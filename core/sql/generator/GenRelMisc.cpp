@@ -2682,9 +2682,10 @@ short RelRoot::codeGen(Generator * generator)
     }
 
   
-  if (generator->processLOB())
-    root_tdb->setProcessLOB(TRUE);
- 
+  if (generator->processLOB()) {
+     root_tdb->setProcessLOB(TRUE);
+     root_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
+  } 
 
   // Self-referencing updates
   if (avoidHalloween_)

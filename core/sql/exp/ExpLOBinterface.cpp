@@ -34,7 +34,7 @@ using std::ofstream;
 #include "ExpLOBinterface.h"
 #include "ex_globals.h"
 
-Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * parentHeap,
+Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap *lobHeap,
                           ContextCli *currContext,NABoolean isHiveRead,
                           char *hdfsServer, 
                           Int32 port)
@@ -46,8 +46,6 @@ Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * parentHeap,
   Ex_Lob_Error status;
   Int32 dummyParam2 = 0;
 
-  NAHeap *lobHeap = new ((NAHeap *)parentHeap) NAHeap("LOB Heap", (NAHeap *)parentHeap);
- 
   err = ExLobsOper((char*)"dummy",
 		   NULL, 0,
 		   NULL, 0, 
@@ -65,16 +63,17 @@ Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * parentHeap,
 		   0);
   if (exLobGlob)
     {
-    
-      if (isHiveRead)
+      if (exLobGlob->useLibHdfs_) 
+      {
+        if (isHiveRead)
         {
           ((ExLobGlobals *)exLobGlob)->startWorkerThreads();
           lobHeap->setThreadSafe();
         }
-      
-      
+      }
     }
-
+  if (exLobGlob->useLibHdfs_)
+  {
   //set hdfsConnection from context global 
   ContextCli *localContext = (ContextCli *)currContext;
   if (localContext)
@@ -89,7 +88,8 @@ Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * parentHeap,
           ((ExLobGlobals *)exLobGlob)->setHdfsFs(fs);
         }
     }
-
+  }
+ 
   if (err != LOB_OPER_OK)
     return err;
   else

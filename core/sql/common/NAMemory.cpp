@@ -877,6 +877,8 @@ NAMemory::NAMemory(const char * name)
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
+    , heapStartAddr_(NULL)
+    , heapStartOffset_(NULL)
 {
   setType(type_, 0);
 #if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) )  
@@ -928,6 +930,8 @@ NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
+    , heapStartAddr_(NULL)
+    , heapStartOffset_(NULL)
 {
   if (parent_->getSharedMemory())
      setSharedMemory();
@@ -984,6 +988,8 @@ NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
+    , heapStartAddr_(NULL)
+    , heapStartOffset_(NULL)
 {
   // call setType to initialize the values of all the sizes
   setType(type_, blockSize);
@@ -1035,6 +1041,8 @@ NAMemory::NAMemory(const char * name,
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
+    , heapStartOffset_(heapStartOffset)
+    , heapStartAddr_(baseAddr)
 {
   // call setType to initialize the values of all the sizes
   setType(type_, 0);
@@ -1055,12 +1063,12 @@ NAMemory::NAMemory(const char * name,
   // space in the segment, then initialize the firstBlk_ within
   // the passed in memory.  The NAHeap constructor will initialize
   // the top NAHeapFragment.
-  if (baseAddr != NULL) {
+  if (heapStartAddr_ != NULL) {
     blockCnt_ = 1;
-    size_t tsize = maxSize - heapStartOffset - BLOCK_OVERHEAD;
+    size_t tsize = maxSize - heapStartOffset_ - BLOCK_OVERHEAD;
     if (tsize > (8 * sizeof(size_t))) {
-      firstBlk_ = (NABlock*)((char*)baseAddr + heapStartOffset);
-      firstBlk_->size_ = maxSize - heapStartOffset;
+      firstBlk_ = (NABlock*)((char*)heapStartAddr_ + heapStartOffset_);
+      firstBlk_->size_ = maxSize - heapStartOffset_;
       firstBlk_->sflags_ = NABlock::EXTERN_BIT;
       firstBlk_->next_ = NULL;
       firstBlk_->segmentId_ = segmentId;
@@ -1161,7 +1169,7 @@ void NAMemory::reInitialize()
     firstBlk_ = externSegment;
     firstBlk_->next_ = NULL;
     blockCnt_ = 1;
-    totalSize_ = firstBlk_->size_ ;
+    totalSize_ = firstBlk_->size_ - heapStartOffset_;
   }
 
   // If this is an NAHeap, then call reInitializeHeap() to reinitialize
@@ -2668,6 +2676,7 @@ void NAHeap::reInitializeHeap()
   // That code frees the NABlocks and will reinitialize the firstBlk_
   // if it was allocated externally.
   if (firstBlk_ != NULL) {
+     assert((char*)firstBlk_ == ((char*)heapStartAddr_ - heapStartOffset_));
      least_addr_ = (char*)firstBlk_;
      initTop(firstBlk_);
   }

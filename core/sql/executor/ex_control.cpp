@@ -387,6 +387,13 @@ short ExControlTcb::work()
                 currContext->getSessionDefaults()->
                   setSchema(value[2], strlen(value[2]));
               }
+            else if (strcmp(value[1], "USE_LIBHDFS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  currContext->getSessionDefaults()->setUseLibHdfs(TRUE);
+                else 
+                  currContext->getSessionDefaults()->setUseLibHdfs(FALSE);
+              } 
             else if (strcmp(value[1], "USER_EXPERIENCE_LEVEL") == 0)
               {
                 currContext->getSessionDefaults()->

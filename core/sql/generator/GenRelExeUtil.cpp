@@ -3646,6 +3646,8 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
 	 (queue_index)64,
 	 4, 
 	 64000); 
+
+  exe_util_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
   generator->initTdbFields(exe_util_tdb);
 
   if(!generator->explainDisabled()) {
@@ -3659,7 +3661,6 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
   
   // users should not start a transaction.
   generator->setTransactionFlag(0);
-  
   return 0;
 }
 
@@ -4076,7 +4077,8 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      2,
      32000);
 
-if (handleInStringFormat_)
+  exe_util_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
+  if (handleInStringFormat_)
     exe_util_tdb->setHandleInStringFormat(TRUE);
 
   if (handle_ == NULL)
@@ -4267,8 +4269,7 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
      2,
      32000);
 
-
-
+  exe_util_lobupdate_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
   if (updateAction_ == UpdateActionType::ERROR_IF_EXISTS_)
     exe_util_lobupdate_tdb->setErrorIfExists(TRUE);   
   else
@@ -4444,6 +4445,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
      2,
      32000);
 
+  exe_util_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
   generator->initTdbFields(exe_util_tdb);
   
   if(!generator->explainDisabled()) {

@@ -380,6 +380,8 @@ protected:
   Lng32 lastVmSize_;
   Lng32 maxVmSize_;
   DerivedClass derivedClass_; // The derived class (removes virtual functions)
+  off_t heapStartOffset_;
+  void *heapStartAddr_;
 public:
   // ---------------------------------------------------------------------
   // The following method and data member are needed for minimizing

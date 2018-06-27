@@ -332,6 +332,8 @@ static const char* const hdfsClientErrorEnumStr[] =
  ,"Java exception in HdfsClient::hdfsOpen()."
  ,"JNI NewStringUTF() in HdfsClient::hdfsWrite()."
  ,"Java exception in HdfsClient::hdfsWrite()."
+ ,"JNI NewStringUTF() in HdfsClient::hdfsWriteImmediate()."
+ ,"Java exception in HdfsClient::hdfsWriteImmediate()."
  ,"Error in HdfsClient::hdfsRead()."
  ,"Java exception in HdfsClient::hdfsRead()."
  ,"Java exception in HdfsClient::hdfsClose()."
@@ -353,6 +355,10 @@ static const char* const hdfsClientErrorEnumStr[] =
  ,"Buffer is small in HdfsClient::getFsDefaultName()."
  ,"Error in HdfsClient::hdfsCreateDirectory()."
  ,"Java exception in HdfsClient::hdfsCreateDirectory()."
+ ,"Error in HdfsClient::hdfsRename()."
+ ,"Java exception in HdfsClient::hdfsRename()."
+ ,"Error in HdfsClient::hdfsSize()."
+ ,"Java exception in HdfsClient::hdfsSize()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -364,6 +370,7 @@ HdfsClient::~HdfsClient()
    deleteHdfsFileInfo();
    if (path_ != NULL) 
       NADELETEBASIC(path_, getHeap());
+   path_ = NULL;
 }
 
 void HdfsClient::deleteHdfsFileInfo()
@@ -416,15 +423,10 @@ HdfsClient* HdfsClient::getInstance()
    return hdfsClient;
 }
 
-void HdfsClient::deleteInstance()
+void HdfsClient::deleteInstance(HdfsClient *hdfsClient)
 {
-   ContextCli *currContext = GetCliGlobals()->currContext();
-   HdfsClient *hdfsClient = currContext->getHDFSClient();
-   if (hdfsClient != NULL) {
-      NAHeap *heap = currContext->exHeap();
-      NADELETE(hdfsClient, HdfsClient, heap);
-      currContext->setHDFSClient(NULL);
-   }
+  hdfsClient->hdfsClose();
+  NADELETE(hdfsClient, HdfsClient, hdfsClient->getHeap());
 }
 
 HDFS_Client_RetCode HdfsClient::init()
@@ -452,8 +454,10 @@ HDFS_Client_RetCode HdfsClient::init()
     JavaMethods_[JM_HDFS_OPEN       ].jm_signature = "(Ljava/lang/String;Z)Z";
     JavaMethods_[JM_HDFS_WRITE      ].jm_name      = "hdfsWrite";
     JavaMethods_[JM_HDFS_WRITE      ].jm_signature = "([B)I";
+    JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].jm_name      = "hdfsWriteImmediate";
+    JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].jm_signature = "([B)J";
     JavaMethods_[JM_HDFS_READ       ].jm_name      = "hdfsRead";
-    JavaMethods_[JM_HDFS_READ       ].jm_signature = "(Ljava/nio/ByteBuffer;)I";
+    JavaMethods_[JM_HDFS_READ       ].jm_signature = "(JLjava/nio/ByteBuffer;)I";
     JavaMethods_[JM_HDFS_CLOSE      ].jm_name      = "hdfsClose";
     JavaMethods_[JM_HDFS_CLOSE      ].jm_signature = "()Z";
     JavaMethods_[JM_HDFS_MERGE_FILES].jm_name      = "hdfsMergeFiles";
@@ -472,6 +476,12 @@ HDFS_Client_RetCode HdfsClient::init()
     JavaMethods_[JM_GET_FS_DEFAULT_NAME].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_HDFS_CREATE_DIRECTORY].jm_name      = "hdfsCreateDirectory";
     JavaMethods_[JM_HDFS_CREATE_DIRECTORY].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_HDFS_RENAME].jm_name      = "hdfsRename";
+    JavaMethods_[JM_HDFS_RENAME].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
+    JavaMethods_[JM_HDFS_SIZE].jm_name      = "hdfsSize";
+    JavaMethods_[JM_HDFS_SIZE].jm_signature = "()J";
+    JavaMethods_[JM_HDFS_SIZE_FOR_FILE].jm_name      = "hdfsSize";
+    JavaMethods_[JM_HDFS_SIZE_FOR_FILE].jm_signature = "(Ljava/lang/String;)J";
     rc = (HDFS_Client_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     if (rc == HDFS_CLIENT_OK)
        javaMethodsInitialized_ = TRUE;
@@ -495,7 +505,7 @@ void HdfsClient::setPath(const char *path)
 {
    if (path_ != NULL) 
       NADELETEBASIC(path_, getHeap());
-   short len = strlen(path);
+   size_t len = strlen(path);
    path_ = new (getHeap()) char[len+1];
    strcpy(path_, path); 
 }
@@ -551,7 +561,7 @@ HDFS_Client_RetCode HdfsClient::hdfsOpen(const char* path, NABoolean compress)
 
   if (initJNIEnv() != JOI_OK)
      return HDFS_CLIENT_ERROR_HDFS_OPEN_PARAM;
-
+  setPath(path);
   jstring js_path = jenv_->NewStringUTF(path);
   if (js_path == NULL) {
     GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_OPEN_PARAM));
@@ -587,8 +597,37 @@ HDFS_Client_RetCode HdfsClient::hdfsOpen(const char* path, NABoolean compress)
   return HDFS_CLIENT_OK;
 }
 
+Int64 HdfsClient::hdfsSize(HDFS_Client_RetCode &hdfsClientRetcode)
+{
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsSize() called.");
+   
+  if (initJNIEnv() != JOI_OK) {
+     hdfsClientRetcode = HDFS_CLIENT_ERROR_SIZE_PARAM;
+     return -1;
+  }
 
-Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode)
+  if (hdfsStats_ != NULL)
+     hdfsStats_->getHdfsTimer().start();
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_SIZE].jm_full_name;
+  jlong jresult = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_HDFS_SIZE].methodID);
+  if (hdfsStats_ != NULL) {
+      hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
+      hdfsStats_->incHdfsCalls();
+  }
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsSize()");
+    jenv_->PopLocalFrame(NULL);
+    hdfsClientRetcode = HDFS_CLIENT_ERROR_SIZE_EXCEPTION;
+    return -1;
+  }
+  hdfsClientRetcode = HDFS_CLIENT_OK;
+  return jresult;
+}
+
+
+Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode, int maxChunkSize)
 {
   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsWrite(%ld) called.", len);
 
@@ -598,8 +637,9 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
   }
   Int64 lenRemain = len;
   Int64 writeLen;
-  Int64 chunkLen = (ioByteArraySizeInKB_ > 0 ? ioByteArraySizeInKB_ * 1024 : 0);
+  Int64 chunkLen = (maxChunkSize > 0 ? maxChunkSize : (ioByteArraySizeInKB_ > 0 ? ioByteArraySizeInKB_ * 1024 : 0));
   Int64 offset = 0;
+  jint bytesWritten;
   do 
   {
      if ((chunkLen > 0) && (lenRemain > chunkLen))
@@ -621,7 +661,7 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
 
      tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE].jm_full_name;
      // Java method returns the cumulative bytes written
-     jint totalBytesWritten = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID, jbArray);
+     bytesWritten = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID, jbArray);
 
      if (hdfsStats_ != NULL) {
          hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
@@ -639,12 +679,70 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
   } while (lenRemain > 0);
   jenv_->PopLocalFrame(NULL);
   hdfsClientRetcode = HDFS_CLIENT_OK;
-  return len; 
+  return bytesWritten; 
 }
 
-Int32 HdfsClient::hdfsRead(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode)
+Int64 HdfsClient::hdfsWriteImmediate(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode, int maxChunkSize)
 {
-   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsWrite(%ld) called.", len);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsWriteImmediate(%ld) called.", len);
+
+  if (initJNIEnv() != JOI_OK) {
+     hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_IMMEDIATE_EXCEPTION;
+     return 0;
+  }
+  Int64 lenRemain = len;
+  Int64 writeLen;
+  Int64 chunkLen = (maxChunkSize > 0 ? maxChunkSize : (ioByteArraySizeInKB_ > 0 ? ioByteArraySizeInKB_ * 1024 : 0));
+  Int64 offset = 0;
+  jlong writeOffset = -1;
+  jlong chunkWriteOffset;
+  do 
+  {
+     if ((chunkLen > 0) && (lenRemain > chunkLen))
+        writeLen = chunkLen; 
+     else
+        writeLen = lenRemain;
+     //Write the requisite bytes into the file
+     jbyteArray jbArray = jenv_->NewByteArray(writeLen);
+     if (!jbArray) {
+        GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_WRITE_IMMEDIATE_PARAM));
+        jenv_->PopLocalFrame(NULL);
+        hdfsClientRetcode =  HDFS_CLIENT_ERROR_HDFS_WRITE_IMMEDIATE_PARAM;
+        return 0;
+     }
+     jenv_->SetByteArrayRegion(jbArray, 0, writeLen, (const jbyte*)(data+offset));
+
+     if (hdfsStats_ != NULL)
+         hdfsStats_->getHdfsTimer().start();
+
+     tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].jm_full_name;
+     // Java method returns the cumulative bytes written
+     chunkWriteOffset = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].methodID, jbArray);
+     if (writeOffset == -1)
+        writeOffset = chunkWriteOffset;
+
+     if (hdfsStats_ != NULL) {
+         hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
+         hdfsStats_->incHdfsCalls();
+     }
+     if (jenv_->ExceptionCheck())
+     {
+        getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsWrite()");
+        jenv_->PopLocalFrame(NULL);
+        hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_IMMEDIATE_EXCEPTION;
+        return 0;
+     }
+     lenRemain -= writeLen;
+     offset += writeLen;
+  } while (lenRemain > 0);
+  jenv_->PopLocalFrame(NULL);
+  hdfsClientRetcode = HDFS_CLIENT_OK;
+  return writeOffset;
+}
+
+Int32 HdfsClient::hdfsRead(Int64 pos, const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode)
+{
+   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsRead(%ld) called.", len);
 
    if (initJNIEnv() != JOI_OK) {
       hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_READ_EXCEPTION;
@@ -661,7 +759,8 @@ Int32 HdfsClient::hdfsRead(const char* data, Int64 len, HDFS_Client_RetCode &hdf
 
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_READ].jm_full_name;
   jint bytesRead = 0;
-  bytesRead = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_READ].methodID, j_buf);
+  jlong j_pos = pos;
+  bytesRead = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_READ].methodID, j_pos, j_buf);
 
   if (hdfsStats_ != NULL) {
       hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
@@ -712,6 +811,38 @@ HDFS_Client_RetCode HdfsClient::hdfsClose()
 
   jenv_->PopLocalFrame(NULL);
   return HDFS_CLIENT_OK;
+}
+
+Int64 HdfsClient::hdfsSize(const char *filename, HDFS_Client_RetCode &hdfsClientRetcode)
+{
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsSize() called.");
+   
+  if (initJNIEnv() != JOI_OK) {
+     hdfsClientRetcode = HDFS_CLIENT_ERROR_SIZE_PARAM;
+     return -1;
+  }
+  if (getInstance() == NULL)
+     return HDFS_CLIENT_ERROR_SIZE_PARAM;
+
+  jstring j_filename = jenv_->NewStringUTF(filename);
+  if (j_filename == NULL) {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_SIZE_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HDFS_CLIENT_ERROR_SIZE_PARAM;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_SIZE_FOR_FILE].jm_full_name;
+  jlong jresult = jenv_->CallStaticLongMethod(javaClass_, JavaMethods_[JM_HDFS_SIZE_FOR_FILE].methodID, j_filename);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsSize()");
+    jenv_->PopLocalFrame(NULL);
+    hdfsClientRetcode = HDFS_CLIENT_ERROR_SIZE_EXCEPTION;
+    return -1;
+  }
+  hdfsClientRetcode = HDFS_CLIENT_OK;
+  return jresult;
 }
 
 HDFS_Client_RetCode HdfsClient::hdfsCleanUnloadPath( const NAString& uldPath)
@@ -978,7 +1109,47 @@ HDFS_Client_RetCode HdfsClient::hdfsCreateDirectory(const NAString &dirName)
   {
     logError(CAT_SQL_HDFS, "HdfsClient::hdfsCreateDirectory()", getLastError());
     jenv_->PopLocalFrame(NULL);
-    return HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION;
+    return HDFS_CLIENT_ERROR_CREATE_DIRECTORY_EXCEPTION;
+  }
+  jenv_->PopLocalFrame(NULL);
+  return HDFS_CLIENT_OK;
+}
+
+HDFS_Client_RetCode HdfsClient::hdfsRename(const NAString &fromPath, const NAString &toPath)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HDFSClient_JNI::hdfsRename() called.");
+  if (initJNIEnv() != JOI_OK)
+     return HDFS_CLIENT_ERROR_RENAME_PARAM;
+  if (getInstance() == NULL)
+     return HDFS_CLIENT_ERROR_RENAME_PARAM;
+
+  jstring js_fromPath = jenv_->NewStringUTF(fromPath.data());
+  if (js_fromPath == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HDFS_CLIENT_ERROR_RENAME_PARAM;
+  }
+
+  jstring js_toPath = jenv_->NewStringUTF(toPath.data());
+  if (js_toPath == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HDFS_CLIENT_ERROR_RENAME_PARAM;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_RENAME].jm_full_name;
+  jstring jresult = 
+        (jstring)jenv_->CallStaticObjectMethod(javaClass_,
+                              JavaMethods_[JM_HDFS_RENAME].methodID, js_fromPath, js_toPath);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsRename()");
+    jenv_->PopLocalFrame(NULL);
+    return HDFS_CLIENT_ERROR_RENAME_EXCEPTION;
+  }
+  if (jresult == false)
+  {
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsRename()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HDFS_CLIENT_ERROR_RENAME_EXCEPTION;
   }
   jenv_->PopLocalFrame(NULL);
   return HDFS_CLIENT_OK;

@@ -3317,8 +3317,8 @@ enum DefaultConstants
 
   BMO_MEMORY_ESTIMATE_OUTLIER_FACTOR,
 
-  // Use the earlier implementation of HdfsScan via libhdfs
-  USE_LIBHDFS_SCAN,
+  // Use the earlier implementation of Hdfs access including LOB via libhdfs
+  USE_LIBHDFS,
 
   // if set, make primary key columns non-nullable. ANSI specification.
   // Default is ON.
