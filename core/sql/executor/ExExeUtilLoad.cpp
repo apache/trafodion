@@ -68,6 +68,7 @@ using std::ofstream;
 #include "ExpHbaseInterface.h"
 #include "ExHbaseAccess.h"
 #include "ExpErrorEnums.h"
+#include "ExpLOBaccess.h"
 #include "HdfsClient_JNI.h"
 
 ///////////////////////////////////////////////////////////////////
@@ -2545,11 +2546,7 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
 
   requestTag_ = -1;
   lobLoc_[0] = '\0';
-  exLobGlobals_ = NULL;
- 
-  ExpLOBinterfaceInit(exLobGlobals_,(NAHeap *)glob->getDefaultHeap(),currContext,TRUE,
-                      lobTdb().getLobHdfsServer(),
-                      lobTdb().getLobHdfsPort());
+  exLobGlobals_ = ExpLOBoper::initLOBglobal((NAHeap *)glob->getDefaultHeap(), currContext, exe_util_tdb.useLibHdfs());
 }
 
 void ExExeUtilLobExtractTcb::freeResources()
@@ -2584,8 +2581,7 @@ void ExExeUtilLobExtractTcb::freeResources()
 	       lobDataLen_, lobData_, 
 	       3, // close
                0); // open type not applicable
-
-  ExpLOBinterfaceCleanup(exLobGlobals_);
+  ExpLOBoper::deleteLOBglobal(exLobGlobals_, (NAHeap *)(NAHeap *)getGlobals()->getDefaultHeap());
   exLobGlobals_ = NULL;
 }
 
@@ -3324,9 +3320,7 @@ ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
   lobHandle_[0] = '\0';
   exLobGlobals_=NULL;
   memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
-  ExpLOBinterfaceInit(exLobGlobals_,(NAHeap *)glob->getDefaultHeap(),currContext,TRUE,
-                      lobTdb().getLobHdfsServer(),
-                      lobTdb().getLobHdfsPort());
+  exLobGlobals_ = ExpLOBoper::initLOBglobal((NAHeap *)glob->getDefaultHeap(), currContext, exe_util_lobupdate_tdb.useLibHdfs());
                                      
 }
 ExExeUtilLobUpdateTcb::~ExExeUtilLobUpdateTcb()
@@ -3336,10 +3330,7 @@ ExExeUtilLobUpdateTcb::~ExExeUtilLobUpdateTcb()
 
 void ExExeUtilLobUpdateTcb::freeResources()
 {
- ContextCli *currContext =
-    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
-    getStatement()->getContext();
- ExpLOBinterfaceCleanup(exLobGlobals_);
+ ExpLOBoper::deleteLOBglobal(exLobGlobals_, (NAHeap *)getGlobals()->getDefaultHeap());
  exLobGlobals_ = NULL;
 }
 

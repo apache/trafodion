@@ -1784,7 +1784,8 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
 
     if (! useLibHdfs_) {
        if (size == 0) {
-          hdfsClientRetcode = HdfsClient::hdfsDeletePath(lobDataFile_.data());
+          // Delete and Create the Hdfs file by passing overwrite to TRUE
+          hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), TRUE, FALSE); 
           if (hdfsClientRetcode != HDFS_CLIENT_OK)
              return LOB_DATA_FILE_WRITE_ERROR;
           else {
