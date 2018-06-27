@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <errno.h>
 #include "seabed/pctl.h"
+#include "Platform.h"
 #include "ExSMGlobals.h"
 #include "ExSMTask.h"
 #include "ExSMReader.h"

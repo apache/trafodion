@@ -1577,6 +1577,15 @@ static Charset_def CHARSET_INFORMATION[] = {
 							if (dataLengthNotExceeded(charSet, dataLen, allocLength))
 							{
 								memcpy(dataPtr, (const void *)byteValue, dataLen);
+                                memset(dataPtr + (dataLen), ' ', allocLength - (dataLen));
+                                if (charSet == SQLCHARSETCODE_UCS2)
+                                {
+                                    // Back fill target buffer with double byte 'space' characters (i.e. 0x00 0x20)
+                                    for (int i = (dataLen+1); i < allocLength-dataLen; i+=2)
+                                    {
+                                        *(dataPtr+i) = 0;
+                                    }
+                                }
 							}
 							else
 							{

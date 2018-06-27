@@ -666,6 +666,14 @@ NABoolean ConstValue::isCacheableExpr(CacheWA& cwa)
     // This fixes genesis case 10-041215-6141, soln 10-041215-2826.
     return FALSE;
   }
+
+  // string of length zero causes a problem during backpatching in method 
+  // CacheData::backpatchParams.
+  // For now, do not cache it.
+  if ((NOT isNull()) &&
+      (isEmptyString()))
+    return FALSE;
+
   return ItemExpr::isCacheableExpr(cwa);
 }
 

@@ -101,6 +101,7 @@ select cast(1e0 as interval year) from dual;
 
 
 -- auto create schema
+drop schema if exists t032sch cascade;
 
 -- should fail, schema doesnt exist
 create table t032sch.t032t2 (a int);
@@ -111,6 +112,61 @@ create table t032sch.t032t2 (a int);
 set schema t032sch;
 invoke t032t2;
 insert into t032t2 values (1);
+
+-- auto NOT NULL attr for pkey columns
+create schema if not exists t032sch;
+set schema t032sch;
+drop table if exists t032t1;
+drop table if exists t032t2;
+drop table if exists t032t3;
+drop table if exists t032t4 cascade;
+drop table if exists t032t5 cascade;
+
+-- NOT NULL attr for pkey columns
+create table t032t1 (a int primary key);
+showddl t032t1;
+drop table t032t1;
+create table t032t1 (a int, primary key(a));
+showddl t032t1;
+drop table t032t1;
+create table t032t1 (a int) primary key(a);
+showddl t032t1;
+drop table t032t1;
+create table t032t1 primary key(a) as select cast(1 as nullable) a from dual;
+showddl t032t1;
+
+-- no NOT NULL attr if nullable pkey is specified
+create table t032t2 (a int constraint t2pk primary key nullable);
+showddl t032t2;
+insert into t032t2 values (1), (null);
+select * from t032t2 order by a;
+drop table t032t2;
+create table t032t2 (a int, b int);
+alter table t032t2 add constraint pkt2 primary key nullable (a);
+showddl t032t2;
+-- should return unique violation
+insert into t032t2 values (null, 1), (null, 2);
+
+-- alter/add pkey on empty table
+create table t032t3 (a int, b int not null);
+alter table t032t3 add constraint pkt3 primary key(a);
+invoke t032t3;
+
+-- alter/add pkey on non-empty table
+create table t032t4 (a int, b int not null);
+insert into t032t4 values (1,1);
+alter table t032t4 add constraint pkt4 primary key(a);
+invoke t032t4;
+
+-- pkey not allowed with dependent objects
+create table t032t5 (a int, b int);
+create view v032t5 as select * from t032t5;
+alter table t032t5 add constraint pkt5 primary key(a);
+
+-- pkey created as unique constraint if cqd is set
+cqd traf_alter_add_pkey_as_unique_constraint 'ON';
+alter table t032t5 add constraint pkt5 primary key(a);
+showddl t032t5;
 
 drop schema t032sch cascade;
 

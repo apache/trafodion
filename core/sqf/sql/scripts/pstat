@@ -51,7 +51,7 @@ process_metrics,pstartd,qpidd,qscom,qsmgr,qsmgr2,qsoffndr,qsrecev,\
 qsrule,qssend,qsstats,qssync,se_metrics_aaa_delta,serevive,shell,\
 snmp_protocol_adapter,sp_proxy,sp_wrapper,spqpid_p,sqcheck,sqlci,sqregck,\
 sqstart,ssd_lun_metric_publish,ssd_lun_state_publish,ssd_metric_publish,\
-ssd_state_publish,tdm_arkcmp,tdm_arkesp,tdm_sqlc,tdm_udrserv,\
+ssd_state_publish,tdm_arkcmp,tdm_arkesp,tdm_sqlc,tdm_udrserv,trafns,\
 textprotocoladapter,timer_pop_generator,tm,tmshutdown,universal_action_agent,\
 universal_consumer,volrcov
 

@@ -196,3 +196,4 @@ t280	- FS	- simple FS app		- verifier
 t281	- MS	- simple MS app		- stream-count-problem
 t282	- MS	- simple MS app		- client-death stress
 t285	- FS	- simple FS app		- like t45 but with tmlib2
+t286	- MS	- simple MS app		- stress monitor

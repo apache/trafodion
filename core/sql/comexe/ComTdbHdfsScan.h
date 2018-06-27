@@ -24,7 +24,6 @@
 #define COM_HDFS_SCAN_H
 
 #include "ComTdb.h"
-//#include "hdfs.h"  // tPort 
 #include "ExpLOBinterface.h"
 #include "ComQueue.h"
 
@@ -54,7 +53,10 @@ class ComTdbHdfsScan : public ComTdb
     // ignore conversion errors and continue reading the next row.
     CONTINUE_ON_ERROR           = 0x0020,
     LOG_ERROR_ROWS              = 0x0040,
-    ASSIGN_RANGES_AT_RUNTIME    = 0x0080
+    ASSIGN_RANGES_AT_RUNTIME    = 0x0080,
+    TREAT_EMPTY_AS_NULL         = 0x0100,
+    USE_LIBHDFS_SCAN            = 0x0200,
+    COMPRESSED_FILE             = 0x0400
   };
 
   // Expression to filter rows.
@@ -107,7 +109,6 @@ class ComTdbHdfsScan : public ComTdb
 
   UInt32 flags_;                                             // 96 - 99
 
-  // hadoop port num. An unsigned short in hdfs.h, subject to change.
   UInt16 port_;                                              // 100 - 101
 
   UInt16 convertSkipListSize_;                               // 102 - 103
@@ -141,7 +142,7 @@ class ComTdbHdfsScan : public ComTdb
   NABasicPtr hdfsRootDir_;                                     // 200 - 207
   Int64  modTSforDir_;                                         // 208 - 215
   Lng32  numOfPartCols_;                                       // 216 - 219
-  char fillersComTdbHdfsScan2_[4];                             // 220 - 223
+  Lng32  hdfsIoByteArraySizeInKB_;                             // 220 - 223
   QueuePtr hdfsDirsToCheck_;                                   // 224 - 231
     
 public:
@@ -284,7 +285,17 @@ public:
   {(v ? flags_ |= ASSIGN_RANGES_AT_RUNTIME : flags_ &= ~ASSIGN_RANGES_AT_RUNTIME); }
   NABoolean getAssignRangesAtRuntime() const
                                 { return (flags_ & ASSIGN_RANGES_AT_RUNTIME) != 0; }
-  
+
+  void setUseLibhdfsScan(NABoolean v)
+  {(v ? flags_ |= USE_LIBHDFS_SCAN : flags_ &= ~USE_LIBHDFS_SCAN); }
+  NABoolean getUseLibhdfsScan() const
+                                { return (flags_ & USE_LIBHDFS_SCAN) != 0; }
+
+  void setCompressedFile(NABoolean v)
+  {(v ? flags_ |= COMPRESSED_FILE : flags_ &= ~COMPRESSED_FILE); }
+  NABoolean isCompressedFile() const
+                                { return (flags_ & COMPRESSED_FILE) != 0; }
+
   UInt32 getMaxErrorRows() const { return maxErrorRows_;}
   void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
   
@@ -351,6 +362,10 @@ public:
   Queue * hdfsDirsToCheck() { return hdfsDirsToCheck_; }
  
   char *hdfsRootDir() { return hdfsRootDir_; }
+  void setHdfsIoByteArraySize(int size)
+    { hdfsIoByteArraySizeInKB_ = size; }
+  int getHdfsIoByteArraySize() 
+    { return hdfsIoByteArraySizeInKB_; }
 };
 
 inline ComTdb * ComTdbHdfsScan::getChildTdb()

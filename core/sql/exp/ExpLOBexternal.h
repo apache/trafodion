@@ -171,7 +171,9 @@ Lng32 SQL_EXEC_LOBddlInterface
  /*IN*/     Int64 lobMaxSize,
  /*IN*/     NABoolean lobTrace
  );
-
+Lng32 SQL_EXEC_SetLobLock(/* IN */   char *llid);
+Lng32 SQL_EXEC_ReleaseLobLock(/* IN */ char *llid);
+Lng32 SQL_EXEC_CheckLobLock(/* IN */   char *llid, /* IN */ Int32 *found);
 
   /***************************************************************************
     Called by loader to load or extract buffers of data.

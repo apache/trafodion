@@ -43,8 +43,6 @@
 class ExeCliInterface;
 
 short exeImmedOneStmt(const char *stmt);
-//short exeImmedOneStmt(void *in_sql_src,
-//		      const char *stmt);
 
 short sendAllControls(NABoolean copyCQS,
                       NABoolean sendAllCQDs,
@@ -57,5 +55,63 @@ short sendAllControls(NABoolean copyCQS,
 void sendParserFlag (ULng32 flag);
 
 short setParentQidAtSession(NAHeap *heap, const char *parentQid);
+
+extern short CmpDescribeSeabaseTable ( 
+     const CorrName  &dtName,
+     short type, // 1, invoke. 2, showddl. 3, createLike
+     char* &outbuf,
+     ULng32 &outbuflen,
+     CollHeap *heap,
+     const char * pkeyName = NULL,
+     const char * pkeyStr = NULL,
+     NABoolean withPartns = FALSE,
+     NABoolean withoutSalt = FALSE,
+     NABoolean withoutDivisioning = FALSE,
+     NABoolean withoutRowFormat = FALSE,
+     NABoolean withoutLobColumns = FALSE,
+     UInt32 columnLengthLimit = UINT_MAX,
+     NABoolean noTrailingSemi = FALSE,
+     
+     // used to add,rem,alter column definition from col list.
+     // valid for 'createLike' mode. 
+     // Used for 'alter add/drop/alter col'.
+     char * colName = NULL,
+     short ada = 0, // 0,add. 1,drop. 2,alter
+     const NAColumn * nacol = NULL,
+     const NAType * natype = NULL,
+     Space *inSpace = NULL,
+     NABoolean isDetail = FALSE);
+
+short CmpDescribeHiveTable ( 
+                             const CorrName  &dtName,
+                             short type, // 1, invoke. 2, showddl. 3, createLike
+                             char* &outbuf,
+                             ULng32 &outbuflen,
+                             CollHeap *heap,
+                             NABoolean isDetail = FALSE,
+                             UInt32 columnLengthLimit = UINT_MAX);
+
+// type:  1, invoke. 2, showddl. 3, create_like
+extern short cmpDisplayColumn(const NAColumn *nac,
+                              char * inColName,
+                              const NAType *inNAT,
+                              short displayType,
+                              Space *inSpace,
+                              char * buf,
+                              Lng32 &ii,
+                              NABoolean namesOnly,
+                              NABoolean &identityCol,
+                              NABoolean isExternalTable,
+                              NABoolean isAlignedRowFormat,
+                              UInt32 columnLengthLimit,
+                              NAList<const NAColumn *> * truncatedColumnList);
+
+extern short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
+                                  Lng32 numKeys,
+                                  NABoolean displaySystemCols,
+                                  Space &space, char * buf, 
+                                  NABoolean displayCompact,
+                                  NABoolean displayAscDesc,
+                                  NABoolean displayParens);
 
 #endif

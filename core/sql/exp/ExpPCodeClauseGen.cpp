@@ -2412,10 +2412,14 @@ ex_expr::exp_return_type ex_arith_sum_clause::pCodeGenerate(Space *space, UInt32
      (op1->getDatatype() > REC_MAX_NUMERIC))
     return ex_clause::pCodeGenerate(space, f);
 
+  if (! isAugmentedAssignOperation())
+     return ex_clause::pCodeGenerate(space, f);
+
   // The result should be the same as one of the operands.
   //
   Int32 firstOperand = isSameAttribute(dst, op1);
   Int32 secondOperand = isSameAttribute(dst, op2);
+  
   if(!firstOperand && !secondOperand)
     return ex_clause::pCodeGenerate(space, f);
 
@@ -4551,6 +4555,10 @@ ex_function_position::pCodeGenerate(Space *space, UInt32 f)
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
 
   if(cs != CharInfo::ISO88591)
+    return ex_clause::pCodeGenerate(space, f);
+
+  // pcode currently doesn't handle non-default start position or n'th occurrence
+  if (getNumOperands() > 3)
     return ex_clause::pCodeGenerate(space, f);
 
   // We don't support system collations (e.g. czech).  Note, some clauses have

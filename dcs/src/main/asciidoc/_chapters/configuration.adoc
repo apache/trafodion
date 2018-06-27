@@ -28,7 +28,7 @@
 :experimental:
 
 This chapter is the Not-So-Quick start guide to DCS configuration.
-Please read this chapter carefully and ensure that all requirements have 
+Please read this chapter carefully and ensure that all requirements have
 been satisfied.  Failure to do so will cause you (and us) grief debugging strange errors.
 
 DCS uses the same configuration mechanism as Apache Hadoop.
@@ -36,10 +36,10 @@ All configuration files are located in the _conf/_ directory.
 
 [TIP]
 ====
-Be careful editing XML.  Make sure you close all elements. Run your file through +xmllint+ or similar to 
+Be careful editing XML.  Make sure you close all elements. Run your file through +xmllint+ or similar to
 ensure well-formedness of your document after an edit session.
 ====
- 
+
 .Keep Configuration In Sync Across the Cluster
 [WARNING]
 ====
@@ -48,101 +48,71 @@ DCS will not do this for you. Use +rsync+, +scp+, or another secure mechanism fo
 A restart is needed for servers to pick up changes.
 ====
 
-This section lists required services and some required system configuration. 
+This section lists required services and some required system configuration.
 
-== Java    
-.Java
-[cols="1,1,1,4", options="header"]
-|===
-|DCS Version
-|JDK 6
-|JDK 7
-|JDK 8
-
-|1.1
-|Not Supported
-|yes
-|Running with JDK 8 has not been tested.
-
-|1.0
-|yes
-|Not Supported
-|Not Supported
-
-|===
+== Java
+DCS is configured to use default version of JDK as defined by Trafodion configuration.
 
 [[os]]
-== Operating System  
- 
-=== ssh  
- 
+== Operating System
+
+=== ssh
+
 _ssh_ must be installed and _sshd_ must be running to use DCS's' scripts to manage remote DCS daemons. You must be able to ssh to all
 nodes, including your local node, using passwordless login (Google "ssh passwordless login").
 
-=== DNS  
+=== DNS
 Both forward and reverse DNS resolving should work. If your machine has multiple interfaces, DCS will use the
 interface that the primary hostname resolves to.
 
-=== Loopback IP 
+=== Loopback IP
 DCS expects the loopback IP address to be 127.0.0.1.  Ubuntu and some other distributions,
 for example, will default to 127.0.1.1 and this will cause problems for you. _/etc/hosts_ should look something like this:
 ----
             127.0.0.1 localhost
             127.0.0.1 ubuntu.ubuntu-domain ubuntu
 ----
-        
-=== NTP 
+=== NTP
 The clocks on cluster members should be in basic alignments. Some skew is tolerable but wild skew could generate odd behaviors. Run
 link:http://en.wikipedia.org/wiki/Network_Time_Protocol[NTP] on your cluster, or an equivalent.
 
-=== Windows 
-DCS is not supported on Windows.
+== Run modes
 
-== Run modes  
-      
-=== Single Node 
+=== Single Node
 This is the default mode. Single node is what is described in the <<quickstart,quickstart>> section. In
 single node, it runs all DCS daemons and a local ZooKeeper all on the same node. Zookeeper binds to a well known port.
 
-=== Multi Node 
+=== Multi Node
 Multi node is where the daemons are spread across all nodes in the cluster. Before proceeding, ensure you have a working Trafodion instance.
 
-Below we describe the different setups. Starting, verification and exploration of your install. Configuration is described in a
-section that follows, <<running.and.confirming.your.installation,Running and Confirming Your Installation>>. 
+Below sections describe the various configuration files that needs to be set up for starting DCS processes. Configuration is described in a
+section that follows, <<running.and.confirming.your.installation,Running and Confirming Your Installation>>.
 
 To set up a multi-node deploy, you will need to configure DCS by editing files in the DCS _conf_ directory.
-        
+
 You may need to edit _conf/dcs-env.sh_ to tell DCS which _java_ to use. In this file you set DCS environment
 variables such as the heap size and other options for the _JVM_, the preferred location for log files,
 etc. Set `JAVA_HOME` to point at the root of your _java_ install.
 
-==== _servers_ 
+==== _servers_
 
-In addition, a multi-node deploy requires that you
-modify _conf/servers_. The  _servers_ file  lists all hosts that you would have running
-DcsServers, one host per line or the host name followed by the number of master executor servers. 
+A multi-node deploy requires that you modify _conf/servers_. The  _servers_ file  lists all hosts that you would have running
+DcsServers, one host per line or the host name followed by the number of master executor servers.
 All servers listed in this file will be started and stopped when DCS start or stop is run.
 
-==== _backup-masters_ 
+==== _masters_
 
-The  _backup-masters_ file lists all hosts that you would have running
-backup DcsMaster processes, one host per line. All servers listed in this file will be started 
-and stopped when DCS start or stop is run.
+The  _masters_ file lists the host of the primary and backup DcsMaster processes, one host per line. All servers listed
+in this file will be started and stopped when DCS stop and start is run.
 
-==== _master_ 
-
-The  _master_ file lists the host of the primary DcsMaster process. Only one host is allowed to 
-be the primary master. The server listed in this file will be started 
-and stopped when DCS start or stop is run.
- 
-==== ZooKeeper and DCS 
+==== ZooKeeper and DCS
 See section <<zookeeper,Zookeeper>> for ZooKeeper setup for DCS.
 
 [[running.and.confirming.your.installation]]
-=== Running and Confirming Your Installation 
+=== Running and Confirming Your Installation
 
-Make sure Trafodion is running first. Start and stop the Trafodion instance by running _sqstart.sh_ over in the
-`TRAF_HOME/sql/scripts` directory. You can ensure it started properly by testing with _sqcheck_. 
+Before you start DCS make sure Trafodion is up and running first. Start and stop the Trafodion instance by running _sqstart.sh_ over in the
+`$TRAF_HOME/sql/scripts` directory. You can ensure it started properly by testing with _sqcheck_.
 If you are managing your own ZooKeeper, start it and confirm its running else, DCS will start up ZooKeeper
 for you as part of its start process.
 
@@ -151,17 +121,17 @@ Start DCS with the following command:
 bin/start-dcs.sh
 ----
 
-Run the above from the `DCS_HOME` directory. 
+Run the above from the `DCS_HOME` directory.
 
 You should now have a running DCS instance. DCS logs can be
 found in the _logs_ subdirectory. Check them out
 especially if DCS had trouble starting.
 
-DCS also puts up a UI listing vital attributes and metrics. By default its deployed on the DcsMaster 
-host at port 24410 (DcsServers put up an informational http server at 24430+their instance number). 
+DCS also puts up a UI listing vital attributes and metrics. By default its deployed on the DcsMaster
+host at port 24410 (DcsServers put up an informational http server at 24430+their instance number).
 If the DcsMaster were running on a host named `master.example.org` on the default port, to see the
 DcsMaster's homepage you'd point your browser at  _http://master.example.org:24410_.
- 
+
 To stop DCS after exiting the DCS shell enter
 ----
 ./bin/stop-dcs.sh
@@ -170,12 +140,12 @@ stopping dcs...............
 Shutdown can take a moment to  complete. It can take longer if your cluster is comprised of many machines.
 
 [[zookeeper]]
-== ZooKeeper 
+== ZooKeeper
 
 DCS depends on a running ZooKeeper cluster.All participating nodes and clients need to be able to access the
 running ZooKeeper ensemble. DCS by default manages a ZooKeeper "cluster" for you. It will start and stop the ZooKeeper ensemble
 as part of the DCS start/stop process. You can also manage the ZooKeeper ensemble independent of DCS and just point DCS at
-the cluster it should use. To toggle DCS management of ZooKeeper, use the `DCS_MANAGES_ZK` variable in 
+the cluster it should use. To toggle DCS management of ZooKeeper, use the `DCS_MANAGES_ZK` variable in
 _conf/dcs-env.sh_. This variable, which defaults to `true`, tells DCS whether to start/stop the ZooKeeper ensemble servers as part of DCS
 start/stop.
 
@@ -185,22 +155,22 @@ _conf/dcs-site.xml_. A ZooKeeper configuration option can be set as a property i
 _dcs-site.xml_ XML configuration file by prefacing the ZooKeeper option name with
 `dcs.zookeeper.property`. For example, the `clientPort` setting in ZooKeeper can be changed
 by setting the `dcs.zookeeper.property.clientPort` property. For all default values used by DCS, including ZooKeeper
-configuration, see section <<dcs_default_configurations,DCS Default Configuration>>. Look for the `dcs.zookeeper.property` prefix 
+configuration, see section <<dcs_default_configurations,DCS Default Configuration>>. Look for the `dcs.zookeeper.property` prefix
 For the full list of ZooKeeper configurations, see ZooKeeper's _zoo.cfg_. DCS does not ship with a _zoo.cfg_ so you will need to browse
 the _conf_ directory in an appropriate ZooKeeper download.
 
 You must at least list the ensemble servers in _dcs-site.xml_ using the `dcs.zookeeper.quorum` property. This property
-defaults to a single ensemble member at `localhost` which is not suitable for a fully distributed DCS. 
+defaults to a single ensemble member at `localhost` which is not suitable for a fully distributed DCS.
 (It binds to the local machine only and remote clients will not be able to connect).
 
 How many ZooKeepers should I run?
 
 You can run a ZooKeeper ensemble that comprises 1 node only but in production it is recommended that you run a
 ZooKeeper ensemble of 3, 5 or 7 machines; the more members a nensemble has, the more tolerant the ensemble is of host
-failures. Also, run an odd number of machines. In ZooKeeper, an even number of peers is supported, but it is normally not used 
-because an even sized ensemble requires, proportionally, more peers to form a quorum than an odd sized ensemble requires. For example, an 
-ensemble with 4 peers requires 3 to form a quorum, while an ensemble with 5 also requires 3 to form a quorum. Thus, an ensemble of 5 allows 2 peers to 
-fail, and thus is more fault tolerant than the ensemble of 4, which allows only 1 down peer.                 
+failures. Also, run an odd number of machines. In ZooKeeper, an even number of peers is supported, but it is normally not used
+because an even sized ensemble requires, proportionally, more peers to form a quorum than an odd sized ensemble requires. For example, an
+ensemble with 4 peers requires 3 to form a quorum, while an ensemble with 5 also requires 3 to form a quorum. Thus, an ensemble of 5 allows 2 peers to
+fail, and thus is more fault tolerant than the ensemble of 4, which allows only 1 down peer.
 
 Give each ZooKeeper server around 1GB of RAM, and if possible, its own dedicated disk (A dedicated disk is the best thing you can do
 to ensure a performant ZooKeeper ensemble). For very heavily loaded clusters, run ZooKeeper servers on separate machines
@@ -211,8 +181,8 @@ port 2222 (the default is 2181) ensure `DCS_MANAGE_ZK` is commented out or set t
 and then edit _conf/dcs-site.xml_ and set `dcs.zookeeper.property.clientPort` and
 `dcs.zookeeper.quorum`. You should also set `dcs.zookeeper.property.dataDir` to other than
 the default as the default has ZooKeeper persist data under _/tmp_ which is often cleared on system
-restart. In the example below we have ZooKeeper persist to _/user/local/zookeeper_. 
-            
+restart. In the example below we have ZooKeeper persist to _/user/local/zookeeper_.
+
 [source,xml]
 ----
 <configuration>
@@ -250,16 +220,16 @@ restart. In the example below we have ZooKeeper persist to _/user/local/zookeepe
 === Using existing ZooKeeper ensemble
 
 To point DCS at an existing ZooKeeper cluster, one that is not managed by DCS, uncomment and set `DCS_MANAGES_ZK`
-in _conf/dcs-env.sh_ to `false`  
+in _conf/dcs-env.sh_ to `false`
 
-[source,console] 
+[source,console]
 ----
 # Tell DCS whether it should manage it's own instance of Zookeeper or not.
 export DCS_MANAGES_ZK=false
 ----
-  
+
 Next set ensemble locations and client port, if non-standard, in
-_dcs-site.xml_, or add a suitably configured _zoo.cfg_ to DCS's _CLASSPATH_. 
+_dcs-site.xml_, or add a suitably configured _zoo.cfg_ to DCS's _CLASSPATH_.
 DCS will prefer the configuration found in _zoo.cfg_ over any settings in _dcs-site.xml_.
 
 When DCS manages ZooKeeper, it will start/stop the
@@ -278,28 +248,28 @@ ZooKeeper cluster, unrelated to DCS. Just make sure to uncomment and set
 DCS shuts down, it doesn't take ZooKeeper down with it.
 
 For more information about running a distinct ZooKeeper
-cluster, see the link:http://hadoop.apache.org/zookeeper/docs/current/zookeeperStarted.html[ZooKeeper Getting Started Guide].  
-Additionally, see the link:http://wiki.apache.org/hadoop/ZooKeeper/FAQ#A7[ZooKeeper Wiki] or the 
-link:http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_zkMulitServerSetup[ZooKeeper documentation] 
+cluster, see the link:http://hadoop.apache.org/zookeeper/docs/current/zookeeperStarted.html[ZooKeeper Getting Started Guide].
+Additionally, see the link:http://wiki.apache.org/hadoop/ZooKeeper/FAQ#A7[ZooKeeper Wiki] or the
+link:http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_zkMulitServerSetup[ZooKeeper documentation]
 for more information on ZooKeeper sizing.
- 
+
 == Configuration Files
-         
+
 === _dcs-site.xml_ and _dcs-default.xml_
 You add site-specific configuration to the _dcs-site.xml_ file, for DCS, site specific customizations go into
 the file _conf/dcs-site.xml_. For the list of configurable properties, see <<dcs_default_configurations,DCS Default Configuration>>
 below or view the raw _dcs-default.xml_ source file in the DCS source code at _src/main/resources_.
 
 Not all configuration options make it out to _dcs-default.xml_.  Configuration
-that it is thought rare anyone would change can exist only in code; the only way 
+that it is thought rare anyone would change can exist only in code; the only way
 to turn up such configurations is via a reading of the source code itself.
-      
+
 Currently, changes here will require a cluster restart for DCS to notice the change.
-      
+
 //The file dcs-default.xml is generated as part of  the build of the dcs site.  See the dcs pom.xml.
 //The generated file is an asciidoc file.
 // dcs/src/main/asciidoc
-// 
+//
 include::../../../../target/asciidoc/dcs-default.adoc[]
 
 === _dcs-env.sh_
@@ -307,21 +277,19 @@ Set DCS environment variables in this file. Examples include options to pass the
 an DCS daemon such as heap size and garbage collector configs. You can also set configurations for DCS configuration, log directories,
 niceness, ssh options, where to locate process pid files, etc. Open the file at _conf/dcs-env.sh_ and peruse its content.
 Each option is fairly well documented.  Add your own environment variables here if you want them read by DCS daemons on startup. Changes done to this file requires restart of DCS.
- 
+
 === _log4j.properties_
 
 Edit this file to change rate at which DCS files are rolled over and, to change the level at which DCS logs messages. Changes done to this file will require restart of DCS.
 
-=== _master_ 
-A plain-text file which lists hostname or host IP address  on which the primary master process should be started. Only one host is allowed to be the primary master
-
-=== _backup-masters_ 
-A plain-text file which lists hosts on which the backup master process should be started. Only one host per line is allowed
+=== _masters_
+A plain-text file which lists of hostname or host IP address  on which the primary and backup master process should be started. The first entry will be the primary DcsMaster and the renamining lines
+will be the backup DcsMaster nodes. Only one host per line is allowed
 
 === _servers_
 A plain-text file which lists hosts on which the DcsServer server process should be started. Only one host per line or the host name followed by the count or number of master executor servers. All servers listed in this file will be started and stopped when DCS start or stop is run.
- 
-== Example Configurations 
+
+== Example Configurations
 
 === Basic Distributed DCS Install
 
@@ -357,9 +325,9 @@ _servers_, and _dcs-env.sh_, found in the DCS _conf_ directory might look like.
 
 ==== _servers_
 
-In this file, you list the nodes that will run DcsServers. In this case, 
+In this file, you list the nodes that will run DcsServers. In this case,
 there are two DcsServrs per node each starting a single mxosrvr:
-[source,console] 
+[source,console]
 ----
   example1
   example2
@@ -380,21 +348,17 @@ Alternatively, you can list the nodes followed by the number of mxosrvrs:
   example4 2
 ----
 
-==== _master_
+==== _masters_
 
-In this file, you list the node that will run primary DcsMasters. 
-[source,console] 
+In this file, you list all the nodes that will run DcsMasters. The first entry
+will be the primary DcsMaster and the remaining nodes will be the backup DcsMasters.
+In the below example, host4 will be the primary DcsMaster node and host5 and host6 are
+the backup DcsMaster nodes
+[source,console]
 ----
-  example4
-----
-
-==== _backup-masters_
-
-In this file, you list the nodes that will run backup DcsMasters. In this case, 
-there is a backup master running on the second node:
-[source,console] 
-----
-  example2
+  host4
+  host5
+  host6
 ----
 
 ==== _dcs-env.sh_
@@ -403,7 +367,7 @@ Below we use a _diff_ to show the differences from default in the _dcs-env.sh_ f
 are setting the DCS heap to be 4G instead of the default 128M.
 
 [source,console]
-----    
+----
 $ git diff dcs-env.sh
 diff --git a/conf/dcs-env.sh b/conf/dcs-env.sh
 index e70ebc6..96f8c27 100644
@@ -411,58 +375,58 @@ index e70ebc6..96f8c27 100644
 +++ b/conf/dcs-env.sh
 @@ -31,7 +31,7 @@ export JAVA_HOME=/usr/java/jdk1.7.0/
  # export DCS_CLASSPATH=
- 
+
  # The maximum amount of heap to use, in MB. Default is 128.
 -# export DCS_HEAPSIZE=128
 +export DCS_HEAPSIZE=4096
 
- 
+
  # Extra Java runtime options.
  # Below are what we set by default. May only work with SUN JVM.
 ----
- 
+
 Use _rsync_ to copy the content of the  _conf_ directory to all nodes of the cluster.
-      
+
 [[ha.configurations]]
-== High Availability(HA) Configuration 
-The master configuration file for DcsMaster may be configured by adding the host name to the _conf/master_ file. If the master is 
-configured to start on the remote node then, during start of dcs the primary master will be started on the remote 
-node. If the _conf/master_ file is empty then the primary master will be started on the host where the dcs start script was run.
-Similarly, DcsMaster backup servers may be configured by adding host names to the _conf/backup-masters_ file. They are
-started and stopped automatically by the _bin/master-backup.sh_ script whenever DCS is started or stopped. Every backup 
+== High Availability(HA) Configuration
+The master configuration file for DcsMaster may be configured by adding the host name to the _conf/masters_ file. If the master is
+configured to start on the remote node then, during start of dcs the primary master will be started on the remote
+node. If the _conf/masters_ file is empty then the primary master will be started on the host where the dcs start script was run.
+Similarly, DcsMaster backup servers may be configured by adding additional host names to the _conf/masters_ file. They are
+started and stopped automatically by the _bin/master-backup.sh_ script whenever DCS is started or stopped. Every backup
 DcsMaster follows the current leader DcsMaster watching for it to fail. If failure of the leader occurs, first
 backup DcsMaster in line for succession checks to see if floating IP is enabled. If enabled it executes
 the _bin/scripts/dcsbind.sh_ script to add a floating IP address to an interface on its node. It then continues
 with normal initialization and eventually starts listening for new client connections. It may take
 several seconds for the take over to complete. When a failed node is restored a new DcsMaster backup may
-be started manually by executing the _bin/dcs-daemon.sh_ script on the restored node.
+be started manually by executing the _dcstart_ script from any node.
 
 ----
->bin/dcs-daemon.sh start master
-----   
+>`TRAF_HOME/sql/scripts/dcsstart`
+----
 
 The newly created DcsMaster backup process will take its place at the back of the line waiting for the current DcsMaster leader to fail.
-   
+
 === `dcs.master.port`
 The default value is 23400. This is the port the DcsMaster listener binds to
 waiting for JDBC/ODBC T4 client connections. The value may need to be changed
 if this port number conflicts with other ports in use on your cluster.
-           
+
 To change this configuration, edit _conf/dcs-site.xml_, copy the changed file around the cluster and restart.
 
 === `dcs.master.port.range`
 The default value is 100. This is the total number of ports that MXOSRVRs will scan trying
 to find an available port to use. You must ensure the value is large enough to support the
-number of MXOSRVRs configured in _conf/servers_. 
+number of MXOSRVRs configured in _conf/servers_.
 
 === `dcs.master.floating.ip`
-The default value is false. When set to true the floating IP feature in the DcsMaster is enabled via the _bin/dcsbind.sh_ script. 
+The default value is false. When set to true the floating IP feature in the DcsMaster is enabled via the _bin/dcsbind.sh_ script.
 This allows backup DcsMaster to take over and set the floating IP address.
 
 === `dcs.master.floating.ip.external.interface`
-There is no default value. You must ensure the value contains the correct interface for your network configuration. 
+There is no default value. You must ensure the value contains the correct interface for your network configuration.
 
 === `dcs.master.floating.ip.external.ip.address`
 There is no default value. It is important that you set this to the dotted IP address appropriate for your network.
-          
+
 To change this configuration, edit _dcs-site.xml_, copy the changed file to all nodes in the cluster and restart dcs.

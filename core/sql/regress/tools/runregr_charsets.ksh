@@ -271,6 +271,11 @@ if [ `uname` = "Windows_NT" ]; then
   skipTheseTests="$skipTheseTests TEST111 TEST132 TEST137 TEST500 TEST503"
 fi
 
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST1" == "1" ]; then
+    skipTheseTests="$skipTheseTests $charsetsCT"
+fi
+
 for i in $testfiles; do 
   skipthis=0
   for j in $skipTheseTests; do

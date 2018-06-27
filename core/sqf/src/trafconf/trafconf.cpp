@@ -41,39 +41,52 @@ using namespace std;
 #include "tclog.h"
 #include "tctrace.h"
 #include "clusterconf.h"
+#include "nameserverconfig.h"
 
 #define MAX_TOKEN   132
 
 typedef enum {
     TrafConfType_Undefined=0,         // Invalid
-    TrafConfType_NodeName,            // Display node names
-    TrafConfType_NodeName_w,          // Display node names
+    TrafConfType_NodeName,            // Display node names: -name -short
+    TrafConfType_NodeName_w,          // Display node names: -wname -wshort
     TrafConfType_NodeId,              // Display node ids
     TrafConfType_PhysicalNodeId,      // Display physical node ids
     TrafConfType_ZoneId,              // Display zone ids
     // the above displays values as: "<value-1>  <value-2> ..."
+
     TrafConfType_NodeConfig,          // Display all nodes configuration attributes
     // node-id=0;node-name=n7;cores=0-1;processors=2;roles=connection,aggregation,storage
+
+    TrafConfType_NodeMax,             // # maximim number of nodes names allowed: -node-max   --node-max
+    TrafConfType_NodeIdCount,         // # configured <nid>s:        -nid-count   --nid-count
+    TrafConfType_PhysicalNodeIdCount, // # configured <pnid>s:       -pnid-count  --pnid-count
+    TrafConfType_SparesCount,         // # configured <spare-pnid>s: -spare-count --spare-count
 
     TrafConfType_PersistConfig,       // Display all persist configuration keys and attributes
 
     TrafConfType_PersistConfigKeys,   // Display persist configuration keys
-    // PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN
+    // PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,TNS,QMN
 
-    TrafConfType_PersistConfigKey     // Display persist configuration attributes of a 'key'
+    TrafConfType_PersistConfigKey,    // Display persist configuration attributes of a 'key'
     // { <persist-prefix>_PROCESS_NAME    = {$<string><nid-format>} }
-    // [ <persist-prefix>_PROCESS_TYPE    = {DTM|PERSIST|PSD|SSMP|TMID|WDG} ]
+    // [ <persist-prefix>_PROCESS_TYPE    = {DTM|PERSIST|PSD|SSMP|TMID|WDG|TNS} ]
     // { <persist-prefix>_PROGRAM_NAME    = {<program-name>} }
     // { <persist-prefix>_REQUIRES_DTM    = {Y|N} } 
     // [ <persist-prefix>_STDOUT          = {<file-name-prefix><nid-format>} ]
     // { <persist-prefix>_PERSIST_RETRIES = {<retries> , <time-window-secs>} }
     // { <persist-prefix>_PERSIST_ZONES   = {<zid-format> [,<zid-format>] . . . }
+    TrafConfType_NameServerConfig     // Display nameserver configuration
 
 } TrafConfType_t;
 
 bool DisplayBeginEnd = false;   // Valid only with:
                                 //   TrafConfType_NodeConfig
                                 //   TrafConfType_PersistConfig
+                                //   TrafConfType_NameServerConfig
+bool DisplayLabel = false;      // Valid only with:
+                                //   TrafConfType_NodeIdCount
+                                //   TrafConfType_PhysicalNodeIdCount
+                                //   TrafConfType_SparesCount
 bool DisplayShortHost = false;  // Valid only with:
                                 //   TrafConfType_NodeName
                                 //   TrafConfType_NodeName_w
@@ -82,6 +95,7 @@ char NodeName[TC_PROCESSOR_NAME_MAX] = { 0 };
 char Key[MAX_TOKEN] = { 0 };
 TrafConfType_t TrafConfType = TrafConfType_Undefined;
 CClusterConfig  ClusterConfig;
+CNameServerConfigContainer  NameServerConfig;
 
 //char Node_name[MPI_MAX_PROCESSOR_NAME];
 //int MyPNID = -1;
@@ -126,20 +140,39 @@ int TcLogWrite(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_s
 void DisplayUsage( void )
 {
     fprintf( stderr, 
-"\nUsage: trafconf { -? | -h | -name | -nameshort | -wname | -wnameshort | -node |  -persist }\n"
+"\nUsage: trafconf { -? | -h | -name | -short | -wname | -wshort | \\\n"
+"                  -nameserver | -ns | -node | -persist | \\\n"
+"                  -node-max | -nid-count | -pnid-count | -spares-count | \\\n"
+"                  --nameserver | --ns | --node | --persist | \\\n"
+"                  --node-max | --nid-count | --pnid-count | --spares-count  }\n"
 "\n   Where:\n"
-"          -?           Displays usage.\n"
-"          -h           Displays usage.\n"
-"          -name        Displays all node names in configuration.\n"
+"     -?                Displays usage.\n"
+"     -h                Displays usage.\n\n"
+
+"     -name             Displays all node names in configuration.\n"
 "                        - Name is as stored in configuration, which could be in short host name or FQDN form.\n"
-"          -short       Displays all node names in configuration in short host name form.\n"
-"          -wname       Displays all node names in configuration prefixed with '-w'\n"
+"     -short            Displays all node names in configuration in short host name form.\n"
+"     -wname            Displays all node names in configuration prefixed with '-w'\n"
 "                        - Name is as stored in configuration, which could be in short host name or FQDN form.\n"
-"          -wshort      Displays all node names in configuration short host name form prefixed with '-w'.\n"
-"          -node        Displays node configuration (without begin/end brackets).\n"
-"          -persist     Displays persist configuration (without begin/end brackets).\n\n"
-"          --node       Displays node configuration (with begin/end brackets).\n"
-"          --persist    Displays persist configuration (with begin/end brackets).\n\n"
+"     -wshort           Displays all node names in configuration short host name form prefixed with '-w'.\n\n"
+
+"     -nameserver -ns   Displays nameserver configuration (without begin/end brackets).\n"
+"     -node             Displays node configuration (without begin/end brackets).\n"
+"     -persist          Displays persist configuration (without begin/end brackets).\n\n"
+
+"     -node-max         Displays maximum number of node allowed in configuration.\n"
+"     -nid-count        Displays count of node-id(s) in the configuration.\n"
+"     -pnid-count       Displays count of physical-node-id(s) in the configuration.\n"
+"     -spares-count     Displays count of spare physical-node-id(s) in the configuration.\n\n"
+
+"     --nameserver --ns Displays nameserver configuration (with begin/end brackets).\n"
+"     --node            Displays node configuration (with begin/end brackets).\n"
+"     --persist         Displays persist configuration (with begin/end brackets).\n\n"   
+
+"     --node-max        Displays maximum number of node allowed in configuration (prefixed with 'Maximum Nodes:').\n"
+"     --nid-count       Displays count of node-id(s) in the configuration (prefixed with 'Node Ids:').\n"
+"     --pnid-count      Displays count of physical-node-id(s) in the configuration (prefixed with 'Physical Node Ids:').\n"
+"     --spares-count    Displays count of spare physical-node-id(s) in the configuration (prefixed with 'Spare Node Ids:').\n\n"
            );
 }
 
@@ -259,6 +292,52 @@ void DisplayNodeName( CLNodeConfig *lnodeConfig, bool dashW )
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Function/Method: DisplayNameServerConfig()
+//
+///////////////////////////////////////////////////////////////////////////////
+int DisplayNameServerConfig( void )
+{
+    int rc = 0;
+    bool prev = false;
+    CNameServerConfig *config;
+
+    if ( DisplayBeginEnd && TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "BEGIN name-server\n\n" );
+    }
+    else if ( TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "\n" );
+    }
+    
+    if (NameServerConfig.GetCount() > 0)
+    {
+        config = NameServerConfig.GetFirstConfig();
+        printf( "nodes=" );
+        for ( ; config; config = config->GetNext() )
+        {
+            const char *configNodeName = config->GetName();
+            if (prev)
+                printf( "," );
+            printf( "%s", NodeNameStr(configNodeName) );
+            prev = true;
+        }
+    }
+
+    if ( DisplayBeginEnd && TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "\n\nEND name-server\n" );
+    }
+    else if ( TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "\n\n" );
+    }
+
+    return(rc);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Function/Method: DisplayNodesConfig()
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -318,6 +397,55 @@ int DisplayNodeConfig( char *nodeName )
         printf( "\n" );
     }
 
+    return(rc);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function/Method: DisplayConfigCounts()
+//
+///////////////////////////////////////////////////////////////////////////////
+int DisplayConfigCounts( void )
+{
+    int rc   = -1;
+
+    switch (TrafConfType)
+    {
+        case TrafConfType_NodeMax:
+            if ( DisplayLabel )
+            {
+                printf( "Maximum Nodes: " );
+            }
+            printf("%d", ClusterConfig.GetPNodesConfigMax() );
+            break;
+        case TrafConfType_NodeIdCount:
+            if ( DisplayLabel )
+            {
+                printf( "Node Ids: " );
+            }
+            printf("%d", ClusterConfig.GetLNodesCount() );
+            break;
+        case TrafConfType_PhysicalNodeIdCount:
+            if ( DisplayLabel )
+            {
+                printf( "Physical Node Ids: " );
+            }
+            printf("%d", ClusterConfig.GetPNodesCount() );
+            break;
+        case TrafConfType_SparesCount:
+            if ( DisplayLabel )
+            {
+                printf( "Spare Node Ids: " );
+            }
+            printf("%d", ClusterConfig.GetSNodesCount() );
+            break;
+        default:
+            printf( "Invalid configuration type!\n" );
+    }
+    if ( DisplayLabel )
+    {
+        printf( "\n" );
+    }
     return(rc);
 }
 
@@ -512,10 +640,19 @@ int ProcessTrafConfig( void )
         case TrafConfType_NodeName_w:
             rc = DisplayNodeConfig( NodeName );
             break;
+        case TrafConfType_NodeMax:
+        case TrafConfType_NodeIdCount:
+        case TrafConfType_PhysicalNodeIdCount:
+        case TrafConfType_SparesCount:
+            rc = DisplayConfigCounts();
+            break;
         case TrafConfType_PersistConfig:
         case TrafConfType_PersistConfigKeys:
         case TrafConfType_PersistConfigKey:
             rc = DisplayPersistConfig( Key );
+            break;
+        case TrafConfType_NameServerConfig:
+            rc = DisplayNameServerConfig( );
             break;
         case TrafConfType_NodeId:
         case TrafConfType_PhysicalNodeId:
@@ -573,9 +710,36 @@ int main( int argc, char *argv[] )
             DisplayShortHost = true;
             TrafConfType = TrafConfType_NodeName_w;
         }
+        else if ( ( strcasecmp( argv [argx], "-nameserver" ) == 0 ) ||
+                  ( strcasecmp( argv [argx], "-ns" ) == 0 ) )
+        {
+            TrafConfType = TrafConfType_NameServerConfig;
+        }
+        else if ( ( strcasecmp( argv [argx], "--nameserver" ) == 0 ) ||
+                  ( strcasecmp( argv [argx], "--ns" ) == 0 ) )
+        {
+            DisplayBeginEnd = true;
+            TrafConfType = TrafConfType_NameServerConfig;
+        }
         else if ( strcasecmp( argv [argx], "-node" ) == 0 )
         {
             TrafConfType = TrafConfType_NodeConfig;
+        }
+        else if ( strcasecmp( argv [argx], "-node-max" ) == 0 )
+        {
+            TrafConfType = TrafConfType_NodeMax;
+        }
+        else if ( strcasecmp( argv [argx], "-nid-count" ) == 0 )
+        {
+            TrafConfType = TrafConfType_NodeIdCount;
+        }
+        else if ( strcasecmp( argv [argx], "-pnid-count" ) == 0 )
+        {
+            TrafConfType = TrafConfType_PhysicalNodeIdCount;
+        }
+        else if ( strcasecmp( argv [argx], "-spares-count" ) == 0 )
+        {
+            TrafConfType = TrafConfType_SparesCount;
         }
         else if ( strcasecmp( argv [argx], "-persist" ) == 0 )
         {
@@ -590,6 +754,26 @@ int main( int argc, char *argv[] )
         {
             DisplayBeginEnd = true;
             TrafConfType = TrafConfType_PersistConfig;
+        }
+        else if ( strcasecmp( argv [argx], "--node-max" ) == 0 )
+        {
+            TrafConfType = TrafConfType_NodeMax;
+            DisplayLabel = true;
+        }
+        else if ( strcasecmp( argv [argx], "--nid-count" ) == 0 )
+        {
+            DisplayLabel = true;
+            TrafConfType = TrafConfType_NodeIdCount;
+        }
+        else if ( strcasecmp( argv [argx], "--pnid-count" ) == 0 )
+        {
+            DisplayLabel = true;
+            TrafConfType = TrafConfType_PhysicalNodeIdCount;
+        }
+        else if ( strcasecmp( argv [argx], "--spares-count" ) == 0 )
+        {
+            DisplayLabel = true;
+            TrafConfType = TrafConfType_SparesCount;
         }
         else
         {
@@ -616,6 +800,11 @@ int main( int argc, char *argv[] )
         if ( !ClusterConfig.LoadConfig() )
         {
             printf( "Failed to load Trafodion Configuration!\n" );
+            exit( EXIT_FAILURE );
+        }
+        if ( !NameServerConfig.LoadConfig() )
+        {
+            printf( "Failed to load nameserver Configuration!\n" );
             exit( EXIT_FAILURE );
         }
     }

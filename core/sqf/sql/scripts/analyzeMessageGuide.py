@@ -624,7 +624,9 @@ enumFileList = ( [ ['ustat/hs_const.h','USTAT_ERROR_CODES'],
     ['sqlcomp/CmpDDLCatErrorCodes.h','CatErrorCode'],
     ['optimizer/opt_error.h','OptimizerSQLErrorCode'],
     ['optimizer/UdrErrors.h','UDRErrors'],
-    ['exp/ExpErrorEnums.h','ExeErrorCode'] ] )
+    ['exp/ExpErrorEnums.h','ExeErrorCode'],
+    ['sort/SortError.h','SortErrorEnum'],
+    ['udrserv/udrdefs.h','UdrErrorEnum'] ] )
 for entry in enumFileList:
     fileName = mySQroot + '/../sql/' + entry[0]
     messagesTable.parseEnumFile(fileName,entry[1])

@@ -34,6 +34,7 @@ public abstract class TrafT4Lob {
 	protected TrafT4Connection connection_ = null;
 	protected boolean isFreed_ = true;
 	protected int lobType = Types.BLOB;
+	protected long length = 0;
 
 	protected Object data_ = null;
 
@@ -91,23 +92,49 @@ public abstract class TrafT4Lob {
 		}
 
 		T4Connection t4connection = this.connection_.getServerHandle().getT4Connection();
-		LogicalByteArray wbuffer = ExtractLobMessage.marshal(ExtractLobMessage.LOB_EXTRACT_BUFFER, lobHandle_, 1, 0,
+		LogicalByteArray wbuffer = ExtractLobMessage.marshal(ExtractLobMessage.LOB_EXTRACT_LEN, lobHandle_, 1, 0,
 				connection_.ic_);
 
 		LogicalByteArray rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_EXTRACTLOB, wbuffer);
 		ExtractLobReply reply = new ExtractLobReply(rbuffer, connection_.ic_);
-		data_ = reply.lobDataValue;
+		length = reply.lobLength;
+
+		byte[] fetchData_ = new byte[(int) length];
+
+		try {
+			int pos = 0;
+            int chunkSize = connection_.props_.getLobChunkSize() * 1024 * 1024;
+			while (pos < length) {
+				int remainSize = (int) (length - pos);
+				int fecthSize = remainSize < chunkSize ? remainSize : chunkSize;
+				wbuffer =  ExtractLobMessage.marshal(ExtractLobMessage.LOB_EXTRACT_BUFFER, lobHandle_, 1, fecthSize, connection_.ic_);
+				rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_EXTRACTLOB, wbuffer);
+				reply = new ExtractLobReply(rbuffer, connection_.ic_);
+				System.arraycopy(reply.extractData, 0, fetchData_, pos, (int) reply.extractLen);
+				pos += reply.extractLen;
+			}
+
+		}
+		catch(SQLException se) {
+			throw se;
+		}
+		finally {
+			// close the LOB cursor
+			wbuffer = ExtractLobMessage.marshal(ExtractLobMessage.LOB_CLOSE_CURSOR, lobHandle_, 1, 0, connection_.ic_);
+			rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_EXTRACTLOB, wbuffer);
+			reply = new ExtractLobReply(rbuffer, connection_.ic_);
+		}
 		switch (lobType) {
 		case Types.BLOB:
-			data_ = reply.lobDataValue;
+			data_ = fetchData_;
 			break;
 		case Types.CLOB:
 			try {
-			    if (reply.lobDataLen == 0) {
+			    if (length == 0) {
 			        data_ = "";
 			    }
 			    else {
-			        data_ = new String(reply.lobDataValue, "UTF-8");
+			        data_ = new String(fetchData_, "UTF-8");
 			    }
 			} catch (UnsupportedEncodingException e) {
 				throw TrafT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_.ic_.getLocale(),
@@ -126,7 +153,7 @@ public abstract class TrafT4Lob {
 		    return ;
 		T4Connection t4connection = this.connection_.getServerHandle().getT4Connection();
 
-		final long chunkSize = 100 * 1024 * 1024;
+        final long chunkSize = connection_.props_.getLobChunkSize() * 1024 * 1024;
 		LogicalByteArray wbuffer = null;
 
 		byte[] valueBuffer = null;

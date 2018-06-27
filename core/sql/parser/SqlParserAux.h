@@ -407,10 +407,14 @@ NAWString badNameFromStrings(ShortStringSequence *names);
 
 QualifiedName * qualifiedNameFromStrings(ShortStringSequence *names);
 
+SchemaName * schemaNameFromStrings(ShortStringSequence *names);
+
 CorrName * corrNameFromStrings(ShortStringSequence *names);
 
 ColRefName *colRefNameFromStrings(ShortStringSequence *names);
 
+short preprocessHiveDDL(const NAString &catalogName, 
+                        Parser::HiveDDLInfo *hiveDDLInfo);
 
 // The purpose of this function is to convert NAStrings that contain
 // delimited identifiers as detected by SqlLexer
@@ -767,7 +771,7 @@ public:
       TYPE_VOLATILE_TABLE_MODE_SPECIAL1,
       TYPE_VOLATILE_SET_TABLE,
       TYPE_VOLATILE_MULTISET_TABLE,
-      TYPE_GHOST_TABLE
+      TYPE_GHOST_TABLE,
     };
 
   // load/in memory options

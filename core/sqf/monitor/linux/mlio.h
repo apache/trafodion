@@ -25,6 +25,7 @@
 
 #ifndef MLIO_H
 #define MLIO_H
+#ifndef NAMESERVER_PROCESS
 
 #include <list>
 #include <set>
@@ -231,4 +232,5 @@ class CNoticeMsg
 
 extern SQ_LocalIOToClient *SQ_theLocalIOToClient;
 
+#endif
 #endif

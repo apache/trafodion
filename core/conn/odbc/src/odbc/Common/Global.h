@@ -139,9 +139,15 @@ class ODBCMXTraceMsg;
 #define DEFAULT_REFRESH_RATE_SECS		60
 #define DEFAULT_SRVR_IDLE_TIMEOUT		0
 #define DEFAULT_CONN_IDLE_TIMEOUT		0
+#define DEFAULT_KEEPALIVE               0     //OPEN KEEPALIVE
+#define DEFAULT_KEEPALIVE_TIMESEC       3600
+#define DEFAULT_KEEPALIVE_COUNT         3
+#define DEFAULT_KEEPALIVE_INTVL         20
 #define INFINITE_SRVR_IDLE_TIMEOUT		-1
 #define INFINITE_CONN_IDLE_TIMEOUT		-1
 #define STATE_TRANSITION_TIMEOUT_SECS	300
+
+#define CLIENT_KEEPALIVE_ATTR_TIMEOUT   3001
 
 #define JDBC_ATTR_CONN_IDLE_TIMEOUT		3000
 #define JDBC_DATASOURCE_CONN_IDLE_TIMEOUT -1L
@@ -210,6 +216,7 @@ class ODBCMXTraceMsg;
 #define RES_ESTIMATEDCOST			0
 
 #define	SQL_ATTR_ROWSET_RECOVERY	2000
+#define SQL_ATTR_CLIPVARCHAR        2001
 
 // session statistics values range from 0x00000001 thru 0x00000128
 #define SESSTAT_LOGINFO				1
@@ -892,6 +899,7 @@ typedef struct _SRVR_GLOBAL_Def
 		bAutoCommitOn = FALSE;
 		bAutoCommitSet = FALSE;
 		javaConnIdleTimeout = JDBC_DATASOURCE_CONN_IDLE_TIMEOUT;
+        clipVarchar  = 0;
 		bSpjEnableProxy = FALSE;
 		lastCQDAdaptiveSegment = -1;
 		bWMS_AdaptiveSegment = false;
@@ -935,7 +943,10 @@ typedef struct _SRVR_GLOBAL_Def
 		bzero(m_ProcName,sizeof(m_ProcName));
 		m_bNewConnection = false;
 		m_bNewService = false;
-
+               clientKeepaliveStatus = false;
+               clientKeepaliveIdletime = 0;
+               clientKeepaliveIntervaltime = 0;
+               clientKeepaliveRetrycount = 0;
 		m_rule_wms_off = false;		// perf
 		m_rule_endstats_off = false;// perf
 
@@ -973,6 +984,7 @@ typedef struct _SRVR_GLOBAL_Def
 
 	long			odbcConnIdleTimeout;		//For ODBC Client timeout value
 
+    IDL_long            clipVarchar ;
 	//	BOOL				validTimerHandle;
 	char				ASProcessName[MAX_PROCESS_NAME_LEN];
 	PROCESS_ID_def		nskASProcessInfo;
@@ -1053,6 +1065,10 @@ typedef struct _SRVR_GLOBAL_Def
 
 	tip_handle_t		tip_gateway;
 
+       BOOL                    clientKeepaliveStatus;
+       int                     clientKeepaliveIdletime;
+       int                     clientKeepaliveIntervaltime;
+       int                     clientKeepaliveRetrycount;
 	char				*pxid_url;
 	IDL_long_long		local_xid;
 	UINT				xid_length;

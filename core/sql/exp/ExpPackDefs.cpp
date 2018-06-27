@@ -315,6 +315,16 @@ Long ExFunctionTokenStr::pack(void * space_)
   return packClause(space_, sizeof(ExFunctionTokenStr));
 }  
 
+Long ex_function_unixtime::pack(void * space_)
+{
+  return packClause(space_, sizeof(ex_function_unixtime));
+}  
+
+Long ex_function_sleep::pack(void * space_)
+{
+  return packClause(space_, sizeof(ex_function_sleep));
+}  
+
 Long ex_function_current::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_current));

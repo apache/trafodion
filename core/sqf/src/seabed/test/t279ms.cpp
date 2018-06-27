@@ -45,9 +45,10 @@
 
 enum { EVENT_ID = 9 };
 
-SB_Thread::CV cv;
-char          my_mon_name[BUFSIZ];
-bool          verbose = false;
+SB_Thread::CV  cv;
+char           my_mon_name[BUFSIZ];
+bool           verbose = false;
+char          *vn;
 
 void cb(SB_Phandle_Type *, struct MS_Mon_NewProcess_Notice_def *msg) {
     int status;
@@ -171,6 +172,7 @@ int main(int argc, char *argv[]) {
       { "",           TA_End,  TA_NOMAX,    NULL       }
     };
 
+    vn = getenv("SQ_VIRTUAL_NODES");
     arg_proc_args(zargs, false, argc, argv);
     if (client && shell)
         ferr = msg_init_attach(&argc, &argv, true, (char *) client_name);
@@ -240,6 +242,8 @@ int main(int argc, char *argv[]) {
         sprintf(arg_verif, "%d", my_mon_verifier);
         argc += 2;
 #endif
+        if (vn == NULL)
+            server_nid1 = 0; // real cluster needs same node
         if (verbose)
             printf("client: starting server\n");
         ferr = msg_mon_start_process(prog,                   // prog
@@ -265,6 +269,8 @@ int main(int argc, char *argv[]) {
         TEST_CHK_FEOK(ferr);
         argv[argc] = (char *) "-server2";
         argc++;
+        if (vn == NULL)
+            server_nid2 = 0; // real cluster needs same node
         ferr =
           msg_mon_start_process_nowait_cb(cb,                     // cb
                                           prog,                   // prog

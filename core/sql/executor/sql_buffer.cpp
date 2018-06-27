@@ -1818,7 +1818,7 @@ tupp_descriptor *SqlBufferDense::add_tuple_desc(Lng32 tup_data_size)
       tdi = firstTupleDesc();
 
   tupp_descriptor * td = tdi->tupleDesc();
-  td->init((unsigned short)tup_data_size,
+  td->init(tup_data_size,
 	   0, 
 	   (char *)td + td_size);
 
@@ -2697,7 +2697,8 @@ sql_buffer_pool::moveIn(atp_struct *atp1,
 
   if (get_free_tuple(atp2->getTupp(tuppIndex), tupDataSize)) {
     if(addBufferIfNeeded) {
-      addBuffer(bufferSize);
+      ULng32 neededSize = SqlBufferNeededSize(1, bufferSize, bufType_);
+      addBuffer(neededSize);
       if (get_free_tuple(atp2->getTupp(tuppIndex), tupDataSize)) {
         ex_assert(0, "sql_buffer_pool::moveIn() No more space for tuples");
       }

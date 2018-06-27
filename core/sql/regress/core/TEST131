@@ -393,13 +393,13 @@ select count(*) from hive.hive.item;
 -- user4 who has been granted DB__HIVEROLE
 values (user);
 log LOG131;
-grant select on hive.hive.item to sql_user3;
+grant select on hive.hive.item to sql_user3 by DB__HIVEROLE;
 
 ?section revoke_hive_privs
 -- user4, has been granted DB__HIVEROLE
 values (user);
 log LOG131;
-revoke select on hive.hive.item from sql_user3;
+revoke select on hive.hive.item from sql_user3 by DB__HIVEROLE;
 
 ?section end_of_test
 -- end of test.

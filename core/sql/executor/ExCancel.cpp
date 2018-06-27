@@ -249,14 +249,13 @@ ExWorkProcRetcode ExCancelTcb::work()
               break;
             }
           }
-          ComDiagsArea *tempDiagsArea =
-                ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-          tempDiagsArea->clear();
+          
+          ComDiagsArea *tempDiagsArea = NULL;
  
           ContextCli *context = getGlobals()->castToExExeStmtGlobals()->
                 castToExMasterStmtGlobals()->getStatement()->getContext();
           ExSsmpManager *ssmpManager = context->getSsmpManager(); 
-          cbServer_ = ssmpManager->getSsmpServer(
+          cbServer_ = ssmpManager->getSsmpServer((NAHeap *)getGlobals()->getDefaultHeap(),
                                  nodeName_,
                                  cpu_, tempDiagsArea);
           if (cbServer_ == NULL) {
@@ -266,8 +265,6 @@ ExWorkProcRetcode ExCancelTcb::work()
              step_ = DONE;
              break;
           }
-          else
-             tempDiagsArea->decrRefCount();
 
           //Create the stream on the IpcHeap, since we don't dispose 
           // of it immediately.  We just add it to the list of completed 

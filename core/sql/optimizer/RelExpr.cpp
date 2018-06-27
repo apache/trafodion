@@ -2268,6 +2268,7 @@ Int32 WildCardOp::getArity() const
     case REL_ANY_GROUP:
     case REL_FORCE_EXCHANGE:
     case REL_ANY_UNARY_TABLE_MAPPING_UDF:
+    case REL_ANY_EXTRACT:
       return 1;
 
     case REL_ANY_BINARY_OP:
@@ -2345,6 +2346,8 @@ const NAString WildCardOp::getText() const
       return "REL_ANY_HASH_JOIN";
     case REL_ANY_MERGE_JOIN:
       return "REL_ANY_MERGE_JOIN";
+    case REL_ANY_EXTRACT:
+      return "REL_ANY_EXTRACT";
     case REL_FORCE_ANY_SCAN:
       return "REL_FORCE_ANY_SCAN";
     case REL_FORCE_EXCHANGE:
@@ -6688,7 +6691,7 @@ void Join::rewriteNotInPredicate( ValueIdSet & origVidSet, ValueIdSet & newVidSe
 Intersect::Intersect(RelExpr *leftChild,
 	     RelExpr *rightChild)
 : RelExpr(REL_INTERSECT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Intersect::~Intersect() {}
 
@@ -6705,7 +6708,7 @@ const NAString Intersect::getText() const
 Except::Except(RelExpr *leftChild,
              RelExpr *rightChild)
 : RelExpr(REL_EXCEPT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Except::~Except() {}
 
@@ -7812,6 +7815,8 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
   myLocalExpr += child(0).getGroupAttr()->getCharacteristicInputs();
   myLocalExpr += groupExpr();
   myLocalExpr += aggregateExpr();
+  // make sure we can still produce our characteristic outputs too
+  myLocalExpr += getGroupAttr()->getCharacteristicOutputs();
           
   // consider only preds that we can evaluate in the parent
   if (optionalMap)
@@ -7875,11 +7880,17 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
       else
         pulledPredicates += tempPulledPreds;
 
+      // just remove pulled up predicates from char. input
+      ValueIdSet newInputs(getGroupAttr()->getCharacteristicInputs());
+      myLocalExpr += selectionPred();
+      myLocalExpr -= tempPulledPreds;
+      myLocalExpr.weedOutUnreferenced(newInputs);
+      
       // adjust char. inputs - this is not exactly
       // good style, just overwriting the char. inputs, but
       // hopefully we'll get away with it at this stage in
       // the processing
-      getGroupAttr()->setCharacteristicInputs(myNewInputs);
+      getGroupAttr()->setCharacteristicInputs(newInputs);
     }
 
   // note that we removed these predicates from our node, it's the
@@ -8790,10 +8801,12 @@ void Scan::addIndexInfo()
               for (CollIndex i = 0; i < possibleIndexJoins_.entries(); i++)
                 {
                   NABoolean isASupersetIndex =
-                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex);
+                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex) &&
+                      possibleIndexJoins_[i]->indexPredicates_.contains(newIndexPredicates);
 
                   NABoolean isASubsetIndex =
-                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) ;
+                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) &&
+                      newIndexPredicates.contains(possibleIndexJoins_[i]->indexPredicates_);
 
                   NABoolean isASuperOrSubsetIndex = isASupersetIndex || isASubsetIndex;
 
@@ -10250,7 +10263,6 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
       return this;
     }
 
-  //  CorrName &corrName = (CorrName&)getCorrName();
   CorrName &corrName = getTableName();
   NATable * naTable = NULL;
 
@@ -10261,7 +10273,8 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
     {
       *CmpCommon::diags()
 	<< DgSqlCode(-1388)
-	<< DgTableName(corrName.getExposedNameAsAnsiString());
+        << DgString0("Object")
+	<< DgString1(corrName.getExposedNameAsAnsiString());
       
       bindWA->setErrStatus();
       return this;
@@ -11388,8 +11401,9 @@ void RelRoot::setMvBindContext(MvBindContext * pMvBindContext)
   pMvBindContextForScope_ = pMvBindContext;
 }
 
-void RelRoot::addOneRowAggregates(BindWA* bindWA)
+NABoolean RelRoot::addOneRowAggregates(BindWA* bindWA, NABoolean forceGroupByAgg)
 {
+  NABoolean groupByAggNodeAdded = FALSE;
   RelExpr * childOfRoot = child(0);
   GroupByAgg *aggNode = NULL;
   // If the One Row Subquery is already enforced by a scalar aggregate
@@ -11404,7 +11418,11 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
   // way out and add a one row aggregate.
   // Also if the groupby is non scalar then we need to add a one row aggregate.
   // Also if we have select max(a) + select b from t1 from t2;
-  if (childOfRoot->getOperatorType() == REL_GROUPBY)
+  // Still another exception is if there is a [last 0] on top of this node. We
+  // need an extra GroupByAgg node with one row aggregates in this case so
+  // we can put the FirstN node underneath that.
+  if (!forceGroupByAgg &&
+      (childOfRoot->getOperatorType() == REL_GROUPBY))
     {
       aggNode = (GroupByAgg *)childOfRoot;
 
@@ -11421,7 +11439,7 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
 
     }
   if (aggNode)
-    return ;
+    return groupByAggNodeAdded;
 
   const RETDesc *oldTable = getRETDesc();
   RETDesc *resultTable = new(bindWA->wHeap()) RETDesc(bindWA);
@@ -11469,9 +11487,12 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
 
   newGrby->bindNode(bindWA) ;
   child(0) = newGrby ;
+  groupByAggNodeAdded = TRUE;
   // Set the return descriptor
   //
   setRETDesc(resultTable);
+
+  return groupByAggNodeAdded;
 }
 // -----------------------------------------------------------------------
 // member functions for class PhysicalRelRoot
@@ -13320,6 +13341,40 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
 				newExternalInputs,
 				predicatesOnParent,
 				&localExprs);
+
+/*to fix jira 18-20180111-2901  
+ *For query " insert into to t1 select seqnum(seq1, next) from t1;", there is no SORT as left child of TSJ, and it 
+ *is a self-referencing updates Halloween problem. In NestedJoin::genWriteOpLeftChildSortReq(), child(0)
+ *producing no outputs for this query, which means that there is no column to sort on. So we solve this by 
+ *having the source for Halloween insert produce at least one output column always.
+ * */
+  if (avoidHalloween() && child(0) &&
+      child(0)->getOperatorType() == REL_SCAN &&
+      child(0)->getGroupAttr())
+    {
+      if (child(0)->getGroupAttr()->getCharacteristicOutputs().isEmpty())
+        {
+          ValueId exprId;
+          ValueId atLeastOne;
+
+          ValueIdSet output_source = child(0)->getTableDescForExpr()->getColumnList();
+          for (exprId = output_source.init();
+               output_source.next(exprId);
+               output_source.advance(exprId))
+            {
+              atLeastOne = exprId;
+              if (!(exprId.getItemExpr()->doesExprEvaluateToConstant(FALSE, TRUE)))
+                {
+                  child(0)->getGroupAttr()->addCharacteristicOutputs(exprId);
+                  break;
+                }
+            }
+         if (child(0)->getGroupAttr()->getCharacteristicOutputs().isEmpty())
+           {
+             child(0)->getGroupAttr()->addCharacteristicOutputs(atLeastOne);
+           }
+        }
+    }	
 }
 
 /*
@@ -13579,7 +13634,6 @@ Delete::Delete(const CorrName &name, TableDesc *tabId, OperatorTypeEnum otype,
 	       ConstStringList * csl,
 	       CollHeap *oHeap)
   : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
-    isFastDelete_(FALSE),
     csl_(csl),estRowsAccessed_(0)
 {
   setCacheableNode(CmpMain::BIND);
@@ -13609,7 +13663,6 @@ RelExpr * Delete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   else
     result = (Delete *) derivedNode;
 
-  result->isFastDelete_       = isFastDelete_;
   result->csl() = csl();
   result->setEstRowsAccessed(getEstRowsAccessed());
 

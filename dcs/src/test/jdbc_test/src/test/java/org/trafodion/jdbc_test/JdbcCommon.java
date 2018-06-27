@@ -117,8 +117,11 @@ public class JdbcCommon {
         StringBuilder buf = new StringBuilder(ddl);
         ddl = buf.toString();
 
-        try {
-            _conn.createStatement().execute(ddl);
+        try (
+            Statement stmt = _conn.createStatement();
+        )
+        {
+            stmt.execute(ddl);
         } catch (Exception e) { 
             System.out.println(e.getMessage());
             fail("Failed to create table");
@@ -154,8 +157,11 @@ public class JdbcCommon {
         if (commConn == null)
             commConn = getConnection();
 
-        try {
-            commConn.createStatement().execute("create schema " + _catalog + "." + _schema);
+        try (
+            Statement stmt = commConn.createStatement();
+        )
+        {
+            stmt.execute("create schema " + _catalog + "." + _schema);
         } catch (Exception e) {
             // Do nothing, the schema may already exist.
         }
@@ -165,8 +171,11 @@ public class JdbcCommon {
         if (commConn == null)
             commConn = getConnection();
 
-        try {
-            commConn.createStatement().execute("drop schema " + _catalog + "." + _schema + " cascade");
+        try (
+            Statement stmt = commConn.createStatement();
+        )
+        {
+            stmt.execute("drop schema " + _catalog + "." + _schema + " cascade");
         } catch (Exception e) {
             // Do nothing, the schema may not exist.  
         }
@@ -184,8 +193,10 @@ public class JdbcCommon {
 
         for (String objname : objDropList) {
             for (int i = 0; i < 3; i++) {
-                try {
-                    commConn.createStatement().executeUpdate("drop " + objname + " cascade");
+                try (
+                    Statement stmt = commConn.createStatement();
+                ){
+                    stmt.executeUpdate("drop " + objname + " cascade");
                     break; // no execption, break out here
                 } catch (Exception e) {
                     String msg = e.getMessage();

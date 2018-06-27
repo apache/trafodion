@@ -48,6 +48,7 @@
 -- returns unordered results because of a parallel plan. Until we can resolve
 -- this issue, let's run test063 using robust_query_optimization minimum
 control query default robust_query_optimization 'minimum';
+cqd traf_object_encryption '';
 
 ?section cleanup
 #ifMX
@@ -216,7 +217,7 @@ SELECT a, RUNNINGMAX(b), (SELECT MAX(B) from t063t1 where (a <= S.a)) from t063t
 
 SELECT a, (SELECT SUM(B) from t063t1 where (a <= S.a)), y  
 FROM t063t1 S, (SELECT a, RUNNINGSUM(B) from t063t1 sequence by a) AS T(x, y) 
-where a = x;
+where a = x order by a;
 
 -- MOVINGMIN/MOVINGMAX
 

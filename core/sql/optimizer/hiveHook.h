@@ -219,6 +219,22 @@ struct hive_tbl_desc
       return FALSE;
   }
 
+  NABoolean isExternalTable() 
+  { 
+    if (tableType_ && (strcmp(tableType_, "EXTERNAL_TABLE") == 0))
+      return TRUE;
+    else
+      return FALSE;
+  }
+
+  NABoolean isManagedTable() 
+  { 
+    if (tableType_ && (strcmp(tableType_, "MANAGED_TABLE") == 0))
+      return TRUE;
+    else
+      return FALSE;
+  }
+
   struct hive_sd_desc* getSDs() { return sd_; };
   
   struct hive_skey_desc* getSortKeys();
@@ -246,9 +262,6 @@ public:
   ~HiveMetaData();
   
   NABoolean init();
-  
-  NABoolean connect();
-  NABoolean disconnect();
   
   struct hive_tbl_desc* getTableDesc(const char* schemaName,
                                      const char* tblName);
@@ -286,8 +299,6 @@ public:
   void recordParseError(Int32 errCode, const char* errCodeStr,
                         const char *errMethodName, const char* errDetail);
 
-  HiveClient_JNI* getClient() {return client_;}
-
 protected:
 
   // read metadata for one table
@@ -300,12 +311,6 @@ protected:
   const char *errCodeStr_;
   const char *errMethodName_;
   const char *errDetail_;
-  // HiveMetadata does not "own" this pointer. There is an assumption that
-  // client is not null then it points to a HiveClient object that has 
-  // been initialized and connected. The pointer is owened by CliGlobals.
-  // This class contains a pointer so that we don't have to check every time
-  // if it is initialized and connected
-  HiveClient_JNI* client_;
 };
 
 

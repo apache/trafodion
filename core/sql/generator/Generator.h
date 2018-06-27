@@ -242,7 +242,7 @@ class Generator : public NABasicObject
     , AQR_WNR_INSERT_EMPTY    = 0x00000100
 
     // if trafodion/hbase IUD operation is using RI inlining
-    , RI_INLINING_FOR_TRAF_IUD = 0x00000200
+    , RI_INLINING_FOR_TRAF_IUD     = 0x00000200
 
     // If Hive tables are accessed at runtime
     , HIVE_ACCESS              = 0x00000400
@@ -1580,6 +1580,7 @@ public:
   // Helpers for the special ONLJ queue sizing defaults.
   NABoolean const getMakeOnljLeftQueuesBig() 
                                     { return makeOnljLeftQueuesBig_; }
+  void setMakeOnljLeftQueuesBig(NABoolean x) {makeOnljLeftQueuesBig_ = x;}
   ULng32 const getOnljLeftUpQueue() { return onljLeftUpQueue_; }
   ULng32 const getOnljLeftDownQueue() {return onljLeftDownQueue_; }
 
@@ -1646,6 +1647,7 @@ public:
 
   void setHBaseNumCacheRows(double rowsAccessed, 
                             ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
+                            Int32 hbaseRowSize,
                             Float32 samplePercent = 0.0);
   void setHBaseCacheBlocks(Int32 hbaseRowSize, double rowsAccessed, 
                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa);

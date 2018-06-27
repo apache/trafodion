@@ -1329,7 +1329,7 @@ static short convAsciiToIntervalMxcs(char *target,
 	    }
 	  else
 	    {
-	      *(UInt32 *)target = (UInt32) interm;
+              fraction = (UInt32) interm;
 	    }
 	};
 

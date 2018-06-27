@@ -310,8 +310,11 @@ Lng32 ExpLOBinterfaceDataModCheck(ExLobGlobals * exLobGlob,
 
       return 1;
     }
-  else if (err != LOB_OPER_OK)
+  else if (err != LOB_OPER_OK) {
+    failedLocBuf[0] = '\0';
+    failedLocBufLen = 0;
     return -err;
+  }
   else
     return 0;
 }
@@ -985,7 +988,6 @@ Lng32 ExpLOBInterfaceSelectCursor(ExLobGlobals * exLobGlob,
 		   0,
 		   hdfsDetailError,0,0,0,0,0,0,0,
                    openType
-                   
 		   );
 
   if (err != LOB_OPER_OK)
@@ -1161,7 +1163,6 @@ Lng32 ExpLOBInterfaceGetFileName(ExLobGlobals * exLobGlob,
     {
       return -err;
     }
-  
   
   return LOB_ACCESS_SUCCESS;
 }

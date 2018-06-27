@@ -119,11 +119,15 @@ public class T4Properties {
 	String clobTableName_;
 	String blobTableName_;
 
-	// private short transportBufferSize_;
+    private int lobChunkSize_ = 10; // default 10M
+    private boolean useLobHandle_ = false;
+
+    // private short transportBufferSize_;
 	private boolean useArrayBinding_;
 	private boolean batchRecovery_;
 	private final String propPrefix_ = "t4jdbc.";
-
+	//clipVarchar flag
+	private short clipVarchar_ = 0;
 	// Default catalog 
 	static final String DEFAULT_CATALOG = "TRAFODION";
 
@@ -163,7 +167,6 @@ public class T4Properties {
 	private String _certificateFile;
 	private boolean _keepAlive = false;
 	private boolean _tokenAuth;
-
 	private static int DEFAULT_MAX_IDLE_TIMEOUT = 0; // Max idle timeout
 	// default = infinite
     
@@ -179,7 +182,6 @@ public class T4Properties {
 	static String t4GlobalLogFile = null;
 	static Logger t4GlobalLogger = null;
 	static FileHandler t4GlobalLogFileHandler = null;
-
 	void initializeLogging() {
 		if (t4GlobalLogger != null) {
 			return;
@@ -390,10 +392,10 @@ public class T4Properties {
 		setBatchRecovery(getProperty("batchRecovery"));
 		// setTransportBufferSize(getProperty("TransportBufferSize"));
 		setLanguage(getProperty("language"));
-
 		setMaxIdleTime(getProperty("maxIdleTime"));
 		setConnectionTimeout(getProperty("connectionTimeout"));
-		setFetchBufferSize(getProperty("fetchBufferSize"));
+		setClipVarchar(getProperty("clipVarchar"));
+		setFetchBufferSize(getProperty("fetchBufferSize")); 
 
 		// For LOB Support - SB 9/28/04
 		try {
@@ -430,6 +432,9 @@ public class T4Properties {
 		setKeepAlive(getProperty("keepAlive"));
 		setTokenAuth(getProperty("tokenAuth"));
         setTcpNoDelay(getProperty("tcpNoDelay"));
+
+        setLobChunkSize(getProperty("lobChunkSize"));
+        setUseLobHandle(getProperty("useLobHandle"));
 	}
 
 	T4Properties getT4Properties() {
@@ -522,7 +527,11 @@ public class T4Properties {
 		props.setProperty("keepAlive", String.valueOf(_keepAlive));
 		props.setProperty("tokenAuth", String.valueOf(_tokenAuth));
         props.setProperty("tcpNoDelay", String.valueOf(_tcpNoDelay));
-        
+
+        props.setProperty("clipVarchar", String.valueOf(clipVarchar_));
+        props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
+        props.setProperty("useLobHandle", String.valueOf(useLobHandle_));
+
 		return props;
 	}
 
@@ -1281,6 +1290,19 @@ public class T4Properties {
 		setConnectionTimeout(tmpTimeout);
 	}
 
+	void setClipVarchar(String clipVarchar) {
+		short tmp = 0;
+		if (clipVarchar != null) {
+			try {
+				tmp = Short.parseShort(clipVarchar);
+			} catch (NumberFormatException ex) {
+				sqlExceptionMessage_ = "Incorrect value for clipVarchar set: " + clipVarchar + ". "
+						+ ex.getMessage();
+				tmp = 0;
+			}
+		}
+		setClipVarchar(tmp);
+	}
 	/*
 	 * Sets the connection timeout value for the Type 4 connection. Set this
 	 * value to 0 for infinite timeout. The default is set to -1. A negative
@@ -1307,7 +1329,9 @@ public class T4Properties {
 			connectionTimeout_ = connectionTimeout;
 		}
 	}
-
+	void setClipVarchar(short clipVarchar) {
+		clipVarchar_=clipVarchar;
+	}
 	/**
 	 * Sets the max idle time value for the Type 4 connection. The default is
 	 * set to 0 (no timeout). Negative values are treated as 0.
@@ -1354,6 +1378,9 @@ public class T4Properties {
 
 	int getConnectionTimeout() {
 		return connectionTimeout_;
+	}
+	short getClipVarchar() {
+		return clipVarchar_;
 	}
 
 	/**
@@ -1893,6 +1920,43 @@ public class T4Properties {
 	long getReserveDataLocator() {
 		return reserveDataLocator_;
 	}
+
+    public int getLobChunkSize() {
+        return lobChunkSize_;
+    }
+
+    public void setLobChunkSize(int lobChunkSize_) {
+        this.lobChunkSize_ = lobChunkSize_;
+    }
+
+    public void setLobChunkSize(String val) {
+        this.lobChunkSize_ = 10;
+        if (val != null) {
+            try {
+                this.lobChunkSize_ = Integer.parseInt(val);
+            } catch (NumberFormatException ex) {
+                sqlExceptionMessage_ = "Incorrect value for setLobChunkSize set: " + val + ex.getMessage();
+                this.lobChunkSize_ = 10;
+            }
+        }
+    }
+
+    public boolean getUseLobHandle() {
+        return useLobHandle_;
+    }
+
+    public void setUseLobHandle(boolean useLobHandle) {
+        this.useLobHandle_ = useLobHandle;
+    }
+
+    public void setUseLobHandle(String val) {
+        if (val != null) {
+            setUseLobHandle(Boolean.parseBoolean(val));
+        }
+        else {
+            setUseLobHandle(false);
+        }
+    }
 
 	/**
 	 * Returns the rounding mode set for the driver as an Integer value with one

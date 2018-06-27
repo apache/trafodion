@@ -21,6 +21,13 @@
 --- SQL operation complete.
 >>#ifMX
 >>
+>>create table t002main (a int not null, b int, primary key (a));
+
+--- SQL operation complete.
+>>create table t002sub  (x int not null, y int, primary key (x));
+
+--- SQL operation complete.
+>>
 >>?section dml
 >>-- INSERT queries
 >>insert into t002t1 values (10, 'abc', 20, 'xy');
@@ -47,6 +54,13 @@
 
 --- 2 row(s) inserted.
 >>#ifMX
+>>
+>>insert into t002main values (1,1);
+
+--- 1 row(s) inserted.
+>>insert into t002sub values (1,1), (2,1);
+
+--- 2 row(s) inserted.
 >>
 >>?section subqtests
 >>-- Expect 2 identical rows saying "2 2";
@@ -464,22 +478,16 @@ A            AMAX         B                   BMAX                C            C
 >>
 >>
 >>------------------------------------------------------------------------
->>?section Genesis_10_000222_6892_p1
->>SELECT 1 FROM T002T3 T1
-+>GROUP BY T1.A
-+>HAVING T1.A >ANY
-+>  ( SELECT 2 FROM T002T1 T2
-+>    WHERE T2.C >SOME
-+>      ( SELECT AVG (T1.A) FROM T002T1 T3 )
-+>  );
-
-(EXPR)
-------
-
-     1
-     1
-
---- 2 row(s) selected.
+>>-- This test disabled since it is non -deterministic.
+>>-- It will be enabled after further investigation.
+>>-- ?section Genesis_10_000222_6892_p1
+>>-- SELECT 1 FROM T002T3 T1
+>>-- GROUP BY T1.A
+>>-- HAVING T1.A >ANY
+>>--  ( SELECT 2 FROM T002T1 T2
+>>--    WHERE T2.C >SOME
+>>--      ( SELECT AVG (T1.A) FROM T002T1 T3 )
+>>--  );
 >>
 >>?section Genesis_10_000222_6892_p2
 >>SELECT 1 FROM T002T1 T1
@@ -859,12 +867,18 @@ A            AMAX         B                   BMAX                C            C
 >>create table t002FUI(x int);
 
 --- SQL operation complete.
+>>create table t002sol(x int);
+
+--- SQL operation complete.
 >>insert into  t002FU  values(3),(4);
 
 --- 2 row(s) inserted.
 >>insert into  t002FUI values(13);
 
 --- 1 row(s) inserted.
+>>insert into t002sol values(2),(5),(4),(3),(7);
+
+--- 5 row(s) inserted.
 >>
 >>-- Tables t002ZZ and t002ZZI are empty (have zero rows), tables t002FU and t002FUI are full.
 >>--
@@ -1149,4 +1163,120 @@ A            AMAX         B                   BMAX                C            C
 >> -- cnt
 >>------------------------------------------------------------------------
 >>
+>>-- Tests of the interaction of [first n] etc. with subqueries
+>>
+>>-- Should return 1
+>>select 
++>(select [FIRST 1] y aa from t002sub b where b.x = a.b) as result_value
++>from t002main a;
+
+RESULT_VALUE
+------------
+
+           1
+
+--- 1 row(s) selected.
+>>
+>>-- Should return null
+>>select 
++>(select [last 0] y aa from t002sub b where b.x = a.b) as result_value
++>from t002main a;
+
+RESULT_VALUE
+------------
+
+           ?
+
+--- 1 row(s) selected.
+>>
+>>-- Should get a cardinality violation (error 8401)
+>>select 
++>(select [first 2] y aa from t002sub b where b.y = a.b) as result_value
++>from t002main a;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- Should return 1
+>>select 
++>(select [first 1] y aa from t002sub b where b.y = a.b) as result_value
++>from t002main a;
+
+RESULT_VALUE
+------------
+
+           1
+
+--- 1 row(s) selected.
+>>
+>>-- Should return 1
+>>select 
++>(select [last 1] y aa from t002sub b where b.y = a.b) as result_value
++>from t002main a;
+
+RESULT_VALUE
+------------
+
+           1
+
+--- 1 row(s) selected.
+>>
+>>-- Should return null
+>>select 
++>(select [last 0] y aa from t002sub b where b.y = a.b) as result_value
++>from t002main a;
+
+RESULT_VALUE
+------------
+
+           ?
+
+--- 1 row(s) selected.
+>>
+>>-- Should return null
+>>select
++>(select [last 0] count(*) from t002sub) as result_value
++>from t002main;
+
+RESULT_VALUE        
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>>
+>>-- Should return 2
+>>select
++>(select [first 20] count(*) from t002sub) as result_value
++>from t002main;
+
+RESULT_VALUE        
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>-- Should return null
+>>select
++>(select [last 0] x from t002sub) as result_value
++>from t002main;
+
+RESULT_VALUE
+------------
+
+           ?
+
+--- 1 row(s) selected.
+>>
+>>-- Should return 7
+>>select x from (select [first 1] x from t002sol order by x desc );
+
+X
+----------
+
+ 7
+
+--- 1 row(s) selected.
 >>log;

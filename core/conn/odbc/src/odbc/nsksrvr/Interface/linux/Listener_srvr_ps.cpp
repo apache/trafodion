@@ -263,7 +263,11 @@ void* CNSKListenerSrvr::OpenTCPIPSession()
 //LCOV_EXCL_STOP
 	}
 
-
+    TCP_SetKeepalive(nSocketFnum,
+            srvrGlobal->clientKeepaliveStatus,
+            srvrGlobal->clientKeepaliveIdletime,
+            srvrGlobal->clientKeepaliveIntervaltime,
+            srvrGlobal->clientKeepaliveRetrycount);
 	pnode = GTransport.m_TCPIPSystemSrvr_list->ins_node(nSocketFnum);
 
 	if (pnode == NULL)
@@ -444,6 +448,7 @@ void * CNSKListenerSrvr::tcpip_listener(void *arg)
 	       {
 
                   GTransport.m_TCPIPSystemSrvr_list->del_node(pnode->m_nSocketFnum);
+                  SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, E_SERVER,"tcpip_listener", O_SELECT, F_SELECT,errno, pnode->m_nSocketFnum);
 				  SRVR::BreakDialogue(NULL);
 	        }
                else

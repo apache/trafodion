@@ -86,8 +86,7 @@ public:
   // memoryType parameter is ignored 
   CmpStatement(
       CmpContext*,
-      NAMemory* outHeap = 0,
-      NAMemory::NAMemoryType memoryType=NAMemory::DERIVED_MEMORY);
+      NAMemory *outHeap = NULL);
   
   // requests process
   ReturnStatus process(const CmpMessageObj&);
@@ -160,9 +159,6 @@ public:
   inline NABoolean isSMDRecompile() {return isSMDRecompile_;}
   //is this statement a DDL statement
   inline NABoolean isDDL(){return isDDL_;}
-
-  inline NABoolean isParallelLabelOp() { return isParallelLabelOp_; }
-  inline void setParallelLabelOp(NABoolean flag) { isParallelLabelOp_ = flag; }
 
   QueryAnalysis* getQueryAnalysis() { return queryAnalysis_; };
   QueryAnalysis* initQueryAnalysis();
@@ -254,6 +250,11 @@ protected:
   // The reply to be sent back to executor after processing the request in CmpStatement
   CmpMessageReply* reply_;
 
+  // The result of Compile for statements like invoke, get tables, show stats
+  // that calls CmpDescribe internally immediately after compilation.
+
+  CmpMessageReply *bound_;
+
   // The flag to record whether exception has been raised in the
   // statement compilation/execution. This is used to clean up properly once the 
   // exception is raised ( especially when longjmp occurred )
@@ -287,8 +288,6 @@ private:
   NABoolean isSMDRecompile_;
   //flag, indicates if this is a DDL statment
   NABoolean isDDL_;
-
-  NABoolean isParallelLabelOp_;
 
   // CompilationStats object that is recording the compilation stats for this statement
   CompilationStats* compStats_;

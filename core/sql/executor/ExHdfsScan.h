@@ -31,9 +31,6 @@
 #include "ExStats.h"
 #include "sql_buffer.h"
 #include "ex_queue.h"
-
-#include "hdfs.h"
-
 #include <time.h>
 #include "ExHbaseAccess.h"
 #include "ExpHbaseInterface.h"
@@ -46,6 +43,8 @@
 // -----------------------------------------------------------------------
 class ExHdfsScanTdb;
 class ExHdfsScanTcb;
+class HdfsScan;
+class HdfsClient;
 
 // -----------------------------------------------------------------------
 // Classes referenced in this file
@@ -108,9 +107,69 @@ private:
   // ---------------------------------------------------------------------
 };
 
+/*
+   USE_LIBHDFS_SCAN - OFF enables hdfs access via java classes 
+      org.trafodion.sql.HdfsScan and org.trafodion.sql.HdfsClient
+   Steps involved:
+   1. Create a new HdfsScan object and set the scan ranges of the fragment instance in it
+      The scan range involves the following and it is determined either at runtime or compile time
+         a) filename
+         b) offset
+         c) len
+      Java layer always reads more than the len by rangeTailIOSize_ to accommdate the record split 
+   2. Two ByteBuffer objects are also passsed to HdfsScan object. These ByteBuffers are backed up by
+      2 native buffers where the data is fetched. The buffer has a head room of size rangeTailIOSize_ and the 
+      data is always read after the head room. 
+   3. HdfsScan returns an int array containing bytesRead, bufNo, rangeNo, isEOF and schedules either
+      the remaining bytes to be read or the next range using ByteBuffers alternatively.
+   4. HdfsScan returns null array when there is no more data to be read.
+   5. When the data is processed in one ByteBuffer in the native thread, the data is fetched into the other ByteBuffer by
+      another Java thread.
+   6. Native layer after processing all the rows in one ByteBuffer, moves the last incomplete row to head room of the
+      other ByteBuffer. Then it requests to check if the read is complete. The native layer processes the buffer starting
+      from the copied partial row.
+*/
+
 class ExHdfsScanTcb  : public ex_tcb
 {
+   
 public:
+  enum
+/*
+   USE_LIBHDFS_SCAN - OFF enables hdfs access via java classes 
+      org.trafodion.sql.HdfsScan and org.trafodion.sql.HdfsClient
+   Steps involved:
+   1. Create a new HdfsScan object and set the scan ranges of the fragment instance in it
+      The scan range involves the following and it is determined either at runtime or compile time
+         a) filename
+         b) offset
+         c) len
+      Java layer always reads more than the len by rangeTailIOSize_ to accommdate the record split 
+   2. Two ByteBuffer objects are also passsed to HdfsScan object. These ByteBuffers are backed up by
+      2 native buffers where the data is fetched. The buffer has a head room of size rangeTailIOSize_ and the 
+      data is always read after the head room. 
+   3. HdfsScan returns an int array containing bytesRead, bufNo, rangeNo, isEOF and schedules either
+      the remaining bytes to be read or the next range using ByteBuffers alternatively.
+   4. HdfsScan returns null array when there is no more data to be read.
+   5. When the data is processed in one ByteBuffer in the native thread, the data is fetched into the other ByteBuffer by
+      another Java thread.
+   6. Native layer after processing all the rows in one ByteBuffer, moves the last incomplete row to head room of the
+      other ByteBuffer. Then it requests to check if the read is complete. The native layer processes the buffer starting
+      from the copied incomplete row.
+*/
+
+  {
+    BYTES_COMPLETED,
+    BUF_NO,
+    RANGE_NO,
+    IS_EOF
+  } retArrayIndices_;
+
+  struct HDFS_SCAN_BUF
+  {
+     BYTE *headRoom_;
+     BYTE *buf_;
+  };
   ExHdfsScanTcb( const ComTdbHdfsScan &tdb,
                          ex_globals *glob );
 
@@ -165,6 +224,10 @@ protected:
   , DONE
   , HANDLE_ERROR_WITH_CLOSE
   , HANDLE_ERROR_AND_DONE
+  , SETUP_HDFS_SCAN
+  , TRAF_HDFS_READ
+  , COPY_TAIL_TO_HEAD
+  , STOP_HDFS_SCAN
   } step_,nextStep_;
 
   /////////////////////////////////////////////////////
@@ -206,6 +269,11 @@ protected:
 
   short handleError(short &rc);
   short handleDone(ExWorkProcRetcode &rc);
+
+  void handleException(NAHeap *heap,
+                          char *loggingDdata,
+                          Lng32 loggingDataLen,
+                          ComCondition *errorCond);
 
   short setupError(Lng32 exeError, Lng32 retcode, 
                    const char * str, const char * str2, const char * str3);
@@ -275,7 +343,7 @@ protected:
   char cursorId_[8];
 
   char *loggingFileName_;
-  NABoolean LoggingFileCreated_ ;
+  NABoolean loggingFileCreated_ ;
   char * hdfsLoggingRow_;
   char * hdfsLoggingRowEnd_;
   tupp_descriptor * defragTd_;
@@ -291,6 +359,24 @@ protected:
 
   // this array is populated from the info list stored as Queue.
   HdfsFileInfoArray hdfsFileInfoListAsArray_;
+
+  HdfsClient *logFileHdfsClient_;
+  HdfsClient *hdfsClient_;
+  HdfsScan *hdfsScan_;
+  NABoolean useLibhdfsScan_;
+  BYTE *hdfsScanBufBacking_[2];
+  HDFS_SCAN_BUF hdfsScanBuf_[2];
+  int retArray_[4];
+  BYTE *bufBegin_;
+  BYTE *bufEnd_;
+  BYTE *bufLogicalEnd_;
+  long currRangeBytesRead_;
+  int headRoomCopied_;
+  int headRoom_;
+  int prevRangeNum_;
+  int extraBytesRead_;
+  NABoolean recordSkip_;
+  int numFiles_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb

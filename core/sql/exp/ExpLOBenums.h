@@ -32,7 +32,7 @@
 #define MAX_BLACK_BOX_LEN 2048
 #define LOB_DESC_HEADER_KEY 1
 #define NUM_WORKER_THREADS 2
-
+#define LOB_LOCK_ID_SIZE 12
  
 // 2 threads at most, one to read and the other to pick up next read from preOpen
 

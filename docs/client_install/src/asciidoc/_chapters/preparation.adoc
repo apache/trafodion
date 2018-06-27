@@ -104,10 +104,12 @@ The {project-name} Client binaries are in the `clients` folder, which contains t
 |===
 | File                               | Usage
 | `JDBCT4.zip`                       | {project-name} JDBC Type 4 Driver.
+| `DISCLAIMER`                       | Apache disclaimer.
 | `LICENCE`                          | Apache license.
 | `NOTICE`                           | Apache notice.
 | `odbc64_linux.tar.gz`              | {project-name} odb tool.
 | `TRAF_ODBC_Linux_Driver_64.tar.gz` | {project-name} ODBC driver for Linux.
+| `TRAFODB-2.2.0.exe`                | Trafodion odb tool for windows.
 | `trafci.zip`                       | The {project-name} command interpreter `trafci`.
 | `TFODBC64-*.exe`                   | *[Not included in this release]*^1^ {project-name} ODBC Driver for Windows.
 |===

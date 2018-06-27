@@ -30,9 +30,11 @@ class ExtractLobReply {
 	odbc_SQLSvc_ExtractLob_exc_ m_p1;
 	String proxySyntax = "";
 
-	int lobDataLen = 0;
+	long lobLength = 0;
+	long extractLen = 0;
+	byte[] extractData = null;
 
-	byte[] lobDataValue = null;
+	public short extractAPIType = 0;
 
 	ExtractLobReply(LogicalByteArray buf, InterfaceConnection ic) throws SQLException {
 		buf.setLocation(Header.sizeOf());
@@ -42,9 +44,20 @@ class ExtractLobReply {
 		m_p1.extractFromByteArray(buf, ic);
 
 		if (m_p1.exception_nr == TRANSPORT.CEE_SUCCESS) {
-			lobDataLen = (int) buf.extractInt();
-			if (lobDataLen > 0) {
-				lobDataValue = buf.extractByteArray(lobDataLen);
+
+			extractAPIType = buf.extractShort();
+			switch (extractAPIType) {
+			case 0:
+				lobLength = buf.extractLong();
+				break;
+			case 1:
+				extractLen = buf.extractLong();
+				extractData = buf.extractByteArray(extractLen);
+				break;
+			case 2:
+				break;
+			default:
+				break;
 			}
 		}
 		}

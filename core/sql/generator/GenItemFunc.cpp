@@ -152,6 +152,22 @@ short BuiltinFunction::codeGen(Generator * generator)
 
       break;
       
+    case ITM_SLEEP:
+      {
+	function_clause =
+	  new(generator->getSpace()) ex_function_sleep(getOperatorType(),(1+getArity()), 
+							 attr, space);
+      }
+      
+      break;
+    case ITM_UNIX_TIMESTAMP:
+      {
+	function_clause =
+	  new(generator->getSpace()) ex_function_unixtime(getOperatorType(), (1+getArity()),
+							 attr, space);
+      }
+      
+      break;
     case ITM_CURRENT_TIMESTAMP:
     case ITM_CURRENT_TIMESTAMP_RUNNING:
       {
@@ -429,7 +445,8 @@ short BuiltinFunction::codeGen(Generator * generator)
           case CharInfo::UTF8:
           // case CharInfo::SJIS: // Uncomment this if we ever support SJIS
 	   function_clause = new(generator->getSpace()) 
-		ex_function_position(ITM_POSITION, attr, space);
+             ex_function_position(ITM_POSITION, attr, space,
+                                  (getArity() + 1));
 
 	    ((ex_function_position *)function_clause)->setCollation(((PositionFunc*)this)->getCollation());
 
@@ -437,7 +454,8 @@ short BuiltinFunction::codeGen(Generator * generator)
 
           case CharInfo::UCS2:
 	   function_clause = new(generator->getSpace()) 
-		ex_function_position_doublebyte(ITM_POSITION_DOUBLEBYTE, attr, space);
+             ex_function_position_doublebyte(ITM_POSITION_DOUBLEBYTE, attr, space,
+                                             (getArity() + 1));
 
            break;
 
@@ -647,6 +665,7 @@ short BuiltinFunction::codeGen(Generator * generator)
     break;
 
     case ITM_UNIQUE_ID:
+    case ITM_UNIQUE_SHORT_ID:
       {
 	function_clause =
 	  new(generator->getSpace()) ExFunctionUniqueId(getOperatorType(),
@@ -2654,6 +2673,11 @@ short LOBinsert::codeGen(Generator * generator)
   else if(obj_ == LOBoper::EMPTY_LOB_)
     li->setFromEmpty(TRUE);
 
+  if (CmpCommon::getDefault(LOB_LOCKING) == DF_ON)
+    li->setLobLocking(TRUE);
+  else
+    li->setLobLocking(FALSE);
+
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
   li->setLobStorageLocation((char*)lobStorageLocation().data());
@@ -2729,7 +2753,10 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromBuffer(TRUE);
   else if(obj_ == LOBoper::EMPTY_LOB_)
     lu->setFromEmpty(TRUE);
-
+  if (CmpCommon::getDefault(LOB_LOCKING) == DF_ON)
+    lu->setLobLocking(TRUE);
+  else
+    lu->setLobLocking(FALSE);
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());

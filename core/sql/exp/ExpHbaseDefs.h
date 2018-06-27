@@ -74,6 +74,7 @@ enum HbaseOptionEnum
     HBASE_SPLIT_POLICY                = 22,   //   "
     HBASE_CACHE_DATA_IN_L1            = 23,   // column family
     HBASE_PREFETCH_BLOCKS_ON_OPEN     = 24,   //   "
+    HBASE_HDFS_STORAGE_POLICY         = 25,   //   "
     HBASE_MAX_OPTIONS
   };
 

@@ -2,7 +2,7 @@
 1000 42000 99999 BEGINNER INFRM LOGONLY A syntax error occurred.
 1001 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in module $0~String0 on line $1~Int0. Details($2~String1).
 1002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName does not exist.
-1003 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName does not exist.
+1003 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~String0.$1~String1 does not exist.
 1004 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist or object type is invalid for the current operation.
 1005 ZZZZZ 99999 BEGINNER MINOR DBADMIN Constraint $0~ConstraintName does not exist.
 1006 ZZZZZ 99999 BEGINNER MINOR DBADMIN Skipping authorization ID $0~Int0.
@@ -11,7 +11,7 @@
 1009 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName does not exist in the specified table.
 1010 0A000 99999 ADVANCED MINOR DBADMIN The statement just entered is currently not supported.
 1011 ZZZZZ 99999 ADVANCED MINOR DBADMIN Only one grantee per grant or revoke is allowed.
-1012 01007 99999 BEGINNER MAJOR DBADMIN No privileges were granted.  You lack grant option on the specified privileges.
+1012 01007 99999 BEGINNER MAJOR DBADMIN No privileges were granted.  $0~String0 lacks grant option on the specified privileges. $1~String1
 1013 01007 99999 BEGINNER MAJOR DBADMIN Not all privileges were granted.  You lack grant option for the $0~string0 privilege.
 1014 2B000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1015 01006 99999 BEGINNER MAJOR DBADMIN Not all privileges were revoked. You lack the grant option for the $0~string0 privilege.
@@ -140,7 +140,7 @@
 1138 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
 1139 ZZZZZ 99999 BEGINNER MAJOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in the search condition of a check constraint definition.
 1140 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Row-length $0~int0 exceeds the maximum allowed row-length of $1~int1 for table $2~TableName.
-1141 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Key length $0-int0 exceeds the maximum allowed key length of $1~int1
+1141 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Key length $0~int0 exceeds the maximum allowed key length of $1~int1.
 1142 0A000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1143 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for constraint $0~ConstraintName failed; incompatible data exists in referencing base table $1~TableName and referenced base table $2~String0.  To display the data that violates the constraint, please use the following DML statement: $3~String1
 1144 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A quoted string was expected in first key clause for column $0~ColumnName on table $1~TableName, but the value detected is ($2~String0).
@@ -193,7 +193,7 @@
 1191 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SERIALIZE option is not yet supported for $0~string0 datatype.
 1192 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Failed to retrieve data from Hive metastore.  Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 1193 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The $0~string0 specified in the $1~string1 clause must be identical to the primary key for a Trafodion table.
-1194 ZZZZZ 99999 ADVANCED MAJOR DIALOUT --- unused ---
+1194 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Component operation $0~string0 does not exist for component $1~string1
 1195 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~ColumnName is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
 1196 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The number of salt partitions must be between $0~int0 and $1~int1 inclusive.
 1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The location $0~string0 for $1~string1 does not match with another location $2~string2 specified. All location specifications must be identical.
@@ -213,7 +213,7 @@
 1211 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The column values of the SPLIT BY first key in position $0~Int0 (one-based) are not greater (for ascending columns) or less (for descending columns) than its predecessor.
 1212 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An HBase region start key provided only part of the value for Trafodion key column $0~Int0. This could in some unusual situations cause errors.
 1213 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unable to create or initialize a connection to Apache Hive.
-1214 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error $0~String0 encountered when executing HiveQL statement $1~String1.
+1214 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error encountered when executing HiveQL statement "$1~String1". Details: $0~String0
 1215 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while determining host, port, or file name for HDFS URI $0~string0. Cause: $1~string1.
 1220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Code must contain two non-blank characters.
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
@@ -382,8 +382,8 @@
 1384 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1385 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1386 ZZZZZ 99999 BEGINNER MINOR DBADMIN	--- unused ---
-1387 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
-1388 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist in hive metadata.
+1387 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 $1~String1 already exists in Hive Metadata.
+1388 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 $1~String1 does not exist in Hive Metadata.
 1389 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 does not exist in Trafodion.
 1390 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 already exists in Trafodion.
 1391 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 is a $1~String1 object and cannot be updated.
@@ -887,7 +887,7 @@ $1~String1 --------------------------------
 3131 0A000 99999 BEGINNER MAJOR DBADMIN The statement just entered is currently not supported.
 3132 42000 99999 BEGINNER MAJOR DBADMIN The HEADING for column $0~ColumnName exceeds the maximum size of 128 characters.
 3133 42000 99999 BEGINNER MAJOR DBADMIN PERFORM is valid only in COBOL programs.
-3134 42000 99999 BEGINNER MAJOR DBADMIN The specified TIME or TIMESTAMP precision value, $0~int0, cannot exceed 6.
+3134 42000 99999 BEGINNER MAJOR DBADMIN The specified TIME or TIMESTAMP precision value, $0~int0, cannot exceed 9.
 3135 42000 99999 BEGINNER MAJOR DBADMIN The precision of float, $0~int0, cannot exceed 54.
 3136 42000 99999 BEGINNER MAJOR DBADMIN Only LEFT, RIGHT, and FULL OUTER JOIN are valid in {oj ...}
 3137 0A000 99999 BEGINNER MAJOR DBADMIN UNION JOIN is not yet supported.
@@ -1047,7 +1047,7 @@ $1~String1 --------------------------------
 3412 ZZZZZ 99999 BEGINNER MAJOR DBADMIN IDENTITY column $0~ColumnName must be the primary key or must have a unique index on it.
 3413 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The NOT NULL constraint on IDENTITY column $0~ColumnName must be NOT DROPPABLE.
 3414 ZZZZZ 99999 BEGINNER MAJOR DBADMIN For an IDENTITY column $0~ColumnName, the tuple list cannot have mixed user specified and DEFAULT values. Specify values for all or specify DEFAULT for all.
-3415 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 is not valid.
+3415 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 is not valid.$1~String1
 3416 42000 99999 BEGINNER MAJOR DBADMIN The last operand of function $0~string0 must not be NULL.
 3417 ZZZZZ 99999 BEGINNER MINOR DBADMIN Invalid DISK POOL $0~Int0 as the maximum number of pools allowed is $1~Int1.
 3418 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Local Number of Partitions clause is not allowed with DISK POOL clause.
@@ -1242,7 +1242,7 @@ $1~String1 --------------------------------
 4179 0A000 99999 BEGINNER MAJOR DBADMIN SEQUENCE BY is not supported for stream expressions.
 4180 0A000 99999 BEGINNER MAJOR DBADMIN Stream expression is not supported for top level DELETE statement. 
 4181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/17/04 ---
-4182 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/17/04 ---
+4182 42000 99999 BEGINNER MAJOR DBADMIN Function $0~String0 operand $0~Int0 must be of type $1~String1.
 4183 0A000 99999 BEGINNER MAJOR DBADMIN Embedded DELETE statements are not allowed on referenced tables.
 4184 0A000 99999 BEGINNER MAJOR DBADMIN Columns that are part of a referential constraint cannot be updated using embedded UPDATE statements. 
 4185 42000 99999 BEGINNER MAJOR DBADMIN Select list index is not allowed to be specified in the GROUP BY clause for this query.
@@ -1309,8 +1309,8 @@ $1~String1 --------------------------------
 4259 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Primary Key clause must be specified for an HBase mapped table.
 4260 ZZZZZ 99999 BEGINNER MAJOR DBADMIN HBase table($0~String0) to be mapped as an external table does not exist.
 4261 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The schema name $0~SchemaName is reserved for HBase mapped tables and cannot be explicitly specified.
-4262 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'cleanup hive table' command to cleanup this table.
-4263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
+4262 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'cleanup table' command to cleanup this table.
+4263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup table/view' command to cleanup this object.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.
@@ -1331,6 +1331,7 @@ $1~String1 --------------------------------
 4320 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Stream access is not allowed on multi-partitioned table or index, when flag ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Object in scope: $0~TableName.
 4321 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An embedded update/delete is not allowed on a partitioned table, when flag ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Object in scope: $0~TableName.
 4322 0A000 99999 BEGINNER MAJOR DBADMIN A column with BLOB datatype cannot be used in this clause or function.
+4323 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of predefined UDF $0~String0 is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
 4330 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid audit compression option $0~Int0 was used in the call to INTERPRET_AS_ROW.
 4331 ZZZZZ 99999 BEGINNER MAJOR DBADMIN KEY_RANGE_COMPARISON of partitioning keys on hash partitioned table $1~TableName is not allowed.
 4332 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Table $1~TableName not exposed. Tables in scope: $2~string0.
@@ -1586,8 +1587,9 @@ $1~String1 --------------------------------
 8448 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access Hbase interface. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 8449 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid HBase table option or option value was specified: ($0~string0 = $1~string1)
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.
-8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error returned while retrieving region stats from hbase.
+8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error $0~String0  returned while retrieving region stats from hbase.
 8452 ZZZZZ 99999 BEGINNER MINOR LOGONLY The regular expression is invalid. Cause: $0~String0
+8453 ZZZZZ 99999 BEGINNER MINOR LOGONLY This expression results in an invalid interval value '$0~String0'
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.
 8552 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~int0 was returned by the file system while fetching the version of the system $0~string0.
@@ -1596,6 +1598,7 @@ $1~String1 --------------------------------
 8555 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in the SQL executor in the disk process.
 8556 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred while accessing HBase table $0~string0. $1~string1
 8557 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The file name passed to externaltolob exceeds 256 bytes.
+8558 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The LOB operation is prevented due to conflicting access $0~string0.
 8570 ZZZZZ 99999 ADVANCED MAJOR DBADMIN SQL could not allocate sufficient memory to build query.
 8571 ZZZZZ 99999 ADVANCED MAJOR DBADMIN SQL could not allocate sufficient memory to execute query.
 8572 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The statement has incurred a fatal error and must be deallocated.

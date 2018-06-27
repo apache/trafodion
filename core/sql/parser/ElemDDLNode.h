@@ -350,6 +350,7 @@ class StmtDDLRegOrUnregObject;
 class StmtDDLCreateRole;
 class StmtDDLRoleGrant;
 class StmtDDLCleanupObjects;
+class StmtDDLonHiveObjects;
 class StmtDDLCommentOn;
 
 class QualifiedName;
@@ -692,7 +693,7 @@ public:
   virtual StmtDDLRoleGrant              * castToStmtDDLRoleGrant();
   virtual StmtDDLCleanupObjects         * castToStmtDDLCleanupObjects();
   virtual StmtDDLCommentOn              * castToStmtDDLCommentOn();
-
+  virtual StmtDDLonHiveObjects            * castToStmtDDLonHiveObjects();
 
   //
   // operator

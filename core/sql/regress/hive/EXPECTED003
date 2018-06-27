@@ -141,13 +141,9 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 >>prepare s from
 +>insert into hive.ins_time_dim values (current_time, 2, 3, 4, 5, 6, 'c', 'd', 'e', 'f');
 
-*** ERROR[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, TIME(0).
+*** ERROR[4035] Type TIME(0) cannot be cast to type INTEGER.
 
 *** ERROR[8822] The statement was not prepared.
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, TIME(0).
 
 >>-- wrong data types
 >>
@@ -532,7 +528,7 @@ T_TIME_SK    T_TIME_ID                  T_TIME       T_HOUR       T_MINUTE     T
 >>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 
 --- SQL operation complete.
->>truncate ins_store_sales_summary;
+>>truncate table ins_store_sales_summary;
 
 --- SQL operation complete.
 >>control query shape esp_exchange(cut);

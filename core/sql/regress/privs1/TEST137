@@ -44,6 +44,8 @@ control query default SKIP_METADATA_VIEWS 'ON';
 
 obey TEST137(clean_up);
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd ALLOW_WGO_FOR_ROLES 'on';
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
 log LOG137 clear;
 obey TEST137(set_up);
 obey TEST137(create_db);
@@ -108,6 +110,7 @@ revoke role library_ckout_clerks from sql_user3, sql_user4, sql_user5;
 drop role library_ckout_clerks;
 
 revoke component privilege lib_view_checkouts on library_books from lib_role_test;
+
 revoke role lib_role_test from sql_user5;
 revoke role db__rootrole from sql_user5;
 drop role lib_role_test;
@@ -158,7 +161,7 @@ where c.component_uid = p.component_uid
   and p.operation_code = d.operation_code
   and p.component_uid = d.component_uid
   and c.component_name like 'LIBRARY%'
-order by 1, 2, d.grantor_ID, d.grantee_name, grant_depth
+order by 1, 2, d.grantee_name, grant_depth
 for read uncommitted access;
 
 ?section create_db
@@ -222,7 +225,6 @@ execute get_components;
 
 -- fails with a syntax error
 register component user;
-register component "delimited not supported";
 register component abi**def;
 
 -- fails with component already registered
@@ -465,8 +467,6 @@ cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 values (user);
 -- These tests should succeed
--- returns 2 rows
-showddl role db__rootrole;
 execute get_component_operations;
 grant component privilege lib_view_checkouts on library_books to sql_user4 
    with grant option;
@@ -508,6 +508,7 @@ log;
 
 -- below is the setup and testing for various scenarios for revoke component privileges
 ?section revoke_comp_privs_setup
+cqd ALLOW_WGO_FOR_ROLES 'on';
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 create role library_admin;
@@ -548,6 +549,7 @@ grant component privilege lib_view_repository
 log;
 
 ?section revoke_comp_privs_setup_user1
+cqd ALLOW_WGO_FOR_ROLES 'on';
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
@@ -555,6 +557,7 @@ on library_books to sql_user2 with grant option;
 log;
 
 ?section revoke_comp_privs_setup_user2
+cqd ALLOW_WGO_FOR_ROLES 'on';
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
@@ -568,6 +571,7 @@ on library_books to sql_user5;
 log;
 
 ?section revoke_comp_privs_setup_user3
+cqd ALLOW_WGO_FOR_ROLES 'on';
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
@@ -581,6 +585,7 @@ on library_books to sql_user4 with grant option;
 log;
 
 ?section revoke_comp_privs_setup_user4
+cqd ALLOW_WGO_FOR_ROLES 'on';
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
@@ -650,4 +655,14 @@ log LOG137;
 --create schema t137sch;
 log;
 
+?section metadata_cmds
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+log LOG137;
 
+select auth_id from "_MD_".auths where auth_db_name = 'DB__ROOT';
+select role_id from "_PRIVMGR_MD_".role_usage where role_name = 'DB__ROOTROLE';
+select count(*) from "_REPOS_".metric_query_table where component_id < 0;
+set param ?cmd 'ls';
+-- always fails, EXECUTE privilege is require not DML_SELECT_METADATA
+call "_LIBMGR_".HELP(?cmd);
+log;

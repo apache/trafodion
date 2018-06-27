@@ -41,10 +41,16 @@ CREATE UNIQUE INDEX T056IN6 ON TRAFODION.SCH.T056T11
 
 --- SQL operation complete.
 >>
+>>cqd traf_alter_add_pkey_as_unique_constraint 'ON';
+
+--- SQL operation complete.
 >>alter table T056t10 add column duck int default 20 
 +>  not null no heading 
 +>constraint duck_PK PRIMARY KEY desc
 +>;
+
+--- SQL operation complete.
+>>cqd traf_alter_add_pkey_as_unique_constraint reset;
 
 --- SQL operation complete.
 >>

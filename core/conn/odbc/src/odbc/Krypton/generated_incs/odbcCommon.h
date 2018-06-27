@@ -273,6 +273,7 @@ struct CONNECTION_CONTEXT_t {
   char pad_to_offset_2572_[2];
   IDL_unsigned_long queryTimeoutSec;
   IDL_unsigned_long idleTimeoutSec;
+  IDL_unsigned_long clipVarchar;
   IDL_unsigned_long loginTimeoutSec;
   IDL_short txnIsolationLevel;
   IDL_short rowSetSize;

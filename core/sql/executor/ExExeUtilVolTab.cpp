@@ -517,9 +517,7 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	      {
 		// cannot have a transaction running.
 		// Return error.
-                ComDiagsArea * diags = getDiagsArea();
-                *diags << DgSqlCode(-EXE_BEGIN_TRANSACTION_ERROR);
-
+                ExRaiseSqlError(getHeap(), &diagsArea_, -EXE_BEGIN_TRANSACTION_ERROR);
 		step_ = ERROR_;
 		break;
 	      }
@@ -558,13 +556,11 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	    char * schemaName = vi->get(0);
 	    retcode =
 	      dropVolatileSchema(masterGlob->getStatement()->getContext(),
-				 schemaName, getHeap(), getGlobals(),
-                                 getDiagsArea());
+				 schemaName, getHeap(), getDiagsArea(), getGlobals());
 	    if (retcode < 0)
 	      {
                 // changes errors to warnings and move on to next schema.
-                if (getDiagsArea())
-                  getDiagsArea()->negateAllErrors();
+                getDiagsArea()->negateAllErrors();
 
 		// clear diags and move on to next schema.
 		// Remember that an error was returned, we will
@@ -594,9 +590,9 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	      {
 		// add a warning to indicate that some schemas were not
 		// dropped.
-                ComDiagsArea * diags = getDiagsArea();
-                *diags << DgSqlCode(1069)
-                       << DgSchemaName(errorSchemas_);
+                ExRaiseSqlError(getHeap(), &diagsArea_, 1069,
+                       NULL, NULL, NULL,
+                       errorSchemas_);
 	      }
 	    step_ = CLEANUP_HIVE_TABLES_;
 	  }
@@ -605,7 +601,7 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	case CLEANUP_HIVE_TABLES_:
 	  {
             if (cvtTdb().cleanupHiveCSETables())
-              dropHiveTempTablesForCSEs(getDiagsArea());
+              dropHiveTempTablesForCSEs();
 
 	    step_ = DONE_;
 	  }
@@ -644,8 +640,8 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
 (ContextCli * currContext,
  char * schemaName,
  CollHeap * heap,
- ex_globals *glob,
- ComDiagsArea *diagsArea)
+ ComDiagsArea *&diagsArea,
+ ex_globals *glob)
 {
   const char *parentQid = NULL;
   if (glob)
@@ -688,7 +684,7 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
 
   // issue the drop schema command 
   Lng32 cliRC = cliInterface.executeImmediate(dropSchema);
-  cliInterface.retrieveSQLDiagnostics(diagsArea);
+  cliInterface.allocAndRetrieveSQLDiagnostics(diagsArea);
                 
   // reset volatile schema bit
   //  currContext->resetSqlParserFlags(0x8000); // ALLOW_VOLATILE_SCHEMA_CREATION
@@ -736,8 +732,7 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
   return cliRC;
 }
 
-short ExExeUtilCleanupVolatileTablesTcb::dropHiveTempTablesForCSEs(
-     ComDiagsArea * diagsArea)
+short ExExeUtilCleanupVolatileTablesTcb::dropHiveTempTablesForCSEs()
 {
   Queue * hiveTableNames = NULL;
   // Todo: CSE: support schemas other than default for temp tables
@@ -774,7 +769,7 @@ short ExExeUtilCleanupVolatileTablesTcb::dropHiveTempTablesForCSEs(
           NAString dropHiveTable("drop table ");
 
           dropHiveTable += origTableName;
-          if (!CmpCommon::context()->execHiveSQL(dropHiveTable.data()))
+          if (HiveClient_JNI::executeHiveSQL(dropHiveTable.data()) != HVC_OK)
             ; // ignore errors for now
         }
 

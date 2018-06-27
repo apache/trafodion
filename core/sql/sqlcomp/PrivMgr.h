@@ -136,6 +136,10 @@ class PrivMgr
        bitmap.set(REFERENCES_PRIV);
     }
 
+    static void translateObjectName(
+      const std::string inputName,
+      std::string &outputName);
+
     static void log(
       const std::string filename,
       const std::string message,

@@ -63,6 +63,7 @@
 #include "ComQueue.h"
 #include "QRLogger.h"
 #include "NAMemory.h"
+#include "HdfsClient_JNI.h"
 #include <seabed/ms.h>
 #include <seabed/fserr.h>
 #include <curl/curl.h>
@@ -304,15 +305,14 @@ Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int32 size, Int64 &operL
       if (fInfo == NULL) {
          return LOB_DATA_FILE_NOT_FOUND_ERROR;
       }
+      if (fdData_)
+      {
+        hdfsCloseFile(fs_, fdData_);
+        fdData_=NULL;
+      }
+      openFlags_ =  O_WRONLY | O_APPEND; 
+      fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
     }
-     hdfsCloseFile(fs_, fdData_);
-     fdData_=NULL;
-     openFlags_ = O_WRONLY | O_APPEND; 
-     fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
-     if (!fdData_) {
-       openFlags_ = -1;
-       return LOB_DATA_FILE_OPEN_ERROR;
-     }
 
      if ((operLen = hdfsWrite(fs_, fdData_, data, size)) == -1) {
        return LOB_DATA_WRITE_ERROR;
@@ -366,74 +366,6 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
     return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::dataModCheck2(
-       char * dirPath, 
-       Int64  inputModTS,
-       Lng32  numOfPartLevels,
-       Int64 &failedModTS,
-       char  *failedLocBuf,
-       Int32 *failedLocBufLen)
-{
-  if (numOfPartLevels == 0)
-    return LOB_OPER_OK;
-
-  Lng32 currNumFilesInDir = 0;
-  hdfsFileInfo * fileInfos = 
-    hdfsListDirectory(fs_, dirPath, &currNumFilesInDir);
-  if ((currNumFilesInDir > 0) && (fileInfos == NULL))
-    {
-      return LOB_DATA_FILE_NOT_FOUND_ERROR;
-    }
-
-  NABoolean failed = FALSE;
-  for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
-    {
-      hdfsFileInfo &fileInfo = fileInfos[i];
-      if (fileInfo.mKind == kObjectKindDirectory)
-        {
-          Int64 currModTS = fileInfo.mLastMod;
-          if ((inputModTS > 0) &&
-              (currModTS > inputModTS) &&
-	      (!strstr(fileInfo.mName, ".hive-staging_hive_")))
-            {
-              failed = TRUE;
-              failedModTS = currModTS;
-
-              if (failedLocBuf && failedLocBufLen)
-                {
-                  Lng32 failedFileLen = strlen(fileInfo.mName);
-                  Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
-                                   ? (*failedLocBufLen-1) : failedFileLen);
-                  
-                  str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
-                                   '\0', ' ', TRUE);
-                  *failedLocBufLen = copyLen;
-                }
-            }
-        }
-    }
-
-  hdfsFreeFileInfo(fileInfos, currNumFilesInDir);
-  if (failed)
-    return LOB_DATA_MOD_CHECK_ERROR;
-
-  numOfPartLevels--;
-  Ex_Lob_Error err = LOB_OPER_OK;
-  if (numOfPartLevels > 0)
-    {
-      for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
-        {
-          hdfsFileInfo &fileInfo = fileInfos[i];
-          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels,
-                              failedModTS, failedLocBuf, failedLocBufLen);
-          if (err != LOB_OPER_OK)
-            return err;
-        }
-    }
-
-  return LOB_OPER_OK;
-}
-
 // numOfPartLevels: 0, if not partitioned
 //                  N, number of partitioning cols
 // failedModTS: timestamp value that caused the mismatch
@@ -446,63 +378,46 @@ Ex_Lob_Error ExLob::dataModCheck(
        char  *failedLocBuf,
        Int32 *failedLocBufLen)
 {
+  if (inputModTS <= 0)
+    return LOB_OPER_OK;
+
+  Ex_Lob_Error result = LOB_OPER_OK;
+  HDFS_Client_RetCode rc;
+  Int64 currModTS;
+
+
   failedModTS = -1;
 
-  // find mod time of root dir
-  hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
-  if (fileInfos == NULL)
-    {       
+  // libhdfs returns a second-resolution timestamp,
+  // get a millisecond-resolution timestamp via JNI
+  rc = HdfsClient::getHiveTableMaxModificationTs(currModTS,
+                                                dirPath,
+                                                numOfPartLevels);
+  // check for errors and timestamp mismatches
+  if (rc != HDFS_CLIENT_OK || currModTS <= 0)
+    {
+      result = LOB_DATA_READ_ERROR;
+    }
+  else if (currModTS > inputModTS)
+    {
+      result = LOB_DATA_MOD_CHECK_ERROR;
+      failedModTS = currModTS;
+    }
+
+  if (result != LOB_OPER_OK && failedLocBuf && failedLocBufLen)
+    {
+      // sorry, we lost the exact location for partitioned
+      // files, user needs to search for him/herself
       Lng32 failedFileLen = strlen(dirPath);
       Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
                        ? (*failedLocBufLen-1) : failedFileLen);
-      Int32 hdfserror = errno;
-      char hdfsErrStr[20];
-      snprintf(hdfsErrStr,sizeof(hdfsErrStr),"(errno %d)",errno);
+
       str_cpy_and_null(failedLocBuf, dirPath, copyLen,
                        '\0', ' ', TRUE);
-      str_cat_c(failedLocBuf,hdfsErrStr);
       *failedLocBufLen = copyLen;
-      if (errno)
-        {
-          // Allow for hdfs error. AQR will find the new hive mapped files
-          // if the hive table has been remapped to new data files
-          return LOB_DATA_MOD_CHECK_ERROR;
-        }
-      else
-        return LOB_DATA_READ_ERROR;
-    }
-    
-  Int64 currModTS = fileInfos[0].mLastMod;
-  if ((inputModTS > 0) &&
-      (currModTS > inputModTS))
-    {
-      hdfsFileInfo &fileInfo = fileInfos[0];
-
-      failedModTS = currModTS;
-
-      if (failedLocBuf && failedLocBufLen)
-        {
-          Lng32 failedFileLen = strlen(fileInfo.mName);
-          Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
-                           ? (*failedLocBufLen-1) : failedFileLen);
-          
-          str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
-                           '\0', ' ', TRUE);
-          *failedLocBufLen = copyLen;
-        }
-
-      hdfsFreeFileInfo(fileInfos, 1);
-      return LOB_DATA_MOD_CHECK_ERROR;
     }
 
-  hdfsFreeFileInfo(fileInfos, 1);
-  if (numOfPartLevels > 0)
-    {
-      return dataModCheck2(dirPath, inputModTS, numOfPartLevels, 
-                           failedModTS, failedLocBuf, failedLocBufLen);
-    }
-
-  return LOB_OPER_OK;
+  return result;
 }
 
 Ex_Lob_Error ExLob::emptyDirectory(char *dirPath,
@@ -870,6 +785,7 @@ Ex_Lob_Error ExLob::getLength(char *handleIn, Int32 handleInLen,Int64 &outLobLen
       }
   return err;
 }
+
 Ex_Lob_Error ExLob::getOffset(char *handleIn, Int32 handleInLen,Int64 &outLobOffset,LobsSubOper so, Int64 transId)
 {
   char logBuf[4096];
@@ -945,6 +861,10 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
       {
        LobInputOutputFileType srcFileType = fileType(source);
        if (srcFileType != HDFS_FILE)
+         return  LOB_SOURCE_FILE_READ_ERROR;
+       //Check if external file exists
+       Int64 sourceEOD = 0;
+       if (statSourceFile(source, sourceEOD) != LOB_OPER_OK)
          return  LOB_SOURCE_FILE_READ_ERROR;
       }
     // Calculate sourceLen for each subOper.
@@ -1256,6 +1176,8 @@ Ex_Lob_Error ExLob::insertSelect(ExLob *srcLobPtr,
       // we have received the external data file name from the descriptor table
       // replace the contents of the lobDataFile with this name      
       str_cpy_all(extFileName, blackBox, blackBoxLen);
+      extFileName[blackBoxLen]= '\0';
+
       extFileNameLen = blackBoxLen;
       // Now insert this into the target lob descriptor
       
@@ -1822,8 +1744,8 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
     if (fInfo)
       dataOffset = fInfo->mSize;
-
-    if ((lobGCLimit != 0) && (dataOffset > lobGCLimit)) // 5 GB default
+    // if -1, don't do GC or if reached the limit do GC
+    if ((lobGCLimit != -1) && (dataOffset > lobGCLimit)) 
       {
         str_sprintf(logBuf,"Starting GC. Current Offset : %ld",dataOffset);
         lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
@@ -1876,7 +1798,7 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
   Ex_Lob_Error rc = LOB_OPER_OK;
   char logBuf[4096];
   lobDebugInfo("In ExLob::compactLobDataFile",0,__LINE__,lobTrace_);
-  Int64 maxMemChunk = 1024*1024*1024; //1GB limit for intermediate buffer for transfering data
+  Int64 maxMemChunk = 100*1024*1024; //100 MB limit for intermediate buffer for transfering data
 
   // make some temporary file names
   size_t len = lobDataFile_.length();

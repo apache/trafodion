@@ -535,8 +535,8 @@ TRAFODION_SCAN    T10         1.000E+005   100000 fragm
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.250E+004   100000 fragm   
-TRAFODION_SCAN    T10         1.250E+004   100000 fragm   
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN    T10         1.000E+004   10000 fragme   
 
 --- 2 row(s) selected.
 >>select count(*) from (SELECT * FROM t10 WHERE d like 'one%') as t;
@@ -557,8 +557,8 @@ TRAFODION_SCAN    T10         1.250E+004   100000 fragm
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          8.750E+004   100000 fragm   
-TRAFODION_SCAN    T10         8.750E+004   100000 fragm   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 2 row(s) selected.
 >>select count(*) from (SELECT * FROM t10 WHERE d not like 'one%') as t;
@@ -1174,8 +1174,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.250E+004   12500 fragme   
-TRAFODION_SCAN    T10         1.250E+004   12500 fragme   
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN    T10         1.000E+004   10000 fragme   
 
 --- 2 row(s) selected.
 >> -- min(1e5, 1e4) should = 1e4
@@ -1202,8 +1202,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+000   10000 fragme   
-TRAFODION_SCAN    T10         1.000E+000   10000 fragme   
+ROOT                          1.000E+000   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+000   100000 fragm   
 
 --- 2 row(s) selected.
 >> -- min(1e4, 1e5) should = 1e4
@@ -2297,7 +2297,7 @@ OPERATOR
 ----------------
 
 ROOT            
-HYBRID_HASH_SEMI
+HYBRID_HASH_JOIN
 
 --- 2 row(s) selected.
 >>

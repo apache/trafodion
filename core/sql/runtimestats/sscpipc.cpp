@@ -215,6 +215,9 @@ void SscpNewIncomingConnectionStream::actOnReceive(IpcConnection *connection)
   case SECURITY_INVALID_KEY_REQ:
     processSecInvReq();
     break;
+  case LOB_LOCK_REQ:
+    processLobLockReq();
+    break;
   default:
     ex_assert(FALSE,"Invalid request for first client message");
   }
@@ -848,6 +851,14 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
               }
             }
           }
+
+          // If a role is granted or revoked from a user do checks next time query is executed
+          else if (siKeyType == COM_QI_USER_GRANT_ROLE)
+          {
+             keysAreInvalid = true;
+             masterStats->setValidPrivs(false);
+          }
+
           else if (siKeyType != COM_QI_STATS_UPDATED)
           {
             // compare the new REVOKE invalidation key to each key in the 
@@ -899,3 +910,53 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
   request->decrRefCount();
 }
 
+void SscpNewIncomingConnectionStream::processLobLockReq()
+{
+  IpcMessageObjVersion msgVer = getNextObjVersion();
+
+  ex_assert(msgVer <= currRtsStatsReqVersionNumber, "Up-rev message received.");
+  NAHeap *statsHeap = NULL;
+  LobLockRequest *request = new(getHeap())
+    LobLockRequest(getHeap());
+
+  *this >> *request;
+  ex_assert( !moreObjects(), "unknown object follows LobLockRequest.");
+  SscpGlobals *sscpGlobals = getSscpGlobals();
+  StatsGlobals *statsGlobals = sscpGlobals->getStatsGlobals();
+  int error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
+                  sscpGlobals->myPin());
+  statsHeap = statsGlobals->getStatsHeap();
+  char *ll = new (statsHeap) char [LOB_LOCK_ID_SIZE];
+  memcpy(ll,request->getLobLockId(),LOB_LOCK_ID_SIZE+1);
+  SyncHashQueue *lobLockList = statsGlobals->getLobLocks();
+  if (ll[0] == '+') // If it's a positive value, we are supposed to insert it.
+    lobLockList->insert(&ll[1],LOB_LOCK_ID_SIZE,&ll[1]);
+  else if (ll[0] =='-')
+    {
+      //negative value means we need to remove/release it from the list
+      lobLockList->position((char *)&ll[1], LOB_LOCK_ID_SIZE);
+      while (lobLockList->getCurr() && 
+             memcmp(lobLockList->getCurr(), &ll[1],LOB_LOCK_ID_SIZE)!= 0)
+        lobLockList->getNext();
+ 
+      lobLockList->remove((char *)&ll[1], LOB_LOCK_ID_SIZE,lobLockList->getCurr());
+    }
+  else
+    ex_assert(FALSE,"invalid lob lock id in LobLockRequest");
+    
+    
+   statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(),
+                                    sscpGlobals->myPin());
+   clearAllObjects();
+   setType(IPC_MSG_SSCP_REPLY);
+   setVersion(CurrSscpReplyMessageVersion);
+
+   RmsGenericReply *reply = new(getHeap())
+    RmsGenericReply(getHeap());
+
+   *this << *reply;
+
+   send(FALSE);
+   reply->decrRefCount();
+   request->decrRefCount();
+}

@@ -22,6 +22,7 @@
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,7 +39,8 @@ import org.junit.Test;
 
 public class TestBlob {
     private static final String tableName = "BLOBTEST";
-    private static final String strCreateTable = "CREATE TABLE " + Utils.schema + "." + tableName + "(C1 int, c2 BLOB);";
+    private static final String strCreateTable = "CREATE TABLE if not exists " + Utils.schema + "." + tableName
+            + "(C1 int, c2 BLOB);";
     private static final String strDropTable = "DROP TABLE " + Utils.schema + "." + tableName;
 
     private static Connection _conn = null;
@@ -46,15 +48,19 @@ public class TestBlob {
     @BeforeClass
     public static void doTestSuiteSetup() throws Exception {
         try {
-            _conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
+            _conn = Utils.getUserConnection();
+        }
+        catch (Exception e) {
+            fail("failed to create connection" + e.getMessage());
+        }
+        try (
             Statement stmt = _conn.createStatement();
-
+        ) {
             // use CQD to enable BLOB support
             stmt.execute("CQD TRAF_BLOB_AS_VARCHAR 'OFF'");
             stmt.execute(strCreateTable);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            fail("failed to set CQDs for Blob : " + e.getMessage());
         }
     }
 

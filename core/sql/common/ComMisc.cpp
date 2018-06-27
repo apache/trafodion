@@ -296,6 +296,53 @@ NAString ComConvertTrafNameToNativeName(
   return convertedName;
 }
 
+// Hive names specified in the query may have any of the following
+// forms after they are fully qualified:
+//  hive.hive.t, hive.`default`.t, hive.hivesch.t, hive.hivesch
+// These names are valid in traf environment only and are used to determine
+// if hive ddl is being processed.
+//
+// Return equivalent native hive names of the format:
+//   `default`.t, `default`.t, hivesch.t, hivesch
+// Return NULL string in case of an error.
+NAString ComConvertTrafHiveNameToNativeHiveName(
+     const NAString &catalogName,
+     const NAString &schemaName,
+     const NAString &objectName)
+{
+  NAString newHiveName;
+  if (catalogName.compareTo(HIVE_SYSTEM_CATALOG, NAString::ignoreCase) != 0)
+    {
+      // Invalid hive name in traf environment.
+      return newHiveName;
+    }
+
+  if (schemaName.compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) // matches  'default'
+    {
+      newHiveName += NAString("`") + schemaName + "`";
+      if (NOT objectName.isNull())
+        newHiveName += ".";
+    }
+  else if (schemaName.compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0) // matches  'hive'
+    {
+      // set fully qualified hive default schema name `default`
+      newHiveName += NAString("`default`");
+      if (NOT objectName.isNull())
+        newHiveName += ".";
+    }
+  else // user schema name
+    {
+      newHiveName += schemaName;
+      if (NOT objectName.isNull())
+        newHiveName += ".";
+    }
+
+  if (NOT objectName.isNull())
+    newHiveName += objectName;
+
+  return newHiveName;
+}
+
 NABoolean ComTrafReservedColName(
      const NAString &colName)
 {

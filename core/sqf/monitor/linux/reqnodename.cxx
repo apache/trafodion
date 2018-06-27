@@ -127,7 +127,7 @@ void CExtNodeNameReq::performRequest()
         else
         {
             char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Failed to retrive ClusterConfig object!\n",
+            sprintf(la_buf, "[%s], Failed to retrieve ClusterConfig object!\n",
                     method_name);
             mon_log_write(MON_REQ_NODE_NAME_2, SQ_LOG_CRIT, la_buf);
 

@@ -991,7 +991,7 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
     // Return - "not authorized" error 
     ComDiagsArea diags;
     diags << DgSqlCode(-1017);
-    handleLocalError(diags, sqlci_env);
+    handleLocalError(&diags, sqlci_env);
     return -1;
   }
 
@@ -1003,7 +1003,7 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
       // Please use "RESET PARSERFLAGS <value>" to reset the flags.
       ComDiagsArea diags;
       diags << DgSqlCode(3190);
-      handleLocalError(diags, sqlci_env);
+      handleLocalError(&diags, sqlci_env);
     }
     retCode = SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(param);
   }
@@ -1020,7 +1020,7 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
     // You are not authorized to perform this operation.
     ComDiagsArea diags;
     diags << DgSqlCode(retCode);
-    handleLocalError(diags, sqlci_env);
+    handleLocalError(&diags, sqlci_env);
   }
   return 0;
 }

@@ -1154,12 +1154,14 @@ VEGReference::replaceVEGReference(const ValueIdSet &origAvailableValues,
 
   if (VEG_DEBUG)
     {
-      NAString av,iv,vb;
+      NAString av,iv,vb,vr;
       availableValues.unparse(av);
       inputValues.unparse(iv);
       valuesToBeBound.unparse(vb);
+      ValueIdSet thisVegRef(getValueId());
+      thisVegRef.unparse(vr);
       cout << endl;
-	  cout << "VEGReference " << getValueId() << " :" << endl;
+      cout << "VEGReference " << getValueId() << " (" << vr << "):" << endl;
       cout << "AV: " << av << endl;
       cout << "IV: " << iv << endl;
       cout << "VB: " << vb << endl;
@@ -2856,9 +2858,11 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
              (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS) ||
              (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS) ||
-             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)))
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME) ||
+             (ddlNode->getOperatorType() == DDL_ON_HIVE_OBJECTS)))
      {
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
@@ -4518,7 +4522,9 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
     {
       oltOptInfo().setOltOpt(FALSE);
       generator->oltOptInfo()->setOltOpt(FALSE);
-      generator->setAqrEnabled(FALSE);
+      //enabling AQR to take care of the lock conflict error 8558 that
+      // should be retried.
+      //      generator->setAqrEnabled(FALSE);
       generator->setUpdAbortOnError(TRUE);
       generator->setUpdSavepointOnError(FALSE);
     }
@@ -5736,19 +5742,9 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   return this;
 }
 
-RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
-					const ValueIdSet & externalInputs,
-					ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
-}
-
-RelExpr * ExeUtilHiveTruncate::preCodeGen(Generator * generator,
-                                          const ValueIdSet & externalInputs,
-                                          ValueIdSet &pulledNewInputs)
+RelExpr * ExeUtilHiveTruncateLegacy::preCodeGen(Generator * generator,
+                                                const ValueIdSet & externalInputs,
+                                                ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;

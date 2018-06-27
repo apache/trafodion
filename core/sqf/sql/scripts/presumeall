@@ -21,8 +21,8 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-SQ_PROCS=`pstat -h | cut -b 14-18`
+SQ_PROCS=`pstat -h | awk '{print $2}'`
 if [[ $SQ_PROCS != "" ]]; then
     echo "Executing the presumeall command"
-    pstat -h | cut -b 14-18 | xargs kill -s SIGCONT
+    pstat -h | awk '{print $2}' | xargs kill -s SIGCONT
 fi

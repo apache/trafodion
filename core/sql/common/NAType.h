@@ -561,8 +561,9 @@ public:
                                  const char * displaydatatype,
 				 short displayCaseSpecific = 0);
 
-  short getMyTypeAsText(NAString * outputStr, 
-			NABoolean addNullability = TRUE) const; // output
+  short getMyTypeAsText(NAString * outputStr,  // output
+			NABoolean addNullability = TRUE,
+                        NABoolean addCollation = TRUE) const;
 
   short getMyTypeAsHiveText(NAString * outputStr) const;  // output
 

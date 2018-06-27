@@ -3482,9 +3482,11 @@ short NestedJoin::codeGen(Generator * generator)
 
   // Make sure that the LHS up queue can grow as large as the RHS down
   // queue.
-  if(tdb1->getMaxQueueSizeUp() < tdb2->getInitialQueueSizeDown()) {
-    tdb1->setMaxQueueSizeUp(tdb2->getInitialQueueSizeDown());
-  }
+  //We can't let upqueue of unpack to grow beyond what was calculated and set earlier in codeGen of the unpack operator
+  if (tdb1->getClassID() != ComTdb::ex_UNPACKROWS)
+    if(tdb1->getMaxQueueSizeUp() < tdb2->getInitialQueueSizeDown()) {
+      tdb1->setMaxQueueSizeUp(tdb2->getInitialQueueSizeDown());
+    }
 
   // If this NestedJoin itself is not on the RHS of a Flow/NestedJoin,
   // Then reset the largeQueueSize to 0.

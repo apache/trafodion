@@ -21,6 +21,8 @@
 # @@@ END COPYRIGHT @@@
 
 if [ "$1" = "-start" ]; then
+export SQ_SHELL_NOCWD=1
+export SQ_CONFIGDB=$PWD/sqconfig.db
 shift
 echo "********* run monitor *********"
 shell <<eof

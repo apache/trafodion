@@ -2404,6 +2404,23 @@ statement.
 
 *Recovery:* Modify the statement and resubmit.
 
+[[SQL-4182]]
+== SQL 4182
+
+```
+Function <function-name> operand <operand-position> must be of type <data-type>.
+```
+
+*Cause:* The expression given for the indicated operand of the indicated function
+has the wrong data type. 
+
+*Effect:* {project-name} is unable to compile the statement.
+
+*Recovery:* Modify the statement and resubmit. If the expression in question
+is a dynamic parameter and the required
+data type is DATE, TIME, TIMESTAMP or INTERVAL, you must use a CAST expression to force
+the dynamic parameter to the required data type.
+
 [[SQL-4183]]
 == SQL 4183
 
@@ -2888,4 +2905,17 @@ the flag ATTEMPT_ASYNCHRONOUS_ACCESS was set to OFF.
 *Effect:* The operation fails.
 
 *Recovery:* Set the ATTEMPT_ASYNCHRONOUS_ACCESS flag to ON and resubmit.
+
+[[SQL-4323]]
+== SQL 4323
+
+```
+Use of predefined UDF <name> is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
+```
+
+*Cause:* See message.
+
+*Effect:* The operation succeeds - this is only a warning.
+
+*Recovery:* See message.
 

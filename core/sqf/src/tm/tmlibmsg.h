@@ -43,8 +43,8 @@
 
 //#include "dumapp.h"
 
+#include "trafconf/trafconfig.h"
 #include "dtm/tm.h"
-
 #include "dtm/xa.h"
 #include "rm.h"
 #include "../../inc/fs/feerrors.h" //legacy error codes for SQL
@@ -86,7 +86,7 @@
 #define MAX_NUM_TRANS           5000
 #define STEADYSTATE_LOW_TRANS   5
 #define STEADYSTATE_HIGH_TRANS  1000
-#define MAX_NODES 256
+#define MAX_NODES               TC_NODES_MAX
 #define MAX_SYNC_TXS 50
 #define MAX_TXN_TAGS UINT_MAX
 

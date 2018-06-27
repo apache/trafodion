@@ -2753,6 +2753,7 @@ void ComDiagsArea::insertNewEODWarning()
 
 void ComDiagsArea::insertNewError()
 {
+
   errors_.insert(newCondition_);
   // for non-atomic inserts, if any error is inserted after NonFatalErrorSeen flag
   // is set, then we want to unset the flag so that mainSQLCODE does not return 30022.
@@ -2952,6 +2953,16 @@ void ComDiagsArea::clearErrorConditionsOnly()
 {
    DiagsCondition  *ptr;
    while (errors_.getFirst(ptr)) 
+   {
+     ptr->deAllocate();
+     --maxDiagsId_;
+   }
+}
+
+void ComDiagsArea::clearWarnings()
+{
+   DiagsCondition  *ptr;
+   while (warnings_.getFirst(ptr)) 
    {
      ptr->deAllocate();
      --maxDiagsId_;

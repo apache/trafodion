@@ -62,6 +62,8 @@
 #include "ItemOther.h"
 #include "ItemExpr.h"
 #include "QRDescGenerator.h"
+#include "HBaseClient_JNI.h"
+#include "HiveClient_JNI.h"
 
 #ifndef TRANSFORM_DEBUG_DECL		// artifact of NSK's OptAll.cpp ...
 #define TRANSFORM_DEBUG_DECL
@@ -2765,28 +2767,44 @@ Here t2.a is a unique key of table t2.
 The following transformation is made
          Semi Join {pred : t1.b = t2.a}          Join {pred : t1.b = t2.a} 
         /         \                   ------->  /    \
-      /             \                         /        \
-Scan t1     Scan t2                 Scan t1     Scan t2
+       /           \                           /      \
+ Scan t1        Scan t2                   Scan t1     Scan t2
                                                 
 
 						
 b) If the right child is not unique in the joining column then 
 we transform the semijoin into an inner join followed by a groupby
 as the join's right child. This transformation is enabled by default
-only if the right side is an IN list, otherwise a CQD has to be used.
+only if the right side is an IN list or if the groupby's reduction 
+ratio is greater than 5.0, otherwise a CQD has to be used.
+
+Examples:
 
 select t1.a
 from t1
 where t1.b in (1,2,3,4,...,101) ;
 
 
-  Semi Join {pred : t1.b = t2.a}          Join {pred : t1.b = InList.col} 
+  Semi Join {pred : t1.b = InList.col}  Join {pred : t1.b = InList.col}
  /         \                   ------->  /    \
 /           \                           /      \
-Scan t1     Scan t2                 Scan t1     GroupBy {group cols: InList.col}
+Scan t1   TupleList                 Scan t1   GroupBy {group cols: InList.col}
                                                   |
                                                   |
                                                 TupleList
+
+select t1.a
+from t1
+where t1.b in (select t2.c from t2 where whatever) ;
+
+
+  Semi Join {pred : t1.b = t2.c }       Join {pred : t1.b = t2.c}
+ /         \                   ------->  /    \
+/           \                           /      \
+Scan t1   Scan t2                   Scan t1   GroupBy {group cols: t2.c}
+                                                  |
+                                                  |
+                                                Scan t2
 
 */
 
@@ -2824,18 +2842,42 @@ RelExpr* Join::transformSemiJoin(NormWA& normWARef)
 
  /* Apply the transformation described in item b) above.
    The transformation below is done if there are no non-equijoin preds either 
-  and the inner side has no base tables (i.e. is an IN LIST) or if we have
-  used a CQD to turn this transformation on for a specific user. For the general
-  case we are not certain if this transformation is always beneficial, so it is 
-  not on by default */
+  and the inner side has no base tables (i.e. is an IN LIST) OR if the groupby
+  is expected to provide a reduction > SEMIJOIN_TO_INNERJOIN_REDUCTION_RATIO
+  (default is 5.0) OR the inner row count is small OR if we have used a CQD to 
+  turn this transformation on. Some rationale: A data reduction might reduce
+  the amount of data for the inner table of a hash join (or it might not!
+  hash-semi-join sometimes does duplicate elimination itself, but not always).
+  Converting to a join allows the join to be commuted; if the number of rows
+  is small, nested join might be profitably chosen in that case. */
 
       ValueIdSet preds ;
       preds += joinPred();
       preds += selectionPred();
       preds -= getEquiJoinPredicates() ;
 
+      EstLogPropSharedPtr innerEstLogProp = child(1)->getGroupAttr()->outputLogProp((*GLOBAL_EMPTY_INPUT_LOGPROP));
+      CostScalar innerRowCount = innerEstLogProp->getResultCardinality(); 
+      CostScalar innerUec = innerEstLogProp->getAggregateUec(equiJoinCols1);
+      NABoolean haveSignificantReduction = FALSE;
+      CostScalar reductionThreshold = 
+        ((ActiveSchemaDB()->getDefaults()).getAsDouble(SEMIJOIN_TO_INNERJOIN_REDUCTION_RATIO));
+      NABoolean noInnerStats = innerEstLogProp->getColStats().containsAtLeastOneFake();
+      // have a valid value of uec, have something other than default 
+      // cardinality and satisfy reduction requirement.
+      if ((innerUec > 0) && (!noInnerStats) && 
+          (innerRowCount/innerUec > reductionThreshold))
+        haveSignificantReduction = TRUE;
+      CostScalar innerAllowance =
+        ((ActiveSchemaDB()->getDefaults()).getAsDouble(SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE));
+      NABoolean haveSmallInner = FALSE;
+      if ((innerRowCount < innerAllowance) && (!noInnerStats))
+        haveSmallInner = TRUE;
+
       if (preds.isEmpty() && 
-	  ((child(1)->getGroupAttr()->getNumBaseTables() == 0) || 
+	  ((child(1)->getGroupAttr()->getNumBaseTables() == 0) ||
+           haveSignificantReduction ||
+           haveSmallInner ||
 	    (CmpCommon::getDefault(SEMIJOIN_TO_INNERJOIN_TRANSFORMATION) == DF_ON)))
   {                     
     CollHeap *stmtHeap = CmpCommon::statementHeap() ;
@@ -2846,6 +2888,8 @@ RelExpr* Join::transformSemiJoin(NormWA& normWARef)
 				child(1)->castToRelExpr()) ;
 	newGrby->setGroupAttr(new (stmtHeap) 
 	  GroupAttributes(*(child(1)->getGroupAttr())));
+	// must reset numJoinedTables_; we might be copying GroupAttributes from a join
+	newGrby->getGroupAttr()->resetNumJoinedTables(1);
 	newGrby->getGroupAttr()->clearLogProperties();
 	  
 	newGrby->setGroupExpr(equiJoinCols1);
@@ -7427,7 +7471,15 @@ void RelRoot::transformNode(NormWA & normWARef,
         }
       else
         updatableSelect() = FALSE;
-
+      
+      if ((child(0)->castToRelExpr()->getOperatorType() == REL_FIRST_N) )
+      {
+         FirstN* firstn = (FirstN *)child(0)->castToRelExpr();
+         if(firstn->reqdOrderInSubquery().entries() >0 )
+         {
+           reqdOrder().insert( firstn->reqdOrderInSubquery());
+         }
+      }
     }
   else
     {
@@ -7446,6 +7498,14 @@ void RelRoot::transformNode(NormWA & normWARef,
     
       locationOfPointerToMe = child(0); // my parent now -> my child
       child(0)->setFirstNRows(getFirstNRows());
+
+      //keep the order if there is FIRSTN
+      if (child(0)->getOperatorType()==REL_FIRST_N)
+      {
+         FirstN* firstn = (FirstN *)child(0)->castToRelExpr();
+         firstn->reqdOrderInSubquery().insert(reqdOrder()) ;
+      }
+
       deleteInstance();                 // Goodbye!
       
       
@@ -9850,8 +9910,7 @@ NABoolean CommonSubExprRef::createTempTable(CSEInfo &info)
     if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
       {
         int m = CmpCommon::diags()->mark();
-        if (!CmpCommon::context()->execHiveSQL(tempTableDDL,
-                                               CmpCommon::diags()))
+        if (HiveClient_JNI::executeHiveSQL(tempTableDDL) != HVC_OK)
           {
             if (CmpCommon::statement()->recompiling() ||
                 CmpCommon::statement()->getNumOfCompilationRetries() > 0)

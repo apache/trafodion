@@ -24,7 +24,6 @@
 #define COM_HDFS_SCAN_H
 
 #include "ComTdb.h"
-#include "hdfs.h"  // tPort 
 
 //
 // Task Definition Block

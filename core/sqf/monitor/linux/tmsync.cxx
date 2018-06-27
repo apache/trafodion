@@ -42,7 +42,9 @@ using namespace std;
 #include "tmsync.h"
 #include "mlio.h"
 #include "reqqueue.h"
+#include "nameserver.h"
 
+extern bool NameServerEnabled;
 extern int trace_level;
 extern int MyPNID;
 extern sigset_t SigSet;
@@ -321,7 +323,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                 exchangeTmSyncData( sync, false );
                 syncCycle_.unlock();
                 ExchangeTmSyncState( false );
-                if (( Monitor->TmSyncPNid == MyPNID                           ) &&
+                if (( Monitor->tmSyncPNid_ == MyPNID                           ) &&
                     ( Nodes->GetTmState( SyncState_Start ) == SyncState_Start )   )
                 {
                     // send unsolicited messages to other TMs in
@@ -353,7 +355,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                 else
                 {
                     if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
-                       trace_printf("%s@%d" " - Tm Sync failed to start, TmSyncPNid=%d, MyPNID=%d, " "TmSyncState=%d, expecting=%d\n", method_name, __LINE__, TmSyncPNid, MyPNID, Nodes->GetTmState( SyncState_Start ), SyncState_Start);
+                       trace_printf("%s@%d" " - Tm Sync failed to start, tmSyncPNid_=%d, MyPNID=%d, " "TmSyncState=%d, expecting=%d\n", method_name, __LINE__, tmSyncPNid_, MyPNID, Nodes->GetTmState( SyncState_Start ), SyncState_Start);
                     if (MyNode->GetTmSyncState() == SyncState_Start)
                     {
                         MyNode->SetTmSyncState( SyncState_Null );
@@ -449,7 +451,7 @@ void CTmSync_Container::EndTmSync( MSGTYPE type )
             {
                 trace_printf("%s@%d - Request (%p) nid=%d, handle=%d, tag=%d, unsol=%d, comp=%d\n", method_name, __LINE__, req, req->Nid, req->Handle, req->Tag, req->Unsolicited, req->Completed);
             }
-            if ( TmSyncPNid == MyPNID )
+            if ( tmSyncPNid_ == MyPNID )
             {
                 if ( MyNode->GetLNodesCount() > 1 )
                 {
@@ -666,7 +668,7 @@ void CTmSync_Container::ProcessTmSyncReply( struct message_def * msg )
             TmSyncReplyCode |= msg->u.reply.u.unsolicited_tm_sync.return_code;
             tmsync_req->Completed = true;
             UnsolicitedComplete( msg );
-            if ( TmSyncPNid == MyPNID )
+            if ( tmSyncPNid_ == MyPNID )
             {
                 if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
                     trace_printf("%s@%d - Local Unsolicited TmSync reply, handle="
@@ -926,6 +928,16 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 // Get the TM that initiated the sync request
                 tm = LNode[req->Nid]->GetProcessLByType( ProcessType_DTM );
             }
+            if (!tm && NameServerEnabled)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Getting process from Name Server, nid=%d, type=ProcessType_DTM\n"
+                                , method_name, __LINE__, req->Nid );
+                }
+            
+                tm = Nodes->GetProcessLByTypeNs( req->Nid, ProcessType_DTM );
+            }
             if ( tm )
             {
                 // send all TmSync requests data to the local TM processes
@@ -997,6 +1009,23 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 {
                     delete msg;
                     msg = NULL;
+                }
+                if (NameServerEnabled)
+                {
+                    if (!MyNode->IsMyNode( tm->GetNid() ))
+                    {
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                        {
+                            trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                        , method_name, __LINE__
+                                        , tm->GetName()
+                                        , tm->GetNid()
+                                        , tm->GetPid()
+                                        , tm->GetVerifier() );
+                        }
+                        Nodes->DeleteCloneProcess( tm );
+                    }
+                
                 }
             }
             else
@@ -1102,7 +1131,7 @@ bool CTmSync_Container::TmSyncPending( void )
        trace_printf("%s@%d" " - PendingTmSync=%d, total=%d, replies=%d, pending=%d\n", method_name, __LINE__, PendingSlaveTmSync, GetTotalSlaveTmSyncCount(), GetTmSyncReplies(), GetPendingSlaveTmSyncCount() );
 
     if (( MyNode->GetTmSyncState() == SyncState_Abort ) &&
-        ( TmSyncPNid != MyPNID ) &&
+        ( tmSyncPNid_ != MyPNID ) &&
         ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )   )
     {
         CommitTmDataBlock( MPI_ERR_UNKNOWN );

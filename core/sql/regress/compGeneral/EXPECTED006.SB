@@ -296,10 +296,7 @@
 
 >>prepare xx from select char_length(a) from t006t2;
 
-*** ERROR[4043] The operand of function CHARACTER_LENGTH, CHAR_LENGTH, or LENGTH must be character.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>prepare xx from select lower(a) from t006t2;
 
 *** ERROR[4043] The operand of function LOWER or LCASE must be character.
@@ -308,10 +305,7 @@
 
 >>prepare xx from select octet_length(a) from t006t2;
 
-*** ERROR[4043] The operand of function OCTET_LENGTH must be character.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Error 4045
 >>prepare xx from select zeroifnull(a) from t006t1;
@@ -601,7 +595,7 @@
 >>-- Error 4071
 >>prepare xx from select * from t006t1 where last_day(A) = A;
 
-*** ERROR[4071] The first operand of function LAST_DAY must be a datetime.
+*** ERROR[4182] Function LAST_DAY operand 1 must be of type DATE or TIMESTAMP.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -746,31 +740,64 @@
 >>
 >>prepare xx from select date_trunc('YEAR',a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATE_TRUNC operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select date_trunc('YEAR',a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATE_TRUNC operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select date_trunc('month',a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATE_TRUNC operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select date_trunc('century',a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATE_TRUNC operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select datediff(year,a, a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATEDIFF operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select datediff(month,a, a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATEDIFF operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare xx from select datediff(day,current_timestamp,a) from t006t1;
+
+*** ERROR[4182] Function DATEDIFF operand 3 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select datediff(hour,a, a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATEDIFF operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select datediff(minute,a, a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATEDIFF operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select datediff(second,a, a) from t006t1;
 
---- SQL command prepared.
+*** ERROR[4182] Function DATEDIFF operand 2 must be of type DATE or TIMESTAMP.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>prepare xx from select datediff(quarter,c, c) from t006t5;
 
 --- SQL command prepared.

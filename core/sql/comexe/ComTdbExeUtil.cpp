@@ -1139,141 +1139,6 @@ void ComTdbExeUtilCreateTableAs::displayContents(Space * space,ULng32 flag)
     }
 }
 
-
-
-
-///////////////////////////////////////////////////////////////////////////
-//
-// Methods for class ComTdbExeUtilFastDelete
-//
-///////////////////////////////////////////////////////////////////////////
-ComTdbExeUtilFastDelete::ComTdbExeUtilFastDelete(
-     char * tableName,
-     ULng32 tableNameLen,
-     char * primaryPartnLoc,
-     Queue * indexList,
-     char * stmt,
-     ULng32 stmtLen,
-     Lng32 numEsps,
-     Int64 objectUID,
-     Lng32 numLOBs,
-     char * lobNumArray,
-     ex_cri_desc * work_cri_desc,
-     const unsigned short work_atp_index,
-     ex_cri_desc * given_cri_desc,
-     ex_cri_desc * returned_cri_desc,
-     queue_index down,
-     queue_index up,
-     Lng32 num_buffers,
-     ULng32 buffer_size)
-     : ComTdbExeUtil(ComTdbExeUtil::FAST_DELETE_,
-		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
-		     tableName, tableNameLen,
-		     NULL, 0,
-		     NULL, 0,
-		     NULL,
-		     work_cri_desc, work_atp_index,
-		     given_cri_desc, returned_cri_desc,
-		     down, up, 
-		     num_buffers, buffer_size),
-       flags_(0),
-       indexList_(indexList),
-       purgedataStmt_(stmt),
-       purgedataStmtLen_(stmtLen),
-       primaryPartnLoc_(primaryPartnLoc),
-       numEsps_(numEsps),
-       objectUID_(objectUID),
-       numLOBs_(numLOBs),
-       lobNumArray_(lobNumArray)
-{
-  setNodeType(ComTdb::ex_FAST_DELETE);
-}
-
-Long ComTdbExeUtilFastDelete::pack(void * space)
-{
-  indexList_.pack(space);
-
-  if (purgedataStmt_) 
-    purgedataStmt_.pack(space);
-
-  if (primaryPartnLoc_)
-    primaryPartnLoc_.pack(space);
-
-  if (lobNumArray_) 
-    lobNumArray_.pack(space);
-
-  return ComTdbExeUtil::pack(space);
-}
-
-Lng32 ComTdbExeUtilFastDelete::unpack(void * base, void * reallocator)
-{
-  if(indexList_.unpack(base, reallocator)) return -1;
-
-  if (purgedataStmt_.unpack(base)) 
-    return -1;
-
-  if (primaryPartnLoc_.unpack(base))
-    return -1;
-
-  if(lobNumArray_.unpack(base)) 
-    return -1;
-
-  return ComTdbExeUtil::unpack(base, reallocator);
-}
-
-short ComTdbExeUtilFastDelete::getLOBnum(short i)
-{
-  if ((i > numLOBs_) || (i <= 0))
-    return -1;
-
-  short lobNum = *((short*)&getLOBnumArray()[2*(i-1)]);
-
-  return lobNum;
-}
-
-void ComTdbExeUtilFastDelete::displayContents(Space * space,
-					      ULng32 flag)
-{
-  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
-  
-  if(flag & 0x00000008)
-    {
-      char buf[500];
-      str_sprintf(buf, "\nFor ComTdbExeUtilFastDelete :");
-      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-      
-      if (getTableName() != NULL)
-	{
-	  str_sprintf(buf,"Tablename = %s ",getTableName());
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
-					       sizeof(short));
-	}
-
-      if (purgedataStmt_)
-	{
-	  str_sprintf(buf,"purgedataStmt_ = %s ", purgedataStmt());
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
-					       sizeof(short));
-	}
-
-      if (numLOBs_ > 0)
-	{
-	  str_sprintf(buf, "numLOBs_ = %d ", numLOBs_);
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
-					       sizeof(short));
-	}
- 
-    }
-
-  
-  if (flag & 0x00000001)
-    {
-      displayExpression(space,flag);
-      displayChildren(space,flag);
-    }
-
-}
-
 ///////////////////////////////////////////////////////////////////////////
 //
 // Methods for class ComTdbExeUtilHiveTruncate
@@ -1288,6 +1153,7 @@ ComTdbExeUtilHiveTruncate::ComTdbExeUtilHiveTruncate(
      char * hostName,
      Lng32 portNum,
      Int64 modTS,
+     char * hiveTruncQuery,
      ex_cri_desc * given_cri_desc,
      ex_cri_desc * returned_cri_desc,
      queue_index down,
@@ -1310,7 +1176,8 @@ ComTdbExeUtilHiveTruncate::ComTdbExeUtilHiveTruncate(
        partnLocation_(partnLocation),
        hdfsHost_(hostName),
        hdfsPort_(portNum),
-       modTS_(modTS)
+       modTS_(modTS),
+       hiveTruncQuery_(hiveTruncQuery)
 {
   setNodeType(ComTdb::ex_HIVE_TRUNCATE);
 }
@@ -1329,6 +1196,9 @@ Long ComTdbExeUtilHiveTruncate::pack(void * space)
   if (hiveTableName_)
     hiveTableName_.pack(space);
 
+  if (hiveTruncQuery_)
+    hiveTruncQuery_.pack(space);
+
   return ComTdbExeUtil::pack(space);
 }
 
@@ -1344,6 +1214,9 @@ Lng32 ComTdbExeUtilHiveTruncate::unpack(void * base, void * reallocator)
     return -1;
 
   if (hiveTableName_.unpack(base))
+    return -1;
+
+  if (hiveTruncQuery_.unpack(base))
     return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
@@ -1388,6 +1261,10 @@ void ComTdbExeUtilHiveTruncate::displayContents(Space * space,
 					       sizeof(short));
 	}
  
+      if (getHiveTruncQuery() != NULL)
+        {
+          
+        }
     }
   
   if (flag & 0x00000001)
@@ -1400,9 +1277,6 @@ void ComTdbExeUtilHiveTruncate::displayContents(Space * space,
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// Methods for class ComTdbExeUtilHiveQuery
-//
-///////////////////////////////////////////////////////////////////////////
 ComTdbExeUtilHiveQuery::ComTdbExeUtilHiveQuery(
      char * hiveQuery,
      ULng32 hiveQueryLen,
@@ -1428,34 +1302,27 @@ ComTdbExeUtilHiveQuery::ComTdbExeUtilHiveQuery(
 {
   setNodeType(ComTdb::ex_HIVE_QUERY);
 }
-
 Long ComTdbExeUtilHiveQuery::pack(void * space)
 {
   if (hiveQuery_)
     hiveQuery_.pack(space);
-
   return ComTdbExeUtil::pack(space);
 }
-
 Lng32 ComTdbExeUtilHiveQuery::unpack(void * base, void * reallocator)
 {
   if(hiveQuery_.unpack(base))
     return -1;
-
   return ComTdbExeUtil::unpack(base, reallocator);
 }
-
 void ComTdbExeUtilHiveQuery::displayContents(Space * space,
 					      ULng32 flag)
 {
   ComTdb::displayContents(space,flag & 0xFFFFFFFE);
-  
   if(flag & 0x00000008)
     {
       char buf[500];
       str_sprintf(buf, "\nFor ComTdbExeUtilHiveQuery :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-      
       if (getHiveQuery() != NULL)
 	{
 	  str_sprintf(buf,"HiveQuery = %s ",getHiveQuery());
@@ -1463,17 +1330,12 @@ void ComTdbExeUtilHiveQuery::displayContents(Space * space,
 					       sizeof(short));
 	}
     }
-  
   if (flag & 0x00000001)
     {
       displayExpression(space,flag);
       displayChildren(space,flag);
     }
-
 }
-
-///////////////////////////////////////////////////////////////////////////
-//
 // Methods for class ComTdbExeUtilGetStatistics
 //
 ///////////////////////////////////////////////////////////////////////////
@@ -2485,6 +2347,7 @@ ComTdbExeUtilLobUpdate::ComTdbExeUtilLobUpdate
      Int32 lobStorageType,
      char * lobHdfsServer,
      Lng32 lobHdfsPort,
+     char *lobLoc,
      ex_expr * input_expr,
      ULng32 input_rowlen,
      ex_cri_desc * work_cri_desc,
@@ -2505,16 +2368,17 @@ ComTdbExeUtilLobUpdate::ComTdbExeUtilLobUpdate
                    given_cri_desc, returned_cri_desc,
                    down, up, 
                    num_buffers, buffer_size),
-     handle_(handle),
-     handleLen_(handleLen),
-     fromType_((short)fromType),
-     bufAddr_(bufAddr),
-     updateSize_(updateSize),
-     lobStorageType_(lobStorageType),
-     lobHdfsServer_(lobHdfsServer),
-     lobHdfsPort_(lobHdfsPort),
-     totalBufSize_(0),
-     flags_(0)
+    handle_(handle),
+    handleLen_(handleLen),
+    fromType_((short)fromType),
+    bufAddr_(bufAddr),
+    updateSize_(updateSize),
+    lobStorageType_(lobStorageType),
+    lobHdfsServer_(lobHdfsServer),
+    lobHdfsPort_(lobHdfsPort),
+    lobLoc_(lobLoc),
+    totalBufSize_(0),
+    flags_(0)
 {
   setNodeType(ComTdb::ex_LOB_UPDATE_UTIL);
 }
@@ -2524,6 +2388,8 @@ Long ComTdbExeUtilLobUpdate::pack(void * space)
     handle_.pack(space);
   if (lobHdfsServer_)
     lobHdfsServer_.pack(space);
+  if (lobLoc_)
+    lobLoc_.pack(space);
   return ComTdbExeUtil::pack(space);
 }
 Lng32 ComTdbExeUtilLobUpdate::unpack(void * base, void * reallocator)
@@ -2531,6 +2397,8 @@ Lng32 ComTdbExeUtilLobUpdate::unpack(void * base, void * reallocator)
   if (handle_.unpack(base))
     return -1;
   if (lobHdfsServer_.unpack(base))
+    return -1;
+  if(lobLoc_.unpack(base))
     return -1;
  return ComTdbExeUtil::unpack(base, reallocator);
 }

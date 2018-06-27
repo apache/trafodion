@@ -42,6 +42,7 @@ extern char MyCommPort[MPI_MAX_PORT_NAME];
 extern char *ErrorMsg (int error_code);
 extern const char *StateString( STATE state);
 extern CommType_t CommType;
+extern bool IsRealCluster;
 
 CCommAccept::CCommAccept()
            : accepting_(true)
@@ -248,7 +249,8 @@ bool CCommAccept::sendNodeInfoSock( int sockFd )
 
     rc = Monitor->SendSock( (char *) nodeInfo
                           , nodeInfoSize
-                          , sockFd);
+                          , sockFd
+                          , method_name );
     if ( rc )
     {
         char buf[MON_STRING_BUF_SIZE];
@@ -315,7 +317,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                     , nodeId.creatorShellVerifier );
     }
 
-    CNode * node= Nodes->GetNode( nodeId.nodeName );
+    CNode * node = Nodes->GetNode( nodeId.nodeName );
     int pnid = -1;
     if ( node != NULL )
     {   // Store port number for the node
@@ -347,6 +349,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                  method_name, ErrorMsg(rc));
         mon_log_write(MON_COMMACCEPT_5, SQ_LOG_ERR, buf);
 
+#ifndef NAMESERVER_PROCESS
         if ( MyNode->IsCreator() )
         {
             snprintf(buf, sizeof(buf), "Cannot merge intercomm for node %s: %s.\n",
@@ -356,6 +359,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                                                    , Notice( buf )
                                                    , NULL );
         }
+#endif
         return;
     }
 
@@ -372,6 +376,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
             MPI_Comm_free( &intraComm );
             MPI_Comm_free( &interComm );
 
+#ifndef NAMESERVER_PROCESS
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "Cannot send node/port info to "
                      " node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
@@ -379,6 +384,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                                                    , MyNode->GetCreatorVerifier()
                                                    , Notice( buf )
                                                    , NULL );
+#endif
             return;
         }
 
@@ -417,6 +423,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                      ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_6, SQ_LOG_ERR, buf);    
 
+#ifndef NAMESERVER_PROCESS
             if ( MyNode->IsCreator() )
             {
                 snprintf(buf, sizeof(buf), "Cannot send connect acknowledgment "
@@ -426,6 +433,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                                                        , Notice( buf )
                                                        , NULL );
             }
+#endif
 
             return;
         }
@@ -462,12 +470,14 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                      method_name, ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_7, SQ_LOG_ERR, buf);
 
+#ifndef NAMESERVER_PROCESS
             snprintf(buf, sizeof(buf), "Unable to obtain node status from "
                      "node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
             SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
                                                    , MyNode->GetCreatorVerifier()
                                                    , Notice( buf )
                                                    , NULL );
+#endif
 
             node->SetState( State_Down );
 
@@ -487,6 +497,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
             }
             else
             {
+#ifndef NAMESERVER_PROCESS
                 char buf[MON_STRING_BUF_SIZE];
                 snprintf(buf, sizeof(buf), "Node %s monitor failed to complete "
                          "initialization\n", nodeId.nodeName);
@@ -494,6 +505,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                                                        , MyNode->GetCreatorVerifier()
                                                        , Notice( buf )
                                                        , NULL );
+#endif
                 node->SetState( State_Down ); 
 
                 MPI_Comm_free ( &interComm );
@@ -520,7 +532,8 @@ void CCommAccept::processNewSock( int joinFd )
     // Get info about connecting monitor
     rc = Monitor->ReceiveSock( (char *) &nodeId
                              , sizeof(nodeId_t)
-                             , joinFd );
+                             , joinFd
+                             , method_name );
     if ( rc )
     {   // Handle error
         close( joinFd );
@@ -554,7 +567,33 @@ void CCommAccept::processNewSock( int joinFd )
                     , nodeId.ping );
     }
 
-    node= Nodes->GetNode( nodeId.nodeName );
+#ifdef NAMESERVER_PROCESS
+    if ( IsRealCluster )
+        node = Nodes->GetNode( nodeId.nodeName );
+    else
+        node = Nodes->GetNode( nodeId.pnid );
+#else
+    node = Nodes->GetNode( nodeId.nodeName );
+#endif
+
+    if ( node == NULL )
+    {
+        close( joinFd );
+
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], got connection from unknown "
+                  "node %d (%s). Ignoring it.\n"
+                , method_name
+                , nodeId.pnid
+                , nodeId.nodeName);
+        mon_log_write(MON_COMMACCEPT_9, SQ_LOG_ERR, buf);
+
+        // Requests is complete, begin accepting connections again
+        CommAccept.startAccepting();
+
+        return;
+    }
 
     if ( nodeId.ping )
     {
@@ -585,7 +624,8 @@ void CCommAccept::processNewSock( int joinFd )
     
         rc = Monitor->SendSock( (char *) &nodeId
                               , sizeof(nodeId_t)
-                              , joinFd );
+                              , joinFd
+                              , method_name );
         if ( rc )
         {
             close( joinFd );
@@ -595,6 +635,10 @@ void CCommAccept::processNewSock( int joinFd )
                     , method_name, node?node->GetName():"", ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_19, SQ_LOG_ERR, buf);    
         }
+
+        // Requests is complete, begin accepting connections again
+        CommAccept.startAccepting();
+
         return;
     }
     
@@ -607,72 +651,60 @@ void CCommAccept::processNewSock( int joinFd )
                           , nodeId.creatorShellVerifier );
     }
     
-    int pnid = -1;
-    if ( node != NULL )
-    {   // Store port numbers for the node
-        char commPort[MPI_MAX_PORT_NAME];
-        char syncPort[MPI_MAX_PORT_NAME];
-        strncpy(commPort, nodeId.commPort, MPI_MAX_PORT_NAME);
-        strncpy(syncPort, nodeId.syncPort, MPI_MAX_PORT_NAME);
-        char *pch1;
-        char *pch2;
-        pnid = nodeId.pnid;
-
-        node->SetCommPort( commPort );
-        pch1 = strtok (commPort,":");
-        pch1 = strtok (NULL,":");
-        node->SetCommSocketPort( atoi(pch1) );
-
-        node->SetSyncPort( syncPort );
-        pch2 = strtok (syncPort,":");
-        pch2 = strtok (NULL,":");
-        node->SetSyncSocketPort( atoi(pch2) );
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Setting node %d (%s), commPort=%s(%d), syncPort=%s(%d)\n"
-                        , method_name, __LINE__
-                        , node->GetPNid()
-                        , node->GetName()
-                        , pch1, atoi(pch1)
-                        , pch2, atoi(pch2) );
-        }
-    }
-    else
-    {
-        close( joinFd );
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], got connection from unknown "
-                  "node %d (%s). Ignoring it.\n"
-                , method_name
-                , nodeId.pnid
-                , nodeId.nodeName);
-        mon_log_write(MON_COMMACCEPT_9, SQ_LOG_ERR, buf);
-
-        return;
-    }
-
     // Sanity check, re-integrating node must be down
     if ( node->GetState() != State_Down )
     {
         int intdata = -1;
         rc = Monitor->SendSock( (char *) &intdata
                               , 0
-                              , joinFd );
+                              , joinFd
+                              , method_name );
 
         close( joinFd );
 
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], got connection from node %s. "
+                , "[%s], got connection from node %s (pnid=%d). "
                   "Node not down, node state=%s\n"
-                , method_name, nodeId.nodeName
+                , method_name, nodeId.nodeName, nodeId.pnid
                 , StateString(node->GetState()));
         mon_log_write(MON_COMMACCEPT_10, SQ_LOG_ERR, buf);
 
+        // Requests is complete, begin accepting connections again
+        CommAccept.startAccepting();
+
         return;
+    }
+
+    int pnid = -1;
+
+    // Store port numbers for the node
+    char commPort[MPI_MAX_PORT_NAME];
+    char syncPort[MPI_MAX_PORT_NAME];
+    strncpy(commPort, nodeId.commPort, MPI_MAX_PORT_NAME);
+    strncpy(syncPort, nodeId.syncPort, MPI_MAX_PORT_NAME);
+    char *pch1;
+    char *pch2;
+    pnid = nodeId.pnid;
+
+    node->SetCommPort( commPort );
+    pch1 = strtok (commPort,":");
+    pch1 = strtok (NULL,":");
+    node->SetCommSocketPort( atoi(pch1) );
+
+    node->SetSyncPort( syncPort );
+    pch2 = strtok (syncPort,":");
+    pch2 = strtok (NULL,":");
+    node->SetSyncSocketPort( atoi(pch2) );
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Setting node %d (%s), commPort=%s(%d), syncPort=%s(%d)\n"
+                    , method_name, __LINE__
+                    , node->GetPNid()
+                    , node->GetName()
+                    , pch1, atoi(pch1)
+                    , pch2, atoi(pch2) );
     }
 
     mem_log_write(CMonLog::MON_CONNTONEWMON_4, pnid);
@@ -685,6 +717,7 @@ void CCommAccept::processNewSock( int joinFd )
         {   // Had problem communicating with new monitor
             close( joinFd );
 
+#ifndef NAMESERVER_PROCESS
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "Cannot send node/port info to "
                      " node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
@@ -692,6 +725,7 @@ void CCommAccept::processNewSock( int joinFd )
                                                    , MyNode->GetCreatorVerifier()
                                                    , Notice( buf )
                                                    , NULL );
+#endif
             return;
         }
     }
@@ -708,7 +742,8 @@ void CCommAccept::processNewSock( int joinFd )
         int mypnid = MyPNID;
         rc = Monitor->SendSock( (char *) &mypnid
                               , sizeof(mypnid)
-                              , joinFd );
+                              , joinFd
+                              , method_name );
         if ( rc )
         {
             close( joinFd );
@@ -742,7 +777,8 @@ void CCommAccept::processNewSock( int joinFd )
         int mypnid = MyPNID;
         rc = Monitor->SendSock( (char *) &mypnid
                               , sizeof(mypnid)
-                              , joinFd );
+                              , joinFd
+                              , method_name );
         if ( rc )
         {
             close( joinFd );
@@ -753,12 +789,14 @@ void CCommAccept::processNewSock( int joinFd )
                      ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_12, SQ_LOG_ERR, buf);
 
+#ifndef NAMESERVER_PROCESS
             snprintf(buf, sizeof(buf), "Cannot send pnid acknowledgment "
                      "to new monitor: %s.\n", ErrorMsg(rc));
             SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
                                                    , MyNode->GetCreatorVerifier()
                                                    , Notice( buf )
                                                    , NULL );
+#endif
             return;
         }
 
@@ -772,7 +810,8 @@ void CCommAccept::processNewSock( int joinFd )
         int newpnid = -1;
         rc = Monitor->ReceiveSock( (char *) &newpnid
                                  , sizeof(newpnid)
-                                 , joinFd );
+                                 , joinFd
+                                 , method_name );
         if ( rc || newpnid != pnid )
         {
             close( joinFd );
@@ -783,12 +822,14 @@ void CCommAccept::processNewSock( int joinFd )
                   ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_13, SQ_LOG_ERR, buf);
 
+#ifndef NAMESERVER_PROCESS
             snprintf(buf, sizeof(buf), "Cannot receive connect acknowledgment "
                   "to new monitor: %s.\n", ErrorMsg(rc));
             SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
                                                 , MyNode->GetCreatorVerifier()
                                                 , Notice( buf )
                                                 , NULL );
+#endif
             return;
         }
 
@@ -815,7 +856,8 @@ void CCommAccept::processNewSock( int joinFd )
         nodeStatus_t nodeStatus;
         rc = Monitor->ReceiveSock( (char *) &nodeStatus
                                  , sizeof(nodeStatus_t)
-                                 , joinFd);
+                                 , joinFd
+                                 , method_name );
         if ( rc != MPI_SUCCESS )
         {   // Handle error
             char buf[MON_STRING_BUF_SIZE];
@@ -824,12 +866,14 @@ void CCommAccept::processNewSock( int joinFd )
                      method_name, ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_14, SQ_LOG_ERR, buf);
 
+#ifndef NAMESERVER_PROCESS
             snprintf(buf, sizeof(buf), "Unable to obtain node status from "
                      "node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
             SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
                                                    , MyNode->GetCreatorVerifier()
                                                    , Notice( buf )
                                                    , NULL );
+#endif
 
             node->SetState( State_Down );
             close( joinFd );
@@ -848,6 +892,7 @@ void CCommAccept::processNewSock( int joinFd )
         }
         else
         {
+#ifndef NAMESERVER_PROCESS
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "Node %s monitor failed to complete "
                      "initialization\n", nodeId.nodeName);
@@ -855,6 +900,7 @@ void CCommAccept::processNewSock( int joinFd )
                                                    , MyNode->GetCreatorVerifier()
                                                    , Notice( buf )
                                                    , NULL );
+#endif
             node->SetState( State_Down );
             close( joinFd );
             Monitor->ResetIntegratingPNid();
@@ -916,6 +962,8 @@ void CCommAccept::commAcceptorIB()
             interComm = MPI_COMM_NULL;
             rc = MPI_Comm_accept( MyCommPort, MPI_INFO_NULL, 0, MPI_COMM_SELF,
                                   &interComm );
+            // Stop accepting connections until this request completes
+            CommAccept.stopAccepting();
         }
         else
         {
@@ -988,6 +1036,8 @@ void CCommAccept::commAcceptorSock()
     
             mem_log_write(CMonLog::MON_CONNTONEWMON_1);
             joinFd = Monitor->AcceptCommSock();
+            // Stop accepting connections until this request completes
+            CommAccept.stopAccepting();
         }
         else
         {

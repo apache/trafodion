@@ -221,7 +221,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST000 TEST001 TEST002 TEST004 TEST005 TEST008 TEST010 TEST018 TEST019 TEST020 TEST027 TEST029 TEST032 TEST037 TEST038 TEST041 TEST056 TEST061 TEST116 TEST131 TEST162 TESTRTS"
+  sbtestfiles="TEST000 TEST001 TEST002 TEST004 TEST005 TEST008 TEST010 TEST018 TEST019 TEST020 TEST027 TEST029 TEST032 TEST037 TEST038 TEST041 TEST056 TEST061 TEST116 TEST131 TEST162 TEST163 TESTRTS"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -329,6 +329,11 @@ fi
 # Skip exclusive tests during concurrent execution
 if [ "$REGRCONCURRENT" -ne 0 ]; then
   skipTheseTests="$skipTheseTests $exclusiveTests"
+fi
+
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST1" == "1" ]; then
+    skipTheseTests="$skipTheseTests $coreCT"
 fi
 
 for i in $testfiles; do 

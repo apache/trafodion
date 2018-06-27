@@ -54,6 +54,7 @@ class ExSqlComp;
 class ExProcessStats;
 
 class ExpHbaseInterface;
+class HdfsClient;
 
 //class FILE_STREAM;
 #include "ComAnsiNamePart.h"
@@ -85,7 +86,6 @@ class ExpHbaseInterface;
 class ExExeUtilTdb;
 class ExExeUtilDisplayExplainTdb;
 class ExExeUtilDisplayExplainComplexTdb;
-class ExExeUtilFastDeleteTdb;
 class ExExeUtilHiveTruncateTdb;
 class ExExeUtilHiveQueryTdb;
 class ExExeUtilSuspendTdb;
@@ -269,7 +269,7 @@ class ExExeUtilTcb : public ex_tcb
   ExeCliInterface * cliInterface() { return cliInterface_; };
   ExeCliInterface * cliInterface2() { return cliInterface2_; };
 
-  ComDiagsArea * getDiagsArea() { return diagsArea_; }
+  ComDiagsArea *&getDiagsArea() { return diagsArea_; }
 
   void setDiagsArea(ComDiagsArea * d) { diagsArea_ = d; }
 
@@ -279,6 +279,7 @@ class ExExeUtilTcb : public ex_tcb
 
   short holdAndSetCQD(const char * defaultName, const char * defaultValue,
                       ComDiagsArea * globalDiags = NULL);
+
   short restoreCQD(const char * defaultName, ComDiagsArea * globalDiags = NULL);
 
   short setCS(const char * csName, char * csValue,
@@ -289,8 +290,9 @@ class ExExeUtilTcb : public ex_tcb
   void restoreMaintainControlTableTimeout(char * catalog);
 
   static Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue,
-                            ExeCliInterface * cliInterface,
-                            ComDiagsArea * globalDiags = NULL);
+                         ExeCliInterface * cliInterface,
+                         ComDiagsArea * globalDiags = NULL);
+
   static Lng32 restoreCQD(const char * defaultName,
                          ExeCliInterface * cliInterface,
                          ComDiagsArea * globalDiags = NULL);
@@ -433,7 +435,6 @@ class ExExeUtilPrivateState : public ex_tcb_private_state
   friend class ExExeUtilTcb;
   friend class ExExeUtilCleanupVolatileTablesTcb;
   friend class ExExeUtilCreateTableAsTcb;
-  friend class ExExeUtilFastDeleteTcb;
   friend class ExExeUtilHiveTruncateTcb;
   friend class ExExeUtilHiveQueryTcb;
   friend class ExExeUtilAQRTcb;
@@ -897,7 +898,7 @@ class ExExeUtilCreateTableAsTcb : public ExExeUtilTcb
     {
       INITIAL_,
       CREATE_,
-      DELETE_DATA_,
+      TRUNCATE_TABLE_,
       INSERT_SIDETREE_,
       INSERT_VSBB_,
       ALTER_TO_NOAUDIT_,
@@ -905,7 +906,7 @@ class ExExeUtilCreateTableAsTcb : public ExExeUtilTcb
       ALTER_TO_AUDIT_AND_INSERT_VSBB_,
       UPD_STATS_,
       DONE_,
-      HANDLE_ERROR_, DELETE_DATA_AND_ERROR_, ERROR_,
+      HANDLE_ERROR_, TRUNCATE_TABLE_AND_ERROR_, ERROR_,
       DROP_AND_ERROR_,
       DROP_AND_DONE_,
       INSERT_SIDETREE_EXECUTE_,
@@ -1019,10 +1020,10 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   static short dropVolatileSchema(ContextCli * currContext,
                                   char * schemaName,
                                   CollHeap * heap,
-                                  ex_globals *globals = NULL,
-                                  ComDiagsArea * diagsArea = NULL);
+                                  ComDiagsArea *&diagsArea,
+                                  ex_globals *globals = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
-  short dropHiveTempTablesForCSEs(ComDiagsArea * diagsArea = NULL);
+  short dropHiveTempTablesForCSEs();
 
  private:
   enum Step
@@ -1353,141 +1354,6 @@ class ExExeUtilLoadVolatileTablePrivateState : public ex_tcb_private_state
  public:
   ExExeUtilLoadVolatileTablePrivateState();
   ~ExExeUtilLoadVolatileTablePrivateState();        // destructor
- protected:
-};
-
-// -----------------------------------------------------------------------
-// ExExeUtilFastDeleteTdb
-// -----------------------------------------------------------------------
-class ExExeUtilFastDeleteTdb : public ComTdbExeUtilFastDelete
-{
- public:
-
-  // ---------------------------------------------------------------------
-  // Constructor is only called to instantiate an object used for
-  // retrieval of the virtual table function pointer of the class while
-  // unpacking. An empty constructor is enough.
-  // ---------------------------------------------------------------------
-  ExExeUtilFastDeleteTdb()
-    {}
-
-  virtual ~ExExeUtilFastDeleteTdb()
-    {}
-
-  // ---------------------------------------------------------------------
-  // Build a TCB for this TDB. Redefined in the Executor project.
-  // ---------------------------------------------------------------------
-  virtual ex_tcb *build(ex_globals *globals);
-
- private:
-  // ---------------------------------------------------------------------
-  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
-  // *********************************************************************
-  // The Executor TDB's are only used for the sole purpose of providing a
-  // way to supplement the Compiler TDB's (in comexe) with methods whose
-  // implementation depends on Executor objects. This is done so as to
-  // decouple the Compiler from linking in Executor objects unnecessarily.
-  //
-  // When a Compiler generated TDB arrives at the Executor, the same data
-  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
-  // a requirement that a Compiler TDB has the same object layout as its
-  // corresponding Executor TDB. As a result of this, all Executor TDB's
-  // must have absolutely NO data members, but only member functions. So,
-  // if you reach here with an intention to add data members to a TDB, ask
-  // yourself two questions:
-  //
-  // 1. Are those data members Compiler-generated?
-  //    If yes, put them in the ComTdbDLL instead.
-  //    If no, they should probably belong to someplace else (like TCB).
-  //
-  // 2. Are the classes those data members belong defined in the executor
-  //    project?
-  //    If your answer to both questions is yes, you might need to move
-  //    the classes to the comexe project.
-  // ---------------------------------------------------------------------
-};
-
-///////////////////////////////////////////////////////////////
-// ExExeUtilFastDeleteTcb
-///////////////////////////////////////////////////////////////
-class ExExeUtilFastDeleteTcb : public ExExeUtilTcb
-{
- public:
-  // Constructor
-  ExExeUtilFastDeleteTcb(const ComTdbExeUtilFastDelete & exe_util_tdb,
-                         ex_globals * glob = 0);
-
-  ~ExExeUtilFastDeleteTcb();
-
-  virtual short work();
-
-  virtual ex_tcb_private_state * allocatePstates(
-                                                            Lng32 &numElems,      // inout, desired/actual elements
-                                                            Lng32 &pstateLength); // out, length of one element
-
- private:
-  enum Step
-    {
-      INITIAL_,
-
-      ADD_DDL_LOCK_,
-      MAKE_OBJECT_OFFLINE_,
-      SET_CORRUPT_BIT_,
-
-      FASTDEL_TABLE_,
-      FASTDEL_INDEX_,
-
-      RESET_CORRUPT_BIT_,
-      MAKE_OBJECT_ONLINE_,
-      DROP_DDL_LOCK_,
-
-      BEGIN_WORK_,
-      COMMIT_WORK_,
-
-      PURGEDATA_CAT_,
-
-      KILL_MXCMP_AND_ERROR_,
-      ROLLBACK_WORK_AND_ERROR_,
-      ROLLBACK_WORK_AND_NO_PD_ERROR_,
-      ERROR_,
-
-      DONE_
-    };
-
-  ExExeUtilFastDeleteTdb & fdTdb() const
-    {return (ExExeUtilFastDeleteTdb &) tdb;};
-
-  short doPurgedataCat(char * objectName);
-  short doFastDelete(char * objectName,
-                     NABoolean isIndex,
-                     NABoolean fastDelUsingResetEOF);
-  short doLabelPurgedata(char * objectName,
-                         NABoolean isIndex);
-  
-  short injectError(const char * val);
-
-  
-  short purgedataLOBs();
-  
-
-  Step step_;
-
-  NABoolean fastDelUsingResetEOF_;
-
-  NABoolean xnWasStarted_;
-
-  NABoolean parallelDeleteDone_;
-
-  char failReason_[2000];
-};
-
-class ExExeUtilFastDeletePrivateState : public ex_tcb_private_state
-{
-  friend class ExExeUtilFastDeleteTcb;
-
- public:
-  ExExeUtilFastDeletePrivateState();
-  ~ExExeUtilFastDeletePrivateState();        // destructor
  protected:
 };
 
@@ -2498,9 +2364,16 @@ private:
     const char *schName,
     const char *objName);
 
+  Int32 colPrivsFrag(
+    const char *authName,
+    const char *catName,
+    const NAString &privWhereClause,
+    NAString &colPrivsStmt);
+
   NAString getGrantedPrivCmd(
     const NAString &roleList,
-    const char * cat);
+    const char * cat,
+    const NAString &inColumn = NAString("object_uid"));
 
   char * getRoleList(
     const Int32 userID,
@@ -3073,6 +2946,7 @@ public:
   ExLobStats lobStats_;
   char statusString_[200];
   fstream indata_;
+  char lobLockId_[LOB_LOCK_ID_SIZE];
   ExLobGlobals *exLobGlobals_;
 };
 // -----------------------------------------------------------------------
@@ -3345,9 +3219,15 @@ virtual ex_tcb_private_state *
        Lng32 &pstateLength); // out, length of one element
 
 protected:
-  Lng32 getFSTypeFromHiveColType(const char* hiveType);
-  Lng32 getLengthFromHiveColType(const char* hiveType);
-
+  Lng32 getTypeAttrsFromHiveColType(const char* hiveType,
+                                    NABoolean isORC,
+                                    Lng32 &fstype,
+                                    Lng32 &length,
+                                    Lng32 &precision,
+                                    Lng32 &scale,
+                                    char *sqlType,
+                                    char *displayType,
+                                    char *charset);
   enum Step
   {
     INITIAL_,
@@ -3451,23 +3331,23 @@ class ExExeUtilHiveTruncateTdb : public ComTdbExeUtilHiveTruncate
 };
 
 ///////////////////////////////////////////////////////////////
-// ExExeUtilHiveTruncateTcb
+// ExExeUtilHiveTruncateLegacyTcb
 ///////////////////////////////////////////////////////////////
-class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
+class ExExeUtilHiveTruncateLegacyTcb : public ExExeUtilTcb
 {
  public:
   // Constructor
-  ExExeUtilHiveTruncateTcb(const ComTdbExeUtilHiveTruncate & exe_util_tdb,
+  ExExeUtilHiveTruncateLegacyTcb(const ComTdbExeUtilHiveTruncate & exe_util_tdb,
                            ex_globals * glob = 0);
 
-  ~ExExeUtilHiveTruncateTcb();
+  ~ExExeUtilHiveTruncateLegacyTcb();
 
   virtual void freeResources();
   virtual short work();
 
   virtual ex_tcb_private_state * allocatePstates(
-                                                            Lng32 &numElems,      // inout, desired/actual elements
-                                                            Lng32 &pstateLength); // out, length of one element
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
   virtual Int32 fixup();
  private:
   enum Step
@@ -3490,6 +3370,52 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
   ExLobGlobals * lobGlob_;
 };
 
+class ExExeUtilHiveTruncateLegacyPrivateState : public ex_tcb_private_state
+{
+  friend class ExExeUtilHiveTruncateLegacyTcb;
+
+ public:
+  ExExeUtilHiveTruncateLegacyPrivateState();
+  ~ExExeUtilHiveTruncateLegacyPrivateState();        // destructor
+ protected:
+};
+
+///////////////////////////////////////////////////////////////
+// ExExeUtilHiveTruncateTcb
+///////////////////////////////////////////////////////////////
+class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
+{
+ public:
+  // Constructor
+  ExExeUtilHiveTruncateTcb(const ComTdbExeUtilHiveTruncate & exe_util_tdb,
+                                ex_globals * glob = 0);
+
+  ~ExExeUtilHiveTruncateTcb();
+
+  virtual ex_tcb_private_state * allocatePstates(
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
+  virtual void freeResources();
+  virtual short work();
+
+ private:
+  enum Step
+    {
+      INITIAL_,
+      ALTER_TO_MANAGED_,
+      TRUNCATE_TABLE_,
+      ALTER_TO_EXTERNAL_,
+      ALTER_TO_EXTERNAL_AND_ERROR_,
+      ERROR_,
+      DONE_
+    };
+
+  ExExeUtilHiveTruncateTdb & htTdb() const
+    {return (ExExeUtilHiveTruncateTdb &) tdb;};
+
+  Step step_;
+};
+
 class ExExeUtilHiveTruncatePrivateState : public ex_tcb_private_state
 {
   friend class ExExeUtilHiveTruncateTcb;
@@ -3500,75 +3426,29 @@ class ExExeUtilHiveTruncatePrivateState : public ex_tcb_private_state
  protected:
 };
 
-// -----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////
 // ExExeUtilHiveQueryTdb
-// -----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////
 class ExExeUtilHiveQueryTdb : public ComTdbExeUtilHiveQuery
 {
  public:
-
-  // ---------------------------------------------------------------------
-  // Constructor is only called to instantiate an object used for
-  // retrieval of the virtual table function pointer of the class while
-  // unpacking. An empty constructor is enough.
-  // ---------------------------------------------------------------------
   ExExeUtilHiveQueryTdb()
     {}
-
   virtual ~ExExeUtilHiveQueryTdb()
     {}
-
-  // ---------------------------------------------------------------------
-  // Build a TCB for this TDB. Redefined in the Executor project.
-  // ---------------------------------------------------------------------
   virtual ex_tcb *build(ex_globals *globals);
-
  private:
-  // ---------------------------------------------------------------------
-  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
-  // *********************************************************************
-  // The Executor TDB's are only used for the sole purpose of providing a
-  // way to supplement the Compiler TDB's (in comexe) with methods whose
-  // implementation depends on Executor objects. This is done so as to
-  // decouple the Compiler from linking in Executor objects unnecessarily.
-  //
-  // When a Compiler generated TDB arrives at the Executor, the same data
-  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
-  // a requirement that a Compiler TDB has the same object layout as its
-  // corresponding Executor TDB. As a result of this, all Executor TDB's
-  // must have absolutely NO data members, but only member functions. So,
-  // if you reach here with an intention to add data members to a TDB, ask
-  // yourself two questions:
-  //
-  // 1. Are those data members Compiler-generated?
-  //    If yes, put them in the ComTdbDLL instead.
-  //    If no, they should probably belong to someplace else (like TCB).
-  //
-  // 2. Are the classes those data members belong defined in the executor
-  //    project?
-  //    If your answer to both questions is yes, you might need to move
-  //    the classes to the comexe project.
-  // ---------------------------------------------------------------------
 };
-
-///////////////////////////////////////////////////////////////
-// ExExeUtilHiveQueryTcb
-///////////////////////////////////////////////////////////////
 class ExExeUtilHiveQueryTcb : public ExExeUtilTcb
 {
  public:
-  // Constructor
   ExExeUtilHiveQueryTcb(const ComTdbExeUtilHiveQuery & exe_util_tdb,
                         ex_globals * glob = 0);
-
   ~ExExeUtilHiveQueryTcb();
-
   virtual short work();
-
   virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
-
  private:
   enum Step
     {
@@ -3577,23 +3457,18 @@ class ExExeUtilHiveQueryTcb : public ExExeUtilTcb
       PROCESS_QUERY_,
       DONE_
     };
-
   ExExeUtilHiveQueryTdb & htTdb() const
     {return (ExExeUtilHiveQueryTdb &) tdb;};
-
   Step step_;
 };
-
 class ExExeUtilHiveQueryPrivateState : public ex_tcb_private_state
 {
   friend class ExExeUtilHiveQueryTcb;
-
  public:
   ExExeUtilHiveQueryPrivateState();
   ~ExExeUtilHiveQueryPrivateState();        // destructor
  protected:
 };
-
 //////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------
 // ExExeUtilHbaseLoadTdb
@@ -3888,7 +3763,6 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   Int64 endTime_;
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
-  SequenceFileWriter* sequenceFileWriter_;
   NAList<struct snapshotStruct *> * snapshotsList_;
   NABoolean emptyTarget_;
   NABoolean oneFile_;

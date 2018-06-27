@@ -1521,7 +1521,10 @@ NATable *BindWA::getNATable(CorrName& corrName,
           ((bindWA->inViewDefinition()) ||
            (bindWA->inMVDefinition())))
       {
-        if (! CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
+        // for Histogram, support to use VOLATILE SCHEMA
+        // or else, don't support
+        if (!corrName.getQualifiedNameObj().isHistogramTable() && 
+            !CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
             (corrName.getQualifiedNameObj()))
         {
           bindWA->setErrStatus();
@@ -1650,7 +1653,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
   if ((table) && 
-      (table->isExternalTable() && 
+      (table->isTrafExternalTable() && 
        (NOT table->getTableName().isHbaseMappedName()) &&
        (! bindWA->allowExternalTables())))    
     {
@@ -1664,7 +1667,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // If the table is an external table and has an associated native table, 
   // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->isExternalTable() &&
+  if ((table) && table->isTrafExternalTable() &&
       (NOT table->getTableName().isHbaseMappedName()))
     {
       NAString adjustedName =ComConvertTrafNameToNativeName 
@@ -2116,6 +2119,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
     }
 
   Parser parser(bindWA->currentCmpContext());
+  parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
   ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                        naTable->getViewLen(),
                                        naTable->getViewTextCharSet());
@@ -6094,8 +6098,11 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if (prevScope)
     inRowSubquery = prevScope->context()->inRowSubquery();
 
+  NABoolean groupByAggNodeAdded = FALSE;
   if (inRowSubquery && (CmpCommon::getDefault(COMP_BOOL_137) == DF_OFF))
-      addOneRowAggregates(bindWA);
+    // force adding one row aggregates in the [last 0] case
+    groupByAggNodeAdded = addOneRowAggregates(bindWA, 
+                            getFirstNRows() == -2 /* [last 0] case */);
 
   returnedRoot = 
     transformGroupByWithOrdinalPhase2(bindWA);
@@ -6665,36 +6672,79 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if ((getFirstNRows() != -1) ||
        (getFirstNRowsParam()))
     {
-      // create a firstN node to retrieve firstN rows.
-      FirstN * firstn = new(bindWA->wHeap())
-        FirstN(child(0), getFirstNRows(), needFirstSortedRows(), getFirstNRowsParam());   
+      // [first/any/last N] processing
 
-      firstn->bindNode(bindWA);
-      if (bindWA->errStatus())
-        return NULL;
+      RelExpr * nodeToInsertUnder = this;
+      if (inRowSubquery)
+        {
+          // [first/any/last N] in a row subquery special case
+          //
+          // In this case, if N > 1 it is first/any N, and we can simply
+          // ignore that as row subqueries already enforce an at-most-one
+          // row semantic. For [first 1], [last 1], [last 0], we need to
+          // add the node below any one-row aggregate group by node created
+          // earlier in this method. (If it put it above that group by node,
+          // that is too late; the one-row aggregate will raise an 8401 error
+          // before our FirstN node has a chance to narrow the result down to
+          // zero or one rows.) There is an interesting nuance with [last 0]:
+          // We forced the addition of a one-row aggregate group by node
+          // in that case, because [last 0] returns no rows. We might have
+          // a scalar aggregate subquery which ordinarily would not require
+          // a one-row aggregate group, but when [last 0] is present we want
+          // to force the aggregates to become NULL. Adding a one-row 
+          // aggregate group on top of the scalar aggregate, with the FirstN
+          // node in between them does the trick.
+          if (groupByAggNodeAdded &&
+               ( (getFirstNRows() == 1) ||   // [first 1] or [any 1]
+                 (getFirstNRows() == -2) ||  // [last 0]
+                 (getFirstNRows() == -3) ) ) // [last 1]
+            {
+              nodeToInsertUnder = child(0);
+              CMPASSERT(nodeToInsertUnder->getOperatorType() == REL_GROUPBY);             
+            }
+          else if (!groupByAggNodeAdded && (getFirstNRows() == -2))  // [last 0]
+            {
+              CMPASSERT(groupByAggNodeAdded);  // a GroupByAgg should have been forced
+            }
+          else  // a case where we can throw the [first/any/last N] away
+            {
+              nodeToInsertUnder = NULL;
+            }
+        }
+          
+      if (nodeToInsertUnder)
+        {
+          // create a firstN node to retrieve firstN rows.
+          FirstN * firstn = new(bindWA->wHeap())
+            FirstN(nodeToInsertUnder->child(0), getFirstNRows(), needFirstSortedRows(), getFirstNRowsParam());   
 
-      // Note: For ORDER BY + [first n], we want to sort the rows before 
-      // picking just n of them. (We don't do this for [any n].) We might
-      // be tempted to copy the orderByTree into the FirstN node at this
-      // point, but this doesn't work. Instead, we copy the bound ValueIds
-      // at normalize time. We have to do this in case there are expressions
-      // involved in the ORDER BY and there is a DESC. The presence of the
-      // Inverse node at the top of the expression tree seems to cause the
-      // expressions underneath to be bound to different ValueIds, which 
-      // causes coverage tests in FirstN::createContextForAChild requirements
-      // generation to fail. An example of where this occurs is:
-      //
-      // prepare s1 from
-      //   select [first 2] y, x from
-      //    (select a,b + 26 from t1) as t(x,y)
-      //   order by y desc;
-      //
-      // If we copy the ORDER BY ItemExpr tree and rebind, we get a different
-      // ValueId for the expression b + 26 in the child characteristic outputs
-      // than what we get for the child of Inverse in Inverse(B + 26). The
-      // trick of copying the already-bound ORDER BY clause later avoids this.
+          firstn->bindNode(bindWA);
+          if (bindWA->errStatus())
+            return NULL;
 
-      setChild(0, firstn);
+          // Note: For ORDER BY + [first n], we want to sort the rows before 
+          // picking just n of them. (We don't do this for [any n].) We might
+          // be tempted to copy the orderByTree into the FirstN node at this
+          // point, but this doesn't work. Instead, we copy the bound ValueIds
+          // at normalize time. We have to do this in case there are expressions
+          // involved in the ORDER BY and there is a DESC. The presence of the
+          // Inverse node at the top of the expression tree seems to cause the
+          // expressions underneath to be bound to different ValueIds, which 
+          // causes coverage tests in FirstN::createContextForAChild requirements
+          // generation to fail. An example of where this occurs is:
+          //
+          // prepare s1 from
+          //   select [first 2] y, x from
+          //    (select a,b + 26 from t1) as t(x,y)
+          //   order by y desc;
+          //
+          // If we copy the ORDER BY ItemExpr tree and rebind, we get a different
+          // ValueId for the expression b + 26 in the child characteristic outputs
+          // than what we get for the child of Inverse in Inverse(B + 26). The
+          // trick of copying the already-bound ORDER BY clause later avoids this.
+
+          nodeToInsertUnder->setChild(0, firstn);
+        }
 
       // reset firstN indication in the root node.
       setFirstNRows(-1);
@@ -7706,8 +7756,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
         stoi_->setDeleteAccess();
         if (((GenericUpdate*)re)->isMerge())
           stoi_->setInsertAccess();
-        if (((Delete*)re)->isFastDelete())
-          stoi_->setSelectAccess();
       }
       break;
     case REL_SCAN:
@@ -10379,7 +10427,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           // column. COM_CURRENT_DEFAULT is only used for Datetime
           // columns.
           //
-          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT) {
+          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT || nacol->getDefaultClass() == COM_CURRENT_UT_DEFAULT 
+             || nacol->getDefaultClass() == COM_UUID_DEFAULT) {
             castType = nacol->getType()->newCopy(bindWA->wHeap());
             omittedCurrentDefaultClassCols = TRUE;
             omittedDefaultCols = TRUE;
@@ -10398,7 +10447,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
           Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
           Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-
           defaultValueExpr = parser.getItemExprTree(defaultValueStr);
           CMPASSERT(defaultValueExpr);
 
@@ -10454,6 +10502,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             Assign(target.getItemExpr(), defaultValueExpr,
                     FALSE /*Not user Specified */);
           if ((nacol->getDefaultClass() != COM_CURRENT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_CURRENT_UT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_FUNCTION_DEFINED_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_UUID_DEFAULT) &&
               (nacol->getDefaultClass() != COM_USER_FUNCTION_DEFAULT))
              assign->setToBeSkipped(TRUE);
           assign->bindNode(bindWA);
@@ -11981,7 +12032,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
   // Triggers --
   
-  if ((NOT isFastDelete()) && (NOT noIMneeded()))
+  if (NOT noIMneeded())
     boundExpr = handleInlining(bindWA, boundExpr);
   else if (hbaseOper() && (getGroupAttr()->isEmbeddedUpdateOrDelete()))
   {
@@ -12883,16 +12934,10 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
 
     // If this is not an INTERNAL REFRESH command, make sure the MV is
     // initialized and available.
-    // If this is FastDelete using parallel purgedata, do not enforce
-    // that MV is initialized.
     if (!bindWA->isBindingMvRefresh())
     {
-      if (NOT ((getOperatorType() == REL_UNARY_DELETE) &&
-               (((Delete*)this)->isFastDelete())))
-        {
-          if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
-            return NULL;
-        }
+      if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
+        return NULL;
     }
   }
 
@@ -14652,12 +14697,9 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
 
   if (! describedTableName_.getQualifiedNameObj().getObjectName().isNull())
     {
-      if ((getFormat() >= CONTROL_FIRST_) &&
-          (getFormat() <= CONTROL_LAST_))
-        {
+       if (getIsControl())
           describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
-        }
-      else
+        if (NOT getIsControl())
         {
           // do not override schema for showddl
           bindWA->setToOverrideSchema(FALSE);  
@@ -14666,27 +14708,20 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
           // describedTableName_ is qualified by getNATable
           if (describedTableName_.getQualifiedNameObj().getSchemaName().isNull())
             setToTryPublicSchema(TRUE);
-      
-          bindWA->getNATable(describedTableName_);
-          if (bindWA->errStatus()) 
+
+          if ((getFormat() == Describe::INVOKE_) ||
+              (getFormat() == Describe::SHOWDDL_) &&
+              (getLabelAnsiNameSpace() == COM_TABLE_NAME) &&
+              (NOT getIsSchema()))
             {
-              // if volatile related error, return it.
-              // Otherwise, clear diags and let this error be caught
-              // when describe is executed.
-              if ((CmpCommon::diags()->mainSQLCODE() == -4190) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4191) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4192) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4193) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
-                  (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
-                  (CmpCommon::diags()->mainSQLCODE() == -4261) || // reserved schema
-                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
-                    return this;
-      
-              CmpCommon::diags()->clear();
-              bindWA->resetErrStatus();
+              bindWA->getNATableInternal(describedTableName_);
+              if (bindWA->errStatus())
+                {
+                  return this;
+                }
             }
+          else
+            describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
         }
       if (pUUDFName_ NEQ NULL AND NOT pUUDFName_->getObjectName().isNull())
       {
@@ -17225,6 +17260,18 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           result->setArity(getArity());
           for (int i=0; i<getArity(); i++)
             result->child(i) = child(i);
+
+          if (opType == REL_TABLE_MAPPING_BUILTIN_LOG_READER ||
+              opType == REL_TABLE_MAPPING_BUILTIN_JDBC)
+            {
+              // The event log reader and JDBC TMUDFs are being migrated
+              // to real UDFs, use of the predefined UDFs is deprecated.
+              // Issue a warning. Eventually these predefined functions
+              // will be removed.
+              (*CmpCommon::diags())
+                << DgSqlCode(4323)
+                << DgString0(tmfuncName.getExposedNameAsAnsiString());
+            }
 
           // Abandon the current node and return the bound new node.
           // Next time it will reach this method it will call an

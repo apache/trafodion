@@ -68,6 +68,7 @@ extern std::string CAT_SQL_HDFS_SEQ_FILE_READER;
 extern std::string CAT_SQL_HDFS_SEQ_FILE_WRITER;
 extern std::string CAT_SQL_HDFS_ORC_FILE_READER;
 extern std::string CAT_SQL_HBASE;
+extern std::string CAT_SQL_HDFS;
 
 class ComDiagsArea;
 

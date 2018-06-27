@@ -19,6 +19,8 @@
 --
 -- @@@ END COPYRIGHT @@@
 
+set schema hive.hive;
+
 drop table customer_ddl;
 create external table customer_ddl
 (

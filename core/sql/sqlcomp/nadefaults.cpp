@@ -424,6 +424,9 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
   DDkwd__(ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS, "OFF"),
 
+  // Allow users to grant privileges to role using the with grant option
+  DDkwd__(ALLOW_WGO_FOR_ROLES,                  "ON"),
+
   DDSkwd__(ALTPRI_ESP,                          ""),
   DDSkwd__(ALTPRI_MASTER,	                ""),
 
@@ -626,7 +629,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_154,      "OFF"),
   DDkwd__(COMP_BOOL_155,      "OFF"),
   DDkwd__(COMP_BOOL_156,      "ON"),  // Used by RTS to turn on RTS Stats collection for ROOT operators
-  DDkwd__(COMP_BOOL_158,      "OFF"),
+  DDkwd__(COMP_BOOL_158,      "ON"),  // ON --> allows equijoins on VARCHAR/VARCHAR and CHAR/VARCHAR to be rewritten as VEGPreds
   DDkwd__(COMP_BOOL_159,      "OFF"),
 
   DDkwd__(COMP_BOOL_160,      "OFF"),
@@ -1154,7 +1157,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  SDDui___(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,	"100"),
 
- SDDui___(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,	"100"),
+ SDDui___(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,	"1024"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
@@ -1217,8 +1220,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(FAKE_VOLUME_ASSIGNMENTS,		"OFF"),
   DDui1__(FAKE_VOLUME_NUM_VOLUMES,              "24"),
-
-  DDkwd__(FAST_DELETE,                          "OFF"),
 
  // upper and lower limit (2,10) must be in sync with error values in 
  //ExFastTransport.cpp
@@ -1493,6 +1494,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDui1__(HDFS_IO_BUFFERSIZE,                            "65536"),
   DDui___(HDFS_IO_BUFFERSIZE_BYTES,               "0"),
+  DDui___(HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB,    "1024"),
   // The value 0 denotes RangeTail = max record length of table.
   DDui___(HDFS_IO_RANGE_TAIL,                     "0"),
   DDkwd__(HDFS_PREFETCH,                           "ON"),
@@ -1632,6 +1634,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DD_____(HIVE_CATALOG,                                ""),
 
+  DDkwd__(HIVE_CTAS_IN_NATIVE_MODE,             "OFF"),
+
   DDkwd__(HIVE_DATA_MOD_CHECK,                  "ON"),
 
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),
@@ -1741,21 +1745,26 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
- // Size in bytes  used to perform garbage collection  to lob data file 
-  // default size is 5GB   . Change to adjust disk usage. If 0 it means
- // don't do GC
-  DDint__(LOB_GC_LIMIT_SIZE,            "5000"),
+ // Size in MB  used to perform garbage collection  to lob data file 
+  // Recommended size is 20GB   . Change to adjust disk usage. If -1 it means
+ // don't do GC during insert/update operations. 
+  DDint__(LOB_GC_LIMIT_SIZE,            "-1"),
   
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
- 
-  DDint__(LOB_INPUT_LIMIT_FOR_BATCH,  "4096"),
+ // For JDBC/ODBC batch operations, LOB  size limited to 4K bytes
+  DDint__(LOB_INPUT_LIMIT_FOR_BATCH,  "16384"),
+ // Control the locking via RMS shared lock. This ensures the CLI and HDFS 
+ // operations for any LOB UID are done under a lock so concurrent operations 
+ // wont conflict and cause incosistent data. For non concurrent applications, 
+ // we can turn this off as a performance enhancement. 
+  DDkwd__(LOB_LOCKING,          "ON"),
    // Size of memoryin Megabytes  used to perform I/O to lob data file 
-  // default size is 512MB   . Change to adjust memory usage. 
-  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "512"), 
-  // default size is 10 G  (10000 M)
-  DDint__(LOB_MAX_SIZE,                         "10000"),
-  // (unused)default size is 32000. Change this to extract more data into memory.
+  // default size is 128MB   . Change to adjust memory usage. 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "128"), 
+  // default size is 5 G  (5120 M)
+  DDint__(LOB_MAX_SIZE,                         "5120"),
+  // default size is 32000bytes. Change this to extract more data into memory.
   DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
   DD_____(LOB_STORAGE_FILE_DIR,                 "/user/trafodion/lobs"), 
@@ -1915,7 +1924,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDui___(MEMORY_LIMIT_QCACHE_UPPER_KB,        "0"),
   // Checked at compile time. Set to -1 to disable check.
   // Value should be >= EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB
-  DDint__(MEMORY_LIMIT_ROWSET_IN_MB,         "500"),
+  DDint__(MEMORY_LIMIT_ROWSET_IN_MB,         "1024"),
 
   // SQL/MX Compiler/Optimzer Memory Monitor.
   DDkwd__(MEMORY_MONITOR,			"OFF"),
@@ -2702,6 +2711,12 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   // SQ_SEAMONSTER which will have a value of 0 or 1.
   DDkwd__(SEAMONSTER,                  "SYSTEM"),
 
+  // If the inner table of a semi-join has fewer rows than this,
+  // we'll allow it to be transformed to a join.
+  DDflt1_(SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE,  "100.0"),
+ // Ratio of right child cardinality to uec above which semijoin 
+ // trans. is favored.
+  DDflt1_(SEMIJOIN_TO_INNERJOIN_REDUCTION_RATIO,  "5.0"),
  SDDkwd__(SEMIJOIN_TO_INNERJOIN_TRANSFORMATION, "SYSTEM"),
   // Disallow/Allow semi and anti-semi joins in MultiJoin framework
   DDkwd__(SEMI_JOINS_SPOIL_JBB,        "OFF"),
@@ -2844,7 +2859,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
  
- 
   DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
@@ -2852,6 +2866,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
  
   DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
+  DDkwd__(TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT, "OFF"),   
 
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
@@ -2872,7 +2888,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
   DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
- 
+
+  DDkwd__(TRAF_DDL_ON_HIVE_OBJECTS,             "ON"),
+
   DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
   DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
@@ -2908,15 +2926,22 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
 
+  DDkwd__(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL,    "ON"),
+
   // max size in bytes of a char or varchar column. Set to 16M
   DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
   DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
+  // max size in MB of a row that canbe accomodated  in scanner cache when 
+  // using th the default scanner cache size. 
+  DDint__(TRAF_MAX_ROWSIZE_IN_CACHE,     "10"),
 
   DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
   DDkwd__(TRAF_NO_DTM_XN,      "OFF"),
+
+  DDkwd__(TRAF_NO_HBASE_DROP_CREATE,                   "OFF"),
 
   DDint__(TRAF_NUM_HBASE_VERSIONS,                     "0"),
 
@@ -3032,6 +3057,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USE_HIVE_SOURCE,            ""),
   // Use large queues on RHS of Flow/Nested Join when appropriate
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
+
+  DDkwd__(USE_LIBHDFS_SCAN,                     "OFF"),
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
 
@@ -5108,7 +5135,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             val = "OFF";
                     
           insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
-          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
                     
           NAString csVal;
           if (value == "ON")
@@ -5431,7 +5457,32 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
          }
      }
      break;
+      case LOB_GC_LIMIT_SIZE:
+        if ((atoi(value.data()) < -1)   ||  (((atoi(value.data()) >0) && (atoi(value.data())) <= 512)))
+          {
+            *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+          }
+        break;
 
+      case LOB_MAX_CHUNK_MEM_SIZE:
+        if (atoi(value.data()) < 0  ||  atoi(value.data()) >  5120)
+	 {
+            *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+          }
+        break;
+
+      case LOB_INPUT_LIMIT_FOR_BATCH:
+        if (atoi(value.data()) <0  && (atoi(value.data())*1024) > INT_MAX )
+          {
+            *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+          }
+        break;
     default:  
     break;
     }
@@ -6470,20 +6521,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         isValid = TRUE;
     break;
 
-    case LOB_OUTPUT_SIZE:
-      if (tok >=0  && tok <= 512000)
-	isValid = TRUE;
-      break;
-
-    case LOB_MAX_CHUNK_MEM_SIZE:
-      if (tok >=0  && tok <= 512000)
-	isValid = TRUE;
-      break;
-
-    case LOB_GC_LIMIT_SIZE:
-      if (tok >= 0 )
-        isValid=TRUE;
-
     case TRAF_TRANS_TYPE:
       if (tok  == DF_MVCC || tok == DF_SSCC)
         isValid = TRUE;
@@ -6786,8 +6823,7 @@ void NADefaults::setSchemaAsLdapUser(const NAString val)
     insert(SCHEMA, schName);
   }
   else
-  {
-		*CmpCommon::diags() << DgSqlCode(-2055)
+  {		*CmpCommon::diags() << DgSqlCode(-2055)
 			<< DgString0(schName)
 			<< DgString1("SCHEMA");
   }

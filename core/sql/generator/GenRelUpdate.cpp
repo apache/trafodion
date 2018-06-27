@@ -1200,7 +1200,7 @@ short HbaseDelete::codeGen(Generator * generator)
   if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
-  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
+  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa,rowIdAsciiRowLen) ;
 
   // create hdfsscan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 
@@ -2163,7 +2163,7 @@ short HbaseUpdate::codeGen(Generator * generator)
   if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
-  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
+  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa,asciiRowLen) ;
 
 
   // create hdfsscan_tdb
@@ -2945,6 +2945,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	// without code change
 	if (loadFlushSizeinRows >= USHRT_MAX/2)
 	  loadFlushSizeinRows = ((USHRT_MAX/2)-1);
+	else if (loadFlushSizeinRows < 1)  // make sure we don't fall to zero on really long rows
+	  loadFlushSizeinRows = 1;
 	hbasescan_tdb->setTrafLoadFlushSize(loadFlushSizeinRows);
 
         // For sample file, set the sample location in HDFS and the sampling rate.

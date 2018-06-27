@@ -503,7 +503,7 @@ Lng32 HSClearCLIDiagnostics()
 // Obtain any JNI diagnostic text stored in the CLI
 const char * HSFuncGetJniErrorStr()
 {
-  return GetCliGlobals()->currContext()->getJniErrorStrPtr();
+  return GetCliGlobals()->getJniErrorStr();
 }
 
 // -----------------------------------------------------------------------
@@ -5754,6 +5754,7 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
     SQLSTMT_ID* ppStmtId = ppCursor.getStmt();
     SQLDESC_ID* ppOutputDesc = ppCursor.getOutDesc();
     retcode = ppCursor.open();
+    HSFilterWarning(retcode);
     HSHandleError(retcode);
 
     printPlanHeader(LM);

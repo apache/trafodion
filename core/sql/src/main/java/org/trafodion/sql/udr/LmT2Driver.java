@@ -195,6 +195,18 @@ public class LmT2Driver implements java.sql.Driver
     return false;
   }
 
+  // similar to acceptsURL, but a static method that checks for substrings
+  // acceptsURL is used by the DriverManager, this static method is used
+  // internally by Trafodion (JDBC TMUDF)
+  public static boolean checkURL( String url ) 
+  {
+    for (int i = 0; i < acceptedURLs.length; i++)
+      if (url.indexOf(acceptedURLs[i]) >= 0)
+        return true;
+
+    return false;
+  }
+
   public Connection connect( String url, java.util.Properties props )
       throws SQLException
   {

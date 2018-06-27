@@ -48,7 +48,8 @@ const CTrafConfigTrace::TraceArea_t CTrafConfigTrace::traceAreaList_[] =
     {"TC_TRACE_REGISTRY",        TC_TRACE_REGISTRY},
     {"TC_TRACE_INIT",            TC_TRACE_INIT},
     {"TC_TRACE_LOG_MSG",         TC_TRACE_LOG_MSG},
-    {"TC_TRACE_ENTRY_EXIT",      TC_TRACE_ENTRY_EXIT}
+    {"TC_TRACE_ENTRY_EXIT",      TC_TRACE_ENTRY_EXIT},
+    {"TC_TRACE_NAMESERVER",      TC_TRACE_NAMESERVER}
 };
 
 // Global trace flags
@@ -60,7 +61,7 @@ CTrafConfigTrace::CTrafConfigTrace()
                 , traceFileFb_(0)
                 , traceFileBase_(NULL)
 {
-    numTraceAreas_ = sizeof(traceAreaList_)/sizeof(TraceArea_t);
+    numTraceAreas_ = (int)(sizeof(traceAreaList_)/sizeof(TraceArea_t));
 }
 
 const char *CTrafConfigTrace::GetEnvStr(const char *key)

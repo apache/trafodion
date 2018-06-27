@@ -388,8 +388,10 @@ odbc_SQLsrvr_ExtractLob_param_res_(
                 , char *&buffer
                 , UInt32 & message_length
                 , const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
-                , IDL_long_long lobDataLen
-                , BYTE * lobDataValue
+                , IDL_short extractLobAPI
+                , IDL_long_long lobLength
+                , IDL_long_long extractLen
+                , BYTE * extractData
 );
 
 CEE_status

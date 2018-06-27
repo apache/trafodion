@@ -234,6 +234,106 @@ int CTcdbSqlite::AddLNodeData( int         nid
     return( TCSUCCESS );
 }
 
+int CTcdbSqlite::AddNameServer( const char *nodeName )
+{
+    const char method_name[] = "CTcdbSqlite::AddNameServer";
+    TRACE_ENTRY;
+
+    if ( !IsInitialized() )  
+    {
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Database is not initialized for access!\n"
+                        , method_name, __LINE__);
+        }
+        TRACE_EXIT;
+        return( TCNOTINIT );
+    }
+    
+    if (TcTraceSettings & (TC_TRACE_NAMESERVER | TC_TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d inserting into monRegNameServer values (node=%s)\n"
+                     , method_name, __LINE__
+                     , nodeName );
+    }
+
+    int rc;
+    const char *sqlStmt;
+    sqlStmt = "insert into monRegNameServer values (?, ?)";
+
+    sqlite3_stmt *prepStmt = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
+    if ( rc != SQLITE_OK )
+    {
+        char buf[TC_LOG_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s] prepare (%s) failed, error: %s\n"
+                , method_name, sqlStmt, sqlite3_errmsg(db_) );
+        TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+        TRACE_EXIT;
+        return( TCDBOPERROR );
+    }
+    else
+    {
+        rc = sqlite3_bind_text( prepStmt, 1, nodeName, -1, SQLITE_STATIC );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_text(nodeName) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_text( prepStmt, 2, nodeName, -1, SQLITE_STATIC );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_text(nodeName) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+
+        rc = sqlite3_step( prepStmt );
+        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
+         && ( rc != SQLITE_CONSTRAINT ) )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] (%s) failed, error: %s\n"
+                      "(nodeName=%s)\n"
+                    , method_name, sqlStmt, sqlite3_errmsg(db_) 
+                    , nodeName );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+    }
+
+    if ( prepStmt != NULL )
+    {
+        sqlite3_finalize( prepStmt );
+    }
+    TRACE_EXIT;
+    return( TCSUCCESS );
+}
+
 int CTcdbSqlite::AddPNodeData( const char *name
                              , int         pnid
                              , int         excludedFirstCore
@@ -928,6 +1028,90 @@ int CTcdbSqlite::Close( void )
     return( TCSUCCESS );
 }
 
+int CTcdbSqlite::DeleteNameServer( const char *nodeName )
+{
+    const char method_name[] = "CTcdbSqlite::DeleteNameServer";
+    TRACE_ENTRY;
+
+    if ( !IsInitialized() )  
+    {
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Database is not initialized for access!\n"
+                        , method_name, __LINE__);
+        }
+        TRACE_EXIT;
+        return( TCNOTINIT );
+    }
+
+    if (TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d delete from monRegNameServer, values (nodeName=%s)\n"
+                     , method_name, __LINE__
+                     , nodeName );
+    }
+
+    int rc;
+
+    const char *sqlStmt;
+    sqlStmt = "delete from monRegNameServer where monRegNameServer.keyName = ?";
+
+    sqlite3_stmt *prepStmt = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
+    if ( rc != SQLITE_OK )
+    {
+        char buf[TC_LOG_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s] prepare (%s) failed, error=%s\n"
+                , method_name, sqlStmt, sqlite3_errmsg(db_) );
+        TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+        TRACE_EXIT;
+        return( TCDBOPERROR );
+    }
+    else
+    {
+        rc = sqlite3_bind_text( prepStmt, 1, nodeName, -1, SQLITE_STATIC );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_text(nodeName) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+
+        rc = sqlite3_step( prepStmt );
+        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
+         && ( rc != SQLITE_CONSTRAINT ) )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] (%s) failed, nodeName=%s, error: %s\n"
+                    , method_name, sqlStmt, nodeName, sqlite3_errmsg(db_));
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+    }
+
+    if ( prepStmt != NULL )
+    {
+        sqlite3_finalize( prepStmt );
+    }
+    TRACE_EXIT;
+    return( TCSUCCESS );
+}
+
 int CTcdbSqlite::DeleteNodeData( int pnid )
 {
     const char method_name[] = "CTcdbSqlite::DeleteNodeData";
@@ -1188,6 +1372,11 @@ int CTcdbSqlite::Initialize( void )
         snprintf( dbase, sizeof(dbase)
                 , "%s/sql/scripts/sqconfig.db", getenv("TRAF_HOME"));
     }
+    if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+    {
+        trace_printf( "%s@%d Opening SQLite database file %s\n"
+                    , method_name, __LINE__, dbase );
+    }
     int rc = sqlite3_open_v2( dbase, &db_
                             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
                             , NULL);
@@ -1195,6 +1384,11 @@ int CTcdbSqlite::Initialize( void )
     {
         db_ = NULL;
 
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Opening SQLite database file sqconfig.db in current directory\n"
+                        , method_name, __LINE__ );
+        }
         // See if database is in current directory
         int rc2 = sqlite3_open_v2( "sqconfig.db", &db_
                                  , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
@@ -1238,6 +1432,152 @@ int CTcdbSqlite::Initialize( void )
             return( TCDBOPERROR );
         }
     }
+
+    TRACE_EXIT;
+    return( TCSUCCESS );
+}
+
+int CTcdbSqlite::GetNameServers( int *count, int max, char **nodeNames )
+{
+    const char method_name[] = "CTcdbSqlite::GetNameServers";
+    TRACE_ENTRY;
+
+    if ( !IsInitialized() )  
+    {
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Database is not initialized for access!\n"
+                        , method_name, __LINE__);
+        }
+        TRACE_EXIT;
+        return( TCNOTINIT );
+    }
+    
+
+    int  rc;
+
+    int  nodeCount = 0;
+    const char   *nodename = NULL;
+    const char   *sqlStmt;
+    sqlite3_stmt *prepStmt = NULL;
+    sqlStmt = "select p.keyName"
+              " from monRegNameServer p";
+
+    rc = sqlite3_prepare_v2( db_
+                           , sqlStmt
+                           , static_cast<int>(strlen(sqlStmt)+1)
+                           , &prepStmt
+                           , NULL);
+    if ( rc != SQLITE_OK )
+    {
+        char buf[TC_LOG_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s] prepare (%s) failed, error: %s\n"
+                , method_name, sqlStmt, sqlite3_errmsg(db_) );
+        TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+        TRACE_EXIT;
+        return( TCDBOPERROR );
+    }
+
+    // Process nameservers
+    while ( 1 )
+    {
+        rc = sqlite3_step( prepStmt );
+        if ( rc == SQLITE_ROW )
+        {  // Process row
+            if ( max == 0 )
+            {
+                nodeCount++;
+                continue;
+            }
+
+            int colCount = sqlite3_column_count(prepStmt);
+            if ( TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST) )
+            {
+                trace_printf("%s@%d sqlite3_column_count=%d\n",
+                             method_name, __LINE__, colCount);
+                for (int i=0; i<colCount; ++i)
+                {
+                    trace_printf("%s@%d column %d is %s\n",
+                                 method_name, __LINE__, i,
+                                 sqlite3_column_name(prepStmt, i));
+                }
+            }
+
+            if ( nodeCount < max )
+            {
+                nodename = (const char *) sqlite3_column_text(prepStmt, 0);
+                if (nodename)
+                {
+                    nodeNames[nodeCount] = new char[strlen(nodename)+1];
+                    strcpy(nodeNames[nodeCount], nodename);
+                }
+                else
+                    nodeNames[nodeCount] = NULL;
+                nodeCount++;
+            }
+            else
+            {
+                *count = nodeCount;
+                if ( prepStmt != NULL )
+                {
+                    sqlite3_finalize( prepStmt );
+                }
+                TRACE_EXIT;
+                return( TCDBTRUNCATE );
+            }
+        }
+        else if ( rc == SQLITE_DONE )
+        {
+            *count = nodeCount;
+            if ( TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST) )
+            {
+                trace_printf("%s@%d Finished processing nameservers.\n",
+                             method_name, __LINE__);
+            }
+            break;
+        }
+        else
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] (%s) failed, error: %s\n"
+                    , method_name, sqlStmt, sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+    }
+
+    if ( prepStmt != NULL )
+    {
+        sqlite3_finalize( prepStmt );
+    }
+    TRACE_EXIT;
+    return( TCSUCCESS );
+}
+
+int CTcdbSqlite::GetNameServer( const char *nodeName )
+{
+    const char method_name[] = "CTcdbSqlite::GetNameServer";
+    TRACE_ENTRY;
+
+    if ( !IsInitialized() )  
+    {
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Database is not initialized for access!\n"
+                        , method_name, __LINE__);
+        }
+        TRACE_EXIT;
+        return( TCNOTINIT );
+    }
+    nodeName = nodeName; // touch
+    return( TCNOTINIT );
 
     TRACE_EXIT;
     return( TCSUCCESS );
@@ -2142,7 +2482,6 @@ int CTcdbSqlite::GetSNodeData( int pnid
         }
     }
 
-    int  spnid;
     int  sparedpnid;
     int  spareCount = 0;
 
@@ -2165,7 +2504,6 @@ int CTcdbSqlite::GetSNodeData( int pnid
                 }
             }
 
-            spnid = sqlite3_column_int(prepStmt, 0);
             sparedpnid = sqlite3_column_int(prepStmt, 1);
             spareNodeConfig.spare_pnid[spareCount] = sparedpnid;
             spareCount++;

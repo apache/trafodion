@@ -119,6 +119,7 @@ extern int sdconn;
 extern int clientConnTimeOut;
 extern short stopOnDisconnect;
 extern int aggrInterval;
+extern int statisticsCacheSize;
 extern int queryPubThreshold;
 extern statistics_type statisticsPubType;
 extern bool bStatisticsEnabled;
@@ -342,10 +343,21 @@ public:
     {
         return my_queue.size();
     }
+
+    bool isEmpty(){
+        return my_queue.empty();
+    }
 };
 
 static Repos_Queue<REPOS_STATS> repos_queue;
 static bool record_session_done = true;
+
+//0:None 1:update 2:insert/upsert cache limit 3:achieve timeline
+
+#define REPOS_EXECUTE_NONE       0
+#define REPOS_EXECUTE_UPDATE     1
+#define REPOS_EXECUTE_CACHELIMIT 2
+#define REPOS_EXECUTE_TIMELINE   3
 
 static void* SessionWatchDog(void* arg)
 {
@@ -530,11 +542,41 @@ static void* SessionWatchDog(void* arg)
                 okToGo = false;
             }
         }
+        vector< vector<string> > query_list;
+        vector<string> session_start;
+        vector<string> statement_new_query;
+        vector<string> session_stat_aggregation;
 
+        session_start.push_back("upsert into Trafodion.\"_REPOS_\".metric_session_table values");
+        statement_new_query.push_back("insert into Trafodion.\"_REPOS_\".metric_query_table values");
+        session_stat_aggregation.push_back("insert into Trafodion.\"_REPOS_\".metric_query_aggr_table values");
 
-		while(!record_session_done && okToGo)
-		{
-			REPOS_STATS repos_stats = repos_queue.get_task();
+        query_list.push_back(session_start);
+        query_list.push_back(statement_new_query);
+        query_list.push_back(session_stat_aggregation);
+
+        int query_limit = statisticsCacheSize;
+        int time_limit = aggrInterval;
+        //0:None 1:update 2:insert/upsert cache limit 3:achieve timeline
+        int execute_flag = REPOS_EXECUTE_NONE;
+        int sleep_count = 0;
+
+        REPOS_STATS repos_stats;
+        while(!record_session_done && okToGo)
+        {
+            sleep_count = 0;
+            while(repos_queue.isEmpty() && (sleep_count < time_limit)){
+                sleep(1);
+                sleep_count++;
+            }
+
+            if(!repos_queue.isEmpty()){
+                repos_stats = repos_queue.get_task();
+            }else{
+                // go to executeDirect
+                execute_flag = REPOS_EXECUTE_TIMELINE;
+                goto execute;
+            }
 
 			ss.str("");
 			ss.clear();
@@ -550,7 +592,8 @@ static void* SessionWatchDog(void* arg)
 					break;
 				}
 
-				ss << "upsert into Trafodion.\"_REPOS_\".metric_session_table values(";
+				//upsert into Trafodion.\"_REPOS_\".metric_session_table values
+				ss << "(";
 				ss << pSessionInfo->m_instance_id << ",";
 				ss << pSessionInfo->m_tenant_id << ",";
 				ss << pSessionInfo->m_component_id << ",";
@@ -599,6 +642,24 @@ static void* SessionWatchDog(void* arg)
 				ss << pSessionInfo->m_authentication_connection_elapsed_time_mcsec << ",";
 				ss << pSessionInfo->m_authentication_elapsed_time_mcsec << ")";
 
+                execute_flag = REPOS_EXECUTE_NONE;
+                vector<string> *tmp = &query_list.at(0);
+                (*tmp).push_back(ss.str());
+                if ((*tmp).size() > query_limit)
+                {
+                    //go executeDirect
+                    execute_flag = REPOS_EXECUTE_CACHELIMIT;
+                    execStr ="";
+                    vector<string>::iterator it = (*tmp).begin();
+                    execStr += *it +  *(it + 1);
+                    it += 2;
+                    for(; it != (*tmp).end(); it++)
+                    {
+                        execStr+= "," + *it;
+                    }
+                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+                }
+
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION)
 			{
@@ -612,7 +673,8 @@ static void* SessionWatchDog(void* arg)
 				}
                                 lastUpdatedTime = JULIANTIMESTAMP();
 
-				ss << "insert into Trafodion.\"_REPOS_\".metric_query_table values(";
+				//ss << "insert into Trafodion.\"_REPOS_\".metric_query_table values(";
+                                ss << "(";
 				ss << pQueryAdd->m_instance_id << ",";
 				ss << pQueryAdd->m_tenant_id << ",";
 				ss << pQueryAdd->m_component_id << ",";
@@ -761,6 +823,25 @@ static void* SessionWatchDog(void* arg)
 
                                 ss <<")";
 
+                                execute_flag = REPOS_EXECUTE_NONE;
+                                vector<string> *tmp = &query_list.at(1);
+                                (*tmp).push_back(ss.str());
+                                if ((*tmp).size() > query_limit)
+                                {
+                                    //go executeDirect
+                                    execute_flag = REPOS_EXECUTE_CACHELIMIT;
+                                    execStr ="";
+                                    vector<string>::iterator it = (*tmp).begin();
+                                    execStr += *it;
+                                    execStr += *(it + 1);
+                                    it += 2;
+                                    for(; it != (*tmp).end(); it++)
+                                    {
+                                        execStr+= "," + *it;
+                                    }
+                                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+                                }
+
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_UPDATE_QUERYEXECUTION)
 			{
@@ -833,6 +914,11 @@ static void* SessionWatchDog(void* arg)
                                 ss << "LAST_UPDATED_TIME= CONVERTTIMESTAMP(" << lastUpdatedTime << ")";
 				ss << " where QUERY_ID = '" << pQueryUpdate->m_query_id.c_str() << "'";
 				ss << " and EXEC_START_UTC_TS = CONVERTTIMESTAMP(" << pQueryUpdate->m_exec_start_utc_ts << ")";
+
+
+                                //go executeDirect
+                                execute_flag = REPOS_EXECUTE_UPDATE;
+                                execStr = ss.str();
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_START_AGGREGATION)
 			{
@@ -845,7 +931,7 @@ static void* SessionWatchDog(void* arg)
 					break;
 				}
 
-				ss << "insert into Trafodion.\"_REPOS_\".metric_query_aggr_table values(";
+				ss << "(";
 				ss << pAggrStat->m_instance_id << ",";
 				ss << pAggrStat->m_tenant_id << ",";
 				ss << pAggrStat->m_component_id << ",";
@@ -909,8 +995,27 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_delta_catalog_errors << ",";
 				ss << pAggrStat->m_delta_other_errors << ",";
 				ss << pAggrStat->m_average_response_time << ",";
-				ss << pAggrStat->m_throughput_per_sec << ")";
-			}
+                ss << pAggrStat->m_throughput_per_sec << ")";
+
+                execute_flag = REPOS_EXECUTE_NONE;
+                vector<string> *tmp = &query_list.at(2);
+                (*tmp).push_back(ss.str());
+                if ((*tmp).size() > query_limit)
+                {
+                    //go executeDirect
+                    execute_flag = REPOS_EXECUTE_CACHELIMIT;
+                    execStr ="";
+                    vector<string>::iterator it = (*tmp).begin();
+                    execStr += *it + *(it + 1);
+                    it += 2;
+                    for(; it != (*tmp).end(); it++)
+                    {
+                        execStr+= "," + *it;
+                    }
+                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+                }
+
+            }
 			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_UPDATE_AGGREGATION || repos_stats.m_pub_type == PUB_TYPE_SESSION_END_AGGREGATION)
 			{
 				std::tr1::shared_ptr<SESSION_AGGREGATION> pAggrStat = repos_stats.m_pAggr_stats;
@@ -972,70 +1077,158 @@ static void* SessionWatchDog(void* arg)
 				ss << " where SESSION_START_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_session_start_utc_ts << ")";
 				ss << " and SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
 
+                               //go executeDirect
+                               execute_flag = REPOS_EXECUTE_UPDATE;
+                               execStr = ss.str();
 			}
 			else
 			{
 				break;
 			}
-			execStr = ss.str();
-			retcode = pSrvrStmt->ExecDirect(NULL, execStr.c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
-			if (retcode < 0)
-			{
-				errMsg.str("");
-				if(pSrvrStmt->sqlError.errorList._length > 0)
-					p_buffer = pSrvrStmt->sqlError.errorList._buffer;
-				else if(pSrvrStmt->sqlWarning._length > 0)
-					p_buffer = pSrvrStmt->sqlWarning._buffer;
-				if(p_buffer != NULL && p_buffer->errorText)
-					errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << p_buffer->errorText;
-				else
-					errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << " no additional information";
-				errStr = errMsg.str();
-				SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-										1, errStr.c_str());
-			}
-			else {
-				// Update QUERY_TABLE with explain plan if needed
-				if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION && TRUE == srvrGlobal->sqlPlan)
-				{
-					std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
-					if(NULL == pQueryAdd)
-					{
-						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-															0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-															1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
-						break;
-					}
-                                        if (pQueryAdd->m_explain_plan && (pQueryAdd->m_explain_plan_len > 0))
-                                          {
-                                            retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
-                                                                                 (char *)(pQueryAdd->m_query_id.c_str()),
-                                                                                 pQueryAdd->m_explain_plan,
-                                                                                 pQueryAdd->m_explain_plan_len );
-                                            
-                                            if (retcode == -EXE_EXPLAIN_PLAN_TOO_LARGE)
-                                              {
-                                                // explain info is too big to be stored in repository.
-                                                // ignore this error and continue with query execution.
-                                                retcode = 0;
-                                              }
-                                            else if (retcode < 0)
-                                              {
-                                                char errStr[256];
-                                                sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
-                                                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-                                                             0, ODBCMX_SERVER,
-                                                             srvrGlobal->srvrObjRef, 1, errStr);
-                                              }
-                                            // Clear diagnostics
-                                            SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
-                                          }
-				}
-			}
+execute:
+            if(REPOS_EXECUTE_UPDATE == execute_flag || REPOS_EXECUTE_CACHELIMIT == execute_flag){
+                retcode = pSrvrStmt->ExecDirect(NULL, execStr.c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+                if (retcode < 0)
+                {
+                    errMsg.str("");
+                    if(pSrvrStmt->sqlError.errorList._length > 0)
+                        p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+                    else if(pSrvrStmt->sqlWarning._length > 0)
+                        p_buffer = pSrvrStmt->sqlWarning._buffer;
+                    if(p_buffer != NULL && p_buffer->errorText)
+                        errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << p_buffer->errorText;
+                    else
+                        errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << " no additional information";
+                    errStr = errMsg.str();
+                    SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                            0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                            1, errStr.c_str());
+                }
+                else {
+                    // Update QUERY_TABLE with explain plan if needed
+                    if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION && TRUE == srvrGlobal->sqlPlan)
+                    {
+                        std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
+                        if(NULL == pQueryAdd)
+                        {
+                            SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                    0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                    1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
+                            break;
+                        }
+                        if (pQueryAdd->m_explain_plan && (pQueryAdd->m_explain_plan_len > 0))
+                        {
+                            retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
+                                    (char *)(pQueryAdd->m_query_id.c_str()),
+                                    pQueryAdd->m_explain_plan,
+                                    pQueryAdd->m_explain_plan_len );
 
-			pSrvrStmt->cleanupAll();
-			REALLOCSQLMXHDLS(pSrvrStmt);
+                            if (retcode == -EXE_EXPLAIN_PLAN_TOO_LARGE)
+                            {
+                                // explain info is too big to be stored in repository.
+                                // ignore this error and continue with query execution.
+                                retcode = 0;
+                            }
+                            else if (retcode < 0)
+                            {
+                                char errStr[256];
+                                sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
+                                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                        0, ODBCMX_SERVER,
+                                        srvrGlobal->srvrObjRef, 1, errStr);
+                            }
+                            // Clear diagnostics
+                            SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
+                        }
+                    }
+                }
+                if (pSrvrStmt != NULL){
+                    pSrvrStmt->cleanupAll();
+                    REALLOCSQLMXHDLS(pSrvrStmt);
+                }
+            
+            }else if (REPOS_EXECUTE_TIMELINE == execute_flag)
+            {
+                for(int i = 0;i < 3;i++)
+                {
+                    vector<string> *tmp = &query_list.at(i);
+
+                    if( (*tmp).size() < 2)
+                    {
+                        continue;
+                    }
+                    execStr ="";
+                    vector<string>::iterator it = (*tmp).begin();
+                    execStr += *it + *(it + 1);
+                    it += 2;
+                    for(; it != (*tmp).end(); it++)
+                    {
+                        execStr+= "," + *it;
+                    }
+                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+
+                    retcode = pSrvrStmt->ExecDirect(NULL, execStr.c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+                    if (retcode < 0)
+                    {
+                        errMsg.str("");
+                        if(pSrvrStmt->sqlError.errorList._length > 0)
+                            p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+                        else if(pSrvrStmt->sqlWarning._length > 0)
+                            p_buffer = pSrvrStmt->sqlWarning._buffer;
+                        if(p_buffer != NULL && p_buffer->errorText)
+                            errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << p_buffer->errorText;
+                        else
+                            errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << " no additional information";
+                        errStr = errMsg.str();
+                        SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                1, errStr.c_str());
+                    }
+                    else {
+                        // Update QUERY_TABLE with explain plan if needed
+                        if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION && TRUE == srvrGlobal->sqlPlan)
+                        {
+                            std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
+                            if(NULL == pQueryAdd)
+                            {
+                                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                        1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
+                                break;
+                            }
+                            if (pQueryAdd->m_explain_plan && (pQueryAdd->m_explain_plan_len > 0))
+                            {
+                                retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
+                                        (char *)(pQueryAdd->m_query_id.c_str()),
+                                        pQueryAdd->m_explain_plan,
+                                        pQueryAdd->m_explain_plan_len );
+
+                                if (retcode == -EXE_EXPLAIN_PLAN_TOO_LARGE)
+                                {
+                                    // explain info is too big to be stored in repository.
+                                    // ignore this error and continue with query execution.
+                                    retcode = 0;
+                                }
+                                else if (retcode < 0)
+                                {
+                                    char errStr[256];
+                                    sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
+                                    SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                            0, ODBCMX_SERVER,
+                                            srvrGlobal->srvrObjRef, 1, errStr);
+                                }
+                                // Clear diagnostics
+                                SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
+                            }
+                        }
+                    }
+	                
+                    if (pSrvrStmt != NULL){
+			            pSrvrStmt->cleanupAll();
+			            REALLOCSQLMXHDLS(pSrvrStmt);
+                    }
+                }//End for
+            }//end else
 		}//End while
 
 	}
@@ -3589,6 +3782,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	if ((srvrGlobal->drvrVersion.componentId == JDBC_DRVR_COMPONENT) && ((long) (inContext->idleTimeoutSec) > JDBC_DATASOURCE_CONN_IDLE_TIMEOUT))
 		srvrGlobal->javaConnIdleTimeout = inContext->idleTimeoutSec;
 
+    srvrGlobal->clipVarchar = 0;
 	// collect information for resource statistics
 	char nodename[100];
 	short error;
@@ -8298,12 +8492,13 @@ void
 odbc_SQLSrvr_ExtractLob_ame_(
     /* In   */ CEE_tag_def objtag_
   , /* In   */ const CEE_handle_def *call_id_
-  , /* In   */ IDL_long    extractLobAPI
-  , /* In   */ IDL_string  lobHandle)
+  , /* In   */ IDL_short   extractLobAPI
+  , /* In   */ IDL_string  lobHandle
+  , /* In   */ IDL_long_long    extractLen)
 {
     ERROR_DESC_LIST_def sqlWarning = {0, 0};
-    IDL_long_long lobDataLen = 0;
-    BYTE * lobDataValue = NULL;
+    IDL_long_long lobLength = 0;
+    BYTE * extractData = NULL;
 
     odbc_SQLsrvr_ExtractLob_exc_ exception_ = {0, 0};
 
@@ -8312,14 +8507,17 @@ odbc_SQLSrvr_ExtractLob_ame_(
                                  &exception_,
                                  extractLobAPI,
                                  lobHandle,
-                                 lobDataLen,
-                                 lobDataValue);
+                                 lobLength,
+                                 extractLen,
+                                 extractData);
 
     odbc_SQLSrvr_ExtractLob_ts_res_(objtag_,
                                     call_id_,
                                     &exception_,
-                                    lobDataLen,
-                                    lobDataValue);
+                                    extractLobAPI,
+                                    lobLength,
+                                    extractLen,
+                                    extractData);
 }
 
 void

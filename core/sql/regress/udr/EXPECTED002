@@ -6515,9 +6515,19 @@ the                                                        611
 
 --- 6344 row(s) selected.
 >>
->>-- some simple tests for the event_log_reader predefined TMUDF
+>>-- make sure the event_log_reader and jdbc UDFs are created (this
+>>-- should only be needed while we are developing Trafodion 2.3, in
+>>-- future releases the installer should do this automatically, by
+>>-- executing the upgrade command below)
+>>initialize trafodion, upgrade library management;
+
+--- SQL operation complete.
+>>
+>>-- some simple tests for the event_log_reader TMUDF
 >>-- (result of the UDF is not deterministic)
 >>select [last 0] * from udf(event_log_reader());
+
+*** WARNING[4323] Use of predefined UDF EVENT_LOG_READER is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
 
 --- 0 row(s) selected.
 >>select [last 0] log_ts + interval '1' day,
@@ -6533,11 +6543,13 @@ the                                                        611
 +>                log_file_name,
 +>                log_file_line -1,
 +>                case when parse_status = ' ' then 'ok' else parse_status end
-+>from udf(event_log_reader('f'));
++>from udf("_LIBMGR_".event_log_reader('f'));
 
 --- 0 row(s) selected.
 >>select coalesce(min(log_file_node), 0) from udf(event_log_reader('f')) x
 +>where x.log_file_line <100;
+
+*** WARNING[4323] Use of predefined UDF X is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
 
 (EXPR)     
 -----------
@@ -6554,7 +6566,7 @@ the                                                        611
 +>       max(log_file_line) as num_lines,
 +>       count(distinct query_id) num_query_ids,
 +>       sum(case when parse_status = ' ' then 0 else 1 end) num_parse_errors
-+>from udf(event_log_reader('f'))
++>from udf("_LIBMGR_".event_log_reader('f'))
 +>where log_file_name = 'master_exec_regr_999_99999.log';
 
 NUM_EVENTS            NUM_LINES    NUM_QUERY_IDS         NUM_PARSE_ERRORS
@@ -6565,7 +6577,7 @@ NUM_EVENTS            NUM_LINES    NUM_QUERY_IDS         NUM_PARSE_ERRORS
 --- 1 row(s) selected.
 >>-- there are 22 events in 33 lines in this file, with 13 unique query ids and 3 parse errors
 >>
->>select * from udf(event_log_reader('f'))
+>>select * from udf("_LIBMGR_".event_log_reader('f'))
 +>where log_file_name = 'master_exec_regr_999_99999.log'
 +>  and (log_file_line in (1,3,8,16,23) or parse_status <> ' ')
 +>order by log_file_line;
@@ -6590,33 +6602,46 @@ LOG_TS                      SEVERITY    COMPONENT                               
 >>-- some negative test cases
 >>prepare s from select * from udf(event_log_reader(10));
 
+*** WARNING[4323] Use of predefined UDF EVENT_LOG_READER is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
+
 *** ERROR[11252] Expecting a character constant as first parameter of the call to TRAFODION.SCH.EVENT_LOG_READER (SQLSTATE 38222)
 
 *** ERROR[8822] The statement was not prepared.
 
 >>-- parameter must be a string
->>prepare s from select * from udf(event_log_reader(?));
+>>prepare s from select * from udf("_LIBMGR_".event_log_reader(?));
 
 *** ERROR[11151] Unable to use 'type' 'UNSUPPORTED TYPE' in a user-defined routine. Details: unsupported type class.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>-- parameter must be available at compile time
->>prepare s from select * from udf(event_log_reader(table(select * from (values (1)) as x)));
+>>prepare s from
++>select *
++>from udf("_LIBMGR_".event_log_reader(table(select * from (values (1)) as x)));
 
-*** ERROR[11252] There should be no table-valued parameters to the call to TRAFODION.SCH.EVENT_LOG_READER, got 1 (SQLSTATE 38220)
+*** ERROR[11252] There should be no table-valued parameters to the call to TRAFODION."_LIBMGR_".EVENT_LOG_READER, got 1 (SQLSTATE 38220)
 
 *** ERROR[8822] The statement was not prepared.
 
 >>-- table-valued input not allowed
 >>prepare s from select query_id, log_file_name, parse_status
-+>from udf(event_log_reader());
++>from udf("_LIBMGR_".event_log_reader());
 
 *** ERROR[4001] Column LOG_FILE_NAME is not found.  Tables in scope: NONE.  Default schema: TRAFODION.SCH.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>-- log_file_name and parse_status columns not available without 'f' option
+>>prepare s from select * from udf(nosuchschema.event_log_reader());
+
+*** ERROR[1389] Object EVENT_LOG_READER does not exist in Trafodion.
+
+*** ERROR[4450] Function NOSUCHSCHEMA.EVENT_LOG_READER is not a built-in function or registered user-defined function.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- Schema/UDF does not exist
 >>
 >>-- some simple tests for the timeseries builtin UDF
 >>
@@ -6759,7 +6784,10 @@ P            SLICE_TIME                  VAL1_FCI     VAL1_LCI     VAL2_FCI     
 +>              'source',
 +>              'select * from (values (''Hello'', ''World''), (''Hallo'', ''Welt'')) T(a,b)'));
 
+*** WARNING[4323] Use of predefined UDF JDBC is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
+
 --- SQL command prepared.
+>>-- warning 4323, predefined UDF is deprecated
 >>execute s_traf;
 
 A           B         
@@ -6767,6 +6795,27 @@ A           B
 
 Hello       World     
 Hallo       Welt      
+
+--- 2 row(s) selected.
+>>
+>>prepare s_traf from
++>select *
++>from udf("_LIBMGR_".jdbc('jdbcT4-${TRAFODION_VER}.jar',
++>                         'org.trafodion.jdbc.t4.T4Driver',
++>                         $$QUOTE$$$$JDBC_T4_URL$$$$QUOTE$$,
++>                         'any', -- no user id
++>                         'any', -- no password
++>                         'source',
++>                         'select * from (values (''Bonjour'', ''Le monde''), (''Hola'', ''Mundo'')) T(a,b)'));
+
+--- SQL command prepared.
+>>execute s_traf;
+
+A               B               
+--------------  ----------------
+
+Bonjour         Le monde        
+Hola            Mundo           
 
 --- 2 row(s) selected.
 >>
@@ -6855,6 +6904,38 @@ Hallo       Welt
 *** ERROR[8822] The statement was not prepared.
 
 >>-- Arguments not in pairs of column names and instructions
+>>
+>>prepare s_traf from
++>select *
++>from udf("_LIBMGR_".jdbc('trafjdbcT2-99.99.99.jar',
++>                         'org.apache.trafodion.jdbc.t2.T2Driver',
++>                         'jdbc:t2jdbc:/something',
++>                         'any', -- no user id
++>                         'any', -- no password
++>                         'source',
++>                         'some sql'));
+
+*** ERROR[11252] Exception during connect: This UDF does not support the Trafodion T2 driver class org.apache.trafodion.jdbc.t2.T2Driver (SQLSTATE 38020)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- T2 driver class is not supported
+>>
+>>prepare s_traf from
++>select *
++>from udf("_LIBMGR_".jdbc('trafjdbcT2-99.99.99.jar',
++>                         'someclass',
++>                         'jdbc:t2jdbc:/something',
++>                         'any', -- no user id
++>                         'any', -- no password
++>                         'source',
++>                         'some sql'));
+
+*** ERROR[11252] Exception during connect: This UDF does not support the Trafodion T2 driver URL jdbc:t2jdbc:/something (SQLSTATE 38020)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- T2 driver URL is not supported
 >>
 >>-- eclipse timeseries builtin function with a true UDF
 >>create table_mapping function timeseries(pattern char(1))

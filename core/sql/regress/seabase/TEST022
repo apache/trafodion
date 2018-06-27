@@ -386,6 +386,7 @@ select * from t022hbm2;
 
 showddl hbase."_CELL_".t022hbm2;
 get hbase registered tables in catalog trafodion, match '%T022HBM2%';
+unregister hbase table t022hbm2;
 register hbase table t022hbm2;
 get hbase registered tables in catalog trafodion, match '%T022HBM2%';
 showddl hbase."_CELL_".t022hbm2;
@@ -493,6 +494,10 @@ select * from t022hbm1;
 
 drop hbase table t022hbm1;
 create hbase table t022hbm1 (column family 'cf');
+create external table t022hbm1 (a varchar(4) not null, b int)
+        primary key (a)
+        attribute default column family 'cf'
+        map to hbase table t022hbm1;
 insert into hbase."_ROW_".t022hbm1 values ('a1234567', 
                                column_create(('cf:B', '10')));
 -- primary key col length must be big enough to hold rowID
@@ -500,6 +505,10 @@ select * from t022hbm1;
 
 drop hbase table t022hbm1;
 create hbase table t022hbm1 (column family 'cf');
+create external table t022hbm1 (a varchar(4) not null, b int)
+        primary key (a)
+        attribute default column family 'cf'
+        map to hbase table t022hbm1;
 insert into hbase."_ROW_".t022hbm1 values ('a1', 
                                column_create(('cf:B', '1000000')));
 -- buffer to retrieve column value must be big enough
@@ -515,8 +524,10 @@ drop hbase table t022hbt1;
 drop hbase table t022hbt2;
 drop hbase table t022hbm1;
 drop hbase table t022hbm11;
+drop hbase table t022hbm2;
 drop table t022hbm1_like;
 drop table t022hbm1_ctas;
 drop table t022t1;
 drop table t022hbm1 cascade;
+drop table t022hbm2;
 

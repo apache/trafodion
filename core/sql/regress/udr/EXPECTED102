@@ -51,6 +51,7 @@ Libraries in Schema TRAFODION._LIBMGR_
 ======================================
 
 DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
 
 --- SQL operation complete.
 >>get procedures;
@@ -233,6 +234,7 @@ Libraries in Schema TRAFODION._LIBMGR_
 ======================================
 
 DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
 
 --- SQL operation complete.
 >>get procedures;

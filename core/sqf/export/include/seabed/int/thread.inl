@@ -68,6 +68,9 @@ SB_INLINE void SB_Thread::Sthr::sleep(int pv_ms) {
 
 SB_INLINE void *SB_Thread::Sthr::specific_get(int pv_key) {
     void *lp_data = pthread_getspecific(pv_key);
+    //a temp solution for Trafodion to running on CentOS 7
+    //Not understanding why lp_data will become 0x01
+    if(lp_data == (void *)0x01) return NULL;
 #ifdef SB_THREAD_PRINT_PTHREAD_CALLS
     if (gv_sb_trace_pthread)
         trace_printf("pthread_getspecific(%d) EXIT, ret=%p\n", pv_key, lp_data);

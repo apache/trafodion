@@ -928,7 +928,8 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
     {
       *CmpCommon::diags()
           << DgSqlCode(-1388)
-          << DgTableName(*object_);
+          << DgString0("Object")
+          << DgString1(*object_);
       return FALSE;
     }
 
@@ -955,7 +956,8 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
     {
       *CmpCommon::diags()
         << DgSqlCode(-1388)
-        << DgTableName(*object_);
+        << DgString0("Object")
+        << DgString1(*object_);
     }
     else
     {

@@ -34,7 +34,7 @@
 #include "ex_tcb.h"
 #include "ComSmallDefs.h"
 #include "ExStats.h"
-
+#include "HdfsClient_JNI.h"
 #include "ExpLOBinterface.h"
 #include "ex_exe_stmt_globals.h"
 // -----------------------------------------------------------------------
@@ -43,6 +43,7 @@
 class sql_buffer;
 class ExExeStmtGlobals;
 class SequenceFileWriter;
+class HdfsClient;
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -407,6 +408,7 @@ protected:
                           
   NABoolean isSequenceFile();
   void createSequenceFileError(Int32 sfwRetCode);
+  void createHdfsClientFileError(Int32 hdfsClientRetCode);
   NABoolean isHdfsCompressed();
   NABoolean getEmptyNullString()
   {
@@ -423,6 +425,7 @@ protected:
   char targetLocation_[1000];
   NABoolean errorOccurred_;
   SequenceFileWriter* sequenceFileWriter_;
+  HdfsClient *hdfsClient_;
 }; // class ExHdfsFastExtractTcb
 
 //----------------------------------------------------------------------

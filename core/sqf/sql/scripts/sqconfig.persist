@@ -29,13 +29,14 @@ begin persist
 #    SSMP
 #    PSD
 #    WDG
+#    TNS
 #
 # Generic persistent processes are of PROCESS_TYPE:
 #
 #    PERSIST
 #
 
-PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG
+PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,TNS
 
 DTM_PROCESS_NAME     = $TM%nid+
 DTM_PROCESS_TYPE     = DTM
@@ -90,6 +91,15 @@ WDG_REQUIRES_DTM     = N
 WDG_STDOUT           = stdout_WDG%nid
 WDG_PERSIST_RETRIES  = 10,60
 WDG_PERSIST_ZONES    = %zid
+
+TNS_PROCESS_NAME     = $TNS%nid+
+TNS_PROCESS_TYPE     = TNS
+TNS_PROGRAM_NAME     = trafns
+TNS_PROGRAM_ARGS     =
+TNS_REQUIRES_DTM     = N
+TNS_STDOUT           = stdout_TNS%nid
+TNS_PERSIST_RETRIES  = 10,60
+TNS_PERSIST_ZONES    = %zid
 
 end persist
 

@@ -25,7 +25,7 @@ shift
 if [ "$1" = "-device" ]; then
 	type="type TSE"
 	zone="set {process \$CLI} ZONE=0"
-	nid="nid 0"
+	nid0="nid 0"
 	device="set {process \$CLI} DEVICE=\$CLI-P"
 	shift
 fi
@@ -33,7 +33,7 @@ fi
 if [ "$1" = "-device2" ]; then
 	type="type TSE"
 	zone="set {process \$CLI} ZONE=0"
-	nid="nid 0"
+	nid0="nid 0"
 	device="set {process \$CLI} DEVICE=\$CLI-P"
 	devicem="set {process \$CLI} DEVICE-M=\$CLI-M"
 	shift
@@ -54,7 +54,7 @@ $zone
 $device
 $devicem
 node info
-exec {$nid $type name \$CLI} $xclient -client $*
+exec {$nid0 $type name \$CLI} $xclient -client $*
 ! Display process status to see new processes
 ps
 ! Wait for our processes to stop, then stop the monitor processes and exit.

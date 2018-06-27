@@ -48,9 +48,7 @@
 
 ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
                                      const char * server,
-                                     const char * zkPort,
-                                     int debugPort,
-                                     int debugTimeout)
+                                     const char * zkPort)
 {
   heap_ = heap;
   hbs_ = NULL;
@@ -66,19 +64,13 @@ ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
     strcpy(zkPort_, zkPort);
   else
     zkPort_[0] = 0;
-
-  debugPort_ = debugPort;
-  debugTimeout_ = debugTimeout;
 }
 
 ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                                   const char* server,
-                                                  const char *zkPort,
-                                                  int debugPort,
-                                                  int debugTimeout)
+                                                  const char *zkPort)
 {
-  return new (heap) ExpHbaseInterface_JNI(heap, server, TRUE, zkPort,
-                                          debugPort, debugTimeout); // This is the transactional interface
+  return new (heap) ExpHbaseInterface_JNI(heap, server, TRUE,zkPort);
 }
 
 NABoolean isParentQueryCanceled()
@@ -283,8 +275,8 @@ char * getHbaseErrStr(Lng32 errEnum)
 // ===========================================================================
 
 ExpHbaseInterface_JNI::ExpHbaseInterface_JNI(CollHeap* heap, const char* server, bool useTRex,
-                                             const char *zkPort, int debugPort, int debugTimeout)
-     : ExpHbaseInterface(heap, server, zkPort, debugPort, debugTimeout)
+                                             const char *zkPort)
+     : ExpHbaseInterface(heap, server, zkPort)
    ,useTRex_(useTRex)
    ,client_(NULL)
    ,htc_(NULL)
@@ -324,7 +316,7 @@ Lng32 ExpHbaseInterface_JNI::init(ExHbaseAccessStats *hbs)
   if (client_ == NULL)
   {
     HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::init() creating new client.");
-    client_ = HBaseClient_JNI::getInstance(debugPort_, debugTimeout_);
+    client_ = HBaseClient_JNI::getInstance();
     
     if (client_->isInitialized() == FALSE)
     {
@@ -1055,26 +1047,6 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
      return -HBASE_CLEANUP_HFILE_ERROR;
  }
  ///////////////////
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- Lng32 ExpHbaseInterface_JNI::hdfsCreateFile(const char* path)
- {
-   if (hive_ == NULL) {
-      retCode_ = initHive();
-      if (retCode_ != HVC_OK)
-         return retCode_;
-   }
-
-    retCode_ = hive_->hdfsCreateFile( path);
-
-    if (retCode_ == HVC_OK)
-      return HBASE_ACCESS_SUCCESS;
-    else
-      return -HVC_ERROR_HDFS_CREATE_EXCEPTION;
- }
-
  Lng32  ExpHbaseInterface_JNI::incrCounter( const char * tabName, const char * rowId,
                              const char * famName, const char * qualName ,
                              Int64 incr, Int64 & count)
@@ -1107,59 +1079,6 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
    else
       return -HBC_ERROR_CREATE_COUNTER_EXCEPTION;
  }
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- Lng32 ExpHbaseInterface_JNI::hdfsWrite(const char* data, Int64 len)
- {
-   if (hive_ == NULL) {
-      retCode_ = initHive();
-      if (retCode_ != HVC_OK)
-         return retCode_;
-   }
-   retCode_ = hive_->hdfsWrite( data, len);
-
-   if (retCode_ == HVC_OK)
-      return HBASE_ACCESS_SUCCESS;
-    else
-      return -HVC_ERROR_HDFS_WRITE_EXCEPTION;
- }
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- Lng32 ExpHbaseInterface_JNI::hdfsClose()
- {
-   if (hive_ == NULL) {
-      retCode_ = initHive();
-      if (retCode_ != HVC_OK)
-         return retCode_;
-   }
-
-   retCode_ = hive_->hdfsClose();
-
-   if (retCode_ == HVC_OK)
-      return HVC_OK;
-    else
-      return -HVC_ERROR_HDFS_CLOSE_EXCEPTION;
- }
-/*
- Lng32 ExpHbaseInterface_JNI::hdfsCleanPath( const std::string& path)
- {
-   if (hblc_ == NULL) {
-      retCode_ = initHBLC();
-      if (retCode_ != HBLC_OK)
-         return -HBASE_ACCESS_ERROR;
-   }
-
-   retCode_ = hblc_->hdfsCleanPath(path);
-
-   if (retCode_ == HBLC_OK)
-      return HBLC_OK;
-    else
-      return -HBLC_ERROR_HDFS_CLOSE_EXCEPTION;
- }
-*/
 
 Lng32 ExpHbaseInterface_JNI::isEmpty(
                                      HbaseStr &tblName)
@@ -1596,9 +1515,6 @@ NAArray<HbaseStr> * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblNam
   NAArray<HbaseStr>* regionStats = client_->getRegionStats((NAHeap *)heap_, tblName.val);
   if (regionStats == NULL)
     return NULL;
-
-  Int32 numEntries = client_->getRegionStatsEntries();
-
   return regionStats;
 }
 
@@ -1615,7 +1531,7 @@ NAArray<HbaseStr> * ExpHbaseInterface_JNI::getClusterStats(Int32 &numEntries)
   if (regionStats == NULL)
     return NULL;
   
-  numEntries = client_->getRegionStatsEntries();
+  numEntries = regionStats->entries();
 
   return regionStats;
 }

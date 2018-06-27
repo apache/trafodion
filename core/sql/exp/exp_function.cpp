@@ -40,6 +40,7 @@
 
 
 #include <math.h>
+#include <unistd.h>
 #include <zlib.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>  
@@ -49,6 +50,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <uuid/uuid.h>
+#include <time.h>
 
 #include "NLSConversion.h"
 #include "nawstring.h"
@@ -159,6 +162,8 @@ ex_function_trim_char::ex_function_trim_char(){};
 ExFunctionTokenStr::ExFunctionTokenStr(){};
 ExFunctionReverseStr::ExFunctionReverseStr(){};
 ex_function_current::ex_function_current(){};
+ex_function_unixtime::ex_function_unixtime(){};
+ex_function_sleep::ex_function_sleep(){};
 ex_function_unique_execute_id::ex_function_unique_execute_id(){};//Trigger -
 ex_function_get_triggers_status::ex_function_get_triggers_status(){};//Trigger -
 ex_function_get_bit_value_at::ex_function_get_bit_value_at(){};//Trigger -
@@ -286,14 +291,19 @@ ExFunctionInetNtoa::ExFunctionInetNtoa(OperatorTypeEnum oper_type,
 };
 
 ExFunctionAESEncrypt::ExFunctionAESEncrypt(OperatorTypeEnum oper_type,
-                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode )
-     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+                                           Attributes ** attr, Space * space, 
+                                           int in_args_num, 
+                                           Int32 aes_mode )
+     : ex_function_clause(oper_type, in_args_num + 1, attr, space), 
+       args_num(in_args_num), aes_mode(aes_mode)
 {
 };
 
 ExFunctionAESDecrypt::ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
-                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode)
-     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+                                           Attributes ** attr, Space * space, 
+                                           int in_args_num, Int32 aes_mode)
+     : ex_function_clause(oper_type, in_args_num + 1, attr, space), 
+       args_num(in_args_num), aes_mode(aes_mode)
 {
 };
 
@@ -343,18 +353,21 @@ ex_function_oct_length::ex_function_oct_length(OperatorTypeEnum oper_type,
 };
 
 ex_function_position::ex_function_position(OperatorTypeEnum oper_type,
-					   Attributes ** attr, Space * space)
-: ex_function_clause(oper_type, 3, attr, space)
+					   Attributes ** attr, Space * space,
+                                           int in_args_num)
+     : ex_function_clause(oper_type, in_args_num, attr, space),
+       args_num(in_args_num)
 {
   
 };
 
 ex_function_position_doublebyte::ex_function_position_doublebyte
 (
-	OperatorTypeEnum oper_type,
-        Attributes ** attr, Space * space
+     OperatorTypeEnum oper_type,
+     Attributes ** attr, Space * space, int in_args_num
 )
-: ex_function_clause(oper_type, 3, attr, space)
+     : ex_function_clause(oper_type, in_args_num, attr, space),
+       args_num(in_args_num)
 {
   
 };
@@ -435,6 +448,19 @@ ex_function_current::ex_function_current(OperatorTypeEnum oper_type,
   
 };
 
+ex_function_sleep::ex_function_sleep(OperatorTypeEnum oper_type, short numOperands,
+					 Attributes ** attr, Space * space)
+: ex_function_clause(oper_type, numOperands, attr, space)
+{
+  
+};
+
+ex_function_unixtime::ex_function_unixtime(OperatorTypeEnum oper_type, short numOperands,
+					 Attributes ** attr, Space * space)
+: ex_function_clause(oper_type, numOperands, attr, space)
+{
+  
+};
 //++ Triggers -
 ex_function_unique_execute_id::ex_function_unique_execute_id(OperatorTypeEnum oper_type,
 					 Attributes ** attr, Space * space)
@@ -1584,6 +1610,7 @@ ex_expr::exp_return_type ex_function_lower::eval(char *op_data[],
     {
       op_data[0][len0] = TOLOWER(op_data[1][len0]);
       ++len0;
+      ++total_bytes_out;
     }
   }
   else 
@@ -2150,6 +2177,7 @@ Lng32 ex_function_position::findPosition
 
   if (searchLen <= 0)
     return 0;
+
   Int32 position = 1;
   Int32 collPosition = 1;
   Int32 char_count = 1;
@@ -2164,14 +2192,14 @@ Lng32 ex_function_position::findPosition
       } 
       else
       {
-	      number_bytes = Attributes::getFirstCharLength
-	          (&sourceStr[position-1], sourceLen - position + 1, cs);
-
-	      if(number_bytes <= 0)
-	        return (Lng32)-1;
-
-	      ++char_count;
-	      position += number_bytes;
+        number_bytes = Attributes::getFirstCharLength
+          (&sourceStr[position-1], sourceLen - position + 1, cs);
+        
+        if(number_bytes <= 0)
+          return (Lng32)-1;
+        
+        ++char_count;
+        position += number_bytes;
       }
     else
     {
@@ -2181,16 +2209,15 @@ Lng32 ex_function_position::findPosition
       }
       else
       {
-	    if(charOffsetFlag)
-	      return char_count;
-	    else
-	      return position;
+        if(charOffsetFlag)
+          return char_count;
+        else
+          return position;
       }
     }
   }
   return 0;
 }
-
 
 ex_expr::exp_return_type 
 ex_function_char_length_doublebyte::eval(char *op_data[],
@@ -2207,12 +2234,51 @@ ex_function_char_length_doublebyte::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 };
 
+Lng32 ex_function_position::errorChecks(Lng32 startPos, Lng32 occurrence,
+                                        CollHeap* heap, ComDiagsArea** diagsArea)
+{
+  // startPos is 1 based. Cannot be <= 0
+  if (startPos < 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1572);
+      *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
+      return -1;
+    }
+  
+  if (startPos == 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1571);
+      *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
+      return -1;
+    }
+  
+  if (occurrence < 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1572);
+      *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
+
+      return -1;
+    }
+  
+  if (occurrence == 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1571);
+      *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
+
+      return -1;
+    }
+  
+  return 0;
+}
+
+
 ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 						    CollHeap* heap,
 						    ComDiagsArea** diagsArea)
 {
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
 
+  // return value is 1 based. First character position is 1.
 
   // search for operand 1
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
@@ -2230,30 +2296,60 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
      len2 = Attributes::trimFillerSpaces( op_data[2], prec2, len2, cs );
   }
 
-  // If len1 is 0, return a position of 1.
-  Lng32 position;
+  Int32 startPos = 1;
+  Int32 occurrence = 1;
+  if (getNumOperands() >= 4) // start position and optional occurrence specified
+    {
+      startPos = *(Int32*)op_data[3];
+      if (getNumOperands() == 5)
+        occurrence = *(Int32*)op_data[4];
+
+      if (errorChecks(startPos, occurrence, heap, diagsArea))
+        return ex_expr::EXPR_ERROR;
+    }
+
+  // operand2/srcStr is the string to be searched in.
+  char * srcStr = &op_data[2][startPos-1];
+  len2 -= (startPos-1);
+
+  char * pat = op_data[1];
+
+  Lng32 position = 0;
   if (len1 > 0)
     {
-
       short nPasses = CollationInfo::getCollationNPasses(getCollation());
-      position = findPosition(op_data[2], 
-			      len2, 
-			      op_data[1], 
-			      len1, 
-			      1, 
-			      nPasses, 
-			      getCollation(),
-			      1,
-			      cs);
+      for (Int32 occ = 1; occ <= occurrence; occ++)
+        {
+          position = findPosition(srcStr,
+                                  len2, 
+                                  pat,
+                                  len1, 
+                                  1, 
+                                  nPasses, 
+                                  getCollation(),
+                                  1,
+                                  cs);
+          
+          if(position < 0)
+            {
+              const char *csname = CharInfo::getCharSetName(cs);
+              ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
+              *(*diagsArea) << DgString0(csname) << DgString1("POSITION FUNCTION"); 
+              return ex_expr::EXPR_ERROR;
+            }
 
-      if(position < 0)
-      {
-        const char *csname = CharInfo::getCharSetName(cs);
-        ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
-        *(*diagsArea) << DgString0(csname) << DgString1("POSITION FUNCTION"); 
-        return ex_expr::EXPR_ERROR;
-      }
- 
+          if ((occ < occurrence) &&
+              (position > 0)) // found a matching string
+            {
+              // skip the current matched string and continue
+              srcStr += (position + len1 - 1);
+              len2 -= (position + len1 - 1);
+              startPos += (position + len1 -1);
+            }
+        } // for occ
+
+      if (position > 0) // found matching string
+        position += (startPos - 1);
     }
   else
     {
@@ -2268,39 +2364,87 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 };
 
 ex_expr::exp_return_type ex_function_position_doublebyte::eval(char *op_data[],
-						    CollHeap*,
-						    ComDiagsArea**)
+                                                               CollHeap*heap,
+                                                               ComDiagsArea**diagsArea)
 {
-  Lng32 len1 = ( getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]) ) / sizeof(NAWchar);
-  
-  // If len1 is 0, return a position of 1.
-  Lng32 position = 1;
-  if (len1 > 0)
-    {
-      Lng32 len2 = ( getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]) ) / sizeof(NAWchar);
+  // len1 and len2 are character lengths.
 
-      NAWchar* pat = (NAWchar*)op_data[1];
-      NAWchar* source = (NAWchar*)op_data[2];
-      
-      // If len1 > len2 or if operand 1 is not present in operand 2, return 
-      // a position of 0; otherwise return the position of operand 1 in 
-      // operand 2.
-      short found = 0;
-      while (position+len1-1 <= len2 && !found)
-        {
-	  if (wc_str_cmp(pat, &source[position-1], (Int32)len1))
-	    position++;
-	  else
-	    found = 1;
-        }
-      if (!found) position = 0;   
-    } 
+  // len1 is the pattern length to be searched.
+  Lng32 len1 = ( getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]) ) / sizeof(NAWchar);
+
+  // len2 is the length of string to be seached in.
+  Lng32 len2 = ( getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]) ) / sizeof(NAWchar);
   
+  // startPos is character pos and not byte pos
+  Int32 startPos = 1;
+
+  Int32 occurrence = 1;
+  if (getNumOperands() >= 4)
+    {
+      startPos = *(Int32*)op_data[3];
+      if (getNumOperands() == 5)
+        occurrence = *(Int32*)op_data[4];
+
+      if (ex_function_position::errorChecks(startPos, occurrence, 
+                                            heap, diagsArea))
+        return ex_expr::EXPR_ERROR;
+    }
+
+  // operand2/srcStr is the string to be searched in.
+  NAWchar * srcStr = 
+    (NAWchar*)&op_data[2][startPos*sizeof(NAWchar) - sizeof(NAWchar)];
+
+  NAWchar* pat = (NAWchar*)op_data[1];
+
+  // start at specified startPos
+  Lng32 position = startPos;
+
+  // If patter length(len1) > srcStr len(len2), return position of 0
+  if (len1 > len2)
+    position = 0;
+  else if (len1 > 0)
+    {
+      // if pat is not present in srcStr, return  position of 0; 
+      // otherwise return the position of pat in  srcStr for the 
+      // specified occurrence.
+      short found = 0;
+      for (Int32 occ = 1; occ <= occurrence; occ++)
+        {
+          found = 0;
+          while (position+len1-1 <= len2 && !found)
+           {
+              if (wc_str_cmp(pat, srcStr, (Int32)len1))
+                {
+                  position++;
+                  srcStr += 1;
+                }
+              else
+                found = 1;
+            }
+
+          if ((occ < occurrence) &&
+              (found)) // found a matching string
+            {
+              srcStr += len1;
+              position += len1;
+            }
+        } // for occ
+
+     if (! found) // not found matching string, return 0;
+       position = 0;
+    } 
+  else
+    {
+      // if len1 <= 0, return position of 1.
+      position = 1;
+    }
+
   // Now copy the position into result which is a long. 
   *(Lng32 *)op_data[0] = position;
   
   return ex_expr::EXPR_OK;
 };
+
 static Lng32 findTokenPosition(char * sourceStr, Lng32 sourceLen,
 			      char * searchStr, Lng32 searchLen,
 			      short bytesPerChar)
@@ -2500,6 +2644,106 @@ ex_expr::exp_return_type ExFunctionReverseStr::eval(char *op_data[],
 
   return ex_expr::EXPR_OK;
 };
+
+ex_expr::exp_return_type ex_function_sleep::eval(char *op_data[],
+						   CollHeap* heap,
+						   ComDiagsArea** diagsArea)
+{
+  Int32 sec = 0;
+  switch (getOperand(1)->getDatatype())
+  {
+    case REC_BIN8_SIGNED:
+      sec = *(Int8 *)op_data[1] ;
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    case REC_BIN16_SIGNED:
+      sec = *(short *)op_data[1] ; 
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    case REC_BIN32_SIGNED:
+      sec = *(Lng32 *)op_data[1];
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+ 
+    case REC_BIN64_SIGNED:
+      sec = *(Int64 *)op_data[1];
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    default:
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+      return ex_expr::EXPR_ERROR;
+      break;
+  }
+  //get the seconds to sleep
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
+						   CollHeap* heap,
+						   ComDiagsArea** diagsArea)
+{
+  char *opData = op_data[1];
+  //if there is input value
+  if( getNumOperands() == 2)
+  {
+    struct tm ptr;
+    if (opData == NULL )
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+       *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
+       return ex_expr::EXPR_ERROR;
+    }
+    char* r = strptime(opData, "%Y-%m-%d %H:%M:%S", &ptr);
+    if( (r == NULL) ||  (*r != '\0') )
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+       *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
+       return ex_expr::EXPR_ERROR;
+    }
+    else
+      *(Int64 *)op_data[0] = mktime(&ptr);
+
+  }
+  else
+  {
+    time_t seconds;  
+    seconds = time((time_t *)NULL);   
+    *(Int64 *)op_data[0] = seconds; 
+  }
+  return ex_expr::EXPR_OK;
+}
 
 ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,
@@ -5826,45 +6070,22 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
 
       // Pick an initial seed.  According to the reference given below
       // (in the eval function), all initial seeds between 1 and
-      // 2147483646 are equally valid.  So, we just need to pick one
+      // 2147483647 are equally valid.  So, we just need to pick one
       // in this range.  Do this based on a timestamp.
+      struct timespec seedTime;
 
-      // Use ex_function_current to get timestamp.
-      //
-      char currBuff[32];
-      char *opData[1];
-      opData[0] = currBuff;
-      ex_function_current currentFun;
-      currentFun.eval(&opData[0], 0, 0);
+      clock_gettime(CLOCK_REALTIME, &seedTime);
 
-      // Extract year, month, etc.
-      //
-      char *p = currBuff;
-      short year = *((short*) p);
-      p += sizeof(short);
-      char month = *p++;
-      char day = *p++;
-      char hour = *p++;
-      char minute = *p++;
-      char second = *p++;
-      Lng32 fraction = *((Lng32*) p);
+      seed_  = (Int32) (seedTime.tv_sec  % 2147483648);
+      seed_ ^= (Int32) (seedTime.tv_nsec % 2147483648L);
 
-      // Local variables year, ..., fraction are now initialized.
-      // From the values of these variables, generate a seed in the
-      // desired range.
-
-      Lng32 x = year * month * day;
-      if (hour) x *= hour;
-      p = (char*) &x;
-
-      assert(sizeof(Lng32)==4);
-
-      p[0] |= (second<<1);
-      p[1] |= (minute<<1);
-      p[2] |= (minute<<2);
-      p[3] |= second;
-
-      seed_ = x + fraction;
+      // Go through one step of a linear congruential random generator.
+      // (https://en.wikipedia.org/wiki/Linear_congruential_generator).
+      // This is to avoid seed values that are close to each other when
+      // we call this method again within a short time. The eval() method
+      // below doesn't handle seed values that are close to each other
+      // very well.
+      seed_ = (((Int64) seed_) * 1664525L + 1013904223L) % 2147483648;
 
       if (seed_<0)
         seed_ += 2147483647;
@@ -6689,21 +6910,38 @@ ex_expr::exp_return_type ExFunctionUniqueId::eval(char *op_data[],
   Lng32 retcode = 0;
 
   char * result = op_data[0];
+  if(getOperType() == ITM_UNIQUE_ID)
+  {
+    //it is hard to find a common header file for these length
+    //so hardcode 36 here
+    //if change, please check the SynthType.cpp for ITM_UNIQUE_ID part as well
+    //libuuid is global unique, even across computer node
+    //NOTE: libuuid is avialble on normal CentOS, other system like Ubuntu may need to check 
+    //Trafodion only support RHEL and CentOS as for now
+    char str[36 + 1];
+    uuid_t uu;
+    uuid_generate( uu ); 
+    uuid_unparse(uu, str);
+    str_cpy_all(result, str, 36);
+  }
+  else //at present , it must be ITM_UUID_SHORT_ID
+  { 
+    Int64 uniqueUID;
 
-  Int64 uniqueUID;
-
-  ComUID comUID;
-  comUID.make_UID();
+    ComUID comUID;
+    comUID.make_UID();
 
 #if defined( NA_LITTLE_ENDIAN )
-  uniqueUID = reversebytes(comUID.get_value());
+    uniqueUID = reversebytes(comUID.get_value());
 #else
-  uniqueUID = comUID.get_value();
+    uniqueUID = comUID.get_value();
 #endif
 
-  str_cpy_all(result, (char*)&uniqueUID, sizeof(Int64));
-  str_pad(&result[sizeof(Int64)], sizeof(Int64), '\0');
-  
+    //it is safe, since the result is allocated 21 bytes in this case from synthtype,
+    //max in64 is 19 digits and one for sign, 21 is enough
+    sprintf(result,"%lu",uniqueUID); 
+  }
+ 
   return ex_expr::EXPR_OK;
 }
 

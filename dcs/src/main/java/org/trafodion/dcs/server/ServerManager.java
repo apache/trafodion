@@ -74,6 +74,7 @@ public final class ServerManager implements Callable {
     private int maxHeapPctExit;
     private int statisticsIntervalTime;
     private int statisticsLimitTime;
+    private int statisticsCacheSize;
     private String statisticsType;
     private String statisticsEnable;
     private String sqlplanEnable;
@@ -82,7 +83,11 @@ public final class ServerManager implements Callable {
     private ServerHandler[] serverHandlers;
     private int maxRestartAttempts;
     private int retryIntervalMillis;
-    private String nid = null;
+//    private String nid = null;
+    private static String userProgKeepaliveStatus;
+    private static int userProgKeepaliveIdletime;
+    private static int userProgKeepaliveIntervaltime;
+    private static int userProgKeepaliveRetrycount;
 
     class RegisteredWatcher implements Watcher {
         CountDownLatch startSignal;
@@ -196,6 +201,8 @@ public final class ServerManager implements Callable {
                                     + " ")
                     .replace("-STATISTICSLIMIT",
                             "-STATISTICSLIMIT " + statisticsLimitTime + " ")
+                    .replace("-STATISTICSCACHESIZE",
+                            "-STATISTICSCACHESIZE " + statisticsCacheSize + " ")
                     .replace("-STATISTICSTYPE",
                             "-STATISTICSTYPE " + statisticsType + " ")
                     .replace("-STATISTICSENABLE",
@@ -205,6 +212,14 @@ public final class ServerManager implements Callable {
                             "-PORTMAPTOSECS " + userProgPortMapToSecs + " ")
                     .replace("-PORTBINDTOSECS",
                             "-PORTBINDTOSECS " + userProgPortBindToSecs)
+                    .replace("-TCPKEEPALIVESTATUS",
+                            "-TCPKEEPALIVESTATUS " + userProgKeepaliveStatus + " ")
+                    .replace("-TCPKEEPALIVEIDLETIME",
+                            "-TCPKEEPALIVEIDLETIME " + userProgKeepaliveIdletime + " ")
+                    .replace("-TCPKEEPALIVEINTERVAL",
+                            "-TCPKEEPALIVEINTERVAL " + userProgKeepaliveIntervaltime + " ")
+                    .replace("-TCPKEEPALIVERETRYCOUNT",
+                            "-TCPKEEPALIVERETRYCOUNT " + userProgKeepaliveRetrycount + " ")
                     .replace("&lt;", "<").replace("&amp;", "&")
                     .replace("&gt;", ">");
             scriptContext.setCommand(command);
@@ -327,6 +342,9 @@ public final class ServerManager implements Callable {
         this.statisticsLimitTime = this.conf
                 .getInt(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME,
                         Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME);
+        this.statisticsCacheSize = this.conf
+                .getInt(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE,
+                        Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE);
         this.statisticsType = this.conf.get(
                 Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE,
                 Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE);
@@ -348,6 +366,18 @@ public final class ServerManager implements Callable {
         this.retryIntervalMillis = conf
                 .getInt(Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,
                         Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
+        this.userProgKeepaliveStatus = conf.get(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_STATUS,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_STATUS);
+        this.userProgKeepaliveIdletime = conf.getInt(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_IDLETIME,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_IDLETIME);
+        this.userProgKeepaliveIntervaltime = conf.getInt(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_INTERVALTIME,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_INTERVALTIME);
+        this.userProgKeepaliveRetrycount = conf.getInt(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_RETRYCOUNT,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_RETRYCOUNT);
         serverHandlers = new ServerHandler[this.childServers];
     }
 
@@ -393,12 +423,9 @@ public final class ServerManager implements Callable {
             featureCheck();
             registerInRunning(instance);
             RetryCounter retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
-            while (!isTrafodionRunning(nid)) {
+            while (!isTrafodionRunning(null)) {
                if (!retryCounter.shouldRetry()) {
-                  if (nid != null)
-                     throw new IOException("Node " + nid + " is not Up");
-                  else
-                     throw new IOException("Trafodion is not running");
+                  throw new IOException("Trafodion is not running");
                } else {
                   retryCounter.sleepUntilNextRetry();
                   retryCounter.useRetry();
@@ -434,6 +461,9 @@ public final class ServerManager implements Callable {
                     LOG.info("Server handler [" + instance + ":" + result + "] exit");
 
                     retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
+                    int childInstance = result.intValue();
+                    ServerHandler previousServerHandler = serverHandlers[childInstance - 1];
+                    String nid = serverHandlers[childInstance - 1].serverMonitor.nid;
                     while (!isTrafodionRunning(nid)) {
                         if (!retryCounter.shouldRetry()) {
                             throw new IOException("Node " + nid + " is not Up");
@@ -442,9 +472,7 @@ public final class ServerManager implements Callable {
                             retryCounter.useRetry();
                         }
                     }
-                    int childInstance = result.intValue();
                     // get the node id
-                    ServerHandler previousServerHandler = serverHandlers[childInstance - 1];
                     if (previousServerHandler.retryCounter.shouldRetryInnerMinutes()) {
                         serverHandlers[childInstance - 1] = previousServerHandler;
                         completionService.submit(serverHandlers[childInstance - 1]);

@@ -92,7 +92,7 @@ public final class Constants {
     public static final String DCS_SERVER_USER_PROGRAM_COMMAND = "dcs.server.user.program.command";
 
     /** Default value for DCS server user program command */
-    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. ./sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSENABLE -SQLPLAN -PORTMAPTOSECS -PORTBINDTOSECS";
+    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. ./sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSCACHESIZE -STATISTICSENABLE -SQLPLAN -PORTMAPTOSECS -PORTBINDTOSECS -TCPKEEPALIVESTATUS -TCPKEEPALIVEIDLETIME -TCPKEEPALIVEINTERVAL -TCPKEEPALIVERETRYCOUNT";
 
     /** Configuration key for DCS server user program connecting timeout */
     public static final String DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT = "dcs.server.user.program.connecting.timeout";
@@ -112,6 +112,29 @@ public final class Constants {
     /** Default value for DCS server user program exit after disconnect */
     public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT = 0;
 
+    /** Configuration key for DCS server program mxosrvr keepalive STATUS*/
+    public static final String  DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_STATUS= "dcs.server.user.program.tcp.keepalive.status";
+
+    /** Default value for DCS server program mxosrvr keepalive STATUS*/
+    public static final String DCS_SERVER_PROGRAM_KEEPALIVE_STATUS = "true";
+
+    /** Configuration key for DCS server program mxosrvr keepalive IDLETIME*/
+    public static final String DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_IDLETIME = "dcs.server.user.program.tcp.keepalive.idletime";
+
+    /** Default value for DCS server program mxosrvr keepalive IDLETIME*/
+    public static final int DCS_SERVER_PROGRAM_KEEPALIVE_IDLETIME = 300;
+
+    /** Configuration key for DCS server program mxosrvr keepalive INTERTIME */
+    public static final String DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_INTERVALTIME = "dcs.server.user.program.tcp.keepalive.intervaltime";
+
+    /** Default value for DCS server program mxosrvr keepalive INTERTIME */
+    public static final int DCS_SERVER_PROGRAM_KEEPALIVE_INTERVALTIME = 5;
+
+    /** Configuration key for DCS server program mxosrvr keepalive RETRYCNT*/
+    public static final String DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_RETRYCOUNT = "dcs.server.user.program.tcp.keepalive.retrycount";
+
+    /** Default value for DCS server program mxosrvr keepalive RETRYCNT*/
+    public static final int DCS_SERVER_PROGRAM_KEEPALIVE_RETRYCOUNT = 3;
     /**
      * Configuration key for DCS server user program exit when heap size becomes
      * too large
@@ -123,6 +146,11 @@ public final class Constants {
      * large
      */
     public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT = 0;
+/** Configuration key for DCS server user program statistics cache size */
+    public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE = "dcs.server.user.program.statistics.cache.size";
+
+    /** Default value for DCS server user program statistics cache size */
+    public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE = 1;
 
     /** Configuration key for DCS server user program statistics interval time */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME = "dcs.server.user.program.statistics.interval.time";
