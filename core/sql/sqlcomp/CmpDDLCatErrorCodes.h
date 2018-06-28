@@ -374,6 +374,10 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION        = 1389
                   , CAT_TRAFODION_OBJECT_EXISTS                   = 1390
 
+                  , TRAF_ALREADY_INITIALIZED                      = 1392
+                  , TRAF_NOT_INITIALIZED                          = 1393
+                  , TRAF_HBASE_ACCESS_ERROR                       = 1398
+
                   // unused                                       = 1400
                   , CAT_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE_TO_CHARSET = 1401
                   , CAT_UNIQUE_INDEX_COLS_NOT_IN_DIV_EXPRS        = 1402

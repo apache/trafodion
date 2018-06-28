@@ -255,14 +255,14 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
 
                 // If fractional precision is greater than
                 // microsecs, disable rangespec transformation.
-                if (type->getScale() > SQLInterval::MAX_FRACTION_PRECISION_MSEC)
+                if (type->getScale() > SQLInterval::MAX_FRACTION_PRECISION_USEC)
                   return FALSE;
 
                 return (SQLInterval::MAX_LEADING_PRECISION >=
                         IntervalType::getPrecision(intvType->getStartField(),
                                                    intvType->getLeadingPrecision(),
                                                    REC_DATE_SECOND,
-                                                   SQLInterval::MAX_FRACTION_PRECISION_MSEC));
+                                                   SQLInterval::MAX_FRACTION_PRECISION_USEC));
             }
         }
 
@@ -277,7 +277,7 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
         // datetime values are currently converted to Int64 microseconds value
         // for rangespec constants. If fractional precision is greater than
         // microsecs, disable rangespec transformation.
-        if (type->getScale() > DatetimeType::MAX_FRACTION_PRECISION_MSEC)
+        if (type->getScale() > DatetimeType::MAX_FRACTION_PRECISION_USEC)
           return FALSE;
 
         return TRUE;

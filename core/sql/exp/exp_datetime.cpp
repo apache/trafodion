@@ -2467,11 +2467,11 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
       return -1;
     }
 
-    Int64 msec = (hh*60L + mm) * 60L * 1000000L;
+    Int64 usec = (hh*60L + mm) * 60L * 1000000L;
     if (isAdd)
-      juliantimestamp += msec;
+      juliantimestamp += usec;
     else
-      juliantimestamp -= msec;
+      juliantimestamp -= usec;
 
     INTERPRETTIMESTAMP(juliantimestamp, timestamp);
     

@@ -235,7 +235,8 @@ class ExExeUtilTcb : public ex_tcb
 
   NABoolean isUpQueueFull(short size);
 
-  char * getTimeAsString(Int64 t, char * timeBuf);
+  static char * getTimeAsString(Int64 t, char * timeBuf,
+                                NABoolean noUsec = FALSE);
   char * getTimestampAsString(Int64 t, char * timeBuf);
 
   short initializeInfoList(Queue* &infoList);

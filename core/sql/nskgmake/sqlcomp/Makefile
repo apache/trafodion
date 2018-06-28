@@ -27,6 +27,7 @@ CPPSRC := CmpDescribe.cpp \
 	CmpSeabaseDDLcleanup.cpp \
 	CmpSeabaseDDLcommon.cpp \
 	CmpSeabaseDDLindex.cpp \
+	CmpSeabaseDDLinitraf.cpp \
 	CmpSeabaseDDLrepos.cpp \
 	CmpSeabaseDDLroutine.cpp \
 	CmpSeabaseDDLschema.cpp \

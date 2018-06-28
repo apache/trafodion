@@ -470,6 +470,9 @@ short DDLExpr::codeGen(Generator * generator)
             ddl_ws_tdb->setReturnDetails(TRUE);
 
         }
+      else if (initHbase())
+        ddl_ws_tdb->setInitTraf(TRUE);
+
       ddl_tdb = ddl_ws_tdb;
     }
   else

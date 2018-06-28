@@ -4067,7 +4067,6 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean isCommentOn = FALSE;
   NABoolean isHive = FALSE;
 
-  returnStatus_ = FALSE;
 
   NABoolean specialType = FALSE;
   if (isUstat())  // special DDLExpr node for an Update Stats statement
@@ -5445,12 +5444,6 @@ RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
 
   // Allocate a TableDesc and attach it to this.
   //
-#ifdef __ignore
-  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
-  if (bindWA->errStatus())
-    return this;
-#endif
-
   RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
   if (bindWA->errStatus())
     return NULL;

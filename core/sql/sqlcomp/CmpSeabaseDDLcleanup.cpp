@@ -1732,7 +1732,7 @@ void CmpSeabaseMDcleanup::cleanupMetadataEntries(ExeCliInterface *cliInterface,
               {
               case 0:
                 {
-                  dws->setMsg("  Start: Cleanup Orphan Objects Entries");              
+                  dws->setMsg("  Start: Cleanup Orphan Objects Entries");
                   dws->subStep()++;
                   dws->setEndStep(FALSE);
                   
@@ -2009,7 +2009,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
         checkOnly_ = TRUE;
       if (dws->getReturnDetails())
         returnDetails_ = TRUE;
-      return cleanupMetadataEntries(&cliInterface, ehi, dws);
+      cleanupMetadataEntries(&cliInterface, ehi, dws);
+      return;
     }
 
   if (cleanupMetadataEntries_)

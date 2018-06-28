@@ -995,7 +995,7 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
                                          currCatName, currSchName))
         return CmpStatement_ERROR;
     }
-  else if (dws->getMDcleanup())
+  else if (dws->getMDcleanup() || dws->getInitTraf())
     {
       CmpSeabaseDDL cmpSBD(heap_);
       if (cmpSBD.executeSeabaseDDL(ddlExpr, ddlNode,

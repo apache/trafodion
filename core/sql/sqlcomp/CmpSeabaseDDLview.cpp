@@ -1612,7 +1612,6 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
   return 0;
 }
 
-
 // *****************************************************************************
 // *                                                                           *
 // * Function: checkAccessPrivileges                                           *

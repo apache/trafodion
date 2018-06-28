@@ -239,6 +239,8 @@ private:
   static Lng32 commitXn();
   static Lng32 rollbackXn();
   static Lng32 statusXn();
+  static Lng32 suspendXn();
+  static Lng32 resumeXn();
 
   Lng32 createContext(char* contextHandle); // out buf will return context handle
   Lng32 switchContext(char* contextHandle); // in buf contains context handle
