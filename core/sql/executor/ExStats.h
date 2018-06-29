@@ -3283,6 +3283,7 @@ public:
   }
   inline void setNumQueryInvKeys(Int32 n) { numQueryInvKeys_ = n; }
   inline void setNodesInCluster(short n) { nodesInCluster_ = n; }
+  inline void setConfiguredPidMax(pid_t pid) { configuredPidMax_ = pid; }
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   void reset();
 private: 
@@ -3320,6 +3321,7 @@ private:
   Int64 rmsStatsResetTimestamp_;
   Int32 numQueryInvKeys_;
   short nodesInCluster_;
+  pid_t configuredPidMax_;
 };
 
 

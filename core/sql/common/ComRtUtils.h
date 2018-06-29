@@ -288,4 +288,6 @@ Int16 getBDRClusterName(char *bdrClusterName);
 
 SB_Phandle_Type *get_phandle_with_retry(char *pname, short *fserr = NULL);
 
+pid_t ComRtGetConfiguredPidMax();
+
 #endif // COMRTUTILS_H

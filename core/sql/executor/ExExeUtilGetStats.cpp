@@ -3654,7 +3654,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (rmsStatsItems_ == NULL)
         {
-          maxRMSStatsItems_ = 33;
+          maxRMSStatsItems_ = 34;
           rmsStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxRMSStatsItems_];
           initSqlStatsItems(rmsStatsItems_, maxRMSStatsItems_, FALSE);
@@ -3691,7 +3691,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           rmsStatsItems_[30].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_BYTES;
           rmsStatsItems_[31].statsItem_id = SQLSTATS_RMS_STATS_RESET_TIMESTAMP;
           rmsStatsItems_[32].statsItem_id = SQLSTATS_RMS_STATS_NUM_SQL_SIK;
-          // maxRMSStatsItems_ is set to 33
+          rmsStatsItems_[33].statsItem_id = SQLSTATS_RMS_CONFIGURED_PID_MAX;
+          // maxRMSStatsItems_ is set to 34
           rmsStatsItems_[0].str_value = new (getGlobals()->getDefaultHeap())
             char[MAX_SEGMENT_NAME_LEN+1];
           rmsStatsItems_[0].str_max_len = MAX_SEGMENT_NAME_LEN;
@@ -3880,7 +3881,10 @@ short ExExeUtilGetRTSStatisticsTcb::work()
 			timestamp[3], timestamp[4], timestamp[5],
 			timestamp[6], timestamp[7]);
 	    break;
-
+          case SQLSTATS_RMS_CONFIGURED_PID_MAX:
+            sprintf(Int64Val, "%ld", rmsStatsItems_[i].int64_value);
+            sprintf(statsBuf_, "%-30s%s", "Configured Pid Max", Int64Val);
+            break;
           }
           if (strlen(statsBuf_) > 0)
             if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
