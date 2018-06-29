@@ -611,6 +611,7 @@ SQLRETURN CConnect::Connect(SQLCHAR *ServerName,
 	// populate the inContext
 	inContext.location[0] = '\0';
 	inContext.userRole[0] = '\0';
+    inContext.sessionName[0] = '\0';
 
 	if (m_DSValue.m_DSServerDSName[0] != 0)
 		strcpy(inContext.datasource, m_DSValue.m_DSServerDSName);
