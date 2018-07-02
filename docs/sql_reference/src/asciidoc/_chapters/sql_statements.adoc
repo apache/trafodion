@@ -6569,7 +6569,7 @@ insert-source is:
 +
 names the user table or view in which to insert rows. _table_ must be a base table or an updatable view.
 
-* `_(target-col-list)_`
+* `_target-col-list_`
 +
 names the columns in the table or view in which to insert values. The data type of each target column must be 
 compatible with the data type of its corresponding source value. Within the list, each target column must
@@ -6581,8 +6581,8 @@ into the columns that do not appear in the list. See <<column_default_settings,C
 +
 If you do not specify _target-col-list_, row values from the source table are inserted into all columns in _table_. 
 The order of the column values in the source table must be the same order as that of the columns specified in the 
-CREATE TABLE for _table_. (This order is the same as that of the columns listed in the result table of SHOWDDL
-_table_.)
+CREATE TABLE for _table_. (This order is the same as that of the columns listed in the result table of `SHOWDDL
+table-name`.)
 
 * `_insert-source_`
 +
@@ -6829,9 +6829,9 @@ INVOKE  table-name
 === Syntax Description of INVOKE
 
 * `_table-name_`
-_
++
 specifies the name of a table, view, or index for which to generate a record description. 
-See <<database_object_names,Database Object Names>>.
+For more information, see <<database_object_names,Database Object Names>>.
 
 [[invoke_considerations]]
 === Considerations for INVOKE
@@ -7315,12 +7315,11 @@ Specifies the privileges to revoke. You can specify these privileges for an obje
 [cols="20%,80%"]
 |===
 | DELETE                   | Revokes the ability to use the DELETE statement.
-| EXECUTE                  | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability
+| EXECUTE                  | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability to execute a user-defined function (UDF).
 | INSERT     [columm-list] | Revokes the ability to use the INSERT statement.
 | REFERENCES [column-list] | Revokes the ability to create constraints that reference the object.
 | SELECT     [column-list] | Revokes the ability to use the SELECT statement.
 | UPDATE     [column-list] | Revokes the ability to use the UPDATE statement.
-to execute a user-defined function (UDF).
 | USAGE                    | For libraries, revokes the ability to access a library using the 
 CREATE PROCEDURE or CREATE FUNCTION statement.
 For sequence generators, revokes the ability to access a sequence in a SQL query.
@@ -7397,44 +7396,51 @@ REVOKE GRANT OPTION FOR SELECT (part_no, part_name), DELETE ON TABLE invent.part
 REVOKE SELECT (part_no, part_name), DELETE ON TABLE invent.partloc FROM jsmith, clerks;
 ```
 
-* To revoke a user’s SELECT privileges on a table:
+* To revoke a user’s SELECT privileges on a table.
++
+User administrator grants the SELECT privilege to _JSMITH_.
 +
 ```
--- User administrator grants the SELECT privilege to JSMITH:
 GRANT SELECT ON TABLE invent.partloc TO jsmith WITH GRANT OPTION;
-
--- JSMITH grants the SELECT privilege to AJONES:
+```
++
+_JSMITH_ grants the SELECT privilege to _AJONES_.
++
+```
 GRANT SELECT ON TABLE invent.partloc TO ajones;
-
--- If the user administrator attempts to revoke the SELECT
--- privilege from JSMITH, this would fail because
--- of the privilege granted to AJONES based on the
--- privilege granted to JSMITH.
--- To successfully revoke the SELECT privilege from
--- JSMITH, the SELECT privilege granted to AJONES
--- must be revoked first. For this example:
--- 1. JSMITH revokes the SELECT privilege granted to AJONES:
+```
++
+If the user administrator attempts to revoke the SELECT privilege from _JSMITH_, this would fail because of 
+the privilege granted to _AJONES_ based on the privilege granted to _JSMITH_. To successfully revoke the SELECT privilege from _JSMITH_, the SELECT privilege granted to _AJONES_ 
+must be revoked first. 
++
+For this example:
++
+_JSMITH_ revokes the SELECT privilege granted to _AJONES_.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM ajones;
-
--- 2. User administrator revokes the SELECT privilege on the
--- table from JSMITH:
+```
++
+User administrator revokes the SELECT privilege on the table from _JSMITH_, the REVOKE operation succeeds.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM jsmith RESTRICT;
-
--- The REVOKE operation succeeds.
--- An easier way to make the REVOKE operation successful is
--- to use the CASCADE option:
+```
++
+An easier way to make the REVOKE operation successful is to use the `CASCADE option`.
++
+The REVOKE operation succeeds because the `CASCADE option` causes all specified privileges, and all privileges that
+were granted based upon the specified privileges, to be removed.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM jsmith CASCADE;
-
--- The REVOKE operation succeeds because the CASCADE option
--- causes all specified privileges, and all privileges that
--- were granted based upon the specified privileges, to be
--- removed.
 ```
 
-* Administration in the shipping department decides that the CLERKS role should no longer be able to grant
-privileges on the invent.partloc table. Fred has recently moved to another department, so JSMITH revokes
-the SELECT privilege on the invent.partloc table from Fred, who was granted the privilege by CLERKS. Then,
-JSMITH revokes the grant option from CLERKS:
+* Administration in the shipping department decides that the _CLERKS_ role should no longer be able to grant
+privileges on the _invent.partloc_ table. _Fred_ has recently moved to another department, so _JSMITH_ revokes
+the SELECT privilege on the _invent.partloc_ table from _Fred_, who was granted the privilege by _CLERKS_. Then,
+_JSMITH_ revokes the grant option from _CLERKS_:
 +
 ```
 REVOKE SELECT on table invent.partloc FROM fred GRANTED BY clerks;
@@ -7940,10 +7946,10 @@ operation. new is not allowed. an implicit old.* return list is assumed for a de
 <<<
 **** `_col-expr_ [[AS] _name_]`
 +
-specifies a derived column determined by the evaluation of an sql value expression in the list. any column referred to in a value
-expression is from the row in the old table exposed by the delete. the old table refers to column values before the delete operation.
+specifies a derived column determined by the evaluation of an sql value expression in the list. Any column referred to in a value
+expression is from the row in the old table exposed by the delete. The old table refers to column values before the delete operation.
 +
-By using the as clause, you can associate a derived column, _col-expr_, with a _name_. _name_ is an SQL identifier. See
+By using the `AS clause`, you can associate a derived column, _col-expr_, with a _name_. _name_ is an SQL identifier. See
 <<identifiers,Identifier>>.
 
 *** `[AS] _corr_ [(_col-expr-list_)]`
@@ -8009,22 +8015,22 @@ specifies a correlation name, _corr_, and an optional column list. See <<correla
 A _joined-table_ can be specified as:
 +
 ```
-_table-ref_ [_join-type_] JOIN _table-ref join-spec_
-| _table-ref_ NATURAL [_join-type_] JOIN _table-ref_
-| _table-ref_ CROSS JOIN _table-ref_
-| (_joined-table_)
+table-ref [join-type] JOIN table-ref join-spec
+| table-ref NATURAL [join-type] JOIN table-ref
+| table-ref CROSS JOIN table-ref
+| (joined-table)
 ```
 
 <<<
-*** `_join-type_ is: INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
+*** `_join-type_` is: 
 +
-is a joined table. You specify the _join-type_ by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
+`INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
++
+is a joined table. You specify the `_join-type_` by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
 If you omit the optional OUTER keyword and use LEFT, RIGHT, or FULL in a join, {project-name} SQL assumes the join is
 an outer join.
-+
-If you specify a CROSS join as the _join-type_, you cannot specify a NATURAL join or a
 
-*** `_join-spec_.`
+*** `_join-spec_`
 +
 If you specify an INNER, LEFT, RIGHT, or FULL join as the _join-type_ and you do not specify a NATURAL join, you
 must use an ON clause as the _join-spec_, as follows: subqueries are not allowed in the join predicate of FULL OUTER JOIN.
@@ -9982,23 +9988,23 @@ the UPSERT occurs within a transaction.
 * `_table_`
 +
 names the user table in which to insert or update rows. _table_ must be
-a base table. (_target-col-list_)
+a base table. 
+
+*`_target-col-list_`
 +
 names the columns in the table in which to insert or update values. The
-data type of each target
-+
-column must be compatible with the data type of its corresponding source
+data type of each target column must be compatible with the data type of its corresponding source
 value. Within the list, each target column must have the same position
 as its associated source value, whose position is determined by the
 columns in the table derived from the evaluation of the query expression
-(_query-expr_).
+(`_query-expr_`).
 +
 If you do not specify all of the columns in the target _table_ in the
-_target-col-list_, column default values are inserted into or updated
+`_target-col-list_`, column default values are inserted into or updated
 in the columns that do not appear in the list. See
 <<column_default_settings,Column Default Settings>>.
 +
-If you do not specify _target-col-list_, row values from the source
+If you do not specify `_target-col-list_`, row values from the source
 table are inserted into or updated in all columns in table. The order of
 the column values in the source table must be the same order as that of
 the columns specified in the CREATE TABLE for _table_. (This order is
