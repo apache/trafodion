@@ -5228,21 +5228,37 @@ GET is a {project-name} SQL extension.
 GET option
 
 option is:
-    COMPONENT PRIVILEGES ON component-name [FOR auth-name]
+    CATALOGS
+  | COMPONENT PRIVILEGES ON component-name [FOR auth-name]
   | COMPONENTS
   | FUNCTIONS FOR LIBRARY [[catalog-name.]schema-name.]library-name
   | FUNCTIONS [IN SCHEMA [catalog-name.]schema-name]
+  | HBASE REGISTERED TABLES IN CATALOG TRAFODION
+  | HIVE EXTERNAL TABLES IN CATALOG TRAFODION
+  | HIVE REGISTERED {OBJECTS | SCHEMAS | TABLES | VIEWS} IN CATALOG TRAFODION 
+  | INDEXES [IN SCHEMA schema-name]
+  | INDEXES [ON TABLE table-name]
   | LIBRARIES [IN SCHEMA [catalog-name.]schema-name]
   | PROCEDURES FOR LIBRARY [[catalog-name.]schema-name.]library-name
   | PROCEDURES [IN SCHEMA [catalog-name.]schema-name]
   | ROLES [FOR USER database-username]
+  | SEQUENCES [IN CATALOG catalog-name]
+  | SEQUENCES [IN SCHEMA schema-name}]
   | SCHEMAS [IN CATALOG catalog-name]
   | SCHEMAS FOR [USER | ROLE] authorization-id
+  | TABLES [IN CATALOG catalog-name]
   | TABLES [IN SCHEMA [catalog-name.]schema-name]
+  | TABLES [IN VIEW view-name]
   | USERS [FOR ROLE role-name]
+  | VIEWS [IN CATALOG catalog-name]
   | VIEWS [IN SCHEMA [catalog-name.]schema-name]
+  | VIEWS [IN VIEW view-name]
+  | VIEWS [ON VIEW view-name]
   | VIEWS ON TABLE [[catalog-name.]schema-name.]table-name
-  | PRIVILEGES FOR {USER | ROLE} authorization-id
+  | PRIVILEGES FOR {USER database-username | ROLE role-name}
+  | PRIVILEGES ON SEQUENCE sequence-name
+  | PRIVILEGES ON TABLE table-name
+  | PRIVILEGES ON VIEW view-name
 ```
 
 [[get_syntax]]
@@ -5332,6 +5348,10 @@ and the schema is seabase.
 +
 displays the names of all the tables in the specified schema.
 
+* `TABLES [IN VIEW view-name]`
++
+returns tables that referenced by the view _view-name_.
+
 * `USERS`
 +
 displays a list of all the registered database users.
@@ -5351,9 +5371,19 @@ and the schema is seabase.
 +
 displays the names of all the views in the specified schema. For the _catalog-name_, you can specify only trafodion.
 
+* `VIEWS [IN VIEW _view-name_]`
++
+returns views that referenced by the view _view-name_.
+
+* `VIEWS [ON VIEW _view-name_]`
++
+returns views that reference the view _view-name_.
+
 * `VIEWS ON TABLE _[[catalog-name.]schema-name.]table-name_`
 +
-displays the names of all the views that were created for the specified table. If you do not qualify the table name with
+returns views that reference the table _table-name_.
++
+If you do not qualify the table name with
 catalog and schema names, get uses the catalog and schema of the current session. For the _catalog-name_, you can specify
 only trafodion.
 
@@ -5431,6 +5461,116 @@ GET VIEWS IN SCHEMA SEABASE2;
 +
 ```
 GET VIEWS ON TABLE T;
+```
+
+* This example makes comparisons among `GET VIEWS [IN VIEW _view-name_]`, `GET VIEWS [ON VIEW _view-name_]`, `GET VIEWS [ON TABLE _table-name_]`
+and `GET TABLES [IN VIEW _view-name_]`.
++
+Creates the table _t1_.
+
++
+```
+SQL>CREATE TABLE t1 (c1 int);
+
+--- SQL operation complete.
+```
+
++
+Creates the view _v1_ based on the table _t1_.
+
++
+```
+SQL>CREATE VIEW v1 AS SELECT * FROM t1;
+
+--- SQL operation complete.
+```
+
++
+Creates the view _v2_ based on the view _v1_.
+
++
+```
+SQL>CREATE VIEW v2 AS SELECT * FROM v1;
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no views are referenced by _v1_.
+
++
+```
+SQL>GET VIEWS IN VIEW v1;
+
+--- SQL operation complete.
+```
+
++
+This statement returns _v1_ as _v1_ is referenced by _v2_.
+
++
+```
+SQL>GET VIEWS IN VIEW v2;
+
+TRAFODION.SEABASE.V1
+
+--- SQL operation complete.
+```
+
++
+This statement returns _v2_ as _v2_ references _v1_.
+
++
+```
+SQL>GET VIEWS ON VIEW v1;
+
+TRAFODION.SEABASE.V2
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no views reference _v2_.
+
++
+```
+SQL>GET VIEWS ON VIEW v2;
+
+--- SQL operation complete.
+```
+
++
+This statements returns _v1_ as _v1_ references _t1_. 
+
++
+```
+SQL>GET VIEWS ON TABLE t1;
+
+TRAFODION.SEABASE.V1
+
+--- SQL operation complete.
+```
+
++
+This statement returns _t1_ as _t1_ is referenced by _v1_.
+
++
+```
+SQL>GET TABLES IN VIEW v1;
+
+TRAFODION.SEABASE.T1
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no tables are referenced by _v2_.
+
++
+```
+SQL>GET TABLES IN VIEW v2;
+
+--- SQL operation complete.
 ```
 
 * This GET statement displays the names of the libraries in the catalog and schema of the current session, which happens to be
