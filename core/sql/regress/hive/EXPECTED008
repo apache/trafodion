@@ -2,6 +2,12 @@
 
 --- SQL operation complete.
 >>
+>>set schema hive.sch008;
+
+*** ERROR[1003] Schema HIVE.SCH008 does not exist.
+
+--- SQL operation failed with errors.
+>>
 >>showddl schema hive.sch008;
 
 *** ERROR[1003] Schema HIVE.SCH008 does not exist.
@@ -1017,6 +1023,77 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- alter rename. Should unregister the source table.
+>>create table t00807 (a int);
+
+--- SQL operation complete.
+>>alter table t00807 rename to `default`.t00807ren;
+
+--- SQL operation complete.
+>>select * from trafodion."_MD_".objects where schema_name = 'HIVE' and object_name = 'T00807';
+
+--- 0 row(s) selected.
+>>-- should show
+>>showddl hive.t00807ren;
+
+/* Hive DDL */
+CREATE TABLE HIVE.HIVE.T00807REN
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+--- SQL operation complete.
+>>-- should not show
+>>showddl t00807ren;
+
+*** ERROR[1388] Object HIVE.SCH008.T00807REN does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>drop table hive.t00807ren;
+
+--- SQL operation complete.
+>>
+>>-- alter rename to the hive schema set in session (hive.sch008)
+>>create table t00807 (a int);
+
+--- SQL operation complete.
+>>alter table t00807 rename to t00807ren;
+
+--- SQL operation complete.
+>>-- should show
+>>showddl t00807ren;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00807REN
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+--- SQL operation complete.
+>>-- should not show
+>>showddl hive.t00807ren;
+
+*** ERROR[1388] Object HIVE.HIVE.T00807REN does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- msck (meta store check) command support
+>>msck repair table t00807ren;
+
+--- SQL operation complete.
+>>alter table t00807ren recover partitions;
+
+--- SQL operation complete.
 >>
 >>-- explain on hive DDL
 >>explain options 'f' drop table hive.hive.tnone;
@@ -1072,7 +1149,7 @@ CREATE ROLE "DB__HIVEROLE";
 
 --- SQL operation complete.
 >>
->>-- should not return unquthorized error.
+>>-- should not return unauthorized error.
 >>log;
 >>process hive ddl 'drop table tnotexists';
 

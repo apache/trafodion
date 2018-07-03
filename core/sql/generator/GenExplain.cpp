@@ -1139,7 +1139,11 @@ DDLExpr::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
             buffer += "object_name: unknown ";
           buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
           if (NOT hddl->getHiveDDL().isNull())
-            buffer += NAString("hive_ddl: ") + hddl->getHiveDDL() + " ";
+            {
+              if (NOT hddl->getHiveDefaultDB().isNull())
+                buffer += NAString("hive_default_db: ") + hddl->getHiveDefaultDB() + " ";
+              buffer += NAString("hive_ddl: ") + hddl->getHiveDDL() + " ";
+            }
           else
             buffer += "hive_ddl: unknown ";
         }
