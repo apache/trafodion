@@ -4257,22 +4257,46 @@ For the searched DELETE form, if no WHERE clause exists, all rows are deleted fr
 ```
 Searched DELETE is:
 
-DELETE FROM table
-
-    [WHERE search-condition ]
-       [[for] access-option access]
+DELETE 
+[WITH NO ROLLBACK] ["["FIRST N"]"]
+FROM table-name
+[WHERE search-condition ]
+[[for] access-option access]
 
 access-option is:
-    read committed
+read committed
 ```
 
 [[delete_syntax]]
 === Syntax Description of DELETE
 
-* `_table_`
+* `_table-name_`
 +
 names the user table or view from which to delete rows. _table_ must be a base table or an updatable view. To refer to a
 table or view, use the ANSI logical name. See <<database_object_names,Database Object Names>>.
+
+* `WITH NO ROLLBACK`
++
+performs a non-transactional delete.
++
+A non-transactional delete is one that happens outside a transaction. It means that if the 
+statement is interrupted, any deletes that have been done are still permanent.
++
+NOTE: This option is only supported if there is no index on the table.
+
+* `FIRST _N_`
++
+specified that _N_ rows are to be deleted (assuming the table has at least _N_ rows and that
+the qualification criteria specified in the WHERE clause, if any, would select at least _N_ rows).
++
+You must enclose `First _N_` in square bracket ([ ]).
+The quotation marks (" ") around each square brackt in the syntax diagram indicate that 
+the bracket is a required character that you must type as shown (for example, `[FIRST 5]`).
+Do not include quotation marks in the FIRST clause.
++
+NOTE: When using this option without the `WITH NO ROLLBACK` option, and if you have a large 
+_N_ (tens of thousands), break up _N_ into smaller numbers and execute the DELETE statement 
+repeatedly for better performance.
 
 * `WHERE _search-condition_`
 +
@@ -4286,7 +4310,7 @@ If you do not specify a search condition, all rows in the table or view are dele
 specifies the access option required for data used to evaluate the search condition.
 See <<data_consistency_and_access_options,Data Consistency and Access Options>>.
 
-** `READ `COMMITTED
+** `READ COMMITTED`
 +
 specifies that any data used to evaluate the search condition must come from committed  rows.
 +
@@ -4358,6 +4382,45 @@ DELETE FROM invent.partsupp WHERE suppnum NOT IN
 +
 ```
 delete from table1 where a in (select a from table1 where b > 200)
+```
+
+* This example executes a non-transactional delete of first 1000 rows that satisfy the
+WHERE condition.
++
+```
+DELETE WITH NO ROLLBACK [FIRST 1000] 
+FROM test 
+WHERE id<30;
+```
+
+* This example shows that the option `WITH NO ROLLBACK` is only supported if there is no
+index on the table.
++
+```
+SQL>DELETE WITH NO ROLLBACK FROM test;
+
+*** ERROR[3232] INSERT, UPDATE, or DELETE of table TRAFODION.SEABASE.TEST with dependent Index : TRAFODION.SEABASE.INDEX_TEST is not allowed when NO ROLLBACK transaction setting is in effect. [2018-05-30 05:42:47]
+
+SQL>SHOWDDL test;
+
+CREATE TABLE TRAFODION.SEABASE.TEST
+  ( 
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               INT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_TEST ON TRAFODION.SEABASE.TEST
+  ( 
+    C1 ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 <<<
