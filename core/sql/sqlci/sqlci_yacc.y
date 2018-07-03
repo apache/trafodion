@@ -429,6 +429,7 @@ static char * FCString (const char *idString, int isFC)
 %token MODE
 %token MODIFY
 %token MODIFYV
+%token MSCKtoken
 %token NEXT
 %token NOEtoken
 %token OBEY
@@ -1934,6 +1935,7 @@ dml_type :
 	|	TRANSFORM		{$$ = DML_DDL_TYPE;}
 	|	CALLToken		{$$ = DML_DDL_TYPE;}
 	|	LOADtoken		{$$ = DML_DDL_TYPE;}
+	|	MSCKtoken		{$$ = DML_DDL_TYPE;}
 	|	EXTRACTtoken		{$$ = DML_DESCRIBE_TYPE;}
 	|	REPLICATEtoken		{$$ = DML_DESCRIBE_TYPE;}
 	|	GENERATEtoken		{$$ = DML_DESCRIBE_TYPE;}

@@ -206,6 +206,7 @@ B			[ \t\n]+
 [Mm][Ee][Tt][Aa][Dd][Aa][Tt][Aa]                   return_IDENT_or_TOKEN(METADATAtoken, 0);
 [Mm][Aa][Pp]                           return_IDENT_or_TOKEN(MAPtoken, 0);
 [Mm][Oo][Dd][Ii][Ff][Yy]               return_IDENT_or_TOKEN(MODIFY, 0);
+[Mm][Ss][Cc][Kk] 		       return_IDENT_or_TOKEN(MSCKtoken, 0);
 [Oo][Bb][Ee][Yy]  		       { 
                      BEGIN FNAME; 
                                          return_IDENT_or_TOKEN (OBEY, 0); 

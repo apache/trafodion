@@ -108,6 +108,33 @@ short ControlAbstractClass::codeGen(Generator * generator)
 	value_ = "OFF";
     }
 
+  Int16 reset;
+  if (cqt == DEFAULT_)
+     reset = ((token_ == "") ? -reset_ : reset_);
+  else
+     reset = reset_;
+
+  // if this is a SET SCHEMA stmt for a Hive schema, construct the value
+  // as fully qualified schema name (cat.sch).
+  // This string will be used at runtime to set this schema in Hive
+  // if the schema exists.
+  // See ExControlTcb::work for details.
+  NABoolean isHiveSetSchema = FALSE;
+  if ((cqt == DEFAULT_) && (dynamic()) && (token_ == "SCHEMA") && (reset == 0))
+    {
+      ComSchemaName csn(value_);
+      NAString catName(csn.getCatalogNamePart().getInternalName());
+      if (catName.isNull())
+        catName = CmpCommon::getDefaultString(CATALOG);
+      if (catName == HIVE_SYSTEM_CATALOG)
+        {
+          value_ = HIVE_SYSTEM_CATALOG;
+          value_ += ".";
+          value_ += csn.getSchemaNamePart().getInternalName();
+          isHiveSetSchema = TRUE;
+        }
+    }
+
   // We need txt/tok/val stuff if in [1] a dynamic compile (EXEC SQL PREPARE),
   // OR [2] a dynamic statement even in a static compile.
   //
@@ -124,12 +151,6 @@ short ControlAbstractClass::codeGen(Generator * generator)
     v[i++] = convertNAString(token_, space);
     v[i++] = convertNAString(value_, space);
   }
-
-  Int16 reset;
-  if (cqt == DEFAULT_)
-     reset = ((token_ == "") ? -reset_ : reset_);
-  else
-     reset = reset_;
 
   ComTdbControl * control_tdb = new(space) 
     ComTdbControl(cqt,
@@ -150,6 +171,12 @@ short ControlAbstractClass::codeGen(Generator * generator)
         ActiveSchemaDB()->getDefaults().isNonResetableAttribute(v[0]);
      control_tdb->setNonResettable(nonResettable);
      control_tdb->setControlActionType(((ControlQueryDefault *)this)->getHoldOrRestoreCQD());
+
+     if (dynamic()) // dynamic() is true for SET stmts
+       {
+         control_tdb->setIsSetStmt(TRUE);
+         control_tdb->setIsHiveSetSchema(isHiveSetSchema);
+       }
   }
   // no tupps are returned 
   generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),

@@ -121,8 +121,19 @@ public:
   void setNonResettable(NABoolean nonResettable) 
                  { nonResettable_ = nonResettable; }
   NABoolean isNonResettable() { return (nonResettable_ != FALSE); } 
+
+  void setIsSetStmt(short v) {(v ? flags_ |= IS_SET_STMT : flags_ &= ~IS_SET_STMT); };
+  NABoolean isSetStmt() { return (flags_ & IS_SET_STMT) != 0; };
+
+  void setIsHiveSetSchema(short v) {(v ? flags_ |= IS_HIVE_SET_SCHEMA : flags_ &= ~IS_HIVE_SET_SCHEMA); };
+  NABoolean isHiveSetSchema() { return (flags_ & IS_HIVE_SET_SCHEMA) != 0; };
  
 private:
+  enum
+    {
+      IS_SET_STMT        = 0x0001,
+      IS_HIVE_SET_SCHEMA = 0x0002
+    };
 
   // Remember, when putting tablename into one of these 3 char*'s,
   // to save its ANSI name; e.g.
@@ -141,7 +152,8 @@ private:
   Int16 sqlTextCharSet_;           // 36-37
   Int16 actionType_;               // 38-39
   Int16 nonResettable_;            // 40-41
-  char fillersComTdbControl_[30];  // 42-71
+  UInt16 flags_;                   // 42-43
+  char fillersComTdbControl_[28];  // 44-71
 
 };
 #endif

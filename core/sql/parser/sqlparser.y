@@ -849,6 +849,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_MONTHNAME
 %token <tokval> TOK_MORE                /* ANSI SQL non-reserved word */
 %token <tokval> TOK_MRANK               /* Tandem extension non-reserved word */
+%token <tokval> TOK_MSCK
 %token <tokval> TOK_MSTDDEV             /* Tandem extension non-reserved word */
 %token <tokval> TOK_MSUM                /* Tandem extension non-reserved word */
 %token <tokval> TOK_MV                  
@@ -976,6 +977,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_REMOTE
 %token <tokval> TOK_TEMP_TABLE         
 %token <tokval> TOK_TEMPORARY
+%token <tokval> TOK_REPAIR
 %token <tokval> TOK_REPEAT
 %token <tokval> TOK_REPEATABLE          /* ANSI SQL non-reserved word */ 
 %token <tokval> TOK_REPEATABLE_ACCESS   /* Tandem extension */
@@ -31801,6 +31803,41 @@ alter_table_statement :  alter_table_start_tokens
                                   delete $4 /*ddl_qualified_name*/;
                                 }
 
+                     | TOK_MSCK
+                       { 
+                         // this is a Hive only syntax
+                         SqlParser_CurrentParser->hiveDDLInfo_->
+                           setValues(TRUE, StmtDDLonHiveObjects::MSCK_, 
+                                     StmtDDLonHiveObjects::TABLE_);
+                       }
+                       TOK_REPAIR TOK_TABLE ddl_qualified_name
+                       {
+                         if (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_)
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Specified object must be a Hive object.");
+                           }
+
+                         $$ = NULL;
+                         YYERROR;
+                       }
+                     | alter_table_start_tokens ddl_qualified_name TOK_RECOVER TOK_PARTITIONS
+                       {
+                         // this is a Hive only syntax
+                         SqlParser_CurrentParser->hiveDDLInfo_->
+                           setValues(TRUE, StmtDDLonHiveObjects::MSCK_, 
+                                     StmtDDLonHiveObjects::TABLE_);
+
+                         if (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_)
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Specified object must be a Hive object.");
+                           }
+ 
+                         $$ = NULL;
+                         YYERROR;
+                       }
+
 ghost : TOK_GHOST
                  {
                    // GHOST is allowed only if the flag ALLOW_SPECIALTABLETYPE is set,
@@ -33957,6 +33994,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MV  
                       | TOK_MULTI            /* Long Running */
 		      | TOK_MULTIDELTA // MV
+                      | TOK_MSCK
 		      | TOK_MVATTRIBUTE  // MV
 		      | TOK_MVATTRIBUTES // MV
                       | TOK_MV_TABLE  
@@ -34062,6 +34100,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RELOAD
                       | TOK_REMOTE
                       | TOK_RENAME
+                      | TOK_REPAIR
                       | TOK_REPOSITORY
                       | TOK_REQUEST // MV
                       | TOK_REQUIRED
