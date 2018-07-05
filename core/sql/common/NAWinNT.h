@@ -181,6 +181,7 @@ NAWchar na_towlower (NAWchar wc)
 Int64 na_wcstoll (const NAWchar *);
 Lng32 na_wcstol (const NAWchar *);
 NAWchar *na_wcschr (const NAWchar *, NAWchar);
+NAWchar *na_wcschrSkipOverParenText (const NAWchar *, NAWchar);
 NAWchar *na_wcsrchr (const NAWchar *, NAWchar);
 Int32 na_wsprintf(NAWchar *buffer, const NAWchar *format, ... );
 NAWchar *na_wmemchr(const NAWchar *ws, NAWchar wc, Int32 n); // used by swsprintf
