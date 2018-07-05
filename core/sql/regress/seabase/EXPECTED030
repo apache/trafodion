@@ -549,6 +549,70 @@ March 01, 2016, 10:11
      2
 
 --- 1 row(s) selected.
+>>select extract(week from date '2005-01-01') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>select extract(epoch from timestamp '2000-12-30 20:38:40.12') from (values(1)) as t(a);
+
+(EXPR)
+---------------------
+
+         978208720.12
+
+--- 1 row(s) selected.
+>>select extract(dow from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     5
+
+--- 1 row(s) selected.
+>>select extract(doy from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+   172
+
+--- 1 row(s) selected.
+>>select extract(wom from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     3
+
+--- 1 row(s) selected.
+>>select extract(century from timestamp '2001-01-01 12:30:00') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    21
+
+--- 1 row(s) selected.
+>>select extract(decade from interval '9' year - interval '99' year) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    -9
+
+--- 1 row(s) selected.
+>>select extract(quarter from interval '09' month) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     3
+
+--- 1 row(s) selected.
 >>
 >>drop table if exists t030t1;
 

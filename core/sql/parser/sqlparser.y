@@ -67,6 +67,7 @@
 // This solves the problem because bison does not have to reduce after reading TOK_DROP. Rather,
 // after reading TOK_DROP TOK_TABLE, it can lookahead at the next token to decide what to do.
 
+
 #include "Platform.h"				// must be the first #include
 //debug yacc
 #define YY_LOG_FILE "yylog"
@@ -500,6 +501,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CARDINALITY
 %token <tokval> TOK_CASE
 %token <tokval> TOK_CAST
+%token <tokval> TOK_CENTURY
 %token <tokval> TOK_TYPECAST
 %token <tokval> TOK_CATCHUP	  // MV
 %token <tokval> TOK_TRANSLATE
@@ -622,6 +624,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_DYNAMIC
 %token <tokval> TOK_DYNAMIC_FUNCTION    /* ANSI SQL non-reserved word */
 %token <tokval> TOK_D_RANK             /* Tandem extension non-reserved word */
+%token <tokval> TOK_DECADE
+%token <tokval> TOK_DOW
+%token <tokval> TOK_DOY
 %token <tokval> TOK_EACH                
 %token <tokval> TOK_EID
 %token <tokval> TOK_ELSEIF
@@ -656,6 +661,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_EXTRACT
 %token <tokval> TOK_EXTRACT_SOURCE
 %token <tokval> TOK_EXTRACT_TARGET
+%token <tokval> TOK_EPOCH
 %token <tokval> TOK_FALSE
 %token <tokval> TOK_FAMILY
 %token <tokval> TOK_FEATURE_VERSION_INFO   /* Versioning. Non-reserved */
@@ -1175,6 +1181,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_WAITEDIO
 %token <tokval> TOK_WCHAR
 %token <tokval> TOK_WEEK
+%token <tokval> TOK_WOM
 %token <tokval> TOK_WHEN
 %token <tokval> TOK_WHENEVER
 %token <tokval> TOK_WHERE
@@ -2043,6 +2050,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <intervalQualifier>	end_field
 %type <intervalQualifier>       fraction_only_interval
 %type <datetimeField>		non_second_datetime_field
+%type <datetimeField>		new_non_second_datetime_field
 %type <datetimeField>		datetime_field
 %type <datetimeQualifier>       datetime_qualifier           //For MP Datetime
 %type <datetimeQualifier>       datetime_start_field         //For MP Datetime
@@ -12482,9 +12490,46 @@ non_second_datetime_field : TOK_YEAR
                           {
                             $$ = REC_DATE_MINUTE;
                           }
+new_non_second_datetime_field:
+                          TOK_CENTURY
+                          {
+                            $$ = REC_DATE_CENTURY;
+                          }
+                          | TOK_DECADE
+                          {
+                            $$ = REC_DATE_DECADE;
+                          }
+                          | TOK_WEEK
+                          {
+                            $$ = REC_DATE_WEEK;
+                          }
+                          | TOK_QUARTER
+                          {
+                            $$ = REC_DATE_QUARTER;
+                          }
+                          | TOK_EPOCH
+                          {
+                            $$ = REC_DATE_EPOCH;
+                          }
+                          | TOK_DOW
+                          {
+                            $$ = REC_DATE_DOW;
+                          }
+                          | TOK_DOY
+                          {
+                            $$ = REC_DATE_DOY;
+                          }
+                          | TOK_WOM
+                          {
+                            $$ = REC_DATE_WOM;
+                          }
 
 /* type datetimeField */
 datetime_field : non_second_datetime_field
+               {
+                 $$ = $1;
+               }
+               | new_non_second_datetime_field
                {
                  $$ = $1;
                }
@@ -33745,6 +33790,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_CATALOGS
                       | TOK_CATALOG_NAME
 		      | TOK_CATCHUP // MV
+                      | TOK_CENTURY
                       | TOK_CHANGED
 		      | TOK_CHANGES // MV
                       | TOK_CHARS
@@ -33814,6 +33860,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DCOMPRESS
                       | TOK_DDL
 		      | TOK_DE			// MV OZ_REFRESH
+                      | TOK_DECADE
                       | TOK_DEFINER
                       | TOK_DEFINITION
                       | TOK_DEFAULTS
@@ -33830,6 +33877,8 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DIVISION
                       | TOK_DO
                       | TOK_DOUBLE_IEEE
+                      | TOK_DOW
+                      | TOK_DOY
                       | TOK_DROP_LIBRARY
                       | TOK_DROP_MV
                       | TOK_DROP_MV_GROUP
@@ -33852,6 +33901,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_ENTERPRISE
                       | TOK_ENTRY
                       | TOK_ENTRIES
+                      | TOK_EPOCH
                       | TOK_ET
                       | TOK_EUROPEAN
                       | TOK_EXCEPTIONS
@@ -34224,6 +34274,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_VSBB
                       | TOK_WAITED
                       | TOK_WAITEDIO
+                      | TOK_WOM
 
 		      	// New words added can be merged into sorted list above
                       | TOK_INVOKE

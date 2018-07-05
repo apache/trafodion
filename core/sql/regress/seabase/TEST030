@@ -98,6 +98,14 @@ select HOUR(interval '5:2:15:36.33' day to second(2)) from (values(1)) as t(a);
 select MINUTE(interval '5:13:25:2.12' day to second(2)) from (values(1)) as t(a);
 select extract (year from INTERVAL '97-02' YEAR TO MONTH) from (values (1)) as t(a);
 select interval '8' year / 4 from dual;
+select extract(week from date '2005-01-01') from (values(1)) as t(a);
+select extract(epoch from timestamp '2000-12-30 20:38:40.12') from (values(1)) as t(a);
+select extract(dow from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+select extract(doy from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+select extract(wom from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+select extract(century from timestamp '2001-01-01 12:30:00') from (values(1)) as t(a);
+select extract(decade from interval '9' year - interval '99' year) from (values(1)) as t(a);
+select extract(quarter from interval '09' month) from (values(1)) as t(a);
 
 drop table if exists t030t1;
 create table t030t1 (a date, b char(30), c varchar(30), d timestamp);

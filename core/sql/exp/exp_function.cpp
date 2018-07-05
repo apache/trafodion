@@ -69,6 +69,7 @@
 #include "ComDiags.h"
 #include "ComAnsiNamePart.h"
 #include "ComSqlId.h"
+#include "ComCextdecs.h"
 #include "ex_globals.h"
 
 #include "NAUserId.h"
@@ -3001,6 +3002,223 @@ ex_expr::exp_return_type ex_function_dayofweek::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
+static Int64 lcl_dayofweek(Int64 totaldays)
+{
+  return (unsigned short)((totaldays + 1) % 7) + 1;
+}
+
+static int lcl_date2Julian(int y, int m ,int d)
+{
+  int myjulian = 0;
+  int mycentury = 0;
+  if ( m <= 2)
+    {
+      m = m+13;
+      y = y+4799;
+    }
+  else
+    {
+      m = m+1;
+      y = y+4800;
+    }
+
+  mycentury = y / 100;
+  myjulian = y * 365 - 32167;
+  myjulian += y/4 - mycentury + mycentury / 4;
+  myjulian += 7834 * m / 256 + d;
+  return myjulian;
+}
+
+static Int64 lcl_dayofyear(char year, char month, char day)
+{
+  return (lcl_date2Julian(year,month,day)-lcl_date2Julian(year,1,1)+1);
+}
+
+#define DAYS_PER_YEAR 365.25 /*consider leap year every four years*/
+#define MONTHS_PER_YEAR 12
+#define DAYS_PER_MONTH 30
+#define HOURS_PER_DAY 24
+#define SECONDS_PER_MINUTE 60
+#define SECONDS_PER_HOUR 3600
+#define SECONDS_PER_DAY 86400
+
+static Int64 lcl_interval(rec_datetime_field eField, Lng32 eCode, char *opdata, UInt32 nLength)
+{
+  if (!opdata)
+    return 0;
+  if ( REC_DATE_DECADE == eField && REC_INT_YEAR == eCode )
+    {
+      short nValue;
+      str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
+      return nValue / 10;
+    }
+  if ( REC_DATE_QUARTER == eField && REC_INT_MONTH == eCode )
+    {
+      short nValue;
+      str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
+      return (nValue-1)/3+1;
+    }
+  if ( REC_DATE_EPOCH == eField )
+    {
+      Int64 nVal = 0;
+      if ( SQL_SMALL_SIZE==nLength )
+        {
+          short value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_INT_SIZE==nLength )
+        {
+          Lng32 value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_LARGE_SIZE==nLength )
+        {
+          str_cpy_all((char *) &nVal, opdata, sizeof(nVal));
+        }
+
+      if ( REC_INT_YEAR==eCode )
+        return nVal*DAYS_PER_YEAR*SECONDS_PER_DAY;
+      else if ( REC_INT_MONTH==eCode
+               || REC_INT_YEAR_MONTH==eCode)
+        {
+          double result = (double)(nVal/MONTHS_PER_YEAR) * DAYS_PER_YEAR * SECONDS_PER_DAY;
+          result += (double)(nVal%MONTHS_PER_YEAR) * DAYS_PER_MONTH * SECONDS_PER_DAY;
+          return Int64(result);
+        }
+      else if ( REC_INT_DAY==eCode )
+        return nVal*SECONDS_PER_DAY;
+      else if ( REC_INT_HOUR==eCode
+               || REC_INT_DAY_HOUR==eCode )
+        return nVal*SECONDS_PER_HOUR;
+      else if ( REC_INT_MINUTE==eCode
+               || REC_INT_HOUR_MINUTE==eCode
+               || REC_INT_DAY_MINUTE==eCode)
+        return nVal*SECONDS_PER_MINUTE;
+      else if ( REC_INT_SECOND==eCode
+               || REC_INT_MINUTE_SECOND==eCode
+               || REC_INT_HOUR_SECOND==eCode
+               || REC_INT_DAY_SECOND==eCode )
+         return nVal;
+    }
+  return 0;
+}
+
+Int64 ex_function_extract::getExtraTimeValue(rec_datetime_field eField, Lng32 eCode, char *dateTime)
+{
+  short year;
+  char month;
+  char day;
+  char hour = 0;
+  char minute = 0;
+  char second = 0;
+  char millisencond = 0;
+  if (eField < REC_DATE_CENTURY || eField > REC_DATE_WOM)
+    return 0;
+  if (eCode != REC_DTCODE_DATE && eCode != REC_DTCODE_TIMESTAMP)
+    return 0;
+
+  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
+  if (!datetimeOpType)
+    return 0;
+
+  rec_datetime_field eEndFiled = REC_DATE_DAY;
+  if ( REC_DTCODE_TIMESTAMP == eCode )
+    eEndFiled = REC_DATE_SECOND;
+  size_t n = strlen(dateTime);
+  for (Int32 field = REC_DATE_YEAR; field <= eEndFiled; field++)
+    {
+      switch (field)
+        {
+          case REC_DATE_YEAR:
+            {
+              str_cpy_all((char *) &year, dateTime, sizeof(year));
+              dateTime += sizeof(year);
+            }
+            break;
+          case REC_DATE_MONTH:
+            {
+              month = *dateTime++;
+            }
+            break;
+          case REC_DATE_DAY:
+            {
+              day = *dateTime;
+              if ( REC_DATE_SECOND == eEndFiled )
+                dateTime++;
+            }
+            break;
+          case REC_DATE_HOUR:
+            {
+              hour = *dateTime++;
+            }
+            break;
+          case REC_DATE_MINUTE:
+            {
+              minute = *dateTime++;
+            }
+            break;
+          case REC_DATE_SECOND:
+            {
+              second = *dateTime;
+              if (n>7)// 2018-06-20 20:30:15.12  length = 8
+                {
+                  dateTime++;
+                  millisencond = *dateTime;
+                }
+            }
+            break;
+        }
+    }
+  switch (eField)
+    {
+      case REC_DATE_DOW:
+        {//same with built-in function dayofweek  ex_function_dayofweek::eval
+          Int64 interval = datetimeOpType->getTotalDays(year, month, day);
+          return lcl_dayofweek(interval);
+        }
+      case REC_DATE_DOY:
+        {
+          return lcl_dayofyear(year,month,day);
+        }
+      case REC_DATE_WOM:
+        {
+          return ((day-1)/7+1);
+        }
+      case REC_DATE_CENTURY:
+        {
+          return (year+99)/100;
+        }
+      case REC_DATE_DECADE:
+        {
+          return year/10;
+        }
+      case REC_DATE_WEEK:
+        {//same with built-in function week  ITM_WEEK
+          Int64 interval = datetimeOpType->getTotalDays(year, 1, 1);
+          Int64 dayofweek = lcl_dayofweek(interval);
+          Int64 dayofyear = lcl_dayofyear(year,month,day);
+          return (dayofyear-1+dayofweek-1)/7+1;
+        }
+      case REC_DATE_QUARTER:
+        {
+          return (month-1)/3+1;
+        }
+      case REC_DATE_EPOCH:
+        {
+          Int64 ndays = datetimeOpType->getTotalDays(year, month, day);
+          Int64 nJuliandays = datetimeOpType->getTotalDays(1970, 1, 1);
+          ndays = ndays - nJuliandays;
+          Int64 ntimestamp = ndays*86400+hour*3600+minute*60+second;
+          if ( 0!=millisencond )
+            ntimestamp = ntimestamp*100+millisencond;
+          return ntimestamp;
+        }
+    }
+  return 0;
+}
+
 ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
 						   CollHeap *heap,
 						   ComDiagsArea** diagsArea)
@@ -3013,6 +3231,13 @@ ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
     rec_datetime_field opEndField;
     rec_datetime_field extractStartField = getExtractField();
     rec_datetime_field extractEndField = extractStartField;
+
+    if ( extractStartField >=REC_DATE_CENTURY && extractStartField<=REC_DATE_WOM )
+    {
+      result = getExtraTimeValue(extractStartField, datetimeOpType->getPrecision(), datetimeOpData);
+      copyInteger (op_data[0], getOperand(0)->getLength(), &result, sizeof(result));
+      return ex_expr::EXPR_OK;
+    }
 
     if (extractStartField > REC_DATE_MAX_SINGLE_FIELD) {
       extractStartField = REC_DATE_YEAR;
@@ -3103,6 +3328,15 @@ ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
       }
     }
   } else {
+    if (getExtractField() == REC_DATE_DECADE
+        || getExtractField() == REC_DATE_QUARTER
+        || getExtractField() == REC_DATE_EPOCH)
+      {
+        ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
+        result = lcl_interval(getExtractField(),getOperand(1)->getDatatype(),op_data[1],getOperand(1)->getLength());
+        copyInteger (op_data[0], getOperand(0)->getLength(), &result, sizeof(result));
+        return ex_expr::EXPR_OK;
+      }
     Int64 interval;
     switch (getOperand(1)->getLength()) {
     case SQL_SMALL_SIZE: {

@@ -231,7 +231,14 @@ enum rec_datetime_field {
 , REC_DATE_MINUTE
 , REC_DATE_SECOND
 , REC_DATE_FRACTION_MP			// Used in MP only!
-
+, REC_DATE_CENTURY
+, REC_DATE_DECADE
+, REC_DATE_WEEK
+, REC_DATE_QUARTER
+, REC_DATE_EPOCH
+, REC_DATE_DOW
+, REC_DATE_DOY
+, REC_DATE_WOM
 , REC_DATE_MAX_SINGLE_FIELD
   // other datetime fields, not used in FS2 and DDL
 , REC_DATE_YEARQUARTER_EXTRACT   = 1000     // Used for EXTRACT (DATE_PART) function only!
