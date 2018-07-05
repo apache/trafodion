@@ -589,6 +589,30 @@ March 01, 2016, 10:11
      3
 
 --- 1 row(s) selected.
+>>select extract(century from timestamp '2001-01-01 12:30:00') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    21
+
+--- 1 row(s) selected.
+>>select extract(decade from interval '9' year - interval '99' year) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    -9
+
+--- 1 row(s) selected.
+>>select extract(quarter from interval '09' month) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     3
+
+--- 1 row(s) selected.
 >>
 >>drop table if exists t030t1;
 

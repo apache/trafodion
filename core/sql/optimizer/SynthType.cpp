@@ -4509,7 +4509,9 @@ const NAType *Extract::synthesizeType()
       scale += dti.getFractionPrecision();
     }
   NABoolean bNegValue = FALSE;
-  if ( getExtractField() >= REC_DATE_CENTURY && extractStartField <= REC_DATE_WOM )
+  if (getExtractField() == REC_DATE_DECADE
+      || getExtractField() == REC_DATE_QUARTER
+      || getExtractField() == REC_DATE_EPOCH )
     bNegValue = TRUE;
   const Int16 disAmbiguate = 0; // added for 64bit project
   return new HEAP

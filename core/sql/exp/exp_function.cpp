@@ -3056,22 +3056,27 @@ static Int64 lcl_interval(rec_datetime_field eField, Lng32 eCode, char *opdata, 
     {
       short nValue;
       str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
-      if( nValue<=0 )
-        return 0;
       return (nValue-1)/3+1;
     }
   if ( REC_DATE_EPOCH == eField )
     {
-      size_t n = 0;
-      if ( SQL_SMALL_SIZE==nLength )
-        n = sizeof(short);
-      else if ( SQL_INT_SIZE==nLength )
-        n = sizeof(Lng32);
-      else if ( SQL_LARGE_SIZE==nLength )
-        n = sizeof(Int64);
-
       Int64 nVal = 0;
-      str_cpy_all((char *) &nVal, opdata, n);
+      if ( SQL_SMALL_SIZE==nLength )
+        {
+          short value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_INT_SIZE==nLength )
+        {
+          Lng32 value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_LARGE_SIZE==nLength )
+        {
+          str_cpy_all((char *) &nVal, opdata, sizeof(nVal));
+        }
 
       if ( REC_INT_YEAR==eCode )
         return nVal*DAYS_PER_YEAR*SECONDS_PER_DAY;

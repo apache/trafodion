@@ -33731,6 +33731,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_CATALOGS
                       | TOK_CATALOG_NAME
 		      | TOK_CATCHUP // MV
+                      | TOK_CENTURY
                       | TOK_CHANGED
 		      | TOK_CHANGES // MV
                       | TOK_CHARS
@@ -33800,6 +33801,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DCOMPRESS
                       | TOK_DDL
 		      | TOK_DE			// MV OZ_REFRESH
+                      | TOK_DECADE
                       | TOK_DEFINER
                       | TOK_DEFINITION
                       | TOK_DEFAULTS
@@ -33816,6 +33818,8 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DIVISION
                       | TOK_DO
                       | TOK_DOUBLE_IEEE
+                      | TOK_DOW
+                      | TOK_DOY
                       | TOK_DROP_LIBRARY
                       | TOK_DROP_MV
                       | TOK_DROP_MV_GROUP
@@ -33838,6 +33842,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_ENTERPRISE
                       | TOK_ENTRY
                       | TOK_ENTRIES
+                      | TOK_EPOCH
                       | TOK_ET
                       | TOK_EUROPEAN
                       | TOK_EXCEPTIONS
@@ -34208,6 +34213,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_VSBB
                       | TOK_WAITED
                       | TOK_WAITEDIO
+                      | TOK_WOM
 
 		      	// New words added can be merged into sorted list above
                       | TOK_INVOKE
