@@ -3022,7 +3022,7 @@ static int lcl_date2Julian(int y, int m ,int d)
       y = y+4800;
     }
 
-  myjulian = y / 100;
+  mycentury = y / 100;
   myjulian = y * 365 - 32167;
   myjulian += y/4 - mycentury + mycentury / 4;
   myjulian += 7834 * m / 256 + d;
@@ -3184,13 +3184,6 @@ Int64 ex_function_extract::getExtraTimeValue(rec_datetime_field eField, Lng32 eC
         }
       case REC_DATE_WOM:
         {
-          /*Int64 interval = datetimeOpType->getTotalDays(year, month, 1);
-          Int64 firstdayinmonthofweek = lcl_dayofweek(interval);
-          int exceptday = 0;
-          if (firstdayinmonthofweek != 2)
-            exceptday = 7 - firstdayinmonthofweek + 2;
-
-          return (day - exceptday)/7 + (day < exceptday ? 0 : 1);*/
           return ((day-1)/7+1);
         }
       case REC_DATE_CENTURY:
