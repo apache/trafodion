@@ -4032,9 +4032,10 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
   NABoolean tf  = ExpDatetime::isTimeFormat(frmt);
   NABoolean tsf = ExpDatetime::isTimestampFormat(frmt);
   NABoolean nf  = ExpDatetime::isNumericFormat(frmt);
+  NABoolean ef  = ExpDatetime::isExtraFormat(frmt);
   NABoolean ms4 = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
   
-  if (NOT (df || tf || tsf || nf))
+  if (NOT (df || tf || tsf || nf || ef))
     {
       // format must be date, time, timestamp or numeric
       error = 1; // error 4065
@@ -4308,6 +4309,10 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
                              getValueId().getType().supportsSQLnull()));
           setChild(0, newChild->bindNode(bindWA));
         }
+    }
+  else if (ExpDatetime::isExtraFormat(frmt_))
+    {
+      dateFormat_ = DateFormat::TIME_FORMAT_STR;
     }
   else
     {

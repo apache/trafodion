@@ -160,9 +160,53 @@ const ExpDatetime::DatetimeFormatInfo ExpDatetime::datetimeFormat[] =
     {ExpDatetime::DATETIME_FORMAT_NUM1,      "99:99:99:99",           11, 11},
     {ExpDatetime::DATETIME_FORMAT_NUM2,      "-99:99:99:99",          12, 12},
 
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_HH,  "HH",                     2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_HH12,"HH12",                   2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_HH24,"HH24",                   2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_MI,  "MI",                     2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_SS,  "SS",                     2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_YYYY,"YYYY",                   4,  4},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_YYY, "YYY",                    3,  3},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_YY,  "YY",                     2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_Y,   "Y",                      1,  1},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_MON, "MON",                    3,  3},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_MM,  "MM",                     2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_DY,  "DY",                     3,  3},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_DAY, "DAY",                    6,  9},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_CC,  "CC",                     2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_D,   "D",                      1,  1},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_DD,  "DD",                     2,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_DDD, "DDD",                    1,  3},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_W,   "W",                      1,  1},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_WW,  "WW",                     1,  2},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_J,   "J",                      7,  7},
+    {ExpDatetime::DATETIME_FORMAT_EXTRA_Q,   "Q",                      1,  1},
+
     // formats that are replaced by one of the other formats at bind time
     {ExpDatetime::DATETIME_FORMAT_UNSPECIFIED,   "UNSPECIFIED",       11, 11}
   };
+
+UInt32 Date2Julian(int y, int m ,int d)
+{
+  int myjulian = 0;
+  int mycentury = 0;
+  if ( m <= 2)
+    {
+      m = m+13;
+      y = y+4799;
+    }
+  else
+    {
+      m = m+1;
+      y = y+4800;
+    }
+
+  mycentury = y / 100;
+  myjulian = y * 365 - 32167;
+  myjulian += y/4 - mycentury + mycentury / 4;
+  myjulian += 7834 * m / 256 + d;
+  return myjulian;
+}
 
 ExpDatetime::ExpDatetime()
 {
@@ -3294,6 +3338,39 @@ convertMonthToStr(Lng32 value, char *&result, UInt32 width)
   result += width;
 }
 
+static void
+convertDayOfWeekToStr(Lng32 value, char *&result, NABoolean bAbbreviation, UInt32 width)
+{
+  const char* dayofweek[] =
+  {
+    "SUNDAY   ",
+    "MONDAY   ",
+    "TUESDAY  ",
+    "WEDNESDAY",
+    "THURSDAY ",
+    "FRIDAY   ",
+    "SATURDAY "
+  };
+
+  const char* dayofweek_abb[] =
+  {
+    "SUN",
+    "MON",
+    "TUE",
+    "WED",
+    "THU",
+    "FRI",
+    "SAT"
+  };
+
+  if (bAbbreviation)
+    strcpy(result, dayofweek_abb[value-1]);
+  else
+    strcpy(result, dayofweek[value-1]);
+  // Update result pointer to point to end of string.
+  result += width;
+}
+
 static void 
 convertMonthToStrLongFormat(Lng32 value, char *&result, UInt32 width)
 {
@@ -3600,9 +3677,169 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
     }
   break;
 
+  case DATETIME_FORMAT_EXTRA_HH:
+  case DATETIME_FORMAT_EXTRA_HH24:
+  case DATETIME_FORMAT_EXTRA_HH12:
+    {
+      char hour = *srcData++;
+      if ( DATETIME_FORMAT_EXTRA_HH12 == format )
+        {
+          if (hour > 12)
+            hour = hour - 12;
+        }
+      convertToAscii(hour, dstDataPtr, 2);
+      return (dstDataPtr - dstData);
+    }
+    break;
+
+  case DATETIME_FORMAT_EXTRA_MI:
+    {
+      char minute = *(srcData+1);
+      convertToAscii(minute, dstDataPtr, 2);
+      return (dstDataPtr - dstData);
+    }
+    break;
+
+  case DATETIME_FORMAT_EXTRA_SS:
+    {
+      char second = *(srcData+2);
+      convertToAscii(second, dstDataPtr, 2);
+      return (dstDataPtr - dstData);
+    }
+    break;
+
+  case DATETIME_FORMAT_EXTRA_YYYY:
+  case DATETIME_FORMAT_EXTRA_YYY:
+  case DATETIME_FORMAT_EXTRA_YY:
+  case DATETIME_FORMAT_EXTRA_Y:
+    {
+      UInt32 nw = 4; //DATETIME_FORMAT_EXTRA_YYYY
+      if ( DATETIME_FORMAT_EXTRA_YYY == format )
+        {
+          nw = 3;
+          year = year % 1000;
+        }
+      else if ( DATETIME_FORMAT_EXTRA_YY == format )
+        {
+          nw = 2;
+          year = year % 100;
+        }
+      else if ( DATETIME_FORMAT_EXTRA_Y == format )
+        {
+          nw = 1;
+          year = year % 10;
+        }
+      convertToAscii(year, dstDataPtr, nw);
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_CC:
+    {
+      year = (year+99)/100;
+      convertToAscii(year, dstDataPtr,2);
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_MON:
+  case DATETIME_FORMAT_EXTRA_MM:
+    {
+      if (DATETIME_FORMAT_EXTRA_MM == format)
+        convertToAscii(month, dstDataPtr,2);
+      else if (DATETIME_FORMAT_EXTRA_MON == format)
+        {
+          if (0 == month)
+            return -1;
+          convertMonthToStr(month, dstDataPtr, 3);
+        }
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_DY:
+  case DATETIME_FORMAT_EXTRA_DAY:
+  case DATETIME_FORMAT_EXTRA_D:
+    {
+      Int64 interval = getTotalDays(year, month, day);
+      short dayofweek = (short)(((interval + 1) % 7) + 1);
+      if (DATETIME_FORMAT_EXTRA_D == format)
+        {
+          convertToAscii(dayofweek,dstDataPtr,1);
+        }
+      else if (DATETIME_FORMAT_EXTRA_DAY == format
+               || DATETIME_FORMAT_EXTRA_DY == format)
+        {
+          if (0 == day)
+            return -1;
+          //SUNDAY or SUN
+          NABoolean bAbbr = (DATETIME_FORMAT_EXTRA_DY == format ? TRUE:FALSE);
+          UInt32 width = 9;
+          if (bAbbr)
+            width = 3;
+          convertDayOfWeekToStr(dayofweek, dstDataPtr, bAbbr, width);
+        }
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_DD:
+    {
+      convertToAscii(day, dstDataPtr, 2);
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_DDD:
+    {
+      int dayofyear = 0;
+      if( day )
+        dayofyear = Date2Julian(year,month,day)-Date2Julian(year,1,1)+1;
+      convertToAscii(dayofyear,dstDataPtr,3);
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_W:
+    {
+      int weekofmonth = 0;
+      if (day)
+        weekofmonth = (day-1)/7+1;
+      convertToAscii(weekofmonth,dstDataPtr,1);
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_WW:
+    {
+      //same with built-in function week
+      int weekofmonth = 0;
+      if ( day )
+        {
+          Int64 interval = getTotalDays(year, 1, 1);
+          int dayofweek = (int)(((interval + 1) % 7) + 1);
+          int dayofyear = Date2Julian(year,month,day)-Date2Julian(year,1,1)+1;
+          weekofmonth = (dayofyear-1+dayofweek-1)/7+1;
+        }
+      convertToAscii(weekofmonth,dstDataPtr,2);
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_J:
+    {
+      int julianday = Date2Julian(year,month,day);
+      convertToAscii(julianday,dstDataPtr,7);
+      return (dstDataPtr - dstData);
+    }
+    break;
+  case DATETIME_FORMAT_EXTRA_Q:
+    {
+      if (month)
+        {
+          month = (month-1)/3+1;
+        }
+      convertToAscii(month,dstDataPtr,1);
+      return (dstDataPtr - dstData);
+    }
+    break;
+
   default:
     return -1;
   }
+
 
   // Add a delimiter between the date and time portion if required.
   //
