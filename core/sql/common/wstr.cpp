@@ -286,6 +286,39 @@ NAWchar *na_wcschr (const NAWchar * wstr, NAWchar wc)
    return NULL;
 }
 
+// like na_wcschr, except this variant skips over any text
+// that is within matched parentheses (note that it will never
+// find a left parenthesis as a consequence)
+NAWchar *na_wcschrSkipOverParenText (const NAWchar * wstr, NAWchar wc)
+{
+   NAWchar* p = (NAWchar*)wstr;
+
+   if ( wc == 0 )
+     return p+na_wcslen(wstr);
+
+   int ignoringTextDepth = 0;
+   while ( *p != (NAWchar)0 )
+     {
+       if (ignoringTextDepth > 0)
+         {
+           if (*p == L')')
+             ignoringTextDepth--;
+           p++;
+         }
+       else if (*p == L'(')
+         {
+           ignoringTextDepth++;
+           p++;
+         }
+       else if ( wc == *p )
+         return p;
+       else 
+         p++;
+     }
+
+   return NULL;
+}
+
 NAWchar *na_wcsrchr (const NAWchar * wstr, NAWchar wc)
 {
    NAWchar* p = (NAWchar*)wstr;
