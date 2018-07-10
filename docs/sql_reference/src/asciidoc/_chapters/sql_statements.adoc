@@ -2910,9 +2910,9 @@ CREATE SEQUENCE   employee_seq
 START WITH        1
 INCREMENT BY      1
 MAXVALUE          10000   
-NOCYCLE
+NO CYCLE
 CACHE             20  
-UNSIGNED SMALLINT
+SMALLINT UNSIGNED 
 ```
 
 The first reference to `seqnum(empolyee_seq, next)` will return 10000, and the second reference will return 10001. Each subsequent reference will return a value 1 greater than the previous value.

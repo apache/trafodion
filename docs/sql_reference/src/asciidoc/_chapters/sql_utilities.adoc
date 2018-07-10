@@ -1736,8 +1736,8 @@ PURGEDATA object
 [[purgedata_syntax]]
 === Syntax Description of PURGEDATA
 
-_object_
-
+* _object_
++
 is the name of the table from which to purge the data. See
 <<"database object names","Database Object Names">>.
 
