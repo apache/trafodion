@@ -42,6 +42,46 @@
 // key words.
 // 001103 EJF
 
+// Important notes for developers:
+//
+// If you are adding a keyword to Trafodion, you need to do the following:
+//
+// 1. Add it to the keyword table below. Use the appropriate flags in the
+//    ParKeyWord object for your new keyword. (Note: Today the RESWORD_,
+//    NONRESWORD_ and NONRESTOKEN_ flags are almost purely for documentation;
+//    the real determination of whether a keyword is reserved or not depends
+//    on how it is used in sqlparser.y. See point 3 below. Nevertheless,
+//    it is useful documentation, and it might be used in the future, so
+//    do try to get this right.)
+// 2. Add a token definition for it to the parser (sqlparser.y). Add
+//    and/or change any productions as needed to use your new token.
+// 3. If your new keyword is *not* a reserved word (which is the usual case),
+//    add it to the appropriate non-reserved word production in the parser.
+//    That will allow the keyword to be used as a regular identifier in
+//    contexts where keyword behavior is not intended. This avoids regressing
+//    customer applications that might already be using that keyword as a 
+//    regular identifier. See sqlparser.y, productions nonreserved_word and
+//    nonreserved_func_word.
+// 4. If your new keyword *is* a reserved word (this case should be rare),
+//    add your keyword to the list of reserved words in ComResWords::resWords_
+//    in common/ComResWords.cpp. This is important so that when an internal
+//    representation of your keyword is used as an identifier, it will get
+//    double quotes when converted to an external identifier. Failing to do
+//    this will cause errors in some statements if your new keyword is used
+//    as a delimited identifier.
+// 5. If your new keyword commonly has a parenthesis after it, and it is
+//    most natural for the parenthesis to be placed right after the keyword
+//    (as opposed to having a space between keyword and paranthesis), then
+//    add it to the keywords table in function tokIsFuncOrParenKeyword in
+//    common/NAString.cpp. An example of this case is a new function name.
+//    If my new function is XYZ, it looks more natural to generate XYZ(1)
+//    rather than XYZ (1) in generated SQL text. An example of a case where
+//    you would *not* want to do this might be adding a new logical operator
+//    such as XOR. (A OR B) XOR (C OR D) looks more natural than 
+//    (A OR B) XOR(C OR D). This is really an issue of esthetics rather than
+//    correctness so this is not as critical as the previous four points.
+// 6. Add test cases to regress/core/TEST037 of your new keyword.
+
 // The keyword table:
 //
 ParKeyWord ParKeyWords::keyWords_[] = {
