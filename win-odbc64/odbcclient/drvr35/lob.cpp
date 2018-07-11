@@ -54,8 +54,12 @@ namespace ODBC {
         CStmt *pStatement = (CStmt *)hstmt;
         IDL_long extractLen = length;
 
+        IDL_string lobHandleTemp = (IDL_string)malloc(lobHandleLen + 1);
+        memset(lobHandleTemp, 0, lobHandleLen + 1);
+        memcpy(lobHandleTemp, lobHandle, lobHandleLen);
+
         if (pStatement->ExtractLob(1,
-            lobHandle, lobHandleLen, extractLen, data) != SQL_SUCCESS)
+            lobHandleTemp, lobHandleLen + 1, extractLen, data) != SQL_SUCCESS)
         {
             pStatement->Close(SQL_CLOSE);
             return false;
