@@ -149,6 +149,7 @@ ExExeUtilGetMetadataInfoTcb::ExExeUtilGetMetadataInfoTcb(
   patternStr_ = new(glob->getDefaultHeap()) char[1000];
 
   numOutputEntries_ = 0;
+  returnRowCount_ = 0;
 }
 
 ExExeUtilGetMetadataInfoTcb::~ExExeUtilGetMetadataInfoTcb()
@@ -1818,11 +1819,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
 {
   short retcode = 0;
   Lng32 cliRC = 0;
-  Lng32 returnRowCount=0;
-  char returnMsg[256];
   ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
 
-  memset(returnMsg, 0, 256);
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -3188,7 +3186,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
             }
 
 	    infoList_->advance();
-            returnRowCount++;
+            incReturnRowCount();
 	  }
 	break;
 
@@ -3351,7 +3349,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
             if (NOT getMItdb().noHeader())
             {
               short rc = 0;
-              sprintf(returnMsg, "\n=======================\nSummary info of get:\nGet %d rows.", returnRowCount);
+              char returnMsg[256];
+              memset(returnMsg, 0, 256);
+              sprintf(returnMsg, "\n=======================\nSummary info of get:\nGet %d rows.", getReturnRowCount());
               moveRowToUpQueue(returnMsg, strlen(returnMsg), &rc);
               moveRowToUpQueue(" ");
             }
@@ -3891,6 +3891,7 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	      moveRowToUpQueue(" ", 0, &rc);
 
 	    infoList_->advance();
+            incReturnRowCount();
 	  }
 	break;
 
@@ -3906,6 +3907,15 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 
 	case DONE_:
 	  {
+            if (NOT getMItdb().noHeader())
+            {
+              short rc = 0;
+              char returnMsg[256];
+              memset(returnMsg, 0, 256);
+              sprintf(returnMsg, "\n=======================\nSummary info of get:\nGet %d rows.", getReturnRowCount());
+              moveRowToUpQueue(returnMsg, strlen(returnMsg), &rc);
+              moveRowToUpQueue(" ");
+            }
 	    retcode = handleDone();
 	    if (retcode == 1)
 	      return WORK_OK;
@@ -4741,6 +4751,7 @@ short ExExeUtilGetHiveMetadataInfoTcb::work()
             }
 
 	    infoList_->advance();
+            incReturnRowCount();
 	  }
 	  break;
 
