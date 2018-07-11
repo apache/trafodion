@@ -3007,31 +3007,9 @@ static Int64 lcl_dayofweek(Int64 totaldays)
   return (unsigned short)((totaldays + 1) % 7) + 1;
 }
 
-static int lcl_date2Julian(int y, int m ,int d)
-{
-  int myjulian = 0;
-  int mycentury = 0;
-  if ( m <= 2)
-    {
-      m = m+13;
-      y = y+4799;
-    }
-  else
-    {
-      m = m+1;
-      y = y+4800;
-    }
-
-  mycentury = y / 100;
-  myjulian = y * 365 - 32167;
-  myjulian += y/4 - mycentury + mycentury / 4;
-  myjulian += 7834 * m / 256 + d;
-  return myjulian;
-}
-
 static Int64 lcl_dayofyear(char year, char month, char day)
 {
-  return (lcl_date2Julian(year,month,day)-lcl_date2Julian(year,1,1)+1);
+  return (Date2Julian(year,month,day)-Date2Julian(year,1,1)+1);
 }
 
 #define DAYS_PER_YEAR 365.25 /*consider leap year every four years*/
