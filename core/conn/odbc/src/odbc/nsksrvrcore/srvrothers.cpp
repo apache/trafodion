@@ -5445,7 +5445,71 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     inputParam[2], inputParam[3],
                     uniqueness == 1 ? "" : "and idx.is_unique=1"
                     );
-
+            break;
+        case SQL_API_SQLTABLEPRIVILEGES:
+            convertWildcard(metadataId, TRUE, catalogNm, expCatalogNm);
+            convertWildcardNoEsc(metadataId, TRUE, catalogNm, catalogNmNoEsc);
+            convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+            convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+            convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+            convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+            inputParam[0] = catalogNmNoEsc;
+            inputParam[1] = expCatalogNm;
+            inputParam[2] = schemaNmNoEsc;
+            inputParam[3] = expSchemaNm;
+            inputParam[4] = tableNmNoEsc;
+            inputParam[5] = expTableNm;
+            snprintf(CatalogQuery, sizeof(CatalogQuery), "select cast(ob.CATALOG_NAME as varchar(128) ) TABLE_CAT,"
+                    "cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+                    "cast(trim(ob.OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
+                    "cast(trim(op.GRANTOR_NAME) as varchar(128) ) GRANTOR,"
+                    "cast(trim(op.GRANTEE_NAME) as varchar(128) ) GRANTEE,"
+                    "cast(trim(case op.PRIVILEGES_BITMAP "
+                    "when 1 then 'SELECT' "
+                    "when 2 then 'INSERT' "
+                    "when 3 then 'SELECT,INSERT' "
+                    "when 4 then 'DELETE' "
+                    "when 5 then 'SELECT,DELETE' "
+                    "when 6 then 'INSERT,DELETE' "
+                    "when 7 then 'SELECT,INSERT,DELETE' "
+                    "when 8 then 'UPDATE' "
+                    "when 9 then 'SELECT,UPDATE' "
+                    "when 10 then 'INSERT,UPDATE' "
+                    "when 11 then 'SELECT,INSERT,UPDATE' "
+                    "when 12 then 'DELETE,UPDATE' "
+                    "when 13 then 'SELECT,DELETE,UPDATE' "
+                    "when 14 then 'INSERT,DELETE,UPDATE' "
+                    "when 15 then 'SELECT,INSERT,DELETE,UPDATE' "
+                    "when 32 then 'REFERENCES' "
+                    "when 33 then 'SELECT,REFERENCES' "
+                    "when 34 then 'INSERT,REFERENCES' "
+                    "when 35 then 'SELECT,INSERT,REFERENCES' "
+                    "when 36 then 'DELETE,REFERENCES' "
+                    "when 37 then 'SELECT,DELETE,REFERENCES' "
+                    "when 38 then 'INSERT,DELETE,REFERENCES' "
+                    "when 39 then 'SELECT,INSERT,DELETE,REFERENCES' "
+                    "when 40 then 'UPDATE,REFERENCES' "
+                    "when 41 then 'SELECT,UPDATE,REFERENCES' "
+                    "when 42 then 'INSERT,UPDATE,REFERENCES' "
+                    "when 43 then 'SELECT,INSERT,UPDATE,REFERENCES' "
+                    "when 44 then 'DELETE,UPDATE,REFERENCES' "
+                    "when 45 then 'SELECT,DELETE,UPDATE,REFERENCES' "
+                    "when 46 then 'INSERT,DELETE,UPDATE,REFERENCES' "
+                    "when 47 then 'SELECT,INSERT,DELETE,UPDATE,REFERENCES' end) as varchar(128)) PRIVILEGE,"
+                    "cast (trim(case op.GRANTABLE_BITMAP "
+                    "when 0 then 'NO' else 'YES' "
+                    "end) as varchar(128)) IS_GRANTABLE "
+                    "from TRAFODION.\"_PRIVMGR_MD_\".OBJECT_PRIVILEGES as op, TRAFODION.\"_MD_\".OBJECTS as ob "
+                    "where ob.OBJECT_UID = op.OBJECT_UID "
+                    "%s"
+                    "and (ob.CATALOG_NAME = '%s' or trim(ob.CATALOG_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+                    , (strlen(inputParam[4]) == 0 || inputParam[4][0] == '%') ? " " : "and op.GRANTEE_NAME <> 'DB__ROOT' "
+                    , inputParam[0], inputParam[1]
+                    , inputParam[2], inputParam[3]
+                    , inputParam[4], inputParam[5]
+                    );
             break;
                default :
                        exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
