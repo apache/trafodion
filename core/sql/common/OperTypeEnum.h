@@ -519,6 +519,7 @@ enum OperatorTypeEnum {
                         ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
+                        ITM_SPLIT_PART = 2249,
                         ITM_TRUNC = 2250,
                         ITM_ASCII = 2251,
                         ITM_POSITION = 2252,

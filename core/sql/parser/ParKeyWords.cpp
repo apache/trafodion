@@ -1065,6 +1065,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SPACE",              TOK_SPACE,       NONRESTOKEN_),
   ParKeyWord("SPECIFIC",           TOK_SPECIFIC,    COMPAQ_|RESWORD_),
   ParKeyWord("SPECIFICTYPE",       TOK_SPECIFICTYPE, COMPAQ_|RESWORD_),
+  ParKeyWord("SPLIT_PART",         TOK_SPLIT_PART, NONRESTOKEN_),
   ParKeyWord("SP_RESULT_SET",      TOK_SP_RESULT_SET, NONRESTOKEN_),
   ParKeyWord("SQL",                TOK_SQL,         ANS_|RESWORD_|SECOND_),
   ParKeyWord("SQLCODE",            TOK_SQLCODE,     ANS_|RESWORD_),

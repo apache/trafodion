@@ -2919,3 +2919,15 @@ Use of predefined UDF <name> is deprecated and this function will be removed in 
 
 *Recovery:* See message.
 
+[[SQL-4997]]
+== SQL 4997
+
+```
+The <number> operand of builtin-func <name> must be great than <intger value>.
+```
+*Cause:* You attempted to use the random function, which some operand of this has range.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+

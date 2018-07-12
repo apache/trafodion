@@ -5843,4 +5843,22 @@ public:
 
 }; // class RowNumFunc
 
+class SplitPart : public CacheableBuiltinFunction
+{
+public: 
+  SplitPart(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr)
+    :CacheableBuiltinFunction(ITM_SPLIT_PART, 3, val1Ptr, val2Ptr, val3Ptr)
+    {
+      allowsSQLnullArg() = FALSE;
+    } 
+
+   virtual ~SplitPart();
+
+   // a virtual function for type propagating the node
+   virtual const NAType * synthesizeType();
+   
+   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+                      CollHeap *outheap = 0);
+}; //class SplitPart
+
 #endif /* ITEMFUNC_H */
