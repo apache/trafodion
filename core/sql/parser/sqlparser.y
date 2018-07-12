@@ -18908,7 +18908,7 @@ simple_table  : query_specification
 
 
 /* type relx */
-rel_subquery : '(' query_expression order_by_clause ')'
+rel_subquery : '(' query_expression order_by_clause optional_limit_spec ')'
 				{
                                   if (InIfCondition) {
                                      *SqlParser_Diags << DgSqlCode(-3176);
@@ -18936,6 +18936,24 @@ rel_subquery : '(' query_expression order_by_clause ')'
                                     }
 
                                   $$ = temp;
+                  if ($4)
+                    {
+                      RelExpr *query = $2;
+                      if (query->getFirstNRows() >= 0)
+                        {
+                          YYERROR;
+                        }
+                      else
+                        {
+                          NABoolean negate;
+                          if ($4->castToConstValue(negate))
+                            {
+                              ConstValue *limit = (ConstValue *)$4;
+                              Lng32 scale = 0;
+                              query->setFirstNRows(limit->getExactNumericValue(scale));
+                            }
+                        }
+                    }
 				}
 /* type item */
 predicate : directed_comparison_predicate
