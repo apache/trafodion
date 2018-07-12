@@ -62,6 +62,9 @@ namespace ODBC {
             lobHandleTemp, lobHandleLen + 1, extractLen, data) != SQL_SUCCESS)
         {
             pStatement->Close(SQL_CLOSE);
+            free(lobHandleTemp);
+            lobHandleTemp = NULL;
+
             return false;
         }
 
@@ -76,6 +79,8 @@ namespace ODBC {
         }
 
         pStatement->Close(SQL_CLOSE);
+        free(lobHandleTemp);
+        lobHandleTemp = NULL;
 
         return true;
     }
