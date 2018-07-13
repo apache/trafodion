@@ -390,25 +390,27 @@ alter-action is:
 
 column-definition is:
    column-name data-type
-      ([DEFAULT default]
-         [[constraint constraint-name] column-constraint])
+      [[DEFAULT default]
+         [[constraint constraint-name] column-constraint]]
 
 data-type is:
      char[acter] [(length)[characters]]
-         [CHARACTER SET char-set-name]
-         [UPSHIFT] [[not] casespecific]
-   | char[acter] varying (length)
-         [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar (length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar2 (length) [character set char-set-name]
-         [upshift] [[not] casespecific]         
+                 [CHARACTER SET char-set-name]
+                 [UPSHIFT] [[NOT] CASESPECIFIC]
+   | char[acter] varying (length [characters])
+                         [CHARACTER SET char-set-name]
+                         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar (length [characters]) 
+             [CHARACTER SET char-set-name]
+             [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar2 (length [characters]) 
+              [CHARACTER SET char-set-name]
+              [UPSHIFT] [[NOT] CASESPECIFIC]         
+   | nchar [length [characters]]
+           [UPSHIFT] [[NOT] CASESPECIFIC] 
+   | nchar varying (length [characters]) 
+                   [UPSHIFT] [[NOT] CASESPECIFIC]
    | numeric [(precision [,scale])] [signed|unsigned]
-   | nchar [(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | nchar varying(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
    | smallint [signed|unsigned]
    | int[eger] [signed|unsigned]
    | largeint
@@ -754,6 +756,86 @@ ALTER TABLE persnl.project
 ```
 Alter TABLE PRODUCT 
 ALTER COLUMN vend_id RENAME TO cstm_id;
+```
+
+* This example demonstrates the character set of NCHAR column cannot be altered.
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (*UCS2*) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *ALTER* and *CREATE* statement.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+ 
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 NCHAR CHARACTER SET ISO88591;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+alter table test1 alter column c1 nchar character set iso88591;
+                                              ^ (47 characters from start of SQL statement) [2018-07-13 10:24:12]
+```
+
+* This example shows how to alter the data type of NCHAR column _c1_.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  (
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 varchar(10) CHARACTER SET ISO88591;
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED /*altered_col*/
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 * The following table _orders_ has two non-unique indexes 
