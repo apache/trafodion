@@ -2963,18 +2963,22 @@ column-definition is:
 <<<
 ```
 data-type is:
-    char[acter] [(length [characters])]
-          [character set char-set-name]
-          [upshift] [[not]casespecific]
+    char[acter] [length [characters]]
+                [character set char-set-name]
+                [upshift] [[not]casespecific]
   | char[acter] varying (length [characters])
-          [character set char-set-name]
+                        [character set char-set-name]
+                        [upshift] [[not]casespecific]
+  | varchar (length [characters]) 
+            [character set char-set-name]
+            [upshift] [[not]casespecific]
+  | varchar2 (length [characters]) 
+             [character set char-set-name]
+             [upshift] [[not]casespecific]          
+  | nchar [length [characters]]
           [upshift] [[not]casespecific]
-  | varchar (length) [character set char-set-name]
-          [upshift] [[not]casespecific]
-  | varchar2 (length) [character set char-set-name]
-          [upshift] [[not]casespecific]          
-  | nchar (length) [characters] [upshift] [[not]casespecific]
-  | nchar varying(length [characters]) [upshift] [[not] casespecific]
+  | nchar varying (length [characters]) 
+                  [upshift] [[not] casespecific]
   | numeric [(precision [,scale])] [signed|unsigned]
   | smallint [signed|unsigned]
   | int[eger] [signed|unsigned]
