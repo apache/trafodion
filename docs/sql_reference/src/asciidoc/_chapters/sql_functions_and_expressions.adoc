@@ -8270,7 +8270,7 @@ result table is empty, STDDEV returns NULL.
 [[float54_and_double_precision_data]]
 ==== FLOAT(54) and DOUBLE PRECISION Data
 
-Avoid using large FLOAT(54) or DOUBLE PRECISION values as arguments to
+Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 STDDEV. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during the computation
 of STDDEV(x), a numeric overflow occurs.
 
@@ -9929,7 +9929,7 @@ result table is empty, VARIANCE returns NULL.
 [[float54_and_double_precision_data]]
 ==== FLOAT(54) and DOUBLE PRECISION Data
 
-Avoid using large FLOAT(54) or DOUBLE PRECISION values as arguments to
+Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 VARIANCE. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during
 the computation of VARIANCE(x), then a numeric overflow occurs.
 

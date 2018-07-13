@@ -385,7 +385,7 @@ depending on precision
 | LARGEINT                      | Binary integer; signed only           | -2^63^ to +(2^63^)-1; stored in 8 bytes
 |Numeric (extended numeric precision)^7^ | NUMERIC (precision 19 to 128)  | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
 length of 8 bytes.
-.3+| Floating point number^7^ | FLOAT[(_precision_)] | Floating point number; precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
+.3+| Floating point number^7^ | FLOAT[(_precision_)] | Floating point number (64 bits); precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
 | REAL                  | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/ 3.40282347e+38; stored in 4 bytes
 | DOUBLE PRECISION      | Floating-point numbers (64 bits) with 1 through 52 bits of precision (52 bits of binary precision and 1 bits of exponent) | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
 | Decimal number^6^        | DECIMAL (1,_scale_) to DECIMAL (18,_scale_)     | Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
@@ -1052,12 +1052,12 @@ The default is DECIMAL (9,0) SIGNED.
 +
 specifies an approximate numeric column. The column stores
 floating-point numbers and
-designates from 1 through 54 bits of _precision_.
+designates from 1 through 52 bits of _precision_.
 The range is from +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308 stored in 8 bytes.
 +
 An IEEE FLOAT _precision_ data type is stored as an IEEE DOUBLE, that is, in 8 bytes, with the specified precision.
 +
-The default _precision_ is 54.
+The default _precision_ is 52.
 
 * `REAL`
 +
