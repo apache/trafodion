@@ -249,6 +249,9 @@ SQL_USER7
 SQL_USER8
 SQL_USER9
 
+=======================
+ 11 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- succeed:  test unreserved words

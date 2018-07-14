@@ -26,6 +26,9 @@ OBJECT_PRIVILEGES
 ROLE_USAGE
 SCHEMA_PRIVILEGES
 
+=======================
+ 7 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- Prepare metadata queries
@@ -902,6 +905,9 @@ DB__ROOTROLE
 PUBLIC
 T135_ROLE1
 
+=======================
+ 6 row(s) returned
+
 --- SQL operation complete.
 >>
 >>grant component privilege MANAGE_LIBRARY on sql_operations to t135_role1;
@@ -917,6 +923,9 @@ Privilege information on Component SQL_OPERATIONS for T135_ROLE1
 
 MANAGE_LIBRARY
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on component sql_operations for "PUBLIC";
 
@@ -926,6 +935,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_ROUTINE
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1300,6 +1312,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>revoke role t135_role1 from sql_user1;
@@ -1318,6 +1333,9 @@ DB__HIVEROLE
 DB__LIBMGRROLE
 DB__ROOTROLE
 PUBLIC
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>

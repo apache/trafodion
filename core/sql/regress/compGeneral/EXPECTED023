@@ -24,8 +24,7 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
 =======================
-Summary info of get:
-Get 3 rows.
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -111,8 +110,7 @@ STESTC
 STEST_EMPTY
 
 =======================
-Summary info of get:
-Get 6 rows.
+ 6 row(s) returned
 
 --- SQL operation complete.
 >>  -- should be just stest, stest_empty, stestc, and the sb_* tables
@@ -158,8 +156,7 @@ STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441663_444545
 
 =======================
-Summary info of get:
-Get 7 rows.
+ 7 row(s) returned
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + a sample table
@@ -186,8 +183,7 @@ STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441711_141471
 
 =======================
-Summary info of get:
-Get 7 rows.
+ 7 row(s) returned
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + a different sample table
@@ -220,8 +216,7 @@ STESTC
 STEST_EMPTY
 
 =======================
-Summary info of get:
-Get 6 rows.
+ 6 row(s) returned
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables only
@@ -251,8 +246,7 @@ STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441748_979037
 
 =======================
-Summary info of get:
-Get 7 rows.
+ 7 row(s) returned
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + another sample table
@@ -289,8 +283,7 @@ STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 
 =======================
-Summary info of get:
-Get 7 rows.
+ 7 row(s) returned
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + another sample table
@@ -422,8 +415,7 @@ TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
 
 =======================
-Summary info of get:
-Get 8 rows.
+ 8 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -461,8 +453,7 @@ TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
 
 =======================
-Summary info of get:
-Get 8 rows.
+ 8 row(s) returned
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
@@ -493,8 +484,7 @@ TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
 
 =======================
-Summary info of get:
-Get 8 rows.
+ 8 row(s) returned
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
@@ -526,8 +516,7 @@ TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
 
 =======================
-Summary info of get:
-Get 8 rows.
+ 8 row(s) returned
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
@@ -561,8 +550,7 @@ TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
 
 =======================
-Summary info of get:
-Get 8 rows.
+ 8 row(s) returned
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
@@ -616,8 +604,7 @@ STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 
 =======================
-Summary info of get:
-Get 7 rows.
+ 7 row(s) returned
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables" except only one sample table
@@ -645,8 +632,7 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
 =======================
-Summary info of get:
-Get 3 rows.
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>  -- sample tables should be gone too

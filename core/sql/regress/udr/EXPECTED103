@@ -553,6 +553,9 @@ GENERATEPHONENUMBER
 GENERATERANDOMNUMBER
 NONDETERMINISTICRANDOM
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>get procedures in schema udr103sch;
 
@@ -560,6 +563,9 @@ Procedures in Schema TRAFODION.UDR103SCH
 ========================================
 
 UPDATESUBSCRIPTIONS
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>showddl function generatePhoneNumber;

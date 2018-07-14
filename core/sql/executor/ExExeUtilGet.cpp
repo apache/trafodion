@@ -3346,14 +3346,13 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 	case DONE_:
 	  {
-            if (NOT getMItdb().noHeader())
+            if (NOT getMItdb().noHeader() && getReturnRowCount() > 0)
             {
               short rc = 0;
               char returnMsg[256];
               memset(returnMsg, 0, 256);
-              sprintf(returnMsg, "\n=======================\nSummary info of get:\nGet %d rows.", getReturnRowCount());
+              sprintf(returnMsg, "\n=======================\n %d row(s) returned", getReturnRowCount());
               moveRowToUpQueue(returnMsg, strlen(returnMsg), &rc);
-              moveRowToUpQueue(" ");
             }
 
 	    retcode = handleDone();
@@ -3907,14 +3906,13 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 
 	case DONE_:
 	  {
-            if (NOT getMItdb().noHeader())
+            if (NOT getMItdb().noHeader() && getReturnRowCount() > 0)
             {
               short rc = 0;
               char returnMsg[256];
               memset(returnMsg, 0, 256);
-              sprintf(returnMsg, "\n=======================\nSummary info of get:\nGet %d rows.", getReturnRowCount());
+              sprintf(returnMsg, "\n=======================\n %d row(s) returned", getReturnRowCount());
               moveRowToUpQueue(returnMsg, strlen(returnMsg), &rc);
-              moveRowToUpQueue(" ");
             }
 	    retcode = handleDone();
 	    if (retcode == 1)
