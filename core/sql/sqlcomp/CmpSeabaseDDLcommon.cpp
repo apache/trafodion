@@ -10880,8 +10880,10 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
 
   NABoolean dataBlockEncodingOptionSpecified = FALSE;
   NABoolean compressionOptionSpecified = FALSE;
+  NABoolean memstoreFlushSizeOptionSpecified = FALSE;
   const char *dataBlockEncodingOptionString = "DATA_BLOCK_ENCODING";
   const char *compressionOptionString = "COMPRESSION";
+  const char *flushSizeOptionString = "MEMSTORE_FLUSH_SIZE";
 
   Lng32 numHbaseOptions = 0;
   if (hbaseOptionsClause)
@@ -10902,6 +10904,8 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
         dataBlockEncodingOptionSpecified = TRUE;
       else if (hbaseOption->key() == compressionOptionString)
         compressionOptionSpecified = TRUE;
+      else if (hbaseOption->key() == flushSizeOptionString)
+        memstoreFlushSizeOptionSpecified= TRUE;
       
       hbaseOptionsStr += hbaseOption->key();
       hbaseOptionsStr += "='";
@@ -10974,6 +10978,8 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
     CmpCommon::getDefaultString(HBASE_DATA_BLOCK_ENCODING_OPTION);
   NAString compression = 
     CmpCommon::getDefaultString(HBASE_COMPRESSION_OPTION);
+  NAString flushSize =
+    CmpCommon::getDefaultString(HBASE_MEMSTORE_FLUSH_SIZE_OPTION); 
   HbaseCreateOption * hbaseOption = NULL;
   
   char optionStr[200];
@@ -10991,7 +10997,20 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           hbaseOptionsStr += optionStr;
         }
     }
+  if (!flushSize.isNull() && !memstoreFlushSizeOptionSpecified)
+    {
+      hbaseOption = new(STMTHEAP) HbaseCreateOption("MEMSTORE_FLUSH_SIZE", 
+                                                    flushSize.data());
+      hbaseCreateOptions.insert(hbaseOption);
 
+      if (ActiveSchemaDB()->getDefaults().userDefault
+          (HBASE_MEMSTORE_FLUSH_SIZE_OPTION) == TRUE)
+        {
+          numHbaseOptions += 1;
+          sprintf(optionStr, "MEMSTORE_FLUSH_SIZE='%s'|", flushSize.data());
+          hbaseOptionsStr += optionStr;
+        }
+    }
   if (!compression.isNull() && !compressionOptionSpecified)
     {
       hbaseOption = new(STMTHEAP) HbaseCreateOption("COMPRESSION", 
