@@ -1296,9 +1296,7 @@ METRIC_SESSION_TABLE
 METRIC_TEXT_TABLE
 
 =======================
-Summary info of get:
-Get 4 rows.
-
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>invoke trafodion."_REPOS_".metric_query_table;

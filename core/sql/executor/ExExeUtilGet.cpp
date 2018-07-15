@@ -1851,6 +1851,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    headingReturned_ = FALSE;
 
 	    numOutputEntries_ = 1;
+            returnRowCount_ = 0 ;
 
 	    objectUid_[0] = 0;
 	  }
@@ -3420,6 +3421,7 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	case INITIAL_:
 	  {
 	    step_ = SETUP_QUERY_;
+            returnRowCount_ = 0 ;
 	  }
 	break;
 

@@ -2497,6 +2497,8 @@ protected:
 
   void incReturnRowCount() {returnRowCount_++; }
 
+  Lng32 returnRowCount_;
+
 private:
 
   NABoolean checkUserPrivs(ContextCli * currConnext, const ComTdbExeUtilGetMetadataInfo::QueryType queryType);
@@ -2523,7 +2525,6 @@ private:
     const char *schName,
     const char *objName);
 
-  Lng32 returnRowCount_;
 
 };
 
