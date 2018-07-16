@@ -777,12 +777,6 @@ T116T2
 --- SQL operation complete.
 >>get tables in schema t116sch1;
 
-
-=======================
-Summary info of get:
-Get 0 rows.
-
-
 --- SQL operation complete.
 >>select count(*) from "_MD_".objects where schema_name = 'T116SCH1' 
 +>   for read uncommitted access;
