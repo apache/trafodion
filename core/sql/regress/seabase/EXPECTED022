@@ -1339,12 +1339,6 @@ REGISTER HBASE TABLE T022HBM2;
 --- SQL operation complete.
 >>get hbase registered tables in catalog trafodion, match '%T022HBM2%';
 
-
-=======================
-Summary info of get:
-Get 0 rows.
-
-
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
 
