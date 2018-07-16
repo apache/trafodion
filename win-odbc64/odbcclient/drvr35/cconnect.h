@@ -277,6 +277,10 @@ private:
 	SQLUINTEGER		m_SecurityMode;
 	bool			m_RetryEncryption;
 
+    //hold the lob handle from last select for insert >16m
+    IDL_string      lobHandleSave;
+    IDL_long        lobHandleLenSave;
+
 	void reset(bool clearE=true);
 	friend class	CStmt;
 	friend class	CDesc;

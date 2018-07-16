@@ -56,6 +56,9 @@ CConnect::CConnect(SQLHANDLE InputHandle) : CHandle(SQL_HANDLE_DBC, InputHandle)
 	InitializeCriticalSection(&m_CSTransmision);
 	m_IgnoreCancel = false; 
 	m_StartNode = -1;
+
+    lobHandleSave = NULL;
+    lobHandleLenSave = 0;
 }
 
 CConnect::~CConnect()

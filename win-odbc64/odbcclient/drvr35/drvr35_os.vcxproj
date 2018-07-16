@@ -296,6 +296,7 @@ pause</Command>
     <ClCompile Include="drvrglobal.cpp" />
     <ClCompile Include="drvrnet.cpp" />
     <ClCompile Include="..\..\Common\ExpConvMxcs.cpp" />
+    <ClCompile Include="lob.cpp" />
     <ClCompile Include="netcommon.cpp" />
     <ClCompile Include="netconnect.cpp" />
     <ClCompile Include="netstmt.cpp" />
@@ -351,6 +352,7 @@ pause</Command>
     <ClInclude Include="drvrnet.h" />
     <ClInclude Include="..\..\Common\DrvrSrvr.h" />
     <ClInclude Include="..\..\Common\OdbcMsg.h" />
+    <ClInclude Include="lob.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="sqlconnect.h" />
     <ClInclude Include="sqldesc.h" />
