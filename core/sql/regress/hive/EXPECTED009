@@ -432,7 +432,7 @@ T009T2
 
 =======================
  2 row(s) returned
- 
+
 --- SQL operation complete.
 >>invoke hive.sch_t009.t009t1;
 
