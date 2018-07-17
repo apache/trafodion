@@ -3716,13 +3716,14 @@ ATTRIBUTES ALIGNED FORMAT
 --- SQL operation complete.
 ```
 
-* This example demonstrates the character set of NCHAR column (_c1_) *cannot be specified*.
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2. 
+So it is not possible to specify a CHARACTER SET clause when using NCHAR, 
+as the following example shows.
 +
 NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
 whether the character set was specified at installation time to be ISO88591 or UTF8, 
 and the character set (UCS2) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
 This is true for both *CREATE* and *ALTER* statement.
-
 +
 ```
 SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET USC2);
@@ -3730,44 +3731,6 @@ SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET USC2);
 *** ERROR[15001] A syntax error occurred at or before: 
 create table test1 (c1 nchar(10) character set usc2);
                                        ^ (40 characters from start of SQL statement) [2018-07-13 04:02:39]
-```
-
-+
-```
-SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET UTF8);
-
-*** ERROR[15001] A syntax error occurred at or before: 
-create table test1 (c1 nchar(10) character set utf8);
-                                       ^ (40 characters from start of SQL statement) [2018-07-13 05:53:52]
-```
-
-+
-```
-SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET ISO88591);
-
-*** ERROR[15001] A syntax error occurred at or before: 
-create table test1 (c1 nchar(10) character set iso88591);
-                                       ^ (40 characters from start of SQL statement) [2018-07-13 05:55:47]
-```
-
-+
-```
-SQL>CREATE TABLE test1 (c1 nchar(10));
-
---- SQL operation complete.
-
-
-SQL>SHOWDDL test1;
- 
-CREATE TABLE TRAFODION.SEABASE.TEST1
-  ( 
-    C1                               CHAR(10) CHARACTER SET UCS2 COLLATE
-      DEFAULT DEFAULT NULL NOT SERIALIZED
-  )
- ATTRIBUTES ALIGNED FORMAT 
-;
-
---- SQL operation complete.
 ```
 
 <<<
