@@ -394,7 +394,7 @@ column-definition is:
          [[constraint constraint-name] column-constraint]]
 
 data-type is:
-     char[acter] [(length)[characters]]
+     char[acter] [length [characters]]
                  [CHARACTER SET char-set-name]
                  [UPSHIFT] [[NOT] CASESPECIFIC]
    | char[acter] varying (length [characters])
@@ -758,7 +758,9 @@ Alter TABLE PRODUCT
 ALTER COLUMN vend_id RENAME TO cstm_id;
 ```
 
-* This example demonstrates the character set of NCHAR column cannot be altered.
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2, so it is not possible to alter the CHARACTER SET when using NCHAR, 
+as the following example shows.
+
 +
 NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
 whether the character set was specified at installation time to be ISO88591 or UTF8, 
