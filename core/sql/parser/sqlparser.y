@@ -1177,6 +1177,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_WHENEVER
 %token <tokval> TOK_WHERE
 %token <tokval> TOK_WITH
+%token <tokval> TOK_WITH1
 %token <tokval> TOK_SLEEP
 %token <tokval> TOK_UUID_SHORT
 %token <tokval> TOK_UNIX_TIMESTAMP
@@ -2127,7 +2128,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		rel_subquery
 %type <item>      		row_subquery
 %type <item>      		predicate
-%type <item>                    connectby_expression
 %type <item>                    connect_by
 %type <item>                    startwith
 %type <item>                    dml_column_reference
@@ -13096,18 +13096,13 @@ list_of_values : '(' insert_value_expression_list ')'
 
 // end of fix: left recursion for insert statement values.		  
 
-connectby_expression: TOK_PRIOR qualified_name '=' qualified_name
+connect_by : TOK_CONNECT TOK_BY comparison_predicate
                     {
+                      $$ = $3;
                     }
-               | qualified_name '=' TOK_PRIOR qualified_name
+startwith : empty { $$ = NULL; }| TOK_START TOK_WITH comparison_predicate
                     {
-                    }
-connect_by : TOK_CONNECT TOK_BY connectby_expression
-                    {
-                    }
-startwith : empty |
-             TOK_START TOK_WITH  
-                    {
+                      $$ = $3;
                     }
 		  
 table_expression : from_clause where_clause sample_clause
@@ -13648,18 +13643,6 @@ query_specification :select_token set_quantifier query_spec_body
          ((RelRoot*)$$)->setAnalyzeOnly();
 
     }
-/*
-query_specification : select_token select_list from_clause connect_by 
-    {
-       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-                                                      , PARSERHEAP() // in  - NAMemory * 
-                                                      );
-      ExeUtilConnectby *euc = new (PARSERHEAP()) ExeUtilConnectby(CorrName( ((Scan*)$3)->getTableName(), PARSERHEAP()),  NULL,
-                                        stmtCharSet,PARSERHEAP());
-      $$ = finalize(euc);
-    }
-*/
 query_specification : exe_util_maintain_object 
                                 {
 				  RelRoot *root = new (PARSERHEAP())
@@ -13779,6 +13762,15 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			    
 			    $$=temp;			    
 			}
+		|  query_select_list from_clause startwith connect_by where_clause access_type  optional_lock_mode TOK_START
+			{
+			  RelRoot *temp=  new (PARSERHEAP())
+                            RelRoot($2, $6, $7, REL_ROOT, $1);
+			  $2->addConnectByExprTree($4);
+                          $2->addStartWithExprTree($3);
+                          ((Scan*)$2)->setConnectByPhase(1);
+			    $$=temp;			    
+ 			}
 		| query_select_list into_clause table_expression access_type optional_lock_mode
 			{
 			  // use a compute node to attach select list
@@ -13810,17 +13802,29 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			  AssignmentHostVars->clear();
 			  $$ = temp;
 			}
-               | query_select_list from_clause connect_by
-{
-       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+		|query_select_list from_clause startwith connect_by where_clause access_type optional_lock_mode
+			{
+                          CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+                          NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
                                                       , PARSERHEAP() // in  - NAMemory *
                                                       );
-      ExeUtilConnectby *euc = new (PARSERHEAP()) ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()),  NULL,
-                                        stmtCharSet,PARSERHEAP());
+                          //remove ';' 
+                          UInt32 pos = 
+                            stmt->index(";", 0, NAString::ignoreCase);
+                          stmt->remove(pos);
+
+                          ExeUtilConnectby *euc = new (PARSERHEAP()) 
+                             ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()), (char*) stmt->data(), 
+                                        stmtCharSet, $2,PARSERHEAP());
+ 
+                          $2->addConnectByExprTree($4);
+                          $2->addStartWithExprTree($3);
   			  RelRoot *temp = new (PARSERHEAP())
 			    RelRoot(euc, REL_ROOT , $1);
-      $$ = temp;
+                          euc->connectByTree_ = $4;
+                          if($3 == NULL)
+                            euc->hasStartWith_ = FALSE;
+                          $$ = temp;
 }
 
 //++ MV OZ
@@ -19047,6 +19051,10 @@ comparison_predicate :
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
      | row_subquery comparison_operator value_expression_list_paren
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
+     | TOK_PRIOR value_expression comparison_operator value_expression
+		      { $$ = new (PARSERHEAP()) BiRelat($3, $2, $4); ((BiRelat*)$$)->setPrior(1);}
+     | value_expression comparison_operator TOK_PRIOR value_expression 
+		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $4); ((BiRelat*)$$)->setPrior(2);}
 
      // BEGIN rules added for UDF
 /* COMMENTED OUT FOR R2.5. CAUSES GRAMMAR CONFLICTS.
@@ -34101,7 +34109,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SP_RESULT_SET
                       | TOK_SQL_WARNING
                       | TOK_SQLROW
-		      | TOK_START  /* used in nist618 for column name */
+//		      | TOK_START  /* used in nist618 for column name */
 		      | TOK_STATE  /* used internally? qat tests */
                       | TOK_STATEMENT
                       | TOK_STATIC

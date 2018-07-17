@@ -201,6 +201,7 @@ public:
   void setNEOCatalogName(char * catalog) { NEOCatalogName_ = catalog; }
 
   void setType(ExeUtilType type) { type_ = type; }
+  char * oriQuery_;
 
 protected:
   Lng32 type_;                               // 00-03
@@ -4111,13 +4112,30 @@ class ComTdbExeUtilConnectby : public ComTdbExeUtil
   friend class ExExeUtilConnectbyTcb;
 
 public:
-  ComTdbExeUtilConnectby()
-  : ComTdbExeUtil()
-  {}
+  ComTdbExeUtilConnectby(char * query,
+			      ULng32 querylen,
+			      Int16 querycharset,
+			      char * tableName,
+			      char * stmtName,
+			      ex_expr * input_expr,
+			      ULng32 input_rowlen,
+			      ex_expr * output_expr,
+			      ULng32 output_rowlen,
+			      ex_cri_desc * work_cri_desc,
+			      const unsigned short work_atp_index,
+			      Lng32 colDescSize,
+			      Lng32 outputRowSize,
+			      ex_cri_desc * given_cri_desc,
+			      ex_cri_desc * returned_cri_desc,
+			      queue_index down,
+			      queue_index up,
+			      Lng32 num_buffers,
+			      ULng32 buffer_size,
+                              ExCriDescPtr workCriDesc 
+			      );
 
-  ComTdbExeUtilConnectby(char * tableName,
-                             ULng32 tableNameLen
-                             );
+  ComTdbExeUtilConnectby()
+    : ComTdbExeUtil() { hasStartWith_ = TRUE; }
 
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
@@ -4128,24 +4146,17 @@ public:
   {
     return "CONNECT_BY";
   };
+  UInt16 sourceDataTuppIndex_;
+  NAString parentColName_;
+  NAString childColName_;
+  NAString connTableName_;
+  NABoolean hasStartWith_;
+private:
+  ExCriDescPtr workCriDesc_;  
+  Int32 flags_;
+  Int32 tupleLen_;    
 };
 
-#if 0
-class ExExeUtilConnectbyTcb : public ExExeUtilTcb
-{
-  //friend class ExExeUtilConnectbyTdb;
-
-public:
-  ExExeUtilConnectbyTcb(const ComTdbExeUtil & exe_util_tdb,
-                            ex_globals * glob = 0);
-
-  virtual ~ExExeUtilConnectbyTcb() 
-   {}
-
-  virtual short work();
-
-};
-#endif 
 class ExExeUtilConnectbyTdb : public ComTdbExeUtilConnectby
 {
 public:

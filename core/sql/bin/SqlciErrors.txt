@@ -1513,6 +1513,7 @@ $1~String1 --------------------------------
 8034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Column $0~String0 of object $1~string1 does not have a default clause but it is missing in database. This indicates inconsistent data.
 8035 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Truncation of hive table failed. $0~String0
 8036 ZZZZZ 99999 ADVANCED MINOR LOGONLY Error while creating the error logging file or logging the error row to file $0~String0: Details :$1~String1 
+8041 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Loop detected in connect by execution.
 8100 ZZZZZ 99999 BEGINNER MINOR LOGONLY Define $1~string0 does not exist
 8101 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by check constraint $0~ConstraintName on table $1~TableName.
 8102 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by a unique constraint.

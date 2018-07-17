@@ -250,6 +250,8 @@ RelExpr::RelExpr(OperatorTypeEnum otype,
 		 CollHeap *outHeap)
      : ExprNode(otype)
   ,selection_(NULL)
+  ,startWith_(NULL)
+  ,connectBy_(NULL)
   ,RETDesc_(NULL)
   ,groupAttr_(NULL)
   ,groupId_(INVALID_GROUP_ID)
@@ -307,6 +309,10 @@ RelExpr::~RelExpr()
 
   // these data structures are always owned by the tree
   delete selection_;
+  if(startWith_)
+  delete startWith_;
+  if(connectBy_)
+  delete connectBy_;
 
   // delete all children, if this is a standalone query
   // (NOTE: can't use the virtual function getArity() in a destructor!!!)
@@ -484,12 +490,40 @@ void RelExpr::addSelPredTree(ItemExpr *selpred)
   selection_ = sel.getPtr();
 } // RelExpr::addSelPredTree()
 
+void RelExpr::addStartWithExprTree(ItemExpr *predExpr)
+{
+  ExprValueId sel = startWith_;
+  ItemExprTreeAsList(&sel, ITM_AND).insert(predExpr);
+  startWith_= sel.getPtr();
+}
+
+void RelExpr::addConnectByExprTree(ItemExpr *predExpr)
+{
+  ExprValueId sel = connectBy_;
+  ItemExprTreeAsList(&sel, ITM_AND).insert(predExpr);
+  connectBy_ = sel.getPtr();
+}
+
 ItemExpr * RelExpr::removeSelPredTree()
 {
   ItemExpr * result = selection_;
   selection_ = NULL;
   return result;
 } // RelExpr::removeSelPredTree()
+
+ItemExpr * RelExpr::removeConnectByTree()
+{
+  ItemExpr * result = connectBy_;
+  connectBy_ = NULL;
+  return result;
+} // RelExpr::removeConnectByTree()
+
+ItemExpr * RelExpr::removeStartWithTree()
+{
+  ItemExpr * result = startWith_;
+  startWith_ = NULL;
+  return result;
+} // RelExpr::removeStartWithTree()
 
 //++ MV -
 void RelExpr::addUniqueColumnsTree(ItemExpr *uniqueColumnsTree)

@@ -6181,9 +6181,13 @@ RelExpr * ExeUtilConnectby::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   if (derivedNode == NULL)
     result = new (outHeap)
       ExeUtilConnectby(getTableName(),
-                      NULL, CharInfo::UnknownCharSet, outHeap);
+                      NULL, CharInfo::UnknownCharSet, NULL,outHeap);
   else
     result = (ExeUtilConnectby*) derivedNode;
+  result->tblDesc_ = tblDesc_;
+  result->connectByTree_ = connectByTree_;
+  result->connectByTree_ = connectByTree_;
+  result->hasStartWith_ = hasStartWith_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
@@ -6193,13 +6197,28 @@ RelExpr * ExeUtilConnectby::bindNode(BindWA *bindWA)
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
     return this;
   }
-  return NULL;
+  RelExpr * boundExpr = NULL;
+  bindChildren(bindWA);
+  boundExpr = ExeUtilExpr::bindNode(bindWA);
+  Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
+  parentColName_=scanNode->getPirorColName(); 
+  childColName_=scanNode->getPirorChildColName(); 
+  if (bindWA->errStatus()) 
+    return NULL;
+  return boundExpr;
+
 }
+
+RelExpr * ExeUtilConnectby::normalizeNode(NormWA & normWARef)
+{
+  return RelExpr::normalizeNode(normWARef);
+}
+
 const NAString ExeUtilConnectby::getText() const
 {
   NAString result(CmpCommon::statementHeap());
 
-  result = "CONNECT BY STATEMENT";
+  result = "CONNECT_BY_STATEMENT";
 
   return result;
 }

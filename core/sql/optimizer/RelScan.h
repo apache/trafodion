@@ -235,6 +235,7 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(oHeap),
          hbaseAccessOptions_(NULL),
+         connectByPhase_(0),
          commonSubExpr_(NULL)
      {} 
 
@@ -263,6 +264,7 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(CmpCommon::statementHeap()),
          hbaseAccessOptions_(NULL),
+         connectByPhase_(0),
          commonSubExpr_(NULL)
      {} 
 
@@ -294,6 +296,7 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(oHeap),
          hbaseAccessOptions_(NULL),
+         connectByPhase_(0),
          commonSubExpr_(NULL)
      {} 
 
@@ -323,6 +326,7 @@ public:
          isRewrittenMV_(FALSE),
          hbaseAccessOptions_(NULL),
          matchingMVs_(CmpCommon::statementHeap()),
+         connectByPhase_(0),
          commonSubExpr_(NULL)
      {} 
 
@@ -633,6 +637,14 @@ public:
   CommonSubExprRef *getCommonSubExpr() const        { return commonSubExpr_; }
   void setCommonSubExpr(CommonSubExprRef *cse)       { commonSubExpr_ = cse; }
 
+  void setConnectByPhase(char v) { connectByPhase_ = v; }
+  char getConnectByPhase() { return connectByPhase_; }
+
+  NAString getPirorColName() { return priorColName_; }
+  NAString getPirorChildColName() { return priorChildColName_; }
+  void setPriorColName(char * v) { priorColName_ = v; }
+  void setPriorChildColName(char * v) { priorChildColName_ = v; }
+
 protected:
 
   // Find the most promising index from the LIST, for index joins
@@ -781,6 +793,12 @@ private:
   // pointer to the common subexpression, if this is a scan of a
   // materialized common subexpr
   CommonSubExprRef *commonSubExpr_;
+
+  char connectByPhase_ ;
+
+  NAString priorColName_;
+  NAString priorChildColName_;
+
 };
 
 // -----------------------------------------------------------------------

@@ -1086,25 +1086,47 @@ public:
   ExeUtilConnectby( const CorrName &TableName,
                    char * stmtText,
                    CharInfo::CharSet stmtTextCharSet,
+                   RelExpr * scan,
                    CollHeap *oHeap = CmpCommon::statementHeap())
-    : ExeUtilExpr(CONNECT_BY_, TableName, NULL, NULL,
+    : ExeUtilExpr(CONNECT_BY_, TableName, NULL, scan,
                  stmtText, stmtTextCharSet, oHeap)
- {}
+ {
+   hasStartWith_ = TRUE;
+ }
   virtual const NAString getText() const;
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
 
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
+  virtual RelExpr * normalizeNode(NormWA & normWARef);
+  virtual Int32 getArity() const { return (child(0) ? 1 : 0); }
+  virtual NABoolean producesOutput() { return TRUE; }
 
   virtual short codeGen(Generator*);
+
+  virtual TrafDesc * createVirtualTableDesc();
+
+  virtual const char * getVirtualTableName();
+
+  int createAsciiColAndCastExpr2(Generator * generator,
+					    ItemExpr * colNode,
+					    const NAType &givenType,
+					    ItemExpr *&asciiValue,
+					    ItemExpr *&castValue,
+                                            NABoolean alignedFormat);
  
+  TrafDesc * tblDesc_;
+  ItemExpr * connectByTree_;
+  NAString parentColName_;
+  NAString childColName_;
+  NABoolean  hasStartWith_;
 private:
   //connect by
   //start with
   //table
   int fake_;
-};
+}; 
 
 class ExeUtilHiveTruncate : public ExeUtilExpr
 {

@@ -2505,6 +2505,61 @@ RelExpr *RelExpr::bindSelf(BindWA *bindWA)
       bindWA->predsOfViewWithCheckOption() += selectionPred();
   }
 
+  ItemExpr *startWithTree = removeStartWithTree();
+  if (startWithTree) {
+    bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
+    startWithTree->convertToValueIdSet(getStartWith(), bindWA, ITM_AND);
+    bindWA->getCurrentScope()->context()->inWhereClause() = FALSE;
+
+    if (bindWA->errStatus()) return this;
+
+    // If this is an embedded insert, then subquery predicates are not
+    // allowed.  
+    // For example:  To handle this query and issue an error stating
+    //               subqueries are not allowed in embedded inserts
+    // 
+    //  select a from (insert into t901t01 values(22,22,222))t(a,b,c)
+    //  where t.a IN (select m from t901t03 where t901t03.m = 77);
+
+    if (getGroupAttr()->isEmbeddedInsert())
+    {
+       if (!getStartWith().isEmpty() && getStartWith().containsSubquery())
+       {
+         *CmpCommon::diags() << DgSqlCode(-4337);
+         bindWA->setErrStatus();
+         return this;
+       }
+    }  
+  }
+
+  ItemExpr *connectByTree = removeConnectByTree();
+  if (connectByTree) {
+
+    bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
+    connectByTree->convertToValueIdSet(getConnectBy(), bindWA, ITM_AND);
+    bindWA->getCurrentScope()->context()->inWhereClause() = FALSE;
+
+    if (bindWA->errStatus()) return this;
+
+    // If this is an embedded insert, then subquery predicates are not
+    // allowed.  
+    // For example:  To handle this query and issue an error stating
+    //               subqueries are not allowed in embedded inserts
+    // 
+    //  select a from (insert into t901t01 values(22,22,222))t(a,b,c)
+    //  where t.a IN (select m from t901t03 where t901t03.m = 77);
+
+    if (getGroupAttr()->isEmbeddedInsert())
+    {
+       if (!getConnectBy().isEmpty() && getConnectBy().containsSubquery())
+       {
+         *CmpCommon::diags() << DgSqlCode(-4337);
+         bindWA->setErrStatus();
+         return this;
+       }
+    }  
+   }
+
   // ++MV
   // Bind the uniqueColumnsTree expression.
   //
@@ -8219,6 +8274,7 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   //
   RelExpr *boundExpr = bindSelf(bindWA);
   if (bindWA->errStatus()) return this;
+
   //
   // Assign the set of columns that belong to the table to be scanned
   // as the output values that can be produced by this scan.
@@ -8373,7 +8429,37 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
               );
          }
      }
+   for (ValueId exprId = getConnectBy().init(); getConnectBy().next(exprId); getConnectBy().advance(exprId))
+    {
 
+      if(exprId.getItemExpr()->getOperatorType() == ITM_EQUAL)
+      {
+        if( ((BiRelat*)exprId.getItemExpr())->getPrior() == 1)
+        {
+           //right child is the PRIOR column
+           ItemExpr * c = exprId.getItemExpr()->child(0);
+           NAString unparsed(CmpCommon::statementHeap());
+           c->unparse(unparsed);
+           setPriorColName((char*)unparsed.data());
+           ItemExpr * cc = exprId.getItemExpr()->child(1);
+           NAString unparsedc(CmpCommon::statementHeap());
+           cc->unparse(unparsedc);
+           setPriorChildColName((char*)unparsedc.data());
+        }
+       if( ((BiRelat*)exprId.getItemExpr())->getPrior() == 2)
+        {
+           //left child is the PRIOR column
+           ItemExpr * c = exprId.getItemExpr()->child(1);
+           NAString unparsed(CmpCommon::statementHeap());
+           c->unparse(unparsed);
+           setPriorColName((char*)unparsed.data());
+           ItemExpr * cc = exprId.getItemExpr()->child(0);
+           NAString unparsedc(CmpCommon::statementHeap());
+           cc->unparse(unparsedc);
+           setPriorChildColName((char*)unparsedc.data());
+        }
+      }
+    }
   return boundExpr;
 } // Scan::bindNode()
 

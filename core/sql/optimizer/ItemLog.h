@@ -345,6 +345,7 @@ public:
     outerNullFilteringDetected_ (FALSE),
     innerNullFilteringDetected_ (FALSE),
     rollupColumnNum_(-1),
+    prior_(0),
     flags_(0)
   {
 #ifndef NDEBUG
@@ -611,6 +612,9 @@ public:
   void setAddedForLikePred(NABoolean v)
   { (v ? flags_ |= FOR_LIKE : flags_ &= ~FOR_LIKE); }
 
+  void setPrior(Int8 v) { prior_ = v; }
+  Int8 getPrior() { return prior_; }
+
  private:
 
   // helper to change literals of a cacheable query into input parameters
@@ -727,6 +731,8 @@ public:
   // change during groupby computation. 
   // Used to return the rollup groups.
   Int16 rollupColumnNum_;
+
+  Int8 prior_; //0 left , 1 right
 
   UInt32 flags_;
 

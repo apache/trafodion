@@ -6065,6 +6065,17 @@ RelExpr * Scan::normalizeNode
     }
   }
   
+  //check connect by phase
+  if( getConnectByPhase() == 1 ) // This is start with
+  {
+    selectionPred().clear();
+    selectionPred() += getStartWith();
+  }
+  if( getConnectByPhase() == 2 ) // This is start with
+  {
+    selectionPred().clear();
+    selectionPred() += getConnectBy();
+  }
   // the following block of code can transform an OR predicate into
   //    semijoin(Scan, TupleList)
   // where the Scan is this scan node.

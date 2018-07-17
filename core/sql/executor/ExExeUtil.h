@@ -4263,6 +4263,7 @@ private:
     DONE_
   };
   Step step_;
+  char * data_;
 
 protected:
   Int64 getEmbeddedNumValue(char* &sep, char endChar, 
@@ -4313,14 +4314,54 @@ class ExExeUtilConnectbyTcb : public ExExeUtilTcb
   friend class ExExeUtilConnectbyTdb;
 
 public:
-  ExExeUtilConnectbyTcb(const ComTdbExeUtil & exe_util_tdb,
+  ExExeUtilConnectbyTcb(const ComTdbExeUtilConnectby &exe_util_tdb,
                             ex_globals * glob = 0);
 
   virtual ~ExExeUtilConnectbyTcb()
    {}
 
   virtual short work();
+  virtual ex_tcb_private_state * allocatePstates(
+                                   Lng32 &numElems,      // inout, desired/actual elements
+                                   Lng32 &pstateLength); // out, length of one element
+  enum Step
+  {
+    INITIAL_,
+    EVAL_INPUT_,
+    EVAL_START_WITH_,
+    DO_CONNECT_BY_,
+    POPULATE_CONNECT_BUF_,
+    EVAL_EXPR_,
+    RETURN_CONNECT_BUF_,
+    NEXT_LEVEL_,
+    ERROR_,
+    DONE_
+  };
+  Step step_;
+  ExExeUtilConnectbyTdb& exeUtilTdb() const
+    {return (ExExeUtilConnectbyTdb&) tdb;};
 
+ short emitRows(Queue *q, ExpTupleDesc * tDesc) ;
+ short emitRow(ExpTupleDesc * tDesc, int level) ;
+ short emitOneRow(ExpTupleDesc * tDesc, int level) ;
+
+protected:
+  ExExeUtilConnectbyTcb *tcb_;
+
+private:
+  tupp tuppData_;
+  char * data_; 
+};
+
+class ExExeUtilConnectbyTdbState : public ex_tcb_private_state
+{
+  friend class ExExeUtilConnectbyTcb;
+
+ public:
+  ExExeUtilConnectbyTdbState();
+  ~ExExeUtilConnectbyTdbState();
+protected:
+  ExExeUtilConnectbyTcb::Step step_;
 };
 
 #endif

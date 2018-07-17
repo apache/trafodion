@@ -83,6 +83,7 @@
 #include "ComSqlId.h"
 #include "MVInfo.h"
 #include "StmtDDLCreateTable.h"
+#include "CmpSeabaseDDL.h"
 
 // need for authorization checks
 #include "ComUser.h"
@@ -5330,9 +5331,167 @@ short ExeUtilOrcFastAggr::codeGen(Generator * generator)
 }
 
 
+const char * ExeUtilConnectby::getVirtualTableName()
+{ 
+  Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
+  NAString  tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
+  NAString tableName = (scanNode->getTableName()).getQualifiedNameAsString();
+  return tbl.data();
+}
+
+TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
+{
+  CmpSeabaseDDL cmpSBD((NAHeap *)CmpCommon::statementHeap());
+  NAString cat;
+  NAString sch;
+  NAString tbl;
+  Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
+  cat= (scanNode->getTableName()).getQualifiedNameObj().getCatalogName();
+  sch= (scanNode->getTableName()).getQualifiedNameObj().getSchemaName();
+  tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
+  NAString tableName = (scanNode->getTableName()).getQualifiedNameAsString();
+  tblDesc_ = cmpSBD.getSeabaseTableDesc(cat,sch,tbl,COM_BASE_TABLE_OBJECT);
+  //add LEVEL column
+  TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;
+  //go to the last entry
+  int i = 0;
+  int tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  TrafDesc * col_desc = TrafMakeColumnDesc(
+           tableName.data(),
+           "LEVEL", //info->colName,
+           i,
+           REC_BIN32_UNSIGNED,
+           4,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UNKNOWN,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+  return tblDesc_;
+}
+
+int ExeUtilConnectby::createAsciiColAndCastExpr2(Generator * generator,
+					    ItemExpr * colNode,
+					    const NAType &givenType,
+					    ItemExpr *&asciiValue,
+					    ItemExpr *&castValue,
+                                            NABoolean alignedFormat)
+{
+  asciiValue = NULL;
+  castValue = NULL;
+  CollHeap * h = generator->wHeap();
+
+  // if this is an upshifted datatype, remove the upshift attr.
+  // We dont want to upshift data during retrievals or while building keys.
+  // Data is only upshifted during insert or updates.
+  const NAType * newGivenType = &givenType;
+  if (newGivenType->getTypeQualifier() == NA_CHARACTER_TYPE &&
+      ((CharType *)newGivenType)->isUpshifted())
+    {
+      newGivenType = newGivenType->newCopy(h);
+      ((CharType*)newGivenType)->setUpshifted(FALSE);
+    }
+
+  NABoolean encodingNeeded = FALSE;
+  asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
+  castValue = new(h) Cast(asciiValue, newGivenType); 
+
+  if ((!alignedFormat) && HbaseAccess::isEncodingNeededForSerialization(colNode))
+    {
+      castValue = new(generator->wHeap()) CompDecode(castValue, 
+						     newGivenType->newCopy(h),
+						     FALSE, TRUE);
+    }
+  
+  return 1;
+}
 
 short ExeUtilConnectby::codeGen(Generator * generator)
 {
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);  
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 1;
+  const Int32 fetchSourceAtpIndex = 2;
+  const Int32 outputAtpIndex = 3;
+
+  Attributes ** attrs =
+    new(generator->wHeap())
+    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+
+  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+    {
+      ItemExpr * col_node
+	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
+	  getItemExpr();
+
+      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
+	getAttr();
+    }
+
+  ExpTupleDesc *tupleDesc = 0;
+  ULng32 tupleLength = 0;
+ 
+  ExpTupleDesc::TupleDataFormat tupleFormat = ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  
+  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
+			    attrs, tupleFormat,
+			    tupleLength,
+			    work_atp, outputAtpIndex,
+			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
+
+  // add this descriptor to the work cri descriptor.
+  workCriDesc->setTupleDescriptor(outputAtpIndex , tupleDesc);
+
+  Int32 theAtpIndex = returnedDesc->noTuples()-1;
+  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+			       0, theAtpIndex);
+
+  TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
+  Lng32 colDescSize =  column_desc->columnsDesc()->length;
+
+  char * stmtText = getStmtText();
+  char *tblnm = (char*)getTableName().getQualifiedNameObj().getObjectName().data();
+
+  ComTdbExeUtilConnectby  * exe_util_tdb = new(space)  
+  ComTdbExeUtilConnectby (stmtText , (stmtText ? strlen(stmtText) : 0), getStmtTextCharSet(), tblnm , NULL, 
+			0 , 0,
+			0,0, //This is the output expression, used in parent to apply on the output
+			workCriDesc , 1,
+			colDescSize,
+			tupleLength,
+			givenDesc,
+			returnedDesc,
+			(queue_index)8,
+			(queue_index)1024,
+			10,
+			32000,
+                        workCriDesc
+			);
+  exe_util_tdb->sourceDataTuppIndex_ = outputAtpIndex;
+  exe_util_tdb->parentColName_ = parentColName_;
+  exe_util_tdb->childColName_ = childColName_;
+  exe_util_tdb->hasStartWith_ = hasStartWith_;
+  generator->initTdbFields(exe_util_tdb);
+
+  if (!generator->explainDisabled())
+  {
+    generator->setExplainTuple(addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  
+  generator->setGenObj(this, exe_util_tdb);
+
   return 0;
 }
 
