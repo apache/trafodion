@@ -428,7 +428,7 @@ default is:
    | null
    | currentdate
    | currenttime
-   | currenttimestamp }
+   | currenttimestamp 
 
 column-constraint is:
      not null
@@ -2963,7 +2963,7 @@ column-definition is:
 <<<
 ```
 data-type is:
-    char[acter] [length [characters]]
+    char[acter] [(length) [characters]]
                 [character set char-set-name]
                 [upshift] [[not]casespecific]
   | char[acter] varying (length [characters])
@@ -2975,7 +2975,7 @@ data-type is:
   | varchar2 (length [characters]) 
              [character set char-set-name]
              [upshift] [[not]casespecific]          
-  | nchar [length [characters]]
+  | nchar [(length) [characters]]
           [upshift] [[not]casespecific]
   | nchar varying (length [characters]) 
                   [upshift] [[not] casespecific]
@@ -4461,7 +4461,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `_[[catalog-name.]schema-name.]function-name`
+* `_[[catalog-name.]schema-name.]function-name_`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -4699,9 +4699,9 @@ DROP ROLE role-name
 +
 is an existing role name. The role cannot be dropped if any of the following are true:
 
-* Any privileges are granted to the role.
-* The role is granted to any users.
-* The role owns any schemas.
+** Any privileges are granted to the role.
+** The role is granted to any users.
+** The role owns any schemas.
 
 [[drop_role_considerations]]
 === Considerations for DROP ROLE
