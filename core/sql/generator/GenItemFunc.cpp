@@ -713,6 +713,13 @@ short BuiltinFunction::codeGen(Generator * generator)
                                                         CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
       break;
     }
+
+    case ITM_SPLIT_PART:
+    {
+      function_clause = 
+            new (generator->getSpace()) ex_function_split_part(getOperatorType(), attr, space);
+      break;
+    }
     default:
       break;
     }

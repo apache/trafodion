@@ -1087,6 +1087,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_STATUS
 %token <tokval> TOK_STDDEV              /* Tandem extension */
 %token <tokval> TOK_STOP                /* Tandem extension */
+%token <tokval> TOK_SPLIT_PART          /* Trafodion extension*/ 
 %token <tokval> TOK_STORED
 %token <tokval> TOK_SQL
 %token <tokval> TOK_SQL_DOUBLE
@@ -9280,6 +9281,11 @@ string_function :
 	  $$ = new (PARSERHEAP()) 
 	    BuiltinFunction(ITM_REVERSE, CmpCommon::statementHeap(), 1, $3);
         } 
+     | TOK_SPLIT_PART '(' value_expression ',' value_expression ',' value_expression ')'
+        {                     
+               $$ = new (PARSERHEAP()) SplitPart($3, $5, $7);
+        }
+
 
 
 /* type item */

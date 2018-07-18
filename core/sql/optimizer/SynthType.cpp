@@ -7139,3 +7139,72 @@ const NAType * ItmLeadOlapFunction::synthesizeType()
    return result;
 }
 
+const NAType * SplitPart::synthesizeType()
+{
+  ValueId vid1 = child(0)->getValueId(); 
+  ValueId vid2 = child(1)->getValueId();
+  ValueId vid3 = child(2)->getValueId();
+  vid1.coerceType(NA_CHARACTER_TYPE);
+  vid2.coerceType(NA_CHARACTER_TYPE);
+  SQLInt si(NULL);
+  vid3.coerceType(NA_NUMERIC_TYPE);
+
+  const NAType *operand1 = &child(0)->getValueId().getType();
+  const NAType *operand2 = &child(1)->getValueId().getType();
+  const NAType *operand3 = &child(2)->getValueId().getType();
+
+  if ((operand1->getTypeQualifier() != NA_CHARACTER_TYPE) 
+      && (operand1->getFSDatatype() != REC_CLOB))
+  {
+    //4051 The first operand of a split_part function must be character.
+    *CmpCommon::diags()<<DgSqlCode(-4051) << DgString0(getTextUpper());
+    return NULL;
+  }
+  if ((operand2->getTypeQualifier() != NA_CHARACTER_TYPE)
+      && (operand1->getFSDatatype() != REC_CLOB))
+  {
+    //4497 The second operand of a split_part function must be character.
+    *CmpCommon::diags()<<DgSqlCode(-4497) << DgString0("second")
+                                          << DgString1(getTextUpper())
+                                          << DgString2("character");
+    return NULL;
+  }
+
+  if (operand3->getTypeQualifier() != NA_NUMERIC_TYPE)
+  {
+    //4053 The third operand of a split_part function must be numeric.
+    *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
+    return NULL;
+  }
+
+  const CharType *charOperand = (CharType *)operand1; 
+  Lng32 maxLength_bytes = charOperand->getDataStorageSize();
+  Lng32 maxLength_chars = charOperand->getPrecisionOrMaxNumChars();
+  CharInfo::CharSet op1_cs = operand1->getCharSet();
+  if (maxLength_chars <= 0) //if unlimited
+    maxLength_chars = maxLength_bytes/CharInfo::minBytesPerChar(op1_cs);
+
+  if (operand1->getFSDatatype() == REC_CLOB)
+  {
+    return new HEAP SQLClob(HEAP
+                            , maxLength_bytes
+                            , Lob_Invalid_Storage
+                            , operand1->supportsSQLnull()
+                                OR operand2->supportsSQLnull()
+                                OR operand3->supportsSQLnull()
+                           );
+  } 
+
+  return new HEAP SQLVarChar(HEAP
+                             , CharLenInfo(maxLength_chars, maxLength_bytes)
+                             , operand1->supportsSQLnull()
+                                 OR operand2->supportsSQLnull()
+                                 OR operand3->supportsSQLnull()
+                             , charOperand->isUpshifted()
+                             , charOperand->isCaseinsensitive()
+                             , operand1->getCharSet()
+                             , charOperand->getCollation()
+                             , charOperand->getCoercibility()
+                             );
+
+}

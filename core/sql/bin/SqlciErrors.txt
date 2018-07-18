@@ -1450,6 +1450,7 @@ $1~String1 --------------------------------
 4494 ZZZZZ 99999 BEGINNER MINOR LOGONLY LOAD is not supported on a table with LOB columns. Table $0~TableName has LOB column $1~ColumnName.
 4495 ZZZZZ 99999 BEGINNER MINOR LOGONLY UNLOAD is not supported on a SELECT with LOB columns. $0~ColumnName is a LOB column.
 4496 42000 99999 BEGINNER MAJOR DBADMIN $0~String0 is supported only with datetime fields.
+4497 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~String0 operand of $1~String1 must be $2~String2.
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 5001 ZZZZZ 99999 ADVANDED MINOR LOGONLY Common subexpression $0~String0 will not be shared among multiple consumers. Reason: $1~String1.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
@@ -1683,7 +1684,7 @@ $1~String1 --------------------------------
 8676 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot suspend the query because it is already suspended.
 8677 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot activate the query because it is not suspended.
 8690 ZZZZZ 99999 BEGINNER MINOR LOGONLY An invalid character value encountered in TRANSLATE function. Source charset $0~string0 , Target charset $1~string1. Error data in HEX: $2~string2 .
-8691 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
+8691 ZZZZZ 99999 BEGINNER MINOR LOGONLY Field position must be greater than zero, currently is $0~int0.
 8692 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8693 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8694 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----

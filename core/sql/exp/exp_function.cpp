@@ -192,6 +192,7 @@ ex_function_user::ex_function_user(){};
 ex_function_nullifzero::ex_function_nullifzero(){};
 ex_function_nvl::ex_function_nvl(){};
 ex_function_json_object_field_text::ex_function_json_object_field_text(){};
+ex_function_split_part::ex_function_split_part(){};
 
 ex_function_queryid_extract::ex_function_queryid_extract(){};
 ExFunctionUniqueId::ExFunctionUniqueId(){};
@@ -829,6 +830,13 @@ ExFunctionSoundex::ExFunctionSoundex(OperatorTypeEnum oper_type,
 
 };
 
+ex_function_split_part::ex_function_split_part(OperatorTypeEnum oper_type
+            , Attributes **attr
+                    , Space *space)
+      : ex_function_clause(oper_type, 4, attr, space)
+{
+
+}
 
 // Triggers
 ex_expr::exp_return_type ex_function_get_bit_value_at::eval(char *op_data[],
@@ -2745,6 +2753,57 @@ ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
   }
   return ex_expr::EXPR_OK;
 }
+
+ex_expr::exp_return_type ex_function_split_part::eval(char *op_data[]
+                               , CollHeap* heap
+                               , ComDiagsArea** diagsArea)
+{
+  size_t sourceLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+  size_t patternLen = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
+  Lng32 indexOfTarget = *(Lng32 *)op_data[3];
+
+  if (indexOfTarget <= 0)
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_INVALID_FIELD_POSITION);
+       *(*diagsArea) << DgInt0(indexOfTarget);
+       return ex_expr::EXPR_ERROR;
+    }
+
+  NAString source(op_data[1], sourceLen);
+  NAString pattern(op_data[2], patternLen);
+
+  Lng32 patternCnt = 0;
+  StringPos currentTargetPos = 0;
+  StringPos pos = 0;
+
+  while (patternCnt != indexOfTarget)
+    {
+       currentTargetPos = pos;
+       pos = source.index(pattern, pos);
+       if (pos == NA_NPOS)
+        break;
+       pos = pos + patternLen;
+       patternCnt++;
+    }
+
+  size_t targetLen = 0;
+  if ((patternCnt == 0)
+        ||((patternCnt != indexOfTarget)
+             && (patternCnt != indexOfTarget - 1)))
+    op_data[0][0] = '\0';
+  else
+    {
+       if (patternCnt == indexOfTarget)
+         targetLen = pos - currentTargetPos - patternLen;
+       else  //if (patternLen == indexOfTarget-1)
+         targetLen = sourceLen - currentTargetPos;
+
+       str_cpy_all(op_data[0], op_data[1] + currentTargetPos, targetLen);
+    }
+  getOperand(0)->setVarLength(targetLen, op_data[-MAX_OPERANDS]);
+  return ex_expr::EXPR_OK;
+}
+
 
 ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,
