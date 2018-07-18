@@ -4709,7 +4709,7 @@ sc
 >>-- **EMPTY RESULT** 
 >>select split_part('sa:sbl:sc', ':', 0) from t038sf;
 
-*** ERROR[4497] The third operand of split_part must be greater than 0
+*** ERROR[8691] Field position must be greater than zero, currently is 0.
 
 --- 0 row(s) selected.
 >>select split_part('sa:sbl:sc', ':', 4) from t038sf;

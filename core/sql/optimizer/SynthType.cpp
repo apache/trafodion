@@ -7163,8 +7163,10 @@ const NAType * SplitPart::synthesizeType()
   if ((operand2->getTypeQualifier() != NA_CHARACTER_TYPE)
       && (operand1->getFSDatatype() != REC_CLOB))
   {
-    //4051 The second operand of a split_part function must be character.
-    *CmpCommon::diags()<<DgSqlCode(-4051) << DgString0(getTextUpper());
+    //4497 The second operand of a split_part function must be character.
+    *CmpCommon::diags()<<DgSqlCode(-4497) << DgString0("second")
+                                          << DgString1(getTextUpper())
+                                          << DgString2("character");
     return NULL;
   }
 
@@ -7172,15 +7174,6 @@ const NAType * SplitPart::synthesizeType()
   {
     //4053 The third operand of a split_part function must be numeric.
     *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
-    return NULL;
-  }
-
-  NABoolean negate;
-  ConstValue *cv = child(2)->castToConstValue(negate);
-  if (negate)
-  {
-    //4496 The third operand of a split_part function must be greater than zero.
-    *CmpCommon::diags() << DgSqlCode(-4497) << DgString0("third") << DgString1(getTextUpper()) << DgString2("0");
     return NULL;
   }
 

@@ -2764,10 +2764,8 @@ ex_expr::exp_return_type ex_function_split_part::eval(char *op_data[]
 
   if (indexOfTarget <= 0)
     {
-       ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)4497);
-       *(*diagsArea) << DgString0("third") 
-                     << DgString1("split_part")
-                     << DgString2("0");
+       ExRaiseSqlError(heap, diagsArea, EXE_INVALID_FIELD_POSITION);
+       *(*diagsArea) << DgInt0(indexOfTarget);
        return ex_expr::EXPR_ERROR;
     }
 
