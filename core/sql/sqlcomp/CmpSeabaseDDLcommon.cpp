@@ -10993,7 +10993,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_DATA_BLOCK_ENCODING_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          snprintf(optionStr, 199, "DATA_BLOCK_ENCODING='%s'|", dataBlockEncoding.data());
+          snprintf(optionStr, 200, "DATA_BLOCK_ENCODING='%s'|", dataBlockEncoding.data());
           hbaseOptionsStr += optionStr;
         }
     }
@@ -11007,7 +11007,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_MEMSTORE_FLUSH_SIZE_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          snprintf(optionStr, 199, "MEMSTORE_FLUSH_SIZE='%s'|", flushSize.data());
+          snprintf(optionStr, 200, "MEMSTORE_FLUSH_SIZE='%s'|", flushSize.data());
           hbaseOptionsStr += optionStr;
         }
     }
@@ -11021,7 +11021,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_COMPRESSION_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          snprintf(optionStr, 199, "COMPRESSION='%s'|", compression.data());
+          snprintf(optionStr, 200, "COMPRESSION='%s'|", compression.data());
           hbaseOptionsStr += optionStr;
         }
     }
@@ -11036,7 +11036,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
     hco += "HBASE_OPTIONS=>";
 
     char hbaseOptionsNumCharStr[HBASE_OPTION_MAX_INTEGER_LENGTH];
-    snprintf(hbaseOptionsNumCharStr, HBASE_OPTION_MAX_INTEGER_LENGTH-1, "%04d", numHbaseOptions);
+    snprintf(hbaseOptionsNumCharStr, HBASE_OPTION_MAX_INTEGER_LENGTH, "%04d", numHbaseOptions);
     hco += hbaseOptionsNumCharStr;
 
     hco += hbaseOptionsStr.data();
