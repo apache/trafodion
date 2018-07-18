@@ -418,6 +418,10 @@ enum SQLTYPE_CODE {
     /* SQL/MP stype VARCHAR with length prefix: Tandem Extension */
     SQLTYPECODE_VARCHAR_WITH_LENGTH = -601,
 
+    /* BLOB TYPE */
+    SQLTYPECODE_BLOB = -602,
+    SQLTYPECODE_CLOB = -603,
+
     /* LONG VARCHAR/ODBC CHARACTER VARYING */
     SQLTYPECODE_VARCHAR_LONG  = -1,		/* ## NEGATIVE??? */
 

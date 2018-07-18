@@ -511,35 +511,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
 
     hs_globals_y = NULL;
 
-    // Remove IUS persistent sample if necessary.
-    //@ZXhbase -- need to make sure seabase.seabase.persistent_samples exists, and
-    //            provide dynamic version of CURSOR_PST_REASON_CODE.
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-    if (statsWritten)
-      {
-        // The update has completed successfully. If it was neither a persistent
-        // (i.e., using the PERSISTENT keyword) RUS nor an IUS, drop the target
-        // table's IUS persistent sample if it exists, and remove the corresponding
-        // row from the PERSISTENT_SAMPLES table.
-        HSGlobalsClass* hs_globals = GetHSContext();
-        if (!(hs_globals->optFlags & IUS_PERSIST ||
-              (hs_globals->okToPerformIUS() &&
-               hs_globals->wherePredicateSpecifiedForIUS())))
-          {
-            Int64 dummy1, dummy2;
-            double dummy3;
-            HSPersSamples* ps =
-                  HSPersSamples::Instance(hs_globals->objDef->getCatName(), FALSE);
-            NAString IUSSampTblName;
-            retcode = ps->find(hs_globals->objDef, char('I'), IUSSampTblName,
-                               dummy1, dummy2, dummy3);
-            if (retcode >= 0 && IUSSampTblName.length() > 0)
-              ps->removeSample(hs_globals->objDef, IUSSampTblName, TRUE,
-                               "DROP IUS PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST");
-          }
-      }
-#endif
-
     // Reset CQDs set above; ignore errors
     HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_BLOB_AS_VARCHAR RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_CLOB_AS_VARCHAR RESET");

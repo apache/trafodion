@@ -164,6 +164,9 @@
     <ClCompile Include="..\..\Common\Compression.cpp">
       <Filter>Interface Files</Filter>
     </ClCompile>
+    <ClCompile Include="lob.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="drvr35.rc">
@@ -299,6 +302,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Common\Compression.h">
       <Filter>Interface Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lob.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -339,7 +339,7 @@ For more information about numeric data type for Hive and Trafodion, see the tab
 | `float`               | `real`
 | `decimal (precision, scale)`                | `decimal (precision, scale)`^1^ +
 `numeric (precision, scale)`^2^
-| `double`              | `float(54)`
+| `double`              | `float`
 |===
 
 1. If p is less than or equal to 18, decimal (precision, scale) is mapped to decimal (precision, scale).

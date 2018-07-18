@@ -1372,7 +1372,10 @@ void HSTableDef::addTruncatedSelectList(NAString & qry)
         if (DFS2REC::isLOB(getColInfo(i).datatype)) // skip LOB columns
           continue;
 
-        if (!ComTrafReservedColName(*getColInfo(i).colname))
+        // skip derived column names (e.g. "_SALT_", "_DIVISION_n_")
+        // but only in Trafodion tables
+        if ((getTblOrigin() != HBASE_TBL) ||
+            (!ComTrafReservedColName(*getColInfo(i).colname)))
           {
             if (!first)
               qry += ", ";
