@@ -54,8 +54,6 @@ enum {
                                 // are not for various reason. See ABSOLUTE,
                                 // DATA, and OPERATION in ComResWords.cpp.
 
-  MPWORD_      = 0x04,          // a SQL/MP Reserved word.
-
   ANS_         = 0x08,          // Indicates that the word is reserved by ANSI
                                 // This flag is used only for notation.
 
@@ -94,12 +92,9 @@ public:
   //
   inline const char *getResWord() const { return resWord_; };
 
-  // Is the word reserved, depends on isMPContext.
+  // Is the word reserved
   //
-  inline NABoolean isReserved(NABoolean inMPContext,UInt32 ifSetFlags) {
-    if (inMPContext) 
-      return isMPReserved();
-     else 
+  inline NABoolean isReserved(UInt32 ifSetFlags) {
       return ((flags_ & RESWORD_) &&
 	      !(allowOldAndNew(ifSetFlags) ));
    
@@ -111,16 +106,6 @@ public:
   inline  NABoolean allowOldAndNew(UInt32 ifSetFlags) {
     return  (ifSetFlags & (flags_ & ALLOWOLDNEW_));
   };
-
-  // Are we parsing/lexing SQL/MP Stored text.
-  // This affect which words are reserved identifiers.
-  //
-  
-  
-  // Is the word reserved by SQL/MP.
-  //
-  inline NABoolean isMPReserved() const { return flags_ & MPWORD_; };
-
 
   // The reserved word.
   //
@@ -153,11 +138,9 @@ public:
   ComResWords(const ComResWords &other, NAMemory * h=0); 
   ComResWords(NAMemory * h=0);
 
-  // Determine if the given word is reserved. Depends on if parsing
-  // MX or MP text.
+  // Determine if the given word is reserved. 
   //
   static NABoolean isSqlReservedWord(const char *word,
-				     NABoolean MPContext =FALSE,
 				     UInt32 ifSetFlags = 0);
 
 private:

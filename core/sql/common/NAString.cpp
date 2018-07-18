@@ -377,7 +377,7 @@ NAString LookupDefineName(const NAString &ns, NABoolean iterate)
 // an ANSI, PotentialANSI, or Tandem reserved word.
 NABoolean IsSqlReservedWord(const char *sqlText)
 {
-  return ComResWords::isSqlReservedWord(sqlText,FALSE,0);
+  return ComResWords::isSqlReservedWord(sqlText,0);
 }
 
 NABoolean IsCIdentifier(const char *id)
