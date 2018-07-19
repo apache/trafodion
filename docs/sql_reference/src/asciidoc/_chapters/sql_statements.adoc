@@ -2963,7 +2963,7 @@ column-definition is:
 <<<
 ```
 data-type is:
-    char[acter] [(length) [characters]]
+    char[acter] [(length [characters])]
                 [character set char-set-name]
                 [upshift] [[not]casespecific]
   | char[acter] varying (length [characters])
@@ -2975,7 +2975,7 @@ data-type is:
   | varchar2 (length [characters]) 
              [character set char-set-name]
              [upshift] [[not]casespecific]          
-  | nchar [(length) [characters]]
+  | nchar [(length [characters])]
           [upshift] [[not]casespecific]
   | nchar varying (length [characters]) 
                   [upshift] [[not] casespecific]
