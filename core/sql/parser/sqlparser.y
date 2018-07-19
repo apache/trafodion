@@ -25417,7 +25417,7 @@ create_table_start_tokens :
                      $$ = tableTokens;
 
                      SqlParser_CurrentParser->hiveDDLInfo_->
-                       setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::TABLE_, $3);
+                       setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::TABLE_, $4);
 		   }
 
                    | TOK_CREATE TOK_IMPLICIT TOK_EXTERNAL TOK_TABLE optional_if_not_exists_clause
