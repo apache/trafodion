@@ -4437,6 +4437,9 @@ interval value expression. It returns an exact numeric value.
 EXTRACT (datetime-field FROM extract-source)
 ```
 
+[[extract_function_syntax]]
+=== Syntax Descriptions of EXTRACT Function
+
 * `_datetime-field_` is:
 +
 .Details of `_datetime-field_`
@@ -4445,11 +4448,13 @@ EXTRACT (datetime-field FROM extract-source)
 ^| `_datetime-filed_` 
 ^| *Description* 
 ^| *Supported* `_extract-source_` 
+
 a| CENTURY 
 | Century.
 a| * `_datetime-expression_` 
 ** DATE 
 ** TIMESTAMP 
+
 | DAY
 a| * `_datetime-expression_` +
 Day.
@@ -4458,6 +4463,7 @@ Number of day(s) in the `_interval-expression_`. +
 a| * `_datetime-expression_`
 ** DATE 
 ** TIMESTAMP 
+
 | DECADE
 a| * `_datetime-expression_` +
 Year field divided by 10.
@@ -4467,6 +4473,7 @@ a| * `_datetime-expression_`
 ** DATE 
 ** TIMESTAMP 
 * `_interval-expression_` 
+
 | DOW
 | Day of week (1-7), where 1 is Sunday, 6 is Saturday. +
 This is not configurable.
@@ -4478,6 +4485,7 @@ a| * `_datetime-expression_`
 a| * `_datetime-expression_` 
 ** DATE 
 ** TIMESTAMP 
+
 | EPOCH
 a| * `_datetime-expression_` +
 Second(s) since 1970-01-01 00:00:00. + 
@@ -4488,6 +4496,7 @@ a| * `_datetime-expression_`
 ** DATE 
 ** TIMESTAMP
 * `_interval-expression_`
+
 | HOUR
 a| * `_datetime-expression_` +
 Hour (0-23).
@@ -4497,6 +4506,7 @@ a| * `_datetime-expression_` +
 ** TIME
 ** TIMESTAMP
 * `_interval-expression_`
+
 | MINUTE
 a| * `_datetime-expression_` +
 Minute (0-59).
@@ -4506,6 +4516,7 @@ a| * `_datetime-expression_`
 ** TIME
 ** TIMESTAMP
 * `_interval-expression_`
+
 | MONTH
 a| * `_datetime-expression_` +
 Month (1-12).
@@ -4515,6 +4526,7 @@ a| * `_datetime-expression_`
 ** DATE
 ** TIMESTAMP
 * `_interval-expression_`
+
 | QUARTER
 a| * `_datetime-expression_` +
 Quarter of year (1-4).
@@ -4524,6 +4536,7 @@ a| * `_datetime-expression_`
 ** DATE
 ** TIMESTAMP
 * `_interval-expression_`
+
 | SECOND
 a| * `_datetime-expression_` +
 Second (0-59).
@@ -4533,22 +4546,29 @@ a| * `_datetime-expression_` +
 ** TIME
 ** TIMESTAMP
 * `_interval-expression_` +
+
 | WEEK
 a| * `_datetime-expression_` +
-Week of year. +
-** The value 1 is returned for datetime that occurs in the first 7 days of the year if the year begins on a Sunday. +
-Otherwise, the value 1 is returned for datetime that occurs in the partial week before the start of the first Sunday.
-** The value 53 is returned for datetime that occurs in the last full or partial week of the year. 
-** The value 54 is returned for datetime that starts on Saturday where December 31 is in the 54th full or partial week in a leap year.
+a| Week of year. +
+
+* The value 1 is returned for datetime that occurs in the first 7 days of the year if the year begins on Sunday. +
+Otherwise, the value 1 is returned for datetime that occurs in the partial week before the start of the first Sunday. 
+
+* The value *53* is returned for datetime that occurs in the last full or partial week of the year. 
+
+* The value *54* is returned for datetime that occurs in the last full or partial week of the leap year if the leap year begins on Saturday.
+
 a| * `_datetime-expression_` 
 ** DATE
 ** TIMESTAMP
+
 | WOM
 a| * `_datetime-expression_` +
 Week of month.
 a| * `_datetime-expression_` +
 ** DATE
 ** TIMESTAMP 
+
 | YEAR
 a| * `_datetime-expression_` +
 Year (0001-9999).
@@ -4573,7 +4593,7 @@ For more information, see <<datetime_value_expressions,Datetime Value Expression
 === Examples of EXTRACT
 
 [[examples_of_extract_century]]
-==== Examples of CENTURY
+==== Examples of EXTRACT (CENTURY)
 
 * This example extracts the century from `_DATE_`.
 +
@@ -4600,7 +4620,7 @@ SQL>SELECT EXTRACT (CENTURY FROM TIMESTAMP '9899-12-31 23:59:59') FROM DUAL;
 ```
 
 [[examples_of_extract_day]]
-==== Examples of DAY
+==== Examples of EXTRACT (DAY)
 
 * This example extracts the day from `_DATE_`.
 +
@@ -4639,7 +4659,7 @@ SQL>SELECT EXTRACT (DAY FROM INTERVAL '1' DAY - INTERVAL '99' DAY) FROM DUAL;
 ```
 
 [[examples_of_extract_decade]]
-==== Examples of DECADE
+==== Examples of EXTRACT (DECADE)
 
 * This example extracts the decade from `_DATE_`.
 +
@@ -4678,7 +4698,7 @@ SQL>SELECT EXTRACT (DECADE FROM INTERVAL '1'YEAR - INTERVAL '99'YEAR) FROM DUAL;
 ```
 
 [[examples_of_extract_dow]]
-==== Examples of DOW
+==== Examples of EXTRACT (DOW)
 
 * This example extracts the DOW from `_DATE_`.
 +
@@ -4705,7 +4725,7 @@ SQL>SELECT EXTRACT (DOW FROM TIMESTAMP '2018-01-01 23:59:59') FROM DUAL;
 ```
 
 [[examples_of_extract_doy]]
-==== Examples of DOY
+==== Examples of EXTRACT (DOY)
 
 * This example extracts the DOY from `_DATE_`.
 +
@@ -4732,7 +4752,7 @@ SQL>SELECT EXTRACT (DOY FROM TIMESTAMP '2020-12-31 11:36:28') FROM DUAL;
 ```
 
 [[examples_of_extract_epoch]]
-==== Examples of EPOCH
+==== Examples of EXTRACT (EPOCH)
 
 * This example extracts the seconds from `_DATE_` since 1970-01-01 00:00:00.
 +
@@ -4783,7 +4803,7 @@ SQL>SELECT EXTRACT (EPOCH FROM INTERVAL '1' MONTH - INTERVAL '2' YEAR) FROM DUAL
 ```
 
 [[examples_of_extract_hour]]
-==== Examples of HOUR
+==== Examples of EXTRACT (HOUR)
 
 * This example extracts the hour from `_TIME_`.
 +
@@ -4822,7 +4842,7 @@ SQL>SELECT EXTRACT (HOUR FROM INTERVAL '1' HOUR - INTERVAL '99' HOUR) FROM DUAL;
 ```
 
 [[examples_of_extract_minute]]
-==== Examples of MINUTE
+==== Examples of EXTRACT (MINUTE)
 
 * This example extracts the minute from `_TIME_`.
 +
@@ -4861,7 +4881,7 @@ SQL>SELECT EXTRACT(MINUTE FROM INTERVAL '1' MINUTE - INTERVAL '99' MINUTE) FROM 
 ```
 
 [[examples_of_extract_month]]
-==== Examples of MONTH
+==== Examples of EXTRACT (MONTH)
 
 * This example extracts the month from `_DATE_`.
 +
@@ -4900,7 +4920,7 @@ SQL>SELECT EXTRACT(MONTH FROM INTERVAL '1' MONTH - INTERVAL '99' MONTH) FROM DUA
 ```
 
 [[examples_of_extract_quarter]]
-==== Examples of QUARTER
+==== Examples of EXTRACT (QUARTER)
 
 * This example extracts the quarter from `_DATE_`.
 +
@@ -4939,7 +4959,7 @@ SQL>SELECT EXTRACT (QUARTER FROM INTERVAL '97' MONTH) FROM DUAL;
 ```
 
 [[examples_of_extract_second]]
-==== Examples of SECOND
+==== Examples of EXTRACT (SECOND)
 
 * This example extracts the second from `_TIME_`.
 +
@@ -4978,7 +4998,7 @@ SQL>SELECT EXTRACT(SECOND FROM INTERVAL '1' SECOND - INTERVAL '99' SECOND) FROM 
 ```
 
 [[examples_of_extract_week]]
-==== Examples of WEEK
+==== Examples of EXTRACT (WEEK)
 
 * This example extracts the week from `_DATE_`.
 +
@@ -5005,7 +5025,7 @@ SQL>SELECT EXTRACT (WEEK FROM TIMESTAMP '2000-12-31 23:59:59') FROM DUAL;
 ```
 
 [[examples_of_extract_wom]]
-==== Examples of WOM
+==== Examples of EXTRACT (WOM)
 
 * This example extracts the WOM from `_DATE_`.
 +
@@ -5032,7 +5052,7 @@ SQL>SELECT EXTRACT (WOM FROM TIMESTAMP '2020-02-29 01:02:30') FROM DUAL;
 ```
 
 [[examples_of_extract_year]]
-==== Examples of YEAR
+==== Examples of EXTRACT (YEAR)
 
 * This example extracts the year from `_DATE_`.
 +
