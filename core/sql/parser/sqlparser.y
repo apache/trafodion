@@ -2154,6 +2154,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>      		in_predicate
 %type <item>      		like_predicate
 %type <tokval>	  		not_like
+%type <item>      		overlaps_predicate
 %type <item>      		quantified_predicate
 %type <item>      		search_condition
 %type <item>      		boolean_term
@@ -18964,6 +18965,7 @@ rel_subquery : '(' query_expression order_by_clause optional_limit_spec ')'
 /* type item */
 predicate : directed_comparison_predicate
         | key_comparison_predicate
+          | overlaps_predicate predicate_selectivity_hint
 	  | between_predicate predicate_selectivity_hint 
           {
               if ($2)
@@ -19429,6 +19431,124 @@ exists_predicate : TOK_EXISTS rel_subquery
 				{
 				  $$ = new (PARSERHEAP()) Exists($2);
 				}
+
+overlaps_predicate : value_expression_list_paren TOK_OVERLAPS value_expression_list_paren
+         {
+            ItemExprList  exprList1($1, PARSERHEAP());
+            ItemExprList  exprList2($3, PARSERHEAP());
+            //Syntax Rules: 
+            //  1) The degrees of <row value predicand 1> and <row value predicand 2> shall both be 2.
+            if ((exprList1.entries() != 2)
+                  || (exprList1.entries() != exprList2.entries()))
+              {
+                 *SqlParser_Diags << DgSqlCode(-4077)
+                     << DgString0("OVERLAPS");
+                 YYERROR;  // CHANGE TO YYABORT
+              }
+
+            ItemExpr *D1 = (*$1)[0];
+            ItemExpr *E1 = (*$1)[1];
+            ItemExpr *D2 = (*$3)[0];
+            ItemExpr *E2 = (*$3)[1];
+
+            NABoolean negate = FALSE;
+            ItemExpr *tmpItemExpr = E1;
+            /**
+             * Syntax Rules: 
+             *  2) ...
+             *  3) The declared type of the second field of each <row value predicand> 
+             *     shall be a datetime data type or INTERVAL.
+	     *   
+             *   Case:
+             *     a) If the declared type is INTERVAL, then the precision of the 
+             *        declared type shall be such that the interval can be added 
+             *        to the datetime data type of the first column of the 
+             *        <row value predicand>. 	
+             *     b) ...
+             **/
+            ConstValue *cv1 = tmpItemExpr->castToConstValue(negate);
+            if (cv1)
+              {
+                 const NAType *nType = cv1->getType();
+                 if (nType->getTypeQualifier() == NA_INTERVAL_TYPE)
+                   {
+                     tmpItemExpr = new (PARSERHEAP()) BiArith(ITM_PLUS, D1, E1);
+                     E1 = tmpItemExpr;
+                   }
+              }
+            tmpItemExpr = E2;
+            ConstValue *cv2 = tmpItemExpr->castToConstValue(negate);
+            if (cv2)
+              {
+                const NAType *nType = cv2->getType();
+                if (nType-> getTypeQualifier() == NA_INTERVAL_TYPE)
+                  {
+                    tmpItemExpr = new (PARSERHEAP()) BiArith(ITM_PLUS, D2, E2);
+                    E2 = tmpItemExpr;
+                  }
+              }
+
+            ItemExpr *relat1 = new (PARSERHEAP()) BiRelat(ITM_LESS_EQ, D1, E1, TRUE);
+            ItemExpr *relat2 = new (PARSERHEAP()) BiRelat(ITM_LESS_EQ, D2, E2, TRUE);
+            ItemExpr *relat3 = new (PARSERHEAP()) BiRelat(ITM_GREATER, D1, E1, TRUE);
+            ItemExpr *relat4 = new (PARSERHEAP()) BiRelat(ITM_GREATER, D2, E2, TRUE);
+            
+            Between *betweenOps1 = NULL;
+            Between *betweenOps2 = NULL;
+            // [D1<=E1] AND [D2<=E2] AND [E1 BETWEEN D2,E2 OR E2 BETWEEN D1,E1]
+            betweenOps1 = new (PARSERHEAP()) Between(E1, D2, E2, FALSE);
+            betweenOps2 = new (PARSERHEAP()) Between(E2, D1, E1, FALSE);
+            betweenOps1->allowsSQLnullArg() = true;
+            betweenOps2->allowsSQLnullArg() = true;
+            ItemExpr *clause1 = new (PARSERHEAP()) BiLogic(ITM_AND
+                                            , relat1
+                                            , new (PARSERHEAP()) BiLogic(ITM_AND
+                                                 , relat2
+                                                 , new (PARSERHEAP())BiLogic(ITM_OR
+                                                    , betweenOps1
+                                                    , betweenOps2)));
+            // [D1<=E1] AND [D2>E2] AND [E1 BETWEEN E2,D2 OR E2 BETWEEN D1,E1]
+            betweenOps1 = new (PARSERHEAP()) Between(E1, E2, D2, FALSE);
+            betweenOps2 = new (PARSERHEAP()) Between(D2, D1, E1, FALSE);
+            betweenOps1->allowsSQLnullArg() = true;
+            betweenOps2->allowsSQLnullArg() = true;
+            ItemExpr *clause2 = new (PARSERHEAP()) BiLogic(ITM_AND
+                                            , relat1
+                                            , new (PARSERHEAP()) BiLogic(ITM_AND
+                                                 , relat4
+                                                 , new (PARSERHEAP())BiLogic(ITM_OR
+                                                    , betweenOps1
+                                                    , betweenOps2)));
+            // [D1>E1] AND [D2<=E2] AND [E1 BETWEEN E2,D2 OR E2 BETWEEN D1,E1]
+            betweenOps1 = new (PARSERHEAP()) Between(D1, D2, E2, FALSE);
+            betweenOps2 = new (PARSERHEAP()) Between(E2, E1, D1, FALSE);
+            betweenOps1->allowsSQLnullArg() = true;
+            betweenOps2->allowsSQLnullArg() = true;
+            ItemExpr *clause3 = new (PARSERHEAP()) BiLogic(ITM_AND
+                                            , relat3
+                                            , new (PARSERHEAP()) BiLogic(ITM_AND
+                                                 , relat2
+                                                 , new (PARSERHEAP())BiLogic(ITM_OR
+                                                    , betweenOps1
+                                                    , betweenOps2)));
+            // [D1>E1] AND [D2>E2] AND [E1 BETWEEN E2,D2 OR E2 BETWEEN D1,E1]
+            betweenOps1 = new (PARSERHEAP()) Between(D1, E2, D2, FALSE);
+            betweenOps2 = new (PARSERHEAP()) Between(D2, E1, D1, FALSE);
+            betweenOps1->allowsSQLnullArg() = true;
+            betweenOps2->allowsSQLnullArg() = true;
+            ItemExpr *clause4 = new (PARSERHEAP()) BiLogic(ITM_AND
+                                            , relat3
+                                            , new (PARSERHEAP()) BiLogic(ITM_AND
+                                                 , relat4
+                                                 , new (PARSERHEAP())BiLogic(ITM_OR
+                                                    , betweenOps1
+                                                    , betweenOps2)));
+            $$ = new (PARSERHEAP()) BiLogic(ITM_OR
+                                      , clause1
+                                      , new (PARSERHEAP()) BiLogic(ITM_OR
+                                            , clause2
+                                            , new (PARSERHEAP()) BiLogic(ITM_OR, clause3, clause4)));
+         } 
 
 /* type item */
 search_condition : boolean_term
