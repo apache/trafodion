@@ -8267,8 +8267,8 @@ STDDEV (PARTCOST * QTY_ORDERED)
 STDDEV is evaluated after eliminating all nulls from the set. If the
 result table is empty, STDDEV returns NULL.
 
-[[float54_and_double_precision_data]]
-==== FLOAT(54) and DOUBLE PRECISION Data
+[[float52_and_double_precision_data]]
+==== FLOAT(52) and DOUBLE PRECISION Data
 
 Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 STDDEV. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during the computation
@@ -9926,8 +9926,8 @@ VARIANCE is evaluated after eliminating all nulls from the set. If the
 result table is empty, VARIANCE returns NULL.
 
 
-[[float54_and_double_precision_data]]
-==== FLOAT(54) and DOUBLE PRECISION Data
+[[float52_and_double_precision_data]]
+==== FLOAT(52) and DOUBLE PRECISION Data
 
 Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 VARIANCE. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during

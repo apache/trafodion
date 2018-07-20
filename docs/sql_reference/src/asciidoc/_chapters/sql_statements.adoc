@@ -430,7 +430,7 @@ default is:
    | null
    | currentdate
    | currenttime
-   | currenttimestamp }
+   | currenttimestamp 
 
 column-constraint is:
      not null
@@ -3048,17 +3048,21 @@ column-definition is:
 ```
 data-type is:
     char[acter] [(length [characters])]
-          [character set char-set-name]
-          [upshift] [[not]casespecific]
+                [character set char-set-name]
+                [upshift] [[not]casespecific]
   | char[acter] varying (length [characters])
-          [character set char-set-name]
+                        [character set char-set-name]
+                        [upshift] [[not]casespecific]
+  | varchar (length [characters]) 
+            [character set char-set-name]
+            [upshift] [[not]casespecific]
+  | varchar2 (length [characters]) 
+             [character set char-set-name]
+             [upshift] [[not]casespecific]          
+  | nchar [(length [characters])]
           [upshift] [[not]casespecific]
-  | varchar (length) [character set char-set-name]
-          [upshift] [[not]casespecific]
-  | varchar2 (length) [character set char-set-name]
-          [upshift] [[not]casespecific]          
-  | nchar (length) [characters] [upshift] [[not]casespecific]
-  | nchar varying(length [characters]) [upshift] [[not] casespecific]
+  | nchar varying (length [characters]) 
+                  [upshift] [[not] casespecific]
   | numeric [(precision [,scale])] [signed|unsigned]
   | smallint [signed|unsigned]
   | int[eger] [signed|unsigned]
@@ -3796,6 +3800,23 @@ ATTRIBUTES ALIGNED FORMAT
 --- SQL operation complete.
 ```
 
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2. 
+So it is not possible to specify a CHARACTER SET clause when using NCHAR, 
+as the following example shows.
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (UCS2) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *CREATE* and *ALTER* statement.
++
+```
+SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET USC2);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table test1 (c1 nchar(10) character set usc2);
+                                       ^ (40 characters from start of SQL statement) [2018-07-13 04:02:39]
+```
+
 <<<
 [[create_table_examples_create_table_as]]
 ==== Examples of CREATE TABLE AS
@@ -4524,7 +4545,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `_[[catalog-name.]schema-name.]function-name`
+* `_[[catalog-name.]schema-name.]function-name_`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -4762,9 +4783,9 @@ DROP ROLE role-name
 +
 is an existing role name. The role cannot be dropped if any of the following are true:
 
-* Any privileges are granted to the role.
-* The role is granted to any users.
-* The role owns any schemas.
+** Any privileges are granted to the role.
+** The role is granted to any users.
+** The role owns any schemas.
 
 [[drop_role_considerations]]
 === Considerations for DROP ROLE
