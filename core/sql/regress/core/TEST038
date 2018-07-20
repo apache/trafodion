@@ -1148,6 +1148,7 @@ select split_part('sa:sbl:sc', ':', 3) from t038sf;
 -- **EMPTY RESULT** 
 select split_part('sa:sbl:sc', ':', 0) from t038sf;
 select split_part('sa:sbl:sc', ':', 4) from t038sf;
+select split_part('sa:sbl:sc', ':', -4) from t038sf;
 
 insert into T038sf values(110, 'a/b/c', 'sa/dsd/s');
 insert into T038sf values(111, 'sasd', 'dsa:/~sd');
