@@ -5859,6 +5859,7 @@ public:
    
    virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
                       CollHeap *outheap = 0);
+   virtual ItemExpr * preCodeGen(Generator*);
 }; //class SplitPart
 
 #endif /* ITEMFUNC_H */
