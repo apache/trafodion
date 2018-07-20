@@ -4519,14 +4519,14 @@ a| * `_datetime-expression_`
 a| * `_datetime-expression_` +
 Quarter of year (1-4).
 * `_interval-expression_` +
-Quarter of year (1-4). 
+Number of quarter(s) in the `_interval-expression_`. 
 a| * `_datetime-expression_` 
 ** DATE
 ** TIMESTAMP
 * `_interval-expression_`
 | SECOND
 a| * `_datetime-expression_` +
-Second(s) (0-59).
+Second (0-59).
 * `_interval-expression_` +
 Number of second(s) in the `_interval-expression_`. +
 a| * `_datetime-expression_` +
@@ -4535,18 +4535,17 @@ a| * `_datetime-expression_` +
 * `_interval-expression_` +
 | WEEK
 a| * `_datetime-expression_` +
-Week of year (1-54).
+Week of year. +
+** The value 1 is returned for datetime that occurs in the first 7 days of the year if the year begins on a Sunday. +
+Otherwise, the value 1 is returned for datetime that occurs in the partial week before the start of the first Sunday.
+** The value 53 is returned for datetime that occurs in the last full or partial week of the year. 
+** The value 54 is returned for datetime that starts on Saturday where December 31 is in the 54th full or partial week in a leap year.
 a| * `_datetime-expression_` 
 ** DATE
 ** TIMESTAMP
 | WOM
 a| * `_datetime-expression_` +
-Week of month (1-5). +
-** The week 1 starts on the 1^st^ day and ends on the 7^th^ day of a month.
-** The week 2 starts on the 8^th^ day and ends on the 14^th^ day of a month.
-** The week 3 starts on the 15^th^ day and ends on the 21^th^ day of a month.
-** The week 4 starts on the 22^th^ day and ends on the 28^th^ day of a month.
-** The week 5 starts on the 29^th^ day and ends on the 31^th^ day of a month.
+Week of month.
 a| * `_datetime-expression_` +
 ** DATE
 ** TIMESTAMP 
@@ -4927,16 +4926,16 @@ SQL>SELECT EXTRACT (QUARTER FROM TIMESTAMP '1990-11-02 08:16:26') FROM DUAL;
 --- 1 row(s) selected.
 ```
 
-* This example extracts the quarter from `_interval-expression_`.
+* This example extracts the number of quarters from `_interval-expression_`.
 +
 ```
-SQL>SELECT EXTRACT(QUARTER FROM INTERVAL '8' MONTH) FROM DUAL;
+SQL>SELECT EXTRACT (QUARTER FROM INTERVAL '97' MONTH) FROM DUAL;
 
 (EXPR)
 ------
-     3
+    33
 
---- 1 row(s) selected. 
+--- 1 row(s) selected.
 ```
 
 [[examples_of_extract_second]]
@@ -4996,7 +4995,7 @@ SQL>SELECT EXTRACT (WEEK FROM DATE '2019-01-01') FROM DUAL;
 * This example extracts the week from `_TIMESTAMP_`.
 +
 ```
-SQL>SELECT EXTRACT (WEEK FROM TIMESTAMP '2020-12-31 23:59:59') FROM DUAL;
+SQL>SELECT EXTRACT (WEEK FROM TIMESTAMP '2000-12-31 23:59:59') FROM DUAL;
 
 (EXPR)
 ------
