@@ -27,6 +27,8 @@ LOG aqatdml03 Clear;
 --       testcase A6: use of for read committed access, for read committed access
 --         and for read committed access
 --       testcase A7: SELECT aggregate functions with where predicate
+--       testcase A8: SELECT WHERE datetime are overlaps with other datetime
+--                    or with expressions. 
 
 -- All testcases are documented further below.
 
@@ -835,7 +837,104 @@ LOG aqatdml03 Clear;
 
 --    <end-input>
 
+-- <testcase A8>
 
+--    <detail>
+--    select normal where clause test case - this tests the use of
+--    a OVERLAPS predicate in a where clause.
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+--    <comment> SELECT WHERE (date, date) OVERLAPS (date, date); 
+--    <ufi-input>
+      select 1 from btsel01
+      where (date'2018-07-19', date'2018-08-19')
+      overlaps (date'2018-07-20', date'2018-08-20')
+      group by 1;
+
+--    <ufi-input>
+      select 1 from btsel01
+      where (date'2018-07-19', date'2018-08-19')
+      overlaps (date'2018-07-18', date'2018-08-20')
+      group by 1;
+      
+--    <ufi-input>
+      select 0 from btsel01
+      where (date'2018-07-19', date'2018-08-19')
+      overlaps (date'2018-08-19', date'2018-08-20');
+
+--    <ufi-input>
+      select 0 from btsel01
+      where (date'2018-07-19', date'2018-08-19')
+      overlaps (date'2018-06-18', date'2018-07-19');
+
+--    <comment> SELECT WHERE (date, interval) OVERLAPS (date, date);
+--    <ufi-input>
+      select 1 from btsel01
+      where (date'2018-07-19', interval '01-02' year to month)
+      overlaps (date'2018-07-20', date'2018-08-20')
+      group by 1;
+
+--    <ufi-input>
+      select 0 from btsel01
+      where (date'2018-07-19', -interval '03-02' year to month)
+      overlaps (date'2018-07-19', date'2018-08-18');
+      
+--    <comment> SELECT WHERE (date, date) OVERLAPS (date, interval);
+--    <ufi-input>
+      select 0 from btsel01
+      where (date'2018-07-20', date'2018-08-20')
+      overlaps (date'2018-08-20', interval '01-02' year to month);
+
+--    <ufi-input>
+      select 1 from btsel01
+      where (date'2018-07-20', date'2018-08-20')
+      overlaps (date'2018-07-19', -interval '01-02' year to month)
+      group by 1;
+
+--    <comment> SELECT WHERE (date, interval) OVERLAPS (date, interval)
+--    <ufi-input>
+      select 1 from btsel01
+      where (date'2018-07-20', interval '1' month)
+      overlaps (date'2018-07-19', interval '01-02' year to month)
+      group by 1;
+
+--    <ufi-input>
+      select 0 from btsel01
+      where (date'2018-07-19', -interval '2' year)
+      overlaps (date'2020-09-19', -interval '01-02' year to month);
+
+--    <comment> SELECT WHERE (time, time) OVERLAPS (time, time); 
+--    <ufi-input>
+      select 1 from btsel01
+      where (time'01:02:03', time'02:03:04')
+      overlaps (time'03:04:05', time'02:01:01')
+      group by 1;
+
+--    <comment> SELECT WHERE (time, interval) OVERLAPS (time, interval); 
+--    <ufi-input>
+      select 0 from btsel01
+      where (time'03:04:06', interval '04:03:04' hour to second )
+      overlaps (time'03:04:05', -interval'02:01:01' hour to second);
+
+--    <comment> SELECT WHERE (timestamp, timerstamp) OVERLAPS (timestamp, timestamp);
+--    <ufi-input>
+      select 1 from btsel01
+      where (timestamp'2018-07-19 01:02:03', timestamp'2018-07-19 02:03:04')
+      overlaps (timestamp'2018-07-19 03:04:05', -interval'02:01:01' hour to second)
+      group by 1;
+
+--    <ufi-input>
+      select 1 from btsel01 
+      where (timestamp'2018-07-19 10:00:00', timestamp'2018-08-19 01:00:00') 
+      overlaps (timestamp'2018-07-19 01:00:00', current_timestamp)
+      group by 1;
+
+--  <end-input>
 
 -- <end-test>
 LOG;
