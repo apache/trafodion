@@ -289,6 +289,10 @@ SB_PERSISTENT_SAMPLES
 T012T11
 T012T12
 
+=======================
+Summary info of get:
+Get 5 rows.
+
 --- SQL operation complete.
 >>get indexes in schema trafodion.zschema;
 
@@ -300,6 +304,10 @@ T012T11C2
 T012T11I1
 T012T11I2
 
+=======================
+Summary info of get:
+Get 4 rows.
+
 --- SQL operation complete.
 >>get views in schema trafodion.zschema;
 
@@ -307,6 +315,10 @@ Views in Schema TRAFODION.ZSCHEMA
 =================================
 
 T012T11V1
+
+=======================
+Summary info of get:
+Get 1 rows.
 
 --- SQL operation complete.
 >>
@@ -316,11 +328,26 @@ T012T11V1
 >>
 >>get tables in schema trafodion.zschema;
 
+
+=======================
+Summary info of get:
+Get 0 rows.
+
 --- SQL operation complete.
 >>get indexes in schema trafodion.zschema;
 
+
+=======================
+Summary info of get:
+Get 0 rows.
+
 --- SQL operation complete.
 >>get views in schema trafodion.zschema;
+
+
+=======================
+Summary info of get:
+Get 0 rows.
 
 --- SQL operation complete.
 >>
@@ -364,6 +391,10 @@ Tables in View ZSCHEMA1.V
 TRAFODION.ZSCHEMA1.T
 TRAFODION.ZSCHEMA2.T
 
+=======================
+Summary info of get:
+Get 2 rows.
+
 --- SQL operation complete.
 >>get views on table zschema1.t;
 
@@ -372,6 +403,10 @@ Views on Table ZSCHEMA1.T
 
 TRAFODION.ZSCHEMA1.V
 TRAFODION.ZSCHEMA2.V
+
+=======================
+Summary info of get:
+Get 2 rows.
 
 --- SQL operation complete.
 >>
@@ -382,6 +417,10 @@ Tables in View ZSCHEMA2.V2
 
 TRAFODION.ZSCHEMA2.T
 
+=======================
+Summary info of get:
+Get 1 rows.
+
 --- SQL operation complete.
 >>get all tables in view zschema2.v2;
 
@@ -391,6 +430,10 @@ Tables in View ZSCHEMA2.V2
 TRAFODION.ZSCHEMA1.T
 TRAFODION.ZSCHEMA2.T
 
+=======================
+Summary info of get:
+Get 2 rows.
+
 --- SQL operation complete.
 >>get views in view zschema2.v2;
 
@@ -398,6 +441,10 @@ Views in View ZSCHEMA2.V2
 =========================
 
 TRAFODION.ZSCHEMA1.V
+
+=======================
+Summary info of get:
+Get 1 rows.
 
 --- SQL operation complete.
 >>get all objects in view zschema2.v2;
@@ -408,6 +455,11 @@ Objects in View ZSCHEMA2.V2
 TRAFODION.ZSCHEMA1.T
 TRAFODION.ZSCHEMA1.V
 TRAFODION.ZSCHEMA2.T
+
+
+=======================
+Summary info of get:
+Get 3 rows.
 
 --- SQL operation complete.
 >>

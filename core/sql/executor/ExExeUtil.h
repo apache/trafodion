@@ -2355,6 +2355,13 @@ protected:
   Lng32 getUsedObjects(Queue * infoList,
                       NABoolean isShorthandView,
                       char* &viewName, Lng32 &len);
+  void setReturnRowCount( Lng32 n) { returnRowCount_ = n; }
+
+  Lng32 getReturnRowCount() {return returnRowCount_;}
+
+  void incReturnRowCount() {returnRowCount_++; }
+
+  Lng32 returnRowCount_;
 
 private:
 
@@ -2381,6 +2388,7 @@ private:
     const char *catName,
     const char *schName,
     const char *objName);
+
 
 };
 

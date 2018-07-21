@@ -1265,6 +1265,9 @@ HBase Registered Tables in Catalog TRAFODION
 "_CELL_".T022HBM2
 "_ROW_".T022HBM2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>unregister hbase table t022hbm2;
 
@@ -1279,6 +1282,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T022HBM2
 "_ROW_".T022HBM2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
@@ -1384,6 +1390,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T022HBM2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
 
@@ -1448,6 +1457,9 @@ HBase Registered Tables in Catalog TRAFODION
 ============================================
 
 "_CELL_".T022HBM2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
