@@ -4330,10 +4330,9 @@ public:
     EVAL_INPUT_,
     EVAL_START_WITH_,
     DO_CONNECT_BY_,
-    POPULATE_CONNECT_BUF_,
     EVAL_EXPR_,
-    RETURN_CONNECT_BUF_,
     NEXT_LEVEL_,
+    NEXT_ROOT_,
     ERROR_,
     DONE_
   };

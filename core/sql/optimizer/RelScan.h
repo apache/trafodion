@@ -642,8 +642,10 @@ public:
 
   NAString getPirorColName() { return priorColName_; }
   NAString getPirorChildColName() { return priorChildColName_; }
+  NAString getStartWithExpr() { return startWithExpr_; }
   void setPriorColName(char * v) { priorColName_ = v; }
   void setPriorChildColName(char * v) { priorChildColName_ = v; }
+  void setStartWithExpr(const char *v) { startWithExpr_ = v; }
 
 protected:
 
@@ -798,6 +800,7 @@ private:
 
   NAString priorColName_;
   NAString priorChildColName_;
+  NAString startWithExpr_;
 
 };
 

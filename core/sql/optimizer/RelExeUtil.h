@@ -1120,6 +1120,7 @@ public:
   ItemExpr * connectByTree_;
   NAString parentColName_;
   NAString childColName_;
+  NAString startWithExprString_;
   NABoolean  hasStartWith_;
 private:
   //connect by

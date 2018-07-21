@@ -4150,6 +4150,7 @@ public:
   NAString parentColName_;
   NAString childColName_;
   NAString connTableName_;
+  NAString startWithExprString_;
   NABoolean hasStartWith_;
 private:
   ExCriDescPtr workCriDesc_;  

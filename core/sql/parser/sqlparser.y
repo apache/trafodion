@@ -475,6 +475,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_END_HINT
 %token <tokval> TOK_BALANCE
 %token <tokval> TOK_NOT_BETWEEN
+%token <tokval> TOK_NOCYCLE
 %token <tokval> TOK_BETWEEN
 %token <tokval> TOK_BIT
 %token <tokval> TOK_BITAND
@@ -1533,7 +1534,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SPECIFICTYPE
 %token <tokval> TOK_START
 %token <tokval> TOK_STATE
-
+%token <tokval> TOK_START_WITH
 %token <tokval> TOK_TERMINATE
 %token <tokval> TOK_THAN
 %token <tokval> TOK_TREAT
@@ -2084,6 +2085,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>	  		table_value_constructor
 %type <relx>      		table_expression
 %type <relx>      		from_clause
+%type <item>            startwith_clause
 %type <item>      		join_specification
 %type <item>      		join_condition
 %type <item>      		where_clause
@@ -2128,8 +2130,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		rel_subquery
 %type <item>      		row_subquery
 %type <item>      		predicate
-%type <item>                    connect_by
-%type <item>                    startwith
+//%type <item>                    connect_by
+//%type <item>                    startwith
 %type <item>                    dml_column_reference
 %type <item>      		null_predicate
 %type <boolean>                 scan_key_hint
@@ -9406,18 +9408,18 @@ sequence_generator_option : start_with_option
                       | datatype_option
 
 /* type pElemDDL */
-start_with_option : TOK_START TOK_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
+start_with_option : TOK_START_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
     {
       // Validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
 
-      NABoolean result = validateSGOption(TRUE, FALSE,(char *)$4->data(), "START WITH", "SEQUENCE");
+      NABoolean result = validateSGOption(TRUE, FALSE,(char *)$3->data(), "START WITH", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
 
-      Int64 value = atoInt64($4->data()); 
-     if (NOT $3)
+      Int64 value = atoInt64($3->data()); 
+     if (NOT $2)
         value = -value;
        
       $$ = new (PARSERHEAP())
@@ -13095,15 +13097,6 @@ list_of_values : '(' insert_value_expression_list ')'
 				}
 
 // end of fix: left recursion for insert statement values.		  
-
-connect_by : TOK_CONNECT TOK_BY comparison_predicate
-                    {
-                      $$ = $3;
-                    }
-startwith : empty { $$ = NULL; }| TOK_START TOK_WITH comparison_predicate
-                    {
-                      $$ = $3;
-                    }
 		  
 table_expression : from_clause where_clause sample_clause
                    cond_transpose_clause_list sequence_by_clause
@@ -13204,13 +13197,42 @@ table_expression : from_clause where_clause sample_clause
 		                                 SqlParser_CurrentParser->topHasOlapFunctions());
                      SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
 		   }
+            | from_clause startwith_clause where_clause
+           {
+		     $$ = 
+		       getTableExpressionRelExpr($1, 
+		                                 $3, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL,
+		                                 NULL,
+		                                 FALSE,
+		                                 SqlParser_CurrentParser->topHasOlapFunctions());
+                     SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
+               $$->addStartWithExprTree(((BiConnectBy*)$2)->getStartWith());
+               $$->addConnectByExprTree(((BiConnectBy*)$2)->getConnectBy());
+               ((Scan*)$$)->setStartWithExpr( ((BiConnectBy*)$2)->startWithString_.data());
 
+           }
 /* type relx */
 from_clause : TOK_FROM global_hint table_reference { $$ = $3; }
 	    | from_clause ',' table_reference
 			      {
 				$$ = new (PARSERHEAP()) Join($1, $3, REL_JOIN);
-			      }
+		      }
+
+startwith_clause :TOK_START_WITH predicate TOK_CONNECT TOK_BY predicate
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$5);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                    }
+                   |  TOK_CONNECT TOK_BY predicate
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
+                    }
 
 /* type item */
 join_specification : join_condition
@@ -13743,6 +13765,7 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
 /* type relx */
 query_spec_body : query_select_list table_expression access_type  optional_lock_mode
 			{
+                          if($2->getConnectByPredTree() == NULL) {
 			  // use a compute node to attach select list
 			  RelRoot *temp=  new (PARSERHEAP())
                             RelRoot($2, $3, $4, REL_ROOT, $1);
@@ -13761,16 +13784,38 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			    SqlParser_CurrentParser->popHasTDFunctions();			    
 			    
 			    $$=temp;			    
+                          }
+                          else
+                          {
+                            CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+                            NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+                                                      , PARSERHEAP() // in  - NAMemory *
+                                                      );
+                            //remove ';' 
+                            UInt32 pos = 
+                              stmt->index(";", 0, NAString::ignoreCase);
+                            stmt->remove(pos);
+
+                            ExeUtilConnectby *euc = new (PARSERHEAP()) 
+                             ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()), (char*) stmt->data(), 
+                                        stmtCharSet, $2,PARSERHEAP());
+ 
+  			    RelRoot *temp = new (PARSERHEAP())
+			      RelRoot(euc, REL_ROOT , $1);
+
+                            if($2->getStartWithPredTree() == NULL)
+                            {
+                              euc->hasStartWith_ = FALSE;
+                            }
+                            else
+                            {
+                              euc->hasStartWith_ = TRUE;
+                              euc->startWithExprString_ = ((Scan*)$2)->getStartWithExpr(); 
+                            }
+                            $$ = temp;                              
+                          }
 			}
-		|  query_select_list from_clause startwith connect_by where_clause access_type  optional_lock_mode TOK_START
-			{
-			  RelRoot *temp=  new (PARSERHEAP())
-                            RelRoot($2, $6, $7, REL_ROOT, $1);
-			  $2->addConnectByExprTree($4);
-                          $2->addStartWithExprTree($3);
-                          ((Scan*)$2)->setConnectByPhase(1);
-			    $$=temp;			    
- 			}
+
 		| query_select_list into_clause table_expression access_type optional_lock_mode
 			{
 			  // use a compute node to attach select list
@@ -13802,6 +13847,7 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			  AssignmentHostVars->clear();
 			  $$ = temp;
 			}
+/*
 		|query_select_list from_clause startwith connect_by where_clause access_type optional_lock_mode
 			{
                           CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
@@ -13826,6 +13872,7 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
                             euc->hasStartWith_ = FALSE;
                           $$ = temp;
 }
+*/
 
 //++ MV OZ
 // type item 
@@ -19051,7 +19098,7 @@ comparison_predicate :
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
      | row_subquery comparison_operator value_expression_list_paren
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
-     | TOK_PRIOR value_expression comparison_operator value_expression
+     | TOK_PRIOR value_expression comparison_operator value_expression 
 		      { $$ = new (PARSERHEAP()) BiRelat($3, $2, $4); ((BiRelat*)$$)->setPrior(1);}
      | value_expression comparison_operator TOK_PRIOR value_expression 
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $4); ((BiRelat*)$$)->setPrior(2);}
@@ -24678,7 +24725,7 @@ param_name : IDENTIFIER
                            temp.toUpper();
                            $$ = new (PARSERHEAP())ElemDDLParamName(temp);	   
                          }
-                    | nonreserved_func_word
+                     | nonreserved_func_word
                          {  
                            NAString temp = *(unicodeToChar
                                             (ToTokvalPlusYYText(&$1)->yytext,
@@ -34109,7 +34156,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SP_RESULT_SET
                       | TOK_SQL_WARNING
                       | TOK_SQLROW
-//		      | TOK_START  /* used in nist618 for column name */
+		      | TOK_START  /* used in nist618 for column name */
 		      | TOK_STATE  /* used internally? qat tests */
                       | TOK_STATEMENT
                       | TOK_STATIC

@@ -5481,6 +5481,7 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   exe_util_tdb->parentColName_ = parentColName_;
   exe_util_tdb->childColName_ = childColName_;
   exe_util_tdb->hasStartWith_ = hasStartWith_;
+  exe_util_tdb->startWithExprString_ = startWithExprString_;
   generator->initTdbFields(exe_util_tdb);
 
   if (!generator->explainDisabled())

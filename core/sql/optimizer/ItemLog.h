@@ -732,11 +732,31 @@ public:
   // Used to return the rollup groups.
   Int16 rollupColumnNum_;
 
-  Int8 prior_; //0 left , 1 right
+  Int8 prior_;
 
   UInt32 flags_;
 
 }; // class BiRelat
+
+class BiConnectBy :public BiRelat {
+public:
+  BiConnectBy( BiRelat * start,
+          BiRelat * conn)
+   :BiRelat(ITM_EQUAL, NULL, NULL)
+  {
+    startWith_ = start;
+    connectBy_ = conn;
+  }
+  virtual ~BiConnectBy() {}
+
+  BiRelat * getStartWith() {return startWith_; }
+  BiRelat * getConnectBy() {return connectBy_; }
+  NAString startWithString_;
+
+private:
+  BiRelat * startWith_;
+  BiRelat * connectBy_;
+};
 
 class KeyRangeCompare : public BiRelat
 {

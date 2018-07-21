@@ -709,6 +709,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("NEXT",               TOK_NEXT,        ANS_|RESWORD_),
   ParKeyWord("NEXT_DAY",           TOK_NEXT_DAY,    NONRESTOKEN_),
   ParKeyWord("NO",                 TOK_NO,          FIRST_|ANS_|RESWORD_),
+  ParKeyWord("NOCYCLE",            TOK_NOCYCLE,     FIRST_|ANS_|RESWORD_),
   ParKeyWord("NODELETE",           TOK_NODELETE,    FLAGSNONE_),
   ParKeyWord("NODES",              TOK_NODES,       NONRESTOKEN_),
   ParKeyWord("NOLOG",              TOK_NOLOG,       NONRESTOKEN_),
@@ -1043,7 +1044,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SQL_VARCHAR",        TOK_VARCHAR,     COMPAQ_|RESWORD_),
   ParKeyWord("SQL_WARNING",        TOK_SQL_WARNING, NONRESTOKEN_),
   ParKeyWord("SQRT",               TOK_SQRT,        NONRESTOKEN_),
-  ParKeyWord("START",              TOK_START,       COMPAQ_|NONRESWORD_),
+  ParKeyWord("START",              TOK_START,       FIRST_|COMPAQ_|NONRESWORD_),
 // used in nist618 test
   ParKeyWord("STATE",              TOK_STATE,       COMPAQ_|NONRESWORD_),
 // used in QAT tests

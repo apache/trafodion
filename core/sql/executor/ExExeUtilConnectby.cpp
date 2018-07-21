@@ -103,8 +103,6 @@ ExExeUtilConnectbyTcb::ExExeUtilConnectbyTcb(
   pool_->get_free_tuple(tuppData_, exe_util_tdb.tupleLen_);
   data_ = tuppData_.getDataPointer();
   //pool_->get_free_tuple(workAtp_->getTupp(2), 0);
-
-
 }
 
 ex_tcb_private_state *  ExExeUtilConnectbyTcb::allocatePstates(
@@ -168,7 +166,7 @@ short ExExeUtilConnectbyTcb::emitRows(Queue *q, ExpTupleDesc * tDesc)
 #endif
 	    if (!valIsNull)
 	      {
-	//	str_cpy_all(src,&data_[attr->getOffset()],attr->getLength() );
+
 #if 1
 		if (
 		    ::convDoIt(src, srcLen, srcType, 0, 0,
@@ -323,18 +321,27 @@ short haveDupSeed(Queue * q , connectByStackItem *it, int len, int level)
   }
   return 0;
 }
+
+Queue * getCurrQueue(int id, Queue *q)
+{
+  for(int i = 0; i < q->numEntries(); i++)
+  {
+     rootItem * ri = (rootItem*) q->get(i);
+     if(ri->rootId == id) return ri->qptr;
+  }
+  return NULL;
+}
  
 short ExExeUtilConnectbyTcb::work()
 {
   short retcode = 0; 
-  char q1[1024], q2[1024];
+  char q1[2048]; //TODO: the max len of supported query len
   void* uppderid = NULL;
   char * ptr;
   Lng32   len;
   short rc;
   NAString nq11, nq21;	    
-  memset(q1, 0, 1024);
-  memset(q2, 0, 1024);
+  memset(q1, 0, sizeof(q1));
   int matchRowNum = 0;
 
   int currLevel = 1;
@@ -356,10 +363,8 @@ short ExExeUtilConnectbyTcb::work()
     {
       NAString nq1=stmtStr;
       UInt32 pos = nq1.index(" from ", 0, NAString::ignoreCase);
-      sprintf(q1,"SELECT %s , * , 0" ,(exeUtilTdb().parentColName_).data());
+      sprintf(q1,"SELECT %s , * , 0 FROM %s WHERE %s ;" ,(exeUtilTdb().parentColName_).data() , (exeUtilTdb().connTableName_).data() ,(exeUtilTdb().startWithExprString_).data() );
       nq11 = q1;
-      nq11.append((char*)&(nq1.data()[pos])); 
-      nq11.append(" START ;");
     }
   else
     {
@@ -371,17 +376,16 @@ short ExExeUtilConnectbyTcb::work()
 
   ExpTupleDesc * tDesc = exeUtilTdb().workCriDesc_->getTupleDescriptor( exeUtilTdb().sourceDataTuppIndex_);
 
-  int isVarchar = 0;
-  char * dp ;
-  Queue * seedQueue = NULL;  
-  Queue * currQueue = new(getHeap()) Queue(getHeap()) ;
+  Queue * seedQueue = new(getHeap()) Queue(getHeap()) ;
+  Queue * currQueue = NULL ;
   Queue * tmpQueue = new(getHeap()) Queue(getHeap());;
   tupp p;
   Lng32 fsDatatype = 0;
-  Lng32 length;
+  Lng32 length = 0;
   Lng32 indOffset = 0;
   Lng32 varOffset = 0;
-
+  int currRootId = 0;
+  
   while (1)
     {
      ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
@@ -394,6 +398,8 @@ short ExExeUtilConnectbyTcb::work()
        case EVAL_START_WITH_:
         {
            short rc = 0;
+          int rootId = 0;
+
          //get the stmt
          retcode = cliInterface()->fetchRowsPrologue(nq11.data(), FALSE, FALSE);
          while ((rc >= 0) && 
@@ -414,7 +420,14 @@ short ExExeUtilConnectbyTcb::work()
            cliInterface()->getAttributes(1, FALSE,
 			fsDatatype, length,
 			&indOffset, &varOffset);
+           currQueue = new(getHeap()) Queue(getHeap()) ;
+           rootItem * ri= new(getHeap()) rootItem();
+           ri->rootId = rootId;
+           rootId++;
+           ri->qptr = currQueue;
+           seedQueue->insert(ri);
 
+           
            char *tmp = new(getHeap()) char[len]; 
            memcpy(tmp,ptr,len);
            it->seedValue = tmp; 
@@ -434,14 +447,14 @@ short ExExeUtilConnectbyTcb::work()
        {
        int seedNum = currQueue->numEntries();
        int loopDetected = 0;
-
+       
        currQueue->position();
        resultSize = 0;
+
        for(int i=0; i< seedNum; i++)  {
          
-         NAString nq2=stmtStr;
-         sprintf(q2,"SELECT %s , * , %d FROM %s WHERE " ,(exeUtilTdb().parentColName_).data(), currLevel,(exeUtilTdb().connTableName_).data());
-         nq21 = q2;
+         sprintf(q1,"SELECT %s , *, %d FROM %s WHERE " ,(exeUtilTdb().parentColName_).data(), currLevel,(exeUtilTdb().connTableName_).data());
+         nq21 = q1;
          nq21.append((exeUtilTdb().childColName_).data()); 
          nq21.append(" in ( ");
          int sybnum = 0;
@@ -458,18 +471,16 @@ short ExExeUtilConnectbyTcb::work()
              char tmpbuf1[128];
              memset(tmpbuf,0,128);
              memset(tmpbuf1,0,128);
-             switch(vi->type) //TODO: more types to support
-               {
-               case REC_BYTE_F_ASCII:
-               case REC_BYTE_V_ASCII:
-                 strcpy(tmpbuf, " '");
+             if(vi->type >= REC_MIN_NUMERIC && vi->type <= REC_MAX_NUMERIC)
+                 sprintf(tmpbuf, "%d ", *(int*)uppderid);
+             else
+             {
+                 strcpy(tmpbuf, " '");	
                  strncpy(tmpbuf1,(char*)uppderid, vi->len);
                  strcat(tmpbuf,tmpbuf1);
                  strcat(tmpbuf,"'");
-               break;
-               default:
-                 sprintf(tmpbuf, "%d ", *(int*)uppderid);
-               }
+             }
+
              nq21.append(tmpbuf);
              if( i == seedNum || batchIdx ==10) continue;
              else
@@ -479,6 +490,7 @@ short ExExeUtilConnectbyTcb::work()
          }//for(int batchIdx = 0; batchIdx < 10 && i < seedNum; batchIdx ++)
 
          nq21.append(" );");
+
          if(sybnum == 0 ) //end
          {
            step_ = NEXT_LEVEL_;
@@ -511,6 +523,13 @@ short ExExeUtilConnectbyTcb::work()
            if(rc1 == 1) 
            {
                loopDetected = 1;
+               ComDiagsArea * diags = getDiagsArea();
+              if(diags == NULL)
+              {
+                setDiagsArea(ComDiagsArea::allocate(getHeap()));
+                diags = getDiagsArea();              
+              }
+              *diags << DgSqlCode(-8041);
                step_ = ERROR_;
                break;
            }
@@ -534,7 +553,7 @@ short ExExeUtilConnectbyTcb::work()
              break;
          }
 	 if(resultSize == 0)
-             step_ = DONE_;
+             step_ = NEXT_ROOT_;
          else
              step_ = NEXT_LEVEL_;
        }
@@ -545,11 +564,28 @@ short ExExeUtilConnectbyTcb::work()
             step_ = DO_CONNECT_BY_;
          }
        break;
+       case NEXT_ROOT_:
+         {
+            currRootId++;
+            currLevel =  1;
+            currQueue = getCurrQueue(currRootId, seedQueue);
+            if(currQueue == NULL) step_ = DONE_;
+            else
+              step_ = DO_CONNECT_BY_;
+         }
+       break;
        case ERROR_:
 	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
 
+	    //if (qparent_.up->isFull())
+	      //return WORK_OK;
+            if (handleError())
+              return WORK_OK;
+
+	    //getDiagsArea()->clear();
+
+	    step_ = DONE_;
+#if 0
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
 	    
@@ -575,7 +611,7 @@ short ExExeUtilConnectbyTcb::work()
 
 	    // insert into parent
 	    qparent_.up->insert();
-	    
+#endif	    
 	    step_ = DONE_;
 	  }
 	break;
@@ -598,8 +634,13 @@ short ExExeUtilConnectbyTcb::work()
 	 qparent_.down->removeHead();
 
          //release the currentQueue
-         releaseCurrentQueue(currQueue, getHeap());
-         NADELETE(currQueue, Queue, getHeap());
+         for(int i = 0; i< currRootId ; i++)
+         {
+           currQueue = getCurrQueue( i, seedQueue);
+           releaseCurrentQueue(currQueue, getHeap());
+           NADELETE(currQueue, Queue, getHeap());
+         }
+         NADELETE(seedQueue, Queue, getHeap());
          return WORK_OK;
        break;
      }
