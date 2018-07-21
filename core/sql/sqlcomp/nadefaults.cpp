@@ -1463,6 +1463,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_MAX_COLUMN_VAL_LENGTH,                  "1000"),
  DDui___(HBASE_MAX_ESPS,                        "9999"),
  DDui___(HBASE_MAX_NUM_SEARCH_KEYS,                  "512"),
+ DDkwd__(HBASE_MEMSTORE_FLUSH_SIZE_OPTION,              ""),
  DDui1__(HBASE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
 
   DDkwd__(HBASE_NATIVE_IUD,		"ON"),
@@ -5964,6 +5965,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         (attrEnum == USE_HIVE_SOURCE) ||
         (attrEnum == HIVE_FILE_CHARSET) ||
         (attrEnum == HBASE_DATA_BLOCK_ENCODING_OPTION) ||
+        (attrEnum == HBASE_MEMSTORE_FLUSH_SIZE_OPTION) ||
         (attrEnum == HBASE_COMPRESSION_OPTION))
       return DF_USER;
     

@@ -10662,8 +10662,10 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
 
   NABoolean dataBlockEncodingOptionSpecified = FALSE;
   NABoolean compressionOptionSpecified = FALSE;
+  NABoolean memstoreFlushSizeOptionSpecified = FALSE;
   const char *dataBlockEncodingOptionString = "DATA_BLOCK_ENCODING";
   const char *compressionOptionString = "COMPRESSION";
+  const char *flushSizeOptionString = "MEMSTORE_FLUSH_SIZE";
 
   Lng32 numHbaseOptions = 0;
   if (hbaseOptionsClause)
@@ -10684,6 +10686,8 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
         dataBlockEncodingOptionSpecified = TRUE;
       else if (hbaseOption->key() == compressionOptionString)
         compressionOptionSpecified = TRUE;
+      else if (hbaseOption->key() == flushSizeOptionString)
+        memstoreFlushSizeOptionSpecified= TRUE;
       
       hbaseOptionsStr += hbaseOption->key();
       hbaseOptionsStr += "='";
@@ -10756,6 +10760,8 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
     CmpCommon::getDefaultString(HBASE_DATA_BLOCK_ENCODING_OPTION);
   NAString compression = 
     CmpCommon::getDefaultString(HBASE_COMPRESSION_OPTION);
+  NAString flushSize =
+    CmpCommon::getDefaultString(HBASE_MEMSTORE_FLUSH_SIZE_OPTION); 
   HbaseCreateOption * hbaseOption = NULL;
   
   char optionStr[200];
@@ -10769,11 +10775,24 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_DATA_BLOCK_ENCODING_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "DATA_BLOCK_ENCODING='%s'|", dataBlockEncoding.data());
+          snprintf(optionStr, 200, "DATA_BLOCK_ENCODING='%s'|", dataBlockEncoding.data());
           hbaseOptionsStr += optionStr;
         }
     }
+  if (!flushSize.isNull() && !memstoreFlushSizeOptionSpecified)
+    {
+      hbaseOption = new(STMTHEAP) HbaseCreateOption("MEMSTORE_FLUSH_SIZE", 
+                                                    flushSize.data());
+      hbaseCreateOptions.insert(hbaseOption);
 
+      if (ActiveSchemaDB()->getDefaults().userDefault
+          (HBASE_MEMSTORE_FLUSH_SIZE_OPTION) == TRUE)
+        {
+          numHbaseOptions += 1;
+          snprintf(optionStr, 200, "MEMSTORE_FLUSH_SIZE='%s'|", flushSize.data());
+          hbaseOptionsStr += optionStr;
+        }
+    }
   if (!compression.isNull() && !compressionOptionSpecified)
     {
       hbaseOption = new(STMTHEAP) HbaseCreateOption("COMPRESSION", 
@@ -10784,7 +10803,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_COMPRESSION_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "COMPRESSION='%s'|", compression.data());
+          snprintf(optionStr, 200, "COMPRESSION='%s'|", compression.data());
           hbaseOptionsStr += optionStr;
         }
     }
@@ -10799,7 +10818,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
     hco += "HBASE_OPTIONS=>";
 
     char hbaseOptionsNumCharStr[HBASE_OPTION_MAX_INTEGER_LENGTH];
-    sprintf(hbaseOptionsNumCharStr, "%04d", numHbaseOptions);
+    snprintf(hbaseOptionsNumCharStr, HBASE_OPTION_MAX_INTEGER_LENGTH, "%04d", numHbaseOptions);
     hco += hbaseOptionsNumCharStr;
 
     hco += hbaseOptionsStr.data();
