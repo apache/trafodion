@@ -506,6 +506,7 @@ ex_clause::ex_clause(clause_type type,
 	  setClassID(FUNC_QUERYID_EXTRACT);
 	  break;
 	case ITM_UNIQUE_ID:
+	case ITM_UNIQUE_ID_SYS_GUID:
 	case ITM_UNIQUE_SHORT_ID:
 	  setClassID(FUNC_UNIQUE_ID);
 	  break;
@@ -1508,6 +1509,7 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_LAST_ITEM_OP: return "ITM_LAST_ITEM_OP";
     case ITM_UNIQUE_ID: return "ITM_UNIQUE_ID";
+    case ITM_UNIQUE_ID_SYS_GUID: return "ITM_UNIQUE_ID_SYS_GUID";
     case ITM_UNIQUE_SHORT_ID: return "ITM_UNIQUE_SHORT_ID";
     case ITM_ROWNUM: return "ITM_ROWNUM";
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";

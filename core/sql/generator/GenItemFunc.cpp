@@ -665,6 +665,7 @@ short BuiltinFunction::codeGen(Generator * generator)
     break;
 
     case ITM_UNIQUE_ID:
+    case ITM_UNIQUE_ID_SYS_GUID:
     case ITM_UNIQUE_SHORT_ID:
       {
 	function_clause =

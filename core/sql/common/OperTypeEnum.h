@@ -728,6 +728,7 @@ enum OperatorTypeEnum {
                         ITM_ANY_CAST = 2457,
 
                         ITM_UNIQUE_ID = 2458,
+                        ITM_UNIQUE_ID_SYS_GUID = 2459,
 
                        // Do not do any conversion. Just interpret source as the specified type.
                         ITM_CAST_TYPE,

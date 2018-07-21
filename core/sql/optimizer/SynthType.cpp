@@ -1347,6 +1347,11 @@ const NAType *BuiltinFunction::synthesizeType()
         //please check the ExFunctionUniqueId::eval if the size is changed
 	retType = new HEAP SQLChar(HEAP, 36, FALSE);
       }
+    case ITM_UNIQUE_ID_SYS_GUID:
+      {
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 16, FALSE);
+      }
       break;
     case ITM_UNIQUE_SHORT_ID:
       {
