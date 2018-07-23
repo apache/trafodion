@@ -201,7 +201,6 @@ public:
   void setNEOCatalogName(char * catalog) { NEOCatalogName_ = catalog; }
 
   void setType(ExeUtilType type) { type_ = type; }
-  char * oriQuery_;
 
 protected:
   Lng32 type_;                               // 00-03
@@ -4135,7 +4134,7 @@ public:
 			      );
 
   ComTdbExeUtilConnectby()
-    : ComTdbExeUtil() { hasStartWith_ = TRUE; }
+    : ComTdbExeUtil() { hasStartWith_ = TRUE; noCycle_ = FALSE; }
 
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
@@ -4152,6 +4151,7 @@ public:
   NAString connTableName_;
   NAString startWithExprString_;
   NABoolean hasStartWith_;
+  NABoolean noCycle_;
 private:
   ExCriDescPtr workCriDesc_;  
   Int32 flags_;

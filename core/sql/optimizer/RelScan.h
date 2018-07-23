@@ -50,6 +50,7 @@
 #include "SchemaDB.h"
 #include "HbaseSearchSpec.h"
 #include "OptHints.h"
+#include "ItemOther.h"
 #include "ExpHbaseDefs.h"
 #include <vector>
 
@@ -235,8 +236,8 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(oHeap),
          hbaseAccessOptions_(NULL),
-         connectByPhase_(0),
-         commonSubExpr_(NULL)
+         commonSubExpr_(NULL),
+         biConnectBy_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -264,8 +265,8 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(CmpCommon::statementHeap()),
          hbaseAccessOptions_(NULL),
-         connectByPhase_(0),
-         commonSubExpr_(NULL)
+         commonSubExpr_(NULL),
+         biConnectBy_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -296,8 +297,8 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(oHeap),
          hbaseAccessOptions_(NULL),
-         connectByPhase_(0),
-         commonSubExpr_(NULL)
+         commonSubExpr_(NULL),
+         biConnectBy_(NULL)
      {} 
 
   Scan(OperatorTypeEnum otype,
@@ -326,8 +327,8 @@ public:
          isRewrittenMV_(FALSE),
          hbaseAccessOptions_(NULL),
          matchingMVs_(CmpCommon::statementHeap()),
-         connectByPhase_(0),
-         commonSubExpr_(NULL)
+         commonSubExpr_(NULL),
+         biConnectBy_(NULL)
      {} 
 
   // virtual destructor
@@ -599,6 +600,10 @@ public:
   void setForceInverseOrder(NABoolean v=TRUE)
   { (v ? scanFlags_ |= FORCE_INVERSE_ORDER : scanFlags_ &= ~FORCE_INVERSE_ORDER); }
 
+  NABoolean hasConnectBy() const { return (scanFlags_ & HAS_CONNECT_BY) != 0; }
+  void setHasConnectBy(NABoolean v=TRUE)
+  { (v ? scanFlags_ |= HAS_CONNECT_BY: scanFlags_ &= ~HAS_CONNECT_BY); }
+
   void setExtraOutputColumns(ValueIdSet outputCols)
     { extraOutputColumns_ = outputCols; }
   const ValueIdSet& getExtraOutputColumns() const
@@ -637,15 +642,8 @@ public:
   CommonSubExprRef *getCommonSubExpr() const        { return commonSubExpr_; }
   void setCommonSubExpr(CommonSubExprRef *cse)       { commonSubExpr_ = cse; }
 
-  void setConnectByPhase(char v) { connectByPhase_ = v; }
-  char getConnectByPhase() { return connectByPhase_; }
-
-  NAString getPirorColName() { return priorColName_; }
-  NAString getPirorChildColName() { return priorChildColName_; }
-  NAString getStartWithExpr() { return startWithExpr_; }
-  void setPriorColName(char * v) { priorColName_ = v; }
-  void setPriorChildColName(char * v) { priorChildColName_ = v; }
-  void setStartWithExpr(const char *v) { startWithExpr_ = v; }
+  void setBiConnectBy(BiConnectBy *b) { biConnectBy_ = b; }
+  BiConnectBy * getBiConnectBy() {return biConnectBy_; }
 
 protected:
 
@@ -693,7 +691,8 @@ private:
   // operation (ex., UPDATE becomes UPDATE(SCAN) in parser),
   // then no security check is needed.
   enum ScanFlags { NO_SECURITY_CHECK    = 0x0001,
-		   FORCE_INVERSE_ORDER  = 0x0002};
+		   FORCE_INVERSE_ORDER  = 0x0002,
+		   HAS_CONNECT_BY       = 0x0004};
 
   Cardinality      baseCardinality_;   // from table statistics
 
@@ -796,11 +795,7 @@ private:
   // materialized common subexpr
   CommonSubExprRef *commonSubExpr_;
 
-  char connectByPhase_ ;
-
-  NAString priorColName_;
-  NAString priorChildColName_;
-  NAString startWithExpr_;
+  BiConnectBy * biConnectBy_;
 
 };
 

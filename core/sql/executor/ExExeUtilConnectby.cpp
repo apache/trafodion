@@ -113,7 +113,7 @@ ex_tcb_private_state *  ExExeUtilConnectbyTcb::allocatePstates(
 
   return pa.allocatePstates(this, numElems, pstateLength);
 }
-
+#if 0
 short ExExeUtilConnectbyTcb::emitRows(Queue *q, ExpTupleDesc * tDesc)
 {
   short retcode = 0, rc =0;
@@ -211,8 +211,8 @@ short ExExeUtilConnectbyTcb::emitOneRow(ExpTupleDesc * tDesc, int level)
   retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
   return retcode;
 }
-
-short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level)
+#endif
+short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle)
 {
   short retcode = 0, rc =0;
   char * ptr;
@@ -221,7 +221,7 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level)
   short *ind ;
   ind = &nullInd;
 
-  for (UInt32 i = 1; i < tDesc->numAttrs() ; i++) 
+  for (UInt32 i = 1; i < tDesc->numAttrs() - 2 ; i++) 
   {
     cliInterface()->getPtrAndLen(i+1, ptr, len,&ind);
     char * src = ptr;
@@ -275,23 +275,40 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level)
 	
       }  
   }
-#if 0
+
+#if 1
   short srcType = REC_BIN32_UNSIGNED;
   Lng32 srcLen = 4;
-  int src = level;
+  int src = isleaf;
   Attributes * attr = tDesc->getAttr(tDesc->numAttrs() - 1);
   if (
    ::convDoIt((char*)&src, srcLen, srcType, 0, 0,
-	       &data_[attr->getOffset()], 
-	       attr->getLength(),
-	       attr->getDatatype(),0,0,
-	       0, 0, NULL) != ex_expr::EXPR_OK)
+              &data_[attr->getOffset()], 
+              attr->getLength(),
+              attr->getDatatype(),0,0,
+              0, 0, NULL) != ex_expr::EXPR_OK)
   {
     ex_assert(
-	 0,
-	 "Error from ExStatsTcb::work::convDoIt.");
+        0,
+        "Error from ExStatsTcb::work::convDoIt.");
+  }
+
+  src = iscycle;
+  attr = tDesc->getAttr(tDesc->numAttrs() - 2);
+  if (
+   ::convDoIt((char*)&src, srcLen, srcType, 0, 0,
+              &data_[attr->getOffset()], 
+              attr->getLength(),
+              attr->getDatatype(),0,0,
+              0, 0, NULL) != ex_expr::EXPR_OK)
+  {
+    ex_assert(
+        0,
+        "Error from ExStatsTcb::work::convDoIt.");
   }
 #endif
+
+
   retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
   return retcode;
 }
@@ -345,7 +362,8 @@ short ExExeUtilConnectbyTcb::work()
   int matchRowNum = 0;
 
   int currLevel = 1;
-  int resultSize = 0;
+  int resultSize = 0;  //the number q2 returned, 0 means reach the leaf
+
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -358,19 +376,15 @@ short ExExeUtilConnectbyTcb::work()
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ex_queue_entry * up_entry = qparent_.up->getTailEntry();
   ex_tcb_private_state * pstate = pentry_down->pstate;
-  char * stmtStr = exeUtilTdb().oriQuery_;
-  if(stmtStr && exeUtilTdb().hasStartWith_ == TRUE)
+  
+  if(exeUtilTdb().hasStartWith_ == TRUE)
     {
-      NAString nq1=stmtStr;
-      UInt32 pos = nq1.index(" from ", 0, NAString::ignoreCase);
-      sprintf(q1,"SELECT %s , * , 0 FROM %s WHERE %s ;" ,(exeUtilTdb().parentColName_).data() , (exeUtilTdb().connTableName_).data() ,(exeUtilTdb().startWithExprString_).data() );
+      sprintf(q1,"SELECT %s , * , cast( 0 as INT) FROM %s WHERE %s ;" ,(exeUtilTdb().parentColName_).data() , (exeUtilTdb().connTableName_).data() ,(exeUtilTdb().startWithExprString_).data() );
       nq11 = q1;
     }
   else
     {
-      NAString nq1=stmtStr;
-      UInt32 pos = nq1.index(" from ", 0, NAString::ignoreCase);
-      sprintf(q1,"SELECT %s , * , 0 FROM %s WHERE %s is null ;" ,(exeUtilTdb().parentColName_).data(), (exeUtilTdb().connTableName_).data(), (exeUtilTdb().childColName_).data());
+      sprintf(q1,"SELECT %s , * , cast(0 as INT) FROM %s WHERE %s is null ;" ,(exeUtilTdb().parentColName_).data(), (exeUtilTdb().connTableName_).data(), (exeUtilTdb().childColName_).data());
       nq11 = q1;
     }   
 
@@ -392,7 +406,6 @@ short ExExeUtilConnectbyTcb::work()
      switch (step_) 
      {
        case INITIAL_:
-
          step_ = EVAL_START_WITH_;
        break;
        case EVAL_START_WITH_:
@@ -435,7 +448,7 @@ short ExExeUtilConnectbyTcb::work()
            it->type = fsDatatype;
            it->len = len;
            if(haveDupSeed(currQueue, it, len, currLevel) == 0) {
-             emitRow(tDesc, currLevel); matchRowNum++;
+             emitRow(tDesc, currLevel, 0, 0); matchRowNum++;
              currQueue->insert(it);
            }
          }
@@ -453,7 +466,7 @@ short ExExeUtilConnectbyTcb::work()
 
        for(int i=0; i< seedNum; i++)  {
          
-         sprintf(q1,"SELECT %s , *, %d FROM %s WHERE " ,(exeUtilTdb().parentColName_).data(), currLevel,(exeUtilTdb().connTableName_).data());
+         sprintf(q1,"SELECT %s , *, cast( %d as INT) FROM %s WHERE " ,(exeUtilTdb().parentColName_).data(), currLevel,(exeUtilTdb().connTableName_).data());
          nq21 = q1;
          nq21.append((exeUtilTdb().childColName_).data()); 
          nq21.append(" in ( ");
@@ -522,22 +535,27 @@ short ExExeUtilConnectbyTcb::work()
            short rc1 = haveDupSeed(currQueue, it, len, currLevel) ; //loop detection
            if(rc1 == 1) 
            {
-               loopDetected = 1;
-               ComDiagsArea * diags = getDiagsArea();
-              if(diags == NULL)
-              {
-                setDiagsArea(ComDiagsArea::allocate(getHeap()));
-                diags = getDiagsArea();              
-              }
-              *diags << DgSqlCode(-8041);
-               step_ = ERROR_;
-               break;
+              loopDetected = 1;
+              if(exeUtilTdb().noCycle_ == FALSE) {
+                ComDiagsArea * diags = getDiagsArea();
+                if(diags == NULL)
+                {
+                  setDiagsArea(ComDiagsArea::allocate(getHeap()));
+                  diags = getDiagsArea();              
+                }
+                *diags << DgSqlCode(-8037);
+                step_ = ERROR_;
+               }
+              else
+                 emitRow(tDesc, currLevel+1, 0, 1); 
+
            }
 
            if(rc1 == 0) {
-             emitRow(tDesc, currLevel+1); matchRowNum++;
+             emitRow(tDesc, currLevel+1, 0, 0); matchRowNum++;
              tmpQueue->insert(it);
            }//if(haveDupSeed(currQueue, it, len, currLevel) == 0)
+
           }// while ((rc >= 0) 
           cliInterface()->fetchRowsEpilogue(0, FALSE);
         }//for(int i=0; i< seedNum; i++)
@@ -549,7 +567,12 @@ short ExExeUtilConnectbyTcb::work()
 
          if( loopDetected == 1)
          {
-             step_ = ERROR_;
+             if( exeUtilTdb().noCycle_ == TRUE)
+             {
+               step_ = NEXT_ROOT_;
+             }
+             else
+               step_ = ERROR_;
              break;
          }
 	 if(resultSize == 0)
@@ -577,41 +600,14 @@ short ExExeUtilConnectbyTcb::work()
        case ERROR_:
 	  {
 
-	    //if (qparent_.up->isFull())
-	      //return WORK_OK;
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
             if (handleError())
               return WORK_OK;
 
-	    //getDiagsArea()->clear();
 
 	    step_ = DONE_;
-#if 0
-	    // Return EOF.
-	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
-	      pentry_down->downState.parentIndex;
-	    
-	    up_entry->upState.setMatchNo(0);
-	    up_entry->upState.status = ex_queue::Q_SQLERROR;
-            ComDiagsArea * diagsArea = NULL;
-            ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(8041));
-            up_entry->setDiagsArea(diagsArea);
-	    //ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	    
-	    if (diagsArea == NULL)
-	      diagsArea = 
-		ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-            else
-              diagsArea->incrRefCount (); // setDiagsArea call below will decr ref count
-
-	    if (getDiagsArea())
-	      diagsArea->mergeAfter(*getDiagsArea());
-
-	    // insert into parent
-	    qparent_.up->insert();
-#endif	    
+   
 	    step_ = DONE_;
 	  }
 	break;

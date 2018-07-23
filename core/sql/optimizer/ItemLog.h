@@ -738,24 +738,26 @@ public:
 
 }; // class BiRelat
 
-class BiConnectBy :public BiRelat {
+class BiConnectByRelat :public BiRelat {
 public:
-  BiConnectBy( BiRelat * start,
-          BiRelat * conn)
-   :BiRelat(ITM_EQUAL, NULL, NULL)
+  BiConnectByRelat( OperatorTypeEnum otype,
+          ItemExpr *child0 = NULL,
+          ItemExpr *child1 = NULL)
+   :BiRelat(otype, NULL, NULL)
   {
-    startWith_ = start;
-    connectBy_ = conn;
   }
-  virtual ~BiConnectBy() {}
 
-  BiRelat * getStartWith() {return startWith_; }
-  BiRelat * getConnectBy() {return connectBy_; }
-  NAString startWithString_;
+  virtual ~BiConnectByRelat() {}
+
+  void setParentColName(char * v) { parentColName_ = v; }
+  NAString getParentColName () { return parentColName_; }
+
+  void setChildColName(char * v) { childColName_ = v; }
+  NAString getChildColName() { return childColName_ ; }
 
 private:
-  BiRelat * startWith_;
-  BiRelat * connectBy_;
+  NAString parentColName_;
+  NAString childColName_;
 };
 
 class KeyRangeCompare : public BiRelat

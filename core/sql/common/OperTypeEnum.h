@@ -676,6 +676,8 @@ enum OperatorTypeEnum {
                         ITM_GREATEST = 2385,
                         ITM_LEAST = 2386,
 
+                        ITM_CONNECT_BY = 2387,
+
 			ITM_UNIQUE_EXECUTE_ID = 2391,
 			ITM_GET_TRIGGERS_STATUS = 2392,
 			ITM_GET_BIT_VALUE_AT = 2393,

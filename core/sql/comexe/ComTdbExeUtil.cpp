@@ -74,7 +74,6 @@ ComTdbExeUtil::ComTdbExeUtil(Lng32 type,
        child_(NULL),
        scanExpr_(scan_expr),
        flags_(0),
-       oriQuery_(query),
        explOptionsStr_(NULL)
 {
   setNodeType(ComTdb::ex_EXE_UTIL);
@@ -3205,7 +3204,6 @@ ComTdbExeUtilConnectby::ComTdbExeUtilConnectby(char * query,
 {
    setNodeType(ComTdb::ex_CONNECT_BY);
    connTableName_ = tableName;
-   oriQuery_ = query;
 }
 
 Long ComTdbExeUtilConnectby::pack(void * space)

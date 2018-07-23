@@ -13211,9 +13211,8 @@ table_expression : from_clause where_clause sample_clause
 		                                 FALSE,
 		                                 SqlParser_CurrentParser->topHasOlapFunctions());
                      SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
-               $$->addStartWithExprTree(((BiConnectBy*)$2)->getStartWith());
-               $$->addConnectByExprTree(((BiConnectBy*)$2)->getConnectBy());
-               ((Scan*)$$)->setStartWithExpr( ((BiConnectBy*)$2)->startWithString_.data());
+                   ((Scan*)$$)->setBiConnectBy( (BiConnectBy*)$2);
+                   ((Scan*)$$)->setHasConnectBy(TRUE);
 
            }
 /* type relx */
@@ -13229,9 +13228,21 @@ startwith_clause :TOK_START_WITH predicate TOK_CONNECT TOK_BY predicate
                       //save the predicate text
                       $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
                     }
+                   |TOK_START_WITH predicate TOK_CONNECT TOK_BY TOK_NOCYCLE predicate
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$6);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
+                    }
                    |  TOK_CONNECT TOK_BY predicate
                     {
                       $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
+                    }
+                   |  TOK_CONNECT TOK_BY TOK_NOCYCLE predicate
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$4);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
                     }
 
 /* type item */
@@ -13765,7 +13776,7 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
 /* type relx */
 query_spec_body : query_select_list table_expression access_type  optional_lock_mode
 			{
-                          if($2->getConnectByPredTree() == NULL) {
+                          if( ! ((Scan *)$2)->hasConnectBy()) {
 			  // use a compute node to attach select list
 			  RelRoot *temp=  new (PARSERHEAP())
                             RelRoot($2, $3, $4, REL_ROOT, $1);
@@ -13803,15 +13814,19 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
   			    RelRoot *temp = new (PARSERHEAP())
 			      RelRoot(euc, REL_ROOT , $1);
 
-                            if($2->getStartWithPredTree() == NULL)
+                            if( ((Scan*)$2)->getBiConnectBy()->getStartWith() == NULL)
                             {
                               euc->hasStartWith_ = FALSE;
                             }
                             else
                             {
                               euc->hasStartWith_ = TRUE;
-                              euc->startWithExprString_ = ((Scan*)$2)->getStartWithExpr(); 
+                              euc->startWithExprString_ = ((Scan*)$2)->getBiConnectBy()->getStartWithString(); 
                             }
+                            euc->noCycle_ = ((Scan*)$2)->getBiConnectBy()->getNoCycle();
+                            euc->parentColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getParentColName();
+                            euc->childColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getChildColName();
+
                             $$ = temp;                              
                           }
 			}
@@ -19099,9 +19114,21 @@ comparison_predicate :
      | row_subquery comparison_operator value_expression_list_paren
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
      | TOK_PRIOR value_expression comparison_operator value_expression 
-		      { $$ = new (PARSERHEAP()) BiRelat($3, $2, $4); ((BiRelat*)$$)->setPrior(1);}
+		      { $$ = new (PARSERHEAP()) BiConnectByRelat($3, $2, $4); 
+                        NAString pn, cn;
+                        $2->unparse(pn, PARSER_PHASE, USER_FORMAT);
+                        $4->unparse(cn, PARSER_PHASE, USER_FORMAT);
+                        ( (BiConnectByRelat*)$$)->setParentColName((char*)pn.data());
+                        ( (BiConnectByRelat*)$$)->setChildColName((char*)cn.data());  
+                      }
      | value_expression comparison_operator TOK_PRIOR value_expression 
-		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $4); ((BiRelat*)$$)->setPrior(2);}
+		      { $$ = new (PARSERHEAP()) BiConnectByRelat($2, $1, $4); 
+                        NAString pn, cn;
+                        $4->unparse(pn, PARSER_PHASE, USER_FORMAT);
+                        $1->unparse(cn, PARSER_PHASE, USER_FORMAT);
+                        ( (BiConnectByRelat*)$$)->setParentColName((char*)pn.data());
+                        ( (BiConnectByRelat*)$$)->setChildColName((char*)cn.data());  
+                      }
 
      // BEGIN rules added for UDF
 /* COMMENTED OUT FOR R2.5. CAUSES GRAMMAR CONFLICTS.

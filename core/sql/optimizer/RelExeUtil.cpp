@@ -6185,8 +6185,6 @@ RelExpr * ExeUtilConnectby::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   else
     result = (ExeUtilConnectby*) derivedNode;
   result->tblDesc_ = tblDesc_;
-  result->connectByTree_ = connectByTree_;
-  result->connectByTree_ = connectByTree_;
   result->hasStartWith_ = hasStartWith_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
@@ -6201,8 +6199,7 @@ RelExpr * ExeUtilConnectby::bindNode(BindWA *bindWA)
   bindChildren(bindWA);
   boundExpr = ExeUtilExpr::bindNode(bindWA);
   Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
-  parentColName_=scanNode->getPirorColName(); 
-  childColName_=scanNode->getPirorChildColName(); 
+  
   if (bindWA->errStatus()) 
     return NULL;
   return boundExpr;

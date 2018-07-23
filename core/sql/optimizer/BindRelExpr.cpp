@@ -2504,7 +2504,7 @@ RelExpr *RelExpr::bindSelf(BindWA *bindWA)
     if (bindWA->inViewWithCheckOption())
       bindWA->predsOfViewWithCheckOption() += selectionPred();
   }
-
+#if 0
   ItemExpr *startWithTree = removeStartWithTree();
   if (startWithTree) {
     bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
@@ -2559,7 +2559,7 @@ RelExpr *RelExpr::bindSelf(BindWA *bindWA)
        }
     }  
    }
-
+#endif
   // ++MV
   // Bind the uniqueColumnsTree expression.
   //
@@ -8429,37 +8429,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
               );
          }
      }
-   for (ValueId exprId = getConnectBy().init(); getConnectBy().next(exprId); getConnectBy().advance(exprId))
-    {
-
-      if(exprId.getItemExpr()->getOperatorType() == ITM_EQUAL)
-      {
-        if( ((BiRelat*)exprId.getItemExpr())->getPrior() == 1)
-        {
-           //right child is the PRIOR column
-           ItemExpr * c = exprId.getItemExpr()->child(0);
-           NAString unparsed(CmpCommon::statementHeap());
-           c->unparse(unparsed);
-           setPriorColName((char*)unparsed.data());
-           ItemExpr * cc = exprId.getItemExpr()->child(1);
-           NAString unparsedc(CmpCommon::statementHeap());
-           cc->unparse(unparsedc);
-           setPriorChildColName((char*)unparsedc.data());
-        }
-       if( ((BiRelat*)exprId.getItemExpr())->getPrior() == 2)
-        {
-           //left child is the PRIOR column
-           ItemExpr * c = exprId.getItemExpr()->child(1);
-           NAString unparsed(CmpCommon::statementHeap());
-           c->unparse(unparsed);
-           setPriorColName((char*)unparsed.data());
-           ItemExpr * cc = exprId.getItemExpr()->child(0);
-           NAString unparsedc(CmpCommon::statementHeap());
-           cc->unparse(unparsedc);
-           setPriorChildColName((char*)unparsedc.data());
-        }
-      }
-    }
   return boundExpr;
 } // Scan::bindNode()
 

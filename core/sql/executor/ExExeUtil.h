@@ -4330,7 +4330,7 @@ public:
     EVAL_INPUT_,
     EVAL_START_WITH_,
     DO_CONNECT_BY_,
-    EVAL_EXPR_,
+    EVAL_OUTPUT_EXPR_,
     NEXT_LEVEL_,
     NEXT_ROOT_,
     ERROR_,
@@ -4340,9 +4340,7 @@ public:
   ExExeUtilConnectbyTdb& exeUtilTdb() const
     {return (ExExeUtilConnectbyTdb&) tdb;};
 
- short emitRows(Queue *q, ExpTupleDesc * tDesc) ;
- short emitRow(ExpTupleDesc * tDesc, int level) ;
- short emitOneRow(ExpTupleDesc * tDesc, int level) ;
+ short emitRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle) ;
 
 protected:
   ExExeUtilConnectbyTcb *tcb_;

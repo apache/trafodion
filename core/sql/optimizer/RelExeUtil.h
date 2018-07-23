@@ -1092,6 +1092,7 @@ public:
                  stmtText, stmtTextCharSet, oHeap)
  {
    hasStartWith_ = TRUE;
+   noCycle_ = FALSE;
  }
   virtual const NAString getText() const;
 
@@ -1122,6 +1123,7 @@ public:
   NAString childColName_;
   NAString startWithExprString_;
   NABoolean  hasStartWith_;
+  NABoolean noCycle_;
 private:
   //connect by
   //start with

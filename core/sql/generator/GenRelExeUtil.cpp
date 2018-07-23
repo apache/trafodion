@@ -5351,6 +5351,7 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
   tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
   NAString tableName = (scanNode->getTableName()).getQualifiedNameAsString();
   tblDesc_ = cmpSBD.getSeabaseTableDesc(cat,sch,tbl,COM_BASE_TABLE_OBJECT);
+
   //add LEVEL column
   TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
   tblDesc_->tableDesc()->colcount++;
@@ -5371,6 +5372,47 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
            NULL);
   column_desc->next = col_desc;
   col_desc->columnsDesc()->colclass='S';
+
+  column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;  
+  i =0;
+  tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  col_desc = TrafMakeColumnDesc(
+           tableName.data(),
+           "CONNECT_BY_ISCYCLE", //info->colName,
+           i,
+           REC_BIN32_UNSIGNED,
+           4,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UNKNOWN,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+
+  column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;  
+  i =0;
+  tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  col_desc = TrafMakeColumnDesc(
+           tableName.data(),
+           "CONNECT_BY_ISLEAF", //info->colName,
+           i,
+           REC_BIN32_UNSIGNED,
+           4,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UNKNOWN,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+
   return tblDesc_;
 }
 
@@ -5477,11 +5519,13 @@ short ExeUtilConnectby::codeGen(Generator * generator)
 			32000,
                         workCriDesc
 			);
+
   exe_util_tdb->sourceDataTuppIndex_ = outputAtpIndex;
-  exe_util_tdb->parentColName_ = parentColName_;
+  exe_util_tdb->parentColName_ =  parentColName_;
   exe_util_tdb->childColName_ = childColName_;
   exe_util_tdb->hasStartWith_ = hasStartWith_;
   exe_util_tdb->startWithExprString_ = startWithExprString_;
+  exe_util_tdb->noCycle_ = noCycle_;
   generator->initTdbFields(exe_util_tdb);
 
   if (!generator->explainDisabled())
