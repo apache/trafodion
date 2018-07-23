@@ -12370,3 +12370,39 @@ RelExpr * ExeUtilOrcFastAggr::preCodeGen(Generator * generator,
   // Done.
   return this;
 }
+
+ItemExpr * SplitPart::preCodeGen(Generator *generator)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  child(0) = child(0)->preCodeGen(generator);
+  if (! child(0).getPtr())
+    return NULL;
+
+  child(1) = child(1)->preCodeGen(generator);
+  if (! child(1).getPtr())
+    return NULL;
+
+  for (Int32 i = 2; i < getArity(); i++)
+    {
+      if (child(i))
+        {
+          const NAType &typ1 = child(i)->getValueId().getType();
+          
+          //Insert a cast node to convert child to an INT.
+          child(i) = new (generator->wHeap())
+            Cast(child(i), new (generator->wHeap()) SQLInt(generator->wHeap(), TRUE,
+                                                         typ1.supportsSQLnullLogical()));
+
+          child(i)->bindNode(generator->getBindWA());
+          child(i) = child(i)->preCodeGen(generator);
+          if (! child(i).getPtr())
+            return NULL;
+
+        }
+    }
+
+  markAsPreCodeGenned();
+  return this;
+}

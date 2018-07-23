@@ -4723,6 +4723,11 @@ sc
          
 
 --- 4 row(s) selected.
+>>select split_part('sa:sbl:sc', ':', -4) from t038sf;
+
+*** ERROR[8691] Field position must be greater than zero, currently is -4.
+
+--- 0 row(s) selected.
 >>
 >>insert into T038sf values(110, 'a/b/c', 'sa/dsd/s');
 
