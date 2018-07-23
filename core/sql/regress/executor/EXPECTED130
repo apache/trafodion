@@ -1596,8 +1596,7 @@ SB_PERSISTENT_SAMPLES
 TLOB130TS2
 
 =======================
-Summary info of get:
-Get 7 rows.
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>drop schema trafodion.lobsch cascade;
