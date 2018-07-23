@@ -290,8 +290,7 @@ T012T11
 T012T12
 
 =======================
-Summary info of get:
-Get 5 rows.
+  5 row(s) returned
 
 --- SQL operation complete.
 >>get indexes in schema trafodion.zschema;
@@ -305,8 +304,7 @@ T012T11I1
 T012T11I2
 
 =======================
-Summary info of get:
-Get 4 rows.
+  4 row(s) returned
 
 --- SQL operation complete.
 >>get views in schema trafodion.zschema;
@@ -317,8 +315,7 @@ Views in Schema TRAFODION.ZSCHEMA
 T012T11V1
 
 =======================
-Summary info of get:
-Get 1 rows.
+  1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -328,26 +325,11 @@ Get 1 rows.
 >>
 >>get tables in schema trafodion.zschema;
 
-
-=======================
-Summary info of get:
-Get 0 rows.
-
 --- SQL operation complete.
 >>get indexes in schema trafodion.zschema;
 
-
-=======================
-Summary info of get:
-Get 0 rows.
-
 --- SQL operation complete.
 >>get views in schema trafodion.zschema;
-
-
-=======================
-Summary info of get:
-Get 0 rows.
 
 --- SQL operation complete.
 >>
@@ -392,8 +374,7 @@ TRAFODION.ZSCHEMA1.T
 TRAFODION.ZSCHEMA2.T
 
 =======================
-Summary info of get:
-Get 2 rows.
+  2 row(s) returned
 
 --- SQL operation complete.
 >>get views on table zschema1.t;
@@ -405,8 +386,7 @@ TRAFODION.ZSCHEMA1.V
 TRAFODION.ZSCHEMA2.V
 
 =======================
-Summary info of get:
-Get 2 rows.
+  2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -418,8 +398,7 @@ Tables in View ZSCHEMA2.V2
 TRAFODION.ZSCHEMA2.T
 
 =======================
-Summary info of get:
-Get 1 rows.
+  1 row(s) returned
 
 --- SQL operation complete.
 >>get all tables in view zschema2.v2;
@@ -431,8 +410,7 @@ TRAFODION.ZSCHEMA1.T
 TRAFODION.ZSCHEMA2.T
 
 =======================
-Summary info of get:
-Get 2 rows.
+  2 row(s) returned
 
 --- SQL operation complete.
 >>get views in view zschema2.v2;
@@ -443,8 +421,7 @@ Views in View ZSCHEMA2.V2
 TRAFODION.ZSCHEMA1.V
 
 =======================
-Summary info of get:
-Get 1 rows.
+  1 row(s) returned
 
 --- SQL operation complete.
 >>get all objects in view zschema2.v2;
@@ -458,8 +435,7 @@ TRAFODION.ZSCHEMA2.T
 
 
 =======================
-Summary info of get:
-Get 3 rows.
+  3 row(s) returned
 
 --- SQL operation complete.
 >>
