@@ -151,7 +151,6 @@ CmpStatement::CmpStatement(CmpContext* context,
   recompiling_ = FALSE;
   isDDL_ = FALSE;
   isSMDRecompile_ = FALSE;
-  isParallelLabelOp_ = FALSE;
   displayGraph_ = FALSE;
   cses_ = NULL;
   detailsOnRefusedRequirements_ = NULL;
@@ -996,7 +995,7 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
                                          currCatName, currSchName))
         return CmpStatement_ERROR;
     }
-  else if (dws->getMDcleanup())
+  else if (dws->getMDcleanup() || dws->getInitTraf())
     {
       CmpSeabaseDDL cmpSBD(heap_);
       if (cmpSBD.executeSeabaseDDL(ddlExpr, ddlNode,

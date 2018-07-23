@@ -887,7 +887,7 @@ $1~String1 --------------------------------
 3131 0A000 99999 BEGINNER MAJOR DBADMIN The statement just entered is currently not supported.
 3132 42000 99999 BEGINNER MAJOR DBADMIN The HEADING for column $0~ColumnName exceeds the maximum size of 128 characters.
 3133 42000 99999 BEGINNER MAJOR DBADMIN PERFORM is valid only in COBOL programs.
-3134 42000 99999 BEGINNER MAJOR DBADMIN The specified TIME or TIMESTAMP precision value, $0~int0, cannot exceed 6.
+3134 42000 99999 BEGINNER MAJOR DBADMIN The specified TIME or TIMESTAMP precision value, $0~int0, cannot exceed 9.
 3135 42000 99999 BEGINNER MAJOR DBADMIN The precision of float, $0~int0, cannot exceed 54.
 3136 42000 99999 BEGINNER MAJOR DBADMIN Only LEFT, RIGHT, and FULL OUTER JOIN are valid in {oj ...}
 3137 0A000 99999 BEGINNER MAJOR DBADMIN UNION JOIN is not yet supported.
@@ -1449,6 +1449,8 @@ $1~String1 --------------------------------
 4493 ZZZZZ 99999 BEGINNER MINOR LOGONLY Stored Descriptor Status: $0~String0
 4494 ZZZZZ 99999 BEGINNER MINOR LOGONLY LOAD is not supported on a table with LOB columns. Table $0~TableName has LOB column $1~ColumnName.
 4495 ZZZZZ 99999 BEGINNER MINOR LOGONLY UNLOAD is not supported on a SELECT with LOB columns. $0~ColumnName is a LOB column.
+4496 42000 99999 BEGINNER MAJOR DBADMIN $0~String0 is supported only with datetime fields.
+4497 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~String0 operand of $1~String1 must be $2~String2.
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 5001 ZZZZZ 99999 ADVANDED MINOR LOGONLY Common subexpression $0~String0 will not be shared among multiple consumers. Reason: $1~String1.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
@@ -1578,7 +1580,7 @@ $1~String1 --------------------------------
 8437 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between external table and underlying hive table definitions.
 8440 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The size of the history buffer is too small to execute one or more of the OLAP Windowed Functions in the query. 
 8441 ZZZZZ 99999 BEGINNER MAJOR DBADMIN one or more of the OLAP Windowed Functions in the query may require overflow which is not supported yet.
-8442 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access $0~string0 interface. Call to $1~string1 returned error $2~string2($0~int0). Error detail $1~int1.
+8442 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access $0~string0 interface. Call to $0~string0 returned error $1~string1($0~int0). Error detail: $1~int1. Cause: $2~string2.
 8443 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Provided LOB handle is invalid.
 8444 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only one lob handle can be returned by child for data extract.
 8445 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during transformation of hdfs row to sql row. Error Detail: $0~string0 
@@ -1589,6 +1591,7 @@ $1~String1 --------------------------------
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.
 8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error $0~String0  returned while retrieving region stats from hbase.
 8452 ZZZZZ 99999 BEGINNER MINOR LOGONLY The regular expression is invalid. Cause: $0~String0
+8453 ZZZZZ 99999 BEGINNER MINOR LOGONLY This expression results in an invalid interval value '$0~String0'
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.
 8552 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~int0 was returned by the file system while fetching the version of the system $0~string0.
@@ -1681,7 +1684,7 @@ $1~String1 --------------------------------
 8676 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot suspend the query because it is already suspended.
 8677 ZZZZZ 99999 ADVANCED INFRM DBADMIN Cannot activate the query because it is not suspended.
 8690 ZZZZZ 99999 BEGINNER MINOR LOGONLY An invalid character value encountered in TRANSLATE function. Source charset $0~string0 , Target charset $1~string1. Error data in HEX: $2~string2 .
-8691 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
+8691 ZZZZZ 99999 BEGINNER MINOR LOGONLY Field position must be greater than zero, currently is $0~int0.
 8692 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8693 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8694 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----

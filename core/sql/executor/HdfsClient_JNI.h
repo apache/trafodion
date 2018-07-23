@@ -47,7 +47,6 @@ typedef enum {
 class HdfsScan : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
   HdfsScan(NAHeap *heap)
   :  JavaObjectInterface(heap) 
   , hdfsStats_(NULL)
@@ -129,6 +128,8 @@ typedef enum {
  ,HDFS_CLIENT_ERROR_HDFS_OPEN_EXCEPTION
  ,HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM
  ,HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION
+ ,HDFS_CLIENT_ERROR_HDFS_WRITE_IMMEDIATE_PARAM
+ ,HDFS_CLIENT_ERROR_HDFS_WRITE_IMMEDIATE_EXCEPTION
  ,HDFS_CLIENT_ERROR_HDFS_READ_PARAM
  ,HDFS_CLIENT_ERROR_HDFS_READ_EXCEPTION
  ,HDFS_CLIENT_ERROR_HDFS_CLOSE_EXCEPTION
@@ -151,13 +152,16 @@ typedef enum {
  ,HDFS_CLIENT_ERROR_GET_FS_DEFAULT_NAME_BUFFER_TOO_SMALL
  ,HDFS_CLIENT_ERROR_CREATE_DIRECTORY_PARAM
  ,HDFS_CLIENT_ERROR_CREATE_DIRECTORY_EXCEPTION
+ ,HDFS_CLIENT_ERROR_RENAME_PARAM
+ ,HDFS_CLIENT_ERROR_RENAME_EXCEPTION
+ ,HDFS_CLIENT_ERROR_SIZE_PARAM
+ ,HDFS_CLIENT_ERROR_SIZE_EXCEPTION
  ,HDFS_CLIENT_LAST
 } HDFS_Client_RetCode;
 
 class HdfsClient : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
   HdfsClient(NAHeap *heap)
   :  JavaObjectInterface(heap) 
     , path_(NULL)
@@ -171,7 +175,7 @@ public:
   ~HdfsClient();
   static HdfsClient *newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode, int hdfsIoByteArraySizeInKB = 0);
   static HdfsClient *getInstance();
-  static void deleteInstance();
+  static void deleteInstance(HdfsClient *hdfsClient);
   void setIoByteArraySize(int size)
       { ioByteArraySizeInKB_ = size; }
 
@@ -182,13 +186,16 @@ public:
   HDFS_Client_RetCode    init();
   HDFS_Client_RetCode    hdfsCreate(const char* path, NABoolean overwrite, NABoolean compress);
   HDFS_Client_RetCode    hdfsOpen(const char* path, NABoolean compress);
-  Int32                  hdfsWrite(const char* data, Int64 size, HDFS_Client_RetCode &hdfsClientRetcode);
-  Int32                  hdfsRead(const char* data, Int64 size, HDFS_Client_RetCode &hdfsClientRetcode);
+  Int64                  hdfsSize(HDFS_Client_RetCode &hdfsClientRetcode);
+  Int32                  hdfsWrite(const char* data, Int64 size, HDFS_Client_RetCode &hdfsClientRetcode, int maxChunkSize = 0);
+  Int64                  hdfsWriteImmediate(const char* data, Int64 size, HDFS_Client_RetCode &hdfsClientRetcode, int maxChunkSize = 0);
+  Int32                  hdfsRead(Int64 offset, const char* data, Int64 size, HDFS_Client_RetCode &hdfsClientRetcode);
   HDFS_Client_RetCode    hdfsClose();
   HDFS_Client_RetCode    setHdfsFileInfo(JNIEnv *jenv, jint numFiles, jint fileNo, jboolean isDir, 
           jstring filename, jlong modTime, jlong len, jshort numReplicas, jlong blockSize, 
           jstring owner, jstring group, jshort permissions, jlong accessTime);
   HDFS_Client_RetCode    hdfsListDirectory(const char *pathStr, HDFS_FileInfo **hdfsFileInfo, int *numFiles);
+  static Int64                  hdfsSize(const char *filename, HDFS_Client_RetCode &hdfsClientRetcode);
   static HDFS_Client_RetCode    hdfsMergeFiles(const NAString& srcPath, const NAString& dstPath);
   static HDFS_Client_RetCode    hdfsCleanUnloadPath(const NAString& uldPath );
   static HDFS_Client_RetCode    hdfsExists(const NAString& uldPath,  NABoolean & exists );
@@ -199,6 +206,7 @@ public:
   // buf_len is the length of the buffer in bytes
   static HDFS_Client_RetCode    getFsDefaultName(char* buffer, Int32 buf_len);
   static HDFS_Client_RetCode    hdfsCreateDirectory(const NAString& path);
+  static HDFS_Client_RetCode    hdfsRename(const NAString& fromPath, const NAString& toPath);
 
 private:  
   enum JAVA_METHODS {
@@ -206,6 +214,7 @@ private:
     JM_HDFS_CREATE,
     JM_HDFS_OPEN,
     JM_HDFS_WRITE,
+    JM_HDFS_WRITE_IMMEDIATE,
     JM_HDFS_READ,
     JM_HDFS_CLOSE,
     JM_HDFS_MERGE_FILES,
@@ -216,6 +225,9 @@ private:
     JM_HIVE_TBL_MAX_MODIFICATION_TS,
     JM_GET_FS_DEFAULT_NAME,
     JM_HDFS_CREATE_DIRECTORY,
+    JM_HDFS_RENAME,
+    JM_HDFS_SIZE,
+    JM_HDFS_SIZE_FOR_FILE,
     JM_LAST
   };
 

@@ -1009,6 +1009,7 @@ protected:
      Int32 ownerID,
      NABoolean ignoreIfExists);
      
+  short createDefaultSystemSchema(ExeCliInterface * cliInterface);
   short createSchemaObjects(ExeCliInterface * cliInterface);
   
   void  createSeabaseSchema(
@@ -1086,11 +1087,6 @@ protected:
                                    const ComObjectName &tgtTableName,
                                    const ComObjectName &srcTableName);
 
-  static short genDDLforHiveTableLikeTrafTable(
-       StmtDDLCreateTable * createTableNode,
-       NAString &currCatName, NAString &currSchName,
-       NAString &tableDDL); // output. Contains hive DDL string.
-  
 public:
   static NABoolean setupQueryTreeForHiveDDL(
        Parser::HiveDDLInfo * hiveDDLInfo,
@@ -1449,13 +1445,14 @@ protected:
   void processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
                                NAString &currCatName, NAString &currSchName);
 
-  void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
   void dropSeabaseMDviews();
   void createSeabaseSchemaObjects();
   void updateVersion();
 
+  short initTrafMD(CmpDDLwithStatusInfo *mdti);
+  
   short createPrivMgrRepos(ExeCliInterface *cliInterface, NABoolean ddlXns);
   short initSeabaseAuthorization(ExeCliInterface *cliInterface,
                                  NABoolean ddlXns,

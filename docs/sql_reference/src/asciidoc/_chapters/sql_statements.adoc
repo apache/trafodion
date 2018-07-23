@@ -390,25 +390,27 @@ alter-action is:
 
 column-definition is:
    column-name data-type
-      ([DEFAULT default]
-         [[constraint constraint-name] column-constraint])
+      [[DEFAULT default]
+         [[constraint constraint-name] column-constraint]]
 
 data-type is:
-     char[acter] [(length)[characters]]
-         [CHARACTER SET char-set-name]
-         [UPSHIFT] [[not] casespecific]
-   | char[acter] varying (length)
-         [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar (length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar2 (length) [character set char-set-name]
-         [upshift] [[not] casespecific]         
+     char[acter] [(length [characters])]
+                 [CHARACTER SET char-set-name]
+                 [UPSHIFT] [[NOT] CASESPECIFIC]
+   | char[acter] varying (length [characters])
+                         [CHARACTER SET char-set-name]
+                         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar (length [characters]) 
+             [CHARACTER SET char-set-name]
+             [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar2 (length [characters]) 
+              [CHARACTER SET char-set-name]
+              [UPSHIFT] [[NOT] CASESPECIFIC]         
+   | nchar [(length [characters])]
+           [UPSHIFT] [[NOT] CASESPECIFIC] 
+   | nchar varying (length [characters]) 
+                   [UPSHIFT] [[NOT] CASESPECIFIC]
    | numeric [(precision [,scale])] [signed|unsigned]
-   | nchar [(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | nchar varying(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
    | smallint [signed|unsigned]
    | int[eger] [signed|unsigned]
    | largeint
@@ -428,7 +430,7 @@ default is:
    | null
    | currentdate
    | currenttime
-   | currenttimestamp }
+   | currenttimestamp 
 
 column-constraint is:
      not null
@@ -754,6 +756,88 @@ ALTER TABLE persnl.project
 ```
 Alter TABLE PRODUCT 
 ALTER COLUMN vend_id RENAME TO cstm_id;
+```
+
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2, so it is not possible to alter the CHARACTER SET when using NCHAR, 
+as the following example shows.
+
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (*UCS2*) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *ALTER* and *CREATE* statement.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+ 
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 NCHAR CHARACTER SET ISO88591;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+alter table test1 alter column c1 nchar character set iso88591;
+                                              ^ (47 characters from start of SQL statement) [2018-07-13 10:24:12]
+```
+
+* This example shows how to alter the data type of NCHAR column _c1_.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  (
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 varchar(10) CHARACTER SET ISO88591;
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED /*altered_col*/
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 * The following table _orders_ has two non-unique indexes 
@@ -2910,9 +2994,9 @@ CREATE SEQUENCE   employee_seq
 START WITH        1
 INCREMENT BY      1
 MAXVALUE          10000   
-NOCYCLE
+NO CYCLE
 CACHE             20  
-UNSIGNED SMALLINT
+SMALLINT UNSIGNED 
 ```
 
 The first reference to `seqnum(empolyee_seq, next)` will return 10000, and the second reference will return 10001. Each subsequent reference will return a value 1 greater than the previous value.
@@ -2964,17 +3048,21 @@ column-definition is:
 ```
 data-type is:
     char[acter] [(length [characters])]
-          [character set char-set-name]
-          [upshift] [[not]casespecific]
+                [character set char-set-name]
+                [upshift] [[not]casespecific]
   | char[acter] varying (length [characters])
-          [character set char-set-name]
+                        [character set char-set-name]
+                        [upshift] [[not]casespecific]
+  | varchar (length [characters]) 
+            [character set char-set-name]
+            [upshift] [[not]casespecific]
+  | varchar2 (length [characters]) 
+             [character set char-set-name]
+             [upshift] [[not]casespecific]          
+  | nchar [(length [characters])]
           [upshift] [[not]casespecific]
-  | varchar (length) [character set char-set-name]
-          [upshift] [[not]casespecific]
-  | varchar2 (length) [character set char-set-name]
-          [upshift] [[not]casespecific]          
-  | nchar (length) [characters] [upshift] [[not]casespecific]
-  | nchar varying(length [characters]) [upshift] [[not] casespecific]
+  | nchar varying (length [characters]) 
+                  [upshift] [[not] casespecific]
   | numeric [(precision [,scale])] [signed|unsigned]
   | smallint [signed|unsigned]
   | int[eger] [signed|unsigned]
@@ -3712,6 +3800,23 @@ ATTRIBUTES ALIGNED FORMAT
 --- SQL operation complete.
 ```
 
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2. 
+So it is not possible to specify a CHARACTER SET clause when using NCHAR, 
+as the following example shows.
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (UCS2) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *CREATE* and *ALTER* statement.
++
+```
+SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET USC2);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table test1 (c1 nchar(10) character set usc2);
+                                       ^ (40 characters from start of SQL statement) [2018-07-13 04:02:39]
+```
+
 <<<
 [[create_table_examples_create_table_as]]
 ==== Examples of CREATE TABLE AS
@@ -4257,22 +4362,46 @@ For the searched DELETE form, if no WHERE clause exists, all rows are deleted fr
 ```
 Searched DELETE is:
 
-DELETE FROM table
-
-    [WHERE search-condition ]
-       [[for] access-option access]
+DELETE 
+[WITH NO ROLLBACK] ["["FIRST N"]"]
+FROM table-name
+[WHERE search-condition ]
+[[for] access-option access]
 
 access-option is:
-    read committed
+read committed
 ```
 
 [[delete_syntax]]
 === Syntax Description of DELETE
 
-* `_table_`
+* `_table-name_`
 +
 names the user table or view from which to delete rows. _table_ must be a base table or an updatable view. To refer to a
 table or view, use the ANSI logical name. See <<database_object_names,Database Object Names>>.
+
+* `WITH NO ROLLBACK`
++
+performs a non-transactional delete.
++
+A non-transactional delete is one that happens outside a transaction. It means that if the 
+statement is interrupted, any deletes that have been done are still permanent.
++
+NOTE: This option is only supported if there is no index on the table.
+
+* `FIRST _N_`
++
+specified that _N_ rows are to be deleted (assuming the table has at least _N_ rows and that
+the qualification criteria specified in the WHERE clause, if any, would select at least _N_ rows).
++
+You must enclose `First _N_` in square bracket ([ ]).
+The quotation marks (" ") around each square brackt in the syntax diagram indicate that 
+the bracket is a required character that you must type as shown (for example, `[FIRST 5]`).
+Do not include quotation marks in the FIRST clause.
++
+NOTE: When using this option without the `WITH NO ROLLBACK` option, and if you have a large 
+_N_ (tens of thousands), break up _N_ into smaller numbers and execute the DELETE statement 
+repeatedly for better performance.
 
 * `WHERE _search-condition_`
 +
@@ -4286,7 +4415,7 @@ If you do not specify a search condition, all rows in the table or view are dele
 specifies the access option required for data used to evaluate the search condition.
 See <<data_consistency_and_access_options,Data Consistency and Access Options>>.
 
-** `READ `COMMITTED
+** `READ COMMITTED`
 +
 specifies that any data used to evaluate the search condition must come from committed  rows.
 +
@@ -4360,6 +4489,45 @@ DELETE FROM invent.partsupp WHERE suppnum NOT IN
 delete from table1 where a in (select a from table1 where b > 200)
 ```
 
+* This example executes a non-transactional delete of first 1000 rows that satisfy the
+WHERE condition.
++
+```
+DELETE WITH NO ROLLBACK [FIRST 1000] 
+FROM test 
+WHERE id<30;
+```
+
+* This example shows that the option `WITH NO ROLLBACK` is only supported if there is no
+index on the table.
++
+```
+SQL>DELETE WITH NO ROLLBACK FROM test;
+
+*** ERROR[3232] INSERT, UPDATE, or DELETE of table TRAFODION.SEABASE.TEST with dependent Index : TRAFODION.SEABASE.INDEX_TEST is not allowed when NO ROLLBACK transaction setting is in effect. [2018-05-30 05:42:47]
+
+SQL>SHOWDDL test;
+
+CREATE TABLE TRAFODION.SEABASE.TEST
+  ( 
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               INT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_TEST ON TRAFODION.SEABASE.TEST
+  ( 
+    C1 ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
 <<<
 [[drop_function_statement]]
 == DROP FUNCTION Statement
@@ -4377,7 +4545,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `_[[catalog-name.]schema-name.]function-name`
+* `_[[catalog-name.]schema-name.]function-name_`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -4615,9 +4783,9 @@ DROP ROLE role-name
 +
 is an existing role name. The role cannot be dropped if any of the following are true:
 
-* Any privileges are granted to the role.
-* The role is granted to any users.
-* The role owns any schemas.
+** Any privileges are granted to the role.
+** The role is granted to any users.
+** The role owns any schemas.
 
 [[drop_role_considerations]]
 === Considerations for DROP ROLE
@@ -5228,21 +5396,37 @@ GET is a {project-name} SQL extension.
 GET option
 
 option is:
-    COMPONENT PRIVILEGES ON component-name [FOR auth-name]
+    CATALOGS
+  | COMPONENT PRIVILEGES ON component-name [FOR auth-name]
   | COMPONENTS
   | FUNCTIONS FOR LIBRARY [[catalog-name.]schema-name.]library-name
   | FUNCTIONS [IN SCHEMA [catalog-name.]schema-name]
+  | HBASE REGISTERED TABLES IN CATALOG TRAFODION
+  | HIVE EXTERNAL TABLES IN CATALOG TRAFODION
+  | HIVE REGISTERED {OBJECTS | SCHEMAS | TABLES | VIEWS} IN CATALOG TRAFODION 
+  | INDEXES [IN SCHEMA schema-name]
+  | INDEXES [ON TABLE table-name]
   | LIBRARIES [IN SCHEMA [catalog-name.]schema-name]
   | PROCEDURES FOR LIBRARY [[catalog-name.]schema-name.]library-name
   | PROCEDURES [IN SCHEMA [catalog-name.]schema-name]
   | ROLES [FOR USER database-username]
+  | SEQUENCES [IN CATALOG catalog-name]
+  | SEQUENCES [IN SCHEMA schema-name}]
   | SCHEMAS [IN CATALOG catalog-name]
   | SCHEMAS FOR [USER | ROLE] authorization-id
+  | TABLES [IN CATALOG catalog-name]
   | TABLES [IN SCHEMA [catalog-name.]schema-name]
+  | TABLES [IN VIEW view-name]
   | USERS [FOR ROLE role-name]
+  | VIEWS [IN CATALOG catalog-name]
   | VIEWS [IN SCHEMA [catalog-name.]schema-name]
+  | VIEWS [IN VIEW view-name]
+  | VIEWS [ON VIEW view-name]
   | VIEWS ON TABLE [[catalog-name.]schema-name.]table-name
-  | PRIVILEGES FOR {USER | ROLE} authorization-id
+  | PRIVILEGES FOR {USER database-username | ROLE role-name}
+  | PRIVILEGES ON SEQUENCE sequence-name
+  | PRIVILEGES ON TABLE table-name
+  | PRIVILEGES ON VIEW view-name
 ```
 
 [[get_syntax]]
@@ -5332,6 +5516,10 @@ and the schema is seabase.
 +
 displays the names of all the tables in the specified schema.
 
+* `TABLES [IN VIEW view-name]`
++
+returns tables that referenced by the view _view-name_.
+
 * `USERS`
 +
 displays a list of all the registered database users.
@@ -5351,9 +5539,19 @@ and the schema is seabase.
 +
 displays the names of all the views in the specified schema. For the _catalog-name_, you can specify only trafodion.
 
+* `VIEWS [IN VIEW _view-name_]`
++
+returns views that referenced by the view _view-name_.
+
+* `VIEWS [ON VIEW _view-name_]`
++
+returns views that reference the view _view-name_.
+
 * `VIEWS ON TABLE _[[catalog-name.]schema-name.]table-name_`
 +
-displays the names of all the views that were created for the specified table. If you do not qualify the table name with
+returns views that reference the table _table-name_.
++
+If you do not qualify the table name with
 catalog and schema names, get uses the catalog and schema of the current session. For the _catalog-name_, you can specify
 only trafodion.
 
@@ -5431,6 +5629,116 @@ GET VIEWS IN SCHEMA SEABASE2;
 +
 ```
 GET VIEWS ON TABLE T;
+```
+
+* This example makes comparisons among `GET VIEWS [IN VIEW _view-name_]`, `GET VIEWS [ON VIEW _view-name_]`, `GET VIEWS [ON TABLE _table-name_]`
+and `GET TABLES [IN VIEW _view-name_]`.
++
+Creates the table _t1_.
+
++
+```
+SQL>CREATE TABLE t1 (c1 int);
+
+--- SQL operation complete.
+```
+
++
+Creates the view _v1_ based on the table _t1_.
+
++
+```
+SQL>CREATE VIEW v1 AS SELECT * FROM t1;
+
+--- SQL operation complete.
+```
+
++
+Creates the view _v2_ based on the view _v1_.
+
++
+```
+SQL>CREATE VIEW v2 AS SELECT * FROM v1;
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no views are referenced by _v1_.
+
++
+```
+SQL>GET VIEWS IN VIEW v1;
+
+--- SQL operation complete.
+```
+
++
+This statement returns _v1_ as _v1_ is referenced by _v2_.
+
++
+```
+SQL>GET VIEWS IN VIEW v2;
+
+TRAFODION.SEABASE.V1
+
+--- SQL operation complete.
+```
+
++
+This statement returns _v2_ as _v2_ references _v1_.
+
++
+```
+SQL>GET VIEWS ON VIEW v1;
+
+TRAFODION.SEABASE.V2
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no views reference _v2_.
+
++
+```
+SQL>GET VIEWS ON VIEW v2;
+
+--- SQL operation complete.
+```
+
++
+This statements returns _v1_ as _v1_ references _t1_. 
+
++
+```
+SQL>GET VIEWS ON TABLE t1;
+
+TRAFODION.SEABASE.V1
+
+--- SQL operation complete.
+```
+
++
+This statement returns _t1_ as _t1_ is referenced by _v1_.
+
++
+```
+SQL>GET TABLES IN VIEW v1;
+
+TRAFODION.SEABASE.T1
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no tables are referenced by _v2_.
+
++
+```
+SQL>GET TABLES IN VIEW v2;
+
+--- SQL operation complete.
 ```
 
 * This GET statement displays the names of the libraries in the catalog and schema of the current session, which happens to be
@@ -6429,7 +6737,7 @@ insert-source is:
 +
 names the user table or view in which to insert rows. _table_ must be a base table or an updatable view.
 
-* `_(target-col-list)_`
+* `_target-col-list_`
 +
 names the columns in the table or view in which to insert values. The data type of each target column must be 
 compatible with the data type of its corresponding source value. Within the list, each target column must
@@ -6441,8 +6749,8 @@ into the columns that do not appear in the list. See <<column_default_settings,C
 +
 If you do not specify _target-col-list_, row values from the source table are inserted into all columns in _table_. 
 The order of the column values in the source table must be the same order as that of the columns specified in the 
-CREATE TABLE for _table_. (This order is the same as that of the columns listed in the result table of SHOWDDL
-_table_.)
+CREATE TABLE for _table_. (This order is the same as that of the columns listed in the result table of `SHOWDDL
+table-name`.)
 
 * `_insert-source_`
 +
@@ -6689,9 +6997,9 @@ INVOKE  table-name
 === Syntax Description of INVOKE
 
 * `_table-name_`
-_
++
 specifies the name of a table, view, or index for which to generate a record description. 
-See <<database_object_names,Database Object Names>>.
+For more information, see <<database_object_names,Database Object Names>>.
 
 [[invoke_considerations]]
 === Considerations for INVOKE
@@ -7175,12 +7483,11 @@ Specifies the privileges to revoke. You can specify these privileges for an obje
 [cols="20%,80%"]
 |===
 | DELETE                   | Revokes the ability to use the DELETE statement.
-| EXECUTE                  | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability
+| EXECUTE                  | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability to execute a user-defined function (UDF).
 | INSERT     [columm-list] | Revokes the ability to use the INSERT statement.
 | REFERENCES [column-list] | Revokes the ability to create constraints that reference the object.
 | SELECT     [column-list] | Revokes the ability to use the SELECT statement.
 | UPDATE     [column-list] | Revokes the ability to use the UPDATE statement.
-to execute a user-defined function (UDF).
 | USAGE                    | For libraries, revokes the ability to access a library using the 
 CREATE PROCEDURE or CREATE FUNCTION statement.
 For sequence generators, revokes the ability to access a sequence in a SQL query.
@@ -7257,44 +7564,51 @@ REVOKE GRANT OPTION FOR SELECT (part_no, part_name), DELETE ON TABLE invent.part
 REVOKE SELECT (part_no, part_name), DELETE ON TABLE invent.partloc FROM jsmith, clerks;
 ```
 
-* To revoke a user’s SELECT privileges on a table:
+* To revoke a user’s SELECT privileges on a table.
++
+User administrator grants the SELECT privilege to _JSMITH_.
 +
 ```
--- User administrator grants the SELECT privilege to JSMITH:
 GRANT SELECT ON TABLE invent.partloc TO jsmith WITH GRANT OPTION;
-
--- JSMITH grants the SELECT privilege to AJONES:
+```
++
+_JSMITH_ grants the SELECT privilege to _AJONES_.
++
+```
 GRANT SELECT ON TABLE invent.partloc TO ajones;
-
--- If the user administrator attempts to revoke the SELECT
--- privilege from JSMITH, this would fail because
--- of the privilege granted to AJONES based on the
--- privilege granted to JSMITH.
--- To successfully revoke the SELECT privilege from
--- JSMITH, the SELECT privilege granted to AJONES
--- must be revoked first. For this example:
--- 1. JSMITH revokes the SELECT privilege granted to AJONES:
+```
++
+If the user administrator attempts to revoke the SELECT privilege from _JSMITH_, this would fail because of 
+the privilege granted to _AJONES_ based on the privilege granted to _JSMITH_. To successfully revoke the SELECT privilege from _JSMITH_, the SELECT privilege granted to _AJONES_ 
+must be revoked first. 
++
+For this example:
++
+_JSMITH_ revokes the SELECT privilege granted to _AJONES_.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM ajones;
-
--- 2. User administrator revokes the SELECT privilege on the
--- table from JSMITH:
+```
++
+User administrator revokes the SELECT privilege on the table from _JSMITH_, the REVOKE operation succeeds.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM jsmith RESTRICT;
-
--- The REVOKE operation succeeds.
--- An easier way to make the REVOKE operation successful is
--- to use the CASCADE option:
+```
++
+An easier way to make the REVOKE operation successful is to use the `CASCADE option`.
++
+The REVOKE operation succeeds because the `CASCADE option` causes all specified privileges, and all privileges that
+were granted based upon the specified privileges, to be removed.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM jsmith CASCADE;
-
--- The REVOKE operation succeeds because the CASCADE option
--- causes all specified privileges, and all privileges that
--- were granted based upon the specified privileges, to be
--- removed.
 ```
 
-* Administration in the shipping department decides that the CLERKS role should no longer be able to grant
-privileges on the invent.partloc table. Fred has recently moved to another department, so JSMITH revokes
-the SELECT privilege on the invent.partloc table from Fred, who was granted the privilege by CLERKS. Then,
-JSMITH revokes the grant option from CLERKS:
+* Administration in the shipping department decides that the _CLERKS_ role should no longer be able to grant
+privileges on the _invent.partloc_ table. _Fred_ has recently moved to another department, so _JSMITH_ revokes
+the SELECT privilege on the _invent.partloc_ table from _Fred_, who was granted the privilege by _CLERKS_. Then,
+_JSMITH_ revokes the grant option from _CLERKS_:
 +
 ```
 REVOKE SELECT on table invent.partloc FROM fred GRANTED BY clerks;
@@ -7800,10 +8114,10 @@ operation. new is not allowed. an implicit old.* return list is assumed for a de
 <<<
 **** `_col-expr_ [[AS] _name_]`
 +
-specifies a derived column determined by the evaluation of an sql value expression in the list. any column referred to in a value
-expression is from the row in the old table exposed by the delete. the old table refers to column values before the delete operation.
+specifies a derived column determined by the evaluation of an sql value expression in the list. Any column referred to in a value
+expression is from the row in the old table exposed by the delete. The old table refers to column values before the delete operation.
 +
-By using the as clause, you can associate a derived column, _col-expr_, with a _name_. _name_ is an SQL identifier. See
+By using the `AS clause`, you can associate a derived column, _col-expr_, with a _name_. _name_ is an SQL identifier. See
 <<identifiers,Identifier>>.
 
 *** `[AS] _corr_ [(_col-expr-list_)]`
@@ -7869,22 +8183,22 @@ specifies a correlation name, _corr_, and an optional column list. See <<correla
 A _joined-table_ can be specified as:
 +
 ```
-_table-ref_ [_join-type_] JOIN _table-ref join-spec_
-| _table-ref_ NATURAL [_join-type_] JOIN _table-ref_
-| _table-ref_ CROSS JOIN _table-ref_
-| (_joined-table_)
+table-ref [join-type] JOIN table-ref join-spec
+| table-ref NATURAL [join-type] JOIN table-ref
+| table-ref CROSS JOIN table-ref
+| (joined-table)
 ```
 
 <<<
-*** `_join-type_ is: INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
+*** `_join-type_` is: 
 +
-is a joined table. You specify the _join-type_ by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
+`INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
++
+is a joined table. You specify the `_join-type_` by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
 If you omit the optional OUTER keyword and use LEFT, RIGHT, or FULL in a join, {project-name} SQL assumes the join is
 an outer join.
-+
-If you specify a CROSS join as the _join-type_, you cannot specify a NATURAL join or a
 
-*** `_join-spec_.`
+*** `_join-spec_`
 +
 If you specify an INNER, LEFT, RIGHT, or FULL join as the _join-type_ and you do not specify a NATURAL join, you
 must use an ON clause as the _join-spec_, as follows: subqueries are not allowed in the join predicate of FULL OUTER JOIN.
@@ -9842,23 +10156,23 @@ the UPSERT occurs within a transaction.
 * `_table_`
 +
 names the user table in which to insert or update rows. _table_ must be
-a base table. (_target-col-list_)
+a base table. 
+
+*`_target-col-list_`
 +
 names the columns in the table in which to insert or update values. The
-data type of each target
-+
-column must be compatible with the data type of its corresponding source
+data type of each target column must be compatible with the data type of its corresponding source
 value. Within the list, each target column must have the same position
 as its associated source value, whose position is determined by the
 columns in the table derived from the evaluation of the query expression
-(_query-expr_).
+(`_query-expr_`).
 +
 If you do not specify all of the columns in the target _table_ in the
-_target-col-list_, column default values are inserted into or updated
+`_target-col-list_`, column default values are inserted into or updated
 in the columns that do not appear in the list. See
 <<column_default_settings,Column Default Settings>>.
 +
-If you do not specify _target-col-list_, row values from the source
+If you do not specify `_target-col-list_`, row values from the source
 table are inserted into or updated in all columns in table. The order of
 the column values in the source table must be the same order as that of
 the columns specified in the CREATE TABLE for _table_. (This order is

@@ -178,6 +178,54 @@ short ExControlTcb::work()
   char *dummyReply = NULL;
   ULng32 dummyLen;
   
+  // if this is SET SCHEMA stmt of a HIVE schema, check that the schema
+  // exists. This is to be consistent with USE <database> functionality
+  // of Hive where a schema must exist before USE stmt can be issued.
+  // An error is returned if it does not exist.
+  if ((controlTdb().isSetStmt()) &&
+      (controlTdb().isHiveSetSchema()))
+    {
+      // set schema hive.<sch> stmt
+      // Check that it exists in Hive.
+      ComSchemaName csn(value[2]);
+      NAString hiveDB = ComConvertTrafHiveNameToNativeHiveName
+        (csn.getCatalogNamePart().getInternalName(),
+         csn.getSchemaNamePart().getInternalName(),
+         NAString(""));
+
+      NAString useDB("use " + hiveDB);
+      if (HiveClient_JNI::executeHiveSQL(useDB.data()) != HVC_OK)
+        {
+          ComDiagsArea *da = 
+            ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+          if (NAString(getSqlJniErrorStr()).contains("Database does not exist:"))
+            *da << DgSqlCode(-1003)
+                << DgString0(HIVE_SYSTEM_CATALOG)
+                << DgString1(hiveDB);
+          else
+            *da << DgSqlCode(-1214)
+                << DgString0(getSqlJniErrorStr())
+                << DgString1(useDB.data());
+          
+          ExHandleArkcmpErrors(qparent_, pentry_down, 0,
+                               getGlobals(), da);
+
+          ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+          
+          up_entry->upState.parentIndex = 
+            pentry_down->downState.parentIndex;
+          
+          up_entry->upState.setMatchNo(0);
+          up_entry->upState.status = ex_queue::Q_NO_DATA;
+          
+          // insert into parent
+          qparent_.up->insert();
+          
+          qparent_.down->removeHead();
+          
+          return WORK_OK;
+        }      
+    }
 
   // Only a STATIC compile will actually affect Arkcmp's context.
   CmpCompileInfo c(buf, usedlen, sqlTextCharSet, NULL, 0, 0, 0);
@@ -387,6 +435,13 @@ short ExControlTcb::work()
                 currContext->getSessionDefaults()->
                   setSchema(value[2], strlen(value[2]));
               }
+            else if (strcmp(value[1], "USE_LIBHDFS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  currContext->getSessionDefaults()->setUseLibHdfs(TRUE);
+                else 
+                  currContext->getSessionDefaults()->setUseLibHdfs(FALSE);
+              } 
             else if (strcmp(value[1], "USER_EXPERIENCE_LEVEL") == 0)
               {
                 currContext->getSessionDefaults()->

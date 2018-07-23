@@ -251,7 +251,6 @@ public:
     ex_CLEANUP_VOLATILE_TABLES = 109,
     ex_GET_VOLATILE_INFO = 110,
     ex_CREATE_TABLE_AS = 111,
-    ex_FAST_DELETE       = 112,
     ex_GET_STATISTICS    = 113,
     ex_PROBE_CACHE = 114,
     ex_LONG_RUNNING = 116,
@@ -561,6 +560,10 @@ public:
 
   void setProcessLOB(NABoolean v){ v ? flags_ |= PROCESS_LOB: flags_ &= ~PROCESS_LOB;}
 
+  NABoolean useLibHdfs() const { return ((flags_ & USE_LIBHDFS) > 0);}
+
+  void setUseLibHdfs(NABoolean v){ v ? flags_ |= USE_LIBHDFS : flags_ &= ~USE_LIBHDFS ;}
+
   enum CollectStatsType
   {
     NO_STATS      = SQLCLI_NO_STATS,
@@ -675,7 +678,9 @@ private:
     // code generation:
     //  master root(ComTdbRoot), esp root(ComTdbSplitBottom),
     //  eid root (ComTdbEidRoot)
-    PROCESS_LOB = 0x0100
+    PROCESS_LOB = 0x0100,
+    //
+    USE_LIBHDFS = 0x0200
 
   };
 

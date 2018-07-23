@@ -2850,6 +2850,10 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
      if (purgedata() || upgradeRepos())
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
+
+     if (initHbase() && producesOutput())  // returns status
+       xnCanBeStarted = FALSE;
+
      if ((ddlNode && ddlNode->castToStmtDDLNode() &&
           ddlNode->castToStmtDDLNode()->ddlXns()) &&
             ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
@@ -4200,7 +4204,8 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
         {
           // assign individual files and blocks to each ESPs
           ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
-          generator->setProcessLOB(TRUE);
+          if (CmpCommon::getDefault(USE_LIBHDFS) == DF_ON)
+             generator->setProcessLOB(TRUE);
 	  
 	  // flag set for HBase scan in HbaseAccess::preCodeGen
 	  // unique scan unlikely for hive scans except 
@@ -5477,7 +5482,6 @@ RelExpr * HiveInsert::preCodeGen(Generator * generator,
     return this;
 
   generator->setHiveAccess(TRUE);
-  generator->setProcessLOB(TRUE);
   return GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs);
 }
 
@@ -5742,19 +5746,9 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   return this;
 }
 
-RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
-					const ValueIdSet & externalInputs,
-					ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
-}
-
-RelExpr * ExeUtilHiveTruncate::preCodeGen(Generator * generator,
-                                          const ValueIdSet & externalInputs,
-                                          ValueIdSet &pulledNewInputs)
+RelExpr * ExeUtilHiveTruncateLegacy::preCodeGen(Generator * generator,
+                                                const ValueIdSet & externalInputs,
+                                                ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;

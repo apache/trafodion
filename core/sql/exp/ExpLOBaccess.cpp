@@ -85,7 +85,9 @@ ExLob::ExLob(NAHeap * heap) :
     fs_(NULL),
     fdData_(NULL),
     openFlags_(0),
-    lobTrace_(FALSE)
+    lobTrace_(FALSE),
+    useLibHdfs_(FALSE),
+    hdfsClient_(NULL)    
 {
   // nothing else to do
 }
@@ -96,6 +98,10 @@ ExLob::~ExLob()
     if (fdData_) {
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
+    }
+    if (hdfsClient_ != NULL) {
+       HdfsClient::deleteInstance(hdfsClient_);
+       hdfsClient_ = NULL;
     }
    
 }
@@ -113,6 +119,7 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
   struct timespec endTime;
   Int64 secs, nsecs, totalnsecs;
  
+  useLibHdfs_ = lobGlobals->useLibHdfs_;
   if (lobStorageLocation) 
     {
       if (lobStorageLocation_.empty()) 
@@ -148,12 +155,21 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
   hdfsPort_ = hdfsPort;
   // lobLocation_ = lobLocation;
   clock_gettime(CLOCK_MONOTONIC, &startTime);
-  
-  if (lobGlobals->getHdfsFs() == NULL)     
-    return LOB_HDFS_CONNECT_ERROR;
-  else 
-    fs_ = lobGlobals->getHdfsFs();
-    
+  lobGlobalHeap_ = lobGlobals->getHeap();    
+  HDFS_Client_RetCode hdfsClientRetcode;
+  if (useLibHdfs_) { 
+     if (lobGlobals->getHdfsFs() == NULL)     
+        return LOB_HDFS_CONNECT_ERROR;
+     else 
+        fs_ = lobGlobals->getHdfsFs();
+     hdfsClient_ = NULL;
+  }
+  else {
+     hdfsClient_ = HdfsClient::newInstance(lobGlobalHeap_, NULL, hdfsClientRetcode);
+     fs_ = NULL;
+     if (hdfsClient_ == NULL)
+        return LOB_HDFS_CONNECT_ERROR;
+  }
 
   clock_gettime(CLOCK_MONOTONIC, &endTime);
 
@@ -166,7 +182,20 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
     }
   totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
   stats_.hdfsConnectionTime += totalnsecs;
-    
+   
+  if (! useLibHdfs_) {
+     if (mode == EX_LOB_CREATE) {
+        hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), FALSE, FALSE); 
+        if (hdfsClientRetcode != HDFS_CLIENT_OK)
+            return LOB_DATA_FILE_CREATE_ERROR;
+     }
+     hdfsClientRetcode = hdfsClient_->hdfsOpen(lobDataFile_.data(), FALSE);
+     if (hdfsClientRetcode != HDFS_CLIENT_OK)
+        return LOB_DATA_FILE_OPEN_ERROR;
+     fdData_ = NULL;
+  }
+  else
+  {
   if (mode == EX_LOB_CREATE) 
     { 
       // check if file is already created
@@ -184,9 +213,8 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
 	}
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
-     
     }
-  lobGlobalHeap_ = lobGlobals->getHeap();    
+  }
   return LOB_OPER_OK;
     
 }
@@ -297,6 +325,16 @@ Ex_Lob_Error ExLob::getDesc(ExLobDesc &desc,char * handleIn, Int32 handleInLen, 
 Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int32 size, Int64 &operLen)
 { 
     Ex_Lob_Error err;
+    HDFS_Client_RetCode hdfsClientRetcode = HDFS_CLIENT_OK;
+    Int64 writeOffset;
+
+    if (! useLibHdfs_ ) {
+       writeOffset = hdfsClient_->hdfsWriteImmediate(data, size, hdfsClientRetcode); 
+       if (hdfsClientRetcode != HDFS_CLIENT_OK)
+          return LOB_DATA_WRITE_ERROR;
+       operLen = size;
+       return LOB_OPER_OK;
+    }
     lobDebugInfo("In ExLob::writeData",0,__LINE__,lobTrace_);
     if (!fdData_ || (openFlags_ != (O_WRONLY | O_APPEND))) // file is not open for write
     {
@@ -329,7 +367,8 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
                                     int bufferSize , short replication , int blockSize)
 { 
     Ex_Lob_Error err;
-
+    if (! useLibHdfs_)
+       return writeData(0,data, size, operLen);
 
     if (!fdData_ || (openFlags_ != (O_WRONLY | O_APPEND))) // file is not open for write
     {
@@ -424,7 +463,14 @@ Ex_Lob_Error ExLob::emptyDirectory(char *dirPath,
                                    ExLobGlobals *lobGlobals)
 {
   int retcode = 0;
-
+  HDFS_Client_RetCode hdfsClientRetcode;
+  if (! useLibHdfs_) {
+     hdfsClientRetcode = HdfsClient::hdfsDeletePath(dirPath);
+     if (hdfsClientRetcode != HDFS_CLIENT_OK)
+        return LOB_DATA_FILE_DELETE_ERROR;
+     return LOB_OPER_OK;
+  }
+      
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
     {
@@ -521,8 +567,16 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
    lobDebugInfo("In ExLob::statSourceFile",0,__LINE__,lobTrace_);
    // check if the source file is a hdfs file or from local file system.
   LobInputOutputFileType srcType = fileType(srcfile);
+   HDFS_Client_RetCode hdfsClientRetcode;
    if (srcType == HDFS_FILE)
      {
+       if (! useLibHdfs_) {
+          sourceEOF = HdfsClient::hdfsSize(srcfile, hdfsClientRetcode);
+          if (hdfsClientRetcode != HDFS_CLIENT_OK)
+             return LOB_SOURCE_FILE_OPEN_ERROR;
+          ex_assert(sourceEOF >= 0, "Offset is -1 possibly due to path being directory");
+       }
+       else {
        hdfsFile sourceFile = hdfsOpenFile(fs_,srcfile,O_RDONLY,0,0,0);   
        if (!sourceFile)	           
          return LOB_SOURCE_FILE_OPEN_ERROR;
@@ -536,8 +590,8 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
        
        str_sprintf(logBuf,"Returning EOF of %ld for file %s", sourceEOF,srcfile);
        lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
+       }
      }
-
    else if (srcType == LOCAL_FILE)
      {
        int openFlags = O_RDONLY;
@@ -554,11 +608,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
        if (stat(srcfile, &statbuf) != 0) {
 	 return LOB_SOURCE_FILE_STAT_ERROR;
        }
-
        sourceEOF = statbuf.st_size;
-
-       
-
        flock(fdSrcFile, LOCK_UN);
        close(fdSrcFile);
        str_sprintf(logBuf,"Returning EOF of %ld for file %s", sourceEOF,srcfile);
@@ -638,8 +688,32 @@ Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &si
      char logBuf[4096];
      str_sprintf(logBuf,"Calling ::readHdfsSourceFile: %s Offset:%ld, Size: %d",srcfile, offset,size);
      lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
-  
-   
+     HDFS_Client_RetCode hdfsClientRetcode; 
+     Int64 bytesRead;
+     if (!useLibHdfs_) {
+        HdfsClient *srcHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
+        ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
+        hdfsClientRetcode  = srcHdfsClient->hdfsOpen(srcfile, FALSE);
+        if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+           HdfsClient::deleteInstance(srcHdfsClient);
+           return LOB_SOURCE_FILE_OPEN_ERROR;
+        }
+        fileData = (char *) (getLobGlobalHeap())->allocateMemory(size);
+        if (fileData == (char *)-1) {
+           HdfsClient::deleteInstance(srcHdfsClient);
+           return LOB_SOURCE_DATA_ALLOC_ERROR;
+        }
+        bytesRead = srcHdfsClient->hdfsRead(offset, fileData, size, hdfsClientRetcode);
+        if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+           HdfsClient::deleteInstance(srcHdfsClient);
+           getLobGlobalHeap()->deallocateMemory(fileData);
+           return LOB_SOURCE_FILE_READ_ERROR;
+        }  
+        size = bytesRead;
+        // Memory growth/leak
+        HdfsClient::deleteInstance(srcHdfsClient);
+        return LOB_OPER_OK;
+     }
      int openFlags = O_RDONLY;
      hdfsFile fdSrcFile = hdfsOpenFile(fs_,srcfile, openFlags,0,0,0);
      if (fdSrcFile == NULL) 
@@ -662,6 +736,7 @@ Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &si
      
      return LOB_OPER_OK;
  }
+
 Ex_Lob_Error ExLob::readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset)
    {  
      char logBuf[4096];
@@ -952,11 +1027,14 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
     Ex_Lob_Error err=LOB_OPER_OK; 
     char logBuf[4096];
     lobDebugInfo("In ExLob::writeLobData",0,__LINE__,lobTrace_);
+    HDFS_Client_RetCode hdfsClientRetcode = HDFS_CLIENT_OK;
+    Int64 writeOffset;
+
     char *inputAddr = source;
     Int64 readOffset = 0;
     Int32 allocMemSize = 0;
     Int64 inputSize = sourceLen;
-    Int64 writeOffset = tgtOffset;
+    writeOffset = tgtOffset;
     if (subOperation == Lob_External_File)
       return LOB_OPER_OK;
     while(inputSize > 0)
@@ -1003,8 +1081,10 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
 	  }
       }
     lobDebugInfo("Leaving ExLob::writeLobData",0,__LINE__,lobTrace_);	
-    hdfsCloseFile(fs_, fdData_);
-    fdData_=NULL;
+    if (useLibHdfs_) {
+       hdfsCloseFile(fs_, fdData_);
+       fdData_=NULL;
+    }
     return err;
 }
 
@@ -1439,6 +1519,13 @@ Ex_Lob_Error ExLob::delDesc(char *handleIn, Int32 handleInLen, Int64 transId)
 Ex_Lob_Error ExLob::purgeLob()
 {
     char logBuf[4096];
+    if (! useLibHdfs_) {
+       HDFS_Client_RetCode hdfsClientRetcode;
+       hdfsClientRetcode = HdfsClient::hdfsDeletePath(lobDataFile_.data());
+       if (hdfsClientRetcode != HDFS_CLIENT_OK)
+	  return LOB_DATA_FILE_DELETE_ERROR;
+       return LOB_OPER_OK;
+    }
      if (hdfsDelete(fs_, lobDataFile_.data(), 0) != 0)
        {
          // extract a substring small enough to fit into logBuf
@@ -1693,6 +1780,27 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     char logBuf[4096];
     lobDebugInfo("In ExLob::allocateDesc",0,__LINE__,lobTrace_);
     Int32 openFlags = O_RDONLY ;   
+    HDFS_Client_RetCode hdfsClientRetcode;
+
+    if (! useLibHdfs_) {
+       if (size == 0) {
+          // Delete and Create the Hdfs file by passing overwrite to TRUE
+          hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), TRUE, FALSE); 
+          if (hdfsClientRetcode != HDFS_CLIENT_OK)
+             return LOB_DATA_FILE_WRITE_ERROR;
+          else {
+             dataOffset = 0;
+             return LOB_OPER_OK; 
+          }
+       }
+       else {
+         dataOffset = hdfsClient_->hdfsSize(hdfsClientRetcode); 
+         if (hdfsClientRetcode != HDFS_CLIENT_OK)
+            return LOB_DATA_FILE_WRITE_ERROR;
+         ex_assert(dataOffset >= 0, "Offset is -1 possibly due to path being directory");
+         return  LOB_OPER_OK;
+       }
+    }
     if (size == 0) //we are trying to empty this lob.
       {
         //rename lob datafile
@@ -1793,12 +1901,13 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
      
       return LOB_OPER_OK;    
 }
+
 Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int32 numEntries)
 {
   Ex_Lob_Error rc = LOB_OPER_OK;
   char logBuf[4096];
   lobDebugInfo("In ExLob::compactLobDataFile",0,__LINE__,lobTrace_);
-  Int64 maxMemChunk = 100*1024*1024; //100 MB limit for intermediate buffer for transfering data
+  Int64 maxMemChunk = 64*1024*1024; //64 MB limit for intermediate buffer for transfering data
 
   // make some temporary file names
   size_t len = lobDataFile_.length();
@@ -1827,14 +1936,15 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
               lobDataFileSubstr,tmpLobDataFileSubstr, saveLobDataFileSubstr);
 
   lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-  hdfsFS fs = hdfsConnect(hdfsServer_,hdfsPort_);
-  if (fs == NULL)
-    return LOB_DATA_FILE_OPEN_ERROR;
+
+  HDFS_Client_RetCode hdfsClientRetcode = HDFS_CLIENT_OK;
+  HdfsClient *srcHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
+  ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
+  HdfsClient *dstHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
+  ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
   
- 
-  hdfsFile  fdData = hdfsOpenFile(fs, lobDataFile_.data(), O_RDONLY, 0, 0,0);
-  
-  if (!fdData)
+  hdfsClientRetcode  = srcHdfsClient->hdfsOpen(lobDataFile_.data(), FALSE); 
+  if (hdfsClientRetcode != HDFS_CLIENT_OK)
     {
       // extract substring small enough to fit in logBuf
       len = MINOF(lobDataFile_.length(),sizeof(logBuf) - 40); 
@@ -1844,14 +1954,11 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
 
       str_sprintf(logBuf,"Could not open file:%s",lobDataFileSubstr2);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-      hdfsCloseFile(fs,fdData);
-      fdData = NULL;
       return LOB_DATA_FILE_OPEN_ERROR;
     }
-                          
         
-  hdfsFile fdTemp = hdfsOpenFile(fs, tmpLobDataFile,O_WRONLY|O_CREAT,0,0,0);
-  if (!fdTemp) 
+  hdfsClientRetcode  = dstHdfsClient->hdfsCreate(tmpLobDataFile, TRUE, FALSE); 
+  if (hdfsClientRetcode != HDFS_CLIENT_OK)
     {
       // extract substring small enough to fit in logBuf
       len = MINOF(sizeof(tmpLobDataFile),sizeof(logBuf)/3 - 20); 
@@ -1861,8 +1968,8 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
 
       str_sprintf(logBuf,"Could not open file:%s",tmpLobDataFileSubstr2);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-      hdfsCloseFile(fs,fdTemp);
-      fdTemp = NULL;
+      srcHdfsClient->hdfsClose();
+      HdfsClient::deleteInstance(srcHdfsClient);
       return LOB_DATA_FILE_OPEN_ERROR;
     }
 
@@ -1871,112 +1978,86 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
    Int64 bytesWritten = 0;
    Int64 size = 0;
    Int64 chunkLen = 0;
+   Int64 readLen = 0;
+   Int64 offset;
    char * tgt = NULL;
-   while (i < numEntries)
-     {
-       chunkLen = dcArray[i].getChunkLen();
-       if (chunkLen > maxMemChunk)
-         {
-           tgt = (char *)(getLobGlobalHeap())->allocateMemory(maxMemChunk);
-           while (chunkLen > maxMemChunk)
-             {             
-               bytesRead = hdfsPread(fs,fdData,dcArray[i].getCurrentOffset(),tgt,maxMemChunk);
-               if (bytesRead != maxMemChunk)
-                 {
-                   lobDebugInfo("Problem reading from  data file",0,__LINE__,lobTrace_);
-                   getLobGlobalHeap()->deallocateMemory(tgt);
-                   return LOB_DATA_READ_ERROR;
-                 }
-               bytesWritten = hdfsWrite(fs,fdTemp, tgt,maxMemChunk);
-               if (bytesWritten != size)
-                 {
-                   lobDebugInfo("Problem writing temp data file",0,__LINE__,lobTrace_);
-                   getLobGlobalHeap()->deallocateMemory(tgt);
-                   return LOB_TARGET_FILE_WRITE_ERROR;
-                 }
-               chunkLen -= maxMemChunk;
-             }
-          
-         }
-       else
-         {
-           tgt = (char *)(getLobGlobalHeap())->allocateMemory(chunkLen);
-            bytesRead = hdfsPread(fs,fdData,dcArray[i].getCurrentOffset(),tgt,chunkLen);
-               if (bytesRead != chunkLen)
-                 {
-                   lobDebugInfo("Problem reading from  data file",0,__LINE__,lobTrace_);
-                   getLobGlobalHeap()->deallocateMemory(tgt);
-                   return LOB_DATA_READ_ERROR;
-                 }
-               bytesWritten = hdfsWrite(fs,fdTemp, tgt,chunkLen);
-               if (bytesWritten != chunkLen)
-                 {
-                   lobDebugInfo("Problem writing to temp data file",0,__LINE__,lobTrace_);
-                   getLobGlobalHeap()->deallocateMemory(tgt);
-                   return LOB_TARGET_FILE_WRITE_ERROR;
-                 }
-         }
-       if (hdfsFlush(fs, fdTemp)) {
-          lobDebugInfo("Problem flushing to temp data file",0,__LINE__,lobTrace_);
-         return LOB_DATA_FLUSH_ERROR;
+   Ex_Lob_Error  saveError = LOB_OPER_OK;
+   tgt = (char *)(getLobGlobalHeap())->allocateMemory(maxMemChunk);
+   while ((i < numEntries) && (saveError == LOB_OPER_OK)) 
+   {
+       readLen = dcArray[i].getChunkLen();
+       offset = dcArray[i].getCurrentOffset(); 
+       while (readLen > 0) 
+       {             
+          if (readLen > maxMemChunk)
+             chunkLen = maxMemChunk;
+          else
+             chunkLen = readLen;  
+          bytesRead = srcHdfsClient->hdfsRead(offset, tgt, chunkLen, hdfsClientRetcode);
+          if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+             lobDebugInfo("Problem reading from  data file",0,__LINE__,lobTrace_);
+             saveError = LOB_SOURCE_FILE_READ_ERROR;
+             break;
+          }
+          bytesWritten = dstHdfsClient->hdfsWrite(tgt, chunkLen, hdfsClientRetcode);
+          if (hdfsClientRetcode != HDFS_CLIENT_OK || bytesWritten != chunkLen) {
+             lobDebugInfo("Problem writing temp data file",0,__LINE__,lobTrace_);
+             saveError = LOB_DATA_FILE_WRITE_ERROR;
+             break;
+          }
+          readLen -= chunkLen;
+          offset += chunkLen;
        }
-       getLobGlobalHeap()->deallocateMemory(tgt);
        i++;
-     }
-   hdfsCloseFile(fs,fdTemp);
-   hdfsCloseFile(fs,fdData);
-  
+   }
+   getLobGlobalHeap()->deallocateMemory(tgt);
+   srcHdfsClient->hdfsClose(); 
+   dstHdfsClient->hdfsClose();  
+   HdfsClient::deleteInstance(srcHdfsClient);
+   HdfsClient::deleteInstance(dstHdfsClient);
+   if (saveError != LOB_OPER_OK)
+      return saveError;
    //Now save the data file and rename the tempfile to the original datafile
 
-   Int32 rc2 = hdfsRename(fs,lobDataFile_.data(),saveLobDataFile);
-   if (rc2 == -1)
-     {
+   hdfsClientRetcode = HdfsClient::hdfsRename(lobDataFile_.data(),saveLobDataFile);
+   if (hdfsClientRetcode != HDFS_CLIENT_OK) {
        lobDebugInfo("Problem renaming datafile to save data file",0,__LINE__,lobTrace_);
        return LOB_DATA_FILE_WRITE_ERROR;
-     }
-   rc2 = hdfsRename(fs,tmpLobDataFile, lobDataFile_.data());
-   if (rc2 == -1)
-     {
+   }
+   hdfsClientRetcode = HdfsClient::hdfsRename(tmpLobDataFile, lobDataFile_.data());
+   if (hdfsClientRetcode != HDFS_CLIENT_OK) {
        lobDebugInfo("Problem renaming temp datafile to data file",0,__LINE__,lobTrace_);
        return LOB_DATA_FILE_WRITE_ERROR;
-     }
+   }
    return LOB_OPER_OK;
 }
 
 Ex_Lob_Error ExLob::restoreLobDataFile()
 {
-  Ex_Lob_Error rc = LOB_OPER_OK;
   lobDebugInfo("In ExLob::restoreLobDataFile",0,__LINE__,lobTrace_);
-  
-  hdfsFS fs = hdfsConnect(hdfsServer_,hdfsPort_);
-  if (fs == NULL)
-    return LOB_DATA_FILE_OPEN_ERROR;
+  HDFS_Client_RetCode hdfsClientRetcode; 
   char saveLobDataFile[lobDataFile_.length() + sizeof("_save")]; // sizeof includes room for null terminator
   strcpy(saveLobDataFile,lobDataFile_.data());
   strcpy(saveLobDataFile+lobDataFile_.length(),"_save");
-  Int32 rc2 = hdfsDelete(fs,lobDataFile_.data(),FALSE);//ok to ignore error.
-  rc2 = hdfsRename(fs,saveLobDataFile, lobDataFile_.data());
-  if (rc2)
+  hdfsClientRetcode = HdfsClient::hdfsDeletePath(lobDataFile_.data());
+  hdfsClientRetcode = HdfsClient::hdfsRename(saveLobDataFile, lobDataFile_.data());
+  if (hdfsClientRetcode != HDFS_CLIENT_OK)
      {
        lobDebugInfo("Problem renaming savedatafile to data file",0,__LINE__,lobTrace_);
        return LOB_OPER_ERROR; 
      }
-  return rc;
+  return LOB_OPER_OK;
 
 } 
 
 Ex_Lob_Error ExLob::purgeBackupLobDataFile()
 {
   Ex_Lob_Error rc = LOB_OPER_OK;
-   lobDebugInfo("In ExLob::purgeBackupLobDataFile",0,__LINE__,lobTrace_);
-  hdfsFS fs = hdfsConnect(hdfsServer_,hdfsPort_);
-  if (fs == NULL)
-    return LOB_DATA_FILE_OPEN_ERROR;
+  lobDebugInfo("In ExLob::purgeBackupLobDataFile",0,__LINE__,lobTrace_);
   char saveLobDataFile[lobDataFile_.length() + sizeof("_save")]; // sizeof includes room for null terminator
   strcpy(saveLobDataFile,lobDataFile_.data());
   strcpy(saveLobDataFile+lobDataFile_.length(),"_save");
-  Int32 rc2 = hdfsDelete(fs,saveLobDataFile,FALSE);//ok to ignore error.
-   
+  HDFS_Client_RetCode hdfsClientRetcode  = HdfsClient::hdfsDeletePath(saveLobDataFile);//ok to ignore error.
   return rc;
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -2055,6 +2136,29 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
       bytesAvailable = cursor.descSize_ - cursor.bytesRead_;
       bytesToCopy = min(bytesAvailable, tgtSize - operLen);
       offset = cursor.descOffset_ + cursor.bytesRead_;
+      if (!useLibHdfs_) {
+         HDFS_Client_RetCode hdfsClientRetcode;
+         if (storage_ == Lob_External_HDFS_File) {
+            HdfsClient *srcHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
+            ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
+            hdfsClientRetcode  = srcHdfsClient->hdfsOpen(lobDataFile_.data(), FALSE);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK)
+               return LOB_SOURCE_FILE_OPEN_ERROR;
+            bytesRead = srcHdfsClient->hdfsRead(offset, tgt, bytesToCopy, hdfsClientRetcode);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+               HdfsClient::deleteInstance(srcHdfsClient);
+               return LOB_SOURCE_FILE_READ_ERROR;
+            } 
+            HdfsClient::deleteInstance(srcHdfsClient);
+          }
+          else {
+               bytesRead = hdfsClient_->hdfsRead(offset, tgt, bytesToCopy, hdfsClientRetcode);
+               if (hdfsClientRetcode != HDFS_CLIENT_OK)
+                  return LOB_DATA_READ_ERROR;
+          }
+      }
+      else {
+
       // #endif
 
       if (!fdData_ || (openFlags_ != O_RDONLY)) 
@@ -2089,7 +2193,7 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
       }
       Int64 totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
       stats_.CumulativeReadTime += totalnsecs;
-
+      } // useLibHdfs
       if (bytesRead == -1) {
          return LOB_DATA_READ_ERROR;
       } else if (bytesRead == 0) {
@@ -2102,9 +2206,10 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
       operLen += bytesRead;
       tgt += bytesRead;
    }
-  
-   hdfsCloseFile(fs_, fdData_);
-   fdData_ = NULL;
+   if (useLibHdfs_) {
+      hdfsCloseFile(fs_, fdData_);
+      fdData_ = NULL;
+   }
    return LOB_OPER_OK;
 }
 
@@ -2133,6 +2238,8 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
     return err;
   
 
+  if (useLibHdfs_) 
+  {
   if (fdData_)// we may have a stale handle. close and open to refresh 
     {
       hdfsCloseFile(fs_, fdData_);
@@ -2161,10 +2268,37 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
           
     }
 	
-
+  } // useLibHdfs_
      
   if (!multipleChunks)
     {
+      if (! useLibHdfs_) {
+         HDFS_Client_RetCode hdfsClientRetcode;
+         Int32 readLen;
+         if (storage_ == Lob_External_HDFS_File) {
+            HdfsClient *srcHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
+            ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
+            hdfsClientRetcode  = srcHdfsClient->hdfsOpen(lobDataFile_.data(), FALSE);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+               HdfsClient::deleteInstance(srcHdfsClient);
+               return LOB_SOURCE_FILE_OPEN_ERROR;
+            }
+            readLen = srcHdfsClient->hdfsRead(offset, memAddr, size, hdfsClientRetcode);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+               HdfsClient::deleteInstance(srcHdfsClient);
+               return LOB_SOURCE_FILE_READ_ERROR;
+            }  
+            HdfsClient::deleteInstance(srcHdfsClient);
+            operLen = readLen;
+         } 
+         else {
+            readLen = hdfsClient_->hdfsRead(offset, memAddr, size, hdfsClientRetcode);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK)
+               return LOB_DATA_READ_ERROR;
+            operLen = readLen;
+         }
+         return LOB_OPER_OK;
+      }
       lobDebugInfo("Reading in single chunk",0,__LINE__,lobTrace_);
       if ((bytesRead = hdfsPread(fs_, fdData_, offset, 
 				 memAddr, size)) == -1) {
@@ -2972,28 +3106,8 @@ if (!lobGlobals->isHive() )
 
 void cleanupLOBDataDescFiles(const char *lobHdfsServer,int lobHdfsPort,const char *lobHdfsLoc)
 { 
-  int numExistingFiles=0;
-  hdfsFS fs;
-  int err = 0;
-  fs = hdfsConnect(lobHdfsServer, lobHdfsPort);
-  if (fs == NULL)
-    return;
-  // Get this list of all data and desc files in the lob sotrage location
-  hdfsFileInfo *fileInfos = hdfsListDirectory(fs, lobHdfsLoc, &numExistingFiles);
-  if (fileInfos == NULL)
-      return ;
-    
-  //Delete each one in a loop
-  for (int i = 0; i < numExistingFiles; i++)  
-    {    
-      err = hdfsDelete(fs, fileInfos[i].mName, 0);
-    }
-    
-  // *Note* : delete the memory allocated by libhdfs for the file info array  
-  if (fileInfos)
-    {
-      hdfsFreeFileInfo(fileInfos, numExistingFiles);
-    }
+  HDFS_Client_RetCode hdfsClientRetcode  = HdfsClient::hdfsDeletePath(lobHdfsLoc);//ok to ignore error.
+  return;
 }
 
 
@@ -3392,7 +3506,8 @@ ExLobGlobals::ExLobGlobals(NAHeap *lobHeap) :
     threadTraceFile_(NULL),
     lobTrace_(FALSE),
     numWorkerThreads_(0),
-    heap_(lobHeap)
+    heap_(lobHeap),
+    useLibHdfs_(FALSE)
 {
   //initialize the log file
   if (getenv("TRACE_HDFS_THREAD_ACTIONS"))
@@ -3481,17 +3596,22 @@ ExLobGlobals::~ExLobGlobals()
     //delete the lobMap AFTER the worker threads have finished their pending 
     //work since they may still be using an objetc that was fetched off the lobMap_
     if (lobMap_) 
-      {
+    {
+        lobMap_it it2; 
+        for (it2 = lobMap_->begin(); it2 != lobMap_->end() ; ++it2)
+        {
+           ExLob *lobPtr = it2->second; 
+           NADELETE(lobPtr, ExLob, heap_);
+        } 
+        lobMap_->clear();
         NADELETE(lobMap_,lobMap_t,heap_);
         lobMap_ = NULL;
-      }
+    }
     
     //msg_mon_close_process(&serverPhandle);
     if (threadTraceFile_)
       fclose(threadTraceFile_);
     threadTraceFile_ = NULL;
-
-   
 }
 
 
@@ -3504,11 +3624,6 @@ Ex_Lob_Error ExLobGlobals::initialize()
     lobMap_ = (lobMap_t *) new (getHeap())lobMap_t;  
     if (lobMap_ == NULL)
       return LOB_INIT_ERROR;
-    // No need to start them here for LOB usage.These worker threads are needed 
-    // only for hive access so moving them to the ExpLOBInterfaceInit function 
-    // where they will get started only in case of hive access.
-    // start the worker threads
-    //startWorkerThreads();
 
     return err;
 }

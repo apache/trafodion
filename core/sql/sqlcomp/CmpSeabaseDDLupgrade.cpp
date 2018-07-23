@@ -525,7 +525,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  deallocEHI(ehi);
 		  
 		  if ((retcode == 0) ||
-                      (retcode == -1393) ||
+                      (retcode == -TRAF_NOT_INITIALIZED) ||
                       (retcode == -1395))
 		    {
 		      // no version mismatch detected between system and expected software.
@@ -985,12 +985,12 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  //
 		  // initialize trafodion
 		  CmpCommon::context()->setIsUninitializedSeabase(TRUE);
-		  CmpCommon::context()->uninitializedSeabaseErrNum() = -1393; // MD doesn't exist
+		  CmpCommon::context()->uninitializedSeabaseErrNum() = -TRAF_NOT_INITIALIZED; // MD doesn't exist
 
                   // Use "initialize trafodion, minimal" so we only create the metadata
                   // tables. The other tables (repository and privilege manager) already
                   // exist; we will upgrade them later in this method.
-		  str_sprintf(buf, "initialize trafodion, minimal;");
+		  str_sprintf(buf, "initialize trafodion, minimal, no return status;");
 		  
 		  cliRC = cliInterface.executeImmediate(buf);
 		  if (cliRC < 0)

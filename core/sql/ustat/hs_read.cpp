@@ -195,43 +195,6 @@ HSStatsTimeCursor::~HSStatsTimeCursor()
   close();
 }
 
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-
-Lng32 HSStatsTimeCursor::open(NABoolean updateReadTime)
-{
-  if (!validCursor_)
-    return -1;
-  HSTranMan *TM = HSTranMan::Instance();
-
-  HSGlobalsClass::autoInterval = CmpCommon::getDefaultLong(USTAT_AUTOMATION_INTERVAL);
-  NAString stmt;
-  // Assign appropriate query depending on table type, schema version, and automation.
-  // For automation, the updatable CURSOR106 requires that a transaction be started.
-  // It is ended in the destructor.
-  if (fileType_ == SQLMP)
-    stmt = "CURSOR102_MP";
-  else if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
-    {
-      if (updateReadTime) 
-      {  
-        stmt = "CURSOR106_MX_2300";  
-        startedTrans_ = (((retcode_ = TM->Begin("CURSOR106")) == 0) ? TRUE : FALSE);
-        HSHandleError(retcode_);
-      }
-      else
-        stmt = "CURSOR102_MX_2300";
-    }
-  else
-        stmt = "CURSOR102_MX"; 
-
-  return OpenCursor( stmt,
-                      (void *)histogramTableName_,
-                      (void *)&tableUID_,
-                      desc_);
-}
-
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
-
 Lng32 HSStatsTimeCursor::open(NABoolean updateReadTime)
 {
   Lng32 retcode;
@@ -292,19 +255,13 @@ Lng32 HSStatsTimeCursor::open(NABoolean updateReadTime)
   return retcode;
 }
 
-#endif // NA_USTAT_USE_STATIC not defined
-
 void HSStatsTimeCursor::close()
 {
   // Commit transaction if started for updatable CURSOR106 (for READ_TIME).
   HSTranMan *TM = HSTranMan::Instance();
   if (startedTrans_)
   {
-#ifdef NA_USTAT_USE_STATIC
-    if (!desc_ || update_retcode_) TM->Rollback();
-#else
     if (!cursor106_ || update_retcode_) TM->Rollback();
-#endif
     else                           TM->Commit();  // doesn't issue COMMIT if trans not started.
   }
   if (desc_)
@@ -343,9 +300,7 @@ Lng32 HSStatsTimeCursor::get(Int64 &maxStatTime, const NAColumnArray &colArray,
   Int32 colNumber;
   Int64 statTime, readTime;
   short readCount;
-#ifdef NA_USTAT_USE_STATIC
-  SQL_EXEC_ClearDiagnostics(desc_);
-#endif
+
   maxStatTime = 0;
   HSLogMan *LM = HSLogMan::Instance();
   HSTranMan *TM = HSTranMan::Instance();
@@ -354,19 +309,11 @@ Lng32 HSStatsTimeCursor::get(Int64 &maxStatTime, const NAColumnArray &colArray,
   LM->LogTimeDiff("Entering: HSStatsTimeCursor::get()");
   while(TRUE) // Loop until break statement below.
   {
-    if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-      retcode_ = SQL_EXEC_Fetch(desc_, NULL, 4,
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
-      retcode_ = SQL_EXEC_Fetch(cursor102_->getStmt(), cursor102_->getOutDesc(), 4,
-#endif // NA_USTAT_USE_STATIC not defined
+    retcode_ = SQL_EXEC_Fetch(cursor102_->getStmt(), cursor102_->getOutDesc(), 4,
                                 (void *)(&statTime),   NULL, 
                                 (void *)(&colNumber),  NULL,
                                 (void *)(&readTime),   NULL,
                                 (void *)(&readCount),  NULL);
-    else
-      retcode_ = SQL_EXEC_Fetch(desc_, NULL, 2,(void *)(&statTime),   NULL, 
-                                               (void *)(&colNumber),  NULL);
     if (retcode_ == HS_EOF || retcode_ < 0) break;
 
     LM->Log("While Fetching StatsTime: Check for update of READ_TIME/READ_COUNT.");
@@ -378,8 +325,7 @@ Lng32 HSStatsTimeCursor::get(Int64 &maxStatTime, const NAColumnArray &colArray,
       if (!updateReadTime && // If already set, no need to check again.
           updatable_ &&
           nacol && 
-          nacol->needFullHistogram() && 
-          HSGlobalsClass::schemaVersion >= COM_VERS_2300
+          nacol->needFullHistogram()
           )
       {
         // Check if READ_TIME is such that it needs to be updated.
@@ -432,20 +378,14 @@ Lng32 HSStatsTimeCursor::update(const NAColumnArray &colArray)
   Int64 statTime, readTime;
   char readTimeTstmp[HS_TIMESTAMP_SIZE];
   short readCount;
-#ifdef NA_USTAT_USE_STATIC
-  SQL_EXEC_ClearDiagnostics(desc_);
-#endif
+
   HSLogMan *LM = HSLogMan::Instance();
   HSTranMan *TM = HSTranMan::Instance();
   
   LM->LogTimeDiff("Entering: HSStatsTimeCursor::update()");
   while(TRUE) // Loop until break statement below.
   {
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-    retcode_ = SQL_EXEC_Fetch(desc_, NULL, 5,
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
     retcode_ = SQL_EXEC_Fetch(cursor106_->getStmt(), cursor106_->getOutDesc(), 5,
-#endif // NA_USTAT_USE_STATIC not defined
                               (void *)(&statTime),   NULL, 
                               (void *)(&colNumber),  NULL,
                               (void *)(&readTime),   NULL,// for read
@@ -459,8 +399,7 @@ Lng32 HSStatsTimeCursor::update(const NAColumnArray &colArray)
       const NAColumn *nacol = colArray.getColumnByPos(colNumber);
       // Only update READ_TIME if column is requested.
       if (nacol && 
-          nacol->needFullHistogram() && 
-          HSGlobalsClass::schemaVersion >= COM_VERS_2300
+          nacol->needFullHistogram()
           )
       {
         // Update the READ_TIME and READ_COUNT.
@@ -1315,8 +1254,7 @@ Lng32 readHistograms(HSTableDef *tabDef
               LM->Log("\nFetchHistograms: Unable to get table schema version.");
               return -1;
             }
-          if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
-            HSGlobalsClass::autoInterval = CmpCommon::getDefaultLong(USTAT_AUTOMATION_INTERVAL);
+          HSGlobalsClass::autoInterval = CmpCommon::getDefaultLong(USTAT_AUTOMATION_INTERVAL);
           if (LM->LogNeeded())
            {
              sprintf(LM->msg, "\nFetchHistograms: TABLE: %s; SCHEMA VERSION: %d; AUTOMATION INTERVAL: %d\n", 
@@ -1720,7 +1658,7 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
   fakeRowCount = correctedRowCount_;
   TotalHistogramDBG += numHistograms;
 
-  if (updateReadTime && HSGlobalsClass::schemaVersion >= COM_VERS_2300)
+  if (updateReadTime)
   {
     // Update requested histograms' READ_TIME and READ_COUNT entries using mechanism
     // employed by FetchStatsTime().
@@ -1746,14 +1684,8 @@ Lng32 HSHistogrmCursor::get()
 
   SQL_EXEC_ClearDiagnostics(desc_);
 
-  // histogram versioning
-  if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
-    // CURSOR101_MX_2300
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-    retcode_ = SQL_EXEC_Fetch(desc_, NULL, 18,
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
-    retcode_ = SQL_EXEC_Fetch(cursor101_->getStmt(), cursor101_->getOutDesc(), 18,
-#endif // NA_USTAT_USE_STATIC not defined
+  retcode_ = SQL_EXEC_Fetch(cursor101_->getStmt(), 
+                            cursor101_->getOutDesc(), 18,
                             (void *)&histid_, NULL,
                             (void *)&tableColNum_, NULL,
                             (void *)&colCount_, NULL,
@@ -1778,17 +1710,6 @@ Lng32 HSHistogrmCursor::get()
                             //(void *)buf3_, NULL,
                             //(void *)buf4_, NULL
                             );
-  else
-    retcode_ = SQL_EXEC_Fetch(desc_, NULL, 9,
-                            (void *)&histid_, NULL,
-                            (void *)&tableColNum_, NULL,
-                            (void *)&colCount_, NULL,
-                            (void *)&intCount_, NULL,
-                            (void *)&tempRowCount, NULL,
-                            (void *)&tempUEC, NULL,
-                            (void *)&statsTime_, NULL,
-                            (void *)buf1_, NULL,
-                            (void *)buf2_, NULL);
 
   if (retcode_ < 0)
     {
@@ -1836,44 +1757,6 @@ Lng32 HSHistogrmCursor::get()
   return 0;
 }
 
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-Lng32 HSHistogrmCursor::open()
-{
-  if (!validCursor_)
-    return -1;
-
-  HSTranMan *TM = HSTranMan::Instance();
-
-  // Assign appropriate query depending on table type and schema version.
-  NAString stmt;
-  //As of APR2003, USTAT produces bad UECs for multi-column histograms. We
-  //need to have the flexibility to use them or not.
-  if (CmpCommon::getDefault(HIST_MC_STATS_NEEDED) == DF_ON)
-    {
-      if (fileType_ == SQLMP)   stmt = "CURSOR101_MP";
-      else
-        if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
-                                stmt = "CURSOR101_MX_2300";
-        else                    stmt = "CURSOR101_MX";
-    }
-  else
-    {
-      if (fileType_ == SQLMP)   stmt = "CURSOR101_NOMC_MP";
-      else
-        if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
-              stmt = "CURSOR101_NOMC_MX_2300";
-        else stmt = "CURSOR101_NOMC_MX";
-    }
-
-  return OpenCursor( stmt
-                    , (void *)histogramTableName_
-                    , (void *)&tableUID_
-                    , desc_
-                    );
-}
-
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
-
 Lng32 HSHistogrmCursor::open()
 {
   char sbuf[25];
@@ -1904,7 +1787,6 @@ Lng32 HSHistogrmCursor::open()
   HSHandleError(retcode);
   return retcode;
 }
-#endif // NA_USTAT_USE_STATIC not defined
 
 
 /******************************************************************************/
@@ -1915,87 +1797,6 @@ Lng32 HSHistogrmCursor::open()
 /* RETCODE    Success: (0)                                                    */
 /*                                                                            */
 /******************************************************************************/
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-
-Lng32 updateHistogram(const char *histogramTableName, Int32 stmtNum, short readCount)
-{
-  HSLogMan           *LM = HSLogMan::Instance();
-  static SQLMODULE_ID module;
-  static char         moduleName[HS_MODULE_LENGTH] = {'\0'};
-  static Int32          moduleNum = 0;
-  static SQLSTMT_ID   update_stmt;               // for update statement
-  static SQLDESC_ID   desc_ivar;                 // input descriptor
-  const char         *stmt, *ivar_stmt;
-  Lng32                retcode;
-  
-  if (stmtNum != moduleNum)
-    {
-      if (stmtNum == 104) {
-        stmt      = "UPD104_MX_2300";
-        ivar_stmt = "UPD104_MX_2300_IVAR";
-      } else if (stmtNum == 106) {
-        stmt      = "UPD106_MX_2300";
-        ivar_stmt = "UPD106_MX_2300_IVAR";
-      } else return -1;
-      init_SQLMODULE_ID(&module);
-      strncpy(moduleName, HS_MODULE, HS_MODULE_LENGTH);
-  
-      module.module_name = (char *)moduleName;
-      module.module_name_len = strlen((char*)moduleName);
-      module.creation_timestamp = 1234567890;
-      moduleNum = stmtNum;
-
-      // descriptor for update
-      init_SQLCLI_OBJ_ID(&update_stmt);
-      update_stmt.name_mode = stmt_name;
-      update_stmt.module = &module;
-      update_stmt.handle = 0;
-      update_stmt.identifier = stmt;
-      update_stmt.identifier_len = strlen(stmt);
-
-      // descriptor for input variable
-      init_SQLCLI_OBJ_ID(&desc_ivar);
-      desc_ivar.name_mode = desc_name;
-      desc_ivar.module = &module;
-      desc_ivar.handle = 0;
-      desc_ivar.identifier = ivar_stmt;
-      desc_ivar.identifier_len = strlen(ivar_stmt);
-    }
-
-  char time_str[HS_TIMESTAMP_SIZE];
-  hs_formatTimestamp(time_str);                                 // current time
-
-  retcode = SQL_EXEC_ClearExecFetchClose(
-                           &update_stmt,                        // statement_id
-                           &desc_ivar,                          // input descriptor
-                           NULL,                                // output descriptor
-                           3,                                   // input ptr_pairs
-                           0,                                   // output ptr_pairs
-                           3,                                   // total ptr_pairs
-                           (void *) histogramTableName, NULL,
-                           (void *) time_str, NULL,
-                           (void *) &readCount, NULL);
-
-  HSFilterWarning(retcode);
-  if (retcode < 0)
-    HSFuncMergeDiags(-UERR_INTERNAL_ERROR, "Update Histogram's READ_TIME", NULL, TRUE);
-
-  if (LM->LogNeeded())
-  {
-    if (retcode)
-      {
-        sprintf(LM->msg, "updateHistogram: ***[FAIL=%d]Unable to update read count/time", retcode);
-      }
-    else
-      {
-        sprintf(LM->msg, "updateHistogram: READ_COUNT/TIME updated; %d, %s", readCount, time_str);
-      }
-    LM->Log(LM->msg);
-  }
-  return (retcode);
-}
-
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
 Lng32 updateHistogram(const char *histogramTableName, Int32 stmtNum, short readCount)
 {
   HSLogMan* LM = HSLogMan::Instance();
@@ -2029,8 +1830,6 @@ Lng32 updateHistogram(const char *histogramTableName, Int32 stmtNum, short readC
 
   return (retcode);
 }
-
-#endif // NA_USTAT_USE_STATIC not defined
 
 // -----------------------------------------------------------------------
 // Constructor and destructor for the second cursor.
@@ -2101,36 +1900,6 @@ HSHistintsCursor::~HSHistintsCursor()
   delete cursor201_;
 }
 
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-
-Lng32 HSHistintsCursor::open()
-{
-  if (!validCursor_)
-    return -1;
-
-  NAString stmt;
-  if (fileType_ == SQLMP)
-    stmt = "CURSOR201_MP"; 
-  else
-    // histogram versioning
-    if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
-      stmt = "CURSOR201_MX_2300";
-    else 
-      stmt = "CURSOR201_MX";
-
-  Lng32 retcode = OpenCursor( stmt
-                            , (void *)histintsTableName_
-                            , (void *)&tableUID_
-                            , desc_
-                            );
-  if (retcode)
-    return retcode;
-  get(0, 0);  // skip first row
-  return 0;
-}
-
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
-
 Lng32 HSHistintsCursor::open()
 {
   char sbuf[25];
@@ -2154,8 +1923,6 @@ Lng32 HSHistintsCursor::open()
   HSHandleError(retcode);
   return retcode;
 }
-
-#endif // NA_USTAT_USE_STATIC not defined
 
 // -----------------------------------------------------------------------
 // Fetch interval rows and set the ColStats object.
@@ -2252,13 +2019,8 @@ Lng32 HSHistintsCursor::get( const ULng32 histid
       intNum_++;
       SQL_EXEC_ClearDiagnostics(desc_);
 
-      // histogram versioning
-      if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-        retcode_ =  SQL_EXEC_Fetch(desc_, NULL, 9,
-#else // NA_USTAT_USE_STATIC not defined, use dynamic query
-        retcode_ = SQL_EXEC_Fetch(cursor201_->getStmt(), cursor201_->getOutDesc(), 9,
-#endif // NA_USTAT_USE_STATIC not defined
+      retcode_ = SQL_EXEC_Fetch(cursor201_->getStmt(), 
+                                 cursor201_->getOutDesc(), 9,
                                  (void *)&histid_, NULL,
                                  (void *)&short1_, NULL,
                                  (void *)&tempIntRowCount, NULL,
@@ -2273,13 +2035,7 @@ Lng32 HSHistintsCursor::get( const ULng32 histid
                                  (void *)buf_mfv_, NULL
                                  //(void *)buf_v6_, NULL
                                  );
-      else 
-        retcode_ =  SQL_EXEC_Fetch(desc_, NULL, 5,
-                                 (void *)&histid_, NULL,
-                                 (void *)&short1_, NULL,
-                                 (void *)&tempIntRowCount, NULL,
-                                 (void *)&tempIntUec, NULL,
-                                 (void *)buf_, NULL);
+
       if (retcode_ && retcode_ != HS_EOF)
         HSLogError(retcode_);
       if (retcode_)

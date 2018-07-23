@@ -430,6 +430,9 @@ Tables in Schema TRAFODION._HV_SCH_T009_
 T009T1
 T009T2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>invoke hive.sch_t009.t009t1;
 

@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Arrays;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
@@ -93,6 +95,8 @@ import java.util.TreeSet;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.permission.AclEntry;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
@@ -161,6 +165,7 @@ public class HBaseClient {
     public static final int HBASE_SPLIT_POLICY = 22;
     public static final int HBASE_CACHE_DATA_IN_L1 = 23;
     public static final int HBASE_PREFETCH_BLOCKS_ON_OPEN = 24;
+    public static final int HBASE_HDFS_STORAGE_POLICY= 25;
 
 
     private static Connection connection; 
@@ -230,10 +235,12 @@ public class HBaseClient {
    private class ChangeFlags {
        boolean tableDescriptorChanged;
        boolean columnDescriptorChanged;
+       boolean storagePolicyChanged;
 
        ChangeFlags() {
            tableDescriptorChanged = false;
            columnDescriptorChanged = false;
+           storagePolicyChanged = false;
        }
 
        void setTableDescriptorChanged() {
@@ -251,6 +258,19 @@ public class HBaseClient {
        boolean columnDescriptorChanged() {
            return columnDescriptorChanged;
        }
+
+       void setStoragePolicyChanged(String str) {
+           storagePolicy_ = str;
+           storagePolicyChanged = true;
+       }
+
+       boolean storagePolicyChanged()    {
+           return storagePolicyChanged;
+       }
+
+       String storagePolicy_;
+
+
    }
 
    private ChangeFlags setDescriptors(Object[] tableOptions,
@@ -470,6 +490,11 @@ public class HBaseClient {
 		  colDesc.setPrefetchBlocksOnOpen(false); 
 	      returnStatus.setColumnDescriptorChanged();
 	      break ;
+           case HBASE_HDFS_STORAGE_POLICY:
+               //TODO HBase 2.0 support this
+               //So when come to HBase 2.0, no need to do this via HDFS, just set here
+             returnStatus.setStoragePolicyChanged(tableOption);
+             break ;
            case HBASE_SPLIT_POLICY:
                // This method not yet available in earlier versions
                // desc.setRegionSplitPolicyClassName(tableOption));
@@ -491,6 +516,7 @@ public class HBaseClient {
        throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
+            ChangeFlags setDescRet = null;
             HTableDescriptor desc = new HTableDescriptor(tblName);
             addCoprocessor(desc);
             int defaultVersionsValue = 0;
@@ -511,7 +537,7 @@ public class HBaseClient {
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
 
                 // change the descriptors based on the tableOptions; 
-                setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+                setDescRet = setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
                 
                 desc.addFamily(colDesc);
             }
@@ -538,7 +564,21 @@ public class HBaseClient {
                      admin.createTable(desc);
                   }
                }
-            admin.close();
+
+            if(setDescRet!= null)
+            {
+              if(setDescRet.storagePolicyChanged())
+              {
+                 Object tableOptionsStoragePolicy[] = new Object[HBASE_HDFS_STORAGE_POLICY+1];
+                 for(int i=0; i<HBASE_HDFS_STORAGE_POLICY; i++)
+                   tableOptionsStoragePolicy[i]="";
+                 tableOptionsStoragePolicy[HBASE_HDFS_STORAGE_POLICY]=(String)setDescRet.storagePolicy_ ;
+                 tableOptionsStoragePolicy[HBASE_NAME]=(String)tblName;
+                 alter(tblName,tableOptionsStoragePolicy,transID);
+              }
+            }
+            else
+              admin.close();
         return true;
     }
 
@@ -579,7 +619,6 @@ public class HBaseClient {
         Admin admin = getConnection().getAdmin();
         HTableDescriptor htblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
-
         String colFam = (String)tableOptions[HBASE_NAME];
         if (colFam == null)
             return true; // must have col fam name
@@ -611,13 +650,18 @@ public class HBaseClient {
                 return true; // col fam already exists
         }
         else {
-            if (colDesc == null)
+            if (colDesc == null )
+            {
+               if( (String)tableOptions[HBASE_HDFS_STORAGE_POLICY] == null || (String)tableOptions[HBASE_HDFS_STORAGE_POLICY]=="" )
                 return true; // colDesc must exist
+            }
+            else {
 
-            int defaultVersionsValue = colDesc.getMaxVersions(); 
+              int defaultVersionsValue = colDesc.getMaxVersions(); 
 
-            status = 
+              status = 
                 setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+           }
         }
 
             if (transID != 0) {

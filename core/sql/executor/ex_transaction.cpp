@@ -433,7 +433,8 @@ short ExTransaction::suspendTransaction()
   short retcode = FEOK;
   if (transid_ != -1 && transtag_ != -1)
   {
-     retcode = RESUMETRANSACTION(0);
+    //     retcode = RESUMETRANSACTION(0);
+    retcode = SUSPENDTRANSACTION((short*)&transid_);
      if (retcode == FENOTRANSID)
         retcode = FEOK;
   }

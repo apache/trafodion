@@ -2804,7 +2804,9 @@ public:
   ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
 
   ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
-					   ComDiagsArea** = 0);  
+					   ComDiagsArea** = 0);
+
+  Int64 getExtraTimeValue(rec_datetime_field eField, Lng32 eCode, char *dateTime);
   Long pack(void *);
 
   // ---------------------------------------------------------------------
@@ -4186,7 +4188,26 @@ private:
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
   char          fillers_[8];            // 08-15
+};
 
+class ex_function_split_part: public ex_function_clause {
+
+public:
+    ex_function_split_part(OperatorTypeEnum oper_type
+                                      , Attributes **attr
+                                      , Space *space);
+    ex_function_split_part();
+
+    ex_expr::exp_return_type eval(char *op_data[], CollHeap*, ComDiagsArea** = 0);
+    Long pack(void *);
+    virtual unsigned char getClassVersionID(){return 1;}
+    virtual void populateImageVersionIDArray()
+      {
+         setImageVersionID(2, getClassVersionID());
+         ex_function_clause::populateImageVersionIDArray();
+      }
+
+    virtual short getClassSize(){return (short)sizeof(*this);} 
 };
 
 

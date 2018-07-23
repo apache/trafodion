@@ -377,7 +377,7 @@ NAString LookupDefineName(const NAString &ns, NABoolean iterate)
 // an ANSI, PotentialANSI, or Tandem reserved word.
 NABoolean IsSqlReservedWord(const char *sqlText)
 {
-  return FALSE;
+  return ComResWords::isSqlReservedWord(sqlText,0);
 }
 
 NABoolean IsCIdentifier(const char *id)
@@ -1137,6 +1137,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"COS ",                // Tandem-extension
 	"COSH ",               // Tandem-extension
 	"COUNT ",              // ANSI
+	"CRC32 ",              // Trafodion extension
 	"CURDATE ",            // Tandem-extension
 	"CURRENT ",            // ANSI
 	"CURRENT_DATE ",       // ANSI
@@ -1175,6 +1176,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"LPAD ",               // Tandem-extension
 	"LTRIM ",              // Tandem-extension
 	"MAX ",                // ANSI
+	"MD5 ",                // Trafodion extension
 	"MIN ",                // ANSI
 	"MINUTE ",             // Datatype with scales/precisions/length
 	"MOD ",                // Tandem-extension
@@ -1201,6 +1203,9 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"RTRIM ",              // Tandem-extension
 	"SECOND ",             // Datatype with scales/precisions/length
 	"SESSION_USER ",       // ANSI
+	"SHA ",                // Trafodion extension
+	"SHA1 ",               // Trafodion extension
+	"SHA2 ",               // Trafodion extension
 	"SIGN ",               // Tandem-extension
 	"SIN ",                // Tandem-extension
 	"SINH ",               // Tandem-extension

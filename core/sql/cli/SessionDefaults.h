@@ -131,6 +131,7 @@ public:
     SCHEMA,
     STATISTICS_VIEW_TYPE,
     SUSPEND_LOGGING,
+    USE_LIBHDFS,
     USER_EXPERIENCE_LEVEL,
     WMS_PROCESS,
     LAST_SESSION_DEFAULT_ATTRIBUTE  // This enum entry should be last always. Add new enums before this entry
@@ -345,6 +346,14 @@ public:
                               espCloseErrorLogging_);
   }
 
+  void setUseLibHdfs(NABoolean useLibHdfs)
+  {
+    const Int16 DisAmbiguate = 0;
+    useLibHdfs_ = useLibHdfs;
+    updateDefaultsValueString(USE_LIBHDFS, DisAmbiguate,
+                              useLibHdfs_);
+  }
+
   void setEspFreeMemTimeout(Lng32 espFreeMemTimeout)
   {
     espFreeMemTimeout_ = espFreeMemTimeout;
@@ -542,6 +551,8 @@ public:
   NABoolean getCancelLogging()                    { return cancelLogging_; }
 
   NABoolean getSuspendLogging()                  { return suspendLogging_; }
+
+  NABoolean getUseLibHdfs()                  { return useLibHdfs_; }
 
   Lng32 readFromDefaultsTable(CliGlobals * cliGlobals);
   Lng32 setIsoMappingDefine();
@@ -790,6 +801,7 @@ private:
   NABoolean modeSeabase_;
   Lng32 jniDebugPort_;     // port to attache JNI debugger, <=0 to disable
   Lng32 jniDebugTimeout_;  // timeout (msec) to wait for debugger to attach
+  NABoolean useLibHdfs_;
 };
 
 

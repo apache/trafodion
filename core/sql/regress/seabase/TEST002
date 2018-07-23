@@ -261,6 +261,7 @@ durability = 'async_wal',
 memstore_flush_size = '2000000',
 split_policy = 'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy',
 CACHE_DATA_IN_L1 = 'false',
+HDFS_STORAGE_POLICY = 'hot' ,
 prefetch_blocks_on_open = 'false'
 );
 

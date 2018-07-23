@@ -1139,7 +1139,11 @@ DDLExpr::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
             buffer += "object_name: unknown ";
           buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
           if (NOT hddl->getHiveDDL().isNull())
-            buffer += NAString("hive_ddl: ") + hddl->getHiveDDL() + " ";
+            {
+              if (NOT hddl->getHiveDefaultDB().isNull())
+                buffer += NAString("hive_default_db: ") + hddl->getHiveDefaultDB() + " ";
+              buffer += NAString("hive_ddl: ") + hddl->getHiveDDL() + " ";
+            }
           else
             buffer += "hive_ddl: unknown ";
         }
@@ -1153,6 +1157,29 @@ DDLExpr::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   return(explainTuple);
 }
 
+ExplainTuple *
+ExeUtilHiveTruncate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
+                                            ComTdb * tdb, 
+                                            Generator *generator)
+{
+  char buf[200];
+  NAString buffer;
+
+  ComTdbExeUtilHiveTruncate *ctdb = (ComTdbExeUtilHiveTruncate*)tdb;
+  if (ctdb->getTableName() != NULL)
+    buffer += NAString("table_name: ") + ctdb->getTableName() + " ";
+  else
+    buffer += "table_name: unknown ";
+  //  buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
+  if (NOT getHiveTruncQuery().isNull())
+    buffer += NAString("hive_trunc_query: ") + getHiveTruncQuery() + " ";
+  else
+    buffer += "hive_trunc_query: unknown ";
+
+  explainTuple->setDescription(buffer);
+  
+  return(explainTuple);
+}
 
 ExplainTuple*
 GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
@@ -2119,6 +2146,41 @@ ExplainTuple * ExeUtilWnrInsert::addSpecificExplainInfo(
   explainTuple->setDescription(buf);
 
   sprintf(buf, "target_table_name: %s ", myTdb->getTableName());
+  explainTuple->setDescription(buf);
+
+  return(explainTuple);
+}
+
+ExplainTuple * ExeUtilCreateTableAs::addSpecificExplainInfo( 
+     ExplainTupleMaster *explainTuple, 
+     ComTdb *tdb, 
+     Generator *generator)
+{
+
+  Lng32 maxBufLen = 2000;
+  maxBufLen = MAXOF(maxBufLen, ctQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, siQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, viQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, usQuery_.length());
+
+  maxBufLen = MINOF(maxBufLen, 4000);
+  maxBufLen++;
+
+  char buf[maxBufLen];
+  snprintf(buf, maxBufLen, "CreateQuery: %s ", 
+           (ctQuery_.length() > 0 ? ctQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "InsertQuery: %s ", 
+           (viQuery_.length() > 0 ? viQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+          
+  snprintf(buf, maxBufLen, "UpsertLoadQuery: %s ", 
+           (siQuery_.length() > 0 ? siQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "UpdStatsQuery: %s ", 
+           (usQuery_.length() > 0 ? usQuery_.data() : "NULL"));
   explainTuple->setDescription(buf);
 
   return(explainTuple);

@@ -224,6 +224,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_POSITION_DOUBLEBYTE:
 	  setClassID(FUNC_POSITION_DOUBLEBYTE_ID);
 	  break;
+	case ITM_SPLIT_PART:
+	  setClassID(FUNC_SPLIT_PART_ID);
+	  break;
 	case ITM_CONCAT:
 	  setClassID(FUNC_CONCAT_ID);
 	  break;
@@ -723,6 +726,9 @@ char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_POSITION_DOUBLEBYTE_ID:
       GetVTblPtr(vtblPtr, ex_function_position_doublebyte);
+      break;
+    case ex_clause::FUNC_SPLIT_PART_ID:
+      GetVTblPtr(vtblPtr, ex_function_split_part);
       break;
     case ex_clause::FUNC_CONCAT_ID:
       GetVTblPtr(vtblPtr, ex_function_concat);

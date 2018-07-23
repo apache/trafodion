@@ -1817,8 +1817,6 @@ enum DefaultConstants
   GEN_UDRRS_SIZE_DOWN  ,
   GEN_UDRRS_SIZE_UP    ,
 
-  FAST_DELETE,
-
   ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS,
 
   EXE_MEMORY_AVAILABLE_IN_MB, // Mem size (MB) in ESP available for BMOs
@@ -2921,6 +2919,7 @@ enum DefaultConstants
 
   HBASE_DATA_BLOCK_ENCODING_OPTION,
   HBASE_COMPRESSION_OPTION,
+  HBASE_MEMSTORE_FLUSH_SIZE_OPTION,
   HQC_LOG,
   HQC_LOG_FILE, // specify the HQC log file name
   HYBRID_QUERY_CACHE,
@@ -3319,8 +3318,8 @@ enum DefaultConstants
 
   BMO_MEMORY_ESTIMATE_OUTLIER_FACTOR,
 
-  // Use the earlier implementation of HdfsScan via libhdfs
-  USE_LIBHDFS_SCAN,
+  // Use the earlier implementation of Hdfs access including LOB via libhdfs
+  USE_LIBHDFS,
 
   // if set, make primary key columns non-nullable. ANSI specification.
   // Default is ON.
@@ -3340,14 +3339,19 @@ enum DefaultConstants
 
   // if set, ddl from Traf interface on Hive objects is supported.
   TRAF_DDL_ON_HIVE_OBJECTS,
-  
-  // This enum constant must be the LAST one in the list; it's a count,
-  // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
+
+  // If set to TRUE, CTAS on Hive object(Create and Insert...select) is processed in Hive.
+  // If set to FALSE, Create is done in Hive, and Insert...select is done in Traf.
+  // Default is OFF.
+  HIVE_CTAS_IN_NATIVE_MODE,
+
   // Size of byte[] in java when direct byteBuffer can't be used
   // Used to read compressed hdfs text files and to write
   // both compressed and uncompressed hdfs files
   HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB,
 
+  // This enum constant must be the LAST one in the list; it's a count,
+  // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
 };
 

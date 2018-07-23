@@ -7767,6 +7767,9 @@ const NAString BuiltinFunction::getText() const
     case ITM_TO_TIMESTAMP:
       return "to_timestamp";
 
+    case ITM_SPLIT_PART:
+      return "split_part";
+
     default:
       return "unknown func";
     } // switch
@@ -15234,5 +15237,18 @@ NABoolean ItmLeadOlapFunction::hasEquivalentProperties(ItemExpr * other)
 ItemExpr *ItmLeadOlapFunction::transformOlapFunction(CollHeap *heap)
 {
    return this;
+}
+
+SplitPart::~SplitPart() {}
+
+ItemExpr * SplitPart::copyTopNode(ItemExpr *derivedNode, CollHeap *outHeap)
+{
+      ItemExpr *result = NULL;
+      if (derivedNode == NULL)
+        result = new (outHeap) SplitPart(child(0), child(1), child(2));
+      else
+        result = derivedNode;
+
+     return BuiltinFunction::copyTopNode(result, outHeap);
 }
 

@@ -1501,7 +1501,7 @@ void Descriptor::DescItemDefaultsForDatetimeCode(
         case SQLINTCODE_HOUR_SECOND:
         case SQLINTCODE_DAY_SECOND:
           // 17.5 - GR 5-j-i
-          descItem.precision          = 6;
+          descItem.precision          = 9;
           break;
 
         default:
@@ -1519,7 +1519,7 @@ void Descriptor::DescItemDefaultsForDatetimeCode(
         case SQLDTCODE_TIMESTAMP:
         // none with Timezone yet
           // 17.5 - GR 5-i-i
-          descItem.precision          = 6;
+          descItem.precision          = 9;
           break;
 
         case SQLDTCODE_TIME:

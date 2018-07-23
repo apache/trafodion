@@ -696,7 +696,10 @@ enum SQLTRANS_COMMAND {
   SQLTRANS_BEGIN_WITH_DP2_XNS   = 9,
 
   /* inherit the global transaction and make it the current xn */
-  SQLTRANS_INHERIT          = 10
+  SQLTRANS_INHERIT          = 10,
+
+  SQLTRANS_SUSPEND          = 11,
+  SQLTRANS_RESUME           = 12,
 };
 
 /* specifies the type/format of an AUTHID */
@@ -1157,6 +1160,7 @@ enum SQLSTATS_ITEM_ID {
   SQLSTATS_RMS_STATS_RESET_TIMESTAMP = 130,
   SQLSTATS_RMS_STATS_NUM_SQL_SIK = 131,
   SQLSTATS_PROCESS_STATS_HEAPS = 132,
+  SQLSTATS_RMS_CONFIGURED_PID_MAX = 133,
 /* SQLSTATS_ITEM_ID for BMO_STATS */
   SQLSTATS_BMO_HEAP_USED = 150,
   SQLSTATS_BMO_HEAP_ALLOC = 151,

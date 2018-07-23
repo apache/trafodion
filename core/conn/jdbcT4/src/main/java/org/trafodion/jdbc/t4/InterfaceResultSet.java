@@ -448,9 +448,6 @@ class InterfaceResultSet {
 					if (desc.sqlPrecision_ > 0) {
 						nanoSeconds = Bytes.extractUInt(values, noNullValue + 7, swap);
 
-						if (nanoSeconds > 999999) // returned in microseconds
-							nanoSeconds = 0;
-
 						// apply leading 0's for string conversion
 						tmpStr = "" + nanoSeconds;
 						length = tmpStr.length();
@@ -488,9 +485,6 @@ class InterfaceResultSet {
 
 						if (desc.sqlPrecision_ > 0) {
 							nanoSeconds = Bytes.extractUInt(values, noNullValue + 3, swap);
-
-							if (nanoSeconds > 999999) // returned in microseconds
-								nanoSeconds = 0;
 
 							String formatStr = "";
 							for(int i=0;i<desc.sqlPrecision_;i++)

@@ -519,6 +519,7 @@ enum OperatorTypeEnum {
                         ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
+                        ITM_SPLIT_PART = 2249,
                         ITM_TRUNC = 2250,
                         ITM_ASCII = 2251,
                         ITM_POSITION = 2252,
@@ -1097,7 +1098,6 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH,
                         ELM_LIKE_OPT_WITHOUT_ROW_FORMAT_ELEM,
                         ELM_LIKE_OPT_WITHOUT_LOB_COLUMNS,
-                        ELM_LIKE_OPT_WITH_HIVE_OPTIONS,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

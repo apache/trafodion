@@ -2081,6 +2081,16 @@ Lng32 ExeCliInterface::statusXn()
   return SQL_EXEC_Xact(SQLTRANS_STATUS, NULL);
 }
 
+Lng32 ExeCliInterface::suspendXn()
+{
+  return SQL_EXEC_Xact(SQLTRANS_SUSPEND, 0);
+}
+
+Lng32 ExeCliInterface::resumeXn()
+{
+  return SQL_EXEC_Xact(SQLTRANS_RESUME, 0);
+}
+
 Lng32 ExeCliInterface::createContext(char * contextHandle)
 {
   Lng32 rc = 0;

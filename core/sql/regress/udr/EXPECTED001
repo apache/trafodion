@@ -231,6 +231,9 @@ SCH.Fibonacci
 SCH.SESSIONIZE_DYNAMIC
 SCH.SESSIONIZE_DYNAMIC_SHARED
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>
 >>showddl table_mapping function sessionize_dynamic;
@@ -257,6 +260,9 @@ Table_mapping Functions for Library SCH.TEST001_JAVA
 
 SCH.FIBONACCI_JAVA
 SCH.SESSIONIZE_JAVA
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>

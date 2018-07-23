@@ -65,8 +65,8 @@ public:
       DROP_,
       ALTER_,
       TRUNCATE_,
+      MSCK_,  // MetaStore Check
       PASSTHRU_DDL_,
-      CREATE_LIKE_TRAF_,
       UNKNOWN_OPER_
     };
   
@@ -80,17 +80,19 @@ public:
       
   // initialize constructor
   StmtDDLonHiveObjects(Operation oper,
-                     ObjectType type,
-                     NABoolean ifExistsOrNotExists,
-                     const NAString &name,
-                     NAString &hiveDDL,
-                     CollHeap * heap)
+                       ObjectType type,
+                       NABoolean ifExistsOrNotExists,
+                       const NAString &name,
+                       NAString &hiveDDL,
+                       NAString &hiveDefaultDB,
+                       CollHeap * heap)
        : StmtDDLNode(DDL_ON_HIVE_OBJECTS),
          oper_(oper),
          type_(type),
          ifExistsOrNotExists_(ifExistsOrNotExists),
          name_(name),
          hiveDDL_(hiveDDL),
+         hiveDefaultDB_(hiveDefaultDB),
          childNode_(NULL)
   {}
   
@@ -124,8 +126,8 @@ public:
       case DROP_         : return "drop";
       case ALTER_        : return "alter";
       case TRUNCATE_     : return "truncate";
+      case MSCK_         : return "msck";
       case PASSTHRU_DDL_ : return "passthru";
-      case CREATE_LIKE_TRAF_: return "create_like_traf";
       case UNKNOWN_OPER_ : return "unknown";
       default            : return "unknown";
       } // switch
@@ -151,6 +153,9 @@ public:
   NAString &getHiveDDL() {return hiveDDL_;}
   void setHiveDDL(NAString &hiveDDL) {hiveDDL_ = hiveDDL;}
 
+  const NAString &getHiveDefaultDB() const {return hiveDefaultDB_;}
+  NAString &getHiveDefaultDB() {return hiveDefaultDB_;}
+
   // ExprNode * bindNode(BindWA * pBindWA);
 
   //
@@ -173,6 +178,9 @@ private:
   
   NAString name_;
   NAString hiveDDL_;
+
+  // default hive database/schema set for the current session
+  NAString hiveDefaultDB_;
 
   //
   // please do not use the following methods

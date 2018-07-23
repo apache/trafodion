@@ -198,6 +198,9 @@ Tables in View SCH007.VHIVE1
 
 HIVE.HIVE.THIVE1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get tables in view trafodion.sch007.vhive11;
 
@@ -205,6 +208,9 @@ Tables in View SCH007.VHIVE11
 =============================
 
 HIVE.HIVE.THIVE2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -216,6 +222,9 @@ Tables in View SCH007.VHIVE3
 HIVE.HIVE.THIVE1
 HIVE.HIVE.THIVE2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get views in view trafodion.sch007.vhive3;
 
@@ -223,6 +232,9 @@ Views in View SCH007.VHIVE3
 ===========================
 
 TRAFODION.SCH007.VHIVE2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get views on table hive.hive.thive1;
@@ -232,6 +244,9 @@ Views on Table HIVE.THIVE1
 
 TRAFODION.SCH007.VHIVE1
 TRAFODION.SCH007.VHIVE2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>get all views on table hive.hive.thive2;
@@ -243,6 +258,9 @@ TRAFODION.SCH007.VHIVE11
 TRAFODION.SCH007.VHIVE2
 TRAFODION.SCH007.VHIVE3
 TRAFODION.SCH007.VHIVEHBASE
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -282,6 +300,9 @@ TRAFODION.SCH007.VHIVE11
 TRAFODION.SCH007.VHIVE2
 TRAFODION.SCH007.VHIVE3
 TRAFODION.SCH007.VHIVEHBASE
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -647,6 +668,9 @@ Views in View SCH007.VTRAFONHIVE
 
 HIVE.HIVESCH007.VHIVE11
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get views on view hive.hivesch007.vhive11;
 
@@ -654,6 +678,9 @@ Views ON View HIVESCH007.VHIVE11
 ================================
 
 TRAFODION.SCH007.VTRAFONHIVE
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -694,6 +721,9 @@ Views in View HIVESCH007.VHIVE11
 
 HIVE.HIVESCH007.VHIVE1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get views on table hive.hivesch007.thive1;
 
@@ -702,6 +732,9 @@ Views on Table HIVESCH007.THIVE1
 
 HIVE.HIVESCH007.VHIVE1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get views on view hive.hivesch007.vhive1;
 
@@ -709,6 +742,9 @@ Views ON View HIVESCH007.VHIVE1
 ===============================
 
 HIVE.HIVESCH007.VHIVE11
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -759,6 +795,9 @@ Tables in View HIVESCH0071.VH11
 
 HIVE.HIVESCH0071.H1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get views in view vh11;
 
@@ -766,6 +805,9 @@ Views in View HIVESCH0071.VH11
 ==============================
 
 HIVE.HIVESCH0071.VH1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get all objects in view vh11;
@@ -776,6 +818,9 @@ Objects in View HIVESCH0071.VH11
 HIVE.HIVESCH0071.H1
 HIVE.HIVESCH0071.VH1
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get hive registered tables in catalog trafodion, match '%hivesch0071%';
@@ -784,6 +829,9 @@ Hive Registered Tables in Catalog TRAFODION
 ===========================================
 
 hive.hivesch0071.h1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get hive registered views in catalog trafodion, match '%hivesch0071%';
@@ -794,6 +842,9 @@ Hive Registered Views in Catalog TRAFODION
 hive.hivesch0071.vh1
 hive.hivesch0071.vh11
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get hive registered objects in catalog trafodion, match '%hivesch0071%';
 
@@ -803,6 +854,9 @@ Hive Registered Objects in Catalog TRAFODION
 hive.hivesch0071.h1
 hive.hivesch0071.vh1
 hive.hivesch0071.vh11
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -883,6 +937,9 @@ Hive Registered Schemas in Catalog TRAFODION
 ============================================
 
 hive.hivesch0078
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>unregister hive schema hive.hivesch0078;
@@ -1016,6 +1073,9 @@ Privileges for User SQL_USER3
 =============================
 
 S------    HIVE.HIVESCH007.THIVE9
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>insert into hive.hivesch007.thive9 values (1), (2), (3), (4), (5), (6);

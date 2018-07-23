@@ -5328,13 +5328,16 @@ Lng32 HSGlobalsClass::validateIUSWhereClause()
 {
   Lng32 retcode = 0;
 
+  // use QualifiedName constructor to correctly handle delimited names.
+  QualifiedName qualTableName(user_table->data(), 1);
+  NAString tableNameStr = qualTableName.getUnqualifiedObjectNameAsAnsiString();
+  NAString query = "select count(*) from ";
+  query.append(tableNameStr);
+  query.append(" where ").append(getWherePredicateForIUS());
+
   // set PARSING_IUS_WHERE_CLAUSE bit in Sql_ParserFlags; return it to
   // its entry value on exit
   PushAndSetSqlParserFlags savedParserFlags(PARSING_IUS_WHERE_CLAUSE);
-
-  NAString query = "select count(*) from ";
-  query.append(getTableName(strrchr(user_table->data(), '.')+1, nameSpace));
-  query.append(" where ").append(getWherePredicateForIUS());
 
   Parser parser(CmpCommon::context());
   Lng32 diagsMark = diagsArea.mark();

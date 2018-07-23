@@ -562,20 +562,13 @@ ItemExpr *makeBetween(ItemExpr *x, ItemExpr *y, ItemExpr *z, Int32 tok);
 
 // Change the <sqltext> arg of a CQD from
 //	SET SCHEMA X.Y;		-- unquoted: Tandem syntax extension
-//	SET MPLOC $V.SV;	-- MPLOC:    Tandem syntax extension
-//	SET MPLOC '$V.SV';	-- MPLOC:    Tandem syntax extension
 // into
 //	SET SCHEMA 'X.Y';	-- string literal: Ansi syntax, MX canonical fmt
-//	SET MP_SUBVOLUME '$V.SV';  -- string lit:  Tdm ext, MX canonical format
-//	SET MP_SUBVOLUME '$V.SV';  -- string lit:  Tdm ext, MX canonical format
 //
 // This needs to be called ONLY for:
 // - SET cqd's (not DECLARE cqd's), and
 //   - the SET cqd's unquoted (non-string-literal) variants, or
 //   - or if we are otherwise rewriting the user input text
-//     (e.g. the syntactic sugar of "SET MPLOC" --
-//	there is no NADefaults attribute of MPLOC --
-//	NADefaults parses a multi-part MP_SUBVOLUME instead).
 //
 ControlQueryDefault *normalizeDynamicCQD(const char *attrName,
                                          const NAString &attrValue);
@@ -772,14 +765,6 @@ public:
       TYPE_VOLATILE_SET_TABLE,
       TYPE_VOLATILE_MULTISET_TABLE,
       TYPE_GHOST_TABLE,
-
-      // create external hive table.
-      // usage: create external hive table hive.hive.tgt like trafodion.sch.src;
-      TYPE_EXTERNAL_HIVE_TABLE,
-
-      // create managed hive table.
-      // usage: create hive table hive.hive.tgt like trafodion.sch.src;
-      TYPE_MANAGED_HIVE_TABLE
     };
 
   // load/in memory options

@@ -745,12 +745,16 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
     // in the case of a string, next has been advanced to the closing quote while
     // item still points to the beginning of the string. Scanning for a comma
     // starting at item may find a comma that is part of the string.
+    // Note: In the case of INTERVAL literals, we might have a nasty SECOND(m,n)
+    // qualifier at the end. We don't want to mistake a possible comma within such
+    // a qualifier for our delimiter, so we have to use na_wcschrSkipOverParenText
+    // instead of na_wcschr to search for the comma.
     if ( i == entries-1 OR entries==0 ) // sometimes columns is an empty list
       next = na_wcsrchr(next, L')') ;
     else  // it's an MCH
       {
     	NAWchar* nextSave = next;
-        next = na_wcschr(next, L',');
+        next = na_wcschrSkipOverParenText(next, L',');
         if ( next == NULL )
           {
             // Number of components of boundary value is less than the number of

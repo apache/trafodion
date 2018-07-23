@@ -140,6 +140,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>
 >>obey TEST144(set_up);
@@ -195,6 +198,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 
 ------E    SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_random;
 
@@ -203,6 +209,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 
 ------E    SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_time;
 
@@ -210,6 +219,9 @@ Privileges on Routine T144USER1.GEN_TIME
 ========================================
 
 ------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help;
@@ -220,6 +232,9 @@ Privileges on Routine _LIBMGR_.HELP
 ------E    DB__LIBMGRROLE
 ------E    DB__ROOT
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on table_mapping function "_LIBMGR_".event_log_reader;
 
@@ -228,6 +243,9 @@ Privileges on Routine _LIBMGR_.EVENT_LOG_READER
 
 ------E    DB__ROOT
 ------E    PUBLIC
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -240,6 +258,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 
 ------E    SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help for sql_user1;
 
@@ -250,6 +271,9 @@ Privileges on Routine _LIBMGR_.EVENT_LOG_READER
 ===============================================
 
 ------E    PUBLIC
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>sh sqlci -i "TEST144(cmds)" -u sql_user1;
@@ -272,6 +296,9 @@ Privileges on Routine T144USER1.GEN_TIME
 
 ------E    SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
@@ -280,6 +307,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 ==========================================
 
 ------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>select customer_id, 
@@ -579,6 +609,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 
 ------E    SQL_USER2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_random for sql_user2;
 
@@ -587,6 +620,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 
 ------E    SQL_USER2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_time for user sql_user2;
 
@@ -594,6 +630,9 @@ Privileges on Routine T144USER1.GEN_TIME
 ========================================
 
 ------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help for user sql_user2;
@@ -646,6 +685,9 @@ Privileges on Routine T144USER1.GEN_TIME
 ========================================
 
 ------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>-- should return no rows for users other than sql_user1
@@ -816,6 +858,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 =========================================
 
 ------E    SQL_USER3
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on function gen_random for user sql_user3;

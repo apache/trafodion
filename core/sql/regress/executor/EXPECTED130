@@ -652,12 +652,12 @@ And the dish ran away with the fork !
 >>
 >>insert into tlob130txt_limit50 values(1,filetolob('lob_input_e1.txt'));
 
-*** ERROR[8442] Unable to access ExpLOBInterfaceInsert interface. Call to ExpLOBInterfaceInsert returned error LOB_MAX_LIMIT_ERROR(560). Error detail 0.
+*** ERROR[8442] Unable to access ExpLOBInterfaceInsert interface. Call to ExpLOBInterfaceInsert returned error LOB_MAX_LIMIT_ERROR(560). Error detail: 0. Cause: .
 
 --- 0 row(s) inserted.
 >>insert into tlob130bin_limit1K values(1,filetolob('anoush.jpg'));
 
-*** ERROR[8442] Unable to access ExpLOBInterfaceInsert interface. Call to ExpLOBInterfaceInsert returned error LOB_MAX_LIMIT_ERROR(560). Error detail 0.
+*** ERROR[8442] Unable to access ExpLOBInterfaceInsert interface. Call to ExpLOBInterfaceInsert returned error LOB_MAX_LIMIT_ERROR(560). Error detail: 0. Cause: .
 
 --- 0 row(s) inserted.
 >>--test extract 
@@ -1594,6 +1594,10 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 TLOB130TS2
+
+=======================
+Summary info of get:
+Get 7 rows.
 
 --- SQL operation complete.
 >>drop schema trafodion.lobsch cascade;

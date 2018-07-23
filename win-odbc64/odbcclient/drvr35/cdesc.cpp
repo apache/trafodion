@@ -503,6 +503,13 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		m_DescLength = 6 + m_DescDatetimeIntervalPrecision;
 		m_DescPrecision = 0;
 		break;
+    case TYPE_BLOB:
+    case TYPE_CLOB:
+        strcpy((char*)m_DescLiteralPrefix, "'");
+        strcpy((char*)m_DescLiteralSuffix, "'");
+        m_DescLength = SQLItemDesc->maxLen;
+        m_DescPrecision = m_DescLength;
+        break;
 	default:
 		return IDS_HY_021;
 	}
@@ -598,6 +605,10 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 //		m_SQLOctetLength = SQLItemDesc->maxLen+3;
 //		m_DescSearchable = SQL_PRED_SEARCHABLE;
 //		break;
+    case SQLTYPECODE_BLOB:
+    case SQLTYPECODE_CLOB:
+        m_SQLOctetLength = SQLItemDesc->maxLen + 4;
+        break;
 	default:
 		m_SQLOctetLength = SQLItemDesc->maxLen;
 		m_DescSearchable = SQL_PRED_BASIC;
@@ -645,6 +656,8 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 	case SQL_LONGVARCHAR:
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
+    case TYPE_BLOB:
+    case TYPE_CLOB:
 		m_DescDatetimeIntervalPrecision = m_DescLength;
 		break;
 	case SQL_INTERVAL_SECOND:
@@ -2819,7 +2832,9 @@ SQLRETURN CDesc::CopyData(CHandle	*pHandle,
 				{
 					descRecPtr->m_SQLCharset=IRDDescRecPtr->m_SQLCharset;
 					descRecPtr->setTranslateOption(descRecPtr->m_DescConciseType);
-					retCode = ConvertSQLToC(m_ODBCAppVersion,
+                    retCode = ConvertSQLToC(m_ConnectHandle,
+                                            m_InputHandle,
+                                            m_ODBCAppVersion,
 											DataLang,
 											SQLDataType,
 											IRDDescRecPtr->m_ODBCDataType,
@@ -3210,7 +3225,8 @@ SQLRETURN CDesc::ExtendedCopyData(CHandle *pHandle,
 				{
 					descRecPtr->m_SQLCharset=IRDDescRecPtr->m_SQLCharset;
 					descRecPtr->setTranslateOption(descRecPtr->m_DescConciseType);
-					retCode = ConvertSQLToC(//pStatement->getODBCAppVersion(),
+                    retCode = ConvertSQLToC(m_ConnectHandle,
+                                            m_InputHandle,
 											m_ODBCAppVersion,
 											DataLang,
 											SQLDataType,
@@ -3342,7 +3358,9 @@ unsigned long CDesc::GetData(SQLValue_def *SQLValue,
 	else
 	{
 		descRecPtr->setTranslateOption(TargetType);
-		retCode = ConvertSQLToC(m_ODBCAppVersion,
+        retCode = ConvertSQLToC(m_ConnectHandle,
+                                m_InputHandle,
+                                m_ODBCAppVersion,
 								DataLang,
 								SQLValue->dataType,
 								descRecPtr->m_ODBCDataType,

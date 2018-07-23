@@ -149,6 +149,7 @@ ExExeUtilGetMetadataInfoTcb::ExExeUtilGetMetadataInfoTcb(
   patternStr_ = new(glob->getDefaultHeap()) char[1000];
 
   numOutputEntries_ = 0;
+  returnRowCount_ = 0;
 }
 
 ExExeUtilGetMetadataInfoTcb::~ExExeUtilGetMetadataInfoTcb()
@@ -1820,6 +1821,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
   Lng32 cliRC = 0;
   ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
 
+
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -1849,6 +1851,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    headingReturned_ = FALSE;
 
 	    numOutputEntries_ = 1;
+            returnRowCount_ = 0 ;
 
 	    objectUid_[0] = 0;
 	  }
@@ -3184,6 +3187,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
             }
 
 	    infoList_->advance();
+            incReturnRowCount();
 	  }
 	break;
 
@@ -3343,6 +3347,15 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 	case DONE_:
 	  {
+            if (NOT getMItdb().noHeader() && getReturnRowCount() > 0)
+            {
+              short rc = 0;
+              char returnMsg[256];
+              memset(returnMsg, 0, 256);
+              sprintf(returnMsg, "\n=======================\n %d row(s) returned", getReturnRowCount());
+              moveRowToUpQueue(returnMsg, strlen(returnMsg), &rc);
+            }
+
 	    retcode = handleDone();
 	    if (retcode == 1)
 	      return WORK_OK;
@@ -3408,6 +3421,7 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	case INITIAL_:
 	  {
 	    step_ = SETUP_QUERY_;
+            returnRowCount_ = 0 ;
 	  }
 	break;
 
@@ -3878,6 +3892,7 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	      moveRowToUpQueue(" ", 0, &rc);
 
 	    infoList_->advance();
+            incReturnRowCount();
 	  }
 	break;
 
@@ -3893,6 +3908,14 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 
 	case DONE_:
 	  {
+            if (NOT getMItdb().noHeader() && getReturnRowCount() > 0)
+            {
+              short rc = 0;
+              char returnMsg[256];
+              memset(returnMsg, 0, 256);
+              sprintf(returnMsg, "\n=======================\n %d row(s) returned", getReturnRowCount());
+              moveRowToUpQueue(returnMsg, strlen(returnMsg), &rc);
+            }
 	    retcode = handleDone();
 	    if (retcode == 1)
 	      return WORK_OK;
@@ -4728,6 +4751,7 @@ short ExExeUtilGetHiveMetadataInfoTcb::work()
             }
 
 	    infoList_->advance();
+            incReturnRowCount();
 	  }
 	  break;
 
@@ -7733,26 +7757,12 @@ else
     return rc;  
                 
   //EOD of LOB data file
-  
-  hdfsFS fs = currContext->getHdfsServerConnection((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
-  if (fs == NULL)
-    return LOB_DATA_FILE_OPEN_ERROR;
-
-  
   snprintf(lobDataFilePath, LOBINFO_MAX_FILE_LEN, "%s/%s", lobLocation, lobDataFile);
-  hdfsFile fdData = hdfsOpenFile(fs, lobDataFilePath,O_RDONLY,0,0,0);
-  if (!fdData) 
-    {
-      hdfsCloseFile(fs,fdData);
-      fdData = NULL;
-      return LOB_DATA_FILE_OPEN_ERROR;
-    }
-  hdfsFileInfo *fInfo = hdfsGetPathInfo(fs, lobDataFilePath);
-  if (fInfo)
-    lobEOD = fInfo->mSize;
-  else
-    lobEOD = 0;
-  
+  HDFS_Client_RetCode hdfsClientRetcode;
+  lobEOD = HdfsClient::hdfsSize(lobDataFilePath, hdfsClientRetcode);
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) 
+     return LOB_DATA_FILE_OPEN_ERROR;
+
   str_sprintf(buf, "  LOB EOD :  %ld", lobEOD);
   if (moveRowToUpQueue(buf, strlen(buf), &rc))
     return rc;
@@ -8034,24 +8044,12 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
       str_cpy_all(lobInfo_->lobDataFile,  lobDataFile,strlen(lobDataFile));
     }             
   //EOD of LOB data file
-  // hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
-  hdfsFS fs = currContext->getHdfsServerConnection((char*)getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
-  if (fs == NULL)
-    return LOB_DATA_FILE_OPEN_ERROR;
-
   snprintf(lobDataFilePath, LOBINFO_MAX_FILE_LEN, "%s/%s", lobLocation, lobDataFile);
-  hdfsFile fdData = hdfsOpenFile(fs, lobDataFilePath,O_RDONLY,0,0,0);
-  if (!fdData) 
-    {
-      hdfsCloseFile(fs,fdData);
-      fdData = NULL;
-      return LOB_DATA_FILE_OPEN_ERROR;
-    }
-  hdfsFileInfo *fInfo = hdfsGetPathInfo(fs, lobDataFilePath);
-  if (fInfo)
-    lobEOD = fInfo->mSize;
-  else
-    lobEOD = 0;
+  HDFS_Client_RetCode hdfsClientRetcode;
+  lobEOD = HdfsClient::hdfsSize(lobDataFilePath, hdfsClientRetcode);
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) 
+     return LOB_DATA_FILE_OPEN_ERROR;
+
   lobInfo_->lobDataFileSizeEod=lobEOD;
   // Sum of all the lobDescChunks for used space
 
