@@ -3186,38 +3186,13 @@ HSGlobalsClass::~HSGlobalsClass()
   DeleteHSContext(contID_);
 }
 
+
 // -----------------------------------------------------------------------
-//
+// Initialize stats schema for Hive or native HBase tables if needed
 // -----------------------------------------------------------------------
-Lng32 HSGlobalsClass::Initialize()
+Lng32 HSGlobalsClass::InitializeStatsSchema()
   {
     Lng32 retcode = 0;
-    NAString query;
-    HSCursor cursor;
-    Int64 xSampleSet = 0;
-    char intStr[30], intStr2[30];
-    Int64 inserts, deletes, updates;
-    HSLogMan *LM = HSLogMan::Instance();
-    HSGlobalsClass *hs_globals = GetHSContext();
-
-    // Seed the random number generator used in quicksort().
-    srand(time(NULL));
-    // Set the default catalog names for Hive and HBase.
-    if (defaultHiveCatName == NULL)
-       defaultHiveCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
-    else
-      (*defaultHiveCatName) = "";
-
-    CmpCommon::getDefault(HIVE_CATALOG, (*defaultHiveCatName), FALSE);
-    (*defaultHiveCatName).toUpper();
-
-    if (defaultHbaseCatName == NULL)
-       defaultHbaseCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
-    else
-      (*defaultHbaseCatName) = "";
-
-    CmpCommon::getDefault(HBASE_CATALOG, (*defaultHbaseCatName), FALSE);
-    (*defaultHbaseCatName).toUpper();
 
                                               /*==============================*/
                                               /*   CREATE HIVE STATS SCHEMA   */
@@ -3260,6 +3235,47 @@ Lng32 HSGlobalsClass::Initialize()
     retcode = CreateHistTables(this);
     HSHandleError(retcode);
 
+    return retcode;
+  }
+
+
+
+// -----------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------
+Lng32 HSGlobalsClass::Initialize()
+  {
+    Lng32 retcode = 0;
+    NAString query;
+    HSCursor cursor;
+    Int64 xSampleSet = 0;
+    char intStr[30], intStr2[30];
+    Int64 inserts, deletes, updates;
+    HSLogMan *LM = HSLogMan::Instance();
+    HSGlobalsClass *hs_globals = GetHSContext();
+
+    // Seed the random number generator used in quicksort().
+    srand(time(NULL));
+    // Set the default catalog names for Hive and HBase.
+    if (defaultHiveCatName == NULL)
+       defaultHiveCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
+    else
+      (*defaultHiveCatName) = "";
+
+    CmpCommon::getDefault(HIVE_CATALOG, (*defaultHiveCatName), FALSE);
+    (*defaultHiveCatName).toUpper();
+
+    if (defaultHbaseCatName == NULL)
+       defaultHbaseCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
+    else
+      (*defaultHbaseCatName) = "";
+
+    CmpCommon::getDefault(HBASE_CATALOG, (*defaultHbaseCatName), FALSE);
+    (*defaultHbaseCatName).toUpper();
+
+    // initialize stats schema if this is a Hive or native HBase table
+    retcode = InitializeStatsSchema();
+    HSHandleError(retcode);    
 
                                              /*==============================*/
                                              /*   CREATE UNDOCUMENTED VIEW   */
@@ -15973,6 +15989,10 @@ Lng32 managePersistentSamples()
   if (!hs_globals) retcode = -1;
   else
   {
+    // initialize stats schema if our object is a Hive or native HBase table
+    retcode = hs_globals->InitializeStatsSchema();
+    HSHandleError(retcode);
+
     NAString table;
     Int64 sampleRows, tableRows;
     NABoolean isEstimate = FALSE;
