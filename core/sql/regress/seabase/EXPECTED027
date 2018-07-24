@@ -1176,6 +1176,9 @@ Views on Table SCH027.T027T7
 
 TRAFODION.SCH027.T027V1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>invoke t027v1;
 
@@ -1248,6 +1251,9 @@ Views on Table SCH027.T027T7
 ============================
 
 TRAFODION.SCH027.T027V1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1434,6 +1440,9 @@ TRAFODION.SCH027.T027V113
 TRAFODION.SCH027.T027V12
 TRAFODION.SCH027.T027V122
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>alter table t027t7 alter column a varchar(20);
 
@@ -1448,6 +1457,9 @@ TRAFODION.SCH027.T027V11
 TRAFODION.SCH027.T027V113
 TRAFODION.SCH027.T027V12
 TRAFODION.SCH027.T027V122
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
