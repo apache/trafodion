@@ -5511,6 +5511,80 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     , inputParam[4], inputParam[5]
                     );
             break;
+        case SQL_API_SQLCOLUMNPRIVILEGES:
+            convertWildcard(metadataId, TRUE, catalogNm, expCatalogNm);
+            convertWildcardNoEsc(metadataId, TRUE, catalogNm, catalogNmNoEsc);
+            convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+            convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+            convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+            convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+            convertWildcard(metadataId, TRUE, columnNm, expColumnNm);
+            convertWildcardNoEsc(metadataId, TRUE, columnNm, columnNmNoEsc);
+            inputParam[0] = catalogNmNoEsc;
+            inputParam[1] = expCatalogNm;
+            inputParam[2] = schemaNmNoEsc;
+            inputParam[3] = expSchemaNm;
+            inputParam[4] = tableNmNoEsc;
+            inputParam[5] = expTableNm;
+            inputParam[6] = columnNmNoEsc;
+            inputParam[7] = expColumnNm;
+            snprintf(CatalogQuery, sizeof(CatalogQuery), "select cast(mob.CATALOG_NAME as varchar(128)) TABLE_CAT,"
+                    "cast(mob.SCHEMA_NAME as varchar(128)) TABLE_SCHEM,"
+                    "cast(mob.OBJECT_NAME as varchar(128)) TABLE_NAME,"
+                    "cast(mco.COLUMN_NAME as varchar(128)) COLUMN_NAME,"
+                    "cast(pmcp.GRANTOR_NAME as varchar(128)) GRANTOR,"
+                    "cast(pmcp.GRANTEE_NAME as varchar(128)) GRANTEE,"
+                    "cast(trim(case pmcp.PRIVILEGES_BITMAP "
+                    "when 1 then 'SELECT' "
+                    "when 2 then 'INSERT' "
+                    "when 3 then 'SELECT,INSERT' "
+                    "when 4 then 'DELETE' "
+                    "when 5 then 'SELECT,DELETE' "
+                    "when 6 then 'INSERT,DELETE' "
+                    "when 7 then 'SELECT,INSERT,DELETE' "
+                    "when 8 then 'UPDATE' "
+                    "when 9 then 'SELECT,UPDATE' "
+                    "when 10 then 'INSERT,UPDATE' "
+                    "when 11 then 'SELECT,INSERT,UPDATE' "
+                    "when 12 then 'DELETE,UPDATE' "
+                    "when 13 then 'SELECT,DELETE,UPDATE' "
+                    "when 14 then 'INSERT,DELETE,UPDATE' "
+                    "when 15 then 'SELECT,INSERT,DELETE,UPDATE' "
+                    "when 32 then 'REFERENCES' "
+                    "when 33 then 'SELECT,REFERENCES' "
+                    "when 34 then 'INSERT,REFERENCES' "
+                    "when 35 then 'SELECT,INSERT,REFERENCES' "
+                    "when 36 then 'DELETE,REFERENCES' "
+                    "when 37 then 'SELECT,DELETE,REFERENCES' "
+                    "when 38 then 'INSERT,DELETE,REFERENCES' "
+                    "when 39 then 'SELECT,INSERT,DELETE,REFERENCES' "
+                    "when 40 then 'UPDATE,REFERENCES' "
+                    "when 41 then 'SELECT,UPDATE,REFERENCES' "
+                    "when 42 then 'INSERT,UPDATE,REFERENCES' "
+                    "when 43 then 'SELECT,INSERT,UPDATE,REFERENCES' "
+                    "when 44 then 'DELETE,UPDATE,REFERENCES' "
+                    "when 45 then 'SELECT,DELETE,UPDATE,REFERENCES' "
+                    "when 46 then 'INSERT,DELETE,UPDATE,REFERENCES' "
+                    "when 47 then 'SELECT,INSERT,DELETE,UPDATE,REFERENCES' end) as varchar(128)) PRIVILEGE, "
+                    "cast (trim(case pmcp.GRANTABLE_BITMAP "
+                    "when 0 then 'NO' else 'YES' "
+                    "end) as varchar(128)) IS_GRANTABLE "
+                    "from TRAFODION.\"_MD_\".OBJECTS as mob, TRAFODION.\"_MD_\".COLUMNS as mco, TRAFODION.\"_PRIVMGR_MD_\".COLUMN_PRIVILEGES as pmcp "
+                    "where pmcp.OBJECT_UID = mob.OBJECT_UID "
+                    "and pmcp.OBJECT_UID = mco.OBJECT_UID "
+                    "and pmcp.COLUMN_NUMBER = mco.COLUMN_NUMBER "
+                    "and mco.COLUMN_NAME <> 'SYSKEY' "
+                    "and (mob.CATALOG_NAME = '%s' or trim(mob.CATALOG_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (mob.SCHEMA_NAME = '%s' or trim(mob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (mob.OBJECT_NAME = '%s' or trim(mob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (mco.COLUMN_NAME = '%s' or trim(mco.COLUMN_NAME) LIKE '%s' ESCAPE '\\') "
+                    "order by pmcp.COLUMN_NUMBER;",
+                inputParam[0], inputParam[1],
+                inputParam[2], inputParam[3],
+                inputParam[4], inputParam[5],
+                inputParam[6], inputParam[7]);
+
+            break;
                default :
                        exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
                        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNSUPPORTED_SMD_API_TYPE;
