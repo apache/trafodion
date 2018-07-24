@@ -249,8 +249,6 @@ typedef enum {
    Lob_Drop,
    Lob_Check_Status,
 
-   Lob_Stats,
-
    Lob_Print, // debugging purposes
 
    Lob_Empty_Directory,

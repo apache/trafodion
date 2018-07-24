@@ -1920,11 +1920,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             case SQLSTATS_DESC_UDR_BASE_STATS:
               step_ = GET_UDR_BASE_STATS_ENTRY_;
               break;
-            case SQLSTATS_DESC_HBASE_ACCESS_STATS:
+            case SQLSTATS_DESC_SE_STATS:
               step_ = GET_HBASE_STATS_ENTRY_;
-              break;
-            case SQLSTATS_DESC_HDFSSCAN_STATS:
-              step_ = GET_HIVE_STATS_ENTRY_;
               break;
             default:
               step_ = GET_NEXT_STATS_DESC_ENTRY_;

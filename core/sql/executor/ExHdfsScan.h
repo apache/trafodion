@@ -50,7 +50,6 @@ class HdfsClient;
 // Classes referenced in this file
 // -----------------------------------------------------------------------
 class ex_tcb;
-class ExHdfsScanStats;
 class SequenceFileReader;
 class ExpORCinterface;
 

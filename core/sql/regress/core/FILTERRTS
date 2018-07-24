@@ -113,4 +113,5 @@ s/STORE\n[0-9 ,]*/STORE @pertableStats@/
 /pertableStats/{N
 s/pertableStats\n[0-9 ,]*/@pertableStats@/
 }
+s/pertableStats[0-9 ,()|a-z]*/@pertableStats@/
 " $fil

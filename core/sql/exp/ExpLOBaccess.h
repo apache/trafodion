@@ -49,6 +49,8 @@
 #include "Globals.h"
 #include <seabed/ms.h>
 #include <seabed/fs.h>
+#include "ex_stdh.h"
+#include "ExStats.h"
 #ifdef LOB_DEBUG_STANDALONE
 #define Int64 long long
 #define Lng32 long
@@ -56,16 +58,8 @@
 #endif
 
 #define SQ_USE_HDFS 1
-
-
-
 #include "hdfs.h"
-
-
-
-
 using namespace std;
-
 
 
 class ExLobGlobals;
@@ -149,6 +143,7 @@ class ExLobRequest
 
 Ex_Lob_Error ExLobsOper (
     char        *lobName,          // lob name
+    ExHdfsScanStats *hdfsAccessStats, // Statistics for Lob access
     char        *handleIn,         // input handle (for cli calls)
     Int32       handleInLen,       // input handle len
     char       *hdfsServer,       // server where hdfs fs resides
@@ -394,7 +389,7 @@ class ExLob : public NABasicObject
 {
   public:
     
-    ExLob(NAHeap * heap);  // default constructor
+    ExLob(NAHeap * heap, ExHdfsScanStats *hdfsAccessStats);  // default constructor
     virtual ~ExLob(); // default desctructor
 
     void setUseLibHdfs(NABoolean useLibHdfs)
@@ -490,7 +485,7 @@ class ExLob : public NABasicObject
 
   Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
 
-  ExLobStats *getStats() { return &stats_; }
+  ExHdfsScanStats *getStats() { return stats_; }
   NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
   Ex_Lob_Error getLength(char *handleIn, Int32 handleInLen,Int64 &outLobLen,LobsSubOper so, Int64 transId);
   Ex_Lob_Error getOffset(char *handleIn, Int32 handleInLen,Int64 &outOffset,LobsSubOper so, Int64 transId);
@@ -515,7 +510,7 @@ class ExLob : public NABasicObject
     hdfsFS fs_;
     hdfsFile fdData_;
     int openFlags_;
-    ExLobStats stats_;
+    ExHdfsScanStats *stats_;
     bool prefetchQueued_;
     NAHeap *lobGlobalHeap_;
     NABoolean lobTrace_;

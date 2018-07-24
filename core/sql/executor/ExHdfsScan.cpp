@@ -771,6 +771,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 openType = 2; // must open
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
+                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
                    NULL, //(char*)"",
                    (Lng32)Lob_External_HDFS_File,
@@ -830,6 +831,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 
                     retcode = ExpLOBInterfaceSelectCursor
                       (lobGlob_,
+                       (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                        hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
                        NULL, //(char*)"",
                        (Lng32)Lob_External_HDFS_File,
@@ -940,6 +942,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 Int32 hdfsErrorDetail = 0;///this is the errno returned from the underlying hdfs call.
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
+                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_,
                    NULL, 
                    (Lng32)Lob_External_HDFS_File,
@@ -1511,6 +1514,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      {
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
+                  (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_, 
                    NULL,
                    (Lng32)Lob_External_HDFS_File,
@@ -1640,29 +1644,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	case CLOSE_FILE:
 	case ERROR_CLOSE_FILE:
 	  {
-	    if (getStatsEntry())
-	      {
-		ExHdfsScanStats * stats =
-		  getStatsEntry()->castToExHdfsScanStats();
-		
-		if (stats)
-		  {
-		    ExLobStats s;
-		    s.init();
-
-		    retcode = ExpLOBinterfaceStats
-		      (lobGlob_,
-		       &s, 
-		       hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
-		       NULL, //(char*)"",
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_);
-
-		    *stats->lobStats() = *stats->lobStats() + s;
-		  }
-	      }
-
             // if next file is not same as current file, then close the current file. 
             bool closeFile = true;
 
@@ -1679,6 +1660,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             {
                 retcode = ExpLOBinterfaceCloseFile
                   (lobGlob_,
+                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_,
                    NULL, 
                    (Lng32)Lob_External_HDFS_File,

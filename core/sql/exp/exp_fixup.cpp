@@ -228,7 +228,7 @@ ex_expr::exp_return_type ex_expr::fixup(Lng32 /*base*/, unsigned short mode,
 	return retcode;
 
       clause->setExeGlobals(glob);
-
+      clause->setTcb(tcb); 
       clause = clause->getNextClause();
     }
 
