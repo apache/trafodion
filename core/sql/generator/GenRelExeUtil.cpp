@@ -5333,10 +5333,14 @@ short ExeUtilOrcFastAggr::codeGen(Generator * generator)
 
 const char * ExeUtilConnectby::getVirtualTableName()
 { 
-  Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
-  NAString  tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
-  NAString tableName = (scanNode->getTableName()).getQualifiedNameAsString();
-  return tbl.data();
+  //Scan * scanNode = (Scan *)scan_;
+//  Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
+//  NAString  tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
+//  NAString tableName = (scanNode->getTableName()).getQualifiedNameAsString();
+//  return tbl.data();
+  //NAString returnNm = "_CONNNEC_BY_"+myTableName_;
+  return myTableName_.data();
+
 }
 
 TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
@@ -5345,13 +5349,16 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
   NAString cat;
   NAString sch;
   NAString tbl;
-  Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
-  cat= (scanNode->getTableName()).getQualifiedNameObj().getCatalogName();
-  sch= (scanNode->getTableName()).getQualifiedNameObj().getSchemaName();
+  Scan * scanNode = (Scan *)scan_;
+  //Scan * scanNode = (Scan *)(child(0)->castToRelExpr());
+  cat= "TRAFODION"; //(scanNode->getTableName()).getQualifiedNameObj().getCatalogName();
+  sch= "SEABASE"; //(scanNode->getTableName()).getQualifiedNameObj().getSchemaName();
   tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
   NAString tableName = (scanNode->getTableName()).getQualifiedNameAsString();
   tblDesc_ = cmpSBD.getSeabaseTableDesc(cat,sch,tbl,COM_BASE_TABLE_OBJECT);
-
+  //rename
+  TrafTableDesc * td = tblDesc_->tableDesc();
+  td->tablename = (char*)getVirtualTableName();
   //add LEVEL column
   TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
   tblDesc_->tableDesc()->colcount++;
@@ -5361,7 +5368,7 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
   while(column_desc->next) { i++; column_desc = column_desc->next; }
   tmpOffset = column_desc->columnsDesc()->offset + 4;
   TrafDesc * col_desc = TrafMakeColumnDesc(
-           tableName.data(),
+           getVirtualTableName(),
            "LEVEL", //info->colName,
            i,
            REC_BIN32_UNSIGNED,
@@ -5381,7 +5388,7 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
 
   tmpOffset = column_desc->columnsDesc()->offset + 4;
   col_desc = TrafMakeColumnDesc(
-           tableName.data(),
+           getVirtualTableName(),
            "CONNECT_BY_ISCYCLE", //info->colName,
            i,
            REC_BIN32_UNSIGNED,
@@ -5401,7 +5408,7 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
 
   tmpOffset = column_desc->columnsDesc()->offset + 4;
   col_desc = TrafMakeColumnDesc(
-           tableName.data(),
+           getVirtualTableName(),
            "CONNECT_BY_ISLEAF", //info->colName,
            i,
            REC_BIN32_UNSIGNED,
@@ -5463,8 +5470,7 @@ short ExeUtilConnectby::codeGen(Generator * generator)
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);  
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
-  const Int32 fetchSourceAtpIndex = 2;
-  const Int32 outputAtpIndex = 3;
+  const Int32 outputAtpIndex = 2;
 
   Attributes ** attrs =
     new(generator->wHeap())
@@ -5496,7 +5502,7 @@ short ExeUtilConnectby::codeGen(Generator * generator)
 
   Int32 theAtpIndex = returnedDesc->noTuples()-1;
   expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, theAtpIndex);
+			       work_atp, outputAtpIndex);
 
   TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
   Lng32 colDescSize =  column_desc->columnsDesc()->length;
@@ -5504,11 +5510,35 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   char * stmtText = getStmtText();
   char *tblnm = (char*)getTableName().getQualifiedNameObj().getObjectName().data();
 
+  ex_expr * selectPred = NULL;
+#if 0
+  ExpTupleDesc * asciiTupleDesc = 0;
+  expGen->processValIdList(
+			   getVirtualTableDesc()->getColumnList(),                             // [IN] ValueIdList
+			   tupleFormat,                        // [IN] tuple data format
+			   tupleLength,                           // [OUT] tuple length 
+			   work_atp,                              // [IN] atp number
+			   outputAtpIndex,                        // [IN] index into atp
+			   &asciiTupleDesc,                       // [optional OUT] tuple desc
+			   ExpTupleDesc::LONG_FORMAT            // [optional IN] desc format
+			);
+#endif  
+
+  if (!selectionPred().isEmpty())
+    {
+      ItemExpr * selPredTree =
+        selectionPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(selPredTree->getValueId(),
+                            ex_expr::exp_SCAN_PRED,
+                            &selectPred);
+    }
+
   ComTdbExeUtilConnectby  * exe_util_tdb = new(space)  
   ComTdbExeUtilConnectby (stmtText , (stmtText ? strlen(stmtText) : 0), getStmtTextCharSet(), tblnm , NULL, 
 			0 , 0,
-			0,0, //This is the output expression, used in parent to apply on the output
-			workCriDesc , 1,
+			0 , 0,
+			selectPred, //This is the output expression, used in parent to apply on the output
+			workCriDesc , outputAtpIndex,
 			colDescSize,
 			tupleLength,
 			givenDesc,

@@ -13201,7 +13201,7 @@ table_expression : from_clause where_clause sample_clause
            {
 		     $$ = 
 		       getTableExpressionRelExpr($1, 
-		                                 $3, 
+		                                 NULL, 
 		                                 NULL, 
 		                                 NULL, 
 		                                 NULL, 
@@ -13210,10 +13210,10 @@ table_expression : from_clause where_clause sample_clause
 		                                 NULL,
 		                                 FALSE,
 		                                 SqlParser_CurrentParser->topHasOlapFunctions());
-                     SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
+                   SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
+                   ((BiConnectBy*)$2)->where_clause = $3;
                    ((Scan*)$$)->setBiConnectBy( (BiConnectBy*)$2);
                    ((Scan*)$$)->setHasConnectBy(TRUE);
-
            }
 /* type relx */
 from_clause : TOK_FROM global_hint table_reference { $$ = $3; }
@@ -13809,8 +13809,8 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 
                             ExeUtilConnectby *euc = new (PARSERHEAP()) 
                              ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()), (char*) stmt->data(), 
-                                        stmtCharSet, $2,PARSERHEAP());
- 
+                                        stmtCharSet, NULL, PARSERHEAP());
+
   			    RelRoot *temp = new (PARSERHEAP())
 			      RelRoot(euc, REL_ROOT , $1);
 
@@ -13824,8 +13824,12 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
                               euc->startWithExprString_ = ((Scan*)$2)->getBiConnectBy()->getStartWithString(); 
                             }
                             euc->noCycle_ = ((Scan*)$2)->getBiConnectBy()->getNoCycle();
+                            euc->scan_ = $2;
+                            euc->myTableName_ = "_CONN_"+((Scan*)$2)->getTableName().getQualifiedNameAsString();
                             euc->parentColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getParentColName();
                             euc->childColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getChildColName();
+                            
+                            euc->addSelPredTree( ((Scan*)$2)->getBiConnectBy()->where_clause );
 
                             $$ = temp;                              
                           }

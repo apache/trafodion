@@ -3176,6 +3176,7 @@ ComTdbExeUtilConnectby::ComTdbExeUtilConnectby(char * query,
 			      ULng32 input_rowlen,
 			      ex_expr * output_expr,
 			      ULng32 output_rowlen,
+			      ex_expr * scan_expr,
 			      ex_cri_desc * work_cri_desc,
 			      const unsigned short work_atp_index,
 			      Lng32 colDescSize,
@@ -3193,13 +3194,13 @@ ComTdbExeUtilConnectby::ComTdbExeUtilConnectby(char * query,
 		     tableName, strlen(tableName),
 		     input_expr, input_rowlen,
 		     output_expr, output_rowlen,
-		     NULL,
+		     scan_expr,
 		     work_cri_desc, work_atp_index,
 		     given_cri_desc, returned_cri_desc,
 		     down, up, 
 		     num_buffers, buffer_size),
        flags_(0),
-	workCriDesc_(workCriDesc),
+	myWorkCriDesc_(workCriDesc),
        tupleLen_(outputRowSize)    
 {
    setNodeType(ComTdb::ex_CONNECT_BY);
@@ -3208,12 +3209,12 @@ ComTdbExeUtilConnectby::ComTdbExeUtilConnectby(char * query,
 
 Long ComTdbExeUtilConnectby::pack(void * space)
 {
-  workCriDesc_.pack(space);
+  myWorkCriDesc_.pack(space);
   return ComTdbExeUtil::pack(space);
 }
 
 Lng32 ComTdbExeUtilConnectby::unpack(void * base, void * reallocator)
 {
-   if(workCriDesc_.unpack(base, reallocator)) return -1;
+   if(myWorkCriDesc_.unpack(base, reallocator)) return -1;
   return ComTdbExeUtil::unpack(base, reallocator);
 }

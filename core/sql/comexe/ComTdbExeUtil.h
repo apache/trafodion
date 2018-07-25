@@ -4120,6 +4120,7 @@ public:
 			      ULng32 input_rowlen,
 			      ex_expr * output_expr,
 			      ULng32 output_rowlen,
+			      ex_expr * scan_expr,
 			      ex_cri_desc * work_cri_desc,
 			      const unsigned short work_atp_index,
 			      Lng32 colDescSize,
@@ -4153,7 +4154,7 @@ public:
   NABoolean hasStartWith_;
   NABoolean noCycle_;
 private:
-  ExCriDescPtr workCriDesc_;  
+  ExCriDescPtr myWorkCriDesc_;  
   Int32 flags_;
   Int32 tupleLen_;    
 };

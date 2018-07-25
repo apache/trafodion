@@ -102,7 +102,11 @@ ExExeUtilConnectbyTcb::ExExeUtilConnectbyTcb(
   qparent_.down->allocatePstate(this);
   pool_->get_free_tuple(tuppData_, exe_util_tdb.tupleLen_);
   data_ = tuppData_.getDataPointer();
-  //pool_->get_free_tuple(workAtp_->getTupp(2), 0);
+//  workAtp_ = allocateAtp(exe_util_tdb.workCriDesc_, glob->getSpace());
+  
+//  pool_->get_free_tuple(workAtp_->getTupp(1), 0);
+//  pool_->get_free_tuple(workAtp_->getTupp(2), 0);
+
 }
 
 ex_tcb_private_state *  ExExeUtilConnectbyTcb::allocatePstates(
@@ -308,8 +312,26 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
   }
 #endif
 
+  //apply the expression
+#if 0
+  ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_OK;
+  UInt32 rowLen = exeUtilTdb().outputRowlen_; //TODO
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
 
-  retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
+  //setup ATP
+  workAtp_->getTupp(exeUtilTdb().workAtpIndex())
+    .setDataPointer(data_);
+  
+  evalRetCode = (exeUtilTdb().scanExpr_)->eval(pentry_down->getAtp(), workAtp_, NULL, 
+                                exeUtilTdb().tupleLen_, &rowLen);
+#endif
+#if 1 
+  ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_TRUE;
+  if(exeUtilTdb().scanExpr_ )
+    evalRetCode = evalScanExpr((char*)data_,  exeUtilTdb().tupleLen_, FALSE);
+#endif
+  if (evalRetCode == ex_expr::EXPR_TRUE)
+    retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
   return retcode;
 }
 

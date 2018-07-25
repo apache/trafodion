@@ -1152,6 +1152,7 @@ public:
   void setNoCycle(NABoolean v) { noCycle_ = v; }
   NABoolean getNoCycle() {return noCycle_; }
   NAString startWithString_;
+  ItemExpr * where_clause;
 
 private:
   BiRelat * startWith_;
