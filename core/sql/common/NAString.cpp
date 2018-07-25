@@ -1213,6 +1213,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"STDDEV ",             // Tandem-extension
 	"SUBSTRING ",          // ANSI
 	"SUM ",                // ANSI
+	"SYS_GUID ",           // Oracle-extension
 	"TAN ",                // Tandem-extension
 	"TANH ",               // Tandem-extension
 	"TIME ",               // Datatype with scales/precisions/length
