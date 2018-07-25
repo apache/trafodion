@@ -7069,7 +7069,7 @@ GROUP BY ROLLUP (delivery_year, region, product);
 image::grouping-by-three-rollup-columns.jpg[700,700]
 
 +
-** First-level: the rows marked in *blue* are the total revenue for each year (_2016_ and _2017_), each region (_A_ and _B_) and each product (_Dress_ and _Pullover_), they are caculated by GROUP BY instead of ROLLUP.
+** First-level: the rows marked in *blue* are the total revenue for each year (_2016_ and _2017_), each region (_A_ and _B_) and each product (_Dress_ and _Pullover_), they are calculated by GROUP BY instead of ROLLUP.
 
 +
 ** Second-level: the rows marked in *red* provide the total revenue for the given _delivery_year_ and _region_ by _product_.
@@ -9086,7 +9086,7 @@ a| * `_datetime-expression_`
 ** DATE 
 ** TIMESTAMP 
 | 'CC'
-| Two-digital century.
+| Two-digit century.
 
 a| * `_datetime-expression_` 
 ** DATE 
@@ -9113,7 +9113,7 @@ a| * `_datetime-expression_`
 | 'DY'
 a| Name of day, which is a three-letter abbreviation for the day in uppercase. +
 
-Following values are valid: +
+The following values are valid: +
 
 * MON +
 
@@ -9135,7 +9135,7 @@ a| * `_datetime-expression_`
 | 'DAY'
 a| Name of day, which is full uppercase day name padded with blanks to the length of 9 characters. +
 
-Following values are valid: +
+The following values are valid: +
 
 * MONDAY +
 
@@ -9175,7 +9175,7 @@ a| * `_datetime-expression_`
 ** DATE
 ** TIMESTAMP 
 | 'J'
-| Number of days since Julian date (January 1, 4713 BC).
+| Julian date (that is, number of days since January 1, 4713 BC).
 
 a| * `_datetime-expression_` 
 ** TIME
@@ -9196,7 +9196,7 @@ a| * `_datetime-expression_`
 | 'MON'
 a| Month, which is a three-letter abbreviation for the month in uppercase. +
 
-Following values are valid: +
+The following values are valid: +
 
 * JAN +
 
@@ -9279,7 +9279,7 @@ a| * `_datetime-expression_`
 |===
 
 +
-Besides the `_format-string_` listed above, following character string literals are also valid:
+Besides the `_format-string_` listed above, the following character string literals are also valid:
 
 ** 'YYYY-MM-DD'
 ** 'MM/DD/YYYY'
@@ -9581,7 +9581,7 @@ SQL>SELECT TO_CHAR (TIMESTAMP '2019-01-01 23:59:59','HH24') FROM DUAL;
 [[examples_of_to_char_j]]
 ==== Examples of TO_CHAR (J)
 
-* This example caculates the number of days since Julian date and converts the `_DATE_` value to the character value.
+* This example calculates the number of days since the beginning of the Julian epoch and converts the `_DATE_` value to the character value.
 +
 ```
 SQL>SELECT TO_CHAR (DATE '0001-01-01','J') FROM DUAL;
@@ -9593,7 +9593,7 @@ SQL>SELECT TO_CHAR (DATE '0001-01-01','J') FROM DUAL;
 --- 1 row(s) selected.
 ```
 
-* This example caculates the number of days since Julian date and converts the `_TIMESTAMP_` value to the character value.
+* This example calculates the number of days since the beginning of the Julian epoch and converts the `_TIMESTAMP_` value to the character value.
 +
 ```
 SQL>SELECT TO_CHAR (TIMESTAMP '2018-11-02 23:59:59','J') FROM DUAL;;
