@@ -34,6 +34,7 @@
 #include "ExHdfsScan.h"
 #include "Context.h"
 #include "HdfsClient_JNI.h"
+#include "ExStats.h"
 
 ExHbaseAccessInsertTcb::ExHbaseAccessInsertTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb, 
@@ -1012,8 +1013,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
               break;
 	    }
 	    if (getHbaseAccessStats()) {
-              getHbaseAccessStats()->lobStats()->numReadReqs++;
-              getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
+              getHbaseAccessStats()->incUsedRows((Int64)numRowsInVsbbBuffer_);
 	    }
             rowsInserted_ += numRowsInVsbbBuffer_; 
             if (asyncOperation_) {
@@ -1611,7 +1611,6 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
         if (getHbaseAccessStats())
         {
-          getHbaseAccessStats()->lobStats()->numReadReqs++;
           getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
         }
 
@@ -4247,7 +4246,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                break;
             }
             if (getHbaseAccessStats()) {
-	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
 	    }
 	    step_ = RS_CLOSE;
@@ -4271,10 +4269,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      }
               step_ = NEXT_ROW;
 
-	      if (getHbaseAccessStats())
-	      {
-	          getHbaseAccessStats()->lobStats()->numReadReqs++;
-	      }
            }
            else
                step_ = SETUP_SELECT;
@@ -4345,7 +4339,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                break;
             }
             if (getHbaseAccessStats()) {
-	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
 	    }
 	    step_ = RS_CLOSE;
@@ -4385,7 +4378,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
             if (step_ == HANDLE_ERROR)
                break;
             if (getHbaseAccessStats()) {
-	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
             }
             step_ = RS_CLOSE;

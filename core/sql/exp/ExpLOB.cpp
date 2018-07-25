@@ -833,6 +833,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
       
       rc = ExpLOBInterfaceInsertSelect
         (getExeGlobals()->getExLobGlobal(), 
+         (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
          getLobHdfsServer(), getLobHdfsPort(),
          tgtLobName, 
          so,
@@ -845,6 +846,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
 else
   rc = ExpLOBInterfaceInsert
     (getExeGlobals()->getExLobGlobal(), 
+     (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
      tgtLobName, 
      lobStorageLocation(),
      lobStorageType(),
@@ -992,6 +994,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 
   
       rc = ExpLOBInterfaceInsert(getExeGlobals()->getExLobGlobal(),
+                                 (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
 				 tgtLobName, 
 				 lobStorageLocation(),
 				 lobType,
@@ -1160,6 +1163,7 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
   rc = ExpLOBInterfaceDelete
     (
      getExeGlobals()->getExLobGlobal(),
+     (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
      getLobHdfsServer(),
      getLobHdfsPort(),
      lobName, 
@@ -1439,6 +1443,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     {
       rc = ExpLOBInterfaceUpdateAppend
 	(getExeGlobals()->getExLobGlobal(), 
+         (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
 	 getLobHdfsServer(),
 	 getLobHdfsPort(),
 	 tgtLobName, 
@@ -1462,6 +1467,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     {
       rc = ExpLOBInterfaceUpdate
 	(getExeGlobals()->getExLobGlobal(), 
+         (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
 	 getLobHdfsServer(),
 	 getLobHdfsPort(),
 	 tgtLobName, 
@@ -1636,6 +1642,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
       so = Lob_File;
       tgtFileName = tgtFileName_;
       rc = ExpLOBInterfaceSelect(getExeGlobals()->getExLobGlobal(), 
+                                 (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
 				 lobName, 
 				 lobStorageLocation(),
 				 lobType,
@@ -1661,6 +1668,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
       lobLen = getConvertSize(); 
       lobData = new(h) char[(Lng32)lobLen];
       rc = ExpLOBInterfaceSelect(getExeGlobals()->getExLobGlobal(), 
+                                 (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
 				 lobName, 
 				 lobStorageLocation(),
 				 lobType,

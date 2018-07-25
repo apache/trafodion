@@ -485,10 +485,6 @@ Ex_Lob_Error ExLobGlobals::initialize()
     return LOB_OPER_OK;
 }
 
-
-
-
-
 Ex_Lob_Error ExLobGlobals::getLobPtr(char *lobName, ExLob *& lobPtr)
 {
     Ex_Lob_Error err;
@@ -500,7 +496,7 @@ Ex_Lob_Error ExLobGlobals::getLobPtr(char *lobName, ExLob *& lobPtr)
 
     if (it == lobMap->end())
     {
-        lobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap());
+        lobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap(),NULL);
         if (lobPtr == NULL) 
           return LOB_ALLOC_ERROR;
 

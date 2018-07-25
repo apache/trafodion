@@ -327,6 +327,14 @@ public:
         return NULL;
     }
 
+  ExHdfsScanStats * getHdfsScanStats()
+    {
+      if (getStatsEntry())
+        return getStatsEntry()->castToExHdfsScanStats();
+      else
+        return NULL;
+    }
+
 
 
 protected:
@@ -359,6 +367,7 @@ protected:
   NABoolean          endOfData_;
   CollHeap           *heap_;
   ExFastExtractStats *feStats_;
+  ExHdfsScanStats    *hdfsStats_;
 
   time_t              tstart_;
 
