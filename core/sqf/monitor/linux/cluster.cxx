@@ -69,6 +69,7 @@ using namespace std;
 #include "nscommacceptmon.h"
 #else
 #include "nameserver.h"
+#include "ptpclient.h"
 #endif
 
 extern bool IAmIntegrating;
@@ -88,7 +89,9 @@ extern char MySyncPort[MPI_MAX_PORT_NAME];
 extern CCommAcceptMon CommAcceptMon;
 extern char MyMon2NsPort[MPI_MAX_PORT_NAME];
 #else
+extern CProcess *NameServerProcess;
 extern CNameServer *NameServer;
+extern CPtpClient *PtpClient;
 extern bool NameServerEnabled;
 extern char MyPtPPort[MPI_MAX_PORT_NAME];
 #endif
@@ -1069,12 +1072,11 @@ unsigned long long CCluster::EnsureAndGetSeqNum(cluster_state_def_t nodestate[])
 }
 
 
+#ifndef NAMESERVER_PROCESS
 void CCluster::HardNodeDown (int pnid, bool communicate_state)
 {
-#ifndef NAMESERVER_PROCESS
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
-#endif
     CNode  *node;
     CLNode *lnode;
     char    buf[MON_STRING_BUF_SIZE];
@@ -1130,7 +1132,6 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         return;
     }
 
-#ifndef NAMESERVER_PROCESS
     if ( !Emulate_Down )
     {
         if( !IsRealCluster )
@@ -1161,7 +1162,6 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         remove(temp_fname);
         rename(port_fname, temp_fname);
     }
-#endif
 
     if (node->GetState() != State_Down || !node->isInQuiesceState())
     {
@@ -1194,9 +1194,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
                 if ( ! Emulate_Down )
                 {
                     // make sure no processes are alive if in the middle of re-integration
-#ifndef NAMESERVER_PROCESS
                     node->KillAllDown();
-#endif
                     snprintf(buf, sizeof(buf),
                              "[CCluster::HardNodeDown], Node %s (%d)is down.\n",
                              node->GetName(), node->GetPNid());
@@ -1212,29 +1210,29 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         }
         else
         {
-            if ( node->GetPNid() == integratingPNid_ )
+            if (node->GetState() != State_Down)
             {
-                ResetIntegratingPNid();
-            }
-#ifndef NAMESERVER_PROCESS
-            node->KillAllDown();
-#endif
-            node->SetState( State_Down );
-            // Send node down message to local node's processes
-            lnode = node->GetFirstLNode();
-            for ( ; lnode; lnode = lnode->GetNextP() )
-            {
-                lnode->Down();
-            }
-            if ( ZClientEnabled )
-            {
-                ZClient->WatchNodeDelete( node->GetName() );
-                ZClient->WatchNodeMasterDelete( node->GetName() );
+                if ( node->GetPNid() == integratingPNid_ )
+                {
+                    ResetIntegratingPNid();
+                }
+                node->KillAllDown();
+                node->SetState( State_Down );
+                // Send node down message to local node's processes
+                lnode = node->GetFirstLNode();
+                for ( ; lnode; lnode = lnode->GetNextP() )
+                {
+                    lnode->Down();
+                }
+                if ( ZClientEnabled )
+                {
+                    ZClient->WatchNodeDelete( node->GetName() );
+                    ZClient->WatchNodeMasterDelete( node->GetName() );
+                }
             }
         }
     }
 
-#ifndef NAMESERVER_PROCESS
     // we need to abort any active TmSync
     if (( MyNode->GetTmSyncState() == SyncState_Start    ) ||
         ( MyNode->GetTmSyncState() == SyncState_Continue ) ||
@@ -1245,21 +1243,79 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
            trace_printf("%s@%d - Node %s (pnid=%d) TmSyncState updated (%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState() ));
     }
-#endif
 
-#ifndef NAMESERVER_PROCESS
     if ( Emulate_Down )
     {
         AssignTmLeader(pnid, false);
     }
     else
-#endif
     {
         AssignLeaders(pnid, node->GetName(), false);
     }
 
     TRACE_EXIT;
 }
+#endif
+
+#ifdef NAMESERVER_PROCESS
+void CCluster::HardNodeDownNs( int pnid )
+{
+    CNode  *node;
+    char    buf[MON_STRING_BUF_SIZE];
+
+    const char method_name[] = "CCluster::HardNodeDownNs";
+    TRACE_ENTRY;
+
+    node = Nodes->GetNode(pnid);
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+       trace_printf( "%s@%d - pnid=%d, state=%s, isInQuiesceState=%d,"
+                     " (local pnid=%d, state=%s, isInQuiesceState=%d, "
+                     "shutdown level=%d)\n", method_name, __LINE__,
+                     pnid, StateString(node->GetState()),
+                     node->isInQuiesceState(),
+                     MyPNID, StateString(MyNode->GetState()),
+                     MyNode->isInQuiesceState(), MyNode->GetShutdownLevel() );
+
+    if (( MyPNID == pnid              ) &&
+        ( MyNode->GetState() == State_Down ||
+          MyNode->IsKillingNode() ) )
+    {
+        // we are coming down ... don't process it
+        if ( !IsRealCluster && MyNode->isInQuiesceState())
+        {
+          // in virtual env, this would be called after node quiescing,
+          // so continue with mark down processing.
+        }
+        else
+        {
+          return;
+        }
+    }
+
+    if (node->GetState() != State_Down)
+    {
+        snprintf( buf, sizeof(buf)
+                , "[%s], Node %s (%d) is going down.\n"
+                 , method_name, node->GetName(), node->GetPNid());
+        mon_log_write(MON_CLUSTER_MARKDOWN_4, SQ_LOG_INFO, buf);
+
+        node->SetKillingNode( true );
+        node->DeleteAllDown();
+        node->SetState( State_Down );
+
+        if ( ZClientEnabled )
+        {
+            //ZClient->WatchNodeDelete( node->GetName() );
+            ZClient->WatchNodeMasterDelete( node->GetName() );
+        }
+    }
+
+    AssignLeaders(pnid, node->GetName(), false);
+
+    TRACE_EXIT;
+}
+#endif
 
 void CCluster::SoftNodeDown( int pnid )
 {
@@ -1651,8 +1707,10 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
         if ( nodeState == State_Down )
         {
             node->SetKillingNode( false );
+#ifndef NAMESERVER_PROCESS
             if ( Emulate_Down )
             {
+#endif
                 // Any DTMs running?
                 for ( int i=0; !tmCount && i < Nodes->GetPNodesCount(); i++ )
                 {
@@ -1706,6 +1764,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                         }
                     }
                 }
+#ifndef NAMESERVER_PROCESS
             }
             else
             {
@@ -1714,6 +1773,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                                   method_name, __LINE__ );
 
             }
+#endif
         }
         else if ( nodeState == State_Merged )
         {
@@ -1865,6 +1925,74 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
     TRACE_EXIT;
     return( rc );
 }
+
+#ifdef NAMESERVER_PROCESS
+int CCluster::HardNodeUpNs( int pnid )
+{
+    int     rc = 0;
+    CNode  *node;
+    STATE   nodeState;
+
+    const char method_name[] = "CCluster::HardNodeUpNs";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+       trace_printf( "%s@%d - pnid=%d, MyPNID = %d, currentNodes_=%d\n"
+                   , method_name, __LINE__, pnid, MyPNID, currentNodes_ );
+
+    node = Nodes->GetNode( pnid );
+    if ( node == NULL )
+    {
+        if ( rc )
+        {   // Handle error
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], Invalid node, pnid=%d\n"
+                    , method_name, pnid );
+            mon_log_write(MON_CLUSTER_HARDNODEUPNS_1, SQ_LOG_ERR, buf);
+            return( -1 );
+        }
+    }
+
+    nodeState = node->GetState();
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+       trace_printf( "%s@%d" " - Node state=%s" "\n"
+                   , method_name, __LINE__, StateString( nodeState ) );
+
+    if ( nodeState != State_Up )
+    {
+        if ( nodeState == State_Down )
+        {
+            node->SetKillingNode( false );
+            // We need to remove any old process objects before we restart the node.
+            node->CleanUpProcesses();
+            node->SetState( State_Up );
+            if ( MyPNID != pnid )
+            {
+                // Let other monitors know this node is up
+                CReplNodeUp *repl = new CReplNodeUp(pnid);
+                Replicator.addItem(repl);
+            }
+        }
+    }
+    else
+    {   // Handle error
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Invalid node state, node %s, pnid=%d, state=%s\n"
+                , method_name
+                , node->GetName()
+                , node->GetPNid()
+                , StateString( nodeState ) );
+        mon_log_write(MON_CLUSTER_HARDNODEUPNS_2, SQ_LOG_ERR, buf);
+        return( -1 );
+    }
+
+    TRACE_EXIT;
+    return( rc );
+}
+#endif
 
 int CCluster::SoftNodeUpPrepare( int pnid )
 {
@@ -7456,7 +7584,10 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         case State_Unknown:
            break;
         case State_Down:
-            doShutdown = true;
+            if (IsRealCluster)
+            {
+                doShutdown = true;
+            }
             break;
         case State_Stopped:
         case State_Shutdown:
@@ -7780,19 +7911,23 @@ bool CCluster::checkIfDone (  )
                     // let the watchdog process exit
                     HealthCheck.setState(MON_EXIT_PRIMITIVES);
                 }
-                else if ( (MyNode->GetNumProcs() <=         // only My Name Server alive
-                            myNameServerCount )
+                else if ( NameServerProcess != NULL
+                          && myNameServerCount > 0
+                          && (MyNode->GetNumProcs() <= myNameServerCount ) // only My Name Server alive
                           && !MyNode->isInQuiesceState()    // post-quiescing will
                                                             // expire WDG (cluster)
                           && !waitForNameServerExit_ )      // Name Server not yet exiting
                 {
                     if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
-                       trace_printf("%s@%d - Stopping Name Server process. "
-                                    "(process count: cluster=%d, MyNode=%d)\n",
-                                    method_name, __LINE__,
-                                    Nodes->ProcessCount(), MyNode->ProcessCount());
-    
+                    {
+                        trace_printf("%s@%d - Stopping Name Server process. "
+                                     "(process count: cluster=%d, MyNode=%d)\n",
+                                     method_name, __LINE__,
+                                     Nodes->ProcessCount(), MyNode->ProcessCount());
+                    }
+
                     waitForNameServerExit_ = true;
+                    MyNode->SetProcessState( NameServerProcess, State_Down, false );
                     int rc = NameServer->ProcessShutdown();
                     if (rc)
                     {
@@ -10196,6 +10331,14 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd, const char *desc)
             if ( errno != EINTR)
             {
                 error = errno;
+                char la_buf[MON_STRING_BUF_SIZE];
+                sprintf( la_buf, "[%s], recv(), received=%d, sock=%d, error=%d(%s), desc=%s\n"
+                       , method_name
+                       , received
+                       , sockFd
+                       , error, strerror(error)
+                       , desc );
+                mon_log_write(MON_CLUSTER_RECEIVESOCK_1, SQ_LOG_ERR, la_buf);
                 readAgain = false;
             }
             else
@@ -10264,6 +10407,14 @@ int CCluster::SendSock(char *buf, int size, int sockFd, const char *desc)
             if ( errno != EINTR)
             {
                 error = errno;
+                char la_buf[MON_STRING_BUF_SIZE];
+                sprintf( la_buf, "[%s], send(), sent=%d, sock=%d, error=%d(%s), desc=%s\n"
+                       , method_name
+                       , sent
+                       , sockFd
+                       , error, strerror(error)
+                       , desc );
+                mon_log_write(MON_CLUSTER_SENDSOCK_1, SQ_LOG_ERR, la_buf);
                 sendAgain = false;
             }
             else

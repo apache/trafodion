@@ -139,6 +139,9 @@ class CProcessContainer
                              , void *tag
                              , int & result
                              );
+#ifdef NAMESERVER_PROCESS
+    void DeleteAllDown();
+#endif
     bool Dump_Process( CProcess *dumper, CProcess *process, char *core_path );
     void DumpCallback( int nid, pid_t pid, int status );
     void Exit_Process( CProcess *process, bool abend, int downNode );
@@ -185,10 +188,12 @@ protected:
     inline void SetNumProcs( int numProcs ) { numProcs_ = numProcs; };
 
 private:
-    int       numProcs_; // Number of processes in container
+    int    numProcs_; // Number of processes in container
     sem_t *Mutex;
 
-    bool      nodeContainer_;  // true when physical node process container
+    bool   nodeContainer_;  // true when physical node process container
+    bool   processNameFormatLong_; // when true process name format is: 
+                                   // '$Zxxxxpppppp' xxxx = nid, pppppp = pid
     nameMap_t *nameMap_;
     pidMap_t *pidMap_;
     CLock pidMapLock_;

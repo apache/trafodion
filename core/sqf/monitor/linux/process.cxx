@@ -2589,27 +2589,46 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
         // Take fork semaphore.  We need to wait until parent indicates
         // it is ok to proceed.  Pipes between parent and child need to
         // be set up before child can continue.
+        bool sem_log_error = false;
         int sem_rc;
+        int err = 0;
         struct timeval logTime;
         struct tm *ltime;
-
-        gettimeofday(&logTime, NULL);
-        ltime = localtime(&logTime.tv_sec);
-
         struct timespec ts;
-        ts.tv_sec  = 1;
-        ts.tv_nsec = 0;
+
+        if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+        {
+            err = errno;
+            gettimeofday(&logTime, NULL);
+            ltime = localtime(&logTime.tv_sec);
+            snprintf(la_buf, sizeof(la_buf),
+                     "%02d/%02d/%02d-%02d:%02d:%02d "
+                     "[CProcess::Create], clock_gettime(CLOCK_REALTIME),"
+                     " Child can't get time, %s (%d), program %s, (pid=%d).\n"
+                     , ltime->tm_mon+1, ltime->tm_mday, ltime->tm_year-100, ltime->tm_hour, ltime->tm_min, ltime->tm_sec
+                     , strerror(err), err
+                     , filename, getpid());
+            write (2, la_buf, strlen(la_buf));
+        }
+        ts.tv_sec  += 1;
+
         env = getenv( "MON_CREATE_SEM_DELAY" );
         if (env && isdigit(*env))
         {
             ts.tv_sec = atol(env);
         }
-        int err;
+
+        env = getenv( "MON_CREATE_SEM_LOG_ERROR" );
+        if (env && isdigit(*env))
+        {
+            int val = atoi(env);
+            sem_log_error = (val != 0) ? true : false;
+        }
         do
         {
             sem_rc = sem_timedwait(MyNode->GetMutex(), &ts);
             err = errno;
-            if ( err == ETIMEDOUT )
+            if ( sem_log_error && err == ETIMEDOUT )
             {
                 gettimeofday(&logTime, NULL);
                 ltime = localtime(&logTime.tv_sec);
@@ -2625,7 +2644,7 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
         }
         while (sem_rc == -1 && (err == EINTR || err == ETIMEDOUT));
 
-        if ( sem_rc == -1 && !(err == EINTR || err == ETIMEDOUT))
+        if ( sem_log_error && sem_rc == -1 && !(err == EINTR || err == ETIMEDOUT))
         {
             gettimeofday(&logTime, NULL);
             ltime = localtime(&logTime.tv_sec);
@@ -3319,6 +3338,10 @@ void CProcess::Exit( CProcess *parent )
             case ProcessType_NameServer:
                 if ( IsAbended() )
                 {
+                    if (!Clone)
+                    {
+                        NameServer->NameServerExited();
+                    }
                     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                        trace_printf("%s@%d" " - NameServer abended" "\n", method_name, __LINE__);
                 }
@@ -4095,6 +4118,7 @@ void CProcess::Switch( CProcess *parent )
 CProcessContainer::CProcessContainer (void)
                   :numProcs_(0)
                   ,nodeContainer_(false)
+                  ,processNameFormatLong_(true)
                   ,nameMap_(NULL)
                   ,pidMap_(NULL)
                   ,head_(NULL)
@@ -4121,12 +4145,22 @@ CProcessContainer::CProcessContainer (void)
         abort();
     }
 
+#ifndef NAMESERVER_PROCESS
+    char *env = getenv("SQ_MON_PROCESS_NAME_FORMAT_LONG");
+    if ( env && isdigit(*env) )
+    {
+        int val = atoi(env);
+        processNameFormatLong_ = (val != 0) ? true : false;
+    }
+#endif
+
     TRACE_EXIT;
 }
 
 CProcessContainer::CProcessContainer( bool nodeContainer )
                   :numProcs_(0)
                   ,nodeContainer_(nodeContainer)
+                  ,processNameFormatLong_(true)
                   ,nameMap_(NULL)
                   ,pidMap_(NULL)
                   ,head_(NULL)
@@ -4160,6 +4194,15 @@ CProcessContainer::CProcessContainer( bool nodeContainer )
         }
         abort();
     }
+
+#ifndef NAMESERVER_PROCESS
+    char *env = getenv("SQ_MON_PROCESS_NAME_FORMAT_LONG");
+    if ( env && isdigit(*env) )
+    {
+        int val = atoi(env);
+        processNameFormatLong_ = (val != 0) ? true : false;
+    }
+#endif
 
     if ( nodeContainer_ )
     {
@@ -4775,46 +4818,85 @@ void CProcessContainer::Bcast (struct message_def *msg)
 
 char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
 {
-    int i;
-    int rem;
-    int cnt[4];
-
     const char method_name[] = "CProcessContainer::BuildOurName";
     TRACE_ENTRY;
 
-    // Convert Pid into base 35 acsii
-    cnt[0] = pid / 42875;
-    rem = pid - ( cnt[0] * 42875 );
-    cnt[1] = rem / 1225;
-    rem -= ( cnt[1] * 1225 );
-    cnt[2] = rem / 35;
-    rem -= ( cnt[2] * 35 );
-    cnt[3] = rem;
+    int i;
+    int rem;
+    int cnt[6];
 
-    // Convert Nid into base 16 acsii
-    sprintf(name,"$Z%2.2X",nid);
-    for(i=3; i>=0; i--)
+    if (!processNameFormatLong_)
     {
-        if( cnt[i] < 10 )
+        // Convert Pid into base 35 acsii
+        cnt[0] = pid / 42875;    // (35 * 35 * 35)
+        rem = pid - ( cnt[0] * 42875 );
+        cnt[1] = rem / 1225;     // (35 * 35)
+        rem -= ( cnt[1] * 1225 );
+        cnt[2] = rem / 35;
+        rem -= ( cnt[2] * 35 );
+        cnt[3] = rem;
+    
+        // Process name format long: '$Zxxpppp' xx = nid, pppp = pid
+
+        // Convert Nid into base 16 acsii
+        sprintf(name,"$Z%2.2X",nid);
+
+        // Convert Pid into base 36 ascii
+        for(i=3; i>=0; i--)
         {
-            name[i+4] = '0'+cnt[i];
-        }
-        else
-        {
-            cnt[i] -= 10;
-            // we are skipping cap 'o' because it looks like zero.
-            if( cnt[i] >= 14 )
+            if( cnt[i] < 10 )
             {
-                name[i+4] = 'P'+(cnt[i]-14);
+                name[i+4] = '0'+cnt[i];
             }
             else
             {
-                name[i+4] = 'A'+cnt[i];
+                cnt[i] -= 10;
+                // we are skipping cap 'o' because it looks like zero.
+                if( cnt[i] >= 14 )
+                {
+                    name[i+4] = 'P'+(cnt[i]-14);
+                }
+                else
+                {
+                    name[i+4] = 'A'+cnt[i];
+                }
             }
         }
+        name[8] = '\0';
     }
-    name[8] = '\0';
-
+    else
+    {
+        // We are skipping 'A', 'I', 'O', and 'U' to distinguish between zero
+        // and one digits, and for political correctness in generated names
+        char b32table[32] =  {'0','1','2','3','4','5','6','7','8','9'
+                             ,'B','C','D','E','F','G','H','J','K','L','M'
+                             ,'N','P','Q','R','S','T','V','W','X','Y','Z' };
+    
+        // Convert Pid into base 32 ascii
+        cnt[0] = pid / 33554432;    // (32 * 32 * 32 * 32 * 32)
+        rem = pid - ( cnt[0] * 33554432 );
+        cnt[1] = rem / 1048576;     // (32 * 32 * 32 * 32)
+        rem -= ( cnt[1] * 1048576 );
+        cnt[2] = rem / 32768;       // (32 * 32 * 32)
+        rem -= ( cnt[2] * 32768 );
+        cnt[3] = rem / 1024;        // (32 * 32)
+        rem -= ( cnt[3] * 1024 );
+        cnt[4] = rem / 32;
+        rem -= ( cnt[4] * 32 );
+        cnt[5] = rem;
+    
+        // Process name format long: '$Zxxxxpppppp' xxxx = nid, pppppp = pid
+    
+        // Convert Nid into base 16 ascii
+        sprintf(name,"$Z%4.4X",nid);
+    
+        // Convert Pid into base 32 ascii
+        for(i=5; i>=0; i--)
+        {
+            name[i+6] = static_cast<char>(b32table[cnt[i]]);
+        }
+        name[12] = '\0';
+    }
 
     TRACE_EXIT;
     return name;
@@ -5395,6 +5477,65 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
     TRACE_EXIT;
 
     return process;
+}
+#endif
+
+#ifdef NAMESERVER_PROCESS
+void CProcessContainer::DeleteAllDown()
+{
+    CProcess *process  = NULL;
+    int nid = -1;
+    int pid = -1;
+
+    const char method_name[] = "CProcessContainer::DeleteAllDown";
+    TRACE_ENTRY;
+
+    nameMap_t::iterator nameMapIt;
+
+    while ( true )
+    {
+        nameMapLock_.lock();
+        nameMapIt = nameMap_->begin();
+
+        if (nameMap_->size() == 0)
+        {
+            nameMapLock_.unlock();
+            break; // all done
+        }
+
+        process = nameMapIt->second;
+
+        // Delete name map entry
+        nameMap_->erase (nameMapIt);
+
+        nameMapLock_.unlock();
+
+        nid = process->GetNid();
+        pid = process->GetPid();
+
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+        {
+            trace_printf("%s@%d removed from nameMap %p: %s (%d, %d)\n",
+                         method_name, __LINE__, nameMap_,
+                         process->GetName(), nid, pid);
+        }
+
+        // Delete pid map entry
+        DelFromPidMap ( process );
+
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Completed delete for %s (%d, %d)\n"
+                        , method_name, __LINE__
+                        , process->GetName(), nid, pid);
+        }
+
+        // Remove all processes
+        // PSD will re-create persistent processes on spare node activation
+        Exit_Process( process, true, nid );
+    }
+
+    TRACE_EXIT;
 }
 #endif
 
@@ -7086,7 +7227,9 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
 
                 // Note: Exit_Process() will delete the process object, so
                 //       save the process information needed before the call
+#ifndef NAMESERVER_PROCESS
                 PROCESSTYPE processType = process->GetType();
+#endif
                 string      processName = process->GetName();
                 int         processNid  = process->GetNid();
                 int         processPid  = process->GetPid();
@@ -7101,6 +7244,7 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                                 , processName.c_str(), processNid, processPid, processVerifier
                                 , abend, downNode
                                 , MyNode->IsKillingNode(), MyNode->IsDTMAborted(), MyNode->IsSMSAborted());
+#ifndef NAMESERVER_PROCESS
                 if ( !MyNode->IsKillingNode() )
                 {
                     switch ( processType )
@@ -7147,6 +7291,7 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                         break;
                     }
                 }
+#endif
             }
             break;
         default:

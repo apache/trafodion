@@ -506,7 +506,7 @@ const char* CZClient::WaitForAndReturnMaster( bool doWait )
     string masterMonitor( ss.str( ) );
 
     // wait for 3 minutes for giving up.  
-    while ( (!found) && (retries < 180)) 
+    while ( (GetState() != ZC_SHUTDOWN) && (!found) && (retries < 180)) 
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {

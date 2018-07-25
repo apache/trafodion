@@ -1012,7 +1012,8 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 }
                 if (NameServerEnabled)
                 {
-                    if (!MyNode->IsMyNode( tm->GetNid() ))
+                    if (!MyNode->IsMyNode( tm->GetNid() )
+                      && (req->GetNext() && req->GetNext()->Nid != tm->GetNid() ) )
                     {
                         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
                         {
@@ -1024,6 +1025,7 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                                         , tm->GetVerifier() );
                         }
                         Nodes->DeleteCloneProcess( tm );
+                        tm = NULL;
                     }
                 
                 }

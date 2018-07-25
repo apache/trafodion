@@ -47,6 +47,7 @@ extern char *ErrorMsg (int error_code);
 extern const char *StateString( STATE state);
 extern CommType_t CommType;
 
+static void *ptpProcess( void *arg );
 
 CPtpCommAccept::CPtpCommAccept()
                : accepting_(true)
@@ -71,155 +72,205 @@ void CPtpCommAccept::processNewSock( int sockFd )
 {
     const char method_name[] = "CPtpCommAccept::processNewSock";
     TRACE_ENTRY;
-    
-    struct internal_msg_def msg;
-    int rc;
-    
-    mem_log_write(CMonLog::MON_CONNTONEWMON_2);
-    int size;
-    rc = Monitor->ReceiveSock( (char *) &size, sizeof(size), sockFd, method_name );
 
-    if ( rc )
-    {   // Handle error
-        close( sockFd );
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
-                     "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(PTP_COMMACCEPT_1, SQ_LOG_ERR, buf);    
-        return;
-    }
-    // Get info about connecting monitor
-    rc = Monitor->ReceiveSock( (char *) &msg
-                             , size
-                             , sockFd
-                             , method_name );
-                        
-    if ( rc )
-    {   // Handle error
-        close( sockFd );
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
-                 "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(PTP_COMMACCEPT_2, SQ_LOG_ERR, buf);    
-        return;
-    }
-    else
+    int rc;
+
+    mem_log_write(CMonLog::MON_CONNTONEWMON_1);
+
+    // need to create context in case back-to-back accept is too fast
+    Context *ctx = new Context();
+    ctx->this_ = this;
+    ctx->pendingFd_ = sockFd;
+    rc = pthread_create(&process_thread_id_, NULL, ptpProcess, ctx);
+    if (rc != 0)
     {
-        switch ( msg.type )
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf(buf, sizeof(buf), "[%s], ptpProcess thread create error=%d\n",
+                 method_name, rc);
+        mon_log_write(PTP_COMMACCEPT_1, SQ_LOG_ERR, buf);
+    }
+
+    TRACE_EXIT;
+}
+
+void CPtpCommAccept::processMonReqs( int sockFd )
+{
+    const char method_name[] = "CPtpCommAccept::processMonReqs";
+    TRACE_ENTRY;
+
+    int rc;
+    struct internal_msg_def msg;
+
+    while ( true )
+    {
+        mem_log_write(CMonLog::MON_CONNTONEWMON_2);
+        ptpMsgInfo_t remoteInfo;
+    
+        // Get info about connecting monitor
+        rc = Monitor->ReceiveSock( (char *) &remoteInfo
+                                 , sizeof(ptpMsgInfo_t)
+                                 , sockFd
+                                 , method_name );
+        if ( rc )
+        {   // Handle error
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf), "[%s], unable to obtain message size and pnid "
+                         "from remote monitor: %s.\n", method_name, ErrorMsg(rc));
+            mon_log_write(PTP_COMMACCEPT_2, SQ_LOG_ERR, buf);    
+            return;
+        }
+    
+        // Get info about connecting monitor
+        rc = Monitor->ReceiveSock( (char *) &msg
+                                 , remoteInfo.size
+                                 , sockFd
+                                 , method_name );
+        if ( rc )
+        {   // Handle error
+            char buf[MON_STRING_BUF_SIZE];
+            CNode *node = Nodes->GetNode(remoteInfo.pnid);
+            snprintf( buf, sizeof(buf)
+                    , "[%s], unable to obtain message size (%d) from remote "
+                      "monitor %d(%s), error: %s.\n"
+                    , method_name
+                    , remoteInfo.size
+                    , remoteInfo.pnid
+                    , node ? node->GetName() : ""
+                    , ErrorMsg(rc));
+            mon_log_write(PTP_COMMACCEPT_3, SQ_LOG_ERR, buf);    
+            return;
+        }
+        else
         {
-            case InternalType_UniqStr:
+            switch ( msg.type )
             {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                case InternalType_UniqStr:
                 {
-                    trace_printf( "%s@%d" " - Received InternalType_UniqStr\n"
-                                , method_name, __LINE__ );
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_UniqStr\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueUniqStrReq( &msg.u.uniqstr);
+                    break;
                 }
-                ReqQueue.enqueueUniqStrReq( &msg.u.uniqstr);
-                break;
-            }
-            case InternalType_Process:
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                case InternalType_Process:
                 {
-                    trace_printf( "%s@%d" " - Received InternalType_Process\n"
-                                , method_name, __LINE__ );
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Process\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueNewProcReq( &msg.u.process);
+                    break;
                 }
-                ReqQueue.enqueueNewProcReq( &msg.u.process);
-                break;
-            }
-            case InternalType_ProcessInit:
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                case InternalType_ProcessInit:
                 {
-                    trace_printf( "%s@%d" " - Received InternalType_ProcessInit\n"
-                                , method_name, __LINE__ );
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_ProcessInit\n"
+                                    , method_name, __LINE__ );
+                    }
+                    if ( MyNode->IsMyNode(msg.u.processInit.origNid) )
+                    {  // New process request originated on this node
+                        ReqQueue.enqueueProcInitReq( &msg.u.processInit);
+                    }
+                    else
+                    {
+                        abort();
+                    }
+                    break;
                 }
-                if ( MyNode->IsMyNode(msg.u.processInit.origNid) )
-                {  // New process request originated on this node
-                    ReqQueue.enqueueProcInitReq( &msg.u.processInit);
-                }
-                else
+                case InternalType_Clone:
                 {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Clone\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueCloneReq( &msg.u.clone );
+                    break;
+                }
+                case InternalType_Open:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Open\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueOpenReq( &msg.u.open );
+                    break;
+                }
+                case InternalType_Notify:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Notify\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueNotifyReq( &msg.u.notify );
+                    break;
+                }
+                case InternalType_Exit:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Exit\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueExitReq( &msg.u.exit );
+                    break;
+                }
+                case InternalType_Kill:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Kill\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueKillReq( &msg.u.kill );
+                    break;
+                }
+                case InternalType_IoData:
+                {
+                    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_IoData\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueIoDataReq( &msg.u.iodata );
+                    break;
+                }
+                case InternalType_StdinReq:
+                {
+                    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_StdinReq\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueStdInReq( &msg.u.stdin_req );
+                    break;
+                }
+                default:
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    CNode *node = Nodes->GetNode(remoteInfo.pnid);
+                    snprintf( buf, sizeof(buf)
+                            , "[%s], Invalid msg.type: %d, msg size=%d, "
+                              "remote monitor %d(%s)\n"
+                            , method_name
+                            , msg.type
+                            , remoteInfo.size
+                            , remoteInfo.pnid
+                            , node ? node->GetName() : "" );
+                    mon_log_write(PTP_COMMACCEPT_4, SQ_LOG_ERR, buf);    
                     abort();
                 }
-                break;
-            }
-            case InternalType_Clone:
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d" " - Received InternalType_Clone\n"
-                                , method_name, __LINE__ );
-                }
-                ReqQueue.enqueueCloneReq( &msg.u.clone );
-                break;
-            }
-            case InternalType_Open:
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d" " - Received InternalType_Open\n"
-                                , method_name, __LINE__ );
-                }
-                ReqQueue.enqueueOpenReq( &msg.u.open );
-                break;
-            }
-            case InternalType_Notify:
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d" " - Received InternalType_Notify\n"
-                                , method_name, __LINE__ );
-                }
-                ReqQueue.enqueueNotifyReq( &msg.u.notify );
-                break;
-            }
-            case InternalType_Exit:
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d" " - Received InternalType_Exit\n"
-                                , method_name, __LINE__ );
-                }
-                ReqQueue.enqueueExitReq( &msg.u.exit );
-                break;
-            }
-            case InternalType_Kill:
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d" " - Received InternalType_Kill\n"
-                                , method_name, __LINE__ );
-                }
-                ReqQueue.enqueueKillReq( &msg.u.kill );
-                break;
-            }
-            case InternalType_IoData:
-            {
-                if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d" " - Received InternalType_IoData\n"
-                                , method_name, __LINE__ );
-                }
-                ReqQueue.enqueueIoDataReq( &msg.u.iodata );
-                break;
-            }
-            case InternalType_StdinReq:
-            {
-                if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d" " - Received InternalType_StdinReq\n"
-                                , method_name, __LINE__ );
-                }
-                ReqQueue.enqueueStdInReq( &msg.u.stdin_req );
-                break;
-            }
-            default:
-            {
-                abort();
             }
         }
     }
+
+    close( sockFd );
 
     TRACE_EXIT;
 }
@@ -285,7 +336,7 @@ void CPtpCommAccept::commAcceptorSock()
                 continue; // Ok to accept another connection
             }
         }
-        
+
         if (shutdown_)
         {   // We are being notified to exit.
             break;
@@ -296,12 +347,12 @@ void CPtpCommAccept::commAcceptorSock()
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], cannot accept new monitor: %s.\n",
                      method_name, strerror(errno));
-            mon_log_write(PTP_COMMACCEPT_6, SQ_LOG_ERR, buf);
+            mon_log_write(PTP_COMMACCEPT_5, SQ_LOG_ERR, buf);
         }
         else
         {
             processNewSock( sockFd );
-            close( sockFd );
+            //close( sockFd );
         }
     }
 
@@ -334,7 +385,7 @@ void CPtpCommAccept::shutdownWork(void)
     TRACE_EXIT;
 }
 
-// Initialize PtpCommAcceptor thread
+// Initialize ptpCommAcceptor thread
 static void *ptpCommAccept(void *arg)
 {
     const char method_name[] = "ptpCommAccept";
@@ -353,7 +404,7 @@ static void *ptpCommAccept(void *arg)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], pthread_sigmask error=%d\n",
                  method_name, rc);
-        mon_log_write(PTP_COMMACCEPT_7, SQ_LOG_ERR, buf);
+        mon_log_write(PTP_COMMACCEPT_6, SQ_LOG_ERR, buf);
     }
 
     // Enter thread processing loop
@@ -364,7 +415,38 @@ static void *ptpCommAccept(void *arg)
 }
 
 
-// Create a commAcceptor thread
+// Initialize ptpProcess thread
+static void *ptpProcess(void *arg)
+{
+    const char method_name[] = "ptpProcess";
+    TRACE_ENTRY;
+
+    // Parameter passed to the thread is an context
+    CPtpCommAccept::Context *ctx = (CPtpCommAccept::Context *) arg;
+    CPtpCommAccept *cao = ctx->this_;
+
+    // Mask all allowed signals
+    sigset_t  mask;
+    sigfillset(&mask);
+    sigdelset(&mask, SIGPROF); // allows profiling such as google profiler
+    int rc = pthread_sigmask(SIG_SETMASK, &mask, NULL);
+    if (rc != 0)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf(buf, sizeof(buf), "[%s], pthread_sigmask error=%d\n",
+                 method_name, rc);
+        mon_log_write(PTP_COMMACCEPT_7, SQ_LOG_ERR, buf);
+    }
+
+    // Enter thread processing loop
+    cao->processMonReqs(ctx->pendingFd_);
+    delete ctx;
+
+    TRACE_EXIT;
+    return NULL;
+}
+
+// Create a ptpCommAccept thread
 void CPtpCommAccept::start()
 {
     const char method_name[] = "CPtpCommAccept::start";

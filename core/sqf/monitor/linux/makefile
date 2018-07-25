@@ -265,6 +265,7 @@ NSOBJS += $(OUTDIR)/nsreqqueue.o
 NSOBJS += $(OUTDIR)/nsreqdelproc.o
 NSOBJS += $(OUTDIR)/nsreqstop.o
 NSOBJS += $(OUTDIR)/nsreqnewproc.o
+NSOBJS += $(OUTDIR)/nsreqnodedown.o
 NSOBJS += $(OUTDIR)/nsreqprocinfo.o
 NSOBJS += $(OUTDIR)/nsreqprocinfons.o
 NSOBJS += $(OUTDIR)/nsreqstart.o

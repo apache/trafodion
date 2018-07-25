@@ -163,8 +163,11 @@ void CExtEventReq::performRequest()
 
                 if ( target_process_name.size() )
                 { // find by name
-                    targetProcess = Nodes->GetProcess( target_process_name.c_str()
-                                                     , target_verifier );
+                    if (msg_->u.request.u.event.target_process_name[0] == '$' )
+                    {
+                        targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                         , target_verifier );
+                    }
                     if ( !targetProcess )
                     {
                         if (NameServerEnabled)
@@ -176,9 +179,12 @@ void CExtEventReq::performRequest()
                                             , target_process_name.c_str()
                                             , target_verifier );
                             }
-                            cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
-                                                                , target_verifier );
-                            targetProcess = cloneProcess;
+                            if (msg_->u.request.u.event.target_process_name[0] == '$' )
+                            {
+                                cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                                    , target_verifier );
+                                targetProcess = cloneProcess;
+                            }
                         }     
                     }
                     if ( targetProcess && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))

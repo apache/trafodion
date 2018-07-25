@@ -681,11 +681,14 @@ export SQ_STARTUP=r
 #            (meaning that mpirun is the parent process of the monitor process)
 #   AGENT  - monitor process runs in agent mode versus MPI collective
 #
-# Uncomment the next four environment variables
-#export SQ_MON_CREATOR=MPIRUN
-#export SQ_MON_RUN_MODE=AGENT
-#export MONITOR_COMM_PORT=23390
-#export MONITOR_SYNC_PORT=23380
+# Uncomment the next environment variable
+export SQ_MON_CREATOR=MPIRUN
+if [[ "$SQ_MON_CREATOR" == "MPIRUN" ]]; then
+  export SQ_MON_RUN_MODE=${SQ_MON_RUN_MODE:-AGENT}
+  export MONITOR_COMM_PORT=${MONITOR_COMM_PORT:-23390}
+  export MONITOR_SYNC_PORT=${MONITOR_SYNC_PORT:-23380}
+  export TRAF_SCALING_FACTOR=${TRAF_SCALING_FACTOR:-0.75}
+fi
 
 #
 #   NAME-SERVER - to disable process replication and enable the name-server
@@ -742,6 +745,11 @@ fi
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
+
+# set to 0 to disable process name long format in clusters larger that 256 nodes
+#export SQ_MON_PROCESS_NAME_FORMAT_LONG=0
+#   short format: '$Zxxpppp'     xx   = nid, pppp   = pid
+#   long  format: '$Zxxxxpppppp' xxxx = nid, pppppp = pid (default)
 
 # set to 0 to disable or 1 to enable configuration of DTM as a persistent process
 # must re-execute 'sqgen' to effect change

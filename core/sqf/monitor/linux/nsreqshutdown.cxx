@@ -30,12 +30,10 @@
 #include "montrace.h"
 #include "monsonar.h"
 #include "monlogging.h"
-#include "replicate.h"
 
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
-extern CReplicate Replicator;
 
 CExtShutdownNsReq::CExtShutdownNsReq (reqQueueMsg_t msgType,
                                       int nid, int pid, int sockFd,
@@ -43,7 +41,7 @@ CExtShutdownNsReq::CExtShutdownNsReq (reqQueueMsg_t msgType,
     : CExternalReq(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RQER", 4); // TODO
+    memcpy(&eyecatcher_, "RqER", 4);
 
     priority_    = High;
 }
@@ -51,7 +49,7 @@ CExtShutdownNsReq::CExtShutdownNsReq (reqQueueMsg_t msgType,
 CExtShutdownNsReq::~CExtShutdownNsReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rqer", 4); // TODO
+    memcpy(&eyecatcher_, "rQer", 4);
 }
 
 void CExtShutdownNsReq::populateRequestString( void )
