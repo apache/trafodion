@@ -9113,7 +9113,7 @@ a| * `_datetime-expression_`
 | 'DY'
 a| Name of day, which is a three-letter abbreviation for the day in uppercase. +
 
-The following values are valid: +
+The following values are returned: +
 
 * MON +
 
@@ -9135,7 +9135,7 @@ a| * `_datetime-expression_`
 | 'DAY'
 a| Name of day, which is full uppercase day name padded with blanks to the length of 9 characters. +
 
-The following values are valid: +
+The following values are returned: +
 
 * MONDAY +
 
@@ -9196,7 +9196,7 @@ a| * `_datetime-expression_`
 | 'MON'
 a| Month, which is a three-letter abbreviation for the month in uppercase. +
 
-The following values are valid: +
+The following values are returned: +
 
 * JAN +
 
