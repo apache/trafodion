@@ -288,10 +288,6 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
         return SQL_SUCCESS;
     }
 	
-	//if (targetPrecision < 19)
-    if (((SQLDataType == SQLTYPECODE_NUMERIC) && (targetPrecision <= 18)) ||
-        ((SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED) && (targetPrecision <= 9)))
-		getMaxNum(targetPrecision, targetScale, integralMax, decimalMax);
 
 	switch (ODBCDataType)
 	{
@@ -756,6 +752,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				}
 				if(negative && targetUnsigned)
 					return IDS_22_003_02;
+                getMaxNum(targetPrecision, targetScale, integralMax, decimalMax);
 				if ((integralPart < 0) || (integralPart > integralMax))
 					return IDS_22_003;
 				decimalDigits = 0;
@@ -848,6 +845,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			}
 			if(negative && targetUnsigned)
 				return IDS_22_003_02;
+            getMaxNum(targetPrecision, targetScale, integralMax, decimalMax);
 			if ((integralPart < 0) || (integralPart > integralMax)) 
 				return IDS_22_003;
 			decimalDigits = 0;
@@ -1435,6 +1433,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				}
 				if(negative && targetUnsigned)
 					return IDS_22_003_02;
+                getMaxNum(targetPrecision, targetScale, integralMax, decimalMax);
 				if ((integralPart < 0) || (integralPart > integralMax))
 					return IDS_22_003;
 				decimalDigits = 0;
@@ -1490,6 +1489,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				}
 					if(negative && targetUnsigned)
 						return IDS_22_003_02;
+                getMaxNum(targetPrecision, targetScale, integralMax, decimalMax);
 				if ((integralPart < 0) || (integralPart > integralMax)) 
 					return IDS_22_003;
 				decimalDigits = 0;
@@ -1598,6 +1598,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			integralPart = (integralPart < 0)? -integralPart: integralPart;
 			decimalPart = 0;
 			leadZeros = 0;
+            getMaxNum(targetPrecision, targetScale, integralMax, decimalMax);
 			if ( integralPart > integralMax )
 				return IDS_22_003;
 
