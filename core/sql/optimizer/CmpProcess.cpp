@@ -63,7 +63,6 @@ CmpProcess::CmpProcess()
     processStartTime_ = CONVERTTIMESTAMP(processStartTime_,0,-1,0);
   }
 }
-// LCOV_EXCL_START :cnu
 /************************************************************************
 method CmpProcess::getProcessDuration
 
@@ -90,7 +89,6 @@ CmpProcess::getCurrentSystemHeapSize()
 
   return currentSystemHeapSize;
 }
-// LCOV_EXCL_STOP
 /************************************************************************
 method CmpProcess::getCompilerId
 
@@ -100,21 +98,19 @@ parameter:
  the compiler id is made up of:
 
  process start timestamp - 18 digits
- node (cpu) #            - 2 digits
- pin #                   - 4 digits
- segment #               - 3 digits
+ node (cpu) #            - 3 digits
+ pin #                   - 5 digits
 
 
 ************************************************************************/
 void
-CmpProcess::getCompilerId(char *id)
+CmpProcess::getCompilerId(char *id, int len)
 {    
   CMPASSERT( NULL != id );
 
-  str_sprintf
-    (id, "%018Ld%02d%04d%03d",
+  snprintf
+    (id, len, "%018ld%03d%05d",
      getProcessStartTime(),        
      getNodeNum(),                      
-     getPin(),                         
-     getSegmentNum());                     
+     getPin());                       
 }

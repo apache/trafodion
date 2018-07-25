@@ -36,10 +36,8 @@
 
 #undef  _DP2NT_
 #define _DP2NT_
-// #define NA_ARKFS
 #define __ROSETTA
 #undef _DP2NT_
-// #undef NA_ARKFS
 #undef __ROSETTA
 
 #include "NATable.h"
@@ -89,6 +87,7 @@
 #define MAX_NODE_NAME 9
 
 #include "SqlParserGlobals.h"
+#include "HdfsClient_JNI.h"
 
 //#define __ROSETTA
 //#include "rosetta_ddl_include.h"
@@ -241,7 +240,6 @@ void HistogramCache::invalidateCache()
 // context heap to store it in the hash table.
 //--------------------------------------------------------------------------
 
-#pragma nowarn(770)   // warning elimination
 void HistogramCache::getHistograms(NATable& table)
 {
   const QualifiedName& qualifiedName = table.getFullyQualifiedGuardianName();
@@ -335,7 +333,6 @@ void HistogramCache::getHistograms(NATable& table)
   lastTouchTime_ = getCurrentTime();
 
 } //1//
-#pragma warn(770)  // warning elimination
   
 //----------------------------------------------------------------------------
 // HistogramCache::createColStatsList()
@@ -577,7 +574,6 @@ void HistogramCache::createColStatsList
 //found in the cache. The columns whose statistics are required
 //are passed in through colArray. 
 //------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 Int32 HistogramCache::getStatsListFromCache
 ( StatsList&            list, //In \ Out
   NAColumnArray&        colArray, //In
@@ -675,7 +671,6 @@ Int32 HistogramCache::getStatsListFromCache
 
   return columnsCovered;
 }
-#pragma warn(1506)  // warning elimination
 
 //this method is used to put into the cache stats lists, that
 //needed to be re-read or were not there in the cache
@@ -1273,8 +1268,7 @@ ItemExpr * getRangePartitionBoundaryValues
                         (const char * keyValueBuffer,
 			 const Lng32   keyValueBufferSize,
 			 NAMemory* heap,
-                          CharInfo::CharSet strCharSet = CharInfo::UTF8
-                         )
+                         CharInfo::CharSet strCharSet = CharInfo::UTF8)
 {
   char * keyValue;             // the string for the key value
   ItemExpr * partKeyValue;     // -> dynamically allocated expression
@@ -1818,7 +1812,6 @@ NABoolean checkColumnTypeForSupportability(const NAColumnArray & partColArray, c
 // permissible values that the partitioning key columns can contain
 // within a certain partition, for range-partitioned data.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 static RangePartitionBoundaries * createRangePartitionBoundaries
                                      (TrafDesc * part_desc_list,
 				      Lng32 numberOfPartitions,
@@ -1958,7 +1951,6 @@ static RangePartitionBoundaries * createRangePartitionBoundaries
   return partBounds;
 
 } // static createRangePartitionBoundaries()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // createRangePartitioningFunction()
@@ -2025,7 +2017,6 @@ static PartitioningFunction * createRangePartitioningFunction
 // createRoundRobinPartitioningFunction()
 // This method is used for creating a RoundRobinPartitioningFunction.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 static PartitioningFunction * createRoundRobinPartitioningFunction
                                 (TrafDesc * part_desc_list,
                                  NodeMap* nodeMap,
@@ -2057,7 +2048,6 @@ static PartitioningFunction * createRoundRobinPartitioningFunction
   return new (heap) RoundRobinPartitioningFunction(numberOfPartitions, nodeMap, heap);
 
 } // static createRoundRobinPartitioningFunction()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // createHashDistPartitioningFunction()
@@ -2220,7 +2210,6 @@ createHash2PartitioningFunctionForHBase(TrafDesc* desc,
 // a histogram's boundary values.
 //
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 RangePartitionBoundaries * createRangePartitionBoundariesFromStats
                                       (const IndexDesc* idesc, 
                                        HistogramSharedPtr& hist,
@@ -2310,10 +2299,10 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
          NAColumn* ncol = partColArray[c];
          const NAType* nt = ncol->getType();
          
-         if (rangePartBoundValues->getOperatorType() == ITM_ITEM_LIST ) 
-            val = (ItemExpr*) (*list) [c];
-          else
-            val = (ItemExpr*) (*list) [0];
+         val = (ItemExpr*) (*list) [c];
+
+         // make sure the value is the same type as the column
+         val = new(heap) Cast(val, nt->newCopy(heap));
 
          if (nt->isEncodingNeeded())
             encodeExpr = new(heap) CompEncode(val, !(partColArray.isAscending(c)));
@@ -2338,7 +2327,7 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
                                     (CmpCommon::diags()));
 
          totalEncodedKeyLength += encodedKeyLength;
-         totalEncodedKeyBuf += encodedKeyBuffer;
+         totalEncodedKeyBuf.append(encodedKeyBuffer, encodedKeyLength);
 
          if ( ok != 0 ) 
             return NULL;
@@ -2381,7 +2370,6 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
   return partBounds;
 
 } // createRangePartitionBoundariesFromStats()
-#pragma warn(1506)  // warning elimination
 
 static 
 PartitioningFunction*
@@ -2669,7 +2657,6 @@ static PartitioningFunction * createHivePartitioningFunction
 // This method is used for creating a node map for all DP2 partitions of
 // associated with this table or index.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 static void createNodeMap (TrafDesc* part_desc_list,
 		           NodeMap*     nodeMap,
                            NAMemory*    heap,
@@ -2775,9 +2762,7 @@ static void createNodeMap (TrafDesc* part_desc_list,
     }
 
 } // static createNodeMap()
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 static void createNodeMap (hive_tbl_desc* hvt_desc,
 		           NodeMap*     nodeMap,
                            NAMemory*    heap,
@@ -2824,7 +2809,6 @@ static void createNodeMap (hive_tbl_desc* hvt_desc,
   // No fake volumn assignment because Hive' partitions are not hash
   // based, there is no balance of data among all partitions.
 } // static createNodeMap()
-#pragma warn(1506)  // warning elimination
 
 //-------------------------------------------------------------------------
 // This function checks if a table/index or any of its partitions are
@@ -2833,13 +2817,11 @@ static void createNodeMap (hive_tbl_desc* hvt_desc,
 // - approx 31000 for messages to remote nodes, and 56000 for messages
 // on the local node.
 //-------------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 static NABoolean checkRemote(TrafDesc* part_desc_list,
                              char * tableName)
 {
     return TRUE;
 }
-#pragma warn(262)  // warning elimination
 
 
 static NAString makeTableName(const NATable *table,
@@ -2850,7 +2832,6 @@ static NAString makeTableName(const NATable *table,
        table->getTableName().getQualifiedNameAsAnsiString().data() : "");
 }
 
-// warning elimination (removed "inline")
 static NAString makeColumnName(const NATable *table,
 			       const TrafColumnsDesc *column_desc)
 {
@@ -2905,200 +2886,180 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 
     case REC_BPINT_UNSIGNED :
       type = new (heap)
-      SQLBPInt(column_desc->precision, column_desc->isNullable(), FALSE, heap);
+      SQLBPInt(heap, column_desc->precision, column_desc->isNullable(), FALSE);
       break;
 
     case REC_BIN8_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLTiny(TRUE,
-		 column_desc->isNullable(),
-                 heap
+	SQLTiny(heap, TRUE,
+		 column_desc->isNullable()
 		 );
       break;
     case REC_BIN8_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLTiny(FALSE,
-		 column_desc->isNullable(),
-                 heap
+	SQLTiny(heap, FALSE,
+		 column_desc->isNullable()
 		 );
       break;
 
     case REC_BIN16_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLSmall(TRUE,
-		 column_desc->isNullable(),
-                 heap
+	SQLSmall(heap, TRUE,
+		 column_desc->isNullable()
 		 );
       break;
     case REC_BIN16_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLSmall(FALSE,
-		 column_desc->isNullable(),
-                 heap
+	SQLSmall(heap, FALSE,
+		 column_desc->isNullable()
 		 );
       break;
 
     case REC_BIN32_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLInt(TRUE,
-	       column_desc->isNullable(),
-               heap
+	SQLInt(heap, TRUE,
+	       column_desc->isNullable()
 	       );
       break;
     case REC_BIN32_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLInt(FALSE,
-	       column_desc->isNullable(),
-               heap
+	SQLInt(heap, FALSE,
+	       column_desc->isNullable()
 	       );
       break;
     case REC_BIN64_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLLargeInt(TRUE,
-		    column_desc->isNullable(),
-                    heap
+	SQLLargeInt(heap, TRUE,
+		    column_desc->isNullable()
 		    );
       break;
     case REC_BIN64_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-          SQLLargeInt(FALSE,
-		    column_desc->isNullable(),
-                    heap
+          SQLLargeInt(heap, FALSE,
+		    column_desc->isNullable()
 		    );
       break;
     case REC_DECIMAL_UNSIGNED:
       type = new (heap)
-	SQLDecimal(column_desc->length,
+	SQLDecimal(heap, column_desc->length,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       break;
     case REC_DECIMAL_LSE:
       type = new (heap)
-	SQLDecimal(column_desc->length,
+	SQLDecimal(heap, column_desc->length,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       break;
     case REC_NUM_BIG_UNSIGNED:
       type = new (heap)
-	SQLBigNum(column_desc->precision,
+	SQLBigNum(heap, column_desc->precision,
 		  column_desc->scale,
 		  TRUE, // is a real bignum
 		  FALSE,
-		  column_desc->isNullable(),
-		  heap
+		  column_desc->isNullable()
 		  );
       break;
     case REC_NUM_BIG_SIGNED:
       type = new (heap)
-	SQLBigNum(column_desc->precision,
+	SQLBigNum(heap, column_desc->precision,
 		  column_desc->scale,
 		  TRUE, // is a real bignum
 		  TRUE,
-		  column_desc->isNullable(),
-		  heap
+		  column_desc->isNullable()
 		  );
       break;
 
     case REC_FLOAT32:
       type = new (heap)
-	SQLReal(column_desc->isNullable(), heap, column_desc->precision);
+	SQLReal(heap, column_desc->isNullable(), column_desc->precision);
       break;
 
     case REC_FLOAT64:
       type = new (heap)
-	SQLDoublePrecision(column_desc->isNullable(), heap, column_desc->precision);
+	SQLDoublePrecision(heap, column_desc->isNullable(), column_desc->precision);
       break;
 
     case REC_BYTE_F_DOUBLE:
       charCount /= SQL_DBCHAR_SIZE;	    // divide the storage length by 2
       type = new (heap)
-	SQLChar(charCount,
+	SQLChar(heap, charCount,
 		column_desc->isNullable(),
 		column_desc->isUpshifted(),
 		column_desc->isCaseInsensitive(),
@@ -3119,7 +3080,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
         if ( column_desc->precision > 0 )
            sizeInChars = column_desc->precision;
         type = new (heap)
-	SQLChar(CharLenInfo(sizeInChars, charCount/*in_bytes*/),
+	SQLChar(heap, CharLenInfo(sizeInChars, charCount/*in_bytes*/),
 		column_desc->isNullable(),
 		column_desc->isUpshifted(),
 		column_desc->isCaseInsensitive(),
@@ -3132,7 +3093,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       }
       else // keep the old behavior
       type = new (heap)
-	SQLChar(charCount,
+	SQLChar(heap, charCount,
 		column_desc->isNullable(),
 		column_desc->isUpshifted(),
 		column_desc->isCaseInsensitive(),
@@ -3155,7 +3116,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
         if ( column_desc->precision > 0 )
            sizeInChars = column_desc->precision;
         type = new (heap)
-	SQLVarChar(CharLenInfo(sizeInChars, charCount/*in_bytes*/),
+	SQLVarChar(heap, CharLenInfo(sizeInChars, charCount/*in_bytes*/),
 		   column_desc->isNullable(),
 		   column_desc->isUpshifted(),
 		   column_desc->isCaseInsensitive(),
@@ -3167,7 +3128,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       }
       else // keep the old behavior
       type = new (heap)
-	SQLVarChar(charCount,
+	SQLVarChar(heap, charCount,
 		   column_desc->isNullable(),
 		   column_desc->isUpshifted(),
 		   column_desc->isCaseInsensitive(),
@@ -3179,7 +3140,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 
     case REC_BYTE_V_ASCII_LONG:
       type = new (heap)
-	SQLLongVarChar(charCount,
+	SQLLongVarChar(heap, charCount,
 		       FALSE,
 		       column_desc->isNullable(),
 		       column_desc->isUpshifted(),
@@ -3218,13 +3179,11 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       break;
     case REC_INTERVAL:
       type = new (heap)
-         SQLInterval(column_desc->isNullable(),
+         SQLInterval(heap, column_desc->isNullable(),
 		    column_desc->datetimeStart(),
 		    column_desc->intervalleadingprec,
 		    column_desc->datetimeEnd(),
-		    column_desc->datetimefractprec,
-                    heap
-		    );
+		    column_desc->datetimefractprec);
       CMPASSERT(type);
       if (! ((SQLInterval *)type)->checkValid(CmpCommon::diags()))
          return TRUE;                                            // error
@@ -3241,19 +3200,19 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 
     case REC_BLOB :
       type = new (heap)
-	SQLBlob(column_desc->precision,Lob_Invalid_Storage,
+	SQLBlob(heap, column_desc->precision,Lob_Invalid_Storage,
 		column_desc->isNullable());
       break;
 
     case REC_CLOB :
       type = new (heap)
-	SQLClob(column_desc->precision,Lob_Invalid_Storage,
+	SQLClob(heap, column_desc->precision,Lob_Invalid_Storage,
 		column_desc->isNullable());
       break;
 
     case REC_BOOLEAN :
       {
-        type = new (heap) SQLBooleanNative(column_desc->isNullable());
+        type = new (heap) SQLBooleanNative(heap, column_desc->isNullable());
       }
       break;
 
@@ -3337,7 +3296,6 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 // Method for inserting new NAColumn entries in NATable::colArray_,
 // one for each column_desc in the list supplied as input.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
 			  NATable *table		/*IN*/,
 			  NAColumnArray &colArray	/*OUT*/,
@@ -3397,7 +3355,7 @@ NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
       NAColumn *newColumn = NULL;
       if (column_desc->colname[0] != '\0')
         {
-	  // Standard named column from ReadTableDef...
+	  // Standard named column
           CMPASSERT(column_desc->colnumber >= 0);
 
          char* defaultValue = column_desc->defaultvalue;
@@ -3511,7 +3469,6 @@ NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
   return FALSE;							// no error
 
 } // createNAColumns()
-#pragma warn(1506)  // warning elimination
       
 NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 {
@@ -3579,7 +3536,6 @@ NABoolean createNAColumns(struct hive_column_desc* hcolumn /*IN*/,
   return FALSE;							// no error
 
 } // createNAColumns()
-#pragma warn(1506)  // warning elimination
 
 
 
@@ -3634,7 +3590,6 @@ ULng32 naStringHashFunc(const NAString& indexName)
 // The method processDuplicateNames() is called by createNAFileSet() for
 // tables having duplicate remote indexes.
 //*************************************************************************
-// LCOV_EXCL_START :nsk
 void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
                            NAFileSetList & indexes,
                            char *localNodeName)
@@ -3642,7 +3597,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
 {
     return;
 } // processDuplicateNames()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Method for:
@@ -3653,7 +3607,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
 // -  inserting new NAFileSet entries in NATable::vertParts_
 //    one for each vertical partition in the list supplied as input.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 static
 NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
                            const NATable * table          /*IN*/,
@@ -4318,7 +4271,6 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      // logic related to indexes hiding
    return FALSE;
  } // static createNAFileSets()
- #pragma warn(1506)  // warning elimination
 
 
  // for Hive tables
@@ -4617,7 +4569,6 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
    return FALSE;
  } // static createNAFileSets()
 
- #pragma warn(1506)  // warning elimination
 
  // -----------------------------------------------------------------------
  // Mark columns named in PRIMARY KEY constraint (these will be different
@@ -4929,7 +4880,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
  const Lng32 initHeapSize = 32 * 1024;		// ## 32K: tune this someday!
 
- #pragma nowarn(770)  // warning elimination
  NATable::NATable(BindWA *bindWA,
                   const CorrName& corrName,
                   NAMemory *heap,
@@ -5057,9 +5007,9 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
    MonitorMemoryUsage_Enter((char*)mmPhase.data(), heap_, TRUE);
 
-   // Do a readTableDef, if table descriptor has not been passed in
+   // Do a metadata read, if table descriptor has not been passed in
    //
-   TrafDesc * table_desc;
+  TrafDesc * table_desc = NULL;
    Int32 *maxIndexLevelsPtr = new (STMTHEAP) Int32;
    if (!inTableDesc)
      {
@@ -5131,7 +5081,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        setHbaseDataFormatString(TRUE);
        break;
      }
-
    if (table_desc->tableDesc()->isInMemoryObject())
      {
        setInMemoryObjectDefn( TRUE );
@@ -5144,7 +5093,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
    if (corrName.isExternal())
      {
-       setIsExternalTable(TRUE);
+       setIsTrafExternalTable(TRUE);
      }
 
    if (qualifiedName_.getQualifiedNameObj().isHistograms() || 
@@ -5197,10 +5146,10 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
    if ((table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE) != 0 ||
        (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE) != 0)
      {
-       setIsExternalTable(TRUE);
+       setIsTrafExternalTable(TRUE);
 
        if (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL)
-         setIsImplicitExternalTable(TRUE);
+         setIsImplicitTrafExternalTable(TRUE);
      }
 
    if (CmpSeabaseDDL::isMDflagsSet
@@ -5298,7 +5247,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        //
        // The updatable flag is false for an MP view only if it is NOT a
        // protection view. Therefore updatable == FALSE iff it is a
-       // shorthand view. See ReadTableDef.cpp, l. 3379.
+       // shorthand view.
        //
 
        viewFileName_ = NULL;
@@ -5478,12 +5427,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        Int32 catStrLen = 0;
        Int32 schemaStrLen = 0;
        Int32 fileStrLen = 0;
-#ifdef NA_64BIT
-       // dg64 - match signature
        int_32 primaryNodeNum=0;
-#else
-       Int32 primaryNodeNum=0;
-#endif
        short error = 0;
 
        //clusteringIndex has physical filename that can be used to check
@@ -5506,8 +5450,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
            //Measure length of node name
            //skip over node name i.e. \MAYA, \AZTEC, etc
            //and get to volume name
-           while((nodeName[nodeNameLen]!='.')&&
-                 (nodeNameLen < 8)){
+           while((nodeNameLen < 8) && (nodeName[nodeNameLen]!='.')){
              catStr++;
              nodeNameLen++;
            };
@@ -5518,8 +5461,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
            //skip over the volume/catalog name
            //while measuring catalog name length
-           while((catStr[catStrLen]!='.')&&
-                 (catStrLen < 8))
+           while((catStrLen < 8) && (catStr[catStrLen]!='.'))
              {
                schemaStr++;
                catStrLen++;
@@ -5531,8 +5473,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
            //skip over the subvolume/schema name
            //while measuring schema name length
-           while((schemaStr[schemaStrLen]!='.')&&
-                 (schemaStrLen < 8))
+           while((schemaStrLen < 8) && (schemaStr[schemaStrLen]!='.'))
              {
                fileStr++;
                schemaStrLen++;
@@ -5570,8 +5511,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
          //Measure length of node name
          //skip over node name i.e. \MAYA, \AZTEC, etc
          //and get to volume name
-         while((nodeName[nodeNameLen]!='.')&&
-               (nodeNameLen < 8)){
+         while((nodeNameLen < 8) && (nodeName[nodeNameLen]!='.')){
            catStr++;
            nodeNameLen++;
          };
@@ -5579,21 +5519,15 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
          //get volume/catalog name
          //skip ".$"
          catStr=&nodeName[nodeNameLen+2];
-#pragma nowarn(1506)   // warning elimination
          catStrLen = catalogName.length() - (nodeNameLen+2);
-#pragma warn(1506)  // warning elimination
 
          //get subvolume/schema name
          schemaStr = (char *) schemaName.data();
-#pragma nowarn(1506)   // warning elimination
          schemaStrLen = schemaName.length();
-#pragma warn(1506)  // warning elimination
 
          //get file name
          fileStr = (char *) fileName.data();
-#pragma nowarn(1506)   // warning elimination
          fileStrLen = fileName.length();
-#pragma warn(1506)  // warning elimination
 
          //figure out the node number for the node
          //which has the primary partition.
@@ -5671,11 +5605,9 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
          } // if
      } // if
 
-   // LCOV_EXCL_STOP
    initialSize_ = heap_->getAllocSize();
    MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
  } // NATable()
-#pragma warn(770)  // warning elimination
 
 
 // Constructor for a Hive table
@@ -5908,6 +5840,12 @@ NATable::NATable(BindWA *bindWA,
       viewExpandedText = replaceAll(viewExpandedText, "`", "");
       
       NAString createViewStmt("CREATE VIEW ");
+      createViewStmt += NAString("hive.");
+      if (strcmp(htbl->schName_, "default") == 0)
+        createViewStmt += "hive";
+      else
+        createViewStmt += htbl->schName_;
+      createViewStmt += ".";
       createViewStmt += htbl->tblName_ + NAString(" AS ") +
         viewExpandedText + NAString(";");
       
@@ -5929,6 +5867,11 @@ NATable::NATable(BindWA *bindWA,
     }
   else
     {
+      if (htbl->isExternalTable())
+        setIsHiveExternalTable(TRUE);
+      else if (htbl->isManagedTable())
+        setIsHiveManagedTable(TRUE);
+      
       if (createNAFileSets(htbl             /*IN*/,
                            this             /*IN*/,
                            colArray_        /*IN*/,
@@ -5965,11 +5908,9 @@ NATable::NATable(BindWA *bindWA,
 
   hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
 
-  // LCOV_EXCL_STOP
   initialSize_ = heap_->getAllocSize();
   MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
 } // NATable()
-#pragma warn(770)  // warning elimination
 
 
 NABoolean NATable::doesMissingStatsWarningExist(CollIndexSet & colsSet) const
@@ -6840,10 +6781,11 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   // If current user is root, object owner, or this is a volatile table
   // automatically have owner default privileges.
- if ((!isSeabaseTable() && !isHiveTable()) ||
-       !CmpCommon::context()->isAuthorizationEnabled() ||
-       isVolatileTable() ||
-       (ComUser::isRootUserID() && !isHiveTable()) )
+ if (!CmpCommon::context()->isAuthorizationEnabled() ||
+      isVolatileTable() ||
+      (ComUser::isRootUserID() && 
+        (!isHiveTable() && !isHbaseCellTable() && 
+         !isHbaseRowTable() && !isHbaseMapTable()) ))
   {
     privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
@@ -6863,7 +6805,8 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
   ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
   {
-    if (isHiveTable())
+    if (isHiveTable() || isHbaseCellTable() ||
+        isHbaseRowTable() || isHbaseMapTable())
       readPrivileges();
     else
       privInfo_ = NULL;
@@ -6989,7 +6932,9 @@ bool NATable::isEnabledForDDLQI() const
 {
   if (isSeabaseMD_ || isSMDTable_ || (getSpecialType() == ExtendedQualName::VIRTUAL_TABLE))
     return false;
-  else 
+  else if (isHiveTable() && (objectUID_.get_value() == 0))
+    return false;
+  else
     {
       if (objectUID_.get_value() == 0)
         {
@@ -7548,7 +7493,6 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
       const Int64 tableRedefTime = cachedNATable->getRedefTime();
       //Get last catalog operation time
       Int64 labelCatalogOpTime = tableRedefTime;
-      Int64 rforkCatalogOpTime = tableRedefTime;
       Int64 currentSchemaRedefTS = 0;
       Int64 cachedSchemaRedefTS = 0;
 
@@ -7781,6 +7725,11 @@ NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos)
   return FALSE;
 }
 
+const NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos) const
+{
+  return ((NATable*)this)->hasSaltedColumn(saltColPos);
+}
+
 NABoolean NATable::hasDivisioningColumn(Lng32 * divColPos)
 {
   for (CollIndex i=0; i<colArray_.entries(); i++ )
@@ -7883,11 +7832,21 @@ Int64 NATable::estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorC
       fqTblName.val[fqTblName.len] = '\0';
 
       Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
+      NABoolean useCoprocessor = 
+        (CmpCommon::getDefault(HBASE_ESTIMATE_ROW_COUNT_VIA_COPROCESSOR) == DF_ON);
+
+      // Note: If in the future we support a hybrid parially aligned +
+      // partially non-aligned format, the following has to be revised.
+      CollIndex keyValueCountPerRow = 1;  // assume aligned format
+      if (!isAlignedFormat(NULL))
+        keyValueCountPerRow = colcount_;  // non-aligned; each column is a separate KV
+
       errorCode = ehi->estimateRowCount(fqTblName,
                                       partialRowSize,
-                                      colcount_,
+                                      keyValueCountPerRow,
                                       retryLimitMilliSeconds,
-                                      estRowCount,
+                                      useCoprocessor,
+                                      estRowCount /* out */,
                                       breadCrumb /* out */);
       NADELETEBASIC(fqTblName.val, STMTHEAP);
 
@@ -7938,7 +7897,7 @@ ExpHbaseInterface* NATable::getHBaseInterfaceRaw()
         << DgString0((char*)"ExpHbaseInterface::init()")
         << DgString1(getHbaseErrStr(-retcode))
         << DgInt0(-retcode)
-        << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+        << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       delete ehi;
       return NULL;
     }
@@ -8381,7 +8340,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       if (isHbaseMap)
         {
           table->setIsHbaseMapTable(TRUE);
-          table->setIsExternalTable(TRUE);
+          table->setIsTrafExternalTable(TRUE);
         }
     }
     else if (isHiveTable(corrName) &&
@@ -8451,8 +8410,11 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
            // 'table' is the NATable for underlying hive table.
            // That table may also have an associated external table.
            // Skip processing the external table defn, if only the 
-           // underlying hive table is needed.
-           if (NOT bindWA->returnHiveTableDefn())
+           // underlying hive table is needed. Skip processing also
+           // if there were errors creating the NATable object 
+           // (which is indicated by a getColumnCount() value of 0).
+           if ((NOT bindWA->returnHiveTableDefn()) &&
+               (table->getColumnCount() > 0) )
              {
                // if this hive/orc table has an associated external table, 
                // get table desc for it.
@@ -8547,7 +8509,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
                      {
                        *CmpCommon::diags()
                          << DgSqlCode(-1388)
-                         << DgTableName(corrName.getExposedNameAsAnsiString());
+                         << DgString0("Object")
+                         << DgString1(corrName.getExposedNameAsAnsiString());
                      }
                  }
                else
@@ -8611,7 +8574,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         // check if this hive schema exists in hiveMD
         LIST(NAText*) tblNames(naTableHeap);
         HVC_RetCode rc =
-          hiveMetaDB_->getClient()->getAllTables(schemaNameInt, tblNames);
+          HiveClient_JNI::getAllTables((NAHeap *)naTableHeap, schemaNameInt, tblNames);
         if ((rc != HVC_OK) && (rc != HVC_DONE))
           {
             *CmpCommon::diags()
@@ -8783,7 +8746,6 @@ void NATableDB::removeNATable2(CorrName &corrName, ComQiScope qiScope,
           //remove from list of cached NATables
           if (cachedTableList_.remove(cachedNATable) > 0)
             {
-              // LCOV_EXCL_START - caching is off by default for now
               //if metadata caching is ON, then adjust cache size
               //since we are deleting a caching entry
               if(cacheMetaData_)
@@ -8791,7 +8753,6 @@ void NATableDB::removeNATable2(CorrName &corrName, ComQiScope qiScope,
               if (cachedNATable->heap_ &&
                   cachedNATable->heap_ != CmpCommon::statementHeap())
                 tablesToDeleteAfterStatement_.insert(cachedNATable);
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -9143,7 +9104,6 @@ NABoolean NATableDB::enforceMemorySpaceConstraints()
 //the current statement.
 //This is used when a binder error occurs. In rare cases the binder
 //error might be due to a stale metadata cache entry.
-// LCOV_EXCL_START :cnu
 void NATableDB::flushCacheEntriesUsedInCurrentStatement(){
 
   //do this only if metadata caching is 'ON'
@@ -9167,7 +9127,6 @@ void NATableDB::flushCacheEntriesUsedInCurrentStatement(){
     statementCachedTableList_.clear();
   }
 }
-// LCOV_EXCL_STOP
 
 //Turn metadata caching ON
 void NATableDB::setCachingON()
@@ -9210,6 +9169,8 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
     NABoolean toRemove = FALSE;
     if ((currTable->isSeabaseTable()) ||
         (currTable->isHiveTable()) ||
+        (currTable->isHbaseCellTable()) ||
+        (currTable->isHbaseRowTable()) ||
         (currTable->hasExternalTable()))
       toRemove = TRUE;
     if (! toRemove)

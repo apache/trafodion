@@ -54,7 +54,7 @@ done
 echo "! Display process status of our processes" >> $TMP
 echo "ps" >> $TMP
 echo "! Start the client process" >> $TMP
-echo "exec {name \$CLI} $xclient -client -maxsp $maxsp $*" >> $TMP
+echo "exec {$nid0 name \$CLI} $xclient -client -maxsp $maxsp $*" >> $TMP
 echo "! Display process status to see new processes" >> $TMP
 echo "ps" >> $TMP
 echo "! Wait for our processes to stop, then stop the monitor processes and exit." >> $TMP

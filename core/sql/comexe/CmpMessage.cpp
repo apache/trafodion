@@ -69,9 +69,7 @@ IpcMessageObjSize CmpMessageObj::packIntoBuffer(IpcMessageBufferPtr& buffer,
   IpcMessageObjSize result = ::packIntoBuffer(buffer,length);
 
   if (strPtr!=NULL)
-#pragma nowarn(1506)   // warning elimination 
      str_cpy_all((char*)buffer,strPtr,length);
-#pragma warn(1506)  // warning elimination 
   buffer += length;
   return result+length;
 }
@@ -103,9 +101,7 @@ void CmpMessageObj::unpackBuffer(IpcConstMessageBufferPtr& buffer,
   else {
      strPtr = new(h) char[length];
      assert(strPtr!=NULL);
-#pragma nowarn(1506)   // warning elimination 
      str_cpy_all((char*)strPtr,(char*) buffer,length);
-#pragma warn(1506)  // warning elimination 
      buffer += length;
   }
 }
@@ -120,9 +116,7 @@ void CmpMessageObj::unpackBuffer(IpcConstMessageBufferPtr& buffer,
   assert(length <= maxSize);
   if ( length > 0 )
   {
-#pragma nowarn(1506)   // warning elimination 
      str_cpy_all((char*)strPtr,(char*) buffer,length);
-#pragma warn(1506)  // warning elimination 
      buffer += length;
   }
   sizeMoved = length;
@@ -262,14 +256,13 @@ void CmpMessageReplyBasic::unpackMyself(IpcMessageObjType objType,
 CmpCompileInfo::CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
 			       Lng32 sourceStrCharSet,
 			       char * schemaName, Lng32 schemaNameLen,
-			       char * recompControlInfo, Lng32 recompControlInfoLen,
                                ULng32 inputArrayMaxsize, short atomicity)
      : flags_(0),
        sqltext_(sourceStr), sqlTextLen_(sourceStrLen),
        sqlTextCharSet_(sourceStrCharSet),
        schemaName_(schemaName), schemaNameLen_(schemaNameLen),
-       recompControlInfo_(recompControlInfo), recompControlInfoLen_(recompControlInfoLen),
-       inputArrayMaxsize_(inputArrayMaxsize)
+       inputArrayMaxsize_(inputArrayMaxsize),
+       unused2_(0)
 {
   if (atomicity == 1) {
       flags_ |= ROWSET_ATOMICITY_SPECIFIED;
@@ -291,8 +284,6 @@ CmpCompileInfo::CmpCompileInfo()
     sqlTextCharSet_(0),
     schemaName_(NULL), 
     schemaNameLen_(0),
-    recompControlInfo_(NULL), 
-    recompControlInfoLen_(0),
     inputArrayMaxsize_(0)
 {
   str_pad(fillerBytes_, FILLERSIZE, '\0');
@@ -306,8 +297,6 @@ void CmpCompileInfo::init()
   sqlTextCharSet_ = 0;
   schemaName_ = NULL; 
   schemaNameLen_ = 0;
-  recompControlInfo_ = NULL; 
-  recompControlInfoLen_ = 0;
   inputArrayMaxsize_ = 0;
 }
 
@@ -321,8 +310,7 @@ Lng32 CmpCompileInfo::getLength()
 Lng32 CmpCompileInfo::getVarLength()
 {
   return ROUND8(sqlTextLen_) + 
-    ROUND8(schemaNameLen_) 
-    + ROUND8(recompControlInfoLen_);
+    ROUND8(schemaNameLen_);
 }
 
 void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
@@ -331,22 +319,15 @@ void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
   if (sqltext_ && (sqlTextLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], sqltext_, sqlTextLen_);
-      ci->sqltext_ = (char *)nextOffset;
+      ci->sqltext_ = (char *)((long)nextOffset);
       nextOffset += ROUND8(sqlTextLen_);
     }
   
   if (schemaName_ && (schemaNameLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], (char *)schemaName_, schemaNameLen_);
-      ci->schemaName_ = (char *)nextOffset;
+      ci->schemaName_ = (char *)((long)nextOffset);
       nextOffset += ROUND8(schemaNameLen_);
-    }
-
-  if (recompControlInfo_ && (recompControlInfoLen_ > 0))
-    {
-      str_cpy_all(&buffer[nextOffset], (char *)recompControlInfo_, recompControlInfoLen_);
-      ci->recompControlInfo_ = (char *)nextOffset;
-      nextOffset += ROUND8(recompControlInfoLen_);
     }
 }
 
@@ -375,15 +356,10 @@ void CmpCompileInfo::unpack(char * base)
       schemaName_ = base + (Lng32)(Long)schemaName_;
     }
 
-  if (recompControlInfo_)
-    {
-      recompControlInfo_ = base + (Lng32)(Long)recompControlInfo_;
-    }
 }
 
 void CmpCompileInfo::getUnpackedFields(char* &sqltext,
-				       char* &schemaName,
-				       char* &recompControlInfo)
+				       char* &schemaName)
 {
   char * base = (char *)this;
 
@@ -397,11 +373,6 @@ void CmpCompileInfo::getUnpackedFields(char* &sqltext,
       schemaName = base + (Lng32)(Long)schemaName_;
     }
 
-  recompControlInfo = NULL;
-  if (recompControlInfo_)
-    {
-      recompControlInfo = base + (Lng32)(Long)recompControlInfo_;
-    }
 }
 
 const short CmpCompileInfo::getRowsetAtomicity()
@@ -446,11 +417,9 @@ CmpDDLwithStatusInfo::CmpDDLwithStatusInfo()
 
 CmpDDLwithStatusInfo::CmpDDLwithStatusInfo(char * sourceStr, Lng32 sourceStrLen,
                                            Lng32 sourceStrCharSet,
-                                           char * schemaName, Lng32 schemaNameLen, 
-                                           char * recompControlInfo, Lng32 recompControlInfoLen)
+                                           char * schemaName, Lng32 schemaNameLen)
   : CmpCompileInfo(sourceStr, sourceStrLen, sourceStrCharSet,
                    schemaName, schemaNameLen,
-                   recompControlInfo, recompControlInfoLen,
                    0, 0)
 {
   statusFlags_ = 0;
@@ -498,7 +467,7 @@ void CmpDDLwithStatusInfo::pack(char * buffer)
   if (blackBox_ && (blackBoxLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], blackBox_, blackBoxLen_);
-      ci->blackBox_ = (char *)nextOffset;
+      ci->blackBox_ = (char *)((long)nextOffset);
       nextOffset += ROUND8(blackBoxLen_);
     }
 
@@ -549,9 +518,7 @@ IpcMessageObjSize CmpMessageReply::mypackedLength()
 {
   IpcMessageObjSize size = CmpMessageReplyBasic::mypackedLength();
   size += sizeof(sz_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,data_,sz_);
-#pragma warn(1506)  // warning elimination 
   return size;
 }
 
@@ -559,9 +526,7 @@ IpcMessageObjSize CmpMessageReply::packMyself(IpcMessageBufferPtr& buffer)
 {
   IpcMessageObjSize size= CmpMessageReplyBasic::packMyself(buffer);
   size += ::packIntoBuffer(buffer,sz_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer,data_,sz_);
-#pragma warn(1506)  // warning elimination 
   return size;
 }
 
@@ -649,7 +614,6 @@ IpcMessageObjSize CmpMessageReplyCode::packMyself(IpcMessageBufferPtr& buffer)
   return size;
 }
 
-#ifdef NA_CMPDLL
 IpcMessageObjSize
 CmpMessageReplyCode::copyFragsToBuffer(IpcMessageBufferPtr& buffer)
 {
@@ -673,7 +637,6 @@ CmpMessageReplyCode::copyFragsToBuffer(IpcMessageBufferPtr& buffer)
 
   return size;
 }
-#endif // NA_CMPDLL
 
 // -----------------------------------------------------------------------
 // methods for CmpMessageRequest
@@ -715,9 +678,7 @@ void CmpMessageRequest::copyToString(char* &dest, CmpMsgBufLenType& sz,
     {
       sz = sz1 + 1;
       dest = new (getHeap()) char[sz];
-#pragma nowarn(1506)   // warning elimination 
       str_cpy_all(dest, source, sz1);      
-#pragma warn(1506)  // warning elimination 
       dest[sz1] = 0;
     }
   else
@@ -733,9 +694,7 @@ IpcMessageObjSize CmpMessageRequest::mypackedLength()
   size += sizeof(sz_);
   size += sizeof(flags_);
   size += sizeof(charSet_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size, data_, sz_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(parentQidLen_);
   size += parentQidLen_;
   return size;  
@@ -747,9 +706,7 @@ IpcMessageObjSize CmpMessageRequest::packMyself(IpcMessageBufferPtr& buffer)
   size += ::packIntoBuffer(buffer, sz_);
   size += ::packIntoBuffer(buffer, flags_);
   size += ::packIntoBuffer(buffer, charSet_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, data_, sz_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer, parentQidLen_);
   if (parentQidLen_ != 0 && parentQid_ != NULL)
       size += packStrIntoBuffer(buffer, (char *)parentQid_, parentQidLen_);
@@ -970,21 +927,13 @@ IpcMessageObjSize CmpMessageISPRequest::mypackedLength()
   IpcMessageObjSize size = CmpMessageRequest::mypackedLength();
   advanceSize(size, procName_);
   size += sizeof(inputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,inputExpr_,inputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(outputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,outputExpr_,outputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(keyExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,keyExpr_,keyExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(inputDataSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,inputData_,inputDataSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(outputRowSize_);
   size += sizeof(outputTotalSize_);
   
@@ -997,21 +946,13 @@ IpcMessageObjSize CmpMessageISPRequest::packMyself(IpcMessageBufferPtr& buffer)
   size += packIntoBuffer(buffer, procName_);
 
   size += ::packIntoBuffer(buffer,inputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, inputExpr_, inputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer,outputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, outputExpr_, outputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer, keyExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, keyExpr_, keyExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer,inputDataSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, inputData_, inputDataSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer,outputRowSize_);
   size += ::packIntoBuffer(buffer,outputTotalSize_);
 

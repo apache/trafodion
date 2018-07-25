@@ -240,7 +240,7 @@ ExplainTupleMaster::init(Space *space, NABoolean doExplainSpaceOpt)
   descCursor_ = 0;
   
   explainTupleStr_ = NULL;
-  explainTupleData_ = NULL;
+  explainTupleData_ = (NABasicPtr)NULL;
 
   // if space opt is to be done, start by allocating max length.
   // this will be trimmed and reset in ExplainTuple::genExplainData at end.
@@ -517,7 +517,7 @@ void
 ExplainTupleMaster::setCardinality(double card)
 {
   
-  float fcard = (float) card;    // NT_PORT ( bd 10/22/96 ) cast to float
+  float fcard = (float) card; 
   
   setCol(EX_COL_CARD, &fcard, 0, 0);
 }
@@ -526,7 +526,7 @@ ExplainTupleMaster::setCardinality(double card)
 void
 ExplainTupleMaster::setOperatorCost(double opCost)
 {
-  float fopCost = (float) opCost; // NT_PORT ( bd 10/22/96 ) cast to float
+  float fopCost = (float) opCost;
   
   setCol(EX_COL_OPCOST, &fopCost, 0, 0);
 }
@@ -534,7 +534,7 @@ ExplainTupleMaster::setOperatorCost(double opCost)
 void
 ExplainTupleMaster::setTotalCost(double totCost)
 {
-  float ftotCost = (float) totCost;  // NT_PORT ( bd 10/22/96 ) cast to float
+  float ftotCost = (float) totCost; 
   
   setCol(EX_COL_TOTCOST, &ftotCost, 0, 0);
 }

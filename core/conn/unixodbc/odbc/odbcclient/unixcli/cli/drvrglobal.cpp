@@ -917,79 +917,45 @@ bool use_gcvt(double number, char* string, short size)
 
 bool double_to_char (double number, int precision, char* string, short size)
 {
-	char *buffer,*temp ;
-	bool rc = true;
+    bool rc = false;
+    char format[16] = { '\0' };
+    size_t actualLen = 0;
 
-	int	decimal_spot,
-		sign,
-		count,
-		current_location = 0,
-		length;
+    // make sure any precision of possible double value can be format to the buf. 
+        char buf[MAX_DOUBLE_TO_CHAR_LEN] = { '\0' };
 
-	*string = 0;
+    // precision should less than size
+    precision = precision < size ? precision : size - 1;
 
-	temp = fcvt (number, precision, &decimal_spot, &sign) ;
-	length = strlen(temp);
-	if (length == 0)
-	{
-		return use_gcvt(number,string,size);
-	}
-	if (length > precision)
-		buffer = (char *) malloc (length + 3) ;
-	else
-		buffer = (char *) malloc (precision + 3) ;
+    // precission should be limit to a reasonable range.
+    if ((precision < 0) || (precision >(DBL_MANT_DIG - DBL_MIN_EXP))) {
+        goto fun_exit;
+    }
 
-	if (buffer == NULL)
-		return false;
+    // we want to return reasonable value even when caller didn't provide sufficiently buffer. 
+    // here using loop because actualLen may increase even precision decrease when fix-point
+    // notation to exponential notation. for example:
+    // for double d = 12345678.9, the caller only provide size=8.
+    // d will first convert to "1.234568e+07", actualLen == 12. then convert to "1.2e+07".
+    do {
+        if (sprintf(format, "%%.%dlg", precision) < 0) {
+            goto fun_exit;
+        }
+        if ((actualLen = sprintf(buf, format, number)) < 0) {
+            goto fun_exit;
+        }
+        if (size > actualLen) {
+            strcpy(string, buf);
+            rc = true;
+            break;
+        }
+        else {
+            precision -= (actualLen - size + 1);
+        }
+    } while ((precision >= 0));
 
-/* Add negative sign if required. */ 
-
-	if (sign)
-		buffer [current_location++] = '-' ;
-
-/* Place decimal point in the correct location. */ 
-
-	if (decimal_spot > 0)
-	{
-		strncpy (&buffer [current_location], temp, decimal_spot) ;
-		buffer [decimal_spot + current_location] = '.' ;
-		strcpy (&buffer [decimal_spot + current_location + 1],
-					&temp [decimal_spot]) ;
-	}
-	else
-	{
-		buffer [current_location] = '.' ;
-		for(count = current_location;
-			count< abs(decimal_spot)+current_location; count++)
-			buffer [count + 1] = '0' ;
-		strcpy (&buffer [count + 1], temp) ;
-	}
-
-	rSup(buffer);
-	length = strlen(buffer);
-	if (buffer[0] == '.' || (buffer[0] == '-' && buffer[1] == '.')) length++;
-
-	if (length>size)
-		rc = use_gcvt(number,string,size);
-	else
-	{
-		if (buffer[0] == '.')
-		{
-			strcpy( string, "0");
-			strcat( string, buffer);
-		}
-		else if (buffer[0] == '-' && buffer[1] == '.')
-		{
-			strcpy( string, "-0");
-			strcat( string, &buffer[1]);
-		}
-
-		else
-			strcpy( string, buffer);
-	}
-
-	free (buffer);
-	return rc;
+fun_exit:
+    return rc;
 } 
 
 bool ctoi64(char* string, __int64& out, bool* truncation)

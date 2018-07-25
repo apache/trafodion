@@ -34,20 +34,16 @@
 #include "ex_tcb.h"
 #include "ComSmallDefs.h"
 #include "ExStats.h"
-
+#include "HdfsClient_JNI.h"
 #include "ExpLOBinterface.h"
 #include "ex_exe_stmt_globals.h"
 // -----------------------------------------------------------------------
 // Forward class declarations
 // -----------------------------------------------------------------------
-#ifndef __EID 
 class sql_buffer;
 class ExExeStmtGlobals;
 class SequenceFileWriter;
-#endif
-
-class SequenceFileWriter;
-
+class HdfsClient;
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -108,18 +104,18 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExFastExtractTdb()
+  ExFastExtractTdb()
   {
   }
 
-  NA_EIDPROC virtual ~ExFastExtractTdb()
+  virtual ~ExFastExtractTdb()
   {
   }
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
   // ---------------------------------------------------------------------
   // Public accessor functions
@@ -412,6 +408,7 @@ protected:
                           
   NABoolean isSequenceFile();
   void createSequenceFileError(Int32 sfwRetCode);
+  void createHdfsClientFileError(Int32 hdfsClientRetCode);
   NABoolean isHdfsCompressed();
   NABoolean getEmptyNullString()
   {
@@ -420,7 +417,7 @@ protected:
     return strlen(myTdb().getNullString()) == 0;
   }
 
-  void * lobGlob_;
+  ExLobGlobals * lobGlob_;
 
   char hdfsHost_[500];
   int  hdfsPort_;
@@ -428,6 +425,7 @@ protected:
   char targetLocation_[1000];
   NABoolean errorOccurred_;
   SequenceFileWriter* sequenceFileWriter_;
+  HdfsClient *hdfsClient_;
 }; // class ExHdfsFastExtractTcb
 
 //----------------------------------------------------------------------

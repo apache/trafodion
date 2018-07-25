@@ -66,7 +66,8 @@ CmpSeabaseMDcleanup::CmpSeabaseMDcleanup(NAHeap *heap)
     numOrphanHbaseEntries_(0),
     numOrphanObjectsEntries_(0),
     numOrphanViewsEntries_(0),
-    numInconsistentHiveEntries_(0)
+    numInconsistentHiveEntries_(0),
+    isHive_(FALSE)
 {};
 
 Int64 CmpSeabaseMDcleanup::getCleanupObjectUID(
@@ -298,15 +299,28 @@ short CmpSeabaseMDcleanup::validateInputValues(
       objectOwner_ = -1;
     }
 
+  isHive_ = FALSE;
+  if (catName_ == HIVE_SYSTEM_CATALOG)
+    isHive_ = TRUE;
+
   // generate hbase name that will be used to drop underlying hbase object
   extNameForHbase_ = "";
-  if ((objType_ == COM_BASE_TABLE_OBJECT_LIT) ||
-      (objType_ == COM_INDEX_OBJECT_LIT))
+  if ((NOT isHive_) &&
+      ((objType_ == COM_BASE_TABLE_OBJECT_LIT) ||
+       (objType_ == COM_INDEX_OBJECT_LIT)))
     {
       if (NOT (catName_.isNull() || schName_.isNull() || objName_.isNull()))
         {
           extNameForHbase_ = catName_ + "." + schName_ + "." + objName_;
         }
+    }
+  else if (isHive_)
+    {
+      if (NOT ((schName_.compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) ||
+               (schName_.compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0)))              
+        extNameForHive_ = schName_ + ".";
+
+      extNameForHive_ += objName_;
     }
 
   // Make sure user has necessary privileges to perform drop
@@ -353,7 +367,7 @@ short CmpSeabaseMDcleanup::gatherDependentObjects(ExeCliInterface *cliInterface)
   if (objType_ == COM_BASE_TABLE_OBJECT_LIT)
     {
       // generate dependent index uid list
-      str_sprintf(query, "select index_uid from %s.\"%s\".%s where base_table_uid = %Ld",
+      str_sprintf(query, "select index_uid from %s.\"%s\".%s where base_table_uid = %ld",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   objUID_);
       
@@ -366,7 +380,7 @@ short CmpSeabaseMDcleanup::gatherDependentObjects(ExeCliInterface *cliInterface)
         }
   
       // generate unique constr list
-     str_sprintf(query, "select constraint_uid from %s.\"%s\".%s where table_uid = %Ld and constraint_type = 'U' ",
+     str_sprintf(query, "select constraint_uid from %s.\"%s\".%s where table_uid = %ld and constraint_type = 'U' ",
                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
                   objUID_);
       
@@ -379,7 +393,7 @@ short CmpSeabaseMDcleanup::gatherDependentObjects(ExeCliInterface *cliInterface)
         }
 
       // generate ref constr list
-     str_sprintf(query, "select constraint_uid from %s.\"%s\".%s where table_uid = %Ld and constraint_type = 'F' ",
+     str_sprintf(query, "select constraint_uid from %s.\"%s\".%s where table_uid = %ld and constraint_type = 'F' ",
                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
                   objUID_);
       
@@ -475,6 +489,34 @@ short CmpSeabaseMDcleanup::gatherDependentObjects(ExeCliInterface *cliInterface)
         }
     }
 
+  if (isHive_)
+    {
+      // if this hive table has an external table, get its uid
+      NAString extTableName;
+      extTableName = ComConvertNativeNameToTrafName(catName_, schName_, objName_);
+      if (NOT extTableName.isNull())
+        {
+          QualifiedName qn(extTableName, 3);
+          Int64 extObjUID = 
+            getObjectUID(cliInterface, 
+                         qn.getCatalogName(), qn.getSchemaName(), qn.getObjectName(),
+                         COM_BASE_TABLE_OBJECT_LIT,
+                         NULL, NULL, FALSE,
+                         FALSE);
+          if (extObjUID > 0)
+            {
+              char query[1000];
+              str_sprintf(query, "cleanup uid %ld", extObjUID);
+              cliRC = cliInterface->executeImmediate(query);
+              if (cliRC < 0)
+                {
+                  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+                  return -1;
+                }
+            }
+        }
+    }
+
   if (errorSeen)
     return -1;
   else
@@ -505,7 +547,7 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
 
   // Now delete from OBJECTS (but not its index)
 
-  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -525,7 +567,7 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
     } 
   
   // OBJECTS index
-  str_sprintf(query, "delete from table(index_table %s.\"%s\".%s) where \"OBJECT_UID@\" = %Ld",
+  str_sprintf(query, "delete from table(index_table %s.\"%s\".%s) where \"OBJECT_UID@\" = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -536,7 +578,7 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
     }
   
   // COLUMNS table
-  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -547,7 +589,7 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
     }
 
   // KEYS table
-  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -558,7 +600,7 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
     }
 
   // TABLES table
-  str_sprintf(query, "delete from %s.\"%s\".%s where table_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where table_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -569,7 +611,7 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
     }
   
   // delete index entries
-  str_sprintf(query, "delete from %s.\"%s\".%s where base_table_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where base_table_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -580,7 +622,7 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
     }
 
   // TEXT entries
-  str_sprintf(query, "delete from %s.\"%s\".%s where text_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where text_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -611,7 +653,7 @@ short CmpSeabaseMDcleanup::deleteMDConstrEntries(ExeCliInterface *cliInterface)
           OutputInfo * oi = (OutputInfo*)uniqueConstrUIDlist_->getCurr(); 
           ucUID = *(Int64*)oi->get(0);
           
-          str_sprintf(query, "delete from %s.\"%s\".%s where unique_constraint_uid = %Ld",
+          str_sprintf(query, "delete from %s.\"%s\".%s where unique_constraint_uid = %ld",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_REF_CONSTRAINTS,
                       ucUID);
           cliRC = cliInterface->executeImmediate(query);
@@ -621,7 +663,7 @@ short CmpSeabaseMDcleanup::deleteMDConstrEntries(ExeCliInterface *cliInterface)
               return -1;
             }
           
-          str_sprintf(query, "delete from %s.\"%s\".%s where unique_constraint_uid = %Ld",
+          str_sprintf(query, "delete from %s.\"%s\".%s where unique_constraint_uid = %ld",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
                       ucUID);
           cliRC = cliInterface->executeImmediate(query);
@@ -644,7 +686,7 @@ short CmpSeabaseMDcleanup::deleteMDConstrEntries(ExeCliInterface *cliInterface)
           
           OutputInfo * oi = (OutputInfo*)refConstrUIDlist_->getCurr(); 
           rcUID = *(Int64*)oi->get(0);
-          str_sprintf(query, "delete from %s.\"%s\".%s where ref_constraint_uid = %Ld",
+          str_sprintf(query, "delete from %s.\"%s\".%s where ref_constraint_uid = %ld",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_REF_CONSTRAINTS,
                       rcUID);
           cliRC = cliInterface->executeImmediate(query);
@@ -654,7 +696,7 @@ short CmpSeabaseMDcleanup::deleteMDConstrEntries(ExeCliInterface *cliInterface)
               return -1;
             }
           
-          str_sprintf(query, "delete from %s.\"%s\".%s where foreign_constraint_uid = %Ld",
+          str_sprintf(query, "delete from %s.\"%s\".%s where foreign_constraint_uid = %ld",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
                       rcUID);
           cliRC = cliInterface->executeImmediate(query);
@@ -668,7 +710,7 @@ short CmpSeabaseMDcleanup::deleteMDConstrEntries(ExeCliInterface *cliInterface)
         } // for
     }
       
-  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid in (select constraint_uid from %s.\"%s\".%s where table_uid = %Ld)",
+  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid in (select constraint_uid from %s.\"%s\".%s where table_uid = %ld)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               objUID_);
@@ -679,7 +721,7 @@ short CmpSeabaseMDcleanup::deleteMDConstrEntries(ExeCliInterface *cliInterface)
       return -1;
     }
   
-  str_sprintf(query, "delete from %s.\"%s\".%s where table_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where table_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -697,7 +739,7 @@ short CmpSeabaseMDcleanup::deleteMDViewEntries(ExeCliInterface *cliInterface)
   Lng32 cliRC = 0;
   char query[1000];
 
-  str_sprintf(query, "delete from %s.\"%s\".%s where view_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where view_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -707,7 +749,7 @@ short CmpSeabaseMDcleanup::deleteMDViewEntries(ExeCliInterface *cliInterface)
       return -1;
     }
 
-  str_sprintf(query, "delete from %s.\"%s\".%s where used_object_uid = %Ld and used_object_type = '%s' ",
+  str_sprintf(query, "delete from %s.\"%s\".%s where used_object_uid = %ld and used_object_type = '%s' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
               objUID_,
               objType_.data());
@@ -733,8 +775,19 @@ short CmpSeabaseMDcleanup::deleteHistogramEntries(ExeCliInterface *cliInterface)
       (objUID_ > 0) &&
       (NOT catName_.isNull()) &&
       (NOT schName_.isNull()))
-    if (dropSeabaseStats(cliInterface, catName_.data(), schName_.data(), objUID_))
-      return -1;
+    {
+      if (NOT isHive_)
+        {
+          if (dropSeabaseStats(cliInterface, catName_.data(), schName_.data(), objUID_))
+            return -1;
+        }
+      else
+        {
+          if (dropSeabaseStats(cliInterface, HIVE_STATS_CATALOG, 
+                               HIVE_STATS_SCHEMA_NO_QUOTES, objUID_))
+            return -1;
+        }
+    }
 
   return 0;
 }
@@ -756,7 +809,7 @@ short CmpSeabaseMDcleanup::dropIndexes(ExeCliInterface *cliInterface)
       OutputInfo * oi = (OutputInfo*)indexesUIDlist_->getCurr(); 
       iUID = *(Int64*)oi->get(0);
 
-      str_sprintf(query, "cleanup uid %Ld",
+      str_sprintf(query, "cleanup uid %ld",
                   iUID);
       cliRC = cliInterface->executeImmediate(query);
       if (cliRC < 0)
@@ -788,7 +841,7 @@ short CmpSeabaseMDcleanup::dropSequences(ExeCliInterface *cliInterface)
       OutputInfo * oi = (OutputInfo*)seqUIDlist_->getCurr(); 
       iUID = *(Int64*)oi->get(0);
 
-      str_sprintf(query, "cleanup uid %Ld",
+      str_sprintf(query, "cleanup uid %ld",
                   iUID);
       cliRC = cliInterface->executeImmediate(query);
       if (cliRC < 0)
@@ -875,7 +928,7 @@ short CmpSeabaseMDcleanup::deletePrivs(ExeCliInterface *cliInterface)
   if (NOT isAuthorizationEnabled())
     return 0;
 
-  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %Ld",
+  str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %ld",
               getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA, "OBJECT_PRIVILEGES",
               objUID_);
   cliRC = cliInterface->executeImmediate(query);
@@ -929,7 +982,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
       NAString obj_name((char*)oi->get(2));
       if (isHistogramTable(obj_name))
       {
-        str_sprintf(query, "cleanup uid %Ld", uid);
+        str_sprintf(query, "cleanup uid %ld", uid);
         cliRC = cliInterface->executeImmediate(query);
         if (cliRC < 0)
           {
@@ -975,7 +1028,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
           continue;
         }
 
-      str_sprintf(query, "cleanup uid %Ld", uid);
+      str_sprintf(query, "cleanup uid %ld", uid);
       cliRC = cliInterface->executeImmediate(query);
       if (cliRC < 0)
         {
@@ -989,9 +1042,10 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
   if (NOT cannotDropSchema)
     {
       // delete schema object row from objects table
-      str_sprintf(query, "delete from  %s.\"%s\".%s where catalog_name = '%s' and schema_name  = '%s' and object_name = '"SEABASE_SCHEMA_OBJECTNAME" ' ",
+      str_sprintf(query, "delete from  %s.\"%s\".%s where catalog_name = '%s' and schema_name  = '%s' and object_name = '%s' ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                  (char*)catName_.data(),(char*)schName_.data());
+                  (char*)catName_.data(),(char*)schName_.data(),
+                  SEABASE_SCHEMA_OBJECTNAME);
       cliRC = cliInterface->executeImmediate(query);
       if (cliRC < 0)
         {
@@ -1020,7 +1074,7 @@ short CmpSeabaseMDcleanup::cleanupUIDs(ExeCliInterface *cliInterface,
       OutputInfo * oi = (OutputInfo*)entriesList->getCurr(); 
       Int64 objUID = *(Int64*)oi->get(0);
       
-      str_sprintf(query, "cleanup uid %Ld", objUID);
+      str_sprintf(query, "cleanup uid %ld", objUID);
       cliRC = cliInterface->executeImmediate(query);
       if (cliRC < 0)
         {
@@ -1032,81 +1086,6 @@ short CmpSeabaseMDcleanup::cleanupUIDs(ExeCliInterface *cliInterface,
     }
   
   return 0;
-}
-
-void CmpSeabaseMDcleanup::cleanupHiveObject(const StmtDDLCleanupObjects * stmtCleanupNode,
-                                             ExeCliInterface *cliInterface)
-{
-
-  Lng32 cliRC = 0;
-  char query[1000];
-  NABoolean errorSeen = FALSE;
-
-  // check if this table exists in hive metadata
-  NABoolean hiveObjExists = TRUE;
-  NAString objName(stmtCleanupNode->getTableNameAsQualifiedName()->getObjectName());
-  objName.toLower();
-  str_sprintf(query, "select * from (get %s in schema %s.%s, no header, match '%s') x(a)",
-              (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
-              ? "tables" : "views",
-               stmtCleanupNode->getTableNameAsQualifiedName()->getCatalogName().data(),
-              stmtCleanupNode->getTableNameAsQualifiedName()->getSchemaName().data(),    
-              objName.data());
-  cliRC = cliInterface->fetchRowsPrologue(query, TRUE/*no exec*/);
-  if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
-    }
-  
-  cliRC = cliInterface->clearExecFetchClose(NULL, 0);
-  if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
-    }
-  
-  if (cliRC == 100) // did not find the row
-    {
-      hiveObjExists = FALSE;
-    }
-    
-  // if underlying hive object doesn't exist, drop external table and unregister
-  // objects
-  if (NOT hiveObjExists)
-    {
-      // drop external table
-      if (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
-        {
-          str_sprintf(query, "drop external table if exists %s for %s;",
-                      objName.data(),
-                      stmtCleanupNode->getTableNameAsQualifiedName()->
-                      getQualifiedNameAsString().data());
-          cliRC = cliInterface->executeImmediate(query);
-          if (cliRC < 0)
-            {
-              if (processCleanupErrors(NULL, errorSeen))
-                return;
-            }          
-        }
-      
-      // unregister registered table or view
-      if (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
-        str_sprintf(query, "unregister hive table if exists %s cleanup;",
-                    stmtCleanupNode->getTableNameAsQualifiedName()->getQualifiedNameAsString().data());
-      else
-        str_sprintf(query, "unregister hive view if exists %s cleanup;",
-                    stmtCleanupNode->getTableNameAsQualifiedName()->getQualifiedNameAsString().data());
-      
-      cliRC = cliInterface->executeImmediate(query);
-      if (cliRC < 0)
-        {
-          if (processCleanupErrors(NULL, errorSeen))
-            return;
-        }
-    }
-
-  return;
 }
 
 void CmpSeabaseMDcleanup::cleanupHBaseObject(const StmtDDLCleanupObjects * stmtCleanupNode,
@@ -1121,9 +1100,7 @@ void CmpSeabaseMDcleanup::cleanupHBaseObject(const StmtDDLCleanupObjects * stmtC
 
   // drop external table
   str_sprintf(query, "drop external table if exists %s;",
-              objName.data(),
-              stmtCleanupNode->getTableNameAsQualifiedName()->
-              getQualifiedNameAsString().data());
+              objName.data());
   cliRC = cliInterface->executeImmediate(query);
   if (cliRC < 0)
     {
@@ -1466,8 +1443,7 @@ short CmpSeabaseMDcleanup::cleanupInconsistentObjectsEntries(ExeCliInterface *cl
 
   str_sprintf(query, "select distinct object_uid, cast(object_uid as varchar(30) not null) from %s.\"%s\".%s where object_uid not in (select object_uid from %s.\"%s\".%s) ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-              getSystemCatalog());
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS);
   
   cliRC = cliInterface->fetchAllRows(obsoleteEntriesList_, query, 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
@@ -1756,7 +1732,7 @@ void CmpSeabaseMDcleanup::cleanupMetadataEntries(ExeCliInterface *cliInterface,
               {
               case 0:
                 {
-                  dws->setMsg("  Start: Cleanup Orphan Objects Entries");              
+                  dws->setMsg("  Start: Cleanup Orphan Objects Entries");
                   dws->subStep()++;
                   dws->setEndStep(FALSE);
                   
@@ -1910,6 +1886,16 @@ void CmpSeabaseMDcleanup::cleanupMetadataEntries(ExeCliInterface *cliInterface,
                   dws->setBlackBoxLen(blackBoxLen);
                   dws->setBlackBox(blackBox);
                    
+                  if ((numOrphanViewsEntries_ == 0) &&
+                      (blackBoxLen > 0))
+                    {
+                      str_sprintf(buf, "  End:   Cleanup Inconsistent Views Entries (%d %s %s) [internal error: blackBoxLen = %d] ",
+                                  numOrphanViewsEntries_,
+                                  (numOrphanViewsEntries_ == 1 ? "entry" : "entries"),
+                                  (checkOnly_ ? "found" : "cleaned up"),
+                                  blackBoxLen);
+                    }
+                  
                   dws->setMsg(buf);
                   dws->setStep(HIVE_ENTRIES);
                   dws->setSubstep(0);
@@ -2023,7 +2009,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
         checkOnly_ = TRUE;
       if (dws->getReturnDetails())
         returnDetails_ = TRUE;
-      return cleanupMetadataEntries(&cliInterface, ehi, dws);
+      cleanupMetadataEntries(&cliInterface, ehi, dws);
+      return;
     }
 
   if (cleanupMetadataEntries_)
@@ -2035,13 +2022,6 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       (objType_ == COM_SHARED_SCHEMA_OBJECT_LIT))
     {
       return cleanupSchemaObjects(&cliInterface);
-    }
-
-  if (stmtCleanupNode &&
-      ((stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_) ||
-       (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_VIEW_)))
-    {
-      return cleanupHiveObject(stmtCleanupNode, &cliInterface);
     }
 
   if (stmtCleanupNode &&
@@ -2058,6 +2038,7 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
 
   if (((objType_ == COM_BASE_TABLE_OBJECT_LIT) ||
        (objType_ == COM_INDEX_OBJECT_LIT)) &&
+      (NOT isHive_) &&
       (extNameForHbase_.isNull()))
     {
       // add warning that name couldnt be found. Hbase object cannot be removed.
@@ -2093,7 +2074,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
     if (stopOnError_)
       goto label_error;
 
-  if (NOT extNameForHbase_.isNull())
+  if ((NOT isHive_) &&
+      (NOT extNameForHbase_.isNull()))
     {
       HbaseStr hbaseObject;
       hbaseObject.val = (char*)extNameForHbase_.data();
@@ -2104,6 +2086,29 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       if (cliRC)
           if (stopOnError_)
             goto label_return;
+    }
+
+  // drop underlying Hive object
+  if (isHive_)
+    {
+      NAString hiveQuery;
+      if (objType_ == COM_BASE_TABLE_OBJECT_LIT)
+        {
+          hiveQuery = "drop table if exists " + extNameForHive_;
+        }
+      else if (objType_ == COM_VIEW_OBJECT_LIT)
+        {
+          hiveQuery = "drop view if exists " + extNameForHive_;
+        }
+
+      if (NOT hiveQuery.isNull())
+        {
+          if (HiveClient_JNI::executeHiveSQL(hiveQuery.data()) != HVC_OK)
+            {
+              if (stopOnError_)
+                goto label_return;
+            }
+        }
     }
 
   cliRC = dropIndexes(&cliInterface);
@@ -2140,7 +2145,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
         (
              cn,
              ComQiScope::REMOVE_FROM_ALL_USERS, 
-             COM_BASE_TABLE_OBJECT,
+             (objType_ == COM_VIEW_OBJECT_LIT ? COM_VIEW_OBJECT :
+              COM_BASE_TABLE_OBJECT),
              FALSE, FALSE);
     }
 

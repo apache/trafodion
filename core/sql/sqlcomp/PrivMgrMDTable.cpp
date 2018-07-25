@@ -232,7 +232,7 @@ int32_t cliRC = cliInterface.fetchRowsPrologue(SQLStatement.c_str(),true/*no exe
 PrivStatus PrivMgrMDTable::CLIImmediate(const std::string & SQLStatement)
 {
 
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
 int32_t cliRC = cliInterface.executeImmediate(SQLStatement.c_str());
@@ -316,13 +316,13 @@ PrivStatus PrivMgrMDTable::executeFetchAll(
    
 {
 
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
    queue = NULL;
    
 // set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+int32_t diagsMark = ((pDiags_ != NULL) ? pDiags_->mark() : -1);
 
 int32_t cliRC = cliInterface.fetchAllRows(queue,(char *)SQLStatement.c_str(),0,
                                           false,false,true);
@@ -333,7 +333,7 @@ int32_t cliRC = cliInterface.fetchAllRows(queue,(char *)SQLStatement.c_str(),0,
       return STATUS_ERROR;
    }
    
-   if (cliRC == 100) // did not find the row
+   if (cliRC == 100 && diagsMark != -1)// did not find the row
    {
       pDiags_->rewind(diagsMark);
       return STATUS_NOTFOUND;
@@ -389,12 +389,12 @@ std::string selectStmt ("SELECT COUNT(*) FROM  ");
    selectStmt += whereClause;
 
 int32_t length = 0;
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
 int32_t cliRC = cliInterface.executeImmediate(selectStmt.c_str(),
                                               (char*)&rowCount, 
-                                              &length,NULL);
+                                              &length,FALSE);
 
    if (cliRC < 0)
    {
@@ -491,7 +491,7 @@ std::string updateStmt("UPDATE ");
 // set pointer in diags area
 int32_t diagsMark = pDiags_->mark();
 
-ExeCliInterface cliInterface(STMTHEAP,NULL,NULL, 
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                              CmpCommon::context()->sqlSession()->getParentQid());
                              
 int32_t cliRC = cliInterface.executeImmediate(updateStmt.c_str());

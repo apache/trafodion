@@ -373,7 +373,6 @@ struct NATableEntryDetails {
 //
 // ***********************************************************************
 
-#pragma nowarn(1506)   // warning elimination 
 class NATable : public NABasicObject
 {
   friend class NATableDB;
@@ -576,6 +575,7 @@ public:
   const char *getHiveOriginalViewText() const { return hiveOrigViewText_; }
 
   NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL);
+  const NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL) const;
   NABoolean hasDivisioningColumn(Lng32 * divColPos = NULL);
 
   void setUpdatable( NABoolean value )
@@ -623,21 +623,17 @@ public:
     return isAlignedFormat;
   }
  
-// LCOV_EXCL_START :cnu
   void setVerticalPartitions( NABoolean value )
   {  value ? flags_ |= IS_VERTICAL_PARTITION : flags_ &= ~IS_VERTICAL_PARTITION;}
-// LCOV_EXCL_STOP
 
   NABoolean isVerticalPartition() const
   {  return (flags_ & IS_VERTICAL_PARTITION) != 0; }
 
-// LCOV_EXCL_START :cnu
   void setHasVerticalPartitions( NABoolean value )
   {
     value ?
        flags_ |= HAS_VERTICAL_PARTITIONS : flags_ &= ~HAS_VERTICAL_PARTITIONS;
   }
-// LCOV_EXCL_STOP
 
   NABoolean hasVerticalPartitions() const
   {  return (flags_ & HAS_VERTICAL_PARTITIONS) != 0; }
@@ -723,17 +719,17 @@ public:
   NABoolean hasSerializedColumn() const
   {  return (flags_ & SERIALIZED_COLUMN) != 0; }
 
-  void setIsExternalTable( NABoolean value )
-  {  value ? flags_ |= IS_EXTERNAL_TABLE : flags_ &= ~IS_EXTERNAL_TABLE; }
+  void setIsTrafExternalTable( NABoolean value )
+  {  value ? flags_ |= IS_TRAF_EXTERNAL_TABLE : flags_ &= ~IS_TRAF_EXTERNAL_TABLE; }
 
-  NABoolean isExternalTable() const
-  {  return (flags_ & IS_EXTERNAL_TABLE) != 0; }
+  NABoolean isTrafExternalTable() const
+  {  return (flags_ & IS_TRAF_EXTERNAL_TABLE) != 0; }
 
-  void setIsImplicitExternalTable( NABoolean value )
-  {  value ? flags_ |= IS_IMPLICIT_EXTERNAL_TABLE : flags_ &= ~IS_IMPLICIT_EXTERNAL_TABLE; }
+  void setIsImplicitTrafExternalTable( NABoolean value )
+  {  value ? flags_ |= IS_IMPLICIT_TRAF_EXT_TABLE : flags_ &= ~IS_IMPLICIT_TRAF_EXT_TABLE; }
 
-  NABoolean isImplicitExternalTable() const
-  {  return (flags_ & IS_IMPLICIT_EXTERNAL_TABLE) != 0; }
+  NABoolean isImplicitTrafExternalTable() const
+  {  return (flags_ & IS_IMPLICIT_TRAF_EXT_TABLE) != 0; }
 
   void setHasExternalTable( NABoolean value )
   {  value ? flags_ |= HAS_EXTERNAL_TABLE : flags_ &= ~HAS_EXTERNAL_TABLE; }
@@ -785,6 +781,16 @@ public:
 
   NABoolean isInternalRegistered() const
   {  return (flags_ & IS_INTERNAL_REGISTERED) != 0; }
+
+  void setIsHiveExternalTable( NABoolean value )
+  {  value ? flags_ |= IS_HIVE_EXTERNAL_TABLE : flags_ &= ~IS_HIVE_EXTERNAL_TABLE; }
+  NABoolean isHiveExternalTable() const
+  {  return (flags_ & IS_HIVE_EXTERNAL_TABLE) != 0; }
+
+  void setIsHiveManagedTable( NABoolean value )
+  {  value ? flags_ |= IS_HIVE_MANAGED_TABLE : flags_ &= ~IS_HIVE_MANAGED_TABLE; }
+  NABoolean isHiveManagedTable() const
+  {  return (flags_ & IS_HIVE_MANAGED_TABLE) != 0; }
  
   const CheckConstraintList &getCheckConstraints() const
                                                 { return checkConstraints_; }
@@ -1002,7 +1008,7 @@ private:
     REMOVE_FROM_CACHE_BNC     = 0x00010000,  // Remove from NATable Cache Before Next Compilation
     SERIALIZED_ENCODED_COLUMN = 0x00020000,
     SERIALIZED_COLUMN         = 0x00040000,
-    IS_EXTERNAL_TABLE         = 0x00080000,
+    IS_TRAF_EXTERNAL_TABLE    = 0x00080000,
     HAS_EXTERNAL_TABLE        = 0x00100000,
     IS_HISTOGRAM_TABLE        = 0x00200000,
     HBASE_MAP_TABLE           = 0x00400000,
@@ -1010,21 +1016,30 @@ private:
     HAS_HIVE_EXT_TABLE        = 0x01000000,
     HIVE_EXT_COL_ATTRS        = 0x02000000,
     HIVE_EXT_KEY_ATTRS        = 0x04000000,
-    IS_IMPLICIT_EXTERNAL_TABLE= 0x08000000,
+    IS_IMPLICIT_TRAF_EXT_TABLE= 0x08000000,
     IS_REGISTERED             = 0x10000000,
-    IS_INTERNAL_REGISTERED    = 0x20000000
+    IS_INTERNAL_REGISTERED    = 0x20000000,
+
+    // if underlying hive table was created as an EXTERNAL table.
+    //  hive syntax: create external table ...)
+    //  Note: this is different than a traf external table created for
+    //        a hive table.
+    IS_HIVE_EXTERNAL_TABLE    = 0x40000000,
+
+    // if underlying hive table was not created as an EXTERNAL table.
+    IS_HIVE_MANAGED_TABLE     = 0x80000000,
   };
     
   UInt32 flags_;
 
   // ---------------------------------------------------------------------
-  // NORMAL, INDEX, RFORK, VIRTUAL, etc.
+  // NORMAL, INDEX, VIRTUAL, etc.
   // ---------------------------------------------------------------------
   // ExtendedQualName::SpecialTableType specialType_;
 
   // ---------------------------------------------------------------------
   // Extended Qualified name for the table. This also has the specialType
-  // (NORMAL, INDEX, RFORK, VIRTUAL, etc.) and the location Name.
+  // (NORMAL, INDEX, VIRTUAL, etc.) and the location Name.
   // ---------------------------------------------------------------------
   ExtendedQualName qualifiedName_;
 
@@ -1240,7 +1255,6 @@ private:
   NAList<NAString> allColFams_;
 }; // class NATable
 
-#pragma warn(1506)  // warning elimination 
 
 struct NATableCacheStats {
   char   contextType[8];
@@ -1356,10 +1370,8 @@ public:
   void getCacheStats(NATableCacheStats & stats);
 
 
-// LCOV_EXCL_START :cnu
   inline ULng32 currentCacheSize() { return currentCacheSize_; }
   inline ULng32 intervalWaterMark() { return intervalWaterMark_; }
-// LCOV_EXCL_STOP
   inline ULng32 hits() { return totalCacheHits_; }
   inline ULng32 lookups() { return totalLookupsCount_; }
 

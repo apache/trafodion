@@ -33,7 +33,9 @@
 #include "seabed/trace.h"
 
 #include <signal.h>
+#ifndef NAMESERVER_PROCESS
 extern void child_death_signal_handler2 (int signal, siginfo_t *info, void *);
+#endif
 
 extern CReqQueue ReqQueue;
 extern CMonStats *MonStats;
@@ -107,6 +109,7 @@ static void *reqWorker(void *arg)
     // Parameter passed to the thread is an instance of the CReqWorker class
     CReqWorker *rwo = (CReqWorker *) arg;
 
+#ifndef NAMESERVER_PROCESS
     // Set sigaction such that SIGCHLD signal is caught.
     struct sigaction act;
     act.sa_sigaction = child_death_signal_handler2;
@@ -114,6 +117,7 @@ static void *reqWorker(void *arg)
     sigaddset (&act.sa_mask, SIGCHLD);
     act.sa_flags = SA_SIGINFO;
     sigaction (SIGCHLD, &act, NULL);
+#endif
 
     // Mask all allowed signals except SIGCHLD
     sigset_t              mask;
@@ -181,7 +185,7 @@ void CReqWorker::shutdownWork()
     TRACE_ENTRY;
 
     // Enqueue a request that will cause request worker threads to exit
-    ReqQueue.enqueueReq(CExternalReq::ShutdownWork, 0, NULL);
+    ReqQueue.enqueueReq(CExternalReq::ShutdownWork, -1, 0, -1, NULL);
 
     for (int i=0; i< NUM_WORKERS; i++)
     {

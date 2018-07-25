@@ -56,7 +56,7 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  recSize_                    = 132L;
  keySize_                    = 10L;
  runSize_                    = 200;
- mergeOrder_                 = NULL;
+ mergeOrder_                 = 0;
  heapAddr_                   = heap;
  minMem_                     = 150000L;
  maxMem_                     = 10000000L; //arbitrarily chosen 10MB max memory
@@ -86,7 +86,7 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  estimateErrorPenalty_ = 0;
  pMemoryContingencyMB_ = 0;
  bmoCitizenshipFactor_ = 0;
- sortMemEstInMbPerCpu_ = 0;
+ sortMemEstInKBPerNode_ = 0;
  bmoMaxMemThresholdMB_ = 0;
  intermediateScratchCleanup_ = TRUE;
  topNSort_ = FALSE;

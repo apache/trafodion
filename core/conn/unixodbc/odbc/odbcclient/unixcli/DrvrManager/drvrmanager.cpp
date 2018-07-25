@@ -86,6 +86,8 @@ SQLRETURN  SQL_API SQLAllocHandle(SQLSMALLINT HandleType,
 			}
 			break;
 		case SQL_HANDLE_STMT:
+            if (!IS_VALID_HDBC (InputHandle))
+                return SQL_INVALID_HANDLE;
 		    rc = NeoAllocHandle(SQL_HANDLE_STMT, InputHandle, (SQLHSTMT*)OutputHandle);
 			//rc = SQLAllocStmt(InputHandle,(SQLHSTMT *)OutputHandle);
 			RETURNCODE (InputHandle,rc);

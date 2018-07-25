@@ -114,7 +114,7 @@ CommonLogger& CommonLogger::instance()
 // This method should be used when the work of producing the logging text
 // is expensive, such as a join graph or an extensive dump.
 // **************************************************************************
-bool CommonLogger::isCategoryInDebug(std::string &cat)
+bool CommonLogger::isCategoryInDebug(const std::string &cat)
 {
     bool result = false;
     log4cxx::LoggerPtr myLogger(log4cxx::Logger::getLogger(cat));
@@ -133,7 +133,7 @@ bool CommonLogger::isCategoryInDebug(std::string &cat)
 // **************************************************************************
 // The generic message logging method for any message type and length.
 // **************************************************************************
-void CommonLogger::log1(std::string &cat,
+void CommonLogger::log1(const std::string &cat,
                         logLevel    level,
                         const char* cmsg,
                         unsigned int eventId)
@@ -144,6 +144,8 @@ void CommonLogger::log1(std::string &cat,
   // This causes any contained % character to be treated as the beginning of
   // a format specifier, with ugly consequences.
   std::string msg(cmsg);
+
+  eventId = eventId; // touch
 
   switch(level)
   {
@@ -177,7 +179,7 @@ void CommonLogger::log1(std::string &cat,
   }
 }
 
-char* CommonLogger::buildMsgBuffer(std::string &cat,
+char* CommonLogger::buildMsgBuffer(const std::string &cat,
                                    logLevel    level,
                                    const char* logMsgTemplate,
                                    va_list     args)
@@ -189,6 +191,7 @@ char* CommonLogger::buildMsgBuffer(std::string &cat,
   va_list args2;
   va_copy(args2, args);
   bool secondTry = false;
+  level = level; // touch
   if (buffer == NULL)
       buffer = new char[bufferSize];
 
@@ -249,7 +252,7 @@ char* CommonLogger::buildMsgBuffer(std::string &cat,
 // **************************************************************************
 // The generic message logging method for any message type and length.
 // **************************************************************************
-void CommonLogger::log(std::string &cat,
+void CommonLogger::log(const std::string &cat,
                        logLevel    level,
                        const char* logMsgTemplate...)
 {

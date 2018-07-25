@@ -198,6 +198,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
+  colIndexOfPK1_(0),
   hbaseAccessOptions_(hbaseAccessOptions),
 
   pkeyColName_(pkeyColName)
@@ -311,6 +312,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
+  colIndexOfPK1_(0),
   hbaseAccessOptions_(NULL),
 
   pkeyColName_(NULL)
@@ -680,7 +682,7 @@ static void showColNames(Queue * listOfColNames, Space * space)
       else
 	v = 0;
       
-      str_sprintf(buf, "  Entry #%d: %s%s%Ld",
+      str_sprintf(buf, "  Entry #%d: %s%s%ld",
 		  j+1, 
 		  colFam, 
 		  (withAt ? "@" : ""),
@@ -964,7 +966,7 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 		  mergeInsertRowLen_, keyLen_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "Flag = %b",flags_);
+      str_sprintf(buf, "Flag = %x",flags_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       str_sprintf(buf, "server_ = %s, zkPort_ = %s", server(), zkPort());
@@ -1060,7 +1062,7 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 		    } // for
 		} // if colNames
 
-	      str_sprintf(buf, "\n    colTS_=%Ld",
+	      str_sprintf(buf, "\n    colTS_=%ld",
 			  hsr->colTS_);
 	      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
@@ -1124,7 +1126,7 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 		    } // for
 		} // if
 
-	      str_sprintf(buf, "\n    colTS_=%Ld",
+	      str_sprintf(buf, "\n    colTS_=%ld",
 			  hgr->colTS_);
 	      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 

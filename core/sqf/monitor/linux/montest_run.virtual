@@ -23,24 +23,26 @@
 
 #!/bin/sh
 
+ARCH=`arch`
 # Cleanup 
-cd $TRAF_HOME/monitor/linux/Linux-x86_64/dbg
+cd ${TRAF_HOME}/monitor/linux/Linux-${ARCH}/dbg
 echo $PWD
 rm -f core* *.log *.lst test*sub*
 rm -f $MPI_TMPDIR/monitor.port.*
+exit 0
 
 # Setup monitor test files
 cd $TRAF_HOME/monitor/linux
 echo $PWD
 echo Copying monitor test files to execution directory
-echo cp -p ./test*sub* ./Linux-x86_64/dbg
-cp -p ./test*sub* ./Linux-x86_64/dbg
+echo cp -p ./test*sub* ./Linux-${ARCH}/dbg
+cp -p ./test*sub* ./Linux-${ARCH}/dbg
 
 # Establish SQ virtual cluster parameters
 export SQ_VIRTUAL_NODES=6
 export SQ_VIRTUAL_NID=0
 
-cd $TRAF_HOME/monitor/linux/Linux-x86_64/dbg
+cd ${TRAF_HOME}/monitor/linux/Linux-${ARCH}/dbg
 echo $PWD
 
 shell <<eof 

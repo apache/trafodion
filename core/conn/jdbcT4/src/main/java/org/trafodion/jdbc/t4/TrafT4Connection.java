@@ -68,6 +68,7 @@ import javax.sql.PooledConnection;
  */
 public class TrafT4Connection extends PreparedStatementManager implements java.sql.Connection {
 
+	private T4DatabaseMetaData metaData_;
 	/**
 	 * Validates the connection by clearing warnings and verifying that the
 	 * Connection is still open.
@@ -306,7 +307,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		validateConnection();
 
-		return new T4DatabaseMetaData(this);
+		return this.metaData_;
 	}
 
 	public int getTransactionIsolation() throws SQLException {
@@ -540,7 +541,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			stmtLabel = stmtLabel.toUpperCase();
 		}
 
-		TrafT4CallableStatement stmt;
+		TrafT4CallableStatement stmt = null;
 
 		clearWarnings();
 		if (_isClosed() == true) {
@@ -556,8 +557,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 					return stmt;
 				}
 			}
-
-			stmt = new TrafT4CallableStatement(this, sql, stmtLabel);
+            if (stmtLabel.equalsIgnoreCase("null")) {
+                stmt = new TrafT4CallableStatement(this, sql);
+            } else {
+                stmt = new TrafT4CallableStatement(this, sql, stmtLabel);
+            }
 			stmt.prepareCall(stmt.sql_, stmt.queryTimeout_, stmt.resultSetHoldability_);
 
 			if (isStatementCachingEnabled()) {
@@ -1644,6 +1648,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		if (props_.getSPJEnv()) {
 			ic_.enableProxySyntax(this);
 		}
+		this.metaData_ = new T4DatabaseMetaData(this);
 	}
 	
 	private ArrayList<String> createAddressList(T4Properties t4props) {
@@ -1849,21 +1854,27 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 
 	public Object unwrap(Class iface) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return iface.cast(this);
+		} catch (ClassCastException cce) {
+			throw TrafT4Messages.createSQLException(props_, this.getLocale(), "unable_unwrap", iface.toString());
+		}
 	}
 
 	public boolean isWrapperFor(Class iface) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+		if (_isClosed() == true) {
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
+		} else {
+			return iface.isInstance(this);
+		}
 	}
 
 	public Clob createClob() throws SQLException {
-        return new TrafT4Clob(this, null, null);
+		return new TrafT4Clob(this, null, null);
 	}
 
 	public Blob createBlob() throws SQLException {
-        return new TrafT4Blob(this, null, null);
+		return new TrafT4Blob(this, null, null);
 	}
 
 	public NClob createNClob() throws SQLException {
@@ -1881,26 +1892,22 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		return false;
 	}
 
-	public void setClientInfo(String name, String value)
-			throws SQLClientInfoException {
-		// TODO Auto-generated method stub
-		
+	public void setClientInfo(String name, String value) throws SQLClientInfoException {
+		ic_.setClientInfo(name, value);
 	}
 
-	public void setClientInfo(Properties properties)
-			throws SQLClientInfoException {
-		// TODO Auto-generated method stub
-		
+	public void setClientInfo(Properties properties) throws SQLClientInfoException {
+		ic_.setClientInfoProperties( properties);
 	}
 
 	public String getClientInfo(String name) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		validateConnection();
+		return ic_.getClientInfoProperties().getProperty(name);
 	}
 
 	public Properties getClientInfo() throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		validateConnection();
+		return ic_.getClientInfoProperties();
 	}
 
 	public Array createArrayOf(String typeName, Object[] elements)
@@ -1965,19 +1972,23 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	}
 
 	public void abort(Executor executor) throws SQLException {
-		// TODO Auto-generated method stub
+		if (ic_.getT4Connection().getInputOutput() != null) {
+			ic_.getT4Connection().getInputOutput().CloseIO(null);
+		}
+		ic_.setIsClosed(true);
 		
 	}
 
 	public void setNetworkTimeout(Executor executor, int milliseconds)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+            validateConnection();
+            props_.setNetworkTimeout(milliseconds);
 	}
+	
 
 	public int getNetworkTimeout() throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+		validateConnection();
+		return props_.getNetworkTimeout();
 	}
 
 	/*

@@ -110,7 +110,6 @@ short BuiltinFunction::codeGen(Generator * generator)
           case CharInfo::ISO88591:
           case CharInfo::UTF8:
           // case CharInfo::SJIS:  // Uncomment this if we ever support SJIS
-#pragma nowarn(1506)   // warning elimination 
            function_clause =
                new(generator->getSpace()) ex_like_clause_char(getOperatorType()
                                                    ,1+getArity()
@@ -138,9 +137,7 @@ short BuiltinFunction::codeGen(Generator * generator)
              function_clause->setNoPCodeAvailable(TRUE);
 
            break;
-#pragma warn(1506)   // warning elimination 
           case CharInfo::UCS2:
-#pragma nowarn(1506)   // warning elimination 
            function_clause = new(generator->getSpace()) 
                                    ex_like_clause_doublebyte(ITM_LIKE_DOUBLEBYTE
                                                    ,1+getArity()
@@ -148,7 +145,6 @@ short BuiltinFunction::codeGen(Generator * generator)
                                                    ,space
                                                    );
            break;
-#pragma warn(1506)   // warning elimination 
           default:
 	    GenAssert(0, "unknown value for bytes-per-char.");
         }
@@ -156,6 +152,22 @@ short BuiltinFunction::codeGen(Generator * generator)
 
       break;
       
+    case ITM_SLEEP:
+      {
+	function_clause =
+	  new(generator->getSpace()) ex_function_sleep(getOperatorType(),(1+getArity()), 
+							 attr, space);
+      }
+      
+      break;
+    case ITM_UNIX_TIMESTAMP:
+      {
+	function_clause =
+	  new(generator->getSpace()) ex_function_unixtime(getOperatorType(), (1+getArity()),
+							 attr, space);
+      }
+      
+      break;
     case ITM_CURRENT_TIMESTAMP:
     case ITM_CURRENT_TIMESTAMP_RUNNING:
       {
@@ -330,7 +342,6 @@ short BuiltinFunction::codeGen(Generator * generator)
 	  }
 	
 
-#pragma nowarn(1506)   // warning elimination 
         const CharType& substringOperandType = 
            (CharType&)((child(0)->getValueId()).getType());
 
@@ -355,7 +366,6 @@ short BuiltinFunction::codeGen(Generator * generator)
 	    GenAssert(0, "unknown value for bytes-per-char.");
         }
       }
-#pragma warn(1506)   // warning elimination 
       
       break;
       
@@ -435,7 +445,8 @@ short BuiltinFunction::codeGen(Generator * generator)
           case CharInfo::UTF8:
           // case CharInfo::SJIS: // Uncomment this if we ever support SJIS
 	   function_clause = new(generator->getSpace()) 
-		ex_function_position(ITM_POSITION, attr, space);
+             ex_function_position(ITM_POSITION, attr, space,
+                                  (getArity() + 1));
 
 	    ((ex_function_position *)function_clause)->setCollation(((PositionFunc*)this)->getCollation());
 
@@ -443,7 +454,8 @@ short BuiltinFunction::codeGen(Generator * generator)
 
           case CharInfo::UCS2:
 	   function_clause = new(generator->getSpace()) 
-		ex_function_position_doublebyte(ITM_POSITION_DOUBLEBYTE, attr, space);
+             ex_function_position_doublebyte(ITM_POSITION_DOUBLEBYTE, attr, space,
+                                             (getArity() + 1));
 
            break;
 
@@ -653,6 +665,7 @@ short BuiltinFunction::codeGen(Generator * generator)
     break;
 
     case ITM_UNIQUE_ID:
+    case ITM_UNIQUE_SHORT_ID:
       {
 	function_clause =
 	  new(generator->getSpace()) ExFunctionUniqueId(getOperatorType(),
@@ -698,6 +711,13 @@ short BuiltinFunction::codeGen(Generator * generator)
                                                         space,
                                                         getArity(),
                                                         CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
+
+    case ITM_SPLIT_PART:
+    {
+      function_clause = 
+            new (generator->getSpace()) ex_function_split_part(getOperatorType(), attr, space);
       break;
     }
     default:
@@ -885,13 +905,11 @@ short BitOperFunc::codeGen(Generator * generator)
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
 
-#pragma nowarn(1506)   // warning elimination 
   ex_clause * function_clause = NULL;
   function_clause =
     new(generator->getSpace()) ExFunctionBitOper(getOperatorType(), 
 						 (1+getArity()),
 						 attr, generator->getSpace());
-#pragma warn(1506)  // warning elimination 
   
   generator->getExpGenerator()->linkClause(this, function_clause);
 
@@ -1417,12 +1435,9 @@ short Cast::codeGen(Generator * generator)
   // if temp space is needed for this operation, set it.
   if (attr[0]->isComplexType())
     {
-#pragma nowarn(1506)   // warning elimination 
       eg->addTempsLength(((ComplexType *)attr[0])->setTempSpaceInfo(getOperatorType(),
 								    eg->getTempsLength()));
-#pragma warn(1506)  // warning elimination 
     }
-#pragma nowarn(1506)   // warning elimination 		      
   ex_conv_clause * conv_clause;
   if(attr[0]->getNullFlag())  //if target is nullable
     conv_clause = new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
@@ -1440,7 +1455,6 @@ short Cast::codeGen(Generator * generator)
                                                     reverseDataErrorConversionFlag_,
                                                     noStringTruncationWarnings(),
                                                     FALSE);
-#pragma warn(1506)  // warning elimination 
 
   conv_clause->setTreatAllSpacesAsZero(treatAllSpacesAsZero());
 
@@ -1791,7 +1805,6 @@ short MathFunc::codeGen(Generator * generator)
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
 
-#pragma nowarn(1506)   // warning elimination 
 
   ex_clause * function_clause = NULL;
   function_clause =
@@ -1799,7 +1812,6 @@ short MathFunc::codeGen(Generator * generator)
 					      (1+getArity()),
 					      attr, generator->getSpace());
   
-#pragma warn(1506)  // warning elimination 
   
   generator->getExpGenerator()->linkClause(this, function_clause);
 
@@ -2091,16 +2103,12 @@ short RangeLookup::codeGen(Generator * generator)
   // copy 2 Attribute pointers and 2 showplan attribute pointers to array with 3 pointers
   str_cpy_all((char *) attr3,
 	      (const char *) attr2,
-#pragma nowarn(1506)   // warning elimination 
 	      sizeof(Attributes *) * (numAttrs-1));
-#pragma warn(1506)  // warning elimination 
   if (numAttrsShowPlan)
     {
       str_cpy_all((char *) &attr3[numAttrs],
 		  (const char *) &attr2[numAttrs-1],
-#pragma nowarn(1506)   // warning elimination 
 		  sizeof(Attributes *) * (numAttrs-1));
-#pragma warn(1506)  // warning elimination 
     }
 
   // make a ConstValue that is a huge character column with all the
@@ -2111,7 +2119,7 @@ short RangeLookup::codeGen(Generator * generator)
   copySplitKeys(constKeyArray, keysLen);
 
   constValSplitKeys = new (generator->wHeap()) ConstValue(
-       new (generator->wHeap()) SQLChar(keysLen,FALSE),
+       new (generator->wHeap()) SQLChar(generator->wHeap(), keysLen,FALSE),
        constKeyArray,
        keysLen,
        NULL,
@@ -2131,13 +2139,11 @@ short RangeLookup::codeGen(Generator * generator)
   // ...and showplan equivalent, if needed
   if (numAttrsShowPlan)
     {
-#pragma nowarn(1506)   // warning elimination 
       attr3[numAttrs + numAttrsShowPlan - 1] = new (generator->wHeap())
 	ShowplanAttributes(
 	     constValSplitKeys->getValueId(),
 	     convertNAString("SplitKeysForRangeRepartitioning",
 			     generator->wHeap()));
-#pragma warn(1506)  // warning elimination 
     }
 
   // now that we prepared all the inputs, add the clause itself
@@ -2306,7 +2312,7 @@ short RandomNum::codeGen(Generator *generator)
       ItemExpr * newChild = 
 	new (generator->wHeap()) 
 	Cast(child(0), 
-	     new (generator->wHeap()) SQLInt(FALSE, FALSE));
+	     new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE, FALSE));
       newChild = newChild->bindNode(generator->getBindWA());
       newChild->preCodeGen(generator);
 
@@ -2316,13 +2322,11 @@ short RandomNum::codeGen(Generator *generator)
 
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
-#pragma nowarn(1506)   // warning elimination 
   ex_clause *function_clause = new (space) ExFunctionRandomNum(ITM_RANDOMNUM,
 							       (1+getArity()),
 							       simpleRandom_,
                                                                attr, 
                                                                space);
-#pragma warn(1506)  // warning elimination 
   
   if (function_clause)
     generator->getExpGenerator()->linkClause(this, function_clause);
@@ -2467,225 +2471,6 @@ newExpr->preCodeGen(generator);
 newExpr->codeGen(generator);
 
 return 0;
-}
-
-
-short AuditImage::codeGen(Generator * generator)
-{
-  // Used to save the original Expression Generator.
-  ExpGenerator *saveExpGen = NULL;
-  
-  try
-    {
-      Attributes ** attr;
-      Int32 numAttrs = 1 /* result */ + getArity();
-      
-      if (generator->getExpGenerator()->genItemExpr
-	  (this,      // (IN) : the tree for which code is to be generated
-	   &attr,     // (OUT): the generated attributes array is returned here
-	   numAttrs,  // 1 (result) + number of children
-	   -1         // if -1, generate code for children.
-	   )
-	  == 1)
-	return 0;
-      
-      // Note that we always generate a Cast operator here, even
-      // if it's not necessary. Because columnValuesVidList may be a
-      // VEGReference and it may not be possible to determine its
-      // exact type at this time. This Cast operator serves dual purpose -
-      // in addition to casting the result of VEGReference resolution 
-      // to the original datatype, it moves the result value to the target 
-      // location. We would have opted to add a conv node (parameter 2) in 
-      // our call to generateContiguousMoveExpr() to do the move if we 
-      // hadn't introduced the Cast operator here.
-      
-      ValueIdList typedColumnValueVidList;
-      Lng32 numChildren = getNumChildren();
-      for (Lng32 i = 0; i < numChildren; i++)
-	{  
-	  // cast the key column to the exact type of the original key column
-	  const NAType &oType = *columnTypeList_[i];
-	  ItemExpr *resultCastExpr = NULL;
-	  
-	  ItemExpr * ie = children()[i].getPtr();
-	  
-	  resultCastExpr = new(generator->wHeap()) Cast(ie,&oType);
-	  resultCastExpr->synthTypeAndValueId();
-	  resultCastExpr = resultCastExpr->preCodeGen(generator);
-	  
-	  // We assemble all the inputs to AI in a temporary tuple.
-	  // We don't need to explicitly set the (atp, atpIndx) as, we
-	  // get this as part of the codeGen of new cast expression.
-	  // The value is added to the temporary ATP (atp,atpindex) - (0,1).
-	  resultCastExpr->codeGen(generator);
-	  
-	  // Set these these cast nodes as the children.
-	  children().insertAt(i, resultCastExpr->getValueId());
-	  
-	  // Populate the typedColumnValueVidList. This list is
-	  // passed to generateContiguousMoveExpr.
-	  typedColumnValueVidList.insert(children()[i].getValueId());
-	}
-      
-      // These cast nodes will copy the inputs to the temp tuple.
-      // At runtime the temp tuple will be made available in (atp,atpindx) -(0,3)
-      // So, modify the map table for the cast nodes to say (0,3) 
-      // for the atp and atp index.
-      CollIndex idx=0;
-      for (idx=0; idx<typedColumnValueVidList.entries(); idx++)
-	{
-	  Attributes * mapAttr =
-                 generator->getMapInfo(typedColumnValueVidList[idx])->getAttr();
-
-	  mapAttr->setAtp(0);
-	  mapAttr->setAtpIndex(3);
-	}
-      
-      // We use a separate ExpGenerator to generate the ex_expr 
-      // that builds the audit row image. 
-      ExpGenerator tempExpGen(generator);
-      
-      // Save the original one. We need to set it back to this value after 
-      // generataContiguousMoveExpr.
-      saveExpGen = generator->getExpGenerator();
-
-      // Use the temp Exp Generator for generateContiguousMoveExpr
-      generator->setExpGenerator(&tempExpGen);
-      generator->getExpGenerator()->setInContainerExpr(TRUE);
-      
-      // allocate a work cri desc to generate audit image. It has
-      // 4 entries: 0, for consts. 1, for temps. 
-      // 2, for the audit row image.
-      // 3, where the input tuple in EXPLODED format will be available.
-      ex_cri_desc * auditRowImageCriDesc = new(generator->getSpace()) 
-	                                   ex_cri_desc(4, generator->getSpace());
-      short auditRowImageAtpIndex   = 2; // where the audit row image will be built
-      ex_expr *auditRowImageExpr = NULL;
-      ULng32 rowLength    = 0;
-      ExpTupleDesc * auditRowImageTupleDesc = 0;
-      
-      // Note that we opt to add a convert node (second parameter) in this call.
-      // The above cast node will copy the inputs to AuditImage to the temporary
-      // tuple, the convert node created as part of this generateContiguousMoveExpr
-      // will copy the inputs from the temporary tuple to the result location.
-      
-      ExpTupleDesc::TupleDataFormat tupleFormat = 
-	generator->getTableDataFormat(getNATable());
-      
-      GenAssert((tupleFormat == ExpTupleDesc::SQLMX_FORMAT ||
-		 tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT )
-		,"AUDIT_IMAGE supported only for PACKED and ALIGNED format"); 
-
-       // Tell the expression generator to gen a header clause.
-      tempExpGen.setForInsertUpdate( TRUE );
-
-      tempExpGen.generateContiguousMoveExpr
-	(
-	 typedColumnValueVidList,            // [IN] source ValueIds
-	 TRUE,                               // [IN] add convert nodes?
-	 0,                                  // [IN] target atp number
-	 auditRowImageAtpIndex,              // [IN] target tupp index
-         tupleFormat,                        // [IN]
-	 rowLength,                          // [OUT] target tuple length
-	 &auditRowImageExpr,                 // [OUT] move expression
-	 &auditRowImageTupleDesc,            // [optional OUT] target tuple desc
-	 ExpTupleDesc::LONG_FORMAT           // [optional IN] target desc format
-	 );
-      
-       // Need this to obtain the length of the row with no varChar columns.
-      auditRowImageCriDesc->setTupleDescriptor(auditRowImageAtpIndex /* 2 */,
-                                               auditRowImageTupleDesc);
-      
-      // Create a ExpDp2Expr and pass it to ExAuditImage clause.
-      ExpDP2Expr * auditImageContainerExpr = 
-	new(generator->getSpace()) ExpDP2Expr(auditRowImageExpr,
-					      auditRowImageCriDesc,
-					      generator->getSpace());
-      
-      generator->getExpGenerator()->setInContainerExpr(FALSE);
-      // Reset it back to the original.
-      generator->setExpGenerator(saveExpGen);
-      
-      // Reset the map table entries for the input values to temp (atp, atpIndx)
-      // - (0,1). This is the same as creating a map table with this information
-      // without the overhead of creating a map table.
-      
-      for (idx=0; idx < typedColumnValueVidList.entries(); idx++)
-	{
-	  Attributes * mapAttr = generator->getMapInfo(typedColumnValueVidList[idx])->getAttr();
-	  mapAttr->setAtp(0);
-	  mapAttr->setAtpIndex(1);
-	}
-      
-      // Use the Expression Generator object from the Generator work area for
-      // generating ExAuditImage.
-      ExpGenerator * expGen = generator->getExpGenerator();
-      
-      // set the numAttrs to 2. Note that it was (1 /* result */ + getArity())
-      // up till now. Beyond this the  ExAuditImage clause will have two operands.
-      // operand(0) - (attr[0]) represents the result.
-      // operand(1) - points to the beginning of temp tuple
-      // carrying the inputs.
-      
-      Int32 numAttrsSave = numAttrs;
-      numAttrs = 2;
-      
-      Int32 numAttrsShowPlan =
-        (generator->getExpGenerator()->getShowplan() ? numAttrs : 0);
-      Attributes ** auditImageAttrs =
-        new(generator->wHeap()) Attributes * [numAttrs + numAttrsShowPlan];
-      
-      // Copy the result attributes of AuditImage to auditImageAttrs[0]
-      auditImageAttrs[0] = attr[0]->newCopy(generator->wHeap());
-      if (numAttrsShowPlan)
-	{
-	  // copy the showplan attributes for AuditImage result (attr[0]) as well
-	  auditImageAttrs[numAttrs] =  
-	    attr[numAttrsSave]->newCopy(generator->wHeap());
-	}
-      
-      // Since this attr represents the temps area, get its length.
-      auditImageAttrs[1] = (Attributes *) new(generator->wHeap()) 
-	SimpleType((Lng32)expGen->getTempsLength(), 
-		   1 /* scale */, 
-		   0 /* precision */);
-      // ex_clause constructor requires the format to be set.
-      auditImageAttrs[1]->setDatatype(REC_BYTE_F_ASCII);
-      auditImageAttrs[1]->setTupleFormat(ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
-      auditImageAttrs[1]->setAtp(0);
-      auditImageAttrs[1]->setAtpIndex(1);
-      auditImageAttrs[1]->setOffset(0);
-
-      if (numAttrsShowPlan)
-	{
-	  // copy the showplan attributes for ExAuditImage's input tuple as well
-	  // Create ShowplanAttributes corresponding to auditImageAttrs[1].
-	  auditImageAttrs[numAttrs + 1] = new (generator->wHeap())
-	    ShowplanAttributes(0, /* NULL_VALUE_ID */
-			       convertNAString("TemporaryTupleWithAuditImageInputValues",
-					       generator->wHeap()));
-	}
-      
-      ex_clause * function_clause =
-	new(generator->getSpace()) ExAuditImage(auditImageAttrs, 
-						generator->getSpace(), 
-						auditImageContainerExpr
-						);
-      
-      if (function_clause)
-	expGen->linkClause(this, function_clause);
-      
-      return 0;
-    } //try
-  
-  catch (...)
-    {
-      // Reset it back to the original.
-      if(saveExpGen != NULL)
-	generator->setExpGenerator(saveExpGen);
-      
-      throw;
-    } // catch (...)
 }
 
 short HbaseColumnLookup::codeGen(Generator * generator)
@@ -2895,6 +2680,11 @@ short LOBinsert::codeGen(Generator * generator)
   else if(obj_ == LOBoper::EMPTY_LOB_)
     li->setFromEmpty(TRUE);
 
+  if (CmpCommon::getDefault(LOB_LOCKING) == DF_ON)
+    li->setLobLocking(TRUE);
+  else
+    li->setLobLocking(FALSE);
+
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
   li->setLobStorageLocation((char*)lobStorageLocation().data());
@@ -2970,7 +2760,10 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromBuffer(TRUE);
   else if(obj_ == LOBoper::EMPTY_LOB_)
     lu->setFromEmpty(TRUE);
-
+  if (CmpCommon::getDefault(LOB_LOCKING) == DF_ON)
+    lu->setLobLocking(TRUE);
+  else
+    lu->setLobLocking(FALSE);
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
@@ -3065,43 +2858,6 @@ short LOBconvert::codeGen(Generator * generator)
   return 0;
 }
 
-short LOBload::codeGen(Generator * generator)
-{
-  Attributes ** attr;
-  
-  Space * space = generator->getSpace();
-  
-  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
-    return 0;
-
-  ExpLOBload * ll =
-    new(generator->getSpace()) ExpLOBload
-    (getOperatorType(), 
-     getArity()+1,
-     attr, 
-     objectUID_,
-     (short)insertedTableSchemaName().length(),
-     (char*)insertedTableSchemaName().data(),
-     space);
-  
-  if (obj_ == LOBoper::STRING_)
-    ll->setFromString(TRUE);
-  else if (obj_ == LOBoper::FILE_)
-    ll->setFromFile(TRUE);
-  else if (obj_ == LOBoper::LOAD_)
-    ll->setFromLoad(TRUE);
-  else if (obj_ == LOBoper::LOB_)
-    ll->setFromLob(TRUE);
-  
-
-  ll->lobNum() = lobNum();
-  ll->setLobStorageType(lobStorageType());
-  ll->setLobStorageLocation((char*)lobStorageLocation().data());
-  
-  generator->getExpGenerator()->linkClause(this, ll);
- return 0;
-}
- 
 
 short SequenceValue::codeGen(Generator * generator)
 {

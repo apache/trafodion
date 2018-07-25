@@ -32,7 +32,7 @@
 #Product version (Trafodion or derivative product)
 export TRAFODION_VER_PROD="Apache Trafodion"
 export TRAFODION_VER_MAJOR=2
-export TRAFODION_VER_MINOR=2
+export TRAFODION_VER_MINOR=3
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
@@ -47,9 +47,14 @@ export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
 ##############################################################
 export TRAFODION_ENABLE_AUTHENTICATION=${TRAFODION_ENABLE_AUTHENTICATION:-NO}
 
-# Uncomment Trafodion Configuration store type
-#export TRAF_CONFIG_DBSTORE=Sqlite
-#export TRAF_CONFIG_DBSTORE=Zookeeper
+# Set the Trafodion Configuration store type
+if [[ -n "$CLUSTERNAME" ]]; then
+  # This is a cluster environment, not a workstation
+  #export TRAF_CONFIG_DBSTORE=MySQL
+  export TRAF_CONFIG_DBSTORE=Sqlite
+else
+  export TRAF_CONFIG_DBSTORE=Sqlite
+fi
 
 # default SQ_IC to TCP if it is not set in sqenv.sh. Values are
 # IBV for infiniband, TCP for tcp
@@ -290,6 +295,17 @@ else
   export LOC_JVMLIBS=$JAVA_HOME/jre/lib/i386/server
 fi
 
+# cache hbase classpath to a file to avoid running hbase command
+# every time when login as trafodion
+CACHED_HBASE_CP_FILE="$TRAF_VAR/hbase_classpath"
+if [[ ! -f $CACHED_HBASE_CP_FILE ]]; then
+  #hbase classpath captures all the right set of jars hbase is using.
+  #this also includes the trx jar that gets installed as part of install.
+  #Additional testing needed.Including it here for future validation.
+  hbase classpath > $CACHED_HBASE_CP_FILE 2>/dev/null
+fi
+lv_hbase_cp=`cat $CACHED_HBASE_CP_FILE`
+
 if [[ -e $TRAF_HOME/sql/scripts/sw_env.sh ]]; then
   # we are on a development system where install_local_hadoop has been
   # executed
@@ -341,8 +357,6 @@ elif [[ -d /opt/cloudera/parcels/CDH ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
-  lv_hbase_cp=`/opt/cloudera/parcels/CDH/bin/hbase classpath`
-
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
@@ -372,8 +386,6 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
-
-  lv_hbase_cp=`hbase classpath`
 
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
@@ -405,8 +417,6 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
-
-  lv_hbase_cp=`hbase classpath`
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
@@ -577,11 +587,6 @@ EOF
     export HADOOP_JAR_FILES=
     export HIVE_JAR_DIRS="$APACHE_HIVE_HOME/lib"
 
-    #hbase classpath captures all the right set of jars hbase is using.
-    #this also includes the trx jar that gets installed as part of install.
-    #Additional testing needed.Including it here for future validation.
-    lv_hbase_cp=`hbase classpath`
-
     # end of code for Apache Hadoop/HBase installation w/o distro
     export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
     export DTM_COMMON_JAR=trafodion-dtm-apache-${TRAFODION_VER}.jar
@@ -668,6 +673,32 @@ export SQ_LUNMGR_VERBOSITY=1
 # Control SQ default startup behavior (c=cold, w=warm, if removed sqstart will autocheck)
 export SQ_STARTUP=r
 
+#
+# NOTE: in a Python installation when SQ_MON_RUN_MODE below
+#       is AGENT the SQ_MON_CREATOR must be MPIRUN
+#
+#   MPIRUN - monitor process is created by mpirun
+#            (meaning that mpirun is the parent process of the monitor process)
+#   AGENT  - monitor process runs in agent mode versus MPI collective
+#
+# Uncomment the next four environment variables
+#export SQ_MON_CREATOR=MPIRUN
+#export SQ_MON_RUN_MODE=AGENT
+#export MONITOR_COMM_PORT=23390
+#export MONITOR_SYNC_PORT=23380
+
+#
+#   NAME-SERVER - to disable process replication and enable the name-server
+#
+# Uncomment the next environment variable
+#export SQ_NAMESERVER_ENABLED=1
+if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
+  export NS_COMM_PORT=${NS_COMM_PORT:-23370}
+  export NS_SYNC_PORT=${NS_SYNC_PORT:-23360}
+  export NS_M2N_COMM_PORT=${NS_M2N_COMM_PORT:-23350}
+  export MON2MON_COMM_PORT=${MON2MON_COMM_PORT:-23340}
+fi
+
 # Alternative logging capability in monitor
 export SQ_MON_ALTLOG=0
 
@@ -681,10 +712,9 @@ export SQ_MON_KEEPINTVL=6
 export SQ_MON_KEEPCNT=5
 
 # Monitor sync thread epoll wait timeout is in seconds
-# Currently set to 64 seconds (4 second timeout, 16 retries)
-export SQ_MON_EPOLL_WAIT_TIMEOUT=4
-# Note: the retry count is ignored when SQ_MON_ZCLIENT_ENABLED=1 (the default)
-export SQ_MON_EPOLL_RETRY_COUNT=16
+# Currently set to 64 seconds (16 second timeout, 4 retries)
+export SQ_MON_EPOLL_WAIT_TIMEOUT=16
+export SQ_MON_EPOLL_RETRY_COUNT=4
 
 # Monitor Zookeeper client
 #  - A zero value disables the zclient logic in the monitor process.
@@ -702,6 +732,13 @@ export SQ_MON_EPOLL_RETRY_COUNT=16
 
 # Trafodion Configuration Zookeeper store
 #export TC_ZCONFIG_SESSION_TIMEOUT=120
+
+# increase SQ_MON,ZCLIENT,WDT timeout only to jenkins env.
+if [[ "$TRAF_HOME" == *"/home/jenkins"* ]]; then
+export SQ_MON_EPOLL_WAIT_TIMEOUT=20
+export SQ_MON_ZCLIENT_SESSION_TIMEOUT=360
+export SQ_WDT_KEEPALIVETIMERVALUE=360
+fi
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1

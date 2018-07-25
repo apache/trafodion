@@ -43,7 +43,6 @@
 
 #undef max
 #undef min
-#undef ERROR
 
 class SqlciEnv;
 
@@ -111,7 +110,6 @@ Lng32 FixupMessageParam(NAWchar *paramName, MsgParamType paramType = NAMED_PARAM
 
 void FixCarriageReturn(char *str);
 
-// NT_PORT 03/20/97 mhr:
 // Global function for portability, in two overloaded flavors for WINNT.
 //
 void NAWriteConsole(const char *str,		// always defined

@@ -66,14 +66,9 @@
 #define REC_MIN_FLOAT   142
 #define REC_IEEE_FLOAT32 142
 #define REC_IEEE_FLOAT64 143
-#define REC_MAX_FLOAT 143
-
-#if   defined(NA_IEEE_FLOAT)
 #define REC_FLOAT32 142
 #define REC_FLOAT64 143
-#else
-#error Unknown float type
-#endif
+#define REC_MAX_FLOAT 143
 
 #define REC_MIN_DECIMAL 150
 #define REC_DECIMAL_UNSIGNED 150
@@ -100,15 +95,7 @@
 // not-quite-right values.
 // These unused, unnecessary #defines have been commented out.
 //
-// In MX, none of the _UP datatypes occur because a column's UPSHIFT attribute
-// is kept only in a separate COLUMNS.ISUPSHIFTED metadata column,
-// and ReadTableDef correctly maps REC_BYTE_x_ASCII_UP to REC_BYTE_x_ASCII.
-// Below, these are marked "[Mxmapped]".
-// Thus, only ReadTableDef.cpp needs to know about REC_BYTE_x_ASCII_UP --
-// none of the rest of MX will ever encounter this datatype --
-// thus, no other MX code should use the #defines for REC_BYTE_x_ASCII_UP.
-
-// All MP or MX multibyte char data is REC_BYTE_x_DOUBLE;
+// All MX multibyte char data is REC_BYTE_x_DOUBLE;
 // the REC_NCHAR_x_UNICODE are synonyms, for convenience, marked "[Mxsynonym]".
 //
 // The COLUMNS.CHARSET metadata of sqlcat/desc.h,
@@ -126,9 +113,6 @@
   #define REC_MIN_F_CHAR_H               0      // MP same name
 
   #define REC_BYTE_F_ASCII               0      // MP same name
-  #ifdef  READTABLEDEF_IMPLEMENTATION
-    #define REC_BYTE_F_ASCII_UP          1      // MP same name [MXmapped]
-  #endif
   #define REC_BYTE_F_DOUBLE              2      // MP same name
   #define REC_NCHAR_F_UNICODE            2	// [MXsynonym]
 
@@ -137,9 +121,6 @@
   #define REC_MIN_V_CHAR_H              64      // MP same name
 
   #define REC_BYTE_V_ASCII              64      // MP same name
-  #ifdef  READTABLEDEF_IMPLEMENTATION
-    #define REC_BYTE_V_ASCII_UP         65      // MP same name [MXmapped]
-  #endif
   #define REC_BYTE_V_DOUBLE             66      // MP same name
   #define REC_NCHAR_V_UNICODE           66	// [MXsynonym]
 
@@ -232,7 +213,7 @@ enum REC_DATETIME_CODE {
 #define REC_INT_DAY_SECOND      207
 
 // #define REC_MAX_INTERVAL        207
-#define REC_INT_FRACTION        208     // Used in MP only!  See ReadTableDef.C  
+#define REC_INT_FRACTION        208     // Used in MP only! 
 #define REC_MAX_INTERVAL        208     
 #define REC_MAX_INTERVAL_MP     212   
 #define REC_MAX_INTERVAL_MP     212   
@@ -249,8 +230,15 @@ enum rec_datetime_field {
 , REC_DATE_HOUR
 , REC_DATE_MINUTE
 , REC_DATE_SECOND
-, REC_DATE_FRACTION_MP			// Used in MP only!  See ReadTableDef.C
-
+, REC_DATE_FRACTION_MP			// Used in MP only!
+, REC_DATE_CENTURY
+, REC_DATE_DECADE
+, REC_DATE_WEEK
+, REC_DATE_QUARTER
+, REC_DATE_EPOCH
+, REC_DATE_DOW
+, REC_DATE_DOY
+, REC_DATE_WOM
 , REC_DATE_MAX_SINGLE_FIELD
   // other datetime fields, not used in FS2 and DDL
 , REC_DATE_YEARQUARTER_EXTRACT   = 1000     // Used for EXTRACT (DATE_PART) function only!
@@ -392,12 +380,9 @@ struct rec_project_struct
 
 #ifndef FS2_RECORD_DEFINED
 
-#pragma nowarn(1506)   // warning elimination 
-#pragma nowarn(270)   // warning elimination 
 class rec_field_struct
 {
 private:
-NA_EIDPROC
   // this code is same as that in common/DateTimeType.cpp.
   // We cannot source in DateTimeType.h in here. Maybe we
   // extract this method in some kind of common utility.
@@ -478,8 +463,6 @@ NA_EIDPROC
   }
   
 public:
-//LCOV_EXCL_START : Reported by Code Coverage tool as unused, but actually not executable on SQ
-  NA_EIDPROC
   Lng32 getLength()
   {
     if ((type >= REC_MIN_NUMERIC) && (type <= REC_MAX_NUMERIC))
@@ -493,9 +476,7 @@ public:
     else
       return len_etc.datetime_.len;
   };
-//LCOV_EXCL_STOP
 
-NA_EIDPROC
   Lng32 getPrecision()
   {
     if ((type >= REC_MIN_NUMERIC) && (type <= REC_MAX_NUMERIC))
@@ -521,7 +502,6 @@ NA_EIDPROC
       return 0;
   };
    
-NA_EIDPROC
   Lng32 getScale()
   {
     if ((type >= REC_MIN_NUMERIC) && (type <= REC_MAX_NUMERIC))
@@ -537,7 +517,6 @@ NA_EIDPROC
   };
    
 
-NA_EIDPROC
   void setLength(Lng32 len)
   {
     if ((type >= REC_MIN_NUMERIC) && (type <= REC_MAX_NUMERIC))
@@ -552,8 +531,6 @@ NA_EIDPROC
       len_etc.datetime_.len = (unsigned short) len;
   };
 
-#ifdef NA_CATMAN_SIM
-NA_EIDPROC
   Lng32 getBeginType()
   {
     if (type == REC_DATETIME)
@@ -562,14 +539,12 @@ NA_EIDPROC
       return -1;
   };
 
-NA_EIDPROC
   void setBeginType(Lng32 ltype)
   {
     if (type == REC_DATETIME)
       len_etc.datetime_.lead_type = (unsigned short) ltype;
   };
 
-NA_EIDPROC
   Lng32 getEndType()
   {
     if (type == REC_DATETIME)
@@ -578,13 +553,11 @@ NA_EIDPROC
       return -1;
   };
 
-NA_EIDPROC
   void setEndType(Lng32 etype)
   {
     if (type == REC_DATETIME)
       len_etc.datetime_.end_type = (unsigned short) etype;
   };
-#endif  // NA_CATMAN_SIM
 
   unsigned char flags;
   unsigned char type;
@@ -626,8 +599,6 @@ NA_EIDPROC
   short offset_ix;      // not used
   short default_offset; // not used
 };
-#pragma warn(1506)   // warning elimination 
-#pragma warn(270)   // warning elimination 
 
 // this struct is same as REC^RECORD^STRUCT from sql/mp DFS2REC.
 // DO NOT CHANGE IT IN ANY WAY.

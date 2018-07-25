@@ -161,28 +161,29 @@ class InterfaceStatement {
 				// line,
 				// because the array is already initialized to 0.
 				Bytes.insertShort(values, noNullValue, (short) 0, this.ic_.getByteSwap());
-			} else if (paramValue instanceof byte[]) {
-				tmpBarray = (byte[]) paramValue;
-			} else if (paramValue instanceof String) {
-				String charSet = "";
+            } else if (paramValue instanceof byte[] || paramValue instanceof String) {
+                String charSet = "";
 
-				try {
-					if (this.ic_.getISOMapping() == InterfaceUtilities.SQLCHARSETCODE_ISO88591
-							&& !this.ic_.getEnforceISO() && dataCharSet == InterfaceUtilities.SQLCHARSETCODE_ISO88591)
-						charSet = ic_.t4props_.getISO88591();
-					else
-					{
-						if(dataCharSet == InterfaceUtilities.SQLCHARSETCODE_UNICODE && this.ic_.getByteSwap())
-							charSet = "UTF-16LE";
-						else
-							charSet = InterfaceUtilities.getCharsetName(dataCharSet);
-					}
-					tmpBarray = ((String) paramValue).getBytes(charSet);
-				} catch (Exception e) {
-					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
-							charSet);
-				}
-			} // end if (paramValue instanceof String)
+                try {
+                    if (this.ic_.getISOMapping() == InterfaceUtilities.SQLCHARSETCODE_ISO88591
+                            && !this.ic_.getEnforceISO() && dataCharSet == InterfaceUtilities.SQLCHARSETCODE_ISO88591)
+                        charSet = ic_.t4props_.getISO88591();
+                    else {
+                        if (dataCharSet == InterfaceUtilities.SQLCHARSETCODE_UNICODE && this.ic_.getByteSwap())
+                            charSet = "UTF-16LE";
+                        else
+                            charSet = InterfaceUtilities.getCharsetName(dataCharSet);
+                    }
+                    if (paramValue instanceof byte[]) {
+                        tmpBarray = (new String((byte[]) paramValue)).getBytes(charSet);
+                    } else {
+                        tmpBarray = (((String) paramValue)).getBytes(charSet);
+                    }
+                } catch (Exception e) {
+                    throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+                            charSet);
+                }
+            } // end if (paramValue instanceof String)
 			else {
 				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 						"CHAR data should be either bytes or String for column: " + paramNumber);
@@ -286,9 +287,14 @@ class InterfaceStatement {
 				}
 				break;
 			case InterfaceResultSet.SQLDTCODE_TIMESTAMP:
-				Timestamp tmpts;
+				Timestamp tmpts = null;
 				try {
-					tmpts = Timestamp.valueOf((String) paramValue);
+					String tmpStr = (String) paramValue;
+					String pattern = "(\\d{4}-\\d{1,2}-\\d{1,2}):(.*)";
+					if(tmpStr != null && tmpStr.matches(pattern)) {
+						tmpStr = tmpStr.replaceFirst(pattern, "$1 $2");
+					}
+					tmpts = Timestamp.valueOf(tmpStr);
 				} catch (IllegalArgumentException iex) {
 					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 							"Timestamp data format is incorrect for column: " + paramNumber + " = " + paramValue);
@@ -966,7 +972,7 @@ class InterfaceStatement {
 		else {
 			switch(this.ic_.getMode()) {
 			case InterfaceConnection.MODE_SQL:
-				if ((str3.equals("SELECT")) || (str3.equals("SHOWSHAPE")) || (str3.equals("INVOKE"))
+				if ((str3.equals("SELECT")) || (str3.equals("WITH"))|| (str3.equals("SHOWSHAPE")) || (str3.equals("INVOKE"))
 						|| (str3.equals("SHOWCONTROL")) || (str3.equals("SHOWDDL")) || (str3.equals("EXPLAIN"))
 						|| (str3.equals("SHOWPLAN")) || (str3.equals("REORGANIZE")) || (str3.equals("MAINTAIN"))
 						|| (str3.equals("SHOWLABEL")) || (str3.equals("VALUES"))
@@ -1447,7 +1453,11 @@ class InterfaceStatement {
 				TrafT4CallableStatement cstmt = (TrafT4CallableStatement) stmt;
 				Object[] outputValueArray;
 				if(er.returnCode == TRANSPORT.NO_DATA_FOUND) { //this should really only happen with LAST0 specified
-					outputValueArray = new Object[cstmt.outputDesc_.length];
+					if (null != cstmt.outputDesc_) {
+					    outputValueArray = new Object[cstmt.outputDesc_.length];
+					} else {
+					    outputValueArray = null;
+					}
 				}
 				else {
 					outputValueArray = InterfaceResultSet.getExecute2Outputs(cstmt.connection_, cstmt.outputDesc_, 

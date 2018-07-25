@@ -195,8 +195,13 @@ This is currently not supported.
 == SQL 1012
 
 ```
-No privileges were granted. You lack grant option on the specified privileges.
+No privileges were granted.  <auth_id> lacks grant option on the specified privileges. <details>.
 ```
+
+Where <auth-id> is a {project-name} user name.
+
+Where <details> suggests roles you can specify in order for the grant to succeed.
+If <auth_id> has not been granted any relevant roles, <details> is omitted.
 
 *Cause:* You attempted to grant privileges for which you do not have
 grant options.
@@ -363,6 +368,24 @@ you can reissue the statement specifying CASCADE. For other DROP
 statements, you must first drop each of the dependent objects, then drop
 the object.
 
+[[SQL-1026]]
+== SQL 1026
+
+```
+Specified object name <object-name> is invalid for this command.
+```
+
+Where <object-name> is the name of the object you specified.
+
+*Cause:* You attempted to register or unregister a Hive or HBase table, but the object name
+was not of the appropriate kind. For example, REGISTER HIVE TABLE TRAFODION.SCH.T1 will get this
+error because objects in the TRAFODION catalog are native {project-name} objects.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
 [[SQL-1027]]
 == SQL 1027
 
@@ -380,7 +403,6 @@ on an earlier release of the {project-name} software, before column privileges w
 
 *Recovery:* Drop and recreate the view, then resubmit the grant request.
 
-<<<
 [[SQL-1028]]
 == SQL 1028
 
@@ -399,6 +421,7 @@ objects.
 *Recovery:* Either drop all the objects in <schema-name> and resubmit
 the statement, or resubmit the drop statement using the CASCADE option.
 
+<<<
 [[SQL-1029]]
 == SQL 1029
 
@@ -415,7 +438,6 @@ accompanying error messages to determine the cause.
 
 *Recovery:* Apply the recovery of the accompanying error messages.
 
-<<<
 [[SQL-1030]]
 == SQL 1030
 
@@ -435,6 +457,7 @@ is too long for HBase.
 
 *Recovery:* Use a shorter name and resubmit.
 
+<<<
 [[SQL-1031]]
 == SQL 1031
 
@@ -450,7 +473,6 @@ Where <object-name> is the SQL object.
 
 *Recovery:* Apply the recovery of the accompanying error message.
 
-<<<
 [[SQL-1032]]
 == SQL 1032
 
@@ -466,6 +488,22 @@ the query is not executed.
 
 *Recovery:* If you wish to execute the query, resubmit without
 the DISPLAY command.
+
+<<<
+[[SQL-1033]]
+== SQL 1033
+
+```
+Unable to obtain comments.
+```
+
+*Cause:* You attempted a DDL or SHOWDDL operation but {project-name}
+could not retrieve comment information needed to process the request.
+Additional error messages may give insight to the cause.
+
+*Effect:* The operation is not executed.
+
+*Recovery:* None. Contact the {project-name} Developer Distribution List.
 
 [[SQL-1034]]
 == SQL 1034
@@ -911,6 +949,25 @@ system error <error-number>.
 *Effect:* The operation fails.
 
 *Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+<<<
+[[SQL-1071]]
+== SQL 1071
+
+```
+View usage information for the following hive tables could not be set. Make sure that an external table either already exists or implicit creation has not been disabled. Hive tables: <hive-tables>
+```
+
+Where <hive-tables> is a list of Hive table names.
+
+*Cause:* You attempted to create a view referencing the listed Hive tables, but the Hive tables do not have external tables defined within {project-name}
+or have not been registered within {project-name}, and automatic registration has been turned off. (CQD HIVE_NO_REGISTER_OBJECTS controls whether automatic
+registration is enabled. If this CQD is 'ON' it has been disabled.)
+
+*Effect:* The operation fails.
+
+*Recovery:* Either register or create external tables within {project-name} for the Hive tables listed, then resubmit. Alternatively, set
+CQD HIVE_NO_REGISTER_OBJECTS 'OFF' and resubmit.
 
 <<<
 [[SQL-1073]]
@@ -1474,12 +1531,30 @@ exceeds the maximum allowed row size.
 *Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for row size limit
 calculations. Change the column definitions and reissue the statement.
 
+[[SQL-1141]]
+== SQL 1141
+
+```
+Key length <actual-key-length> exceeds the maximum allowed key length of <maximum-key-length>.
+```
+
+Where <actual-key-length> is the summary length of all the primary key for the given table.
+
+Where <maximum-key-length> is the largest key size allowed according to the underlying storage engine.
+
+*Cause:* On a CREATE TABLE statement, the size of the primary key total size in bytes
+exceeds the maximum allowed key size.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the error message for the maximum allowed key size, change the column definitions and reissue the statement.
+
 <<<
 [[SQL-1143]]
 == SQL 1143
 
 ```
-Validation for constraint <constraint-name> failed; incompatible data exists in referencing base table <referencing-table-name> and referenced base table <referenced-table-name>. To display the data violating the constraint, please use the following DML statement: <statement-text>.
+Validation for constraint <constraint-name> failed; incompatible data exists in referencing base table <referencing-table-name> and referenced base table <referenced-table-name>. To display the data that violates the constraint, please use the following DML statement: <statement-text>
 ```
 
 Where <constraint-name> is the name of a column constraint or table
@@ -1530,22 +1605,17 @@ compatible with the type of column <column-name> and resubmit.
 == SQL 1146
 
 ```
-Object <object-name> could not be altered because it is not a <object-type>.
+Object <object-name> could not be altered because it either does not exist or is not a table.
 ```
 
 Where <object-name> is the name of the object being requested.
 
-Where <object-type> is the type of object required for the DDL statement
-issued.
-
-*Cause:* The type of the object specified in the command is inconsistent
-with the DDL command being used. For example, this occurs if DROP TABLE
-is used, and the object you specify is an INDEX.
+*Cause:* You attempted to rename a column in a table, but the <object-name> specified
+either is not a table, or the table does not exist.
 
 *Effect:* The operation fails.
 
-*Recovery:* Check that the correct object name was specified and execute
-a statement that is consistent with that type of object.
+*Recovery:* Correct the <object-name> and resubmit.
 
 <<<
 [[SQL-1147]]
@@ -1585,78 +1655,6 @@ that is the SYSKEY, which is not supported.
 *Recovery:* Do not use the SYSKEY as part of the referenced key.
 
 <<<
-[[SQL-1150]]
-== SQL 1150
-
-```
-Table <table-name> was not created as Partition Overlay Support could not generate volume names for the partitions to reside on.
-```
-
-Where <table-name> is the name of the table.
-
-*Cause:* When the Partition Overlay Support feature is enabled without
-setting volume names (through CQD POS_LOCATIONS) for table partitions to
-reside on, location names are generated automatically. However, the
-{project-name} database software could not generate the location names
-automatically and, because the CQD POS_RAISE_ERROR is set, the table is
-not created.
-
-*Effect:* The operation fails.
-
-*Recovery:* To correct the error, choose a recovery method:
-
-* Verify that the disk volumes are available on the current node and
-retry the request.
-* Specify the volume names where the partitions need to be created for
-the given CREATE TABLE statement through CONTROL QUERY DEFAULT
-POS_LOCATIONS, and then retry the request.
-* Do not set the CQD POS_RAISE_ERROR, in which case, a simple table
-without partitions is created when the volume names cannot be generated.
-
-<<<
-[[SQL-1151]]
-== SQL 1151
-
-```
-POS (Partition Overlay Support) was not applied as volume names could not be generated for the partitions. So a simple table <table-name> was created without partitions.
-```
-
-Where <table-name> is the name of the table.
-
-*Cause:* When the Partition Overlay Support feature is enabled without
-setting volume names (through CQD POS_LOCATIONS) for table partitions to
-reside on, location names are generated automatically. However, the
-{project-name} database software could not generate the location names
-automatically, and because the CQD POS_RAISE_ERROR is not set, the given
-table is created as a simple table without partitions as it would be if
-the Partition Overlay Support feature was not enabled.
-
-*Effect:* The POS feature was not applied. A simple table without
-partitions was created.
-
-*Recovery:* None if a non-partitioned table is requested. To request a
-partitioned table, delete the table, verify that disk volumes are
-available, and resubmit. You can also specify the volume names where the
-partitions need to be created for the given CREATE TABLE through
-CONTROL QUERY DEFAULT POS_LOCATIONS, and then retry the request.
-
-<<<
-[[SQL-1154]]
-== SQL 1154
-
-```
-Cannot create object <object-name> as the table size is too big to fit on the system.
-```
-
-*Cause:* {project-name} could not create the object
-because the requested table size is bigger than the total amount of disk
-space available on the system.
-
-*Effect:* The SQL operation fails.
-
-*Recovery:* Check that the table size requested is big enough to fit on
-the system and retry the statement.
-
 [[SQL-1155]]
 == SQL 1155
 
@@ -1675,15 +1673,14 @@ Operation cannot be performed because <object-name> is not a synonym.
 == SQL 1156
 
 ```
-Synonym <name> does not exist or object type is invalid for the current operation.
+Object <object-name> does not have columns.
 ```
 
-*Cause:* You specified a create or alter of synonym <name> on an object
-that is not a table or view.
+*Cause:* You attempted to grant or revoke column privileges, but <object-name> is not a table or a view.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the syntax so that the correct <name> is used.
+*Recovery:* Correct the syntax so that the correct <object-name> is used.
 
 [[SQL-1157]]
 == SQL 1157
@@ -1699,184 +1696,59 @@ is the same as its previous mapping.
 
 *Recovery:* None.
 
-<<<
-[[SQL-1158]]
-== SQL 1158
+[[SQL-1174]]
+== SQL 1174
 
 ```
-Synonym <name> already exists.
+An unsupported data type was encountered on this operation.
 ```
 
-*Cause:* You specified a create of synonym <name> on an object, but a
-synonym of that name already exists.
+*Cause:* You performed a DDL-related operation and one of the objects involved
+has a column with a data type that is not supported for this operation. This is
+due to an incomplete implementation of support for a particular column type.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the syntax so that the correct <name> is used.
-
-[[SQL-1159]]
-== SQL 1159
-
-```
-The specified object <name> is not a table or a view. Please verify that the correct object was specified.
-```
-
-*Cause:* You specified an alter or drop of synonym <name>, but a synonym of that name already exists.
-
-*Effect:* The operation fails.
-
-*Recovery:* Correct the syntax so that the correct <name> is used.
-
-<<<
-[[SQL-1160]]
-== SQL 1160
-
-```
-A mismatch between the NOT DROPPABLE PRIMARY KEY constraint and the STORE BY clause was detected. When both clauses are specified, the STORE BY key column list must be the same as, or a prefix of , the PRIMARY KEY column list. This mismatch is caused by differences between the columns themselves, the order of columns, or the ASC/DESC attribute.
-```
-
-*Cause:* You attempted to create a table that contains both a NOT
-DROPPABLE PRIMARY KEY constraint and a STORE BY clause. The syntax
-specified is not correct. The STORE BY column list must be the same as,
-or a prefix of, the NOT DROPPABLE PRIMARY KEY column list.
-
-*Effect:* The operation fails.
-
-*Recovery:* If you want the STORE BY column list that specifies the
-clustering key to be different than the PRIMARY KEY, specify a DROPPABLE
-PRIMARY KEY. If you want the PRIMARY KEY to be the same as the STORE BY
-key, do not specify a STORE BY clause. Correct the syntax and resubmit.
-
-[[SQL-1161]]
-== SQL 1161
-
-```
-System generated column SYSKEY cannot be specified as part of the PARTITION BY clause.
-```
-
-*Cause:* {project-name} could not create the object
-because system-generated column SYSKEY is not allowed as part of the
-PARTITION BY clause.
-
-*Effect:* The DDL operation fails.
-
-*Recovery:* Remove the system added column SYSKEY from the PARTITION BY
-clause and retry the DDL statement.
+*Recovery:* None. Report this error and the DDL operation to the {project-name} User Distribution List.
 
 <<<
 [[SQL-1180]]
 == SQL 1180
 
 ```
-The required subvolume name for locations in schema <schema-name> is <directory-name>.
+Trying to create an external <kind> table with a different schema or table name (<table-name>) than the source table (<source-table-name>). The external schema and table name must be the same as the source.
 ```
 
-Where <schema-name> is the schema in which the object is being created.
+Where <kind> is the kind of the source table (e.g. HBASE or HIVE).
 
-Where <directory-name> is the designated subvolume name for that schema.
+Where <table-name> is the name of a {project-name} external table that you are trying to create.
 
-*Cause:* One or more LOCATION clauses in the CREATE or MODIFY statement
-contained a {project-name} platform location whose subvolume did not match
-the designated subvolume for the schema in which the object was being
-created.
+Where <source-table-name> is the name of a non-{project-name} table (e.g. an HBase or Hive table).
 
-*Effect:* The object was not created.
+*Cause:* You attempted a CREATE EXTERNAL TABLE statement, but you used a different schema name for the {project-name} external
+table than the original. This might happen because you let the schema name of the external table default, and the default is not the 
+same as the source table schema.
 
-*Recovery:* Either correct the invalid LOCATION clauses or remove them
-and allow the system to generate the {project-name} platform locations.
+*Effect:* The external table was not created.
+
+*Recovery:* Either supply the correct schema name or change the default schema name.
 
 [[SQL-1181]]
 == SQL 1181
 
 ```
-Label <file-name> could not be dropped. (file error <error>).
+Trying to create a schema with name <schema-name> to store the definition of a native HIVE or HBASE table and the name is too long. Maximum length supported is <max-length>.
 ```
 
-Where <file-name> is the name of the table, index, view, or routine
-being dropped.
+Where <schema-name> is the name of the schema you are trying to create.
 
-Where <error> is the returned file system error number.
+Where <max-length> is the maximum length of schema names supported by {project-name}.
 
-*Cause:* The object you attempted to drop resulted in file system error
-<error>.
-
-*Effect:* The DDL DROP operation fails.
-
-*Recovery:* See previous messages in this {project-name} database software
-operation to determine the necessary corrective actions. Also, use the
-file system error <error-number> to analyze the cause. For information
-about file system errors, see <<file_system_errors, File-System Errors>>.
-Fix the error and resubmit.
-
-<<<
-[[SQL-1182]]
-== SQL 1182
-
-```
-Error <error> was returned by the file system on resource fork <file-name>.
-```
-
-Where <error> is the error returned.
-
-Where <file-name> is the name of the file.
-
-*Cause:* File system error.
+*Cause:* You attempted to create an external table for an HBase or Hive table but the schema name is too long.
 
 *Effect:* The operation fails.
 
-*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
-
-[[SQL-1183]]
-== SQL 1183
-
-```
-Error <error> was returned by the file system on metadata table <ANSI-name> (file name <file-name>).
-```
-
-Where <error> is the error returned.
-
-Where <ANSI-name> is the metadata table.
-
-Where <file-name> is the name of the file.
-
-*Cause:* File system error.
-
-*Effect:* The operation fails.
-
-*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
-
-<<<
-[[SQL-1184]]
-== SQL 1184
-
-```
-You do not have the required privilege(s) on <column-name>.
-```
-
-Where <column-name> is the name of a column specified in the references
-part of a referential integrity constraint.
-
-*Cause:* You attempted to establish a referential integrity constraint
-on a column for which the executing user ID has no REFERENCES
-privileges.
-
-*Effect:* The operation fails.
-
-*Recovery:* Establish correct column privileges and resubmit.
-
-[[SQL-1185]]
-== SQL 1185
-
-```
-The location name is either invalid or missing.
-```
-
-*Cause:* A partition location is either invalid or missing.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify the correct location for all partitions involved in
-the affected command.
+*Recovery:* None.
 
 <<<
 [[SQL-1186]]
@@ -1904,7 +1776,7 @@ default to be compatible types and resubmit.
 == SQL 1187
 
 ```
-The schema name <schema-name> is reserved for {project-name} metadata.
+The schema name <schema-name> is reserved for SQL metadata.
 ```
 
 Where <schema-name> is the name of a {project-name} database schema.
@@ -1940,50 +1812,390 @@ indirectly.
 
 *Recovery:* None. You cannot define a referential constraint that creates a circular dependency.
 
-[[SQL-1224]]
-== SQL 1224
+[[SQL-1190]]
+== SQL 1190
 
 ```
-An invalid data type was specified for routine parameter <parameter-name>.
+Failed to initialize Hive metadata. Call to <function> returned error <optional-symbol>(<error-number>). Cause: <diagnostics>.
 ```
 
-Where <parameter-name> is the name of the parameter.
+Where <function> is a {project-name} internal method call.
 
-*Cause:* You specified a data type for this routine parameter that is
-not supported.
+Where <optional-symbol> is an internal symbol representing the error.
 
-*Effect:* {project-name} is unable to complete the operation.
+Where <error-number> is the error code returned by <function>.
 
-*Recovery:* Specify a different data type.
+Where <diagnositics> is Java exception information.
+
+*Cause:* You attempted to access a Hive object but {project-name} was unable to access the Hive metadata for that object. A common
+cause of this error is that the Hive metadata server is down.
+
+*Effect:* The operation fails.
+
+*Recovery:* Take corrective action to insure that the Hive subsystem is functioning correctly. Then resubmit.
 
 <<<
-[[SQL-1225]]
-== SQL 1225
+[[SQL-1191]]
+== SQL 1191
 
 ```
-Mixing EXECUTE with other privileges is not allowed.
+SERIALIZE option is not yet supported for <data-type> datatype.
 ```
 
-*Cause:* EXECUTE and another privilege were specified in the same GRANT
-or REVOKE statement, which is not allowed.
+Where <data-type> is the data type of a column that you tried to create.
+
+*Cause:* You attempted to create a column with the SERIALIZED attribute (for example, while submitting a CREATE TABLE statement) 
+but {project-name} does not presently
+support columns of the given data type with the SERIALIZED attribute.
 
 *Effect:* The operation fails.
 
-*Recovery:* Use separate GRANT or REVOKE statements for EXECUTE and other privileges.
+*Recovery:* Correct the statement by either changing the data type or removing the SERIALIZED attribute. Then resubmit.
 
-[[SQL-1226]]
-== SQL 1226
+[[SQL-1192]]
+== SQL 1192
 
 ```
-No valid combination of privileges was specified.
+Failed to retrieve data from Hive metastore. Call to <function> returned error <optional-symbol>(<error-number>). Cause: <diagnostics>.
 ```
 
-*Cause:* The GRANT or REVOKE statement did not specify a valid
-combination of privileges.
+Where <function> is a {project-name} internal method call.
+
+Where <optional-symbol> is an internal symbol representing the error.
+
+Where <error-number> is the error code returned by <function>.
+
+Where <diagnositics> is Java exception information.
+
+*Cause:* An error occurred when {project-name} attempted to read metadata about a Hive object from the Hive metastore. The <diagnostics>
+contains specific information about the error.
 
 *Effect:* The operation fails.
 
-*Recovery:* Specify a valid combination of privileges in the GRANT or REVOKE statement.
+*Recovery:* The <diagnostics> may suggest appropriate corrective action. If not, report this error and the associated SQL
+operation to the {project-name} User Distribution List.
+
+<<<
+[[SQL-1193]]
+== SQL 1193
+
+```
+The <type-of-string> specified in the <clause-name> clause must be identical to the primary key for a Trafodion table.
+```
+
+Where <type-of-string> indicates some syntactic construct (e.g. "clusering key").
+
+Where <clause-name> is a SQL clause (e.g. "STORE BY").
+
+*Cause:* You specified two syntatic constructs (e.g. "STORE BY" and "PRIMARY KEY") in a DDL statement (e.g. "CREATE TABLE") that
+overlap in meaning. {project-name} requires the former construct to match the latter in this case.
+
+*Effect:* The operation fails.
+
+*Recovery:* Either remove the <clause-name> clause (as it is redundant) or change it to match the primary key. Then resubmit.
+
+[[SQL-1194]]
+== SQL 1194
+
+```
+Component operation <operation> does not exist for component <component-name>.
+```
+
+Where <operation> is the operation assigned to a component.
+
+Where <component-name> is the name of a valid component.
+
+*Cause:* Components are assigned a set of operations that can be granted privileges.  The requested <operation>
+is not assigned to component <component-name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Perform "get privileges on component <component-name>" to get the list of valid operations (privileges) for the 
+component and retry the request.
+
+<<<
+[[SQL-1195]]
+== SQL 1195
+
+```
+Column <column-name> is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
+```
+
+Where <column-name> is the name of a column specified in a SALT clause.
+
+*Cause:* You specified a column in a SALT clause (e.g. on a CREATE TABLE statement) that is not part of the primary or clustering key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the column name then resubmit.
+
+[[SQL-1196]]
+== SQL 1196
+
+```
+The number of salt partitions must be between <lower-bound> and <upper-bound> inclusive.
+```
+
+Where <lower-bound> is the smallest allowable number of salt partitions supported.
+
+Where <upper-bound> is the largest allowable number of salt partitions supported.
+
+*Cause:* You specified a SALT clause (e.g. on a CREATE TABLE statement) with a number of partitions outside the range that
+{project-name} supports.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the SALT clause then resubmit.
+
+<<<
+[[SQL-1197]]
+== SQL 1197
+
+```
+The location <location-1> for <stored-procedure-name> does not match with another location <location-2> specified. All location specifications must be identical.
+```
+
+Where <location-1> and <location-2> are execution locations for an internal stored procedure.
+
+Where <stored-procedure-name> is the name of an internal stored procedure.
+
+*Cause:* This is a {project-name} internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Report this error and the associated SQL
+operation to the {project-name} User Distribution List.
+
+[[SQL-1199]]
+== SQL 1199
+
+```
+The PARTITION BY clause is not allowed for a Trafodion table.
+```
+
+*Cause:* You specified a PARTITION BY clause when trying to create a {project-name} table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the PARTITION BY clause from the DDL statement and resubmit.
+
+<<<
+[[SQL-1200]]
+== SQL 1200
+
+```
+An error occurred while reading HDFS file statistics for Hive table <table-name>. Cause: <diagnostics>.
+```
+
+Where <table-name> is the name of a Hive table.
+
+Where <diagnostics> give diagnostics as to the cause of the error.
+
+*Cause:* The {project-name} engine attempted to read file statistics from HDFS for a particular Hive table.
+A failure occurred at the HDFS or Hive level. The diagnostics contain more information about the failure.
+
+*Effect:* The operation fails.
+
+*Recovery:* Address the indicated issue at the HDFS or Hive level, then resubmit.
+
+[[SQL-1201]]
+== SQL 1201
+
+```
+Salted index <index-name> cannot be unique.
+```
+
+Where <index-name> is the name of a {project-name} index that you are trying to create.
+
+*Cause:* You attempted a CREATE UNIQUE INDEX statement that included the SALT LIKE TABLE clause.
+SALT LIKE TABLE is not allowed for unique indexes.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove either the UNIQUE keyword or the SALT LIKE TABLE clause and resubmit.
+
+<<<
+[[SQL-1202]]
+== SQL 1202
+
+```
+Index <index-name> cannot be salted like a table since table <table-name> is not salted.
+```
+
+Where <index-name> is the name of a {project-name} index that you are trying to create.
+
+Where <table-name> is a {project-name} table.
+
+*Cause:* You attempted a CREATE INDEX statement that included the SALT LIKE TABLE clause on
+a table that is not salted.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the SALT LIKE TABLE clause and resubmit.
+
+[[SQL-1203]]
+== SQL 1203
+
+```
+HBASE_OPTIONS clause in CREATE statement is longer than 6000 characters. Object <object-name> was not created.
+```
+
+Where <object-name> is the name of a {project-name} object that you are trying to create.
+
+*Cause:* The HBASE_OPTIONS clause specified in the CREATE statement contained more than 6000
+characters of HBase options, exceeding the length limit that {project-name} supports.
+
+*Effect:* The operation fails.
+
+*Recovery:* Shorten the set of options specified in HBASE_OPTIONS and resubmit.
+
+<<<
+[[SQL-1204]]
+== SQL 1204
+
+```
+Unsupported Hive datatype <Hive-datatype>.
+```
+
+Where <Hive-datatype> is a Hive data type.
+
+*Cause:* You attempted to reference a Hive table that has a column with a data type
+that {project-name} does not support.
+
+*Effect:* The operation fails.
+
+*Recovery:* If the wrong Hive table was referenced, correct the reference and resubmit.
+
+[[SQL-1214]]
+== SQL 1214
+
+```
+Error <Hive-exception-info> encountered when executing HiveQL statement <Hive-statement>.
+```
+
+Where <Hive-exception-info> is error diagnostic information from Hive.
+
+Where <Hive-statement> is the Hive SQL statement you specified.
+
+*Cause:* You attempted to execute a Hive SQL statement via the PROCESS HIVE STATEMENT command,
+and Hive detected errors in that statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Determine the proper recovery action from the <Hive-exception-info> then resubmit.
+
+<<<
+[[SQL-1215]]
+== SQL 1215
+
+```
+An error occurred while determining host, port, or file name for HDFS URI <HDFS-URI>. Cause: <diagnostics>.
+```
+
+Where <HDFS-URI> is a Uniform Resource Identifier for a Hive table partition.
+
+Where <diagnostics> are diagnostics from HDFS.
+
+*Cause:* You attempted to access a Hive table but {project-name} could not obtain location information
+about that object.
+
+*Effect:* The operation fails.
+
+*Recovery:* Determine the proper recovery action from the <diagnostics> then resubmit.
+
+[[SQL-1220]]
+== SQL 1220
+
+```
+Code must contain two non-blank characters.
+```
+
+*Cause:* You attempted to create a component privilege but you specified a component code that is not two non-blank characters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1222]]
+== SQL 1222
+
+```
+Command not supported when authorization is not enabled.
+```
+
+*Cause:* You attempted to perform a privilege-related command (e.g. GRANT), but authorization
+is not enabled on this {project-name} instance.
+
+*Effect:* The operation fails.
+
+*Recovery:* Enable authorization on the instance (e.g. INITIALIZE AUTHORIZATION), register users and resubmit.
+
+[[SQL-1223]]
+== SQL 1223
+
+```
+Grant to self or DB__ROOT is not allowed.
+```
+
+*Cause:* You attempted to grant a privilege to yourself or to DB__ROOT.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1227]]
+== SQL 1227
+
+```
+Cannot unregister user. User <user-name> has been granted privileges on <object-name>.
+```
+
+Where <user-name> is the name of a user that you are trying to unregister.
+
+Where <object-name> is the name of a {project-name} object.
+
+*Cause:* You attempted to unregister a user, but the user has privileges on a {project-name} object.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use REVOKE to remove any privileges granted to the user, then resubmit.
+
+[[SQL-1228]]
+== SQL 1228
+
+```
+Cannot drop role. Role <role-name> has been granted privileges on <object-name>.
+```
+
+Where <role-name> is the name of a role that you are trying to drop.
+
+Where <object-name> is the name of a {project-name} object.
+
+*Cause:* You attempted to drop a role that has privileges. All privileges granted to a role
+must be dropped before the role can be dropped.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use SHOWDDL on the <object-name> to see what privileges are granted to the role.
+Then REVOKE those privileges, and resubmit the DROP ROLE statement.
+
+<<<
+[[SQL-1230]]
+== SQL 1230
+
+```
+Object owner must be the schema owner in private schemas.
+```
+
+*Cause:* You attempted to create an object on behalf of another user but you attempted 
+to place the object in a private schema owned by a different user.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the schema name of the new object or correct the user name in the BY clause
+to match the owner of the schema.
 
 <<<
 [[SQL-1231]]
@@ -2002,112 +2214,20 @@ Where <procedure-name> is the stored procedure's ANSI name.
 *Recovery:* Fix the error conditions identified in messages preceding
 this message and reissue the CREATE PROCEDURE statement.
 
-[[SQL-1232]]
-== SQL 1232
+[[SQL-1234]]
+== SQL 1234
 
 ```
-A file error occurred when saving dropped table DDL for table <table-name> to <path-name>.
+Authorization needs to be reinitialized due to missing or corrupted privilege manager metadata. To reinitialize, do 'initialize authorization, drop' followed by 'initialize authorization'. This deletes and recreates privilege manager metadata. Trafodion metadata is not affected.
 ```
 
-Where <table-name> is the table being dropped whose DDL was to be saved.
+*Cause:* Privilege metadata has become corrupted.
 
-Where <path-name> is the pathname of the file to which the DDL was to
-be saved.
+*Effect:* Some or all authorization operations on the {project-name} instance will fail.
 
-*Cause:* A file system error occurred when you attempted to save a table
-DDL. Possible reasons are:
-
-* The directory `/usr/tandem/sqlmx/ddl` did not exist or could not be
-created.
-* The system did not have write access to `/usr/tandem/sqlmx/ddl`.
-* Insufficient file space was available.
-
-*Effect:* The table is not dropped.
-
-*Recovery:* Either correct the file system problem and drop the table or
-perform a SHOWDDL on the existing table, capture the output, set.
-SAVE_DROPPED_TABLE_DDL to "OFF," and drop the table. For information
-about file system errors, see <<file_system_errors,File-System Errors>>.
+*Recovery:* Reinitialize authorization by performing INITIALIZE AUTHORIZATION, DROP followed by INITIALIZE AUTHORIZATION.
 
 <<<
-[[SQL-1233]]
-== SQL 1233
-
-```
-Creating schema in {project-name} system catalog <catalog-name> is prohibited.
-```
-
-Where <catalog-name> is the name of the {project-name} database catalog.
-
-*Cause:* You attempted to create a schema in the system catalog.
-
-*Effect:* The operation fails.
-
-*Recovery:* Choose a different catalog name and reissue the CREATE
-statement.
-
-[[SQL-1235]]
-== SQL 1235
-
-```
-An invalid combination of EXTENT sizes and MAXEXTENTS was specified
-```
-for table or index <table-name>.
-
-*Cause:* A CREATE or ALTER statement specified an invalid combination of
-EXTENT sizes and MAXEXTENTS.
-
-*Effect:* The operation fails.
-
-*Recovery:* Correct the error and retry the operation.
-
-<<<
-[[SQL-1236]]
-== SQL 1236
-
-```
-The schema name specified for SQL object <object-name> is not valid. The schema name must be the same as the schema being created.
-```
-
-Where <object-name> is the name of the SQL object.
-
-*Cause:* You specified a schema name for an object that is different
-from the name of the schema being created.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify a schema name for the object that matches the name
-of the schema being created.
-
-[[SQL-1238]]
-== SQL 1238
-
-```
-The character set for TRIGGER text must be ISO88591.
-```
-
-*Cause:* You specified a literal with a character set other than
-ISO88591 in the text of a create trigger statement.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify only ISO88591 literals in the command.
-
-<<<
-[[SQL-1239]]
-== SQL 1239
-
-```
-The character set for string literals in VIEW text must be ISO88591.
-```
-
-*Cause:* You specified a literal with a character set other than
-ISO88591 in the text of a create view statement.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify only ISO88591 literals in the command.
-
 [[SQL-1240]]
 == SQL 1240
 
@@ -2122,37 +2242,6 @@ ISO88591 as a partition key.
 
 *Recovery:* Specify only ISO88591 literals as partition keys.
 
-<<<
-[[SQL-1241]]
-== SQL 1241
-
-```
-The character set for HEADING must be ISO88591.
-```
-
-*Cause:* You specified a literal with a character set other than
-ISO88591 in a HEADING clause.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify only ISO88591 literals in HEADING clauses.
-
-[[SQL-1242]]
-== SQL 1242
-
-```
-The character set for string literals in CONSTRAINT must be ISO88591.
-```
-
-*Cause:* You specified a literal with a character set other than
-
-ISO88591 in the text of a constraint.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify only ISO88591 literals in constraints.
-
-<<<
 [[SQL-1243]]
 == SQL 1243
 
@@ -2167,90 +2256,7 @@ statement, which is not allowed.
 
 *Recovery:* Do not specify hexadecimals in this type of command.
 
-[[SQL-1245]]
-== SQL 1245
-
-```
-The supplied partition key value (<key-value>) for column <column-name> of object <object-name> is not valid.
-```
-
-Where <key-value> is the specified first key value.
-
-Where <column-name> is the column of <object-name> that corresponds to
-the invalid key value.
-
-Where <object-name> is the name of the affected object.
-
-*Cause:* A utility command specified an invalid key value.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify valid key values and resubmit.
-
 <<<
-[[SQL-1246]]
-== SQL 1246
-
-```
-The supplied partition key value (<key-value>) is inconsistent
-```
-with the data type of column <column-name> of object <object-name>.
-
-Where <key-value> is the specified first key value.
-
-Where <column-name> is the column of <object-name> that corresponds to
-the invalid key value.
-
-Where <object-name> is the name of the affected object.
-
-*Cause:* A utility command specified a key value that is inconsistent
-with the data type of the column that corresponds to the key value.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify valid key values and resubmit.
-
-[[SQL-1248]]
-== SQL 1248
-
-```
-Partition name <partition-name> has already been used. Each partition in an object should have a unique name.
-```
-
-Where <partition-name> is the name specified for a partition.
-
-*Cause:* Partition names are required to be unique within the set of
-partitions of an object.
-
-*Effect:* The CREATE statement fails.
-
-*Recovery:* Choose a name that is not the same as any other partition
-name in this object and reissue the CREATE statement.
-
-<<<
-[[SQL-1250]]
-== SQL 1250
-
-```
-DROP cannot be performed on object <object-name> because a utility operation (<operation-type>) associated with DDL_LOCK <lock-name> is currently running.
-```
-
-Where <object-name> is the ANSI name of the object named in the DROP
-command.
-
-Where <operation-type> is the type of utility operation.
-
-Where <lock-name> is the ANSI name of the DDL lock object that is
-associated with the utility operation.
-
-*Cause:* You attempted to drop an object that a utility command is
-using.
-
-*Effect:* The operation fails.
-
-*Recovery:* Wait until the utility operation has finished, and then
-retry the DROP operation.
-
 [[SQL-1251]]
 == SQL 1251
 
@@ -2271,22 +2277,6 @@ extra digits to the right are discarded.
 *Recovery:* None. This is a warning message only.
 
 <<<
-[[SQL-1252]]
-== SQL 1252
-
-```
-The existing index <index-name> to be used by a unique or primary constraint has not been populated. Please populate the index and then try to add the constraint again.
-```
-
-Where <index-name> is the name of an existing unpopulated index.
-
-*Cause:* An existing index that is not populated has been chosen for a
-unique or primary constraint, which is not allowed.
-
-*Effect:* The operation fails.
-
-*Recovery:* Populate the index and resubmit.
-
 [[SQL-1254]]
 == SQL 1254
 
@@ -2305,43 +2295,57 @@ constraints or multiple unique constraints are not specified on the same
 set of columns.
 
 <<<
-[[SQL-1262]]
-== SQL 1262
+[[SQL-1255]]
+== SQL 1255
 
 ```
-The command cannot be executed because <operation> is in progress for <schema>.
+Constraint <constraint-name> is the clustering key constraint for table <table-name> and cannot be dropped.
 ```
 
-Where <operation> is a schema-level operation.
+Where <constraint-name> refers to a constraint that you are trying to drop.
 
-Where <schema> is the ANSI name of the affected schema.
+Where <table-name> is the name of a {project-name} table.
 
-*Cause:* You attempted a DDL or utility operation on a database object
-while <operation> was in progress for that object's <schema>.
+*Cause:* You attempted to drop a constraint on a {project-name} table, but the constraint is implied by
+the clustering key and therefore cannot be dropped. This can occur, for example, if the primary key
+was used as the clustering key, and you attempt to drop the primary key constraint.
 
-*Effect:* The DDL or utility operation fails.
+*Effect:* The operation fails.
 
-*Recovery:* Wait until the operation has finished, and then retry the
-DDL or utility operation.
+*Recovery:* If you genuinely wish to remove this constraint, recreate the table with a different
+clustering key.
 
-[[SQL-1263]]
-== SQL 1263
+[[SQL-1256]]
+== SQL 1256
 
 ```
-Table, view, and stored procedure names that start with <text> are reserved for {project-name} metadata.
+PRIMARY KEY constraint cannot be added since table <table-name> already has a user specified clustering key. 
 ```
 
-Where <text> is the disallowed name that was specified.
+Where <table-name> is the name of a {project-name} table.
 
-*Cause:* You specified a {project-name} database reserved object name.
+*Cause:* You attempted to add a primary key constraint, but the table already has a user-specified
+clustering key. This can happen, for example, when adding a primary key to a table that already has one.
 
-*Effect:* The object is not created.
+*Effect:* The operation fails.
 
-*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for the list of
-reserved object names. Choose a name that is not reserved and reissue
-the CREATE statement.
+*Recovery:* If you genuinely wish to add this primary key, recreate the table with the primary key as
+its clustering key.
 
 <<<
+[[SQL-1260]]
+== SQL 1260
+
+```
+Debugging of UDRs is only allowed for the DB__ROOT user. Connect as DB__ROOT, preferably using the sqlci tool, and try again.
+```
+
+*Cause:* You attempted to debug a User Defined Routine, but you were not connected as DB__ROOT.
+
+*Effect:* The operation fails.
+
+*Recovery:* Connect as DB__ROOT and resubmit.
+
 [[SQL-1264]]
 == SQL 1264
 
@@ -2356,21 +2360,6 @@ statement.
 
 *Recovery:* Reissue the GRANT or REVOKE statement, specifying a single
 privilege or a list of distinct privileges.
-
-[[SQL-1265]]
-== SQL 1265
-
-```
-Duplicate grantees not allowed in a GRANT or REVOKE statement.
-```
-
-*Cause:* You specified duplicate grantees in a GRANT or REVOKE
-statement.
-
-*Effect:* The operation fails.
-
-*Recovery:* Reissue the GRANT or REVOKE statement specifying a single
-grantee or a list of distinct grantees.
 
 <<<
 [[SQL-1266]]
@@ -2392,8 +2381,10 @@ for the procedure or routine.
 == SQL 1267
 
 ```
-EXECUTE privilege is incompatible with this object type.
+<privilege-type> privilege is incompatible with this object type.
 ```
+
+Where <privilege-type> is a type of privilege (e.g. EXECUTE).
 
 *Cause:* You specified a privilege that is not supported for the object
 type in a GRANT statement.
@@ -2419,271 +2410,778 @@ references privilege in a GRANT or REVOKE statement.
 *Recovery:* Correct the GRANT or REVOKE statement by specifying a single
 column name or a list of distinct column names.
 
-[[SQL-1270]]
-== SQL 1270
+<<<
+[[SQL-1269]]
+== SQL 1269
 
 ```
-ALLOCATE or DEALLOCATE failed for object <sql-object-name> due to
-file error <file-system-error-number> on <file-name>.
+Column name <column-name> is reserved for internal system usage. It cannot be specified as a user column.
 ```
 
-Where <sql-object-name> is the ANSI name of the affected SQL database
-object.
+Where <column-name> is the column name you specified.
 
-Where <file-system-error-number> is a {project-name} platform file system
-error code.
-
-*Cause:* A CREATE or ALTER operation encountered a file system error
-<error-number> during processing of the ALLOCATE or DEALLOCATE attribute.
+*Cause:* You attempted to use a column name in a DDL statement that is reserved by {project-name} 
+for internal use. For example,
+you attempted to create a table with a column named SYSKEY.
 
 *Effect:* The operation fails.
 
-*Recovery:* For information about file system errors, see
-<file-system-errors,File-System Errors>.
+*Recovery:* Correct the DDL statement and resubmit.
+
+[[SQL-1276]]
+== SQL 1276
+
+```
+Unable to select partition <partition-number> from table <table-name>.
+```
+
+Where <partition-number> is a partition number you specified.
+
+Where <table-name> is the table name you specified.
+
+*Cause:* You attempted to select data from a subset of the partitions of a table, but the
+table in question is not salted or the table name given refers to a view.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
 
 <<<
-[[SQL-1271]]
-== SQL 1271
+[[SQL-1279]]
+== SQL 1279
 
 ```
-ALLOCATE failed for object <object-name> because extents to be allocated <number> is greater than the MAXEXTENTS for a partition of the object.
+A volatile DDL statement cannot be used on regular objects.
 ```
 
-Where <object-name> is the ANSI name of the affected database object.
-
-Where <number> is the specified number of extents.
-
-*Cause:* A CREATE or ALTER operation specified an ALLOCATE attribute
-value that was greater than the MAXEXTENTS value for the affected
-database object, which is not allowed.
+*Cause:* You specified VOLATILE when performing a DDL operation on a non-volatile object. For example, you
+may have specified DROP VOLATILE TABLE on a table that is not volatile.
 
 *Effect:* The operation fails.
 
-*Recovery:* If possible, alter the MAXEXTENTS attribute value to be
-greater than the
+*Recovery:* Correct the statement and resubmit.
 
-desired number of extents to be allocated. The current maximum value for
-MAXEXTENTS is 768.
-
-[[SQL-1273]]
-== SQL 1273
+[[SQL-1280]]
+== SQL 1280
 
 ```
-The specified MAXEXTENTS value must be greater than the number of extents allocated.
+A regular DDL statement cannot be used on volatile objects.
 ```
 
-*Cause:* The value that you specified to change MAXEXTENTS is less than
-or equal to the allocated extents.
+*Cause:* You attempted an unsupported ALTER statement on a volatile object. Altering a column
+on a volatile table, for example, is not presently supported.
 
 *Effect:* The operation fails.
 
-*Recovery:* Use a MAXEXTENTS value greater than the allocated extents.
+*Recovery:* Correct the statement and resubmit.
 
 <<<
-[[SQL-1274]]
-== SQL 1274
+[[SQL-1282]]
+== SQL 1282
 
 ```
-The specified or default MAXEXTENTS value is not sufficient. The MAXEXTENTS value has been automatically set to the new value of <value> for the file <file-name>.
+A LOB column cannot be specified in a volatile table.
 ```
 
-*Cause:* You specified an insufficient MAXEXTENTS value while creating
-an index.
-
-*Effect:* The SQL operation completed with a warning.
-
-*Recovery:* This is a warning only.
-
-[[SQL-1275]]
-== SQL 1275
-
-```
-Constraint <constraint-1> cannot be dropped because it is needed by unique constraint <constraint-2>.
-```
-
-Where <constraint-1> is the constraint you are trying to drop.
-
-Where <constraint-2> is the UNIQUE constraint.
-
-*Cause:* You attempted to drop a constraint that is needed by a UNIQUE
-constraint, which is not allowed because it would leave a UNIQUE
-constraint on a column, but without a NOT NULL constraint for that
-column.
+*Cause:* You attempted to create a volatile table with a BLOB or CLOB column. {project-name} presently
+does not support this. (Note: By default, {project-name} maps BLOB and CLOB columns to VARCHAR columns,
+which are supported. This particular error message can only occur if this mapping is turned off. The
+mapping is turned off when CQD TRAF_BLOB_AS_VARCHAR and/or CQD TRAF_CLOB_AS_VARCHAR is set to 'OFF'.)
 
 *Effect:* The operation fails.
 
-*Recovery:* To drop the constraint, you must remove the UNIQUE
-constraint or add an additional NOT NULL constraint to the columns that
-contain UNIQUE constraints and only one NOT NULL constraint for that
-column.
+*Recovery:* Correct the statement and resubmit.
 
-<<<
-[[SQL-1277]]
-== SQL 1277
+[[SQL-1283]]
+== SQL 1283
 
 ```
-Unrecognized partitioning scheme for object <object-name>.
+The specified constraint or file option is not supported on a volatile table.
 ```
 
-<object-name> is the name of the SQL object (table or index).
-
-*Cause:* The {project-name} database does not recognize the partitioning
-scheme stored in the metadata for the named object.
-
-*Effect:* The named object is considered corrupt and is inaccessible.
-
-*Recovery:* None. Contact the {project-name} User Distribution List Consider
-running the VERIFY operation on the named object to check for
-inconsistencies in the metadata with respect to the partitioning scheme.
-
-[[SQL-1278]]
-== SQL 1278
-
-```
-The command cannot be executed because <operation> is in progress for all schemas in catalog <catalog>.
-```
-
-<operation> is a schema level operation, currently UPGRADE or DOWNGRADE,
-that uses the ALL SCHEMAS IN CATALOG flavor. <catalog> is a catalog name
-that is affected by <operation>.
-
-*Cause:* An attempt was made to execute a DDL or utility operation that
-affected <catalog>, or a schema in that catalog.
+*Cause:* You attempted to create a volatile table with a feature that {project-name} does not support
+on volatile tables. For example, unique constraints are not supported on volatile table columns.
 
 *Effect:* The operation fails.
 
-*Recovery:* Wait until <operation> is finished, then retry the failed
-DDL or utility operation.
+*Recovery:* Correct the statement and resubmit.
 
 <<<
-[[SQL-1301]]
-== SQL 1301
+[[SQL-1289]]
+== SQL 1289
 
 ```
-NO ACTION referential action for <referential-triggered-action> clause is not yet supported as specified by ANSI SQL-99 standard. To alter the behavior, set an appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
+The use of ALTER on reserved schemas and metadata schemas is not permitted.
 ```
 
-Where <referential-triggered-action> can either be ON DELETE or ON
-UPDATE.
-
-*Cause:* NO ACTION referential action is specified in the referential
-integrity definition, and the CONTROL QUERY DEFAULT value for
-REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT is 'OFF.'
-
-*Effect:* The NO ACTION referential action cannot be defined.
-
-*Recovery:* To alter the behavior of NO ACTION referential action, set
-the appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT
-default.
-
-[[SQL-1302]]
-== SQL 1302
-
-```
-NO ACTION referential action for <referential-triggered-action> clause behaves like RESTRICT referential action. To alter the behavior, set the appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
-```
-
-Where <referential-triggered-action> can either be ON DELETE or ON
-UPDATE.
-
-*Cause:* NO ACTION referential action is specified in the referential
-definition and the CONTROL QUERY DEFAULT value for
-REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT is 'SYSTEM.'
-
-*Effect:* The NO ACTION referential action has RESTRICT referential
-action semantics. It is recorded as NO ACTION in the metadata table.
-
-*Recovery:* To alter the behavior of the NO ACTION referential action,
-set the appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT
-default.
-
-<<<
-[[SQL-1305]]
-== SQL 1305
-
-```
-The specified schema location <directory> is already in use by schema <schema>.
-```
-
-Where <directory> is the {project-name} platform subvolume name specified in
-the LOCATION clause of the CREATE SCHEMA command.
-
-Where <schema> is the ANSI name of an existing schema that already uses
-<directory> as a schema subvolume.
-
-*Cause:* In a CREATE SCHEMA command, you specified <directory> in the
-LOCATION clause; however, this subvolume is already being used as schema
-subvolume by <schema>.
-
-*Effect:* The statement fails unless it includes the optional REUSE
-clause to allow reuse of the same schema subvolume name. If the REUSE
-clause is used, this is a warning message and the schema is created
-successfully. The warning can be issued repeatedly for a single CREATE
-SCHEMA command if multiple schemas already exist with <directory> as the
-schema subvolume.
-
-*Recovery:* Only schemas that are RDF replicated to another node should
-have the same subvolume names as their corresponding schemas on the
-other node. To create these, use the optional REUSE clause in the CREATE
-SCHEMA statement. All other schemas should have unique subvolume names.
-Schemas that are, or will be, related as RDF primary and backup schemas
-must have identical schema names and subvolumes on the primary and
-backup nodes.
-
-[[SQL-1307]]
-== SQL 1307
-
-```
-The schema location <directory> is reserved for {project-name} metadata.
-```
-
-Where <directory> is the {project-name} platform subvolume name specified in
-the LOCATION clause of the CREATE SCHEMA command.
-
-*Cause:* In a CREATE SCHEMA command, you specified subvolume in the
-LOCATION clause, however subvolume names with the format
-ZSD<digit><anything> are reserved for {project-name} database software
-metadata schemas.
+*Cause:* You attempted to ALTER an object in a reserved or metadata schema. This is not
+permitted.
 
 *Effect:* The operation fails.
 
-*Recovery:* Specify a subvolume name using the format
-ZSD<letter><anything> in the LOCATION clause, and resubmit.
+*Recovery:* If your intent was to alter a different object, correct the object name and resubmit.
 
-<<<
-[[SQL-1309]]
-== SQL 1309
+[[SQL-1298]]
+== SQL 1298
 
 ```
-Object type for <object-name> is not valid for the current operation.
+Schema <schema-name> could not be altered. <reason>
 ```
 
-Where <object-name> is the name of the object.
+Where <schema-name> is the name of the schema you specified.
 
-*Cause:* You specified an object for an SQL operation that does not
-support its object type.
+Where <reason> gives further information about the nature of the error.
+
+*Cause:* You attempted an ALTER SCHEMA statement but one or more objects in the schema are in an
+invalid state. The <reason> gives more details concerning this invalid state.
 
 *Effect:* The operation fails.
 
-*Recovery:* Specify an object of valid object type and retry the
-operation.
+*Recovery:* The <reason> may suggest possible recoveries. For example, you may need to
+use CLEANUP on certain objects in the schema, then resubmit the ALTER SCHEMA statement.
 
-[[SQL-1310]]
-== SQL 1310
+<<<
+[[SQL-1313]]
+== SQL 1313
 
 ```
-The CREATE SCHEMA statement does not support the creation of triggers.
+The referential integrity constraint <constraint-name> has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 ```
 
-*Cause:* You specified creation of triggers in the CREATE SCHEMA
-statement.
+Where <constraint-name> is the name of the constraint you specified.
+
+*Cause:* You created a table with a referential constraint but specified NOT ENFORCED for that constraint. NOT ENFORCED is commonly
+used when specifying a constraint for documentation purposes only.
+
+*Effect:* This is a warning message only. The DDL succeeds, however the constraint named is not enforced at run time.
+
+*Recovery:* None needed.
+
+[[SQL-1323]]
+== SQL 1323
+
+```
+Unable to grant privileges while creating <object-name>.
+```
+
+Where <object-name> is the name of a {project-name} object.
+
+*Cause:* While creating the given object, {project-name} encountered an error when setting the privileges for that object. This error
+is usually accompanied by other error messages that give details on the cause.
 
 *Effect:* The operation fails.
 
-*Recovery:* Remove the creation of triggers from the CREATE SCHEMA
-statement and resubmit. Create triggers in separate statements.
+*Recovery:* Recovery depends on the specific cause of the error, as described in the accompanying error messages.
 
 <<<
+[[SQL-1330]]
+== SQL 1330
+
+```
+Cannot revoke role <role-name> from authorization ID <user-name>. Role has been granted to another authorization ID.
+```
+
+Where <role-name> is the role name you specified.
+
+Where <user-name> is the user name you specified.
+
+*Cause:* While executing a REVOKE ROLE command to revoke the given role from the given user, {project-name} discovered that
+the user had granted that role to yet another user.
+
+*Effect:* The operation fails.
+
+*Recovery:* Have the user revoke the role, then resubmit.
+
+[[SQL-1331]]
+== SQL 1331
+
+```
+User <directory-service-user-name> does not exist in the directory service.
+```
+
+Where <directory-service-user-name> is a directory service user name that you specified.
+
+*Cause:* You attempted a REGISTER USER or ALTER USER EXTERNAL NAME statement, but the directory service user name
+does not exist in the directory service.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the directory service user name and resubmit.
+
+<<<
+[[SQL-1332]]
+== SQL 1332
+
+```
+Error while communicating with the directory service.
+```
+
+*Cause:* You attempted a REGISTER USER or ALTER USER EXTERNAL NAME statement, but the directory service is unavailable.
+
+*Effect:* The operation fails.
+
+*Recovery:* Restore availability of the directory service, then resubmit.
+
+[[SQL-1333]]
+== SQL 1333
+
+```
+User <user-name> does not exist.
+```
+
+Where <user-name> is the name of the user you specified.
+
+*Cause:* You specified an UNREGISTER or ALTER USER statement for a user that does not exist.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user name and resubmit.
+
+<<<
+[[SQL-1334]]
+== SQL 1334
+
+```
+User or role <user-or-role-name> already exists.
+```
+
+Where <user-or-role-name> is the name of the user or role you specified.
+
+*Cause:* You specified a REGISTER statement for a user or role that already exists.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user or role name and resubmit.
+
+[[SQL-1335]]
+== SQL 1335
+
+```
+Directory service user <directory-service-user-name> already defined in the database.
+```
+
+Where <directory-service-user-name> is a directory service user name that you specified.
+
+*Cause:* You specified a directory service user name in a REGISTER statement or in
+the EXTERNAL NAME clause of an ALTER USER statement, and the directory service user name
+already is defined in the {project-name} instance.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the external user name and resubmit.
+
+<<<
+[[SQL-1337]]
+== SQL 1337
+
+```
+<user-name> is a reserved authorization identifier.
+```
+
+Where <user-name> is a user name that you specified.
+
+*Cause:* The <user-name> you specified in a REGISTER, ALTER USER or UNREGISTER statement
+is a reserved identifier. For example, "PUBLIC" is reserved; an attempt to REGISTER or 
+UNREGISTER "PUBLIC" will fail with this error.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user name and resubmit.
+
+[[SQL-1338]]
+== SQL 1338
+
+```
+Role <role-name> is not defined in the database.
+```
+
+Where <role-name> is a role name that you specified.
+
+*Cause:* You specified a role name in a GRANT, REVOKE or DROP ROLE statement that
+does not exist in the database.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the role name and resubmit.
+
+<<<
+[[SQL-1339]]
+== SQL 1339
+
+```
+<role-name> is not a grantable role.
+```
+
+Where <role-name> is a role name that you specified.
+
+*Cause:* You attempted to grant a role that is not grantable. For example, "PUBLIC" is not a grantable role.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the role name and resubmit.
+
+[[SQL-1340]]
+== SQL 1340
+
+```
+<user-name> is not a user.
+```
+
+Where <user-name> is a user name that you specified.
+
+*Cause:* You specified a name in a GET PRIVILEGES FOR USER statement that cannot be 
+a user name. For example, GET PRIVILEGES FOR USER "PUBLIC" will generate this error.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user name and resubmit.
+
+<<<
+[[SQL-1347]]
+== SQL 1347
+
+```
+Cannot unregister user. User owns one or more roles.
+```
+
+*Cause:* You specified an UNREGISTER command, but the user name specified owns one 
+or more roles.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user name and resubmit.
+
+[[SQL-1348]]
+== SQL 1348
+
+```
+Cannot drop role. Role is granted to one or more users.
+```
+
+*Cause:* You attempted a DROP ROLE statement but the role you are attempting to
+drop is granted to one or more users.
+
+*Effect:* The operation fails.
+
+*Recovery:* Revoke the role from any users, then resubmit.
+
+<<<
+[[SQL-1349]]
+== SQL 1349
+
+```
+Cannot unregister user. User granted one or more roles.
+```
+
+*Cause:* You specified an UNREGISTER command, but the user name specified has been granted one 
+or more roles.
+
+*Effect:* The operation fails.
+
+*Recovery:* Revoke the roles from the user, then resubmit.
+
+[[SQL-1351]]
+== SQL 1351
+
+```
+Role <role-name> appears multiple times in list.
+```
+
+Where <role-name> is one of the role names you specified.
+
+*Cause:* You specified a list of role names in a GRANT ROLE or REVOKE ROLE statement, but
+the given role name appears more than once in the list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the role name list (for example, removing the duplication), then resubmit.
+
+<<<
+[[SQL-1352]]
+== SQL 1352
+
+```
+User <user-name> appears multiple times in list.
+```
+
+Where <user-name> is one of the user names you specified.
+
+*Cause:* You specified a list of user names in a GRANT ROLE or REVOKE ROLE statement, but
+the given user name appears more than once in the list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user name list (for example, removing the duplication), then resubmit.
+
+<<<
+[[SQL-1355]]
+== SQL 1355
+
+```
+Granting a role to PUBLIC or _SYSTEM is not allowed.
+```
+
+*Cause:* You attempted to grant a role to PUBLIC or _SYSTEM in a GRANT ROLE statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement, then resubmit.
+
+[[SQL-1356]]
+== SQL 1356
+
+```
+Cannot create the component privilege specified. Component privilege code <privilege-code> for the component already exists. 
+```
+
+Where <privilege-code> is the privilege code you specified.
+
+*Cause:* You attempted to create a component privilege (CREATE COMPONENT PRIVILEGE statement),
+but the privilege code you specified is already defined.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement, then resubmit.
+
+<<<
+[[SQL-1357]]
+== SQL 1357
+
+```
+Cannot create the component privilege specified. Component privilege name <privilege-name> for the component already exists. 
+```
+
+Where <privilege-name> is the privilege name you specified.
+
+*Cause:* You attempted to create a component privilege (CREATE COMPONENT PRIVILEGE statement),
+but the privilege name you specified is already defined.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement, then resubmit.
+
+[[SQL-1364]]
+== SQL 1364
+
+```
+Cannot revoke role <role-name>. Object <object-name-1> depends on privileges on object <object-name-2>. 
+```
+
+Where <role-name> is the role name you specified in a REVOKE ROLE statement.
+
+Where <object-name-1> and <object-name-2> are objects in the database.
+
+*Cause:* You attempted to revoke a role from a particular user, but this is not allowed because the object <object-name-1>
+owned by that user depends on an object <object-name-2>, and the user has access to the latter object through the role
+privileges. This can happen, for example, if the user created a schema, then in that schema, created a view that references
+an object not owned by the user, but accessible to the user through the role.
+
+*Effect:* The operation fails.
+
+*Recovery:* Drop the dependent object <object-name-1>. Then resubmit the REVOKE ROLE statement.
+
+<<<
+[[SQL-1366]]
+== SQL 1366
+
+```
+Request failed. One or more dependent procedures exist.
+```
+
+*Cause:* You attempted to drop a library (DROP LIBRARY statement), but there is a user-defined function or procedure
+that references this library.
+
+*Effect:* The operation fails.
+
+*Recovery:* Drop any functions or procedures that reference this library. Then resubmit the DROP LIBRARY statement.
+
+[[SQL-1370]]
+== SQL 1370
+
+```
+The authorization name "<authorization-name>" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
+```
+
+Where <authorization-name> is the user name you specified.
+
+*Cause:* You attempted to execute a REGISTER USER command, but the user name you specified contains characters that
+are not permitted.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user name and resubmit.
+
+<<<
+[[SQL-1382]]
+== SQL 1382
+
+```
+JAR or DLL file <file-name> not found.
+```
+
+Where <file-name> is the file name you specified.
+
+*Cause:* You attempted to execute a CREATE LIBRARY statement, but the library file does not exist.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the file name and resubmit.
+
+[[SQL-1388]]
+== SQL 1388
+
+```
+Object <hive-object-name> does not exist in hive metadata.
+```
+
+Where <hive-object-name> is the name of an Apache Hive object.
+
+*Cause:* You specified the name of a Hive object in a {project-name} DML statement, but that Hive object
+is not defined in the Hive metadata.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the object name and resubmit.
+
+<<<
+[[SQL-1389]]
+== SQL 1389
+
+```
+Object <object-name> does not exist in Trafodion.
+```
+
+Where <object-name> is the name of a {project-name} object.
+
+*Cause:* You specified the given object name in a DML or DDL statement, but the object does not 
+exist in the {project-name} database.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the object name and resubmit.
+
+[[SQL-1390]]
+== SQL 1390
+
+```
+Object <object-name> already exists in Trafodion.
+```
+
+Where <object-name> is the name of a {project-name} object.
+
+*Cause:* You specified the given object name in a CREATE statement, but the object already 
+exists in the {project-name} database.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the object name and resubmit.
+
+<<<
+[[SQL-1391]]
+== SQL 1391
+
+```
+<object-name> is a <object-kind> object and cannot be updated.
+```
+
+Where <object-name> is the name of a {project-name} object that you specified.
+
+Where <object-kind> is a description of what kind of an object it is (e.g. "metadata").
+
+*Cause:* You attempted an INSERT, UPDATE, DELETE or other write DML statement on a table
+where that is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the object name and resubmit.
+
+[[SQL-1392]]
+== SQL 1392
+
+```
+Trafodion is already initialized on this system. No action is needed.
+```
+
+*Cause:* You attempted an INITIALIZE TRAFODION statement on a {project-name} instance that has already been initialized.
+
+*Effect:* The operation does nothing.
+
+*Recovery:* None needed; the instance is already initialized. If your intent was to re-initialize the instance, first
+perform INITIALIZE TRAFODION, DROP to destroy the old instance, then INITIALIZE TRAFODION to initialize the new instance. Note that
+destroying your old instance destroys all data in the instance.
+
+<<<
+[[SQL-1393]]
+== SQL 1393
+
+```
+Trafodion is not initialized on this system. Do 'initialize trafodion' to initialize it.
+```
+
+*Cause:* You attempted a SQL statement on a {project-name} instance that has not yet been initialized.
+
+*Effect:* The operation fails.
+
+*Recovery:* Execute INITIALIZE TRAFODION to initialize the instance, then resubmit.
+
+[[SQL-1394]]
+== SQL 1394
+
+```
+Trafodion needs to be reinitialized on this system due to missing or corrupted metadata objects. Do 'initialize trafodion, drop' followed by 'initialize trafodion' to reinitialize Trafodion. This will delete all metadata and user objects from the Trafodion database and recreate metadata.
+```
+
+*Cause:* The metadata objects do not have the structure that {project-name} expects. This may be due to corruption. Another possibility
+is an older release of {project-name} software has been installed and brought up. At this time {project-name} does not support downgrade.
+
+*Effect:* The operation fails.
+
+*Recovery:* The recovery depends upon the cause and on whether there is a desire to keep the data in the instance. If corruption has happened
+it may be possible to manually restore the metadata tables. This may be difficult, however; contact the {project-name} dlist for help.
+If it is due to the improper installation of software, installing the correct version and restarting the instance may solve the problem.
+If there is no need to keep data from the instance, you can do INITIALIZE TRAFODION, DROP followed by INITIALIZE TRAFODION.
+
+<<<
+[[SQL-1395]]
+== SQL 1395
+
+```
+Trafodion needs to be upgraded on this system due to metadata version mismatch. Do 'initialize trafodion, upgrade' to upgrade metadata. Or do 'initialize trafodion, drop' followed by 'initialize trafodion'. Be aware that the second option will delete all metadata and user objects from Trafodion database.
+```
+
+*Cause:* A new version of the {project-name} software has been installed, and a metadata upgrade is required as a result.
+
+*Effect:* The operation fails.
+
+*Recovery:* Perform INITIALIZE TRAFODION, UPGRADE to upgrade the metadata. Note: {project-name} supports upgrade only in single release
+increments. So, if you desire to upgrade your instance by multiple release increments, you will need to install each of the intervening
+releases serially and do a metadata upgrade on each. If you do not care about keeping your data, you can instead drop the metadata using INITIALIZE TRAFODION, DROP and then do an INITIALIZE TRAFODION. Please note though that all data in your instance will be lost if you choose this option.
+
+[[SQL-1396]]
+== SQL 1396
+
+```
+Trafodion needs to be reinitialized on this system due to data format version mismatch.
+```
+
+*Cause:* A new version of the {project-name} software has been installed, and that version uses a different data format. Note: The
+data format has never yet changed in {project-name}, so this error should never be seen.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the {project-name} dlist.
+
+<<<
+[[SQL-1397]]
+== SQL 1397
+
+```
+Software version of objects being used is different than the version of software running on the system. Make sure that objects being used are built with the same version as that running on the system. Version of Trafodion software is determined by file sqenvcom.sh.
+```
+
+*Cause:* This error is most likely to be seen in a {project-name} development environment at the beginning of a new release
+development cycle. The
+software version information in the built objects differs from that in sqenvcom.sh. This can happen, for example, if you have 
+created a new branch in which sqenvcom.sh has been updated, but you bring up software that was built on the previous branch.
+
+*Effect:* The operation fails.
+
+*Recovery:* Assuming this is a development environment, rebuild the {project-name} software to get the correct software version numbers.
+If this is not a development environment, contact the {project-name} dlist.
+
+[[SQL-1398]]
+== SQL 1398
+
+```
+Error <error-number> occured while accessing the HBase subsystem. Fix that error and make sure HBase is up and running. Error Details: <HBase-diagnostics>. 
+```
+
+Where <error-number> is an internal {project-name} error code.
+
+Where <HBase-diagnostics> is a Java exception stack trace from HBase, which indicates the cause of the error.
+
+*Cause:* An error occurred when {project-name} attempted an HBase access. The HBase diagnostics may give an indication of the cause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Take action as indicated by the HBase diagnostics. Insure that the HBase subsystem is up and running correctly.
+
+<<<
+[[SQL-1399]]
+== SQL 1399
+
+```
+Metadata has already been upgraded. No action is needed.
+```
+
+*Cause:* You executed an INITIALIZE TRAFODION, UPGRADE statement but the metadata version is already up-to-date.
+
+*Effect:* The operation does nothing.
+
+*Recovery:* None needed.
+
+[[SQL-1401]]
+== SQL 1401
+
+```
+The default value of column <column-name> contains characters that cannot be converted to character set <character-set-name>.
+```
+
+Where <column-name> is a column name you specified.
+
+Where <character-set-name> is the character set of the column you specified.
+
+*Cause:* In a CREATE TABLE or ALTER TABLE ADD COLUMN statement, you specified a default value for the given column that 
+cannot be converted to that column's character set.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the DEFAULT clause literal and resubmit.
+
+<<<
+[[SQL-1402]]
+== SQL 1402
+
+```
+Unique index <index-name> could not be created with the DIVISION LIKE TABLE option. Only non-unique indexes are supported with this option.
+```
+
+Where <index-name> is an index name you specified.
+
+*Cause:* You specified both UNIQUE and DIVISION LIKE TABLE in a CREATE INDEX statement. {project-name} does not support unique indexes
+with the DIVISION LIKE TABLE option.
+
+*Effect:* The operation fails.
+
+*Recovery:* Either remove UNIQUE or remove DIVSION LIKE TABLE from the CREATE INDEX statement and resubmit.
+
+[[SQL-1403]]
+== SQL 1403
+
+```
+This ALTER command is not allowed on a reserved system schema object.
+```
+
+*Cause:* You specified an ALTER INDEX statement on an index in a reserved schema (e.g. the metadata schema).
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the index schema name and resubmit.
+
+<<<
+[[SQL-1404]]
+== SQL 1404
+
+```
+Column <column-name> cannot be altered. Reason: <reason>
+```
+
+*Cause:* You specified an ALTER TABLE ALTER COLUMN statement, but the column cannot be altered. The reason gives details on why.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
 [[SQL-1420]]
 == SQL 1420
 
@@ -2697,6 +3195,7 @@ Column <column-name> cannot be dropped or altered as it is part of the table's p
 
 *Recovery:* Correct the column name or table name as appropriate and resubmit.
 
+<<<
 [[SQL-1421]]
 == SQL 1421 
 
@@ -2744,10 +3243,10 @@ be additional messages giving details of the failure.
 == SQL 1424 
 
 ```
-Column <column-name> cannot be dropped as that would leave the table with no user defined columns.
+Column <column-name> cannot be dropped as that would leave the table with no user defined or user updatable columns.
 ```
 
-*Cause:* You attempted to drop the only remaining user-defined column in the table.
+*Cause:* You attempted to drop the only remaining user-defined or user-updatable column in the table.
 
 *Effect:* The operation fails.
 
@@ -2772,7 +3271,7 @@ be performed. <reason> gives more details.
 == SQL 1426
 
 ```
-An invalid HBase column name <column-name> was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
+An invalid HBase column name <column-name> was specified. A valid name must be of the format: <ColumnFamily>:<ColumnName>
 ```
 
 *Cause:* When accessing an external HBase table (for example, using _ROW_ format), you specified
@@ -2824,5 +3323,405 @@ clause but did not use a COLUMN_CREATE function.
 *Effect:* The operation fails.
 
 *Recovery:* Correct the statement and resubmit.
+
+[[SQL-1430]]
+== SQL 1430
+
+```
+A schema name that starts and ends with an "_"(underscore) is reserved for internal usage. It cannot be used to create a user schema.
+```
+
+*Cause:* You attempted to create a schema with a name beginning and ending with an underscore. These names are
+reserved by {project-name} for internal use.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1431]]
+== SQL 1431
+
+```
+Object <object-name> exists in HBase. This could be due to a concurrent transactional ddl operation in progress on this table.
+```
+
+Where <object-name> is an object name you specified.
+
+*Cause:* You attempted to create an object, but the object already exists in HBase. It may be the case that the object is being created
+(or dropped) in another concurrent transaction.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check to see if the object exists. If not, resubmit the statement again. If the transaction is long-running, you may need
+to attempt this multiple times.
+
+[[SQL-1432]]
+== SQL 1432
+
+```
+Input LOB type <storage-type-1> does not match column's storage type: <storage-type-2> Column name: <column-name> .
+```
+
+Where <storage-type-1> is the storage type of an input LOB value you specified.
+
+Where <storage-type-2> is the storage type of the target LOB column.
+
+Where <column-name> is the name of the target LOB column.
+
+*Cause:* You attempted to store a LOB value into a LOB column, but the storage type of the LOB value and the target column are not
+compatible. 
+
+*Effect:* The operation fails.
+
+*Recovery:* Consult the Trafodion SQL Large Objects Guide for more information about LOB storage types. Correct the statement
+and resubmit.
+
+<<<
+[[SQL-1510]]
+== SQL 1510
+
+```
+IDENTITY column <column-name> can be of the following data types only: LARGEINT, INTEGER UNSIGNED and SMALLINT UNSIGNED.
+```
+
+Where <column-name> is a column name you specified.
+
+*Cause:* You attempted to define an IDENTITY column but you specified a data type other than LARGEINT, INTEGER UNSIGNED or SMALLINT UNSIGNED.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the data type of the column to LARGEINT, INTEGER UNSIGNED or SMALLINT UNSIGNED and resubmit.
+
+[[SQL-1511]]
+== SQL 1511
+
+```
+There can only be one IDENTITY column for a table.
+```
+
+*Cause:* You attempted to define more than one IDENTITY column in a table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the column definitions so that there is at most one IDENTITY column and resubmit.
+
+<<<
+[[SQL-1514]]
+== SQL 1514
+
+```
+Cannot add an IDENTITY column using ALTER TABLE command.
+```
+
+*Cause:* You attempted to add an IDENTITY column to a table using the ALTER TABLE command. {project-name} does not presently support this.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1540]]
+== SQL 1540
+
+```
+The NO POPULATE clause is not allowed for index <index-name> on volatile table <table-name>.
+```
+
+*Cause:* You attempted to execute a CREATE INDEX statement to create an index on a volatile table, and you specified the NO POPULATE option. That option
+is not allowed for indexes on volatile tables.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the NO POPULATE clause from the statement and resubmit.
+
+<<<
+[[SQL-1541]]
+== SQL 1541
+
+```
+Use of BLOB/CLOB datatype as a key of the base table or an index is not allowed.
+```
+
+*Cause:* You attempted to execute a CREATE TABLE statement with a BLOB or CLOB column in the primary key, or you attempted to execute a CREATE INDEX
+statement that referenced a CLOB or BLOB column. This is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1550]]
+== SQL 1550
+
+```
+Failed to create UDF <udf-name> with <number> parameters. A scalar UDF can have a maximum of 32 parameters.
+```
+
+Where <udf-name> is the name of a user defined function that you specified.
+
+Where <number> is the number of parameters in the function signature that you specified.
+
+*Cause:* You attempted to execute a CREATE FUNCTION statement and you specified more than 32 parameters in the function signature. {project-name}
+only supports up to 32 parameters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reduce the number of parameters in the function and resubmit.
+
+<<<
+[[SQL-1570]]
+== SQL 1570
+
+```
+MAXVALUE must be greater than MINVALUE for <purpose>.
+```
+
+Where <purpose> is either "an IDENTITY column" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing a CREATE SEQUENCE statement, you specified a MAXVALUE that is less than or equal to the MINVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1571]]
+== SQL 1571
+
+```
+<value-name> value cannot be zero for <purpose>.
+```
+
+Where <value-name> is one of "INCREMENT BY", "MINVALUE" or "MAXVALUE".
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value of zero for INCREMENT BY,
+MINVALUE or MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1572]]
+== SQL 1572
+
+```
+<value-name> value cannot be a negative number for <purpose>.
+```
+
+Where <value-name> is one of "INCREMENT BY", "MINVALUE" or "MAXVALUE".
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a negative value for INCREMENT BY,
+MINVALUE or MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1573]]
+== SQL 1573
+
+```
+START WITH value must be greater than or equal to MINVALUE and less than or equal to MAXVALUE for <purpose>.
+```
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value for START WITH that is
+less than the value for MINVALUE or greater than the value for MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1575]]
+== SQL 1575
+
+```
+INCREMENT BY value cannot be greater than the difference between MINVALUE and MAXVALUE for <purpose>.
+```
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value for INCREMENT BY that is
+greater than the difference between the values for MINVALUE and MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1576]]
+== SQL 1576
+
+```
+<value-name> value is greater than maximum allowed for this sequence.
+```
+
+Where <value-name> is one of "INCREMENT BY", "MAXVALUE" or "START WITH".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value that is larger than
+permitted for the data type of the column or sequence.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1577]]
+== SQL 1577
+
+```
+CACHE value must be greater than 1 and less than or equal to (maxValue-startValue+1)/incrementValue for <purpose>.
+```
+
+Where <purpose> is "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value for CACHE that is less than one
+or is greater than (maxValue - startValue + 1)/incrementValue.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1579]]
+== SQL 1579
+
+```
+This sequence has reached its max and cannot provide a new value.
+```
+
+*Cause:* When executing a DML statement that uses the SEQNUM to obtain a value from a sequence, or when
+inserting a row into a table having an IDENTITY column, the underlying sequence had already reached its
+maximum value.
+
+*Effect:* The operation fails.
+
+*Recovery:* If desired, use ALTER SEQUENCE to increase the maximum value for the sequence, then resubmit.
+
+<<<
+[[SQL-1582]]
+== SQL 1582
+
+```
+Internal Error: Sequence information does not exist in metadata.
+```
+
+*Cause:* When executing a DML statement that references a sequence, {project-name} could not find
+the sequence definition in the {project-name} metadata.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the {project-name} distribution list. If the DML statement involves an IDENTITY
+column it is likely the existing data is not at risk, however it may not be possible to create new
+rows using the IDENTITY column's underlying sequence. If the DML statement involves getting new
+values from a sequence via the SEQNUM function, it may be possible to create a new sequence with
+a MINVALUE just greater to the last value taken from the sequence, and use the new sequence instead.
+
+[[SQL-1583]]
+== SQL 1583
+
+```
+Sequence metadata could not be updated.
+```
+
+*Cause:* When executing a DML statement that references a sequence, the sequence metadata could
+not be updated.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the {project-name} distribution list.
+
+<<<
+[[SQL-1584]]
+== SQL 1584
+
+```
+Timestamp mismatch detected on Sequence object.
+```
+
+*Cause:* When executing a DML statement that references a sequence, the {project-name} run-time
+engine discovered a mismatch between the expected state of the sequence and the state found
+at run-time.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the {project-name} distribution list. If this is a PREPAREd statement,
+re-PREPARing it may cure the error.
+
+[[SQL-1590]]
+== SQL 1590
+
+```
+Column <column-name> is not an IDENTITY column.
+```
+
+Where <column-name> is the column name you specified.
+
+*Cause:* You attempted to execute an ALTER TABLE ALTER COLUMN statement, setting an IDENTITY-column-related
+value such as INCREMENT BY. However, the column specified is not an IDENTITY column.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the table name or column name in the statement and resubmit.
+
+<<<
+[[SQL-1592]]
+== SQL 1592
+
+```
+<value-name> cannot be specified for <purpose>.
+```
+
+Where <value-name> is "MINVALUE" or "START WITH".
+
+Where <purpose> is "ALTER SEQUENCE".
+
+*Cause:* You attempted to modify the MINVALUE or START WITH values for a sequence in an ALTER SEQUENCE statement but
+this is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1719]]
+== SQL 1719
+
+```
+Access Type '<access>' is not supported.
+```
+
+Where <access> is an access type you specified in a FOR ACCESS clause.
+
+*Cause:* The access type you specified is not presently supported by {project-name}.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1720]]
+== SQL 1720
+
+```
+Isolation Level '<level>' is not supported.
+```
+
+Where <level> is an isolation level you specified in a SET TRANSACTION ISOLATION LEVEL statement.
+
+*Cause:* The isolation level you specified is not presently supported by {project-name}.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+
+
+
+
+
+
 
 

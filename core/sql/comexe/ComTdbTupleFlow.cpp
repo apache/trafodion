@@ -127,28 +127,24 @@ const char * ComTdbTupleFlow::getExpressionName(Int32 pos) const
     return NULL;
 }
 
-NA_EIDPROC void ComTdbTupleFlow::displayContents(Space * space,ULng32 flag)
+void ComTdbTupleFlow::displayContents(Space * space,ULng32 flag)
 {
-      ComTdb::displayContents(space,flag & 0xFFFFFFFE);
-
-      if(flag & 0x00000008)
-        {
-		      char buf[100];
-
-#pragma nowarn(1506)   // warning elimination 
-      		Lng32 lFlags = flags_%65536;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-		      Lng32 hFlags = (flags_- lFlags)/65536;
-#pragma warn(1506)  // warning elimination 
- 	   		str_sprintf(buf, "\nFor ComTdbTupleFlow :\nFlags = %b%b ",hFlags,lFlags );
-		      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-        }
-
-      if(flag & 0x00000001)
-        {
-        		displayExpression(space,flag);
-            displayChildren(space,flag);
-        }
+  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
+  
+  if(flag & 0x00000008)
+    {
+      char buf[100];
+      
+      Lng32 lFlags = flags_%65536;
+      Lng32 hFlags = (flags_- lFlags)/65536;
+      str_sprintf(buf, "\nFor ComTdbTupleFlow :\nFlags = %x%x ",hFlags,lFlags );
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+    }
+  
+  if(flag & 0x00000001)
+    {
+      displayExpression(space,flag);
+      displayChildren(space,flag);
+    }
 }
 

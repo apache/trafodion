@@ -58,7 +58,7 @@ class ExSsmpManager
 public:
   ExSsmpManager(IpcEnvironment *env);
   ~ExSsmpManager();
-  IpcServer *getSsmpServer(char *nodeName, short cpuNum, ComDiagsArea *&diagsArea);
+  IpcServer *getSsmpServer(NAHeap *heap, char *nodeName, short cpuNum, ComDiagsArea *&diagsArea);
   IpcEnvironment *getIpcEnvironment() { return env_; }
   void removeSsmpServer(char *nodeName, short cpuNum);
   void cleanupDeletedSsmpServers();
@@ -216,10 +216,8 @@ public:
     ipcEnv_ = ipcEnv;
     ssmpGlobals_ = ssmpGlobals;
     heap_ = heap;
-#ifndef __EID
     handle_ = INVALID_RTS_HANDLE;
     wmsProcess_ = FALSE;
-#endif
   }
 
   ~SsmpNewIncomingConnectionStream();
@@ -240,6 +238,7 @@ public:
   void actOnSuspendQueryReq(IpcConnection *connection);
   void actOnActivateQueryReq(IpcConnection *connection);
   void actOnSecInvalidKeyReq(IpcConnection *connection);
+  void actOnLobLockReq(IpcConnection *connection);
   void getProcessStats(short reqType,
                        short subReqType,
                        pid_t pid);
@@ -256,23 +255,18 @@ public:
   void clearSscpDiagsArea() { sscpDiagsArea_->decrRefCount(); 
                               sscpDiagsArea_ = NULL; }
 
-#ifndef __EID
   inline RtsHandle getHandle() { return handle_; }
   inline void setHandle(const RtsHandle h) { handle_ = h; }
   inline NABoolean isWmsProcess() { return wmsProcess_; }
   inline void setWmsProcess(NABoolean flag) { wmsProcess_ = flag; }
-#endif
 private:
 
   NAHeap *heap_;
   IpcEnvironment *ipcEnv_;
   SsmpGlobals *ssmpGlobals_;
   ComDiagsArea *sscpDiagsArea_;
-#ifndef __EID
   RtsHandle handle_;
   NABoolean wmsProcess_;
-#endif
-
 }; // SsmpNewIncomingConnectionStream
 
 // -----------------------------------------------------------------------
@@ -352,7 +346,9 @@ public:
   inline short getDetailLevel() { return detailLevel_; }
   inline void setUsedToSendCbMsgs() { completionProcessing_ = CB; }
   inline void setUsedToSendSikMsgs() { completionProcessing_ = SIK; }
+  inline void setUsedToSendLLMsgs() { completionProcessing_ = LL; }
   void replySik();
+  void replyLL();
   inline short getSubReqType() { return subReqType_; }
   inline void setSubReqType(short subReqType) { subReqType_ = subReqType; }
 private:
@@ -368,7 +364,7 @@ private:
   short numSqlProcs_;
   short numCpus_;
   StmtStats *stmtStats_;
-  enum { STATS, CB, SIK } completionProcessing_;
+  enum { STATS, CB, SIK,LL} completionProcessing_;
   short detailLevel_;
   short subReqType_;
 };

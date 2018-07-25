@@ -32,7 +32,7 @@
 #   DCS_NICENESS The scheduling priority for daemons. Defaults to 0.
 #
 
-usage="Usage: dcs-daemon.sh [--config <conf-dir>]\
+usage="Usage: dcs-daemon.sh [--foreground] [--config <conf-dir>]\
  (start|stop|restart) <dcs-command> \
  <args...>"
 
@@ -105,14 +105,16 @@ if [ "$DCS_PID_DIR" = "" ]; then
   DCS_PID_DIR="$DCS_HOME/tmp"
 fi
 
-#if [ "$DCS_IDENT_STRING" = "" ]; then
+#DCS_IDENT_STRING can be set in environment to uniquely identify dcs instances
+if [ $command == "master" ] || [ $command == "master-backup" ]; then
+  export DCS_IDENT_STRING="$USER"
+else
   export DCS_IDENT_STRING="$USER-$instance"
-#fi
+fi
 
 # Some variables
 # Work out java location so can print version into log.
 if [ "$JAVA_HOME" != "" ]; then
-  #echo "run java in $JAVA_HOME"
   JAVA_HOME=$JAVA_HOME
 fi
 if [ "$JAVA_HOME" = "" ]; then
@@ -128,6 +130,7 @@ logout=$DCS_LOG_DIR/$DCS_LOG_PREFIX.out
 loggc=$DCS_LOG_DIR/$DCS_LOG_PREFIX.gc
 loglog="${DCS_LOG_DIR}/${DCS_LOGFILE}"
 pid=$DCS_PID_DIR/dcs-$DCS_IDENT_STRING-$command.pid
+stopmode=$DCS_PID_DIR/dcs-server-stop
 
 if [ "$DCS_USE_GC_LOGFILE" = "true" ]; then
   export DCS_GC_OPTS=" -Xloggc:${loggc}"
@@ -138,14 +141,26 @@ if [ "$DCS_NICENESS" = "" ]; then
     export DCS_NICENESS=0
 fi
 
+if [[ $startStop == 'conditional-start' ]]
+then
+  if [[ -f $stopmode ]]
+  then
+    echo "Server stopped intentionally, no restart"
+    exit 5
+  else
+    startStop=start
+  fi
+fi
+
 case $startStop in
 
   (start)
+    rm -f $stopmode # leaving stop-mode
     mkdir -p "$DCS_PID_DIR"
     if [ -f $pid ]; then
       if kill -0 `cat $pid` > /dev/null 2>&1; then
-        echo $command  `cat $pid`.  Stop it first.
-        exit 1
+        echo $command running as process `cat $pid`.  Stop it first.
+        exit -2
       fi
     fi
 
@@ -155,14 +170,27 @@ case $startStop in
     # Add to the command log file vital stats on our environment.
     # echo "`date` Starting $command on `hostname`" >> $loglog
     # echo "`ulimit -a`" >> $loglog 2>&1
-    nohup nice -n $DCS_NICENESS "$DCS_HOME"/bin/dcs \
-        --config "${DCS_CONF_DIR}" \
-        $command "$@" $startStop > "$logout" 2>&1 < /dev/null &
-    echo $! > $pid
-    sleep 1; head "$logout"
+    if [[ $foreground == "true" ]]
+    then
+      renice -n $DCS_NICENESS $$
+      echo $$ > $pid
+      exec > "$logout" 2>&1 < /dev/null
+      exec "$DCS_HOME"/bin/dcs \
+             --config "${DCS_CONF_DIR}" \
+             $command "$@" $startStop
+      echo "Error: exec failed"
+      exit 1
+    else
+      nohup nice -n $DCS_NICENESS "$DCS_HOME"/bin/dcs \
+          --config "${DCS_CONF_DIR}" \
+          $command "$@" $startStop > "$logout" 2>&1 < /dev/null &
+      echo $! > $pid
+      sleep 1; head "$logout"
+    fi
     ;;
 
   (stop)
+    touch $stopmode # entering stop-mode
     if [ -f $pid ]; then
       # kill -0 == see if the PID exists 
       if kill -0 `cat $pid` > /dev/null 2>&1; then

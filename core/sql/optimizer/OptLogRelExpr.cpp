@@ -2374,7 +2374,7 @@ Join::synthConstraints(NormWA * normWAPtr)
   else
     rightHasUniqueMatches_ = FALSE;
 
-  if (isSemiJoin() OR isAntiSemiJoin())
+  if (isSemiJoin() OR isAntiSemiJoin() OR isIndexJoin_)
     leftHasUniqueMatches_ = TRUE;
 
   // QSTUFF
@@ -2394,7 +2394,7 @@ Join::synthConstraints(NormWA * normWAPtr)
   (void) leftGA.hasCardConstraint(minLeft,maxLeft);
   (void) rightGA.hasCardConstraint(minRight,maxRight);
 
-  if (maxLeft == 1)
+  if (maxLeft == 1 || isIndexJoin_)
     rightHasUniqueMatches_ = TRUE;
 
   if (maxRight == 1)
@@ -3419,7 +3419,6 @@ Union::synthLogProp(NormWA * normWAPtr)
 // -----------------------------------------------------------------------
 // member functions for class GroupByAgg
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 void
 GroupByAgg::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 {
@@ -4423,7 +4422,6 @@ GroupByAgg::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 		 myEstProps /* final OLP - after applying grouping and HAVING preds */,
 		 intermedEstProps /* intermediate OLP - after grouping */);
 } // GroupByAgg::synthEstLogProp
-#pragma warn(262)  // warning elimination
 
 void GroupByAgg::handleIndirectDepInGroupingcols(ValueIdSet& workGroup,
 				      ValueIdSet& interestingColSet,
@@ -5183,9 +5181,9 @@ Scan::synthLogProp(NormWA * normWAPtr)
     setBaseCardinality (MIN_ONE (getTableDesc()->getNATable()->getEstRowCount())) ;
 
   if ((CURRSTMT_OPTDEFAULTS->histDefaultSampleSize() > 0) &&
-      (RelExpr *)this->getRETDesc() &&
-      (RelExpr *)this->getRETDesc()->getBindWA() &&
-      (RelExpr *)this->getRETDesc()->getBindWA()->inDDL())
+      this->getRETDesc() &&
+      this->getRETDesc()->getBindWA() &&
+      this->getRETDesc()->getBindWA()->inDDL())
   {
     CURRSTMT_OPTDEFAULTS->setHistDefaultSampleSize(0);
   }
@@ -5703,7 +5701,6 @@ ExplainFunc::synthLogProp(NormWA * normWAPtr)
 // UEC of C4 = 2
 //
 
-#pragma nowarn(770)   // warning elimination
 void
 Transpose::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 {
@@ -6060,7 +6057,6 @@ Transpose::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
   getGroupAttr()->addInputOutputLogProp(inputEstLogProp, myEstProps);
 
 } // Transpose::synthEstLogProp
-#pragma warn(770)  // warning elimination
 
 
 

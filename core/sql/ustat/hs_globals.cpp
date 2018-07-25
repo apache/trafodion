@@ -62,7 +62,6 @@
 #include "CompException.h"
 #include "SQLTypeDefs.h"
 #include "csconvert.h"
-#include "ReadTableDef.h"
 #include "exp_clause_derived.h"  // convDoIt
 #include "ExSqlComp.h" // for NAExecTrans()
 #include "sql_id.h"
@@ -223,7 +222,6 @@ static short convFloat64ToAscii(char *target,
      //        : new (STMTHEAP, FALSE) elemType[elemCount])
 #endif
 
-// LCOV_EXCL_START :rfi
 void ISFixedChar::fail(const char* opName, Lng32 line)
 {
   HSLogMan *LM = HSLogMan::Instance();
@@ -237,7 +235,6 @@ void ISFixedChar::fail(const char* opName, Lng32 line)
   throw CmpInternalException("failure in ISFixedChar",
                              __FILE__, line);
 }
-// LCOV_EXCL_STOP
 
 // Compare this object to rhs, returning negative value if less, 0 if equal,
 // and positive value if greater.
@@ -1327,7 +1324,6 @@ void MCWrapper::fail(const char* opName, Lng32 line)
 }
 
 
-// LCOV_EXCL_START :rfi
 void ISVarChar::fail(const char* opName, Lng32 line)
 {
   HSLogMan *LM = HSLogMan::Instance();
@@ -1341,7 +1337,6 @@ void ISVarChar::fail(const char* opName, Lng32 line)
   throw CmpInternalException("failure in ISVarChar",
                              __FILE__, line);
 }
-// LCOV_EXCL_STOP
 
 // Compare this object to rhs, returning negative value if less, 0 if equal,
 // and positive value if greater.
@@ -2514,7 +2509,6 @@ Int64 HSHistogram::getTotalUec()
   }
 
 
-// LCOV_EXCL_START :cnu
 /***********************************************/
 /* METHOD:  getTotalRowCount()                 */
 /* PURPOSE: Determine the SUM(rowcount)        */
@@ -2535,7 +2529,6 @@ Int64 HSHistogram::getTotalRowCount()
       }
     return rowCount;
   }
-// LCOV_EXCL_STOP
 
 Lng32 HSHistogram::getParenthesizedIntBoundary(Lng32 intNum, HSDataBuffer &intBoundary)
   {
@@ -2700,7 +2693,6 @@ static void sumFrequencies(FrequencyCounts& fc, Int32 maxInterval, FrequencyCoun
       }
 }
 
-// LCOV_EXCL_START :cnu
 /**************************************************************************/
 /* METHOD:  compareFC()                                                   */
 /* PURPOSE: Compare the two frequency counts to determine if for each     */
@@ -2745,7 +2737,6 @@ NABoolean compareFC(FrequencyCounts& fc1, FrequencyCounts& fc2)
 
   return differenceFound;
 }
-// LCOV_EXCL_STOP
 
 /**************************************************************************/
 /* METHOD:  removeLesserGapIntervals()                                    */
@@ -3442,7 +3433,6 @@ Lng32 HSGlobalsClass::Initialize()
         for (retry = 0; retry <= retryLimit && groupStateOK; retry++)
           {
             retcode = AddNecessaryColumns();
-            // LCOV_EXCL_START :rfi
             if (retcode < 0)
               {
                 // An error occurred.
@@ -3457,7 +3447,6 @@ Lng32 HSGlobalsClass::Initialize()
               }
             else
               break;  // successful execution, exit retry loop
-            // LCOV_EXCL_STOP
           }
 
         // If we found errors, but retried successfully, rewind past the errors
@@ -3545,12 +3534,10 @@ Lng32 HSGlobalsClass::Initialize()
                   else
                     {
                       xSampleSet = MINOF(sampleValue1, actualRowCount);
-#pragma nowarn(1506)  // warning elimination 
                       // multiply by 100.0001 instead of 100 so that rounding
                       // errors are limited.
                       sampleTblPercent = convertInt64ToDouble(xSampleSet) / 
                                          actualRowCount * 100.0001;
-#pragma warn(1506)    // warning elimination 
 
                       if (sampleTblPercent < 100)
                         {
@@ -3701,10 +3688,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
   if (!CmpCommon::context()->isAuthorizationEnabled())
     return TRUE;
 
-   // no privilege support available for hbase and hive tables
-   HS_ASSERT (objDef->getNATable());
-   if (CmpSeabaseDDL::isHbase(objDef->getCatName()))
-     return TRUE;
+  HS_ASSERT (objDef->getNATable());
 
   // Let keep track of how long authorization takes
   HSLogMan *LM = HSLogMan::Instance();
@@ -3860,34 +3844,8 @@ void HSGlobalsClass::startJitLogging(const char* checkPointName, Int64 elapsedSe
 {
   HSLogMan *LM = HSLogMan::Instance();
 
-
-
-
-  // Construct logfile name incorporating process id and node number. Note that
-  // the 2nd parameter of processhandle_decompose is named cpu but is actually
-  // the node number for Seaquest (the 4th param, named nodenumber, is the cluster
-  // number).
-  Int32 nodeNum;
-  Int32 pin;
-  SB_Phandle_Type procHandle;
-  XPROCESSHANDLE_GETMINE_(&procHandle);
-  XPROCESSHANDLE_DECOMPOSE_(&procHandle, &nodeNum, &pin);
-
-  NAString filePath;
-  char* sqroot = getenv("TRAF_HOME");
-  if (sqroot)
-    {
-	  filePath = sqroot;
-      filePath.append("/logs/");
-    }
-
-  const size_t MAX_FILENAME_SIZE = 50;
-  char fileName[MAX_FILENAME_SIZE];
-  sprintf(fileName, "ULOG.%d.%d.txt", nodeNum, pin);
-  filePath.append(fileName);
-
-  // Turn logging on using the filepath we just created.
-  LM->StartLog(TRUE, filePath.data());
+  // Turn logging on 
+  LM->StartLog(TRUE);
   jitLogOn = TRUE;
 
   // Write introductory information to log; name of table and columns being
@@ -4289,15 +4247,10 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     dml  = insertType;
     dml += sampleTable;
     dml += " SELECT ";
-    if (hs_globals->hasOversizedColumns)
-      {
-        // The source table has an oversized column. We have to generate
-        // SUBSTRING calls on such columns to fit them into the sample
-        // table.
-        objDef->addTruncatedSelectList(dml);
-      }      
-    else
-      dml += "*";
+
+    // Generate the select list. Truncate any over-long char/varchar columns
+    // by using SUBSTRING calls. Omit any LOB columns.
+    objDef->addTruncatedSelectList(dml);
 
     dml += " FROM ";
 
@@ -4322,12 +4275,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     {
        SQL_EXEC_SetParserFlagsForExSqlComp_Internal(hsALLOW_SPECIALTABLETYPE);
     }
-
-    // Set the insert to nonaudited table CQD so that the forceopen flag will be set
-    // for the executor.  This allows the insert to ignore the fact that the create 
-    // may have occurred on another process.  This is necessary to avoid a file system
-    // error 1054.  On NT this doesn't work (causes a crash).
-    HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_INSERT_TO_NONAUDITED_TABLE 'ON'");
 
     // initialize sourceTableRowCount to -1. The method that sets this parameter
     // will not change this value if there is an error. So if 
@@ -4395,9 +4342,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
            }
          LM->StopTimer();
        }
-
-
-    HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_INSERT_TO_NONAUDITED_TABLE RESET");
 
     // RESET CQDS:
     //10-040706-7608: a workaround for this solution is to turn cqd        //Workaround: 10-040706-7608
@@ -4998,7 +4942,6 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
               break;
 
             default:
-              // LCOV_EXCL_START :rfi
               LM->Log("INTERNAL ERROR (mapInternalSortTypes):");
               sprintf(LM->msg, "Undefined datetime type %d", col.precision);
               LM->Log(LM->msg);
@@ -5008,7 +4951,6 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
                                   << DgString2(LM->msg);
               throw CmpInternalException("failure in mapInternalSortTypes()",
                                          __FILE__, __LINE__);
-              // LCOV_EXCL_STOP
           }
         break;
 
@@ -5107,7 +5049,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+2);
+            sprintf(sbuf, "%d,0", col.precision+2); // for seconds cast below
             typeName = getIntTypeForInterval(group, 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -5131,7 +5073,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+4);
+            sprintf(sbuf, "%d,0", col.precision+4); // for seconds cast below
             typeName = getIntTypeForInterval(group, 60 * 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -5155,7 +5097,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+5);
+            sprintf(sbuf, "%d,0", col.precision+5); // for seconds cast below
             typeName = getIntTypeForInterval(group, 24 * 60 * 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -5313,7 +5255,6 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
           default:
             // Check to see if the column's type is supposed to be handled
             // by internal sort.  If so, this is a problem.
-            // LCOV_EXCL_START :rfi
             if (isInternalSortType(group->colSet[0]))
               {
                 LM->Log("INTERNAL ERROR (getInternalSortMemoryRequirements):");
@@ -5328,7 +5269,6 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
               }
             elementSize = 0;
             break;
-            // LCOV_EXCL_STOP
         }
 
       Int64 i64MemNeeded = rows * elementSize;
@@ -5388,13 +5328,16 @@ Lng32 HSGlobalsClass::validateIUSWhereClause()
 {
   Lng32 retcode = 0;
 
+  // use QualifiedName constructor to correctly handle delimited names.
+  QualifiedName qualTableName(user_table->data(), 1);
+  NAString tableNameStr = qualTableName.getUnqualifiedObjectNameAsAnsiString();
+  NAString query = "select count(*) from ";
+  query.append(tableNameStr);
+  query.append(" where ").append(getWherePredicateForIUS());
+
   // set PARSING_IUS_WHERE_CLAUSE bit in Sql_ParserFlags; return it to
   // its entry value on exit
   PushAndSetSqlParserFlags savedParserFlags(PARSING_IUS_WHERE_CLAUSE);
-
-  NAString query = "select count(*) from ";
-  query.append(getTableName(strrchr(user_table->data(), '.')+1, nameSpace));
-  query.append(" where ").append(getWherePredicateForIUS());
 
   Parser parser(CmpCommon::context());
   Lng32 diagsMark = diagsArea.mark();
@@ -5738,16 +5681,28 @@ Lng32 HSGlobalsClass::CollectStatistics()
         else
           {
               if (useSampling && !externalSampleTable)
+              {
+                // free column memory, to allow sample table load to use it
+                deallocatePendingMemory();
+                
+                // create and populate the sample table
                 retcode = sampleTable.make(currentRowCountIsEstimate_,
                                            *hssample_table,
                                            actualRowCount, sampleRowCount);
-               // hssample_table assigned, actualRowCount and sampleRowCount may get adjusted.
+                // hssample_table assigned, actualRowCount and sampleRowCount may get adjusted.
+                
+                HSHandleError(retcode);
+
+                // reallocate column memory
+                numColsToProcess = getColsToProcess(maxRowsToRead,
+                                              internalSortWhenBetter,
+                                              trySampleTableBypassForIS);
+              }
               else if (!externalSampleTable)
               {
                 *hssample_table = getTableName(user_table->data(), nameSpace);
                 sampleRowCount = actualRowCount;
-              }
-              HSHandleError(retcode);
+              }          
           }
 
         while (numColsToProcess > 0)
@@ -6914,7 +6869,7 @@ Lng32 HSGlobalsClass::generateSampleI(Int64 currentSampleSize,
   if (LM->LogNeeded())
     {
       LM->StopTimer();
-      sprintf(LM->msg, "the size of data set I is "PF64" rows", xRows);
+      sprintf(LM->msg, "the size of data set I is " PF64" rows", xRows);
       LM->Log(LM->msg);
     }
 
@@ -7112,16 +7067,20 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
   }
 
   rowsAffected = 0;
+
+  // The most likely error on the DELETE would be due to a bad WHERE clause.
+  // (When CQD USTAT_INCREMENTAL_UPDATE_STATISTICS is set to 'SAMPLE', this is
+  // the first place that we attempt to use the user's WHERE clause.)
   if (transactional)
     {
-      retcode = HSFuncExecTransactionalQueryWithRetry(deleteQuery, -UERR_INTERNAL_ERROR,
+      retcode = HSFuncExecTransactionalQueryWithRetry(deleteQuery, -UERR_IUS_BAD_WHERE_CLAUSE,
                             &rowsAffected,
                             "IUS delete from PS where",
                             NULL, NULL);
     }
   else
     {
-      retcode = HSFuncExecQuery(deleteQuery, -UERR_INTERNAL_ERROR,
+      retcode = HSFuncExecQuery(deleteQuery, -UERR_IUS_BAD_WHERE_CLAUSE,
                             &rowsAffected,
                             "IUS delete from PS where",
                             NULL, NULL);
@@ -7594,11 +7553,11 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
               sprintf(LM->msg, "Not enough memory for %s: memLeft=" PF64 " totMemNeeded=", group->colNames->data(), memLeft);
               formatFixedNumeric((Int64)totMemNeeded, 0, LM->msg+strlen(LM->msg));
               LM->Log(LM->msg);
-              sprintf(LM->msg, "group->memNeeded="PF64"", group->memNeeded); 
+              sprintf(LM->msg, "group->memNeeded=" PF64"", group->memNeeded); 
               LM->Log(LM->msg);
-              sprintf(LM->msg, "delGroup->memNeeded="PF64"", delGroup->memNeeded); 
+              sprintf(LM->msg, "delGroup->memNeeded=" PF64"", delGroup->memNeeded); 
               LM->Log(LM->msg);
-              sprintf(LM->msg, "insGroup->memNeeded="PF64"", insGroup->memNeeded); 
+              sprintf(LM->msg, "insGroup->memNeeded=" PF64"", insGroup->memNeeded); 
               LM->Log(LM->msg);
               sprintf(LM->msg, "memForCBF=");
               formatFixedNumeric((Int64)memForCBF, 0, LM->msg+strlen(LM->msg));
@@ -7610,7 +7569,7 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
           // Ignore the group if there is no stats for it!
 
           if (LM->LogNeeded()) {
-              sprintf(LM->msg, "No stats: histTableName=%s, tableUid="PF64", colnum=%d", 
+              sprintf(LM->msg, "No stats: histTableName=%s, tableUid=" PF64", colnum=%d", 
                                (char*)hstogram_table->data(),
                                tableUID,
                                group->colSet[0].colnum);
@@ -7655,7 +7614,7 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
         {
           if (group->state == PENDING)
             {
-              sprintf(LM->msg, "    %s ("PF64" bytes)",
+              sprintf(LM->msg, "    %s (" PF64" bytes)",
                                group->colSet[0].colname->data(),
                                group->memNeeded);
               LM->Log(LM->msg);
@@ -8184,10 +8143,8 @@ Lng32 HSGlobalsClass::WriteStatistics()
       }
     else
       {
-        // LCOV_EXCL_START :nsk
         histRS.reset(new HSinsertHist("INSERT101_MP", hstogram_table->data()));
         histintRS.reset(new HSinsertHistint("INSERT201_MP", hsintval_table->data()));
-        // LCOV_EXCL_STOP
       }
     LM->StartTimer("initialize rowset for Histograms");
     retcode = histRS->initialize();       //initialize ROWSET for HISTOGRAMS
@@ -8489,6 +8446,35 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
 
     // Initialize the pointer to the group list we will build.
     groupList = NULL;
+    
+    // if showstats for a native hbase table,hive table or table under seabase schema, 
+    // need to check if the table SB_HISTOGRAMS exist
+    NAString schemaName;
+    if (strcmp(hstogram_table->data(), "TRAFODION.\"_HBASESTATS_\".SB_HISTOGRAMS") == 0)
+      schemaName = "_HBASESTATS_";
+    else if (strcmp(hstogram_table->data(), "TRAFODION.\"_HIVESTATS_\".SB_HISTOGRAMS") == 0)
+      schemaName = "_HIVESTATS_";
+    else if (strcmp(hstogram_table->data(), "TRAFODION.SEABASE.SB_HISTOGRAMS") == 0)
+      schemaName = "SEABASE";
+    if (!schemaName.isNull())
+      {
+        NAString queryStr = "SELECT count(*) FROM TRAFODION.\"_MD_\".OBJECTS WHERE SCHEMA_NAME='" +
+                            schemaName + 
+                            "' AND OBJECT_NAME='SB_HISTOGRAMS' AND OBJECT_TYPE='BT';";
+        HSCursor cursor;
+        retcode = cursor.prepareQuery(queryStr.data(), 0, 1);
+        HSHandleError(retcode);
+        retcode = cursor.open();
+        HSHandleError(retcode);
+        ULng32 cnt;
+        retcode = cursor.fetch (1, (void *)&cnt);
+        HSHandleError(retcode);
+        if (cnt == 0)
+          {
+            LM->StopTimer();
+            return 0;
+          }
+      }
 
 #ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
     HSCliStatement::statementIndex stmt;
@@ -8504,7 +8490,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
       else
         stmt = HSCliStatement::CURSOR103_MX;
     else
-      stmt = HSCliStatement::CURSOR103_MP;  // LCOV_EXCL_LINE :nsk
+      stmt = HSCliStatement::CURSOR103_MP;
 
     HSCliStatement cursor103( stmt,
                            (char *)hstogram_table->data(),
@@ -8520,7 +8506,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
     sprintf(sbuf, PF64, objID);
     qry.append(sbuf);
     qry.append(    " ORDER BY TABLE_UID, HISTOGRAM_ID, COL_POSITION ");
-    qry.append(    " FOR SERIALIZABLE ACCESS");
+    qry.append(    " FOR READ COMMITTED ACCESS");
 
     HSCursor cursor103;
     retcode = cursor103.prepareQuery(qry.data(), 0, 6);
@@ -8544,6 +8530,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
                                       (void *)&colNum, (void *)&colCount
                                       );
           // Don't read any more (break out of loop) if fetch did not succeed.
+          HSFilterWarning(retcode);
           if (retcode)
             break;
           // If EXISTING keyword specified and REASON field is EMPTY, skip.
@@ -9393,14 +9380,14 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
                mgroup->clistr->append(sampleOption->data());
 
             mgroup->clistr->append(" GROUP BY ");
-            mgroup->clistr->append(mgroup->colNames->data());
+            mgroup->clistr->append(mgroupColNames);
             mgroup->clistr->append(" FOR READ UNCOMMITTED ACCESS) T(");
-            mgroup->clistr->append(mgroup->colNames->data());
+            mgroup->clistr->append(mgroupColNames);
             mgroup->clistr->append(", FMTVAL, SUMVAL)");
             if(collectMCSkewedValues)
             {
               mgroup->clistr->append(" ORDER BY ");
-              mgroup->clistr->append(mgroup->colNames->data());
+              mgroup->clistr->append(mgroupColNames);
             }
     
             cursor = new(STMTHEAP) HSCursor;
@@ -9529,9 +9516,7 @@ Lng32 HSGlobalsClass::FixSamplingCounts(HSColGroupStruct *group)
     double lower     = 0;
     const double UEC_FRACTION_UPPER = 0.975;
     const double FRACTION_HIGH = 0.981;
-#pragma nowarn(1506)   // warning elimination 
     const double UPSCALE_FOR_ROWS = convertInt64ToDouble(actualRowCount) / sampleRowCount;
-#pragma warn(1506)  // warning elimination 
     const Lng32 MAX_INTERVAL_JOIN = 4;
     NABoolean processMultiGroups = TRUE;
 
@@ -10010,8 +9995,8 @@ Lng32 HSGlobalsClass::ClearAllHistograms()
         LM->Log(LM->msg);
       }
 
-    if (tableFormat == SQLMP)               // LCOV_EXCL_LINE :nsk
-      stmt = HSCliStatement::DELETE101_MP;  // LCOV_EXCL_LINE :nsk
+    if (tableFormat == SQLMP)       
+      stmt = HSCliStatement::DELETE101_MP;
     else
       if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
         stmt = HSCliStatement::DELETE101_MX_2300;
@@ -10030,8 +10015,8 @@ Lng32 HSGlobalsClass::ClearAllHistograms()
         LM->Log(LM->msg);
       }
 
-    if (tableFormat == SQLMP)               // LCOV_EXCL_LINE :nsk
-      stmt = HSCliStatement::DELETE201_MP;  // LCOV_EXCL_LINE :nsk
+    if (tableFormat == SQLMP)               
+      stmt = HSCliStatement::DELETE201_MP; 
     else
       if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
         stmt = HSCliStatement::DELETE201_MX_2300;
@@ -10152,7 +10137,6 @@ Lng32 HSGlobalsClass::ClearSelectHistograms()
     return retcode;
   }
 
-// LCOV_EXCL_START :nsk
 /***********************************************/
 /* METHOD:  DeleteOrphanHistograms()           */
 /* PURPOSE: Deletes obsolete histograms that   */
@@ -10166,7 +10150,6 @@ Lng32 HSGlobalsClass::ClearSelectHistograms()
 /* ASSUMPTIONS: A transaction has already been */
 /*              started.                       */
 /***********************************************/
-#pragma nowarn(770)   // warning elimination 
 Lng32 HSGlobalsClass::DeleteOrphanHistograms()
   {
     Lng32     retcode = 0;
@@ -10209,7 +10192,6 @@ Lng32 HSGlobalsClass::DeleteOrphanHistograms()
       }
     return 0;
   }
-// LCOV_EXCL_STOP
 
 /***********************************************/
 /* METHOD:  GetStatistics()                    */
@@ -10476,6 +10458,7 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
 
     // Go ahead to write information for intervals of this histogram if DETAIL
     // option was specified, else return now.
+    HSFilterWarning(retcode);  // clean up any warnings before possible return
     if (!(optFlags & DETAIL_OPT))
         return 0;
 
@@ -10485,8 +10468,8 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
         stmt = HSCliStatement::SHOWINT_MX_2300;
       else
         stmt = HSCliStatement::SHOWINT_MX;
-    else                                    // LCOV_EXCL_LINE :nsk
-        stmt = HSCliStatement::SHOWINT_MP;  // LCOV_EXCL_LINE :nsk
+    else                                    
+        stmt = HSCliStatement::SHOWINT_MP;
 
     HSCliStatement intData( stmt,
         (char *)hsintval_table->data(),
@@ -10602,6 +10585,8 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
     intData.close();
     displayData += "\n";
 
+    HSFilterWarning(retcode);  // filter out any warnings so HSErrorCatcher doesn't act up
+
     return 0;
 }
 
@@ -10621,7 +10606,6 @@ HSColGroupStruct* HSGlobalsClass::ReverseList(HSColGroupStruct* list)
    return saveGroup;
 }
 
-#pragma warn(770)   // warning elimination 
 
 /***********************************************/
 /* METHOD:  print()                            */
@@ -10910,7 +10894,6 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
             }
             break;
 
-          // LCOV_EXCL_START :rfi
           default:
             sprintf(errtxt, "processInternalSortNulls(): unknown type %d", 
                             group->ISdatatype);
@@ -10919,7 +10902,6 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
             retcode=-1;
             HSHandleError(retcode);
             break;
-          // LCOV_EXCL_STOP
         }
 
       group = group->next;
@@ -11020,7 +11002,6 @@ bool isInternalSortType(HSColumnStruct &col)
             case REC_DTCODE_TIME:
             case REC_DTCODE_TIMESTAMP:
               return true;
-            // LCOV_EXCL_START :rfi
             default:
               LM->Log("INTERNAL ERROR (isInternalSortType):");
               sprintf(LM->msg, "Undefined datetime precision type %d", col.precision);
@@ -11031,7 +11012,6 @@ bool isInternalSortType(HSColumnStruct &col)
                                   << DgString2(LM->msg);
               throw CmpInternalException("failure in isInternalSortType()",
                                          __FILE__, __LINE__);
-            // LCOV_EXCL_STOP
           }
 
       case REC_INT_YEAR:
@@ -11237,6 +11217,22 @@ Int32 HSGlobalsClass::getColsToProcess(Int64 rows,
     }
 
   return numColsToProcess;
+}
+
+// If we decide to create and load a sample table, deallocate column memory
+// and reset PENDING group states back to UNPROCESSED before creating and
+// loading the sample table. We'll call getColsToProcess to reallocate it
+// again afterwards.
+void HSGlobalsClass::deallocatePendingMemory(void)
+{
+  for (HSColGroupStruct *group = singleGroup; group; group = group->next)
+    {
+      if (group->state == PENDING)
+        {
+          group->freeISMemory(TRUE,TRUE);
+          group->state = UNPROCESSED;
+        }
+    }
 }
 
 // Select a set of columns for internal sort based on the amount of memory req'd, type,
@@ -11640,7 +11636,12 @@ Int32 HSGlobalsClass::allocateMemoryForColumns(HSColGroupStruct* group,
          memReduceAllowance();
          break;
        }
-
+     //trafodion-2978
+     //group->mcis_memFreed may be set TRUE in HSColGroupStruct::freeISMemory
+     //so if allocate memory success,set group->mcis_memFreed to FALSE agin.
+     if(group->mcis_memFreed)
+         group->mcis_memFreed = FALSE;
+     //trafodion-2978
      group->nextData = group->data;
      group->mcis_nextData = group->mcis_data;
      numCols++;
@@ -11970,7 +11971,6 @@ Lng32 doSort(HSColGroupStruct *group)
                        (ISVarChar*)group->nextData - (ISVarChar*)group->data - 1);
         break;
       }
-      // LCOV_EXCL_START :rfi
       default:
         sprintf(errtxt, "doSort(): unknown type %d", group->ISdatatype);
         sprintf(LM->msg, "INTERNAL ERROR: %s", errtxt);
@@ -11978,7 +11978,6 @@ Lng32 doSort(HSColGroupStruct *group)
         retcode = -1;
         HSHandleError(retcode);
         break;
-      // LCOV_EXCL_STOP
     }
 
   if (LM->LogNeeded())
@@ -11988,7 +11987,6 @@ Lng32 doSort(HSColGroupStruct *group)
               group->colSet[0].colname->data(), maxRecDepth);
       LM->Log(LM->msg);
     }
-  // LCOV_EXCL_START :rfi
   if (recDepth != 0) 
     {
       sprintf(errtxt, "doSort(): Recursion depth should be 0.");
@@ -11997,7 +11995,6 @@ Lng32 doSort(HSColGroupStruct *group)
       retcode = -1;
       HSHandleError(retcode);
     }
-  // LCOV_EXCL_STOP
   return retcode;
 }
 
@@ -12449,7 +12446,6 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (double*)NULL);
         break;
 
-      // LCOV_EXCL_START :rfi
       default:
         sprintf(errtxt, "createStats(): unknown type %d", group->ISdatatype);
         sprintf(LM->msg, "INTERNAL ERROR: %s", errtxt);
@@ -12457,7 +12453,6 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
         retcode=-1;
         HSHandleError(retcode);
         break;
-      // LCOV_EXCL_STOP
     }
 
     if (LM->LogNeeded())
@@ -12506,7 +12501,6 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
   return retcode;
 }
 
-// LCOV_EXCL_START :rfi
 /************************************************/
 /* METHOD:  log()                               */
 /* PURPOSE: Write selected information to the   */
@@ -12563,7 +12557,6 @@ void HSGlobalsClass::log(HSLogMan* LM)
       group = group->next;
     }
 }
-// LCOV_EXCL_STOP
 
 NABoolean HSGlobalsClass::wherePredicateSpecifiedForIUS()
 {
@@ -12616,15 +12609,11 @@ void HSGlobalsClass::generateIUSSelectInsertQuery(const NAString& smplTable,
   queryText.append("UPSERT USING LOAD INTO "); // for algorithm 1
   queryText.append(smplTable.data());
   queryText.append(" (SELECT ");
-  if (hasOversizedColumns)
-    {
-      // The source table has an oversized column. We have to generate
-      // SUBSTRING calls on such columns to fit them into the sample
-      // table.
-      objDef->addTruncatedSelectList(queryText);
-    }      
-  else
-    queryText.append("*");
+  
+  // Generate the select list. Truncate any over-long char/varchar columns
+  // by using SUBSTRING calls. Omit any LOB columns.
+  objDef->addTruncatedSelectList(queryText);
+
   queryText.append(" FROM ");
 
   if (CmpCommon::getDefault(USTAT_INCREMENTAL_UPDATE_STATISTICS) == DF_ON)
@@ -13573,8 +13562,12 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
 
       // Use the oldUec if estimatedUec is nan.  This is to work around 
       // the nan value produced by lwcUecEstimate() above.
-
+     
+#if __GNUC_MINOR__ == 8
+      if ( std::isnan(estIntvlUEC) )
+#else
       if ( isnan(estIntvlUEC) )
+#endif
         estIntvlUEC = oldUec;
 
       // cap the new UEC with the RC
@@ -14078,9 +14071,7 @@ void formatFixedNumeric(Int64 value, Lng32 scale, char* buffer)
   char digits[] = "0123456789";
   char temp;
   char *p1 = buffer, *p2 = buffer;
-#pragma warning(disable:4146)
   Int64 xval = (Int64)(value >=0 ? value : -value);  // no template for abs()
-#pragma warning(default:4146)
   Int32 numDigits = 0;
 
   // Write the digits out in reverse order, adding the decimal point at the
@@ -14348,18 +14339,15 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
                 }
                 break;
 
-              // LCOV_EXCL_START :rfi
               default:
                 retcode = -1;
                 break;
-              // LCOV_EXCL_STOP
             }
           break;
 
 // Unary minus used in several places in the following code for intervals,
 // which are always encoded as signed integers. The template instantiations for
 // unsigned types will complain about the attempted negation.
-#pragma warning(disable:4146)
 
         // For single-field intervals, all we have to do is right-justify the
         // value in a field with width equal to the interval's precision.
@@ -14485,13 +14473,10 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
           }
           break;
 
-#pragma warning(default:4146)
 
-        // LCOV_EXCL_START :rfi
         default:
           retcode = -1;
           break;
-        // LCOV_EXCL_STOP
        } // switch
       }  // else
 
@@ -14528,7 +14513,6 @@ Lng32 setBufferValue(T& value,
 
     // Copy the value, with any required formatting, into the buffer.
     Int32 rc=0;
-    // LCOV_EXCL_START :rfi
     if ((rc = copyValue(value, valueBuff, colDesc, len)) < 0)
       {
         LM->Log("INTERNAL ERROR (copyValue):");
@@ -14543,7 +14527,6 @@ Lng32 setBufferValue(T& value,
         throw CmpInternalException("failure in copyValue()",
                                    __FILE__, __LINE__);
       }
-    // LCOV_EXCL_STOP
 
     // *len has already been set for char types due to possibility of embedded
     // nulls, but will have to be adjusted here to len in bytes instead of chars.
@@ -15041,9 +15024,7 @@ static short convInt64ToAscii(char *target,
   if (scale) {
     Lng32 low = (currPos - scale);
     for (; currPos > low; currPos--) {
-#pragma nowarn(1506)   // warning elimination 
       target[currPos] = (char)(Int32)(newSource % 10) + '0';
-#pragma warn(1506)   // warning elimination 
       newSource /= 10;
     }
     target[currPos--] = '.';
@@ -15051,9 +15032,7 @@ static short convInt64ToAscii(char *target,
 
   // Convert the integer part.
   for (; currPos >= leftMost; currPos--) {
-#pragma nowarn(1506)   // warning elimination 
     target[currPos] = (char)(Int32)(newSource % 10) + '0';
-#pragma warn(1506)   // warning elimination 
     newSource /= 10;
   }
 
@@ -15102,7 +15081,6 @@ static short convInt64ToAscii(char *target,
 // 1 byte for at least one digit after decimal point
 // 5 bytes for exponent (E+DDD)
 ///////////////////////////////////////////////////////////////////
-//NA_EIDPROC
 static short convFloat64ToAscii(char *target,
 		 Lng32 targetLen,
 			double source,
@@ -16345,15 +16323,11 @@ HSInMemoryTable::generateInsertSelectIQuery(NAString& targetTable,
   queryText.append(targetTable.data());
 
   queryText.append(" (SELECT ");
-  if (hasOversizedColumns)
-    {
-      // The source table has an oversized column. We have to generate
-      // SUBSTRING calls on such columns to fit them into the sample
-      // table.
-      objDef->addTruncatedSelectList(queryText);
-    }      
-  else
-    queryText.append("*");
+
+  // Generate the select list. Truncate any over-long char/varchar columns
+  // by using SUBSTRING calls. Omit any LOB columns.
+  objDef->addTruncatedSelectList(queryText);
+
   queryText.append(" FROM ");
 
   queryText.append(sourceTable.data());

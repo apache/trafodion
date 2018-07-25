@@ -39,8 +39,8 @@ LOG aqatdml10 Clear;
 --               EXISTS/NOT EXISTS
 --  testcase A4: multiple nesting,multiple subqueries connected with
 --               and/or,mixed correlated/uncorrelated nested subqueries
---  testcase A5: use of for browse access,
---               for stable access,for repeatable access
+--  testcase A5: use of for read committed access,
+--               for read committed access,for read committed access
 --  testcase A6: SELECT aggregate functions with aggregates in
 --               subquery
 
@@ -1613,8 +1613,8 @@ LOG aqatdml10 Clear;
 
 -- <detail>
 --    correlated subquery in where clause test - this tests the use of
---    for browse access, for stable access,
---    and for repeatable access inside of subqueries.
+--    for read committed access, for read committed access,
+--    and for read committed access inside of subqueries.
 
 -- <templates>
 --     US00
@@ -1627,9 +1627,9 @@ LOG aqatdml10 Clear;
          (select distinct Y.partnum
           from fromsup Y
           where Y.suppnum <> X.suppnum
-          for browse access
+          for read committed access
          )
-      for stable access;
+      for read committed access;
 
 -- <comment> get part numbers for all parts supplied by more than one supplier
 -- <ufi-input>
@@ -1639,9 +1639,9 @@ LOG aqatdml10 Clear;
          (select distinct Y.partnum
           from fromsup Y
           where Y.suppnum <> X.suppnum
-          for stable access
+          for read committed access
          )
-      for repeatable access;
+      for read committed access;
 
 -- <comment> get part numbers for all parts supplied by more than one supplier
 -- <ufi-input>
@@ -1651,9 +1651,9 @@ LOG aqatdml10 Clear;
          (select distinct Y.partnum
           from fromsup Y
           where Y.suppnum <> X.suppnum
-          for repeatable access
+          for read committed access
          )
-      for repeatable access;
+      for read committed access;
 
 -- <comment> get part names whose cost is greater than 10000 and whose
 -- <comment> price is equal to its' cost from at least one supplier
@@ -1665,7 +1665,7 @@ LOG aqatdml10 Clear;
        (select partcost
         from expfroms
         where  parts.partnum =  expfroms.partnum
-        for repeatable access
+        for read committed access
        );
 
 -- <comment> get part names for parts whose price is less than 2000
@@ -1678,7 +1678,7 @@ LOG aqatdml10 Clear;
          from fromsup
          where  parts.partnum =  fromsup.partnum
          group by partcost
-         for browse access
+         for read committed access
         );
 
 -- <comment> get part names for parts who have the same price as at
@@ -1690,9 +1690,9 @@ LOG aqatdml10 Clear;
         (select Y.col_3
          from partsfor Y
          where X.col_1 <> Y.col_1
-         for browse access
+         for read committed access
         )
-      for browse access;
+      for read committed access;
 
 -- <comment> get part names for parts who have the same price as at
 -- <comment> least one other part
@@ -1703,9 +1703,9 @@ LOG aqatdml10 Clear;
         (select Y.col_3
          from partsfor Y
          where X.col_1 <> Y.col_1
-         for stable access
+         for read committed access
         )
-      for stable access;
+      for read committed access;
 
 -- <comment> get part names for parts who have the same price as at
 -- <comment> least one other part
@@ -1716,9 +1716,9 @@ LOG aqatdml10 Clear;
         (select Y.col_3
          from partsfor Y
          where X.col_1 <> Y.col_1
-         for repeatable access
+         for read committed access
         )
-      for browse access;
+      for read committed access;
 
 
 -- <comment> get part numbers for all parts supplied by more than
@@ -1731,7 +1731,7 @@ LOG aqatdml10 Clear;
          from fromsup Y
          where Y.suppnum <> X.suppnum
          and X.partnum = Y.partnum
-         for repeatable access
+         for read committed access
         );
 
 -- <comment> get supplier numbers for suppliers who supply at least
@@ -1748,11 +1748,11 @@ LOG aqatdml10 Clear;
             from fromsup Z
             where X.suppnum = Z.suppnum
             and Z.partnum = Y.partnum
-            for browse access
+            for read committed access
            )
-         for stable access
+         for read committed access
         )
-      for repeatable access;
+      for read committed access;
 
 -- <comment> get part numbers for parts supplied to all customers
 -- <comment> in California
@@ -1769,11 +1769,11 @@ LOG aqatdml10 Clear;
             from odetail Y
             where Y.partnum = X.partnum
             and  orders.ordernum = Y.ordernum
-            for browse access
+            for read committed access
            )
-         for repeatable access
+         for read committed access
         )
-      for stable access;
+      for read committed access;
 
 -- <comment> get supplier names for suppliers who supply part 4102
 -- <comment> and part 5504
@@ -1784,13 +1784,13 @@ LOG aqatdml10 Clear;
         (select partnum
          from fromsup
          where  fromsup.suppnum =  supplier.suppnum
-         for repeatable access
+         for read committed access
         )
       and 5504 =ANY
         (select partnum
          from fromsup
          where  fromsup.suppnum =  supplier.suppnum
-         for stable access
+         for read committed access
         );
 
 -- <comment> get part numbers for all parts supplied by more than
@@ -1807,11 +1807,11 @@ LOG aqatdml10 Clear;
             from fromsup Z
             where Z.suppnum <> Y.suppnum
             and Z.suppnum <> X.suppnum
-            for stable access
+            for read committed access
            )
-         for browse access
+         for read committed access
         )
-      for repeatable access;
+      for read committed access;
 
 -- <comment> same as above, use view fsdetail instead
 -- <ufi-input>
@@ -1826,11 +1826,11 @@ LOG aqatdml10 Clear;
             from fsdetail Z
             where Z.col_2 <> Y.col_2
             and Z.col_2 <> X.col_2
-            for browse access
+            for read committed access
            )
-         for repeatable access
+         for read committed access
         )
-      for stable access;
+      for read committed access;
 
 -- <end-input>
 

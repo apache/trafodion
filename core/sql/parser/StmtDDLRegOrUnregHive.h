@@ -71,7 +71,7 @@ public:
                           // true, register. false, unregister
                           const NABoolean isRegister, 
                           const ComObjectType objType,
-                          const NABoolean existsOption,
+                          const NABoolean registeredOption,
                           const NABoolean isInternal,
                           const NABoolean cascade,
                           const NABoolean cleanup,
@@ -98,7 +98,7 @@ public:
   {return objQualName_;}  
   const NABoolean &isRegister() const { return isRegister_; }
   const ComObjectType &objType() const { return objType_; }
-  const NABoolean &existsOption() const { return existsOption_; }
+  const NABoolean &registeredOption() const { return registeredOption_; }
 
   const NABoolean &isInternal() const { return isInternal_; }
 
@@ -130,7 +130,7 @@ private:
   // For unregister operation:
   //   true, unregister if registered.
   //   false, return error if not registered.
-  NABoolean existsOption_;
+  NABoolean registeredOption_;
 
   // true if this object was registered internally by trafodion
   NABoolean isInternal_;

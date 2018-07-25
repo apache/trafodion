@@ -26,6 +26,7 @@ package org.apache.trafodion.jdbc.t2;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -68,7 +69,7 @@ import java.util.Locale;
  * so on) for setting IN parameter must specify types that are compatible with
  * the defined SQL type of the input parameter. For instance, if the IN
  * parameter has SQL type <tt>INTEGER</tt>, then the method <tt>setInt</tt>
- * should be used. The HP JDBC does not follow this specification and will allow
+ * should be used. The Trafodion JDBC does not follow this specification and will allow
  * writing to all most all SQL column types. The only exceptions would be the
  * <tt>TIME</tt>, <tt>TIMESTAMP</tt>, <tt>DATE</tt>, <tt>CLOB</tt>, and
  * <tt>BLOB</tt>. <B>If these extensions are use the Java code may not run on
@@ -99,7 +100,7 @@ import java.util.Locale;
  * 	 Inventory  p WHERE (p.cost / ? = ?) AND(p.partId = ?)");
  * 	 pstmt.setLong(1, 2);
  * 	 pstmt.setLong(2,1000000);
- * 	 pstmt.setString(3, "HP Printer");
+ * 	 pstmt.setString(3, "Trafodion Printer");
  * </ul>
  * </tt></pre>
  * <p>
@@ -171,7 +172,7 @@ import java.util.Locale;
  *
  * @see ResultSet
  * @see org.apache.trafodion.jdbc.t2.SQLMXConnection#prepareStatement
- * @version HP JDBC/MX
+ * @version Trafodion JDBC/MX
  *
  */
 
@@ -631,7 +632,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 
 	public boolean execute(String sql) throws SQLException {
 		System.out
-				.println("HP recommends that the JDBC Type 2 driver not be used in this context.");
+				.println("Trafodion recommends that the JDBC Type 2 driver not be used in this context.");
 		System.out
 				.println("The query ' "
 						+ sql
@@ -1142,7 +1143,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 
 	public int executeUpdate(String sql) throws SQLException {
 		System.out
-				.println("HP recommends that the JDBC Type 2 driver not be used in this context.");
+				.println("Trafodion recommends that the JDBC Type 2 driver not be used in this context.");
 		System.out
 				.println("The query ' "
 						+ sql
@@ -1181,7 +1182,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * driver converts this to an SQL <tt>ARRAY</tt> value when it sends it to
 	 * the database.
 	 * <p>
-	 * <B>Note:</B>This method is <em><B>unsupported</B></em> by the HP JDBC
+	 * <B>Note:</B>This method is <em><B>unsupported</B></em> by the Trafodion JDBC
 	 * driver. If this method is called a <i>Unsupported feature -
 	 * {setArray())</i> SQLException will be thrown.
 	 * </p>
@@ -1313,7 +1314,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * value. The driver converts this to a SQL <tt>NUMERIC</tt> value when it
 	 * sends it to the database.
 	 * <p>
-	 * <B>Note:</B> An <em>extended</em> feature of the HP JDBC driver will
+	 * <B>Note:</B> An <em>extended</em> feature of the Trafodion JDBC driver will
 	 * allow the setBigDecimal to write data to any compatible SQL column type.
 	 * The given <tt>java.math.BigDecimal</tt> value is converted to the correct
 	 * SQL column type, before the data is written to the database. If the
@@ -1648,7 +1649,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * </p>
 	 * <p>
 	 * The stream can be used to write <tt>BLOB</tt>, <tt>CHAR</tt>,
-	 * <tt>VARCHAR</tt>, or <tt>LONGVARCHAR</tt> SQL column types. The HP JDBC
+	 * <tt>VARCHAR</tt>, or <tt>LONGVARCHAR</tt> SQL column types. The Trafodion JDBC
 	 * driver does not support <tt>BINARY</tt>, <tt>VARBINARY</tt>, or
 	 * <tt>LONGVARBINARY</tt> SQL column types, at this time.
 	 * </p>
@@ -1792,9 +1793,9 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * The driver converts this to a SQL <tt>BIT</tt> value when it sends it to
 	 * the database.
 	 * <P>
-	 * <B>Note:</B> The HP JDBC driver does not support a SQL column type of
+	 * <B>Note:</B> The Trafodion JDBC driver does not support a SQL column type of
 	 * <tt>BIT</tt> and can not convert the <tt>boolean</tt> value to a SQL
-	 * <tt>BIT</tt> value. The HP JDBC driver does allow the use of the
+	 * <tt>BIT</tt> value. The Trafodion JDBC driver does allow the use of the
 	 * setBoolean method to write to the following SQL column types:
 	 *
 	 * <ul PLAIN> <tt>TINYINT</tt> </ul> <ul PLAIN> <tt>SMALLINT</tt> </ul> <ul
@@ -1923,8 +1924,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * <tt>LONGVARBINARY</tt> (depending on the argument's size relative to the
 	 * driver's limits on <tt>VARBINARY</tt>) when it sends it to the database.
 	 * <P>
-	 * <B>Note:</B> The HP SQL/MX database <em><B>does not</B></em> support
-	 * <tt>VARBINARY</tt> or <tt>LONVARBINARY</tt> at this time. An HP
+	 * <B>Note:</B> The Trafodion SQL/MX database <em><B>does not</B></em> support
+	 * <tt>VARBINARY</tt> or <tt>LONVARBINARY</tt> at this time. An Trafodion
 	 * extension, allows the use of the SQL column types <tt>VARCHAR</tt>,
 	 * <tt>LONGVARCHAR</tt>, and <tt>BLOB</tt>.
 	 * </p>
@@ -1953,11 +1954,12 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			}
 
 
-			byte[] tmpArray = new byte[x.length];
-			System.arraycopy(x, 0, tmpArray, 0, x.length);
+			//byte[] tmpArray = new byte[x.length];
+			//System.arraycopy(x, 0, tmpArray, 0, x.length);
 
 			validateSetInvocation(parameterIndex);
 			dataType = inputDesc_[parameterIndex - 1].dataType_;
+            int dataCharSet = inputDesc_[parameterIndex - 1].sqlCharset_;
 			switch (dataType) {
 			case Types.BLOB:
 				long dataLocator = connection_.getDataLocator(
@@ -1969,12 +1971,24 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				isAnyLob_ = true;
 				paramContainer_.setLong(parameterIndex, dataLocator);
 				break;
+            case Types.CHAR:
+            case Types.VARCHAR:
+            case Types.LONGVARCHAR:
+                String charSet = SQLMXDesc.SQLCHARSETSTRING_ISO88591;
+                if (dataCharSet == SQLMXDesc.SQLCHARSETCODE_UCS2)
+                    charSet = "UTF-16LE";
+                try {
+                    x = (new String(x)).getBytes(charSet);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                    throw Messages.createSQLException(connection_.locale_, "unsupported_encoding",
+                            new Object[] { charSet });
+                }
+                paramContainer_.setObject(parameterIndex, x);
+                break;
 			case Types.DATE:
 			case Types.TIME:
 			case Types.TIMESTAMP:
-			case Types.CHAR:
-			case Types.VARCHAR:
-			case Types.LONGVARCHAR:
 			case Types.BINARY:
 			case Types.VARBINARY:
 			case Types.LONGVARBINARY:
@@ -2155,7 +2169,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * <tt>TIMESTAMP</tt> value when it sends it to the database.
 	 *
 	 * <p>
-	 * <B>Note:</B> An extension to the HP JDBC driver is that the Date
+	 * <B>Note:</B> An extension to the Trafodion JDBC driver is that the Date
 	 * parameter can be used to write to the following additional SQL column
 	 * types:
 	 *
@@ -2217,7 +2231,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * sends it to the database.
 	 *
 	 *<p>
-	 * <B>Note:</B> The cal parameter is used, by the HP JDBC driver from now.
+	 * <B>Note:</B> The cal parameter is used, by the Trafodion JDBC driver from now.
 	 *</p>
 	 *
 	 * @param parameterIndex
@@ -2301,7 +2315,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * to the database.
 	 *
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setFloat to write data to any compatible SQL column type. The float input
 	 * parameter is converted to the correct SQL column type before the data is
 	 * written to the database. If the conversion can not be performed, then the
@@ -2310,7 +2324,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * too big or too small, the number is converted to + or - infinity. This
 	 * action conforms to the way that the IEEE floating point number
 	 * specification in the handling of overflow and underflow, and has changed
-	 * from previous HP JDBC driver releases.
+	 * from previous Trafodion JDBC driver releases.
 	 * </p>
 	 * <p>
 	 * The compatible SQL column types are:
@@ -2372,7 +2386,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				paramContainer_.setFloat(parameterIndex, dataWrapper.getFloat(
 						1, connection_.locale_));
 				break;
-			default: // This is an HP extension JDBC 3.0 API does not allow data
+			default: // This is an Trafodion extension JDBC 3.0 API does not allow data
 				// type conversion
 				setObject(parameterIndex, dataWrapper, dataType);
 			}
@@ -2389,7 +2403,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * database.
 	 *
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setFloat to write data to any compatible SQL column type. The float input
 	 * parameter is converted to the correct SQL column type before the data is
 	 * written to the database. If the conversion can not be performed, then the
@@ -2398,7 +2412,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * too big or too small, the number is converted to + or - infinity. This
 	 * action conforms to the way that the IEEE floating point number
 	 * specification in the handling of overflow and underflow, and has changed
-	 * from previous HP JDBC driver releases.
+	 * from previous Trafodion JDBC driver releases.
 	 * </p>
 	 *
 	 * <p>
@@ -2460,7 +2474,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			case Types.TIMESTAMP:
 				throw Messages.createSQLException(connection_.locale_,
 						"invalid_datatype_for_column", null);
-			default: // This is an HP extension JDBC 3.0 API does not allow data
+			default: // This is an Trafodion extension JDBC 3.0 API does not allow data
 				// type conversion
 				setObject(parameterIndex, dataWrapper, dataType);
 			}
@@ -2513,7 +2527,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * the database.
 	 *
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setInt to write data to any compatible SQL column type. The int input
 	 * parameter is converted to the correct SQL column type before the data is
 	 * written to the database. If the conversion can not be performed, then the
@@ -2656,7 +2670,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * the database.
 	 *
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setLong to write data to any compatible SQL column type. The long input
 	 * parameter is converted to the correct SQL column type before the data is
 	 * written to the database. If the conversion can not be performed, then the
@@ -2772,7 +2786,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	/**
 	 * Sets the designated parameter to SQL <tt>NULL</tt>.
 	 * <p>
-	 * <B>Note:</B> You must specify the parameters SQL type (although HP SQL/MX
+	 * <B>Note:</B> You must specify the parameters SQL type (although Trafodion SQL/MX
 	 * database does not use the sqlType and it is ignored)
 	 * </p>
 	 *
@@ -2808,7 +2822,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	/**
 	 * Sets the designated parameter to SQL <tt>NULL</tt>.
 	 * <P>
-	 * <B>Note:</B> You must specify the parameters SQL type (although HP SQL/MX
+	 * <B>Note:</B> You must specify the parameters SQL type (although Trafodion SQL/MX
 	 * database does not use the sqlType and it is ignored)
 	 * </p>
 	 *
@@ -2863,7 +2877,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * named above.
 	 * </p>
 	 * <p>
-	 * <B>Note:</B> The HP JDBC driver does not support the following and will
+	 * <B>Note:</B> The Trafodion JDBC driver does not support the following and will
 	 * throw an exception if called with a object of one of these interfaces:
 	 * <ul PLAIN> <tt>Array</tt> </ul> <ul PLAIN> <tt>Ref</tt> </ul> <ul PLAIN>
 	 * <tt>Struct</tt> </ul> <ul PLAIN> <tt>SQLData</tt> </ul>
@@ -3983,7 +3997,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * <tt>&ltstructured-type&gt</tt> value. The driver converts this to an SQL
 	 * <tt>REF</tt> value when it sends it to the database.
 	 * <p>
-	 * <B>Note:</B>This method is <em><B>unsupported</B></em> my the HP JDBC
+	 * <B>Note:</B>This method is <em><B>unsupported</B></em> my the Trafodion JDBC
 	 * driver. If this method is called a <i>Unsupported feature -
 	 * {setArray())</i> SQLException will be thrown.
 	 * </p>
@@ -4016,7 +4030,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * driver converts this to a SQL <tt>SMALLINT</tt> value when it sends it to
 	 * the database.
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setShort to write data to any compatible SQL column type. The
 	 * <tt>short</tt> input parameter is converted to the correct SQL column
 	 * type before the data is written to the database. If the conversion can
@@ -4105,7 +4119,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * value (depending on the arguments size relative to the driver's limits on
 	 * <tt>VARCHAR</tt> values) when it sends it to the database.
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setString to write data to any compatible SQL column type. The
 	 * <tt>String</tt> input parameter is converted to the correct SQL column
 	 * type before the data is written to the database. If the conversion can
@@ -4249,7 +4263,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * The driver converts this to a SQL <tt>TIME</tt> value when it sends it to
 	 * the database.
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setTime to write data to any compatible SQL column type. The
 	 * <tt>Time</tt> input parameter is converted to the correct SQL column type
 	 * before the data is written to the database. If the conversion can not be
@@ -4319,8 +4333,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * the default timezone, which is that of the virtual machine running the
 	 * application.
 	 * <p>
-	 * <B>Note:</B> The HP JDBC driver uses the <tt>Calendar</tt> parameter. An
-	 * extended feature of the HP JDBC driver will allow the setTime to write
+	 * <B>Note:</B> The Trafodion JDBC driver uses the <tt>Calendar</tt> parameter. An
+	 * extended feature of the Trafodion JDBC driver will allow the setTime to write
 	 * data to any compatible SQL column type. The <tt>Time</tt> input parameter
 	 * is converted to the correct SQL column type before the data is written to
 	 * the database. If the conversion can not be performed, then the
@@ -4414,7 +4428,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * value. The driver converts this to a SQL <tt>TIMESTAMP</tt> value when it
 	 * sends it to the database.
 	 * <p>
-	 * <B>Note:</B> An extended feature of the HP JDBC driver will allow the
+	 * <B>Note:</B> An extended feature of the Trafodion JDBC driver will allow the
 	 * setTimestamp to write data to any compatible SQL column type. The
 	 * <tt>Timestamp</tt> input parameter is converted to the correct SQL column
 	 * type before the data is written to the database. If the conversion can
@@ -4496,8 +4510,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * uses the default timezone, which is that of the virtual machine running
 	 * the application.
 	 * <p>
-	 * <B>Note:</B> The HP JDBC driver uses the <tt>Calendar</tt> parameter. An
-	 * extended feature of the HP JDBC driver will allow the setTime to write
+	 * <B>Note:</B> The Trafodion JDBC driver uses the <tt>Calendar</tt> parameter. An
+	 * extended feature of the Trafodion JDBC driver will allow the setTime to write
 	 * data to any compatible SQL column type. The <tt>Timestamp</tt> input
 	 * parameter is converted to the correct SQL column type before the data is
 	 * written to the database. If the conversion can not be performed, then the
@@ -4667,7 +4681,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	 * The driver converts this to an SQL <tt>DATALINK</tt> value when it sends
 	 * it to the database.
 	 * <p>
-	 * <B>Note:</B>This method is <em><B>unsupported</B></em> by the HP JDBC
+	 * <B>Note:</B>This method is <em><B>unsupported</B></em> by the Trafodion JDBC
 	 * driver. If this method is called a <i>Unsupported feature -
 	 * {setURL())</i> SQLException will be thrown.
 	 * </p>

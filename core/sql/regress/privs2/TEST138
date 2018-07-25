@@ -264,6 +264,7 @@ showddl user1_t2;
 ?section alter_tbl
 set schema t138sch;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
+cqd traf_alter_add_pkey_as_unique_constraint 'ON';
 log LOG138;
 get tables;
 

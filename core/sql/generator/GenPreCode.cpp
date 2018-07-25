@@ -44,7 +44,6 @@
 #include "GroupAttr.h"
 #include "AllRelExpr.h"
 #include "RelPackedRows.h"
-#include "ReadTableDef.h"
 #include "Generator.h"
 #include "GenExpGenerator.h"
 #include "dfs2rec.h"
@@ -677,12 +676,8 @@ ItemExpr * ValueIdUnion::replaceVEGExpressions
 
   for(CollIndex i = 0; i < entries(); i++) {
     viduPtr->
-#pragma nowarn(1506)   // warning elimination
       setSource(i,
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
 		(viduPtr->getSource(i).getItemExpr()
-#pragma warn(1506)  // warning elimination
 		 ->replaceVEGExpressions(availableValues,inputValues,
                                    thisIsAnMdamKeyPredicate,lookup, 
                                    FALSE, /* replicateExpression default */ 
@@ -1159,12 +1154,14 @@ VEGReference::replaceVEGReference(const ValueIdSet &origAvailableValues,
 
   if (VEG_DEBUG)
     {
-      NAString av,iv,vb;
+      NAString av,iv,vb,vr;
       availableValues.unparse(av);
       inputValues.unparse(iv);
       valuesToBeBound.unparse(vb);
+      ValueIdSet thisVegRef(getValueId());
+      thisVegRef.unparse(vr);
       cout << endl;
-	  cout << "VEGReference " << getValueId() << " :" << endl;
+      cout << "VEGReference " << getValueId() << " (" << vr << "):" << endl;
       cout << "AV: " << av << endl;
       cout << "IV: " << iv << endl;
       cout << "VB: " << vb << endl;
@@ -1609,8 +1606,20 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
   // can teach optimizer to do this.
   if ((getFirstNRows() != -1) || (getFirstNRowsParam()))
     {
+      // As of JIRA TRAFODION-2840, the binder always adds the FirstN,
+      // except in the case of output rowsets. So, the only time we 
+      // should now be going through this code is a SELECT query using
+      // output rowsets + FirstN + ORDER BY. A follow-on JIRA,
+      // TRAFODION-2924, will take care of that case and delete this code.
+      // (As a matter of design, it is highly undesireable to sometimes
+      // create the FirstN in the Binder and sometimes in the Generator;
+      // that means that any FirstN-related semantic checks in the 
+      // intervening passes will need two completely separate 
+      // implementations.)
+
       RelExpr * firstn = new(generator->wHeap()) FirstN(child(0),
 							getFirstNRows(),
+							needFirstSortedRows(),   
                                                         getFirstNRowsParam());
 
       // move my child's attributes to the firstN node.
@@ -1859,7 +1868,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 		doMaxOneRowOpt = FALSE;
 
 	      if ((s->getGroupAttr()->isStream()) ||
-		  (s->accessOptions().accessType() == SKIP_CONFLICT_))
+		  (s->accessOptions().accessType() == TransMode::SKIP_CONFLICT_ACCESS_))
 		{
 		  //doMaxOneInputRowOpt = FALSE;
 		  //doMaxOneRowOpt = FALSE;
@@ -1915,10 +1924,8 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       if (generator->getBindWA()->getUdrStoiList().entries () > 0)
         generator->setAqrEnabled(FALSE);
 
-      // Reset the accumulated # of BMOs and memory usages in 
-      // the generator 
+      // Reset the accumulated # of BMOs for the fragment
       prevNumBMOs = generator->replaceNumBMOs(0);
-      prevBMOsMemoryUsage = generator->replaceBMOsMemoryUsage(0);
 
     } // true root
 
@@ -2075,13 +2082,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
   pulledNewInputs -= (ValueIdSet) inputVars();
   GenAssert(pulledNewInputs.isEmpty(),"root can't produce these values");
 
-  // propagate the need to return top sorted N rows to all sort
-  // nodes in the query.
-  if (needFirstSortedRows() == TRUE)
-    {
-      needSortedNRows(TRUE);
-    }
-
   // Do not rollback on error for INTERNAL REFRESH commands.
   if (isRootOfInternalRefresh())
     {
@@ -2150,39 +2150,13 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       // Remember # of BMOs that children's preCodeGen found for my fragment.
       setNumBMOs( generator->replaceNumBMOs(prevNumBMOs) );
 
-      setBMOsMemoryUsage( generator->replaceBMOsMemoryUsage(prevBMOsMemoryUsage) );
-
       // Compute the total available memory quota for BMOs
       NADefaults &defs               = ActiveSchemaDB()->getDefaults();
 
-      // total per CPU
-      double m = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) * (1024*1024);
+      // total per node
+      double m = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) * (1024*1024);
 
-      // total memory usage for all nBMOs 
-      double m1 = (generator->getTotalNBMOsMemoryPerCPU()).value();
-
-      // total memory limit for all BMOs
-      double m2 = m-m1;
-
-      double ratio = 
-          defs.getAsDouble(EXE_MEMORY_LIMIT_NONBMOS_PERCENT) / 100;
-
-      if ( m2 < 0 ) {
-         // EXE_MEMORY_LIMIT_PER_CPU is set too small, set the total 
-         // memory limit for BMOs to zero. When the memory quota for
-         // each BMO is computed (via method RelExpr::computeMemoryQuota()),
-         // the lower-bound for each BMO will kick in and each will receive
-         // a quota equal to the lower-bound value.
-         m2 = 0;
-      } else { 
-
-         // nBMOs use more memory than the portion, adjust m2 to 
-         // that of (1-ratio)*m
-         if (m1 > m*ratio )
-           m2 = m*(1-ratio);
-      }
-
-      generator->setBMOsMemoryLimitPerCPU(m2);
+      generator->setBMOsMemoryLimitPerNode(m);
 
     }
 
@@ -2270,6 +2244,8 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
   
   setHdfsAccess(generator->hdfsAccess());
 
+  generator->finetuneBMOEstimates();
+
   markAsPreCodeGenned();
 
 #ifdef _DEBUG
@@ -2337,7 +2313,7 @@ RelExpr * Join::preCodeGen(Generator * generator,
 
       ValueIdSet discardSet;
       CollIndex ne = nullInstantiatedOutput().entries();
-      for (CollIndex j = 0; j < ne; j++)              // NT_PORT FIX SK 07/16/96
+      for (CollIndex j = 0; j < ne; j++) 
 	{
 	  instNullId = nullInstantiatedOutput_[j];
 	  GenAssert(instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL,"NOT instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL");
@@ -2381,7 +2357,7 @@ RelExpr * Join::preCodeGen(Generator * generator,
       availableValues += child(1)->getGroupAttr()->getCharacteristicOutputs();
 
       CollIndex neR = nullInstantiatedForRightJoinOutput().entries();
-      for (CollIndex j = 0; j < neR; j++)              // NT_PORT FIX SK 07/16/96
+      for (CollIndex j = 0; j < neR; j++) 
 	{
 	  instNullIdForRightJoin = nullInstantiatedForRightJoinOutput_[j];
 	  GenAssert(instNullIdForRightJoin.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL,"NOT instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL");
@@ -2468,12 +2444,14 @@ RelExpr * Join::preCodeGen(Generator * generator,
       if (!(getEquiJoinPredicates().isEmpty() || getJoinPred().isEmpty() || 
 	    isAntiSemiJoin()))
       {
-	ValueIdSet dummy1, dummy2, dummy3, uncoveredPreds ;
+	ValueIdSet coveredPreds, dummy2, dummy3, uncoveredPreds ;
 	child(0)->getGroupAttr()->coverTest(getJoinPred(),
 					    getGroupAttr()->getCharacteristicInputs(),
-					    dummy1, dummy2, NULL,
+					    coveredPreds, dummy2, NULL,
 					    &uncoveredPreds);
-	if (uncoveredPreds.isEmpty())
+	// set the flag only if all the non-equi-join preds are covered
+	if  ((getJoinPred().entries() == coveredPreds.entries()) &&
+	      uncoveredPreds.isEmpty())
 	  setBeforeJoinPredOnOuterOnly();
       }
 
@@ -2547,13 +2525,18 @@ RelExpr * Join::preCodeGen(Generator * generator,
   ValueIdSet joinInputAndPotentialOutput;
   getInputAndPotentialOutputValues(joinInputAndPotentialOutput);
 
-  if (isTSJ())
+  if (isTSJ() || beforeJoinPredOnOuterOnly())
     {
       availableValues += child(0)->getGroupAttr()->getCharacteristicOutputs();
 
       // For a TSJ the joinPred() is a predicate between the inputs
       // and the first child that could not be pushed down to the first
       // child because it is either a left join or an anti-semi-join
+
+      // if beforeJoinPredOnOuterOnly is true, then we have an outer join
+      // and an other_join_predicate that has values from the outer side alone
+      // We do not need the inner row to evaluate the other_join_predicate 
+      // in this case.
 
       // Rebuild the join predicate tree now
       joinPred().replaceVEGExpressions
@@ -2601,8 +2584,9 @@ RelExpr * Join::preCodeGen(Generator * generator,
   // children. Use these values for rewriting the VEG expressions.
   getInputValuesFromParentAndChildren(availableValues);
 
-  // Rebuild the join predicate tree
-  if (! isTSJ())
+  // Rebuild the join predicate tree, for the general case where both inner
+  // and outer row is needed to evaluate the predicate.
+  if (! (isTSJ() || beforeJoinPredOnOuterOnly()))
     joinPred().replaceVEGExpressions
                   (availableValues,
 		   getGroupAttr()->getCharacteristicInputs(),
@@ -2866,6 +2850,10 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
      if (purgedata() || upgradeRepos())
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
+
+     if (initHbase() && producesOutput())  // returns status
+       xnCanBeStarted = FALSE;
+
      if ((ddlNode && ddlNode->castToStmtDDLNode() &&
           ddlNode->castToStmtDDLNode()->ddlXns()) &&
             ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
@@ -2874,9 +2862,11 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
              (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS) ||
              (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS) ||
-             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)))
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME) ||
+             (ddlNode->getOperatorType() == DDL_ON_HIVE_OBJECTS)))
      {
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
@@ -3758,8 +3748,8 @@ RelExpr * HashJoin::preCodeGen(Generator * generator,
   // Count this BMO and add its needed memory to the total needed
   generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+    generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
 
 
   // store the transformed predicates back into the hash join node
@@ -4214,7 +4204,14 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
         {
           // assign individual files and blocks to each ESPs
           ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
-          generator->setProcessLOB(TRUE);
+          if (CmpCommon::getDefault(USE_LIBHDFS) == DF_ON)
+             generator->setProcessLOB(TRUE);
+	  
+	  // flag set for HBase scan in HbaseAccess::preCodeGen
+	  // unique scan unlikely for hive scans except 
+	  // with predicate on virtual cols.
+	  if (!(searchKey() && searchKey()->isUnique()))
+	    generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
         }
     }
 
@@ -4260,7 +4257,7 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
       generator->setUpdErrorOnError(FALSE);
     }
 
-  if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
+  if ((accessOptions().accessType() == TransMode::SKIP_CONFLICT_ACCESS_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback
     {
@@ -4530,7 +4527,9 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
     {
       oltOptInfo().setOltOpt(FALSE);
       generator->oltOptInfo()->setOltOpt(FALSE);
-      generator->setAqrEnabled(FALSE);
+      //enabling AQR to take care of the lock conflict error 8558 that
+      // should be retried.
+      //      generator->setAqrEnabled(FALSE);
       generator->setUpdAbortOnError(TRUE);
       generator->setUpdSavepointOnError(FALSE);
     }
@@ -5483,7 +5482,6 @@ RelExpr * HiveInsert::preCodeGen(Generator * generator,
     return this;
 
   generator->setHiveAccess(TRUE);
-  generator->setProcessLOB(TRUE);
   return GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs);
 }
 
@@ -5748,19 +5746,9 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   return this;
 }
 
-RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
-					const ValueIdSet & externalInputs,
-					ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
-}
-
-RelExpr * ExeUtilHiveTruncate::preCodeGen(Generator * generator,
-                                          const ValueIdSet & externalInputs,
-                                          ValueIdSet &pulledNewInputs)
+RelExpr * ExeUtilHiveTruncateLegacy::preCodeGen(Generator * generator,
+                                                const ValueIdSet & externalInputs,
+                                                ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;
@@ -5896,7 +5884,8 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
       && (getFirstNRows() == 1))
     {
       RelExpr * firstnNode = new(generator->wHeap()) FirstN(child(0),
-							    getFirstNRows());
+							    getFirstNRows(),
+							    FALSE /* [any n] is good enough */);
       firstnNode->setEstRowsUsed(getEstRowsUsed());
       firstnNode->setMaxCardEst(getMaxCardEst());
       firstnNode->setInputCardinality(child(0)->getInputCardinality());
@@ -6008,8 +5997,8 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
     // Count this BMO and add its needed memory to the total needed
     generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
 
   }
 
@@ -6083,12 +6072,8 @@ RelExpr * MergeUnion::preCodeGen(Generator * generator,
       // -------------------------------------------------------------------
       if (outputId.isEmpty())
       {
-#pragma nowarn(1506)   // warning elimination
         Int32 leftIndex = getLeftMap().getTopValues().index(v);
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
         Int32 rightIndex = getRightMap().getTopValues().index(v);
-#pragma warn(1506)  // warning elimination
 
         CMPASSERT((leftIndex != NULL_COLL_INDEX) &&
                   (rightIndex != NULL_COLL_INDEX));
@@ -6651,8 +6636,8 @@ RelExpr * Sort::preCodeGen(Generator * generator,
       if (CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF) {
         generator->incrNumBMOs();
 
-        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-          generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+          generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
       }
     }
 
@@ -6685,6 +6670,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
 				       numUnblockedHalloweenScansBefore);
 	}
     }
+  topNRows_ = generator->getTopNRows();
   return this;
 
 } // Sort::preCodeGen()
@@ -6747,15 +6733,14 @@ RelExpr *ProbeCache::preCodeGen(Generator * generator,
                      (availableValues,
 		      getGroupAttr()->getCharacteristicInputs());
 
-  /*
+/*
   TBD - maybe ProbeCache as BMO memory participant??
   if(CmpCommon::getDefault(PROBE_CACHE_MEMORY_QUOTA_SYSTEM) != DF_OFF)
     generator->incrNumBMOs();
-  */
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
-
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(generator, TRUE));
+*/
   markAsPreCodeGenned();
   return this;
     
@@ -6933,7 +6918,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
   NABoolean inputOltMsgOpt = generator->oltOptInfo()->oltMsgOpt();
 
   unsigned short prevNumBMOs = generator->replaceNumBMOs(0);
-  CostScalar prevBMOsMemoryUsage = generator->replaceBMOsMemoryUsage(0);
 
   // These are used to fix solution 10-071204-9253 and for 
   // solution 10-100310-8659.
@@ -7096,7 +7080,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
     generator->setHalloweenESPonLHS(halloweenESPonLHS);
 
   setNumBMOs( generator->replaceNumBMOs(prevNumBMOs) );
-  setBMOsMemoryUsage( generator->replaceBMOsMemoryUsage(prevBMOsMemoryUsage) );
 
   if (! child(0).getPtr())
     return NULL;
@@ -7228,9 +7211,8 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
   {
     result = child(0).getPtr();
 
-    // transfer the # of BMOs and their memory usages to generator as
+    // transfer the # of BMOs to generator as
     // this exchange node is to be discarded.
-    generator->incrBMOsMemoryPerFrag(getBMOsMemoryUsage());
     generator->incrNumBMOsPerFrag(getNumBMOs());
   }
 
@@ -7258,8 +7240,7 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
       
     } // isEspExchange() && !eliminateThisExchange
   
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+
   
   return result;
   
@@ -7336,7 +7317,7 @@ ItemExpr * BuiltinFunction::preCodeGen(Generator * generator)
                 // the executor method assumes an ASCII string for the query id, so
                 // convert the value to a fixed char type in the ISO88591 char set
                 SQLChar * newTyp0 = new(generator->wHeap())
-                  SQLChar(typ0.getCharLimitInUCS2or4chars(),
+                  SQLChar(generator->wHeap(), typ0.getCharLimitInUCS2or4chars(),
                           typ0.supportsSQLnullLogical(),
                           typ0.isUpshifted(),
                           typ0.isCaseinsensitive(),
@@ -7359,7 +7340,7 @@ ItemExpr * BuiltinFunction::preCodeGen(Generator * generator)
                 // the executor method assumes an ASCII string for the query id, so
                 // convert the value to a fixed char type in the ISO88591 char set
                 SQLChar * newTyp1 = new(generator->wHeap())
-                  SQLChar(typ1.getCharLimitInUCS2or4chars(),
+                  SQLChar(generator->wHeap(), typ1.getCharLimitInUCS2or4chars(),
                           typ1.supportsSQLnullLogical(),
                           typ1.isUpshifted(),
                           typ1.isCaseinsensitive(),
@@ -7839,12 +7820,8 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
     case ITM_PLUS:
     case ITM_MINUS:
       if (type_op1->getTypeQualifier() == NA_DATETIME_TYPE) {
-#pragma nowarn(1506)   // warning elimination
         Lng32 fp1 = ((DatetimeType *) type_op1)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
         Lng32 fp2 = ((DatetimeType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
         if (fp1 < fp2) {
           child(0) = new(generator->wHeap()) Cast(child(0), type_op2);
           child(0)->bindNode(generator->getBindWA());
@@ -7919,13 +7896,11 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
         IntervalType *interval = (IntervalType *) result_type;
         const Int16 DisAmbiguate = 0;
         child(1) = new(generator->wHeap()) Cast(child(1),
-                            new(generator->wHeap()) SQLNumeric(TRUE, /* signed */
-#pragma nowarn(1506)   // warning elimination
+                            new(generator->wHeap()) SQLNumeric(generator->wHeap(), TRUE, /* signed */
                                            interval->getTotalPrecision(),
                                            0,
                                            DisAmbiguate, // added for 64bit proj.
                                            interval->supportsSQLnull()));
-#pragma warn(1506)  // warning elimination
         child(1)->bindNode(generator->getBindWA());
       }
       break;
@@ -7968,13 +7943,11 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
         IntervalType *interval = (IntervalType *) result_type;
         const Int16 DisAmbiguate = 0;
         child(1) = new(generator->wHeap()) Cast(child(1),
-                            new(generator->wHeap()) SQLNumeric(TRUE, /* signed */
-#pragma nowarn(1506)   // warning elimination
+                            new(generator->wHeap()) SQLNumeric(generator->wHeap(), TRUE, /* signed */
                                            interval->getTotalPrecision(),
                                            0,
                                            DisAmbiguate, // added for 64bit proj.
                                            interval->supportsSQLnull()));
-#pragma warn(1506)  // warning elimination
         child(1)->bindNode(generator->getBindWA());
       }
       break;
@@ -7988,19 +7961,15 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
     case ITM_MINUS: {
       if ((type_op1->getTypeQualifier() == NA_INTERVAL_TYPE) &&
           (((IntervalType*) type_op1)->getEndField() == REC_DATE_SECOND)) {
-#pragma nowarn(1506)   // warning elimination
         Lng32 sourceScale = ((IntervalType *) type_op1)->getFractionPrecision();
         Lng32 targetScale = ((DatetimeType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
         child(0) = generator->getExpGenerator()->scaleBy10x(
                                                    child(0)->getValueId(),
                                                    targetScale - sourceScale);
       } else if ((type_op2->getTypeQualifier() == NA_INTERVAL_TYPE) &&
                  (((IntervalType*) type_op2)->getEndField() == REC_DATE_SECOND)) {
-#pragma nowarn(1506)   // warning elimination
         Lng32 targetScale = ((DatetimeType *) type_op1)->getFractionPrecision();
         Lng32 sourceScale = ((IntervalType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
         child(1) = generator->getExpGenerator()->scaleBy10x(
                                                    child(1)->getValueId(),
                                                    targetScale - sourceScale);
@@ -8379,7 +8348,6 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 
       CMPASSERT(coll1==coll2);
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  if (CollationInfo::isSystemCollation(coll1))
 	  {
 	    setCollationEncodeComp(TRUE);
@@ -8401,7 +8369,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  if (DFS2REC::isAnyVarChar(cType1.getFSDatatype()))
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLVarChar( CharLenInfo(Prec, len),
+		      SQLVarChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType1.supportsSQLnull(), 
 				  cType1.isUpshifted(),
 				  cType1.isCaseinsensitive(),
@@ -8413,7 +8381,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  else
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLChar( CharLenInfo(Prec, len),
+		      SQLChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType1.supportsSQLnull(), 
 				  cType1.isUpshifted(),
 				  cType1.isCaseinsensitive(),
@@ -8432,7 +8400,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  if (DFS2REC::isAnyVarChar(cType2.getFSDatatype()))
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLVarChar( CharLenInfo(Prec, len),
+		      SQLVarChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType2.supportsSQLnull(), 
 				  cType2.isUpshifted(),
 				  cType2.isCaseinsensitive(),
@@ -8444,7 +8412,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  else
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLChar( CharLenInfo(Prec, len),
+		      SQLChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType2.supportsSQLnull(), 
 				  cType2.isUpshifted(),
 				  cType2.isCaseinsensitive(),
@@ -8484,7 +8452,6 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 	    }
 
 	  }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	     // update both operands if case insensitive comparions
@@ -8573,7 +8540,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
                 new (generator->wHeap())
                 Cast(child(1),
                      new (generator->wHeap())
-                     SQLLargeInt(numOp2.isSigned(),
+                     SQLLargeInt(generator->wHeap(), numOp2.isSigned(),
                                  numOp2.supportsSQLnull()));
               
               newOp2 = newOp2->bindNode(generator->getBindWA());
@@ -8594,7 +8561,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
                 new (generator->wHeap())
                 Cast(child(0),
                      new (generator->wHeap())
-                     SQLLargeInt(numOp1.isSigned(),
+                     SQLLargeInt(generator->wHeap(), numOp1.isSigned(),
                                  numOp1.supportsSQLnull()));
               
               newOp1 = newOp1->bindNode(generator->getBindWA());
@@ -8673,15 +8640,9 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 							   *result_type);
     }
   else if (result_type->getTypeQualifier() == NA_DATETIME_TYPE) {
-#pragma nowarn(1506)   // warning elimination
     Lng32 fp1 = ((DatetimeType *) type_op1)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     Lng32 fp2 = ((DatetimeType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     Lng32 fpResult = ((DatetimeType *) result_type)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
     if (fp1 != fpResult) {
       child(0) = new(generator->wHeap()) Cast(child(0), result_type,
 					      ITM_CAST, FALSE);
@@ -8820,7 +8781,7 @@ ItemExpr * BitOperFunc::preCodeGen(Generator * generator)
 	      ItemExpr * newChild =
 		new (generator->wHeap()) 
 		Cast(child(i), 
-		     new (generator->wHeap()) SQLInt(FALSE,
+		     new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						 typ.supportsSQLnullLogical()));
 	      setChild(i, newChild);	
 
@@ -8931,7 +8892,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    new (generator->wHeap())
 	    Cast(child(0),
 		 new (generator->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(generator->wHeap(), TRUE,
 			     child(0)->castToItemExpr()->
 			     getValueId().getType().supportsSQLnull()));
 	  newChild = newChild->bindNode(generator->getBindWA());
@@ -8961,7 +8922,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    new (generator->wHeap())
 	    Cast(child(0),
 		 new (generator->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(generator->wHeap(), TRUE,
 			     child(0)->castToItemExpr()->
 			     getValueId().getType().supportsSQLnull()));
 	  newChild = newChild->bindNode(generator->getBindWA());
@@ -8990,7 +8951,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    new (generator->wHeap())
 	    Cast(child(0),
 		 new (generator->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(generator->wHeap(), TRUE,
                              child(0)->castToItemExpr()->
                              getValueId().getType().supportsSQLnull()));
 	  newChild = newChild->bindNode(generator->getBindWA());
@@ -9062,9 +9023,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
       // Size (in bytes) of the source value represented as a
       // character string.
       //
-#pragma nowarn(1506)   // warning elimination
       Int32 sourceFieldsSize = sourceType.getDisplayLength();
-#pragma warn(1506)  // warning elimination
 
       // Construct an expression (string) to concatinate the given
       // value with the required fields from the current timestamp as
@@ -9228,13 +9187,12 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 
 	    NAType * intermediateType =
 	      new(generator->wHeap())
-		SQLBigNum(intermediatePrecision,
+		SQLBigNum(generator->wHeap(), intermediatePrecision,
 			  intermediateScale,
 			  (sourceNumType->isBigNum() &&
 			   ((SQLBigNum*)sourceNumType)->isARealBigNum()),
 			  TRUE, // make it signed
-			  sourceNumType->supportsSQLnull(),
-			  NULL);
+			  sourceNumType->supportsSQLnull());
 
 	    child(0) = new(generator->wHeap()) Cast(child(0),intermediateType);
 
@@ -9288,7 +9246,7 @@ ItemExpr * CharFunc::preCodeGen(Generator * generator)
 
   // Insert a cast node to convert child to an INT.
   child(0) = new (generator->wHeap())
-    Cast(child(0), new (generator->wHeap()) SQLInt(FALSE,
+    Cast(child(0), new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						   typ1.supportsSQLnullLogical()));
 
   child(0)->bindNode(generator->getBindWA());
@@ -9363,7 +9321,7 @@ ItemExpr * ConvertTimestamp::preCodeGen(Generator * generator)
     child(0) = new(generator->wHeap())
                  Cast(child(0),
                       new(generator->wHeap())
-                        SQLLargeInt(TRUE, numeric->supportsSQLnull()));
+                        SQLLargeInt(generator->wHeap(), TRUE, numeric->supportsSQLnull()));
     child(0)->bindNode(generator->getBindWA());
   }
   child(0) = child(0)->preCodeGen(generator);
@@ -9392,7 +9350,7 @@ ItemExpr * Extract::preCodeGen(Generator * generator)
     child(0) = new(generator->wHeap())
                  Cast(child(0), dataConvError,
                       new(generator->wHeap())
-                        SQLInterval(interval->supportsSQLnull(),
+                        SQLInterval(generator->wHeap(), interval->supportsSQLnull(),
                                     interval->getStartField(),
                                     interval->getLeadingPrecision(),
                                     getExtractField()),
@@ -9426,7 +9384,7 @@ ItemExpr * JulianTimestamp::preCodeGen(Generator * generator)
     child(0) = new(generator->wHeap())
                  Cast(child(0),
                       new(generator->wHeap())
-                        SQLTimestamp(dt->supportsSQLnull(), 6));
+                        SQLTimestamp(generator->wHeap(), dt->supportsSQLnull(), 6));
     child(0)->bindNode(generator->getBindWA());
   }
   child(0) = child(0)->preCodeGen(generator);
@@ -9471,14 +9429,12 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	if (CollationInfo::isSystemCollation(coll))
 	    {
 	      child(0) = new(generator->wHeap()) 
 		CompEncode(child(0),FALSE, -1, CollationInfo::Compare);
 	      child(0) = child(0)->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	    {
 	      //--------------------------
@@ -9505,7 +9461,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	    const CharType &chType = (CharType&)childType;
 	    CharInfo::Collation coll = chType.getCollation();
 	    
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	      {
 		hi = new(generator->wHeap()) 
@@ -9513,7 +9468,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	      }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	      else
 	      {
 		//-----------------------------
@@ -9540,7 +9494,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    child(0) = new (generator->wHeap()) 
@@ -9548,7 +9501,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	    
 	    child(0) = child(0)->bindNode(generator->getBindWA());
           }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9603,14 +9555,12 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	if (CollationInfo::isSystemCollation(coll))
 	    {
 	      child(0) = new(generator->wHeap()) 
 		CompEncode(child(0),FALSE, -1, CollationInfo::Compare);
 	      child(0) = child(0)->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	    {
 	      //--------------------------
@@ -9637,7 +9587,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	    const CharType &chType = (CharType&)childType;
 	    CharInfo::Collation coll = chType.getCollation();
 	    
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	      {
 		hi = new(generator->wHeap()) 
@@ -9645,7 +9594,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	      }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	      else
 	      {
 		//-----------------------------
@@ -9672,7 +9620,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    child(0) = new (generator->wHeap()) 
@@ -9680,7 +9627,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	    
 	    child(0) = child(0)->bindNode(generator->getBindWA());
           }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9742,7 +9688,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 	
 	CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    if (child(0)->getOperatorType() == ITM_NARROW)
@@ -9763,7 +9708,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	    child(0) = child(0)->bindNode(generator->getBindWA());
 	  }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9789,7 +9733,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	    CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	    {
 	      //Solution 10-081216-8006
@@ -9811,7 +9754,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	    else
 	    {
   		if ((chType.isCaseinsensitive()) &&
@@ -9838,7 +9780,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	{
 	  //Solution 10-081216-8006
@@ -9860,7 +9801,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	  child(0) = child(0)->bindNode(generator->getBindWA());
 	}
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	else
 	{
 	    if ((chType.isCaseinsensitive()) &&
@@ -10004,7 +9944,7 @@ ItemExpr * MathFunc::preCodeGen(Generator * generator)
       child(i) = new (generator->wHeap())
 	Cast(child(i),
 	     new (generator->wHeap()) SQLDoublePrecision(
-		  typ.supportsSQLnullLogical()));
+		  generator->wHeap(), typ.supportsSQLnullLogical()));
 
       child(i)->bindNode(generator->getBindWA());
 
@@ -10031,7 +9971,7 @@ ItemExpr * Modulus::preCodeGen(Generator * generator)
 	{
 	  // Insert a cast node to convert child to an LARGEINT.
 	  child(i) = new (generator->wHeap())
-	    Cast(child(i), new (generator->wHeap()) SQLLargeInt(TRUE,
+	    Cast(child(i), new (generator->wHeap()) SQLLargeInt(generator->wHeap(), TRUE,
 								typ.supportsSQLnullLogical()));
 	}
 
@@ -10106,7 +10046,7 @@ ItemExpr * PivotGroup::preCodeGen(Generator * generator)
                                                 0);
 
       NAType * newType = new(generator->getBindWA()->wHeap()) 
-        SQLVarChar(displayLen, type1.supportsSQLnull());
+        SQLVarChar(generator->getBindWA()->wHeap(), displayLen, type1.supportsSQLnull());
 
       childExpr = new (generator->getBindWA()->wHeap()) Cast(childExpr, newType);
       
@@ -10137,7 +10077,7 @@ ItemExpr * RandomNum::preCodeGen(Generator * generator)
 
       // Insert a cast node to convert child to an INT.
       child(0) = new (generator->wHeap())
-	Cast(child(0), new (generator->wHeap()) SQLInt(FALSE,
+	Cast(child(0), new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						       typ1.supportsSQLnullLogical()));
 
       child(0)->bindNode(generator->getBindWA());
@@ -10160,7 +10100,7 @@ ItemExpr * Repeat::preCodeGen(Generator * generator)
 
   // Insert a cast node to convert child 2 to an INT.
   child(1) = new (generator->wHeap())
-    Cast(child(1), new (generator->wHeap()) SQLInt(FALSE,
+    Cast(child(1), new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						   typ2.supportsSQLnullLogical()));
 
   child(1)->bindNode(generator->getBindWA());
@@ -10373,7 +10313,7 @@ ItemExpr * Substring::preCodeGen(Generator * generator)
 
 	  // Insert a cast node to convert child to an INT.
 	  child(i) = new (generator->wHeap())
-	    Cast(child(i), new (generator->wHeap()) SQLInt(TRUE,
+	    Cast(child(i), new (generator->wHeap()) SQLInt(generator->wHeap(), TRUE,
 							   typ1.supportsSQLnullLogical()));
 
 	  child(i)->bindNode(generator->getBindWA());
@@ -10471,12 +10411,8 @@ VEGRewritePairs::insert(const ValueId& original,
 
 void VEGRewritePairs::VEGRewritePair::print(FILE *ofd) const
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 orId = CollIndex(original_),
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     reId = CollIndex(rewritten_);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"<%d, %d>",orId,reId);
 }
 
@@ -10485,9 +10421,7 @@ void VEGRewritePairs::print( FILE* ofd,
 			     const char* indent,
 			     const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"%s %s\n%s",NEW_INDENT,title,NEW_INDENT);
 
   CollIndex *key;
@@ -10644,7 +10578,8 @@ RelExpr* PhyPack::preCodeGen(Generator* generator,
   if (getFirstNRows() != -1)
     {
       RelExpr * firstn = new(generator->wHeap()) FirstN(child(0),
-                                                        getFirstNRows());
+                                                        getFirstNRows(),
+                                                        FALSE /* [any n] is good enough */);
 
       // move my child's attributes to the firstN node.
       // Estimated rows will be mine.
@@ -10843,6 +10778,12 @@ RelExpr * FirstN::preCodeGen(Generator * generator,
 {
   if (nodeIsPreCodeGenned())
     return this;
+
+
+  if (getFirstNRows() > 0)
+     generator->setTopNRows(getFirstNRows());
+  else
+     generator->setTopNRows(ActiveSchemaDB()->getDefaults().getAsULong(GEN_SORT_TOPN_THRESHOLD));
 
   if (! RelExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;
@@ -12427,5 +12368,41 @@ RelExpr * ExeUtilOrcFastAggr::preCodeGen(Generator * generator,
   markAsPreCodeGenned();
   
   // Done.
+  return this;
+}
+
+ItemExpr * SplitPart::preCodeGen(Generator *generator)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  child(0) = child(0)->preCodeGen(generator);
+  if (! child(0).getPtr())
+    return NULL;
+
+  child(1) = child(1)->preCodeGen(generator);
+  if (! child(1).getPtr())
+    return NULL;
+
+  for (Int32 i = 2; i < getArity(); i++)
+    {
+      if (child(i))
+        {
+          const NAType &typ1 = child(i)->getValueId().getType();
+          
+          //Insert a cast node to convert child to an INT.
+          child(i) = new (generator->wHeap())
+            Cast(child(i), new (generator->wHeap()) SQLInt(generator->wHeap(), TRUE,
+                                                         typ1.supportsSQLnullLogical()));
+
+          child(i)->bindNode(generator->getBindWA());
+          child(i) = child(i)->preCodeGen(generator);
+          if (! child(i).getPtr())
+            return NULL;
+
+        }
+    }
+
+  markAsPreCodeGenned();
   return this;
 }

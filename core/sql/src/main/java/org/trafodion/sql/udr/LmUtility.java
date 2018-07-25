@@ -93,13 +93,13 @@ public class LmUtility {
     static Method getTypeMID_ = null;       // ResultSet.getType()
 
     // static variables related to T4 driver
-    static Class rsT4Cls_ = null;            // com.hp.jdbc.HPT4ResultSet
-    static Method getConnectionMID_ = null;  // HPT4ResultSet.getConnection()
-    static Method getProxySyntaxMID_ = null; // HPT4ResultSet.getProxySyntax()
+    static Class rsT4Cls_ = null;            // org.trafodion.jdbc.t4.TrafT4ResultSet
+    static Method getConnectionMID_ = null;  // TrafT4ResultSet.getConnection()
+    static Method getProxySyntaxMID_ = null; // TrafT4ResultSet.getProxySyntax()
     static Method getSequenceNumberMID_ = null;
-                                       // HPT4ResultSet.getSequenceNumber()
-    static Method isClosedMID_ = null; // HPT4ResultSet.isClosed()
-    static Method hasLOBColumnsMID_ = null; // HPT4ResultSet.hasLOBColumns()
+                                       // TrafT4ResultSet.getSequenceNumber()
+    static Method isClosedMID_ = null; // TrafT4ResultSet.isClosed()
+    static Method hasLOBColumnsMID_ = null; // TrafT4ResultSet.hasLOBColumns()
 
     static final int JDBC_UNKNOWN_CONNECTION = -1;
     static final int JDBC_TYPE4_CONNECTION = 1;
@@ -1325,8 +1325,8 @@ public class LmUtility {
          rsCls_ = Class.forName("java.sql.ResultSet");
 	 getTypeMID_ = rsCls_.getMethod("getType", null);
 
-         // Load com.hp.jdbc.HPT4ResultSet class
-         rsT4Cls_ = Class.forName("com.hp.jdbc.HPT4ResultSet");
+         // Load org.trafodion.jdbc.t4.TrafT4ResultSet class
+         rsT4Cls_ = Class.forName("org.trafodion.jdbc.t4.TrafT4ResultSet");
 	 getConnectionMID_ = rsT4Cls_.getMethod("getConnection", null);
 	 getProxySyntaxMID_ = rsT4Cls_.getMethod("getProxySyntax", null);
 	 getSequenceNumberMID_ = rsT4Cls_.getMethod("getSequenceNumber", null);
@@ -1440,21 +1440,21 @@ public class LmUtility {
        proxySyntax[0] = null;
        conn[0] = null;
 
-       // call HPT4ResultSet.isClosed()
+       // call TrafT4ResultSet.isClosed()
        closeStatus[0] =
          ((Boolean) (isClosedMID_.invoke(rsObj, null))).booleanValue();
 
        if (closeStatus[0])
          return;  // RS is closed. No need for further processing
 
-       // call HPT4ResultSet.getConnection();
+       // call TrafT4ResultSet.getConnection();
        conn[0] = getConnectionMID_.invoke(rsObj, null);
 
-       // call HPT4ResultSet.getSequenceNumber()
+       // call TrafT4ResultSet.getSequenceNumber()
        rsCounter[0] =
          ((Long) (getSequenceNumberMID_.invoke(rsObj, null))).longValue();
 
-       // call HPT4ResultSet.hasLOBColumns()
+       // call TrafT4ResultSet.hasLOBColumns()
        hasLOBColumns[0] =
          ((Boolean) (hasLOBColumnsMID_.invoke(rsObj, null))).booleanValue();
 
@@ -1467,7 +1467,7 @@ public class LmUtility {
        else if (type == ResultSet.TYPE_SCROLL_SENSITIVE)
          rsType[0] = 2;
 
-       // call HPT4ResultSet.getProxySyntax()
+       // call TrafT4ResultSet.getProxySyntax()
        proxySyntax[0] = (String) getProxySyntaxMID_.invoke(rsObj, null);
      }
 

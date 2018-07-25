@@ -578,6 +578,11 @@ ElemDDLLikeOptWithoutRowFormat * ElemDDLNode::castToElemDDLLikeOptWithoutRowForm
   return NULL;
 }
 
+ElemDDLLikeOptWithoutLobColumns * ElemDDLNode::castToElemDDLLikeOptWithoutLobColumns()
+{
+  return NULL;
+}
+
 ElemDDLList *
 ElemDDLNode::castToElemDDLList()
 {
@@ -1538,6 +1543,14 @@ ElemDDLNode::castToStmtDDLCreateLibrary()
   return NULL;
 }
 
+StmtDDLCommentOn *
+ElemDDLNode::castToStmtDDLCommentOn()
+{
+  return NULL;
+}
+
+
+
 StmtDDLCreateRoutine *
 ElemDDLNode::castToStmtDDLCreateRoutine()
 {
@@ -1845,6 +1858,12 @@ ElemDDLNode::castToStmtDDLRoleGrant()
   return NULL;
 }
 
+StmtDDLonHiveObjects *
+ElemDDLNode::castToStmtDDLonHiveObjects()
+{
+  return NULL;
+}
+
 //
 // accessors
 //
@@ -1982,7 +2001,7 @@ ElemDDLNode::print(FILE * f,
                    const char * prefix,
                    const char * suffix) const
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(f,"%s%s(%s)\n", prefix, (const char *)getText(), suffix);
 #endif
 }
@@ -3157,7 +3176,7 @@ void ElemDDLDivisionClause::synthesize(ElemDDLNode * pColRefTree)
   {
     columnRefArray_.insert(pColRefTree->castToElemDDLColRef());
   }
-  else if (colRefEntries > 1)
+  else if (colRefEntries > 1 AND pColRefTree NEQ NULL)
   {
     ElemDDLList * pElemDDLList = pColRefTree->castToElemDDLList();
     ElemDDLColRef * pElemDDLColRef = NULL;

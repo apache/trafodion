@@ -144,11 +144,7 @@ void Queue::insert(const void * entry_, ULng32 packedLength)
   if (heap_)
     tail->next = new(heap_) Q_Entry(0, 0, 0);
   else
-#ifdef __EID
-    assert(heap_);
-#else
     tail->next = new Q_Entry(0, 0, 0);
-#endif // __EID
   tail->next->prev = tail;
   tail = tail->next;
   numEntries_++;

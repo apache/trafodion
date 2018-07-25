@@ -769,7 +769,7 @@ std::string tempStr;
 //Operation exists, get the data.
 
 std::string operationCode;
-bool isSystemOperation;
+bool isSystemOperation = FALSE;
 
    fetchByName(componentUIDString,operationName,operationCode,isSystemOperation,
                tempStr);
@@ -1306,7 +1306,7 @@ std::string selectStmt ("SELECT COMPONENT_UID, OPERATION_CODE, OPERATION_NAME, I
    selectStmt += " ";
    selectStmt += whereClause;
    
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
    
 PrivStatus privStatus = CLIFetch(cliInterface,selectStmt);   
@@ -1513,7 +1513,7 @@ PrivStatus MyTable::selectWhere(
 // set pointer in diags area
 int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * tableQueue = NULL;
   int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, 

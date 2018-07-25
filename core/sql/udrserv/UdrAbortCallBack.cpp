@@ -39,7 +39,6 @@
 #include "UdrFFDC.h"
 #include "string.h"
 
-// LCOV_EXCL_START
 void UdrAbortCallBack::doCallBack(const char *msg, const char *file, UInt32 line){
 #define TEXT_SIZE 1024
   char extMsg[TEXT_SIZE];
@@ -47,4 +46,3 @@ void UdrAbortCallBack::doCallBack(const char *msg, const char *file, UInt32 line
   strncat(extMsg, msg, sizeof(extMsg)-strlen(extMsg));
   makeTFDSCall(extMsg,(char *)file,line);
 }
-// LCOV_EXCL_STOP

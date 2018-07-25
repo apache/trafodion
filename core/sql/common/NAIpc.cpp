@@ -107,7 +107,6 @@ NAMessage::NAMessage(IpcNetworkDomain domain) :
     {
       switch (domain)
 	{
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
 	case IPC_DOM_GUA_PHANDLE:
 
 	  // open $RECEIVE
@@ -117,7 +116,6 @@ NAMessage::NAMessage(IpcNetworkDomain domain) :
 	  while (cc->getConnection() == NULL)
 	    cc->castToGuaReceiveControlConnection()->wait(IpcInfiniteTimeout);
 	  break;
-#endif
 
 	case IPC_DOM_INTERNET:
 

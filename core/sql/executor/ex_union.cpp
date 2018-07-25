@@ -100,7 +100,6 @@ ex_tcb * ex_union_tdb::build(ex_globals * glob)
 //
 // Constructor for union_tcb
 //
-#pragma nowarn(770)   // warning elimination 
 ex_union_tcb::ex_union_tcb(const ex_union_tdb &  union_tdb,  // 
 			   const ex_tcb *    left_tcb,    // left queue pair
 			   const ex_tcb *    right_tcb,   // right queue pair
@@ -114,11 +113,9 @@ ex_union_tcb::ex_union_tcb(const ex_union_tdb &  union_tdb,  //
   CollHeap * space = glob->getSpace();
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(union_tdb.numBuffers_,
 				     union_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
  
   // get the queues that left and right use to communicate with me
   childQueues_[0]  = left_tcb->getParentQueue();
@@ -179,7 +176,6 @@ ex_union_tcb::ex_union_tcb(const ex_union_tdb &  union_tdb,  //
     (void) trigExceptExpr()->fixup(0, getExpressionMode(), this,
 			     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 };
-#pragma warn(770)  // warning elimination 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Destructor for union_tcb
@@ -439,9 +435,7 @@ ExWorkProcRetcode ex_union_tcb::workUp()
               pentry->upState.status = ex_queue::Q_SQLERROR;
               pentry->upState.parentIndex = pentry_down->downState.parentIndex;
               pentry->upState.downIndex = qparent.down->getHeadIndex();
-#pragma nowarn(1506)   // warning elimination 
               pentry->upState.setMatchNo(pstate.matchCount_);
-#pragma warn(1506)  // warning elimination 
               qparent.up->insert();
               continue;
             }
@@ -537,9 +531,7 @@ ExWorkProcRetcode ex_union_tcb::workUp()
 		  pentry->copyAtp(centry);
 		}
 	      
-#pragma nowarn(1506)   // warning elimination 
 	      pentry->upState.setMatchNo(++pstate.matchCount_);
-#pragma warn(1506)  // warning elimination 
 
               // insert into parent up queue
 	      qparent.up->insert();	  
@@ -604,9 +596,7 @@ void ex_union_tcb::processError(ex_union_private_state &pstate, Int32 &endOfData
   pentry->upState.status = ex_queue::Q_SQLERROR;
   pentry->upState.parentIndex = pentry_down->downState.parentIndex;
   pentry->upState.downIndex = qparent.down->getHeadIndex();
-#pragma nowarn(1506)   // warning elimination 
   pentry->upState.setMatchNo(pstate.matchCount_);
-#pragma warn(1506)  // warning elimination 
   qparent.up->insert();	  
 
   // cancel this request and cancel all the children.
@@ -1392,9 +1382,7 @@ void ex_c_union_tcb::stop()
   pentry->upState.status = ex_queue::Q_NO_DATA;
   pentry->upState.parentIndex = pentry_down->downState.parentIndex;
   pentry->upState.downIndex = qparent.down->getHeadIndex();
-#pragma nowarn(1506)   // warning elimination 
   pentry->upState.setMatchNo(pstate.matchCount_);
-#pragma warn(1506)  // warning elimination 
   
   qparent.up->insert();
 
@@ -1527,9 +1515,7 @@ void ex_c_union_tcb::processError(ex_union_private_state &pstate,
   pentry->upState.status = ex_queue::Q_SQLERROR;
   pentry->upState.parentIndex = pentry_down->downState.parentIndex;
   pentry->upState.downIndex = qparent.down->getHeadIndex();
-#pragma nowarn(1506)   // warning elimination 
   pentry->upState.setMatchNo(pstate.matchCount_);
-#pragma warn(1506)  // warning elimination 
   qparent.up->insert();	  
 
   qparent.down->cancelRequest(qparent.down->getHeadIndex());

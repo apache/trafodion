@@ -31,6 +31,7 @@
 #include <sys/syscall.h>
 #include "jni.h"
 #include "Platform.h"
+#include "NAString.h"
 
 class LmJavaOptions;
 
@@ -40,7 +41,11 @@ class LmJavaOptions;
 
 extern __thread JNIEnv *jenv_;
 extern __thread NAString *tsRecentJMFromJNI;
+extern __thread NAString *tsSqlJniErrorStr;
 
+void setSqlJniErrorStr(NAString &errorMsg);
+void setSqlJniErrorStr(const char *errorMsg);
+const char *getSqlJniErrorStr();
 
 // This structure defines the information needed for each java method used.
 struct JavaMethodInit {
@@ -74,18 +79,13 @@ class JavaObjectInterface
   : public ExGod
 #endif
 {
-public:
-  NAString getLastJavaError(jmethodID methodID);
 protected:
 
   // Default constructor - for creating a new JVM		
-  JavaObjectInterface(NAHeap *heap , int debugPort = 0, int debugTimeout = 0)
+  JavaObjectInterface(NAHeap *heap)
     :  heap_(heap)
       ,javaObj_(NULL)
-      ,needToDetach_(false)
       ,isInitialized_(false)
-      ,debugPort_(debugPort)
-      ,debugTimeout_(debugTimeout)
   {
      tid_ = syscall(SYS_gettid);
   }
@@ -94,10 +94,7 @@ protected:
   JavaObjectInterface(NAHeap *heap, jobject jObj)
     :  heap_(heap)
       ,javaObj_(NULL)
-      ,needToDetach_(false)
       ,isInitialized_(false)
-      ,debugPort_(0)
-      ,debugTimeout_(0)
   {
     tid_ = syscall(SYS_gettid);
     // When jObj is not null in the constructor
@@ -113,27 +110,28 @@ protected:
   virtual ~JavaObjectInterface();
   
   // Create a new JVM
-  int createJVM(LmJavaOptions *options);
+  static int createJVM(LmJavaOptions *options);
   
   // Initialize the JVM.
-  JOI_RetCode    initJVM(LmJavaOptions *options = NULL);
+  static JOI_RetCode    initJVM(LmJavaOptions *options = NULL);
   
   // Initialize JVM and all the JNI configuration.
   // Must be called.
   JOI_RetCode    init(char *className, jclass &javaclass, JavaMethodInit* JavaMethods, Int32 howManyMethods, bool methodsInitialized);
 
   // Get the error description.
-  virtual char* getErrorText(JOI_RetCode errEnum);
+  static char* getErrorText(JOI_RetCode errEnum);
  
-  NAString getLastError();
+  static const char *getLastError() 
+    { return getSqlJniErrorStr(); }
 
   // Write the description of a Java error to the log file.
-  void logError(std::string &cat, const char* methodName, const char *result);
-  void logError(std::string &cat, const char* methodName, jstring jresult);
-  void logError(std::string &cat, const char* file, int line);
+  static void logError(std::string &cat, const char* methodName, const char *result);
+  static void logError(std::string &cat, const char* methodName, jstring jresult);
+  static void logError(std::string &cat, const char* file, int line);
 
-  JOI_RetCode initJNIEnv();
-  char* buildClassPath();  
+  static JOI_RetCode initJNIEnv();
+  static char* buildClassPath();  
   
 public:
   void setJavaObject(jobject jobj);
@@ -149,16 +147,20 @@ public:
   {
     return isInitialized_;
   }
-  // Pass in jenv if the thread where the object is created is different than
-  // the thread where exception occurred
-  NABoolean getExceptionDetails(JNIEnv *jenv = NULL);  
-  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg);
+  static NABoolean getExceptionDetails(const char *fileName, int lineNo,
+                                       const char *methodName, 
+                                       NABoolean noDetails = FALSE);
+
+  static NABoolean appendExceptionMessages(jthrowable a_exception, 
+                                           NAString &error_msg,
+                                           NABoolean noDetails = FALSE);
   
   NAHeap *getHeap() { return heap_; }
 protected:
   static JavaVM*   jvm_;
   static jclass gThrowableClass;
   static jclass gStackTraceClass;
+  static jclass gOOMErrorClass;
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
@@ -166,10 +168,9 @@ protected:
   static jint jniHandleCapacity_;
 
   jobject   javaObj_;
-  bool      needToDetach_;
   bool      isInitialized_;
-  int       debugPort_;
-  int       debugTimeout_;
+  static int debugPort_;
+  static int debugTimeout_;
   pid_t     tid_;
   NAHeap    *heap_;
 };

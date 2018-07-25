@@ -57,6 +57,18 @@ sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
 
 select * from t002t2;
 
+-- purgedata should preserve regions
+get region stats for table t002t2;
+purgedata t002t2;
+get region stats for table t002t2;
+select * from t002t2;
+
+insert into t002t2 values (1,2);
+
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
+
+select * from t002t2;
 
 ?section region_stats
 set schema t002sch;
@@ -172,27 +184,58 @@ select cast('RegionName: ' || trim(region_name) as char(30) character set iso885
 cqd hive_max_string_length_in_bytes '20';
 invoke table(hivemd(tables));
 invoke table(hivemd(columns));
+
+process hive statement 'drop table thive002';
+process hive statement 'create table thive002 (a int, b string)';
 select cast(table_name as char(30) character set iso88591), 
        file_format, num_cols, num_part_cols, num_bucket_cols, num_sort_cols,
        field_delimiter, record_terminator, hive_table_type
-  from table(hivemd(tables, "hive", "warehouse"));
+  from table(hivemd(tables, "hive", "thive002"))
+   where file_format = 'TEXTFILE';
 select cast(table_name as char(30) character set iso88591), 
        file_format, num_cols, num_part_cols, num_bucket_cols, num_sort_cols,
        field_delimiter, record_terminator, hive_table_type
-  from table(hivemd(tables)) where table_name = 'warehouse';
+  from table(hivemd(tables)) where table_name = 'thive002'
+  and file_format = 'TEXTFILE';
+
+cqd nested_joins 'OFF';
 select cast(column_name as char(30) character set iso88591), 
        sql_data_type, fs_data_type, hive_data_type,
        column_size, column_scale, 
        column_number, part_col_number, bucket_col_number, sort_col_number
-  from table(hivemd(columns, "hive", "warehouse"))
+  from table(hivemd(columns, "hive", "thive002")) C,
+       table(hivemd(tables, "hive", "thive002")) T
+   where C.table_name = T.table_name
+    and T.file_format = 'TEXTFILE'
   order by column_number;
+
 select cast(column_name as char(30) character set iso88591), 
        sql_data_type, fs_data_type, hive_data_type,
        column_size, column_scale, 
        column_number, part_col_number, bucket_col_number, sort_col_number
-  from table(hivemd(columns))
-  where table_name = 'warehouse'
+  from table(hivemd(tables, "hive", "thive002")) T,
+       table(hivemd(columns, "hive", "thive002")) C
+  where C.table_name = T.table_name
+    and T.file_format = 'TEXTFILE'
+    and T.table_name = 'thive002'
+    and C.table_name = 'thive002'
   order by column_number;
+cqd nested_joins reset;
+
+prepare s from select schema_name from table(hivemd(tables)) where table_name = 'thive002' and file_format = 'TEXTFILE';
+-- should return one row
+execute s;
+-- should return one row
+execute s;
+
+process hive statement 'drop table thivearr';
+process hive statement 'create table thivearr (a array<string>)';
+-- should return warning 8742
+select table_name from table(hivemd(columns)) where table_name = 'thivearr';
+
+process hive ddl 'drop table thivealldt';
+process hive ddl 'create table thivealldt(a smallint, b int, c bigint, d decimal(3,1), e string, f char(10), g varchar(7), h date, i timestamp)';
+select fs_data_type, left(sql_data_type, 20) sql_data_type, left(display_data_type, 60) display_data_type, hive_data_type, column_precision, column_scale, column_size  from table(hivemd(columns, "hive","thivealldt"  ));
 
 create table createOptions (a int) HBASE_OPTIONS 
 (max_versions = '3',
@@ -218,6 +261,7 @@ durability = 'async_wal',
 memstore_flush_size = '2000000',
 split_policy = 'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy',
 CACHE_DATA_IN_L1 = 'false',
+HDFS_STORAGE_POLICY = 'hot' ,
 prefetch_blocks_on_open = 'false'
 );
 

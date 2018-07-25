@@ -71,7 +71,7 @@ void doMessageBox(UdrGlobals *UdrGlob, Int32 trLevel,
                   NABoolean moduleType, const char *moduleName);
 
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 void sleepIfPropertySet(LmLanguageManager &lm,
                         const char *property,
                         ComDiagsArea *d);
@@ -79,7 +79,7 @@ NABoolean getLmProperty(LmLanguageManager &lm,
                         const char *property,
                         Lng32 &result,
                         ComDiagsArea *diags);
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
 void  getActiveRoutineInfo(UdrGlobals *UdrGlob, 
                            char *routineName,

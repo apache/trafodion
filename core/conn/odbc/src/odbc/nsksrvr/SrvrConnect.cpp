@@ -119,6 +119,7 @@ extern int sdconn;
 extern int clientConnTimeOut;
 extern short stopOnDisconnect;
 extern int aggrInterval;
+extern int statisticsCacheSize;
 extern int queryPubThreshold;
 extern statistics_type statisticsPubType;
 extern bool bStatisticsEnabled;
@@ -218,20 +219,6 @@ Int32 SQL_EXEC_GetAuthState(
 #define SKIP_COMPRIV_CHECK 0x100000
 
 #define MAX_EVAR_VALUE_LENGTH 3900 + 1
-
-#define START_CONN_IDLE_TIMER \
-	if (srvrGlobal != NULL && \
-		srvrGlobal->srvrState == SRVR_CONNECTED && \
-		((srvrGlobal->javaConnIdleTimeout > JDBC_INFINITE_CONN_IDLE_TIMEOUT) || \
-		 (srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT))) \
-			startConnIdleTimer();
-
-#define DESTROY_CONN_IDLE_TIMER \
-	if (srvrGlobal != NULL && \
-		srvrGlobal->srvrState == SRVR_CONNECTED && \
-		((srvrGlobal->javaConnIdleTimeout > JDBC_INFINITE_CONN_IDLE_TIMEOUT) || \
-		 (srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT))) \
-			destroyConnIdleTimer();
 
 #define CHECK_QUERYTYPE(y) \
 		(( y == SQL_SELECT_NON_UNIQUE || y == SQL_INSERT_NON_UNIQUE || \
@@ -356,10 +343,21 @@ public:
     {
         return my_queue.size();
     }
+
+    bool isEmpty(){
+        return my_queue.empty();
+    }
 };
 
 static Repos_Queue<REPOS_STATS> repos_queue;
 static bool record_session_done = true;
+
+//0:None 1:update 2:insert/upsert cache limit 3:achieve timeline
+
+#define REPOS_EXECUTE_NONE       0
+#define REPOS_EXECUTE_UPDATE     1
+#define REPOS_EXECUTE_CACHELIMIT 2
+#define REPOS_EXECUTE_TIMELINE   3
 
 static void* SessionWatchDog(void* arg)
 {
@@ -544,11 +542,41 @@ static void* SessionWatchDog(void* arg)
                 okToGo = false;
             }
         }
+        vector< vector<string> > query_list;
+        vector<string> session_start;
+        vector<string> statement_new_query;
+        vector<string> session_stat_aggregation;
 
+        session_start.push_back("upsert into Trafodion.\"_REPOS_\".metric_session_table values");
+        statement_new_query.push_back("insert into Trafodion.\"_REPOS_\".metric_query_table values");
+        session_stat_aggregation.push_back("insert into Trafodion.\"_REPOS_\".metric_query_aggr_table values");
 
-		while(!record_session_done && okToGo)
-		{
-			REPOS_STATS repos_stats = repos_queue.get_task();
+        query_list.push_back(session_start);
+        query_list.push_back(statement_new_query);
+        query_list.push_back(session_stat_aggregation);
+
+        int query_limit = statisticsCacheSize;
+        int time_limit = aggrInterval;
+        //0:None 1:update 2:insert/upsert cache limit 3:achieve timeline
+        int execute_flag = REPOS_EXECUTE_NONE;
+        int sleep_count = 0;
+
+        REPOS_STATS repos_stats;
+        while(!record_session_done && okToGo)
+        {
+            sleep_count = 0;
+            while(repos_queue.isEmpty() && (sleep_count < time_limit)){
+                sleep(1);
+                sleep_count++;
+            }
+
+            if(!repos_queue.isEmpty()){
+                repos_stats = repos_queue.get_task();
+            }else{
+                // go to executeDirect
+                execute_flag = REPOS_EXECUTE_TIMELINE;
+                goto execute;
+            }
 
 			ss.str("");
 			ss.clear();
@@ -564,7 +592,8 @@ static void* SessionWatchDog(void* arg)
 					break;
 				}
 
-				ss << "upsert into Trafodion.\"_REPOS_\".metric_session_table values(";
+				//upsert into Trafodion.\"_REPOS_\".metric_session_table values
+				ss << "(";
 				ss << pSessionInfo->m_instance_id << ",";
 				ss << pSessionInfo->m_tenant_id << ",";
 				ss << pSessionInfo->m_component_id << ",";
@@ -613,6 +642,24 @@ static void* SessionWatchDog(void* arg)
 				ss << pSessionInfo->m_authentication_connection_elapsed_time_mcsec << ",";
 				ss << pSessionInfo->m_authentication_elapsed_time_mcsec << ")";
 
+                execute_flag = REPOS_EXECUTE_NONE;
+                vector<string> *tmp = &query_list.at(0);
+                (*tmp).push_back(ss.str());
+                if ((*tmp).size() > query_limit)
+                {
+                    //go executeDirect
+                    execute_flag = REPOS_EXECUTE_CACHELIMIT;
+                    execStr ="";
+                    vector<string>::iterator it = (*tmp).begin();
+                    execStr += *it +  *(it + 1);
+                    it += 2;
+                    for(; it != (*tmp).end(); it++)
+                    {
+                        execStr+= "," + *it;
+                    }
+                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+                }
+
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION)
 			{
@@ -626,7 +673,8 @@ static void* SessionWatchDog(void* arg)
 				}
                                 lastUpdatedTime = JULIANTIMESTAMP();
 
-				ss << "insert into Trafodion.\"_REPOS_\".metric_query_table values(";
+				//ss << "insert into Trafodion.\"_REPOS_\".metric_query_table values(";
+                                ss << "(";
 				ss << pQueryAdd->m_instance_id << ",";
 				ss << pQueryAdd->m_tenant_id << ",";
 				ss << pQueryAdd->m_component_id << ",";
@@ -775,6 +823,25 @@ static void* SessionWatchDog(void* arg)
 
                                 ss <<")";
 
+                                execute_flag = REPOS_EXECUTE_NONE;
+                                vector<string> *tmp = &query_list.at(1);
+                                (*tmp).push_back(ss.str());
+                                if ((*tmp).size() > query_limit)
+                                {
+                                    //go executeDirect
+                                    execute_flag = REPOS_EXECUTE_CACHELIMIT;
+                                    execStr ="";
+                                    vector<string>::iterator it = (*tmp).begin();
+                                    execStr += *it;
+                                    execStr += *(it + 1);
+                                    it += 2;
+                                    for(; it != (*tmp).end(); it++)
+                                    {
+                                        execStr+= "," + *it;
+                                    }
+                                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+                                }
+
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_UPDATE_QUERYEXECUTION)
 			{
@@ -847,6 +914,11 @@ static void* SessionWatchDog(void* arg)
                                 ss << "LAST_UPDATED_TIME= CONVERTTIMESTAMP(" << lastUpdatedTime << ")";
 				ss << " where QUERY_ID = '" << pQueryUpdate->m_query_id.c_str() << "'";
 				ss << " and EXEC_START_UTC_TS = CONVERTTIMESTAMP(" << pQueryUpdate->m_exec_start_utc_ts << ")";
+
+
+                                //go executeDirect
+                                execute_flag = REPOS_EXECUTE_UPDATE;
+                                execStr = ss.str();
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_START_AGGREGATION)
 			{
@@ -859,7 +931,7 @@ static void* SessionWatchDog(void* arg)
 					break;
 				}
 
-				ss << "insert into Trafodion.\"_REPOS_\".metric_query_aggr_table values(";
+				ss << "(";
 				ss << pAggrStat->m_instance_id << ",";
 				ss << pAggrStat->m_tenant_id << ",";
 				ss << pAggrStat->m_component_id << ",";
@@ -923,8 +995,27 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_delta_catalog_errors << ",";
 				ss << pAggrStat->m_delta_other_errors << ",";
 				ss << pAggrStat->m_average_response_time << ",";
-				ss << pAggrStat->m_throughput_per_sec << ")";
-			}
+                ss << pAggrStat->m_throughput_per_sec << ")";
+
+                execute_flag = REPOS_EXECUTE_NONE;
+                vector<string> *tmp = &query_list.at(2);
+                (*tmp).push_back(ss.str());
+                if ((*tmp).size() > query_limit)
+                {
+                    //go executeDirect
+                    execute_flag = REPOS_EXECUTE_CACHELIMIT;
+                    execStr ="";
+                    vector<string>::iterator it = (*tmp).begin();
+                    execStr += *it + *(it + 1);
+                    it += 2;
+                    for(; it != (*tmp).end(); it++)
+                    {
+                        execStr+= "," + *it;
+                    }
+                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+                }
+
+            }
 			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_UPDATE_AGGREGATION || repos_stats.m_pub_type == PUB_TYPE_SESSION_END_AGGREGATION)
 			{
 				std::tr1::shared_ptr<SESSION_AGGREGATION> pAggrStat = repos_stats.m_pAggr_stats;
@@ -986,70 +1077,158 @@ static void* SessionWatchDog(void* arg)
 				ss << " where SESSION_START_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_session_start_utc_ts << ")";
 				ss << " and SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
 
+                               //go executeDirect
+                               execute_flag = REPOS_EXECUTE_UPDATE;
+                               execStr = ss.str();
 			}
 			else
 			{
 				break;
 			}
-			execStr = ss.str();
-			retcode = pSrvrStmt->ExecDirect(NULL, execStr.c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
-			if (retcode < 0)
-			{
-				errMsg.str("");
-				if(pSrvrStmt->sqlError.errorList._length > 0)
-					p_buffer = pSrvrStmt->sqlError.errorList._buffer;
-				else if(pSrvrStmt->sqlWarning._length > 0)
-					p_buffer = pSrvrStmt->sqlWarning._buffer;
-				if(p_buffer != NULL && p_buffer->errorText)
-					errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << p_buffer->errorText;
-				else
-					errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << " no additional information";
-				errStr = errMsg.str();
-				SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-										1, errStr.c_str());
-			}
-			else {
-				// Update QUERY_TABLE with explain plan if needed
-				if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION && TRUE == srvrGlobal->sqlPlan)
-				{
-					std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
-					if(NULL == pQueryAdd)
-					{
-						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-															0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-															1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
-						break;
-					}
-                                        if (pQueryAdd->m_explain_plan && (pQueryAdd->m_explain_plan_len > 0))
-                                          {
-                                            retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
-                                                                                 (char *)(pQueryAdd->m_query_id.c_str()),
-                                                                                 pQueryAdd->m_explain_plan,
-                                                                                 pQueryAdd->m_explain_plan_len );
-                                            
-                                            if (retcode == -EXE_EXPLAIN_PLAN_TOO_LARGE)
-                                              {
-                                                // explain info is too big to be stored in repository.
-                                                // ignore this error and continue with query execution.
-                                                retcode = 0;
-                                              }
-                                            else if (retcode < 0)
-                                              {
-                                                char errStr[256];
-                                                sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
-                                                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-                                                             0, ODBCMX_SERVER,
-                                                             srvrGlobal->srvrObjRef, 1, errStr);
-                                              }
-                                            // Clear diagnostics
-                                            SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
-                                          }
-				}
-			}
+execute:
+            if(REPOS_EXECUTE_UPDATE == execute_flag || REPOS_EXECUTE_CACHELIMIT == execute_flag){
+                retcode = pSrvrStmt->ExecDirect(NULL, execStr.c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+                if (retcode < 0)
+                {
+                    errMsg.str("");
+                    if(pSrvrStmt->sqlError.errorList._length > 0)
+                        p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+                    else if(pSrvrStmt->sqlWarning._length > 0)
+                        p_buffer = pSrvrStmt->sqlWarning._buffer;
+                    if(p_buffer != NULL && p_buffer->errorText)
+                        errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << p_buffer->errorText;
+                    else
+                        errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << " no additional information";
+                    errStr = errMsg.str();
+                    SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                            0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                            1, errStr.c_str());
+                }
+                else {
+                    // Update QUERY_TABLE with explain plan if needed
+                    if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION && TRUE == srvrGlobal->sqlPlan)
+                    {
+                        std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
+                        if(NULL == pQueryAdd)
+                        {
+                            SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                    0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                    1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
+                            break;
+                        }
+                        if (pQueryAdd->m_explain_plan && (pQueryAdd->m_explain_plan_len > 0))
+                        {
+                            retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
+                                    (char *)(pQueryAdd->m_query_id.c_str()),
+                                    pQueryAdd->m_explain_plan,
+                                    pQueryAdd->m_explain_plan_len );
 
-			pSrvrStmt->cleanupAll();
-			REALLOCSQLMXHDLS(pSrvrStmt);
+                            if (retcode == -EXE_EXPLAIN_PLAN_TOO_LARGE)
+                            {
+                                // explain info is too big to be stored in repository.
+                                // ignore this error and continue with query execution.
+                                retcode = 0;
+                            }
+                            else if (retcode < 0)
+                            {
+                                char errStr[256];
+                                sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
+                                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                        0, ODBCMX_SERVER,
+                                        srvrGlobal->srvrObjRef, 1, errStr);
+                            }
+                            // Clear diagnostics
+                            SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
+                        }
+                    }
+                }
+                if (pSrvrStmt != NULL){
+                    pSrvrStmt->cleanupAll();
+                    REALLOCSQLMXHDLS(pSrvrStmt);
+                }
+            
+            }else if (REPOS_EXECUTE_TIMELINE == execute_flag)
+            {
+                for(int i = 0;i < 3;i++)
+                {
+                    vector<string> *tmp = &query_list.at(i);
+
+                    if( (*tmp).size() < 2)
+                    {
+                        continue;
+                    }
+                    execStr ="";
+                    vector<string>::iterator it = (*tmp).begin();
+                    execStr += *it + *(it + 1);
+                    it += 2;
+                    for(; it != (*tmp).end(); it++)
+                    {
+                        execStr+= "," + *it;
+                    }
+                    (*tmp).erase((*tmp).begin() + 1, (*tmp).end());
+
+                    retcode = pSrvrStmt->ExecDirect(NULL, execStr.c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+                    if (retcode < 0)
+                    {
+                        errMsg.str("");
+                        if(pSrvrStmt->sqlError.errorList._length > 0)
+                            p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+                        else if(pSrvrStmt->sqlWarning._length > 0)
+                            p_buffer = pSrvrStmt->sqlWarning._buffer;
+                        if(p_buffer != NULL && p_buffer->errorText)
+                            errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << p_buffer->errorText;
+                        else
+                            errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << " no additional information";
+                        errStr = errMsg.str();
+                        SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                1, errStr.c_str());
+                    }
+                    else {
+                        // Update QUERY_TABLE with explain plan if needed
+                        if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION && TRUE == srvrGlobal->sqlPlan)
+                        {
+                            std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
+                            if(NULL == pQueryAdd)
+                            {
+                                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                        1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
+                                break;
+                            }
+                            if (pQueryAdd->m_explain_plan && (pQueryAdd->m_explain_plan_len > 0))
+                            {
+                                retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
+                                        (char *)(pQueryAdd->m_query_id.c_str()),
+                                        pQueryAdd->m_explain_plan,
+                                        pQueryAdd->m_explain_plan_len );
+
+                                if (retcode == -EXE_EXPLAIN_PLAN_TOO_LARGE)
+                                {
+                                    // explain info is too big to be stored in repository.
+                                    // ignore this error and continue with query execution.
+                                    retcode = 0;
+                                }
+                                else if (retcode < 0)
+                                {
+                                    char errStr[256];
+                                    sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
+                                    SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                            0, ODBCMX_SERVER,
+                                            srvrGlobal->srvrObjRef, 1, errStr);
+                                }
+                                // Clear diagnostics
+                                SRVR::WSQL_EXEC_ClearDiagnostics(NULL);
+                            }
+                        }
+                    }
+	                
+                    if (pSrvrStmt != NULL){
+			            pSrvrStmt->cleanupAll();
+			            REALLOCSQLMXHDLS(pSrvrStmt);
+                    }
+                }//End for
+            }//end else
 		}//End while
 
 	}
@@ -1177,10 +1356,12 @@ ImplInit (
 		srvrGlobal = new SRVR_GLOBAL_Def;
 		if (srvrGlobal == NULL)
 		{
+			IDL_OBJECT_def objRef;
+			memset(&objRef, 0, sizeof(IDL_OBJECT_def));
 //LCOV_EXCL_START
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
-					srvrGlobal->srvrObjRef, 1, "srvrGlobal");
+					GetCurrentProcessId(), ODBCMX_SERVER,
+					objRef, 1, "srvrGlobal");
 			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
@@ -1190,9 +1371,7 @@ ImplInit (
    srvrGlobal->receiveThrId = getpid();
    timer_register();
 
-	CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-	CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-	CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
+   CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
 
 	srvrGlobal->srvrVersion.componentId = 0; // Unknown
 	if (srvrGlobal->srvrVersion.componentId == 0)
@@ -3603,8 +3782,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	if ((srvrGlobal->drvrVersion.componentId == JDBC_DRVR_COMPONENT) && ((long) (inContext->idleTimeoutSec) > JDBC_DATASOURCE_CONN_IDLE_TIMEOUT))
 		srvrGlobal->javaConnIdleTimeout = inContext->idleTimeoutSec;
 
-	START_CONN_IDLE_TIMER
-
+    srvrGlobal->clipVarchar = 0;
 	// collect information for resource statistics
 	char nodename[100];
 	short error;
@@ -4250,67 +4428,6 @@ void __cdecl SRVR::BreakDialogue(CEE_tag_def monitor_tag)
 	SRVRTRACE_EXIT(FILE_AME+7);
 }
 
-// Timer Expiration routine, when connIdleTimeout expires
-
-void __cdecl SRVR::connIdleTimerExpired(CEE_tag_def timer_tag)
-{
-	SRVRTRACE_ENTER(FILE_AME+8);
-
-    if(srvrGlobal->mutex->locked())
-	   // a tcp/ip request was received just in time, ignore this timeout
-	   return;
-
-    srvrGlobal->mutex->lock();
-
-	char tmpStringEnv[1024];
-	sprintf(tmpStringEnv,
-		   "Idle Connection Timer Expired. Client %s Disconnecting: Data Source: %s, Application: %s, Server Reference: %s",
-		    srvrGlobal->ClientComputerName,
-		    srvrGlobal->DSName,
-		    srvrGlobal->ApplicationName,
-		    srvrGlobal->srvrObjRef);
-
-	if (srvrGlobal->traceLogger != NULL)
-	{
-//LCOV_EXCL_START
-		SendEventMsg(MSG_SERVER_TRACE_INFO
-						, EVENTLOG_INFORMATION_TYPE
-						, srvrGlobal->nskProcessInfo.processId
-						, ODBCMX_SERVER
-						, srvrGlobal->srvrObjRef
-						, 4
-						, srvrGlobal->sessionId
-						, "connIdleTimerExpired"
-						, "0"
-						, tmpStringEnv);
-//LCOV_EXCL_STOP
-	}
-
-	releaseCachedObject(FALSE, NDCS_CONN_IDLE);
-
-        SRVR::SrvrSessionCleanup();
-        srvrGlobal->dialogueId = -1;
-
-	if (srvrGlobal->stopTypeFlag == STOP_WHEN_DISCONNECTED)
-		updateSrvrState(SRVR_STOP_WHEN_DISCONNECTED);
-	else
-		updateSrvrState(SRVR_DISCONNECTED);
-	if (srvrGlobal->stopTypeFlag == STOP_WHEN_DISCONNECTED)
-	{
-        srvrGlobal->mutex->unlock();
-		exitServerProcess();
-	}
-	else
-	{
-		GTransport.m_TCPIPSystemSrvr_list->cleanup();
-		GTransport.m_FSystemSrvr_list->cleanup();
-	}
-
-    srvrGlobal->mutex->unlock();
-	SRVRTRACE_EXIT(FILE_AME+8);
-	return;
-}
-
 // Timer Expiration routine, when srvrIdleTimeout expires
 void __cdecl SRVR::srvrIdleTimerExpired(CEE_tag_def timer_tag)
 {
@@ -4418,65 +4535,16 @@ odbcas_ASSvc_WouldLikeToLive_ccf_(
 		exitServerProcess();
 //LCOV_EXCL_STOP
 	}
-	if (createTimer)
-	{
-		if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
-		{
-			if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-			{
-				CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-			}
-
-			sts = CEE_TIMER_CREATE2((long)srvrGlobal->srvrContext.srvrIdleTimeout * 60, 0, srvrIdleTimerExpired, NULL,
-				&srvrGlobal->srvrIdleTimerHandle,srvrGlobal->receiveThrId);
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-			}
-		}
-	}
 	delete asCallContext;
 	SRVRTRACE_EXIT(FILE_AME+10);
 }
 
-void SRVR::destroyConnIdleTimer()
+long SRVR::getConnIdleTimeout()
 {
-	SRVRTRACE_ENTER(FILE_AME+11);
-	if (srvrGlobal != NULL && srvrGlobal->srvrState == SRVR_CONNECTED)
-	{
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->connIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-		}
-	}
-	SRVRTRACE_EXIT(FILE_AME+11);
-}
-
-void SRVR::startConnIdleTimer()
-{
-	SRVRTRACE_ENTER(FILE_AME+12);
-	CEE_status sts;
 	long connIdleTimeout = INFINITE_CONN_IDLE_TIMEOUT;
 
 	if (srvrGlobal != NULL && srvrGlobal->srvrState == SRVR_CONNECTED)
 	{
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->connIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-		}
 		if ((srvrGlobal->drvrVersion.componentId == JDBC_DRVR_COMPONENT) && (srvrGlobal->javaConnIdleTimeout > JDBC_DATASOURCE_CONN_IDLE_TIMEOUT))
 		{
 			if (srvrGlobal->javaConnIdleTimeout != JDBC_INFINITE_CONN_IDLE_TIMEOUT)
@@ -4485,31 +4553,17 @@ void SRVR::startConnIdleTimer()
 		else if (srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT)
 		{
 			connIdleTimeout = (long)srvrGlobal->srvrContext.connIdleTimeout * 60;
-		}
-
-		if (connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT)
-		{
-			sts = CEE_TIMER_CREATE2((long)connIdleTimeout, 0,
-				connIdleTimerExpired, NULL, &srvrGlobal->connIdleTimerHandle,srvrGlobal->receiveThrId);
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				char tmpString[32];
-
-				CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-			}
-		}
+       		}
 	}
-	SRVRTRACE_EXIT(FILE_AME+12);
+        return connIdleTimeout;
+}
+
+long SRVR::getSrvrIdleTimeout()
+{
+   long srvrIdleTimeout = INFINITE_SRVR_IDLE_TIMEOUT;
+   if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
+      srvrIdleTimeout = (long)srvrGlobal->srvrContext.srvrIdleTimeout * 60;
+   return srvrIdleTimeout;
 }
 
 BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
@@ -4563,14 +4617,6 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 		if( !result )
 			exitServerProcess();
 
-		// May be this TimerHandle is OLD Timer, Destroy it
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-//LCOV_EXCL_START
-			CEE_TIMER_DESTROY(&srvrGlobal->connIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-//LCOV_EXCL_STOP
-		}
 		// The server need to die, when disconnected, hence don't start any timer
 		if (srvrGlobal->stopTypeFlag == STOP_WHEN_DISCONNECTED)
 			break;
@@ -4586,35 +4632,6 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 		srvrGlobal->bSkipASTimer = false;
 
 		CEE_TIMER_CREATE2(DEFAULT_AS_POLLING,0,ASTimerExpired,(CEE_tag_def)NULL, &srvrGlobal->ASTimerHandle,srvrGlobal->receiveThrId);
-
-		// Create SrvrIdleTimeout timer
-		if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
-		{
-			if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-			{
-				CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-			}
-
-			sts = CEE_TIMER_CREATE2((long)srvrGlobal->srvrContext.srvrIdleTimeout * 60, 0, srvrIdleTimerExpired, NULL,
-				&srvrGlobal->srvrIdleTimerHandle,srvrGlobal->receiveThrId);
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-
-			}
-		}
-
 		break;
 	case SRVR_CONNECTED:
 		srvrGlobal->srvrState = srvrState;
@@ -4623,14 +4640,8 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 		{
 			srvrGlobal->bSkipASTimer = true;
 		}
-		// Destory the srvrIdleTimeout timer
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-		}
-	if( !updateZKState(CONNECTING, CONNECTED) )
-		exitServerProcess();
+		if( !updateZKState(CONNECTING, CONNECTED) )
+		      exitServerProcess();
 		break;
 	case SRVR_STOP_WHEN_DISCONNECTED:
 		if (srvrGlobal->cleanupByTime > 0)
@@ -4904,8 +4915,6 @@ odbc_SQLSrvr_Close_ame_(
 		srvrGlobal->traceLogger->TraceCloseEnter(dialogueId, stmtLabel, freeResourceOpt);
 	}
 
-	DESTROY_CONN_IDLE_TIMER
-
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -4981,7 +4990,6 @@ odbc_SQLSrvr_Close_ame_(
 	}
 //LCOV_EXCL_STOP
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+18);
 
 	return;
@@ -5421,38 +5429,8 @@ odbc_SQLSvc_UpdateServerContext_ame_(
 	else if (srvrGlobal->srvrState == SRVR_AVAILABLE)
 	{
 		UPDATE_SERVER_CONTEXT(srvrContext);
-
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-		}
-
-		if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
-		{
-			sts = CEE_TIMER_CREATE2((long)srvrGlobal->srvrContext.srvrIdleTimeout * 60, 0, srvrIdleTimerExpired, NULL,
-				&srvrGlobal->srvrIdleTimerHandle,srvrGlobal->receiveThrId);
-
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				char tmpString[30];
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-			}
-		}
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-			destroyConnIdleTimer();
-		}
 	}
+
 	else
 		exception.exception_nr = odbc_SQLSvc_UpdateServerContext_SQLError_exn_;
 
@@ -5668,7 +5646,7 @@ bool InsertControls(char* sqlString, odbc_SQLSvc_ExecDirect_exc_ *exception_)
 	SRVR_STMT_HDL	*pSrvrStmt;
 	char			ControlType[32];
 	char			StatementName[128 + 1];
-	char			RequestError[200];
+	char			RequestError[200 + 1];
 
 //
 // skip white spaces and check first parameter //
@@ -5839,7 +5817,7 @@ bool InsertControls(char* sqlString, odbc_SQLSvc_ExecDirect_exc_ *exception_)
 		else if (strnicmp(ControlType,"PLANINSCQS",10) == 0)
 		{
 			ControlQuery[0] = '\0';
-			sprintf(ControlQuery,"SELECT STATEMENT_NAME FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS WHERE STATEMENT_NAME = UPSHIFT('%s') AND CONTROL_TYPE = 2 FOR BROWSE ACCESS", StatementName);
+			sprintf(ControlQuery,"SELECT STATEMENT_NAME FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS WHERE STATEMENT_NAME = UPSHIFT('%s') AND CONTROL_TYPE = 2 FOR READ UNCOMMITTED ACCESS", StatementName);
 			iqqcode = QryControlSrvrStmt->ExecDirect(NULL, ControlQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
 			if (iqqcode == SQL_ERROR)
 			{
@@ -5961,7 +5939,7 @@ bool LoadControls(char* sqlString, bool genOrexc, char* genRequestError, odbc_SQ
 
 //
 // skip white spaces and check first parameter //
-	char			VariableValue[200];
+	char			VariableValue[200 + 1];
 	char			seps[]   = " \t\n";
 	char			*token;
 	char			*saveptr;
@@ -6058,7 +6036,7 @@ bool LoadControls(char* sqlString, bool genOrexc, char* genRequestError, odbc_SQ
 		ResetControls(ResetQuery);
 
 		ControlQuery[0] = '\0';
-		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 1 FOR BROWSE ACCESS", StatementName);
+		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 1 FOR READ UNCOMMITTED ACCESS", StatementName);
 		iqqcode = QryControlSrvrStmt->ExecDirect(NULL, ControlQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
 		if (iqqcode != SQL_SUCCESS)
 		{
@@ -6157,7 +6135,7 @@ bool LoadControls(char* sqlString, bool genOrexc, char* genRequestError, odbc_SQ
 		}
 
 		ControlQuery[0] = '\0';
-		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 2 ORDER BY CONTROL_SEQUENCE FOR BROWSE ACCESS", StatementName);
+		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 2 ORDER BY CONTROL_SEQUENCE FOR READ UNCOMMITTED ACCESS", StatementName);
 		iqqcode = QryControlSrvrStmt->ExecDirect(NULL, ControlQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
 		if (iqqcode != SQL_SUCCESS)
 		{
@@ -6333,7 +6311,7 @@ bool GetHashInfo(char* sqlString, char* genRequestError, char* HashTableInfo)
 
 //
 // skip white spaces and check first parameter //
-	char			VariableValue[200];
+	char			VariableValue[200 + 1];
 	char			seps[]   = " \t\n";
 	char			seps2[]   = " \t\n.;";
 	char			*token;
@@ -6504,7 +6482,7 @@ bool GetHashInfo(char* sqlString, char* genRequestError, char* HashTableInfo)
 				ControlQueryLen = ControlQueryLen + 4;
 				break;
 			case 6:
-				sprintf(ControlQuery,"select cast(cast((52 * 1024 * 128) / (sum(co.column_size)) as integer) as varchar(10) character set ISO88591) from  %s.SYSTEM_SCHEMA.SCHEMATA sc, NEO.HP_DEFINITION_SCHEMA.OBJECTS ob, NEO.HP_DEFINITION_SCHEMA.COLS co where sc.SCHEMA_NAME = '%s' and ob.OBJECT_NAME = '%s' and sc.SCHEMA_UID = ob.SCHEMA_UID and ob.OBJECT_UID = co.OBJECT_UID and ob.OBJECT_TYPE = 'BT' FOR READ UNCOMMITTED ACCESS", srvrGlobal->SystemCatalog, verBuffer, verBuffer, atol(verBuffer), schemaToken, tableName);
+				sprintf(ControlQuery,"select cast(cast((52 * 1024 * 128) / (sum(co.column_size)) as integer) as varchar(10) character set ISO88591) from  %s.SYSTEM_SCHEMA.SCHEMATA sc, NEO.HP_DEFINITION_SCHEMA.OBJECTS ob, NEO.HP_DEFINITION_SCHEMA.COLS co where sc.SCHEMA_NAME = '%s' and ob.OBJECT_NAME = '%s' and sc.SCHEMA_UID = ob.SCHEMA_UID and ob.OBJECT_UID = co.OBJECT_UID and ob.OBJECT_TYPE = 'BT' FOR READ UNCOMMITTED ACCESS", srvrGlobal->SystemCatalog, schemaToken, tableName);
 				strcpy(HashTableInfo+ControlQueryLen, ";HE="); // HE means Guesstimated rowset size. Change 128 to HP soon.
 				ControlQueryLen = ControlQueryLen + 4;
 				break;
@@ -7051,25 +7029,25 @@ bool ChkWSvcCommands(char* wsname, int& retcode, long type)
 	switch (type)
 	{
 	case CHECK_SERVICE:
-		sprintf(ControlQuery,"select service_id from NEO.NWMS_SCHEMA.SERVICES where service_name = \'%s\' for browse access", wsname);
+		sprintf(ControlQuery,"select service_id from NEO.NWMS_SCHEMA.SERVICES where service_name = \'%s\' for read uncommitted access", wsname);
 		break;
 	case CHECK_SERVICEMAX:
-		sprintf(ControlQuery,"select MAX(service_id) from NEO.NWMS_SCHEMA.SERVICES for browse access");
+		sprintf(ControlQuery,"select MAX(service_id) from NEO.NWMS_SCHEMA.SERVICES for read uncommitted access");
 		break;
 	case CHECK_SERVICEPRTY:
-		sprintf(ControlQuery,"select service_priority from NEO.NWMS_SCHEMA.SERVICES  where service_name = \'%s\' for browse access", wsname);
+		sprintf(ControlQuery,"select service_priority from NEO.NWMS_SCHEMA.SERVICES  where service_name = \'%s\' for read uncommitted access", wsname);
 		break;
 //	case CHECK_MAXQUERIES_TOTAL:
-//		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) for browse access");
+//		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) for read uncommitted access");
 //		break;
 	case CHECK_MAXQUERIES_OTHERS:
-		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) and service_id <> %s for browse access", service_id);
+		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) and service_id <> %s for read uncommitted access", service_id);
 		break;
 	case CHECK_QUERIES_WAITING:
-		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 1 and service_id = %s for browse access", service_id);
+		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 1 and service_id = %s for read uncommitted access", service_id);
 		break;
 	case CHECK_QUERIES_EXECUTING:
-		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 0 and service_id = %s for browse access", service_id);
+		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 0 and service_id = %s for read uncommitted access", service_id);
 		break;
 	default:
 		return false;
@@ -7255,9 +7233,6 @@ odbc_SQLSrvr_Prepare_ame_(
 			sqlString, sqlStringCharset, setStmtOptionsLength, setStmtOptions, txnID, holdableCursor);
 	}
 
-
-	DESTROY_CONN_IDLE_TIMER
-
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -7441,7 +7416,6 @@ odbc_SQLSrvr_Prepare_ame_(
 		outputDescLength, outputDesc);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+19);
 
 #ifdef PERF_TEST
@@ -7490,8 +7464,6 @@ odbc_SQLSrvr_Fetch_ame_(
                                                   , maxRowLen
 												  , (long)srvrGlobal->fetchAhead);
 	}
-
-	DESTROY_CONN_IDLE_TIMER
 
 	bool firstFetch = false;
 	SRVR_STMT_HDL *pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
@@ -7769,7 +7741,6 @@ FETCH_EXIT:
 							    outValues);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+37);
 	return;
 
@@ -7850,7 +7821,6 @@ odbc_SQLSrvr_ExecDirect_ame_(
 							      sqlString, sqlAsyncEnable, queryTimeout);
 	}
 
-	DESTROY_CONN_IDLE_TIMER
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -8133,8 +8103,6 @@ cfgerrexit:
 							     rowsAffected, sqlWarning);
 	}
 
-	START_CONN_IDLE_TIMER
-
 	SRVRTRACE_EXIT(FILE_AME+23);
 
 #ifdef PERF_TEST
@@ -8209,9 +8177,6 @@ odbc_SQLSrvr_Execute2_ame_(
 	   returnCode = SQL_ERROR;
 	   GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Statement Handle.", &sqlWarningOrErrorLength, sqlWarningOrError);
 	}
-
-   DESTROY_CONN_IDLE_TIMER
-
 
 	if (pSrvrStmt != NULL) {
 	   paramCount = pSrvrStmt->paramCount;
@@ -8408,7 +8373,6 @@ odbc_SQLSrvr_Execute2_ame_(
 		rowsAffected, outValuesLength, outValues);
 	}
 
-    START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+19);
 
 #ifdef PERF_TEST
@@ -8442,8 +8406,6 @@ odbc_SQLSrvr_SetConnectionOption_ame_(
 								 optionValueNum, optionValueStr);
 	}
 
-	DESTROY_CONN_IDLE_TIMER
-
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -8469,7 +8431,6 @@ odbc_SQLSrvr_SetConnectionOption_ame_(
 		srvrGlobal->traceLogger->TraceConnectOptionExit(exception_, sqlWarning);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+21);
 
 } // odbc_SQLSrvr_SetConnectionOption_ame_()
@@ -8491,8 +8452,6 @@ odbc_SQLSrvr_EndTransaction_ame_(
 	{
 		srvrGlobal->traceLogger->TraceEndTransactEnter(dialogueId, transactionOpt);
 	}
-
-	DESTROY_CONN_IDLE_TIMER
 
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
@@ -8518,7 +8477,6 @@ odbc_SQLSrvr_EndTransaction_ame_(
 		srvrGlobal->traceLogger->TraceEndTransactExit(exception_, sqlWarning);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+20);
 	return;
 
@@ -8975,6 +8933,11 @@ bool checkSyntaxInfoDisk(char* sqlString, char *diskName)
 
 bool isInfoDisk(char*& sqlString, const IDL_char *stmtLabel, short& error, char *errBuf )
 {
+  return true;
+
+#if 0
+  // Obsolete function, should not be used
+
 	static char buffer[1000];
 	static char * str = NULL;
 	static int strSize = 0;
@@ -9169,6 +9132,7 @@ out:
 	}
 
 	return true;
+#endif        
 }
 
 

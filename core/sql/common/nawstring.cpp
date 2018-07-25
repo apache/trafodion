@@ -48,9 +48,7 @@ void NAWString::initFromSingleByteString(Lng32 charset, const char* str, size_t 
 {
    assert(str!=nanil);
    NAWchar buf[N+1];
-#pragma nowarn(1506)   // warning elimination 
    Lng32 wcs = LocaleStringToUnicode(charset, (char*)str, N, buf, N, FALSE);
-#pragma warn(1506)  // warning elimination 
    buf[wcs] = 0;
    append(buf, wcs);
 }
@@ -150,7 +148,6 @@ NAWString::replace(size_t pos, size_t n1, const NAWchar* cs, size_t n2)
   return *this;
 }
 
-SQLEXPORT_LIB_FUNC
 NAWString operator+(const NAWString& s1, const NAWString& s2)
 {
  // Use the special concatenation constructor:
@@ -248,8 +245,6 @@ size_t NAWString::index(const NAWchar* pattern, size_t patLen, size_t startIndex
 // Use the NADELETEBASIC(returned_NAWchar_star_pointer, heap_pointer)
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers in SQ SQL except copyNAWString() which has no callers
-SQLEXPORT_LIB_FUNC
 NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
 {
   size_t len = naws.length();
@@ -265,7 +260,6 @@ NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
   buf[len] = NAWCHR('\0');
   return buf;
 }
-//LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // newNAWcharBufferContainingAnEmptyNAWString()
@@ -284,8 +278,6 @@ NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
 // Use the NADELETEBASIC(returned_NAWchar_star_pointer, heap_pointer)
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers in SQ SQL except copyNAWString() which has no callers
-SQLEXPORT_LIB_FUNC
 NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap)
 {
   NAWchar* buf = NULL;
@@ -301,12 +293,10 @@ NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap)
 
   return buf;
 }
-//LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Remove whitespace (spaces and tabs) from front or back or both
 // -----------------------------------------------------------------------
-SQLEXPORT_LIB_FUNC
 void TrimNAWStringSpace(NAWString& ns, NAString::stripType eStripType) // default is NAString::trailing
 {
   StringPos i;
@@ -321,12 +311,10 @@ void TrimNAWStringSpace(NAWString& ns, NAString::stripType eStripType) // defaul
   }
 
   if (eStripType == NAString::leading || eStripType == NAString::both) {
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers pass eStripType value other than "trailing".
     for (i=0; i<ns.length(); i++)
       if (!isSpace8859_1(ns[i]))
         break;
     if (i)
       ns.remove(0, i);
-//LCOV_EXCL_STOP
   }
 }

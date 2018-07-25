@@ -83,7 +83,6 @@ SP_HELPER_STATUS CmpSPFormatFunc_ (Lng32 fieldNo,
                                    Lng32 casting)
 {
   CmpSPExecDataItemReply* replyPtr = (CmpSPExecDataItemReply*)rowData;
-#pragma nowarn(262)   // warning elimination 
   ULng32 tempNum = (ULng32)fieldNo;
   ULng32 tempLen = (ULng32)fieldLen;
   ComDiagsArea* diags = replyPtr->SPFuncsDiags();
@@ -97,7 +96,6 @@ SP_HELPER_STATUS CmpSPFormatFunc_ (Lng32 fieldNo,
   else
     return SP_NO_ERROR;
 }
-#pragma warn(262)  // warning elimination 
 
 SP_HELPER_STATUS CmpSPKeyValueFunc_ (
                                      Lng32 keyIndex,

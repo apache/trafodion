@@ -45,7 +45,7 @@
 #include "SQLCLIdev.h"
 #include "ExpLOBexternal.h"
 #include "ComDiags.h"
-class CliStatement;
+class Statement;
 class CliGlobals;
 class ContextCli;
 class Descriptor;
@@ -101,9 +101,6 @@ struct DiagsConditionItem {
 extern "C"
 {
 
-   Lng32 SQLCLI_AddModule(/*IN*/ CliGlobals   * cliGlobals,
-			 /*IN*/ const SQLMODULE_ID * module_name);
-
    Lng32 SQLCLI_AllocDesc(/*IN*/          CliGlobals * cliGlobals,
 			 /*INOUT*/       SQLDESC_ID * desc_id,
 
@@ -118,13 +115,11 @@ extern "C"
                               /*IN*/ SQLSTMT_ID *callStmtId,
                               /*IN*/ Lng32 resultSetIndex,
                               /*INOUT*/ SQLSTMT_ID *resultSetStmtId);
-//LCOV_EXCL_START
 
    Lng32 SQLCLI_AssocFileNumber(/*IN*/    CliGlobals   * cliGlobals,
                                /*IN*/    SQLSTMT_ID * statement_id,
 		               /*IN*/    short         file_number);
 
-//LCOV_EXCL_STOP
 Int32  SQLCLI_GetDiskMaxSize (
 			      /*IN*/ CliGlobals *cliGlobals,
 			      /*IN*/ char *volname,
@@ -328,7 +323,7 @@ Lng32 SQLCLI_ExecDirect2(/*IN*/           CliGlobals * cliGlobals,
 	/*IN*/ CliGlobals * cliGlobals,
 	/*IN OPTIONAL*/ SQLSTMT_ID * statement_id,
 	/*IN* (SQLDIAG_STMT_INFO_ITEM_ID) */ Lng32 what_to_get,
-	/*OUT OPTIONAL*/ void * numeric_value,  /* NA_64BIT */
+	/*OUT OPTIONAL*/ void * numeric_value,
 	/*OUT OPTIONAL*/ char * string_value,
 	/*IN OPTIONAL*/ Lng32 max_string_len,
 	/*OUT OPTIONAL*/ Lng32 * len_of_item);
@@ -360,7 +355,7 @@ Lng32 SQLCLI_ExecDirect2(/*IN*/           CliGlobals * cliGlobals,
    Lng32 SQLCLI_GetSQLCODE(/*IN*/  CliGlobals * cliGlobals,
                            /*OUT*/       Lng32 * theSQLCODE);
 
-SQLCLI_LIB_FUNC Lng32 SQLCLI_GetDiagnosticsCondInfo2(
+  Lng32 SQLCLI_GetDiagnosticsCondInfo2(
                 /*IN*/             CliGlobals * cliGlobals,
 		/*IN* (SQLDIAG_COND_INFO_ITEM_ID) */ Lng32 what_to_get,
 		/*IN*/ Lng32 conditionNum,
@@ -369,7 +364,7 @@ SQLCLI_LIB_FUNC Lng32 SQLCLI_GetDiagnosticsCondInfo2(
 		/*IN OPTIONAL */ Lng32 max_string_len,
 		/*OUT OPTIONAL*/ Lng32 * len_of_item);
 
-SQLCLI_LIB_FUNC	Lng32 SQLCLI_GetDiagnosticsCondInfo3 (
+  Lng32 SQLCLI_GetDiagnosticsCondInfo3 (
 		/*IN*/ CliGlobals * cliGlobals,
 		/*IN*/ Lng32 no_of_condition_items,
 		/*IN*/ SQLDIAG_COND_INFO_ITEM_VALUE
@@ -436,15 +431,6 @@ SQLCLI_LIB_FUNC	Lng32 SQLCLI_GetDiagnosticsCondInfo3 (
                            /*OUT*/ Int32 *pfsCurUse,
                            /*OUT*/ Int32 *pfsMaxUse);
    Lng32 SQLCLI_CleanUpPfsResources(/*IN*/ CliGlobals *cliGlobals);
-
-
-   Lng32 SQLCLI_GetVersion_Internal
-     (/*IN*/  CliGlobals * cliGlobals,
-      /*IN*/  Lng32 versionType,
-      /*OUT*/ Lng32 * versionValue,
-      /*IN OPTIONAL*/ const char * nodeName,
-      /*IN OPTIONAL*/ const SQLMODULE_ID * module_name,
-      /*IN OPTIONAL*/ const SQLSTMT_ID * statement_id);
 
    Lng32 SQLCLI_PerformTasks(
 	/*IN*/ CliGlobals * cliGlobals,
@@ -656,7 +642,6 @@ Lng32 SQLCLI_SetAuthID(
                                /*?*/ SQLSTMT_ID * statement_id,
                                /*?*/      Int64 & rowsAffected);
 
-//#ifdef NA_NSK
 //Function to get the length of the desc_items array
 //returns the length if no error occurs, if error_occurred
 //is 1 on return then return value indicates error
@@ -690,7 +675,6 @@ Lng32 SQLCLI_OutputValueIntoNumericHostvar(
 		/*IN*/       Lng32   desc_entry,
 		/*IN*/       Lng32   value);
 
-//#endif /* NA_NSK */
 Lng32 SQLCLI_GetSystemVolume_Internal(
      /*IN*/ CliGlobals * cliGlobals,
      /*INOUT*/    char * SMDLocation,
@@ -779,7 +763,13 @@ Lng32 SQLCLI_GetSecInvalidKeys(CliGlobals *cliGlobals,
             /* IN/OUT */  Int32 *returnedNumSiKeys,
             /* IN/OUT */  Int64 *maxTimestamp);
 
-
+Lng32 SQLCLI_SetLobLock(CliGlobals *cliGlobals,
+                        /* IN */    char * lobLockId
+                        );
+Lng32 SQLCLI_CheckLobLock(CliGlobals *cliGlobals,
+                        /* IN */   char *lobLockId,
+                        /*OUT */ NABoolean *found
+                          );
 Lng32 SQLCLI_GetStatistics2(CliGlobals *cliGlobals,
             /* IN */  	short statsReqType,
 	    /* IN */  	char *statsReqStr,
@@ -920,7 +910,7 @@ Lng32 SQLCLI_LOBcliInterface
 Lng32 SQLCLI_LOB_GC_Interface
 (
  /*IN*/     CliGlobals *cliGlobals,
- /*IN*/     void *lobGlobals, // can be passed or NULL
+ /*IN*/     ExLobGlobals *lobGlobals, // can be passed or NULL
  /*IN*/     char * handle,
  /*IN*/     Lng32  handleLen,
  /*IN*/     char*  hdfsServer,

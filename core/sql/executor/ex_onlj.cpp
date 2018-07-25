@@ -43,9 +43,7 @@
 #include "str.h"
 #include "ExStats.h"
 
-#ifndef __EID
 #include "ex_exe_stmt_globals.h"
-#endif
 #include "sql_buffer_size.h"
 
 /////////////////////////////////////////////////////////////////////////
@@ -98,7 +96,6 @@ ExOnljTcb::ExOnljTcb(const ExOnljTdb &  nljTdb,  //
 
   // Allocate the buffer pool, if 'special' left join
   if ((isLeftJoin()) && (nljTdb.ljExpr_)) {
-#pragma nowarn(1506)   // warning elimination 
     pool_ = new(glob->getSpace()) sql_buffer_pool(nljTdb.numBuffers_,
                                                   nljTdb.bufferSize_,
                                                   glob->getSpace());
@@ -117,7 +114,6 @@ ExOnljTcb::ExOnljTcb(const ExOnljTdb &  nljTdb,  //
     }
 
   }
-#pragma warn(1506)  // warning elimination 
   
   // Copy predicate pointers
   beforePred_ = nljTdb.preJoinPred_;
@@ -455,7 +451,6 @@ ExWorkProcRetcode ExOnljTcb::work_phase1()
           else
             {
 #ifdef TRACE_PAPA_DEQUEUE
-#ifndef __EID
               if ((pentry1->downState.numGetNextsIssued - pstate1.pushedDownGetNexts_ ) > 1)
                 {
                    cout << "ExOnljTcb::work_phase1, too many requests." 
@@ -465,7 +460,6 @@ ExWorkProcRetcode ExOnljTcb::work_phase1()
                         <<   pstate1.pushedDownGetNexts_ 
                         << endl;
                 }
-#endif
 #endif
               // Push down the GET_NEXT request
 
@@ -681,7 +675,6 @@ ExWorkProcRetcode ExOnljTcb::work_phase2()
 	      lentry->setDiagsArea(NULL);
 	      // Adjust the rowcount in the statement globals
 	      // Subtract the rows that were "undone"
-#ifndef __EID
               //if we have already subtracted rowcount once for  this 
 	      // parent entry don't do it again. We only have to do it once per parent entry row.
 	      if (!pstate.rowAlreadyRaisedNFError_)
@@ -699,14 +692,6 @@ ExWorkProcRetcode ExOnljTcb::work_phase2()
 		  else
 		    ex_assert(g, "Rowset insert has a flow node that is not in the master executor");
 		}
-#else
-	      if (onljTdb().isRowsetIterator() && 
-		  onljTdb().isNonFatalErrorTolerated() && 
-		  onljTdb().isSetNFErrorJoin())
-		ex_assert(0, "Cannot execute in DP2");
-		  
-		
-#endif
 	    }
 	}
       // set the atp of the right child to be the same as the left atp
@@ -1429,14 +1414,7 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 
         pstate.tgtRequestCount_++;
 
-        // If it is an EID then it is a pushdown and we should not count the number of rows
-        // coming from the right side if the right side is an MV IUD LOG
-#ifdef __EID
-        if (!isDrivingMVLogging())
-	   pstate.rowCount_ += rentry->upState.getMatchNo();
-#else
-	   pstate.rowCount_ += rentry->upState.getMatchNo();
-#endif
+        pstate.rowCount_ += rentry->upState.getMatchNo();
 
         // Be ready to null instantiate the new left row
         pstate.outerMatched_ = ExConstants::EX_FALSE;
@@ -1677,11 +1655,8 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
     // merge any diags from the upentry with any diags that may be in the 
     // parent entry diags area.
     NABoolean anyRowsAffected = FALSE;
-#ifndef __EID
     ExMasterStmtGlobals *g = getGlobals()->
       castToExExeStmtGlobals()->castToExMasterStmtGlobals();
-#endif
-    
    
     // if a  split-top is returning a diags area, 
     // set the accumulated diags in the parent entry. 
@@ -1716,7 +1691,6 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
       // Compute the rows affected and set the NF warning for any errors coming from the left or right.
       if (onljTdb().isRowsetIterator() && onljTdb().isNonFatalErrorTolerated() && onljTdb().isSetNFErrorJoin())
 	{
-#ifndef __EID	            
 	  if (g)
 	    {		 
 	      Int64 rowsAffected = g->getRowsAffected();	  
@@ -1725,7 +1699,6 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	    }
 	  else
 	    ex_assert(g, "Rowset insert has a flow node that is not in the master executor");
-#endif
 	  ComDiagsArea *mergedDiags = uentry->getDiagsArea();
 
 	  // if it's a diags just containing rowcount and no error/warning

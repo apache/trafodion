@@ -905,7 +905,6 @@ class CostWeight : public NABasicObject
 {
 public:
 
-// warning elimination (removed "inline")
   virtual ~CostWeight() {}
 
   // ---------------------------------------------------------------------
@@ -1340,12 +1339,6 @@ private:
 // Assume 10 instructions for copying a row.
 // -----------------------------------------------------------------------
 //#define CPUCOST_COPY_ROW (0.01)
-
-// -----------------------------------------------------------------------
-// Assume 100 instructions for reading a row across the DM interface
-//  (executor does a DM^GET in DP2)
-// -----------------------------------------------------------------------
-//#define CPUCOST_DM_GET (0.1)
 
 // -----------------------------------------------------------------------
 // Assume 100 instructions for updating/deleting a row across the DM

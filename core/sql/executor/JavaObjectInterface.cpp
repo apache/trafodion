@@ -24,30 +24,58 @@
 #include "JavaObjectInterface.h"
 #include "QRLogger.h"
 #include "Globals.h"
+#include "Context.h"
 #include "ComUser.h"
 #include "LmJavaOptions.h"
+#include "ex_ex.h"
 
-// Changed the default to 256 to limit java heap size used by SQL processes.
-// Keep this define in sync with udrserv/udrserv.cpp
 #define DEFAULT_JVM_MAX_HEAP_SIZE 256
 #define DEFAULT_COMPRESSED_CLASSSPACE_SIZE 128
 #define DEFAULT_MAX_METASPACE_SIZE 128
 #define TRAF_DEFAULT_JNIHANDLE_CAPACITY 32
+
+
 // ===========================================================================
 // ===== Class JavaObjectInterface
 // ===========================================================================
 
 JavaVM* JavaObjectInterface::jvm_  = NULL;
 jint JavaObjectInterface::jniHandleCapacity_ = 0;
+int JavaObjectInterface::debugPort_ = 0;
+int JavaObjectInterface::debugTimeout_ = 0;
+
 __thread JNIEnv* jenv_ = NULL;
 __thread NAString *tsRecentJMFromJNI = NULL;
+__thread NAString *tsSqlJniErrorStr = NULL;
 jclass JavaObjectInterface::gThrowableClass = NULL;
 jclass JavaObjectInterface::gStackTraceClass = NULL;
+jclass JavaObjectInterface::gOOMErrorClass = NULL;
 jmethodID JavaObjectInterface::gGetStackTraceMethodID = NULL;
 jmethodID JavaObjectInterface::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterface::gStackFrameToStringMethodID = NULL;
 jmethodID JavaObjectInterface::gGetCauseMethodID = NULL;
 
+void setSqlJniErrorStr(NAString &errorMsg)
+{
+  if (tsSqlJniErrorStr != NULL)
+     delete tsSqlJniErrorStr;
+  tsSqlJniErrorStr = new NAString(errorMsg); 
+}
+
+void setSqlJniErrorStr(const char *errorMsg)
+{
+  if (tsSqlJniErrorStr != NULL)
+     delete tsSqlJniErrorStr;
+  tsSqlJniErrorStr = new NAString(errorMsg); 
+}
+
+const char *getSqlJniErrorStr()
+{
+   if (tsSqlJniErrorStr == NULL)
+      return "";
+   else
+      return tsSqlJniErrorStr->data();
+}
   
 static const char* const joiErrorEnumStr[] = 
 {
@@ -75,6 +103,8 @@ char* JavaObjectInterface::getErrorText(JOI_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 JavaObjectInterface::~JavaObjectInterface()
 {
+  if (jenv_ == NULL)
+     return;
   if ((long)javaObj_ != -1)
      jenv_->DeleteGlobalRef(javaObj_); 
   javaObj_ = NULL;
@@ -136,6 +166,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
     {
       classPathArg = buildClassPath();
       jvm_options[numJVMOptions].optionString = classPathArg;
+      jvm_options[numJVMOptions].extraInfo = NULL;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Using classpath: %s", 
                     jvm_options[numJVMOptions].optionString);
       numJVMOptions++;
@@ -145,7 +176,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
     {
       int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
       const char *maxHeapSizeStr = getenv("JVM_MAX_HEAP_SIZE_MB");
-      if (maxHeapSizeStr)
+      if (maxHeapSizeStr != NULL)
         {
           maxHeapEnvvarMB = atoi(maxHeapSizeStr);
           if (maxHeapEnvvarMB <= 0)
@@ -155,17 +186,30 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
       snprintf(maxHeapOptions, sizeof(maxHeapOptions),
                "-Xmx%dm", maxHeapEnvvarMB);
       jvm_options[numJVMOptions].optionString = maxHeapOptions;
+      jvm_options[numJVMOptions].extraInfo = NULL;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                     "Max heap option: %s",
                     jvm_options[numJVMOptions].optionString);
       numJVMOptions++;
     }
 
+    const char *jvmGC = getenv("JVM_GC_OPTION");
+    if (jvmGC != NULL)
+    {
+       jvm_options[numJVMOptions].optionString = (char *)jvmGC;
+       jvm_options[numJVMOptions].extraInfo = NULL;
+       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                   "GC Option: %s",
+                   jvm_options[numJVMOptions].optionString);
+       numJVMOptions++;
+    }
+
+
   if (!isDefinedInOptions(options, "-XX:CompressedClassSpaceSize="))
     {
       int compressedClassSpaceSize = 0;
       const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
-      if (compressedClassSpaceSizeStr)
+      if (compressedClassSpaceSizeStr != NULL)
         compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
       if (compressedClassSpaceSize <= 0)
         compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
@@ -173,6 +217,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
                sizeof(compressedClassSpaceSizeOptions),
                "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
       jvm_options[numJVMOptions].optionString = compressedClassSpaceSizeOptions;
+      jvm_options[numJVMOptions].extraInfo = NULL;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                     "CompressedClassSpaceSize: %s",
                     jvm_options[numJVMOptions].optionString);
@@ -183,13 +228,14 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
     {
       int maxMetaspaceSize = 0;
       const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
-      if (maxMetaspaceSizeStr)
+      if (maxMetaspaceSizeStr != NULL)
         maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
       if (maxMetaspaceSize <= 0)
         maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
       snprintf(maxMetaspaceSizeOptions, sizeof(maxMetaspaceSizeOptions),
                "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
       jvm_options[numJVMOptions].optionString = maxMetaspaceSizeOptions;
+      jvm_options[numJVMOptions].extraInfo = NULL;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                     "MaxMetaspaceSize: %s",
                     jvm_options[numJVMOptions].optionString);
@@ -199,7 +245,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
   if (!isDefinedInOptions(options, "-Xms"))
     {
       const char *initHeapSizeStr = getenv("JVM_INIT_HEAP_SIZE_MB");
-      if (initHeapSizeStr)
+      if (initHeapSizeStr != NULL)
         {
           const int initHeapEnvvarMB = atoi(initHeapSizeStr);
           if (initHeapEnvvarMB > 0)
@@ -207,6 +253,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
               snprintf(initHeapOptions, sizeof(initHeapOptions),
                        "-Xms%dm", initHeapEnvvarMB);
               jvm_options[numJVMOptions].optionString = initHeapOptions;
+              jvm_options[numJVMOptions].extraInfo = NULL;
               QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                             "Init heap option: %s",
                             jvm_options[numJVMOptions].optionString);
@@ -243,6 +290,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
           else
             strcat(debugOptions, ",suspend=n");
           jvm_options[numJVMOptions].optionString = debugOptions;
+          jvm_options[numJVMOptions].extraInfo = NULL;
           QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_WARN,
                         "Debugging JVM with options: %s", 
                         jvm_options[numJVMOptions].optionString);
@@ -253,6 +301,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
   if (!isDefinedInOptions(options, oomOption))
     {
       jvm_options[numJVMOptions].optionString = (char *)oomOption;
+      jvm_options[numJVMOptions].extraInfo = NULL;
       numJVMOptions++;
     }
 
@@ -263,19 +312,23 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
       if (mySqRoot != NULL)
         {
           len = strlen(mySqRoot); 
-          oomDumpDir = new (heap_) char[len+50];
+          oomDumpDir = new char[len+50];
           strcpy(oomDumpDir, "-XX:HeapDumpPath="); 
           strcat(oomDumpDir, mySqRoot);
           strcat(oomDumpDir, "/logs");
           jvm_options[numJVMOptions].optionString = (char *)oomDumpDir;
+          jvm_options[numJVMOptions].extraInfo = NULL;
           numJVMOptions++;
         }
     }
+
+  ex_assert((numJVMOptions < MAX_NO_JVM_OPTIONS), "Buffer overflow in JVM options");
 
   if (options)
     for (CollIndex o=0; o<options->entries(); o++)
       {
         jvm_options[numJVMOptions].optionString = (char *) options->getOption(o);
+        jvm_options[numJVMOptions].extraInfo = NULL;
         QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                       "Option passed to JavaObjectInterface::createJVM(): %s",
                       jvm_options[numJVMOptions].optionString);
@@ -291,7 +344,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
   if (classPathArg)
     free(classPathArg);
   if (oomDumpDir)
-    NADELETEBASIC(oomDumpDir, heap_);
+    delete oomDumpDir;
   return ret;
 }
 
@@ -320,8 +373,6 @@ JOI_RetCode JavaObjectInterface::initJVM(LmJavaOptions *options)
          GetCliGlobals()->setJniErrorStr(getErrorText(JOI_ERROR_CHECK_JVM));
          return JOI_ERROR_CREATE_JVM;
       }
-        
-      needToDetach_ = false;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Created a new JVM.");
     }
     char *jniHandleCapacityStr =  getenv("TRAF_JNIHANDLE_CAPACITY");
@@ -345,7 +396,6 @@ JOI_RetCode JavaObjectInterface::initJVM(LmJavaOptions *options)
       if (result != JNI_OK)
         return JOI_ERROR_ATTACH_JVM;
       
-      needToDetach_ = true;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Attached to an existing JVM from another thread.");
       break;
        
@@ -393,6 +443,15 @@ JOI_RetCode JavaObjectInterface::initJVM(LmJavaOptions *options)
                       "()Ljava/lang/String;");
      }
   }                  
+  if (gOOMErrorClass == NULL)
+  {
+     lJavaClass =  (jclass)jenv_->FindClass("java/lang/OutOfMemoryError");
+     if (lJavaClass != NULL)
+     {
+        gOOMErrorClass = (jclass)jenv_->NewGlobalRef(lJavaClass);
+        jenv_->DeleteLocalRef(lJavaClass);
+     }
+  }
   return JOI_OK;
 }
  
@@ -424,8 +483,9 @@ JOI_RetCode JavaObjectInterface::init(char *className,
        lJavaClass = jenv_->FindClass(className); 
        if (jenv_->ExceptionCheck()) 
        {
-          getExceptionDetails();
-          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Exception in FindClass(%s).", className);
+          char errMsg[200];
+          snprintf(errMsg, sizeof(errMsg), "Exception in FindClass(%s)", className);
+          getExceptionDetails(__FILE__, __LINE__, errMsg);
           return JOI_ERROR_FINDCLASS;
        }
        if (lJavaClass == 0) 
@@ -449,9 +509,14 @@ JOI_RetCode JavaObjectInterface::init(char *className,
                                                      JavaMethods[i].jm_signature);
         if (JavaMethods[i].methodID == 0 || jenv_->ExceptionCheck())
         { 
-          getExceptionDetails();
-          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in GetMethod(%s).", JavaMethods[i].jm_name);
-          return JOI_ERROR_GETMETHOD;
+          jenv_->ExceptionClear();
+          JavaMethods[i].methodID = jenv_->GetStaticMethodID(javaClass, 
+                                                     JavaMethods[i].jm_name, 
+                                                     JavaMethods[i].jm_signature);
+          if (JavaMethods[i].methodID == 0 || jenv_->ExceptionCheck()) {
+             getExceptionDetails(__FILE__, __LINE__, "GetMethodId()");
+             return JOI_ERROR_GETMETHOD;
+          }
         }      
       }
     }
@@ -463,8 +528,9 @@ JOI_RetCode JavaObjectInterface::init(char *className,
       jobject jObj = jenv_->NewObject(javaClass, JavaMethods[0].methodID);
       if (jObj == 0 || jenv_->ExceptionCheck())
       { 
-        getExceptionDetails();
-        QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in NewObject() for class %s.", className);
+        char errMsg[200];
+        snprintf(errMsg, sizeof(errMsg), "Error in NewObject() for class %s.", className);
+        getExceptionDetails(__FILE__, __LINE__, errMsg);
         return JOI_ERROR_NEWOBJ;
       }
       javaObj_ = jenv_->NewGlobalRef(jObj);
@@ -509,51 +575,61 @@ void JavaObjectInterface::logError(std::string &cat, const char* file, int line)
   QRLogger::log(cat, LL_ERROR, "Java exception in file %s, line %d.", file, line);
 }
 
-NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
+NABoolean JavaObjectInterface::getExceptionDetails(const char *fileName, int lineNo,
+                                                   const char *methodName,
+                                                   NABoolean noDetails)
 {
-   NAString error_msg(heap_);
-
-   if (jenv == NULL)
-       jenv = jenv_;
+   JNIEnv *jenv = jenv_;
+   NABoolean killProcess = FALSE;
    CliGlobals *cliGlobals = GetCliGlobals();
-   if (jenv == NULL)
-   {
-      error_msg = "Internal Error - Unable to obtain jenv";
-      cli_globals->setJniErrorStr(error_msg);
-      return FALSE;
-   } 
+   NAString error_msg;
    if (gThrowableClass == NULL)
    {
       jenv->ExceptionDescribe();
       error_msg = "Internal Error - Unable to find Throwable class";
-      cli_globals->setJniErrorStr(error_msg);
+      setSqlJniErrorStr(error_msg); 
       return FALSE; 
    }
    jthrowable a_exception = jenv->ExceptionOccurred();
    if (a_exception == NULL)
    {
        error_msg = "No java exception was thrown";
-       cli_globals->setJniErrorStr(error_msg);
+       setSqlJniErrorStr(error_msg); 
        return FALSE;
    }
-   appendExceptionMessages(jenv, a_exception, error_msg);
-   cli_globals->setJniErrorStr(error_msg);
+
+   if (appendExceptionMessages(a_exception, error_msg, noDetails))
+     killProcess = TRUE;
+
+   setSqlJniErrorStr(error_msg); 
+   logError(CAT_SQL_EXE, fileName, lineNo); 
+   logError(CAT_SQL_EXE, methodName, error_msg); 
    jenv->ExceptionClear();
+   if (killProcess) {
+      // wait to get the hprof dump by JVM 
+      sleep(30);
+      abort();
+   }
    return TRUE;
 }
 
-void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg)
+NABoolean JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, 
+                                                       NAString &error_msg,
+                                                       NABoolean noDetails)
 {
+    NABoolean killProcess = FALSE;
+    if (jenv_->IsInstanceOf(a_exception, gOOMErrorClass) == JNI_TRUE)
+       killProcess = TRUE; 
     jstring msg_obj =
-       (jstring) jenv->CallObjectMethod(a_exception,
+       (jstring) jenv_->CallObjectMethod(a_exception,
                                          gThrowableToStringMethodID);
     const char *msg_str;
     if (msg_obj != NULL)
     {
-       msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+       msg_str = jenv_->GetStringUTFChars(msg_obj, 0);
        error_msg += msg_str;
-       jenv->ReleaseStringUTFChars(msg_obj, msg_str);
-       jenv->DeleteLocalRef(msg_obj);
+       jenv_->ReleaseStringUTFChars(msg_obj, msg_str);
+       jenv_->DeleteLocalRef(msg_obj);
     }
     else
        msg_str = "Exception is thrown, but tostring is null";
@@ -561,56 +637,42 @@ void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exc
 
     // Get the stack trace
     jobjectArray frames =
-        (jobjectArray) jenv->CallObjectMethod(
+        (jobjectArray) jenv_->CallObjectMethod(
                                         a_exception,
                                         gGetStackTraceMethodID);
     if (frames == NULL)
-       return;
-    jsize frames_length = jenv->GetArrayLength(frames);
+       return killProcess;
+
+    if (noDetails)
+      return killProcess;
+
+    jsize frames_length = jenv_->GetArrayLength(frames);
 
     jsize i = 0;
     for (i = 0; i < frames_length; i++)
     {
-       jobject frame = jenv->GetObjectArrayElement(frames, i);
-       msg_obj = (jstring) jenv->CallObjectMethod(frame,
+       jobject frame = jenv_->GetObjectArrayElement(frames, i);
+       msg_obj = (jstring) jenv_->CallObjectMethod(frame,
                                             gStackFrameToStringMethodID);
        if (msg_obj != NULL)
        {
-          msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+          msg_str = jenv_->GetStringUTFChars(msg_obj, 0);
           error_msg += "\n";
           error_msg += msg_str;
-          jenv->ReleaseStringUTFChars(msg_obj, msg_str);
-          jenv->DeleteLocalRef(msg_obj);
-          jenv->DeleteLocalRef(frame);
+          jenv_->ReleaseStringUTFChars(msg_obj, msg_str);
+          jenv_->DeleteLocalRef(msg_obj);
+          jenv_->DeleteLocalRef(frame);
        }
     }
-    jthrowable j_cause = (jthrowable)jenv->CallObjectMethod(a_exception, gGetCauseMethodID);
+    jthrowable j_cause = (jthrowable)jenv_->CallObjectMethod(a_exception, gGetCauseMethodID);
     if (j_cause != NULL) {
        error_msg += " Caused by \n";
-       appendExceptionMessages(jenv, j_cause, error_msg);
+       if (appendExceptionMessages(j_cause, error_msg, noDetails))
+         killProcess = TRUE;
     }
-    jenv->DeleteLocalRef(a_exception);
+    jenv_->DeleteLocalRef(a_exception);
+    return killProcess;
 } 
-
-NAString JavaObjectInterface::getLastError()
-{
-  return cli_globals->getJniErrorStr();
-}
-
-NAString JavaObjectInterface::getLastJavaError(jmethodID methodID)
-{
-  if (javaObj_ == NULL)
-    return "";
-  jstring j_error = (jstring)jenv_->CallObjectMethod(javaObj_,
-               methodID);
-  if (j_error == NULL)
-      return "";
-  const char *error_str = jenv_->GetStringUTFChars(j_error, NULL);
-  cli_globals->setJniErrorStr(error_str);
-  jenv_->ReleaseStringUTFChars(j_error, error_str);
-  return cli_globals->getJniErrorStr();
-}
-
 
 JOI_RetCode JavaObjectInterface::initJNIEnv()
 {
@@ -620,7 +682,6 @@ JOI_RetCode JavaObjectInterface::initJNIEnv()
          return retcode;
   }
   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
     return JOI_ERROR_INIT_JNI;
   }
   return JOI_OK;

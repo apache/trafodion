@@ -113,7 +113,8 @@ static const NAString LiteralCatalog;
 // ---------------------------------------------------------------------
 // Constructor functions
 // ---------------------------------------------------------------------
-CharType (const NAString&	adtName, 
+CharType (NAMemory *h,
+          const NAString&	adtName, 
 	  Lng32		maxCharStrLen,
 	  short		bytesPerChar = 0,
 	  NABoolean	nullTerminated = FALSE,
@@ -127,7 +128,8 @@ CharType (const NAString&	adtName,
 	  CharInfo::CharSet      encoding = CharInfo::UnknownCharSet,
 	  Lng32 vcIndLen = 0  // not passed in, need to be computed
          );
-CharType (const NAString&  adtName,
+CharType (NAMemory *h,
+          const NAString&  adtName,
           const CharLenInfo & maxLenInfo,
           short            /*max*/bytesPerChar = 0, // is maxBytesPerChar when cs is SJIS or UTF8
           NABoolean        nullTerminated = FALSE,
@@ -430,7 +432,8 @@ public:
 // ---------------------------------------------------------------------
 // Constructor functions 
 // ---------------------------------------------------------------------
-  SQLChar (Lng32 maxLength, 
+  SQLChar (NAMemory *h,
+           Lng32 maxLength, 
 	   NABoolean allowSQLnull	= TRUE,
 	   NABoolean isUpShifted	= FALSE, 
 	   NABoolean     isCaseInsensitive = FALSE,
@@ -440,7 +443,8 @@ public:
 	   CharInfo::Coercibility	= CharInfo::COERCIBLE,
 	   CharInfo::CharSet encoding	= CharInfo::UnknownCharSet
           );
-  SQLChar (const CharLenInfo & maxLenInfo,
+  SQLChar (NAMemory *h,
+           const CharLenInfo & maxLenInfo,
 	   NABoolean allowSQLnull	= TRUE,
 	   NABoolean isUpShifted	= FALSE, 
 	   NABoolean isCaseInsensitive	= FALSE,
@@ -497,7 +501,8 @@ public:
 // ---------------------------------------------------------------------
 // Constructor functions 
 // ---------------------------------------------------------------------
-  SQLVarChar(Lng32 maxLength,
+  SQLVarChar(NAMemory *h,
+             Lng32 maxLength,
  	     NABoolean allowSQLnull	= TRUE,
 	     NABoolean isUpShifted	= FALSE,
 	     NABoolean isCaseInsensitive = FALSE,
@@ -507,7 +512,8 @@ public:
 	     CharInfo::CharSet encoding	= CharInfo::UnknownCharSet,
              Lng32 vcIndLen             = 0
 	    );
-  SQLVarChar(const CharLenInfo & maxLenInfo,
+  SQLVarChar(NAMemory *h,
+             const CharLenInfo & maxLenInfo,
 	     NABoolean allowSQLnull	= TRUE,
 	     NABoolean isUpShifted	= FALSE,
 	     NABoolean isCaseInsensitive = FALSE,
@@ -586,7 +592,8 @@ public:
 // ---------------------------------------------------------------------
 // Constructor functions 
 // ---------------------------------------------------------------------
- ANSIChar (Lng32 maxLength,
+ ANSIChar (NAMemory *h,
+           Lng32 maxLength,
  	   NABoolean allowSQLnull	= TRUE,
 	   NABoolean isUpShifted	= FALSE,
 	   NABoolean varLenFlag		= FALSE,
@@ -604,7 +611,7 @@ NABoolean isExternalType() const 	{ return TRUE; }
 
 NAType * equivalentType(CollHeap* h=0) const
 {
-  return new(h) SQLVarChar(getNominalSize(), supportsSQLnull(),
+  return new(h) SQLVarChar(h, getNominalSize(), supportsSQLnull(),
 			     isUpshifted(), FALSE, getCharSet(), getCollation(),
                            getCoercibility());
 }
@@ -653,7 +660,8 @@ class SQLLongVarChar : public SQLVarChar
 
 public: 
 
- SQLLongVarChar(Lng32 maxLength, 
+ SQLLongVarChar(NAMemory *h,
+                Lng32 maxLength, 
 		NABoolean validLength	   = FALSE, 
 		NABoolean allowSQLnull	   = TRUE,
 		NABoolean isUpShifted	   = FALSE,
@@ -663,13 +671,14 @@ public:
 		CharInfo::Coercibility ce  = CharInfo::COERCIBLE,
 		CharInfo::CharSet encoding = CharInfo::UnknownCharSet
 	       )
-  : SQLVarChar(maxLength, allowSQLnull, isUpShifted, isCaseInsensitive,
+  : SQLVarChar(h, maxLength, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       cs, co, ce)
   {
     setClientDataType("LONG VARCHAR");
     lengthNotSet_ = !validLength;
   }
- SQLLongVarChar(const CharLenInfo & maxLenInfo,
+ SQLLongVarChar(NAMemory *h,
+                const CharLenInfo & maxLenInfo,
 		NABoolean validLength	   = FALSE, 
 		NABoolean allowSQLnull	   = TRUE,
 		NABoolean isUpShifted	   = FALSE,
@@ -679,7 +688,7 @@ public:
 		CharInfo::Coercibility ce  = CharInfo::COERCIBLE,
 		CharInfo::CharSet encoding = CharInfo::UnknownCharSet
 	       )
-  : SQLVarChar(maxLenInfo, allowSQLnull, isUpShifted, isCaseInsensitive,
+  : SQLVarChar(h, maxLenInfo, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       cs, co, ce)
   {
     setClientDataType("LONG VARCHAR");
@@ -724,17 +733,23 @@ class SQLlob : public NAType
 
 public: 
 
-  SQLlob(NABuiltInTypeEnum  ev,
-	 Int64 lobLength, 
-	 LobsStorage lobStorage,
+  SQLlob(NAMemory *h,
+         NABuiltInTypeEnum  ev,
+	 Int64 lobLength=1024, 
+	 LobsStorage lobStorage=Lob_Invalid_Storage,
 	 NABoolean allowSQLnull	= TRUE,
 	 NABoolean inlineIfPossible = FALSE,
 	 NABoolean externalFormat = FALSE,
-	 Lng32 extFormatLen = 100);
+	 Lng32 extFormatLen=1024 );
  SQLlob(const SQLlob & aLob,NAMemory * heap)
-   :NAType(aLob,heap),
-    charSet_(CharInfo::UnknownCharSet)
-    {}
+   :NAType(aLob,heap)
+    {
+      lobLength_ = aLob.lobLength_;
+      lobStorage_ = aLob.lobStorage_;
+      externalFormat_ = aLob.externalFormat_;
+      extFormatLen_ = aLob.extFormatLen_;     
+      setCharSet(CharInfo::ISO88591);//lobhandle can only be in ISO format
+    }
   
  //is this type a blob/clob
  virtual NABoolean isLob() const {return TRUE;};
@@ -787,14 +802,15 @@ class SQLBlob : public SQLlob
 
 public: 
 
-  SQLBlob(Int64 blobLength, 
+  SQLBlob(NAMemory *h,
+          Int64 blobLength=1024, 
 	  LobsStorage lobStorage = Lob_Invalid_Storage,
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
 	  Lng32 extFormatLen = 1024);
  SQLBlob(const SQLBlob & aBlob,NAMemory * heap)
-   :SQLlob(aBlob,heap)
+      :SQLlob(aBlob,heap)
     {}
   virtual short getFSDatatype() const
   {return REC_BLOB;}
@@ -826,14 +842,15 @@ class SQLClob : public SQLlob
 
 public: 
 
-  SQLClob(Int64 blobLength, 
+  SQLClob(NAMemory *h,
+          Int64 blobLength=1024, 
 	  LobsStorage lobStorage = Lob_Invalid_Storage,
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
 	  Lng32 extFormatLen = 1024);
  SQLClob(const SQLClob & aClob,NAMemory * heap)
-   :SQLlob(aClob,heap)
+      :SQLlob(aClob,heap)
     {}
   virtual short getFSDatatype() const
   {return REC_CLOB;}
@@ -852,6 +869,6 @@ public:
 private:
 
 }; // class SQLClob
-// sss #endif
+
 
 #endif /* CHARTYPE_H */

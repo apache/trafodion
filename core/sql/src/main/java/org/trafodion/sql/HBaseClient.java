@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Arrays;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
@@ -41,6 +43,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.coprocessor.Batch;
+import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
@@ -89,6 +95,8 @@ import java.util.TreeSet;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.permission.AclEntry;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
@@ -100,7 +108,21 @@ import org.apache.hadoop.hbase.client.DtmConst;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.hbase.util.CompressionTest;
 
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Message;
+import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcController;
+import com.google.protobuf.Service;
 import com.google.protobuf.ServiceException;
+
+import org.apache.hadoop.hbase.ipc.BlockingRpcCallback;
+import org.apache.hadoop.hbase.ipc.ServerRpcController;
+
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafEstimateRowCountRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafEstimateRowCountResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService;
+
 
 public class HBaseClient {
 
@@ -143,6 +165,7 @@ public class HBaseClient {
     public static final int HBASE_SPLIT_POLICY = 22;
     public static final int HBASE_CACHE_DATA_IN_L1 = 23;
     public static final int HBASE_PREFETCH_BLOCKS_ON_OPEN = 24;
+    public static final int HBASE_HDFS_STORAGE_POLICY= 25;
 
 
     private static Connection connection; 
@@ -201,13 +224,6 @@ public class HBaseClient {
                   colDesc.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                 desc.addFamily(colDesc);
             }
-            HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
-            if (isMVCC)
-              metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
-            else
-              metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
-            metaColDesc.setInMemory(true);
-            desc.addFamily(metaColDesc);
             Admin admin = getConnection().getAdmin();
             admin.createTable(desc);
             admin.close();
@@ -219,10 +235,12 @@ public class HBaseClient {
    private class ChangeFlags {
        boolean tableDescriptorChanged;
        boolean columnDescriptorChanged;
+       boolean storagePolicyChanged;
 
        ChangeFlags() {
            tableDescriptorChanged = false;
            columnDescriptorChanged = false;
+           storagePolicyChanged = false;
        }
 
        void setTableDescriptorChanged() {
@@ -240,6 +258,19 @@ public class HBaseClient {
        boolean columnDescriptorChanged() {
            return columnDescriptorChanged;
        }
+
+       void setStoragePolicyChanged(String str) {
+           storagePolicy_ = str;
+           storagePolicyChanged = true;
+       }
+
+       boolean storagePolicyChanged()    {
+           return storagePolicyChanged;
+       }
+
+       String storagePolicy_;
+
+
    }
 
    private ChangeFlags setDescriptors(Object[] tableOptions,
@@ -459,6 +490,11 @@ public class HBaseClient {
 		  colDesc.setPrefetchBlocksOnOpen(false); 
 	      returnStatus.setColumnDescriptorChanged();
 	      break ;
+           case HBASE_HDFS_STORAGE_POLICY:
+               //TODO HBase 2.0 support this
+               //So when come to HBase 2.0, no need to do this via HDFS, just set here
+             returnStatus.setStoragePolicyChanged(tableOption);
+             break ;
            case HBASE_SPLIT_POLICY:
                // This method not yet available in earlier versions
                // desc.setRegionSplitPolicyClassName(tableOption));
@@ -480,6 +516,7 @@ public class HBaseClient {
        throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
+            ChangeFlags setDescRet = null;
             HTableDescriptor desc = new HTableDescriptor(tblName);
             addCoprocessor(desc);
             int defaultVersionsValue = 0;
@@ -500,18 +537,11 @@ public class HBaseClient {
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
 
                 // change the descriptors based on the tableOptions; 
-                setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+                setDescRet = setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
                 
                 desc.addFamily(colDesc);
             }
 
-            HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
-            if (isMVCC)
-              metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
-            else
-              metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
-            metaColDesc.setInMemory(true);
-            desc.addFamily(metaColDesc);
             Admin admin = getConnection().getAdmin();
                if (beginEndKeys != null && beginEndKeys.length > 0)
                {
@@ -534,7 +564,21 @@ public class HBaseClient {
                      admin.createTable(desc);
                   }
                }
-            admin.close();
+
+            if(setDescRet!= null)
+            {
+              if(setDescRet.storagePolicyChanged())
+              {
+                 Object tableOptionsStoragePolicy[] = new Object[HBASE_HDFS_STORAGE_POLICY+1];
+                 for(int i=0; i<HBASE_HDFS_STORAGE_POLICY; i++)
+                   tableOptionsStoragePolicy[i]="";
+                 tableOptionsStoragePolicy[HBASE_HDFS_STORAGE_POLICY]=(String)setDescRet.storagePolicy_ ;
+                 tableOptionsStoragePolicy[HBASE_NAME]=(String)tblName;
+                 alter(tblName,tableOptionsStoragePolicy,transID);
+              }
+            }
+            else
+              admin.close();
         return true;
     }
 
@@ -575,7 +619,6 @@ public class HBaseClient {
         Admin admin = getConnection().getAdmin();
         HTableDescriptor htblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
-
         String colFam = (String)tableOptions[HBASE_NAME];
         if (colFam == null)
             return true; // must have col fam name
@@ -607,13 +650,18 @@ public class HBaseClient {
                 return true; // col fam already exists
         }
         else {
-            if (colDesc == null)
+            if (colDesc == null )
+            {
+               if( (String)tableOptions[HBASE_HDFS_STORAGE_POLICY] == null || (String)tableOptions[HBASE_HDFS_STORAGE_POLICY]=="" )
                 return true; // colDesc must exist
+            }
+            else {
 
-            int defaultVersionsValue = colDesc.getMaxVersions(); 
+              int defaultVersionsValue = colDesc.getMaxVersions(); 
 
-            status = 
+              status = 
                 setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+           }
         }
 
             if (transID != 0) {
@@ -648,6 +696,8 @@ public class HBaseClient {
            }
            else {
               TableName tableName = TableName.valueOf(tblName);
+              if (admin.isTableEnabled(tableName))
+                  admin.disableTable(tableName);
               admin.truncateTable(tableName, preserveSplits);
            }
         } finally {
@@ -805,11 +855,11 @@ public class HBaseClient {
                         
                         int  numStores           = regionSizeInfo.numStores;
                         int  numStoreFiles       = regionSizeInfo.numStoreFiles;
-                        Long storeUncompSize     = regionSizeInfo.storeUncompSize;
-                        Long storeFileSize       = regionSizeInfo.storeFileSize;
-                        Long memStoreSize        = regionSizeInfo.memStoreSize;
-                        Long readRequestsCount   = regionSizeInfo.readRequestsCount;
-                        Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+                        long storeUncompSize     = regionSizeInfo.storeUncompSize;
+                        long storeFileSize       = regionSizeInfo.storeFileSize;
+                        long memStoreSize        = regionSizeInfo.memStoreSize;
+                        long readRequestsCount   = regionSizeInfo.readRequestsCount;
+                        long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
                         
                         String oneRegion = "";
                         oneRegion += serverName + "|";
@@ -830,12 +880,6 @@ public class HBaseClient {
                 } // switch
             }
 
-    }
-
-    // number of regionInfo entries returned by getRegionStats.
-    public int getRegionStatsEntries() {
- 
-        return regionStatsEntries;
     }
 
     public byte[][]  getRegionStats(String tableName) 
@@ -862,21 +906,31 @@ public class HBaseClient {
                 
                     hregInfo = entry.getKey();                    
                     ServerName serverName = entry.getValue();
-                     byte[] regionName = hregInfo.getRegionName();
+                    byte[] regionName = hregInfo.getRegionName();
                     String encodedRegionName = hregInfo.getEncodedName();
                     String ppRegionName = HRegionInfo.prettyPrint(encodedRegionName);
                     SizeInfo regionSizeInfo  = rsc.getRegionSizeInfo(regionName);
-                    String serverNameStr     = regionSizeInfo.serverName;
-                    int  numStores           = regionSizeInfo.numStores;
-                    int  numStoreFiles       = regionSizeInfo.numStoreFiles;
-                    Long storeUncompSize     = regionSizeInfo.storeUncompSize;
-                    Long storeFileSize       = regionSizeInfo.storeFileSize;
-                    Long memStoreSize        = regionSizeInfo.memStoreSize;
-                    Long readRequestsCount   = regionSizeInfo.readRequestsCount;
-                    Long writeRequestsCount  = regionSizeInfo.writeRequestsCount;
-
-                    String ppTableName = regionSizeInfo.tableName;
-                    ppRegionName = regionSizeInfo.regionName;
+                    String serverNameStr     = "";
+                    int  numStores           = 0;
+                    int  numStoreFiles       = 0;
+                    long storeUncompSize     = 0;
+                    long storeFileSize       = 0;
+                    long memStoreSize        = 0;
+                    long readRequestsCount   = 0;
+                    long writeRequestsCount  = 0;
+                    String ppTableName = "";
+                    if (regionSizeInfo != null) {
+                       serverNameStr       = regionSizeInfo.serverName;
+                       numStores           = regionSizeInfo.numStores;
+                       numStoreFiles       = regionSizeInfo.numStoreFiles;
+                       storeUncompSize     = regionSizeInfo.storeUncompSize;
+                       storeFileSize       = regionSizeInfo.storeFileSize;
+                       memStoreSize        = regionSizeInfo.memStoreSize;
+                       readRequestsCount   = regionSizeInfo.readRequestsCount;
+                       writeRequestsCount  = regionSizeInfo.writeRequestsCount;
+                       ppTableName = regionSizeInfo.tableName;
+                       ppRegionName = regionSizeInfo.regionName;
+                    }
                     String oneRegion;
                     oneRegion = serverNameStr + "|";
                     oneRegion += ppTableName + "/" + ppRegionName + "|";
@@ -1051,6 +1105,8 @@ public class HBaseClient {
     // columns in the table) to the size of the HFile.
     private long estimateMemStoreRows(String tblName, int rowSize)
                  throws MasterNotRunningException, IOException {
+      if (logger.isDebugEnabled()) logger.debug("estimateMemStoreRows called for " + tblName + " with row size " + rowSize);
+
       if (rowSize == 0)
         return 0;
 
@@ -1085,6 +1141,12 @@ public class HBaseClient {
             }
           }
         }
+      }
+      catch (IOException e) {
+        if (logger.isDebugEnabled()) logger.debug("IOException caught in estimateMemStoreRows: " + e);
+      }
+      catch (Throwable e) {
+        if (logger.isDebugEnabled()) logger.debug("Throwable caught in estimateMemStoreRows: " + e);
       }
       finally {
         admin.close();
@@ -1255,6 +1317,7 @@ public class HBaseClient {
                                tblName + "/" + REGION_NAME_PATTERN +
                                "/#1/" + HFILE_NAME_PATTERN));
       for (FileStatus fs : fsArr) {
+        if (logger.isDebugEnabled()) logger.debug("Estimate row count is processing file " + fs.getPath());
         // Make sure the file name conforms to HFile name pattern.
         if (!StoreFileInfo.isHFile(fs.getPath())) {
           if (logger.isDebugEnabled()) logger.debug("Skipped file " + fs.getPath() + " -- not a valid HFile name.");
@@ -1393,6 +1456,164 @@ public class HBaseClient {
       rc[0] += memStoreRows;  // Add memstore estimate to total
       if (logger.isDebugEnabled()) logger.debug("Total estimated row count for " + tblName + " = " + rc[0]);
       return true;
+    }
+
+    // Similar to estimateRowCount, except that the implementation
+    // uses a coprocessor. This is necessary when HBase encryption is
+    // in use, because the Trafodion ID does not have the proper 
+    // authorization to the KeyStore file used by HBase.
+    public boolean estimateRowCountViaCoprocessor(String tblName, int partialRowSize,
+                                    int numCols, int retryLimitMilliSeconds, long[] rc)
+                   throws ServiceException, IOException {
+      if (logger.isDebugEnabled()) {
+        logger.debug("HBaseClient.estimateRowCountViaCoprocessor(" + tblName + ") called.");
+        logger.debug("numCols = " + numCols + ", partialRowSize = " + partialRowSize);
+      }
+
+      boolean retcode = true; 
+      rc[0] = 0;
+
+      Table table = getConnection().getTable(TableName.valueOf(tblName));
+
+      int putKVsSampled = 0;
+      int nonPutKVsSampled = 0;
+      int missingKVsCount = 0;
+      long totalEntries = 0;   // KeyValues in all HFiles for table
+      long totalSizeBytes = 0; // Size of all HFiles for table 
+
+      final int finalNumCols = numCols;
+
+      Batch.Call<TrxRegionService, TrafEstimateRowCountResponse> callable = 
+        new Batch.Call<TrxRegionService, TrafEstimateRowCountResponse>() {
+          ServerRpcController controller = new ServerRpcController();
+          BlockingRpcCallback<TrafEstimateRowCountResponse> rpcCallback = 
+            new BlockingRpcCallback<TrafEstimateRowCountResponse>();         
+
+          @Override
+          public TrafEstimateRowCountResponse call(TrxRegionService instance) throws IOException {    
+            if (logger.isDebugEnabled()) logger.debug("call method for TrxRegionService was called");
+            
+            // one of these God-awful long type identifiers common in Java/Maven environments...
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafEstimateRowCountRequest.Builder
+              builder = TrafEstimateRowCountRequest.newBuilder();        
+            builder.setNumCols(finalNumCols);
+        
+            instance.trafEstimateRowCount(controller, builder.build(), rpcCallback);
+            TrafEstimateRowCountResponse response = rpcCallback.get();
+            if (logger.isDebugEnabled()) {
+              if (response == null)
+                logger.debug("response was null");
+              else
+                logger.debug("response was non-null");
+              if (controller.failed())
+                logger.debug("controller.failed() is true");
+              else
+                logger.debug("controller.failed() is false");
+              if (controller.errorText() != null)
+                logger.debug("controller.errorText() is " + controller.errorText());
+              else
+                logger.debug("controller.errorText() is null");
+              IOException ioe = controller.getFailedOn();
+              if (ioe != null)
+                logger.debug("controller.getFailedOn() returned " + ioe.getMessage());
+              else
+                logger.debug("controller.getFailedOn() returned null");
+            }
+            return response;        
+          }
+      };
+    
+      Map<byte[], TrafEstimateRowCountResponse> result = null;
+      try {
+        result = table.coprocessorService(TrxRegionService.class, null, null, callable);
+      } catch (Throwable e) {
+        throw new IOException("Exception from coprocessorService caught in estimateRowCountViaCoprocessor",e);
+      }      
+
+      for (TrafEstimateRowCountResponse response : result.values()) {
+        boolean hasException = response.getHasException();
+        String exception = response.getException();
+        if (hasException) {
+          if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCountViaCoprocessor exception " + exception);
+          throw new IOException(exception);
+        }
+        totalEntries = totalEntries + response.getTotalEntries();
+        totalSizeBytes = totalSizeBytes + response.getTotalSizeBytes();
+        putKVsSampled = putKVsSampled + response.getPutKVsSampled();
+        nonPutKVsSampled = nonPutKVsSampled + response.getNonPutKVsSampled();
+        missingKVsCount = missingKVsCount + response.getMissingKVsCount();
+      }
+
+      if (logger.isDebugEnabled()) { 
+        logger.debug("The coprocessor service for estimating row count returned " + result.size() + " messages.");
+        logger.debug("totalEntries = " + totalEntries + ", totalSizeBytes = " + totalSizeBytes);
+        logger.debug("putKVsSampled = " + putKVsSampled + ", nonPutKVsSampled = " + nonPutKVsSampled +
+                     ", missingKVsCount = " + missingKVsCount);
+      }
+
+      final int ROWS_TO_SAMPLE = 500;
+      long estimatedEntries = ((ROWS_TO_SAMPLE > 0) && (numCols > 1)
+                                 ? 0               // get from sample data, below
+                                 : totalEntries);  // no sampling, use stored value
+      if (putKVsSampled > 0) // avoid div by 0 if no Put KVs in sample
+        {
+          long estimatedTotalPuts = (putKVsSampled * totalEntries) / 
+                               (putKVsSampled + nonPutKVsSampled);
+          estimatedEntries = ((putKVsSampled + missingKVsCount) * estimatedTotalPuts)
+                                   / putKVsSampled;
+        }
+
+      if (logger.isDebugEnabled()) { 
+        logger.debug("estimatedEntries = " + estimatedEntries + ", numCols = " + numCols);
+      } 
+
+      // Calculate estimate of rows in all HFiles of table.
+      rc[0] = (estimatedEntries + (numCols/2)) / numCols; // round instead of truncate
+
+      if (logger.isDebugEnabled()) { 
+        logger.debug("rc[0] = " + rc[0]);
+      }       
+
+      // Estimate # of rows in MemStores of all regions of table. Pass
+      // a value to divide the size of the MemStore by. Base this on the
+      // ratio of bytes-to-rows in the HFiles, or the actual row size if
+      // the HFiles were empty.
+      int rowSize;
+
+      if (rc[0] > 0)
+        rowSize = (int)(totalSizeBytes / rc[0]);
+      else {
+        // From Traf metadata we have calculated and passed in part of the row
+        // size, including size of column qualifiers (col names), which are not
+        // known to HBase.  Add to this the length of the fixed part of the
+        // KeyValue format, times the number of columns.
+        int fixedSizePartOfKV = KeyValue.KEYVALUE_INFRASTRUCTURE_SIZE // key len + value len
+                              + KeyValue.KEY_INFRASTRUCTURE_SIZE;     // rowkey & col family len, timestamp, key type
+        rowSize = partialRowSize   // for all cols: row key + col qualifiers + values
+                      + (fixedSizePartOfKV * numCols);
+
+
+        // Trafodion tables have a single col family at present, so we only look
+        // at the first family name, and multiply its length times the number of
+        // columns. Even if more than one family is used in the future, presumably
+        // they will all be the same short size.
+        HTableDescriptor htblDesc = table.getTableDescriptor();
+        HColumnDescriptor[] families = htblDesc.getColumnFamilies();
+        rowSize += (families[0].getName().length * numCols);
+      }
+
+      // Get the estimate of MemStore rows
+      long memStoreRows = estimateMemStoreRows(tblName, rowSize);
+
+      if (logger.isDebugEnabled()) {
+        logger.debug("Estimated row count from HFiles = " + rc[0]);
+        logger.debug("Estimated row count from MemStores = " + memStoreRows);
+      }
+
+      rc[0] += memStoreRows;  // Add memstore estimate to total
+      if (logger.isDebugEnabled()) logger.debug("Total estimated row count for " + tblName + " = " + rc[0]);
+
+      return retcode;
     }
 
 
@@ -1736,11 +1957,12 @@ public class HBaseClient {
                            Object row,
                            long timestamp,
                            boolean checkAndPut,
+			   short colIndexToCheck,
                            boolean asyncOperation,
                            boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
 
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.putRow(transID, rowID, row, null, null,
+      boolean ret = htc.putRow(transID, rowID, row, null, null, colIndexToCheck,
                                checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
@@ -1756,8 +1978,10 @@ public class HBaseClient {
                                    boolean asyncOperation,
                                    boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
       boolean checkAndPut = true;
+      short colIndexToCheck = 0; // is overridden by columnToCheck
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
+      boolean ret = htc.putRow(transID, rowID, columnsToUpdate, 
+			       columnToCheck, columnValToCheck, colIndexToCheck,
                                checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);

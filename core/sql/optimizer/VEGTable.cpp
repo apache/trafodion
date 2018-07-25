@@ -146,9 +146,7 @@ NABoolean VEGMember::operator==(const VEGMember & other) const
 // -----------------------------------------------------------------------
 void VEGMember::print(FILE* ofd, const char* indent, const char* title)
 {
-#pragma nowarn(1506)   // warning elimination 
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination 
   fprintf(ofd,"%s %s %s",NEW_INDENT,title,NEW_INDENT);
   fprintf(ofd,"Member (0x%x) VEG (0x%x) VEGRef (0x%x) VEGPred (0x%x)  {%s}  {%s}\n", 
               CollIndex(memberM_), CollIndex(groupG_),
@@ -175,9 +173,7 @@ void VEGMember::display()
 
 VEGMember * VEGRegion::findVEGMember(VEGReference *vegReference)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = members_.entries();
-#pragma warn(1506)  // warning elimination 
   Lng32 i = 0;
   NABoolean found = FALSE;
   ValueId memberValueId;
@@ -202,9 +198,7 @@ VEGMember * VEGRegion::findVEGMember(VEGReference *vegReference)
 // -----------------------------------------------------------------------
 VEGMember * VEGRegion::findVEGMember(const ValueId & vid) const
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = members_.entries();
-#pragma warn(1506)  // warning elimination 
   Lng32 i = 0;
   NABoolean found = FALSE;
   ValueId memberValueId;
@@ -624,9 +618,7 @@ VEGReference * VEGRegion::getVEGReferenceFromCurrentVEGRegion
   
   VEGMember * memberPtr = findVEGMember(exprId);
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 count = zones_.entries();
-#pragma warn(1506)  // warning elimination 
 
   if (memberPtr == NULL &&
       searchThisVegRegionFirst &&
@@ -737,9 +729,7 @@ void VEGRegion::importVEGsForUnionChildVEGRegion()
   while (parentRegion)
     {
       parentZone = parentRegion; // initialize per iteration
-#pragma nowarn(1506)   // warning elimination 
       parentZoneCount = getParentVEGRegion()->zones_.entries();
-#pragma warn(1506)  // warning elimination 
       parentZoneCountPlusOne = 1 + parentZoneCount;
       iterations  = 0;
 
@@ -877,9 +867,7 @@ void VEGRegion::importVEGsForUnionChildVEGRegion()
 // -----------------------------------------------------------------------
 void VEGRegion::gatherInstantiateNullMembers(ValueIdSet & vidset)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = members_.entries();
-#pragma warn(1506)  // warning elimination 
   Lng32 index;
   for (index = 0; index < ne; index ++)
   {
@@ -896,9 +884,7 @@ void VEGRegion::gatherInstantiateNullMembers(ValueIdSet & vidset)
 // -----------------------------------------------------------------------
 void VEGRegion::replaceInstantiateNullMembers()
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = members_.entries();      // number of entries in the VEGRegion
-#pragma warn(1506)  // warning elimination 
   Lng32 index;               // loop index
   InstantiateNull * instNullPtr; // -> an InstantiateNull 
   VEGMember * memberPtr;         // -> a VEGMember
@@ -958,9 +944,7 @@ void VEGRegion::replaceInstantiateNullMembers()
   // Iterate over entries in deleteStack.
   // Each entry of deleteStack is for a member that is an InstantiateNull.
   // ---------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
   ne = deleteStack.entries();
-#pragma warn(1506)  // warning elimination 
   ValueId vegId;
   for (index = 0; index < ne; index++)
     {
@@ -1179,9 +1163,7 @@ void VEGRegion::mergeZonesFromSameVEGRegion(VEGRegion * fromRegion,
     replaceInstantiateNullMembers();
 
   // Process all the descendant VEGRegions
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = zones_.entries();
-#pragma warn(1506)  // warning elimination 
 
   // this call is not needed as the above call to
   // replaceInstantiateNullMembers() already does this
@@ -1213,9 +1195,7 @@ void VEGRegion::mergeZonesFromSameVEGRegion(VEGRegion * fromRegion,
 void VEGRegion::processZones()
 {
   Lng32 index;
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = members_.entries();
-#pragma warn(1506)  // warning elimination 
   LIST(VEGMember *) deleteStack(STMTHEAP);
 
   // Walk through the members of this VEGRegion to check if any member
@@ -1227,17 +1207,13 @@ void VEGRegion::processZones()
   // Delete all the unwanted members.
   if (deleteStack.entries() > 0)
     {
-#pragma nowarn(1506)   // warning elimination 
       ne = deleteStack.entries();
-#pragma warn(1506)  // warning elimination 
       for (index = 0; index < ne; index ++)
 	deleteVEGMember(deleteStack[index]->getMemberValueId());
     }
   
   // Process all the descendant VEGRegions
-#pragma nowarn(1506)   // warning elimination 
   ne = zones_.entries();
-#pragma warn(1506)  // warning elimination 
   for (index = 0; index < ne; index++)
     zones_[index]->processZones();
 
@@ -1263,9 +1239,7 @@ void VEGRegion::processZones()
 void VEGRegion::fixupZonesAfterFullToLeftConversion()
 {
   Lng32 index;
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = zones_.entries();
-#pragma warn(1506)  // warning elimination 
 
   // And that this method is invoked right after conversion
   // of full outer Join to left outer join. 
@@ -1299,9 +1273,7 @@ void VEGRegion::fixupActiveZones(VEGRegion * activeParentRegion,
    CMPASSERT(isActive());
 
   Lng32 index;
-#pragma nowarn(1506)   // warning elimination 
   Lng32 ne = zones_.entries();
-#pragma warn(1506)  // warning elimination 
 
   ValueIdSet  newOuterReferences(outerReferences);
   ValueIdSet  setOfMembers;
@@ -1462,9 +1434,7 @@ void VEGRegion::fixupZonesAndParentPointers()
   
       parentRegion->zones_.remove(candidateRegion);
 
-#pragma nowarn(1506)   // warning elimination
       Lng32 ne = candidateRegion->zones_.entries();
-#pragma warn(1506)  // warning elimination
 
       // loop throught the zones of this region and add them to the 
       // parent region zones
@@ -1549,9 +1519,7 @@ void VEGRegion::print(FILE* ofd, const char* indent, const char* title)
 {
   Lng32 ne;
   
-#pragma nowarn(1506)   // warning elimination 
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination 
   fprintf(ofd,"************\n");
   fprintf(ofd,"%s %s[%d] %s",NEW_INDENT,title,getRegionId(),NEW_INDENT);
   if (isActive())
@@ -1955,18 +1923,14 @@ void VEGTable::processVEGRegions()
 // -----------------------------------------------------------------------
 void VEGTable::print(FILE* ofd, const char* indent, const char* title)
 {
-#pragma nowarn(1506)   // warning elimination 
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination 
   fprintf(ofd,"%s %s %s",NEW_INDENT,title,NEW_INDENT);
   if (getCurrentVEGRegion())
     {
       fprintf(ofd,"nextInSequence = %d\n>>>> Current Region is Region[%d] <<<<\n", 
 	      nextInSequence_,getCurrentVEGRegion()->getRegionId());
 
-#pragma nowarn(1506)   // warning elimination 
       Lng32 ne = arrayEntry_.entries();
-#pragma warn(1506)  // warning elimination 
       // Print all the regions
       for (RegionId index = FIRST_VEG_REGION;
            index < (RegionId)arrayEntry_.entries();

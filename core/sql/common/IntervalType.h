@@ -44,7 +44,7 @@
 #include "NAType.h"
 #include "DTICommonType.h"
 #include "Int64.h"
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <iostream>
 #endif
 
@@ -67,8 +67,6 @@ short getIntervalFields(Lng32 fsDatatype,
 //  IntervalType : The interval data type
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
-#pragma nowarn(1319)  // warning elimination
 class IntervalType : public DatetimeIntervalCommonType
 {
 public:
@@ -102,15 +100,14 @@ public:
   // Constructor functions
   // ---------------------------------------------------------------------
   IntervalType
-  ( NABoolean allowSQLnull
+  ( NAMemory *heap, NABoolean allowSQLnull
   , rec_datetime_field startField
   , UInt32 leadingPrec
   , rec_datetime_field endField
   , UInt32 fractionPrec = 0
-  , NAMemory * heap =0
   )
   : DatetimeIntervalCommonType
-  ( LiteralInterval //"INTERVAL"
+  ( heap, LiteralInterval //"INTERVAL"
   , NA_INTERVAL_TYPE
   , getStorageSize(startField, leadingPrec, endField, fractionPrec)
   , allowSQLnull
@@ -118,7 +115,7 @@ public:
   , endField
   , fractionPrec
   , getStorageSize(startField, leadingPrec, endField, fractionPrec)
-  , heap)
+  )
   , leadingPrecision_(leadingPrec)
   {                                         // this could be a valid interval if we change endField to SECOND
     if (endField == REC_DATE_FRACTION_MP && startField != REC_DATE_FRACTION_MP)
@@ -129,12 +126,12 @@ public:
       {
 	makeInvalid();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 	// All callers *should be* immediately calling the checkValid() method
 	// and so this debugging info *should be* unnecessary.  Delete it!
 	cerr << "Invalid interval specification " <<
 		getTypeSQLname(TRUE /*terse*/) << endl;
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
       }
   }
 
@@ -153,12 +150,12 @@ public:
       {
 	makeInvalid();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 	// All callers *should be* immediately calling the checkValid() method
 	// and so this debugging info *should be* unnecessary.  Delete it!
 	cerr << "Invalid interval specification " <<
 		getTypeSQLname(TRUE /*terse*/) << endl;
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
       }
   }
 
@@ -315,8 +312,6 @@ private:
   unsigned short leadingPrecision_;
 
 }; // class IntervalType
-#pragma warn(1506)  // warning elimination
-#pragma warn(1319)  // warning elimination
 
 // ***********************************************************************
 //
@@ -330,22 +325,22 @@ public:
   enum { DEFAULT_LEADING_PRECISION  =  2,	// ANSI 10.1 SR 5: two
 	 MAX_LEADING_PRECISION	    = MAX_NUMERIC_PRECISION, // 10.1 SR 3: >=2
 	 DEFAULT_FRACTION_PRECISION =  6,	// ANSI 10.1 SR 6: six
-	 MAX_FRACTION_PRECISION	    =  6	// ANSI 10.1 SR 4: >=6
+	 MAX_FRACTION_PRECISION_USEC=  6,	// ANSI 10.1 SR 4: >=6
+	 MAX_FRACTION_PRECISION	    =  9	// ANSI 10.1 SR 4: >=6
        };
 
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
   SQLInterval
-  ( NABoolean allowSQLnull
+  ( NAMemory *h, NABoolean allowSQLnull
   , rec_datetime_field startField
   , UInt32 leadingPrec
   , rec_datetime_field endField
   , UInt32 fractionPrec = DEFAULT_FRACTION_PRECISION
-  , NAMemory *h=0
   )
-  : IntervalType(allowSQLnull, startField, leadingPrec, endField,
-                 endField >= REC_DATE_SECOND ? fractionPrec : 0, h)
+  : IntervalType(h, allowSQLnull, startField, leadingPrec, endField,
+                 endField >= REC_DATE_SECOND ? fractionPrec : 0)
   {}
 
 // copy ctor
@@ -391,21 +386,19 @@ public:
 
   // Constructors
   IntervalQualifier
-  ( rec_datetime_field startField
+  ( NAMemory *h, rec_datetime_field startField
   , UInt32 leadingPrec = DEFAULT_LEADING_PRECISION
-  , NAMemory *h = 0
   )
-  : SQLInterval(FALSE, startField, leadingPrec, startField, DEFAULT_FRACTION_PRECISION,h)
+  : SQLInterval(h, FALSE, startField, leadingPrec, startField, DEFAULT_FRACTION_PRECISION)
   {}
 
   IntervalQualifier
-  ( rec_datetime_field startField
+  ( NAMemory *h, rec_datetime_field startField
   , UInt32 leadingPrec
   , rec_datetime_field endField
   , UInt32 fractionPrec
-  , NAMemory *h=0
   )
-  : SQLInterval(FALSE, startField, leadingPrec, endField, fractionPrec,h)
+  : SQLInterval(h, FALSE, startField, leadingPrec, endField, fractionPrec)
   {}
 
 private:

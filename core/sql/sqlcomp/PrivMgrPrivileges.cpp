@@ -1361,7 +1361,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   PrivMgrDesc privsToGrant(granteeID);
   PrivMgrDesc privsOfTheGrantor(grantorID_);
   std::vector<int_32> roleIDs;
-  retcode = initGrantRevoke(objectType, granteeID,
+  retcode = initGrantRevoke(objectType, granteeID, grantorName,
                             privsList, colPrivsArray,
                             isAllSpecified, isWGOSpecified, true,
                             privsToGrant, privsOfTheGrantor, roleIDs);
@@ -1380,9 +1380,23 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
     warnNotAll = true;
 
   // If nothing left to grant, we are done.
+  // If one of the users roles has privilege, indicate in error message
   if ( privsToGrant.isNull() )
   {
-    *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_GRANTED);
+    std::string rolesWithPrivs;
+    if (getRolesToCheck(grantorID_, roleIDs, objectType, rolesWithPrivs)== STATUS_GOOD)
+    {
+      if (rolesWithPrivs.size() > 0)
+      {
+        *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_GRANTED)
+                 << DgString0 (grantorName.c_str())
+                 << DgString1 (rolesWithPrivs.c_str());
+        return STATUS_ERROR;
+      }
+    }
+
+    *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_GRANTED)
+             << DgString0 (grantorName.c_str());
     return STATUS_ERROR;
   }
 
@@ -1708,6 +1722,7 @@ PrivStatus privStatus = objectPrivsTable.insert(row);
 PrivStatus PrivMgrPrivileges::initGrantRevoke(
     const ComObjectType objectType,
     const int32_t granteeID,
+    const std::string &grantorName,
     const std::vector<PrivType> &privList,
     const std::vector<ColPrivSpec> & colPrivsArray,
     const bool isAllSpecified,
@@ -1742,11 +1757,6 @@ PrivStatus PrivMgrPrivileges::initGrantRevoke(
   if (generateColumnRowList() == STATUS_ERROR)
     return STATUS_ERROR; 
     
-  // get roleIDs for the grantor
-  retcode = getRoleIDsForUserID(grantorID_,roleIDs);
-  if (retcode == STATUS_ERROR)
-    return retcode;
-
   // get column and object privileges across all grantors 
   bool hasManagePrivileges;
   retcode = getUserPrivs(objectType, grantorID_, roleIDs, privsOfTheGrantor,
@@ -1754,10 +1764,28 @@ PrivStatus PrivMgrPrivileges::initGrantRevoke(
   if (retcode != STATUS_GOOD)
     return retcode;
 
+  // get roleIDs for the grantor
+  retcode = getRoleIDsForUserID(grantorID_,roleIDs);
+  if (retcode == STATUS_ERROR)
+    return retcode;
+
   // If null, the grantor has no privileges
-  if ( privsOfTheGrantor.isNull() )
+ if ( privsOfTheGrantor.isNull() )
   {
-    *pDiags_ << DgSqlCode ((isGrant) ? -CAT_PRIVILEGE_NOT_GRANTED : -CAT_PRIVILEGE_NOT_REVOKED);
+    std::string rolesWithPrivs;
+    if (getRolesToCheck(grantorID_, roleIDs, objectType, rolesWithPrivs)== STATUS_GOOD)
+    {
+      if (rolesWithPrivs.size() > 0)
+      {
+        *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_GRANTED)
+                 << DgString0 (grantorName.c_str())
+                 << DgString1 (rolesWithPrivs.c_str());
+        return STATUS_ERROR;
+      }
+    }
+
+    *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_GRANTED)
+             << DgString0 (grantorName.c_str());
     return STATUS_ERROR;
   }
 
@@ -2851,7 +2879,7 @@ short retcode = 0;
     char authName[MAX_USERNAME_LEN+1];
     Int32 actualLen = 0;
     retcode = ComUser::getAuthNameFromAuthID(objectOwner,authName,
-                                             MAX_USERNAME_LEN,actualLen);
+                                             MAX_USERNAME_LEN+1,actualLen);
     if (retcode != FEOK)
     {
       *pDiags_ << DgSqlCode(-20235)
@@ -3249,7 +3277,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   PrivMgrDesc privsToRevoke(granteeID);
   PrivMgrDesc privsOfTheGrantor(grantorID_);
   std::vector<int_32> roleIDs;
-  retcode = initGrantRevoke(objectType, granteeID,
+  retcode = initGrantRevoke(objectType, granteeID, grantorName,
                             privsList, colPrivsArray,
                             isAllSpecified, isGOFSpecified, false,
                             privsToRevoke, privsOfTheGrantor, roleIDs);
@@ -3270,7 +3298,20 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   // If nothing left to revoke, we are done.
   if ( privsToRevoke.isNull() )
   {
-    *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_REVOKED);
+    std::string rolesWithPrivs;
+    if (getRolesToCheck(grantorID_, roleIDs, objectType, rolesWithPrivs)== STATUS_GOOD)
+    {
+      if (rolesWithPrivs.size() > 0)
+      {
+        *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_GRANTED)
+                 << DgString0 (grantorName.c_str())
+                 << DgString1 (rolesWithPrivs.c_str());
+        return STATUS_ERROR;
+      }
+    }
+
+    *pDiags_ << DgSqlCode (-CAT_PRIVILEGE_NOT_GRANTED)
+             << DgString0 (grantorName.c_str());
     return STATUS_ERROR;
   }
 
@@ -3788,7 +3829,7 @@ bool PrivMgrPrivileges::checkColumnRevokeRestrict (
 }
 
 // ----------------------------------------------------------------------------
-//  method:  scanObjectBranch 
+//  method:  scanColumnBranch 
 // 
 //   scans the privsList entries for match on Grantor,
 //   keeping track of which priv/wgo entries have been encountered
@@ -3835,7 +3876,6 @@ void PrivMgrPrivileges::scanColumnBranch( const PrivType pType,
     ColumnPrivsMDRow &currentRow = static_cast<ColumnPrivsMDRow &> (*rowList[i]);
     if (currentRow.grantorID_ == grantor)
     {
-
       // Just look at rows that have had privileges changed
       // The listOfColumnOrdinals has this list
       PrivMgrCoreDesc current = currentRow.current_;
@@ -3864,15 +3904,33 @@ void PrivMgrPrivileges::scanColumnBranch( const PrivType pType,
               if ( ComUser::isPublicUserID(thisGrantee) )
                 scanPublic( pType, //  Deal with PUBLIC grantee wgo.
                             rowList );
+  
               else
               {
-                int32_t granteeAsGrantor(thisGrantee);
+                int32_t granteeAsGrantor;
+                if (isRoleID(thisGrantee))
+                {
+                  std::vector<int32_t> roleIDs;
+                  std::vector<int32_t> userIDs;
+                  roleIDs.push_back(thisGrantee);
+                  if (getUserIDsForRoleIDs(roleIDs,userIDs) == STATUS_ERROR)
+                    return;
+                  for (size_t j = 0; j < userIDs.size(); j++)
+                  {
+                     granteeAsGrantor = userIDs[j];
+                     scanColumnBranch( pType, // Scan for this grantee as grantor.
+                                       granteeAsGrantor,
+                                       listOfColumnOrdinals,
+                                       rowList );
+                  }
+                }
+                granteeAsGrantor = thisGrantee;
                 scanColumnBranch( pType, // Scan for this grantee as grantor.
-                               granteeAsGrantor,
-                               listOfColumnOrdinals,
-                               rowList );
-              }
-            }
+                                  granteeAsGrantor,
+                                  listOfColumnOrdinals,
+                                  rowList );
+              } // end process non public auth ID
+            } // end visit row
           }  // end this grantee has wgo
         }  // end this grantee has this priv
       } // correct column ordinal
@@ -4440,6 +4498,50 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
 
   summarizedPrivs.setColumnPrivs(coreColumnPrivs);
   summarizedPrivs.setHasPublicPriv(hasPublicGrantee);
+
+  return STATUS_GOOD;
+}
+
+
+// ----------------------------------------------------------------------------
+// method: getRolesToCheck
+//
+// This method checks all the roles granted to the user and returns a comma
+// separated list of those roles that have privileges on the target object.
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrPrivileges::getRolesToCheck(
+  const int32_t grantorID,
+  const std::vector<int32_t> & roleIDs,
+  const ComObjectType objectType,
+  std::string &rolesWithPrivs)
+{
+  int32_t length;
+  char roleName[MAX_DBUSERNAME_LEN + 1];
+  std::vector<int_32> emptyRoleIDs;
+  bool hasManagePrivPriv = false;
+
+  for (size_t r = 0; r < roleIDs.size(); r++)
+  {
+    PrivMgrDesc privsOfTheRole(roleIDs[r],true);
+    if (getUserPrivs(objectType, roleIDs[r], emptyRoleIDs, privsOfTheRole,
+                     hasManagePrivPriv) != STATUS_GOOD)
+      return STATUS_ERROR;
+
+    if (!privsOfTheRole.isNull())
+    {
+      // just return what getAuthNameFromAuthID returns
+      ComUser::getAuthNameFromAuthID(roleIDs[r],roleName, sizeof(roleName),length);
+      if (rolesWithPrivs.size() > 0)
+        rolesWithPrivs += ", ";
+      rolesWithPrivs += roleName;
+    }
+  }
+
+  if (rolesWithPrivs.size() > 0)
+  {
+    rolesWithPrivs.insert (0,"Please retry using the BY clause for one of the following roles (");
+    rolesWithPrivs += ").";
+  }
 
   return STATUS_GOOD;
 }
@@ -5736,7 +5838,7 @@ PrivStatus ObjectPrivsMDTable::selectWhere(
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * tableQueue = NULL;
   int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, (char *)selectStmt.c_str(), 0, false, false, true);
@@ -5895,7 +5997,7 @@ PrivStatus ObjectPrivsMDTable::insert(const PrivMgrMDRow &rowIn)
               privilegesBitmapLong,
               grantableBitmapLong);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(insertStmt);
 
@@ -5964,7 +6066,7 @@ PrivStatus ObjectPrivsMDTable::deleteWhere(const std::string & whereClause)
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   int32_t cliRC = cliInterface.executeImmediate(deleteStmt.c_str());
@@ -6050,7 +6152,7 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(updateStmt.c_str());
   if (cliRC < 0)
@@ -6130,9 +6232,9 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   sprintf(buf, "select count(*) from %s", tableName_.c_str());
   Int64 rowsSelected = 0;
   Lng32 theLen = 0;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
-  int32_t cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &theLen, NULL);
+  int32_t cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &theLen, FALSE);
   if (cliRC < 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -6222,7 +6324,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
               " and object_owner > 0",
               objectsLocation.c_str());
   Lng32 len = 0;
-  cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &len, NULL);
+  cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &len, FALSE);
   if (cliRC < 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());

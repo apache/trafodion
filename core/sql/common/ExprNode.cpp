@@ -181,8 +181,9 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_UNARY_TABLE_MAPPING_UDF:
 	    case REL_BINARY_TABLE_MAPPING_UDF:
 	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
-            case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
-            case REL_TABLE_MAPPING_BUILTIN_JDBC:
+	    case REL_TABLE_MAPPING_BUILTIN_SERIES:
+	    case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+	    case REL_TABLE_MAPPING_BUILTIN_JDBC:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -700,8 +701,9 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_UNARY_TABLE_MAPPING_UDF:
 	    case REL_BINARY_TABLE_MAPPING_UDF:
 	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
-            case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
-            case REL_TABLE_MAPPING_BUILTIN_JDBC:
+	    case REL_TABLE_MAPPING_BUILTIN_SERIES:
+	    case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+	    case REL_TABLE_MAPPING_BUILTIN_JDBC:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -732,6 +734,16 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	  switch (op_)
 	    {
 	    case REL_BINARY_TABLE_MAPPING_UDF:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
+        case REL_ANY_EXTRACT:
+	  switch (op_)
+	    {
+	    case REL_FAST_EXTRACT:
+	    case REL_HIVE_INSERT:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -773,6 +785,7 @@ NABoolean OperatorType::isWildcard() const
     case REL_FORCE_ANY_SCAN:
     case REL_ANY_ROUTINE:
     case REL_ANY_SCALAR_UDF_ROUTINE:
+    case REL_ANY_EXTRACT:
       return TRUE;
 
     default:
@@ -806,7 +819,6 @@ ExprNode::ExprNode(const ExprNode& s)
 
 ExprNode::~ExprNode() {}
 
-// LCOV_EXCL_START
 ExprNode * ExprNode::getChild(Lng32 )
 {
   ABORT("virtual function ExprNode::getChild() must be redefined");
@@ -908,5 +920,4 @@ void ExprNode::addLocalExpr(LIST(ExprNode *) &,
 {
   // the default implementation is to do nothing
 }
-// LCOV_EXCL_STOP
 

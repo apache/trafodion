@@ -52,7 +52,6 @@ TreeNode::TreeNode() {}
 //---------------------------------------------------------------------------
 // Class Destructor. Delete all the space pointed to by the ptrs in TreeNode
 //---------------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 TreeNode::~TreeNode() {
  if (key_ != NULL) {
     key_ = NULL;
@@ -68,7 +67,6 @@ TreeNode::~TreeNode() {
     sortMergeNode_ = NULL;
   }
 }
-#pragma warn(770)  // warning elimination 
 
 //-----------------------------------------------------------------------
 // Name         : initialize 
@@ -106,14 +104,12 @@ void TreeNode::initialize(ULng32 nodenum,
   heap_    = heap;
   if (merge)
     {
-#pragma nowarn(1506)   // warning elimination 
     sortMergeNode_ = new (heap_) SortMergeNode(associatedrun, scratch);
-#pragma warn(1506)  // warning elimination 
     if (sortMergeNode_ == NULL)
       {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-        ,NULL          //syserr: the actual FS error
-        ,NULL          //syserrdetail
+        ,0          //syserr: the actual FS error
+        ,0          //syserrdetail
         ,"Treenode::initialize"     //methodname
         );
       return;
@@ -140,7 +136,6 @@ void TreeNode::initialize(ULng32 nodenum,
 // Description  : This function is used to deallocate objects that
 //                were allocated in initialize().
 
-#pragma nowarn(770)   // warning elimination 
 void TreeNode::deallocate() 
 {
   // No need to delete scratch file, it is managed outside the scope
@@ -153,7 +148,6 @@ void TreeNode::deallocate()
     sortMergeNode_ = NULL;
   }
 }
-#pragma warn(770)  // warning elimination
 
 //-----------------------------------------------------------------------
 // Name         : outputScr 

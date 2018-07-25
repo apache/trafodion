@@ -66,13 +66,22 @@ For information on specific functions and expressions, see:
 
 You can use {project-name} SQL statements to read, update, and create HBase tables.
 
-* <<initializing_the_trafodion_metadata,Initializing the {project-name} Metadata>>
+* <<initializing_the_trafodion_metadata,Initializing the Trafodion Metadata>>
 * <<ways_to_access_hbase_tables,Ways to Access HBase Tables>>
 * <<trafodion_sql_tables_versus_native_hbase_tables,{project-name} SQL Tables Versus Native HBase Tables>>
 * <<supported_sql_statements_with_hbase_tables,Supported SQL Statements With HBase Tables>>
 
 For a list of Control Query Default (CQD) settings for the HBase environment, see the
 {docs-url}/cqd_reference/index.hmtl[{project-name} Control Query Default (CQD) Reference Guide].
+
+[[initializing_the_trafodion_metadata]]
+=== Initializing the Trafodion Metadata
+Before using SQL statements for the first time to access HBase tables, you will need to initialize the Trafodion metadata. 
+To initialize the Trafodion metadata, run this command:
+
+```
+initialize trafodion;
+```
 
 [[ways_to_access_hbase_tables]]
 === Ways to Access HBase Tables
@@ -251,35 +260,103 @@ select * from hive.hive.t; -- explicit table name
 
 
 <<<
-[[type_mapping_from_hive_to_trafodion_sql]]
-=== Type Mapping From Hive to {project-name} SQL
+[[data_type_mapping_from_hive_to_trafodion_sql]]
+=== Data Type Mapping From Hive to {project-name} SQL
 
-{project-name} performs the following data-type mappings:
+{project-name} performs the following data-type mappings.
 
-[cols="2*",options="header"]
+[[numeric_data_type_mapping_from_hive_to_trafodion]]
+==== Numeric Data Type Mapping From Hive to Trafodion
+
+[cols="6*^.^",options="header"]
 |===
-| Hive Type             | {project-name} SQL Type
-| `tinyint`             | `tinyint`
-| `tinyint`             | `smallint`
-| `smallint`            | `smallint`
-| `int`                 | `int`
-| `bigint`              | `largeint`
+6+| +++<u>Numeric</u>+++ Data Type Mapping From Hive to Trafodion
+3+| *Hive ^1^* 3+| *Trafodion*
+| Data Type | Range | Byte(s) | Data Type | Range | Byte(s)
+| tinyint + 
+(signed) | -128 ~ +127 | 1 | tinyint +
+(signed) | -128 ~ +127 | 1
+| smallint +
+(signed) | -32,768 ~ +32,767 |	2	| smallint +
+(signed)	| -32,768 ~ +32,767	| 2
+| int +
+(signed) | -2,147,483,648 ~ +2,147,483,647	| 4	| int +
+(signed) |	-2,147,483,648 ~ +2,147,483,647	| 4
+| bigint +
+(signed) |	-9,223,372,036,854,775,808 ~ +9,223,372,036,854,775,807	| 8 |	largeint +
+(signed)	| -9,223,372,036,854,775,808 ~ +9,223,372,036,854,775,807	| 8
+|===
+
+1. Hive supports *only signed numeric data types*. +
+For more information about numeric data type for Hive and Trafodion, see the table below.
+
+[cols="6*^.^",options="header"]
+|===
+6+| Comparison of Numeric Data Type between Hive and Trafodion
+3+| *Hive* 3+| *Trafodion*
+| Data Type | Range | Byte(s) | Data Type | Range | Byte(s)
+| tinyint +
+(signed) | -128 ~ +127 | 1 | tinyint +
+(signed) | -128 ~ +127 .2+| 1
+.2+| smallint +
+(signed) .2+| -32,768 ~ +32,767 .2+| 2 | tinyint +
+(unsigned) | 0 ~ 255 | smallint +
+(signed)	| -32,768 ~ +32,767	.2+| 2
+.2+| int +
+(signed) .2+| -2,147,483,648 ~ +2,147,483,647	.2+| 4	| smallint +
+(unsigned) | 0 ~ 65,535 | int +
+(signed) |	-2,147,483,648 ~ +2,147,483,647	.2+| 4
+.2+| bigint +
+(signed) .2+| -9,223,372,036,854,775,808 ~ +9,223,372,036,854,775,807 .2+| 8 | int +
+(unsigned)	| 0 ~ 4,294,967,295 | largeint +
+(signed)	| -9,223,372,036,854,775,808 ~ +9,223,372,036,854,775,807	.2+| 8
+| / | / | / | largeint +
+(unsigned)	| 0 ~ 18,446,744,073,709,551,615
+|===
+
+[[character_string_data_type_mapping_from_hive_to_trafodion]]
+==== Character String Data Type Mapping From Hive to Trafodion
+
+[cols="2*^.^",options="header"]
+|===
+2+| +++<u>Character String</u>+++ Data Type Mapping From Hive to Trafodion
+| *Hive*                | *Trafodion*
 | `string`              | `varchar(_n_ bytes) character set utf8`^1^
 | `varchar`             | `varchar`
 | `char`                | `char`
-| `float`               | `real`
-| `decimal (precision, scale)`                | `decimal (precision, scale)`^2^ +
-`numeric (precision, scale)`^3^
-| `double`              | `float(54)`
-| `timestamp`           | `timestamp(6)`^4^
-| `date`                | `date`
 |===
 
 1. The value `_n_` is determined by `CQD HIVE_MAX_STRING_LENGTH`. See the
 {docs-url}/cqd_reference/index.hmtl[{project-name} Control Query Default (CQD) Reference Guide].
-2. If p is less than or equal to 18, decimal (precision, scale) is mapped to decimal (precision, scale).
-3. If p is greater than 18, decimal (precision, scale) is mapped to numeric (precision, scale).
-4. Hive supports timestamps with nanosecond resolution (precision of 9). {project-name} SQL supports only microsecond resolution (precision 6).
+
+[[numeric_data_type_mapping_from_hive_to_trafodion]]
+==== Numeric Data Type Mapping From Hive to Trafodion
+
+[cols="2*^.^",options="header"]
+|===
+2+| +++<u>Numeric</u>+++ Data Type Mapping From Hive to Trafodion
+| *Hive*                | *Trafodion*
+| `float`               | `real`
+| `decimal (precision, scale)`                | `decimal (precision, scale)`^1^ +
+`numeric (precision, scale)`^2^
+| `double`              | `float`
+|===
+
+1. If p is less than or equal to 18, decimal (precision, scale) is mapped to decimal (precision, scale).
+2. If p is greater than 18, decimal (precision, scale) is mapped to numeric (precision, scale).
+
+[[datetime_data_type_mapping_from_hive_to_trafodion]]
+==== Datetime Data Type Mapping From Hive to Trafodion
+
+[cols="2*^.^",options="header"]
+|===
+2+| +++<u>Datetime</u>+++ Data Type Mapping From Hive to Trafodion
+| *Hive*                | *Trafodion*
+| `timestamp`           | `timestamp(6)`^1^
+| `date`                | `date`
+|===
+
+1. Hive supports timestamps with nanosecond resolution (precision of 9). {project-name} SQL supports only microsecond resolution (precision 6).
 
 [[supported_sql_statements_with_hive_tables]]
 === Supported SQL Statements With Hive Tables

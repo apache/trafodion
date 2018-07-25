@@ -70,16 +70,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExSampleTdb()
+  ExSampleTdb()
   {};
 
-  NA_EIDPROC virtual ~ExSampleTdb()
+  virtual ~ExSampleTdb()
   {};
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -130,28 +130,28 @@ public:
     ExSamp_DONE
   };
   
-  NA_EIDPROC ExSampleTcb(const ExSampleTdb & sample_tdb,    
+  ExSampleTcb(const ExSampleTdb & sample_tdb,    
 			 const ex_tcb &    child_tcb,
 			 ex_globals * glob
 			 );
-  NA_EIDPROC ~ExSampleTcb();  
+  ~ExSampleTcb();  
   
-  NA_EIDPROC void freeResources();
-  NA_EIDPROC short work();
+  void freeResources();
+  short work();
   
-  NA_EIDPROC inline ExSampleTdb & myTdb() const;
-  NA_EIDPROC ex_queue_pair getParentQueue() const
+  inline ExSampleTdb & myTdb() const;
+  ex_queue_pair getParentQueue() const
   {
   return (qparent_);
   }
 
-  NA_EIDPROC inline ex_expr * initExpr() const;
-  NA_EIDPROC inline ex_expr * balanceExpr() const;
-  NA_EIDPROC inline Int32 returnFactorOffset() const;
-  NA_EIDPROC inline ex_expr * postPred() const;
+  inline ex_expr * initExpr() const;
+  inline ex_expr * balanceExpr() const;
+  inline Int32 returnFactorOffset() const;
+  inline ex_expr * postPred() const;
   
-  NA_EIDPROC virtual Int32 numChildren() const;
-  NA_EIDPROC virtual const ex_tcb* getChild(Int32 pos) const;
+  virtual Int32 numChildren() const;
+  virtual const ex_tcb* getChild(Int32 pos) const;
 
 private:
   const ex_tcb * childTcb_;
@@ -164,32 +164,32 @@ private:
 
 // ExSampleTdb inline function definitions
 //
-NA_EIDPROC inline ex_expr * ExSampleTcb::initExpr() const 
+inline ex_expr * ExSampleTcb::initExpr() const 
 { 
   return myTdb().initExpr_; 
 };
 
-NA_EIDPROC inline ex_expr * ExSampleTcb::balanceExpr() const 
+inline ex_expr * ExSampleTcb::balanceExpr() const 
 { 
   return myTdb().balanceExpr_; 
 };
 
-NA_EIDPROC inline Int32 ExSampleTcb::returnFactorOffset() const
+inline Int32 ExSampleTcb::returnFactorOffset() const
 { 
   return myTdb().returnFactorOffset_; 
 };
 
-NA_EIDPROC inline ex_expr * ExSampleTcb::postPred() const 
+inline ex_expr * ExSampleTcb::postPred() const 
 { 
   return myTdb().postPred_; 
 };
   
-NA_EIDPROC inline Int32 ExSampleTcb::numChildren() const 
+inline Int32 ExSampleTcb::numChildren() const 
 { 
   return 1; 
 }   
 
-NA_EIDPROC inline const ex_tcb* ExSampleTcb::getChild(Int32 pos) const
+inline const ex_tcb* ExSampleTcb::getChild(Int32 pos) const
 {
    ex_assert((pos >= 0), ""); 
    if (pos == 0)
@@ -198,7 +198,7 @@ NA_EIDPROC inline const ex_tcb* ExSampleTcb::getChild(Int32 pos) const
       return NULL;
 }
 
-NA_EIDPROC inline ExSampleTdb & ExSampleTcb::myTdb() const
+inline ExSampleTdb & ExSampleTcb::myTdb() const
 {
         return (ExSampleTdb &) tdb;
 };
@@ -211,9 +211,9 @@ class ExSamplePrivateState : public ex_tcb_private_state
   friend class ExSampleTcb;
 
 public:
-  NA_EIDPROC ExSamplePrivateState(const ExSampleTcb * tcb);
-  NA_EIDPROC ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
-  NA_EIDPROC ~ExSamplePrivateState();
+  ExSamplePrivateState(const ExSampleTcb * tcb);
+  ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
+  ~ExSamplePrivateState();
 
 private:
   ExSampleTcb::RequestState step_;

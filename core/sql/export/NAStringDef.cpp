@@ -55,9 +55,7 @@
 
 #include "str.h"
 #include <fstream>
-#ifdef NA_STD_NAMESPACE
 using namespace std;
-#endif // NA_STD_NAMESPACE
 
 // we're using the multithread-safe versions here
 #define MULTITHREAD_LOCK
@@ -192,12 +190,8 @@ NAString::compareTo(const char* cs2, caseCompare cmp) const
   } else {                  // ignore case
     for (; cs2[i]; ++i) {
       if (i == len) return -1;
-#pragma nowarn(1506)   // warning elimination 
       char c1 = tolower((unsigned char)cs1[i]);
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
       char c2 = tolower((unsigned char)cs2[i]);
-#pragma warn(1506)  // warning elimination 
       if (c1 != c2) return ((c1 > c2)? 1 : -1);
     }
   }
@@ -216,12 +210,8 @@ NAString::compareTo(const NAString& str, caseCompare cmp) const
   } else {
     size_t i = 0;
     for (; i < len; ++i) {
-#pragma nowarn(1506)   // warning elimination 
       char c1 = tolower((unsigned char)s1[i]);
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
       char c2 = tolower((unsigned char)s2[i]);
-#pragma warn(1506)  // warning elimination 
       if (c1 != c2) return ((c1 > c2)? 1 : -1);
     }
   }
@@ -531,9 +521,7 @@ NAString::toLower()
   cow();
   register size_t N = length();
   register char* p = fbstring_.begin();
-#pragma nowarn(1506)   // warning elimination 
   while ( N-- ) { *p = tolower((unsigned char)*p); p++;}
-#pragma warn(1506)  // warning elimination 
 }
 
 // Change self to upper case
@@ -543,9 +531,7 @@ NAString::toUpper()
   cow();
   register size_t N = length();
   register char* p = fbstring_.begin();
-#pragma nowarn(1506)   // warning elimination 
   while ( N-- ) { *p = toupper((unsigned char)*p); p++;}
-#pragma warn(1506)  // warning elimination 
 }
 
 // Change self to upper case
@@ -561,9 +547,7 @@ NAString::toUpper8859_1()
         (*p != 0xff) &&    // small y with diaeresis has no upcase equiv in 8859-1
         (*p != 0xdf))      // small german sharp s has no upcase euqiv in 8859-1
     {
-#pragma nowarn(1506)   // warning elimination 
       *p = *p - 32; // convert to uppercase equivalent
-#pragma warn(1506)  // warning elimination 
     }
     p++;
   }
@@ -624,7 +608,6 @@ NAString::clone(size_t nc)
 
 /****************** Related global functions ***********************/
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NAString& s1, const char* s2)
 {
@@ -637,7 +620,6 @@ operator==(const NAString& s1, const char* s2)
 }
 
 // Return a lower-case version of str:
-SQLEXPORT_LIB_FUNC
 NAString 
 toLower(const NAString& str)
 {
@@ -646,14 +628,11 @@ toLower(const NAString& str)
   register const char* uc = str.data();
   register       char* lc = (char*)temp.data();
   // Guard against tolower() being a macro:
-#pragma nowarn(1506)   // warning elimination 
   while( N-- ) { *lc++ = tolower((unsigned char)*uc); uc++; }
-#pragma warn(1506)  // warning elimination 
   return temp;
 }
 
 // Return an upper-case version of str:
-SQLEXPORT_LIB_FUNC
 NAString 
 toUpper(const NAString& str)
 {
@@ -662,13 +641,10 @@ toUpper(const NAString& str)
   register const char* uc = str.data();
   register       char* lc = (char*)temp.data();
   // Guard against toupper() being a macro:
-#pragma nowarn(1506)   // warning elimination 
   while( N-- ) { *lc++ = toupper((unsigned char)*uc); uc++; }
-#pragma warn(1506)  // warning elimination 
   return temp;
 }
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const NAString& s, const char* cs)
 {
@@ -676,7 +652,6 @@ operator+(const NAString& s, const char* cs)
   return NAString(s.data(), s.length(), cs, strlen(cs), s.heap());
 }            
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const NAString& s, const char c)
 {
@@ -685,7 +660,6 @@ operator+(const NAString& s, const char c)
   return NAString(s.data(), s.length(), temp.data(), temp.length(), s.heap());
 }            
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const char* cs, const NAString& s)
 {
@@ -693,7 +667,6 @@ operator+(const char* cs, const NAString& s)
   return NAString(cs, strlen(cs), s.data(), s.length(), s.heap());
 }
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const NAString& s1, const NAString& s2)
 {
@@ -824,7 +797,6 @@ NASubString::operator=(const char* cs)
   return *this;
 }
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NASubString& ss, const char* cs)
 {
@@ -841,7 +813,6 @@ operator==(const NASubString& ss, const char* cs)
   return (i == ss.extent_);
 }
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NASubString& ss, const NAString& s)
 {
@@ -850,7 +821,6 @@ operator==(const NASubString& ss, const NAString& s)
   return !memcmp(ss.str_->data() + ss.begin_, s.data(), ss.extent_);
 }
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NASubString& s1, const NASubString& s2)
 {
@@ -868,9 +838,7 @@ NASubString::toLower()
      str_->cow();
      register char* p = (char*)(str_->data() + begin_); // Cast away constness
      size_t N = extent_;
-#pragma nowarn(1506)   // warning elimination 
      while( N-- ) { *p = tolower((unsigned char)*p); p++;}
-#pragma warn(1506)  // warning elimination 
   }
 }
 
@@ -883,9 +851,7 @@ NASubString::toUpper()
      str_->cow();
      register char* p = (char*)(str_->data() + begin_); // Cast away constness
      size_t N = extent_;
-#pragma nowarn(1506)   // warning elimination 
      while( N-- ) { *p = toupper((unsigned char)*p); p++;}
-#pragma warn(1506)  // warning elimination 
   }
 }
 
@@ -965,7 +931,6 @@ NAString::mbLength() const
  * the streambuf.
  */
 
-SQLEXPORT_LIB_FUNC
 ostream& 
 operator<<(ostream& os, const NAString& s)
 {
@@ -980,14 +945,10 @@ operator<<(ostream& os, const NAString& s)
     size_t wid = os.width();
     wid = (len < wid) ? wid - len : 0;
     Lng32 flags = os.flags();
-#pragma nowarn(1506)   // warning elimination 
     os.width(wid);
-#pragma warn(1506)  // warning elimination 
     if (wid && !(flags & ios::left))
       os << "";  // let the ostream fill
-#pragma nowarn(1506)   // warning elimination 
     os.rdbuf()->sputn((char*)s.data(), s.length());
-#pragma warn(1506)  // warning elimination 
     if (wid && (flags & ios::left))
       os << "";  // let the ostream fill
 

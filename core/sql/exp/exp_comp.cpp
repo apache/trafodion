@@ -164,10 +164,8 @@ ex_comp_clause::processResult(Int32 compare_code, Lng32* result,
       break;
       
     default:
-      // LCOV_EXCL_START
       ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
       return ex_expr::EXPR_ERROR;
-      // LCOV_EXCL_STOP
       break;
     }
   return ex_expr::EXPR_OK;
@@ -209,9 +207,7 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
     case EQ_BIN16S_BIN16U:
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] == *(unsigned short *)op_data[2]);
       break;
-      // LCOV_EXCL_START
     case EQ_BIN16S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = ((ULng32)*(short *)op_data[1] == *(ULng32 *)op_data[2]);
       break;
   
@@ -220,7 +216,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
     case EQ_BIN16U_BIN16S:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] == *(short *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
     case EQ_BIN16U_BIN32S:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] == *(Lng32 *)op_data[2]);
       break;
@@ -230,10 +225,8 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
       
     case EQ_BIN16U_BIN32U:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] == *(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
    
     case EQ_BIN32S_BIN16S:
@@ -249,27 +242,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case EQ_BIN32S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
        *(Lng32 *)op_data[0] = ((ULng32)*(Lng32 *)op_data[1] == *(ULng32 *)op_data[2]);
       break;
   
   
   
     case EQ_BIN32U_BIN16S:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] == (ULng32)*(short *)op_data[2]);
       break;
       
     case EQ_BIN32U_BIN32S:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] == (ULng32)*(Lng32 *)op_data[2]);
       break;
       
     case EQ_BIN32U_BIN16U:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] == *(unsigned short *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
       
     case EQ_BIN32U_BIN32U:
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] == *(ULng32 *)op_data[2]);
@@ -334,22 +322,18 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
 
     case NE_BIN16S_BIN16S:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] != *(short *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
     case NE_BIN16S_BIN32S:
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] != *(Lng32 *)op_data[2]);
       break;
   
     case NE_BIN16S_BIN16U:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] != *(unsigned short *)op_data[2]);
       break;
   
     case NE_BIN16S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = ((ULng32)*(short *)op_data[1] != *(ULng32 *)op_data[2]);
       break;
   
@@ -362,16 +346,13 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
     case NE_BIN16U_BIN32S:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] != *(Lng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
     case NE_BIN16U_BIN16U:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] != *(unsigned short *)op_data[2]);
       break;
   
     case NE_BIN16U_BIN32U:
-    	 // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] != *(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
   
     case NE_BIN32S_BIN16S:
@@ -387,27 +368,22 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case NE_BIN32S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = ((ULng32)*(Lng32 *)op_data[1] != *(ULng32 *)op_data[2]);
       break;
   
   
   
     case NE_BIN32U_BIN16S:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] != (ULng32)*(short *)op_data[2]);
       break;
   
     case NE_BIN32U_BIN32S:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] != (ULng32)*(Lng32 *)op_data[2]);
       break;
   
     case NE_BIN32U_BIN16U:
-    	 // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] != *(unsigned short *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
     case NE_BIN32U_BIN32U:
       *(Lng32 *)op_data[0] = (*(ULng32 *)op_data[1] != *(ULng32 *)op_data[2]);
       break;
@@ -438,14 +414,12 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
       
     case NE_UNICODE_F_F: // 11/3/97: Added for Unicode support
-    	 // LCOV_EXCL_START
     if (wc_str_cmp((NAWchar*)op_data[1], (NAWchar*)op_data[2], 
                 (Int32)getOperand(1)->getLength() >> 1) != 0)
   	*(Lng32 *)op_data[0] = 1;
     else
   	*(Lng32 *)op_data[0] = 0;
     break;
-    // LCOV_EXCL_STOP
     case NE_FLOAT32_FLOAT32:
       *(Lng32 *)op_data[0] = (*(float *)op_data[1] != *(float *)op_data[2]);
       break;
@@ -488,21 +462,17 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case LT_BIN16S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long in order to handle negative values
       *(Lng32 *)op_data[0] = ((Int64)*(short *)op_data[1] < (Int64)*(ULng32 *)op_data[2]);
       break;
   
   
    
     case LT_BIN16U_BIN16S:
-    	 // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] < *(short *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
     case LT_BIN16U_BIN32S:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] < *(Lng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_START
     case LT_BIN16U_BIN16U:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] < *(unsigned short *)op_data[2]);
       break;
@@ -510,7 +480,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
     case LT_BIN16U_BIN32U:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] < *(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
    
     case LT_BIN32S_BIN16S:
@@ -522,24 +491,19 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case LT_BIN32S_BIN16U:
-    	 // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(Lng32 *)op_data[1] < *(unsigned short *)op_data[2]);
       break;
   
     case LT_BIN32S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = ((Int64)*(Lng32 *)op_data[1] < (Int64)*(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
   
     case LT_BIN32U_BIN16S:
-      // NT_PORT (BD 7/11/96) cast to long in order to handle negative values
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] < *(short *)op_data[2]);
       break;
       
     case LT_BIN32U_BIN32S:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] < (Int64)*(Lng32 *)op_data[2]);
       break;
       
@@ -671,31 +635,26 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case LE_BIN16S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long in order to handle negative values
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] <= (Int64)*(ULng32 *)op_data[2]);
       break;
   
   
    
     case LE_BIN16U_BIN16S:
-    	 // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] <= *(short *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
     case LE_BIN16U_BIN32S:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] <= *(Lng32 *)op_data[2]);
       break;
       
     case LE_BIN16U_BIN16U:
-    	 // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] <= *(unsigned short *)op_data[2]);
       break;
       
     case LE_BIN16U_BIN32U:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] <= *(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
    
     case LE_BIN32S_BIN16S:
@@ -707,24 +666,19 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case LE_BIN32S_BIN16U:
-    	 // LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(Lng32 *)op_data[1] <= *(unsigned short *)op_data[2]);
       break;
   
     case LE_BIN32S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = ((Int64)*(Lng32 *)op_data[1] <= (Int64)*(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
   
     case LE_BIN32U_BIN16S:
-      // NT_PORT (BD 7/11/96) cast to long in order to handle negative values
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] <= *(short *)op_data[2]);
       break;
       
     case LE_BIN32U_BIN32S:
-      // NT_PORT (BD 7/11/96) cast to unsigned long
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] <= (Int64)*(Lng32 *)op_data[2]);
       break;
       
@@ -781,7 +735,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   	else
   	  {
   	    // first operand is negative
-  		// LCOV_EXCL_START
   	    if ((op_data[2][0] & 0200) == 0)
   	      {
   		// second operand is positive
@@ -796,7 +749,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   		else
   		  *(Lng32 *)op_data[0] = 1;	
   	      }    
-  	  // LCOV_EXCL_STOP
   	  } // first operand is negative
       }
       break;
@@ -860,7 +812,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case GT_BIN16S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long in order to handle negative values
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] > (Int64)*(ULng32 *)op_data[2]);
       break;
   
@@ -875,14 +826,12 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
       
     case GT_BIN16U_BIN16U:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] > *(unsigned short *)op_data[2]);
       break;
       
     case GT_BIN16U_BIN32U:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] > *(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
    
     case GT_BIN32S_BIN16S:
@@ -894,24 +843,19 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case GT_BIN32S_BIN16U:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(Lng32 *)op_data[1] > *(unsigned short *)op_data[2]);
       break;
   
     case GT_BIN32S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = ((Int64)*(Lng32 *)op_data[1] > (Int64)*(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
   
     case GT_BIN32U_BIN16S:
-      // NT_PORT (BD 7/11/96) cast to long in order to handle negative values
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] > *(short *)op_data[2]);
       break;
       
     case GT_BIN32U_BIN32S:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] > (Int64)*(Lng32 *)op_data[2]);
       break;
       
@@ -994,14 +938,12 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   
   case GT_UNICODE_F_F:
   // 11/3/97: added for Unicode
-	  // LCOV_EXCL_START
     if (wc_str_cmp((NAWchar*)op_data[1], (NAWchar*)op_data[2], 
         (Int32)(getOperand(1)->getLength()) >>1) > 0)
   	*(Lng32 *)op_data[0] = 1;
     else
   	*(Lng32 *)op_data[0] = 0;
     break;
-    // LCOV_EXCL_STOP
   
     case GT_FLOAT32_FLOAT32:
       *(Lng32 *)op_data[0] = (*(float *)op_data[1] > *(float *)op_data[2]);
@@ -1037,7 +979,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case GE_BIN16S_BIN32S:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] >= *(Lng32 *)op_data[2]);
       break;
       
@@ -1045,30 +986,24 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] >= *(unsigned short *)op_data[2]);
       break;
   
-      // LCOV_EXCL_STOP
     case GE_BIN16S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = (*(short *)op_data[1] >= (Int64)*(ULng32 *)op_data[2]);
       break;
    
     case GE_BIN16U_BIN16S:
-    //	LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] >= *(short *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
     case GE_BIN16U_BIN32S:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] >= *(Lng32 *)op_data[2]);
       break;
       
     case GE_BIN16U_BIN16U:
-    	// LCOV_EXCL_START
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] >= *(unsigned short *)op_data[2]);
       break;
       
     case GE_BIN16U_BIN32U:
       *(Lng32 *)op_data[0] = (*(unsigned short *)op_data[1] >= *(ULng32 *)op_data[2]);
       break;
-      // LCOV_EXCL_STOP
   
    
     case GE_BIN32S_BIN16S:
@@ -1084,19 +1019,16 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       break;
   
     case GE_BIN32S_BIN32U:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = ((Int64)*(Lng32 *)op_data[1] >= (Int64)*(ULng32 *)op_data[2]);
       break;
   
   
   
     case GE_BIN32U_BIN16S:
-      // NT_PORT (BD 7/11/96) cast to long in order to handle negative values
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] >= *(short *)op_data[2]);
       break;
       
     case GE_BIN32U_BIN32S:
-      // NT_PORT (BD 7/11/96) cast to long
       *(Lng32 *)op_data[0] = ((Int64)*(ULng32 *)op_data[1] >= (Int64)*(Lng32 *)op_data[2]);
       break;
       
@@ -1212,7 +1144,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
      case LE_ASCII_COMP:
      case NE_ASCII_COMP:
         {
-#pragma nowarn(1506)   // warning elimination 
 
        Lng32 length1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
        Lng32 length2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]) ;
@@ -1227,7 +1158,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
        Int32 compare_code =
           charStringCompareWithPad( op_data[1], length1, op_data[2], length2, padChar);
 
-#pragma warn(1506)  // warning elimination 
 
        retcode = processResult(compare_code, (Lng32 *)op_data[0], 
 			       heap, diagsArea);
@@ -1236,7 +1166,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
 
     case UNICODE_COMP: // 11/3/95: Unicode
      {
-#pragma nowarn(1506)   // warning elimination 
        Lng32 length1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]); 
        Lng32 length2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]);
 
@@ -1245,7 +1174,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
                              (NAWchar*)op_data[2], length2>>1,
                               unicode_char_set::space_char()
                             );
-#pragma warn(1506)  // warning elimination 
 
        retcode = processResult(compare_code, (Lng32 *)op_data[0], 
 			       heap, diagsArea);
@@ -1276,7 +1204,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
 	// this comparison operation not supported.
 	// See if it could still be evaluated by doing some intermediate
 	// operations.
-    	  // LCOV_EXCL_START
 	if (evalUnsupportedOperations(op_data, heap, diagsArea) !=
 	    ex_expr::EXPR_OK)
 	  return ex_expr::EXPR_ERROR;
@@ -1287,7 +1214,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
       retcode = ex_expr::EXPR_ERROR;
       break;
-      // LCOV_EXCL_STOP
     }
 
   if ((getRollupColumnNum() >= 0) &&
@@ -1300,7 +1226,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
   return retcode;
 
 }
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_comp_clause::evalUnsupportedOperations(
      char *op_data[],
      CollHeap *heap,
@@ -1314,7 +1239,6 @@ ex_expr::exp_return_type ex_comp_clause::evalUnsupportedOperations(
   ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
   return ex_expr::EXPR_ERROR;
 }
-// LCOV_EXCL_STOP
 
 
 

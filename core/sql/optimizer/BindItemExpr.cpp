@@ -1118,7 +1118,7 @@ ItemExpr* ItemExpr::performImplicitCasting(CharInfo::CharSet cs, BindWA *bindWA)
         {
            CharType myCharType = (const CharType&)type;
            Int32 bytesPerCh = myCharType.getBytesPerChar();
-           NAType * newType = new (HEAP) SQLChar( 
+           NAType * newType = new (HEAP) SQLChar(HEAP, 
                            ( cv_ValueId == NULL_VALUE_ID )
                            ? 0 : type.getNominalSize()/bytesPerCh,
                              TRUE, FALSE, FALSE, FALSE,
@@ -1231,7 +1231,6 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_MOVING_MIN:            // b) possibly different orderings
      case ITM_SCALAR_MIN:            // b) ordering, also may eliminate data
      case ITM_SCALAR_MAX:            // b) ordering, also may eliminate data
-     case ITM_AUDIT_IMAGE:           // a), b) output is binary disguised as ISO
      case ITM_OLAP_MAX:              // b) ordering, also may eliminate data
      case ITM_OLAP_MIN:              // b) ordering, also may eliminate data
      case ITM_CONVERTTOHEX:          // b) operator depends on encoding
@@ -1354,10 +1353,8 @@ ItemExpr* BiRelat::tryToRelaxCharTypeMatchRules(BindWA *bindWA)
       if ( leafList1 -> entries() != leafList2 -> entries() )
          return this;
 
-#pragma warning (disable : 4018)   //warning elimination
       // relax by pairs
       for ( Int32 i=0; i<leafList1 -> entries(); i++ ) {
-#pragma warning (default : 4018)   //warning elimination
          if ( performRelaxation((*leafList1)[i], (*leafList2)[i], bindWA) == FALSE )
            return this; // If one pair can not be made to be type-compatible, return
                         // right away. The type synthesise code will flag the
@@ -1879,7 +1876,6 @@ ItemExpr *ItemExpr::bindNodeRoot(BindWA *bindWA)
 
 } // ItemExpr::bindNodeRoot()
 
-// LCOV_EXCL_START :rfi
 ItemExpr* ItemExpr::_bindNodeRoot(BindWA *bindWA)
 {
   return 0;
@@ -1893,7 +1889,6 @@ ItemExpr * ItemExpr::foldConstants(BindWA *bindWA)
     bindWA->setErrStatus();
   return result;
 }
-// LCOV_EXCL_STOP
 
 ItemExpr * ItemExpr::bindUDFsOrSubqueries(BindWA *bindWA)
 {
@@ -2457,7 +2452,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	  new (bindWA->wHeap())
 	  Cast((srcOpIndex == 0 ? op1 : op2),
 	    new (bindWA->wHeap())
-	    SQLDoublePrecision((srcOpIndex == 0 ? op1 : op2)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
+	    SQLDoublePrecision(bindWA->wHeap(), (srcOpIndex == 0 ? op1 : op2)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
     	newOp = newOp->bindNode(bindWA);
         break;
 
@@ -2477,7 +2472,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	    new (bindWA->wHeap())
 	    Cast((srcOpIndex == 0 ? op1 : op2),
 		 new (bindWA->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(bindWA->wHeap(), TRUE,
 			     (srcOpIndex == 0 ? op1 : op2)->castToItemExpr()->
 			     getValueId().getType().supportsSQLnull()));
 	  newOp = newOp->bindNode(bindWA);
@@ -2497,6 +2492,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	  
 	  SQLInterval * newInterval =  
 	    new(bindWA->wHeap()) SQLInterval(
+                 bindWA->wHeap(),
 		 numeric.supportsSQLnull(),
 		 interval.getEndField(),
 		 maxDigits,
@@ -3323,11 +3319,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
       {
         // type cast any params
 	ValueId vid1 = child(0)->getValueId();
-	SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+	SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
 	vid1.coerceType(c1, NA_CHARACTER_TYPE);
         
         ValueId vid2 = child(1)->getValueId();
-	SQLChar c2(40, FALSE);
+	SQLChar c2(NULL, 40, FALSE);
 	vid2.coerceType(c2, NA_CHARACTER_TYPE);
 
 	const CharType &typ1 = (CharType&)child(0)->getValueId().getType();
@@ -3476,6 +3472,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   // expression getting translated correctly. 
 
   setReplacementExpr(ie);
+
   return ie;
 }
 
@@ -3497,9 +3494,25 @@ ItemExpr *Upper::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) return this;
 
   // If our child is already upshifted, we can remove this Upper from the tree.
+  // BuiltinFunction::bindNode might have added a Cast node underneath Upper
+  // with the MATCH_CHILD_TYPE flag set. We need to remove it too
+  // else we can get into trouble with unmapped ValueIds at code generation
+  // time. (e.g. If a hash join equi-join predicate refers to the Cast, the
+  // Cast expression will be in the join child's characteristic outputs but
+  // when we generate the join predicate we skip the Cast looking for the
+  // underlying column. That might not be in the join child's characteristic
+  // outputs.)
   if (boundExpr == this) {
     CMPASSERT(getArity() == 1);
     ValueId opVid = child(0)->getValueId();
+    ItemExpr * child0ie = opVid.getItemExpr();
+    if (child0ie->getOperatorType() == ITM_CAST)
+      {
+        Cast * child0ieCast = (Cast *)child0ie;
+        if (child0ieCast->matchChildType()) 
+          // we need to remove the Cast too
+          opVid = child0ieCast->child(0)->getValueId();
+      }
     const CharType &ct = (const CharType &)opVid.getType();
     CMPASSERT(ct.getTypeQualifier() == NA_CHARACTER_TYPE);
     if (ct.isUpshifted()) setValueId(opVid);
@@ -3544,7 +3557,7 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
 
     case CharInfo::KANJI_MP:
     case CharInfo::KSC5601_MP:
-      setOperatorType(ITM_NCHAR_MP_CHAR); //LCOV_EXCL_LINE - mp
+      setOperatorType(ITM_NCHAR_MP_CHAR);
       break;
 
     default:
@@ -3552,7 +3565,6 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
   }
 
   if (!CharInfo::isCharSetSupported(charSet_)) {
-// LCOV_EXCL_START - rfi
     // 3010 Character set $0~string0 is not yet supported.
     // 4062 The preceding error actually occurred in function $0~String0.
     *CmpCommon::diags() << DgSqlCode(-3010)
@@ -3562,7 +3574,6 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
     *CmpCommon::diags() << DgSqlCode(-4062) << DgString0(unparsed);
     bindWA->setErrStatus();
     return NULL;
-// LCOV_EXCL_STOP
   }
 
   // CharFunc inherits from BuiltinFunction .. Function .. ItemExpr.
@@ -3650,7 +3661,7 @@ ItemExpr *Concat::bindNode(BindWA *bindWA)
               new (bindWA->wHeap())
               Cast(child(srcChildIndex),
                    new (bindWA->wHeap())
-                   SQLChar(dLen,
+                   SQLChar(bindWA->wHeap(), dLen,
                            child(srcChildIndex)->castToItemExpr()->
                            getValueId().getType().supportsSQLnull()));
             newChild = newChild->bindNode(bindWA);
@@ -3660,12 +3671,10 @@ ItemExpr *Concat::bindNode(BindWA *bindWA)
         else if (convType == 2)
           {
             Parser parser(bindWA->currentCmpContext());
-            char buf[1000];
+            char buf[128];
             
-            // right justify the string representation of numeric operand 
-            // and then do the concat
-            sprintf(buf, "CAST(SPACE(%d - CHAR_LENGTH(CAST(@A1 AS VARCHAR(%d)))) || CAST(@A1 AS VARCHAR(%d)) AS VARCHAR(%d))",
-                    dLen, dLen, dLen, dLen);
+            sprintf(buf, "CAST(CAST(@A1 AS VARCHAR(%d)) AS VARCHAR(%d))",
+                    dLen, dLen);
             newChild = 
               parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 1, child(srcChildIndex));
             
@@ -3713,7 +3722,7 @@ ItemExpr * ExtractOdbc::bindNode(BindWA * bindWA)
     {
       ItemExpr * newChild =
 	new (bindWA->wHeap()) Cast(child(0), new (bindWA->wHeap())
-				   SQLTimestamp(TRUE));
+				   SQLTimestamp(bindWA->wHeap(), TRUE));
       setChild(0, newChild);
     }
   unBind();
@@ -4023,9 +4032,10 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
   NABoolean tf  = ExpDatetime::isTimeFormat(frmt);
   NABoolean tsf = ExpDatetime::isTimestampFormat(frmt);
   NABoolean nf  = ExpDatetime::isNumericFormat(frmt);
+  NABoolean ef  = ExpDatetime::isExtraFormat(frmt);
   NABoolean ms4 = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
   
-  if (NOT (df || tf || tsf || nf))
+  if (NOT (df || tf || tsf || nf || ef))
     {
       // format must be date, time, timestamp or numeric
       error = 1; // error 4065
@@ -4045,10 +4055,20 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         error = 1; // error 4065
     }
 
-  if (toTime && NOT tf)
+  if (!error && toTime)
     {
-      // TO_TIME requires time format
-      error = 1; // error 4065
+      if (NOT tf)
+        {
+          // TO_TIME requires time format
+          error = 1; // error 4065
+        }
+      // source must be datetime containing time field or a character string
+      else if (((opType->getTypeQualifier() == NA_DATETIME_TYPE) &&
+                (opType->getPrecision() == SQLDTCODE_DATE)) ||
+               (opType->getTypeQualifier() != NA_CHARACTER_TYPE))
+        {
+          error = 9; // error 3415
+        }
     }
 
   if (!error && toChar)
@@ -4102,7 +4122,7 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
           {
             *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
                                 << DgString1((toChar ? "TO_CHAR" : 
-                                                       (toDate ? "TO_DATE" : "TO_TIME")));
+                                              (toDate ? "TO_DATE" : "TO_TIME")));
             bindWA->setErrStatus();
           }
           break;
@@ -4156,6 +4176,14 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
           }
           break;
 
+        case 9:
+          {
+            *CmpCommon::diags() << DgSqlCode(-3415) << DgString0("TO_TIME")
+                                << DgString1(" It must be a datetime datatype containing the time field or a character datatype.");
+            bindWA->setErrStatus();
+          }
+          break;
+
         } // switch
 
       return TRUE;
@@ -4173,6 +4201,7 @@ DateFormat::DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
        wasDateformat_(wasDateformat),
        formatType_(formatType),
        frmt_(-1),
+       origString_(""),
        dateFormat_(DATE_FORMAT_NONE)
 { 
   allowsSQLnullArg() = FALSE; 
@@ -4256,7 +4285,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLChar(formatStr_.length(),
+                 SQLChar(bindWA->wHeap(), formatStr_.length(),
                          child(0)->castToItemExpr()->
                          getValueId().getType().supportsSQLnull()));
           setChild(0, newChild->bindNode(bindWA));
@@ -4275,11 +4304,15 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLLargeInt(TRUE,
+                 SQLLargeInt(bindWA->wHeap(), TRUE,
                              child(0)->castToItemExpr()->
                              getValueId().getType().supportsSQLnull()));
           setChild(0, newChild->bindNode(bindWA));
         }
+    }
+  else if (ExpDatetime::isExtraFormat(frmt_))
+    {
+      dateFormat_ = DateFormat::TIME_FORMAT_STR;
     }
   else
     {
@@ -4297,7 +4330,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLTime(child(0)->castToItemExpr()->
+                 SQLTime(bindWA->wHeap(), child(0)->castToItemExpr()->
                          getValueId().getType().supportsSQLnull(),
                          0));
         }
@@ -4307,7 +4340,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLDate(child(0)->castToItemExpr()->
+                 SQLDate(bindWA->wHeap(), child(0)->castToItemExpr()->
                          getValueId().getType().supportsSQLnull()));
         }
       
@@ -4340,28 +4373,23 @@ ItemExpr *Trim::bindNode(BindWA *bindWA)
       if (type1.getTypeQualifier() == NA_NUMERIC_TYPE)
         {
           const NumericType &numeric  = (NumericType&)type1;
-          if ((numeric.isExact()) &&
-              (NOT numeric.isBigNum()) &&
-              (numeric.getScale() == 0))
-            {
-              Lng32 dLen =
-                numeric.getDisplayLength(numeric.getFSDatatype(),
-                                         numeric.getNominalSize(),
-                                         numeric.getPrecision(),
-                                         numeric.getScale(),
-                                         0);
-              
-              ItemExpr * newChild =
-                new (bindWA->wHeap())
-                Cast(child(1),
-                     new (bindWA->wHeap())
-                     SQLChar(dLen, type1.supportsSQLnull()));
-              
-              newChild = newChild->bindNode(bindWA);
-              if (bindWA->errStatus())
-                return this;
-              setChild(1, newChild);
-            }
+          Lng32 dLen =
+            numeric.getDisplayLength(numeric.getFSDatatype(),
+                                     numeric.getNominalSize(),
+                                     numeric.getPrecision(),
+                                     numeric.getScale(),
+                                     0);
+          
+          ItemExpr * newChild =
+            new (bindWA->wHeap())
+            Cast(child(1),
+                 new (bindWA->wHeap())
+                 SQLChar(bindWA->wHeap(), dLen, type1.supportsSQLnull()));
+          
+          newChild = newChild->bindNode(bindWA);
+          if (bindWA->errStatus())
+            return this;
+          setChild(1, newChild);
         }
     }
 
@@ -5058,7 +5086,7 @@ ItemExpr *Aggregate::bindNode(BindWA *bindWA)
 	    new (bindWA->wHeap())
 	    Cast(child(0),
 		 new (bindWA->wHeap())
-		 SQLDoublePrecision(type1.supportsSQLnull()));
+		 SQLDoublePrecision(bindWA->wHeap(), type1.supportsSQLnull()));
 	  setChild(0, newChild->bindNode(bindWA));
 	}
 
@@ -5415,7 +5443,7 @@ ItemExpr *Variance::bindNode(BindWA *bindWA)
   // Assumes that the type propogation will make the types
   // of the child of the ScalarVariance node all double precision floats.
   //
-  const NAType *desiredType = new (bindWA->wHeap()) SQLDoublePrecision(TRUE);
+  const NAType *desiredType = new (bindWA->wHeap()) SQLDoublePrecision(bindWA->wHeap(), TRUE);
 
   // Cast the first child to the desired type.
   // This is the itemExpr which should be distinct.
@@ -5737,6 +5765,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 				SQLInterval::MAX_LEADING_PRECISION);
 	      SQLInterval * interval =  
 		new(bindWA->wHeap()) SQLInterval(
+                     bindWA->wHeap(),
 		     naType1->supportsSQLnull(),
 		     datetime->getEndField(),
 		     maxDigits,
@@ -5759,11 +5788,10 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	  const IntervalType*  interval  = (IntervalType*)naType1;
 	  if (interval->getEndField() > REC_DATE_DAY)
 	    {	  
-	   SQLTimestamp * ts = new(bindWA->wHeap()) SQLTimestamp ( naType0->supportsSQLnull(),
+	   SQLTimestamp * ts = new(bindWA->wHeap()) SQLTimestamp ( bindWA->wHeap(), naType0->supportsSQLnull(),
                                interval->getFractionPrecision() > datetime->getFractionPrecision()
                                ?interval->getFractionPrecision()
-                               :datetime->getFractionPrecision(),
-                               bindWA->wHeap()); 
+                               :datetime->getFractionPrecision());
 	   	      
 	   ItemExpr * newChild = 
 		new(bindWA->wHeap()) Cast(child(0), ts);
@@ -5789,6 +5817,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 				SQLInterval::MAX_LEADING_PRECISION);
 	      SQLInterval * newInterval =  
 		new(bindWA->wHeap()) SQLInterval(
+                     bindWA->wHeap(),
 		     numeric->supportsSQLnull(),
 		     interval->getEndField(),
 		     maxDigits,
@@ -5826,7 +5855,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	      maxDigits = MINOF(maxDigits, 
 				SQLInterval::MAX_LEADING_PRECISION);
 	      SQLInterval * newInterval =  
-		new(bindWA->wHeap()) SQLInterval(
+		new(bindWA->wHeap()) SQLInterval(bindWA->wHeap(),
 		     numeric->supportsSQLnull(),
 		     interval->getEndField(),
 		     maxDigits,
@@ -5854,7 +5883,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(0),
 		     new (bindWA->wHeap())
-		     SQLNumeric(TRUE,
+		     SQLNumeric(bindWA->wHeap(), TRUE,
 				interval1->getTotalPrecision(),
 				0,
 				DisAmbiguate, // added for 64bit proj.
@@ -5868,7 +5897,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(1),
 		     new (bindWA->wHeap())
-		     SQLNumeric(TRUE,
+		     SQLNumeric(bindWA->wHeap(), TRUE,
 				interval2->getTotalPrecision(),
 				0,
 				DisAmbiguate, // added for 64bit proj.
@@ -5908,7 +5937,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
                   newChild = new (bindWA->wHeap())
                     Cast(child(0),
                          new (bindWA->wHeap())
-                         SQLDate(datetime1->supportsSQLnull()));
+                         SQLDate(bindWA->wHeap(), datetime1->supportsSQLnull()));
                   setChild(0, newChild->bindNode(bindWA));
                   if (bindWA->errStatus())
                     return this;
@@ -5919,7 +5948,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
                   newChild = new (bindWA->wHeap())
                     Cast(child(1),
                          new (bindWA->wHeap())
-                         SQLDate(datetime2->supportsSQLnull()));
+                         SQLDate(bindWA->wHeap(), datetime2->supportsSQLnull()));
                   setChild(1, newChild->bindNode(bindWA));
                   if (bindWA->errStatus())
                     return this;
@@ -5954,7 +5983,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(srcChildIndex),
 		     new (bindWA->wHeap())
-		     SQLLargeInt(TRUE,
+		     SQLLargeInt(bindWA->wHeap(), TRUE,
 				 child(srcChildIndex)->castToItemExpr()->
 				 getValueId().getType().supportsSQLnull()));
 	      setChild(srcChildIndex, newChild->bindNode(bindWA));
@@ -5967,7 +5996,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(srcChildIndex),
 		     new (bindWA->wHeap())
-		     SQLDoublePrecision(child(srcChildIndex)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
+		     SQLDoublePrecision(bindWA->wHeap(), child(srcChildIndex)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
 	      setChild(srcChildIndex, newChild->bindNode(bindWA));
 	    }
 	}
@@ -5993,10 +6022,10 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
       const Int16 DisAmbiguate = 0;
       NAType * orig_result_type = result_type->newCopy(bindWA->wHeap());
       result_type = new(bindWA->wHeap()) 
-	SQLNumeric(TRUE,
+	SQLNumeric(bindWA->wHeap(), TRUE, 
 		   MAX_NUMERIC_PRECISION,
 		   result_type->getScale(),
-		   DisAmbiguate, // added for 64bit proj.
+                   DisAmbiguate,
 		   result_type->supportsSQLnull());
       getValueId().changeType(result_type);
 
@@ -6074,7 +6103,8 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
   }
 #endif  
 
-  ItemExpr *boundExpr, *boundExpr_0, *boundExpr_1 ;
+  ItemExpr *boundExpr = NULL;
+  ItemExpr *boundExpr_0, *boundExpr_1 ;
 
   boundExpr_0 = child(0)->bindNode(bindWA);
   if (bindWA->errStatus())
@@ -6109,20 +6139,22 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 
               NAType * newType = NULL;
 
-              double lob_input_limit_for_batch = CmpCommon::getDefaultNumeric(LOB_INPUT_LIMIT_FOR_BATCH);
+              double lob_input_limit_for_batch = CmpCommon::getDefaultNumeric(LOB_INPUT_LIMIT_FOR_BATCH)*1024;
                   double lob_size = lobType.getLobLength();
               if (fs_datatype == REC_CLOB) {
-                  newType = new SQLClob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
+                newType = new (bindWA->wHeap()) SQLClob(bindWA->wHeap(), lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size,
                          lobType.getLobStorage(),
-                         TRUE, FALSE, TRUE,
+                         TRUE, FALSE, FALSE,
                          lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
               }
               else {
-              newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
+                newType = new (bindWA->wHeap()) SQLBlob(bindWA->wHeap(),lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size ,
                                              lobType.getLobStorage(), 
-                                             TRUE, FALSE, TRUE, 
+                                             TRUE, FALSE, FALSE, 
                                              lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
               }
+             
+              CMPASSERT(lob_input_limit_for_batch < INT_MAX);
               vid1.coerceType(*newType, NA_LOB_TYPE); 
               if (bindWA->getCurrentScope()->context()->inUpdate())
                 {
@@ -6640,9 +6672,7 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
     if (escapeNode)
     {
       CharInfo::CharSet cs = matchCharType->getCharSet();
-#pragma nowarn(1506)   // warning elimination
       escapeChar_len = escapeNode->getRawText()->length();
-#pragma warn(1506)  // warning elimination
       escapeChar = escapeNode->getRawText()->data();
 
       if      (  CharInfo::isSingleByteCharSet(cs) && escapeChar_len == 1) /*ok*/;
@@ -6731,21 +6761,17 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
    Int32 pattern_str_len = 0;
 
    pattern_str = patternNode->getRawText() -> data();
-#pragma nowarn(1506)   // warning elimination
    pattern_str_len = patternNode->getRawText()->length();
-#pragma warn(1506)  // warning elimination
 
     CharInfo::CharSet cs = matchCharType->getCharSet();
 
 
-#pragma nowarn(1506)   // warning elimination
     LikePatternString patternString( pattern_str,
 				     pattern_str_len, cs,
 				     escapeChar, escapeChar_len,
 				     underscoreChar, underscoreChar_len,
 				     percentChar, percentChar_len
 				   );
-#pragma warn(1506)  // warning elimination
 
     LikePattern pattern(patternString, heap, cs);
 
@@ -6995,10 +7021,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
       // Zero-pad into prefixZ, e.g. for mv type VARCHAR(4), make "ab\0\0"
       char *prefixZ = new (heap) char[matchLen];
-  #pragma nowarn(1506)   // warning elimination
       byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		   (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
 
       ItemExpr *child1 = new (heap) SystemLiteral(
 			      NAString(prefixZ, matchLen),
@@ -7073,10 +7097,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
       if ( matchCharType->getCharSet() == CharInfo::ISO88591 )
       {
 	  foundNextKey = matchCharType->computeNextKeyValue(prefix);
-  #pragma nowarn(1506)   // warning elimination
 	  byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		       (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
       }
       else if ( matchCharType->getCharSet() == CharInfo::UCS2 )
       {
@@ -7086,20 +7108,14 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 	  foundNextKey = matchCharType->computeNextKeyValue(prefixW);
 	  byte_str_cpy(prefixZ, matchLen,
 		       (char*)prefixW.data(), prefixW.length()<<1,
-  #pragma nowarn(1506)   // warning elimination
 		       (char)zeroChar
-  #pragma warn(1506)  // warning elimination
-  #pragma nowarn(1506)   // warning elimination
 		      );
-  #pragma warn(1506)  // warning elimination
       }
       else if ( matchCharType->getCharSet() == CharInfo::UTF8 )
       {
 	  foundNextKey = matchCharType->computeNextKeyValue_UTF8(prefix);
-  #pragma nowarn(1506)   // warning elimination
 	  byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		       (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
       }
 
       if ( foundNextKey )
@@ -7252,25 +7268,16 @@ ItemExpr *Case::bindNode(BindWA *bindWA)
             {
               NumericType &numeric = (NumericType&)
                 thenClause->getValueId().getType();
-              if ((numeric.isExact()) &&
-                  //		  (NOT numeric.isBigNum()) &&
-                  (numeric.getScale() == 0))
-                {
-                  Lng32 numericDLen =
-                    numeric.getDisplayLength(numeric.getFSDatatype(),
-                                             numeric.getNominalSize(),
-                                             numeric.getPrecision(),
-                                             numeric.getScale(),
-                                             0);
+              Lng32 numericDLen =
+                numeric.getDisplayLength(numeric.getFSDatatype(),
+                                         numeric.getNominalSize(),
+                                         numeric.getPrecision(),
+                                         numeric.getScale(),
+                                         0);
               
-                  if (numericDLen > dLen)
-                    dLen = numericDLen;
-                  numericFound = TRUE;
-                }
-              else
-                {
-                  done = TRUE;
-                }
+              if (numericDLen > dLen)
+                dLen = numericDLen;
+              numericFound = TRUE;
             }
           else
             {
@@ -7311,7 +7318,7 @@ ItemExpr *Case::bindNode(BindWA *bindWA)
                     new (bindWA->wHeap())
                     Cast(thenClause,
                          new (bindWA->wHeap())
-                         SQLChar(dLen,
+                         SQLChar(bindWA->wHeap(), dLen,
                                  thenClause->
                                  getValueId().getType().supportsSQLnull()));
                   
@@ -8130,6 +8137,12 @@ ItemExpr *ColReference::bindNode(BindWA *bindWA)
     return this;
   }
 
+  if (NULL == xcnmEntry)
+  {
+    bindWA->setErrStatus();
+    return this;
+  }
+
   // Continue with no-error, non-star column reference.
   ValueId valId = xcnmEntry->getValueId();
   setValueId(valId);	// not bound yet, but this makes more informative errmsg
@@ -8431,6 +8444,70 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
   return NULL;
 
 } // DefaultSpecification::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class SleepFunction 
+// -----------------------------------------------------------------------
+
+ItemExpr *SleepFunction::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // SleepFunction::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class UnixTimestamp
+// -----------------------------------------------------------------------
+
+ItemExpr *UnixTimestamp::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // UnixTimestamp::bindNode()
 
 // -----------------------------------------------------------------------
 // member functions for class CurrentTimestamp
@@ -8827,10 +8904,82 @@ ItemExpr *PositionFunc::bindNode(BindWA *bindWA)
 	}
     }
 
+  // if third(start position) and fourth(occurence) child operands are
+  // specified, then convert them to INT.
+  if (child(2))
+    {
+      ValueId vid3 = child(2)->getValueId();
+      SQLInt si(NULL);
+
+      vid3.coerceType(si, NA_NUMERIC_TYPE);
+
+      const NAType &type3 = vid3.getType();
+
+      if (type3.getTypeQualifier() != NA_NUMERIC_TYPE) {
+        // 4053 The third operand of a POSITION function must be numeric.
+        *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
+        return NULL;
+      }
+      
+      if (((NumericType&)type3).getScale() != 0) {
+        // 4047 The third operand of a POSITION function must have a scale of 0.
+        *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
+        return NULL;
+      }
+
+      if (type3.getFSDatatype() != REC_BIN32_SIGNED)
+        {
+          ItemExpr * newChild =
+            new (bindWA->wHeap())
+            Cast(child(2), 
+                 new (bindWA->wHeap())
+                 SQLInt(bindWA->wHeap(), TRUE, type3.supportsSQLnull()));
+          newChild = newChild->bindNode(bindWA);
+          setChild(2, newChild);
+        }
+    }
+
+  if (child(3))
+    {
+      ValueId vid4 = child(3)->getValueId();
+      SQLInt si(NULL);
+
+      vid4.coerceType(si, NA_NUMERIC_TYPE);
+
+      const NAType &type4 = vid4.getType();
+
+      if (type4.getTypeQualifier() != NA_NUMERIC_TYPE) {
+        // 4053 The third operand of a POSITION function must be numeric.
+        *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
+        return NULL;
+      }
+      
+      if (((NumericType&)type4).getScale() != 0) {
+        // 4047 The third operand of a POSITION function must have a scale of 0.
+        *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
+        return NULL;
+      }
+
+      if (type4.getFSDatatype() != REC_BIN32_SIGNED)
+        {
+          ItemExpr * newChild =
+            new (bindWA->wHeap())
+            Cast(child(3), 
+                 new (bindWA->wHeap())
+                 SQLInt(bindWA->wHeap(), TRUE, type4.supportsSQLnull()));
+          newChild = newChild->bindNode(bindWA);
+          setChild(3, newChild);
+        }
+    }
+
   BuiltinFunction::bindNode(bindWA);
   if (bindWA->errStatus()) 
     return this;
-  
+
   return getValueId().getItemExpr();
 } // PositionFunc::bindNode()
 
@@ -8890,10 +9039,75 @@ ItemExpr *Replace::bindNode(BindWA *bindWA)
 } // Replace::bindNode()
 
 // -----------------------------------------------------------------------
+// member functions for class CharLength
+// -----------------------------------------------------------------------
+
+ItemExpr *CharLength::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  // this will bind/type-propagate all children.
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  const NAType &type1 = 
+    child(0)->castToItemExpr()->getValueId().getType();
+  
+  if (type1.getTypeQualifier() == NA_NUMERIC_TYPE)
+    {
+      ItemExpr * newChild = new (bindWA->wHeap()) 
+        Trim((Int32)Trim::TRAILING,
+             new (PARSERHEAP()) SystemLiteral(" ", WIDE_(" ")), child(0));
+
+      setChild(0, newChild);
+    }
+
+  BuiltinFunction::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+  
+  return getValueId().getItemExpr();
+} // CharLength::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class OctetLength
+// -----------------------------------------------------------------------
+
+ItemExpr *OctetLength::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  // this will bind/type-propagate all children.
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  const NAType &type1 = 
+    child(0)->castToItemExpr()->getValueId().getType();
+  
+  if (type1.getTypeQualifier() == NA_NUMERIC_TYPE)
+    {
+      ItemExpr * newChild = new (bindWA->wHeap()) 
+        Trim((Int32)Trim::TRAILING,
+             new (PARSERHEAP()) SystemLiteral(" ", WIDE_(" ")), child(0));
+
+      setChild(0, newChild);
+    }
+
+  BuiltinFunction::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+  
+  return getValueId().getItemExpr();
+} // OctetLength::bindNode()
+
+// -----------------------------------------------------------------------
 // member functions for class SelIndex
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 ItemExpr *SelIndex::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -8914,7 +9128,7 @@ ItemExpr *SelIndex::bindNode(BindWA *bindWA)
       // See RelRoot::transformGroupByWithOrdinalPhase2().
 
       // create a dummy type of type unknown.
-      NAType * type = new(bindWA->wHeap()) SQLUnknown();
+      NAType * type = new(bindWA->wHeap()) SQLUnknown(bindWA->wHeap());
       setValueId(createValueDesc(bindWA, this, type));
 
       if ((bindWA->inViewDefinition()) &&
@@ -8943,7 +9157,6 @@ ItemExpr *SelIndex::bindNode(BindWA *bindWA)
   setValueId(resultTable->getValueId(i - 1));
   return getValueId().getItemExpr();
 }
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class Subquery
@@ -9088,7 +9301,7 @@ ItemExpr *QuantifiedComp::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(0),
 		     new (bindWA->wHeap())
-		     SQLDoublePrecision(
+		     SQLDoublePrecision(bindWA->wHeap(),
 			  child(0)->castToItemExpr()->getValueId().
 			  getType().supportsSQLnull()));
 	      newChild = newChild->bindNode(bindWA);
@@ -9180,7 +9393,7 @@ ItemExpr *Substring::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(0), 
 		     new (bindWA->wHeap())
-		     SQLInt(TRUE, type1.supportsSQLnull()));
+		     SQLInt(bindWA->wHeap(), TRUE, type1.supportsSQLnull()));
 	      newChild = newChild->bindNode(bindWA);
 
 	      // Cast INT to CHAR(7).
@@ -9188,7 +9401,7 @@ ItemExpr *Substring::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(newChild,
 		     new (bindWA->wHeap())
-		     SQLChar(7, type1.supportsSQLnull()));
+		     SQLChar(bindWA->wHeap(), 7, type1.supportsSQLnull()));
 	      newChild = newChild->bindNode(bindWA);
 	      setChild(0, newChild);
 	    }
@@ -9495,7 +9708,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
 
     // IS req 6: Check ROUTINE_TYPE column of ROUTINES table.
     // Emit error if invalid type.
-    ComRoutineType udrType;
+    ComRoutineType udrType = COM_UNKNOWN_ROUTINE_TYPE;
     if (CmpCommon::getDefault(COMP_BOOL_191) == DF_OFF)
       {
         udrType = udfMetadata->routineDesc()->UDRType ;
@@ -9518,7 +9731,6 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
       // track the size of this object.  Otherwise we might use the context heap.
       const Lng32 size = 16 * 1024;  // The initial size
       routineHeap = new CTXTHEAP NAHeap("NARoutine Heap", (NAHeap *)CTXTHEAP, size);
-      routineHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
     }
     // If not caching, put NARoutine on statement heap.
     else routineHeap=CmpCommon::statementHeap(); 
@@ -10153,7 +10365,7 @@ ItemExpr *ValueIdUnion::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(getSource(srcChildIndex).getItemExpr(),
 		     new (bindWA->wHeap())
-		     SQLChar(dLen,
+		     SQLChar(bindWA->wHeap(), dLen,
 			     getSource(srcChildIndex).getType().
 			     supportsSQLnull()));
 	    }
@@ -10273,7 +10485,7 @@ ItemExpr * ValueIdUnion::tryToDoImplicitCasting( BindWA *bindWA )
   CMPASSERT( getValueId() == NULL_VALUE_ID ); // call this before assigning a value id
 
   CharType * MostGeneralType = new( bindWA->wHeap() )
-                                   SQLVarChar(savedMaxLen,
+                                   SQLVarChar(bindWA->wHeap(), savedMaxLen,
                                               savedAllowNull,
                                               savedUpShifted,
                                               savedCaseInsensitive,
@@ -10593,6 +10805,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     {
     case ITM_DATE_TRUNC_YEAR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Cast to DATETIME YEAR first to pick up only the year.
         strcpy(buf, "CAST(CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP) ;");
       }
@@ -10600,6 +10815,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_MONTH:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Get first day of year and then add in the months.
         strcpy(buf, "CAST(CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP) + "
                     "CAST(MONTH(@A1)-1 AS INTERVAL MONTH);");
@@ -10608,6 +10826,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_DAY:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Note: Cast to DATE first to zero out all time fields
         strcpy(buf, "CAST(CAST(@A1 AS DATE) AS TIMESTAMP);");
       }
@@ -10615,6 +10836,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_HOUR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Note: Cast to DATE to zero out all time fields.  Cast to TIMESTAMP in case DATE was supplied.
         strcpy(buf,
                "CAST( CAST(@A1 AS DATE) AS TIMESTAMP) + "
@@ -10624,6 +10848,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_MINUTE:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         strcpy(buf, "DATE_TRUNC('HOUR',@A1) + "
                     "CAST(MINUTE(CAST(@A1 AS TIMESTAMP)) AS INTERVAL MINUTE);");
       }
@@ -10631,6 +10858,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_SECOND:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         strcpy(buf, "DATE_TRUNC('MINUTE',@A1) + "
                     "CAST( CAST( SECOND(CAST(@A1 AS TIMESTAMP)) AS SMALLINT) "
                     "AS INTERVAL SECOND);");
@@ -10639,6 +10869,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_CENTURY:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2)) 
+          return this;
+
         strcpy(buf, "CAST( CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP ) - "
                     "CAST( MOD(YEAR(@A1),100) AS INTERVAL YEAR(4)  );");
       }
@@ -10646,6 +10879,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_DECADE:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2)) 
+          return this;
+
         strcpy(buf, "CAST( CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP ) - "
                     "CAST( MOD(YEAR(@A1),10) AS INTERVAL YEAR(4)   );");
       }
@@ -10654,6 +10890,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_YEAR:
     case ITM_TSI_YEAR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( YEAR(@A2) - YEAR(@A1) AS INT) ;");
       }
       break;
@@ -10661,6 +10901,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_MONTH:
     case ITM_TSI_MONTH:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( (YEAR(@A2)*12 + MONTH(@A2)) - "
                           "(YEAR(@A1)*12 + MONTH(@A1)) AS INT) ;");
       }
@@ -10668,6 +10912,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_MONTHS_BETWEEN:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,1))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,2))
+          return this;
 	strcpy(buf, "CASE WHEN DAY (@A1) = DAY (@A2) THEN (YEAR(@A1)*12 + MONTH(@A1) - (YEAR(@A2)*12 + MONTH(@A2))) ELSE CAST((CAST(@A1 AS DATE) - CAST(@A2 AS DATE)) AS NUMERIC(18,6))/31 END");
       }
       break;
@@ -10675,6 +10923,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_DAY:
     case ITM_TSI_DAY:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( CAST(@A2 AS DATE) - CAST(@A1 AS DATE) AS INT );");
       }
       break;
@@ -10682,6 +10934,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_HOUR:
     case ITM_TSI_HOUR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf,
               "CAST( (JULIANTIMESTAMP(DATE_TRUNC('HOUR',@A2)) - "
                     " JULIANTIMESTAMP(DATE_TRUNC('HOUR',@A1))) / (1000000*3600) "
@@ -10692,6 +10948,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_MINUTE:
     case ITM_TSI_MINUTE:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf,
                "CAST( (JULIANTIMESTAMP(DATE_TRUNC('MINUTE',@A2)) - "
                      " JULIANTIMESTAMP(DATE_TRUNC('MINUTE',@A1))) / (1000000*60)"
@@ -10702,6 +10962,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_SECOND:
     case ITM_TSI_SECOND:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( "
                     "(JULIANTIMESTAMP(DATE_TRUNC('SECOND',@A2)) - "
                     " JULIANTIMESTAMP(DATE_TRUNC('SECOND',@A1))) / 1000000"
@@ -10712,6 +10976,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_QUARTER:
     case ITM_TSI_QUARTER:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( ("
                     "((YEAR(@A2)*12) + ((QUARTER(@A2)-1)*3)) - "
                     "((YEAR(@A1)*12) + ((QUARTER(@A1)-1)*3)) ) / 3 AS INT);");
@@ -10721,6 +10989,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_WEEK:
     case ITM_TSI_WEEK:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST(("
                     "(CAST(@A2 AS DATE) - CAST(DAYOFWEEK(@A2)-1 AS INTERVAL DAY)) - "
                     "(CAST(@A1 AS DATE) - CAST(DAYOFWEEK(@A1)-1 AS INTERVAL DAY))"
@@ -10730,32 +11002,8 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_LAST_DAY:
       {
-	// Make sure that the child is of date datatype.
-	ItemExpr * tempBoundTree =
-	  child(0)->castToItemExpr()->bindNode(bindWA);
-	if (bindWA->errStatus()) return this;
-
-	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
-	    NA_DATETIME_TYPE)
-	  {
-	    // 4071 The operand of a LAST_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	DatetimeType *dtOper = 
-	  &(DatetimeType&)tempBoundTree->getValueId().getType();
-	if ((dtOper->getPrecision() != SQLDTCODE_TIMESTAMP) &&
-	    (dtOper->getPrecision() != SQLDTCODE_DATE))
-	  {
-	    // 4071 The operand of a LAST_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	setChild(0, tempBoundTree);
+        if (enforceDateOrTimestampDatatype(bindWA,0,1))
+          return this;
 
         strcpy(buf, "@A1 - CAST( DAY(@A1) -1 AS INTERVAL DAY) + INTERVAL '1' MONTH - INTERVAL '1' DAY;");
       }
@@ -10763,36 +11011,12 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_NEXT_DAY:
       {
-	// Make sure that the child is of date datatype.
-	ItemExpr * tempBoundTree =
-	  child(0)->castToItemExpr()->bindNode(bindWA);
-	if (bindWA->errStatus()) 
-	  return this;
-
-	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
-	    NA_DATETIME_TYPE)
-	  {
-	    // 4071 The operand of a NEXT_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	DatetimeType *dtOper = 
-	  &(DatetimeType&)tempBoundTree->getValueId().getType();
-	if ((dtOper->getPrecision() != SQLDTCODE_DATE) &&
-	    (dtOper->getPrecision() != SQLDTCODE_TIMESTAMP))
-	  {
-	    // 4071 The operand of a LAST_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	setChild(0, tempBoundTree);
+	// Make sure that child(0) is of date or timestamp datatype.
+        if (enforceDateOrTimestampDatatype(bindWA,0,1))
+          return this;
 
 	// make sure child(1) is of string type
-	tempBoundTree =
+	ItemExpr * tempBoundTree =
 	  child(1)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus()) 
 	  return this;
@@ -10967,7 +11191,29 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
       }
     break;
 
-   case ITM_GREATEST:
+    case ITM_DAYOFMONTH:
+      {
+	// Make sure that the child is of date datatype.
+	ItemExpr * tempBoundTree =
+	  child(0)->castToItemExpr()->bindNode(bindWA);
+	if (bindWA->errStatus()) 
+          return this;
+
+	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
+	    NA_DATETIME_TYPE)
+	  {
+	    // 4071 The operand of a DAYOFMONTH function must be a datetime.
+	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
+	    bindWA->setErrStatus();
+	    return this;
+	  }
+
+        parseTree = new(bindWA->wHeap()) 
+          ExtractOdbc(REC_DATE_DAY, child(0), TRUE);
+      }
+      break;
+
+    case ITM_GREATEST:
       {
 	strcpy(buf, "CASE WHEN @A1 is NULL or @A2 is null then NULL WHEN @A1 > @A2 then @A1 else @A2 END;");
       }
@@ -10986,16 +11232,16 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	ItemExpr * tempBoundTree =
 	  child(2)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus()) return this;
-
-    // fix case 10-031103-2610, soln 10-031103-0997: make sure length arg
-    // in function "INSERT(s1, start, length, s2)" is not null.
-    if (tempBoundTree->getOperatorType() == ITM_CONSTANT &&
-        ((ConstValue *)tempBoundTree)->isNull()) {
-      *CmpCommon::diags() << DgSqlCode(-4097) << DgString0("INSERT");
-      bindWA->setErrStatus();
-      return this;
-    }
-
+        
+        // fix case 10-031103-2610, soln 10-031103-0997: make sure length arg
+        // in function "INSERT(s1, start, length, s2)" is not null.
+        if (tempBoundTree->getOperatorType() == ITM_CONSTANT &&
+            ((ConstValue *)tempBoundTree)->isNull()) {
+          *CmpCommon::diags() << DgSqlCode(-4097) << DgString0("INSERT");
+          bindWA->setErrStatus();
+          return this;
+        }
+        
 	//
 	// Type cast any param.
 	//
@@ -11028,11 +11274,11 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	// <str1> beginning at <start> and where <str2> has been inserted
 	// into <str1>, beginning at <start>
 
-    // make sure replacement expression handles any null args correctly
-    strcpy(buf, "CASE WHEN @A1 IS NULL THEN NULL"
-                " WHEN @A2 IS NULL THEN NULL"
-                " WHEN @A3 IS NULL THEN NULL"
-                " WHEN @A4 IS NULL THEN NULL ELSE ");
+        // make sure replacement expression handles any null args correctly
+        strcpy(buf, "CASE WHEN @A1 IS NULL THEN NULL"
+               " WHEN @A2 IS NULL THEN NULL"
+               " WHEN @A3 IS NULL THEN NULL"
+               " WHEN @A4 IS NULL THEN NULL ELSE ");
 
 	// Get the characters before <start>
 	strcat(buf, "(LEFT(@A1, CAST(@A2 AS INT UNSIGNED) - 1)");
@@ -11503,11 +11749,27 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_SIGN:
       {
-	// find the nullability of child
 	ItemExpr * tempBoundTree =
 	  child(0)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus()) return this;
 
+	//
+	// Type cast any param.
+	//
+	SQLInt nType(FALSE);
+	ValueId vid = tempBoundTree->castToItemExpr()->getValueId();
+	vid.coerceType(nType, NA_NUMERIC_TYPE);
+
+	const NAType &typ1 = vid.getType();
+        if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+          {
+            // 4045 Operand must be numeric.
+            *CmpCommon::diags() << DgSqlCode(-4045) << DgString0(getTextUpper());
+            bindWA->setErrStatus();
+            return this;
+          }
+
+	// find the nullability of child
 	NABoolean childIsNullable = FALSE;
 	if (tempBoundTree->getValueId().getType().supportsSQLnull())
 	  {
@@ -11664,6 +11926,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	//Processing of first operand.
 	ItemExpr * tempBoundTree = child(0)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus()) return this;
+
+	if (tempBoundTree->getValueId().getType().getTypeQualifier() == NA_UNKNOWN_TYPE)
+	  child(0)->getValueId().coerceType(NA_NUMERIC_TYPE);
 	
 	if (tempBoundTree->getValueId().getType().getTypeQualifier() != NA_NUMERIC_TYPE)
 	  {
@@ -11796,7 +12061,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 		    i--;
 		  }
 		
-		str_sprintf(buf, "@A1 / %Ld", denom);
+		str_sprintf(buf, "@A1 / %ld", denom);
 	      }
 	    
 	    if (strlen(buf) > 0)
@@ -11817,7 +12082,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 		
 		// multiply by 10 ** (number of digits rounded off) to
 		// get back to the original scale.
-		str_sprintf(buf, "cast(@A1 * %Ld as numeric(%d,%d))", 
+		str_sprintf(buf, "cast(@A1 * %ld as numeric(%d,%d))", 
                   denom, MAX_NUMERIC_PRECISION, MAXOF(type_op1.getScale(), roundTo));
 		parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 2, divExpr, child(1));
 		if (! parseTree)
@@ -11880,7 +12145,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
                        // result in consuming additional precision.
                        // For example, round(99.00, -2) = 100.00 
                        const Int16 DisAmbiguate = 0;
-                       typeTemp = new(bindWA->wHeap()) SQLNumeric(type_op1.isSigned(),
+                       typeTemp = new(bindWA->wHeap()) SQLNumeric(bindWA->wHeap(), type_op1.isSigned(),
                                                                    MINOF(type_op1.getPrecision()+1,128),
                                                                    type_op1.getScale(),
                                                                    DisAmbiguate // added for 64bit proj.
@@ -12238,7 +12503,7 @@ ItemExpr *ZZZBinderFunction::tryToUndoBindTransformation(ItemExpr *expr)
         //                   ...)))
         if (op1->getOperatorType() == ITM_CAST)
           {
-            if (expr->origOpType() == ITM_DATEDIFF_QUARTER &&
+            if (NULL != expr && expr->origOpType() == ITM_DATEDIFF_QUARTER &&
                 op1->child(0)->getOperatorType() == ITM_DIVIDE)
               op1 = op1->child(0)->child(0); // the minus operator
               //    cast   /         -
@@ -12246,7 +12511,7 @@ ItemExpr *ZZZBinderFunction::tryToUndoBindTransformation(ItemExpr *expr)
               op1 = op1->child(0); // the minus operator
               //    cast   -
 
-            if (expr->origOpType() == ITM_DATEDIFF_YEAR)
+            if (NULL != expr && expr->origOpType() == ITM_DATEDIFF_YEAR)
               {
                 if (op1->child(0)->getOperatorType() == ITM_EXTRACT ||
                     op1->child(0)->getOperatorType() == ITM_EXTRACT_ODBC)
@@ -12334,6 +12599,40 @@ ItemExpr *ZZZBinderFunction::tryToUndoBindTransformation(ItemExpr *expr)
   return result;  
 }
 
+// returns true if there is an error
+bool ZZZBinderFunction::enforceDateOrTimestampDatatype(BindWA * bindWA, CollIndex childIndex, int operand)
+{
+  // Make sure that the child is of date or timestamp datatype.
+  ItemExpr * tempBoundTree =
+    child(childIndex)->castToItemExpr()->bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return true;
+
+  bool error = (tempBoundTree->getValueId().getType().getTypeQualifier() !=
+                NA_DATETIME_TYPE);
+  if (!error)
+    {
+      DatetimeType *dtOper = 
+	  &(DatetimeType&)tempBoundTree->getValueId().getType();
+      error = ((dtOper->getPrecision() != SQLDTCODE_TIMESTAMP) &&
+	       (dtOper->getPrecision() != SQLDTCODE_DATE));
+    }
+
+  if (error)
+    {
+      // 4182 Function $0~String0 operand $0~Int0 must be of type $1~String1.
+      *CmpCommon::diags() << DgSqlCode(-4182) 
+                          << DgString0(getTextUpper())
+                          << DgInt0(operand)
+                          << DgString1("DATE or TIMESTAMP");
+      bindWA->setErrStatus();
+      return true;
+    }
+
+  setChild(childIndex, tempBoundTree);
+  return false;  // no error
+}
+
 //-------------------------------------------------------------------------
 //
 // member functions for class ItmSequenceFunction
@@ -12357,11 +12656,9 @@ ItemExpr *ItmSequenceFunction::bindNode(BindWA *bindWA)
          olap->isFrameEndUnboundedFollowing()) || //olap->getframeEnd() ==  INT_MAX) || 
         (olap->getframeStart() > olap->getframeEnd()))
     {
-// LCOV_EXCL_START - rfi
       //The specified window frame clause is not valid.
       *CmpCommon::diags() << DgSqlCode(-4342);
       bindWA->setErrStatus();
-// LCOV_EXCL_STOP
     } 
 
     if (!olap->isFrameStartUnboundedPreceding() && //olap->getframeStart() != -INT_MAX &&
@@ -12595,42 +12892,6 @@ ItemExpr *ItmSequenceFunction::bindNode(BindWA *bindWA)
     return getValueId().getItemExpr();
 }
 
-//-------------------------------------------------------------------------
-//
-// member functions for class AuditImage
-//
-//-------------------------------------------------------------------------
-ItemExpr *AuditImage::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound())
-    return getValueId().getItemExpr();
-
-  ItemExpr * boundExpr = NULL;
-     
-  // Obtain the NATable for the objectName.
-  NATable *table = bindWA->getNATable(getObjectName());
-  if (bindWA->errStatus()) return NULL; 
-
-  setNATable(table);
-
-  // The number of columns in the object must match the number of columns
-  // in the expression list for AUDIT_IMAGE. The columns in the expression
-  // list form the children of AUDIT_IMAGE node.
-  if (table->getColumnCount() != (ULng32) getArity())
-    {
-      *CmpCommon::diags() << DgSqlCode(-4315)
-			  << DgTableName(getObjectName().getQualifiedNameAsString());
-      bindWA->setErrStatus();
-      return NULL;
-    }
- 
-  // Binds self; Binds children; AuditImage::synthesize();
-  boundExpr = Function::bindNode(bindWA);
-  if (bindWA->errStatus()) return NULL;
- 
-  return boundExpr;
-}
-
 //---------------------------------------------------------------------------
 //
 // member functions for class HbaseColumnLookup
@@ -12732,7 +12993,6 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     return getValueId().getItemExpr();
 
   ItemExpr * boundExpr = NULL;
-
   short numEntries = hccol_->entries();
   colValMaxLen_ = 0;
   NAType * firstType = NULL;
@@ -12742,7 +13002,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
   for (short i = 0; i < numEntries; i++)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
-      HbaseColumnCreate::HbaseColumnCreateOptions::ConvType co;
+      HbaseColumnCreate::HbaseColumnCreateOptions::ConvType co = HbaseColumnCreate::HbaseColumnCreateOptions::NONE;
 
       ItemExpr * colName = hcco->colName();
       colName = colName->bindNode(bindWA);
@@ -12751,7 +13011,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
       
       // type cast any params
       ValueId vid1 = colName->getValueId();
-      SQLVarChar c1(CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH));
+      SQLVarChar c1(NULL, CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH));
       vid1.coerceType(c1, NA_CHARACTER_TYPE);
       
       hcco->setColName(colName);
@@ -12763,7 +13023,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
 
       // type cast any params
       ValueId vid2 = colValue->getValueId();
-      SQLVarChar c2(CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_VAL_LENGTH));
+      SQLVarChar c2(NULL, CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_VAL_LENGTH));
       vid2.coerceType(c2, NA_CHARACTER_TYPE);
 
       hcco->setColVal(colValue);
@@ -12802,7 +13062,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
 	  if ((co != hcco->convType()) ||
 	      (! firstType && hcco->naType()) ||
 	      (firstType && ! hcco->naType()) ||
-	      (firstType && (NOT (*firstType == *hcco->naType()))))
+	      (firstType && hcco->naType() && (NOT (*firstType == *hcco->naType()))))
 	    {
 	      *CmpCommon::diags() << DgSqlCode(-4221)
 			       << DgString0("COLUMN_CREATE(list format)")
@@ -12824,7 +13084,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     } // for
 
   resultNull = TRUE;
-  NAType * childResultType = new(bindWA->wHeap()) SQLVarChar(colValMaxLen_,
+  NAType * childResultType = new(bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), colValMaxLen_,
 							     resultNull);
   
   Lng32 totalLen = 0;
@@ -12835,7 +13095,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
 
-      NAType * cnType = new(bindWA->wHeap()) SQLVarChar(colNameMaxLen_, FALSE);
+      NAType * cnType = new(bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), colNameMaxLen_, FALSE);
       ItemExpr * cnChild =
 	new (bindWA->wHeap()) Cast(hcco->colName(), cnType);
       cnChild = cnChild->bindNode(bindWA);
@@ -12849,7 +13109,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
       totalLen += newChild->getValueId().getType().getTotalSize();      
     }
 
-  resultType_ = new(bindWA->wHeap()) SQLVarChar(totalLen, FALSE);
+  resultType_ = new(bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), totalLen, FALSE);
   
   // Binds self; Binds children; ColumnCreate::synthesize();
   boundExpr = Function::bindNode(bindWA);
@@ -12949,7 +13209,7 @@ ItemExpr *HbaseTimestamp::bindNode(BindWA *bindWA)
   colName_ = nac->getColName();
 
   NAType * tsValsType = 
-    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+    new (bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), sizeof(Int64), FALSE);
   tsVals_ = 
     new (bindWA->wHeap()) NATypeToItem(tsValsType);
   
@@ -13042,7 +13302,7 @@ ItemExpr *HbaseVersion::bindNode(BindWA *bindWA)
   colName_ = nac->getColName();
 
   NAType * tsValsType = 
-    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+    new (bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), sizeof(Int64), FALSE);
   tsVals_ = 
     new (bindWA->wHeap()) NATypeToItem(tsValsType);
   

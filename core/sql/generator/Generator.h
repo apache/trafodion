@@ -40,7 +40,7 @@
 
 #include "GenMapTable.h"
 #include "FragmentDir.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "exp_clause.h"
 #include "str.h"
 #include "Int64.h"
@@ -72,6 +72,7 @@ class ComTdb;
 class Attributes;
 class DP2Insert;
 class TrafSimilarityTableInfo;
+class OperBMOQuota;
 
 // this define is used to raise assertion in generator.
 // Calls GeneratorAbort which does a longjmp out of the calling scope.
@@ -86,10 +87,18 @@ struct CifAvgVarCharSizeCache
     double avgSize;
   };
 
+
+class XBMOQuotaMap : public NAKeyLookup<NAString, OperBMOQuota>
+{
+public:
+   XBMOQuotaMap(CollHeap *heap)
+    : NAKeyLookup<NAString, OperBMOQuota>(10, NAKeyLookupEnums::KEY_INSIDE_VALUE, heap)
+   {}
+};
+
 //////////////////////////////////////////////////////////////////////////
 // class Generator
 //////////////////////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination
 class Generator : public NABasicObject
 {
   enum {TRANSACTION_FLAG   = 0x0001,   // transaction is needed somewhere
@@ -233,7 +242,7 @@ class Generator : public NABasicObject
     , AQR_WNR_INSERT_EMPTY    = 0x00000100
 
     // if trafodion/hbase IUD operation is using RI inlining
-    , RI_INLINING_FOR_TRAF_IUD = 0x00000200
+    , RI_INLINING_FOR_TRAF_IUD     = 0x00000200
 
     // If Hive tables are accessed at runtime
     , HIVE_ACCESS              = 0x00000400
@@ -426,15 +435,13 @@ class Generator : public NABasicObject
 
   // temporary value holder (during pre code gen) for #BMOs in this fragment
   unsigned short numBMOs_;
-  unsigned short totalNumBMOsPerCPU_; // accumulated # of BMO, per CPU
 
-  CostScalar BMOsMemoryPerFrag_; // accumulated BMO memory, per fragment 
-  CostScalar totalBMOsMemoryPerCPU_; // accumulated BMO memory, per CPU
+  CostScalar totalBMOsMemoryPerNode_; // accumulated BMO memory, per Node
 
-  CostScalar nBMOsMemoryPerCPU_; // accumulated nBMO memory, per CPU
+  CostScalar nBMOsMemoryPerNode_; // accumulated nBMO memory, per Node
 
-  // BMO memory limit per CPU
-  CostScalar BMOsMemoryLimitPerCPU_; 
+  // BMO memory limit per Node
+  CostScalar BMOsMemoryLimitPerNode_; 
 
   // Total number of BMOs in the query
   unsigned short totalNumBMOs_;
@@ -556,12 +563,9 @@ private:
   // total estimated memory used by BMOs and certain other operators in bytes
   double totalEstimatedMemory_ ;
 
-   // total overflowed memory used by Sort, HashGroupBy and HashJoin in bytes
-  double totalOverflowMemory_ ;
-
   // estimated memory for an individual operator. Used by Explain
   // set to 0 after Explain has been called so that next operator
-  // can used this field. In KB and on a per CPU basis.
+  // can used this field. In KB and on a per Node basis.
   Lng32 operEstimatedMemory_ ;
 
   Int16 maxCpuUsage_ ;
@@ -604,6 +608,8 @@ private:
   char NExLogPathNam_[1024] ; // Only 1 needed, so we put it in Generator object
 
   LIST(CifAvgVarCharSizeCache) avgVarCharSizeList_;
+
+  UInt32 topNRows_;
   //LIST(double) avgVarCharSizeValList_;
   void addCifAvgVarCharSizeToCache( ValueId vid, double size)
   {
@@ -627,6 +633,7 @@ private:
     return FALSE;
   };
 
+  XBMOQuotaMap bmoQuotaMap_;
 public:
   enum cri_desc_type {
     UP, DOWN
@@ -1459,25 +1466,13 @@ public:
 			      ItemExpr * childNode0, ItemExpr * childNode1,
 			      ComDiagsArea * diagsArea);
 
-  inline CostScalar getBMOsMemory() { return BMOsMemoryPerFrag_; }
-
   inline void incrBMOsMemory(CostScalar x) 
-     { incrBMOsMemoryPerFrag(x); totalBMOsMemoryPerCPU_ += x; }
+     { totalBMOsMemoryPerNode_ += x; }
 
-  inline void incrBMOsMemoryPerFrag(CostScalar x) 
-     { BMOsMemoryPerFrag_ += x;  }
-
-  inline CostScalar replaceBMOsMemoryUsage(CostScalar newVal)
-  {
-    CostScalar retVal = BMOsMemoryPerFrag_;
-    BMOsMemoryPerFrag_ = newVal;
-    return retVal;
-  }
-  inline CostScalar getTotalBMOsMemoryPerCPU() 
-                 { return totalBMOsMemoryPerCPU_; }
-
+  inline CostScalar getTotalBMOsMemoryPerNode() 
+           { return totalBMOsMemoryPerNode_; }
   inline void incrNumBMOs() 
-     {  incrNumBMOsPerFrag(1);  totalNumBMOsPerCPU_++; totalNumBMOs_++;}
+     {  incrNumBMOsPerFrag(1);  totalNumBMOs_++;}
 
   inline void incrNumBMOsPerFrag(UInt32 x) { numBMOs_ += x; }
 
@@ -1487,15 +1482,14 @@ public:
     numBMOs_ = newVal;
     return retVal;
   }
-  inline unsigned short getTotalNumBMOsPerCPU() { return totalNumBMOsPerCPU_; }
-  
-  inline CostScalar getTotalNBMOsMemoryPerCPU() { return nBMOsMemoryPerCPU_; }
-  inline void incrNBMOsMemoryPerCPU(CostScalar x) { nBMOsMemoryPerCPU_ += x; }
+ 
+  inline CostScalar getTotalNBMOsMemoryPerNode() { return nBMOsMemoryPerNode_; }
+  inline void incrNBMOsMemoryPerNode(CostScalar x) { nBMOsMemoryPerNode_ += x; }
+ 
+  inline void setBMOsMemoryLimitPerNode(CostScalar x) 
+            { BMOsMemoryLimitPerNode_ = x; }
 
-  inline void setBMOsMemoryLimitPerCPU(CostScalar x) 
-            { BMOsMemoryLimitPerCPU_ = x; }
-
-  inline CostScalar getBMOsMemoryLimitPerCPU() { return BMOsMemoryLimitPerCPU_; }
+  inline CostScalar getBMOsMemoryLimitPerNode() { return BMOsMemoryLimitPerNode_; }
 
   inline unsigned short getTotalNumBMOs() { return totalNumBMOs_; }
 
@@ -1586,6 +1580,7 @@ public:
   // Helpers for the special ONLJ queue sizing defaults.
   NABoolean const getMakeOnljLeftQueuesBig() 
                                     { return makeOnljLeftQueuesBig_; }
+  void setMakeOnljLeftQueuesBig(NABoolean x) {makeOnljLeftQueuesBig_ = x;}
   ULng32 const getOnljLeftUpQueue() { return onljLeftUpQueue_; }
   ULng32 const getOnljLeftDownQueue() {return onljLeftDownQueue_; }
 
@@ -1603,13 +1598,6 @@ public:
 
   inline short getMaxCpuUsage(){return maxCpuUsage_;}
   inline void setMaxCpuUsage(short val){maxCpuUsage_ = val;}
-
-  inline double getTotalOverflowMemory(){return totalOverflowMemory_;}
-  inline void addToTotalOverflowMemory(double val)
-        {totalOverflowMemory_ += val;}
-
-  inline Lng32 getOperEstimatedMemory(){return operEstimatedMemory_;}
-  inline void setOperEstimatedMemory(Lng32 val){operEstimatedMemory_ = val;}
 
   inline ComTdb::OverflowModeType getOverflowMode() {return overflowMode_; }
 
@@ -1659,6 +1647,7 @@ public:
 
   void setHBaseNumCacheRows(double rowsAccessed, 
                             ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
+                            Int32 hbaseRowSize,
                             Float32 samplePercent = 0.0);
   void setHBaseCacheBlocks(Int32 hbaseRowSize, double rowsAccessed, 
                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
@@ -1691,8 +1680,15 @@ public:
     }
     return snapshotScanTmpLocation_;
   }
+  inline void setTopNRows(ULng32 topNRows) 
+     { topNRows_ = topNRows; }
+  inline ULng32 getTopNRows() { return topNRows_; }
+  inline XBMOQuotaMap *getBMOQuotaMap() { return &bmoQuotaMap_; }      
+  double getEstMemPerNode(NAString *key, Lng32 &numStreams);
+  double getEstMemForTdb(NAString *key);
+  double getEstMemPerInst(NAString *key);
+  void finetuneBMOEstimates();
 }; // class Generator
-#pragma warn(1506)   // warning elimination
 
 class GenOperSimilarityInfo : public NABasicObject
 {
@@ -1728,6 +1724,46 @@ private:
   NABoolean constraintsTrigPresent_;
 
   UInt32 flags_;
+};
+
+
+class OperBMOQuota : public NABasicObject
+{
+public: 
+   OperBMOQuota(NAString *operAddr, Int32 numStreams, CostScalar estMemPerNode, CostScalar estMemPerInst,
+                CostScalar estRowsUsed, CostScalar maxCard) :
+     operAddr_(operAddr) 
+   , numStreams_(numStreams)
+   , estMemPerNode_(estMemPerNode)
+   , estMemPerInst_(estMemPerInst)
+   , estRowsUsed_(estRowsUsed)
+   , maxCard_(maxCard) 
+   , ignoreEstimate_(FALSE)
+   , origEstMemPerNode_(estMemPerNode)
+   { 
+     //weight_ = (estRowsUsed_ / maxCard_).value();
+     weight_ = 0;
+   }
+   const NAString *getKey() const {return operAddr_; }
+   inline Int32 getNumStreams() { return numStreams_; }
+   inline double getEstMemPerNode() { return estMemPerNode_.value(); }
+   inline double getEstMemPerInst() { return estMemPerInst_.value(); }
+   inline double getEstMemForTdb() { return estMemPerInst_.value() * numStreams_; }
+   inline void setIgnoreEstimate() { ignoreEstimate_ = TRUE; } 
+   NABoolean operator==(const OperBMOQuota &other) const
+                                        { return this == &other; }
+   inline void setEstMemPerNode(double estMemPerNode) { estMemPerNode_ = estMemPerNode; }
+
+private:
+   const NAString *operAddr_;
+   Int32 numStreams_;
+   CostScalar estMemPerNode_; 
+   CostScalar estMemPerInst_;
+   CostScalar estRowsUsed_;
+   CostScalar maxCard_;
+   CostScalar origEstMemPerNode_;
+   double weight_;
+   NABoolean ignoreEstimate_; 
 };
 
 // Get table and index filename
@@ -1782,6 +1818,7 @@ Generator::getExplainTuple()
 {
   return explainTuple_;
 }
+
 
 #endif
 

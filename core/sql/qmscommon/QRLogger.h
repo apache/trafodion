@@ -60,6 +60,7 @@ extern std::string CAT_SQL_COMP;
 extern std::string CAT_SQL_ESP;
 extern std::string CAT_SQL_SSCP;
 extern std::string CAT_SQL_PRIVMGR;
+extern std::string CAT_SQL_USTAT;
 
 // HDFS
 extern std::string CAT_SQL_HDFS_JNI_TOP;
@@ -67,6 +68,7 @@ extern std::string CAT_SQL_HDFS_SEQ_FILE_READER;
 extern std::string CAT_SQL_HDFS_SEQ_FILE_WRITER;
 extern std::string CAT_SQL_HDFS_ORC_FILE_READER;
 extern std::string CAT_SQL_HBASE;
+extern std::string CAT_SQL_HDFS;
 
 class ComDiagsArea;
 
@@ -211,10 +213,10 @@ public:
   const char* getMyProcessInfo();
 
   // overrides the method in CommonLogger so process information can be added
-  static void log(std::string &cat,
+  static void log(const std::string &cat,
                   logLevel    level,
                   const char* logMsgTemplate ...);
-  static void log(std::string &cat,
+  static void log(const std::string &cat,
                   logLevel    level,
                   int         sqlCode,
                   const char* queryId,
@@ -262,9 +264,15 @@ public:
   
   static NABoolean initLog4cxx(ExecutableModule module);
 
-protected:
+  // Methods for use by components that wish to manage logs for their
+  // own debugging purposes. The log layout includes just the text 
+  // the component generates and not the usual log header text.
 
-   void initCategory(std::string &cat, log4cxx::LevelPtr defaultPriority);
+  static NABoolean startLogFile(const std::string &cat, const char * logFileName);
+
+  static NABoolean stopLogFile(const std::string &cat);
+
+  static NABoolean getRootLogDirectory(const std::string &cat, std::string &out);
 
 private:
     /**
@@ -279,9 +287,6 @@ private:
     QRLogger& operator=(const QRLogger&);
 
 private:
-
-  /** The appender. */
-  log4cxx::Appender *fileAppender_;
 
   /** Is this QMS, QMM, QMP or MXCMP? */
   ExecutableModule module_;
@@ -434,7 +439,6 @@ class QRException
 /**
  * Exception thrown when an error in the program logic is found.
  */
-// LCOV_EXCL_START :rfi
 class QRLogicException : public QRException
 {
   public:
@@ -458,6 +462,5 @@ class QRLogicException : public QRException
     {}
 
 }; //QRLogicException
-// LCOV_EXCL_STOP
 
 #endif  /* _QRLOGGER_H_ */

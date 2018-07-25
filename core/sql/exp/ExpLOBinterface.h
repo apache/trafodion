@@ -29,6 +29,13 @@
 class HdfsFileInfo
 {
  public:
+  HdfsFileInfo() {
+     entryNum_ = -1;
+     startOffset_ = -1;
+     bytesToRead_ = 0;
+     compressionMethod_ = 0;
+     flags_ = 0;
+  }
   char * fileName() { return fileName_; }
 
   // used for text/seq file access
@@ -38,6 +45,8 @@ class HdfsFileInfo
   // used for ORC access
   Int64 getStartRow() { return startOffset_; }
   Int64 getNumRows() { return bytesToRead_; }
+
+  Int16 getCompressionMethod() const { return compressionMethod_; }
 
   Lng32 getFlags() { return flags_; }
 
@@ -64,6 +73,7 @@ class HdfsFileInfo
   NABasicPtr  fileName_;
   Int64 startOffset_;
   Int64 bytesToRead_;
+  Int16 compressionMethod_;
 };
 
 typedef HdfsFileInfo* HdfsFileInfoPtr;
@@ -80,11 +90,11 @@ enum ExpLOBinterfaceInputFlags
     ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
   };
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, void *currContext,NABoolean isHiveRead, char *hdfsServer="default", Int32 port=0);
+Lng32 ExpLOBinterfaceInit(ExLobGlobals *& lobGlob, NAHeap *lobHeap, ContextCli *currContext,NABoolean isHiveRead, char *hdfsServer=(char *)"default", Int32 port=0);
 
-Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
+Lng32 ExpLOBinterfaceCleanup(ExLobGlobals *& lobGlob);
 
-Lng32 ExpLOBinterfaceCreate(void * lobGlob, 
+Lng32 ExpLOBinterfaceCreate(ExLobGlobals * lobGlob, 
 			    char * lobName,
 			    char * lobLoc,
 			    Lng32 lobType = (Lng32)Lob_HDFS_File,
@@ -95,23 +105,23 @@ Lng32 ExpLOBinterfaceCreate(void * lobGlob,
 	                    short  replication =0,
 	                    int    blocksize=0);
 
-Lng32 ExpLOBinterfaceDrop(void * lobGlob,
+Lng32 ExpLOBinterfaceDrop(ExLobGlobals * lobGlob,
 			  char * lobHdfsServer ,
 			  Lng32 lobHdfsPort ,
 			  char * lobName,
 			  char * lobLoc);
 
-Lng32 ExpLOBInterfacePurgedata(void * lobGlob, 			      
+Lng32 ExpLOBInterfacePurgedata(ExLobGlobals * lobGlob, 			      
 			       char * lobName,
 			       char * lobLoc);
 
-Lng32 ExpLOBinterfaceCloseFile(void * lobGlob, 
+Lng32 ExpLOBinterfaceCloseFile(ExLobGlobals * lobGlob, 
 			       char * lobName,
 			       char * lobLoc,
 			       Lng32 lobType,
 			       char * lobHdfsServer ,
 			       Lng32 lobHdfsPort );
-Lng32 ExpLOBInterfaceInsertSelect(void * exLobGlob, 
+Lng32 ExpLOBInterfaceInsertSelect(ExLobGlobals * exLobGlob, 
 				  char * lobHdfsServer ,
 				  Lng32 lobHdfsPort ,
 				  char * tgtLobName,
@@ -135,7 +145,7 @@ Lng32 ExpLOBInterfaceInsertSelect(void * exLobGlob,
                                   int    blocksize=0
 
                                   );
-Lng32 ExpLOBInterfaceInsert(void * lobGlob, 
+Lng32 ExpLOBInterfaceInsert(ExLobGlobals * lobGlob, 
 			    char * tgtLobName,
 			    char * lobLocation,
 			    Lng32 lobType,
@@ -171,7 +181,7 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 			    int    blocksize=0
 			    );
 
-Lng32 ExpLOBInterfaceUpdate(void * lobGlob, 
+Lng32 ExpLOBInterfaceUpdate(ExLobGlobals * lobGlob, 
 			    char * lobHdfsServer ,
 			    Lng32 lobHdfsPort,	 
 			    char * tgtLobName,
@@ -201,7 +211,7 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    Int64 lobMaxChunkMemSize = 0,
                             Int64 lobGCLimit = 0);
 
-Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob, 
+Lng32 ExpLOBInterfaceUpdateAppend(ExLobGlobals * lobGlob, 
 				  char * lobHdfsServer ,
 				  Lng32 lobHdfsPort ,
 				  char * tgtLobName,
@@ -232,7 +242,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
                                   Int64 lobGCLimit = 0
 				  );
 
-Lng32 ExpLOBInterfaceDelete(void * lobGlob, 
+Lng32 ExpLOBInterfaceDelete(ExLobGlobals * lobGlob, 
 			    char * lobHdfsServer ,
 			    Lng32 lobHdfsPort ,
 			    char * lobName,
@@ -245,7 +255,7 @@ Lng32 ExpLOBInterfaceDelete(void * lobGlob,
 			    Lng32 checkStatus,
 			    Lng32 waitedOp);
 
-Lng32 ExpLOBInterfaceSelect(void * lobGlob, 
+Lng32 ExpLOBInterfaceSelect(ExLobGlobals * lobGlob, 
 			    char * lobName, 
 			    char * lobLoc,
 			    Lng32  lobType,
@@ -265,7 +275,7 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Int64 lobMaxChunkMemlen,
 			    Int32 inputFlags=0);
 
-Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob, 
+Lng32 ExpLOBInterfaceSelectCursor(ExLobGlobals * lobGlob, 
 				  char * lobName, 
 				  char * lobLoc,
 				  Lng32 lobType,
@@ -289,7 +299,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
                                   Int32 *hdfsDetailError = NULL
 				  );
 
-Lng32 ExpLOBinterfaceStats(void * lobGlob, 
+Lng32 ExpLOBinterfaceStats(ExLobGlobals * lobGlob, 
 			   ExLobStats * lobStats,
 			   char * lobName,
 			   char * lobLoc,
@@ -299,9 +309,9 @@ Lng32 ExpLOBinterfaceStats(void * lobGlob,
 
 char * getLobErrStr(Lng32 errEnum);
 
-Lng32 ExpLOBinterfacePerformGC(void *& lobGlob, char *lobName,void *descChunksArray, Int32 numEntries, char *hdfsServer, Int32 hdfsPort,char *LOBlOC,Int64 lobMaxChunkMemSize);
-Lng32 ExpLOBinterfaceRestoreLobDataFile(void *& lobGlob, char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
-Lng32 ExpLOBinterfacePurgeBackupLobDataFile(void *& lobGlob,  char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
+Lng32 ExpLOBinterfacePerformGC(ExLobGlobals *& lobGlob, char *lobName,void *descChunksArray, Int32 numEntries, char *hdfsServer, Int32 hdfsPort,char *LOBlOC,Int64 lobMaxChunkMemSize);
+Lng32 ExpLOBinterfaceRestoreLobDataFile(ExLobGlobals *& lobGlob, char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
+Lng32 ExpLOBinterfacePurgeBackupLobDataFile(ExLobGlobals *& lobGlob,  char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
 
 // dirPath: path to needed directory (includes directory name)
 // modTS is the latest timestamp on any file/dir under dirPath.
@@ -311,7 +321,7 @@ Lng32 ExpLOBinterfacePurgeBackupLobDataFile(void *& lobGlob,  char *hdfsServer, 
 //   failedLocBuf: buffer where path/name of failed dir/file will be returned.
 //   failedLocBufLen: IN: max len of buf. OUT: actual length of data.
 // Return: 1, if check fails. 0, if passes. -1, if error.
-Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
+Lng32 ExpLOBinterfaceDataModCheck(ExLobGlobals * lobGlob,
                                   char * dirPath,
                                   char * lobHdfsServer,
                                   Lng32  lobHdfsPort,
@@ -321,7 +331,7 @@ Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
                                   char * failedLocBuf,
                                   Int32 &failedLocBufLen);
 
-Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
+Lng32 ExpLOBinterfaceEmptyDirectory(ExLobGlobals * lobGlob,
                             char * lobName,
                             char * lobLoc,
                             Lng32 lobType = (Lng32)Lob_Empty_Directory,
@@ -331,7 +341,7 @@ Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             short  replication =0,
                             int    blocksize=0);
 
-Lng32 ExpLOBInterfaceGetLobLength(void * exLobGlob, 
+Lng32 ExpLOBInterfaceGetLobLength(ExLobGlobals * exLobGlob, 
 				  char * lobName, 
 				  char * lobLoc,
 				  Lng32 lobType,
@@ -342,21 +352,29 @@ Lng32 ExpLOBInterfaceGetLobLength(void * exLobGlob,
 			          Int64 &outLobLen 
                                   
 				  );
+Lng32 ExpLOBInterfaceGetFileName(ExLobGlobals * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+                                  char * lobHandle,  
+                                 char * outFileName,
+                                  Int32 &outFileLen);
 
+Lng32 ExpLOBInterfaceGetOffset(ExLobGlobals * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+				  char * lobHandle,
+			          Int64 &outLobOffset 
+                                  
+				  );
 
-/*
-class HdfsFileInfo
-{
- public:
-  char * fileName() { return fileName_; }
-  Int64 getStartOffset() { return startOffset_; }
-  Int64 getBytesToRead() { return bytesToRead_; }
-  Lng32 entryNum_; // 0 based, first entry is entry num 0.
-  NABasicPtr  fileName_;
-  Int64 startOffset_;
-  Int64 bytesToRead_;
-};
-*/
 #endif
 
 

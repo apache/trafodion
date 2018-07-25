@@ -21,10 +21,7 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC := arkcmp_proc.cpp \
-	Sqlci_templ.cpp
-
-#CPPSRC := Sqlci_templ.cpp
+CPPSRC := arkcmp_proc.cpp 
 
 #GUI Debugger
   ifeq ($(FLAVOR),debug)

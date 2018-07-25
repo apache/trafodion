@@ -307,7 +307,6 @@ LmJavaExceptionReporter::checkNewObjectExceptions(LmHandle jobj,
   }
   else
   {
-// LCOV_EXCL_START
     jstring jstr =
       (jstring) jni->CallObjectMethod(jt, (jmethodID) throwableToStringId_);
     if (jstr)
@@ -342,7 +341,6 @@ LmJavaExceptionReporter::checkNewObjectExceptions(LmHandle jobj,
     jni->DeleteLocalRef(jt);
     jni->ExceptionClear();
     return LM_ERR;
-// LCOV_EXCL_STOP
   }
 }
 
@@ -487,7 +485,6 @@ LmJavaExceptionReporter::getNextChainedException(LmHandle throwable)
 //
 // Returns: LM_ERR unconditionally
 //
-// LCOV_EXCL_START
 LmResult
 LmJavaExceptionReporter::insertDiags(ComDiagsArea *diags,
                                      Int32 errCode,
@@ -588,7 +585,6 @@ LmJavaExceptionReporter::checkGetMethodExceptions(const char   *routineName,
   jni->ExceptionClear();
   return LM_ERR;
 }
-// LCOV_EXCL_STOP
 
 //
 // processUserException(): Processes possible uncaught Java exceptions.
@@ -737,7 +733,6 @@ LmJavaExceptionReporter::reportUserSQLException(LmHandle jt,
 // MethodValidationException. This exception is thrown by
 // the internal SPJ VALIDATEROUTINE.
 //
-// LCOV_EXCL_START
 void
 LmJavaExceptionReporter::reportInternalSPJException(LmHandle jt,
                                                     char *errText,
@@ -794,7 +789,6 @@ LmJavaExceptionReporter::reportInternalSPJException(LmHandle jt,
   }
 
 }
-// LCOV_EXCL_STOP
 
 //
 // reportJavaObjException(): populates the diags for

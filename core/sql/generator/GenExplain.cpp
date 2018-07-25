@@ -62,6 +62,7 @@
 
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLCreateIndex.h"
+#include "StmtDDLonHiveObjects.h"
 #include "ComDistribution.h"
 #include "TrafDDLdesc.h"
 
@@ -320,10 +321,10 @@ RelExpr::addExplainInfo(ComTdb * tdb,
   NAString fragdescr;
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  double mlimit = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU);
+  double mlimit = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB);
   double quotaPerBMO = defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB);
 
-  const char * memory_quota_str = "memory_quota_per_esp: %d MB " ;
+  const char * memory_quota_str = "memory_quota_per_instance: %d MB " ;
   if ( generator->getEspLevel() == 0 ) 
     memory_quota_str = "memory_quota: %d MB " ;
 
@@ -333,12 +334,12 @@ RelExpr::addExplainInfo(ComTdb * tdb,
          if ( quotaPerBMO > 0 || mlimit == 0 ) 
             break;
 
-         double BMOsMemoryLimit = 
-              generator->getBMOsMemoryLimitPerCPU().value() / (1024 * 1024);
+         double BMOsMemory = 
+              generator->getTotalBMOsMemoryPerNode().value() / (1024 * 1024);
          double nBMOsTotalMemory = 
-              (generator->getTotalNBMOsMemoryPerCPU()).value() / (1024 * 1024);
-         snprintf(buf, 120, "memory_limit_per_cpu: %.2f(total), %.2f(BMOs), %.2f(nBMOs) ", 
-                                   mlimit, BMOsMemoryLimit, nBMOsTotalMemory); 
+              (generator->getTotalNBMOsMemoryPerNode()).value() / (1024 * 1024);
+         snprintf(buf, 120, "est_memory_per_node: %.2f(Limit), %.2f(BMOs), %.2f(nBMOs) MB ", 
+                                   mlimit, BMOsMemory, nBMOsTotalMemory); 
          fragdescr += buf;
        } 
        break;
@@ -438,13 +439,13 @@ RelExpr::addExplainInfo(ComTdb * tdb,
       explainTuple->setDescription(rowsetNAR);
     }
 
-
   if ( mlimit > 0 && quotaPerBMO == 0 )
   {
      // Report estimate memory usage per CPU (both BMOs and nBMOs)
 
      NABoolean reportMemoryEst = TRUE;
-     switch (tdb->getNodeType()) {
+     ComTdb::ex_node_type nodeType = tdb->getNodeType();
+     switch (nodeType) {
        case ComTdb::ex_HASH_GRBY:
          reportMemoryEst = ((ComTdbHashGrby*)tdb)->memoryQuotaMB() > 0;
          break;
@@ -454,21 +455,24 @@ RelExpr::addExplainInfo(ComTdb * tdb,
        default:
          break;
      }
-             
      if ( reportMemoryEst == TRUE ) {
-        double memUsage = getEstimatedRunTimeMemoryUsage(TRUE).value()/1024;
-        if ( memUsage > 0 ) {
-          sprintf(buf, "est_memory_per_cpu: %.3f KB ", memUsage);
-          explainTuple->setDescription(buf);
+        if (nodeType == ComTdb::ex_HASH_GRBY || nodeType == ComTdb::ex_HASHJ
+               || nodeType == ComTdb::ex_SORT) {
+           double memUsage = tdb->getEstimatedMemoryUsage();
+           if ( memUsage > 0 ) {
+              sprintf(buf, "est_memory_per_instance: %.3f KB ", memUsage);
+              explainTuple->setDescription(buf);
+           }
         }
-     }
-  } else {
-     if ( generator->getOperEstimatedMemory() > 0 ) {
-       sprintf(buf, "est_memory_per_cpu: %d KB ", 
-          generator->getOperEstimatedMemory());
-       explainTuple->setDescription(buf);
-     }
-  }
+        else {
+           double memUsage = getEstimatedRunTimeMemoryUsage(generator, TRUE).value()/1024;
+           if ( memUsage > 0 ) {
+              sprintf(buf, "est_memory_per_node: %.3f KB ", memUsage);
+              explainTuple->setDescription(buf);
+           }
+        }
+    }
+  } 
 
   //calls virtual subclass-specific function
   addSpecificExplainInfo(explainTuple, tdb, generator);
@@ -550,22 +554,20 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   
   description += "access_mode: ";
     switch(accessOptions().accessType()) {
-      case BROWSE_:     description += "read uncommitted ";
-                        break;
-      case SKIP_CONFLICT_: description += "skip conflict ";
-                        break;
-      case CLEAN_:      description += "read committed ";
-                        break;
-      case STABLE_:     description += "stable ";
-                        break;
-      case REPEATABLE_: description += "serializable ";
-                        break;
-      case SERIALIZABLE_placeholder_: description += "mx serializable ";
-                        break;
-      case ACCESS_TYPE_NOT_SPECIFIED_: description += "not specified, defaulted to read committed ";
-                        break;
-      default:          description += "unknown ";
-                        break;
+    case TransMode::READ_UNCOMMITTED_ACCESS_:     description += "read uncommitted ";
+      break;
+    case TransMode::SKIP_CONFLICT_ACCESS_: description += "skip conflict ";
+      break;
+    case TransMode::READ_COMMITTED_ACCESS_:      description += "read committed ";
+      break;
+    case TransMode::REPEATABLE_READ_ACCESS_: description += "repeatable read ";
+      break;
+    case TransMode::SERIALIZABLE_: description += "serializable ";
+      break;
+    case TransMode::ACCESS_TYPE_NOT_SPECIFIED_: description += "not specified, defaulted to read committed ";
+      break;
+    default:          description += "unknown ";
+      break;
     }; 
 
   // now get columns_retrieved
@@ -705,12 +707,12 @@ static void appendListOfColumns(Queue* listOfColNames,ComTdb *tdb, NAString& out
           else
         v = 0;
           if (j==0)
-              str_sprintf(buf, "%s%s%Ld",
+              str_sprintf(buf, "%s%s%ld",
                   colFam,
                   (withAt ? "@" : ""),
                   v);
           else
-              str_sprintf(buf, ",%s%s%Ld",
+              str_sprintf(buf, ",%s%s%ld",
                   colFam,
                   (withAt ? "@" : ""),
                   v);
@@ -801,7 +803,7 @@ static void appendPushedDownExpression(ComTdb *tdb, NAString& outNAString){
                 v = *(ULng32*)colName;
                   else
                 v = 0;
-                  str_sprintf(buf2, "%s%s%Ld",
+                  str_sprintf(buf2, "%s%s%ld",
                       colFam,
                       (withAt ? "@" : ""),
                       v);
@@ -946,10 +948,11 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   description += cacheBuf ;
   description += " " ;
 
-  if (!(((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->cacheBlocks())) {
-    description += "cache_blocks: " ;
+  description += "cache_blocks: " ;
+  if (!(((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->cacheBlocks()))
     description += "OFF " ;
-  }
+  else
+    description += "ON " ;
 
   if ((((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->useSmallScanner())) {
     description += "small_scanner: " ;
@@ -1121,13 +1124,62 @@ DDLExpr::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   char buf[200];
   NAString buffer;
 
-  buffer = "explain_information: not available.";
+  ExprNode *ddlNode = getDDLNode();
+  if (ddlNode)
+    {
+      if (ddlNode->getOperatorType() == DDL_ON_HIVE_OBJECTS)
+        {
+          StmtDDLonHiveObjects * hddl =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLonHiveObjects();
+          buffer = "explain_information: DDL on Hive object ";
+          buffer += NAString("ddl_operation: ") + hddl->getOperStr() + " ";
+          if (NOT hddl->getName().isNull())
+            buffer += NAString("object_name: ") + hddl->getName() + " ";
+          else
+            buffer += "object_name: unknown ";
+          buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
+          if (NOT hddl->getHiveDDL().isNull())
+            {
+              if (NOT hddl->getHiveDefaultDB().isNull())
+                buffer += NAString("hive_default_db: ") + hddl->getHiveDefaultDB() + " ";
+              buffer += NAString("hive_ddl: ") + hddl->getHiveDDL() + " ";
+            }
+          else
+            buffer += "hive_ddl: unknown ";
+        }
+    } // ddlNode
+
+  if (buffer.isNull())
+    buffer = "explain_information: not available.";
 
   explainTuple->setDescription(buffer);
   
   return(explainTuple);
 }
 
+ExplainTuple *
+ExeUtilHiveTruncate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
+                                            ComTdb * tdb, 
+                                            Generator *generator)
+{
+  char buf[200];
+  NAString buffer;
+
+  ComTdbExeUtilHiveTruncate *ctdb = (ComTdbExeUtilHiveTruncate*)tdb;
+  if (ctdb->getTableName() != NULL)
+    buffer += NAString("table_name: ") + ctdb->getTableName() + " ";
+  else
+    buffer += "table_name: unknown ";
+  //  buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
+  if (NOT getHiveTruncQuery().isNull())
+    buffer += NAString("hive_trunc_query: ") + getHiveTruncQuery() + " ";
+  else
+    buffer += "hive_trunc_query: unknown ";
+
+  explainTuple->setDescription(buffer);
+  
+  return(explainTuple);
+}
 
 ExplainTuple*
 GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
@@ -1395,8 +1447,6 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   // on different systems.
   if ((child(0) && child(0)->castToRelExpr()->getOperatorType() == REL_DDL) &&
       (sqlmxRegress))
-      //      (val = ActiveControlDB()->getControlSessionValue("EXPLAIN")) &&
-      //      (*val == "ON"))
     {  
       explainTuple->setDescription(statement);
 
@@ -1405,10 +1455,6 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 
 
   char buf[20];
-
-  statement += "statement_index: ";
-  sprintf(buf,"%d ", CmpCommon::statement()->getStmtIndex());
-  statement += buf;
 
   // For Adaptive Segmentation
   //
@@ -1423,7 +1469,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   ComTdbRoot *rootTdb = (ComTdbRoot *)tdb;
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  Lng32 mlimit = defs.getAsLong(EXE_MEMORY_LIMIT_PER_CPU);
+  ULng32 mlimit = defs.getAsLong(BMO_MEMORY_LIMIT_PER_NODE_IN_MB);
 
   if (mlimit == 0 && rootTdb->getQueryCostInfo())
   {
@@ -1443,14 +1489,6 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   sprintf(maxMaxCard, "%.0lf", CURRSTMT_OPTDEFAULTS->maxMaxCardinality());
   statement += maxMaxCard;
   statement += " ";
-
-  double total_overflow_size = generator->getTotalOverflowMemory();
-  statement += "total_overflow_size: ";
-
-  char ovSizeVal[1024];
-  sprintf(ovSizeVal, "%.2lf", total_overflow_size/1024);
-  statement += ovSizeVal;
-  statement += " KB ";
 
   FragmentDir *fragDir = generator->getFragmentDir();
   for (CollIndex i = 0; i < fragDir->entries(); i++) {
@@ -1726,7 +1764,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
        ComQIActionTypeEnumToLiteral(sikValue[i].getSecurityKeyType(),
                                     sikOperationLit);
        sikOperationLit[2] = '\0';
-       str_sprintf(buf, "{%Ld,%Ld,%s}",
+       str_sprintf(buf, "{%ld,%ld,%s}",
                   (Int64)sikValue[i].getSubjectHashValue(),
                   (Int64)sikValue[i].getObjectHashValue(),
                   sikOperationLit);
@@ -1739,12 +1777,12 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   if (objectUIDs)
   {
     char buf[64];
-    str_sprintf(buf, "ObjectUIDs: %Ld", objectUIDs[0]);
+    str_sprintf(buf, "ObjectUIDs: %ld", objectUIDs[0]);
     statement += buf; 
     Int32 numO = rootTdb->getNumObjectUIDs();
     for (Int32 i = 1; i < numO; i++)
     {
-      str_sprintf(buf, ", %Ld", objectUIDs[i]);
+      str_sprintf(buf, ", %ld", objectUIDs[i]);
       statement += buf;
     }
     statement += " ";
@@ -1950,6 +1988,9 @@ Sort::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
       description += "CIF: OFF ";
     }
   }
+  if (sortTdb->topNSortEnabled() && sortNRows())
+    description += "topn_enabled: yes ";
+
   explainTuple->setDescription(description);  // save what we have built
 
   return(explainTuple);
@@ -2105,6 +2146,41 @@ ExplainTuple * ExeUtilWnrInsert::addSpecificExplainInfo(
   explainTuple->setDescription(buf);
 
   sprintf(buf, "target_table_name: %s ", myTdb->getTableName());
+  explainTuple->setDescription(buf);
+
+  return(explainTuple);
+}
+
+ExplainTuple * ExeUtilCreateTableAs::addSpecificExplainInfo( 
+     ExplainTupleMaster *explainTuple, 
+     ComTdb *tdb, 
+     Generator *generator)
+{
+
+  Lng32 maxBufLen = 2000;
+  maxBufLen = MAXOF(maxBufLen, ctQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, siQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, viQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, usQuery_.length());
+
+  maxBufLen = MINOF(maxBufLen, 4000);
+  maxBufLen++;
+
+  char buf[maxBufLen];
+  snprintf(buf, maxBufLen, "CreateQuery: %s ", 
+           (ctQuery_.length() > 0 ? ctQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "InsertQuery: %s ", 
+           (viQuery_.length() > 0 ? viQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+          
+  snprintf(buf, maxBufLen, "UpsertLoadQuery: %s ", 
+           (siQuery_.length() > 0 ? siQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "UpdStatsQuery: %s ", 
+           (usQuery_.length() > 0 ? usQuery_.data() : "NULL"));
   explainTuple->setDescription(buf);
 
   return(explainTuple);

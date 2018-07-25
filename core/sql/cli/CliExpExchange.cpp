@@ -48,9 +48,6 @@
 #include "cli_stdh.h"
 #include "exp_datetime.h"
 #include "exp_interval.h"
-#if defined( NA_SHADOWCALLS )
-#include "sqlclisp.h" //shadow
-#endif
 #include "exp_expr.h"
 #include "ExRLE.h"
 
@@ -154,14 +151,10 @@ ex_expr::exp_return_type InputOutputExpr::describeOutput(void * output_desc_,
                                      0);
 	    if (NOT isIFIO)
 	      {
-#pragma warning (disable : 4244)   //warning elimination
 		Lng32 displaySize =
 		  ExpInterval::getDisplaySize(operand->getDatatype(),
-#pragma nowarn(1506)   // warning elimination 
 					      operand->getPrecision(),
-#pragma warn(1506)  // warning elimination 
 					      operand->getScale());
-#pragma warning (default : 4244)   //warning elimination
 		length = displaySize;
 	      }
           } else if (operand->getDatatype() == REC_DATETIME) {
@@ -465,9 +458,9 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV1(
   //  if (! getenv("DOSLOWBULKMOVE"))
   //    return BULK_MOVE_OFF;
   if (getenv("BULKMOVEOFF"))
-    return BULK_MOVE_OFF;//LCOV_EXCL_LINE
+    return BULK_MOVE_OFF;
   else if (getenv("BULKMOVEDISALLOWED"))
-    return BULK_MOVE_DISALLOWED;//LCOV_EXCL_LINE
+    return BULK_MOVE_DISALLOWED;
 #endif
 
   desc_struct  &descItem =  desc[entry - 1]; // Zero base
@@ -499,11 +492,13 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV1(
   // zero, and less than operand's precision or op's precision is zero.
   //
   // Bulk move for char datatype is only done if both source and
-  // target are single byte charsets.
+  // target are single byte charsets and the target doesn't enforce
+  // character limits.
   else if ((descItem.datatype != op->getDatatype())    ||
 	   ((DFS2REC::isAnyCharacter(op->getDatatype())) &&
 	    ((descItem.charset != op->getCharSet()) ||
-	     (NOT CharInfo::isSingleByteCharSet((CharInfo::CharSet)descItem.charset)))) ||
+	     (NOT CharInfo::isSingleByteCharSet((CharInfo::CharSet)descItem.charset)) ||
+             op->getPrecision() /*char limit*/ > 0)) ||
 	   ((NOT DFS2REC::isAnyCharacter(op->getDatatype())) &&
 	    (descItem.scale != op->getScale())) || 
 	   (descItem.length != op->getLength())        ||
@@ -689,7 +684,6 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV2(
 
 
 
-#pragma warning (disable : 4273)   //warning elimination
 void InputOutputExpr::setupBulkMoveInfo(void * desc_, CollHeap * heap,
 					NABoolean isInputDesc,
 					UInt32 flags)
@@ -947,7 +941,6 @@ next_clause:
   
   desc->setBulkMoveSetup(TRUE);
 
-  //LCOV_EXCL_START
   if (getenv("BULKMOVE") && getenv("BULKMOVEINFO") &&
       desc->bulkMoveInfo())
     {
@@ -974,11 +967,8 @@ next_clause:
 	  cout << endl;
 	}
     }
-  //LCOV_EXCL_STOP
 }
-#pragma warning (default : 4273)   //warning elimination
 
-#pragma warning (disable : 4273)   //warning elimination
 ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
 						     void * desc_,
 						     char * tgtRowPtr,
@@ -1031,9 +1021,7 @@ ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
 
   return ex_expr::EXPR_OK;
 }
-#pragma warning (default : 4273)   //warning elimination
 
-#pragma warning (disable : 4273)   //warning elimination
 ex_expr::exp_return_type
 InputOutputExpr::outputValues(atp_struct *atp,
                               void * output_desc_, 
@@ -1068,9 +1056,6 @@ InputOutputExpr::outputValues(atp_struct *atp,
   Lng32   targetPrecision;
   char * targetVarPtr = NULL;
   char * targetIndPtr = NULL;
-#if defined( NA_SHADOWCALLS )
-  char * bimodalIndPtr = NULL;
-#endif
   char * targetVCLen  = NULL;
   short  targetVCLenSize = 0;
   
@@ -1221,9 +1206,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	
       default:
         dataPtr = (atp->getTupp(operand->getAtpIndex())).getDataPointer();
-#pragma nowarn(270)   // warning elimination 
         if (operand->getOffset() < 0) {
-#pragma warn(270)  // warning elimination 
           // Offset is negative. This indicates that this offset
           // is the negative of field number in a base table
           // and this field follows one or more varchar fields.
@@ -1410,12 +1393,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
         if (tempTarget && output_desc->rowwiseRowset() && (NOT output_desc->rowwiseRowsetDisabled()))
 	  tempTarget = tempTarget + output_desc->getCurrRowOffsetInRowwiseRowset();
          
-#if defined( NA_SHADOWCALLS )
-        bimodalIndPtr = (char *)tempTarget;
-        targetIndPtr = SqlCliSp_GetBufPtr(bimodalIndPtr, FALSE);
-#else
         targetIndPtr = (char *)tempTarget;
-#endif
 	
         if ((operand->getVCIndicatorLength()) && (sourceVCLenInd)) {
           if (operand->getVCIndicatorLength() == sizeof(short))
@@ -2110,7 +2088,6 @@ next_clause:
   
   return ex_expr::EXPR_OK;
 }
-#pragma warning (default : 4273)   //warning elimination
 
 
 ex_expr::exp_return_type InputOutputExpr::describeInput(void * input_desc_,
@@ -2193,14 +2170,10 @@ ex_expr::exp_return_type InputOutputExpr::describeInput(void * input_desc_,
                                     0);
 	    if (NOT isIFIO)
 	      {
-#pragma warning (disable : 4244)   //warning elimination
 		displayLength =
 		  ExpInterval::getDisplaySize(dataType,
-#pragma nowarn(1506)   // warning elimination 
 					      operand->getPrecision(),
-#pragma warn(1506)  // warning elimination 
 					      operand->getScale());
-#pragma warning (default : 4244)   //warning elimination
 		
 		length = displayLength;
 	      }
@@ -2529,8 +2502,6 @@ then place the following four lines of code after the call to setRowNumberInCli.
       return ex_expr::EXPR_ERROR;
 */
 // error path not taken . This is only if something bad happens in NVT
-//LCOV_EXCL_START
-#pragma warning (disable : 4273)   //warning elimination
 ex_expr::exp_return_type
 InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 				     void * inputDesc_,
@@ -2885,9 +2856,7 @@ InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 		
 		if (sourceType == REC_NCHAR_V_ANSI_UNICODE)  
 		  {
-#pragma nowarn(1506)   // warning elimination
 		    realSourceLen = NAWstrlen((wchar_t*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination
 		    
 		    if ( realSourceLen > sourceLen )
 		      realSourceLen = sourceLen ;
@@ -3102,7 +3071,6 @@ error_return:
   
   return ex_expr::EXPR_ERROR;
 }
-//LCOV_EXCL_STOP
 ex_expr::exp_return_type
 InputOutputExpr::inputRowwiseRowsetValues(atp_struct *atp,
 					  void * inputDesc_,
@@ -3351,7 +3319,6 @@ InputOutputExpr::inputRowwiseRowsetValues(atp_struct *atp,
   else
     {
       // error path not taken . This is only if something bad happens in NVT
-      //LCOV_EXCL_START
       if (isDbtr)
 	{
 	  // rowwise rowsets from dbtr *must* use the optimized input
@@ -3413,7 +3380,6 @@ error_return:
 		    (intParam3 != 0 ? &intParam3 : NULL));
   if (diagsArea != atp->getDiagsArea())
     atp->setDiagsArea(diagsArea);	
-  //LCOV_EXCL_STOP
   return ex_expr::EXPR_ERROR;
 }
 
@@ -3493,12 +3459,10 @@ InputOutputExpr::inputValues(atp_struct *atp,
   
   if (inputDesc && inputDesc->rowwiseRowset())
     {
-      //LCOV_EXCL_START
       ExRaiseSqlError(heap, &diagsArea, CLI_ROWWISE_ROWSETS_NOT_SUPPORTED);
       if (diagsArea != atp->getDiagsArea())
 	atp->setDiagsArea(diagsArea);
       return ex_expr::EXPR_ERROR;
-      //LCOV_EXCL_STOP
     }
 
   // If bulk move has not been disabled before, then check to see if bulk
@@ -3914,9 +3878,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	      Int32 i;
 	      if ((sourceType >= REC_MIN_V_N_CHAR_H) 
 		  && (sourceType <= REC_MAX_V_N_CHAR_H)) {
-#pragma nowarn(1506)   // warning elimination 
 		for (i = strlen(source); i < operand->getLength(); i++) {
-#pragma warn(1506)  // warning elimination 
 		  target[i] = 0;
 		}
 	      }
@@ -3969,9 +3931,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
                Lng32 realSourceLen = sourceLen;
 
                if (sourceType == REC_NCHAR_V_ANSI_UNICODE)  {
-#pragma nowarn(1506)   // warning elimination
                   realSourceLen = NAWstrlen((NAWchar*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination
 
                   if ( realSourceLen > sourceLen )
                      realSourceLen = sourceLen ;
@@ -3981,7 +3941,6 @@ InputOutputExpr::inputValues(atp_struct *atp,
                if ( CharInfo::checkCodePoint((NAWchar*)source, realSourceLen,
                                           CharInfo::UNICODE ) == FALSE )
                {
-		 //LCOV_EXCL_START
                  // Error code 3400 falls in CLI error code area, but it is
                  // a perfect fit to use here (as an exeutor error).
                  ExRaiseSqlError(heap, &diagsArea, (ExeErrorCode)3400);
@@ -3996,7 +3955,6 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		  continue;
 		 else
 		  return ex_expr::EXPR_ERROR;
-		 //LCOV_EXCL_STOP
                }
             }
 	    
@@ -4052,15 +4010,18 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		source = intermediate;
 	      } // sourceType == REC_BYTE_V_ANSI
 	    
-	    if ((sourceType >= REC_MIN_BINARY) &&
-		(sourceType <= REC_MAX_BINARY) &&
-		(sourceType == operand->getDatatype()) &&
-		(sourcePrecision > 0) &&
-		(sourcePrecision == operand->getPrecision()))
+	    if ((sourcePrecision > 0) &&
+		((sourceType >= REC_MIN_BINARY) &&
+                 (sourceType <= REC_MAX_BINARY) &&
+                 (sourceType == operand->getDatatype()) &&
+                 (sourcePrecision == operand->getPrecision()) ||
+                 (DFS2REC::isAnyCharacter(sourceType) && !suppressCharLimitCheck())))
 	      {
-		// validate source precision. Make the source precision
+		// Validate source precision. Make the source precision
 		// zero, that will trigger the validation. See method
-		// checkPrecision in exp_conv.cpp.
+		// checkPrecision in exp_conv.cpp. This also applies to
+                // source chars or varchars, where we don't trust the
+                // precision (max number of chars) in the value
 		sourcePrecision = 0;
 	      }
 
@@ -4100,7 +4061,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		    else
                       {
                         sourceType = REC_BYTE_F_ASCII;
-                        sourcePrecision = 0;  // TBD $$$$ add source max chars later
+                        sourcePrecision = 0;
                         sourceScale = SQLCHARSETCODE_ISO88591; // assume target charset is ASCII-compatible
 
                         convFlags |= CONV_NO_HADOOP_DATE_FIX;
@@ -4323,9 +4284,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
-#pragma nowarn(1506)   // warning elimination 
 		  dynamicRowsetSize = *((ULng32 *) target);
-#pragma warn(1506)  // warning elimination 
 		  break;
                 }
                 
@@ -4372,7 +4331,6 @@ next_clause:
   return ex_expr::EXPR_OK;
 }
 
-#pragma warning (disable : 4273)   //warning elimination
 Lng32 InputOutputExpr::getCompiledOutputRowsetSize(atp_struct *atp)
 {
   ex_clause  * clause = getClauses();
@@ -4390,7 +4348,6 @@ Lng32 InputOutputExpr::getCompiledOutputRowsetSize(atp_struct *atp)
 
   return sourceRowsetSize;
 }
-#pragma warning (default : 4273)   //warning elimination
 
 ex_expr::exp_return_type InputOutputExpr::addDescInfoIntoStaticDesc
 (Descriptor * desc, NABoolean isInput)

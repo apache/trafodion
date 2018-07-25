@@ -1226,15 +1226,9 @@ void RequirementGenerator::producePartitioningRequirements()
     if ((addedNumberOfPartitions_ != ANY_NUMBER_OF_PARTITIONS) AND
         ((addedPartitioningRequirement_->getCountOfPartitions() >
           addedNumberOfPartitions_) OR
-#pragma nowarn(1506)   // warning elimination
          (addedPartitioningRequirement_->getCountOfPartitions() <
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
           (addedNumberOfPartitions_ -
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
            (addedNumberOfPartitions_ * addedNumOfPartsAllowedDeviation_)))
-#pragma warn(1506)  // warning elimination
         )
        )
     {
@@ -1276,12 +1270,8 @@ void RequirementGenerator::producePartitioningRequirements()
       // if there was a required number of partitions, then 1 partition
       // must satisfy this requirement
       if ((addedNumberOfPartitions_ != ANY_NUMBER_OF_PARTITIONS) AND
-#pragma nowarn(1506)   // warning elimination
           ((addedNumberOfPartitions_ -
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
             (addedNumberOfPartitions_ * addedNumOfPartsAllowedDeviation_)) >
-#pragma warn(1506)  // warning elimination
            EXACTLY_ONE_PARTITION))
         stillFeasible_ = FALSE;
       else

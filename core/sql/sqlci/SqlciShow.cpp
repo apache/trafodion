@@ -83,23 +83,6 @@ short Show::show_cursor(SqlciEnv * sqlci_env)
   return 0;
 }
 
-short Show::show_define(SqlciEnv * sqlci_env)
-{
-  char buff[4000];
-
-
-  Define * define = sqlci_env->get_definelist()->getFirst();
-  
-  while (define)
-    {
-      sprintf(buff, "%s\t%s", define->getName(), define->getValue());
-      sqlci_env->get_logfile()->WriteAll(buff);
-      define = sqlci_env->get_definelist()->getNext(); 
-    }
-
-  return 0;
-}
-
 short Show::show_param(SqlciEnv * sqlci_env)
 {
   char buff[250];
@@ -187,10 +170,6 @@ short Show::process(SqlciEnv * sqlci_env)
 
     case CURSOR_:
       retcode = show_cursor(sqlci_env);
-      break;
-
-    case DEFINE_:
-      retcode = show_define(sqlci_env);
       break;
 
     case PARAM_:

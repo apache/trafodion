@@ -323,12 +323,8 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
 	      *(new (CmpCommon::statementHeap()) MaterialDisjuncts(
 		   setOfPredicates)),
               nonKeyColumnSet, indexDesc, UDindexDesc),
-#pragma nowarn(1506)   // warning elimination
       beginKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       endKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
       valuesArePartitionRange_(FALSE),
       _countTimesBoundaryValReq(0)
 {
@@ -357,12 +353,8 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
               indexDesc,
               UDindexDesc
               ),
-#pragma nowarn(1506)   // warning elimination
       beginKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       endKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
       valuesArePartitionRange_(FALSE),
       _countTimesBoundaryValReq(0)
 {
@@ -673,7 +665,6 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
   }
 } // SearchKey::SearchKey()
 
-// LCOV_EXCL_START :cnu RR part func table not supported
 // -----------------------------------------------------------------------
 // Constructor to set up partition search keys for a RR partitioned table
 // -----------------------------------------------------------------------
@@ -764,7 +755,6 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
          setOfPredicates);
   }
 } // SearchKey::SearchKey()
-// LCOV_EXCL_STOP
 
 ItemExpr *SearchKey::getBeginKeyExclusionExpr() const
 {
@@ -801,15 +791,12 @@ ValueId SearchKey::computeMissingKeyValue(ValueId keyColumn,
   return minMaxConstant->getValueId();
 } // SearchKey::computeMissingKeyValue()
 
-// LCOV_EXCL_START :dpm
 // -----------------------------------------------------------------------
 // Methods for debugging
 // -----------------------------------------------------------------------
 void SearchKey::print(FILE* ofd, const char* indent, const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"%s %s \n%s",NEW_INDENT,title,NEW_INDENT);
   getKeyColumns().print(ofd,indent,"Key Columns:");
   getBeginKeyValues().print(ofd,indent,"Begin Key Values:");
@@ -822,7 +809,6 @@ void SearchKey::display() const
 {
  SearchKey::print();
 } // SearchKey::display()
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // $$$ SearchKeyBounds
@@ -860,7 +846,6 @@ NABoolean SearchKeyBounds::operator == (const SearchKeyBounds & other) const
 //         data from the access path.
 //
 // -----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 void SearchKeyBounds::analyzeSearchPredicates(const ValueIdSet & setOfPredicates,
                                               const ValueIdSet & externalInputs)
 {
@@ -897,7 +882,7 @@ void SearchKeyBounds::analyzeSearchPredicates(const ValueIdSet & setOfPredicates
       // All value id's in SearchKeyBounds *must* be either
       // an index column or a base table column,
       // if we reach here it is an internal error:
-      CMPASSERT(FALSE); // LCOV_EXCL_LINE :rfi
+      CMPASSERT(FALSE);
     } // switch on type of input column
 
 
@@ -940,7 +925,6 @@ void SearchKeyBounds::analyzeSearchPredicates(const ValueIdSet & setOfPredicates
     } // loop over predicates
 
 } // SearchKeyBounds::analyzeSearchPredicate()
-#pragma warn(770)  // warning elimination
 
 
 // -----------------------------------------------------------------------
@@ -1402,15 +1386,12 @@ ValueId SearchKeyBounds::computeMissingKeyValue(NABoolean wantMinValue)
 } // SearchKeyBounds::computeMissingKeyValue()
 
 
-// LCOV_EXCL_START :dpm
 // -----------------------------------------------------------------------
 // Method for allocating the work space.
 // -----------------------------------------------------------------------
 void SearchKeyBounds::print(FILE* ofd, const char* indent, const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"%s %s\n%s",NEW_INDENT,title,NEW_INDENT);
   if (isAscendingOrder())
     fprintf(ofd,"ascending , ");
@@ -1461,7 +1442,6 @@ void SearchKeyBounds::display() const
 {
  SearchKeyBounds::print();
 } // SearchKeyBounds::display()
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // $$$ SearchKeyWorkSpace
@@ -1474,9 +1454,7 @@ SearchKeyWorkSpace::SearchKeyWorkSpace(const ValueIdList & keyColumns,
 				       const ValueIdList & indexOrder,
 				       const NABoolean forwardSearch,
                                        const SearchKey& searchKey)
-#pragma nowarn(1506)   // warning elimination
                   : keyCount_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
 		    keyBounds_(CmpCommon::statementHeap()),
                     searchKey_(searchKey)
 {
@@ -1532,7 +1510,7 @@ void SearchKeyWorkSpace::analyzeSearchPredicates
 			     const ValueIdSet & externalInputs
 			     )
 {
-  for (CollIndex keyNum = 0; keyNum < (CollIndex)keyCount_; keyNum++)  // NT_PORT ( bd 10/22/96 ) cast to CollIndex
+  for (CollIndex keyNum = 0; keyNum < (CollIndex)keyCount_; keyNum++)
     {
       // Set the value contained in the key predicate (if any)
       // for this key column (i.e. bound):
@@ -1931,7 +1909,6 @@ void SearchKey::getKeyPredicates(ValueIdSet &keyPredicates, /* out */
 } // getKeyPredicates(...)
 
 
-// LCOV_EXCL_START :cnu
 // Generate the data structures needed by the generator and
 // rewrite VEG preds and predicates:
 void SearchKey::preCodeGen(ValueIdSet& executorPredicates,
@@ -1994,7 +1971,6 @@ void SearchKey::replaceBegEndPivs(ValueIdSet & oldPivs,
         }
     }
 }
-// LCOV_EXCL_STOP
 
 
 

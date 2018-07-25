@@ -37,7 +37,6 @@
 // Version
 DEFINE_EXTERN_COMP_DOVERS(tmshutdown)
 
-#define MAX_NODES 256
 #define MAX_ARGLEN 32
 using namespace std;
 

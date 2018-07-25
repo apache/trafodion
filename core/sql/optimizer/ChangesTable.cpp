@@ -249,9 +249,7 @@ RelExpr *ChangesTable::buildInsert(NABoolean useLeafInsert,
   ItemExpr *delColExpr, *insColExpr;
   for (CollIndex i=0; i < tempColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     NAColumn *currentTempCol = tempColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination 
     const NAString& colName = currentTempCol->getColName();
 
     delColExpr = insColExpr = NULL;
@@ -268,12 +266,10 @@ RelExpr *ChangesTable::buildInsert(NABoolean useLeafInsert,
       {	
 	// This is the log SYSKEY column
         // iud log no longer has a SYSKEY
-        // LCOV_EXCL_START
         if (needOld && useLeafInsert)
 	  delColExpr = createSyskeyColExpr(colName, FALSE);
         if (needNew && useLeafInsert)
 	  insColExpr = createSyskeyColExpr(colName, TRUE);
-        // LCOV_EXCL_STOP
       }
       else
       {
@@ -467,9 +463,7 @@ ItemExpr *ChangesTable::buildBaseColsSelectList(const CorrName& tableName) const
 
   for (CollIndex i=0; i<subjectColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     NAString colName(subjectColumns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
     if (!colName.compareTo("SYSKEY"))
       continue;  // Skip SYSKEY.
 
@@ -500,9 +494,7 @@ ChangesTable::buildColsCorrespondingToBaseSelectList() const
 
   for (CollIndex i=0; i<columns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     NAString colName(columns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
     if (colName.data()[0] == '@' && colName.compareTo("@SYSKEY"))
       continue;  // Skip any special column that is not @SYSKEY.
 
@@ -583,9 +575,7 @@ ItemExpr *ChangesTable::buildRenameColsList() const
 
   for (CollIndex i=0; i<subjectColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     const NAString subjectCol(subjectColumns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
     const NAString *colName = &subjectCol;
     if (!subjectCol.compareTo("SYSKEY"))
     {
@@ -777,14 +767,12 @@ ItemExpr *TriggersTempTable::createAtColExpr(const NAColumn *naColumn,
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 // iud log no longer has a SYSKEY
-// LCOV_EXCL_START
 ItemExpr *TriggersTempTable::createSyskeyColExpr(const NAString& colName,
 						 NABoolean       isInsert) const
 {
   CMPASSERT(FALSE);
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -996,7 +984,6 @@ ItemExpr *MvIudLog::createAtColExpr(const NAColumn *naColumn,
 
     case 'A' : // @ALIGNMENT
       // ALIGNMENT is not used 
-      // LCOV_EXCL_START
       CMPASSERT(!colName.compareTo(COMMV_ALIGNMENT_COL));
       {
         Int32 bitmapSize = naColumn->getType()->getNominalSize();
@@ -1004,10 +991,9 @@ ItemExpr *MvIudLog::createAtColExpr(const NAColumn *naColumn,
 	result = new(heap_) SystemLiteral(*bitmap);
       }
       break;
-      // LCOV_EXCL_STOP
 
     default  : // Unknown column
-      CMPASSERT(FALSE); // LCOV_EXCL_LINE
+      CMPASSERT(FALSE);
   }
 
   return result;
@@ -1104,12 +1090,10 @@ ItemExpr *MvIudLog::createColExprForRangeSize(NABoolean isInsert) const
   if (needsRangeLogging_)
   {
     // range logging is not supported 
-    // LCOV_EXCL_START
     CMPASSERT(isInsert);
     result = new(heap_) 
       ColReference(new(heap_) 
 	ColRefName(InliningInfo::getRowCountVirtualColName(),heap_));
-    // LCOV_EXCL_STOP
   }
   else
   {
@@ -1139,13 +1123,11 @@ ItemExpr *MvIudLog::createColExprForAtSyskey(NABoolean isInsert) const
 // by DP2 as the timestamp of insertion.
 //////////////////////////////////////////////////////////////////////////////
 // iud log no longer have a syskey, we now enforce uniqueness using a @TS
-// LCOV_EXCL_START
 ItemExpr *MvIudLog::createSyskeyColExpr(const NAString& colName,
 					NABoolean       isInsert) const
 {
   return new(heap_) SystemLiteral(0);
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // build the expression to insert into the @TS column.
@@ -1257,7 +1239,6 @@ ItemExpr *MvIudLog::buildLogEpochPredicate(const DeltaDefinition *deltaDef,
 //		       We use here a special builtin function that evalutes
 //		       this expression
 //////////////////////////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 ItemExpr *MvIudLog::createSpecificWhereExpr(RowsType type) const
 {
   CMPASSERT(deltaDef_ != NULL);
@@ -1343,7 +1324,6 @@ ItemExpr *MvIudLog::createSpecificWhereExpr(RowsType type) const
 
   return result;
 }
-#pragma warn(262)  // warning elimination 
 
 //////////////////////////////////////////////////////////////////////////////
 // The orig selection predicate is on the base table columns. This recursive 
@@ -1397,9 +1377,7 @@ ItemExpr *MvIudLog::buildOrigScanPredicate() const
     parser.getItemExprTree((char *)textPredicate.data());
 
   ItemExprList predicateList(origScanPredicate, bindWA_->wHeap(), ITM_AND);
-#pragma nowarn(1506)   // warning elimination 
   for (Int32 i=predicateList.entries()-1; i>=0; i--)
-#pragma warn(1506)  // warning elimination 
   {
     if (fixReferencesFromBaseTableToLog(predicateList[i]) == FALSE)
       predicateList.removeAt(i);
@@ -1463,9 +1441,7 @@ ItemExpr *MvIudLog::constructUpdateBitmapFromList(const LIST(Lng32) &columnList)
   
   for (CollIndex i=0; i < logColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     currentTempCol = logColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination 
     if (!currentTempCol->getColName().compareTo(COMMV_BITMAP_COL))
       break;
   }
@@ -1544,7 +1520,6 @@ void MvIudLog::setTuplesUnionType(Union *unionNode) const
 *****************************************************************************/
 
 // MVLOG command is currently not supported
-// LCOV_EXCL_START
 //////////////////////////////////////////////////////////////////////////////
 // Ctor for building the Insert node.
 //////////////////////////////////////////////////////////////////////////////
@@ -1650,7 +1625,6 @@ ItemExpr *MvIudLogForMvLog::createBaseColExpr(const NAString& colName,
     ColReference(new(heap_) ColRefName(virtualColumnName, heap_));
 }
 
-// LCOV_EXCL_STOP
 
 /*****************************************************************************
 ******************************************************************************
@@ -1740,14 +1714,12 @@ ItemExpr *MvLogForContextRows::createAtColExpr(const NAColumn *naColumn,
 // There is no log SYSKEY column for the context log!
 //////////////////////////////////////////////////////////////////////////////
 // should never get here
-// LCOV_EXCL_START
 ItemExpr *MvLogForContextRows::createSyskeyColExpr(const NAString& colName,
 						   NABoolean       isInsert) const
 {
   CMPASSERT(FALSE);
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Build the selection predicate for reading a context row from the log. 

@@ -108,6 +108,33 @@ short ControlAbstractClass::codeGen(Generator * generator)
 	value_ = "OFF";
     }
 
+  Int16 reset;
+  if (cqt == DEFAULT_)
+     reset = ((token_ == "") ? -reset_ : reset_);
+  else
+     reset = reset_;
+
+  // if this is a SET SCHEMA stmt for a Hive schema, construct the value
+  // as fully qualified schema name (cat.sch).
+  // This string will be used at runtime to set this schema in Hive
+  // if the schema exists.
+  // See ExControlTcb::work for details.
+  NABoolean isHiveSetSchema = FALSE;
+  if ((cqt == DEFAULT_) && (dynamic()) && (token_ == "SCHEMA") && (reset == 0))
+    {
+      ComSchemaName csn(value_);
+      NAString catName(csn.getCatalogNamePart().getInternalName());
+      if (catName.isNull())
+        catName = CmpCommon::getDefaultString(CATALOG);
+      if (catName == HIVE_SYSTEM_CATALOG)
+        {
+          value_ = HIVE_SYSTEM_CATALOG;
+          value_ += ".";
+          value_ += csn.getSchemaNamePart().getInternalName();
+          isHiveSetSchema = TRUE;
+        }
+    }
+
   // We need txt/tok/val stuff if in [1] a dynamic compile (EXEC SQL PREPARE),
   // OR [2] a dynamic statement even in a static compile.
   //
@@ -124,12 +151,6 @@ short ControlAbstractClass::codeGen(Generator * generator)
     v[i++] = convertNAString(token_, space);
     v[i++] = convertNAString(value_, space);
   }
-
-  Int16 reset;
-  if (cqt == DEFAULT_)
-     reset = ((token_ == "") ? -reset_ : reset_);
-  else
-     reset = reset_;
 
   ComTdbControl * control_tdb = new(space) 
     ComTdbControl(cqt,
@@ -150,6 +171,12 @@ short ControlAbstractClass::codeGen(Generator * generator)
         ActiveSchemaDB()->getDefaults().isNonResetableAttribute(v[0]);
      control_tdb->setNonResettable(nonResettable);
      control_tdb->setControlActionType(((ControlQueryDefault *)this)->getHoldOrRestoreCQD());
+
+     if (dynamic()) // dynamic() is true for SET stmts
+       {
+         control_tdb->setIsSetStmt(TRUE);
+         control_tdb->setIsHiveSetSchema(isHiveSetSchema);
+       }
   }
   // no tupps are returned 
   generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
@@ -203,7 +230,7 @@ short RelTransaction::codeGen(Generator * generator)
       // location. Create that node.
       ItemExpr * daSize = 
 	new(generator->wHeap()) Cast (diagAreaSizeExpr_, 
-	new(generator->wHeap()) SQLInt(TRUE, FALSE));
+	new(generator->wHeap()) SQLInt(generator->wHeap(), TRUE, FALSE));
       daSize->setConstFoldingDisabled(TRUE);      
       
       daSize->bindNode(generator->getBindWA());
@@ -231,10 +258,8 @@ short RelTransaction::codeGen(Generator * generator)
 	       (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 	       (queue_index)getDefault(GEN_TRAN_SIZE_DOWN),
 	       (queue_index)getDefault(GEN_TRAN_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	       getDefault(GEN_TRAN_NUM_BUFFERS), 
 	       getDefault(GEN_TRAN_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(trans_tdb);
 
   // SET TRANSACTION is allowed within a transaction, if this query
@@ -293,12 +318,7 @@ short RelSetTimeout::codeGen(Generator * generator)
     char * varName;
     GenAssert(hv->getName().data(), "Hostvar pointer must have name");
 
-#pragma nowarn(1506)   // warning elimination 
     lateNameInfo->setEnvVar(hv->isEnvVar());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-    lateNameInfo->setDefine(hv->isDefine());
-#pragma warn(1506)  // warning elimination 
 
     varName = convertNAString(hv->getName(), generator->wHeap());
     strcpy(lateNameInfo->variableName(), varName);
@@ -309,7 +329,6 @@ short RelSetTimeout::codeGen(Generator * generator)
     lateNameInfo->setLastUsedName(prototypeValue, space);
     strcpy(lateNameInfo->resolvedPhyName(), prototypeValue);
     lateNameInfo->setVariable(1);
-    lateNameInfo->setAvoidSimCheck(TRUE); 
   } // end of host-var
   else if ( isForAllTables_ ) { // a "*" was specified for a table name
     strcpy( lateNameInfo->resolvedPhyName(), "*" );  // special mark
@@ -337,7 +356,7 @@ short RelSetTimeout::codeGen(Generator * generator)
       ItemExpr * toVal = 
 	new(generator->wHeap()) Cast(timeoutValueExpr_, 
 				     new(generator->wHeap()) 
-				     SQLInt(TRUE, FALSE));
+				     SQLInt(generator->wHeap(), TRUE, FALSE));
       toVal->setConstFoldingDisabled(TRUE);      
       
       toVal->bindNode(generator->getBindWA());
@@ -364,10 +383,8 @@ short RelSetTimeout::codeGen(Generator * generator)
 		   (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 		   (queue_index)getDefault(GEN_TIMEOUT_SIZE_DOWN),
 		   (queue_index)getDefault(GEN_TIMEOUT_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 		   getDefault(GEN_TIMEOUT_NUM_BUFFERS),
 		   getDefault(GEN_TIMEOUT_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   
   timeout_tdb->setStream( isStream_ );  // set the flags in the TCB
   timeout_tdb->setReset( isReset_ );

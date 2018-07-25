@@ -25,21 +25,15 @@
 #include "Platform.h"
 
   #ifndef SQLEVENTS_LIB_FUNC
-    #ifdef  __EID
-      #define SQLEVENTS_LIB_FUNC
-    #else
       #ifdef  EVENTS_DLL
         #define SQLEVENTS_LIB_FUNC __declspec( dllexport )
       #else
         #define SQLEVENTS_LIB_FUNC __declspec( dllimport )
       #endif
-    #endif  // __EID
   #endif  // SQLEVENTS_LIB_FUNC
-#ifdef NA_64BIT
-  // dg64 - get rid of __declspec
+
   #undef SQLEVENTS_LIB_FUNC
   #define SQLEVENTS_LIB_FUNC
-#endif
 
 #endif  // SQLEVENTS_DLL_DEFINES.h
 

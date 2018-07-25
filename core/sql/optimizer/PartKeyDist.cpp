@@ -72,9 +72,7 @@ PartitionKeyDistribution::PartitionKeyDistribution (
                               EncodedValueList(CmpCommon::statementHeap(), 0);
 
       boundaries.insertAt(i, evl);
-#pragma nowarn(1506)   // warning elimination 
       const ItemExprList *boundary = rpBoundariesPtr->getBoundaryValues(i);
-#pragma warn(1506)  // warning elimination 
 
       // transform to encoded value list
       for (CollIndex j=0; j < boundary->entries(); j++)
@@ -127,9 +125,7 @@ PartitionKeyDistribution::getHistIdxFromPartIdx (CollIndex extIdx) const
   // to provide the "inverse" hist idx.  See PartKeyDist.h for a careful
   // description of what's going on.
 
-#pragma nowarn(270)   // warning elimination 
   DCMPASSERT(extIdx >= 0 AND extIdx < getNumPartitions());
-#pragma warn(270)  // warning elimination 
 
   CollIndex countParts, interval ;
   
@@ -168,9 +164,7 @@ PartitionKeyDistribution::getRowsForPartition(CollIndex extIdx) const
   // it corresponds to a "partition" for all rows below "MIN".
   // No rows satisfy this. Thus, the first partition is described
   // by the first interval.
-#pragma nowarn(270)   // warning elimination 
   DCMPASSERT(extIdx >= 0 AND extIdx < getNumPartitions());
-#pragma warn(270)  // warning elimination 
   
   // remember : each entry in the histogram represents potentially many 
   // different partition boundaries, each with the same partition boundary value.

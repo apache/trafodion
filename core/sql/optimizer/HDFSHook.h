@@ -52,6 +52,7 @@ class HivePartitionAndBucketKey;
 class HHDFSTableStats;
 class OsimHHDFSStatsBase;
 class OptimizerSimulator;
+class ExLobGlobals;
 
 typedef CollIndex HostId;
 typedef Int64 BucketNum;
@@ -318,7 +319,11 @@ public:
                                     validationJTimestamp_(-1),
                                     listPartitionStatsList_(heap),
                                     hiveStatsSize_(0),
-                                    heap_(heap) {}
+                                    heap_(heap),
+                                    type_(UNKNOWN_),
+                                    modificationTSInMillisec_(-1)
+  {}
+
   ~HHDFSTableStats();
 
   const CollIndex entries() const          { return listPartitionStatsList_.entries(); }
@@ -392,6 +397,12 @@ public:
   const Lng32 numOfPartCols() const { return numOfPartCols_; }
   const Lng32 totalNumPartitions() const { return totalNumPartitions_; }
 
+  // finer-resolution timestamp for entire table
+  // (can remove this once we use JNI to collect this info
+  // for all HDFS files)
+  Int64 getModificationTSmsec() const { return modificationTSInMillisec_; }
+  void computeModificationTSmsec();
+
 private:
   enum FileType
   {
@@ -442,8 +453,10 @@ private:
   HHDFSDiags diags_;
 
   NAMemory *heap_;
-
+ 
   FileType type_;
+
+  Int64 modificationTSInMillisec_;
 };
 
 #endif

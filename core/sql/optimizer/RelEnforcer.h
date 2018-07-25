@@ -107,6 +107,7 @@ public:
 	      CollHeap *oHeap = CmpCommon::statementHeap()) :
        RelExpr(REL_SORT,child,NULL,oHeap),
        sortNRows_(FALSE), 
+       topNRows_(0),
        collectNFErrors_(FALSE),
        forcedHalloweenProtection_(FALSE),
        checkAccessToSelfRefTable_(FALSE)
@@ -117,6 +118,7 @@ public:
        RelExpr(REL_SORT,child, NULL, oHeap),
        sortKey_(sortKey),
        sortNRows_(FALSE), 
+       topNRows_(0),
        collectNFErrors_(FALSE),
        forcedHalloweenProtection_(FALSE),
        checkAccessToSelfRefTable_(FALSE)
@@ -126,6 +128,7 @@ public:
        RelExpr(REL_SORT,child),
        arrangedCols_(arrangedCols),
        sortNRows_(FALSE), 
+       topNRows_(0),
     forcedHalloweenProtection_(FALSE),
     checkAccessToSelfRefTable_(FALSE),
     collectNFErrors_(FALSE)
@@ -185,10 +188,7 @@ public:
   virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU);
-  virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
-
-  virtual double getEstimatedRunTimeOverflowSize(double memoryQuotaMB);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams = NULL);
 
   virtual PlanPriority computeOperatorPriority
     (const Context* context,
@@ -233,6 +233,8 @@ protected:
   ValueIdList PartialSortKeyFromChild_;
 
   NABoolean collectNFErrors_;
+
+  ULng32 topNRows_;
 
   short generateTdb(Generator * generator,
                     ComTdb * child_tdb,
@@ -580,8 +582,8 @@ public:
   inline void setBMOsMemoryUsage(CostScalar x) { BMOsMemoryUsage_ = x; }
   inline CostScalar getBMOsMemoryUsage() { return BMOsMemoryUsage_ ; }
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU);
-  virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams = NULL);
+  virtual double getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb);
 
   void setExtractProducerFlag() { isExtractProducer_ = TRUE; }
   NABoolean getExtractProducerFlag() { return isExtractProducer_; }

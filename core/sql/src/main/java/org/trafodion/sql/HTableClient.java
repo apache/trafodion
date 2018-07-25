@@ -114,7 +114,6 @@ public class HTableClient {
 	private ResultScanner scanner = null;
         private ScanHelper scanHelper = null;
 	Result[] getResultSet = null;
-	String lastError;
         RMInterface table = null;
         private boolean writeToWAL = false;
 	int numRowsCached = 1;
@@ -129,6 +128,8 @@ public class HTableClient {
 	byte[][] kvBuffer = null;
 	byte[][] rowIDs = null;
 	int[] kvsPerRow = null;
+        byte[][] kvFamArray = null;
+        byte[][] kvQualArray = null;
         static ExecutorService executorService = null;
         Future future = null;
 	boolean preFetch = false;
@@ -348,16 +349,6 @@ public class HTableClient {
 	    if (logger.isDebugEnabled()) logger.debug("Exit HTableClient::init, useTRex: " + this.useTRex + ", useTRexScanner: "
 	              + this.useTRexScanner + ", table object: " + table);
 	    return true;
-	}
-
-	public String getLastError() {
-		String ret = lastError;
-		lastError = null;
-		return ret;
-	}
-
-	void setLastError(String err) {
-		lastError = err;
 	}
 
 	String getTableName() {
@@ -1186,10 +1177,7 @@ public class HTableClient {
 		else
 		{
 			if (scanner == null) {
-				String err = "  fetchRows() called before scanOpen().";
-				logger.error(err);
-				setLastError(err);
-				return -1;
+                                throw new IOException("HTableClient.FetchRows() called before scanOpen().");
 			}
 			Result[] result = null;
 			if (preFetch)
@@ -1242,6 +1230,8 @@ public class HTableClient {
 			kvFamOffset = new int[numTotalCells];
 			kvTimestamp = new long[numTotalCells];
 			kvBuffer = new byte[numTotalCells][];
+                        kvFamArray = new byte[numTotalCells][];
+                        kvQualArray = new byte[numTotalCells][];
 		}
                
 		if (rowIDs == null || (rowIDs != null &&
@@ -1271,6 +1261,8 @@ public class HTableClient {
 				kvFamOffset[cellNum] = kv.getFamilyOffset();
 				kvTimestamp[cellNum] = kv.getTimestamp();
 				kvBuffer[cellNum] = kv.getValueArray();
+                                kvFamArray[cellNum] = kv.getFamilyArray();
+                                kvQualArray[cellNum] = kv.getQualifierArray();
 				colFound = true;
 			}
 		}
@@ -1282,11 +1274,11 @@ public class HTableClient {
 		if (cellsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
+				null, null, null, null, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		else 
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
+				kvTimestamp, kvBuffer, kvFamArray, kvQualArray, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -1294,6 +1286,7 @@ public class HTableClient {
 			throws IOException {
 		int rowsReturned = 1;
 		int numTotalCells;
+
 		if (numColsInScan == 0)
 			numTotalCells = result.size();
 		else
@@ -1316,6 +1309,8 @@ public class HTableClient {
 			kvFamOffset = new int[numTotalCells];
 			kvTimestamp = new long[numTotalCells];
 			kvBuffer = new byte[numTotalCells][];
+                        kvFamArray = new byte[numTotalCells][];
+                        kvQualArray = new byte[numTotalCells][];
 		}
 		if (rowIDs == null)
 		{
@@ -1342,15 +1337,17 @@ public class HTableClient {
 			kvFamOffset[colNum] = kv.getFamilyOffset();
 			kvTimestamp[colNum] = kv.getTimestamp();
 			kvBuffer[colNum] = kv.getValueArray();
+                        kvFamArray[colNum] = kv.getFamilyArray();
+                        kvQualArray[colNum] = kv.getQualifierArray();
 		}
 		if (numColsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
+				null, null, null, null, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		else
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
+				kvTimestamp, kvBuffer, kvFamArray, kvQualArray, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -1509,7 +1506,8 @@ public class HTableClient {
     
 	public boolean putRow(final long transID, final byte[] rowID, Object row,
                               byte[] columnToCheck, final byte[] colValToCheck,
-                              final boolean checkAndPut, boolean asyncOperation,
+                              final short colIndexToCheck, 
+			      final boolean checkAndPut, boolean asyncOperation,
                               final boolean useRegionXn) throws IOException, InterruptedException, 
                           ExecutionException 
 	{
@@ -1539,7 +1537,7 @@ public class HTableClient {
 			colValue = new byte[colValueLen];
 			bb.get(colValue, 0, colValueLen);
 			put.add(getFamily(colName), getName(colName), colValue); 
-			if (checkAndPut && colIndex == 0) {
+			if (checkAndPut && colIndex == colIndexToCheck) {
 				family = getFamily(colName);
 				qualifier = getName(colName);
 			} 
@@ -1618,13 +1616,13 @@ public class HTableClient {
 		}	
 	}
     
-        public boolean insertRow(long transID, byte[] rowID, 
+    /* public boolean insertRow(long transID, byte[] rowID, 
                          Object row, 
 			 long timestamp,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
-		return putRow(transID, rowID, row, null, null, 
-                              false, asyncOperation, false);
-	}
+	    return putRow(transID, rowID, row, null, null, 0, 
+			  false, asyncOperation, false);
+			  } */
 
 	public boolean putRows(final long transID, short rowIDLen, Object rowIDs, 
                        Object rows,
@@ -1713,21 +1711,22 @@ public class HTableClient {
 		return true;
 	}
 
-	public boolean checkAndInsertRow(long transID, byte[] rowID, 
+    /* public boolean checkAndInsertRow(long transID, byte[] rowID, 
                          Object row, 
 			 long timestamp,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException  {
-		return putRow(transID, rowID, row, null, null, 
+	    return putRow(transID, rowID, row, null, null, 0, 
                               true, asyncOperation, false);
-	}
+			      } */
 
 	public boolean checkAndUpdateRow(long transID, byte[] rowID, 
              Object columns, byte[] columnToCheck, byte[] colValToCheck,
              long timestamp, boolean asyncOperation) throws IOException, InterruptedException, 
                                     ExecutionException, Throwable  {
-		return putRow(transID, rowID, columns, columnToCheck, 
-                              colValToCheck, 
-                              true, asyncOperation, false);
+	    short colIndexToCheck = 0; // overridden by columnToCheck
+	    return putRow(transID, rowID, columns, columnToCheck, 
+			  colValToCheck, colIndexToCheck,
+			  true, asyncOperation, false);
 	}
 
         public byte[] coProcAggr(long transID, int aggrType, 
@@ -1874,7 +1873,10 @@ public class HTableClient {
 				int[] kvQualLen, int[] kvQualOffset,
 				int[] kvFamLen, int[] kvFamOffset,
   				long[] timestamp, 
-				byte[][] kvBuffer, byte[][] rowIDs,
+				byte[][] kvBuffer, 
+                                byte[][] kvFamArray,
+                                byte[][] kvQualArray,
+                                byte[][] rowIDs,
 				int[] kvsPerRow, int numCellsReturned,
 				int rowsReturned);
 

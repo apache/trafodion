@@ -6081,9 +6081,9 @@ NABoolean NestedJoin::OCBJoinIsFeasible(const Context* myContext) const
   if ( (myContext->requiresOrder() AND
         partReq AND 
         partReq->isRequirementExactlyOne() == FALSE) OR
-       partReq == NULL OR
-       (partReq->isRequirementApproximatelyN() AND
-         NOT partReq->partitioningKeyIsSpecified()
+       (partReq AND
+        partReq->isRequirementApproximatelyN() AND
+        NOT partReq->partitioningKeyIsSpecified()
        )
      )
   {
@@ -7074,7 +7074,6 @@ NABoolean MergeJoin::parentAndChildPartReqsCompatible(
         // are disjoint, then the requirement must allow a single
         // partition part func, because this will be the only way
         // to satisfy both the requirement and the join cols.
-#pragma nowarn(1506)   // warning elimination
         if (joinLeftPartKey.isEmpty() AND
             joinRightPartKey.isEmpty() AND
             (reqPartCount != ANY_NUMBER_OF_PARTITIONS) AND
@@ -7084,7 +7083,6 @@ NABoolean MergeJoin::parentAndChildPartReqsCompatible(
              EXACTLY_ONE_PARTITION)
            )
           return FALSE;
-#pragma warn(1506)  // warning elimination
       }
     } // end if fuzzy requirement
   } // end if there was a partitioning requirement for the join
@@ -11582,7 +11580,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
       {
         // Scalar aggregates cannot execute in parallel, so the
         // requirement must allow a single partition part func.
-#pragma nowarn(1506)   // warning elimination
         if ((reqPartCount != ANY_NUMBER_OF_PARTITIONS) AND
             ((reqPartCount -
               (reqPartCount * partReq->castToRequireApproximatelyNPartitions()->
@@ -11590,7 +11587,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
              EXACTLY_ONE_PARTITION)
            )
           return FALSE;
-#pragma warn(1506)  // warning elimination
       }
       else if (partReq->getPartitioningKey().entries() > 0)
       {
@@ -11600,7 +11596,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
         // are disjoint, then the requirement must allow a single
         // partition part func, because this will be the only way
         // to satisfy both the requirement and the GB cols.
-#pragma nowarn(1506)   // warning elimination
         if (myPartKey.isEmpty() AND
             (reqPartCount != ANY_NUMBER_OF_PARTITIONS) AND
             ((reqPartCount -
@@ -11608,7 +11603,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
                                         getAllowedDeviation())) >
              EXACTLY_ONE_PARTITION))
           return FALSE;
-#pragma warn(1506)  // warning elimination
       }
     } // end if fuzzy requirement
   } // end if there was a partitioning requirement for the GB
@@ -13057,9 +13051,7 @@ computeDP2CostDataThatDependsOnSPP(
 
   //  Assume at least one DP2 volume even if node map indicates otherwise.
   Lng32 numOfDP2Volumes =
-#pragma nowarn(1506)   // warning elimination
     MIN_ONE(((NodeMap *)(physicalPartFunc.getNodeMap()))->getNumOfDP2Volumes());
-#pragma warn(1506)  // warning elimination
 
   //  The number of cpus executing DP2's cannot be more than the number
   //  of active partitions :
@@ -13368,9 +13360,7 @@ computeDP2CostDataThatDependsOnSPP(
               // the synthesis for AP:
 
               Lng32 affectedPartitions =
-#pragma nowarn(1506)   // warning elimination
                 newNodeMapPtr->getNumActivePartitions();
-#pragma warn(1506)  // warning elimination
 
               // Now estimate the RC:
 
@@ -14555,8 +14545,8 @@ PhysicalProperty * FileScan::synthHiveScanPhysicalProperty(
       // Try to make the # of ESPs a factor, the same or a multiple
       // of the # of SQ nodes to avoid an imbalance. If we use locality,
       // make the # of ESPs a multiple of the # of nodes for now.
-      double allowedDev = 1.0 + ActiveSchemaDB()->getDefaults().getAsDouble(
-                                            HIVE_NUM_ESPS_ROUND_DEVIATION)/100.0;
+      double allowedDev = 1.0 + ActiveSchemaDB()->
+        getDefaults().getAsDouble(HIVE_NUM_ESPS_ROUND_DEVIATION)/100.0;
       Lng32 maxRoundedESPs = MINOF((Lng32) (numESPs * allowedDev), maxESPs);
       Lng32 minRoundedESPs = MAXOF((Lng32) (numESPs / allowedDev), minESPs);
       Lng32 delta = 0;
@@ -14849,7 +14839,7 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
   Lng32 numESPs = 1;
   PartitioningFunction * ixDescPartFunc = NULL;
    
-  // Nothing we can do if the requirment is a single partition func
+  // Nothing we can do if the requirement is a single partition func
   if ( partReq && partReq->castToRequireExactlyOnePartition() ) {
     myPartFunc = new (CmpCommon::statementHeap())
               SinglePartitionPartitioningFunction();
@@ -15509,6 +15499,74 @@ GenericUtilExpr::synthPhysicalProperty(const Context* myContext,
   return sppForMe;
 } //  GenericUtilExpr::synthPhysicalProperty()
 
+// -----------------------------------------------------------------------
+// FirstN::createContextForAChild()
+// The FirstN node may have an order by requirement that it needs to
+// pass to its child context. Other than that, this method is quite
+// similar to the default implementation, RelExpr::createContextForAChild.
+// The arity of FirstN is always 1, so some logic from the default
+// implementation that deals with childIndex > 0 is unnecessary and has
+// been removed.
+// -----------------------------------------------------------------------
+Context * FirstN::createContextForAChild(Context* myContext,
+                                 PlanWorkSpace* pws,
+                                 Lng32& childIndex)
+{
+  const ReqdPhysicalProperty* rppForMe =
+                                    myContext->getReqdPhysicalProperty();
+
+  CMPASSERT(getArity() == 1);
+
+  childIndex = getArity() - pws->getCountOfChildContexts() - 1;
+
+  // return if we are done
+  if (childIndex < 0)
+    return NULL;
+
+  RequirementGenerator rg(child(childIndex), rppForMe);
+
+  if (reqdOrder().entries() > 0)
+    {
+      // add our sort requirement as implied by our ORDER BY clause
+
+      // Shouldn't/Can't add a sort order type requirement
+      // if we are in DP2
+      if (rppForMe->executeInDP2())
+        rg.addSortKey(reqdOrder(),NO_SOT);
+      else
+        rg.addSortKey(reqdOrder(),ESP_SOT);
+    }
+
+  if (NOT rg.checkFeasibility())
+    return NULL;
+
+  Lng32 planNumber = 0;
+
+  // ---------------------------------------------------------------------
+  // Compute the cost limit to be applied to the child.
+  // ---------------------------------------------------------------------
+  CostLimit* costLimit = computeCostLimit(myContext, pws);
+
+  // ---------------------------------------------------------------------
+  // Get a Context for optimizing the child.
+  // Search for an existing Context in the CascadesGroup to which the
+  // child belongs that requires the same properties as myContext.
+  // Reuse it, if found. Otherwise, create a new Context that contains
+  // the same rpp and input log prop as in myContext.
+  // ---------------------------------------------------------------------
+  Context* result = shareContext(childIndex, rg.produceRequirement(),
+                                 myContext->getInputPhysicalProperty(),
+                                 costLimit, myContext,
+                                 myContext->getInputLogProp());
+
+  // ---------------------------------------------------------------------
+  // Store the Context for the child in the PlanWorkSpace.
+  // ---------------------------------------------------------------------
+  pws->storeChildContext(childIndex, planNumber, result);
+
+  return result;
+
+} // FirstN::createContextForAChild()
 
 //<pb>
 //==============================================================================
@@ -15828,7 +15886,6 @@ Tuple::costMethod() const
 // should change as well.
 //
 //==============================================================================
-#pragma nowarn(262)   // warning elimination
 PhysicalProperty*
 Tuple::synthPhysicalProperty(const Context* myContext,
                              const Lng32     planNumber,
@@ -16067,7 +16124,6 @@ Tuple::synthPhysicalProperty(const Context* myContext,
   return sppForMe;
 
 } //  Tuple::synthPhysicalProperty()
-#pragma warn(262)  // warning elimination
 
 //<pb>
 //==============================================================================
@@ -17163,7 +17219,6 @@ PhysicalIsolatedScalarUDF::costMethod() const
 // should change as well.
 //
 //==============================================================================
-#pragma nowarn(262)   // warning elimination
 PhysicalProperty*
 IsolatedScalarUDF::synthPhysicalProperty(const Context* myContext,
                                          const Lng32     planNumber,
@@ -17341,7 +17396,6 @@ IsolatedScalarUDF::synthPhysicalProperty(const Context* myContext,
   return sppForMe;
 
 } //  IsolatedScalarUDF::synthPhysicalProperty()
-#pragma warn(262)  // warning elimination
 
 
 PhysicalProperty *CallSP::synthPhysicalProperty(const Context* context,

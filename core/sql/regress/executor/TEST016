@@ -80,7 +80,7 @@ hash partition by (a,b)
 #ifNT
 attribute all mvs allowed
 ;
-
+create table t3015 (a1 NUMERIC(19,0), a2 int);
 -- MVs not support on seabase
 #ifndef SEABASE_REGRESS
 create MVGroup MVG_016;
@@ -151,6 +151,7 @@ insert into t016t2 values (2234567890123456789012345.123456789012, 1234567890123
 insert into t016t2 values (-1234567890123456789012345.123456789012, 22345678901234567890, .000000000000000000001);
 insert into t016t2 values (10, 20, .30);
 insert into t016t2 values (11, 22, null);
+insert into t3015 values(27380468,27380468);
 
 select * from t016t2;
 
@@ -313,9 +314,11 @@ select * from t016_2535_3 where (c1,c2) > (1234568.3, 2);
 select * from t016_2535_3 where (c1,c2) < (1234568.3, 2);
 select * from t016_2535_3 where (c1,c2) <= (1234568.3, 2);
 select * from t016_2535_3 where (c1,c2) <= (1234567.3, 0);
-
+--JIRA TRAFODION-3015
+select * from t3015 where a1='27380468';
 drop table t016_2535_2;
 drop table t016_2535_3;
+drop table t3015;
 
 log;
 

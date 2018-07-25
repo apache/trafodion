@@ -67,7 +67,6 @@
 // an undefined symbol.
 // ***********************************************************************
 
-// LCOV_EXCL_START
 void displayPartitioningFunction(const PartitioningFunction& pf)
 {
   pf.display();
@@ -89,7 +88,6 @@ void displayPartitionBoundaries(const RangePartitionBoundaries* pb)
   if (pb)
     pb->display();
 }
-// LCOV_EXCL_STOP
 
 
 // ***********************************************************************
@@ -276,14 +274,12 @@ PartitioningFunction::replaceNodeMap(NodeMap* nodeMap)
 // PartitioningFunction::copy()
 // Virtual copy constructor returns a copy of myself.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 PartitioningFunction* PartitioningFunction::copy() const
 {
   // illegal to call copy() of the base class
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // PartitioningFunction::normalizePartitioningKeys()
@@ -384,14 +380,12 @@ NABoolean PartitioningFunction::isAGroupingOf(
   return (comparePartFuncToFunc(other) == SAME);
 }
 
-// LCOV_EXCL_START
 PartitioningRequirement* PartitioningFunction::makePartitioningRequirement()
 {
   // Redefine PartitioningFunction::makePartitioningRequirement()
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // PartitioningFunction::scaleNumberOfPartitions
@@ -538,14 +532,12 @@ NABoolean PartitioningFunction::shouldUseSynchronousAccess(
 // -----------------------------------------------------------------------
 // Virtual functions that must be redefined for derived classes.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 Lng32 PartitioningFunction::getCountOfPartitions() const
 {
   // Redefine PartitioningFunction::getCountOfPartitions()
   CMPABORT;
   return 1;
 }
-// LCOV_EXCL_STOP
 
 NABoolean PartitioningFunction::canProducePartitioningKeyPredicates() const
 {
@@ -570,7 +562,6 @@ const ValueIdList& PartitioningFunction::getPartitionInputValuesLayout() const
   return partitionInputValuesLayout_;
 }
 
-// LCOV_EXCL_START
 void PartitioningFunction::createPartitioningKeyPredicates()
 {
   // Redefine PartitioningFunction::createPartitioningKeyPredicates()
@@ -600,7 +591,6 @@ ItemExpr* PartitioningFunction::createPartitioningExpression()
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 void PartitioningFunction::createPartSelectionExprFromSearchKey(
       const ValueId beginPartSelId,
@@ -636,14 +626,12 @@ void PartitioningFunction::preCodeGen(const ValueIdSet& availableValues)
 
 } // PartitioningFunction::preCodeGen()
 
-// LCOV_EXCL_START
 const NAString PartitioningFunction::getText() const
 {
   CMPABORT;
   return NAString("some type of partitioning function",
                    CmpCommon::statementHeap());
 }
-// LCOV_EXCL_STOP
 
 void PartitioningFunction::setupForStatement()
 {
@@ -675,13 +663,10 @@ void PartitioningFunction::resetAfterStatement()
 // -----------------------------------------------------------------------
 // Method for debugging
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void PartitioningFunction::print(FILE* ofd, const char* indent,
 				 const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
 
   fprintf(ofd,"%s--Partitioning-Function----------------\n",NEW_INDENT);
   fprintf(ofd,"%s%s (%d)\n",
@@ -704,12 +689,12 @@ void PartitioningFunction::print(FILE* ofd, const char* indent,
   if (NOT partitionInputValues_.isEmpty())
     partitionInputValues_.print(ofd, NEW_INDENT,
 				"Partition Input Values");
-  if (NOT getPartitionInputValuesLayout().isEmpty())
-    getPartitionInputValuesLayout().print(ofd, NEW_INDENT,
-				"Partition Input Values Layout");
+  if (NOT partitionInputValuesLayout_.isEmpty())
+    partitionInputValuesLayout_.print(ofd, NEW_INDENT,
+                                      "Partition Input Values Layout");
 
   if (getPartitioningExpression()) {
-    NAString partExpr("Partitionin Expression\n",  CmpCommon::statementHeap());
+    NAString partExpr("Partitioning Expression\n",  CmpCommon::statementHeap());
 
     getPartitioningExpression()->
       unparse(partExpr, DEFAULT_PHASE, EXPLAIN_FORMAT);
@@ -725,7 +710,6 @@ void PartitioningFunction::print(FILE* ofd, const char* indent,
 } // PartitioningFunction::print()
 
 void PartitioningFunction::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // SinglePartitionPartitioningFunction
@@ -766,7 +750,6 @@ void SinglePartitionPartitioningFunction::createPartitioningKeyPredicates()
   storePartitioningKeyPredicates(ValueIdSet());
 }
 
-// LCOV_EXCL_START
 void SinglePartitionPartitioningFunction::replacePivs(
        const ValueIdList& newPivs,
        const ValueIdSet& newPartKeyPreds)
@@ -774,7 +757,6 @@ void SinglePartitionPartitioningFunction::replacePivs(
   // do nothing, there aren't any pivs for a single
   // partition
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SinglePartitionPartitioningFunction::createPartitioningExpression()
@@ -791,7 +773,7 @@ SinglePartitionPartitioningFunction::createPartitioningExpression()
   // ---------------------------------------------------------------------
   ItemExpr * partFunc = new (CmpCommon::statementHeap())
     Cast(new (CmpCommon::statementHeap()) SystemLiteral(0),
-	 new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE));
+	 new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE,FALSE));
 
   partFunc->synthTypeAndValueId();
   storeExpression(partFunc);
@@ -849,14 +831,12 @@ const NAString SinglePartitionPartitioningFunction::getText() const
   return "exactly 1 partition";
 }
 
-// LCOV_EXCL_START
 void SinglePartitionPartitioningFunction::print(FILE* ofd, const char* indent,
 						const char* title) const
 {
   PartitioningFunction::print(ofd, indent,
 			      "SinglePartitionPartitioningFunction");
 }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // ReplicateViaBroadcastPartitioningFunction
@@ -1115,11 +1095,11 @@ void PartitioningFunction::createBetweenPartitioningKeyPredicates(
           // the partition input values are two integer values: lo and hi part #
           loPart = new (CmpCommon::statementHeap())
             HostVar(pivLoName,
-                    new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE),
+                    new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE,FALSE),
                     TRUE);
           hiPart = new (CmpCommon::statementHeap())
             HostVar(pivHiName,
-                    new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE),
+                    new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE,FALSE),
                     TRUE);
           loPart->synthTypeAndValueId();
           hiPart->synthTypeAndValueId();
@@ -1160,9 +1140,8 @@ void PartitioningFunction::createBetweenPartitioningKeyPredicates(
           NAString numPartsLiteral(numPartsString);
           ConstValue *numPartns = new (CmpCommon::statementHeap())
             ConstValue(new (CmpCommon::statementHeap())
-                         SQLInt(FALSE,
-                                FALSE,
-                                CmpCommon::statementHeap()),
+                         SQLInt(CmpCommon::statementHeap(), FALSE,
+                                FALSE),
                        (void *) &numOfOrigPartns,
                        (Lng32) sizeof(numOfOrigPartns),
                        &numPartsLiteral,
@@ -1441,13 +1420,11 @@ const NAString HashPartitioningFunction::getText() const
    return getTextImp("hash"); 
 }
 
-// LCOV_EXCL_START
 void HashPartitioningFunction::print(FILE* ofd, const char* indent,
 	   			     const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HashPartitioningFunction");
 } // HashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 // Return an expression casting an encoded skew value to oType.
 static 
@@ -1457,7 +1434,7 @@ getCastedSkewValueExpr(const EncodedValue& ev, const NAType& oType, CollHeap* he
   double x = ev.getDblValue();
   return new (heap) Cast(
        new (heap) ConstValue(
-             new (heap) SQLDoublePrecision(FALSE /* no SQL NULL*/, heap), 
+             new (heap) SQLDoublePrecision(heap, FALSE /* no SQL NULL*/), 
              (char*)&x, sizeof(x)
                             ), 
        &oType
@@ -1541,7 +1518,7 @@ TableHashPartitioningFunction::createPartitionSelectionExprInputs()
   ItemExpr *numParts = new (heap)
         HostVar(hvFabricatedName,
                 // int not null
-                new (heap) SQLInt(FALSE, FALSE),
+                new (heap) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 // is system-supplied
                 TRUE);
   numParts->synthTypeAndValueId();
@@ -1553,7 +1530,7 @@ TableHashPartitioningFunction::createPartitionSelectionExprInputs()
   ItemExpr *partNum = new (heap)
         HostVar(hvFabricatedName,
                 // int not null
-                new (heap) SQLInt(FALSE, FALSE),
+                new (heap) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 // is system-supplied
                 TRUE);
   partNum->synthTypeAndValueId();
@@ -1718,7 +1695,7 @@ TableHashPartitioningFunction::createPartitioningExpressionImp(NABoolean doVarCh
         {
           dataConversionErrorFlag =
             new (heap) HostVar("_sys_repartConvErrorFlg",
-                               new (heap) SQLInt(TRUE,FALSE),
+                               new (heap) SQLInt(heap, TRUE,FALSE),
                                TRUE);
           storeConvErrorExpr(dataConversionErrorFlag);
         }
@@ -1884,7 +1861,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
           {
             dataConversionErrorFlag =
               new (heap) HostVar("_sys_repartConvErrorFlg",
-                                 new (heap) SQLInt(TRUE,FALSE),
+                                 new (heap) SQLInt(heap, TRUE,FALSE),
                                  TRUE);
             storeConvErrorExpr(dataConversionErrorFlag);
           }
@@ -2057,13 +2034,11 @@ const NAString HashDistPartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void HashDistPartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HashDistPartitioningFunction");
 } // TableHashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // HashDistPartitioningFunction::createPartitioningFunctionForIndexDesc()
@@ -2371,7 +2346,7 @@ HashDistPartitioningFunction::buildPartitioningExpression(
 {
   CollHeap *heap = CmpCommon::statementHeap();
 
-  NAType *numPartsType = new (heap) SQLInt(FALSE,FALSE);
+  NAType *numPartsType = new (heap) SQLInt(heap, FALSE,FALSE);
   char buffer[20];
 
   // Create a ConstValue expression containing the original number of hash
@@ -2465,13 +2440,11 @@ const NAString Hash2PartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void Hash2PartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "Hash2PartitioningFunction");
 } // TableHashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -2709,7 +2682,7 @@ ItemExpr *
 Hash2PartitioningFunction::buildPartitioningExpression(const ValueIdList &keyCols) const
 {
   CollHeap *heap = CmpCommon::statementHeap();
-  NAType *numPartsType = new (heap) SQLInt(FALSE,FALSE);
+  NAType *numPartsType = new (heap) SQLInt(heap, FALSE,FALSE);
 
   // Build a ConstValue expression of the scaled number of partitions.
   Lng32 numParts = getCountOfPartitions();
@@ -2757,7 +2730,7 @@ PartitioningFunction::getCastedItemExpre(ItemExpr* iv, const NAType& oType, Coll
           dataConversionErrorFlag =
             new (CmpCommon::statementHeap()) HostVar(
                  "_sys_repartConvErrorFlg",
-                 new (CmpCommon::statementHeap()) SQLInt(TRUE,FALSE),
+                 new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE,FALSE),
                  TRUE);
           storeConvErrorExpr(dataConversionErrorFlag);
        }
@@ -2825,7 +2798,7 @@ void SkewedDataPartitioningFunction::createPIV(ValueIdList &partInputValues)
   //
   ItemExpr *dummyPIV = new (CmpCommon::statementHeap())
     HostVar("_sys_dummySkewBusterPartNo",
-	    new (CmpCommon::statementHeap()) SQLInt(FALSE, FALSE),
+	    new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
 	    TRUE);
   dummyPIV->synthTypeAndValueId();
 
@@ -2934,13 +2907,11 @@ const NAString SkewedDataPartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void SkewedDataPartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "SkewedDataPartitioningFunction");
 }  
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SkewedDataPartitioningFunction::comparePartFuncToFunc(): Compare this
@@ -2978,7 +2949,6 @@ comparePartFuncToFunc(const PartitioningFunction &other) const
 // SkewedDataPartitioningFunction::scaleNumberOfPartitions()
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 
 //::scaleNUmberOfPartitions() are called in following locations
 //
@@ -3007,7 +2977,6 @@ scaleNumberOfPartitions(Lng32 &suggestedNewNumberOfPartitions,
     return this;
 
 } // SkewedDataPartitioningFunction::scaleNumberOfPartitions()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SkewedDataPartitioningFunction::isAGroupingOf()
@@ -3356,9 +3325,7 @@ NABoolean RangePartitionBoundaries::compareRangePartitionBoundaries(
   // Since we didn't look at the last group, we need to compute the
   // number of partitions in it and see if it is the group with
   // the largest number of partitions.
-#pragma nowarn(1506)   // warning elimination
   numOfPartsInLastGroup = (other.partitionCount_ - otherix) + 1;
-#pragma warn(1506)  // warning elimination
   if ((maxPartsPerGroup != NULL) AND
       (numOfPartsInLastGroup > *maxPartsPerGroup))
   {
@@ -3506,9 +3473,7 @@ RangePartitionBoundaries::merge(const RangePartitionBoundaries& other,
     }
 
   result->encodedBoundaryKeyLength_ = encodedBoundaryKeyLength_;
-#pragma nowarn(1506)   // warning elimination
   result->partitionCount_ = resultix - 1;
-#pragma warn(1506)  // warning elimination
 
   return result;
 } // RangePartitionBoundaries::merge
@@ -3545,9 +3510,7 @@ Lng32 RangePartitionBoundaries::getOptimizedNumberOfPartKeys()
       }
     }
 
-#pragma nowarn(1506)   // warning elimination
   return numPartKeyCols;
-#pragma warn(1506)  // warning elimination
 }
 
 Lng32 RangePartitionBoundaries::scaleNumberOfPartitions(
@@ -3814,9 +3777,7 @@ void RangePartitionBoundaries::completePartitionBoundaries(
     ItemExprList(CmpCommon::statementHeap());
 
   // set some data members that could not be set before
-#pragma nowarn(1506)   // warning elimination
   partKeyColumnCount_ = partitioningKeyOrder.entries();
-#pragma warn(1506)  // warning elimination
   encodedBoundaryKeyLength_ = encodedBoundaryKeyLength;
 
   Lng32 i;
@@ -3949,9 +3910,7 @@ void RangePartitionBoundaries::setupForStatement(NABoolean useStringVersion)
 
   for(UInt32 i=0; i < boundaryValuesList_.entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination
     bindAddBoundaryValue(i);
-#pragma warn(1506)  // warning elimination
   }
 
   setupForStatement_ = TRUE;
@@ -3974,27 +3933,36 @@ void RangePartitionBoundaries::resetAfterStatement()
 // -----------------------------------------------------------------------
 // Method for debugging.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
 				     const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
-  char  btitle[50];
-  char* S = btitle;
-  Lng32 index;
+  char S[500];
+  int index;
 
   fprintf(ofd,"%s %s\n",NEW_INDENT,title);
   for (index = 0; index < partitionCount_; index++)
     {
       const ItemExprList* iel = boundaryValues_[index];
-      sprintf(S,"boundary[%d] :",index);
+      snprintf(S, sizeof(S), "boundary[%d]: ", index);
       if (iel)
 	iel->print(ofd, indent, S);
       else
 	fprintf(ofd,"%s %s is empty\n",NEW_INDENT,S);
     }
+  for (int index2 = 0; index2 < partitionCount_; index2++)
+    if (binaryBoundaryValues_.used(index2) &&
+        binaryBoundaryValues_[index2])
+      {
+        const char *binaryVal = binaryBoundaryValues_[index2];
+
+        fprintf(ofd, "binary boundary[%d]: 0x", // %#0*",
+                index2);
+
+        for (int b=0; b<encodedBoundaryKeyLength_; b++)
+          fprintf(ofd, "%02hhx", binaryVal[b]);
+        fprintf(ofd, "\n");
+      }
 
   fprintf(ofd,"%s %s (in binary form)\n",NEW_INDENT,title);
   Lng32 keyLen = getEncodedBoundaryKeyLength();
@@ -4007,7 +3975,6 @@ void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
     }
 
 } // RangePartitionBoundaries::print()
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // RangePartitioningFunction
@@ -4139,9 +4106,7 @@ void RangePartitioningFunction::createPartitioningKeyPredicates()
 
       CollIndex nCols = keyColumnList_.entries();
       ValueIdSet setOfKeyPredicates;
-#pragma nowarn(1506)   // warning elimination
       ValueIdList partInputValues(2*nCols+1);
-#pragma warn(1506)  // warning elimination
       ValueIdList loValues;
       ValueIdList hiValues;
 
@@ -4181,7 +4146,7 @@ void RangePartitioningFunction::createPartitioningKeyPredicates()
       ItemExpr *intervalExclusionIndicator =
 	new(CmpCommon::statementHeap()) HostVar(
 	     "_sys_hostVarExclRange",
-	     new(CmpCommon::statementHeap()) SQLInt(TRUE,FALSE),
+	     new(CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE,FALSE),
 	     TRUE);
       intervalExclusionIndicator->synthTypeAndValueId();
       partInputValues.insert(intervalExclusionIndicator->getValueId());
@@ -4480,9 +4445,7 @@ RangePartitioningFunction::createPartitioningFunctionForIndexDesc
   for (i = 0; i < partKeyColumns.entries(); i++)
     {
       // which column of the index is this (usually this will be == i)
-#pragma nowarn(1506)   // warning elimination
       ixColNumber = allColumns.index(partKeyColumns[i]);
-#pragma warn(1506)  // warning elimination
 
       // insert the value id of the index column into the partitioning
       // key column value id list
@@ -4595,7 +4558,7 @@ ItemExpr* RangePartitioningFunction::createPartitioningExpression()
 	  dataConversionErrorFlag =
 	    new (CmpCommon::statementHeap()) HostVar(
 		 "_sys_repartConvErrorFlg",
-		 new (CmpCommon::statementHeap()) SQLInt(TRUE,FALSE),
+		 new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE,FALSE),
 		 TRUE);
 	  storeConvErrorExpr(dataConversionErrorFlag);
 	}
@@ -4607,9 +4570,7 @@ ItemExpr* RangePartitioningFunction::createPartitioningExpression()
 	   dataConversionErrorFlag,
 	   &oType);
       // form the key encoding of the key column (a character string)
-#pragma nowarn(1506)   // warning elimination
       ItemExpr *e = new (CmpCommon::statementHeap()) CompEncode (c,descOrder);
-#pragma warn(1506)  // warning elimination
 
       // concatenate the individual key encodings of the key columns
       if (encKey == NULL)
@@ -4864,12 +4825,8 @@ RangePartitioningFunction::partFuncAndFuncPushDownCompatible(
 
    if ( other == NULL ) return FALSE;
 
-#pragma nowarn(1506)   // warning elimination
    Lng32 thisKeyCount = getPartitioningKey().entries();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
    Lng32 otherKeyCount = other->getPartitioningKey().entries();
-#pragma warn(1506)  // warning elimination
 
    // same key count
    if (thisKeyCount != otherKeyCount)
@@ -4991,12 +4948,35 @@ const NAString RangePartitioningFunction::getText() const
     }
 
     result += ")";
+    /* enable this for debugging of binary key problems
+    result += " binary (";
+    Lng32 encodedBoundaryKeyLength = partitionBoundaries_->getEncodedBoundaryKeyLength();
+    char hexDigits[4];
+
+    for (Int32 index2 = 0; index2 < partitionBoundaries_->getCountOfPartitions(); index2++)
+    {
+      const char * binaryVal = partitionBoundaries_->getBinaryBoundaryValue(index2);
+
+      if (binaryVal)
+        {
+          if (index2 > 0)
+            result += ", ";
+          result += "b(0x";
+          for (int b=0; b<encodedBoundaryKeyLength; b++)
+            {
+              snprintf(hexDigits, sizeof(hexDigits), "%02hhx", binaryVal[b]);
+              result += hexDigits;
+            }
+          result += ")";
+        }
+    }
+    result += ")";
+    end of code for binary keys */
   }
 
   return result;
 }
 
-// LCOV_EXCL_START
 void RangePartitioningFunction::print(FILE* ofd, const char* indent,
 					const char* title) const
 {
@@ -5136,7 +5116,6 @@ RangePartitioningFunction::computeNumOfActivePartitions(SearchKey* skey, const T
 }
 
 
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // LogPhysPartitioningFunction
@@ -5665,7 +5644,6 @@ const NAString LogPhysPartitioningFunction::getPhysForSplitTop() const
   return physPartFunc_->getText();
 }
 
-// LCOV_EXCL_START
 void LogPhysPartitioningFunction::print(
      FILE* ofd,
      const char* indent,
@@ -5675,13 +5653,11 @@ void LogPhysPartitioningFunction::print(
   logPartFunc_->print(ofd,"logical:  ");
   physPartFunc_->print(ofd,"physical: ");
 }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // RoundRobinPartitioningFunction
 // ***********************************************************************
 
-// LCOV_EXCL_START
 PartitioningRequirement*
 RoundRobinPartitioningFunction::makePartitioningRequirement()
 {
@@ -5739,12 +5715,12 @@ void RoundRobinPartitioningFunction::createPartitioningKeyPredicates()
       //
       ItemExpr *loPart = new (CmpCommon::statementHeap())
         HostVar("_sys_HostVarLoRoundRobinPart",
-                new (CmpCommon::statementHeap()) SQLInt(FALSE, FALSE),
+                new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 TRUE);
 
       ItemExpr *hiPart = new (CmpCommon::statementHeap())
         HostVar("_sys_HostVarHiRoundRobinPart",
-                new (CmpCommon::statementHeap()) SQLInt(FALSE, FALSE),
+                new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 TRUE);
 
       loPart->synthTypeAndValueId();
@@ -5803,9 +5779,7 @@ createPartitioningFunctionForIndexDesc(IndexDesc *idesc) const
   for (CollIndex i = 0; i < partKeyColumns.entries(); i++)
     {
       // which column of the index is this (usually this will be == i)
-#pragma nowarn(1506)   // warning elimination
       ixColNumber = allColumns.index(partKeyColumns[i]);
-#pragma warn(1506)  // warning elimination
 
       // insert the value id of the index column into the partitioning
       // key column value id set
@@ -5844,7 +5818,7 @@ ItemExpr* RoundRobinPartitioningFunction::createPartitioningExpression()
   // The type of the partitioning key for round robin is always
   // SQLLargeInt (the type of SYSKEY)
   //
-  NAType *desiredType = new (heap) SQLLargeInt(TRUE, FALSE);
+  NAType *desiredType = new (heap) SQLLargeInt(heap, TRUE, FALSE);
 
   // The layout of the SYSKEY is
   //
@@ -5857,9 +5831,9 @@ ItemExpr* RoundRobinPartitioningFunction::createPartitioningExpression()
                     desiredType),
                new (heap)
                ConstValue(32)),
-         new (heap) SQLInt(FALSE,FALSE));
+         new (heap) SQLInt(heap, FALSE,FALSE));
 
-  NAType *numPartsType = new (heap) SQLInt(FALSE,FALSE);
+  NAType *numPartsType = new (heap) SQLInt(heap, FALSE,FALSE);
 
   Lng32 numParts = getCountOfOrigRRPartitions();
   char buffer[20];
@@ -5919,7 +5893,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
   //
   ItemExpr *numParts = new (heap) HostVar("_sys_hostVarNumParts",
                                           // int not null
-                                          new (heap) SQLInt(FALSE, FALSE),
+                                          new (heap) SQLInt(heap, FALSE, FALSE),
                                           // is system-supplied
                                           TRUE);
   numParts->synthTypeAndValueId();
@@ -5929,7 +5903,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
   //
   ItemExpr *partNum = new (heap) HostVar("_sys_hostVarPartNo",
                                          // int not null
-                                         new (heap) SQLInt(FALSE, FALSE),
+                                         new (heap) SQLInt(heap, FALSE, FALSE),
                                          // is system-supplied
                                          TRUE);
   partNum->synthTypeAndValueId();
@@ -5960,7 +5934,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
       new (heap) Modulus(new (heap) Cast(new (heap)
                                          BiArith(ITM_PLUS, partNum,
                                                  new (heap) SystemLiteral(1)),
-                                         new (heap) SQLInt(TRUE,FALSE)),
+                                         new (heap) SQLInt(heap, TRUE,FALSE)),
                          numParts);
 
     // Bind the expression.
@@ -5987,7 +5961,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
     // The type of the partitioning key for round robin is always
     // SQLLargeInt (the type of SYSKEY)
     //
-    NAType *desiredType = new (heap) SQLLargeInt(TRUE, FALSE);
+    NAType *desiredType = new (heap) SQLLargeInt(heap,TRUE, FALSE);
 
     // The partition selection expression is:
     //
@@ -6014,7 +5988,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
                                              desiredType),
                                         new (heap)
                                         SystemLiteral(0x1000)),
-                                  new (heap) SQLInt(FALSE,FALSE)),
+                                  new (heap) SQLInt(heap, FALSE,FALSE)),
                              numParts);
 
     // Bind the expression.
@@ -6324,7 +6298,6 @@ void RoundRobinPartitioningFunction::print(
   PartitioningFunction::print(ofd,indent,"RoundRobinPartitioningFunction");
 }
 
-// LCOV_EXCL_STOP
 
 const skewProperty ANY_SKEW_PROPERTY(skewProperty::ANY, NULL);
   
@@ -6547,13 +6520,11 @@ const NAString HivePartitioningFunction::getText() const
    return getTextImp("hive"); 
 }
 
-// LCOV_EXCL_START
 void HivePartitioningFunction::print(FILE* ofd, const char* indent,
 	   			     const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HivePartitioningFunction");
 } // HivePartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 PartitioningFunction*
 HivePartitioningFunction::

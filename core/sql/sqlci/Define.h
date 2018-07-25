@@ -64,46 +64,4 @@ public:
   Int32 reset();
 };
 
-class Define
-{
-  char * name;
-  char * value;
-  char * defineNameInternal;
-
-public:
-  Define(const char * name_, const char * value_);
-  ~Define();
-
-  const char * getName() const		{return name;};
-  void setName(const char * name_);
-
-  const char * getValue() const		{return value;};
-  void setValue(const char * value_);
-
-  short contains(const char * value) const;
-
-  Int32 set(SqlciEnv * sqlci_env);
-  Int32 reset(SqlciEnv * sqlci_env);
-
-  static void stripTrailingBlanks(unsigned char * value, short valueLen);
-
-  ///////////////////////////////////////////////////////////////
-  // If getNext is -1, returns values for the next define
-  // following the one in defineName.
-  // Otherwise returns values for defineName.
-  //
-  // returns: 0, if define found. 1, if no more define (EOD).
-  //          -1, on error.
-  //  Caller must allocated space for all params.
-  ///////////////////////////////////////////////////////////////
-  static short getDefineInfo(unsigned char * defineName,
-			     unsigned char * defineClass,
-			     unsigned char * defineAttr,
-			     unsigned char * attrValue,
-			     short getNext);
-
-  static short getDefaults(unsigned char * defaultSubvol);
-
-};
-
 #endif

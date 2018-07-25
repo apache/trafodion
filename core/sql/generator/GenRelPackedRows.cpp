@@ -27,6 +27,7 @@
 #include "GenExpGenerator.h"
 #include "ExpCriDesc.h"
 #include "ComTdbUnPackRows.h"
+#include "ex_queue.h"
 
 // PhysUnPackRows::preCodeGen() -------------------------------------------
 // Perform local query rewrites such as for the creation and
@@ -134,6 +135,22 @@ RelExpr * PhysUnPackRows::preCodeGen(Generator * generator,
     (availableValues,
      getGroupAttr()->getCharacteristicInputs());
 
+  Lng32 memLimit = (Lng32)CmpCommon::getDefaultNumeric(MEMORY_LIMIT_ROWSET_IN_MB);
+  if (memLimit > 0)
+  {
+    Lng32 rowLength = getGroupAttr()->getCharacteristicOutputs().getRowLength();
+    Lng32 rowsetSize = getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value() ;
+    Lng32 memNeededMB = (rowLength * rowsetSize)/(1024 * 1024);
+    if (memLimit < memNeededMB)
+    {
+      *CmpCommon::diags() << DgSqlCode(-30050) << DgInt0(memNeededMB) 
+                          << DgInt1(memLimit) << DgInt2(rowLength) 
+                          << DgInt3(rowsetSize);
+      GenExit();
+      return NULL;
+    }
+  }
+
   generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
 
   markAsPreCodeGenned();
@@ -180,14 +197,10 @@ PhysUnPackRows::codeGen(Generator *generator)
   ex_cri_desc *givenCriDesc = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc *returnedCriDesc = 
-#pragma nowarn(1506)   // warning elimination 
     new(space) ex_cri_desc(givenCriDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
 
   ex_cri_desc *workCriDesc = 
-#pragma nowarn(1506)   // warning elimination 
     new(space) ex_cri_desc(givenCriDesc->noTuples() + 2, space);
-#pragma warn(1506)  // warning elimination 
 
 
   // unPackCols is the next to the last Tp in Atp 0, the work ATP.
@@ -302,14 +315,10 @@ PhysUnPackRows::codeGen(Generator *generator)
                              &unPackColsTupleDesc,
                              ExpTupleDesc::SHORT_FORMAT);
 
-#pragma nowarn(1506)   // warning elimination 
   workCriDesc->setTupleDescriptor(unPackColsAtpIndex,
-#pragma warn(1506)  // warning elimination 
                                   unPackColsTupleDesc);
 
-#pragma nowarn(1506)   // warning elimination 
   returnedCriDesc->setTupleDescriptor(unPackColsAtpIndex,
-#pragma warn(1506)  // warning elimination 
                                       unPackColsTupleDesc);
 
 
@@ -414,20 +423,28 @@ PhysUnPackRows::codeGen(Generator *generator)
       // queue size values represent initial (and final) queue
       // sizes (not max queue sizes).
       //
-      queue_index upQueueSize = 
-        (queue_index)getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value();
+      ULng32 rowsetSize = 
+          getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value();
+      double  memoryLimitPerInstance =
+        (ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB) * 1024 * 1024)/2; // At runtime (ExUnpackRowsTcb::ExUnpackRowsTcb) we allocate twice the size of the queue. So ensure it fits in to half the specified limit.
 
-      // Make sure it is at least 1024.
-      upQueueSize = (upQueueSize < 1024 ? 1024 : upQueueSize);
+      rowsetSize = (rowsetSize < 1024 ? 1024 : rowsetSize);
+     
+      double estimatedMemory = (Int64)rowsetSize * (Int64)unPackColsTupleLen;
+ 
+      if (estimatedMemory > memoryLimitPerInstance)
+      {
+         estimatedMemory = memoryLimitPerInstance;
+         rowsetSize = estimatedMemory / unPackColsTupleLen;
+         rowsetSize = MAXOF(rowsetSize, 1);
+      }
 
-      // Make sure that it is not more the 64K.
-      upQueueSize = (upQueueSize > 65536 ? 65536 : upQueueSize);
+      queue_index upQueueSize = ex_queue::roundUp2Power((queue_index)rowsetSize);
 
       unPackTdb =
 	new (space) ComTdbUnPackRows(childTdb,
 				     packingFactorExpr,
 				     unPackColsExpr,
-#pragma nowarn(1506)   // warning elimination 
 				     unPackColsTupleLen,
 				     unPackColsAtpIndex,
 				     indexValueAtpIndex,
@@ -443,7 +460,6 @@ PhysUnPackRows::codeGen(Generator *generator)
 				     tolerateNonFatalError);
     }
 
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(unPackTdb);
 
   // Remove child's outputs from mapTable, They are not needed
@@ -451,6 +467,8 @@ PhysUnPackRows::codeGen(Generator *generator)
   //
   generator->removeAll(localMapTable);
 
+  //Turn off override of queue sizes for unpack. Once set they should remain.
+  generator->setMakeOnljLeftQueuesBig(FALSE);
   // Add the explain Information for this node to the EXPLAIN
   // Fragment.  Set the explainTuple pointer in the generator so
   // the parent of this node can get a handle on this explainTuple.

@@ -65,13 +65,11 @@ public:
   // Used when unpacking the Transpose TDB.  Used to get a pointer
   // to the Virtual Method Table.
   //
-  NA_EIDPROC
   ComTdbTranspose();
   
   // Construct a copy of the given node.
   // (This constructor does not seem to be used)
   // 
-  NA_EIDPROC
   ComTdbTranspose(const ComTdbTranspose *transposeTdb);
 	
   // Construct a new Transpose TDB.
@@ -130,7 +128,6 @@ public:
   // unsigned long bufferSize
   //  IN: Recommended size for pool buffers.
   //
-  NA_EIDPROC
   ComTdbTranspose(ComTdb * childTdb,
 		  ex_expr ** transColExprs,
 		  Int32 numTransExprs,
@@ -149,18 +146,18 @@ public:
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                 { return (short)sizeof(ComTdbTranspose); }
 
 
@@ -178,7 +175,6 @@ public:
   //       that can be reached from this TDB points to memory outside 
   //       this space object.
   //
-  NA_EIDPROC
   Long pack(void *);
 
   // ComTdbTranspose::unpack() ---------------------------------------------
@@ -193,19 +189,16 @@ public:
   //  IN - The base address of the TDB fragment.  Pointers are calculated
   //       by adding the offset to the base address (more or less).
   //
-  NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
   
   // ComTdbTranspose::Display() -----------------------------------------
   // (Don't know why this is here.  It does not seem to be virtual and
   // on class seems to do anything for this method.)
   //
-  NA_EIDPROC
   void display() const;
 
   // Return a pointer to the child TBD of this transpose TDB.
   //
-  NA_EIDPROC
   inline ComTdb * getChildTdb() { return childTdb_; }
 
   // We are observing order queue protocol. Results from
@@ -214,15 +207,11 @@ public:
   //
   // Exclude this code from coverage analysis.
   // This code could be deleted since it is the same as the base implementation.
-  // LCOV_EXCL_START
-  NA_EIDPROC
   Int32 orderedQueueProtocol() const { return -1; }
-  // LCOV_EXCL_STOP
 
   // return a pointer to the specifed (by position) child TDB.
   // Transpose has only one child.
   //
-  NA_EIDPROC
   virtual const ComTdb *getChild(Int32 pos) const
   {
     if(pos == 0) 
@@ -233,7 +222,6 @@ public:
   // Return the number of children for this node.
   // Transpose has one child.
   //
-  NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }
 
   // Return the number of expression this node has.
@@ -241,7 +229,6 @@ public:
   // There are numTransExprs_ transpose expressions, plus
   // the afterTransPred_ selection predicate.
   //
-  NA_EIDPROC
   virtual Int32 numExpressions() const
   { 
     return numTransExprs_ + 1;
@@ -251,7 +238,6 @@ public:
   // The transpose expressions come first, followed
   // by the selection pred.
   //
-  NA_EIDPROC
   virtual ex_expr * getExpressionNode(Int32 pos) 
   {
     if(transColExprs_ && (pos >= 0) && (pos < numTransExprs_)) 
@@ -265,7 +251,6 @@ public:
   // The transpose expressions come first, followed
   // by the selection pred.
   //
-  NA_EIDPROC
   virtual const char * getExpressionName(Int32 pos) const
   {
     if(transColExprs_ && (pos >= 0) && (pos < numTransExprs_)) 
@@ -283,7 +268,6 @@ public:
   // Return the number of transpose expressions.  Used by
   // the Transpose TDB and TCB methods.
   //
-  NA_EIDPROC
   Int32 numTransExprs() { return numTransExprs_; };
 protected:
 

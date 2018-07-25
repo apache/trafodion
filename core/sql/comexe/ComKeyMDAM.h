@@ -55,7 +55,6 @@ typedef NAVersionedObjectPtrTempl<MdamPred> MdamPredPtr;
 ///////////////////////////////////////////////////////////
 // Class MdamPred
 ///////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
 class MdamPred : public NAVersionedObject
 {
 public:
@@ -98,17 +97,17 @@ private:
   Int16 reverseEndpoints_;         // 38-39
 
   // private method used by public methods getValue() and getValue2()
-  NA_EIDPROC ex_expr::exp_return_type getValue_(ExExprPtr value,
+  ex_expr::exp_return_type getValue_(ExExprPtr value,
                                                 atp_struct * atp0,
                                                 atp_struct * atp1);
 
 public:
 
-  NA_EIDPROC MdamPred()  // for use by unpack only
+  MdamPred()  // for use by unpack only
        : NAVersionedObject(-1)
   { }
 
-  NA_EIDPROC MdamPred(Lng32 disjunctNumber,
+  MdamPred(Lng32 disjunctNumber,
                          MdamPredType pred_type,
                          ex_expr *value,
                          ex_expr *value2 = NULL,
@@ -130,45 +129,45 @@ public:
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(0,getClassVersionID());
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(MdamPred); }
+  virtual short getClassSize() { return (short)sizeof(MdamPred); }
 
-  NA_EIDPROC ~MdamPred() { };
+  ~MdamPred() { };
 
   // methods used during Generation only
   void setOr()
   { firstInOrGroup_ = FALSE; };
 
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC Lng32 unpack(void *,void * reallocator);
+  Long pack(void *);
+  Lng32 unpack(void *,void * reallocator);
 
-  NA_EIDPROC ex_expr::exp_return_type fixup(Lng32 base, unsigned short,
+  ex_expr::exp_return_type fixup(Lng32 base, unsigned short,
                                             const ex_tcb *tcb,
                                             Space * space,
                                             CollHeap *heap);
 
-  NA_EIDPROC void setNext(MdamPred *next) { next_ = next; };
-  NA_EIDPROC MdamPred *getNext() { return next_; };
-  NA_EIDPROC NABoolean firstInOrGroup() { return firstInOrGroup_; };
-  NA_EIDPROC Lng32 getDisjunctNumber() { return disjunctNumber_; };
+  void setNext(MdamPred *next) { next_ = next; };
+  MdamPred *getNext() { return next_; };
+  NABoolean firstInOrGroup() { return firstInOrGroup_; };
+  Lng32 getDisjunctNumber() { return disjunctNumber_; };
 
-  NA_EIDPROC MdamPredType getPredType()
+  MdamPredType getPredType()
   { return (enum MdamPredType)predType_; };
 
-  NA_EIDPROC NABoolean reverseEndpoints()
+  NABoolean reverseEndpoints()
   { return (NABoolean)reverseEndpoints_; }
 
   // Indicates whether the start of an MDAM_BETWEEN interval is inclusive.
-  NA_EIDPROC MdamEnums::MdamInclusion getStartInclusion()
+  MdamEnums::MdamInclusion getStartInclusion()
     { 
       return val1Inclusive_ 
                ? MdamEnums::MDAM_INCLUDED
@@ -176,7 +175,7 @@ public:
     }
 
   // Indicates whether the end of an MDAM_BETWEEN interval is inclusive.
-  NA_EIDPROC MdamEnums::MdamInclusion getEndInclusion()
+  MdamEnums::MdamInclusion getEndInclusion()
     { 
       return val2Inclusive_ 
                ? MdamEnums::MDAM_INCLUDED
@@ -185,7 +184,7 @@ public:
 
   // This function computes a transformed predicate type based on
   // predType_ and dataConvErrorFlag.  
-  NA_EIDPROC MdamPredType getTransformedPredType
+  MdamPredType getTransformedPredType
                                      (Lng32 dataConvErrorFlag,
                                       Lng32 dataConvErrorFlag2,
                                       MdamEnums::MdamInclusion& startInclusion,
@@ -193,14 +192,13 @@ public:
 
   // Get the value used in this predicate. For MDAM_BETWEEN, which has two values,
   // this is the start value.
-  NA_EIDPROC ex_expr::exp_return_type getValue(atp_struct* atp0, atp_struct* atp1)
+  ex_expr::exp_return_type getValue(atp_struct* atp0, atp_struct* atp1)
   { return getValue_(value_, atp0, atp1); }
 
   // Used only for MDAM_BETWEEN, this gets the end value.
-  NA_EIDPROC ex_expr::exp_return_type getValue2(atp_struct* atp0, atp_struct* atp1)
+  ex_expr::exp_return_type getValue2(atp_struct* atp0, atp_struct* atp1)
   { return getValue_(value2_, atp0, atp1); }
 };
-#pragma warn(1506)  // warning elimination 
 
 
 // ---------------------------------------------------------------------
@@ -256,11 +254,11 @@ private:
 
 public: 
 
-  NA_EIDPROC MdamColumnGen() // for use by unpack only
+  MdamColumnGen() // for use by unpack only
        : NAVersionedObject(-1)
   { preds_ = NULL; };
 
-  NA_EIDPROC MdamColumnGen(MdamColumnGen *previous,
+  MdamColumnGen(MdamColumnGen *previous,
                            ULng32 columnLength,
                            ULng32 keyBufferOffset,
                            NABoolean useSparseProbes,
@@ -287,36 +285,36 @@ public:
       }
   };
 
-  NA_EIDPROC ~MdamColumnGen();
+  ~MdamColumnGen();
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(0,getClassVersionID());
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                       { return (short)sizeof(MdamColumnGen); }
 
-  NA_EIDPROC ex_expr::exp_return_type fixup(Lng32 base, unsigned short mode,
+  ex_expr::exp_return_type fixup(Lng32 base, unsigned short mode,
                                             Space * space,
                                             CollHeap *heap, const ex_tcb *tcb);
 
-  NA_EIDPROC MdamColumnGen *getNext()
+  MdamColumnGen *getNext()
   { return next_; };
-  NA_EIDPROC void setNext(MdamColumnGen *next)
+  void setNext(MdamColumnGen *next)
   { next_ = next; };
 
   // the following function is used in the Generator to obtain the
   // maximum disjunct number
-  NA_EIDPROC Lng32 getLastDisjunctNumber()
+  Lng32 getLastDisjunctNumber()
   {
     Lng32 rc = -1;
     
@@ -341,32 +339,32 @@ public:
   { useSparseProbes_ = FALSE; };
 
   // the following functions are used at MdamColumn constructor time
-  NA_EIDPROC ex_expr *getHiExpr()
+  ex_expr *getHiExpr()
   { return hiExpr_; };
-  NA_EIDPROC ex_expr *getLoExpr()
+  ex_expr *getLoExpr()
   { return loExpr_; };
-  NA_EIDPROC ex_expr *getNonNullHiExpr()
+  ex_expr *getNonNullHiExpr()
   { return nonNullHiExpr_; };
-  NA_EIDPROC ex_expr *getNonNullLoExpr()
+  ex_expr *getNonNullLoExpr()
   { return nonNullLoExpr_; };
 
   // the following function is used at MdamColumn constructor time
   // and during tree traversal
-  NA_EIDPROC ULng32 getLength()
+  ULng32 getLength()
   { return columnLength_; };
 
   // the following function is used during tree traversal
-  NA_EIDPROC ULng32 getOffset()
+  ULng32 getOffset()
   { return keyBufferOffset_; };
-  NA_EIDPROC NABoolean useSparseProbes()
+  NABoolean useSparseProbes()
   { return useSparseProbes_; };
 
   // the following function used when building an Mdam network
-  NA_EIDPROC MdamPred *getFirstPred()
+  MdamPred *getFirstPred()
   { return preds_; };
 
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC Lng32 unpack(void *, void * reallocator);
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
 
 };
 
@@ -411,10 +409,10 @@ class keyMdamGen : public keyRangeGen
 
 public:
 
-   NA_EIDPROC keyMdamGen()  // default constructor needed for UNPACK
+   keyMdamGen()  // default constructor needed for UNPACK
        { first_ = 0; last_ = 0; };  
 
-   NA_EIDPROC keyMdamGen(ULng32 keyLen,
+   keyMdamGen(ULng32 keyLen,
                          ex_cri_desc * workCriDesc,
                          unsigned short keyValuesAtpIndex,
                          unsigned short excludeFlagAtpIndex,
@@ -428,50 +426,50 @@ public:
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     keyRangeGen::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(keyMdamGen); }
+  virtual short getClassSize() { return (short)sizeof(keyMdamGen); }
 
-   NA_EIDPROC ~keyMdamGen();
+   ~keyMdamGen();
 
-   NA_EIDPROC MdamColumnGen *getFirst() const
+   MdamColumnGen *getFirst() const
   { return first_; };
 
-   NA_EIDPROC unsigned short getValueAtpIndex() const
+   unsigned short getValueAtpIndex() const
   { return valueAtpIndex_; };
 
-   NA_EIDPROC Lng32 getMaxDisjunctNumber() const
+   Lng32 getMaxDisjunctNumber() const
   { return maxDisjunctNumber_; };
 
-   NA_EIDPROC Lng32 getMaxMdamIntervals() const
+   Lng32 getMaxMdamIntervals() const
   { return maxMdamIntervals_; };
 
-   NA_EIDPROC Lng32 getMaxMdamRefs() const
+   Lng32 getMaxMdamRefs() const
   { return maxMdamRefs_; };
 
-   NA_EIDPROC Lng32 getMaxMdamRefsForStopLists() const
+   Lng32 getMaxMdamRefsForStopLists() const
   { return maxMdamRefsForStopLists_; };
 
-   NA_EIDPROC NABoolean complementKeysBeforeReturning() const
+   NABoolean complementKeysBeforeReturning() const
   { return complementKeysBeforeReturning_; };
 
-   NA_EIDPROC virtual Long pack(void * space);
-   NA_EIDPROC virtual Lng32 unpack(void * base, void * reallocator);
-   NA_EIDPROC virtual ex_expr* getExpressionNode(Int32 pos);
+   virtual Long pack(void * space);
+   virtual Lng32 unpack(void * base, void * reallocator);
+   virtual ex_expr* getExpressionNode(Int32 pos);
 
   virtual keyMdamGen * castToKeyMdamGen() { return this; }
 
 private:
-   NA_EIDPROC NABoolean isBlank(char *text);
+   NABoolean isBlank(char *text);
 };
 
 

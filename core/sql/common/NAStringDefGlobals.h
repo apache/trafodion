@@ -51,7 +51,6 @@
 // -----------------------------------------------------------------------
 
 #include "Platform.h"
-#include "SqlExportDllDefines.h"
 // #include "ComCharSetDefs.h" // includes definition of enum SQLCHARSET_CODE
 
 // classes in this file:
@@ -71,7 +70,7 @@ class NAWString ;
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
-class SQLEXPORT_LIB_FUNC NAReference 
+class NAReference 
 {
 protected:
   UInt32        refs_;          // (1 less than) number of references 
@@ -103,7 +102,7 @@ public:
  * There are no public member functions.
  */
 
-class SQLEXPORT_LIB_FUNC NAStringRef : public NAReference 
+class NAStringRef : public NAReference 
 {
 private: // not protected -- we don't expect anyone to ever inherit from NAStringRef
 
@@ -133,7 +132,6 @@ private: // not protected -- we don't expect anyone to ever inherit from NAStrin
   // In order to use the above ctor with NAMemory the way we want, we need
   // to make sure that we don't use the globally-defined new.  So we write
   // for NAStringRef.
-#pragma nowarn (1059) // warning elimination
   static inline void* operator new (size_t, void* loc) 
   {
     return loc ;  // yes, it's really this simple!

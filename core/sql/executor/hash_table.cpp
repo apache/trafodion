@@ -34,7 +34,6 @@
 #include "hash_table.h"
 
 void HashRow::print(ULng32 rowlength) {
-#ifndef __EID
   printf("\tHashValue: %6d\n\tData: ", hashValue_);
   unsigned char * data = (unsigned char *)this;
   ULng32 i = 0;
@@ -50,7 +49,6 @@ void HashRow::print(ULng32 rowlength) {
     else
       printf ("%1d0", i/10);
   printf ("\n");
-#endif
 }
 
 HashTableCursor::HashTableCursor() {
@@ -87,9 +85,7 @@ HashTable::HashTable(ULng32 headerCount,
     singleChainLastRow_(NULL) {
 
 #ifdef _DEBUG
-#ifndef __EID
   if ( getenv("ALLOW_HV_DUPS" ) ) noHashValueDups_ = FALSE; // for testing
-#endif
 #endif
   
   headerCount_ *= 2; // the first iteration below would divide it back
@@ -129,7 +125,7 @@ void HashTable::init() {
   // memset is about six times faster than this loop
   //     for (unsigned long i = 0; i < headerCount_; i++)
   //        header_[i].init();
-  memset( header_ , NULL, headerCount_ * sizeof(HashTableHeader) );
+  memset( header_ , 0, headerCount_ * sizeof(HashTableHeader) );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -259,7 +255,7 @@ ULng32 HashTable::resize(NABoolean enoughMemory) {
   }
 
   // initialize new HT
-  memset( newHeader , NULL, newSize * sizeof(HashTableHeader) );
+  memset( newHeader , 0, newSize * sizeof(HashTableHeader) );
 
   // insert entries from the old HT into the new HT
   for ( ULng32 oldind = 0; oldind < headerCount_; oldind++ ) {
@@ -291,9 +287,6 @@ ULng32 HashTable::resize(NABoolean enoughMemory) {
 
   return memAdded ;
 }
-
-#ifndef __EID
-// this is only used by Hash Join, so does not need to be in EID code
 
 // HashTable::insertUniq()
 // An insert method used by UniqueHashJoin.
@@ -340,7 +333,6 @@ void HashTable::insertUniq(HashRow *newRow)
   return;
   
 }
-#endif
 
 ///////////////////////////////////////////////////////////////////
 // Add a row to the end of the first hash header.  The purpose
@@ -539,9 +531,6 @@ void HashTable::position(HashTableCursor * cursor,
   cursor->init();
 }
 
-#ifndef __EID
-// this is only used by Hash Join, so does not need to be in EID code
-
 // HashTable::positionUniq()
 // A position method used by UniqueHashJoin.
 // Assumes entries are unique and so does not need to check for
@@ -600,7 +589,6 @@ ex_expr::exp_return_type HashTable::positionUniq(HashRow **currRow,
   // Not found
   return ex_expr::EXPR_FALSE;
 }
-#endif
 
 /////////////////////////////////////////////////////////
 // positions to the first entry in the hash table.

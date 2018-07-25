@@ -134,7 +134,6 @@ static void GU_DEBUG_Display(BindWA *bindWA, GenericUpdate *gu,
   if (!GU_DEBUG)
     return;
 
-// LCOV_EXCL_START - dpm
   if (preEndl) cerr << endl;
   cerr << "---" << endl;
 
@@ -159,13 +158,11 @@ static void GU_DEBUG_Display(BindWA *bindWA, GenericUpdate *gu,
     cerr << gu->getUpdTableNameText() << " bwa>cs>grd(" << text << ") " <<flush;
     bindWA->getCurrentScope()->getRETDesc()->display();
   }
-// LCOV_EXCL_STOP
 
   if (postEndl) cerr << endl;
 #endif
 } // GU_DEBUG_Display()
 
-#pragma nowarn(770)   // warning elimination
 static RETDesc *bindRowValues(BindWA *bindWA,
                               ItemExpr *exprTree,
                               ValueIdList &vidList,
@@ -611,7 +608,6 @@ static RETDesc *bindRowValues(BindWA *bindWA,
 
   return resultTable;
 } // bindRowValues()
-#pragma warn(770)  // warning elimination
 
 // Bind a constraint (MP Check Constraint).
 // Returns NULL if error in constraint *OR* we can safely ignore the constraint
@@ -707,7 +703,6 @@ static ItemExpr* bindCheckConstraint(
   return constraintPred;
 } // bindCheckConstraint()
 
-// LCOV_EXCL_START - cnu
 static ItemExpr *intersectColumns(const RETDesc &leftTable,
                                   const RETDesc &rightTable,
                                   BindWA* bindWA)
@@ -726,7 +721,6 @@ static ItemExpr *intersectColumns(const RETDesc &leftTable,
   // Binding this predicate must be done in caller's context/scope, not here...
   return predicate;
 } // intersectColumns()
-// LCOV_EXCL_STOP
 
 static ItemExpr *joinCommonColumns(const RelExpr *const leftRelExpr,
                                    const RelExpr *const rightRelExpr,
@@ -1000,6 +994,9 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
                                     RETDesc *rd,
                                     ValueIdList &compExpr)
 {
+  if (! rd)
+    return;
+
   const ColumnDescList &cols = *rd->getColumnList();
   CollIndex i = cols.entries();
   CMPASSERT(i == compExpr.entries());
@@ -1058,12 +1055,12 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         ItemExpr * cast = new (bindWA->wHeap())
           Cast(col->getValueId().getItemExpr(),
                new (bindWA->wHeap())
-               SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+               SQLBigNum(bindWA->wHeap(), MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
                          nTyp->getScale(),
                          FALSE,
                          FALSE,
-                         naType->supportsSQLnull(),
-                         NULL));
+                         naType->supportsSQLnull()
+                         ));
         
         cast = cast->bindNode(bindWA);
         if (bindWA->errStatus()) 
@@ -1084,7 +1081,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         ItemExpr * cast = new (bindWA->wHeap())
           Cast(col->getValueId().getItemExpr(),
                new (bindWA->wHeap())
-               SQLChar(SQL_BOOLEAN_DISPLAY_SIZE, naType->supportsSQLnull()));
+               SQLChar(bindWA->wHeap(), SQL_BOOLEAN_DISPLAY_SIZE, naType->supportsSQLnull()));
         
         cast = cast->bindNode(bindWA);
         if (bindWA->errStatus()) 
@@ -1109,11 +1106,11 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         NumericType * newType;
         if (srcNum->getScale() == 0)
           newType = new (bindWA->wHeap())
-            SQLSmall(NOT srcNum->isUnsigned(),
+            SQLSmall(bindWA->wHeap(), NOT srcNum->isUnsigned(),
                      naType->supportsSQLnull());
         else
           newType = new (bindWA->wHeap())
-            SQLNumeric(sizeof(short), srcNum->getPrecision(), 
+            SQLNumeric(bindWA->wHeap(), sizeof(short), srcNum->getPrecision(), 
                        srcNum->getScale(),
                        NOT srcNum->isUnsigned(), 
                        naType->supportsSQLnull());
@@ -1186,12 +1183,11 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
               }
 
             newTyp = new (bindWA->wHeap())
-              SQLBigNum(newPrec,
+              SQLBigNum(bindWA->wHeap(), newPrec,
                         newScale,
                         ((SQLBigNum &)col->getValueId().getType()).isARealBigNum(),
                         nTyp->isSigned(),
-                        nTyp->supportsSQLnull(),
-                        NULL);
+                        nTyp->supportsSQLnull());
           }
           else if (oflow > 0) {
             // If it's not a computed expr, but a column w/ a legal type, re-loop
@@ -1258,11 +1254,11 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
             
             if (newScale == 0)
               newTyp = new (bindWA->wHeap())
-                         SQLLargeInt(TRUE, // hardware only supports signed
+                         SQLLargeInt(bindWA->wHeap(), TRUE, // hardware only supports signed
                                      nTyp->supportsSQLnull());
             else
               newTyp = new (bindWA->wHeap())
-                         SQLNumeric(sizeof(Int64),
+                         SQLNumeric(bindWA->wHeap(), sizeof(Int64),
                                     newPrec,
                                     newScale,
                                     nTyp->isSigned(),
@@ -1358,7 +1354,6 @@ NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
        const Lng32 size = 16 * 1024;  // The initial size
        routineHeap = new CTXTHEAP NAHeap("NARoutine Heap", (NAHeap *)CTXTHEAP, 
                                          size);
-       routineHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
      }
      else 
        routineHeap=CmpCommon::statementHeap(); 
@@ -1526,7 +1521,10 @@ NATable *BindWA::getNATable(CorrName& corrName,
           ((bindWA->inViewDefinition()) ||
            (bindWA->inMVDefinition())))
       {
-        if (! CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
+        // for Histogram, support to use VOLATILE SCHEMA
+        // or else, don't support
+        if (!corrName.getQualifiedNameObj().isHistogramTable() && 
+            !CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
             (corrName.getQualifiedNameObj()))
         {
           bindWA->setErrStatus();
@@ -1655,7 +1653,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
   if ((table) && 
-      (table->isExternalTable() && 
+      (table->isTrafExternalTable() && 
        (NOT table->getTableName().isHbaseMappedName()) &&
        (! bindWA->allowExternalTables())))    
     {
@@ -1669,7 +1667,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // If the table is an external table and has an associated native table, 
   // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->isExternalTable() &&
+  if ((table) && table->isTrafExternalTable() &&
       (NOT table->getTableName().isHbaseMappedName()))
     {
       NAString adjustedName =ComConvertTrafNameToNativeName 
@@ -2121,6 +2119,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
     }
 
   Parser parser(bindWA->currentCmpContext());
+  parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
   ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                        naTable->getViewLen(),
                                        naTable->getViewTextCharSet());
@@ -2175,7 +2174,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   // or ignore any accessOpts from the view, for a consistent access model.
 
   if ((CmpCommon::getDefault(ALLOW_ISOLATION_LEVEL_IN_CREATE_VIEW) == DF_OFF) ||
-      (viewRoot->accessOptions().accessType() == ACCESS_TYPE_NOT_SPECIFIED_))
+      (viewRoot->accessOptions().accessType() == TransMode::ACCESS_TYPE_NOT_SPECIFIED_))
     {
       // if cqd is set and view options were explicitely specified,
       // then do not overwrite it with accessOptions.
@@ -2556,7 +2555,7 @@ RETDesc *RelExpr::getRETDesc() const
 {
   if (RETDesc_)
     return RETDesc_;
-  if (getArity() == 1)
+  if ((getArity() == 1) && (child(0)))
     return child(0)->getRETDesc();
   else
     return NULL;
@@ -3135,7 +3134,6 @@ void Join::BuildLeftChildMapForRightJoin()
 // member functions for class Intersect
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START - cnu
 RelExpr *Intersect::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -3221,13 +3219,11 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
 
   return join;
 } // Intersect::bindNode()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // member functions for class Except 
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START - cnu
 RelExpr *Except::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -3313,7 +3309,6 @@ RelExpr *Except::bindNode(BindWA *bindWA)
 
   return join;
 } // Excpet::bindNode()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // member functions for class Union
@@ -3508,9 +3503,7 @@ RelExpr *Union::bindNode(BindWA *bindWA)
       ValueIdUnion(leftTable.getValueId(i),
                    rightTable.getValueId(i),
                    NULL_VALUE_ID,
-#pragma nowarn(1506)   // warning elimination
                    getUnionFlags());
-#pragma warn(1506)  // warning elimination
       vidUnion->setIsTrueUnion(TRUE);
       vidUnion->bindNode(bindWA);
       if (bindWA->errStatus()) {
@@ -4128,7 +4121,7 @@ ItemExpr * RelRoot::processGroupingID(ItemExpr * ie, BindWA *bindWA)
   
   Int64 multiplier = (Int64)pow(2, (childExprList.entries()-1));
   SQLLargeInt * li = 
-    new(bindWA->wHeap()) SQLLargeInt(FALSE, FALSE); // +ve value, no nulls
+    new(bindWA->wHeap()) SQLLargeInt(bindWA->wHeap(), FALSE, FALSE); // +ve value, no nulls
   for (CollIndex i = 0; i < (CollIndex)childExprList.entries(); i++)
     {
       ItemExpr * currChildIE = 
@@ -5469,7 +5462,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 	      ExeUtilLobExtract * le =
 		new (PARSERHEAP()) ExeUtilLobExtract
 		(lef, ExeUtilLobExtract::TO_STRING_,
-		 NULL, NULL, lef->getTgtSize(), 0,
+		 0, 0, lef->getTgtSize(), 0,
 		 NULL, NULL, NULL, child(0), PARSERHEAP());
 	      le->setHandleInStringFormat(FALSE);
 	      setChild(0, le);
@@ -5815,7 +5808,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   if (isTrueRoot()) {
 
-    if (child(0)->getGroupAttr()->isEmbeddedUpdateOrDelete()) {
+    if (child(0) && child(0)->getGroupAttr()->isEmbeddedUpdateOrDelete()) {
       // Olt optimization is now supported for embedded updates/deletes (pub/sub
       // thingy) for now.
       oltOptInfo().setOltOpt(TRUE);
@@ -5914,8 +5907,10 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     if (isEmptySelectList())
       setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA));
     else {
-      setRETDesc(child(0)->getRETDesc());
-      getRETDesc()->getValueIdList(compExpr());
+      if (child(0)) {
+        setRETDesc(child(0)->getRETDesc());
+        getRETDesc()->getValueIdList(compExpr());
+      }
     }
   }
   else {
@@ -6024,6 +6019,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   // # columns, we make that check in the CallSP::bindNode, so ignore it
   // for now.
   if (isTrueRoot() &&
+      (child(0)) &&
       (child(0)->getOperatorType() != REL_CALLSP &&
       (child(0)->getOperatorType() != REL_COMPOUND_STMT &&
       (child(0)->getOperatorType() != REL_TUPLE &&
@@ -6039,9 +6035,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
       Lng32 sqlcode = (CmpCommon::context()->GetMode() == STMT_DYNAMIC) ?
       -4093 : -4094;
       *CmpCommon::diags() << DgSqlCode(sqlcode)
-#pragma nowarn(1506)   // warning elimination
       << DgInt0(outputVarCnt()) << DgInt1(getRETDesc()->getDegree());
-#pragma warn(1506)  // warning elimination
       bindWA->setErrStatus();
       return NULL;
     }
@@ -6104,8 +6098,11 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if (prevScope)
     inRowSubquery = prevScope->context()->inRowSubquery();
 
+  NABoolean groupByAggNodeAdded = FALSE;
   if (inRowSubquery && (CmpCommon::getDefault(COMP_BOOL_137) == DF_OFF))
-      addOneRowAggregates(bindWA);
+    // force adding one row aggregates in the [last 0] case
+    groupByAggNodeAdded = addOneRowAggregates(bindWA, 
+                            getFirstNRows() == -2 /* [last 0] case */);
 
   returnedRoot = 
     transformGroupByWithOrdinalPhase2(bindWA);
@@ -6672,18 +6669,82 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
         }
     }
 
-  if ((NOT hasOrderBy()) &&
-      ((getFirstNRows() != -1) ||
-       (getFirstNRowsParam())))
+  if ((getFirstNRows() != -1) ||
+       (getFirstNRowsParam()))
     {
-      // create a firstN node to retrieve firstN rows.
-      FirstN * firstn = new(bindWA->wHeap())
-        FirstN(child(0), getFirstNRows(), getFirstNRowsParam());
-      firstn->bindNode(bindWA);
-      if (bindWA->errStatus())
-        return NULL;
+      // [first/any/last N] processing
 
-      setChild(0, firstn);
+      RelExpr * nodeToInsertUnder = this;
+      if (inRowSubquery)
+        {
+          // [first/any/last N] in a row subquery special case
+          //
+          // In this case, if N > 1 it is first/any N, and we can simply
+          // ignore that as row subqueries already enforce an at-most-one
+          // row semantic. For [first 1], [last 1], [last 0], we need to
+          // add the node below any one-row aggregate group by node created
+          // earlier in this method. (If it put it above that group by node,
+          // that is too late; the one-row aggregate will raise an 8401 error
+          // before our FirstN node has a chance to narrow the result down to
+          // zero or one rows.) There is an interesting nuance with [last 0]:
+          // We forced the addition of a one-row aggregate group by node
+          // in that case, because [last 0] returns no rows. We might have
+          // a scalar aggregate subquery which ordinarily would not require
+          // a one-row aggregate group, but when [last 0] is present we want
+          // to force the aggregates to become NULL. Adding a one-row 
+          // aggregate group on top of the scalar aggregate, with the FirstN
+          // node in between them does the trick.
+          if (groupByAggNodeAdded &&
+               ( (getFirstNRows() == 1) ||   // [first 1] or [any 1]
+                 (getFirstNRows() == -2) ||  // [last 0]
+                 (getFirstNRows() == -3) ) ) // [last 1]
+            {
+              nodeToInsertUnder = child(0);
+              CMPASSERT(nodeToInsertUnder->getOperatorType() == REL_GROUPBY);             
+            }
+          else if (!groupByAggNodeAdded && (getFirstNRows() == -2))  // [last 0]
+            {
+              CMPASSERT(groupByAggNodeAdded);  // a GroupByAgg should have been forced
+            }
+          else  // a case where we can throw the [first/any/last N] away
+            {
+              nodeToInsertUnder = NULL;
+            }
+        }
+          
+      if (nodeToInsertUnder)
+        {
+          // create a firstN node to retrieve firstN rows.
+          FirstN * firstn = new(bindWA->wHeap())
+            FirstN(nodeToInsertUnder->child(0), getFirstNRows(), needFirstSortedRows(), getFirstNRowsParam());   
+
+          firstn->bindNode(bindWA);
+          if (bindWA->errStatus())
+            return NULL;
+
+          // Note: For ORDER BY + [first n], we want to sort the rows before 
+          // picking just n of them. (We don't do this for [any n].) We might
+          // be tempted to copy the orderByTree into the FirstN node at this
+          // point, but this doesn't work. Instead, we copy the bound ValueIds
+          // at normalize time. We have to do this in case there are expressions
+          // involved in the ORDER BY and there is a DESC. The presence of the
+          // Inverse node at the top of the expression tree seems to cause the
+          // expressions underneath to be bound to different ValueIds, which 
+          // causes coverage tests in FirstN::createContextForAChild requirements
+          // generation to fail. An example of where this occurs is:
+          //
+          // prepare s1 from
+          //   select [first 2] y, x from
+          //    (select a,b + 26 from t1) as t(x,y)
+          //   order by y desc;
+          //
+          // If we copy the ORDER BY ItemExpr tree and rebind, we get a different
+          // ValueId for the expression b + 26 in the child characteristic outputs
+          // than what we get for the child of Inverse in Inverse(B + 26). The
+          // trick of copying the already-bound ORDER BY clause later avoids this.
+
+          nodeToInsertUnder->setChild(0, firstn);
+        }
 
       // reset firstN indication in the root node.
       setFirstNRows(-1);
@@ -6701,9 +6762,9 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   if (bindWA->getHoldableType() == SQLCLIDEV_ANSI_HOLDABLE)
   {
-    if (accessOptions().accessType() != ACCESS_TYPE_NOT_SPECIFIED_)
+    if (accessOptions().accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
     {
-      if (accessOptions().accessType() == REPEATABLE_)
+      if (accessOptions().accessType() == TransMode::REPEATABLE_READ_ACCESS_)
       {
         *CmpCommon::diags() << DgSqlCode(-4381);
         bindWA->setErrStatus();
@@ -6713,7 +6774,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     else
     {
       TransMode::IsolationLevel il=CmpCommon::transMode()->getIsolationLevel();
-      if (CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ )
+      if (CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_)
       {
         *CmpCommon::diags() << DgSqlCode(-4381);
         bindWA->setErrStatus();
@@ -6736,14 +6797,12 @@ ItemExpr *RelRoot::selectList()
 
 // Returns current place that assignmentStTree_ points to and
 // sets that pointer to NULL
-// LCOV_EXCL_START - cnu
 ItemExpr * RelRoot::removeAssignmentStTree()
 {
   ItemExpr* tempTree = assignmentStTree_;
   assignmentStTree_ = NULL;
   return tempTree;
 }
-// LCOV_EXCL_STOP
 
 bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType,
                                        const PrivMgrUserPrivs *pPrivInfo)
@@ -7697,8 +7756,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
         stoi_->setDeleteAccess();
         if (((GenericUpdate*)re)->isMerge())
           stoi_->setInsertAccess();
-        if (((Delete*)re)->isFastDelete())
-          stoi_->setSelectAccess();
       }
       break;
     case REL_SCAN:
@@ -7752,8 +7809,7 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
   // notion to begin with.
   if ((naTable->getSpecialType() == ExtendedQualName::TRIGTEMP_TABLE) ||
       (naTable->getSpecialType() == ExtendedQualName::IUD_LOG_TABLE) ||
-      (naTable->getSpecialType() == ExtendedQualName::INDEX_TABLE) ||
-      (naTable->getSpecialType() == ExtendedQualName::RESOURCE_FORK))
+      (naTable->getSpecialType() == ExtendedQualName::INDEX_TABLE))
   {
     return NULL;
   }
@@ -8238,18 +8294,18 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
 
   // See Halloween handling code in GenericUpdate::bindNode
   if (accessOptions().userSpecified()) {
-    if ( accessOptions().accessType() == REPEATABLE_ ||
-         accessOptions().accessType() == STABLE_     ||
-         accessOptions().accessType() == BROWSE_
+    if ( accessOptions().accessType() == TransMode::REPEATABLE_READ_ACCESS_ ||
+         accessOptions().accessType() == TransMode::READ_COMMITTED_ACCESS_  ||
+         accessOptions().accessType() == TransMode::READ_UNCOMMITTED_ACCESS_
       ) {
         naTable->setRefsIncompatibleDP2Halloween();
     }
   }
   else {
     TransMode::IsolationLevel il = CmpCommon::transMode()->getIsolationLevel();
-    if((CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ ) ||
-       (CmpCommon::transMode()->ILtoAT(il) == STABLE_     ) ||
-       (CmpCommon::transMode()->ILtoAT(il) == BROWSE_     )) {
+    if((CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_ ) ||
+       (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_COMMITTED_ACCESS_  ) ||
+       (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_UNCOMMITTED_ACCESS_     )) {
         naTable->setRefsIncompatibleDP2Halloween();
     }
   }
@@ -8334,7 +8390,7 @@ RelExpr *Scan::bindExpandedMaterializedView(BindWA *bindWA, NATable *naTable)
     // the select list of this MV, just fake it. It's value will never be
     // used anyway - just it's existance.
     ConstValue *dummySyskey = new(heap) ConstValue(0);
-    dummySyskey->changeType(new(heap) SQLLargeInt());
+    dummySyskey->changeType(new(heap) SQLLargeInt(heap));
     ItemExpr *dummySyskeyCol = dummySyskey->bindNode(bindWA);
     if (bindWA->errStatus())
       return this;
@@ -9012,9 +9068,7 @@ RelExpr *RenameTable::bindNode(BindWA *bindWA)
     if (derivedColList.entries() != sourceTable.getDegree()) {
       // 4016 The number of derived columns must equal the degree of the derived table.
       *CmpCommon::diags() << DgSqlCode(-4016)
-#pragma nowarn(1506)   // warning elimination
         << DgInt0(derivedColList.entries()) << DgInt1(sourceTable.getDegree());
-#pragma warn(1506)  // warning elimination
       bindWA->setErrStatus();
       delete resultTable;
       return this;
@@ -9579,7 +9633,6 @@ RelExpr *BeforeTrigger::bindNode(BindWA *bindWA)
 // -----------------------------------------------------------------------
 // member functions for class Insert
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
 static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
                             ValueIdList &sysColList, CollIndex i)
 {
@@ -9603,7 +9656,7 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
   //
   ItemExpr *partNum = new (heap)
     HostVar("_sys_hostVarInsertPartNum",
-      new (heap) SQLInt(FALSE,FALSE),   // int unsigned not null
+      new (heap) SQLInt(heap, FALSE,FALSE),   // int unsigned not null
       TRUE // is system-generated
      );
   partNum->synthTypeAndValueId();
@@ -9611,7 +9664,7 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
 
   ItemExpr *rowPos = new (heap)
     HostVar("_sys_hostVarInsertRowPos",
-      new (heap) SQLInt(FALSE,FALSE),  // int unsigned not null
+      new (heap) SQLInt(heap, FALSE,FALSE),  // int unsigned not null
       TRUE // is system-generated
      );
   rowPos->synthTypeAndValueId();
@@ -9619,7 +9672,7 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
 
   ItemExpr *totNumParts = new (heap)
     HostVar("_sys_hostVarInsertTotNumParts",
-      new (heap) SQLInt(FALSE,FALSE),  // int unsigned not null
+      new (heap) SQLInt(heap, FALSE,FALSE),  // int unsigned not null
       TRUE // is system-generated
      );
   totNumParts->synthTypeAndValueId();
@@ -9638,7 +9691,6 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
   assign->bindNode(bindWA);
   insert->rrKeyExpr() = assign->getValueId();
 } // bindInsertRRKey
-// LCOV_EXCL_STOP
 
 RelExpr *Insert::bindNode(BindWA *bindWA)
 {
@@ -9745,54 +9797,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       setInsertSelectQuery(TRUE);
     }
 
-  // if table has a lob column, then fix up any reference to LOBinsert
-  // function in the source values list.
-  //
-  if ((getOperatorType() == REL_UNARY_INSERT) &&
-      (getTableDesc()->getNATable()->hasLobColumn()) &&
-      (child(0)->getOperatorType() == REL_TUPLE || // VALUES (1,'b')
-       child(0)->getOperatorType() == REL_TUPLE_LIST)) // VALUES (1,'b'),(2,'Y')
-    {
-      if (child(0)->getOperatorType() == REL_TUPLE_LIST)
-	{
-	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
-	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
-	    {
-	      ValueIdList tup;
-	      if (!tl->getTuple(bindWA, tup, x)) 
-		{
-		  bindWA->setErrStatus();
 
-		  return boundExpr; // something went wrong
-		}
-	      
-	      for (CollIndex n = 0; n < tup.entries(); n++)
-		{
-		  ItemExpr * ie = tup[n].getItemExpr();
-		  if (ie->getOperatorType() == ITM_LOBINSERT)
-		    {
-		      // cannot have this function in a values list with multiple
-		      // tuples. Use a single tuple.
-		      *CmpCommon::diags() << DgSqlCode(-4483);
-		      bindWA->setErrStatus();
-		      
-		      return boundExpr; 
-   
-		      LOBinsert * li = (LOBinsert*)ie;
-		      li->insertedTableObjectUID() = 
-			getTableDesc()->getNATable()->objectUid().castToInt64();
-		      li->lobNum() = n;
-
-		      li->insertedTableSchemaName() = 
-			getTableDesc()->getNATable()->
-			getTableName().getSchemaName();
-		    }
-		} // for
-	    } // for
-	} // if tuplelist
-
-    } // if
- 
 
   // Prepare for any IDENTITY column checking later on
   NAString identityColumnName;
@@ -9910,10 +9915,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     }
 
     if (GU_DEBUG) {
-// LCOV_EXCL_START - dpm
       cerr << "columnLkp " << flush;
       columnLkp->display();
-// LCOV_EXCL_STOP
     }
 
     for (i = 0; i < columnLkp->getDegree(); i++) {
@@ -10133,9 +10136,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       if ((sourceTable.getDegree() != newTgtColList.entries())&& !bulkLoadIndex) {
       // 4023 degree of row value constructor must equal that of target table
       *CmpCommon::diags() << DgSqlCode(-4023)
-#pragma nowarn(1506)   // warning elimination
         << DgInt0(sourceTable.getDegree()) << DgInt1(tgtColList.entries());
-#pragma warn(1506)  // warning elimination
       bindWA->setErrStatus();
       return boundExpr;
       }
@@ -10221,6 +10222,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
       if(bindWA->errStatus())
 	return NULL;
+
+
 
       if (stoiInList && !getUpdateCKorUniqueIndexKey())
       {
@@ -10424,7 +10427,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           // column. COM_CURRENT_DEFAULT is only used for Datetime
           // columns.
           //
-          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT) {
+          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT || nacol->getDefaultClass() == COM_CURRENT_UT_DEFAULT 
+             || nacol->getDefaultClass() == COM_UUID_DEFAULT) {
             castType = nacol->getType()->newCopy(bindWA->wHeap());
             omittedCurrentDefaultClassCols = TRUE;
             omittedDefaultCols = TRUE;
@@ -10443,7 +10447,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
           Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
           Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-
           defaultValueExpr = parser.getItemExprTree(defaultValueStr);
           CMPASSERT(defaultValueExpr);
 
@@ -10499,6 +10502,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             Assign(target.getItemExpr(), defaultValueExpr,
                     FALSE /*Not user Specified */);
           if ((nacol->getDefaultClass() != COM_CURRENT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_CURRENT_UT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_FUNCTION_DEFINED_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_UUID_DEFAULT) &&
               (nacol->getDefaultClass() != COM_USER_FUNCTION_DEFAULT))
              assign->setToBeSkipped(TRUE);
           assign->bindNode(bindWA);
@@ -10570,13 +10576,70 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
 
   if (isRRTable) {
-// LCOV_EXCL_START -
     const LIST(IndexDesc *) indexes = getTableDesc()->getIndexes();
     for(i = 0; i < indexes.entries(); i++) {
       indexes[i]->getPartitioningFunction()->setAssignPartition(TRUE);
     }
-// LCOV_EXCL_STOP
   }
+
+ if ((getOperatorType() == REL_UNARY_INSERT) &&
+     (getTableDesc()->getNATable()->hasLobColumn()) &&
+     child(0)->getOperatorType() == REL_TUPLE_LIST) // VALUES (1,'b'),(2,'Y')
+    {
+      if (child(0)->getOperatorType() == REL_TUPLE_LIST)
+	{
+	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
+	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
+	    {
+	      ValueIdList tup;
+	      if (!tl->getTuple(bindWA, tup, x)) 
+		{
+		  bindWA->setErrStatus();
+
+		  return boundExpr; // something went wrong
+		}
+	      
+	      for (CollIndex n = 0; n < tup.entries(); n++)
+		{
+		  ItemExpr * ie = tup[n].getItemExpr();
+                  
+		  if (ie->getOperatorType() == ITM_LOBINSERT)
+		    {                                                          
+                      // cannot have this function in a values list with
+                      // multiple tuples. Use a single tuple.
+                          *CmpCommon::diags() << DgSqlCode(-4483);
+                          bindWA->setErrStatus();		      
+                          return boundExpr; 
+                        
+                    }
+               
+                  else
+                    {
+                      Assign * assign = (Assign*)newRecExprArray()[n].getItemExpr();
+                      ItemExpr *assign_child = NULL;
+                      if (assign)
+                        {
+                           assign_child = assign->child(1);
+                        }
+                      if ( assign_child && assign_child->getOperatorType() == ITM_CAST )
+                        {
+                          const NAType& type = assign_child->getValueId().getType();
+                          if ( type.getTypeQualifier() == NA_LOB_TYPE )
+                            {
+                              // cannot have this function in a values list with multiple
+                              // tuples. Use a single tuple.
+                              *CmpCommon::diags() << DgSqlCode(-4483);
+                              bindWA->setErrStatus();		      
+                              return boundExpr; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
 
   // It is a system generated identity value if
   // identityColumn() != NULL_VALUE_ID. The identityColumn()
@@ -10650,6 +10713,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     //4486--Constraints not supported with bulk load. Disable the constraints and try again.
     *CmpCommon::diags() << DgSqlCode(-4486)
                         <<  DgString0("bulk load") ;
+    bindWA->setErrStatus();
+    return boundExpr;
   }
   if (getIsTrafLoadPrep())
   {
@@ -10661,10 +10726,34 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       {
         partns = np->getNumEntries();
         if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
-          // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
-          *CmpCommon::diags() << DgSqlCode(-4490);
+	  {
+	    // 4490 - BULK LOAD into a salted table is not supported if 
+	    // ESP parallelism is turned off
+	    *CmpCommon::diags() << DgSqlCode(-4490);
+	     bindWA->setErrStatus();
+	     return boundExpr;
+	  }
       }
-  }
+
+    const NATable* naTable = getTableDesc()->getNATable();
+    if (naTable->hasLobColumn())
+      {
+	NAColumn *nac = NULL;
+	for (CollIndex c = 0; c < naTable->getColumnCount(); c++) 
+	  {
+	    nac = naTable->getNAColumnArray()[c];
+	    if (nac->getType()->isLob())
+	      break;
+	  }
+	*CmpCommon::diags() << DgSqlCode(-4494)
+			    << DgTableName(naTable->getTableName().
+					   getQualifiedNameAsAnsiString()) 
+			    << DgColumnName(nac->getColName());
+	bindWA->setErrStatus();
+	return boundExpr;
+      } // has Lob column
+  } // isLoadPrep
+
   NABoolean toMerge = FALSE;
   if (isUpsertThatNeedsTransformation(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols,toMerge)) {
     if ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) ||toMerge)	
@@ -11039,7 +11128,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   ValueIdSet sequenceFunction ;		
  
   //Retrieve all the system and user columns of the left join output
-  ValueIdList  ljOutCols = NULL;
+  ValueIdList  ljOutCols = 0;
   boundLJ->getRETDesc()->getValueIdList(ljOutCols);
   //Retrieve the null instantiated part of the LJ output
   ValueIdList ljNullInstColumns = lj->nullInstantiatedOutput();
@@ -11354,12 +11443,8 @@ const char *Insert::getColDefaultValue(BindWA *bindWA, CollIndex i) const
   if (colList.entries() <= pos) {
     // 4023 degree of row value constructor must equal that of target table
     *CmpCommon::diags() << DgSqlCode(-4023)
-#pragma nowarn(1506)   // warning elimination
                         << DgInt0(++pos)
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
                         << DgInt1(colList.entries());
-#pragma warn(1506)  // warning elimination
     bindWA->setErrStatus();
     return NULL;
   }
@@ -11532,7 +11617,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
       if (scanNode->getFirstNRows() >= 0)
         {
           FirstN * firstn = new(bindWA->wHeap())
-            FirstN(scanNode, scanNode->getFirstNRows(), NULL);
+            FirstN(scanNode, scanNode->getFirstNRows(), FALSE /* there's no ORDER BY on an UPDATE */, NULL);
           firstn->bindNode(bindWA);
           if (bindWA->errStatus())
             return NULL;
@@ -11554,35 +11639,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
   NABoolean transformUpdateKey = updatesClusteringKeyOrUniqueIndexKey(bindWA);
   if (bindWA->errStatus()) // error occurred in updatesCKOrUniqueIndexKey()
     return this;
-  // To be removed when TRAFODION-1610 is implemented.
-  NABoolean xnsfrmHbaseUpdate = FALSE;
-  if ((hbaseOper()) && (NOT isMerge()))
-    {      
-      if (CmpCommon::getDefault(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT) == DF_ON)
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
-      else if (getCheckConstraints().entries())
-       {
-         xnsfrmHbaseUpdate = TRUE;
-       }
-      else if (getTableDesc()->getNATable()->isHbaseMapTable())
-       {
-         xnsfrmHbaseUpdate = TRUE;
-       }
-     }  
-  
-  if (xnsfrmHbaseUpdate)
-    {
-      ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
-      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
 
-      boundExpr = transformHbaseUpdate(bindWA);
-
-      Assign_SqlParser_Flags (savedParserFlags);
-    }
-  else 
-  // till here and remove the function transformHbaseUpdate also
   if ((transformUpdateKey) && (NOT isMerge()))
     {
       boundExpr = transformUpdatePrimaryKey(bindWA);
@@ -11758,7 +11815,7 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   if (getProducedMergeIUDIndicator() == NULL_VALUE_ID)
     {
       ItemExpr *mergeIUDIndicator = new(bindWA->wHeap()) NATypeToItem(
-           new(bindWA->wHeap()) SQLChar(
+           new(bindWA->wHeap()) SQLChar(bindWA->wHeap(), 
                 1, FALSE, FALSE, FALSE, FALSE, CharInfo::ISO88591));
 
       mergeIUDIndicator = mergeIUDIndicator->bindNode(bindWA);
@@ -11916,7 +11973,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
       RelExpr * childNode = child(0)->castToRelExpr();
       FirstN * firstn = new(bindWA->wHeap())
-        FirstN(childNode, getFirstNRows(), NULL);
+        FirstN(childNode, getFirstNRows(), FALSE /* There's no ORDER BY on a DELETE */, NULL);
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
         return NULL;
@@ -11975,7 +12032,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
   // Triggers --
   
-  if ((NOT isFastDelete()) && (NOT noIMneeded()))
+  if (NOT noIMneeded())
     boundExpr = handleInlining(bindWA, boundExpr);
   else if (hbaseOper() && (getGroupAttr()->isEmbeddedUpdateOrDelete()))
   {
@@ -12003,7 +12060,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
       // during handleInlining. Occurs when DELETE FIRST N is used on table with no
       // dependent objects. 
       FirstN * firstn = new(bindWA->wHeap())
-        FirstN(boundExpr, getFirstNRows());
+        FirstN(boundExpr, getFirstNRows(), FALSE /* There's no ORDER BY on a DELETE */ );
       if (NOT(scanNode && scanNode->getSelectionPred().containsSubquery()))
         firstn->setCanExecuteInDp2(TRUE);
       firstn->bindNode(bindWA);
@@ -12154,7 +12211,6 @@ static const char OLDTable [] = "OLD";    // QSTUFF:  corr for embedded d/u
 // the before image.
 // delete from tab set on rollback x = 1;
 // update tab set x = 1 set on rollback x = 2;
-#pragma nowarn(770)   // warning elimination
 void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
                                    ItemExpr      *recExpr,
                                    ItemExprList  &assignList,
@@ -12352,9 +12408,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
   // to the columns, of course.
   //
   CollIndex totalColCount = getTableDesc()->getColumnList().entries();
-#pragma nowarn(1506)   // warning elimination
   ValueIdArray holeyArray(totalColCount);
-#pragma warn(1506)  // warning elimination
   ValueId assignId;                                 // i'th newRecExpr valueid
   for (i = 0, assignId = newRecExpr.init();         // bizarre ValueIdSet iter
          newRecExpr.next(assignId);
@@ -12466,7 +12520,6 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
    CMPASSERT(j == a);
    bindWA->getCurrentScope()->setRETDesc(origScope);
 }
-#pragma warn(770)  // warning elimination
 
 void getScanPreds(RelExpr *start, ValueIdSet &preds)
 {
@@ -12835,13 +12888,11 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
   }
 
   if (naTable->isVerticalPartition()) {
-// LCOV_EXCL_START - cnu
     // On attempt to update an individual VP, say: 4082 table not accessible
     *CmpCommon::diags() << DgSqlCode(-4082) <<
        DgTableName(naTable->getTableName().getQualifiedNameAsAnsiString());
     bindWA->setErrStatus();
     return this;
-// LCOV_EXCL_STOP
   }
 
 
@@ -12883,16 +12934,10 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
 
     // If this is not an INTERNAL REFRESH command, make sure the MV is
     // initialized and available.
-    // If this is FastDelete using parallel purgedata, do not enforce
-    // that MV is initialized.
     if (!bindWA->isBindingMvRefresh())
     {
-      if (NOT ((getOperatorType() == REL_UNARY_DELETE) &&
-               (((Delete*)this)->isFastDelete())))
-        {
-          if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
-            return NULL;
-        }
+      if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
+        return NULL;
     }
   }
 
@@ -13574,9 +13619,9 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
         // Now check the transaction isolation level, which can override
         // the access mode.  Note that il was initialized above for the
         // check for an updatable trans, i.e., errors 3140 and 3141.
-        if((CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ ) ||
-           (CmpCommon::transMode()->ILtoAT(il) == STABLE_     ) ||
-           (CmpCommon::transMode()->ILtoAT(il) == BROWSE_     )) 
+        if((CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_ ) ||
+           (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_COMMITTED_ACCESS_     ) ||
+           (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_UNCOMMITTED_ACCESS_     )) 
            cannotUseDP2Locks = TRUE;
 
         // Save the result with this GenericUpdate object.  It will be 
@@ -13789,7 +13834,7 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
     return TRUE;
   }
   
-  if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
+  if ((accessOptions().accessType() == TransMode::SKIP_CONFLICT_ACCESS_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback
   {
@@ -14076,7 +14121,6 @@ ItemExpr *execPred  = NULL;
 // -----------------------------------------------------------------------
 // RelRoutine
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - rfi
 RelExpr *RelRoutine::bindNode(BindWA *bindWA)
 {
   CMPASSERT(0); // For the time being, all classes above implement their own.
@@ -14100,7 +14144,6 @@ RelExpr *RelRoutine::bindNode(BindWA *bindWA)
   //  getGroupAttr()->addCharacteristicOutputs(getTableDesc()->getColumnList());
   return boundExpr;
 } // RelRoutine::bindNode()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // BuiltinTableValuedFunction
@@ -14193,7 +14236,7 @@ RelExpr *BuiltinTableValuedFunction::bindNode(BindWA *bindWA)
 	// type any param arguments to fixed char since runtime explain
 	// expects arguments to be fixed char.
 	Lng32 len = (Lng32)CmpCommon::getDefaultNumeric(VARCHAR_PARAM_DEFAULT_SIZE);
-	SQLChar c(len);
+	SQLChar c(NULL, len);
 	
 	for (Lng32 i = 0; i < numParams(); i++)
 	  {
@@ -14360,20 +14403,23 @@ RelExpr * ControlQueryDefault::bindNode(BindWA *bindWA)
          }
        }
     }
-  
+
+
   if (holdOrRestoreCQD_ == 0)
     {
-  attrEnum_ = affectYourself ? defs.validateAndInsert(token_, value_, reset_)
-                             : defs.validate         (token_, value_, reset_);
-  if (attrEnum_ < 0)
-    {
-      if (bindWA) bindWA->setErrStatus();
-      return NULL;
-    }
-
-  // remember this control in the control table
-  if (affectYourself)
-    ActiveControlDB()->setControlDefault(this);
+      if (affectYourself)
+        attrEnum_ =  defs.validateAndInsert(token_, value_, reset_);
+      else
+        attrEnum_ = defs.validate(token_, value_, reset_);
+      if (attrEnum_ < 0)
+        {
+          if (bindWA) bindWA->setErrStatus();
+          return NULL;
+        }
+      
+      // remember this control in the control table
+      if (affectYourself)
+        ActiveControlDB()->setControlDefault(this);
     }
   else if ((holdOrRestoreCQD_ > 0) && (affectYourself))
     {
@@ -14384,7 +14430,7 @@ RelExpr * ControlQueryDefault::bindNode(BindWA *bindWA)
           return NULL;
         }
     }
-
+  
   return ControlAbstractClass::bindNode(bindWA);
 } // ControlQueryDefault::bindNode()
 
@@ -14541,20 +14587,6 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
       NAString cat(catsch.getCatalogNameAsAnsiString(),bindWA->wHeap());
       NAString sch(catsch.getUnqualifiedSchemaNameAsAnsiString(),bindWA->wHeap());
       //
-      if (SqlParser_NAMETYPE == DF_NSK) {
-// LCOV_EXCL_START - nsk
-        // The cat & sch from the BindWA are really from MPLOC.
-        // Get the real ANSI cat & sch, prepending them to the strings
-        // and put the MPLOC info in parens.
-        const SchemaName &csAnsi = ActiveSchemaDB()->getDefaultSchema();
-        NAString cAnsi(csAnsi.getCatalogNameAsAnsiString(),bindWA->wHeap());
-        NAString sAnsi(csAnsi.getUnqualifiedSchemaNameAsAnsiString(),bindWA->wHeap());
-        cat.prepend(cAnsi + " (");
-        cat += ")";
-        sch.prepend(sAnsi + " (");
-        sch += ")";
-// LCOV_EXCL_STOP
-      }
       *CmpCommon::diags() << DgSqlCode(-ABS(ShowSchema::DiagSqlCode()))
         << DgCatalogName(cat) << DgSchemaName (sch);
       bindWA->setErrStatus();
@@ -14630,8 +14662,6 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
   index_desc->indexesDesc()->colcount = table_desc->tableDesc()->colcount;
   index_desc->indexesDesc()->blocksize = 4096; // anything > 0
 
-  // Cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
   index_desc->indexesDesc()->files_desc = i_files_desc;
 
@@ -14670,63 +14700,31 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
 
   if (! describedTableName_.getQualifiedNameObj().getObjectName().isNull())
     {
-      if ((getFormat() >= CONTROL_FIRST_) &&
-          (getFormat() <= CONTROL_LAST_))
-        {
+       if (getIsControl())
           describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
-        }
-      else
+        if (NOT getIsControl())
         {
           // do not override schema for showddl
           bindWA->setToOverrideSchema(FALSE);  
           
-          // if this is a showlabel command on a resource fork, 
-          // but the describedTableName
-          // is not a fully qualified rfork name, then get the rfork name
-          // for the specified table.
-          if ((getFormat() == Describe::LABEL_) &&
-              (describedTableName_.getSpecialType() == ExtendedQualName::RESOURCE_FORK) &&
-              (describedTableName_.getLocationName().isNull()))
-            {
-              describedTableName_.setSpecialType(ExtendedQualName::NORMAL_TABLE);
-              NATable *naTable = bindWA->getNATable(describedTableName_);
-              if (NOT bindWA->errStatus())
-                {
-                  // replace the describedTableName with its rfork name.
-                  describedTableName_.setSpecialType(ExtendedQualName::RESOURCE_FORK);
-                
-                  NAString rforkName = naTable->getClusteringIndex()->getFileSetName().getQualifiedNameAsString();
-                  char * rforkNameData = (char*)(rforkName.data());
-                  rforkNameData[rforkName.length()-1] += 1;
-                  describedTableName_.setLocationName(rforkName);
-                }
-            }
-
           // check if we need to consider public schema before 
           // describedTableName_ is qualified by getNATable
           if (describedTableName_.getQualifiedNameObj().getSchemaName().isNull())
             setToTryPublicSchema(TRUE);
-      
-          bindWA->getNATable(describedTableName_);
-          if (bindWA->errStatus()) 
+
+          if ((getFormat() == Describe::INVOKE_) ||
+              (getFormat() == Describe::SHOWDDL_) &&
+              (getLabelAnsiNameSpace() == COM_TABLE_NAME) &&
+              (NOT getIsSchema()))
             {
-              // if volatile related error, return it.
-              // Otherwise, clear diags and let this error be caught
-              // when describe is executed.
-              if ((CmpCommon::diags()->mainSQLCODE() == -4190) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4191) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4192) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4193) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
-                  (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
-                  (CmpCommon::diags()->mainSQLCODE() == -4261) || // reserved schema
-                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
-                    return this;
-      
-              CmpCommon::diags()->clear();
-              bindWA->resetErrStatus();
+              bindWA->getNATableInternal(describedTableName_);
+              if (bindWA->errStatus())
+                {
+                  return this;
+                }
             }
+          else
+            describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
         }
       if (pUUDFName_ NEQ NULL AND NOT pUUDFName_->getObjectName().isNull())
       {
@@ -15176,9 +15174,7 @@ RelExpr *Transpose::bindNode(BindWA *bindWA)
 
         // Construct the constant value
         //
-#pragma nowarn(1506)   // warning elimination
         constExpr = new(bindWA->wHeap()) SystemLiteral(keyVal);
-#pragma warn(1506)  // warning elimination
 
         // Bind the constant value.
         //
@@ -15383,9 +15379,7 @@ RelExpr* Pack::bindNode(BindWA* bindWA)
   // ---------------------------------------------------------------------
 
   // Create and bind the packing factor item expression.
-#pragma nowarn(1506)   // warning elimination
   ItemExpr* pfie = new (bindWA->wHeap()) SystemLiteral(packingFactorLong());
-#pragma warn(1506)  // warning elimination
   pfie->bindNode(bindWA);
   if (bindWA->errStatus()) return this;
 
@@ -15408,14 +15402,10 @@ RelExpr* Pack::bindNode(BindWA* bindWA)
       // Add all columns to result table.
       NAString packedColName( "PACKEDCOL_", bindWA->wHeap());
       packedColName += bindWA->fabricateUniqueName();
-#pragma nowarn(1506)   // warning elimination
       Int32 length = packedColName.length();
-#pragma warn(1506)  // warning elimination
       char * colName = new (bindWA->wHeap()) char[length + 1];
       colName[length] = 0;
-#pragma nowarn(1506)   // warning elimination
       str_cpy_all(colName, packedColName, packedColName.length());
-#pragma warn(1506)  // warning elimination
 
       ColRefName colRefName(colName);
       resultTable->addColumn(bindWA,
@@ -15483,7 +15473,7 @@ RelExpr* Pack::bindNode(BindWA* bindWA)
     ItemExpr* rowFilter = NULL;
     ItemExpr* unPackItem;
     ItemExpr* numRows;
-    const NAType* typeInt = new(bindWA->wHeap()) SQLInt(TRUE,FALSE);
+    const NAType* typeInt = new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE);
 
     ValueIdList packedCols;
     resultTable->getValueIdList(packedCols);
@@ -15491,7 +15481,7 @@ RelExpr* Pack::bindNode(BindWA* bindWA)
     NAString hostVarName("_sys_UnPackIndex", bindWA->wHeap());
     hostVarName += bindWA->fabricateUniqueName();
     ItemExpr* indexHostVar = new(bindWA->wHeap())
-        HostVar(hostVarName,new(bindWA->wHeap()) SQLInt(TRUE,FALSE),TRUE);
+        HostVar(hostVarName,new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE),TRUE);
     indexHostVar->synthTypeAndValueId();
 
     for (CollIndex i=0; i < packedCols.entries(); i++)
@@ -15500,10 +15490,8 @@ RelExpr* Pack::bindNode(BindWA* bindWA)
             &(packedCols[i].getItemExpr()->child(0)->getValueId().getType());
 
       Lng32 width = colType->getNominalSize();
-#pragma nowarn(1506)   // warning elimination
       Lng32 base = (colType->supportsSQLnullPhysical() ? (pf-1)/CHAR_BIT +1 : 0)
                    + sizeof(Int32);
-#pragma warn(1506)  // warning elimination
 
       // $$$ Some duplicate code to be moved to PackColDesc later.
       ColRefName colRefName;
@@ -15680,7 +15668,7 @@ RelExpr * Rowset::bindNode(BindWA* bindWA)
        NAString name = "__arrayinputsize" ;
        HostVar *node = new (bindWA->wHeap())
                                     HostVar(name,
-                                            new(bindWA->wHeap()) SQLInt(TRUE,FALSE),
+                                            new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE),
                                             TRUE);
        node->setHVRowsetForInputSize();
        root->addAtTopOfInputVarTree(node);
@@ -15756,13 +15744,13 @@ RelExpr * Rowset::bindNode(BindWA* bindWA)
       // is of size integer, so we do this cast. We do not allow null
       // values.
       rowsetSizeExpr = new (bindWA->wHeap())
-        Cast(rowsetSizeExpr, new (bindWA->wHeap()) SQLInt(TRUE,FALSE));
+        Cast(rowsetSizeExpr, new (bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE));
 
       // For dynamic rowsets, the parameter specifying rowset for input size
       // must be typed as an non-nullable integer.
       if (sizeExpr_->getOperatorType() == ITM_DYN_PARAM ) {
         sizeExpr_->synthTypeAndValueId();
-        SQLInt intType(TRUE,FALSE); // TRUE -> allow neagtive values, FALSE -> not nullable
+        SQLInt intType(bindWA->wHeap(), TRUE,FALSE); // TRUE -> allow neagtive values, FALSE -> not nullable
         (sizeExpr_->getValueId()).coerceType(intType, NA_NUMERIC_TYPE);
       }
 
@@ -15787,7 +15775,7 @@ RelExpr * Rowset::bindNode(BindWA* bindWA)
     indexName = "_sys_rowset_index" + bindWA->fabricateUniqueName();
   }
 
-  const NAType *indexType = new (bindWA->wHeap()) SQLInt(TRUE, FALSE);
+  const NAType *indexType = new (bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE, FALSE);
   ItemExpr *indexHostVar = new (bindWA->wHeap())
     HostVar(indexName, indexType,
             TRUE // is system-generated
@@ -15974,7 +15962,7 @@ RelExpr * RowsetRowwise::bindNode(BindWA* bindWA)
   Lng32 maxRowsetSize = 
     (Lng32)((ConstValue *)arrayArea->rwrsMaxSize())->getExactNumericValue() ;
 
-  NAType * typ = new(bindWA->wHeap()) SQLInt(FALSE, FALSE); 
+  NAType * typ = new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), FALSE, FALSE); 
   ItemExpr * rwrsInputSizeExpr = 
     new(bindWA->wHeap()) Cast(arrayArea->inputSize(), typ);
   if (bindWA->errStatus()) 
@@ -16005,7 +15993,6 @@ RelExpr * RowsetRowwise::bindNode(BindWA* bindWA)
   return newSubTree->bindNode(bindWA);
 } // RowsetRowwise::bindNode()
 
-// LCOV_EXCL_START - rfi
 RelExpr * RowsetFor::bindNode(BindWA* bindWA)
 {
   // Binding of this node should not happen. It should have been eliminated
@@ -16015,7 +16002,6 @@ RelExpr * RowsetFor::bindNode(BindWA* bindWA)
   CMPASSERT(0);
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 RelExpr * RowsetInto::bindNode(BindWA* bindWA)
 {
@@ -16159,9 +16145,7 @@ RelExpr * RowsetInto::bindNode(BindWA* bindWA)
   if (numOutputHostvars != childTableVidList.entries()) {
     // 4094 The number of output host vars  ($0) must equal the number of cols
     *CmpCommon::diags() << DgSqlCode(-4094)
-#pragma nowarn(1506)   // warning elimination
       << DgInt0(numOutputHostvars) << DgInt1(childTableVidList.entries());
-#pragma warn(1506)  // warning elimination
     bindWA->setErrStatus();
     return NULL;
   }
@@ -16844,7 +16828,6 @@ void IsolatedNonTableUDR::populateAndBindItemExpr ( ItemExpr *param,
 
 
 
-// LCOV_EXCL_START - rfi
 void
 IsolatedNonTableUDR::setInOrOutParam (ItemExpr *expr,
                               ComColumnDirection paramMode,
@@ -16853,7 +16836,6 @@ IsolatedNonTableUDR::setInOrOutParam (ItemExpr *expr,
     // Should not get here..
    CMPASSERT(FALSE);
 }
-// LCOV_EXCL_STOP
 
 
 // This method separates the IN and OUT parameters Each IN/INOUT param
@@ -16978,13 +16960,11 @@ void CallSP::setInOrOutParam ( ItemExpr *expr,
       if ( throwInTranslateNode == FALSE )
       {
         // Error, data types dont match
-#pragma nowarn(1506)   // warning elimination
         *CmpCommon::diags() <<  DgSqlCode(-UDR_BINDER_PARAM_TYPE_MISMATCH)
                             << DgInt0 (ordinalPosition)
                             << DgTableName(getRoutineName().getQualifiedNameAsString())
                             << DgString0 (inputType.getTypeSQLname (TRUE))
                             << DgString1 (paramType.getTypeSQLname (TRUE));
-#pragma warn(1506)  // warning elimination
         bindWA->setErrStatus ();
         return;
       }
@@ -17032,11 +17012,9 @@ void CallSP::setInOrOutParam ( ItemExpr *expr,
     if (!( ITM_HOSTVAR == expr->getOperatorType () ||
            ITM_DYN_PARAM == expr->getOperatorType ()))
     {
-#pragma nowarn(1506)   // warning elimination
       *CmpCommon::diags() << DgSqlCode(-UDR_BINDER_OUTVAR_NOT_HV_OR_DP)
                           << DgInt0(ordinalPosition)
                           << DgTableName(getRoutineName().getQualifiedNameAsString());
-#pragma warn(1506)  // warning elimination
       bindWA->setErrStatus ();
       return;
     } // if NOT HOSTVAR or DYNAMIC PARAM
@@ -17286,6 +17264,18 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           for (int i=0; i<getArity(); i++)
             result->child(i) = child(i);
 
+          if (opType == REL_TABLE_MAPPING_BUILTIN_LOG_READER ||
+              opType == REL_TABLE_MAPPING_BUILTIN_JDBC)
+            {
+              // The event log reader and JDBC TMUDFs are being migrated
+              // to real UDFs, use of the predefined UDFs is deprecated.
+              // Issue a warning. Eventually these predefined functions
+              // will be removed.
+              (*CmpCommon::diags())
+                << DgSqlCode(4323)
+                << DgString0(tmfuncName.getExposedNameAsAnsiString());
+            }
+
           // Abandon the current node and return the bound new node.
           // Next time it will reach this method it will call an
           // overloaded getRoutineMetadata() that will succeed.
@@ -17350,13 +17340,12 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           // In the TMUDF code, on the other hand, we compute the
           // storage size from the precision. So, make sure we follow
           // the TMUDF rules here, when we describe its input table
-          adjustedChildColType = new(heap) SQLNumeric(
+          adjustedChildColType = new(heap) SQLNumeric(heap,
                getBinaryStorageSize(childColType.getPrecision()),
                childColType.getPrecision(),
                childColType.getScale(),
                ((const NumericType &) childColType).isSigned(),
-               childColType.supportsSQLnull(),
-               heap);
+               childColType.supportsSQLnull());
         }
 
       childCol = new (heap) NAColumn(
@@ -17717,6 +17706,22 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
           }
         }
     }
+  else 
+    {
+      NABoolean hasLob = FALSE;
+      CollIndex i = 0;
+      for (i = 0; (i < vidList.entries() && !hasLob); i++)
+	hasLob = vidList[i].getType().isLob();
+      if (hasLob) {
+	*CmpCommon::diags() << DgSqlCode(-4495) 
+			    << DgColumnName(childRETDesc->getColRefNameObj(i).
+					    getColRefAsAnsiString());
+	bindWA->setErrStatus();
+	return NULL;
+      }
+      
+    }
+    
 
   setSelectList(vidList);
 

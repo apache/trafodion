@@ -313,7 +313,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			} catch (SQLException e) {
 				BatchUpdateException be;
 				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-						"batch_command_failed", null);
+						"batch_command_failed", e.getMessage());
 				if (batchRowCount_ == null) // we failed before execute
 				{
 					batchRowCount_ = new int[paramRowCount_];
@@ -1244,6 +1244,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.CLOB:
 				setString(parameterIndex, x.toString());
 				break;
+			case Types.NCHAR:
+			case Types.NVARCHAR:
+			    setNString(parameterIndex, x.toString());
+			    break;
 			case Types.VARBINARY:
 			case Types.BINARY:
 			case Types.LONGVARBINARY:
@@ -1298,7 +1302,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.INTEGER:
 				tmpbd = Utility.getBigDecimalValue(locale, x);
 				//Utility.checkLongTruncation(parameterIndex, tmpbd);
-				//Utility.checkIntegerBoundary(locale, tmpbd);
+				Utility.checkIntegerBoundary(locale, tmpbd);
 				setInt(parameterIndex, tmpbd.intValue());
 				break;
 			case Types.BIGINT:
@@ -1307,6 +1311,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				if (type == InterfaceResultSet.SQLTYPECODE_LARGEINT_UNSIGNED){
                 	Utility.checkUnsignedLongBoundary(locale, tmpbd);
 					setLong(parameterIndex, tmpbd);
+				} else if (type == InterfaceResultSet.SQLTYPECODE_INTEGER_UNSIGNED) {
+				    // if data is unsigned int ,the java.sql.type is -5 (bigint), our sql type is -401
+				    Utility.checkUnsignedIntegerBoundary(locale, tmpbd);
+				    setLong(parameterIndex, tmpbd);
 				} else{
 					Utility.checkLongBoundary(locale, tmpbd);
 					setLong(parameterIndex, tmpbd.longValue());
@@ -2513,8 +2521,23 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 	public void setNString(int parameterIndex, String value)
 			throws SQLException {
-		// TODO Auto-generated method stub
+	    if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, value);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "setNString", "", p);
+        }
 
+        validateSetInvocation(parameterIndex);
+        int dataType = inputDesc_[parameterIndex - 1].dataType_;
+
+        switch (dataType) {
+        case Types.CHAR:
+        case Types.VARCHAR:
+            addParamValue(parameterIndex, value);
+            break;
+        default:
+            throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+                    "fetch_output_inconsistent", null);
+        }
 	}
 
 	public void setNCharacterStream(int parameterIndex, Reader value,

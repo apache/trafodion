@@ -155,11 +155,7 @@
 #define SQLCI_RW_DETAIL_ALIAS_NOT_ALLOWED 15547
 #define SQLCI_RW_RIGHT_MARGIN_EXCEEDS   15548
 #define SQLCI_RW_NONNUMERIC_CHARACTER   15549
-#pragma warning( disable : 4005 )  // warning elimination
-#pragma nowarn(140)   // warning elimination 
 #define SQLCI_RW_INVALID_FORMATTING     15550
-#pragma warn(140)  // warning elimination 
-#pragma warning( default : 4005 )  // warning elimination
 #define SQLCI_RW_DIVISION_BY_ZERO       15551
 #define SQLCI_RW_INVALID_DELIMITED_IDENTIFIER 15552
 #define SQLCI_RW_UNABLE_TO_RESET        15575

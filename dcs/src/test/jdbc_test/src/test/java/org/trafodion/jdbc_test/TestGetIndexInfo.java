@@ -97,7 +97,7 @@ public class TestGetIndexInfo {
 		IndexInfo[] expIndexInfo = {
 				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, false, (String)null, (String)null, (short)0, (short)0, "C1", 0, 3, (short)0, (String)null),
 				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, false, (String)null, (String)null, (short)0, (short)0, "C2", 0, 3, (short)0, (String)null),
-				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, false, (String)null, INDEX_C1_NAME, (short)3, (short)0, "", 0, 0, (short)0, (String)null)
+				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, true, (String)null, INDEX_C1_NAME, (short)3, (short)0, "", 0, 0, (short)0, (String)null)
 		};
 		
 		try {

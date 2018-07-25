@@ -25,19 +25,26 @@
 
 using namespace std;
 
+#ifndef NAMESERVER_PROCESS
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
+#endif
 #include <sys/epoll.h>
+#ifndef NAMESERVER_PROCESS
 #include <errno.h>
 #include <stdlib.h>
+#endif
 #include <string.h>
+#ifndef NAMESERVER_PROCESS
 #include <sys/time.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/stat.h>
+#endif
 
+#ifndef NAMESERVER_PROCESS
 #include "monlogging.h"
 #include "montrace.h"
 #include "monitor.h"
@@ -51,7 +58,10 @@ using namespace std;
 #include "replicate.h"
 #include "monsonar.h"
 #include "reqqueue.h"
+#include "ptpclient.h"
+#endif
 
+#ifndef NAMESERVER_PROCESS
 extern CNode *MyNode;
 extern sigset_t SigSet;
 extern CRedirector Redirector;
@@ -61,6 +71,9 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CMonStats *MonStats;
 extern CReqQueue ReqQueue;
+extern CPtpClient *PtpClient;
+extern bool NameServerEnabled;
+#endif
 
 const char *EpollEventString( __uint32_t events )
 {
@@ -127,6 +140,7 @@ const char *EpollOpString( int op )
     return( str );
 }
 
+#ifndef NAMESERVER_PROCESS
 CRedirect::CRedirect(int nid, int pid)
                     :fd_(-1)
                     ,activity_(false)
@@ -651,10 +665,23 @@ int CRedirectAncestorStdin::handleInput()
             reqType = STDIN_FLOW_ON;
         }
 
-    CReplStdinReq *repl
-        = new CReplStdinReq(MyPNID, pid_, reqType, ancestorNid_, ancestorPid_ );
-    Replicator.addItem(repl);
-
+        if (NameServerEnabled)
+        {
+            PtpClient->StdInReq( MyPNID
+                               , pid_
+                               , reqType
+                               , ancestorNid_
+                               , ancestorPid_  );
+        }
+        else
+        {
+            CReplStdinReq *repl = new CReplStdinReq( MyPNID
+                                                   , pid_
+                                                   , reqType
+                                                   , ancestorNid_
+                                                   , ancestorPid_ );
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -845,9 +872,24 @@ void CRedirectStdinRemote::handleOutput(ssize_t count, char *buffer)
                      (int)count);
     }
 
-    CReplStdioData *repl
-        = new CReplStdioData(requesterNid_, pid_, STDIN_DATA, count, buffer );
-    Replicator.addItem(repl);
+    if (NameServerEnabled)
+    {
+        PtpClient->StdIoData( requesterNid_
+                            , pid_
+                            , STDIN_DATA
+                            , count
+                            , buffer );
+    }
+    else
+    {
+        CReplStdioData *repl = new CReplStdioData( requesterNid_
+                                                 , pid_
+                                                 , STDIN_DATA
+                                                 , count
+                                                 , buffer );
+        Replicator.addItem(repl);
+    }
+
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdinRemoteDataReplIncr();
 
@@ -1133,10 +1175,24 @@ void CRedirectAncestorStdout::handleOutput(ssize_t count, char *buffer)
                      (int)count);
     }
 
-    CReplStdioData *repl
-        = new CReplStdioData(ancestor_nid_, ancestor_pid_, STDOUT_DATA, 
-                              count, buffer );
-    Replicator.addItem(repl);
+    if (NameServerEnabled)
+    {
+        PtpClient->StdIoData( ancestor_nid_
+                            , ancestor_pid_
+                            , STDOUT_DATA
+                            , count
+                            , buffer );
+    }
+    else
+    {
+        CReplStdioData *repl = new CReplStdioData( ancestor_nid_
+                                                 , ancestor_pid_
+                                                 , STDOUT_DATA
+                                                 , count
+                                                 , buffer );
+        Replicator.addItem(repl);
+    }
+
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdioDataReplIncr();
 
@@ -1271,12 +1327,24 @@ void CRedirectStderr::handleOutput(ssize_t count, char *buffer)
     if ( buf )
     {
         memset(buf, 0, buf_size);
-        ssize_t size = snprintf(buf, 
-                                (buf_size<MON_EVENT_BUF_SIZE)?buf_size:MON_EVENT_BUF_SIZE, 
-                                "STDERR redirected from %s.%s.%d.%d: %s",
-                                nodeName(), processName(), nid(), pid(), buffer );
-        if ( size > 0 && buf[size-1] != '\n') buf[size-1] = '\n';
-        mon_log_write(MON_REDIR_STDERR, SQ_LOG_INFO, buf);
+        // Copy up to MON_EVENT_BUF_SIZE
+        ssize_t size = snprintf( buf
+                               , (buf_size<MON_EVENT_BUF_SIZE)?buf_size:MON_EVENT_BUF_SIZE
+                               , "STDERR redirected from %s.%s.%d.%d: %s"
+                               ,  nodeName(), processName(), nid(), pid(), buffer );
+        if ( size > 0 )
+        {
+            if (size >= MON_EVENT_BUF_SIZE )
+            { // truncated
+                buf[MON_EVENT_BUF_SIZE-2] = '\n';
+                buf[MON_EVENT_BUF_SIZE-1] = 0;
+            }
+            else if ( buf[size-1] != '\n')
+            {
+                buf[size-1] = '\n';
+            }
+        }
+        mon_log_write(MON_REDIR_STDERR, SQ_LOG_DEBUG, buf);
 
         delete [] buf;
     }
@@ -1584,10 +1652,23 @@ void CRedirector::stdinFd(int nid, int pid, int &pipeFd, char filename[],
         fdMap_.insert(std::make_pair(pipeFd, redirect));
         fdMapLock_.unlock();
 
-        CReplStdinReq *repl
-            = new CReplStdinReq(nid, pid, STDIN_REQ_DATA, ancestor_nid,
-                                ancestor_pid );
-        Replicator.addItem(repl);
+        if (NameServerEnabled)
+        {
+            PtpClient->StdInReq( nid
+                               , pid
+                               , STDIN_REQ_DATA
+                               , ancestor_nid
+                               , ancestor_pid );
+        }
+        else
+        {
+            CReplStdinReq *repl = new CReplStdinReq( nid
+                                                   , pid
+                                                   , STDIN_REQ_DATA
+                                                   , ancestor_nid
+                                                   , ancestor_pid );
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -1752,7 +1833,7 @@ void CRedirector::stdinOn(int fd)
     TRACE_EXIT;
 }
 
-void CRedirector::tryShutdownPipeFd(int pid, int fd)
+void CRedirector::tryShutdownPipeFd(int pid, int fd, bool pv_delete_redirect)
 {
     const char method_name[] = "CRedirector::tryShutdownPipeFd";
     TRACE_ENTRY;
@@ -1772,9 +1853,12 @@ void CRedirector::tryShutdownPipeFd(int pid, int fd)
         redirect = iter->second;
 
         // bugcatcher, temp call
-        redirect->validateObj();
+        if (redirect->pid() != 0)
+            redirect->validateObj();
 
-        if (!redirect->active() && (pid == redirect->pid()))
+        if (((pv_delete_redirect) ||
+             (!redirect->active())) &&
+            (pid == redirect->pid()))
         {
             if (trace_settings & TRACE_REDIRECTION)
                 trace_printf("%s@%d invoking shutdownPipeFd for fd=%d\n",
@@ -2109,3 +2193,4 @@ void CRedirector::start()
 
     TRACE_EXIT;
 }
+#endif

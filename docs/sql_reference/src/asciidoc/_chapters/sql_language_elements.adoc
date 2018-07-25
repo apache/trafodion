@@ -312,6 +312,8 @@ unique names within a given schema.
 | <<datetime_data_types,Datetime Data Types>>                 | DATE, TIME, and TIMESTAMP data types.
 | <<interval_data_types,Interval Data Types>>                 | Year-month intervals (years and months) and day-time intervals (days,
 hours, minutes, seconds, and fractions of a second).
+| <<LOB Data Types,LOB Data Types>>                           | A set of large object data types used to store large volumes of data, 
+provides random and piece-wise access to the data, such as BLOB and CLOB.
 | <<numeric_data_types_,Numeric Data Types >>                 | Exact and approximate numeric data types.
 |===
 
@@ -322,14 +324,15 @@ The following table summarizes the {project-name} SQL data types:
 
 [cols="14%,14%,24%,24%,24%",options="header"]
 |===
-| Category | Type | SQL Designation | Description | Size or Range^1^
-.7+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 200000 characters^2^ ^8^
-| NCHAR                | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
-| NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
-.4+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
-| CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
-| NCHAR VARYING                | Variable-length ASCII character string | 1 to 200000 bytes^4^ ^7^ ^9^
-| NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 200000 characters^4^ ^7^ ^8^
+^| *Category* ^| *Type* ^| *SQL Designation* ^| *Description* ^| *Size or Range*^1^
+.8+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 16,777,216 bytes ^2^
+| NCHAR                | Fixed-length character data in predefined national character set | 1 to 16,777,216 bytes^2^ ^3^ 
+| NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 16,777,216 bytes^2^ ^3^
+.5+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^4^
+| VARCHAR2                     | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^4^
+| CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^4^
+| NCHAR VARYING                | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^3^ ^4^
+| NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^3^ ^4^
 .6+| Datetime Data Types .6+| Date-Time | | Point in time, using the Gregorian calendar and a 24 hour clock system. The five supported designations are listed below.
 | YEAR 0001-9999 +
 MONTH 1-12 +
@@ -366,7 +369,10 @@ SECOND 0-59 +
 FRACTION(n) 0-999999 +
 in which n is the number of significant digits (default is 6; minimum is 1; maximum is 6); +
 stored in 2, 4, or 8 bytes depending on number of digits^2^
-.10+| Numeric Data Types .5+| Numeric | NUMERIC (1,_scale_) to + NUMERIC (128,_scale_) | Binary number with optional scale; signed or unsigned for 1 to 9 digits
+.2+| LOB Data Types .2+| LOB | BLOB | Binary Large Object .2+| 10G – no limit + 
+Currently the limit defaults to 10G. This limit can be configured as needed using the CQD `LOB_MAX_SIZE`.
+| CLOB | Character Large Object 
+.10+| Numeric Data Types .5+| Numeric^6^ ^7^ | NUMERIC (1,_scale_) to + NUMERIC (128,_scale_) | Binary number with optional scale; signed or unsigned for 1 to 9 digits
 | 1 to 128 digits; +
 stored: +
 1 to 4 digits in 2 bytes +
@@ -377,34 +383,33 @@ depending on precision
 | SMALLINT                      | Binary integer; signed or unsigned    | 0 to 65535 unsigned, -32768 to +32767 signed; stored in 2 bytes
 | INTEGER                       | Binary integer; signed or unsigned    | 0 to 4294967295 unsigned, -2147483648 to +2147483647 signed; stored in 4 bytes
 | LARGEINT                      | Binary integer; signed only           | -2^63^ to +(2^63^)-1; stored in 8 bytes
-|Numeric (extended numeric precision) | NUMERIC (precision 19 to 128)  | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
+|Numeric (extended numeric precision)^7^ | NUMERIC (precision 19 to 128)  | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
 length of 8 bytes.
-.3+| Floating point number | FLOAT[(_precision_)] | Floating point number; precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
+.3+| Floating point number^7^ | FLOAT[(_precision_)] | Floating point number (64 bits); precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
 | REAL                  | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/ 3.40282347e+38; stored in 4 bytes
 | DOUBLE PRECISION      | Floating-point numbers (64 bits) with 1 through 52 bits of precision (52 bits of binary precision and 1 bits of exponent) | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
-| Decimal number        | DECIMAL (1,_scale_) to DECIMAL (18,_scale_)     | Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
+| Decimal number^6^        | DECIMAL (1,_scale_) to DECIMAL (18,_scale_)     | Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
 | 1 to 18 digits. Byte length equals the number of digits. Sign is stored as the first bit of the leftmost byte.
 |===
 
-* _scale_ is the number of digits to the right of the decimal.
-* _precision_ specifies the allowed number of decimal digits.
+TIP:
 
-
-1.  The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
-2.  The maximum row size is 32708 bytes, but the actual row size is less than that because of bytes used by
-null indicators, varchar column length indicators, and actual data encoding.
-3.  Storage size is the same as that required by CHAR data type but store only half as many characters depending
-on character set selection.
-4.  Storage size is reduced by 4 bytes for storage of the varying character length.
-5.  The maximum number of digits in an INTERVAL value is 18, including the digits in all INTERVAL fields of the value.
+1. The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
+2. The maximum number of characters depends on the character set. 
++
+[cols="2*",options="header"]
+|===
+^| *Character Set* ^|	*Maximum Number of Characters* 
+| For 8-bit character sets such as *ISO88591*	    | Equal to the maximum storage size in bytes, that is 16,777,216, which is divided 16,777,216 by 1
+| For 16-bit character sets such as *UCS2*	      | Half the maximum storage size in bytes, that is 8,388,608, which is divided 16,777,216 by 2
+| For 32-bit character sets such as *UTF8*        | One fourth the maximum storage size in bytes, that is 4,194,304, which is divided 16,777,216 by 4
+|===
+3. NCHAR or NATIONAL CHAR implicitly assumes that the character set is UCS2, whether the character set was specified at installation time to be ISO88591 or UTF8, and the character set (UCS2) cannot be specified or altered. This is true for both CREATE and ALTER statement.
+4. Storage size is reduced by 4 bytes for storage of the varying character length field.
+5. The maximum number of digits in an INTERVAL value is 18, including the digits in all INTERVAL fields of the value.
 Any INTERVAL field that is a starting field can have up to 18 digits minus the number of other digits in the INTERVAL value.
-6.  The maximum is 32707 if the national character set was specified at installation time to be ISO88591.
-The maximum is 16353 if the national character set was specified at installation time as UTF8.
-7.  The maximum is 32703 if the national character set was specified at installation time to be ISO88591.
-The maximum is 16351 if the national character set was specified at installation time as UTF8.
-8.  It defaults to 200000 characters and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
-9.  It defaults to 200000 bytes and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
-
+6. _scale_ is the number of digits to the right of the decimal.
+7. _precision_ specifies the allowed number of decimal digits.
 
 <<<
 [[comparable_and_compatible_data_types]]
@@ -607,6 +612,7 @@ numeric, datetime, or interval data.
 CHAR[ACTER] [(length [unit])] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 | CHAR[ACTER] VARYING(length [unit]) [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 | VARCHAR(length [unit]) [CHARACTERS] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| VARCHAR2(length [unit]) [CHARACTERS] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 | NCHAR [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
 | NCHAR VARYING (length) [UPSHIFT] [[NOT]CASESPECIFIC]
 | NATIONAL CHAR[ACTER] [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
@@ -614,8 +620,10 @@ CHAR[ACTER] [(length [unit])] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 ```
 
 +
-CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. CHAR
-VARYING, VARCHAR, NCHAR VARYING and NATIONAL CHAR VARYING are
+CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. 
+
++
+CHAR VARYING, VARCHAR, VARCHAR2, NCHAR VARYING and NATIONAL CHAR VARYING are
 varying-length character types.
 
 * `_length_`
@@ -668,6 +676,14 @@ an equivalent column that is not VARYING.
 +
 specifies a column with varying-length character data. VARCHAR is
 equivalent to data type CHAR[ACTER] VARYING.
+
+* `VARCHAR2 (_length_ [_unit_]) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
++
+specifies a column with varying-length character data. VARCHAR2 is
+equivalent to data type CHAR[ACTER] VARYING.
+
+NOTE: Trafodion supports VARCHAR2 as a synonym for VARCHAR. This improves portability from some popular databases. 
+VARCHAR2 in Trafodion, however, has the standard semantics of VARCHAR. That is, an empty string is a non-null value.
 
 * `NCHAR [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
@@ -1036,12 +1052,12 @@ The default is DECIMAL (9,0) SIGNED.
 +
 specifies an approximate numeric column. The column stores
 floating-point numbers and
-designates from 1 through 54 bits of _precision_.
+designates from 1 through 52 bits of _precision_.
 The range is from +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308 stored in 8 bytes.
 +
 An IEEE FLOAT _precision_ data type is stored as an IEEE DOUBLE, that is, in 8 bytes, with the specified precision.
 +
-The default _precision_ is 54.
+The default _precision_ is 52.
 
 * `REAL`
 +

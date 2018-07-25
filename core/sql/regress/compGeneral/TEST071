@@ -753,6 +753,16 @@ order by 1, 2, 3
 
 execute smdixquery;
 
+update statistics for table mtd1 on every column;
+
+select store_id, item_id, sale_date, sale_amt
+from mtd1
+where item_id = 101 and sale_amt = 100.0 and sale_date between date '2011-06-01' and date '2011-06-30';
+
+select store_id, item_id, sale_date, sale_amt
+from mtd1
+where item_id = 102 and sale_amt = 200.0 and sale_date between date '2011-07-01' and date '2011-08-31';
+
 set parserflags 1;
 -- validate contents of index against base table after create index
 select count(*) from mtd1;

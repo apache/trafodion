@@ -26,7 +26,7 @@
 * File:         EncodedKeyValue.cpp
 * Description:  Functions to compute binary encoded keys that can be written 
                 to disk for a given set of TrafDescs.
-* Origin:       Copy of existing code from GenRFork.cpp
+* Origin:       
 * Created:      10/30/2013
 * Language:     C++
 *

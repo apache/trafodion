@@ -51,52 +51,6 @@ enum TransStmtType
   SET_TRANSACTION_
 };
 
-
-enum AccessType
-  {
-  // These values are mirrored by enum TransMode::IsolationLevel,
-  // which requires that the values NEVER CHANGE
-  // and that they form an ORDERED SEQUENCE.
-  // 
-  // There are gaps here to allow later addition of intervening lock consistency
-  // values, e.g. CLEAN and STABLE, preserving the ORDERED SEQUENCE.
-  // These values kind-of sort-of match enum DP2LockFlags::ConsistencyLevel.
-  // 
-  // We define the values here only because this enum appears first in the file.
-  //
-  BROWSE_                       = 00,
-
- // QSTUFF
-  // when propagating access options a higher/stronger access type
-  // is overwriting a lower/weaker access type. For now we assume
-  // that skip conflict is between  browse and stable, thus when
-  // somebody requires stable, repeatable or serializable access this will
-  // overwrite the skip conflict access type and skip conflict will not
-  // be able to overwrite repeatable and serializable. 
-
-  // note:: the whole treatment of access types is questionable as sql/mx does 
-  // not really have stable access but only read committed which is not correctly
-  // reflected here and one also must distinguish between skip conflict in an 
-  // update statement where one must always lock selected rows exclusively
-  // which is currently only done with a hack in the binder. Skip conflict in 
-  // that context is to repeatable read as it does not lock a range but only 
-  // the records accessed thus allows now records to be inserted in the ranges
-  // scanned.
-
-  SKIP_CONFLICT_        = 05,
-
-  // since stable really means read committed that looks like a questionable hack
-  // QSTUFF
-
-  CLEAN_                        = 10,
-  STABLE_                       = 11,
-  REPEATABLE_                   = 20,
-  SERIALIZABLE_placeholder_     = 30,   // does not exist in SQL/MP
-  ACCESS_TYPE_NOT_SPECIFIED_    = -1
-  
- 
-};
-
   
 // PROTECTED_ mode allows read operation against the table but prevents
 // writes to it. Currently used with lock table operation only.
@@ -229,85 +183,19 @@ private:
 };
 
 
-////////////////////////////////////////////////////////////////
-// These are the access options that are specified in a SQL
-// statements (FOR BROWSE ACCESS, IN SHARE MODE, etc).
-// This is a Tandem extension. Do HELP from sql/mp sqlci or
-// look at sql/mp manual or SQL/ARK Language spec
-// for details on these options. If these are specified in a
-// query, they override any options specified via a SET 
-// TRANSACTION statement.
-////////////////////////////////////////////////////////////////
-class StmtLevelAccessOptions
-{
- 
-
-public:
-  StmtLevelAccessOptions(AccessType at = ACCESS_TYPE_NOT_SPECIFIED_,
-                         LockMode lm = LOCK_MODE_NOT_SPECIFIED_)
-    : accessType_(at), lockMode_(lm)
-        // QSTUFF
-        ,updateOrDelete_ (FALSE)
-        // QSTUFF
-        ,scanLockForIM_(FALSE)
-  {}
-
-  NABoolean operator==(const StmtLevelAccessOptions &o) const
-  { return accessType_ == o.accessType_ && lockMode_ == o.lockMode_; }
-
-  AccessType& accessType()      { return accessType_; }
-  AccessType accessType() const { return accessType_; }
-  LockMode& lockMode()          { return lockMode_;   }
-
-  NABoolean userSpecified()
-  {
-    return (accessType_ != ACCESS_TYPE_NOT_SPECIFIED_ ||
-            lockMode_   != LOCK_MODE_NOT_SPECIFIED_);
-  }
-  
-  void updateAccessOptions(AccessType at, LockMode lm = LOCK_MODE_NOT_SPECIFIED_);
-
-  // based on the current access options, return the corresponding DP2LockFlags
-  DP2LockFlags getDP2LockFlags();
-
-  // QSTUFF
-  void setUpdateOrDelete (NABoolean u) { updateOrDelete_ = u; };
-  NABoolean isUpdateOrDelete() { return updateOrDelete_; };
-  // QSTUFF
- 
-  void setScanLockForIM(NABoolean u) { scanLockForIM_ = u; };
-  NABoolean scanLockForIM(){ return scanLockForIM_; };
-
-private:
-  AccessType accessType_;
-  LockMode   lockMode_;
-  // QSTUFF
-  NABoolean  updateOrDelete_;
-  // QSTUFF
-
-  //-------------------------------------------------------------------------
-  // This option attribute is set for all scans that are on the left side of
-  // an TSJ "for write" when there is an update or delete and Index Maintenance.
-  // This is needed by the executor to ensure that selected rows are 
-  // appropriately locked, even if scanned from an index, to protect against 
-  // index corruption.  The attribute is propagated to ComTdbDp2SubsOper and 
-  // ComTdbDp2UniqueOper and used during execution to ask DP2 for serializable
-  // locks.
-  //
-  // This is to address genesis solution 10-040802-8483, and also addresses 
-  // solution 10-031111-1215.  The original fix for 10-040802-8483 caused
-  // deadlocks in "refresh MVGROUP" to get error 73 when 
-  // MV_REFRESH_MAX_PARALLELISM > 1 (see solution 10-070322-3467), so it has
-  // been modified to limit the scan nodes that will use serializable locking
-  // to those nodes on the left side of the TSJforWrite.
-  //------------------------------------------------------------------------- 
-  NABoolean  scanLockForIM_;
-};
-
-#pragma nowarn(1506)   // warning elimination 
 class TransMode : public NAVersionedObject
 {
 public:
+
+  enum AccessType
+    {
+      READ_UNCOMMITTED_ACCESS_   = 00,
+      SKIP_CONFLICT_ACCESS_      = 05,
+      READ_COMMITTED_ACCESS_     = 10,
+      REPEATABLE_READ_ACCESS_    = 20,
+      SERIALIZABLE_ACCESS_       = 30,
+      ACCESS_TYPE_NOT_SPECIFIED_ = -1
+    };
 
   // These values get stored in generated code, so MUST NOT BE CHANGED.
   // The values must form a logical sequence -- see the xxCompatible()
@@ -316,17 +204,18 @@ public:
   // Enum TransMode::IsolationLevel maps to enum AccessType.
   // The static funcs that follow do this mapping, in both directions.
   //
+
   enum IsolationLevel
   {
-    READ_UNCOMMITTED_ = BROWSE_,
-    READ_COMMITTED_   = CLEAN_,
-    REPEATABLE_READ_  = REPEATABLE_,
-    SERIALIZABLE_     = SERIALIZABLE_placeholder_,
+    READ_UNCOMMITTED_ = READ_UNCOMMITTED_ACCESS_,
+    READ_COMMITTED_   = READ_COMMITTED_ACCESS_,
+    REPEATABLE_READ_  = REPEATABLE_READ_ACCESS_,
+    SERIALIZABLE_     = SERIALIZABLE_ACCESS_,
     IL_NOT_SPECIFIED_ = ACCESS_TYPE_NOT_SPECIFIED_
   };
 
   static AccessType     ILtoAT(IsolationLevel il)
-  { return (il == SERIALIZABLE_) ? REPEATABLE_ : (AccessType)il; }
+  { return (il == SERIALIZABLE_) ? REPEATABLE_READ_ACCESS_ : (AccessType)il; }
 
   static IsolationLevel ATtoIL(AccessType at)
   { return (IsolationLevel)at; }
@@ -551,7 +440,76 @@ private:
 
   UInt32 multiCommitSize_;                                           // 20-23
 };
-#pragma warn(1506)  // warning elimination 
+
+////////////////////////////////////////////////////////////////
+// These are the access options that are specified in a SQL
+// statements (FOR BROWSE ACCESS, IN SHARE MODE, etc).
+// This is a Tandem extension. Do HELP from sql/mp sqlci or
+// look at sql/mp manual or SQL/ARK Language spec
+// for details on these options. If these are specified in a
+// query, they override any options specified via a SET 
+// TRANSACTION statement.
+////////////////////////////////////////////////////////////////
+class StmtLevelAccessOptions
+{
+public:
+  StmtLevelAccessOptions(TransMode::AccessType at = TransMode::ACCESS_TYPE_NOT_SPECIFIED_,
+                         LockMode lm = LOCK_MODE_NOT_SPECIFIED_)
+    : accessType_(at), lockMode_(lm)
+    ,updateOrDelete_ (FALSE)
+    ,scanLockForIM_(FALSE)
+  {}
+
+  NABoolean operator==(const StmtLevelAccessOptions &o) const
+  { return accessType_ == o.accessType_ && lockMode_ == o.lockMode_; }
+
+  TransMode::AccessType& accessType()      { return accessType_; }
+  TransMode::AccessType accessType() const { return accessType_; }
+  LockMode& lockMode()          { return lockMode_;   }
+
+  NABoolean userSpecified()
+  {
+    return (accessType_ != TransMode::ACCESS_TYPE_NOT_SPECIFIED_ ||
+            lockMode_   != LOCK_MODE_NOT_SPECIFIED_);
+  }
+  
+  void updateAccessOptions(TransMode::AccessType at, 
+                           LockMode lm = LOCK_MODE_NOT_SPECIFIED_);
+
+  // based on the current access options, return the corresponding DP2LockFlags
+  DP2LockFlags getDP2LockFlags();
+
+  // QSTUFF
+  void setUpdateOrDelete (NABoolean u) { updateOrDelete_ = u; };
+  NABoolean isUpdateOrDelete() { return updateOrDelete_; };
+  // QSTUFF
+ 
+  void setScanLockForIM(NABoolean u) { scanLockForIM_ = u; };
+  NABoolean scanLockForIM(){ return scanLockForIM_; };
+
+private:
+  TransMode::AccessType accessType_;
+  LockMode   lockMode_;
+  NABoolean  updateOrDelete_;
+
+  //-------------------------------------------------------------------------
+  // This option attribute is set for all scans that are on the left side of
+  // an TSJ "for write" when there is an update or delete and Index Maintenance.
+  // This is needed by the executor to ensure that selected rows are 
+  // appropriately locked, even if scanned from an index, to protect against 
+  // index corruption.  The attribute is propagated to ComTdbDp2SubsOper and 
+  // ComTdbDp2UniqueOper and used during execution to ask DP2 for serializable
+  // locks.
+  //
+  // This is to address genesis solution 10-040802-8483, and also addresses 
+  // solution 10-031111-1215.  The original fix for 10-040802-8483 caused
+  // deadlocks in "refresh MVGROUP" to get error 73 when 
+  // MV_REFRESH_MAX_PARALLELISM > 1 (see solution 10-070322-3467), so it has
+  // been modified to limit the scan nodes that will use serializable locking
+  // to those nodes on the left side of the TSJforWrite.
+  //------------------------------------------------------------------------- 
+  NABoolean  scanLockForIM_;
+};
 
 // verify that statement-level access and session-level setting are OK.
 // set errCodeA/errCodeB to 0/0 if all OK, else to -3140/-3141.

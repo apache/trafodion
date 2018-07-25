@@ -70,7 +70,9 @@ ComTdbRoot::ComTdbRoot()
        rtFlags5_(0),
        compilationStatsData_(NULL),
        objectUidList_(NULL),
-       cursorType_(SQL_READONLY_CURSOR)	   
+       cursorType_(SQL_READONLY_CURSOR),	
+       bmoMemLimitPerNode_(0),
+       estBmoMemPerNode_(0)
 {
   //setPlanVersion(ComVersion_GetCurrentPlanVersion());
       
@@ -268,7 +270,7 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 
 ComTdbRoot::~ComTdbRoot()
 {
-  childTdb = NULL;
+  childTdb = (ComTdbPtr)NULL;
   
   rtFlags1_ = 0;
 };
@@ -440,7 +442,7 @@ void ComTdbRoot::displayContents(Space * space,ULng32 flag)
   if(flag & 0x00000008)
     {
       char buf[1000];
-      str_sprintf(buf, "\nFor ComTdbRoot :\nFirstNRows = %d, baseTablenamePosition = %d ",
+      str_sprintf(buf, "\nFor ComTdbRoot :\nFirstNRows = %ld, baseTablenamePosition = %d ",
 		  firstNRows_,baseTablenamePosition_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       str_sprintf(buf, "queryType_ = %d, planVersion_ = %d ",
@@ -449,25 +451,25 @@ void ComTdbRoot::displayContents(Space * space,ULng32 flag)
       
       UInt32 lFlags = rtFlags1_%65536;
       UInt32 hFlags = (rtFlags1_- lFlags)/65536;
-      str_sprintf(buf,"rtFlags1_ = %b%b ",hFlags,lFlags);
+      str_sprintf(buf,"rtFlags1_ = %x%x ",hFlags,lFlags);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       lFlags = rtFlags2_%65536;
       hFlags = (rtFlags2_- lFlags)/65536;
-      str_sprintf(buf,"rtFlags2_ = %b%b ",hFlags,lFlags);
+      str_sprintf(buf,"rtFlags2_ = %x%x ",hFlags,lFlags);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf,"rtFlags3_ = %b ", rtFlags3_);
+      str_sprintf(buf,"rtFlags3_ = %x ", rtFlags3_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       lFlags = rtFlags4_%65536;
       hFlags = (rtFlags4_- lFlags)/65536;
-      str_sprintf(buf,"rtFlags4_ = %b%b ",hFlags,lFlags);
+      str_sprintf(buf,"rtFlags4_ = %x%x ",hFlags,lFlags);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       lFlags = rtFlags5_%65536;
       hFlags = (rtFlags5_- lFlags)/65536;
-      str_sprintf(buf,"rtFlags5_ = %b%b ",hFlags,lFlags);
+      str_sprintf(buf,"rtFlags5_ = %x%x ",hFlags,lFlags);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       str_sprintf(buf, "queryType_ = %d", (Int32) queryType_);
@@ -484,7 +486,7 @@ void ComTdbRoot::displayContents(Space * space,ULng32 flag)
 
       if (compoundStmtsInfo_ != 0)
 	{
-	  str_sprintf(buf,"compoundStmtsInfo_ = %b ",compoundStmtsInfo_);
+	  str_sprintf(buf,"compoundStmtsInfo_ = %x ",compoundStmtsInfo_);
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
 
@@ -538,7 +540,7 @@ void ComTdbRoot::displayContents(Space * space,ULng32 flag)
 		      getRWRSInfo()->rwrsMaxInternalRowlen_);
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	  
-	  str_sprintf(buf,"flags_ = %b ", getRWRSInfo()->flags_);
+	  str_sprintf(buf,"flags_ = %x ", getRWRSInfo()->flags_);
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
 

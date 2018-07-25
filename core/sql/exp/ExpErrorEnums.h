@@ -62,8 +62,6 @@ enum ExeErrorCode
   EXE_EXPLAIN_BAD_DATA			= 8019,
 
   EXE_INITIALIZE_MAINTAIN               = 8020,
-  EXE_PURGEDATA_CAT                     = 8021,
-  EXE_PARALLEL_PURGEDATA_FAILED         = 8022,
 
   EXE_QUERY_LIMITS_CPU                  = 8023,
   EXE_QUERY_LIMITS_CPU_DEBUG            = 8024,
@@ -163,6 +161,8 @@ enum ExeErrorCode
   EXE_OLAP_OVERFLOW_NOT_SUPPORTED       = 8441,
   EXE_ERROR_FROM_LOB_INTERFACE          = 8442,
   EXE_INVALID_LOB_HANDLE                = 8443,
+  EXE_ERROR_HDFS_SCAN                   = 8447,
+  EXE_INVALID_INTERVAL_RESULT           = 8453,
   EXE_LAST_EXPRESSIONS_ERROR		= 8499,
 
   // ---------------------------------------------------------------------
@@ -174,6 +174,7 @@ enum ExeErrorCode
   EXE_ERROR_STREAM_OVERFLOW             = 8553,
   EXE_EID_INTERNAL_ERROR                = 8555,
   EXE_HBASE_ACCESS_ERROR                = 8556,
+  EXE_LOB_CONCURRENT_ACCESS_ERROR       = 8558,
   EXE_LAST_ERROR_FROM_FS_DP2		= 8569,
 
   // ---------------------------------------------------------------------
@@ -182,7 +183,7 @@ enum ExeErrorCode
   EXE_NO_MEM_TO_BUILD			= 8570,
   EXE_NO_MEM_TO_EXEC 			= 8571,
   EXE_CANNOT_CONTINUE                   = 8572,
-  EXE_ACCESS_VIOLATION                  = 8573,
+  // unused                             = 8573,
   
   // ------------------------------------------------------------
   // Error 8574, lost open. Could result in reopening the table.
@@ -201,11 +202,6 @@ enum ExeErrorCode
   EXE_RELEASE_WORK_TIMEOUT              = 8584,
   EXE_SCHEMA_SECURITY_CHANGED           = 8585,
   EXE_ASSIGN_ESPS_ERROR                 = 8586,
-  EXE_IAR_MFMAP_BAD                     = 8590,
-  EXE_IAR_ERROR_EXTRACTING_COLUMNS      = 8591,
-  EXE_IAR_NO_MFMAP                      = 8592,
-  EXE_IAR_MISSING_COLS_COMPRESSED_AUDIT = 8593,
-  EXE_AUDIT_IMAGE_EXPR_EVAL_ERROR       = 8594, 
   EXE_MERGE_STMT_ERROR                  = 8595,
   EXE_ESP_CHANGE_PRIORITY_FAILED        = 8596,
   EXE_RECOMPILE_AUTO_QUERY_RETRY        = 8597,
@@ -267,17 +263,17 @@ enum ExeErrorCode
   //-------------------------------------------------------------
   EXE_INVALID_CHAR_IN_TRANSLATE_FUNC    = 8690,
 
+  //-------------------------------------------------------------
+  // Errors codes split_part function.
+  //-------------------------------------------------------------
+  EXE_INVALID_FIELD_POSITION            = 8691,
+  
   // ---------------------------------------------------------------------
   // Parallel execution
   // ---------------------------------------------------------------------
   EXE_PARALLEL_EXECUTION_ERROR		= 8700,
   EXE_PARALLEL_EXTRACT_OPEN_ERROR       = 8701,
   EXE_PARALLEL_EXTRACT_CONNECT_ERROR    = 8702,
-
-  // ---------------------------------------------------------------------
-  // Warning from updating Measure SQL counters.
-  // ---------------------------------------------------------------------
-  EXE_MEASURE                           = 8710,
 
   //----------------------------------------------------------------------
   // Errors generated in the CLI code
@@ -350,7 +346,7 @@ enum ExeErrorCode
   CLI_USER_ENDED_XN_CLEANUP             = 8844,
   CLI_INTERR_NULL_TCB                   = 8845,
   CLI_EMPTY_SQL_STMT                    = 8846,
-  CLI_SQLMP_RTD_ERROR			= 8847,
+  // unused      			= 8847,
   CLI_CANCEL_REJECTED                   = 8848,
   CLI_NON_CURSOR_UPDEL_TABLE            = 8850,
   CLI_USER_MEMORY_IN_EXECUTOR_SEGMENT   = 8851,
@@ -404,13 +400,12 @@ enum ExeErrorCode
 
   CLI_ARKCMP_INIT_FAILED		= 8890,
   CLI_NOT_ASCII_CHAR_TYPE		= 8891,
-  CLI_RTD_BUFFER_TOO_SMALL		= 8892,
+  // unused				= 8892,
   CLI_STMT_DESC_COUNT_MISMATCH          = 8893,
   CLI_RESERVED_ARGUMENT                 = 8894,
   CLI_INVALID_CHARSET_FOR_DESCRIPTOR    = 8895,
   CLI_CHARSET_MISMATCH                  = 8896,
 
-  CLI_SHADOW_RPC_EXCEPTION		= 8897,
   CLI_INTERNAL_ERROR			= 8898,
   CLI_LAST_ERROR			= 8899,
 

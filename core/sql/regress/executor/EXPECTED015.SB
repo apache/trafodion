@@ -2236,4 +2236,154 @@ A                     B
 >>cqd traf_upsert_to_eff_tree reset;
 
 --- SQL operation complete.
+>>
+>>-- merge tests (and insert and update tests) on tables with check constraints
+>>insert into t015tc1 values ('ACID','FOUR','GUNK'), ('FIVE','FIVE','HIVE'),('TENT','TEXT','TEST');
+
+--- 3 row(s) inserted.
+>>select * From t015tc1;
+
+A     B     C   
+----  ----  ----
+
+ACID  FOUR  GUNK
+FIVE  FIVE  HIVE
+TENT  TEXT  TEST
+
+--- 3 row(s) selected.
+>>
+>>insert into t015tc2 values ('ACID','FOUR','GUNK'), ('FIVE','FIVE','HIVE'),('TENT','TEXT','TEST');
+
+--- 3 row(s) inserted.
+>>select * From t015tc2;
+
+A     B     C   
+----  ----  ----
+
+ACID  FOUR  GUNK
+FIVE  FIVE  HIVE
+TENT  TEXT  TEST
+
+--- 3 row(s) selected.
+>>
+>>-- should fail, constraint violation
+>>merge into t015tc1 on a='FIVE' when matched then update set c= 'BALD';
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_454758687_3491 on table TRAFODION.SCH.T015TC1.
+
+--- 0 row(s) updated.
+>>
+>>-- should fail, constraint violation
+>>merge into t015tc1 on a = 'TENT' when matched then update set b = 'ACID';
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_318658687_3491 on table TRAFODION.SCH.T015TC1.
+
+--- 0 row(s) updated.
+>>
+>>select * From t015tc1;
+
+A     B     C   
+----  ----  ----
+
+ACID  FOUR  GUNK
+FIVE  FIVE  HIVE
+TENT  TEXT  TEST
+
+--- 3 row(s) selected.
+>>
+>>-- no constraint violation
+>>merge into t015tc1 on a='FIVE' when matched then update set c= 'GLAD';
+
+--- 1 row(s) updated.
+>>
+>>-- should fail because 'BOMB' < 'FUNK'
+>>merge into t015tc1 on a = 'NOSH' when matched then update set b = 'GOOD'
++>  when not matched then insert values ('GOOD','GOOD','BOMB');
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_454758687_3491 on table TRAFODION.SCH.T015TC1.
+
+--- 0 row(s) updated.
+>>
+>>-- the row GOOD, GOOD, NICE should successfully be added
+>>merge into t015tc1 on a = 'NOSH' when matched then update set b = 'GOOD'
++>  when not matched then insert values ('GOOD','GOOD','NICE');
+
+--- 1 row(s) updated.
+>>
+>>select * from t015tc1;
+
+A     B     C   
+----  ----  ----
+
+ACID  FOUR  GUNK
+FIVE  FIVE  GLAD
+GOOD  GOOD  NICE
+TENT  TEXT  TEST
+
+--- 4 row(s) selected.
+>>
+>>-- should fail because of constraint on C
+>>insert into t015tc1 values ('ACID','TEST','ACID');
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_454758687_3491 on table TRAFODION.SCH.T015TC1.
+
+--- 0 row(s) inserted.
+>>
+>>-- should fail because of constraint on B
+>>insert into t015tc1 values ('ACID','ACID','TEST');
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_318658687_3491 on table TRAFODION.SCH.T015TC1.
+
+--- 0 row(s) inserted.
+>>
+>>-- should fail because of constraint on B
+>>update t015tc1 set a = 'COOL', b = 'ACID' where a = 'TENT';
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_318658687_3491 on table TRAFODION.SCH.T015TC1.
+
+--- 0 row(s) updated.
+>>
+>>select * from t015tc1;
+
+A     B     C   
+----  ----  ----
+
+ACID  FOUR  GUNK
+FIVE  FIVE  GLAD
+GOOD  GOOD  NICE
+TENT  TEXT  TEST
+
+--- 4 row(s) selected.
+>>
+>>-- should fail because of constraint on A
+>>insert into t015tc2 values ('NUMB','NUMB','NUMB');
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC2_289858687_3491 on table TRAFODION.SCH.T015TC2.
+
+--- 0 row(s) inserted.
+>>
+>>-- should fail because of constraint on A
+>>update t015tc2 set a = 'NUMB', b = 'OKAY' where a = 'TENT';
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC2_289858687_3491 on table TRAFODION.SCH.T015TC2.
+
+--- 0 row(s) updated.
+>>
+>>-- should fail because of constraint on B
+>>merge into t015tc1 on a = 'NOSH' when matched then update set b = 'ACID';
+
+--- 0 row(s) updated.
+>>
+>>select * from t015tc2;
+
+A     B     C   
+----  ----  ----
+
+ACID  FOUR  GUNK
+FIVE  FIVE  HIVE
+TENT  TEXT  TEST
+
+--- 3 row(s) selected.
+>>
+>>
 >>log;

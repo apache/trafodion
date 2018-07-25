@@ -388,6 +388,14 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       i++;
     }
 
+  if (keyLength > MAX_HBASE_ROWKEY_LEN )
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ROWKEY_LEN_TOO_LARGE)
+                              << DgInt0(keyLength)
+                              << DgInt1(MAX_HBASE_ROWKEY_LEN);
+      return -1;
+    }
+
   return 0;
 }
 
@@ -435,7 +443,7 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
       return;
     }
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
   NABoolean isVolatileTable = FALSE;
   ComObjectName volTabName ;
@@ -1138,7 +1146,7 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   else
     query += tableName.getExternalName(TRUE);
 
-  query += " for read uncommitted access; ";
+  query += " ; ";
 
   UInt32 savedCliParserFlags = 0;
   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedCliParserFlags);
@@ -1236,7 +1244,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
       return;
     }
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
   //  If an index was created with NO POPULATE option, then
@@ -1437,7 +1445,7 @@ void CmpSeabaseDDL::dropSeabaseIndex(
   NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extIndexName = indexName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -1773,7 +1781,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   const NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extIndexName = indexName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
@@ -1817,7 +1825,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
       return;
     }
 
-  Int64 btUID;
+  Int64 btUID = 0;
   Int32 btObjOwner = 0;
   Int32 btSchemaOwner = 0;
   Int64 btObjectFlags = 0;
@@ -1890,7 +1898,7 @@ short CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
  Lng32 cliRC = 0;
 
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
   sprintf (buf, " ALTER TABLE \"%s\".\"%s\".\"%s\"  %s INDEX \"%s\" ;", catName, schName, tabName,
@@ -1925,7 +1933,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
   // Fix for launchpad bug 1381621
@@ -2018,7 +2026,7 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
   const NAString extIndexName = indexName.getExternalName(TRUE);
   NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   
   ExpHbaseInterface * ehi = allocEHI();

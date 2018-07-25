@@ -73,7 +73,6 @@ static void DisplayDebugBox(Int32 num)
 #endif
 
 // This class is not used at all.
-// LCOV_EXCL_START :cnu
 
 //--------------------------------------------------------------------------//
 //	CRUTaskServerExecController constructors & destructors
@@ -433,4 +432,3 @@ void CRUTaskServerExecController::logError(CDSException &ex)
 
 #endif
 
-// LCOV_EXCL_STOP

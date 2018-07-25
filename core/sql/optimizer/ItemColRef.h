@@ -78,7 +78,6 @@ typedef ClusteredBitmap PositionSet;
 // the ValueDesc.
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1682)   // warning elimination 
 class BaseColumn : public ItemExpr
 {
 
@@ -183,13 +182,11 @@ private:
   // If this is a computed column, the expression used to compute it (NULL otherwise)
   ValueId computedColumnExpr_;
 }; // class BaseColumn
-#pragma warn(1682)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // An index column object is allocated each time when an index is used
 // by a rule that transforms some base table access into an index scan.
 // -----------------------------------------------------------------------
-#pragma nowarn(1682)   // warning elimination 
 class IndexColumn : public ItemExpr
 {
 
@@ -256,7 +253,6 @@ private:
   ValueId indexColDefinition_;
 
 };
-#pragma warn(1682)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // A column reference points to a column in a relational node. Constants
@@ -564,7 +560,7 @@ public:
 
   // provide an interface to the SB and MB strings prepared by the parser.
   // Use with caution! At least need to check the null-ness.
-  NAString* getLocaleString() { return locale_strval; }; // LCOV_EXCL_LINE
+  NAString* getLocaleString() { return locale_strval; };
   NAWString* getLocaleWString() { return locale_wstrval; };
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
 
@@ -723,12 +719,10 @@ public:
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
 
-  // LCOV_EXCL_START
   // Safety net -- these methods should never be called because we should
   // never get so far as to use them.
   virtual const NAType * synthesizeType()    { CMPASSERT(FALSE); return NULL; }
   short codeGen(Generator*)		     { CMPASSERT(FALSE); return -1; }
-  // LCOV_EXCL_STOP
 
   const NAString getText() const	     { return "DEFAULT"; }
 
@@ -830,7 +824,7 @@ public:
   void setIsEnvVar(NABoolean isEV = TRUE)  { isEnvVar_ = isEV; }
 
   NABoolean isDefine() const		   { return isDefine_; }
-  void setIsDefine(NABoolean isDef = TRUE)  { isDefine_ = isDef; } // LCOV_EXCL_LINE
+  void setIsDefine(NABoolean isDef = TRUE)  { isDefine_ = isDef; }
 
   NABoolean isParam() const		   { return isParam_; }
   void setIsParam(NABoolean isParam = TRUE)  { isParam_ = isParam; }
@@ -842,7 +836,7 @@ public:
   NABoolean isSystemGeneratedOutputHV() const;
 
   NAString& getPrototypeValue() 	   { return prototypeValue_; }
-  const NAString& getPrototypeValue() const { return prototypeValue_; } // LCOV_EXCL_LINE
+  const NAString& getPrototypeValue() const { return prototypeValue_; }
   NABoolean hasPrototypeValue() const	   { return !prototypeValue_.isNull(); }
   void setPrototypeValue(const NAString &s){ prototypeValue_ = s; }
 
@@ -956,17 +950,13 @@ public:
  // Raj P - 01/2001
   // Parameter  mode, ordinal position and variable index
   // needed for (java) stored procedures
-// warning elimination (removed "inline")
   ComColumnDirection getParamMode () const {return paramMode_;};
-// warning elimination (removed "inline")
   Int32 getOrdinalPosition () const {return ordinalPosition_;};
-// warning elimination (removed "inline")
   Int32 getHVorDPIndex () const { return hvIndex_;}
   virtual void setPMOrdPosAndIndex( ComColumnDirection paramMode,
 				    Int32 ordinalPosition,
 				    Int32 index);
 
-  // LCOV_EXCL_START
   // Param heading and tablename needed here for JDBC/WLI, when dynamic rowsets are used.
   const NAString &getParamHeading() const {  return heading_; }
 
@@ -981,7 +971,6 @@ public:
   { 
     tablename_ = tablename; 
   }
-  // LCOV_EXCL_STOP
 
 private:
 
@@ -1112,7 +1101,7 @@ class ConstantParameter : public Parameter
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
                                  CollHeap* outHeap = 0);
 
-  virtual ConstantParameter *castToConstantParameter() { return this; } // LCOV_EXCL_LINE
+  virtual ConstantParameter *castToConstantParameter() { return this; }
 
   NABoolean matches(ConstValue *val) const;
 
@@ -1446,7 +1435,6 @@ private:
 // A fake parameter used to represent the routines formal intputs and
 // actual output
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 class RoutineParam : public Parameter
 {
 
@@ -1477,7 +1465,6 @@ public:
       memset(argumentType_, 0, sizeof(argumentType_));
   }
 
-  // LCOV_EXCL_STOP
   RoutineParam(const NAString & paramName, const NAType *type, Lng32 pos, 
       ComColumnDirection direction, RoutineDesc *rdesc, CollHeap * h=0) 
     : Parameter(ITM_ROUTINE_PARAM), paramName_(paramName, h),

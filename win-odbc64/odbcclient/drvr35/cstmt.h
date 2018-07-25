@@ -245,6 +245,33 @@ public:
 	SQLRETURN SetPos(SQLUSMALLINT	RowNumber,
 			SQLUSMALLINT    Operation,
 			SQLUSMALLINT    LockType);
+    SQLRETURN CStmt::SendExtractLob(IDL_short extractType,
+		IDL_string lobHandle,
+		IDL_long lobHandleLen,
+		IDL_long &extractLen,
+		BYTE *& extractData);
+
+    SQLRETURN ExtractLob(IDL_short extractType,
+        IDL_string lobHandle,
+        IDL_long   lobHandleLen,
+        IDL_long &extractLen,
+        BYTE * &extractData);
+    SQLRETURN SendUpdateLob(IDL_long updateType,
+        IDL_string lobHandle,
+        IDL_long   lobHandleLen,
+        IDL_long_long totalLength,
+        IDL_long_long offset,
+        IDL_long_long pos,
+        IDL_long_long length,
+        BYTE *        data);
+    SQLRETURN UpdateLob(IDL_long updateType,
+        IDL_string lobHandle,
+        IDL_long   lobHandleLen,
+        IDL_long_long totalLength,
+        IDL_long_long offset,
+        IDL_long_long pos,
+        IDL_long_long length,
+        BYTE *        data);
 
 	SQLRETURN setDescRec(const SQLItemDescList_def *IPDDescList, const SQLItemDescList_def *IRDDescList);
 	inline BOOL getHeartBeatEnable() {return m_ConnectHandle->getHeartBeatEnable();};

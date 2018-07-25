@@ -1438,10 +1438,6 @@ private:
   // inlining for the new insert and delete nodes)
   RelExpr *transformUpdatePrimaryKey(BindWA *bindWA);
 
-  // right now, hbase updates are done as cursor update...select followed
-  // by deletes.
-  RelExpr *transformHbaseUpdate(BindWA *bindWA);
-
   inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
 
   // Estimated number of rows accessed by Update operator.
@@ -1584,17 +1580,6 @@ public:
 				     const QualifiedName &subjectTable,
 				     UpdateColumns *updateCols = NULL);
 
-  void setIsFastDelete(NABoolean v)
-  {
-    isFastDelete_ = v;
-  }
-  NABoolean isFastDelete()
-  {
-    return isFastDelete_;
-  }
-  
-  // ValueIdList    &lobDeleteExpr()          { return lobDeleteExpr_; }
-
   ConstStringList* &csl() { return csl_; }
 
   inline const CostScalar getEstRowsAccessed() const
@@ -1603,10 +1588,6 @@ public:
   inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
 
 private:
-  NABoolean isFastDelete_;
-
-  // ValueIdList  lobDeleteExpr_;
-
   ConstStringList * csl_;
   // Estimated number of rows accessed by Delete operator.
   CostScalar estRowsAccessed_;

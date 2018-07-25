@@ -135,11 +135,9 @@ ExExeUtilTcb::ExExeUtilTcb(const ComTdbExeUtil & exe_util_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
 
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(exe_util_tdb.numBuffers_,
 				     exe_util_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   childTcb_ = child_tcb;
   if (childTcb_)
@@ -204,10 +202,9 @@ ExExeUtilTcb::ExExeUtilTcb(const ComTdbExeUtil & exe_util_tdb,
 					     SQLCHARSETCODE_ISO88591,  // ISO_MAPPING=ISO88591
 					     currContext,
 					     parentQid);
-  
-  //diagsArea_ = NULL;
-  setDiagsArea(ComDiagsArea::allocate(getHeap()));
 
+  diagsArea_ = NULL;
+  
   pqStep_ = PROLOGUE_;
 
   VersionToString(COM_VERS_MXV, versionStr_);
@@ -340,7 +337,8 @@ short ExExeUtilTcb::moveRowToUpQueue(const char * row, Lng32 len,
   return  retcode;
 }
 
-char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf)
+char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf,
+                                     NABoolean noUsec)
 {
   ULng32 sec = (ULng32) (elapsedTime / 1000000);
   ULng32 usec = (ULng32) (elapsedTime % 1000000);
@@ -349,9 +347,13 @@ char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf)
   ULng32 hour = min/60;
   min = min % 60;
   
-  str_sprintf (timeBuf,  "%02u:%02u:%02u.%03u",
-	       hour, min, sec, TO_FMT3u(usec));
-
+  if (noUsec)
+    str_sprintf (timeBuf,  "%02u:%02u:%02u",
+                 hour, min, sec);
+  else
+    str_sprintf (timeBuf,  "%02u:%02u:%02u.%03u",
+                 hour, min, sec, TO_FMT3u(usec));
+   
   return timeBuf;
 }
 
@@ -443,11 +445,10 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
     strcat(stmt, " no label update");
 
   strcat(stmt, ";");
-
+  ComDiagsArea *diagsArea = getDiagsArea();
   retcode = cliInterface()->executeImmediate
-    (stmt, NULL, NULL, TRUE, NULL, 0,
-     &(masterGlob->getStatement()->getContext()->diags()));
-
+    (stmt, NULL, NULL, TRUE, NULL, 0, &diagsArea); 
+  setDiagsArea(diagsArea);
   masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x400); // ALLOW_AUDIT_CHANGE
   
   if (retcode < 0)
@@ -464,8 +465,8 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
 }
 
 void ExExeUtilTcb::handleErrors(Lng32 rc)
-{
-  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+{ 
+  cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 }
 
 short ExExeUtilTcb::initializeInfoList(Queue* &infoList)
@@ -671,7 +672,9 @@ short ExExeUtilTcb::executeQuery(char * task,
 	    char * stringParam1 = NULL;
 	    Lng32   intParam1 = ComDiags_UnInitialized_Int;
 
-	    retcode = (short)cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+            cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
+            if (getDiagsArea() != NULL)
+	        retcode = 0;
 	    if (moveErrorRow)
 	      {
 		if (retcode == 0)
@@ -713,7 +716,7 @@ short ExExeUtilTcb::executeQuery(char * task,
 		
 		char * outBuf = new(getHeap()) char[errorBufLen+400];
 		getStatusString(task, "Error", NULL, outBuf,
-				NULL, NULL,
+				FALSE, NULL,
 				errorBuf);
 		
 		NADELETEBASIC(errorBuf, getHeap());
@@ -772,7 +775,6 @@ short ExExeUtilTcb::holdAndSetCQD(const char * defaultName, const char * default
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -787,7 +789,6 @@ short ExExeUtilTcb::restoreCQD(const char * defaultName, ComDiagsArea * globalDi
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -824,7 +825,6 @@ short ExExeUtilTcb::setCS(const char * csName, char * csValue,
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -839,7 +839,6 @@ short ExExeUtilTcb::resetCS(const char * csName, ComDiagsArea * globalDiags)
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -862,7 +861,7 @@ Lng32 ExExeUtilTcb::setCS(const char * csName, char * csValue,
 
   cliRC = 
     cliInterface->executeImmediate(buf, NULL, NULL, TRUE, NULL,FALSE,
-				   globalDiags);
+				   &globalDiags);
   if (cliRC < 0)
     {
       return cliRC;
@@ -883,7 +882,7 @@ Lng32 ExExeUtilTcb::resetCS(const char * csName,
   strcat(buf, csName);
   strcat(buf, "' reset;");
   cliRC = cliInterface->executeImmediate(buf, NULL, NULL, TRUE, NULL,FALSE,
-					 globalDiags);
+					 &globalDiags);
   if (cliRC < 0)
     {
       return cliRC;
@@ -900,7 +899,6 @@ short ExExeUtilTcb::disableCQS()
   if (rc < 0)
     {
       handleErrors(rc);
-
       return -1;
     }
 
@@ -914,7 +912,6 @@ short ExExeUtilTcb::restoreCQS()
   if (rc < 0)
     {
       handleErrors(rc);
-
       return -1;
     }
 
@@ -1058,7 +1055,7 @@ short ExExeUtilTcb::setSystemVersion()
 					 sysVersionStr_, &sysVersionStrLen_);
       if (cliRC < 0)
 	{
-	  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	  return -1;
 	}
       
@@ -1127,7 +1124,7 @@ short ExExeUtilTcb::getObjectUid(char * catName, char * schName,
 				     uid, &uidLen);
   if (cliRC < 0)
     {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       return -1;
     }
   uid[uidLen] = 0;
@@ -1278,8 +1275,8 @@ short ExExeUtilTcb::alterDDLLock(NABoolean add, char * tableName,
   ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
   ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
 
-  AnsiOrNskName aonn(tableName);
-  aonn.convertAnsiOrNskName(FALSE);
+  AnsiName aonn(tableName);
+  aonn.convertAnsiName(FALSE);
   char * parts[4];
   Lng32 numParts;
   aonn.extractParts(numParts, parts);
@@ -1465,12 +1462,22 @@ short ExExeUtilTcb::alterAuditFlag(NABoolean audited, char * tableName,
 
 short ExExeUtilTcb::handleError()
 {
-  return ex_tcb::handleError(&qparent_, getDiagsArea());
+  short rc = ex_tcb::handleError(&qparent_, getDiagsArea());
+  if (diagsArea_ != NULL)
+     diagsArea_->deAllocate();
+  diagsArea_ = NULL;
+  return rc;
 }
 
 short ExExeUtilTcb::handleDone()
 {
-  return ex_tcb::handleDone(&qparent_, getDiagsArea());
+  short rc = ex_tcb::handleDone(&qparent_, getDiagsArea());
+  if (diagsArea_ != NULL)
+  { 
+     diagsArea_->deAllocate();
+     diagsArea_ = NULL;
+  }
+  return rc;
 }
     
 short ExExeUtilTcb::createServer(char *serverName,
@@ -1609,17 +1616,17 @@ Lng32 ExExeUtilTcb::extractParts
   Lng32 rc = 0;
 
   // We want to ignore any "." dots within a delimited
-  // name.  The AnsiOrNskName object is ultimately deleted
+  // name.  The AnsiName object is ultimately deleted
   // in the ExExeUtilMainObjectTcb destructor.
   
   if (extractedPartsObj_)
     delete extractedPartsObj_;
 
-  extractedPartsObj_ = new (getHeap()) AnsiOrNskName(objectName);
+  extractedPartsObj_ = new (getHeap()) AnsiName(objectName);
   if ((rc = extractedPartsObj_->extractParts(numParts, parts)) != 0 ||
       (numParts != 3))
     {
-      *getDiagsArea() << DgSqlCode(-CLI_INTERNAL_ERROR);
+      ExRaiseSqlError(getHeap(), &diagsArea_, -CLI_INTERNAL_ERROR);
       return -1;
     }
 
@@ -1795,7 +1802,7 @@ Lng32 ExExeUtilTcb::extractParts
     strcpy(parts2, parts[2]);
   }
 
-  /* The AnsiOrNskName() method strips out the leading
+  /* The AnsiName() method strips out the leading
      and ending double quotes.  The following code
      is no longer needed.
 

@@ -57,7 +57,7 @@ void Timer::openLog() {
   char fileName[256];
   char *logFileEnv = 0;
   if((logFileEnv = getenv("MEASURE_LOG_FILE")) != NULL){
-    sprintf(fileName, "%s.%d", pid);
+    sprintf(fileName, "%s.%d", logFileEnv, pid);
     logFile = fopen(fileName, "w+t");
     if(logFile == 0){
       logFile = stderr;

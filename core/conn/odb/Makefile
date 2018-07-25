@@ -48,7 +48,7 @@ INCPATH_64luo = -I/use/include \
 		-I$(JAVA_HOME)/include/linux \
 		-I$(TRAF_HOME)/export/include
 
-LIBS_64luo = -lodbc -lodbcinst -lz -ldl
+LIBS_64luo = -lodbc -lodbcinst -lz -ldl -lpthread
 EXEC_64luo = odb64luo
 ODBBLD_64luo = "\"linux, amd64, gcc generic m64, uodbc, mreadline, dynamic gzip, dynamic libhdfs, dynamic libxml2\""
 vpath %.c src
@@ -65,9 +65,9 @@ profile: CFLAGS_LNX += -DODB_PROFILE
 profile: LIBS_64luo += -lrt
 profile: generic 
 
-odb64luo: odb64luo.o mreadline.o memcpy_wrapper.o versodb.o
+odb64luo: odb64luo.o mreadline.o memcpy_wrapper.o versodb.o JsonReader.o
 	gcc -m64 -O2 -mtune=generic  -DODBC64 -DHDFS -DXML $(LDFLAGS_LNX) \
-		-o $(EXEC_64luo) bin/memcpy_wrapper.o bin/odb64luo.o bin/mreadline.o bin/versodb.o \
+		-o $(EXEC_64luo) bin/memcpy_wrapper.o bin/odb64luo.o bin/mreadline.o bin/versodb.o bin/JsonReader.o \
 		-D ODBBLD=$(ODBBLD_64luo) $(LIBPATH_64luo) $(INCPATH_64luo) $(LIBS_64luo) -o bin/odb64luo
 	tar -czf ../clients/odb64_linux.tar.gz bin/odb64luo README
 	ln -sf $(TRAF_HOME)/../conn/odb/bin/odb64luo $(TRAF_HOME)/export/bin$(SQ_MBTYPE)/odb64luo
@@ -91,6 +91,9 @@ memcpy_wrapper.o: memcpy_wrapper.c
 
 versodb.o: versodb.c
 	gcc -m64 -O2 -mtune=generic -g -c src/versodb.c $(INCPATH_64luo) -o bin/versodb.o
+
+JsonReader.o: JsonReader.c
+	gcc $(CFLAGS_LNX) -c src/JsonReader.c -o bin/JsonReader.o
 
 clean: 
 	rm -f bin/*.o bin/odb64luo

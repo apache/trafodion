@@ -27,6 +27,8 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -69,6 +71,7 @@ import java.util.logging.LogRecord;
  */
 public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.DatabaseMetaData {
 
+	private Map<String, TrafT4Statement> stmtMap_ = new ConcurrentHashMap<String, TrafT4Statement>(16);
 	// ----------------------------------------------------------------------
 	// First, a variety of minor information about the target database.
 
@@ -5636,7 +5639,7 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			hashcode = -hashcode;
 
 		}
-		String stmtLabel = "STMT_CATALOG_" + hashcode + 1000;
+		String stmtLabel = "STMT_CA_" + catalogAPI  + hashcode + 1000;
 		if (stmtLabel.length() > 17) {
 			stmtLabel = stmtLabel.substring(0, 17);
 
@@ -5764,7 +5767,10 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			}
 
 			TrafT4Desc[] outputDesc = InterfaceStatement.NewDescArray(gcr_.m_p3);
-
+			if (!this.stmtMap_.containsKey(stmtLabel) || this.stmtMap_.get(stmtLabel).isClosed()) {
+				//Initialize a statement for MD queries, and this stmt will be removed while closing connection		 +				// Initialize a statement for MD queries, and this stmt will be
+				this.stmtMap_.put(stmtLabel, new TrafT4Statement(this.connection_, stmtLabel));
+			}
 			resultSet_ = new TrafT4ResultSet(this, outputDesc, gcr_.m_p2, true);
 			resultSet_.proxySyntax_ = gcr_.proxySyntax;
 			break;

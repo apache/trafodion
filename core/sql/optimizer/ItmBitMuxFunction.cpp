@@ -21,7 +21,6 @@
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
 
-// LCOV_EXCL_START
 // This class is obsolete in the sense 
 // that it had been added long time ago during the data
 // mining days (late 90s) but is not used anymore
@@ -43,12 +42,11 @@ const NAType *ItmBitMuxFunction::synthesizeType() {
     size += type.getTotalSize();
   }
 
-  return new(CmpCommon::statementHeap()) SQLChar(size, FALSE);
+  return new(CmpCommon::statementHeap()) SQLChar(CmpCommon::statementHeap(), size, FALSE);
 };
 
 // copyTopNode
 //
-#pragma nowarn(770)   // warning elimination 
 ItemExpr *ItmBitMuxFunction::copyTopNode(ItemExpr *derivedNode, 
 					 CollHeap *outHeap) {
   ItemExpr *result;
@@ -62,5 +60,3 @@ ItemExpr *ItmBitMuxFunction::copyTopNode(ItemExpr *derivedNode,
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 };
-#pragma warn(770)  // warning elimination 
-// LCOV_EXCL_STOP

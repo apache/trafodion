@@ -53,13 +53,11 @@
 // -----------------------------------------------------------------------
 Lng32 ExpDP2Expr::spaceNeededForWorkAtp()
 {
-#pragma nowarn(1506)   // warning elimination 
   return ( ( criDesc_ != (ExCriDescPtr) NULL )
 	  ? 2 * (sizeof(atp_struct) +
 		 criDesc_->noTuples() * (sizeof(tupp) + 
 					 sizeof(tupp_descriptor)))
 	  : 0);
-#pragma warn(1506)  // warning elimination 
 }
 
 ExpDP2Expr::ExpDP2Expr(ex_expr_base * expr, 
@@ -148,4 +146,5 @@ ExpDP2KeyEncodeExpr::ExpDP2KeyEncodeExpr(ex_expr_base * expr,
 {
   memset(fillersExpDP2KEExpr_, 0, FILLERS_EXP_DP2_KE_EXPR_SIZE);
 }
+
 

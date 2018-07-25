@@ -260,11 +260,14 @@ public:
                                          Int32   sourceLenInBytes,
                                          CharSet targetCS);
 
+  static const CollationDB *builtinCollationDB();
+ 
+
 private:
 friend class CollationDB;			// needs to access builtinCDB_
 
    static const char*	const localeCharSet_;
-   static const CollationDB   builtinCollationDB_;
+   static const CollationDB   *builtinCollationDB_;
 
 }; // CharInfo
 
@@ -360,12 +363,10 @@ public:
     return collationNPasses[getCollationParamsIndex( collation) ];
   }
 
-//LCOV_EXCL_START :cnu -- SQ does not support any collations yet.
   inline static unsigned char  getCollationMaxChar(const CharInfo::Collation collation) 
   {
     return collationMaxChar[getCollationParamsIndex( collation) ];
   }
-//LCOV_EXCL_STOP
 
 
  

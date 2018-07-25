@@ -616,6 +616,7 @@ SQLCONNECT_IOMessage(
 	else
 		inContext.clientUserName = NULL;
 
+
 	odbc_SQLSvc_InitializeDialogue_ame_(
 		  objtag_
 		, call_id_

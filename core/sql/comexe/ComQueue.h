@@ -117,18 +117,13 @@ class Q_Entry
   char        fillersQ_Entry_[20];                               // 28-47
 
 public:
-NA_EIDPROC
   Q_Entry(void * entry_, Q_Entry * prev_, Q_Entry * next_);
 
-NA_EIDPROC
   ~Q_Entry();
 
-NA_EIDPROC
   Long pack(void *space);
-NA_EIDPROC
   Lng32 unpack(void *base);
 
-NA_EIDPROC
   ULng32 packedLength() { return packedLength_; }
 };
 
@@ -139,9 +134,6 @@ class Queue : public NAVersionedObject
   Q_EntryPtr   curr;                                             // 16-23
 
   CollHeap    *heap_;
-#ifndef NA_64BIT
-  char         fillersQueue1_[4];
-#endif                                                           // 24-31
 
   Int32        numEntries_;                                      // 32-35
   
@@ -162,125 +154,97 @@ class Queue : public NAVersionedObject
   };
 
 public:
-NA_EIDPROC
   Queue();
 
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-NA_EIDPROC
   virtual unsigned char getClassVersionID()
   {
     return 1;
   }
   
-NA_EIDPROC
   virtual void populateImageVersionIDArray()
   {
     setImageVersionID(0,getClassVersionID());
   }
   
-NA_EIDPROC
   virtual short getClassSize() { return (short)sizeof(Queue); }
 
-NA_EIDPROC
   Queue(CollHeap * heap);
 
-NA_EIDPROC
   ~Queue();
   
   // inserts at tail
-NA_EIDPROC
   void insert(const void * entry_, ULng32 entryPackedLength = 0);
 
   // inserts at tail, returns addr of Queue entry inserted
-NA_EIDPROC
   void insert(const void * entry_, ULng32 entryPackedLength,
 	      void ** queueEntry);
 
   // returns the head entry
-NA_EIDPROC
   void * get();
 
   // returns the i'th entry. 0 based. First entry is i = 0
-NA_EIDPROC
   void * get(ULng32 i);
 
   // returns the head entry
-NA_EIDPROC
   void * getHead();
 
   // returns the tail(last) entry
-NA_EIDPROC
   void * getTail();
 
   // positions on the head entry
-NA_EIDPROC
   void position();
   
   // positions on a specified Queue entry 
-NA_EIDPROC
   void position(void * queueEntry);
 
   // returns the current entry
-NA_EIDPROC
   void * getCurr();
 
   // advances the current entry
-NA_EIDPROC
   void advance();
   
   // returns the current entry and advances curr
-NA_EIDPROC
   void * getNext();
   
   // returns -1, if all entries have been returned. 
-NA_EIDPROC
   short atEnd();
   
   // removes the head entry
-NA_EIDPROC
   void remove();
 
   // removes the head entry
-NA_EIDPROC
   void removeHead() { remove(); };
 
   // removes the tail entry
-NA_EIDPROC
   void removeTail();
 
-NA_EIDPROC
   void removeWithSpaceOpt();
 
   // removes the 'entry' entry
-NA_EIDPROC
   NABoolean remove(void * entry);
 
 
-NA_EIDPROC
   virtual Long pack(void * space);
   
-NA_EIDPROC
   virtual Lng32 unpack(void * base, void * reallocator);
   
   // returns -1, if queue is empty. Otherwise, returns 0.
-NA_EIDPROC
   Int32 isEmpty()
     {
       return ((numEntries() == 0) ? -1 : 0);
     }
    
-NA_EIDPROC
   Lng32 numEntries() { return numEntries_;}
 
    Lng32 entries() { return numEntries();}
 
-NA_EIDPROC
   ULng32 packedLength() { return packedLength_; }
 
-  NA_EIDPROC 
+  
   void setDoSpaceOpt(short v) {(v ? flags_ |= DO_SPACE_OPT : flags_ &= ~DO_SPACE_OPT); };
   NABoolean doSpaceOpt() { return (flags_ & DO_SPACE_OPT) != 0; };
 
@@ -308,7 +272,6 @@ class HashQueueEntry {
   friend class HashQueue;
 
 public:
-NA_EIDPROC
   HashQueueEntry(void * entry,
 			HashQueueEntry * prev,
 			HashQueueEntry * next,
@@ -319,7 +282,6 @@ NA_EIDPROC
   hashValue_(hashValue) {
   };
 
-NA_EIDPROC
   ~HashQueueEntry() {
   };
 
@@ -333,66 +295,48 @@ private:
  
 class HashQueue : public NABasicObject {
 public:
-NA_EIDPROC
   HashQueue(CollHeap * heap, ULng32 hashTableSize = 513);
 
-NA_EIDPROC
   HashQueue(const NABoolean shadowCopy,
 	    const HashQueue &other); 
 
-NA_EIDPROC
   ~HashQueue();
 
-NA_EIDPROC
   ULng32 entries() { return entries_; }
 
-NA_EIDPROC
   ULng32 size() { return hashTableSize_; }
 
-NA_EIDPROC
   void insert(const char * data, ULng32 dataLength, void * entry);
 
 // position by hashing
-NA_EIDPROC
   void position(const char * data, ULng32 dataLength);
 
 // position globally
-NA_EIDPROC
   void position();
 
-NA_EIDPROC
   void * getNext();
 
   // returns the current entry
-NA_EIDPROC
   void * getCurr();
 
   // advances the current entry
-NA_EIDPROC
   void advance();
 
-NA_EIDPROC
   void remove(void * entry);
 
-// To remove the last rrturned entry via getNext() in case of global scan
+// To remove the last returned entry via getNext() in case of global scan
 // of hash queue
-NA_EIDPROC
   void remove();
 
 // To remove the entry by passing in the hashing fields and the corresponding entry
-NA_EIDPROC
   void remove(const char *data, ULng32 dataLength, void *entry);
 
-NA_EIDPROC
   Lng32 numEntries() { return (Lng32)entries_;}
 
-NA_EIDPROC
   NABoolean sequentialAdd()      { return (flags_ & SEQUENTIAL_ADD)    != 0; }
 
-NA_EIDPROC
   void setSequentialAdd(NABoolean v)      
            { (v ? flags_ |= SEQUENTIAL_ADD : flags_ &= ~SEQUENTIAL_ADD); }
-NA_EIDPROC
   Int32 isEmpty() { return ((entries_ == 0) ? -1 : 0); }
 
 private:
@@ -416,10 +360,8 @@ private:
 
   ULng32 flags_;
 
-NA_EIDPROC
   void getHashValue(const char * data, ULng32 dataLength);
 
-NA_EIDPROC
   void removeLastReturned();
 };
 

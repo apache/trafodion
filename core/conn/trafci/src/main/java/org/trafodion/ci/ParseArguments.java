@@ -375,6 +375,8 @@ public class ParseArguments
               spacedOutLine +
               " -s[cript] <scriptfilename> -q|-sql <\"querystring\">" +
               spacedOutLine +
+              " -j[line] <yes|no>" +
+              spacedOutLine +
               " -noconnect -version -help" );
 
       cwObj.println(SessionDefaults.lineSeperator+"where:");
@@ -383,6 +385,7 @@ public class ParseArguments
       cwObj.println("\t-p[assword] specifies the user's password to log into a database server.");
       cwObj.println("\t-r[ole]     specifies the role name associated with the user.");
       cwObj.println("\t-s[cript]   specifies the command file used to customize a session.");
+      cwObj.println("\t-j[line]    specifies whether the shell supports jline.");
       cwObj.println("\t-q|-sql     specifies the command to be run in non-interactive mode.");
       cwObj.println("\t-noconnect  specifies the session login mode.");
       cwObj.println("\t-version    displays the Trafodion Command Interface and JDBC Type 4 Driver versions, then exits.");

@@ -21,10 +21,17 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- succeed: DB__ROOT can create a library
->>sh sqlci -i "TEST132(manage_library)";
+>>obey TEST132(manage_library);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>get libraries in schema t132sch;
 
 --- SQL operation complete.
@@ -38,6 +45,9 @@ Libraries in Schema TRAFODION.T132SCH
 
 T132_L1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>drop library t132_l1;
 
@@ -46,13 +56,14 @@ T132_L1
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
 >>
 >>-- fail: sql_user1 cannot create a library
->>sh sqlci -i "TEST132(manage_library)" -u sql_user1;
+>>changeuser sql_user1;
+>>obey TEST132(manage_library);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>get libraries in schema t132sch;
 
 --- SQL operation complete.
@@ -73,16 +84,18 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>
 >>-- succeed: grant DB__ROOTROLE to sql_user1
 >>grant role DB__ROOTROLE to sql_user1;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(manage_library)" -u sql_user1;
+>>changeuser sql_user1;
+>>obey TEST132(manage_library);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>get libraries in schema t132sch;
 
 --- SQL operation complete.
@@ -96,6 +109,9 @@ Libraries in Schema TRAFODION.T132SCH
 
 T132_L1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>drop library t132_l1;
 
@@ -104,16 +120,18 @@ T132_L1
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser DB__ROOT;
 >>
 >>-- fail: just grant the create privilege
 >>grant component privilege CREATE_LIBRARY on sql_operations to sql_user2;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(manage_library)" -u sql_user2;
+>>changeuser sql_user2;
+>>obey TEST132(manage_library);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>get libraries in schema t132sch;
 
 --- SQL operation complete.
@@ -134,10 +152,7 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser DB__ROOT;
 >>
 >>-- succeed: now grant the manage_library privilege
 >>grant component privilege MANAGE_LIBRARY on sql_operations to sql_user2;
@@ -146,7 +161,12 @@ End of MXCI Session
 >>get privileges on component sql_operation for sql_user2;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(manage_library)" -u sql_user2;
+>>changeuser sql_user2;
+>>obey TEST132(manage_library);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>get libraries in schema t132sch;
 
 --- SQL operation complete.
@@ -160,6 +180,9 @@ Libraries in Schema TRAFODION.T132SCH
 
 T132_L1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>drop library t132_l1;
 
@@ -168,10 +191,7 @@ T132_L1
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser DB__ROOT;
 >>
 >>-- reset 
 >>revoke role DB__ROOTROLE from sql_user1;
@@ -191,6 +211,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>obey TEST132(test_popindex);
@@ -205,24 +228,10 @@ SHOW
 >>set schema t132sch;
 
 --- SQL operation complete.
->>set parserflags 1;
-
---- SQL operation complete.
->>set parserflags 131072;
-
---- SQL operation complete.
->>cqd DDL_TRANSACTIONS 'ON';
-
---- SQL operation complete.
+>>--set parserflags 131072;
+>>--cqd DDL_TRANSACTIONS 'ON';
 >>
->>get tables;
-
-Tables in Schema TRAFODION.T132SCH
-==================================
-
-SB_HISTOGRAMS
-SB_HISTOGRAM_INTERVALS
-SB_PERSISTENT_SAMPLES
+>>get tables, match '%T132%';
 
 --- SQL operation complete.
 >>
@@ -239,13 +248,6 @@ SB_PERSISTENT_SAMPLES
 >>create index t132t2_ndx1 on t132t2(c2) no populate;
 
 --- SQL operation complete.
->>create table t132t3 (c1 int not null primary key, c2 int)
-+>  attribute by sql_user1;
-
---- SQL operation complete.
->>create index t132t3_ndx1 on t132t3(c2) no populate;
-
---- SQL operation complete.
 >>
 >>insert into t132t1 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
 
@@ -253,21 +255,20 @@ SB_PERSISTENT_SAMPLES
 >>insert into t132t2 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
 
 --- 8 row(s) inserted.
->>insert into t132t3 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
-
---- 8 row(s) inserted.
 >>
->>get tables;
+>>get tables, match '%T132%';
 
 Tables in Schema TRAFODION.T132SCH
 ==================================
 
-SB_HISTOGRAMS
-SB_HISTOGRAM_INTERVALS
-SB_PERSISTENT_SAMPLES
 T132T1
 T132T2
-T132T3
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
 >>showddl t132t1;
@@ -298,23 +299,12 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T2 TO SQL_USER1 WITH GRANT OPTION;
 
 --- SQL operation complete.
->>showddl t132t3;
-
-CREATE TABLE TRAFODION.T132SCH.T132T3
-  (
-    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , C2                               INT DEFAULT NULL
-  , PRIMARY KEY (C1 ASC)
-  )
- ATTRIBUTES ALIGNED FORMAT
-;
-
--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132T3 TO SQL_USER1 WITH GRANT OPTION;
-
---- SQL operation complete.
 >>
 >>-- DB__ROOT can populate indexes
->>sh sqlci -i "TEST132(populate_index)";
+>>obey TEST132(populate_index);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>populate index t132t1_ndx1 on t132t1;
 
@@ -322,19 +312,14 @@ CREATE TABLE TRAFODION.T132SCH.T132T3
 >>populate index t132t2_ndx1 on t132t2;
 
 --- SQL operation complete.
->>populate index t132t3_ndx1 on t132t3;
-
---- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
 >>obey TEST132(popindex_check_reset);
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
+>>set parserflags 1;
+
+--- SQL operation complete.
 >>
 >>select count(*) from table (index_table t132t1_ndx1);
 
@@ -352,16 +337,8 @@ End of MXCI Session
                    8
 
 --- 1 row(s) selected.
->>select count(*) from table (index_table t132t3_ndx1);
-
-(EXPR)              
---------------------
-
-                   8
-
---- 1 row(s) selected.
 >>
->>drop index t132t1_ndx1;
+>>cleanup index t132t1_ndx1;
 
 --- SQL operation complete.
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
@@ -373,18 +350,16 @@ End of MXCI Session
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t3_ndx1;
-
---- SQL operation complete.
->>create index t132t3_ndx1 on t132t3 (c2) no populate;
-
---- SQL operation complete.
 >>
 >>
 >>-- object owner can populate
->>-- sql_user1 owns t132t2 and t132t3 but not t132t1
+>>-- sql_user1 owns t132t2 but not t132t1
 >>--  popindex fails for t132t1 but works for the rest
->>sh sqlci -i "TEST132(populate_index)" -u sql_user1;
+>>changeuser sql_user1;
+>>obey TEST132(populate_index);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>populate index t132t1_ndx1 on t132t1;
 
@@ -396,19 +371,15 @@ End of MXCI Session
 >>populate index t132t2_ndx1 on t132t2;
 
 --- SQL operation complete.
->>populate index t132t3_ndx1 on t132t3;
-
---- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>obey TEST132(popindex_check_reset);
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
+>>set parserflags 1;
+
+--- SQL operation complete.
 >>
 >>select count(*) from table (index_table t132t1_ndx1);
 
@@ -426,16 +397,8 @@ End of MXCI Session
                    8
 
 --- 1 row(s) selected.
->>select count(*) from table (index_table t132t3_ndx1);
-
-(EXPR)              
---------------------
-
-                   8
-
---- 1 row(s) selected.
 >>
->>drop index t132t1_ndx1;
+>>cleanup index t132t1_ndx1;
 
 --- SQL operation complete.
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
@@ -447,19 +410,17 @@ End of MXCI Session
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t3_ndx1;
-
---- SQL operation complete.
->>create index t132t3_ndx1 on t132t3 (c2) no populate;
-
---- SQL operation complete.
 >>
 >>
 >>-- if user belongs to DB__ROOTROLE, has DML privileges, so can populate indexes
 >>grant role DB__ROOTROLE to sql_user2;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(populate_index)" -u sql_user2;
+>>changeuser sql_user2;
+>>obey TEST132(populate_index);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>populate index t132t1_ndx1 on t132t1;
 
@@ -467,19 +428,15 @@ End of MXCI Session
 >>populate index t132t2_ndx1 on t132t2;
 
 --- SQL operation complete.
->>populate index t132t3_ndx1 on t132t3;
-
---- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>obey TEST132(popindex_check_reset);
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
+>>set parserflags 1;
+
+--- SQL operation complete.
 >>
 >>select count(*) from table (index_table t132t1_ndx1);
 
@@ -497,16 +454,8 @@ End of MXCI Session
                    8
 
 --- 1 row(s) selected.
->>select count(*) from table (index_table t132t3_ndx1);
-
-(EXPR)              
---------------------
-
-                   8
-
---- 1 row(s) selected.
 >>
->>drop index t132t1_ndx1;
+>>cleanup index t132t1_ndx1;
 
 --- SQL operation complete.
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
@@ -516,12 +465,6 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
-
---- SQL operation complete.
->>drop index t132t3_ndx1;
-
---- SQL operation complete.
->>create index t132t3_ndx1 on t132t3 (c2) no populate;
 
 --- SQL operation complete.
 >>
@@ -537,10 +480,11 @@ End of MXCI Session
 >>grant SELECT, INSERT on t132t2 to sql_user3 by sql_user1;
 
 --- SQL operation complete.
->>grant INSERT on t132t3 to sql_user3 by sql_user1;
+>>changeuser sql_user3;
+>>obey TEST132(populate_index);
+>>set schema t132sch;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(populate_index)" -u sql_user3;
 >>
 >>populate index t132t1_ndx1 on t132t1;
 
@@ -550,21 +494,15 @@ End of MXCI Session
 >>populate index t132t2_ndx1 on t132t2;
 
 --- SQL operation complete.
->>populate index t132t3_ndx1 on t132t3;
-
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T3.
-
---- SQL operation failed with errors.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>obey TEST132(popindex_check_reset);
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
+>>set parserflags 1;
+
+--- SQL operation complete.
 >>
 >>select count(*) from table (index_table t132t1_ndx1);
 
@@ -582,16 +520,8 @@ End of MXCI Session
                    8
 
 --- 1 row(s) selected.
->>select count(*) from table (index_table t132t3_ndx1);
-
-(EXPR)              
---------------------
-
-                   0
-
---- 1 row(s) selected.
 >>
->>drop index t132t1_ndx1;
+>>cleanup index t132t1_ndx1;
 
 --- SQL operation complete.
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
@@ -603,12 +533,6 @@ End of MXCI Session
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t3_ndx1;
-
---- SQL operation complete.
->>create index t132t3_ndx1 on t132t3 (c2) no populate;
-
---- SQL operation complete.
 >>
 >>
 >>-- reset
@@ -618,17 +542,7 @@ End of MXCI Session
 >>drop table t132t2 cascade;
 
 --- SQL operation complete.
->>drop table t132t3 cascade;
-
---- SQL operation complete.
->>get tables;
-
-Tables in Schema TRAFODION.T132SCH
-==================================
-
-SB_HISTOGRAMS
-SB_HISTOGRAM_INTERVALS
-SB_PERSISTENT_SAMPLES
+>>get tables, match 'T132%';
 
 --- SQL operation complete.
 >>
@@ -753,6 +667,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 
@@ -764,6 +681,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- DB__ROOT has all privileges
@@ -772,7 +692,6 @@ CREATE_SCHEMA
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
@@ -871,7 +790,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Tue Sep 27 10:16:36 2016
+-- Definition current  Sun Oct 22 16:08:56 2017
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -888,7 +807,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Tue Sep 27 10:16:39 2016
+-- Definition current  Sun Oct 22 16:08:59 2017
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -905,7 +824,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Tue Sep 27 10:16:41 2016
+-- Definition current  Sun Oct 22 16:09:02 2017
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -919,7 +838,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Tue Sep 27 10:16:44 2016
+-- Definition current  Sun Oct 22 16:09:05 2017
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -932,7 +851,12 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>
 >>
 >>-- sql_user1 owns some of the objects but not all
->>sh sqlci -i "TEST132(show_objects)" -u sql_user1;
+>>changeuser sql_user1;
+>>obey TEST132(show_objects);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
@@ -990,7 +914,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_GAMES ADD CONSTRAINT
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Tue Sep 27 10:17:03 2016
+-- Definition current  Sun Oct 22 16:09:18 2017
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1020,14 +944,15 @@ ALTER TABLE TRAFODION.T132SCH.T132_GAMES ADD CONSTRAINT
 
 --- SQL operation failed with errors.
 >>
->>exit;
-
-End of MXCI Session
-
 >>
 >>-- sql_user2 get privileges through DB__ROOTROLE role SHOW privilege
 >>-- first illustrate that sql_user2 has no privileges
->>sh sqlci -i "TEST132(show_objects)" -u sql_user2;
+>>changeuser sql_user2;
+>>obey TEST132(show_objects);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
@@ -1079,16 +1004,18 @@ End of MXCI Session
 
 --- SQL operation failed with errors.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>grant role DB__ROOTROLE to sql_user2;
 
 --- SQL operation complete.
 >>
 >>-- now sql_user2 has privileges with the grant
->>sh sqlci -i "TEST132(show_objects)" -u sql_user2;
+>>changeuser sql_user2;
+>>obey TEST132(show_objects);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
@@ -1187,7 +1114,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Tue Sep 27 10:17:40 2016
+-- Definition current  Sun Oct 22 16:09:50 2017
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1204,7 +1131,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Tue Sep 27 10:17:40 2016
+-- Definition current  Sun Oct 22 16:09:50 2017
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1221,7 +1148,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Tue Sep 27 10:17:40 2016
+-- Definition current  Sun Oct 22 16:09:50 2017
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1235,7 +1162,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Tue Sep 27 10:17:40 2016
+-- Definition current  Sun Oct 22 16:09:50 2017
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1246,19 +1173,24 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>revoke role DB__ROOTROLE from sql_user2;
 
 --- SQL operation complete.
 >>
 >>-- sql_user3 gets some privileges through SELECT grant
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>grant SELECT on t132_teams to sql_user3;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(show_objects)" -u sql_user3;
+>>changeuser sql_user3;
+>>obey TEST132(show_objects);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
@@ -1316,7 +1248,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Tue Sep 27 10:18:07 2016
+-- Definition current  Sun Oct 22 16:10:13 2017
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1341,10 +1273,13 @@ ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
 
 --- SQL operation failed with errors.
 >>
->>exit;
+>>changeuser db__root;
+>>set schema t132sch;
 
-End of MXCI Session
+--- SQL operation complete.
+>>revoke select on t132_teams from sql_user3;
 
+--- SQL operation complete.
 >>
 >>-- regrant the show privs - everyone has privs
 >>get privileges on component sql_operations for "PUBLIC";
@@ -1353,6 +1288,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>grant component privilege "SHOW" on sql_operations to "PUBLIC";
@@ -1366,8 +1304,16 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
->>sh sqlci -i "TEST132(show_objects)" -u sql_user1;
+>>changeuser sql_user1;
+>>obey TEST132(show_objects);
+>>
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
@@ -1422,7 +1368,6 @@ ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
   (TRAFODION.T132SCH.T132_TEAMS.TEAM_NUMBER > 0)
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132_TEAMS TO DB__ROOT WITH GRANT OPTION;
-  GRANT SELECT ON TRAFODION.T132SCH.T132_TEAMS TO SQL_USER3;
 
 --- SQL operation complete.
 >>showddl t132_giants_games;
@@ -1467,7 +1412,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Tue Sep 27 10:18:30 2016
+-- Definition current  Sun Oct 22 16:10:48 2017
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1484,7 +1429,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Tue Sep 27 10:18:30 2016
+-- Definition current  Sun Oct 22 16:10:48 2017
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1501,7 +1446,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Tue Sep 27 10:18:30 2016
+-- Definition current  Sun Oct 22 16:10:48 2017
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1515,7 +1460,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Tue Sep 27 10:18:30 2016
+-- Definition current  Sun Oct 22 16:10:49 2017
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1526,337 +1471,11 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
->>sh sqlci -i "TEST132(show_objects)" -u sql_user2;
->>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
-
---- SQL operation complete.
 >>
->>showddl t132_games;
-
-CREATE TABLE TRAFODION.T132SCH.T132_GAMES
-  (
-    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , PRIMARY KEY (GAME_NUMBER ASC)
-  )
- ATTRIBUTES ALIGNED FORMAT
-;
-
-CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
-  (
-    HOME_TEAM_NUMBER ASC
-  )
-;
-
-ALTER TABLE TRAFODION.T132SCH.T132_GAMES ADD CONSTRAINT
-  TRAFODION.T132SCH.VALID_GAME_NUMBER CHECK
-  (TRAFODION.T132SCH.T132_GAMES.GAME_NUMBER > 0)
-
--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132_GAMES TO SQL_USER1 WITH GRANT OPTION;
+>>changeuser db__root;
+>>set schema t132sch;
 
 --- SQL operation complete.
->>showddl t132_teams;
-
-CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
-  (
-    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_NAME                        CHAR(20) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT                     VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT_NUMBER              CHAR(10) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , PRIMARY KEY (TEAM_NUMBER ASC)
-  )
- ATTRIBUTES ALIGNED FORMAT
-;
-
-ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
-  TRAFODION.T132SCH.VALID_TEAM_NO CHECK
-  (TRAFODION.T132SCH.T132_TEAMS.TEAM_NUMBER > 0)
-
--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132_TEAMS TO DB__ROOT WITH GRANT OPTION;
-  GRANT SELECT ON TRAFODION.T132SCH.T132_TEAMS TO SQL_USER3;
-
---- SQL operation complete.
->>showddl t132_giants_games;
-
-CREATE VIEW TRAFODION.T132SCH.T132_GIANTS_GAMES AS
-  SELECT TRAFODION.T132SCH.T132_GAMES.GAME_NUMBER,
-    TRAFODION.T132SCH.T132_GAMES.GAME_TIME,
-    TRAFODION.T132SCH.T132_GAMES.GAME_LOCATION FROM
-    TRAFODION.T132SCH.T132_GAMES WHERE
-    TRAFODION.T132SCH.T132_GAMES.HOME_TEAM_NUMBER = 2 ORDER BY 1, 2, 3 ;
-
--- GRANT SELECT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132_GIANTS_GAMES TO DB__ROOT WITH GRANT OPTION;
-
---- SQL operation complete.
->>showddl t132_home_teams_games;
-
-CREATE VIEW TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES AS
-  SELECT T.TEAM_NUMBER, G.GAME_NUMBER, G.GAME_TIME FROM
-    TRAFODION.T132SCH.T132_TEAMS T, TRAFODION.T132SCH.T132_GAMES G WHERE
-    T.TEAM_NUMBER = G.HOME_TEAM_NUMBER ORDER BY 1, G.GAME_NUMBER, G.GAME_TIME
-    ;
-
--- GRANT SELECT, REFERENCES ON TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES TO DB__ROOT WITH GRANT OPTION;
-
---- SQL operation complete.
->>showddl sequence t132_team_number_sequence;
-
-CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
-  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
-  INCREMENT BY 1
-  MAXVALUE 9223372036854775806
-  MINVALUE 1
-  CACHE 25
-  NO CYCLE
-  LARGEINT
-;
-
--- GRANT USAGE ON SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
-
---- SQL operation complete.
->>
->>invoke t132_games;
-
--- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Tue Sep 27 10:18:51 2016
-
-  (
-    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (GAME_NUMBER ASC)
-
---- SQL operation complete.
->>invoke t132_teams;
-
--- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Tue Sep 27 10:18:51 2016
-
-  (
-    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_NAME                        CHAR(20) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT                     VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT_NUMBER              CHAR(10) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (TEAM_NUMBER ASC)
-
---- SQL operation complete.
->>invoke t132_giants_games;
-
--- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Tue Sep 27 10:18:51 2016
-
-  (
-    GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-
---- SQL operation complete.
->>invoke t132_home_teams_games;
-
--- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Tue Sep 27 10:18:51 2016
-
-  (
-    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  )
-
---- SQL operation complete.
->>
->>exit;
-
-End of MXCI Session
-
->>sh sqlci -i "TEST132(show_objects)" -u sql_user3;
->>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
-
---- SQL operation complete.
->>
->>showddl t132_games;
-
-CREATE TABLE TRAFODION.T132SCH.T132_GAMES
-  (
-    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , PRIMARY KEY (GAME_NUMBER ASC)
-  )
- ATTRIBUTES ALIGNED FORMAT
-;
-
-CREATE INDEX T132_HOME_GAMES ON TRAFODION.T132SCH.T132_GAMES
-  (
-    HOME_TEAM_NUMBER ASC
-  )
-;
-
-ALTER TABLE TRAFODION.T132SCH.T132_GAMES ADD CONSTRAINT
-  TRAFODION.T132SCH.VALID_GAME_NUMBER CHECK
-  (TRAFODION.T132SCH.T132_GAMES.GAME_NUMBER > 0)
-
--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132_GAMES TO SQL_USER1 WITH GRANT OPTION;
-
---- SQL operation complete.
->>showddl t132_teams;
-
-CREATE TABLE TRAFODION.T132SCH.T132_TEAMS
-  (
-    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_NAME                        CHAR(20) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT                     VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT_NUMBER              CHAR(10) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , PRIMARY KEY (TEAM_NUMBER ASC)
-  )
- ATTRIBUTES ALIGNED FORMAT
-;
-
-ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
-  TRAFODION.T132SCH.VALID_TEAM_NO CHECK
-  (TRAFODION.T132SCH.T132_TEAMS.TEAM_NUMBER > 0)
-
--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132_TEAMS TO DB__ROOT WITH GRANT OPTION;
-  GRANT SELECT ON TRAFODION.T132SCH.T132_TEAMS TO SQL_USER3;
-
---- SQL operation complete.
->>showddl t132_giants_games;
-
-CREATE VIEW TRAFODION.T132SCH.T132_GIANTS_GAMES AS
-  SELECT TRAFODION.T132SCH.T132_GAMES.GAME_NUMBER,
-    TRAFODION.T132SCH.T132_GAMES.GAME_TIME,
-    TRAFODION.T132SCH.T132_GAMES.GAME_LOCATION FROM
-    TRAFODION.T132SCH.T132_GAMES WHERE
-    TRAFODION.T132SCH.T132_GAMES.HOME_TEAM_NUMBER = 2 ORDER BY 1, 2, 3 ;
-
--- GRANT SELECT, DELETE, UPDATE, REFERENCES ON TRAFODION.T132SCH.T132_GIANTS_GAMES TO DB__ROOT WITH GRANT OPTION;
-
---- SQL operation complete.
->>showddl t132_home_teams_games;
-
-CREATE VIEW TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES AS
-  SELECT T.TEAM_NUMBER, G.GAME_NUMBER, G.GAME_TIME FROM
-    TRAFODION.T132SCH.T132_TEAMS T, TRAFODION.T132SCH.T132_GAMES G WHERE
-    T.TEAM_NUMBER = G.HOME_TEAM_NUMBER ORDER BY 1, G.GAME_NUMBER, G.GAME_TIME
-    ;
-
--- GRANT SELECT, REFERENCES ON TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES TO DB__ROOT WITH GRANT OPTION;
-
---- SQL operation complete.
->>showddl sequence t132_team_number_sequence;
-
-CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
-  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
-  INCREMENT BY 1
-  MAXVALUE 9223372036854775806
-  MINVALUE 1
-  CACHE 25
-  NO CYCLE
-  LARGEINT
-;
-
--- GRANT USAGE ON SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
-
---- SQL operation complete.
->>
->>invoke t132_games;
-
--- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Tue Sep 27 10:19:11 2016
-
-  (
-    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (GAME_NUMBER ASC)
-
---- SQL operation complete.
->>invoke t132_teams;
-
--- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Tue Sep 27 10:19:11 2016
-
-  (
-    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_NAME                        CHAR(20) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT                     VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , TEAM_CONTACT_NUMBER              CHAR(10) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (TEAM_NUMBER ASC)
-
---- SQL operation complete.
->>invoke t132_giants_games;
-
--- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Tue Sep 27 10:19:11 2016
-
-  (
-    GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-
---- SQL operation complete.
->>invoke t132_home_teams_games;
-
--- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Tue Sep 27 10:19:11 2016
-
-  (
-    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
-      DROPPABLE
-  )
-
---- SQL operation complete.
->>
->>exit;
-
-End of MXCI Session
-
->>
 >>drop table t132_teams cascade;
 
 --- SQL operation complete.
@@ -1880,14 +1499,7 @@ End of MXCI Session
 >>set schema t132sch;
 
 --- SQL operation complete.
->>get tables;
-
-Tables in Schema TRAFODION.T132SCH
-==================================
-
-SB_HISTOGRAMS
-SB_HISTOGRAM_INTERVALS
-SB_PERSISTENT_SAMPLES
+>>get tables, match '%T132%';
 
 --- SQL operation complete.
 >>
@@ -1904,16 +1516,16 @@ SB_PERSISTENT_SAMPLES
 
 --- 8 row(s) inserted.
 >>
->>get tables;
+>>get tables, match '%T132%';
 
 Tables in Schema TRAFODION.T132SCH
 ==================================
 
-SB_HISTOGRAMS
-SB_HISTOGRAM_INTERVALS
-SB_PERSISTENT_SAMPLES
 T132T1
 T132T2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>select count(*) from t132t1;
@@ -1934,7 +1546,10 @@ T132T2
 --- 1 row(s) selected.
 >>
 >>-- update statistics as DB__ROOT
->>sh sqlci -i "TEST132(update_stats)";
+>>obey TEST132(update_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>update statistics for table t132t1 on every column;
 
@@ -1943,15 +1558,14 @@ T132T2
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
 >>
->>-- run as DB__ROOTROLE
 >>-- DB__ROOTROLE is granted MANAGE_STATISTICS privilege by default
 >>-- first show that sql_user2 cannot perform operations
->>sh sqlci -i "TEST132(update_stats)" -u sql_user2;
+>>changeuser sql_user2;
+>>obey TEST132(update_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>update statistics for table t132t1 on every column;
 
@@ -1968,16 +1582,17 @@ End of MXCI Session
 
 --- SQL operation failed with errors.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
+>>
+>>-- now show privileges after being granted DB__ROOTROLE role
 >>grant role DB__ROOTROLE to sql_user2;
 
 --- SQL operation complete.
->>
->>-- now show privileges after being granted DB__ROOTROLE role
->>sh sqlci -i "TEST132(update_stats)" -u sql_user2;
+>>changeuser sql_user2;
+>>obey TEST132(update_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>update statistics for table t132t1 on every column;
 
@@ -1986,17 +1601,19 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser DB__ROOT;
 >>revoke role DB__ROOTROLE from sql_user2;
 
 --- SQL operation complete.
 >>
 >>-- run as table owner, sql_user1 owns one table
 >>-- update stats only works for t132t2, showstats works on both tables
->>sh sqlci -i "TEST132(show_update_stats)" -u sql_user1;
+>>changeuser sql_user1;
+>>obey TEST132(show_update_stats);
+>>obey TEST132(update_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>update statistics for table t132t1 on every column;
 
@@ -2013,39 +1630,35 @@ End of MXCI Session
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
 >>
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 8170765222353678252
+Table ID: 3703791059232936033
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 208504770      8           8           8 SYSKEY
- 208504767      8           8           8 C1
- 208504760      8           8           8 C2
+1800623295      8           8           8 SYSKEY
+1800623288      8           8           8 C1
+1800623285      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 8170765222353678398
+Table ID: 3703791059232936201
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 214964582      8           8           8 SYSKEY
- 214964577      8           8           8 C1
- 214964572      8           8           8 C2
+1824908698      8           8           8 SYSKEY
+1824908693      8           8           8 C1
+1824908688      8           8           8 C2
 
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser DB__ROOT;
 >>
 >>-- revoke SHOW privilege from public for the next set of tests
 >>get privileges on component sql_operations for "PUBLIC";
@@ -2055,6 +1668,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
@@ -2067,6 +1683,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- Run with MANAGE_STATISTICS and no SHOW
@@ -2074,7 +1693,12 @@ CREATE_SCHEMA
 >>get privileges on component sql_operations for sql_user3;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(show_update_stats)" -u sql_user3;
+>>changeuser sql_user3;
+>>obey TEST132(show_update_stats);
+>>obey TEST132(update_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>update statistics for table t132t1 on every column;
 
@@ -2095,7 +1719,6 @@ CREATE_SCHEMA
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
 >>
 >>showstats for table t132t1 on every column;
 
@@ -2112,15 +1735,12 @@ CREATE_SCHEMA
 
 --- SQL operation failed with errors.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
+>>
+>>-- now show privileges after being granted MANAGE_STATISTICS
 >>grant component privilege MANAGE_STATISTICS on sql_operations to sql_user3;
 
 --- SQL operation complete.
->>
->>-- now show privileges after being granted MANAGE_STATISTICS
 >>get privileges on component sql_operations for sql_user3;
 
 Privilege information on Component SQL_OPERATIONS for SQL_USER3
@@ -2128,8 +1748,16 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER3
 
 MANAGE_STATISTICS
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
->>sh sqlci -i "TEST132(show_update_stats)" -u sql_user3;
+>>changeuser sql_user3;
+>>obey TEST132(show_update_stats);
+>>obey TEST132(update_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>update statistics for table t132t1 on every column;
 
@@ -2142,39 +1770,35 @@ MANAGE_STATISTICS
 >>set schema t132sch;
 
 --- SQL operation complete.
->>log LOG132;
 >>
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 8170765222353678252
+Table ID: 3703791059232936033
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 208504771      8           8           8 SYSKEY
- 208504766      8           8           8 C1
- 208504761      8           8           8 C2
+1800623294      8           8           8 SYSKEY
+1800623289      8           8           8 C1
+1800623284      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 8170765222353678398
+Table ID: 3703791059232936201
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 214964583      8           8           8 SYSKEY
- 214964576      8           8           8 C1
- 214964573      8           8           8 C2
+1824908699      8           8           8 SYSKEY
+1824908692      8           8           8 C1
+1824908689      8           8           8 C2
 
 
 --- SQL operation complete.
 >>
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>revoke component privilege MANAGE_STATISTICS on sql_operations from sql_user3;
 
 --- SQL operation complete.
@@ -2184,7 +1808,11 @@ End of MXCI Session
 >>
 >>-- test showstats
 >>-- showstats should no longer work
->>sh sqlci -i "TEST132(show_stats)" -u sql_user3;
+>>changeuser sql_user3;
+>>obey TEST132(show_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>showstats for table t132t1 on every column;
 
@@ -2200,13 +1828,16 @@ End of MXCI Session
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T2.
 
 --- SQL operation failed with errors.
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>
 >>-- grant select to allow showstats to work
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>grant SELECT on t132t1 to sql_user4;
+
+--- SQL operation complete.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
 >>showddl t132t1;
@@ -2223,18 +1854,22 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
   GRANT SELECT ON TRAFODION.T132SCH.T132T1 TO SQL_USER4;
 
 --- SQL operation complete.
->>sh sqlci -i "TEST132(show_stats)" -u sql_user4;
+>>changeuser sql_user4;
+>>obey TEST132(show_stats);
+>>set schema t132sch;
+
+--- SQL operation complete.
 >>
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 8170765222353678252
+Table ID: 3703791059232936033
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 208504771      8           8           8 SYSKEY
- 208504766      8           8           8 C1
- 208504761      8           8           8 C2
+1800623294      8           8           8 SYSKEY
+1800623289      8           8           8 C1
+1800623284      8           8           8 C2
 
 
 --- SQL operation complete.
@@ -2245,10 +1880,7 @@ Table ID: 8170765222353678252
 *** ERROR[9241] Insufficient privileges to perform the statistics request for table TRAFODION.T132SCH.T132T2.
 
 --- SQL operation failed with errors.
->>exit;
-
-End of MXCI Session
-
+>>changeuser db__root;
 >>
 >>-- testcase for trafodion-2188 fix
 >>create schema t132sch_private;
@@ -2299,23 +1931,27 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER3
 
 MANAGE_STATISTICS
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
->>sh sqlci -i "TEST132(update_stats1)" -u sql_user3;
+>>changeuser sql_user3;
+>>obey TEST132(update_stats1);
+>>set schema t132sch_private;
+
+--- SQL operation complete.
 >>update statistics for table t132t3 create sample random 10 percent;
 
 --- SQL operation complete.
 >>
->>exit;
+>>changeuser db__root;
+>>set schema t132sch_private;
 
-End of MXCI Session
-
+--- SQL operation complete.
 >>revoke component privilege MANAGE_STATISTICS on sql_operations from sql_user3;
 
 --- SQL operation complete.
->>drop table t132t3 cascade;
-
---- SQL operation complete.
->>drop schema t132sch_private cascade;
+>>cleanup schema t132sch_private;
 
 --- SQL operation complete.
 >>set schema t132sch;
@@ -2337,12 +1973,19 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>drop table t132t1;
 
 --- SQL operation complete.
 >>drop table t132t2;
+
+--- SQL operation complete.
+>>
+>>get tables, match 'T132%';
 
 --- SQL operation complete.
 >>

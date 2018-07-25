@@ -42,7 +42,6 @@
 #include <iostream>
 #include <errno.h>  
 #include "Platform.h"
-#include "RWInterface.h"
 
 #include "SqlciCmd.h"
 #include "SqlciError.h"
@@ -89,13 +88,9 @@ void Logfile::Open(char * name_, open_mode mode)
     }
     if (desensitize)
       if (desensitize == 'U')
-#pragma nowarn(1506)   // warning elimination 
 	{for (char *n=name; *n; n++) *n = toupper(*n);}
-#pragma warn(1506)  // warning elimination 
       else
-#pragma nowarn(1506)   // warning elimination 
 	{for (char *n=name; *n; n++) *n = tolower(*n);}
-#pragma warn(1506)  // warning elimination 
   #endif
   
   if (mode == CLEAR_)
@@ -169,9 +164,7 @@ short Logfile::Write(const char * buffer, Lng32 buflen)
 	    buflen--;
 	  }
 
-#pragma nowarn(1506)   // warning elimination 
       retcode = fwrite(buffer, buflen, 1, logfile_stream);
-#pragma warn(1506)  // warning elimination 
       fflush (logfile_stream);
       if (!retcode)
 	return -1;
@@ -217,9 +210,7 @@ short Logfile::WriteAll(const char * buffer, Lng32 buflen, Int32 useCout)
   if (IsOpen())
   {
     if (useCout)
-#pragma nowarn(1506)   // warning elimination 
       return Write (buffer, strlen(buffer));
-#pragma warn(1506)  // warning elimination 
     else
       return Write (buffer, buflen);
   }
@@ -233,16 +224,12 @@ short Logfile::WriteAll(const WCHAR * mbBuf, Lng32 buflen)
 
 short Logfile::WriteAll(const char * buffer)
 {
-#pragma nowarn(1506)   // warning elimination 
    return WriteAll (buffer, strlen(buffer));
-#pragma warn(1506)  // warning elimination 
 }
 
 short Logfile::WriteAllWithoutEOL(const char * buffer)
 {
-#pragma nowarn(1506)   // warning elimination 
    Int32 buflen = strlen(buffer);
-#pragma warn(1506)  // warning elimination 
    Int32 retcode ;
    
    if (NOT noDisplay())
@@ -258,13 +245,9 @@ short Logfile::WriteAllWithoutEOL(const char * buffer)
 
 	 if (buflen > 0)
 	 {
-#pragma nowarn(1506)   // warning elimination 
 	    retcode = fwrite(buffer, buflen, 1, logfile_stream);
-#pragma warn(1506)  // warning elimination 
             fflush(logfile_stream);
-#pragma nowarn(1506)   // warning elimination 
 	    return retcode;
-#pragma warn(1506)  // warning elimination 
 	 }
 	 else
 	    return -1;
@@ -309,18 +292,6 @@ short Log::process(SqlciEnv * sqlci_env)
 	    sqlci_env->get_logfile()->Close();
 	
 	sqlci_env->get_logfile()->Open(get_argument(), Logfile::CLEAR_);
-        // Check to see if report mode is on and if it is then call the report
-        // writer method to let them know that we have started a LOG command.
-        if (sqlci_env->isReportWriterMode())
-        {
-// 64-bit: no more report writer, return -1
-//          long retcode = RW_MXCI_sendOutputDevice (sqlci_env->sqlciRWEnv()->rwEnv(), sqlci_env, LOG_FILE);
-          Lng32 retcode = -1;
-          if (retcode) // retcode == -1
-          {
-            SqlciError (SQLCI_RW_INVALID_OUTPUT_DEVICE,(ErrorParam *) 0 );
-          }
-        }
 
         if (!sqlci_env->get_logfile()->IsOpen())
 	{
@@ -341,16 +312,6 @@ short Log::process(SqlciEnv * sqlci_env)
 	    sqlci_env->get_logfile()->Close();
 	
 	sqlci_env->get_logfile()->Open(get_argument(), Logfile::APPEND_);
-        if (sqlci_env->isReportWriterMode())
-        {
-// 64-bit: no more report writer, return -1
-//          long retcode = RW_MXCI_sendOutputDevice (sqlci_env->sqlciRWEnv()->rwEnv(), sqlci_env, LOG_FILE);
-          Lng32 retcode = -1;
-          if (retcode) // retcode == -1
-          {
-            SqlciError (SQLCI_RW_INVALID_OUTPUT_DEVICE,(ErrorParam *) 0 );
-          }
-        }
 
         if (!sqlci_env->get_logfile()->IsOpen())
 	{
@@ -369,18 +330,6 @@ short Log::process(SqlciEnv * sqlci_env)
       {
 	if (sqlci_env->get_logfile()->IsOpen())
 	  sqlci_env->get_logfile()->Close();
-
-        if (sqlci_env->isReportWriterMode())
-        {
-// 64-bit: no more report writer, return -1
-//          long retcode = RW_MXCI_sendOutputDevice (sqlci_env->sqlciRWEnv()->rwEnv(), sqlci_env, SCREEN);
-          Lng32 retcode = -1;
-          if (retcode) // retcode == -1
-          {
-            SqlciError (SQLCI_RW_INVALID_OUTPUT_DEVICE,(ErrorParam *) 0 );
-          }
-        }
-
       }
       break;
       

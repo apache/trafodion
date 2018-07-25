@@ -57,7 +57,6 @@ ComTdbUnPackRows::ComTdbUnPackRows()
 // (This constructor does not seem to be used)
 
 // Exclude this code from coverage analysis.
-// LCOV_EXCL_START
 ComTdbUnPackRows::ComTdbUnPackRows(const ComTdbUnPackRows *unPackRowsTdb)
   : ComTdb(ComTdb::ex_UNPACKROWS,
 	   eye_UNPACKROWS,
@@ -78,7 +77,6 @@ ComTdbUnPackRows::ComTdbUnPackRows(const ComTdbUnPackRows *unPackRowsTdb)
     flags_(unPackRowsTdb->flags_)
 {
 }
-// LCOV_EXCL_STOP
 
 // Construct a new UnPackRows TDB.
 // This constructor is call by the generator (PhysUnPackRows::codeGen() in
@@ -206,14 +204,12 @@ ComTdbUnPackRows::ComTdbUnPackRows(ComTdb *childTdb,
 //
 // Exclude this code from coverage analysis.
 // This code could be deleted since it is not used.
-// LCOV_EXCL_START
 void
 ComTdbUnPackRows::display() const 
 {
   // Do nothing for now.
   //
 }
-// LCOV_EXCL_STOP
 
 // ComTdbUnPackRows::pack() ---------------------------------------------
 // Pack the unPackRows TDB for transmission from the compiler to the
@@ -298,7 +294,7 @@ void ComTdbUnPackRows::displayContents(Space * space,ULng32 flag)
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
 
-      str_sprintf(buf,"flags_ = %b", flags_);
+      str_sprintf(buf,"flags_ = %x", flags_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
   

@@ -40,6 +40,7 @@
 
 
 #include <math.h>
+#include <unistd.h>
 #include <zlib.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>  
@@ -49,6 +50,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <uuid/uuid.h>
+#include <time.h>
 
 #include "NLSConversion.h"
 #include "nawstring.h"
@@ -66,6 +69,7 @@
 #include "ComDiags.h"
 #include "ComAnsiNamePart.h"
 #include "ComSqlId.h"
+#include "ComCextdecs.h"
 #include "ex_globals.h"
 
 #include "NAUserId.h"
@@ -122,10 +126,8 @@ Section missing, generate compiler error
 
 extern char * exClauseGetText(OperatorTypeEnum ote);
 
-NA_EIDPROC
 void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value);
 
-NA_EIDPROC
 static void ExRaiseJSONError(CollHeap* heap, ComDiagsArea** diagsArea, JsonReturnType type);
 
 
@@ -161,6 +163,8 @@ ex_function_trim_char::ex_function_trim_char(){};
 ExFunctionTokenStr::ExFunctionTokenStr(){};
 ExFunctionReverseStr::ExFunctionReverseStr(){};
 ex_function_current::ex_function_current(){};
+ex_function_unixtime::ex_function_unixtime(){};
+ex_function_sleep::ex_function_sleep(){};
 ex_function_unique_execute_id::ex_function_unique_execute_id(){};//Trigger -
 ex_function_get_triggers_status::ex_function_get_triggers_status(){};//Trigger -
 ex_function_get_bit_value_at::ex_function_get_bit_value_at(){};//Trigger -
@@ -188,6 +192,7 @@ ex_function_user::ex_function_user(){};
 ex_function_nullifzero::ex_function_nullifzero(){};
 ex_function_nvl::ex_function_nvl(){};
 ex_function_json_object_field_text::ex_function_json_object_field_text(){};
+ex_function_split_part::ex_function_split_part(){};
 
 ex_function_queryid_extract::ex_function_queryid_extract(){};
 ExFunctionUniqueId::ExFunctionUniqueId(){};
@@ -213,7 +218,6 @@ ExPAGroup::ExPAGroup(){};
 ExFunctionPack::ExFunctionPack(){};
 ExUnPackCol::ExUnPackCol(){};
 ExFunctionRangeLookup::ExFunctionRangeLookup(){};
-ExAuditImage::ExAuditImage(){};
 ExFunctionCrc32::ExFunctionCrc32(){};
 ExFunctionMd5::ExFunctionMd5(){};
 ExFunctionSha::ExFunctionSha(){};
@@ -289,14 +293,19 @@ ExFunctionInetNtoa::ExFunctionInetNtoa(OperatorTypeEnum oper_type,
 };
 
 ExFunctionAESEncrypt::ExFunctionAESEncrypt(OperatorTypeEnum oper_type,
-                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode )
-     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+                                           Attributes ** attr, Space * space, 
+                                           int in_args_num, 
+                                           Int32 aes_mode )
+     : ex_function_clause(oper_type, in_args_num + 1, attr, space), 
+       args_num(in_args_num), aes_mode(aes_mode)
 {
 };
 
 ExFunctionAESDecrypt::ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
-                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode)
-     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+                                           Attributes ** attr, Space * space, 
+                                           int in_args_num, Int32 aes_mode)
+     : ex_function_clause(oper_type, in_args_num + 1, attr, space), 
+       args_num(in_args_num), aes_mode(aes_mode)
 {
 };
 
@@ -346,18 +355,21 @@ ex_function_oct_length::ex_function_oct_length(OperatorTypeEnum oper_type,
 };
 
 ex_function_position::ex_function_position(OperatorTypeEnum oper_type,
-					   Attributes ** attr, Space * space)
-: ex_function_clause(oper_type, 3, attr, space)
+					   Attributes ** attr, Space * space,
+                                           int in_args_num)
+     : ex_function_clause(oper_type, in_args_num, attr, space),
+       args_num(in_args_num)
 {
   
 };
 
 ex_function_position_doublebyte::ex_function_position_doublebyte
 (
-	OperatorTypeEnum oper_type,
-        Attributes ** attr, Space * space
+     OperatorTypeEnum oper_type,
+     Attributes ** attr, Space * space, int in_args_num
 )
-: ex_function_clause(oper_type, 3, attr, space)
+     : ex_function_clause(oper_type, in_args_num, attr, space),
+       args_num(in_args_num)
 {
   
 };
@@ -438,6 +450,19 @@ ex_function_current::ex_function_current(OperatorTypeEnum oper_type,
   
 };
 
+ex_function_sleep::ex_function_sleep(OperatorTypeEnum oper_type, short numOperands,
+					 Attributes ** attr, Space * space)
+: ex_function_clause(oper_type, numOperands, attr, space)
+{
+  
+};
+
+ex_function_unixtime::ex_function_unixtime(OperatorTypeEnum oper_type, short numOperands,
+					 Attributes ** attr, Space * space)
+: ex_function_clause(oper_type, numOperands, attr, space)
+{
+  
+};
 //++ Triggers -
 ex_function_unique_execute_id::ex_function_unique_execute_id(OperatorTypeEnum oper_type,
 					 Attributes ** attr, Space * space)
@@ -805,15 +830,20 @@ ExFunctionSoundex::ExFunctionSoundex(OperatorTypeEnum oper_type,
 
 };
 
+ex_function_split_part::ex_function_split_part(OperatorTypeEnum oper_type
+            , Attributes **attr
+                    , Space *space)
+      : ex_function_clause(oper_type, 4, attr, space)
+{
+
+}
 
 // Triggers
 ex_expr::exp_return_type ex_function_get_bit_value_at::eval(char *op_data[],
 						     CollHeap *heap,
 						     ComDiagsArea** diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 buffLen = getOperand(1)->getLength(op_data[1]);
-#pragma warn(1506)   // warning elimination 
   
   // Get the position from operand 2.
   Lng32 pos = *(Lng32 *)op_data[2];
@@ -832,9 +862,7 @@ ex_expr::exp_return_type ex_function_get_bit_value_at::eval(char *op_data[],
 
   unsigned char onechar = *(unsigned char *)(op_data[1] + charnum);
   unsigned char mask = 1;
-#pragma nowarn(1506)   // warning elimination 
   mask = mask<<bitnum;
-#pragma warn(1506)   // warning elimination 
 
   *((ULng32*)op_data[0]) = (ULng32) (mask & onechar ? 1 : 0);
 
@@ -848,10 +876,8 @@ ex_expr::exp_return_type ex_function_is_bitwise_and_true::eval(char *op_data[],
 						     CollHeap *heap,
 						     ComDiagsArea** diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 leftSize = getOperand(1)->getLength(op_data[1]);
   Lng32 rightSize = getOperand(2)->getLength(op_data[2]);
-#pragma warn(1506)   // warning elimination 
   
   if (leftSize != rightSize)
   {
@@ -932,23 +958,12 @@ ExFunctionRangeLookup::ExFunctionRangeLookup(Attributes** attr,
 {
 } 
 
-ExAuditImage::ExAuditImage(Attributes** attr,
-			   Space* space,
-			   ExpDP2ExprPtr auditImageContainerExpr
-			   )
-  : ex_function_clause(ITM_AUDIT_IMAGE, 2, attr, space),
-    auditImageContainerExpr_(auditImageContainerExpr)
-{
-} 
-
 ex_expr::exp_return_type ex_function_concat::eval(char *op_data[],
 						  CollHeap *heap,
 						  ComDiagsArea** diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)   // warning elimination 
 
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
 
@@ -1092,7 +1107,6 @@ ex_expr::exp_return_type ExFunctionReplace::eval(char *op_data[],
 
   if (CollationInfo::isSystemCollation(getCollation()))
   {
-	// LCOV_EXCL_START
     nPasses= CollationInfo::getCollationNPasses(getCollation());
     lenSourceStr = getArgEncodedLen(0);
     lenSearchStr = getArgEncodedLen(1);
@@ -1122,7 +1136,6 @@ ex_expr::exp_return_type ExFunctionReplace::eval(char *op_data[],
 				nPasses,
 				getCollation(),
 				TRUE);
-    // LCOV_EXCL_START
 
   }
 
@@ -1360,9 +1373,7 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
   char trimCharSmallBuf[lenTrimCharSmallBuf];
 
   // find out the length of trim character.
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)   // warning elimination 
 
   CharInfo::CharSet cs = ((SimpleType *)getOperand(0))->getCharSet();
 
@@ -1395,9 +1406,7 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
       return ex_expr::EXPR_ERROR;
     }   
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)   // warning elimination 
 
   if (cs == CharInfo::UTF8) // If so, must ignore any filler spaces at end of string
   {
@@ -1416,7 +1425,6 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
   // case of collation -- 
   if (CollationInfo::isSystemCollation(getCollation()))
   {
-	  // LCOV_EXCL_START
     nPasses = CollationInfo::getCollationNPasses(getCollation());
 
     //get the length of the encoded source string
@@ -1467,7 +1475,6 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
 				getCollation(),
 				FALSE);
 
-    // LCOV_EXCL_STOP
   }
   // Find how many leading characters in operand 2 correspond to the trim
   // character.
@@ -1612,6 +1619,7 @@ ex_expr::exp_return_type ex_function_lower::eval(char *op_data[],
     {
       op_data[0][len0] = TOLOWER(op_data[1][len0]);
       ++len0;
+      ++total_bytes_out;
     }
   }
   else 
@@ -1798,9 +1806,7 @@ ex_expr::exp_return_type ex_function_oct_length::eval(char *op_data[],
      Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
      len1 = Attributes::trimFillerSpaces( op_data[1], prec1, len1, cs );
   }
-#pragma nowarn(1506)   // warning elimination 
   *(Lng32 *)op_data[0] = len1;
-#pragma warn(1506)   // warning elimination 
   
   return ex_expr::EXPR_OK;
 };
@@ -1976,7 +1982,6 @@ ex_expr::exp_return_type ExFunctionChar::eval(char *op_data[],CollHeap* heap,
       // in multi-byte form (i.e. in big-endian order).
       if (getOperType() == ITM_NCHAR_MP_CHAR) 
       {
-//SQ_LINUX #ifdef NA_WINNT
 		*(NAWchar*)op_data[0] = reversebytesUS(wcharCode);
       } else
         *(NAWchar*)op_data[0] = wcharCode;
@@ -2034,9 +2039,7 @@ ex_expr::exp_return_type ExFunctionConvertHex::eval(char *op_data[],
 {
   static const char HexArray[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
   if (getOperType() == ITM_CONVERTTOHEX)
     {
       Int32 i;
@@ -2096,27 +2099,17 @@ ex_expr::exp_return_type ExFunctionConvertHex::eval(char *op_data[],
 	      unsigned char upper4Bits;
 	      unsigned char lower4Bits;
 	      if ((op_data[1][i] >= '0') && (op_data[1][i] <= '9'))
-#pragma nowarn(1506)   // warning elimination 
 		upper4Bits = (unsigned char)(op_data[1][i]) - '0';
-#pragma warn(1506)  // warning elimination 
 	      else
-#pragma nowarn(1506)   // warning elimination 
 		upper4Bits = (unsigned char)(op_data[1][i]) - 'A' + 10;
-#pragma warn(1506)  // warning elimination 
 
 	      if ((op_data[1][i+1] >= '0') && (op_data[1][i+1] <= '9'))
-#pragma nowarn(1506)   // warning elimination 
 		lower4Bits = (unsigned char)(op_data[1][i+1]) - '0';
-#pragma warn(1506)  // warning elimination 
 	      else
-#pragma nowarn(1506)   // warning elimination 
 		lower4Bits = (unsigned char)(op_data[1][i+1]) - 'A' + 10;
-#pragma warn(1506)  // warning elimination 
 
 	      
-#pragma nowarn(1506)   // warning elimination 
 	      op_data[0][j] = (upper4Bits << 4) | lower4Bits;
-#pragma warn(1506)  // warning elimination 
 
 	      i += 2;
 	      j++;
@@ -2192,14 +2185,12 @@ Lng32 ex_function_position::findPosition
   // sourceStr.
 
   if (searchLen <= 0)
-  // LCOV_EXCL_START
     return 0;
-  // LCOV_EXCL_STOP
+
   Int32 position = 1;
   Int32 collPosition = 1;
   Int32 char_count = 1;
   Int32 number_bytes;
-  // LCOV_EXCL_START
   while (position + searchLen -1 <= sourceLen)
   {
     if (str_cmp(searchStr, &sourceStr[position-1], (Int32)searchLen) != 0)
@@ -2210,14 +2201,14 @@ Lng32 ex_function_position::findPosition
       } 
       else
       {
-	      number_bytes = Attributes::getFirstCharLength
-	          (&sourceStr[position-1], sourceLen - position + 1, cs);
-
-	      if(number_bytes <= 0)
-	        return (Lng32)-1;
-
-	      ++char_count;
-	      position += number_bytes;
+        number_bytes = Attributes::getFirstCharLength
+          (&sourceStr[position-1], sourceLen - position + 1, cs);
+        
+        if(number_bytes <= 0)
+          return (Lng32)-1;
+        
+        ++char_count;
+        position += number_bytes;
       }
     else
     {
@@ -2227,17 +2218,15 @@ Lng32 ex_function_position::findPosition
       }
       else
       {
-	    if(charOffsetFlag)
-	      return char_count;
-	    else
-	      return position;
+        if(charOffsetFlag)
+          return char_count;
+        else
+          return position;
       }
     }
   }
   return 0;
-  // LCOV_EXCL_STOP
 }
-
 
 ex_expr::exp_return_type 
 ex_function_char_length_doublebyte::eval(char *op_data[],
@@ -2248,13 +2237,49 @@ ex_function_char_length_doublebyte::eval(char *op_data[],
   // The data type of result is long.
 
   *(Lng32 *)op_data[0] = 
-#pragma nowarn(1506)   // warning elimination 
 	(getOperand(1)->getLength(op_data[-MAX_OPERANDS+1])) >> 1;
-#pragma warn(1506)  // warning elimination 
 
 
   return ex_expr::EXPR_OK;
 };
+
+Lng32 ex_function_position::errorChecks(Lng32 startPos, Lng32 occurrence,
+                                        CollHeap* heap, ComDiagsArea** diagsArea)
+{
+  // startPos is 1 based. Cannot be <= 0
+  if (startPos < 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1572);
+      *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
+      return -1;
+    }
+  
+  if (startPos == 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1571);
+      *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
+      return -1;
+    }
+  
+  if (occurrence < 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1572);
+      *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
+
+      return -1;
+    }
+  
+  if (occurrence == 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, -1571);
+      *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
+
+      return -1;
+    }
+  
+  return 0;
+}
+
 
 ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 						    CollHeap* heap,
@@ -2262,11 +2287,10 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 {
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
 
+  // return value is 1 based. First character position is 1.
 
   // search for operand 1
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
@@ -2274,39 +2298,67 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
   }
   
   // in operand 2
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
      len2 = Attributes::trimFillerSpaces( op_data[2], prec2, len2, cs );
   }
 
-  // If len1 is 0, return a position of 1.
-  Lng32 position;
+  Int32 startPos = 1;
+  Int32 occurrence = 1;
+  if (getNumOperands() >= 4) // start position and optional occurrence specified
+    {
+      startPos = *(Int32*)op_data[3];
+      if (getNumOperands() == 5)
+        occurrence = *(Int32*)op_data[4];
+
+      if (errorChecks(startPos, occurrence, heap, diagsArea))
+        return ex_expr::EXPR_ERROR;
+    }
+
+  // operand2/srcStr is the string to be searched in.
+  char * srcStr = &op_data[2][startPos-1];
+  len2 -= (startPos-1);
+
+  char * pat = op_data[1];
+
+  Lng32 position = 0;
   if (len1 > 0)
     {
-
       short nPasses = CollationInfo::getCollationNPasses(getCollation());
-      position = findPosition(op_data[2], 
-			      len2, 
-			      op_data[1], 
-			      len1, 
-			      1, 
-			      nPasses, 
-			      getCollation(),
-			      1,
-			      cs);
+      for (Int32 occ = 1; occ <= occurrence; occ++)
+        {
+          position = findPosition(srcStr,
+                                  len2, 
+                                  pat,
+                                  len1, 
+                                  1, 
+                                  nPasses, 
+                                  getCollation(),
+                                  1,
+                                  cs);
+          
+          if(position < 0)
+            {
+              const char *csname = CharInfo::getCharSetName(cs);
+              ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
+              *(*diagsArea) << DgString0(csname) << DgString1("POSITION FUNCTION"); 
+              return ex_expr::EXPR_ERROR;
+            }
 
-      if(position < 0)
-      {
-        const char *csname = CharInfo::getCharSetName(cs);
-        ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
-        *(*diagsArea) << DgString0(csname) << DgString1("POSITION FUNCTION"); 
-        return ex_expr::EXPR_ERROR;
-      }
- 
+          if ((occ < occurrence) &&
+              (position > 0)) // found a matching string
+            {
+              // skip the current matched string and continue
+              srcStr += (position + len1 - 1);
+              len2 -= (position + len1 - 1);
+              startPos += (position + len1 -1);
+            }
+        } // for occ
+
+      if (position > 0) // found matching string
+        position += (startPos - 1);
     }
   else
     {
@@ -2321,45 +2373,87 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 };
 
 ex_expr::exp_return_type ex_function_position_doublebyte::eval(char *op_data[],
-						    CollHeap*,
-						    ComDiagsArea**)
+                                                               CollHeap*heap,
+                                                               ComDiagsArea**diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
-  Lng32 len1 = ( getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]) ) / sizeof(NAWchar);
-#pragma warn(1506)  // warning elimination 
-  
-  // If len1 is 0, return a position of 1.
-  Lng32 position = 1;
-  if (len1 > 0)
-    {
-#pragma nowarn(1506)   // warning elimination 
-      Lng32 len2 = ( getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]) ) / sizeof(NAWchar);
-#pragma warn(1506)  // warning elimination 
+  // len1 and len2 are character lengths.
 
-      NAWchar* pat = (NAWchar*)op_data[1];
-      NAWchar* source = (NAWchar*)op_data[2];
-      
-      // If len1 > len2 or if operand 1 is not present in operand 2, return 
-      // a position of 0; otherwise return the position of operand 1 in 
-      // operand 2.
-      short found = 0;
-      while (position+len1-1 <= len2 && !found)
-        {
-	  if (wc_str_cmp(pat, &source[position-1], (Int32)len1))
-	    position++;
-	  else
-	    found = 1;
-        }
-      if (!found) position = 0;   
-    } 
+  // len1 is the pattern length to be searched.
+  Lng32 len1 = ( getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]) ) / sizeof(NAWchar);
+
+  // len2 is the length of string to be seached in.
+  Lng32 len2 = ( getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]) ) / sizeof(NAWchar);
   
+  // startPos is character pos and not byte pos
+  Int32 startPos = 1;
+
+  Int32 occurrence = 1;
+  if (getNumOperands() >= 4)
+    {
+      startPos = *(Int32*)op_data[3];
+      if (getNumOperands() == 5)
+        occurrence = *(Int32*)op_data[4];
+
+      if (ex_function_position::errorChecks(startPos, occurrence, 
+                                            heap, diagsArea))
+        return ex_expr::EXPR_ERROR;
+    }
+
+  // operand2/srcStr is the string to be searched in.
+  NAWchar * srcStr = 
+    (NAWchar*)&op_data[2][startPos*sizeof(NAWchar) - sizeof(NAWchar)];
+
+  NAWchar* pat = (NAWchar*)op_data[1];
+
+  // start at specified startPos
+  Lng32 position = startPos;
+
+  // If patter length(len1) > srcStr len(len2), return position of 0
+  if (len1 > len2)
+    position = 0;
+  else if (len1 > 0)
+    {
+      // if pat is not present in srcStr, return  position of 0; 
+      // otherwise return the position of pat in  srcStr for the 
+      // specified occurrence.
+      short found = 0;
+      for (Int32 occ = 1; occ <= occurrence; occ++)
+        {
+          found = 0;
+          while (position+len1-1 <= len2 && !found)
+           {
+              if (wc_str_cmp(pat, srcStr, (Int32)len1))
+                {
+                  position++;
+                  srcStr += 1;
+                }
+              else
+                found = 1;
+            }
+
+          if ((occ < occurrence) &&
+              (found)) // found a matching string
+            {
+              srcStr += len1;
+              position += len1;
+            }
+        } // for occ
+
+     if (! found) // not found matching string, return 0;
+       position = 0;
+    } 
+  else
+    {
+      // if len1 <= 0, return position of 1.
+      position = 1;
+    }
+
   // Now copy the position into result which is a long. 
   *(Lng32 *)op_data[0] = position;
   
   return ex_expr::EXPR_OK;
 };
-// LCOV_EXCL_START
-NA_EIDPROC
+
 static Lng32 findTokenPosition(char * sourceStr, Lng32 sourceLen,
 			      char * searchStr, Lng32 searchLen,
 			      short bytesPerChar)
@@ -2395,9 +2489,7 @@ ex_expr::exp_return_type ExFunctionTokenStr::eval(char *op_data[],
 {
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
   // search for operand 1
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
@@ -2405,9 +2497,7 @@ ex_expr::exp_return_type ExFunctionTokenStr::eval(char *op_data[],
   }
   
   // in operand 2
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
@@ -2564,7 +2654,157 @@ ex_expr::exp_return_type ExFunctionReverseStr::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 };
 
-// LCOV_EXCL_STOP
+ex_expr::exp_return_type ex_function_sleep::eval(char *op_data[],
+						   CollHeap* heap,
+						   ComDiagsArea** diagsArea)
+{
+  Int32 sec = 0;
+  switch (getOperand(1)->getDatatype())
+  {
+    case REC_BIN8_SIGNED:
+      sec = *(Int8 *)op_data[1] ;
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    case REC_BIN16_SIGNED:
+      sec = *(short *)op_data[1] ; 
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    case REC_BIN32_SIGNED:
+      sec = *(Lng32 *)op_data[1];
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+ 
+    case REC_BIN64_SIGNED:
+      sec = *(Int64 *)op_data[1];
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    default:
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+      return ex_expr::EXPR_ERROR;
+      break;
+  }
+  //get the seconds to sleep
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
+						   CollHeap* heap,
+						   ComDiagsArea** diagsArea)
+{
+  char *opData = op_data[1];
+  //if there is input value
+  if( getNumOperands() == 2)
+  {
+    struct tm ptr;
+    if (opData == NULL )
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+       *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
+       return ex_expr::EXPR_ERROR;
+    }
+    char* r = strptime(opData, "%Y-%m-%d %H:%M:%S", &ptr);
+    if( (r == NULL) ||  (*r != '\0') )
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+       *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
+       return ex_expr::EXPR_ERROR;
+    }
+    else
+      *(Int64 *)op_data[0] = mktime(&ptr);
+
+  }
+  else
+  {
+    time_t seconds;  
+    seconds = time((time_t *)NULL);   
+    *(Int64 *)op_data[0] = seconds; 
+  }
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ex_function_split_part::eval(char *op_data[]
+                               , CollHeap* heap
+                               , ComDiagsArea** diagsArea)
+{
+  size_t sourceLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+  size_t patternLen = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
+  Lng32 indexOfTarget = *(Lng32 *)op_data[3];
+
+  if (indexOfTarget <= 0)
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_INVALID_FIELD_POSITION);
+       *(*diagsArea) << DgInt0(indexOfTarget);
+       return ex_expr::EXPR_ERROR;
+    }
+
+  NAString source(op_data[1], sourceLen);
+  NAString pattern(op_data[2], patternLen);
+
+  Lng32 patternCnt = 0;
+  StringPos currentTargetPos = 0;
+  StringPos pos = 0;
+
+  while (patternCnt != indexOfTarget)
+    {
+       currentTargetPos = pos;
+       pos = source.index(pattern, pos);
+       if (pos == NA_NPOS)
+        break;
+       pos = pos + patternLen;
+       patternCnt++;
+    }
+
+  size_t targetLen = 0;
+  if ((patternCnt == 0)
+        ||((patternCnt != indexOfTarget)
+             && (patternCnt != indexOfTarget - 1)))
+    op_data[0][0] = '\0';
+  else
+    {
+       if (patternCnt == indexOfTarget)
+         targetLen = pos - currentTargetPos - patternLen;
+       else  //if (patternLen == indexOfTarget-1)
+         targetLen = sourceLen - currentTargetPos;
+
+       str_cpy_all(op_data[0], op_data[1] + currentTargetPos, targetLen);
+    }
+  getOperand(0)->setVarLength(targetLen, op_data[-MAX_OPERANDS]);
+  return ex_expr::EXPR_OK;
+}
+
+
 ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,
 						   ComDiagsArea**)
@@ -2673,7 +2913,6 @@ ex_expr::exp_return_type ex_function_converttimestamp::eval(char *op_data[],
   Int64 juliantimestamp;
   str_cpy_all((char *) &juliantimestamp, op_data[1], sizeof(juliantimestamp));
   const Int64 minJuliantimestamp = (Int64) 1487311632 * (Int64) 100000000;
-//SQ_LINUX #ifndef NA_HSC
   const Int64 maxJuliantimestamp = (Int64) 2749273487LL * (Int64) 100000000 +
                                                         (Int64)  99999999;
   if ((juliantimestamp < minJuliantimestamp) ||
@@ -2817,11 +3056,204 @@ ex_expr::exp_return_type ex_function_dayofweek::eval(char *op_data[],
   month = *datetimeOpData++;
   day = *datetimeOpData;
   interval = datetimeOpType->getTotalDays(year, month, day);
-#pragma nowarn(1506)   // warning elimination 
-  unsigned short result = (unsigned short)((interval + 1) % 7) + 1;  // NT_PORT ( bd 12/9/96 ) cast to unsigned short
-#pragma warn(1506)  // warning elimination 
+  unsigned short result = (unsigned short)((interval + 1) % 7) + 1;
   str_cpy_all(op_data[0], (char *) &result, sizeof(result));
   return ex_expr::EXPR_OK;
+}
+
+static Int64 lcl_dayofweek(Int64 totaldays)
+{
+  return (unsigned short)((totaldays + 1) % 7) + 1;
+}
+
+static Int64 lcl_dayofyear(char year, char month, char day)
+{
+  return (Date2Julian(year,month,day)-Date2Julian(year,1,1)+1);
+}
+
+#define DAYS_PER_YEAR 365.25 /*consider leap year every four years*/
+#define MONTHS_PER_YEAR 12
+#define DAYS_PER_MONTH 30
+#define HOURS_PER_DAY 24
+#define SECONDS_PER_MINUTE 60
+#define SECONDS_PER_HOUR 3600
+#define SECONDS_PER_DAY 86400
+
+static Int64 lcl_interval(rec_datetime_field eField, Lng32 eCode, char *opdata, UInt32 nLength)
+{
+  if (!opdata)
+    return 0;
+  if ( REC_DATE_DECADE == eField && REC_INT_YEAR == eCode )
+    {
+      short nValue;
+      str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
+      return nValue / 10;
+    }
+  if ( REC_DATE_QUARTER == eField && REC_INT_MONTH == eCode )
+    {
+      short nValue;
+      str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
+      return (nValue-1)/3+1;
+    }
+  if ( REC_DATE_EPOCH == eField )
+    {
+      Int64 nVal = 0;
+      if ( SQL_SMALL_SIZE==nLength )
+        {
+          short value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_INT_SIZE==nLength )
+        {
+          Lng32 value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_LARGE_SIZE==nLength )
+        {
+          str_cpy_all((char *) &nVal, opdata, sizeof(nVal));
+        }
+
+      if ( REC_INT_YEAR==eCode )
+        return nVal*DAYS_PER_YEAR*SECONDS_PER_DAY;
+      else if ( REC_INT_MONTH==eCode
+               || REC_INT_YEAR_MONTH==eCode)
+        {
+          double result = (double)(nVal/MONTHS_PER_YEAR) * DAYS_PER_YEAR * SECONDS_PER_DAY;
+          result += (double)(nVal%MONTHS_PER_YEAR) * DAYS_PER_MONTH * SECONDS_PER_DAY;
+          return Int64(result);
+        }
+      else if ( REC_INT_DAY==eCode )
+        return nVal*SECONDS_PER_DAY;
+      else if ( REC_INT_HOUR==eCode
+               || REC_INT_DAY_HOUR==eCode )
+        return nVal*SECONDS_PER_HOUR;
+      else if ( REC_INT_MINUTE==eCode
+               || REC_INT_HOUR_MINUTE==eCode
+               || REC_INT_DAY_MINUTE==eCode)
+        return nVal*SECONDS_PER_MINUTE;
+      else if ( REC_INT_SECOND==eCode
+               || REC_INT_MINUTE_SECOND==eCode
+               || REC_INT_HOUR_SECOND==eCode
+               || REC_INT_DAY_SECOND==eCode )
+         return nVal;
+    }
+  return 0;
+}
+
+Int64 ex_function_extract::getExtraTimeValue(rec_datetime_field eField, Lng32 eCode, char *dateTime)
+{
+  short year;
+  char month;
+  char day;
+  char hour = 0;
+  char minute = 0;
+  char second = 0;
+  char millisencond = 0;
+  if (eField < REC_DATE_CENTURY || eField > REC_DATE_WOM)
+    return 0;
+  if (eCode != REC_DTCODE_DATE && eCode != REC_DTCODE_TIMESTAMP)
+    return 0;
+
+  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
+  if (!datetimeOpType)
+    return 0;
+
+  rec_datetime_field eEndFiled = REC_DATE_DAY;
+  if ( REC_DTCODE_TIMESTAMP == eCode )
+    eEndFiled = REC_DATE_SECOND;
+  size_t n = strlen(dateTime);
+  for (Int32 field = REC_DATE_YEAR; field <= eEndFiled; field++)
+    {
+      switch (field)
+        {
+          case REC_DATE_YEAR:
+            {
+              str_cpy_all((char *) &year, dateTime, sizeof(year));
+              dateTime += sizeof(year);
+            }
+            break;
+          case REC_DATE_MONTH:
+            {
+              month = *dateTime++;
+            }
+            break;
+          case REC_DATE_DAY:
+            {
+              day = *dateTime;
+              if ( REC_DATE_SECOND == eEndFiled )
+                dateTime++;
+            }
+            break;
+          case REC_DATE_HOUR:
+            {
+              hour = *dateTime++;
+            }
+            break;
+          case REC_DATE_MINUTE:
+            {
+              minute = *dateTime++;
+            }
+            break;
+          case REC_DATE_SECOND:
+            {
+              second = *dateTime;
+              if (n>7)// 2018-06-20 20:30:15.12  length = 8
+                {
+                  dateTime++;
+                  millisencond = *dateTime;
+                }
+            }
+            break;
+        }
+    }
+  switch (eField)
+    {
+      case REC_DATE_DOW:
+        {//same with built-in function dayofweek  ex_function_dayofweek::eval
+          Int64 interval = datetimeOpType->getTotalDays(year, month, day);
+          return lcl_dayofweek(interval);
+        }
+      case REC_DATE_DOY:
+        {
+          return lcl_dayofyear(year,month,day);
+        }
+      case REC_DATE_WOM:
+        {
+          return ((day-1)/7+1);
+        }
+      case REC_DATE_CENTURY:
+        {
+          return (year+99)/100;
+        }
+      case REC_DATE_DECADE:
+        {
+          return year/10;
+        }
+      case REC_DATE_WEEK:
+        {//same with built-in function week  ITM_WEEK
+          Int64 interval = datetimeOpType->getTotalDays(year, 1, 1);
+          Int64 dayofweek = lcl_dayofweek(interval);
+          Int64 dayofyear = lcl_dayofyear(year,month,day);
+          return (dayofyear-1+dayofweek-1)/7+1;
+        }
+      case REC_DATE_QUARTER:
+        {
+          return (month-1)/3+1;
+        }
+      case REC_DATE_EPOCH:
+        {
+          Int64 ndays = datetimeOpType->getTotalDays(year, month, day);
+          Int64 nJuliandays = datetimeOpType->getTotalDays(1970, 1, 1);
+          ndays = ndays - nJuliandays;
+          Int64 ntimestamp = ndays*86400+hour*3600+minute*60+second;
+          if ( 0!=millisencond )
+            ntimestamp = ntimestamp*100+millisencond;
+          return ntimestamp;
+        }
+    }
+  return 0;
 }
 
 ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
@@ -2836,6 +3268,13 @@ ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
     rec_datetime_field opEndField;
     rec_datetime_field extractStartField = getExtractField();
     rec_datetime_field extractEndField = extractStartField;
+
+    if ( extractStartField >=REC_DATE_CENTURY && extractStartField<=REC_DATE_WOM )
+    {
+      result = getExtraTimeValue(extractStartField, datetimeOpType->getPrecision(), datetimeOpData);
+      copyInteger (op_data[0], getOperand(0)->getLength(), &result, sizeof(result));
+      return ex_expr::EXPR_OK;
+    }
 
     if (extractStartField > REC_DATE_MAX_SINGLE_FIELD) {
       extractStartField = REC_DATE_YEAR;
@@ -2926,6 +3365,15 @@ ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
       }
     }
   } else {
+    if (getExtractField() == REC_DATE_DECADE
+        || getExtractField() == REC_DATE_QUARTER
+        || getExtractField() == REC_DATE_EPOCH)
+      {
+        ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
+        result = lcl_interval(getExtractField(),getOperand(1)->getDatatype(),op_data[1],getOperand(1)->getLength());
+        copyInteger (op_data[0], getOperand(0)->getLength(), &result, sizeof(result));
+        return ex_expr::EXPR_OK;
+      }
     Int64 interval;
     switch (getOperand(1)->getLength()) {
     case SQL_SMALL_SIZE: {
@@ -3112,7 +3560,6 @@ short exp_function_get_user(
   short result = FEOK;
   Int32 lActualLen = 0;
 
-#if !defined (__EID)
   Int32 userID;
 
   if (userType == ITM_SESSION_USER)
@@ -3135,7 +3582,6 @@ short exp_function_get_user(
   }
   else 
     result = FEBUFTOOSMALL;
-#endif
 
   if (((result == FEOK) || (result == FEBUFTOOSMALL)) && actualLength)
     *actualLength = lActualLen;
@@ -3531,9 +3977,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     //
     if (source[0] & 0200) {
       for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
         target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
     } else {
       if (target != source)
         str_cpy_all(target, source, length);
@@ -3644,7 +4088,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     break;
   }
 
-  // LCOV_EXCL_START
   case REC_BYTE_F_ASCII: {
       if (CollationInfo::isSystemCollation(collation )) 
       {
@@ -3662,7 +4105,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
 			  collation,
 			  TRUE);
 	}
-	// LCOV_EXCL_STOP
 	else //search
 	{
           Int32 effEncodedKeyLength = 0;
@@ -3707,7 +4149,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
      
       if (CollationInfo::isSystemCollation(collation))
       {
-    // LCOV_EXCL_START
 	Int16 nPasses = CollationInfo::getCollationNPasses(collation);
 	NABoolean rmTspaces = getRmTSpaces(collation);
 	
@@ -3741,7 +4182,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
 	}
       }
       else
-  // LCOV_EXCL_STOP
       {
 
         //
@@ -3838,7 +4278,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
 // class ex_function_encode
 ////////////////////////////////////////////////////////////////////
 ex_function_encode::ex_function_encode(){};
-// LCOV_EXCL_START
 ex_function_encode::ex_function_encode(OperatorTypeEnum oper_type,
 				       Attributes ** attr,
 				       Space * space,
@@ -3854,7 +4293,6 @@ ex_function_encode::ex_function_encode(OperatorTypeEnum oper_type,
   
   setCollEncodingType(CollationInfo::Sort);
 };
-// LCOV_EXCL_STOP
 ex_function_encode::ex_function_encode(OperatorTypeEnum oper_type,
 				       Attributes ** attr,
 				       Space * space,
@@ -4057,7 +4495,6 @@ void ex_function_encode::getCollationWeight(
     }
   }
 }
-// LCOV_EXCL_START
 unsigned char ex_function_encode::getCollationWeight( 
                                                      CharInfo::Collation collation,
                                                      Int16 pass,
@@ -4301,7 +4738,6 @@ void ex_function_encode::encodeCollationSearchKey(const UInt8 * src,
   str_pad( (char *) ptr,(encodeKey - ptr) + encodedKeyLength, '\0');
 
 } // ex_function_encode::encodeCollationSearchKey
-// LCOV_EXCL_STOP
 
 ////////////////////////////////////////////////////////////////////////
 // class ex_function_explode_varchar
@@ -4363,7 +4799,6 @@ ex_expr::exp_return_type ex_function_explode_varchar::eval(char *op_data[],
   if (forInsert_)
     {
       // move source to target. No blankpadding.
-#pragma nowarn(1506)   // warning elimination 
       return convDoIt(op_data[1],
 		      getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]),
 		      getOperand(1)->getDatatype(),
@@ -4378,12 +4813,10 @@ ex_expr::exp_return_type ex_function_explode_varchar::eval(char *op_data[],
 		      getOperand(0)->getVCIndicatorLength(),
 		      heap,
 		      diagsArea);
-#pragma warn(1506)  // warning elimination 
     }
   else
     {
       // move source to target. Blankpad target to maxLength.
-#pragma nowarn(1506)   // warning elimination 
       if (convDoIt(op_data[1],
 		   getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]),
 		   getOperand(0)->getDatatype(),
@@ -4399,7 +4832,6 @@ ex_expr::exp_return_type ex_function_explode_varchar::eval(char *op_data[],
 		   heap,
 		   diagsArea))
 	return ex_expr::EXPR_ERROR;
-#pragma warn(1506)  // warning elimination 
       
       // Move max length to length bytes of target.
       getOperand(0)->setVarLength(getOperand(0)->getLength(),
@@ -4463,7 +4895,6 @@ ULng32 ex_function_hash::HashHash(ULng32 inValue) {
   register ULng32 u, v, c, d, k0;
   ULng32 a1, a2, b1, b2;
   
-//SQ_LINUX #ifndef NA_HSC
   ULng32 c1 = (ULng32)5233452345LL;   
   ULng32 c2 = (ULng32)8578458478LL;  
   ULng32 d1 = 1862598173LL;
@@ -5072,7 +5503,6 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 ////////////////////////////////////////////////////////////////////
 // class ex_function_mask
 ////////////////////////////////////////////////////////////////////
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_function_mask::eval(char *op_data[], 
                                                 CollHeap* heap,
                                                 ComDiagsArea** diagsArea)
@@ -5199,8 +5629,7 @@ ex_expr::exp_return_type ExFunctionShift::eval(char *op_data[],
 
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP
-NA_EIDPROC static
+static
 ex_expr::exp_return_type getDoubleValue(double *dest,
                                         char *source,
                                         Attributes *operand,
@@ -5218,7 +5647,7 @@ ex_expr::exp_return_type getDoubleValue(double *dest,
     
 }
 
-NA_EIDPROC static
+static
 ex_expr::exp_return_type setDoubleValue(char *dest,
                                         Attributes *operand,
                                         double *source,
@@ -5241,11 +5670,11 @@ ex_expr::exp_return_type ExFunctionSVariance::eval(char *op_data[],
 						   ComDiagsArea **diagsArea)
 {
   
-  double sumOfValSquared;
-  double sumOfVal;
-  double countOfVal;
+  double sumOfValSquared = 0;
+  double sumOfVal = 0;
+  double countOfVal = 1;
   double avgOfVal;
-  double result;
+  double result = 0;
 
   if(getDoubleValue(&sumOfValSquared, op_data[1], getOperand(1),
                     heap, diagsArea)) {
@@ -5285,11 +5714,11 @@ ex_expr::exp_return_type ExFunctionSStddev::eval(char *op_data[],
 						 ComDiagsArea **diagsArea)
 {
   
-  double sumOfValSquared;
-  double sumOfVal;
-  double countOfVal;
+  double sumOfValSquared = 0;
+  double sumOfVal = 0;
+  double countOfVal = 1;
   double avgOfVal;
-  double result;
+  double result = 0;
 
   if(getDoubleValue(&sumOfValSquared, op_data[1], getOperand(1),
                     heap, diagsArea)) {
@@ -5377,9 +5806,7 @@ ex_expr::exp_return_type ExpRaiseErrorFunction::eval(char *op_data[],
   
 	if (getNumOperands()==2) 
         {
-#pragma nowarn(1506)   // warning elimination 
            Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
            op_data[1][len1] = '\0';
            *(*diagsArea) << DgString1(op_data[1]);  // The string expression
 	} 
@@ -5419,7 +5846,6 @@ ex_expr::exp_return_type ExpRaiseErrorFunction::eval(char *op_data[],
 // -----------------------------------------------------------------------
 // methods for ExFunctionPack
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 // Constructor.
 ExFunctionPack::ExFunctionPack(Attributes** attr,
                                Space* space,
@@ -5470,9 +5896,7 @@ ex_expr::exp_return_type ExFunctionPack::eval(char* op_data[],
     char* nullByte = op_data[0] + nullBitOffsetInBytes + sizeof(Int32);
 
     // Used to set/unset the null bit.
-#pragma nowarn(1506)   // warning elimination 
     unsigned char nullByteMask = (1 << nullBitOffsetInBits);
-#pragma warn(1506)  // warning elimination 
 
     // Turn bit off/on depending on whether operand is null.
     if(nullFlag == 0)
@@ -5531,20 +5955,16 @@ ex_expr::exp_return_type ExFunctionPack::eval(char* op_data[],
         if(bitsToCopyThisRound > bitsToCopy) bitsToCopyThisRound = bitsToCopy;
 
         // Mask has ones in the those positions where bits will be copied to.
-#pragma nowarn(1506)   // warning elimination 
         unsigned char mask = ((0xFF >> tgtBitOffset) <<
                               (8 - bitsToCopyThisRound)) >>
                               (8 - tgtBitOffset - bitsToCopyThisRound);
-#pragma warn(1506)  // warning elimination 
 
         // Clear target bits. Keep other bits unchanged in the target byte.
         (*tgtBytePtr) &= (~mask);
 
         // Align source bits with its the destination. Mask off other bits.
         unsigned char srcByte = *(op_data[1] + srcByteOffset);
-#pragma nowarn(1506)   // warning elimination 
         srcByte = ((srcByte >> srcBitOffset) << tgtBitOffset) & mask;
-#pragma warn(1506)  // warning elimination 
 
         // Make the copy.
         (*tgtBytePtr) |= srcByte;
@@ -5637,9 +6057,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
 
     // The byte of the CHAR field containing the bit.
     //
-#pragma nowarn(1506)   // warning elimination 
     Lng32 byteOffset = sizeof(Int32) + (bitOffset >> 3);
-#pragma warn(1506)  // warning elimination 
 
     // The bit of the byte at byteOffset to be extracted.
     //
@@ -5724,9 +6142,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
 
       // The index into the byte of the value.
       //
-#pragma nowarn(1506)   // warning elimination 
       Lng32 itemIndex = index & ( itemsPerByte - 1);
-#pragma warn(1506)  // warning elimination 
 
       // A mask to extract an item of size width.
       //
@@ -5751,14 +6167,10 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
     //
     switch(getOperand(0)->getLength()) {
     case 1:
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned char *)op_data[0] = value;
-#pragma warn(1506)  // warning elimination 
       return ex_expr::EXPR_OK;
     case 2:
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned short *)op_data[0] = value;
-#pragma warn(1506)  // warning elimination 
       return ex_expr::EXPR_OK;
     case 4:
       *(ULng32 *)op_data[0] = value;
@@ -5770,9 +6182,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
       return ex_expr::EXPR_ERROR;
     }
 
-#pragma nowarn(203)   // warning elimination 
     return ex_expr::EXPR_OK;
-#pragma warn(203)  // warning elimination 
   }
 
 
@@ -5852,9 +6262,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
       // to the destination.  This is the first time this
       // byte is written to.
       //
-#pragma nowarn(1506)   // warning elimination 
       op_data[0][dindex] = byte >> rshift;
-#pragma warn(1506)  // warning elimination 
     }
 
     dindex++;
@@ -5866,9 +6274,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
   //
   for(i = 0; i < (Lng32) getOperand(0)->getLength(); i++) {
 
-#pragma nowarn(1506)   // warning elimination 
     unsigned char mask = (width > 7) ? 0xFF : masks[width];
-#pragma warn(1506)  // warning elimination 
     
     op_data[0][i] &= mask;
     width -= 8;
@@ -5883,7 +6289,6 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
 
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP
 ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
                                                      CollHeap* heap,
                                                      ComDiagsArea** diagsArea)
@@ -5897,7 +6302,6 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
   ULng32 convFlags = (flags_ & TRANSLATE_FLAG_ALLOW_INVALID_CODEPOINT ?
                       CONV_ALLOW_INVALID_CODE_VALUE : 0);
 
-#pragma nowarn(1506)   // warning elimination 
       return convDoIt(op_data[1],
         op1->getLength(op_data[-MAX_OPERANDS + 1]),
         op1->getDatatype(),
@@ -5915,7 +6319,6 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
         (ConvInstruction)convType,
         NULL,
         convFlags);
-#pragma warn(1506)  // warning elimination 
 }
   
 void ExFunctionRandomNum::initSeed(char *op_data[])
@@ -5932,53 +6335,28 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
       if (getNumOperands() == 2)
 	{
 	  // seed is specified as an argument. Use it.
-#pragma nowarn(1506)   // warning elimination 
 	  seed_ = *(ULng32 *)op_data[1];
-#pragma warn(1506)  // warning elimination 
 	  return;
 	}
 
       // Pick an initial seed.  According to the reference given below
       // (in the eval function), all initial seeds between 1 and
-      // 2147483646 are equally valid.  So, we just need to pick one
+      // 2147483647 are equally valid.  So, we just need to pick one
       // in this range.  Do this based on a timestamp.
+      struct timespec seedTime;
 
-      // Use ex_function_current to get timestamp.
-      //
-      char currBuff[32];
-      char *opData[1];
-      opData[0] = currBuff;
-      ex_function_current currentFun;
-      currentFun.eval(&opData[0], 0, 0);
+      clock_gettime(CLOCK_REALTIME, &seedTime);
 
-      // Extract year, month, etc.
-      //
-      char *p = currBuff;
-      short year = *((short*) p);
-      p += sizeof(short);
-      char month = *p++;
-      char day = *p++;
-      char hour = *p++;
-      char minute = *p++;
-      char second = *p++;
-      Lng32 fraction = *((Lng32*) p);
+      seed_  = (Int32) (seedTime.tv_sec  % 2147483648);
+      seed_ ^= (Int32) (seedTime.tv_nsec % 2147483648L);
 
-      // Local variables year, ..., fraction are now initialized.
-      // From the values of these variables, generate a seed in the
-      // desired range.
-
-      Lng32 x = year * month * day;
-      if (hour) x *= hour;
-      p = (char*) &x;
-
-      assert(sizeof(Lng32)==4);
-
-      p[0] |= (second<<1);
-      p[1] |= (minute<<1);
-      p[2] |= (minute<<2);
-      p[3] |= second;
-
-      seed_ = x + fraction;
+      // Go through one step of a linear congruential random generator.
+      // (https://en.wikipedia.org/wiki/Linear_congruential_generator).
+      // This is to avoid seed values that are close to each other when
+      // we call this method again within a short time. The eval() method
+      // below doesn't handle seed values that are close to each other
+      // very well.
+      seed_ = (((Int64) seed_) * 1664525L + 1013904223L) % 2147483648;
 
       if (seed_<0)
         seed_ += 2147483647;
@@ -5987,7 +6365,7 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
 }
 
 
-NA_EIDPROC void ExFunctionRandomNum::genRand(char *op_data[])
+void ExFunctionRandomNum::genRand(char *op_data[])
 {
   // Initialize seed if not already done
   initSeed(op_data);
@@ -6052,9 +6430,7 @@ void ExFunctionRandomSelection::initDiff()
     // reset the selProbability_ to original value in case this function
     // gets called again
     
-#pragma nowarn(1506)   // warning elimination 
     selProbability_ += difference_;
-#pragma warn(1506)  // warning elimination 
   }
 }
 
@@ -6100,12 +6476,8 @@ ex_expr::exp_return_type ExProgDistrib::eval(char *op_data[],
   ULng32 i = 2;
 
   while(offset >= i && i <= totNumValues) {
-#pragma nowarn(1506)   // warning elimination 
     Lng32 n1 = offset % i;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
     Lng32 n2 = offset / i;
-#pragma warn(1506)  // warning elimination 
     if (n1 == 0) {
       offset = (i-1) * (n2 - 1) + resultValue;
       resultValue = i;
@@ -6127,7 +6499,6 @@ ex_expr::exp_return_type ExProgDistrib::eval(char *op_data[],
   *((ULng32 *)op_data[0]) = resultValue - 1;
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_START
 ex_expr::exp_return_type ExProgDistribKey::eval(char *op_data[],
                                                 CollHeap*,
                                                 ComDiagsArea**)
@@ -6163,7 +6534,6 @@ ex_expr::exp_return_type ExProgDistribKey::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 
 }
-// LCOV_EXCL_STOP
 ex_expr::exp_return_type ExPAGroup::eval(char *op_data[],
                                          CollHeap*,
                                          ComDiagsArea**)
@@ -6487,7 +6857,6 @@ ExRowsetArrayInto::eval(char *op_data[], CollHeap *heap,
 
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_function_nullifzero::eval(char *op_data[],
 						      CollHeap *heap,
 						      ComDiagsArea** diagsArea)
@@ -6522,7 +6891,6 @@ ex_expr::exp_return_type ex_function_nullifzero::eval(char *op_data[],
   
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP
 //
 // NVL(e1, e2) returns e2 if e1 is NULL otherwise e1. NVL(e1, e2) is
 // equivalent to ANSI/ISO
@@ -6613,9 +6981,7 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
 {
     CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
     // search for operand 1
-#pragma nowarn(1506)   // warning elimination 
     Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
     if ( cs == CharInfo::UTF8 )
     {
         Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
@@ -6623,16 +6989,21 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
     }
 
     // in operand 2
-#pragma nowarn(1506)   // warning elimination 
     Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)  // warning elimination 
     if ( cs == CharInfo::UTF8 )
     {
         Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
         len2 = Attributes::trimFillerSpaces( op_data[2], prec2, len2, cs );
     }
+
     char *rltStr = NULL;
-    JsonReturnType ret = json_extract_path_text(&rltStr, op_data[1], 1, op_data[2]);
+    char jsonStr[len1+1];
+    char jsonAttr[len2+1];
+    strncpy(jsonStr, op_data[1], len1);
+    jsonStr[len1] = '\0';
+    strncpy(jsonAttr, op_data[2], len2);
+    jsonAttr[len2] = '\0';
+    JsonReturnType ret = json_extract_path_text(&rltStr, jsonStr, 1, jsonAttr);
     if (ret != JSON_OK)
     {
         ExRaiseJSONError(heap, diagsArea, ret);
@@ -6810,21 +7181,38 @@ ex_expr::exp_return_type ExFunctionUniqueId::eval(char *op_data[],
   Lng32 retcode = 0;
 
   char * result = op_data[0];
+  if(getOperType() == ITM_UNIQUE_ID)
+  {
+    //it is hard to find a common header file for these length
+    //so hardcode 36 here
+    //if change, please check the SynthType.cpp for ITM_UNIQUE_ID part as well
+    //libuuid is global unique, even across computer node
+    //NOTE: libuuid is avialble on normal CentOS, other system like Ubuntu may need to check 
+    //Trafodion only support RHEL and CentOS as for now
+    char str[36 + 1];
+    uuid_t uu;
+    uuid_generate( uu ); 
+    uuid_unparse(uu, str);
+    str_cpy_all(result, str, 36);
+  }
+  else //at present , it must be ITM_UUID_SHORT_ID
+  { 
+    Int64 uniqueUID;
 
-  Int64 uniqueUID;
-
-  ComUID comUID;
-  comUID.make_UID();
+    ComUID comUID;
+    comUID.make_UID();
 
 #if defined( NA_LITTLE_ENDIAN )
-  uniqueUID = reversebytes(comUID.get_value());
+    uniqueUID = reversebytes(comUID.get_value());
 #else
-  uniqueUID = comUID.get_value();
+    uniqueUID = comUID.get_value();
 #endif
 
-  str_cpy_all(result, (char*)&uniqueUID, sizeof(Int64));
-  str_pad(&result[sizeof(Int64)], sizeof(Int64), '\0');
-  
+    //it is safe, since the result is allocated 21 bytes in this case from synthtype,
+    //max in64 is 19 digits and one for sign, 21 is enough
+    sprintf(result,"%lu",uniqueUID); 
+  }
+ 
   return ex_expr::EXPR_OK;
 }
 
@@ -7108,7 +7496,7 @@ ExFunctionHbaseColumnsDisplay::eval(char *op_data[], CollHeap *heap,
 	}
     }
 
-  // store the audit row image length in the varlen indicator.
+  // store the row length in the varlen indicator.
   getOperand(0)->setVarLength((result-resultStart), op_data[-MAX_OPERANDS]);
 
   return ex_expr::EXPR_OK;
@@ -7265,78 +7653,6 @@ ExFunctionHbaseVersion::eval(char *op_data[], CollHeap *heap,
   return ex_expr::EXPR_OK;
 }
 
-/////////////////////////////////////////////////////////////////
-// ExAuditImage::eval() 
-// The ExAuditImage clause evaluates the auditRowImageExpr_ and
-// stores the result from it into the result of ExAuditImage. 
-// auditRowImageExpr_ constructs the audit row image in SQLMX_FORMAT.
-/////////////////////////////////////////////////////////////////
-ex_expr::exp_return_type 
-ExAuditImage::eval(char *op_data[], CollHeap *heap, 
-                        ComDiagsArea **diagsArea)
-{
-  // op_data[0] points to result. The result is a varchar.
-  Attributes *resultAttr   = getOperand(0);
-
-  // This cri desc generated at codeGen() time to generate audit row image
-  // has 3 entries: 0, for consts. 1, for temps. 
-  // 2, for the audit row image.
-  // 3, where the input tuple in EXPLODED format will be available.
-  ex_cri_desc * auditImageWorkCriDesc = auditImageContainerExpr_->criDesc();
-
-  short auditImageAtpIndex   = 2;  // where audit row image will be built 
-  
-  //Allocate ATP to evaluate the auditRowImageExpr_
-  atp_struct *auditImageWorkAtp = auditImageContainerExpr_->getWorkAtp();
-
-   // Set the data pointer to point to the resultAttr's data space.
-  auditImageWorkAtp->getTupp(auditImageAtpIndex).setDataPointer(op_data[0]);
-  
-  ex_expr * auditRowImageExpr = (ex_expr *)auditImageContainerExpr_->getExpr();
-
-  
-  Attributes *inputs = getOperand(1);
-
-  // set the inputs tuple to point to the temp tuple
-  short inputsAtpIndex   = 3;  // where the inputs to audit row image 
-                               // is available.  
-
-  auditImageWorkAtp->getTupp(inputsAtpIndex).setDataPointer(op_data[1]);
-  
-  
-  // Setting the auditRowImageLength to the length from the tuple descriptor.
-  // This length is computed during compile time.
-  // For a row with variable length field(s), the eval() method re-calculates 
-  // the row length and modifies the auditRowImageLength variable.
-  ULng32 auditRowImageLength = auditImageWorkCriDesc->getTupleDescriptor(auditImageAtpIndex)->tupleDataLength();
-
-  ex_expr::exp_return_type retCode = ex_expr::EXPR_OK;
-
-  retCode = auditRowImageExpr->eval(auditImageWorkAtp,     // Input - atp1
-				    0,                        // None - atp2
-				    NULL,                     // heap
-				    -1,                       // datalen
-				    &auditRowImageLength      // Output
-				    );
-  
-  if (retCode == ex_expr::EXPR_ERROR)
-    {
-      *diagsArea = auditImageWorkAtp->getDiagsArea();
-      ExRaiseFunctionSqlError(heap, diagsArea, EXE_AUDIT_IMAGE_EXPR_EVAL_ERROR,
-			      derivedFunction(),
-			      origFunctionOperType());
-
-      return retCode;
-    }
-
-  // store the audit row image length in the varlen indicator.
-  getOperand(0)->setVarLength(auditRowImageLength, op_data[-MAX_OPERANDS]);
- 
-  return ex_expr::EXPR_OK;
-}
-
-
-
 ////////////////////////////////////////////////////////////////////
 //
 // decodeKeyValue
@@ -7370,9 +7686,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     {
       // compliment all bytes
       for (Lng32 k = 0; k < encodedKeyLen; k++)
-#pragma nowarn(1506)   // warning elimination 
 	target[k] = ~(source[k]);
-#pragma warn(1506)  // warning elimination 
       
       source = target;
     }
@@ -7558,9 +7872,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     //
     if (NOT(source[0] & 0200)) {
       for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
         target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
     } else {
       if (target != source)
         str_cpy_all(target, source, length);
@@ -7612,9 +7924,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
 	// this was a negative number.
 	// flip all bits.
 	for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
 	  target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
       }
 
     // here comes the dependent part
@@ -7662,9 +7972,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
 	// this was a negative number.
 	// flip all bits.
 	for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
 	  target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
       }
 
     // here comes the dependent part
@@ -7761,7 +8069,6 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
   return 0;
 }
 
-NA_EIDPROC 
 static Lng32 convAsciiLength(Attributes * attr)
 {
   Lng32 d_len = 0;
@@ -7900,65 +8207,6 @@ static Lng32 convAsciiLength(Attributes * attr)
     }
   
   return d_len;
-}
-
-// LCOV_EXCL_START
-// This is a function clause used by INTERPRET_AS_ROW to extract specific
-// columns as specified by an extraction column list from an audit row image
-// (compressed or uncompressed). The input to this function is an audit row
-// image, possibly a modified field map (for compressed audit), and a list 
-// of columns to extract. The output is a tuple in exploded format made up of
-// the extracted columns.
-ExFunctionExtractColumns::ExFunctionExtractColumns 
-                                           (OperatorTypeEnum operType,
-                                            short numOperands,
-                                            Attributes ** attr,
-                                            Space *space,
-                                            UInt32 compressedAudit,
-                                            ULng32 *extractColList,
-                                            ULng32 encodedKeyLength,
-                                            ExpTupleDesc *auditImageTupleDesc,
-                                            ExpTupleDesc *extractedRowTupleDesc)
-           : ex_function_clause(operType, numOperands, attr, space)
-{
-   if (numOperands == 2)
-      flags_.mfMapIsNullConst_ = 1;
-   flags_.auditCompressionFlag_ = compressedAudit;
-   extractColList_ = (Lng32 *)extractColList;
-   numColsToExtract_ = extractedRowTupleDesc->numAttrs();
-   auditRowImageDesc_ = auditImageTupleDesc;
-   extractedRowDesc_ = extractedRowTupleDesc;
-   encodedKeyLen_ = encodedKeyLength;
-}
-
-ExFunctionExtractColumns::ExFunctionExtractColumns(void)
-{
-}
-
-// This is the function that does the bulk of the work of extracting
-// columns from an audit row image (compressed or uncompressed) as part
-// of the work done by the function INTERPRET_AS_ROW.
-ex_expr::exp_return_type ExFunctionExtractColumns::eval(char * op_data[],
-                                                        CollHeap *heap,
-                                                        ComDiagsArea **diags)
-{
-   return ex_expr::EXPR_ERROR;
-}
-
-Long ExFunctionExtractColumns::pack (void * space)
-{
-   auditRowImageDesc_.pack(space);
-   extractedRowDesc_.pack(space);
-   extractColList_.pack(space);
-   return packClause(space, sizeof(ExFunctionExtractColumns));
-}
-
-Lng32 ExFunctionExtractColumns::unpack (void * base, void * reallocator)
-{
-   if (auditRowImageDesc_.unpack(base, reallocator)) return -1;
-   if (extractedRowDesc_.unpack(base, reallocator)) return -1;
-   if (extractColList_.unpack(base)) return -1;
-   return unpackClause(base, reallocator);
 }
 
 //helper function, convert a string into IPV4 , if valid, it can support leading and padding space
@@ -8782,5 +9030,3 @@ aes_decrypt_error:
 
   return ex_expr::EXPR_ERROR;
 }
-// LCOV_EXCL_STOP
-#pragma warn(1506)  // warning elimination 

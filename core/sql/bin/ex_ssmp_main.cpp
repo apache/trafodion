@@ -145,7 +145,6 @@ Int32 main(Int32 argc, char **argv)
 
 void runServer(Int32 argc, char **argv)
 {
-  jmp_buf ssmpJmpBuf;
   Int32 shmId;
   StatsGlobals *statsGlobals = (StatsGlobals *)shareStatsSegment(shmId);
   Int32 r = 0;
@@ -182,7 +181,6 @@ void runServer(Int32 argc, char **argv)
   // while holding the stats semaphore.  This code has been covered in
   // a manual unit test, but it is not possible to cover this easily in
   // an automated test.
-  // LCOV_EXCL_START
   if (statsGlobals->getSemPid() != -1)
   {
     NAProcessHandle prevSsmpPhandle((SB_Phandle_Type *)
@@ -193,31 +191,23 @@ void runServer(Int32 argc, char **argv)
       NAProcessHandle myPhandle;
       myPhandle.getmine();
       myPhandle.decompose();
-      short savedPriority, savedStopMode;
-      short error =
+      int error =
            statsGlobals->releaseAndGetStatsSemaphore(
                      statsGlobals->getSsmpProcSemId(),
                      (pid_t) myPhandle.getPin(),
-                     (pid_t) prevSsmpPhandle.getPin(),
-                     savedPriority, savedStopMode,
-                     FALSE /*shouldTimeout*/);
+                     (pid_t) prevSsmpPhandle.getPin());
       ex_assert(error == 0,
                "releaseAndGetStatsSemaphore() returned error");
 
       statsGlobals->releaseStatsSemaphore(
                      statsGlobals->getSsmpProcSemId(),
-                     (pid_t) myPhandle.getPin(),
-                     savedPriority, savedStopMode);
+                     (pid_t) myPhandle.getPin());
     }
   }
-  // LCOV_EXCL_STOP
 
   XPROCESSHANDLE_GETMINE_(statsGlobals->getSsmpProcHandle());
 
   NAHeap *ssmpHeap = cliGlobals->getExecutorMemory();
-  cliGlobals->setJmpBufPtr(&ssmpJmpBuf);
-  if (setjmp(ssmpJmpBuf))
-    NAExit(1); // Abend
 
   IpcEnvironment       *ssmpIpcEnv = new (ssmpHeap) IpcEnvironment(ssmpHeap,
             cliGlobals->getEventConsumed(), FALSE, IPC_SQLSSMP_SERVER,

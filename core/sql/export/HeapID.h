@@ -39,14 +39,6 @@
 #define HEAPID__H
 
 #include "Platform.h"
-// -----------------------------------------------------------------------
-// Force heaplog off if __EID code.
-// -----------------------------------------------------------------------
-#ifndef __NOIMPORT_HEAPL
- #ifdef __EID 
- #define __NOIMPORT_HEAPL
- #endif
-#endif
 
 // -----------------------------------------------------------------------
 // NA_DEBUG_HEAPLOG indicates this is a debug build on NT and 
@@ -62,31 +54,25 @@
 // -----------------------------------------------------------------------
 #ifdef NA_DEBUG_HEAPLOG
 // -----------------------------------------------------------------------
-#include "SqlExportDllDefines.h"
 
-class SQLEXPORT_LIB_FUNC HeapID
+class HeapID
 {
 public:
 
-NA_EIDPROC
   HeapID();
 
-NA_EIDPROC
   ~HeapID();
 
 // -----------------------------------------------------------------------
 #else
 // -----------------------------------------------------------------------
-#include "SqlExportDllDefines.h"
 
-class SQLEXPORT_LIB_FUNC HeapID
+class HeapID
 {
 public:
 
-NA_EIDPROC
   HeapID() : heapNum(-1) {}
 
-NA_EIDPROC
   ~HeapID() {}
 
 #endif

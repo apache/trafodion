@@ -47,7 +47,6 @@
 //--------------------------------------------------------------------------//
 //	CRUSQLStatementContainer::StoreData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSQLStatementContainer::
 StoreData(CUOFsIpcMessageTranslator &translator)
 {
@@ -57,17 +56,13 @@ StoreData(CUOFsIpcMessageTranslator &translator)
 	
 	for (Int32 i=0;i<GetNumOfStmt();i++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		GetStmt(i).StoreData(translator);
-#pragma warn(1506)  // warning elimination 
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSQLStatementContainer::LoadData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSQLStatementContainer::
 	LoadData(CUOFsIpcMessageTranslator &translator)
 {
@@ -79,34 +74,27 @@ void CRUSQLStatementContainer::
 
 	for (Int32 i=0;i<GetNumOfStmt();i++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		GetStmt(i).LoadData(translator);
-#pragma warn(1506)  // warning elimination 
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSQLStatementContainer::Stmt::StoreData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSQLStatementContainer::Stmt::
 StoreData(CUOFsIpcMessageTranslator &translator)
 {
 	translator.WriteBlock(&executionCounter_,sizeof(Lng32));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSQLStatementContainer::Stmt::LoadData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSQLStatementContainer::Stmt::
 	LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	translator.ReadBlock(&executionCounter_,sizeof(Lng32));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSQLStatementContainer::Stmt::ExecuteQuery()

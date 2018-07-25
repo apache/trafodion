@@ -772,17 +772,16 @@ RelExpr * PhysSequence::preCodeGen(Generator * generator,
   ///addCheckPartitionChangeExpr(generator->wHeap());
 
   transformOlapFunctions(generator->wHeap());
-
   if ( getUnboundedFollowing() ) {
     // Count this Seq as a BMO and add its needed memory to the total needed
     generator->incrNumBMOs();
     
     if ((ActiveSchemaDB()->getDefaults()).
-	getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+	getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
   }
   else
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(generator, TRUE));
 
   markAsPreCodeGenned();
 
@@ -835,9 +834,7 @@ PhysSequence::codeGen(Generator *generator)
   //
   Int32 numberTuples = givenCriDesc->noTuples() + 1;
   ex_cri_desc * returnCriDesc 
-#pragma nowarn(1506)   // warning elimination 
     = new (space) ex_cri_desc(numberTuples, space);
-#pragma warn(1506)  // warning elimination 
 
   // For now, the history buffer row looks just the return row. Later,
   // it may be useful to add an additional tupp for sequence function
@@ -846,9 +843,7 @@ PhysSequence::codeGen(Generator *generator)
   //
   const Int32 historyAtp = 0;
   const Int32 historyAtpIndex = numberTuples-1;
-#pragma nowarn(1506)   // warning elimination 
   ex_cri_desc *historyCriDesc = new (space) ex_cri_desc(numberTuples, space);
-#pragma warn(1506)  // warning elimination 
   ExpTupleDesc *historyDesc = 0;
 
   //seperate the read and retur expressions
@@ -948,12 +943,8 @@ PhysSequence::codeGen(Generator *generator)
                             &historyDesc,
                             ExpTupleDesc::SHORT_FORMAT);
   NADELETEBASIC(attrs, wHeap);
-#pragma nowarn(1506)   // warning elimination 
   returnCriDesc->setTupleDescriptor(historyAtpIndex, historyDesc);
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   historyCriDesc->setTupleDescriptor(historyAtpIndex, historyDesc);
-#pragma warn(1506)  // warning elimination 
 
   // If there are any sequence function items, generate the sequence 
   // function expressions.
@@ -1055,7 +1046,6 @@ PhysSequence::codeGen(Generator *generator)
                                 postPred,
                                 cancelExpression,
                                 getMinFollowingRows(),
-#pragma nowarn(1506)   // warning elimination 
                                 historyRecLen,
                                 historyAtpIndex,
                                 childTdb,
@@ -1079,28 +1069,20 @@ PhysSequence::codeGen(Generator *generator)
                                 numberOfWinOLAPBuffers,
                                 noOverflow,
                                 checkPartChangeExpr);
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(sequenceTdb);
 
   // update the estimated value of HistoryRowLength with actual value
   //setEstHistoryRowLength(historyIds.getRowLength());
 
-  double sequenceMemEst = getEstimatedRunTimeMemoryUsage(sequenceTdb);
+  double sequenceMemEst = generator->getEstMemPerInst(getKey());
   generator->addToTotalEstimatedMemory(sequenceMemEst);
 
   if(!generator->explainDisabled()) {
-    Lng32 seqMemEstInKBPerCPU = (Lng32)(sequenceMemEst / 1024) ;
-    seqMemEstInKBPerCPU = seqMemEstInKBPerCPU/
-      (MAXOF(generator->compilerStatsInfo().dop(),1));
-    generator->setOperEstimatedMemory(seqMemEstInKBPerCPU);
-
     generator->
       setExplainTuple(addExplainInfo(sequenceTdb,
                                      childExplainTuple,
                                      0,
                                      generator));
-
-    generator->setOperEstimatedMemory(0);
   }
 
   sequenceTdb->setScratchIOVectorSize((Int16)getDefault(SCRATCH_IO_VECTOR_SIZE_HASH));
@@ -1121,28 +1103,42 @@ PhysSequence::codeGen(Generator *generator)
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
   UInt16 mmu = (UInt16)(defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB));
   UInt16 numBMOsInFrag = (UInt16)generator->getFragmentDir()->getNumBMOs();
+  Lng32 numStreams;
+  double bmoMemoryUsagePerNode = generator->getEstMemPerNode(getKey(), numStreams);
+  double memQuota = 0;
+  double memQuotaRatio;
   if (mmu != 0)
     sequenceTdb->setMemoryQuotaMB(mmu);
   else {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs 
     //   2. the memory limit feature is turned on
-    NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
 
-    if ( mlimitPerCPU || numBMOsInFrag > 1 ) {
-
+    if ( mlimitPerNode || numBMOsInFrag > 1 ) {
         double memQuota = 
            computeMemoryQuota(generator->getEspLevel() == 0,
-                              mlimitPerCPU,
-                              generator->getBMOsMemoryLimitPerCPU().value(),
-                              generator->getTotalNumBMOsPerCPU(),
-                              generator->getTotalBMOsMemoryPerCPU().value(),
+                              mlimitPerNode,
+                              generator->getBMOsMemoryLimitPerNode().value(),
+                              generator->getTotalNumBMOs(),
+                              generator->getTotalBMOsMemoryPerNode().value(),
                               numBMOsInFrag, 
-                              generator->getFragmentDir()->getBMOsMemoryUsage()
+                              bmoMemoryUsagePerNode,
+                              numStreams,
+                              memQuotaRatio
                              );
-                                  
-        sequenceTdb->setMemoryQuotaMB( UInt16(memQuota) );
     }
+    Lng32 seqMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE);
+    Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
+
+    if ( memQuota < seqMemoryLowbound ) {
+       memQuota = seqMemoryLowbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+    }
+    else if (memQuota >  memoryUpperbound)
+       memQuota = memoryUpperbound;
+           
+    sequenceTdb->setMemoryQuotaMB( UInt16(memQuota) );
   }
 
   generator->setCriDesc(givenCriDesc, Generator::DOWN);
@@ -1286,40 +1282,51 @@ void PhysSequence::computeHistoryParams(Lng32 histRecLength,
 }
 
 
-CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   // input param is not used as this operator does not participate in the
   // quota system.
 
   ValueIdSet outputFromChild = child(0).getGroupAttr()->getCharacteristicOutputs();
+  //TODO: Line below dumps core at times 
+  //const CostScalar maxCard = child(0).getGroupAttr()->getResultMaxCardinalityForEmptyInput();
+  const CostScalar maxCard = 0;
+  const CostScalar rowCount = numHistoryRows();
 
   //ValueIdSet historyIds;
   //getHistoryAttributes(sequenceFunctions(),outputFromChild, historyIds);
   //historyIds += sequenceFunctions();
   const Lng32 historyBufferWidthInBytes = getEstHistoryRowLength(); //historyIds.getRowLength();
-  const double historyBufferSizeInBytes = numHistoryRows() * 
+  const double historyBufferSizeInBytes = rowCount.value() * 
                                             historyBufferWidthInBytes;
 
   // totalMemory is per CPU at this point of time.
   double totalMemory = historyBufferSizeInBytes;
+  CostScalar estMemPerNode;
+  CostScalar estMemPerInst;
 
-  if ( perCPU == FALSE ) {
-    const PhysicalProperty* const phyProp = getPhysicalProperty();
-    if (phyProp != NULL)
-    {
-      PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-
-      // totalMemory is for all CPUs at this point of time.
-      totalMemory *= partFunc->getCountOfPartitions();
-    }
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
+  Lng32 numOfStreams = 1;
+  if (phyProp != NULL)
+  {
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
+     // totalMemory is for all CPUs at this point of time.
+     totalMemory *= numOfStreams;
   }
-
-  return totalMemory;
-}
-
-double PhysSequence::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
-{
-   return getEstimatedRunTimeMemoryUsage(FALSE).value();
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  estMemPerNode = totalMemory /= MINOF(MAXOF(gpClusterInfo->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerInst = totalMemory /= numOfStreams;
+  OperBMOQuota *operBMOQuota = new (generator->wHeap()) OperBMOQuota(getKey(), numOfStreams,         
+                                                  estMemPerNode, estMemPerInst, rowCount, maxCard);
+  generator->getBMOQuotaMap()->insert(operBMOQuota);
+  if (perNode)
+     return estMemPerNode;
+  else
+     return estMemPerInst; 
 }
 
 ExplainTuple*

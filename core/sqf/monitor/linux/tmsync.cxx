@@ -42,7 +42,9 @@ using namespace std;
 #include "tmsync.h"
 #include "mlio.h"
 #include "reqqueue.h"
+#include "nameserver.h"
 
+extern bool NameServerEnabled;
 extern int trace_level;
 extern int MyPNID;
 extern sigset_t SigSet;
@@ -236,7 +238,7 @@ void CTmSync_Container::CommitTmDataBlock( int return_code )
         if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
            trace_printf("%s@%d" " - Getting all nodes TmSyncState\n", method_name, __LINE__);
 
-        ExchangeTmSyncState();
+        ExchangeTmSyncState( false );
         state = Nodes->GetTmState( SyncState_Commit );
         if (( state == SyncState_Abort ) ||
             ( state == SyncState_Null  )   )
@@ -267,7 +269,7 @@ void CTmSync_Container::CommitTmDataBlock( int return_code )
     // End the TM sync processing cycle for my node.
     MyNode->SetTmSyncState( SyncState_Null );
     MyNode->SetTmSyncNid( -1 );
-    ExchangeTmSyncState();
+    ExchangeTmSyncState( false );
     if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
        trace_printf("%s@%d" " - Physical Node " "%d"  " TmSyncState updated (" "%d" ")" "\n", method_name, __LINE__, MyPNID, MyNode->GetTmSyncState());
     
@@ -318,10 +320,10 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                    trace_printf("%s@%d" " - Physical Node %d TmSyncState updated (nid=%d, state=%d)\n", method_name, __LINE__, MyPNID, MyNode->GetTmSyncNid(), MyNode->GetTmSyncState());
                 }
                 syncCycle_.lock();
-                exchangeTmSyncData( sync );
+                exchangeTmSyncData( sync, false );
                 syncCycle_.unlock();
-                ExchangeTmSyncState();
-                if (( Monitor->TmSyncPNid == MyPNID                           ) &&
+                ExchangeTmSyncState( false );
+                if (( Monitor->tmSyncPNid_ == MyPNID                           ) &&
                     ( Nodes->GetTmState( SyncState_Start ) == SyncState_Start )   )
                 {
                     // send unsolicited messages to other TMs in
@@ -353,7 +355,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                 else
                 {
                     if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
-                       trace_printf("%s@%d" " - Tm Sync failed to start, TmSyncPNid=%d, MyPNID=%d, " "TmSyncState=%d, expecting=%d\n", method_name, __LINE__, TmSyncPNid, MyPNID, Nodes->GetTmState( SyncState_Start ), SyncState_Start);
+                       trace_printf("%s@%d" " - Tm Sync failed to start, tmSyncPNid_=%d, MyPNID=%d, " "TmSyncState=%d, expecting=%d\n", method_name, __LINE__, tmSyncPNid_, MyPNID, Nodes->GetTmState( SyncState_Start ), SyncState_Start);
                     if (MyNode->GetTmSyncState() == SyncState_Start)
                     {
                         MyNode->SetTmSyncState( SyncState_Null );
@@ -391,7 +393,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                trace_printf("%s@%d" " - Physical Node " "%d"  " TmSyncState updated (" "%d" ")" "\n", method_name, __LINE__, MyPNID, MyNode->GetTmSyncState());
             }
             UnPackSyncData(sync);
-            ExchangeTmSyncState();
+            ExchangeTmSyncState( true );
         }
         else
         {
@@ -449,7 +451,7 @@ void CTmSync_Container::EndTmSync( MSGTYPE type )
             {
                 trace_printf("%s@%d - Request (%p) nid=%d, handle=%d, tag=%d, unsol=%d, comp=%d\n", method_name, __LINE__, req, req->Nid, req->Handle, req->Tag, req->Unsolicited, req->Completed);
             }
-            if ( TmSyncPNid == MyPNID )
+            if ( tmSyncPNid_ == MyPNID )
             {
                 if ( MyNode->GetLNodesCount() > 1 )
                 {
@@ -661,30 +663,40 @@ void CTmSync_Container::ProcessTmSyncReply( struct message_def * msg )
         if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
             trace_printf("%s@%d - Unsolicited TmSync reply, handle=%d\n",
                          method_name, __LINE__, tmsync_req->Handle);
-        tmsync_req->Completed = true;
-        UnsolicitedComplete( msg );
-        if ( msg->u.reply.u.unsolicited_tm_sync.return_code != MPI_SUCCESS )
+        if (msg->u.reply.u.unsolicited_tm_sync.return_code == MPI_SUCCESS)
         {
             TmSyncReplyCode |= msg->u.reply.u.unsolicited_tm_sync.return_code;
-        }
-        if ( TmSyncPNid == MyPNID )
-        {
-            if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
-                trace_printf("%s@%d - Local Unsolicited TmSync reply, handle="
-                             "%d\n", method_name, __LINE__,
-                             tmsync_req->Handle);
-            if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
+            tmsync_req->Completed = true;
+            UnsolicitedComplete( msg );
+            if ( tmSyncPNid_ == MyPNID )
             {
-                UpdateTmSyncState( TmSyncReplyCode );
-                UnsolicitedCompleteDone();
+                if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
+                    trace_printf("%s@%d - Local Unsolicited TmSync reply, handle="
+                                 "%d\n", method_name, __LINE__,
+                                 tmsync_req->Handle);
+                if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
+                {
+                    UpdateTmSyncState( TmSyncReplyCode );
+                    UnsolicitedCompleteDone();
+                }
+            }
+            else
+            {
+                if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
+                {
+                    CommitTmDataBlock(TmSyncReplyCode);
+                }
             }
         }
         else
-        {
-            if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
-            {
-                CommitTmDataBlock(TmSyncReplyCode);
-            }
+        { // The Seabed callback has not been registered, try again
+            if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
+                trace_printf("%s@%d - Retrying Local Unsolicited TmSync, handle="
+                             "%d\n", method_name, __LINE__,
+                             tmsync_req->Handle);
+            PendingSlaveTmSyncCount--;
+            tmsync_req->Completed = false;
+            SendUnsolicitedMessages();
         }
     }
     else
@@ -700,7 +712,7 @@ void CTmSync_Container::ProcessTmSyncReply( struct message_def * msg )
     TRACE_EXIT;
 }
 
-void CTmSync_Container::ExchangeTmSyncState( void )
+void CTmSync_Container::ExchangeTmSyncState( bool bumpSync )
 {
     struct sync_def sync;
 
@@ -714,7 +726,7 @@ void CTmSync_Container::ExchangeTmSyncState( void )
     sync.count = 0;
     sync.length = 0;
     syncCycle_.lock();
-    exchangeTmSyncData( &sync );
+    exchangeTmSyncData( &sync, bumpSync );
     syncCycle_.unlock();
 
     TRACE_EXIT;
@@ -916,6 +928,16 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 // Get the TM that initiated the sync request
                 tm = LNode[req->Nid]->GetProcessLByType( ProcessType_DTM );
             }
+            if (!tm && NameServerEnabled)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Getting process from Name Server, nid=%d, type=ProcessType_DTM\n"
+                                , method_name, __LINE__, req->Nid );
+                }
+            
+                tm = Nodes->GetProcessLByTypeNs( req->Nid, ProcessType_DTM );
+            }
             if ( tm )
             {
                 // send all TmSync requests data to the local TM processes
@@ -987,6 +1009,23 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 {
                     delete msg;
                     msg = NULL;
+                }
+                if (NameServerEnabled)
+                {
+                    if (!MyNode->IsMyNode( tm->GetNid() ))
+                    {
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                        {
+                            trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                        , method_name, __LINE__
+                                        , tm->GetName()
+                                        , tm->GetNid()
+                                        , tm->GetPid()
+                                        , tm->GetVerifier() );
+                        }
+                        Nodes->DeleteCloneProcess( tm );
+                    }
+                
                 }
             }
             else
@@ -1092,7 +1131,7 @@ bool CTmSync_Container::TmSyncPending( void )
        trace_printf("%s@%d" " - PendingTmSync=%d, total=%d, replies=%d, pending=%d\n", method_name, __LINE__, PendingSlaveTmSync, GetTotalSlaveTmSyncCount(), GetTmSyncReplies(), GetPendingSlaveTmSyncCount() );
 
     if (( MyNode->GetTmSyncState() == SyncState_Abort ) &&
-        ( TmSyncPNid != MyPNID ) &&
+        ( tmSyncPNid_ != MyPNID ) &&
         ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )   )
     {
         CommitTmDataBlock( MPI_ERR_UNKNOWN );

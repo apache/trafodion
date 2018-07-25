@@ -352,7 +352,7 @@ A     B     C    D
 >>
 >>invoke hive.hive.ttiny;
 
--- Definition of hive table TTINY
+-- Definition of hive table HIVE.HIVE.TTINY
 -- Definition current  Wed Feb 22 23:04:49 2017
 
   (
@@ -833,7 +833,7 @@ A       B       C      D
 >>
 >>invoke hive.hive.ttiny;
 
--- Definition of hive table TTINY
+-- Definition of hive table HIVE.HIVE.TTINY
 -- Definition current  Wed Feb 22 23:05:57 2017
 
   (
@@ -2462,7 +2462,7 @@ TRUE   FALSE
 >>
 >>invoke hive.hive.tbool;
 
--- Definition of hive table TBOOL
+-- Definition of hive table HIVE.HIVE.TBOOL
 -- Definition current  Wed Feb 22 23:08:45 2017
 
   (

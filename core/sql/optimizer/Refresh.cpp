@@ -517,9 +517,7 @@ NABoolean Refresh::doesBaseTableHaveSupportingIndex(BindWA *bindWA,
   LIST (MVColumnInfo *) mvGroupByColumns(bindWA->wHeap());
   for (	i = 0 ; i < pMvInfoColumnList.entries() ; i++)
   {
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *currentMvColInfo = pMvInfoColumnList[i];
-#pragma warn(1506)  // warning elimination 
     if (COM_MVCOL_GROUPBY == currentMvColInfo->getColType())
     {
       mvGroupByColumns.insert(currentMvColInfo);
@@ -687,7 +685,6 @@ const NAString Refresh::getText() const
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 // Exclude from coverage testing - Must be implemented as a RelExpr subclass, but not used.
-// LCOV_EXCL_START
 RelExpr *Refresh::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
   Refresh *result = NULL;
@@ -726,7 +723,6 @@ RelExpr *Refresh::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   return BinderOnlyNode::copyTopNode(result, outHeap);
 }  // Refresh::copyTopNode()
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Return the DeltaDefinition for the table named 'name'.

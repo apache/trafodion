@@ -63,16 +63,6 @@ public:
   virtual ~SqlciNode();
   virtual short process(SqlciEnv * sqlci_env);
 
-  // These are new functions to allow certain
-  // commands to be accepted in the Report Writer 
-  // mode and in the SelectInProgress mode.  These 
-  // functions are virtual functions which has 
-  // to be implemented by all classes that derive
-  // from SqlciNode.
-  virtual NABoolean isAllowedInSIP();
-  virtual NABoolean isAllowedInRWMode();
-  virtual NABoolean isAllowedInCSMode();
-
   void set_next(SqlciNode * next_)	{next = next_;}
   SqlciNode * get_next() const		{return next;}
 

@@ -4446,7 +4446,7 @@ SB_Export int msg_mon_open_process_self_ic(SB_Phandle_Type *pp_phandle,
 //
 void msg_mon_oc_cbt(MS_Md_Type *pp_md, void *pp_stream) {
     const char   *WHERE = "msg_mon_oc_cbt";
-    Mon_Msg_Type *lp_msg;
+    Mon_Msg_Type *lp_msg = NULL;
     bool          lv_aborted;
     bool          lv_close_dup;
     bool          lv_close_shutdown;
@@ -4550,7 +4550,6 @@ void msg_mon_oc_cbt(MS_Md_Type *pp_md, void *pp_stream) {
         break;
 
     default:
-        lp_msg = NULL;
         SB_util_abort("invalid pp_md->out.iv_msg_type"); // sw fault
         break;
     }
@@ -4592,13 +4591,13 @@ void msg_mon_oc_cbt(MS_Md_Type *pp_md, void *pp_stream) {
                 trace_where_printf(WHERE, "connection-open (aborted)\n");
         }
 
-        if (gv_ms_trace_mon) {
+        if (gv_ms_trace_mon && NULL != lp_msg) {
             const char *lp_msg_type = msg_util_get_msg_type(lp_msg->type);
             trace_where_printf(WHERE, "manufacturing/queueing %s (%d) mon message\n",
                                lp_msg_type, lp_msg->type);
             msg_mon_trace_msg(WHERE, lp_msg);
         }
-        if (gv_ms_enable_messages) {
+        if (gv_ms_enable_messages && NULL != lp_msg) {
             if (lp_msg->type == MsgType_Close) {
 
                 do {
@@ -6609,7 +6608,7 @@ void msg_mon_recv_unsol_msg_loc_cbt(Mon_Msg_Type *pp_msg, int) {
     } else {
         if (gv_ms_trace_mon)
             trace_where_printf(WHERE, "no tmsync callback, replying with error\n");
-        lv_handle = -1;
+        lv_handle = pp_msg->u.request.u.unsolicited_tm_sync.handle;
         lv_cbret = 1; // set error
     }
     lv_err = gp_local_mon_io->acquire_msg(&lp_msg);

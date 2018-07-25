@@ -305,7 +305,6 @@ private:
 	Lng32						processId_;	
 };
 
-// LCOV_EXCL_START :cnu
 void CRUTaskExecutor::StoreRequest(CUOFsIpcMessageTranslator &translator)
 {
 	StoreData(translator);
@@ -326,6 +325,5 @@ void CRUTaskExecutor::StoreReply(CUOFsIpcMessageTranslator &translator)
 {
 	StoreData(translator);
 }
-// LCOV_EXCL_STOP
 
 #endif

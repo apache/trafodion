@@ -78,6 +78,7 @@
 #include "StmtDDLCreateSynonym.h"
 #include "ElemDDLMVFileAttrClause.h"
 #include "StmtDDLCreateExceptionTable.h"
+#include "StmtDDLCommentOn.h"
 #include "MVInfo.h"
 
 #include "NumericType.h"
@@ -1027,7 +1028,6 @@ StmtDDLCreateComponentPrivilege::castToStmtDDLCreateComponentPrivilege()
 // methods for tracing
 //
 
-// LCOV_EXCL_START
 
 const NAString
 StmtDDLCreateComponentPrivilege::displayLabel1() const
@@ -1059,7 +1059,6 @@ StmtDDLCreateComponentPrivilege::getText() const
   return "StmtDDLCreateComponentPrivilege";
 }
 
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // MV - RG (refresh groups)
@@ -1413,7 +1412,7 @@ StmtDDLCreateIndex::StmtDDLCreateIndex(NABoolean isUnique,
           isPartitionByClauseSpec_(FALSE),
           isDivisionClauseSpec_(FALSE),
           pDivisionClauseParseNode_(NULL),
-          isHbaseOptionsSpec_(NULL),
+          isHbaseOptionsSpec_(FALSE),
 	  pHbaseOptionsParseNode_(NULL),
           pSaltOptions_(NULL),
           isParallelExec_(FALSE),
@@ -2913,32 +2912,32 @@ StmtDDLCreateRoutine::synthesize()
             {
             case COM_UUDF_PARAM_ACTION:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("ACTION");
-              pParamDataType2 = new(STMTHEAP) SQLVarChar ( 1024  // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLVarChar (STMTHEAP, 1024  // long maxLength
                                                          , FALSE // NABoolean allowSQLnull
                                                          );
               break;
             case COM_UUDF_PARAM_SAS_FORMAT:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("SAS_FORMAT");
-              pParamDataType2 = new(STMTHEAP) SQLVarChar ( 1024  // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLVarChar (STMTHEAP, 1024  // long maxLength
                                                          , FALSE // NABoolean allowSQLnull
                                                          );
               break;
             case COM_UUDF_PARAM_SAS_LOCALE:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("SAS_LOCALE");
-              pParamDataType2 = new(STMTHEAP) SQLInt ( TRUE  // NABoolean allowNegValues
+              pParamDataType2 = new(STMTHEAP) SQLInt (STMTHEAP,  TRUE  // NABoolean allowNegValues
                                                      , FALSE // NABoolean allowSQLnull
                                                      );
               break;
             case COM_UUDF_PARAM_SAS_MODEL_INPUT_TABLE:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("SAS_MODEL_INPUT_TABLE");
-              pParamDataType2 = new(STMTHEAP) SQLVarChar ( 1024  // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLVarChar (STMTHEAP, 1024  // long maxLength
                                                          , FALSE // NABoolean allowSQLnull
                                                          );
               break;
             default:
             case COM_UUDF_PARAM_OMITTED:           // any dummy data type would do
               pParamName2     = NULL;
-              pParamDataType2 = new(STMTHEAP) SQLChar ( 1     // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLChar (STMTHEAP, 1     // long maxLength
                                                       , FALSE // NABoolean allowSQLnull
                                                       );
               break;
@@ -3766,7 +3765,7 @@ StmtDDLCreateTable::StmtDDLCreateTable(const QualifiedName & aTableQualName,
 	  isMVFileAttributeClauseSpec_(FALSE),
           isDivisionByClauseSpec_(FALSE),
           pDivisionByClauseParseNode_(NULL),
-	  isHbaseOptionsSpec_(NULL),
+	  isHbaseOptionsSpec_(FALSE),
 	  pHbaseOptionsParseNode_(NULL),
           pSaltOptions_(NULL),
           isStoreByClauseSpec_(FALSE),
@@ -4256,9 +4255,12 @@ StmtDDLCreateTable::synthesize()
     }
 
   NABoolean userSpecifiedPKey = FALSE;
-  if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
+  NABoolean nullablePKeySpecified = FALSE;
+  if ((CmpCommon::getDefault(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL) == DF_ON) ||
+      (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
       (isVolatile()) ||
-      ((isPkeyStoreByKeylist) && pTableDefBody && (pTableDefBody->castToElemDDLLikeCreateTable() == NULL)))
+      ((isPkeyStoreByKeylist) && pTableDefBody && 
+       (pTableDefBody->castToElemDDLLikeCreateTable() == NULL)))
     {
       NABoolean addPrimaryKeyClause = FALSE;
 
@@ -4389,6 +4391,9 @@ StmtDDLCreateTable::synthesize()
 
 		  keyColsList = 
 		    currElem->castToElemDDLConstraintPK()->getColumnRefList();
+
+                  nullablePKeySpecified = 
+                    currElem->castToElemDDLConstraintPK()->isNullableSpecified();
 		}
 	    }
 	} // while
@@ -4494,9 +4499,13 @@ StmtDDLCreateTable::synthesize()
 
       // loop over all cols and make nullable columns which are part
       // of pkey specification, not-null-non-droppable.
-      // Do this only if cqd VOLATILE_TABLE_FIND_SUITABLE_KEY is 
-      // set to OFF.
-      if (CmpCommon::getDefault(VOLATILE_TABLE_FIND_SUITABLE_KEY) == DF_OFF)
+      // For volatile tables, do this only if cqd 
+      // VOLATILE_TABLE_FIND_SUITABLE_KEY is set to OFF.
+      if (((NOT isVolatile()) &&
+           (CmpCommon::getDefault(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL) == DF_ON) &&
+           (NOT nullablePKeySpecified)) ||
+          ((isVolatile()) && 
+           (CmpCommon::getDefault(VOLATILE_TABLE_FIND_SUITABLE_KEY) == DF_OFF)))
 	{
 	  currListElem = pTableDefBody;
 	  while (currListElem)
@@ -4528,7 +4537,13 @@ StmtDDLCreateTable::synthesize()
 		  NABoolean makeThisColNNND = FALSE;
 		  
 		  if (col->isPrimaryKeyConstraintSpecified())
-		    makeThisColNNND = TRUE;
+                    {
+                      makeThisColNNND = TRUE;
+
+                      if (col->getConstraintPK() && 
+                          col->getConstraintPK()->isNullableSpecified())
+                        makeThisColNNND = FALSE;
+                    }
 		  else if (keyColsList NEQ NULL)
 		    {
 		      // See if this col is in pkey or store by clause.
@@ -6835,7 +6850,8 @@ StmtDDLCreateView::StmtDDLCreateView(const QualifiedName & viewQualName,
           pWithCheckOption_(optionalWithCheckOption),
           columnDefArray_(heap),
           viewUsages_(heap),
-	  udfList_(heap)
+	  udfList_(heap),
+          createIfNotExists_(FALSE)
 {
   setChild(INDEX_VIEW_OWNER, pOwner);
 }
@@ -7162,6 +7178,70 @@ ViewUsages::insertUsedTableName(const QualifiedName &tableName)
 }
 
 *****************************************************/
+
+
+
+
+// -----------------------------------------------------------------------
+// Methods for class StmtDDLCommentOn
+// -----------------------------------------------------------------------
+
+//
+// Constructor
+//
+
+
+StmtDDLCommentOn::StmtDDLCommentOn(COMMENT_ON_TYPES objType, const QualifiedName & objName, const NAString & commentStr, CollHeap * heap)
+  : StmtDDLNode(DDL_COMMENT_ON),
+    type_(objType),
+    objectName_(objName, heap),
+    comment_(commentStr),
+    colRef_(NULL),
+    isViewCol_(FALSE),
+    colNum_(0)
+{
+      
+}
+
+
+StmtDDLCommentOn::StmtDDLCommentOn(COMMENT_ON_TYPES objType, const QualifiedName & objName, const NAString & commentStr, ColReference  * colRef, CollHeap * heap)
+  : StmtDDLNode(DDL_COMMENT_ON),
+    type_(objType),
+    objectName_(objName, heap),
+    colRef_(colRef),
+    comment_(commentStr),
+    isViewCol_(FALSE),
+    colNum_(0)
+{
+      
+}
+
+
+StmtDDLCommentOn::~StmtDDLCommentOn()
+{
+
+}
+
+StmtDDLCommentOn  * StmtDDLCommentOn::castToStmtDDLCommentOn()
+{
+  return this;
+}
+
+/* add escape quote for single quote */
+NAString StmtDDLCommentOn::getCommentEscaped()
+{
+    NAString ret(comment_);
+    int idx = ret.length() - 1;
+
+    for (; idx >= 0; idx--)
+    {
+        if (ret[idx] == '\'')
+            ret.insert(idx, "'");
+    }
+
+    return ret;
+}
+
 
 //
 // End of File

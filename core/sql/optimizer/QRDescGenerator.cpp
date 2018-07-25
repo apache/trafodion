@@ -103,11 +103,9 @@ void EqualitySet::determineType()
   if (isEmpty())
     {
       // I don't think this should happen.
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
         "determineType() called for empty EqualitySet.");
       return;
-      // LCOV_EXCL_STOP
     }
 
   NABoolean isExact = FALSE, wasExact, isSigned = FALSE, isNullable = FALSE;
@@ -178,22 +176,22 @@ void EqualitySet::determineType()
     {
       // Binary precision smallint, int, largeint, real, double)
       if (magnitude < 50)
-        type_ = new(heap_) SQLSmall(isSigned, isNullable, heap_);
+        type_ = new(heap_) SQLSmall(heap_,isSigned, isNullable);
       else if (magnitude < 100)
-        type_ = new(heap_) SQLInt(isSigned, isNullable, heap_);
+        type_ = new(heap_) SQLInt(heap_, isSigned, isNullable);
       else if (magnitude < 200)
-        type_ = new(heap_) SQLLargeInt(isSigned, isNullable, heap_);
+        type_ = new(heap_) SQLLargeInt(heap_, isSigned, isNullable);
       else if (magnitude < 500)
-        type_ = new(heap_) SQLReal(isNullable, heap_);
+        type_ = new(heap_) SQLReal(heap_, isNullable);
       else
-        type_ = new(heap_) SQLDoublePrecision(isNullable, heap_);
+        type_ = new(heap_) SQLDoublePrecision(heap_, isNullable);
     }
   else
     {
       // @ZX need to amend this (and elsewhere) for SQLBigNum.
       // Numeric or Decimal -- type will be generated as Numeric
       const Int16 DisAmbiguate = 0;
-      type_ = new(heap_) SQLNumeric(isSigned, (magnitude / 10) + scale, scale,
+      type_ = new(heap_) SQLNumeric(heap_, isSigned, (magnitude / 10) + scale, scale,
                                     DisAmbiguate,  // added for 64bit proj.
                                     isNullable);
     }
@@ -254,11 +252,17 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
 
               default:
                 // All day-time interval values are expressed in terms of microseconds.
+
+                // If fractional precision is greater than
+                // microsecs, disable rangespec transformation.
+                if (type->getScale() > SQLInterval::MAX_FRACTION_PRECISION_USEC)
+                  return FALSE;
+
                 return (SQLInterval::MAX_LEADING_PRECISION >=
                         IntervalType::getPrecision(intvType->getStartField(),
                                                    intvType->getLeadingPrecision(),
                                                    REC_DATE_SECOND,
-                                                   SQLInterval::MAX_FRACTION_PRECISION));
+                                                   SQLInterval::MAX_FRACTION_PRECISION_USEC));
             }
         }
 
@@ -269,6 +273,13 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
       //case NA_USER_SUPPLIED_TYPE:
       //case NA_RECORD_TYPE:
       //case NA_ROWSET_TYPE:
+
+        // datetime values are currently converted to Int64 microseconds value
+        // for rangespec constants. If fractional precision is greater than
+        // microsecs, disable rangespec transformation.
+        if (type->getScale() > DatetimeType::MAX_FRACTION_PRECISION_USEC)
+          return FALSE;
+
         return TRUE;
 
       default:
@@ -781,7 +792,6 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
         }
         break;
 
-      // LCOV_EXCL_START :rfi
       case QR::QRNoElem:
       default:
         assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
@@ -789,7 +799,6 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
 			   "Unhandled ExprElement enum value: %d",
 			   itemExpr->getQRExprElem());
         return NULL;
-      // LCOV_EXCL_STOP
     }
   // make the compiler happy
   return NULL;
@@ -895,7 +904,6 @@ QRDescGenerator::genQRExpr(ItemExpr* pExpr,
 }  // genQRExpr()
 
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 NABoolean
 QRDescGenerator::normalizeColumnInExpression(NAString& pExprText,
 					     ValueId   colvid,
@@ -936,7 +944,6 @@ QRDescGenerator::normalizeColumnInExpression(NAString& pExprText,
   return bColFound;
 
 }  // normalizeColumnInExpression()
-// LCOV_EXCL_STOP
 
 void QRDescGenerator::markColumnsAsResidual(ValueIdSet& vegrefsInExpr)
 {
@@ -1328,14 +1335,12 @@ void QRDescGenerator::processJBBCList(CANodeIdSet* jbbcNodeIds,
           }
         else
           {
-            // LCOV_EXCL_START :rfi
             deletePtr(groupJbb);
             Int32 nodeIdVal = nodeId;
             assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                                FALSE, QRDescriptorException,
                                "Unsupported operator: %s",
                                nodeAnalysis->getOriginalExpr()->getText().data());
-            // LCOV_EXCL_STOP
           }
       }
   }
@@ -1818,7 +1823,6 @@ NABoolean QRDescGenerator::processJBBs(QRDescriptorPtr descPtr,
   return jbbElemsWereCreated;
 }
 
-// LCOV_EXCL_START :cnu
 void QRDescGenerator::logColumnBitmap(QRTablePtr table,
                                       const XMLBitmap& bitmap,
                                       ElementType predType)
@@ -1876,7 +1880,6 @@ void QRDescGenerator::logColumnBitmap(QRTablePtr table,
       
     }
 }  // logColumnBitmap()
-// LCOV_EXCL_STOP
 
 QRQueryDescriptorPtr QRDescGenerator::createQueryDescriptor(QueryAnalysis* qa,
                                                             RelExpr* expr)
@@ -1924,10 +1927,8 @@ QRMVDescriptorPtr QRDescGenerator::createMvDescriptor(QueryAnalysis* qa,
     }
   else
     {
-      // LCOV_EXCL_START :rfi  processJBBs should not return false for mv
       deletePtr(mvDesc);
       return NULL;
-      // LCOV_EXCL_STOP
     }
 }  // createMvDescriptor() 
 
@@ -2786,7 +2787,7 @@ void QRDescGenerator::putVegMembersInEqualitySet(
   // persist beyond this function. Note that ValueId is not an NABasicObject,
   // so we use the system heap.
   // 
-  QRValueId* vegVidPtr = new QRValueId(vegVid);
+  QRValueId* vegVidPtr = new (mvqrHeap_) QRValueId(vegVid);
   vegsUsedHash_.insert(vegVidPtr, eqSet);
 
   // Put the veg members in the list and in the hash tables.
@@ -2801,7 +2802,7 @@ void QRDescGenerator::putVegMembersInEqualitySet(
       if (op == ITM_BASECOLUMN)
         {
           eqSet->insert(itemExpr);
-          vidPtr = new QRValueId(vid);
+          vidPtr = new (mvqrHeap_) QRValueId(vid);
           vegsUsedHash_.insert(vidPtr, eqSet);
         }
       else if (op != ITM_INDEXCOLUMN)
@@ -3033,13 +3034,11 @@ void QRDescGenerator::setPredBitmap(QRValueId colVid, ElementType elemType)
         }
       else
         {
-          // LCOV_EXCL_START :rfi
           Int32 vidInt = vid;
           assertLogAndThrow2(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             FALSE, QRDescriptorException,
                             "ValueId %d is not a base col or veg ref -- op type = %d",
                             vidInt, opType);
-          // LCOV_EXCL_STOP
         }
     }
   assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
@@ -3063,7 +3062,7 @@ void QRDescGenerator::setPredBitmap(QRValueId colVid, ElementType elemType)
   else if (elemType == ET_ResidualPred)
     elem->downCastToQRTable()->setResidualBit(col->getColIndex());
   else
-    assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+    assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                        FALSE, QRDescriptorException,
                        "Wrong element type sent to setPredBitmap() -- %d",
                        elemType);
@@ -3074,7 +3073,7 @@ void QRDescGenerator::storeRangeInfo(OptRangeSpec* range, QRJBBPtr jbbElem)
   QRTRACER("QRDescGenerator::storeRangeInfo()");
   RangeInfo* rangeInfo = NULL;
   NAString* exprText = NULL;
-  QRValueId* key = new QRValueId(range->getRangeJoinPredId());
+  QRValueId* key = new (mvqrHeap_) QRValueId(range->getRangeJoinPredId());
 
   if (*key != NULL_VALUE_ID)
     rangeInfo = rangeColHash_.getFirstValue(key);
@@ -3085,7 +3084,7 @@ void QRDescGenerator::storeRangeInfo(OptRangeSpec* range, QRJBBPtr jbbElem)
     }
   else
     {
-      exprText = new NAString(range->getRangeExprText());
+      exprText = new (mvqrHeap_) NAString(range->getRangeExprText(), mvqrHeap_);
       rangeInfo = rangeExprHash_.getFirstValue(exprText);
     }
 

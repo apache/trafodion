@@ -44,9 +44,9 @@
 #include "exp_attrs.h"
 #include "Int64.h"
 
-#pragma warning ( disable : 4251 )
+UInt32 Date2Julian(int y, int m ,int d);
 
-class SQLEXP_LIB_FUNC  ExpDatetime : public SimpleType {
+class ExpDatetime : public SimpleType {
 
 public:
   // these enums must be in the same order as the datetimeFormat[] array 
@@ -95,9 +95,32 @@ public:
     DATETIME_FORMAT_NUM2,     // -99:99:99:99
     DATETIME_FORMAT_MAX_NUM = DATETIME_FORMAT_NUM2,
 
+    DATETIME_FORMAT_EXTRA_MIN = DATETIME_FORMAT_MAX_NUM,
+    DATETIME_FORMAT_EXTRA_HH,   // hour of day(00-23)
+    DATETIME_FORMAT_EXTRA_HH12, // hour of day(01-12)
+    DATETIME_FORMAT_EXTRA_HH24, // hour of day(00-23)
+    DATETIME_FORMAT_EXTRA_MI,   // minute(00-59)
+    DATETIME_FORMAT_EXTRA_SS,   // second(00-59)
+    DATETIME_FORMAT_EXTRA_YYYY, // year(4 digits)
+    DATETIME_FORMAT_EXTRA_YYY,  // year(last 3 digits of year)
+    DATETIME_FORMAT_EXTRA_YY,   // year(last 2 digits of year)
+    DATETIME_FORMAT_EXTRA_Y,    // year(last digit of year)
+    DATETIME_FORMAT_EXTRA_MON,  // month(3 chars in English)
+    DATETIME_FORMAT_EXTRA_MM,   // month(01-12)
+    DATETIME_FORMAT_EXTRA_DY,   // name of day(3 chars in English) exp. SUN
+    DATETIME_FORMAT_EXTRA_DAY,  // name of day,padded with blanks to length of 9 characters. exp. SUNDAY
+    DATETIME_FORMAT_EXTRA_CC,   // century
+    DATETIME_FORMAT_EXTRA_D,    // day of week(Sunday(1) to Saturday(7))
+    DATETIME_FORMAT_EXTRA_DD,   // day of month(01-31)
+    DATETIME_FORMAT_EXTRA_DDD,  // day of year(1-366)
+    DATETIME_FORMAT_EXTRA_W,    // week of month(1-5)
+    DATETIME_FORMAT_EXTRA_WW,   // week number of year(1-53)
+    DATETIME_FORMAT_EXTRA_J,    //number of days since January 1, 4713 BC
+    DATETIME_FORMAT_EXTRA_Q,    // the quarter of year(1-4)
+    DATETIME_FORMAT_EXTRA_MAX = DATETIME_FORMAT_EXTRA_Q,
     // the following are intended for binder time resolution based 
     // on operand type to one of the formats above
-    DATETIME_FORMAT_MIN_UNRESOLVED = DATETIME_FORMAT_MAX_NUM,
+    DATETIME_FORMAT_MIN_UNRESOLVED = DATETIME_FORMAT_EXTRA_MAX,
     DATETIME_FORMAT_UNSPECIFIED,  // Default format for TO_CHAR; resolved at bind time
                                   // based on the datatype of the operand
     DATETIME_FORMAT_MAX_UNRESOLVED = DATETIME_FORMAT_UNSPECIFIED,
@@ -121,7 +144,9 @@ public:
   enum { DATETIME_MAX_NUM_FIELDS = 7 };
   enum { MAX_DATETIME_SIZE = 11 };
 
-  enum { MAX_DATETIME_FRACT_PREC = 6 };
+  enum { MAX_DATETIME_MICROS_FRACT_PREC = 6 };
+  enum { MAX_DATETIME_NANOS_FRACT_PREC = 9 };
+  enum { MAX_DATETIME_FRACT_PREC = 9 };
 
   // MAX Length of Datetime string is 50 -
   // "DATE 'YYYY-MM-DD';"
@@ -135,41 +160,39 @@ public:
 
   enum arithOps {DATETIME_ADD, DATETIME_SUB};
 
-NA_EIDPROC
   ExpDatetime();
-NA_EIDPROC
   ~ExpDatetime();
 
-NA_EIDPROC
   static Int64 getTotalDays(short year, short month, short day);
 
-NA_EIDPROC
   static short getDatetimeFields(Lng32 datetimeCode,
                                  rec_datetime_field &startField,
                                  rec_datetime_field &endField);
 
-NA_EIDPROC
+  static NABoolean fractionStoredAsNanos(rec_datetime_field endField,
+                                         short fractionPrecision);
+
   void convertDatetimeToInterval(rec_datetime_field datetimeStartField,
                                  rec_datetime_field datetimeEndField,
                                  short fractionPrecision,
                                  rec_datetime_field intervalEndField,
                                  char *datetimeOpData,
-                                 Int64 &interval) const;
+                                 Int64 &interval,
+                                 char * intervalBignum,
+                                 NABoolean &isBignum) const;
 
-NA_EIDPROC
   static short getYearMonthDay(Int64 totalDays,
                                short &year,
                                char &month,
                                char &day);
 
-NA_EIDPROC
   short convertIntervalToDatetime(Int64 interval,
+                                  char * intervalBignum,
                                   rec_datetime_field startField,
                                   rec_datetime_field endField,
                                   short fractionPrecision,
                                   char *datetimeOpData) const;
 
-NA_EIDPROC
   static short validateDate(rec_datetime_field startField,
                             rec_datetime_field endField,
                             char *datetimeOpData,
@@ -177,14 +200,11 @@ NA_EIDPROC
                             short intervalFlag,
                             NABoolean &LastDayPrevMonth);
 
-NA_EIDPROC
   static short validateTime(const char *datetimeOpData);
 
-NA_EIDPROC
   short compDatetimes(char *datetimeOpData1,
                       char *datetimeOpData2);
 
-NA_EIDPROC
   short arithDatetimeInterval(ExpDatetime::arithOps operation,
                               ExpDatetime *datetimeOpType,
                               Attributes *intervalOpType,
@@ -194,7 +214,6 @@ NA_EIDPROC
                               CollHeap *heap,
                               ComDiagsArea** diagsArea);
 
-NA_EIDPROC
   short subDatetimeDatetime(Attributes *datetimeOpType,
                             Attributes *intervalOpType,
                             char *datetimeOpData1,
@@ -203,32 +222,25 @@ NA_EIDPROC
                             CollHeap *heap,
                             ComDiagsArea** diagsArea) const;
 
-NA_EIDPROC
   static short getDisplaySize(Lng32 datetimeCode,
 			      short fractionPrecision);
 		       
-NA_EIDPROC
   static Lng32 getDatetimeFormatLen(Lng32 format, NABoolean to_date,
 				   rec_datetime_field startField,
 				   rec_datetime_field endField);
 
-NA_EIDPROC
   Attributes * newCopy();
 
-NA_EIDPROC
   Attributes * newCopy(CollHeap *);
 
-NA_EIDPROC
   void copyAttrs(Attributes *source_); // copy source attrs to this.
 
   // ---------------------------------------------------------------------
   // Perform type-safe pointer casts.
   // ---------------------------------------------------------------------
-NA_EIDPROC
   virtual
   ExpDatetime* castToExpDatetime();
 
-NA_EIDPROC
   short convDatetimeDatetime(char *srcData,
                              rec_datetime_field dstStartField,
                              rec_datetime_field dstEndField,
@@ -238,13 +250,11 @@ NA_EIDPROC
 			     short validateFlag,
                              NABoolean *roundedDownFlag = NULL);
 
-NA_EIDPROC
   static short currentTimeStamp(char *dstData,
                                 rec_datetime_field startField,
                                 rec_datetime_field endField,
                                 short fractPrec);
 
-NA_EIDPROC
   short extractDatetime(rec_datetime_field srcStartField,
                         rec_datetime_field srcEndField,
                         short srcFractPrec,
@@ -273,7 +283,6 @@ NA_EIDPROC
                             ComDiagsArea** diagsArea,
                             ULng32 flags);
 
-NA_EIDPROC
   short convAsciiToDate(char *target,
                         Lng32 targetLen,
                         char *source,
@@ -283,7 +292,6 @@ NA_EIDPROC
                         ComDiagsArea** diagsArea,
                         ULng32 flags);
 
-NA_EIDPROC
   Lng32 convDatetimeToASCII(char *srcData,
                            char *dstData,
                            Lng32 dstLen,
@@ -292,7 +300,6 @@ NA_EIDPROC
                            CollHeap *heap,
                            ComDiagsArea** diagsArea);
 
-NA_EIDPROC
   static Lng32 convNumericTimeToASCII(char *srcData,
 				     char *dstData,
 				     Lng32 dstLen,
@@ -301,7 +308,6 @@ NA_EIDPROC
 				     CollHeap *heap,
 				     ComDiagsArea** diagsArea);
   
-NA_EIDPROC
 static
   short convAsciiDatetimeToASCII(char *srcData,
 				 Lng32 srcPrecision,
@@ -318,18 +324,18 @@ static
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     SimpleType::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
   static const char * getDatetimeFormatStr(Lng32 frmt)
@@ -351,6 +357,17 @@ static
       }
 
     for (Lng32 i = DATETIME_FORMAT_MIN_NUM; i <= DATETIME_FORMAT_MAX_NUM; i++)
+      {
+        if (stricmp(formatStr, datetimeFormat[i].str) == 0)
+          {
+            if (datetimeFormat[i].format != i)
+              return -1;
+
+            return i;
+          }
+      }
+
+    for (Lng32 i = DATETIME_FORMAT_EXTRA_MIN; i <= DATETIME_FORMAT_EXTRA_MAX; i++)
       {
         if (stricmp(formatStr, datetimeFormat[i].str) == 0)
           {
@@ -399,6 +416,12 @@ static
             (frmt <= DATETIME_FORMAT_MAX_TIME));
   }
 
+  static NABoolean isExtraFormat(Lng32 frmt)
+  {
+    return ((frmt >= DATETIME_FORMAT_EXTRA_MIN) &&
+            (frmt <= DATETIME_FORMAT_EXTRA_MAX));
+  }
+
   static NABoolean isNumericFormat(Lng32 frmt)
   {
     return ((frmt == DATETIME_FORMAT_NUM1) || (frmt == DATETIME_FORMAT_NUM2));
@@ -418,7 +441,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #endif
 

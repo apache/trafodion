@@ -46,30 +46,15 @@
 //                    for release and debug builds to prevent corruption
 //                    of the shared memory segment used by runtime stats.
 
-#if (defined(NA_LINUX) && !defined(__EID))
 #include <stdio.h>
-#endif
-#ifdef STAND_ALONE
-#define NA_EIDPROC
-#define TRUE 1
-#define NABoolean bool
-#endif
-
-#ifndef STAND_ALONE
 #include "NABasicObject.h"
-#endif
 
-#ifndef STAND_ALONE
 #include "Platform.h"
 #include "NAStringDefGlobals.h"
-#endif
 #include <stddef.h>
-#include <setjmp.h>
 
-#ifndef STAND_ALONE
 #include "NAError.h"
 #include "HeapID.h"
-#endif
 
 #ifdef _DEBUG
 // forward declaration
@@ -77,25 +62,17 @@ template <class T> class NAList;
 #define LIST(Type) NAList<Type>
 #endif // _DEBUG
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID)
-#ifdef NA_STD_NAMESPACE
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 #include <iosfwd>
 using namespace std;
-#else
-class ostream;
-#endif
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID)
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 
 #include <unistd.h>
 #include <sys/types.h>
 typedef uid_t SEG_ID;
-#if !defined(__EID) && (defined(NA_LINUX) || defined(NA_WINNT))
-#define HAVE_MMAP 1
-#endif
 
 // contents of this file:
 class NAMemory;
-class NASegGlobals;
 class NABlock;
 class NAHeap;
 class NAHeapFragment;
@@ -103,16 +80,17 @@ class NATreeFragment;
 class MemBinsem;
 class SegmentStatus;
 
+#define MAX_MEMORY_SIZE_IN_AN_ALLOC  INT_MAX
+
 
 // MemoryStats is used for dynamically allocated statistics (when MEMDEBUG=1 or higher)
 // and if NAHeap::dump() is called.
-#ifndef __EID
 class MemoryStats {
 public:
   MemoryStats();
 
   void addEntry(size_t value);
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
   void dump(ostream* outstream, const char* name, Lng32 indent);
 #endif
 private:
@@ -127,88 +105,6 @@ private:
                          // 16 - all objects <= 2 MB
                          // 17 - all objects > 2 MB
 };
-#endif
-
-////////////////////////////////////////////////////////////////////////////
-// One NASegGlobals object exists in the executor as a member variable
-// of CliGlobals. Information about the first executor flat segment, as well
-// as the address of the NASegGlobals object in which the information is
-// stored, is passed as arguments to the setFirstSegInfo function, and used
-// by NAMEMORY::allocateBlock. addSegId is called by NAMemory::allocateBlock
-// to maintain an array of secondary (allocated after the first) flat segment
-// ids. getSegId is called on MIPS by switchToPriv and switchToNonPriv to
-// obtain the flat segment ids to hide and reveal.  On Yosemite, the
-// segments are not hidden and revealed.
-////////////////////////////////////////////////////////////////////////////
-class NASegGlobals {
-public:
-  inline short getSegId(Lng32 &index) const
-  {
-    Lng32 i, addedSegCount;
-    for (i = 0, addedSegCount = 0; addedSegCount < addedSegCount_; i++)
-    {
-      if (addedSegId_[i] != 0)
-      {
-        addedSegCount += 1;
-        if (i >= index)
-        {
-          index = i;
-          return addedSegId_[i];
-        }
-      }
-    }
-    return 0;
-  }
-
-NA_EIDPROC
-  short getSegInfo(Lng32 index, void **startAddr) const
-    {
-      *startAddr = startAddresses_[index];
-      return addedSegId_[index];
-    }
-  void   setFirstSegInfo(
-			 SEG_ID firstSegId,
-                         void *firstSegStart,
-                         off_t  firstSegOffset,
-                         size_t  firstSegLen,
-                         size_t  firstSegMaxLen);
-  void   setMaxSecSegCount(Lng32 maxSecSegCount)
-                                { maxSecSegCount_ = maxSecSegCount; }
-  NABoolean reachedMaxSegCnt() const
-                                { return addedSegCount_ >= maxSecSegCount_; }
-  Lng32   addSegId(short segId, void *start, size_t len);
-  void   deleteSegId(short segId);
-// LCOV_EXCL_START
-  SEG_ID  getFirstSegId() const			 { return firstSegId_; }
-  void * getFirstSegStart() const                { return firstSegStart_; }
-  off_t   getFirstSegOffset() const              { return firstSegOffset_; }
-  size_t   getFirstSegLen() const                { return firstSegLen_; }
-  size_t   getFirstSegMaxLen() const             { return firstSegMaxLen_; }
-// LCOV_EXCL_STOP
-  void   resizeSeg(short segId, void *start, size_t newLen);
-
-  // check whether a specified range of memory overlaps any of the segments
-  NABoolean overlaps(void *start, size_t len) const;
-
-  enum { NA_MAX_SECONDARY_SEGS=28 };   // Seg IDs 2111 - 2138
-private:
-  SEG_ID firstSegId_;
-  void *firstSegStart_;    // starting addr of segment
-  off_t  firstSegOffset_;  // offset of free space in the segment
-  size_t  firstSegLen_;    // length of external segment
-  size_t  firstSegMaxLen_; // max. len the segment can be resized to
-  Lng32	addedSegCount_;    // number of additional segments
-  Lng32  maxSecSegCount_;  // Maximum number of secondary segments
-  short addedSegId_     [NA_MAX_SECONDARY_SEGS]; // array of secondary seg ids
-  void *startAddresses_ [NA_MAX_SECONDARY_SEGS]; // start addresses of segs
-  size_t lengths_[NA_MAX_SECONDARY_SEGS]; // lengths of segments
-
-  // total range of memory spanned by the segments (may have other
-  // things or holes between those water marks)
-  void *lowWaterMark_;
-  void *highWaterMark_;
-};
-
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -234,39 +130,27 @@ public:
   NABlock * next_;      // next block in chain
   UInt32 sflags_; // "extern" and future other flags
 
-NA_EIDPROC
   NABoolean blockHolds(void *addr);
 
-NA_EIDPROC
   static NABlock *blockHolding(NABlock *firstBlock, void *addr);
 
-NA_EIDPROC
   NABoolean isExternSegment();
 
-#ifdef HAVE_MMAP
-NA_EIDPROC
   NABoolean isMMapped();
-#endif // HAVE_MMAP
 
-NA_EIDPROC
   size_t firstFragmentOffset();
 
-NA_EIDPROC
   NAHeapFragment* alignAsFragment();
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
-// LCOV_EXCL_START
-NA_EIDPROC
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 void dump(ostream* outstream,
 	  Lng32 debugLevel,
 	  MemoryStats& freeStats,
 	  MemoryStats& allocStats,
           NAHeapFragment *top,
 	  Lng32 indent);
-// LCOV_EXCL_STOP
 #endif
 
-NA_EIDPROC
   NABlock();
 
 private:
@@ -277,11 +161,7 @@ private:
 // NAMemory is an abstract base class. NAHeap and Space/NASpace are derived
 // from it.
 ////////////////////////////////////////////////////////////////////////////
-#ifndef STAND_ALONE
 class NAMemory : public NABasicObject {
-#else
-class NAMemory {
-#endif
 friend class NAHeap;
 friend class ExMemStats;   // Class used in muse
 friend class ExHeapStats;  // Class used in muse
@@ -292,7 +172,6 @@ public:
 
   // memory type            NT/UNIX             NSK
   // -----------------------------------------------------------------------
-  // DP2_MEMORY             regular memory      memory maintained by DP2
   // EXECUTOR_MEMORY        regular memory      selectable segment used in the
   //                                            master. This is a priv
   //                                            segment.
@@ -305,18 +184,8 @@ public:
   // time. Before a memory can be used, the type_ has to be set via
   // setType() or setParent()
   //
-  // The number of NAMemory objects of NAMemoryType SYSTEM_MEMORY or IPC_MEMORY
-  // is currently restricted to one because the assignment of flat segment ids
-  // (NSK) for SYSTEM/IPC_MEMORY is not managed globally. If one such object
-  // already exists, an assertion failure will occur following an attempt to
-  // to allocate a segment with an id that was previously used. This is not
-  // a problem because only the compiler's main statement heap resides in
-  // SYSTEM_MEMORY, and only ESPs use IPC_Memory. If needed in the future, 
-  // multiple SYSTEM/IPC _MEMORY heaps could be supported by keeping track of
-  // SYSTEM_MEMORY/IPC segment ids in the NASegGlobals object.
   enum NAMemoryType {
     NO_MEMORY_TYPE = 0,
-    DP2_MEMORY = 1,
     EXECUTOR_MEMORY = 2,
     SYSTEM_MEMORY = 3,
     DERIVED_MEMORY = 4,
@@ -340,177 +209,115 @@ public:
   };
 
 // default constructor. Initializes the memory to NO_MEMORY_TYPE.
-NA_EIDPROC
   NAMemory(const char * name = NULL);
 
-  // a basic (OS depended) memory. type is one of DP2_MEMORY,
-  // or SYSTEM_MEMORY. DERIVED_MEMORY is not allowed as basic memory.
-NA_EIDPROC
+  // a basic (OS depended) memory. type is one of
+  // SYSTEM_MEMORY. DERIVED_MEMORY is not allowed as basic memory.
   NAMemory(const char * name, NAMemoryType type, size_t blockSize,
            size_t upperLimit);
 
-  // an NAMemory of type EXECUTOR_MEMORY that uses a first flat segment
-  // that is allocated by the caller (on NSK, uses malloc on NT and ignores
-  // the parameters after the first one)
-NA_EIDPROC
-  NAMemory(const char * name,
-           SEG_ID  extFirstSegId,
-           void  * extFirstSegStart,
-           off_t   extFirstSegOffset,
-           size_t  extFirstSegLen,
-           size_t  extFirstSegMaxLen,
-           NASegGlobals  * segGlobals,
-           Lng32   extMaxSecSegCount = NASegGlobals::NA_MAX_SECONDARY_SEGS);
-
   // DERIVED_MEMORY
-NA_EIDPROC
   NAMemory(const char * name, NAHeap * parent, size_t blockSize,
            size_t upperLimit);
 
-NA_EIDPROC
+  // an NAMemory of type EXECUTOR_MEMORY that imposes the NAMemory struture 
+  // on already allocated memory
+  NAMemory(const char * name,
+           SEG_ID segmentId,
+           void  * baseAddr,
+           off_t   heapStartOffset,
+           size_t  maxSize);
+
   ~NAMemory();
 
-NA_EIDPROC
   void reInitialize();
 
 
-NA_EIDPROC
   void setType(NAMemoryType type,
 	       Lng32 blockSize = 0);
 
-NA_EIDPROC
   Lng32 getAllocatedSpaceSize();
 
   // This method takes and returns the same arguments as an "operator new".
   // It is used to allocate arrays(!!) of the collected object(type T).
-NA_EIDPROC
   void * allocateMemory(size_t size, NABoolean failureIsFatal = TRUE);
 
   // This method takes and returns the same arguments as an "operator delete".
   // It is used to deallocate the above arrays.
-NA_EIDPROC
   void deallocateMemory(void * addr);
 
-  // this method is used to set the upper limit - currently only used for testing
-  // setjmp and longjmp
-NA_EIDPROC
   void setUpperLimit ( size_t newUpperLimit ) { upperLimit_ = newUpperLimit; };
   
-  // these four methods used to reside in class CollHeap 
-NA_EIDPROC
-  void setJmpBuf( jmp_buf *newJmpBuf );
-
-NA_EIDPROC
-  inline jmp_buf * getJmpBuf()                { return heapJumpBuf_; }
-
-NA_EIDPROC
   inline NABoolean getWasMemoryExhausted()    { return exhaustedMem_; }
 
-NA_EIDPROC
-  void logAllocateError(short error, SEG_ID segmentId, Lng32 blockSize, short errorDetail);
-
-NA_EIDPROC
   void handleExhaustedMemory();
 
-#ifndef STAND_ALONE
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID)
-NA_EIDPROC
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
   void dump(ostream* outstream, Lng32 indent); 
 #else
-NA_EIDPROC
   inline void dump(void* outstream, Lng32 indent) {}
 #endif
-#endif // !STAND_ALONE
 
-NA_EIDPROC
   void incrementStats(size_t size);
 
-NA_EIDPROC
   void decrementStats(size_t size);
 
-#ifndef __EID
-  NA_EIDPROC
   void showStats(ULng32 level = 0);
-#endif
 
-NA_EIDPROC
   inline size_t getTotalSize() {return totalSize_;};
 
-NA_EIDPROC
   inline size_t getIncrementSize() {return incrementSize_;};
 
-NA_EIDPROC
   inline size_t getInitialSize() {return initialSize_;};
 
-NA_EIDPROC
   inline NAHeap* getParent() {return parent_;};
 
-NA_EIDPROC
   inline size_t getAllocSize() {return allocSize_;};
 
-NA_EIDPROC
   inline size_t getAllocCnt() {return allocCnt_;};
 
-NA_EIDPROC
   inline size_t getHighWaterMark() {return highWaterMark_;};
 
-NA_EIDPROC
   inline size_t getIntervalWaterMark() {return intervalWaterMark_;};
 
-NA_EIDPROC
   inline void resetIntervalWaterMark() { intervalWaterMark_ = allocSize_;};
 
-NA_EIDPROC
-  inline NASegGlobals * getSegGlobals() { return segGlobals_; }
-NA_EIDPROC
   char *getName() {  return name_; }
-NA_EIDPROC
   NAMemoryType getType() {  return type_; }
-NA_EIDPROC
+
   NABoolean getUsage(size_t* lastSegSize, size_t* freeSize, size_t* totalSize);
-  // for debugging
-NA_EIDPROC
+
   NABoolean containsAddress(void *addr)
         { return NABlock::blockHolding(firstBlk_, addr) != NULL; }
 
-  // #ifdef NA_WINNT
-#ifndef __EID
   NABoolean  getSharedMemory() { return sharedMemory_; }
   void setSharedMemory() { sharedMemory_ = TRUE; }
-#endif
 
   NABoolean isComSpace(void) { return derivedClass_ == COMSPACE_CLASS; } ;
+ 
+  NABoolean checkSize(size_t size, NABoolean failureIsFatal);
 
 protected:
 
   // set the name of this memory
-NA_EIDPROC
   void setName(const char * name);
 
   // put child on memoryList_
-NA_EIDPROC
   void registerMemory(NAMemory * child);
 
   // remove child from memoryList_
-NA_EIDPROC
   void unRegisterMemory(NAMemory * child);
 
 
-NA_EIDPROC
   void sysFreeBlock(NABlock *blk);
 
-#ifdef HAVE_MMAP
-NA_EIDPROC
   NABlock* allocateMMapBlock(size_t size);
 
   void deallocateMMapBlock(NABlock *blk);
-#endif // HAVE_MMAP
 
-#if (defined(NA_LINUX) && !defined(__EID))
   Lng32 getVmSize();
   void allocationIncrement(Lng32 size);
   void allocationDecrement(Lng32 size);
-#endif // NA_LINUX
 private:
   // these ctors make no sense at all -- should never be used
   NAMemory (const NAMemory &) ;            // not written
@@ -551,8 +358,6 @@ private:
                               // that was allocated before this memory
                               // was created (allows to put the memory
                               // itself and other info into the segment)
-  NASegGlobals *segGlobals_;  // Executor flat segment globals object
-
   NAMemory *memoryList_;      // list of memory directly derived from this
   NAMemory *lastListEntry_;   // last entry of this list
   NAMemory *nextEntry_;       // pointer if this memory is on a memoryList_
@@ -563,14 +368,10 @@ private:
 
   // these data members used to be in class CollHeap
 protected:
-  jmp_buf *heapJumpBuf_;      // Setjmp() buffer for handing memory failures
   NABoolean exhaustedMem_;    // Set to true if cannot satisfy memory request
   unsigned short errorsMask_; // SEGMENT_ALLOCATE_ errors that have occurred
-#ifndef STAND_ALONE
   HeapID heapID_;             // For tracking leaks.  (eric)
-#endif
   Int64 crowdedTotalSize_; // Total size at which memory pressure seen
-#ifndef __EID
   Int64 allocationDelta_; // Change in memory size since last check of VmSize
   FILE* procStatusFile_;      // FILE pointer for "reading" process status
   Lng32 executorVmReserveSize_; // Size in MB of VM safety net
@@ -578,10 +379,10 @@ protected:
   Int32 munmapErrno_;
   Lng32 lastVmSize_;
   Lng32 maxVmSize_;
-#endif // __EID
   DerivedClass derivedClass_; // The derived class (removes virtual functions)
+  off_t heapStartOffset_;
+  void *heapStartAddr_;
 public:
-#ifndef STAND_ALONE
   // ---------------------------------------------------------------------
   // The following method and data member are needed for minimizing
   // NAString's memory usage -- each heap needs to maintain a
@@ -591,26 +392,20 @@ public:
   // See NAStringDef.h/.cpp for a complete explanation of why this
   // dependence on NAString code is necessary.
   // ---------------------------------------------------------------------
-NA_EIDPROC
   NAStringRef * nullNAStringRef() 
   // NB: the fudge-factor ("3") below is probably no longer necessary ...
   { return (NAStringRef*) ( (&nullNAStringRep_[3]) ) ; }
 
 protected:
   Lng32 nullNAStringRep_[(sizeof(NAStringRef)+1)/sizeof(Lng32)+1+4] ; // +4 for good luck :-)
-#endif
-#ifndef __EID
   NABoolean sharedMemory_;
-#endif
   // ---------------------------------------------------------------------
 private:
-#ifndef PRIV_SRL
   // the PRIV SRL will add a vtbl pointer for NAMemory because it
   // will see NABasicObject as an object without virtual functions.
   // Add this filler for the non-priv code so NAMemory will have
   // the same length for both PRIV and non-PRIV code.
   Lng32 fillerForVtblPtr_;
-#endif
 };
 
 
@@ -639,58 +434,46 @@ public:
 
   // see the corresponding NAMemory constructors for an explanation
 
-NA_EIDPROC
   NAHeap();
-NA_EIDPROC
   NAHeap(const char * name, 
 	 NAHeap * parent, 
 	 Lng32 blockSize = 0, 
-	 Lng32 upperLimit =0);
-NA_EIDPROC
-  NAHeap(const char * name, NAMemoryType type = DERIVED_FROM_SYS_HEAP, 
-         Lng32 blockSize = 0, Lng32 upperLimit = 0);
-NA_EIDPROC
-  NAHeap(const char  * name,
-         SEG_ID   extFirstSegId,
-	 void  * extFirstSegStart,
-	 Lng32    extFirstSegOffset,
-	 Lng32    extFirstSegLen,
-	 Lng32    extFirstSegMaxLen,
-	 NASegGlobals *segGlobals,
-         Lng32    extMaxSecSegCount = NASegGlobals::NA_MAX_SECONDARY_SEGS);
-NA_EIDPROC
+	 size_t upperLimit =0);
+  NAHeap(const char * name, NAMemoryType type,
+         Lng32 blockSize = 0, size_t upperLimit = 0);
+
+  // Constructor that imposes the NAHeap struture on already allocated memory 
+  NAHeap(const char * name,
+           SEG_ID  segmentId,
+           void  * baseAddr,
+           off_t   heapStartOffset,
+           size_t  maxSize);
+
+  NAHeap(const char  * name);
+
   ~NAHeap();
-NA_EIDPROC
   void destroy();
-NA_EIDPROC
   void reInitializeHeap();
-NA_EIDPROC
   void * allocateHeapMemory(size_t userSize, NABoolean failureIsFatal = TRUE);
-NA_EIDPROC
   void deallocateHeapMemory(void * addr);
-NA_EIDPROC
   void * allocateAlignedHeapMemory(size_t userSize, size_t alignment, NABoolean failureIsFatal = TRUE);
 
-NA_EIDPROC
   void setErrorCallback(void (*errCallback)(NAHeap*,size_t));
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
-  NA_EIDPROC void dumpHeapInfo(ostream* outstream, Lng32 indent);
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
+  void dumpHeapInfo(ostream* outstream, Lng32 indent);
 #endif
 
-#if defined(NA_LINUX) && !defined(__EID)
 // setThreadSafe must be called by the thread that creates the heap
 // before other threads use it
   void setThreadSafe();
   const inline bool getThreadSafe() { return threadSafe_; }
-#endif
 
 #ifdef _DEBUG
   LIST(TrafAddrStack *) *getSAL() { return la_; }
 #endif // _DEBUG
 
 private:
-NA_EIDPROC
   NABlock* allocateBlock(size_t size, NABoolean failureIsFatal);
 
   binmap_t smallmap_;         // Bitmap of small bins
@@ -725,18 +508,15 @@ NA_EIDPROC
                               // are 2 equally spaced treebins for each power
                               // of two from TREE_SHIFT to TREE_SHIFT+16.
                               // The last bin holds anything larger.
-#ifndef __EID
+
   MemoryStats dynamicAllocs;  // Statistics about memory allocations
-#endif
 
   void (*errCallback_)(NAHeap*, size_t); // Pointer to a function that 
                               // will be called when an error occurs. The
                               // function can log the error or handle the
                               // error in an appropriate way.
-#if defined(NA_LINUX) && !defined(__EID)
   bool threadSafe_;           // Heao is thread safe
   pthread_mutex_t mutex_;     // Mutex to serialize thread safe access
-#endif
 
 #ifdef _DEBUG
   LIST(TrafAddrStack *) *la_; // List of back traces when centain size
@@ -745,94 +525,92 @@ NA_EIDPROC
 
 public:
 // Operations from Doug Lea's malloc implementation
-  NA_EIDPROC static NABoolean isSmall(size_t size);
-  NA_EIDPROC static bindex_t  smallIndex(size_t size);
-  NA_EIDPROC static size_t    smallIndex2Size(bindex_t idx);
+  static NABoolean isSmall(size_t size);
+  static bindex_t  smallIndex(size_t size);
+  static size_t    smallIndex2Size(bindex_t idx);
 
-  NA_EIDPROC static bindex_t  computeTreeIndex(size_t size);
-  NA_EIDPROC static size_t    minsizeForTreeIndex(bindex_t idx);
+  static bindex_t  computeTreeIndex(size_t size);
+  static size_t    minsizeForTreeIndex(bindex_t idx);
 
-  NA_EIDPROC void releaseFreePages(); // release deallocted pages to kernel
+  void releaseFreePages(); // release deallocted pages to kernel
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) 
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
   // useful method for debugging buffer overruns; sprinkle your code
   // with calls to this in order to narrow down where a buffer overrun
   // is occurring
-  NA_EIDPROC void      doCheckMallocState();
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID)
+  void      doCheckMallocState();
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 
 private:
-  NA_EIDPROC static NABoolean isAligned(void *a);
-  NA_EIDPROC static size_t    granularityAlign(size_t size);
+  static NABoolean isAligned(void *a);
+  static size_t    granularityAlign(size_t size);
 
-  NA_EIDPROC NABoolean        okAddress(void *addr);
-  NA_EIDPROC static NABoolean okNext(NAHeapFragment *p, NAHeapFragment *n);
-  NA_EIDPROC static NABoolean okCinuse(NAHeapFragment *p);
-  NA_EIDPROC static NABoolean okPinuse(NAHeapFragment *p);
+  NABoolean        okAddress(void *addr);
+  static NABoolean okNext(NAHeapFragment *p, NAHeapFragment *n);
+  static NABoolean okCinuse(NAHeapFragment *p);
+  static NABoolean okPinuse(NAHeapFragment *p);
 
-  NA_EIDPROC static binmap_t idx2bit(bindex_t idx);
-  NA_EIDPROC static bindex_t bit2idx(binmap_t x);
+  static binmap_t idx2bit(bindex_t idx);
+  static bindex_t bit2idx(binmap_t x);
 
-  NA_EIDPROC void      markSmallmap(bindex_t idx);
-  NA_EIDPROC void      clearSmallmap(bindex_t idx);
-  NA_EIDPROC NABoolean smallmapIsMarked(bindex_t idx);
+  void      markSmallmap(bindex_t idx);
+  void      clearSmallmap(bindex_t idx);
+  NABoolean smallmapIsMarked(bindex_t idx);
 
-  NA_EIDPROC void      markTreemap(bindex_t idx);
-  NA_EIDPROC void      clearTreemap(bindex_t idx);
-  NA_EIDPROC NABoolean treemapIsMarked(bindex_t idx);
+  void      markTreemap(bindex_t idx);
+  void      clearTreemap(bindex_t idx);
+  NABoolean treemapIsMarked(bindex_t idx);
 
-  NA_EIDPROC static binmap_t leftBits(binmap_t bits);
-  NA_EIDPROC static binmap_t leastBit(binmap_t bits);
+  static binmap_t leftBits(binmap_t bits);
+  static binmap_t leastBit(binmap_t bits);
 
-  NA_EIDPROC static UInt32 leftshiftForTreeIndex(bindex_t idx);
+  static UInt32 leftshiftForTreeIndex(bindex_t idx);
 
-  NA_EIDPROC NAHeapFragment* smallbinAt(bindex_t idx);
-  NA_EIDPROC NATreeFragment** treebinAt(bindex_t idx);
+  NAHeapFragment* smallbinAt(bindex_t idx);
+  NATreeFragment** treebinAt(bindex_t idx);
 
-  NA_EIDPROC void initBins();
+  void initBins();
 
-  NA_EIDPROC void insertSmallFragment(NAHeapFragment *p, size_t size);
-  NA_EIDPROC void unlinkSmallFragment(NAHeapFragment *p, size_t size);
-  NA_EIDPROC void unlinkFirstSmallFragment(NAHeapFragment *b,
+  void insertSmallFragment(NAHeapFragment *p, size_t size);
+  void unlinkSmallFragment(NAHeapFragment *p, size_t size);
+  void unlinkFirstSmallFragment(NAHeapFragment *b,
                      NAHeapFragment *p, bindex_t idx);
 
-  NA_EIDPROC void insertLargeFragment(NATreeFragment *p, size_t size);
-  NA_EIDPROC void unlinkLargeFragment(NATreeFragment *p);
+  void insertLargeFragment(NATreeFragment *p, size_t size);
+  void unlinkLargeFragment(NATreeFragment *p);
 
-  NA_EIDPROC void insertFragment(NAHeapFragment *p, size_t size);
-  NA_EIDPROC void unlinkFragment(NAHeapFragment *p, size_t size);
+  void insertFragment(NAHeapFragment *p, size_t size);
+  void unlinkFragment(NAHeapFragment *p, size_t size);
 
-  NA_EIDPROC void replaceDV(NAHeapFragment *p, size_t size);
+  void replaceDV(NAHeapFragment *p, size_t size);
 
-  NA_EIDPROC void resizeTop(size_t newsize);
-  NA_EIDPROC void initTop(NABlock *block);
-  NA_EIDPROC void addBlock(NABlock* newBlock);
+  void resizeTop(size_t newsize);
+  void initTop(NABlock *block);
+  void addBlock(NABlock* newBlock);
 
-  NA_EIDPROC NABoolean deallocateFreeBlock(NAHeapFragment *p);
+  NABoolean deallocateFreeBlock(NAHeapFragment *p);
 
-  NA_EIDPROC NAHeapFragment *tmallocLarge(size_t nb);
-  NA_EIDPROC NAHeapFragment *tmallocSmall(size_t nb);
+  NAHeapFragment *tmallocLarge(size_t nb);
+  NAHeapFragment *tmallocSmall(size_t nb);
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) 
-  NA_EIDPROC void      doAllocDebugProcess(NAHeapFragment *p, size_t userSize);
-  NA_EIDPROC void      doDeallocDebugProcess(NAHeapFragment *p);
-  NA_EIDPROC void      doCheckAnyFragment(NAHeapFragment *p);
-  NA_EIDPROC void      doCheckTopFragment(NAHeapFragment *p);
-  NA_EIDPROC void      doCheckInuseFragment(NAHeapFragment *p);
-  NA_EIDPROC void      doCheckFreeFragment(NAHeapFragment *p);
-  NA_EIDPROC void      doCheckMallocedFragment(NAHeapFragment *p, size_t s);
-  NA_EIDPROC void      doCheckTree(NATreeFragment *t);
-  NA_EIDPROC void      doCheckTreebin(bindex_t i);
-  NA_EIDPROC void      doCheckSmallbin(bindex_t i);
-  NA_EIDPROC NABoolean binFind(NAHeapFragment *x);
-  NA_EIDPROC size_t    traverseAndCheck();
-#ifndef STAND_ALONE
-  NA_EIDPROC void checkForOverflow();
-#endif // STAND_ALONE
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) 
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
+  void      doAllocDebugProcess(NAHeapFragment *p, size_t userSize);
+  void      doDeallocDebugProcess(NAHeapFragment *p);
+  void      doCheckAnyFragment(NAHeapFragment *p);
+  void      doCheckTopFragment(NAHeapFragment *p);
+  void      doCheckInuseFragment(NAHeapFragment *p);
+  void      doCheckFreeFragment(NAHeapFragment *p);
+  void      doCheckMallocedFragment(NAHeapFragment *p, size_t s);
+  void      doCheckTree(NATreeFragment *t);
+  void      doCheckTreebin(bindex_t i);
+  void      doCheckSmallbin(bindex_t i);
+  NABoolean binFind(NAHeapFragment *x);
+  size_t    traverseAndCheck();
+  void checkForOverflow();
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 
 #ifdef _DEBUG
-  NA_EIDPROC void      setAllocTrace();
+  void      setAllocTrace();
 #endif // _DEBUG
 };
 
@@ -972,56 +750,54 @@ private:
 
 class NAHeapFragment {
 public:
-  NA_EIDPROC void *getMemory(NABoolean cleanUpPrevNext=FALSE);
-  NA_EIDPROC static NAHeapFragment *memToFragment(void *mem);
+  void *getMemory(NABoolean cleanUpPrevNext=FALSE);
+  static NAHeapFragment *memToFragment(void *mem);
 
-  NA_EIDPROC NABoolean cinuse();
-  NA_EIDPROC NABoolean pinuse();
-  NA_EIDPROC NABoolean cpinuse();
-  NA_EIDPROC size_t fragmentSize();
-  NA_EIDPROC void clearCinuse();
-  NA_EIDPROC void clearPinuse();
+  NABoolean cinuse();
+  NABoolean pinuse();
+  NABoolean cpinuse();
+  size_t fragmentSize();
+  void clearCinuse();
+  void clearPinuse();
 
-  NA_EIDPROC void initializeFirstFragment(size_t s);
-  NA_EIDPROC size_t getFirstFragmentBit();
-  NA_EIDPROC void setHeadBits(size_t bits);
-  NA_EIDPROC NABoolean occupiesCompleteNABlock();
+  void initializeFirstFragment(size_t s);
+  size_t getFirstFragmentBit();
+  void setHeadBits(size_t bits);
+  NABoolean occupiesCompleteNABlock();
 
-  NA_EIDPROC const size_t* getHeadAddr();
-  NA_EIDPROC void setNext(NAHeapFragment *next);
-  NA_EIDPROC void setPrev(NAHeapFragment *prev);
-  NA_EIDPROC NAHeapFragment* getNext();
-  NA_EIDPROC NAHeapFragment* getPrev();
-  NA_EIDPROC size_t getPrevFoot();
-  NA_EIDPROC void adjustBlockSize(Lng32 s);
-  NA_EIDPROC NAHeapFragment *fragmentPlusOffset(size_t s);
-  NA_EIDPROC NAHeapFragment *fragmentMinusOffset(size_t s);
-  NA_EIDPROC NAHeapFragment *nextFragment();
-  NA_EIDPROC NAHeapFragment *prevFragment();
-  NA_EIDPROC NABoolean nextPinuse();
-  NA_EIDPROC void setFoot(size_t s);
-  NA_EIDPROC void setSizeAndPinuseOfFreeFragment(size_t s);
-  NA_EIDPROC void setFreeWithPinuse(size_t s, NAHeapFragment *next);
-  NA_EIDPROC void setInuseAndPinuse(size_t s);
-  NA_EIDPROC void setSize(size_t s);
-  NA_EIDPROC void setSizeAndPinuse(size_t s);
-  NA_EIDPROC void setSizeAndPinuseOfInuseFragment(size_t s);
+  const size_t* getHeadAddr();
+  void setNext(NAHeapFragment *next);
+  void setPrev(NAHeapFragment *prev);
+  NAHeapFragment* getNext();
+  NAHeapFragment* getPrev();
+  size_t getPrevFoot();
+  void adjustBlockSize(Lng32 s);
+  NAHeapFragment *fragmentPlusOffset(size_t s);
+  NAHeapFragment *fragmentMinusOffset(size_t s);
+  NAHeapFragment *nextFragment();
+  NAHeapFragment *prevFragment();
+  NABoolean nextPinuse();
+  void setFoot(size_t s);
+  void setSizeAndPinuseOfFreeFragment(size_t s);
+  void setFreeWithPinuse(size_t s, NAHeapFragment *next);
+  void setInuseAndPinuse(size_t s);
+  void setSize(size_t s);
+  void setSizeAndPinuse(size_t s);
+  void setSizeAndPinuseOfInuseFragment(size_t s);
 
-  NA_EIDPROC NABoolean isFencePost();
-  NA_EIDPROC void setFencePosts();
+  NABoolean isFencePost();
+  void setFencePosts();
 
-#ifdef HAVE_MMAP
-  NA_EIDPROC NABoolean isMMapped();
-  NA_EIDPROC void setSizeOfMMapFragment(size_t s);
-#endif
+  NABoolean isMMapped();
+  void setSizeOfMMapFragment(size_t s);
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
-  NA_EIDPROC void checkBufferOverflow();
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
+  void checkBufferOverflow();
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 
-  NA_EIDPROC void cleanFreePages(size_t fragSize); // mark free pages as "clean". 
+  void cleanFreePages(size_t fragSize); // mark free pages as "clean". 
   // Release unused/free memory in the heap back to the kernel
-  NA_EIDPROC void releaseFreePages(NAHeapFragment *prev, 
+  void releaseFreePages(NAHeapFragment *prev, 
                                    NAHeapFragment *next, 
                                    Int32 mergeFlags);
 
@@ -1030,11 +806,7 @@ private:
     PINUSE_BIT = 1,     // Previous fragment is in use
     CINUSE_BIT = 2,     // Current fragment is in use
     MMAPPED_BIT = 4,    // This NABlock was allocated with MMAP and contains a single fragment.
-#ifdef NA_64BIT
     FIRST_FRAGMENT_BIT = 0x8000000000000000,  // First fragment in NABlock
-#else
-    FIRST_FRAGMENT_BIT = 0x80000000,  // First fragment in NABlock
-#endif
     INUSE_BITS = (PINUSE_BIT|CINUSE_BIT),
     FENCEPOST_HEAD = (INUSE_BITS|sizeof(size_t))
   };
@@ -1118,19 +890,19 @@ private:
 
 class NATreeFragment : public NAHeapFragment {
 public:
-  NA_EIDPROC NATreeFragment* getChild(UInt32 childNo);
-  NA_EIDPROC NATreeFragment** getChildAddr(UInt32 childNo);
-  NA_EIDPROC NATreeFragment* leftmostChild();
-  NA_EIDPROC void setChild(Int32 childNo, NATreeFragment *p);
-  NA_EIDPROC NATreeFragment* getParent();
-  NA_EIDPROC void setParent(NATreeFragment *p);
-  NA_EIDPROC NAHeap::bindex_t getIndex();
-  NA_EIDPROC void setIndex(NAHeap::bindex_t idx);
-  NA_EIDPROC short getFreedNSKMemory();
-  NA_EIDPROC void setFreedNSKMemory(short value);
+  NATreeFragment* getChild(UInt32 childNo);
+  NATreeFragment** getChildAddr(UInt32 childNo);
+  NATreeFragment* leftmostChild();
+  void setChild(Int32 childNo, NATreeFragment *p);
+  NATreeFragment* getParent();
+  void setParent(NATreeFragment *p);
+  NAHeap::bindex_t getIndex();
+  void setIndex(NAHeap::bindex_t idx);
+  short getFreedNSKMemory();
+  void setFreedNSKMemory(short value);
 
-  NA_EIDPROC void recurseFreeMemory();
-  NA_EIDPROC void releaseFreePages();
+  void recurseFreeMemory();
+  void releaseFreePages();
 
 private:
   // The first four fields are in NAHeapFragment:
@@ -1152,26 +924,18 @@ private:
 class DefaultIpcHeap : public CollHeap
 {
 public:
-NA_EIDPROC
   DefaultIpcHeap() { derivedClass_= DEFAULTIPCHEAP_CLASS; }
-NA_EIDPROC
   void * allocateIpcHeapMemory(size_t size, NABoolean failureIsFatal = TRUE);
-NA_EIDPROC
   void deallocateIpcHeapMemory(void * buffer);
-NA_EIDPROC
   ~DefaultIpcHeap();
-NA_EIDPROC
   void destroy();
   // bogus fn needed simply because of inheritance
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
-NA_EIDPROC
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
   void dumpIpcHeapInfo(ostream* outstream, Lng32 indent);
 #endif
 };
 
-#if ((defined(NA_NSK) || defined (NA_LINUX)) && (!defined(__EID)))
 SEG_ID getStatsSegmentId();
-#endif
 
 extern SEG_ID gStatsSegmentId_;
 

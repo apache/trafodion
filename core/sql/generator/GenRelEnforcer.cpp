@@ -257,9 +257,7 @@ short Exchange::codeGenForESP(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc         *returned_cri_desc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(given_cri_desc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
 
   ex_cri_desc         *splitTopWorkCriDesc  = new(space) ex_cri_desc(splitTopWorkTupps,space);
   ex_cri_desc         *sendTopWorkCriDesc   = new(space) ex_cri_desc(sendTopWorkTupps,space);
@@ -343,7 +341,7 @@ short Exchange::codeGenForESP(Generator * generator)
     ComUID uid;
     uid.make_UID();
     Int64 i64 = uid.get_value();
-    str_sprintf(extractSecurityKey, "%Ld", i64);
+    str_sprintf(extractSecurityKey, "%ld", i64);
   }
   else
   {
@@ -479,11 +477,9 @@ short Exchange::codeGenForESP(Generator * generator)
                                      &initialESPMapTable);
 
   // we MUST be able to fit at least one row into a buffer
-#pragma nowarn(1506)   // warning elimination
   downSqlBufferLength = 
     MAXOF((ULng32) ComTdbSendTop::minSendBufferSize(downRecordLength),
           (ULng32) (downMessageBufferLength_.getValue() * 1024));
-#pragma warn(1506)  // warning elimination 
 
   CollIndex childFragmentId = 0;
 
@@ -657,7 +653,7 @@ short Exchange::codeGenForESP(Generator * generator)
         ItemExpr * cast = new (generator->wHeap()) 
           Cast(topPartExpr, 
                new (generator->wHeap()) 
-               SQLInt(FALSE,
+               SQLInt(generator->wHeap(), FALSE,
                       topPartExpr->getValueId().getType().
                       supportsSQLnullLogical()));
         
@@ -689,7 +685,7 @@ short Exchange::codeGenForESP(Generator * generator)
               ItemExpr * hashExprResult = new (generator->wHeap()) 
                 Cast( hashExpr, 
                      new (generator->wHeap()) 
-                     SQLLargeInt(TRUE, // allow negative values.
+                     SQLLargeInt(generator->wHeap(), TRUE, // allow negative values.
                                  FALSE // no nulls.
                           ));
 
@@ -847,17 +843,14 @@ short Exchange::codeGenForESP(Generator * generator)
                                        &returnedValuesMapTable);
 
     // we MUST be able to fit at least one row into a buffer
-#pragma nowarn(1506)   // warning elimination 
     upSqlBufferLength =
       MAXOF((ULng32) ComTdbSendTop::minReceiveBufferSize(upRecordLength),
             (ULng32) (upMessageBufferLength_.getValue() * 1024));
-#pragma warn(1506)  // warning elimination 
 
     // ---------------------------------------------------------------------
     // generate send bottom tdb
     // ---------------------------------------------------------------------
  
-#pragma nowarn(1506)   // warning elimination 
     sendBottom = new(space) ComTdbSendBottom(
        outputMoveExpr,
        (queue_index)getDefault(GEN_SNDB_SIZE_DOWN), 
@@ -874,7 +867,6 @@ short Exchange::codeGenForESP(Generator * generator)
        numUpBuffers,
        (Cardinality) numRowsDown.value(),
        (Cardinality) numRowsUp.value());
-#pragma warn(1506)  // warning elimination 
  
     sendBottom->setConsiderBufferDefrag(considerBufferDefrag);
     sendBottom->setCIFON( (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT));
@@ -915,8 +907,10 @@ short Exchange::codeGenForESP(Generator * generator)
 
     splitBottom->setCIFON( (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT));
 
-    if (generator->processLOB())
-      splitBottom->setProcessLOB(TRUE);
+    if (generator->processLOB()) {
+       splitBottom->setProcessLOB(TRUE);
+       splitBottom->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
+    }
 
     if (CmpCommon::getDefault(COMP_BOOL_153) == DF_ON)
       splitBottom->setForceSkewRoundRobin(TRUE);
@@ -1036,16 +1030,14 @@ short Exchange::codeGenForESP(Generator * generator)
 
     if(!generator->explainDisabled())
     {
-      Lng32 sbMemEstInKBPerCPU = (Lng32) ((totalMemoryST + totalMemorySB) / 1024) ;
-      sbMemEstInKBPerCPU = sbMemEstInKBPerCPU/
+      Lng32 sbMemEstInKBPerNode = (Lng32) ((totalMemoryST + totalMemorySB) / 1024) ;
+      sbMemEstInKBPerNode = sbMemEstInKBPerNode/
         (MAXOF(generator->compilerStatsInfo().dop(),1));
-      generator->setOperEstimatedMemory(sbMemEstInKBPerCPU);
        
       generator->setExplainTuple(
 	  addExplainInfo(splitBottom, childExplainTuple, 0, generator));
       sendBottom->setExplainNodeId(generator->getExplainNodeId());
 
-      generator->setOperEstimatedMemory(0);
     }
     
     // ExplainTuple *sendBotExplain = 
@@ -1082,9 +1074,7 @@ short Exchange::codeGenForESP(Generator * generator)
       // the row coming up from the connection is returned as the tupp
       // following the input tupps
       attr->setAtp(0);
-#pragma nowarn(1506)   // warning elimination 
       attr->setAtpIndex(given_cri_desc->noTuples());
-#pragma warn(1506)  // warning elimination 
     }
     
     // ---------------------------------------------------------------------
@@ -1132,7 +1122,6 @@ short Exchange::codeGenForESP(Generator * generator)
   // Generate send top tdb
   // ---------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
   sendTop = new(space) ComTdbSendTop(
        childFragmentId,
        inputMoveExpr,
@@ -1153,7 +1142,6 @@ short Exchange::codeGenForESP(Generator * generator)
        (Cardinality) numRowsDown.value(),
        (Cardinality) numRowsUp.value(),
        (CmpCommon::getDefault(EXE_DIAGNOSTIC_EVENTS) == DF_ON));
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(sendTop);
 
   if (isExtractConsumer_)
@@ -1213,14 +1201,10 @@ short Exchange::codeGenForESP(Generator * generator)
        (Cardinality) getGroupAttr()->
        getOutputLogPropList()[0]->getResultCardinality().value(),
        numBottomPartitions,
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
        CmpCommon::getDefaultNumeric(STREAM_TIMEOUT),
        getDefault(GEN_SID_NUM_BUFFERS),
        getDefault(GEN_SID_BUFFER_SIZE)
        );
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
 
   generator->initTdbFields(splitTop);
 
@@ -1328,7 +1312,7 @@ ExpTupleDesc::TupleDataFormat Exchange::determineInternalFormat( const ValueIdLi
                                             considerBufferDefrag);
 
 }
-CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar Exchange::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
    //////////////////////////////////////
    // compute the buffer length (for both 
@@ -1393,20 +1377,21 @@ CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
     // split top. 
   }
 
-  if ( perCPU == FALSE ) {
-
-    const PhysicalProperty* const phyProp = getPhysicalProperty();
-    if (phyProp != NULL) {
-      memoryRequired = numTopEsps * memoryRequired;
-    }
-  }
-
+  if (numStreams != NULL)
+     *numStreams = numTopEsps;
+  if (perNode) 
+     memoryRequired /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numTopEsps);
+  else
+     memoryRequired /= numTopEsps;
   return memoryRequired;
 }
 
-double Exchange::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
+double Exchange::getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb)
 {
-  return (getEstimatedRunTimeMemoryUsage(FALSE)).value();
+  Lng32 numOfStreams = 1;
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(generator, FALSE, &numOfStreams);
+  totalMemory = totalMemory * numOfStreams ;
+  return totalMemory.value();
 }
 
 bool Exchange::thisExchangeCanUseSM(BindWA *bindWA) const

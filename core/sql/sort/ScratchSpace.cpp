@@ -109,8 +109,8 @@ scratchMgmtOption_(scratchMgmtOption)
     if (scrFilesMap_ == NULL)
     {
         sortError_->setErrorInfo( EScrNoMemory   //sort error
-            ,NULL          //syserr: the actual FS error
-            ,NULL          //syserrdetail
+            ,0          //syserr: the actual FS error
+            ,0          //syserrdetail
             ,"ScratchSpace::ScratchSpace"     //methodname
             );
         
@@ -266,8 +266,8 @@ RESULT ScratchSpace::CreateANewScrFileAndWrite(char *buffer, Int32 blockNum, UIn
     if(fileIndex < 0)
     {
         sortError_->setErrorInfo(EUnexpectErr// should not happen
-            ,NULL            //syserr: the actual FS error
-            ,NULL            //syserrdetail
+            ,0            //syserr: the actual FS error
+            ,0            //syserrdetail
             ,"ScratchSpace::CreateANewScrFileAndWrite, getFreeFileHandle" //methodname
             );
         return SCRATCH_FAILURE;
@@ -400,8 +400,8 @@ RESULT ScratchSpace::writeThru(char* buf, ULng32 len,
     if(scratchMaxOpens_ > 1)
     {
       sortError_->setErrorInfo( EUnexpectErr   //sort error
-                       ,NULL               //syserr: the actual FS error
-                       ,NULL               //syserrdetail
+                       ,0               //syserr: the actual FS error
+                       ,0               //syserrdetail
                        ,"ScratchSpace::writeThru" //methodname
                       );
       return SCRATCH_FAILURE;
@@ -417,8 +417,8 @@ RESULT ScratchSpace::writeThru(char* buf, ULng32 len,
       if ((maxBlocks > 0) && (totalNumOfScrBlocks_ > maxBlocks))
       {
         sortError_->setErrorInfo( EThresholdReached   //sort error
-                                 ,NULL               //syserr: the actual FS error
-                                 ,NULL               //syserrdetail
+                                 ,0               //syserr: the actual FS error
+                                 ,0               //syserrdetail
                                  ,"ScratchSpace::writeThru"     //methodname
                                 );
        return SCRATCH_FAILURE;
@@ -436,8 +436,8 @@ RESULT ScratchSpace::writeThru(char* buf, ULng32 len,
         if(fileIndex != 0)
         {
             sortError_->setErrorInfo(EUnexpectErr// should not happen
-                ,NULL            //syserr: the actual FS error
-                ,NULL            //syserrdetail
+                ,0            //syserr: the actual FS error
+                ,0            //syserrdetail
                 ,"ScratchSpace::writeThru, getFreeFileHandle" //methodname
                 );
             return SCRATCH_FAILURE;
@@ -546,8 +546,8 @@ RESULT ScratchSpace::readThru(char *buf,
 
     if ((blockNum < 0) ||( blockNum > totalNumOfScrBlocks_)) {
         sortError_->setErrorInfo( EInvScrBlockNum       //sort error
-            ,NULL                  //syserr: the actual FS err
-            ,NULL                  //syserrdetail
+            ,0                  //syserr: the actual FS err
+            ,0                  //syserrdetail
             ,"ScratchSpace::readThru" //methodname
             );
         return SCRATCH_FAILURE;
@@ -571,8 +571,8 @@ RESULT ScratchSpace::readThru(char *buf,
       if (currentReadScrFile_ == NULL)
       {
           sortError_->setErrorInfo( EScrFileNotFound      //sort error
-                                   ,NULL                  //syserr: the actual FS err
-                                   ,NULL                  //syserrdetail
+                                   ,0                  //syserr: the actual FS err
+                                   ,0                  //syserrdetail
                                    ,"ScratchSpace::readThru" //methodname
                                    );
 
@@ -588,8 +588,8 @@ RESULT ScratchSpace::readThru(char *buf,
     if(fileIndex < 0)
     {
         sortError_->setErrorInfo(EUnexpectErr// should not happen
-            ,NULL            //syserr: the actual FS error
-            ,NULL            //syserrdetail
+            ,0            //syserr: the actual FS error
+            ,0            //syserrdetail
             ,"ScratchSpace::readThru, getFreeFileHandle" //methodname
             );
         return SCRATCH_FAILURE;
@@ -630,8 +630,8 @@ RESULT ScratchSpace::writeFile(char* block,
             scrFilesMap_->getFirstScrBlockNum(currentWriteScrFile_);
         if (firstBlockNum == -1) {
             sortError_->setErrorInfo( EScrFileNotFound//sort error
-                ,NULL            //syserr: the actual FS error
-                ,NULL            //syserrdetail
+                ,0            //syserr: the actual FS error
+                ,0            //syserrdetail
                 ,"ScratchSpace::WriteFile" //methodname
                 );
             return SCRATCH_FAILURE;
@@ -653,8 +653,8 @@ RESULT ScratchSpace::writeFile(char* block,
             if(fileIndex < 0)
             {
                 sortError_->setErrorInfo(EUnexpectErr// should not happen
-                    ,NULL            //syserr: the actual FS error
-                    ,NULL            //syserrdetail
+                    ,0            //syserr: the actual FS error
+                    ,0            //syserrdetail
                     ,"ScratchSpace::WriteFile, getFreeFileHandle" //methodname
                     );
                 return SCRATCH_FAILURE;
@@ -994,8 +994,8 @@ NABoolean ScratchSpace:: generateDiskTable(SortError *sorterror)
     if (diskPool_ == NULL)
     {
         sortError_->setErrorInfo( EScrNoMemory   //sort error
-            ,NULL          //syserr: the actual FS error
-            ,NULL          //syserrdetail
+            ,0          //syserr: the actual FS error
+            ,0          //syserrdetail
             ,"ScratchSpace::generateDiskTable"     //methodname
             );
         return SORT_FAILURE;
@@ -1011,8 +1011,8 @@ NABoolean ScratchSpace:: generateDiskTable(SortError *sorterror)
     {
         
         sortError_->setErrorInfo( EScrNoDisks         //sort error
-            ,NULL               //syserr: the actual FS error
-            ,NULL               //syserrdetail
+            ,0               //syserr: the actual FS error
+            ,0               //syserrdetail
             ,"ScratchSpace::generateDiskTable"     //methodname
             );
         return SORT_FAILURE;
@@ -1248,7 +1248,7 @@ SortScratchSpace::SortScratchSpace(CollHeap* heap,
                                    scratchMgmtOption)
 {
   blockHead_.thisBlockNum_ = 0L;
-  blockHead_.nextBlockNum_ = NULL;
+  blockHead_.nextBlockNum_ = 0;
   blockHead_.runNum_       = 0;
   blockHead_.numRecs_      = 0;
   blockHead_.bytesUsed_    = OVERHEAD;
@@ -1269,8 +1269,8 @@ SortScratchSpace::SortScratchSpace(CollHeap* heap,
   if (runDirectory_ == NULL)
   {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-          ,NULL          //syserr: the actual FS error
-          ,NULL          //syserrdetail
+          ,0          //syserr: the actual FS error
+          ,0          //syserrdetail
           ,"SortScratchSpace::SortScratchSpace"     //methodname
           );
       
@@ -1328,8 +1328,8 @@ RESULT SortScratchSpace::setupSortMergeBufferPool(Int32 numBuffers)
     if (mb->scrBlock_ == 0)
     {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-          ,NULL          //syserr: the actual FS error
-          ,NULL          //syserrdetail
+          ,0          //syserr: the actual FS error
+          ,0          //syserrdetail
           ,"SortScratchSpace::setupSortMergeBufferPool2"     //methodname
           );
       cleanupSortMergeBufferPool();
@@ -1440,9 +1440,7 @@ RESULT SortScratchSpace::flushRun(NABoolean endrun,NABoolean waited)
     else {
         blockHead_.nextBlockNum_ = totalNumOfScrBlocks_ + 1;      
     }
-#pragma nowarn(1506)   // warning elimination 
     blockHead_.runNum_       = currentRun_;
-#pragma warn(1506)  // warning elimination 
     memcpy(currentBlock_, &blockHead_, sizeof(ScrBlockHeader));
 
     retval = ScratchSpace::writeFile(currentBlock_,
@@ -1531,8 +1529,8 @@ RESULT SortScratchSpace::initiateSortMergeNodeRead(SortMergeNode *sortMergeNode,
     if(mb == NULL)
     {
         sortError_->setErrorInfo(EUnexpectErr    //sort error
-            ,NULL                     //syserr: the actual FS err
-            ,NULL                     //syserrdetail
+            ,0                     //syserr: the actual FS err
+            ,0                     //syserrdetail
             ,"ScratchSpace::initiateSortMergeNodeRead" //methodname
             );
         return SCRATCH_FAILURE;
@@ -1544,8 +1542,8 @@ RESULT SortScratchSpace::initiateSortMergeNodeRead(SortMergeNode *sortMergeNode,
     if (mb->currentScrFile_ == NULL) 
     {
       sortError_->setErrorInfo(EScrFileNotFound    //sort error
-                              ,NULL                     //syserr: the actual FS err
-                              ,NULL                     //syserrdetail
+                              ,0                     //syserr: the actual FS err
+                              ,0                     //syserrdetail
                               ,"ScratchSpace::initiateSortMergeBufferRead" //methodname
                               );
       return SCRATCH_FAILURE;
@@ -1622,8 +1620,8 @@ RESULT SortScratchSpace::readSortMergeNode(SortMergeNode *sortMergeNode,
             //We should not reach here at all. (blockHead_.nextBlockNum_ == -1) check
             //being done above should take of this.
             sortError_->setErrorInfo(EUnexpectErr    //sort error
-                                      ,NULL                     //syserr: the actual FS err
-                                      ,NULL                     //syserrdetail
+                                      ,0                     //syserr: the actual FS err
+                                      ,0                     //syserrdetail
                                       ,"SortScratchSpace::readSortMergeNode" //methodname
                                       );
              return SCRATCH_FAILURE;
@@ -1637,8 +1635,8 @@ RESULT SortScratchSpace::readSortMergeNode(SortMergeNode *sortMergeNode,
           if (retval == READ_EOF) 
           {
               sortError_->setErrorInfo( EScrEOF      //sort error
-                  ,NULL         //syserr: the actual FS err
-                  ,NULL         //syserrdetail
+                  ,0         //syserr: the actual FS err
+                  ,0         //syserrdetail
                   ,"SortScratchSpace:readSortMergeBuffer" //methodname
                   );
           }
@@ -1770,8 +1768,8 @@ RESULT SortScratchSpace::cleanupScratchFiles(Lng32 inRun)
   if(beginBlockNum == EOF)
   {
     sortError_->setErrorInfo(EInvRunNumber   //sort error
-                     ,NULL          //syserr: the actual FS error
-                     ,NULL          //syserrdetail
+                     ,0          //syserr: the actual FS error
+                     ,0          //syserrdetail
                      ,"SortScratchSpace::cleanupScratchFiles"
                      );
     return SCRATCH_FAILURE;
@@ -1883,8 +1881,8 @@ RESULT HashScratchSpace::readThru(char *buf, UInt32 clusterID, ClusterPassBack *
   if((Int32)blockNumToRead <= 0)
   {
     sortError_->setErrorInfo( EInvScrBlockNum      //sort error
-                     ,NULL         //syserr: the actual FS err
-                     ,NULL         //syserrdetail
+                     ,0         //syserr: the actual FS err
+                     ,0         //syserrdetail
                      ,"HashScratchSpace::readThru" //methodname
                     );
     
@@ -2151,8 +2149,8 @@ RESULT HashScratchSpace::registerClusterBlock(UInt32 clusterID, DWORD blockNum)
     if (temp == NULL)   
     {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-          ,NULL          //syserr: the actual FS error
-          ,NULL          //syserrdetail
+          ,0          //syserr: the actual FS error
+          ,0          //syserrdetail
           ,"HashScratchSpace::registerClusterBlock"     //methodname
           ); 
       return SCRATCH_FAILURE;
@@ -2171,8 +2169,8 @@ RESULT HashScratchSpace::registerClusterBlock(UInt32 clusterID, DWORD blockNum)
     if (temp == NULL)   
     {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-          ,NULL          //syserr: the actual FS error
-          ,NULL          //syserrdetail
+          ,0          //syserr: the actual FS error
+          ,0          //syserrdetail
           ,"HashScratchSpace::registerClusterBlock"     //methodname
           ); 
       return SCRATCH_FAILURE;
@@ -2196,8 +2194,8 @@ RESULT HashScratchSpace::registerClusterBlock(UInt32 clusterID, DWORD blockNum)
         if (temp == NULL)   
         {
           sortError_->setErrorInfo( EScrNoMemory   //sort error
-              ,NULL          //syserr: the actual FS error
-              ,NULL          //syserrdetail
+              ,0          //syserr: the actual FS error
+              ,0          //syserrdetail
               ,"HashScratchSpace::registerClusterBlock"     //methodname
               ); 
           return SCRATCH_FAILURE;
@@ -2218,8 +2216,8 @@ RESULT HashScratchSpace::registerClusterBlock(UInt32 clusterID, DWORD blockNum)
         if (temp == NULL)   
         {
           sortError_->setErrorInfo( EScrNoMemory   //sort error
-              ,NULL          //syserr: the actual FS error
-              ,NULL          //syserrdetail
+              ,0          //syserr: the actual FS error
+              ,0          //syserrdetail
               ,"HashScratchSpace::registerClusterBlock"     //methodname
               ); 
           return SCRATCH_FAILURE;
@@ -2238,8 +2236,8 @@ RESULT HashScratchSpace::registerClusterBlock(UInt32 clusterID, DWORD blockNum)
       if (tempClusterDList_ == NULL)   
       {
         sortError_->setErrorInfo( EScrNoMemory   //sort error
-            ,NULL          //syserr: the actual FS error
-            ,NULL          //syserrdetail
+            ,0          //syserr: the actual FS error
+            ,0          //syserrdetail
             ,"HashScratchSpace::registerClusterBlock"     //methodname
             ); 
         return SCRATCH_FAILURE;
@@ -2255,8 +2253,8 @@ RESULT HashScratchSpace::registerClusterBlock(UInt32 clusterID, DWORD blockNum)
       if (temp == NULL)   
       {
         sortError_->setErrorInfo( EScrNoMemory   //sort error
-            ,NULL          //syserr: the actual FS error
-            ,NULL          //syserrdetail
+            ,0          //syserr: the actual FS error
+            ,0          //syserrdetail
             ,"HashScratchSpace::registerClusterBlock"     //methodname
             ); 
         return SCRATCH_FAILURE;

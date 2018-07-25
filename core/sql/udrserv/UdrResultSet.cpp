@@ -65,7 +65,6 @@ extern NABoolean allocateEODRow(UdrGlobals *UdrGlob,
                                 SqlBuffer &replyBuffer,
                                 queue_index parentIndex);
 
-// LCOV_EXCL_START
 // Utility method to deallocate descriptor items created in
 // UdrResultSet::generateProxySyntax()
 static void
@@ -89,7 +88,6 @@ deleteDescItems(ComUInt32 numCols, SQLDESC_ITEM *desc_items, NAMemory *heapPtr)
 
   return;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -159,7 +157,6 @@ char *TmpBuffer::getNextRow(ComDiagsArea* &rowDiags,
 // If errors occur, parameter 'd' will be populated with errors. Callers
 // need to check for diagnostics
 // This constructor is used on Windows Platform
-// LCOV_EXCL_START
 UdrResultSet::UdrResultSet(SPInfo *spInfo, SQLSTMT_ID *stmt, ComDiagsArea &d)
   : spInfo_(spInfo),
     state_(RS_INITIATED),
@@ -192,7 +189,6 @@ UdrResultSet::UdrResultSet(SPInfo *spInfo, SQLSTMT_ID *stmt, ComDiagsArea &d)
   UDR_DEBUG1("  Proxy syntax \"%s\"",
              (proxySyntax_ ? proxySyntax_->data() : ""));
 }
-// LCOV_EXCL_STOP
 
 // If errors occur, parameter 'd' will be populated with errors. Callers
 // need to check for diagnostics
@@ -323,7 +319,6 @@ UdrResultSet::deallocateExeGeneratedFields()
 
 } // UdrResultSet::deallocateExeGeneratedFields
 
-// LCOV_EXCL_START
 const char *
 UdrResultSet::stateString()
 {
@@ -340,7 +335,6 @@ UdrResultSet::stateString()
     default: return ComRtGetUnknownString((Int32) state_);
   }
 }
-// LCOV_EXCL_STOP
 
 // Reinitiliazes the UdrResultSet object with the new LmResultSet object.
 // If lmRS param is NULL, the stmt_id param is used for initialization.
@@ -551,7 +545,7 @@ UdrResultSet::setContext(SQLCTX_HANDLE &oldCtx, ComDiagsArea &d)
   Int32 result = SQL_EXEC_SwitchContext((Lng32) getContextHandle(),
                                       &tmpCtx);
 
-  if (result != 0)
+  if (result < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_SwitchContext")
@@ -573,7 +567,7 @@ UdrResultSet::resetContext(SQLCTX_HANDLE ctxHandle, ComDiagsArea &d)
   SQLCTX_HANDLE tmpCtxHandle;
   Int32 result = SQL_EXEC_SwitchContext(ctxHandle, &tmpCtxHandle);
 
-  if (result != 0)
+  if (result < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_SwitchContext")
@@ -640,7 +634,7 @@ UdrResultSet::generateProxySyntax(ComDiagsArea &d)
   outmodule->module_name =0;
 
   retcode = SQL_EXEC_AllocDesc(output_desc_, 500);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_AllocDesc")
@@ -651,7 +645,7 @@ UdrResultSet::generateProxySyntax(ComDiagsArea &d)
 
   // Describe Statement.
   retcode = SQL_EXEC_DescribeStmt(stmt_id_, NULL, output_desc_);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_DescribeStmt")
@@ -663,7 +657,7 @@ UdrResultSet::generateProxySyntax(ComDiagsArea &d)
   // Check how many columns there are in the output_desc
   ComUInt32 numColumns = 0;
   retcode = SQL_EXEC_GetDescEntryCount(output_desc_, (Lng32*) &numColumns);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_GetDescEntryCount")
@@ -757,7 +751,7 @@ UdrResultSet::generateProxySyntax(ComDiagsArea &d)
   retcode = SQL_EXEC_GetDescItems2(output_desc_,
                                    (Lng32) numColumns * NUMDESC_ITEMS,
                                    desc_items);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_GetDescItems2")
@@ -1258,7 +1252,7 @@ UdrResultSet::setupQuadFields(ComDiagsArea &d)
                                                1,
                                                (Lng32) numColumns_,
                                                quad_fields_);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_SETROWSETDESCPOINTERS")
@@ -1292,7 +1286,7 @@ UdrResultSet::fetchRowsFromCLI(UdrGlobals *udrGlob,
   if (stmt_id_->tag != 0)
   {
     retcode = SQL_EXEC_DisassocFileNumber(stmt_id_);
-    if (retcode != 0)
+    if (retcode < 0)
     {
       mainDiags << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
                 << DgString0("SQL_EXEC_DisassocFileNumber")
@@ -1327,7 +1321,7 @@ UdrResultSet::fetchRowsFromCLI(UdrGlobals *udrGlob,
          ! tmpBuffer_->moreRowsToCopy())
   {
     retcode = SQL_EXEC_ClearDiagnostics(stmt_id_);
-    if (retcode != 0)
+    if (retcode < 0)
     {
       mainDiags << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
                 << DgString0("SQL_EXEC_ClearDiagnostics")
@@ -1422,7 +1416,7 @@ UdrResultSet::fetchRowsFromCLI(UdrGlobals *udrGlob,
     }
 
     retcode = SQL_EXEC_ClearDiagnostics(stmt_id_);
-    if (retcode != 0)
+    if (retcode < 0)
     {
       mainDiags << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
                 << DgString0("SQL_EXEC_ClearDiagnostics")
@@ -1437,7 +1431,7 @@ UdrResultSet::fetchRowsFromCLI(UdrGlobals *udrGlob,
     retcode = SQL_EXEC_GetDescItem(output_desc_, 1,
                                    SQLDESC_ROWSET_NUM_PROCESSED,
                                    &numRowsFetched, 0, 0, 0, 0);
-    if (retcode != 0)
+    if (retcode < 0)
     {
       mainDiags << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
                 << DgString0("SQL_EXEC_GetDescItem")

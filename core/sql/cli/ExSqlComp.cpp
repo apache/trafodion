@@ -27,17 +27,6 @@
  * Description:  This file contains the implementation of ExSqlComp class for
  *               executor to create arkcmp process and send requests 
  *               for compilation and SQLCAT related tasks.
- *               There are two modes this file to be compiled :
- *                 -DNA_ARKCMP_PROCESS_SINGLE :
- *                    In this case, the routines are compiled such that the
- *                    user will have choice to call compiler routines either
- *                    through linked in routines or through IPC to arkcmp, a
- *                    different process (choice via an env var).
- *		      (NOT USED ANY MORE.  SEE NOTE BELOW.)
- *                 default case :
- *                    In this case, the routines are compiled such that all
- *                    the compiler main routines are performed in arkcmp process
- *                    (a different process, not linked into the executor).
  *
  * Created:      06/21/96
  * Language:     C++
@@ -100,17 +89,7 @@ void ExSqlComp::clearDiags()
   if (diagArea_)
     diagArea_->clear();
   else
-    diagArea_ = diagArea_->allocate(h_);
-}
-
-inline NABoolean ExSqlComp::oneProcess()
-{
-#ifdef NA_ARKCMP_PROCESS_SINGLE
-  static NABoolean flag = !getenv("ARKCMP_PROCESS_SINGLE_OFF");
-  return flag;
-#else
-  return FALSE;
-#endif  
+    diagArea_ = ComDiagsArea::allocate(h_);
 }
 
 inline void ExSqlComp::initRequests(Requests& req)
@@ -149,12 +128,11 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
   if (!(sc_=new(h_) IpcServerClass(env_, IPC_SQLCOMP_SERVER, allocMethod_,
                                    compilerVersion_,nodeName_)))
     {
-      //ss_cc_change : Rare error condition
-      //LCOV_EXCL_START
+      //
       *diagArea_ << DgSqlCode(- CLI_OUT_OF_MEMORY)
                  << DgString0("IpcServerClass");
       ret = ERROR;
-      //LCOV_EXCL_STOP
+      
     }
   else
     {
@@ -172,9 +150,8 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
 	  getMxcmpPriorityDelta();
       if ((priority > 200) ||
 	  (priority < 1))
-	//ss_cc_change - rare occurence
 	
-	priority = IPC_PRIORITY_DONT_CARE;//LCOV_EXCL_LINE
+	priority = IPC_PRIORITY_DONT_CARE;
 	
       ComDiagsArea* diags = 0;
       if ( !( server_ = sc_->allocateServerProcess(&diags, h_,nodeName_,
@@ -192,15 +169,14 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
       //Server process allocations may have changed the define context
       cliGlobals_->currContext()->checkAndSetCurrentDefineContext();
     }
-  //ss_cc_change : rare error condition
-  //LCOV_EXCL_START  
+  //  
   if (ret == ERROR)
   {
 	error(arkcmpErrorServer);
 	if (getenv("DEBUG_SERVER"))
 	  MessageBox(NULL, "ExSqlComp:createServer", "error ", MB_OK|MB_ICONINFORMATION);
   }
-  //LCOV_EXCL_STOP
+  
 
   return ret;
 }
@@ -233,11 +209,10 @@ ExSqlComp::ReturnStatus ExSqlComp::establishConnection()
     if (badConnection_)
       ret = ERROR;
   }
-    //ss_cc_change : rare error path
-    //LCOV_EXCL_START
+    //
   if (ret == ERROR)
     error(arkcmpErrorConnection);
-  //LCOV_EXCL_STOP
+  
   return ret;
 }
 
@@ -250,12 +225,12 @@ ExSqlComp::ReturnStatus ExSqlComp::startSqlcomp(void)
 
   // all the connection and control processing are done in waited mode.
   if ( (ret=createServer()) == ERROR )
-    return ret; //LCOV_EXCL_LINE
+    return ret;
   if ( (ret=establishConnection()) == ERROR )
-    return ret; //LCOV_EXCL_LINE
+    return ret;
 
   if ( (ret=resendControls()) == ERROR )
-    return ret; //LCOV_EXCL_LINE
+    return ret;
 
   // on NT, the environment is not shipped to mxcmp when the process
   // is created as an NSK lite process.
@@ -283,8 +258,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendRequest()
   /* long sqlCode = (ta->xnInProgress() && !ta->implicitXn()) ?
      arkcmpErrorUserTxnAndArkcmpGone : 0;*/
   Lng32 sqlCode=0;
-  //ss_cc_change : debug error path
-  //LCOV_EXCL_START
+  //
   if (
 #ifdef _DEBUG
       getenv("ARKCMP_NORESEND_DEBUG")		||
@@ -302,7 +276,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendRequest()
       outstandingSendBuffers_.ioStatus_ = FINISHED;
       return ERROR;
     }
-  //LCOV_EXCL_STOP
+  
   // if this transaction was 
   // implicitly started by the executor clean it up now. otherwise
   // this executor will get stuck in a repeated 8841 cycle.
@@ -378,23 +352,21 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
   short indexIntoCliCompilerArray = 0;
   indexIntoCliCompilerArray = cliGlobals_->currContext()->getIndexToCompilerArray();
 
-  //ss_cc_change : rare error condition
-  //LCOV_EXCL_START
+  //
   if (badConnection_)
     {      
       deleteServerStruct();
       badConnection_ = FALSE;
       breakReceived_ = FALSE;
     }
-  //LCOV_EXCL_STOP
+  
   if (!sqlcompMessage_) 
     { 
       ret = startSqlcomp();
       if (ret == ERROR)
          return ret;
     } 
-  //ss_cc_change : can only happen through nowait CLI
-  //LCOV_EXCL_START
+  //
 
   if(this->isShared() && (cliGlobals_->currContext() != lastContext_))
   {
@@ -405,7 +377,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
 	return ret;
     }
   }
-  //LCOV_EXCL_STOP
+  
 
   sqlcompMessage_->clearAllObjects();
   (*sqlcompMessage_) << *c;
@@ -462,20 +434,15 @@ ExSqlComp::OperationStatus ExSqlComp::status(Int64 reqId)
 {
   OperationStatus s = FINISHED;
  
-#ifdef NA_ARKCMP_PROCESS_SINGLE 
-  if (!oneProcess())
-#endif
-    {
-      waitForReply();
-      s = outstandingSendBuffers_.ioStatus_;
-    }
+  waitForReply();
+  s = outstandingSendBuffers_.ioStatus_;
+
   return s;
 }
 
 // --------------------------------------------------------------------------
 // Parse the info fetched from Describe::bindNode().  Genesis 10-981211-5986.
-//ss_cc_change : This is unused dead code 
-//LCOV_EXCL_START
+//
 static NABoolean pairLenTxt(Int32 &len, const char *&txt, const char *&cqd)
 {
   len = 0;
@@ -491,7 +458,7 @@ static NABoolean pairLenTxt(Int32 &len, const char *&txt, const char *&cqd)
   cqd += len;
   return FALSE;
 }
-//LCOV_EXCL_STOP
+
 
 void ExSqlComp::appendControls(ExControlArea *dest, ExControlArea *src){
   Queue *srcList = src->getControlList();
@@ -510,8 +477,7 @@ void ExSqlComp::appendControls(ExControlArea *dest, ExControlArea *src){
                        ctl->isNonResettable());
     }
 }
-//ss_cc_change : This was used only for versioning - obsolete on SQ
-//LCOV_EXCL_START
+//
 static ExSqlComp::ReturnStatus saveControls(ExControlArea *ca, const char *cqd)
 {
 	      #ifdef _DEBUG
@@ -571,7 +537,7 @@ static ExSqlComp::ReturnStatus saveControls(ExControlArea *ca, const char *cqd)
 
   return ret;
 }
-//LCOV_EXCL_STOP
+
 
 ExSqlComp::ReturnStatus ExSqlComp::resetAllDefaults(){
   const char * buf[] = {"control query default * reset", "control query shape off", 
@@ -581,7 +547,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resetAllDefaults(){
     Lng32 len = str_len(buf[i])+1;
     CmpCompileInfo c((char *)buf[i], len,
                      (Lng32)SQLCHARSETCODE_UTF8
-                     , NULL, 0, NULL, 0, 0, 0);
+                     , NULL, 0, 0, 0);
     size_t dataLen = c.getLength();
     char * data = new(h_) char[dataLen];
     c.pack(data);
@@ -595,32 +561,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resetAllDefaults(){
   }
   return SUCCESS;
 }
-//ss_cc_change : this used only when talking to a downrev compiler
-//LCOV_EXCL_START
-ExSqlComp::ReturnStatus ExSqlComp::resetRemoteDefaults(){
-  const char * buf[] = {"control query default MP_CATALOG reset",
-                        "control query default MP_SUBVOLUME reset",
-                        "control query default MP_SYSTEM reset",
-                        "control query default MP_VOLUME reset "};
 
-  for(Int32 i=0; i<sizeof(buf)/sizeof(char *); i++){
-    Lng32 len = str_len(buf[i])+1;
-    CmpCompileInfo c((char *)buf[i], len,
-                     (Lng32)SQLCHARSETCODE_UTF8
-                     , NULL, 0,NULL,0, 0, 0);
-    size_t dataLen = c.getLength();
-    char * data = new(h_) char[dataLen];
-    c.pack(data);
-
-    ReturnStatus ret = sendRequest(EXSQLCOMP::SQLTEXT_STATIC_COMPILE,
-                        data,dataLen);
-
-    h_->deallocateMemory(data);
-    if(ret == ERROR) return ret;
-  }
-  return SUCCESS;
-}
-//LCOV_EXCL_STOP
 ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 10-981211-5986
 {
   // If we are already resending the controls, then we must return.
@@ -634,18 +575,6 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
     return SUCCESS;
 
   resendingControls_ = TRUE;
-
-#ifdef NA_ARKCMP_PROCESS_SINGLE
-  if (oneProcess())
-  {
-    // sendRequest(CmpMessageObj*...) in single-process mode not tested!
-    assert(FALSE);
-    resendingControls_ = FALSE;
-    lastContext_ = 0;
-    
-    return ERROR;
-  }
-#endif
 
   // ##DLL-linkage problem ...
   // ## Perhaps we need to copy the global IdentifyMyself to exe-glob-ctxt ...
@@ -663,8 +592,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
   ContextCli *ctxt = cliGlobals_->currContext();
   short indexIntoCliCompilerArray = ctxt->getIndexToCompilerArray();
 
-  //ss_cc_change: rare error condition
-  //LCOV_EXCL_START
+  //
   if (ctxt->arkcmpInitFailed(indexIntoCliCompilerArray))
   {
     ctxt->arkcmpInitFailed(indexIntoCliCompilerArray) =
@@ -673,7 +601,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
 
     ret = ERROR;
   }
-  //LCOV_EXCL_STOP
+  
 
   if (ret != ERROR)
   {
@@ -691,7 +619,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
     char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1 + 2];
     str_sprintf(userMessage, "%d,%d,%s", authOn, userAsInt, ctxt->getDatabaseUserName());
 
-#if defined(NA_DEBUG_C_RUNTIME)
+#ifdef _DEBUG
     NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
     if (doDebug)
     {
@@ -706,7 +634,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
                       (ULng32) sizeof(userMessage));
   }
 
-  ComDiagsArea loopDiags(h_);
+  ComDiagsArea *loopDiags = NULL;
   ExControlArea *ca = ctxt->getControlArea();
   Queue *q = ca->getControlList();
 
@@ -715,8 +643,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
     if (q->isEmpty())
     {
       ret=resetAllDefaults(); 
-      //ss_cc_change : rare error condition
-      //LCOV_EXCL_START 
+      // 
       if (ret == ERROR)
       {
         resendingControls_ = FALSE;
@@ -724,7 +651,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
         
         return ERROR;
       }
-      //LCOV_EXCL_STOP
+      
       
       ExControlArea *sharedCtrl = cliGlobals_->getSharedControl();
       Queue *sharedCtrlList = sharedCtrl->getControlList();
@@ -745,7 +672,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
           str_len(GetControlDefaults::GetExternalizedDefaultsStmt())+1;
         CmpCompileInfo c(buf, len,
                          (Lng32)SQLCHARSETCODE_UTF8
-                         , NULL, 0, NULL, 0, 0, 0);
+                         , NULL, 0, 0, 0);
         size_t dataLen = c.getLength();
         char * data = new(h_) char[dataLen];
         c.pack(data);
@@ -825,7 +752,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
         Lng32 len = ctl->getSqlTextLen()+1;
 	CmpCompileInfo c(buf, len,
                          (Lng32)SQLCHARSETCODE_UTF8
-                         , NULL, 0, NULL, 0, 0, 0);
+                         , NULL, 0, 0, 0);
         size_t dataLen = c.getLength();
         char * data = new(h_) char[dataLen];
         c.pack(data);
@@ -859,8 +786,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
         
         if (ret != ERROR)
         {
-	  // ss_cc_change : only applicable to downrev compiler
-	  //LCOV_EXCL_START
+	  //
           if ( 
               ((*diagArea_).contains(-2050) || 
                (*diagArea_).contains(-2055))  &&
@@ -871,10 +797,14 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
           }
           else
           {
-            loopDiags.mergeAfter(*diagArea_);
-            diagArea_->clear();
+            if (diagArea_->getNumber() > 0)
+            {
+               if (loopDiags == NULL)
+                   loopDiags = ComDiagsArea::allocate(h_);
+               loopDiags->mergeAfter(*diagArea_);
+               diagArea_->clear();
+            }
           }
-          //LCOV_EXCL_STOP
           ret = SUCCESS;
         }
         else
@@ -896,9 +826,6 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
             ret = ERROR;
       }
       
-      if (compilerVersion_ < COM_VERS_COMPILER_VERSION)
-        resetRemoteDefaults();
-      
       if ((ret == ERROR) && (!breakReceived_))
       {
         ctxt->arkcmpInitFailed(indexIntoCliCompilerArray) =
@@ -910,19 +837,21 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
       
     } // control list is NOT empty
   } // if (ret != ERROR)
-  //ss_cc_change : rare error case
-  //LCOV_EXCL_START
-  if (ret != SUCCESS || diagArea_->getNumber() || loopDiags.getNumber())
+  //
+  if (ret != SUCCESS || diagArea_->getNumber() || loopDiags != NULL )
   {
-    diagArea_->mergeAfter(loopDiags);
-    loopDiags.clear();
+    if (loopDiags != NULL)
+    {
+       diagArea_->mergeAfter(*loopDiags);
+       loopDiags->decrRefCount();
+    }
     if (ret != ERROR)
       ret = diagArea_->getNumber(DgSqlCode::ERROR_) ? ERROR : WARNING;
     if (ret == ERROR)
       *diagArea_ << DgSqlCode(- CLI_SEND_REQUEST_ERROR)
                  << DgString0("resendControls");
   }  
-  //LCOV_EXCL_STOP
+  
   doRefreshEnvironment_ = e;					// restore
   outstandingSendBuffers_.message_ = t;				// restore
   
@@ -1047,8 +976,7 @@ ExSqlComp::~ExSqlComp()
   if (diagArea_)
     diagArea_->deAllocate();
 }
-//ss_cc_change : this is applicable to nowait cli
-//LCOV_EXCL_START
+//
 void ExSqlComp::endConnection()
 {
   if ( sqlcompMessage_ )
@@ -1065,7 +993,7 @@ void ExSqlComp::endConnection()
   sqlcompMessage_ = NULL;
   doRefreshEnvironment_ = TRUE;
 }
-//LCOV_EXCL_STOP
+
 inline NABoolean ExSqlComp::getEnvironment(char*&, ULng32&) 
 {
   // TODO : use environment in executor globals.
@@ -1108,92 +1036,16 @@ ExSqlComp::ReturnStatus
 ExSqlComp::sendRequest(CmpMessageObj* request, NABoolean waited)
 {
   ReturnStatus ret = SUCCESS;
-
-#ifdef NA_ARKCMP_PROCESS_SINGLE
-  if (oneProcess())
-    {
-      CmpStatement cmpStatement(cmpCurrentContext, h_);
-      
-      jmp_buf oldBuf;
-      memcpy ( &oldBuf, &ExportJmpBuf, sizeof(jmp_buf));
+  outstandingSendBuffers_.ioStatus_ = ExSqlComp::PENDING;
+  outstandingSendBuffers_.message_ = request;
+  outstandingSendBuffers_.waited_ = waited;
+  outstandingSendBuffers_.requestId_ = request->id();
+  ret = sendR(request, waited);
+  if (ret != ERROR)
+    if (waitForReply() == ERROR)
+      if (waited)
+        ret = ERROR;
   
-      if (setjmp(ExportJmpBuf))
-	{
-	  diagArea_->mergeAfter(*CmpCommon::diags());
-	  *diagArea_ << DgSqlCode(arkcmpErrorAssert) 
-	    << DgInt0(0) << DgString0("from longjmp(NAAssert)");
-	  cmpStatement.exceptionRaised();
-	  if (request)
-	    request->decrRefCount();
-	  memcpy ( &ExportJmpBuf, &oldBuf, sizeof(jmp_buf));
-	  return ERROR;
-	}
-
-      ExportJmpBufPtr = &ExportJmpBuf;
-
-      CmpCommon::diags()->clear();
-      EH_REGISTER(EH_INTERNAL_EXCEPTION);
-      EH_REGISTER(EH_BREAK_EXCEPTION);
-      EH_REGISTER(EH_ALL_EXCEPTIONS);
-      EH_TRY           
-	{
-	  if (cmpStatement.process(*request)==CmpStatement::ERROR)
-	    ret = ERROR;
-	  else
-	    ret = SUCCESS;
-	  if (cmpStatement.reply())
-	    {	      
-	      replyData_ = (cmpStatement.reply())->takeData();
-	      replyDatalen_=(ULng32)((cmpStatement.reply())->getSize());
-	      //cmpStatement.reply()->decrRefCount();
-	    }
-	  else
-	    {
-	      replyData_ = 0;
-	      replyDatalen_ = 0;	      
-	    }
-
-	}
-      EH_END_TRY;
-      EH_CATCH(EH_INTERNAL_EXCEPTION)
-	{
-	  cmpStatement.exceptionRaised();
-	  ret = ERROR;
-	}
-      EH_CATCH(EH_BREAK_EXCEPTION)
-	{
-	  NAExit(1);
-	}
-      EH_CATCH(EH_ALL_EXCEPTIONS)
-	{
-	  cmpStatement.exceptionRaised();
-	  ret = ERROR;
-	}
-      diagArea_->mergeAfter(*cmpStatement.diags());
-      if (diagArea_->getNumber(DgSqlCode::ERROR_))
-	retval_ = ERROR;
-      else if (diagArea_->getNumber(DgSqlCode::WARNING_))
-        retval_ = WARNING;
-      if (request)
-	request->decrRefCount();
-      memcpy(&ExportJmpBuf, &oldBuf, sizeof(jmp_buf));
-    }
-  else
-#endif
-    {
-      if (ret != ERROR)
-	{	  
-	  outstandingSendBuffers_.ioStatus_ = ExSqlComp::PENDING;
-	  outstandingSendBuffers_.message_ = request;
-          outstandingSendBuffers_.waited_ = waited;
-          outstandingSendBuffers_.requestId_ = request->id();
-          ret = sendR(request, waited);
-          if (ret != ERROR)
-	    if (waitForReply() == ERROR)
-	      if (waited)
-		ret = ERROR;
-	}
-    }  
   return ret;
 }
 
@@ -1221,13 +1073,12 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
   // When we move to v2400 and beyond, this code need to correctly
   // figure out which charsets are not understood by the downrev
   // compiler where this msg is being sent to.
-  // ss_cc_change : down rev compiler is obsolete on SQ
-  //LCOV_EXCL_START
+  //
   if (getVersion() < COM_VERS_2300)
     {
       charset = SQLCHARSETCODE_ISO88591;
     }
-  //LCOV_EXCL_STOP
+  
   if ( ( ret = preSendRequest(FALSE) ) == ERROR )
     {
       if ( resendFlg && badConnection_ )
@@ -1298,11 +1149,6 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
 	CmpMessageDatabaseUser(input_data,(CmpMsgBufLenType)size,h_);
       break;
       
-    case EXSQLCOMP::READTABLEDEF_REQUEST :
-      request = new(h_)CmpMessageRequest(EXSQLCOMP::READTABLEDEF_REQUEST,
-					 input_data, size, h_, charset); 
-      break;
-      
     case EXSQLCOMP::END_SESSION :
       request = new(h_)CmpMessageEndSession(input_data, 
 					    (CmpMsgBufLenType)size, h_);
@@ -1323,8 +1169,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
       request->setFlags(cliGlobals_->currContext()->getSqlParserFlags()); 
       
       // If we are talking to a downrev compiler take care of the following.
-      //ss_cc_change
-      //LCOV_EXCL_START
+      //
       if ( compilerVersion_ < COM_VERS_COMPILER_VERSION)
 	{
 	  // if the structure of any of the above message op types have changed from
@@ -1336,7 +1181,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
 	  
 	  
 	}
-      //LCOV_EXCL_STOP
+      
       // send the request.
       ret = sendRequest(request, waited);
       if ((ret == ERROR) && badConnection_)
@@ -1359,14 +1204,13 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
 		}
 	      else
 		{
-		  //ss_cc_change : rare error condition
-		  //LCOV_EXCL_START
+		  //
 		  // The second retry failed. Reset outstandingSendBuffers.
 		  outstandingSendBuffers_.ioStatus_ = ExSqlComp::FINISHED;
 		  outstandingSendBuffers_.resendCount_ = 0;
 		  outstandingSendBuffers_.message_ = 0;
 		  badConnection_ = FALSE;
-		  //LCOV_EXCL_STOP
+		  
 		}
 	      
 	    } // if (resendFlg)
@@ -1472,15 +1316,6 @@ ExSqlComp::ReturnStatus ExSqlComp::getReply
   assert(outstandingSendBuffers_.ioStatus_ == FINISHED);
   outstandingSendBuffers_.ioStatus_ = FETCHED;
 
-#ifdef NA_ARKCMP_PROCESS_SINGLE
-  if (oneProcess())
-    {
-      reply = replyData_;
-      size = replyDatalen_;
-      return retval_;
-    }
-#endif
-
   Int64 request = ( reqId ) ? reqId : outstandingSendBuffers_.requestId_;
   if (diagArea_->getNumber(DgSqlCode::ERROR_))
     {
@@ -1541,8 +1376,7 @@ ComDiagsArea* ExSqlComp::getDiags(Int64 )
 {
   return diagArea_;
 }
-//ss_cc_change : dead code
-//LCOV_EXCL_START
+//
 ComDiagsArea* ExSqlComp::takeDiags(Int64)
 {
   ComDiagsArea* d = diagArea_;
@@ -1560,7 +1394,7 @@ void ExSqlComp::deleteServerStruct()
   sqlcompMessage_ = NULL;
   sc_ = NULL;
 }
-//LCOV_EXCL_STOP
+
 
 // -----------------------------------------------------------------------
 // Methods for CmpMessageStream 
@@ -1607,15 +1441,7 @@ void CmpMessageStream::actOnSend(IpcConnection*)
     Int32 guaRetcode = phandle.decompose();
     if (XZFIL_ERR_OK == guaRetcode)
     {
-#ifdef SQ_PHANDLE_VERIFIER
       msg_mon_stop_process_name(phandle.getPhandleString());
-#else
-    Int32 nid = 0;
-    Int32 pid = 0;
-    msg_mon_get_process_info(phandle.getPhandleString(),
-                             &nid, &pid);
-    msg_mon_stop_process(phandle.getPhandleString(), nid, pid);
-#endif
     }
     delete sqlcomp_->sqlcompMessage_;
     sqlcomp_->getDiags() ->setRollbackTransaction(-1);
@@ -1689,16 +1515,7 @@ void CmpMessageStream::actOnReceive(IpcConnection*)
               Int32 guaRetcode = phandle.decompose();
               if (XZFIL_ERR_OK == guaRetcode)
               {
-#ifdef SQ_PHANDLE_VERIFIER
                 msg_mon_stop_process_name(phandle.getPhandleString());
-#else
-                Int32 nid = 0;
-                Int32 pid = 0;
-                msg_mon_get_process_info(phandle.getPhandleString(),
-                                         &nid, &pid);
-                msg_mon_stop_process(phandle.getPhandleString(), 
-                                         nid, pid);
-#endif
               }
               delete sqlcomp_->sqlcompMessage_;
               sqlcomp_->sqlcompMessage_ = NULL;

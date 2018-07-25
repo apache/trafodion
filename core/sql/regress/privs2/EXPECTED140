@@ -4,12 +4,12 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs2
+CURRENT DIRECTORY  /mnt/rmarton/gitws/trafodion/core/sql/regress/rundir/privs2
 LIST_COUNT         4294967295
 LOG FILE           LOG140
-MESSAGEFILE        /mnt/rmarton/gitws/incubator-trafodion/core/sqf/export/ ...
+MESSAGEFILE        /mnt/rmarton/gitws/trafodion/core/sqf/export/bin64d/mxc ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2016-09-23 23:03 LINUX:EDEV05/rmarton} 
+MESSAGEFILE VRSN   {2018-04-19 16:37 LINUX:EDEV07.ESGYN.LOCAL/rmarton} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         T140_SHARED_VIEWS
 SQL USER CONNECTED user not connected
@@ -208,6 +208,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 TEAMS
+
+=======================
+ 6 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -442,7 +445,7 @@ Zachary
 >>-- user2 cannot propagate select privilege on games
 >>grant select on games to sql_user3;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER2 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>
@@ -609,7 +612,7 @@ Tom                                                 White Socks
 >>-- user3 cannot propagate select on table games
 >>grant select on games to sql_user4;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER3 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>
@@ -724,12 +727,12 @@ SQL_USER4
 >>--user4 cannot grant any privileges
 >>grant select on teams to sql_user5;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER4 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>grant insert on players to sql_user5;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER4 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>
@@ -909,7 +912,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 >>-- user6 tries to grant select to user7
 >>grant select on games to sql_user7 by sql_user6;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER6 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>

@@ -41,11 +41,11 @@
 #include "ComTdb.h"
 #include "ex_tcb.h"
 #include "ExStats.h"
-#include "ExMeas.h"
 #include "ex_globals.h"
 #include "Globals.h"
 #include "SqlStats.h"
 #include "ExpLOB.h"
+#include "ExpLOBaccess.h"
 
 ex_globals::ex_globals(short num_temps,
 		       short create_gui_sched,
@@ -62,9 +62,9 @@ ex_globals::ex_globals(short num_temps,
        injectErrorAtQueueFreq_(0),
        flags_(0),
        planVersion_(0),
-       jmpInScope_(FALSE),
        sharedPool_(NULL),
-       rowNum_(1)
+       rowNum_(1),
+       exLobGlobals_(NULL)
 {
   // Small data items are allocated using space rather than heap so that
   // the allocation of memory for the heap can be avoided in simple queries.
@@ -82,17 +82,16 @@ ex_globals::ex_globals(short num_temps,
 	tempList_[i] = NULL;
     }
 
-  
-  lobGlobals_ = new(heap_) LOBglobals(heap_);
 }
 
-void *& ex_globals::getExLobGlobal() { return lobGlobals()->lobAccessGlobals(); }
+ExLobGlobals *&ex_globals::getExLobGlobal() 
+{ 
+  return exLobGlobals_;
+}
 
-void ex_globals::initLOBglobal(void *context)
+void ex_globals::initLOBglobal(ContextCli *context, NABoolean useLibHdfs)
 {
-  // initialize lob interface
-  ExpLOBoper::initLOBglobal(getExLobGlobal(), heap_, context,(char *)"default",0);
-
+  exLobGlobals_ = ExpLOBoper::initLOBglobal((NAHeap *)heap_, context, useLibHdfs);
 }
 
 void ex_globals::reAllocate(short create_gui_sched)
@@ -104,8 +103,7 @@ void ex_globals::reAllocate(short create_gui_sched)
   tempList_ = NULL;
   
   tcbList_.allocate(0);
-
-  lobGlobals_ = new(heap_) LOBglobals(heap_);
+  exLobGlobals_ = NULL;
 }
 
 void ex_globals::deleteMe(NABoolean fatalError)
@@ -119,7 +117,6 @@ void ex_globals::deleteMe(NABoolean fatalError)
 
   if (statsArea_)
   {
-#ifndef __EID
     StatsGlobals *statsGlobals = getStatsGlobals();
     if (statsGlobals == NULL)
     {
@@ -128,22 +125,17 @@ void ex_globals::deleteMe(NABoolean fatalError)
     else
     {
       Long semId = getSemId();
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(semId, getPid(), savedPriority, savedStopMode,
-                        FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(semId, getPid());
       NADELETE(statsArea_, ExStatisticsArea, statsArea_->getHeap());
-      statsGlobals->releaseStatsSemaphore(semId, getPid(), savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(semId, getPid());
     }
-#else
-    NADELETE(statsArea_, ExStatisticsArea, statsArea_->getHeap());
-#endif
   }
   statsArea_ = NULL;
   cleanupTcbs();
   tcbList_.deallocate();
-  NADELETE(lobGlobals_,LOBglobals,heap_);
-  lobGlobals_ = NULL;
+  if (exLobGlobals_ != NULL)
+     ExpLOBoper::deleteLOBglobal(exLobGlobals_, (NAHeap *)heap_);
+  exLobGlobals_ = NULL;
 }
 
 void ex_globals::deleteMemory(void *mem)

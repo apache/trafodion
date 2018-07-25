@@ -48,7 +48,6 @@ Record::Record(ULng32 size, NABoolean doNotallocRec, CollHeap* heap)
     allocatedRec_ = FALSE_L;  
   }
   else{
-    //Allocation failure will cause longjmp to jmp handler in ex_sort.
     rec_  = new (heap_) char[recSize_+1];
     ex_assert(rec_ != NULL, "Record::Record: rec_ is NULL");
     allocatedRec_ = TRUE_L;
@@ -93,7 +92,6 @@ void Record::initialize(ULng32 recsize, NABoolean doNotallocRec,
     allocatedRec_ = FALSE_L; 
  }
  else {
-    //Allocation failure will cause longjmp to jmp handler in ex_sort.
     rec_  = new (heap_) char[recsize+1];
     ex_assert(rec_ != NULL, "Record::initialize: rec_ is NULL");
     allocatedRec_ = TRUE_L;

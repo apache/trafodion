@@ -97,18 +97,14 @@ ComTdbSplitTop::ComTdbSplitTop(ComTdb       *child,
   streamTimeout_ = streamTimeout;
 }
   
-// LCOV_EXCL_START
 Int32 ComTdbSplitTop::orderedQueueProtocol() const
 {
   return TRUE;
 } // these 3 lines won't be covered, obsolete but not in the list yet
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void ComTdbSplitTop::display() const
 {
 } // these 3 lines won't be covered, used by Windows GUI only
-// LCOV_EXCL_STOP
 
 const ComTdb* ComTdbSplitTop::getChild(Int32 pos) const
 {
@@ -177,10 +173,10 @@ void ComTdbSplitTop::displayContents(Space *space, ULng32 flag)
   {
     char buf[256];
     
-    str_sprintf(buf, "\nFor ComTdbSplitTop :\nFlags = %b ",flags_);
+    str_sprintf(buf, "\nFor ComTdbSplitTop :\nFlags = %x ",flags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     
-    str_sprintf(buf, "splitTopFlags_ = %b", (Lng32) splitTopFlags_);
+    str_sprintf(buf, "splitTopFlags_ = %x", (Lng32) splitTopFlags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
     str_sprintf(buf, "bottomNumParts_ = %d", (Int32) bottomNumParts_);

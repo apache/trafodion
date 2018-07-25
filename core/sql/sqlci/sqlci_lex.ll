@@ -54,18 +54,12 @@
 #include <stdlib.h>
 #include <iostream>
 #include "SqlciCmd.h"
-#include "SqlciRWCmd.h"
 #include "str.h"
 #include "Sqlci.h"
-#pragma warning (disable : 4005)   //warning elimination
-#pragma nowarn(140)  // warning elimination
 #define yylval sqlcilval
 #define yyerror sqlcierror
 #include "sqlci_yacc.h"
-#pragma warn(140)  // warning elimination
-#pragma warning (default : 4005)   //warning elimination
 #include "SqlciParseGlobals.h"
-#pragma nowarn(1506)  //warning elimination
 
 static int token_to_return;
 
@@ -97,10 +91,6 @@ extern "C" { int yylex(void); }
 extern "C" { int yylex(void); }
 #endif
 
-#ifndef NA_FLEXBUILD  
-#undef input
-#define input()  SqlciInput()
-#else  // NT_PORT
 # undef YY_INPUT
 #define YY_INPUT(buffer,result,maxsize)\
 {\
@@ -110,7 +100,6 @@ extern "C" { int yylex(void); }
     else\
         result=1;\
 }
-#endif  // NA_FLEXBUILD
 
 #undef unput
 #define unput(c) SqlciUnput(c)
@@ -118,61 +107,19 @@ extern "C" { int yylex(void); }
 #define yylval sqlcilval
 #define yyerror sqlcierror
 
-#ifndef NA_FLEXBUILD  // NT_PORT ( bd 10/6/96 ) moving to flex/bison BEGIN
-void sqlci_unput_(int c);
-char sqlci_input_();
-
-char SqlciInput(void)
-{
-
-  short x;
-  x = sqlci_input_();
-
-  return x;
-}
-      
-#endif  // NT_PORT ( bd 10/6/96 ) moving to flex/bison END
-
 // put back a previously read input character that wasn't needed
 void SqlciUnput(char c)
 {
-#ifndef NA_FLEXBUILD  // NT_PORT ( bd 10/6/96 ) moving to flex/bison BEGIN
- sqlci_unput_(c);
-#else
  SqlciParse_InputPos--;
-#endif  // NT_PORT ( bd 10/6/96 ) moving to flex/bison END
 }
-
-#ifndef NA_FLEXBUILD  // NT_PORT ( bd 10/6/96 ) moving to flex/bison BEGIN
-void sqlci_unput_(int c)
-{
- SqlciParse_InputPos--;
-};
-
-char sqlci_input_()
-{
-  char a;
-  
-  a = SqlciParse_InputStr[SqlciParse_InputPos++];
-  return a;
-}
-#endif  // NT_PORT ( bd 10/6/96 ) moving to flex/bison END
 
 // handle EOF in the input stream and let lex continue
 // with the next input file
-
-#if defined(NA_EXTERN_C_LINKAGE)
 extern "C"   
   int yywrap(void)
     {
       return 0;
     }
-#else
-int yywrap(void)
-{
-  return 0;
-}
-#endif
 
 %}
 
@@ -214,6 +161,7 @@ B			[ \t\n]+
 [Cc][Oo][Mm][Mm][Aa][Nn][Dd]           return_IDENT_or_TOKEN(COMMANDStoken,0);
 [Cc][Oo][Mm][Mm][Aa][Nn][Dd][Ss]       return_IDENT_or_TOKEN(COMMANDStoken,0);
 [Cc][Oo][Mm][Mm][Ii][Tt]               return_IDENT_or_TOKEN(COMMIT, 0);
+[Cc][Oo][Mm][Mm][Ee][Nn][Tt]       return_IDENT_or_TOKEN(COMMENTtoken, 0);
 [Cc][Oo][Nn][Tt][Rr][Oo][Ll]	       return_IDENT_or_TOKEN(CONTROL, 0);
 [Cc][Oo][Nn][Tt][Rr][Oo][Ll][Ss]       return_IDENT_or_TOKEN(CONTROL, 0);
 [Cc][Qq][Dd]	                       return_IDENT_or_TOKEN(CONTROL, 0);
@@ -232,7 +180,6 @@ B			[ \t\n]+
 [Dd][Ii][Ss][Pp][Ll][Aa][Yy]_[Qq][Cc]_[Ee][Nn][Tt][Rr][Ii][Ee][Ss] return_IDENT_or_TOKEN(DISPLAY_QC_ENTRIES,0);
 [Dd][Ii][Ss][Pp][Ll][Aa][Yy]_[Qq][Cc]_[Ee][Nn][Tt][Rr][Ii][Ee][Ss]_[Nn][Oo][Tt][Ii][Mm][Ee] return_IDENT_or_TOKEN(DISPLAY_QC_ENTRIES_NOTIME,0);
 [Dd][Ii][Ss][Pp][Ll][Aa][Yy]{B}[Uu][Ss][Ee]{B}[Oo][Ff]          return_IDENT_or_TOKEN(DISPLAY_USE_OF, 0);
-[Dd][Uu][Pp]   			       return_IDENT_or_TOKEN(DUP, 0);
 [Ee][Nn][Vv]  			       return_IDENT_or_TOKEN(MXCI_TOK_ENV, 0);
 [Ee][Nn][Vv][Vv][Aa][Rr]  	       return_IDENT_or_TOKEN(ENVVARtoken, 0);
 [Ee][Tt]                               return_IDENT_or_TOKEN(COMMIT, 0);
@@ -257,19 +204,9 @@ B			[ \t\n]+
 [Ll][Oo][Aa][Dd] 		       return_IDENT_or_TOKEN(LOADtoken, 0);
 [Mm][Ee][Rr][Gg][Ee]                   return_IDENT_or_TOKEN(MERGEtoken, 0);
 [Mm][Ee][Tt][Aa][Dd][Aa][Tt][Aa]                   return_IDENT_or_TOKEN(METADATAtoken, 0);
-[Mm][Aa][Ii][Nn][Tt][Aa][Ii][Nn]       return_IDENT_or_TOKEN(MAINTAINtoken, 0);
 [Mm][Aa][Pp]                           return_IDENT_or_TOKEN(MAPtoken, 0);
 [Mm][Oo][Dd][Ii][Ff][Yy]               return_IDENT_or_TOKEN(MODIFY, 0);
-[Mm][Oo][Dd][Uu][Ll][Ee]               {
-                     return_IDENT_or_TOKEN(MODULE, 0);
-                       }
-[Mm][Oo][Dd][Uu][Ll][Ee][Ss]               {
-                     return_IDENT_or_TOKEN(MODULES, 0);
-                       }
-[Mm][Oo][Dd][Uu][Ll][Ee][_][Dd][Ii][Rr]   {
-                        return_IDENT_or_TOKEN(MODULE_DIR, 0);
-                                          }
-[No][Oo][Ee]                           return_IDENT_or_TOKEN(NOEtoken, 0);
+[Mm][Ss][Cc][Kk] 		       return_IDENT_or_TOKEN(MSCKtoken, 0);
 [Oo][Bb][Ee][Yy]  		       { 
                      BEGIN FNAME; 
                                          return_IDENT_or_TOKEN (OBEY, 0); 
@@ -290,8 +227,6 @@ B			[ \t\n]+
 [Ee][Xx][Ii][Tt] 		       return_IDENT_or_TOKEN(EXIT, 0);
 [Ff][Cc]   		               return_IDENT_or_TOKEN(FC, -1);
 [Ff][Oo][Rr]   		               return_IDENT_or_TOKEN(FORtoken, 0);
-[Rr][Ee][Oo][Rr][Gg]   		       return_IDENT_or_TOKEN(REORGtoken, 0);
-[Rr][Ee][Oo][Rr][Gg][Aa][Nn][Ii][Zz][Ee] return_IDENT_or_TOKEN(REORGtoken, 0);
 [Rr][Ee][Pp][Ll][Ii][Cc][Aa][Tt][Ee]    return_IDENT_or_TOKEN(REPLICATEtoken, 0);
 [[Cc][Pp][Uu]                           return_IDENT_or_TOKEN(CPU, 0);
 [Pp][Ii][Dd]                           return_IDENT_or_TOKEN(PID, 0);
@@ -305,21 +240,6 @@ B			[ \t\n]+
                                          return_IDENT_or_TOKEN(LOG, 0);
                                        }
                                       
-[Hh][Ee][Ll][Pp] 		       { 
-                                       SqlciParse_SyntaxErrorCleanup = -1;
-                       if (SqlciParse_IdentifierExpected)
-                     {
-                       if (yylval.stringval_type)
-                         delete [] yylval.stringval_type;
-                       yylval.stringval_type = new char[5];
-                       strcpy(yylval.stringval_type, "HELP");
-                       token_to_return = IDENTIFIER ;
-                     }
-                     else
-                       token_to_return = HELP; 
-                     SqlciParse_IdentifierExpected = -1;
-                     return (token_to_return);
-                                       }
 [Hh][Ii][Ss][Tt][Oo][Rr][Yy]	       return_IDENT_or_TOKEN(HISTORY, 0);
 [Rr][Ee][Ss][Ee][Tt]                   return_IDENT_or_TOKEN(RESET, 0);
 [Ss][Ee][Tt]{B}[Tt][Aa][Bb][Ll][Ee] return_IDENT_or_TOKEN(SET_TABLEtoken, 0);
@@ -327,13 +247,11 @@ B			[ \t\n]+
 [Ss][Ee][Tt]                           return_IDENT_or_TOKEN(SETtoken, 0);
 [Ss][Ee][Tt][Ee][Nn][Vv]               return_IDENT_or_TOKEN(SETENV, 0);
 [Ll][Ii][Ss][Tt]_[Cc][Oo][Uu][Nn][Tt]  return_IDENT_or_TOKEN(LISTCOUNT, 0);
-[Ll][Ii][Ss][Tt]                       return_IDENT_or_TOKEN(LISTX, 0); 
 [Ff][Ii][Rr][Ss][Tt]                   return_IDENT_or_TOKEN(FIRST, 0);
 [Nn][Ee][Xx][Tt]                       return_IDENT_or_TOKEN(NEXT, 0);
 [Rr][Ee][Pp][Oo][Rr][Tt]               return_IDENT_or_TOKEN(REPORT, 0);
 [Ss][Qq][Ll]                           return_IDENT_or_TOKEN(SQL, 0);
 [Cc][Aa][Nn][Cc][Ee][ll]               return_IDENT_or_TOKEN(CANCEL, 0);
-[Mm][Xx][Cc][Ss]                       return_IDENT_or_TOKEN(MXCS, 0); 
 [Mm][Oo][Dd][Ee]                       return_IDENT_or_TOKEN(MODE,0);
 [Ww][Aa][Rr][Nn][Ii][Nn][Gg][Ss]       return_IDENT_or_TOKEN(VERBOSE, 0);
 [Pp][Aa][Rr][Aa][Mm]                   return_IDENT_or_TOKEN(PARAM, 0);
@@ -344,7 +262,6 @@ B			[ \t\n]+
 [Pp][Uu][Rr][Gg][Ee][Dd][Aa][Tt][Aa]   return_IDENT_or_TOKEN(PURGEDATA, 0);
 [Pp][Oo][Pp][Uu][Ll][Aa][Tt][Ee]       return_IDENT_or_TOKEN(POPULATE, 0);
 [Vv][Aa][Ll][Ii][Dd][Aa][Tt][Ee]       return_IDENT_or_TOKEN(VALIDATEtoken, 0);
-[Rr][Ee][Cc][Oo][Vv][Ee][Rr]           return_IDENT_or_TOKEN(RECOVER, 0);
 [Rr][Ee][Ff][Rr][Ee][Ss][Hh]		   return_IDENT_or_TOKEN(REFRESH, 0);	/* MV - REFRESH utility */
 [Rr][Ee][Pp][Oo][Ss][Ii][Tt][Oo][Rr][Yy]    return_IDENT_or_TOKEN(REPOSITORYtoken, 0);
 [Rr][Oo][Ww][Ss][Ee][Tt]               return_IDENT_or_TOKEN(ROWSETtoken, 0);
@@ -355,8 +272,6 @@ B			[ \t\n]+
 [Ss][Hh][Oo][Ww]                       return_IDENT_or_TOKEN(SHOW, 0);
 [Ss][Hh][Oo][Ww][Cc][Oo][Nn][Tt][Rr][Oo][Ll]           return_IDENT_or_TOKEN(SHOWCONTROL, 0);
 [Ss][Hh][Oo][Ww][Dd][Dd][Ll]           return_IDENT_or_TOKEN(SHOWDDL, 0);
-[Ss][Hh][Oo][Ww][Ll][Aa][Bb][Ee][Ll]   return_IDENT_or_TOKEN(SHOWLABEL, 0);
-[Ss][Hh][Oo][Ww][Ll][Ee][Aa][Kk][Ss]   return_IDENT_or_TOKEN(SHOWLEAKS, 0);
 [Ss][Hh][Oo][Ww][Pp][Ll][Aa][Nn]       return_IDENT_or_TOKEN(SHOWPLAN, 0);
 [Ss][Hh][Oo][Ww][Ss][Hh][Aa][Pp][Ee]   return_IDENT_or_TOKEN(SHOWSHAPE, 0);
 [Ss][Hh][Oo][Ww][Ss][Ee][Tt]           return_IDENT_or_TOKEN(SHOWSET, 0);
@@ -377,19 +292,6 @@ B			[ \t\n]+
 [Vv][Aa][Ll][Uu][Ee][Ss]	       return_IDENT_or_TOKEN(VALUES, 0);
 [Vv][Ee][Rr][Ss][Ii][Oo][Nn]           return_IDENT_or_TOKEN(VERSIONtoken, 0);
 [Cc][Rr][Ee][Aa][Tt][Ee]	       return_IDENT_or_TOKEN(CREATE, 0);
-[Ll][Aa][Bb][Ee][Ll][_][Cc][Rr][Ee][Aa][Tt][Ee] {
-                                       return_IDENT_or_TOKEN(LABEL_CREATE, 0);
-                                                }
-[Ll][Aa][Bb][Ee][Ll][_][Dd][Rr][Oo][Pp] {
-                                       return_IDENT_or_TOKEN(LABEL_DROP, 0);
-					}		
-
-[Ll][Aa][Bb][Ee][Ll][_][Aa][Ll][Tt][Ee][Rr] {
-                                       return_IDENT_or_TOKEN(LABEL_ALTER, 0);
-				       }
-[Ll][Aa][Bb][Ee][Ll][_][Pp][Uu][Rr][Gg][Ee][Dd][Aa][Tt][Aa] {
-                                       return_IDENT_or_TOKEN(LABEL_PURGEDATA, 0);
-				       }
 [Aa][Ll][Tt][Ee][Rr]		       return_IDENT_or_TOKEN(ALTER, 0);
 [Dd][Rr][Oo][Pp] 		       return_IDENT_or_TOKEN(DROP, 0);
 [Ll][Oo][Cc][Kk]                       return_IDENT_or_TOKEN(LOCK, 0);
@@ -433,8 +335,6 @@ B			[ \t\n]+
 [Ii][Nn][Ff][Ee][Rr]_[Cc][Hh][Aa][Rr][Ss][Ee][Tt] return_IDENT_or_TOKEN(INFER_CHARSET, 0);
 [Rr][Ee][Ss][Uu][Ll][Tt]               return_IDENT_or_TOKEN(RESULT, 0);
 [Qq][Uu][Ii][Ee][Ss][Cc][Ee]           return_IDENT_or_TOKEN(QUIESCE, 0);
-[Dd][Oo][Ww][Nn][Gg][Rr][Aa][Dd][Ee]   return_IDENT_or_TOKEN(DOWNGRADEtoken, 0);
-[Uu][Pp][Gg][Rr][Aa][Dd][Ee]           return_IDENT_or_TOKEN(UPGRADEtoken, 0);
 [Aa][Cc][Tt][Ii][Vv][Ee]               return_IDENT_or_TOKEN(ACTIVEtoken, 0);
 [Aa][Cc][Cc][Uu][Mm][Uu][Ll][Aa][Tt][Ee][Dd] return_IDENT_or_TOKEN(ACCUMULATEDtoken, 0);
 [Pp][Ee][Rr][Tt][Aa][Bb][Ll][Ee]       return_IDENT_or_TOKEN(PERTABLEtoken, 0);
@@ -447,6 +347,7 @@ B			[ \t\n]+
 [Mm][Vv][Ll][Oo][Gg]				return_IDENT_or_TOKEN(MVLOG, 0);
 [Uu][Nn][Ll][Oo][Aa][Dd]                return_IDENT_or_TOKEN(UNLOAD, 0); 
 [Tt][Rr][Uu][Nn][Cc][Aa][Tt][Ee]        return_IDENT_or_TOKEN(TRUNCATE, 0);
+[Cc][Hh][Aa][Nn][Gg][Ee][Uu][Ss][Ee][Rr] return_IDENT_or_TOKEN(USERtoken, 0);
 
 [\*]		{SqlciParse_IdentifierExpected = 0; return(ALLtoken);};
 [(]		{SqlciParse_IdentifierExpected = 0; return(LPAREN);};
@@ -518,26 +419,6 @@ B			[ \t\n]+
                 return_IDENT_or_TOKEN(DQUOTED_STRING, 0);
                  }
 
-[=][A-Za-z][A-Za-z0-9_\$]*  {
-                                if (yylval.stringval_type)
-                  delete [] yylval.stringval_type;
-                yylval.stringval_type = new char[strlen(yytext) + 1];
-                strcpy(yylval.stringval_type, yytext);
-                SqlciParse_IdentifierExpected = 0;
-                
-                return(DEFINE_NAME);
-                             }
-[=][_][A-Za-z][A-Za-z0-9_\$]*  {
-                                if (yylval.stringval_type)
-                  delete [] yylval.stringval_type;
-                yylval.stringval_type = new char[strlen(yytext) + 1];
-                strcpy(yylval.stringval_type, yytext);
-                SqlciParse_IdentifierExpected = 0;
-                
-                return(DEFINE_NAME);
-                             }
-
-
 [A-Za-z_][A-Za-z0-9_.]*    {
                 yylval.stringval_type = new char[strlen(yytext)+1];
                 strcpy(yylval.stringval_type, yytext);
@@ -562,30 +443,6 @@ B			[ \t\n]+
                                 SqlciParse_IdentifierExpected = 0;
                 return_IDENT_or_TOKEN(FILENAME, 0);
                         }
-\\{G}\.\${G}\.{G}\.{G}	   {
-                                if (yylval.stringval_type)
-                                  delete [] yylval.stringval_type;
-                                yylval.stringval_type = new char[strlen(yytext)+1];
-                strcpy(yylval.stringval_type, yytext);
-                                return(NSK_NAME);
-                           }
-
-\\{G}\.\${G}               {
-                                if (yylval.stringval_type)
-	                              delete [] yylval.stringval_type;
-                                yylval.stringval_type = new char[strlen(yytext)+1];
-				strcpy(yylval.stringval_type, yytext);
-                                return(NODE_VOL_NAME);
-                           }
-
-\\{G}                      {
-                                if (yylval.stringval_type)
-	                              delete [] yylval.stringval_type;
-                                yylval.stringval_type = new char[strlen(yytext)+1];
-				strcpy(yylval.stringval_type, yytext);
-                                return(NODE_NAME);
-                           }
-
 \\{G}\.[0-9]*\,[0-9]*      {
                                 if (yylval.stringval_type)
 	                              delete [] yylval.stringval_type;
@@ -611,11 +468,8 @@ B			[ \t\n]+
 . 		{SqlciParse_IdentifierExpected = 0; return(ERROR_STMT);};
 
 %%
-#pragma warn(1506)  //warning elimination
-#pragma nowarn(262)  //warning elimination
-#ifdef NA_FLEXBUILD
+
 void SqlciLexReinit()
 {
     sqlcirestart(0);
 }
-#endif

@@ -63,7 +63,6 @@
 #include "str.h"
 #include "charinfo.h"
 #include "SqlciEnv.h"
-#include "RWInterface.h"
 #include "Sqlci.h"
 #include "sql_id.h"
 #include "ComRtUtils.h"
@@ -340,9 +339,7 @@ short SetTerminalCharset::process(SqlciEnv * sqlci_env)
   char* tcs = get_argument();
   Int32 tcs_len;
 
-#pragma nowarn(1506)   // warning elimination 
   if ( tcs != NULL && ((tcs_len=strlen(tcs)) <= 128) )
-#pragma warn(1506)  // warning elimination 
   {
      char tcs_uppercase[129];
      str_cpy_convert(tcs_uppercase, tcs, tcs_len, 1);
@@ -402,9 +399,7 @@ short SetIsoMapping::process(SqlciEnv * sqlci_env)
   char* omcs = get_argument();
   Int32 omcs_len;
 
-#pragma nowarn(1506)   // warning elimination
   if ( omcs != NULL && ((omcs_len=strlen(omcs)) <= 128) )
-#pragma warn(1506)  // warning elimination
   {
      char omcs_uppercase[129];
      str_cpy_convert(omcs_uppercase, omcs, omcs_len, 1);
@@ -450,9 +445,7 @@ short SetDefaultCharset::process(SqlciEnv * sqlci_env)
   char* dcs = get_argument();
   Int32 dcs_len;
 
-#pragma nowarn(1506)   // warning elimination 
   if ( dcs != NULL && ((dcs_len=strlen(dcs)) <= 128) )
-#pragma warn(1506)  // warning elimination 
   {
      char dcs_uppercase[129];
      str_cpy_convert(dcs_uppercase, dcs, dcs_len, 1);
@@ -512,9 +505,7 @@ short SetInferCharset::process(SqlciEnv * sqlci_env)
   char* ics = get_argument();
   Int32 ics_len;
 
-#pragma nowarn(1506)   // warning elimination 
   if ( ics != NULL && ((ics_len=strlen(ics)) <= 128) )
-#pragma warn(1506)  // warning elimination 
   {
      char ics_uppercase[129];
      str_cpy_convert(ics_uppercase, ics, ics_len, 1);
@@ -1000,7 +991,7 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
     // Return - "not authorized" error 
     ComDiagsArea diags;
     diags << DgSqlCode(-1017);
-    handleLocalError(diags, sqlci_env);
+    handleLocalError(&diags, sqlci_env);
     return -1;
   }
 
@@ -1012,7 +1003,7 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
       // Please use "RESET PARSERFLAGS <value>" to reset the flags.
       ComDiagsArea diags;
       diags << DgSqlCode(3190);
-      handleLocalError(diags, sqlci_env);
+      handleLocalError(&diags, sqlci_env);
     }
     retCode = SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(param);
   }
@@ -1029,7 +1020,7 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
     // You are not authorized to perform this operation.
     ComDiagsArea diags;
     diags << DgSqlCode(retCode);
-    handleLocalError(diags, sqlci_env);
+    handleLocalError(&diags, sqlci_env);
   }
   return 0;
 }
@@ -1039,71 +1030,21 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
 //Process of the MODE Command//
 ///////////////////////////////
 
-/* Mode can have 3 types.  SQL and REPORT mode and 
-   DISPLAY mode and potentially MXCS mode for ODBC.
-   SQL is the normal mode in which MXCI executes.
-   REPORT will be the Report Writer Mode.*/
-
+//   SQL is the normal mode in which MXCI executes.
 short Mode::process(SqlciEnv * sqlci_env)
 {
   short retcode = 1;
   switch (type)
   {
-// 64-bit: report writer are no longer supported
-/*
-//    case REPORT_:
-//      retcode = process_report(sqlci_env);
-//      break;
-*/
     case SQL_:
       retcode = process_sql(sqlci_env);
       break;
-    case DISPLAY_:
-      retcode = process_display(sqlci_env);
-      break;
-    //Neo 2.0: MODE MXCS should be disabled in Neo Soln 10-061220-1308.
-    /*case MXCS_:
-      retcode = process_mxcs(sqlci_env);
-      break; */
     default: 
       SqlciError(SQLCI_INVALID_MODE 
 			,(ErrorParam *) 0 );
       break;
   }
   return retcode;
-}
-
-short Mode::process_report(SqlciEnv * sqlci_env)
-{
-    if (sqlci_env->isReportWriterMode())
-    {
-	SqlciError(SQLCI_RW_MODE_ALREADY_REPORT 
-			,(ErrorParam *) 0 );
-       return 0;
-    }
-
-    // If we are in MXCS mode and are switching to RW mode,
-    // make sure that that MACL knows that they have to stop
-    // the existing context for that. CR 10-040311-7309
-
-// 64-bit: macl is no longer supported
-//    if (sqlci_env->isMXCSMode())
-//      CS_MXCI_StopContext(sqlci_env->sqlciCSEnv()->csEnv());
-
-    sqlci_env->setMode(SqlciEnv::REPORT_);
-
-    if (sqlci_env->get_logfile()->IsOpen())
-    {
-      // retcode should be 0 for success and -1 for error.
-// 64bit: no more report writer, return -1
-//      long retcode = RW_MXCI_sendOutputDevice (sqlci_env->sqlciRWEnv()->rwEnv(), sqlci_env, LOG_FILE);
-      Lng32 retcode = -1;
-      if (retcode) // retcode == -1
-      {
-       SqlciError (SQLCI_RW_INVALID_OUTPUT_DEVICE,(ErrorParam *) 0 );
-      }
-    } 
-    return 0;
 }
 
 short Mode::process_sql(SqlciEnv * sqlci_env)
@@ -1115,46 +1056,7 @@ short Mode::process_sql(SqlciEnv * sqlci_env)
        return 0;
     }
     
-    // If we are in MXCS mode and are switching to SQL mode
-    // make sure that MACL knows that they have to stop
-    // the existing context for that. CR 10-040311-7309
-
-// 64bit: no more macl
-//    if (sqlci_env->isMXCSMode())
-//      CS_MXCI_StopContext(sqlci_env->sqlciCSEnv()->csEnv());
-
-
     sqlci_env->setMode(SqlciEnv::SQL_);
-    sqlci_env->sqlciRWEnv()->setSelectInProgress(FALSE);
-
-    return 0;
-}
-
-short Mode::process_mxcs(SqlciEnv * sqlci_env)
-{
-  if (sqlci_env->isMXCSMode())
-    {
-	SqlciError(SQLCI_CS_MODE_ALREADY_MXCS
-			,(ErrorParam *) 0 );
-       return 0;
-    }
-  else
-  {
-	  if (sqlci_env->statusTransaction())
-	  {
-		SqlciError(SQLCI_TRANSACTION_IN_PROGRESS 
-			,(ErrorParam *) 0 );
-		return 0;
-	  }
-    sqlci_env->setMode(SqlciEnv::MXCS_);
-    return 0;
-  }
-}
-
-
-short Mode::process_display(SqlciEnv * sqlci_env)
-{
-    sqlci_env->showMode(sqlci_env->getMode());
 
     return 0;
 }
@@ -1204,9 +1106,7 @@ short QueryId::process(SqlciEnv * sqlci_env)
 		  stmt_name, &module);
 
   char * id = new char[strlen(stmtName) + 1];
-#pragma nowarn(1506)   // warning elimination 
   stmt.identifier_len = strlen(stmtName);
-#pragma warn(1506)  // warning elimination 
   str_cpy_all(id,stmtName, 
 	 stmt.identifier_len);
   id[stmt.identifier_len] = 0;

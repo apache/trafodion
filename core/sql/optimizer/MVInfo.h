@@ -167,9 +167,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   ViewColumnConnection(const ViewColumnConnection& other);
-#pragma nowarn(1026)   // warning elimination 
   ViewColumnConnection& operator=(const ViewColumnConnection& other);
-#pragma warn(1026)  // warning elimination 
 
   ColRefName	    baseColName_; // The name of the column in the base table.
   const ColRefName  viewColName_; // The name of the column in the view.
@@ -223,9 +221,7 @@ public:
 private:
     // Copy Ctor and = operator are not implemented.
   ViewTableConnection(const ViewTableConnection& other);
-#pragma nowarn(1026)   // warning elimination 
   ViewTableConnection& operator=(const ViewTableConnection& other);
-#pragma warn(1026)  // warning elimination 
 
   typedef NAHashDictionary<const NAString, const ViewColumnConnection> columnConnection;
 
@@ -277,9 +273,7 @@ public:
 private:
     // Copy Ctor and = operator are not implemented.
   ViewColumnGraph(const ViewColumnGraph& other);
-#pragma nowarn(1026)   // warning elimination 
   ViewColumnGraph& operator=(const ViewColumnGraph& other);
-#pragma warn(1026)  // warning elimination 
 
   void addConnection(ViewColumnConnection *colConnection, CollHeap *heap);
   const ViewColumnConnection *findColumn(const ValueId vid) const;
@@ -367,9 +361,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVVegPredicateColumn& operator=(const MVVegPredicateColumn& other);
-#pragma warn(1026)  // warning elimination 
   MVVegPredicateColumn(const MVVegPredicateColumn& other);
 
   const QualifiedName		tableName_;
@@ -447,9 +439,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVVegPredicate& operator=(const MVVegPredicate& other);
-#pragma warn(1026)  // warning elimination 
   MVVegPredicate(const MVVegPredicate& other);
 
   // Is this predicate from a left join?
@@ -535,9 +525,7 @@ public:
 
 private:
   // Prevent accidental use of default = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVUsedObjectCatmanFlags& operator=(const MVUsedObjectCatmanFlags& other);
-#pragma warn(1026)  // warning elimination 
 
   ComMVSUsedTableAttribute  objectAttributes_; // Ignore changes/Insert only.
   ComMVSUsageType	    usageType_;        // Direct/Expanded/User specified.
@@ -701,9 +689,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVUsedObjectInfo& operator=(const MVUsedObjectInfo& other);
-#pragma warn(1026)  // warning elimination 
   MVUsedObjectInfo(const MVUsedObjectInfo& other);
 
   const QualifiedName	  objectName_; 
@@ -856,9 +842,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVColumnInfo& operator=(const MVColumnInfo& other);
-#pragma warn(1026)  // warning elimination 
   MVColumnInfo(const MVColumnInfo& other);
 
   ItemExpr   *findMavColumnType(ItemExpr *expr, MVInfoForDDL& mvInfoObj);
@@ -959,9 +943,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVColumns& operator=(const MVColumns& other);
-#pragma warn(1026)  // warning elimination 
   MVColumns(const MVColumns& other);
 
   typedef NAHashDictionary<const NAString, MVColumnInfo>     ColumnInfoHash;
@@ -1116,9 +1098,7 @@ protected:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVInfo& operator=(const MVInfo& other);
-#pragma warn(1026)  // warning elimination
   MVInfo(); // do not use
   MVInfo(const MVInfo& other);
 
@@ -1234,9 +1214,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MVInfoForDDL& operator=(const MVInfoForDDL& other);
-#pragma warn(1026)  // warning elimination 
   MVInfoForDDL(const MVInfoForDDL& other);
 
   // Called by processBoundInformation() and processNormalizedInformation().
@@ -1357,9 +1335,7 @@ public:
 private:
   // Prevent accidental use of default copy Ctor and = operator.
   MVInfoForDML(const MVInfoForDML& other);
-#pragma nowarn(1026)   // warning elimination 
   MVInfoForDML& operator=(const MVInfoForDML& other);
-#pragma warn(1026)  // warning elimination 
 
   TableNameHash usedObjectsHash_;
   CharInfo::CharSet mvSelectTextCharSet_;

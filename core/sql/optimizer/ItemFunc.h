@@ -1610,6 +1610,9 @@ public:
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
 
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
 
@@ -1632,6 +1635,9 @@ public:
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
 
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
   virtual NABoolean protectFromVEGs() { return TRUE; };
@@ -1643,8 +1649,10 @@ public:
 class PositionFunc : public CacheableBuiltinFunction
 {
 public:
-  PositionFunc(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr)
-         : CacheableBuiltinFunction(ITM_POSITION, 3, val1Ptr, val2Ptr, val3Ptr)
+  PositionFunc(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr,
+               ItemExpr *val4Ptr)
+         : CacheableBuiltinFunction(ITM_POSITION, 4, 
+                                    val1Ptr, val2Ptr, val3Ptr, val4Ptr)
 	 { allowsSQLnullArg() = FALSE; }
 
   // virtual destructor
@@ -1750,6 +1758,67 @@ public:
 
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
 }; // class ConvertTimestamp
+
+class SleepFunction : public CacheableBuiltinFunction
+{
+public:
+
+  SleepFunction( ItemExpr *val1Ptr )
+   : CacheableBuiltinFunction(ITM_SLEEP, 1, val1Ptr)
+  {}
+  // virtual destructor
+  virtual ~SleepFunction();
+
+  // A method that returns for "user-given" input values.
+  // These are values that are either constants, host variables, parameters,
+  // or even values that are sensed from the environment such as
+  // current time, the user name, etcetera.
+  virtual NABoolean isAUserSuppliedInput() const;
+
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
+
+}; // class SleepFunction 
+
+class UnixTimestamp : public CacheableBuiltinFunction
+{
+public:
+  UnixTimestamp()
+   : CacheableBuiltinFunction(ITM_UNIX_TIMESTAMP)
+  {}
+
+  UnixTimestamp( ItemExpr *val1Ptr )
+   : CacheableBuiltinFunction(ITM_UNIX_TIMESTAMP, 1, val1Ptr)
+  {}
+  // virtual destructor
+  virtual ~UnixTimestamp();
+
+  // A method that returns for "user-given" input values.
+  // These are values that are either constants, host variables, parameters,
+  // or even values that are sensed from the environment such as
+  // current time, the user name, etcetera.
+  virtual NABoolean isAUserSuppliedInput() const;
+
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
+
+}; // class UnixTimestamp
 
 class CurrentTimestamp : public CacheableBuiltinFunction
 {
@@ -1857,6 +1926,9 @@ public:
 
   ItemExpr * bindNode(BindWA * bindWA);
 
+  void setOriginalString(NAString &s) {origString_ = s; }
+  const NAString & getOriginalString() const { return origString_; }
+
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
 
@@ -1893,6 +1965,9 @@ private:
 
   // actual datetime format (defined in class ExpDatetime in exp_datetime.h)
   Lng32 frmt_;
+
+  //original string
+  NAString origString_;
 }; // class DateFormat
 
 class DayOfWeek : public CacheableBuiltinFunction
@@ -2570,10 +2645,10 @@ public:
   void setSrcIsVarcharPtr(NABoolean v)
        { (v ? flags_ |= SRC_IS_VARCHAR_PTR : flags_ &= ~SRC_IS_VARCHAR_PTR); }
 
-  NA_EIDPROC NABoolean allowSignInInterval()
+  NABoolean allowSignInInterval()
     { return ((flags_ & ALLOW_SIGN_IN_INTERVAL) != 0); };
 
-  NA_EIDPROC void setAllowSignInInterval(NABoolean v)
+  void setAllowSignInInterval(NABoolean v)
     { (v) ? flags_ |= ALLOW_SIGN_IN_INTERVAL : flags_ &= ~ALLOW_SIGN_IN_INTERVAL; }
 
   NABoolean convertNullWhenError() 
@@ -2869,9 +2944,9 @@ public:
    obj_(obj),
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
-   lobMaxSize_((Int64)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
-     lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)),
-     lobGCLimit_(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)),
+     lobMaxSize_((Int64)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
+     lobMaxChunkMemSize_((Int64)CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024),
+     lobGCLimit_((Int64) CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)*1024*1024),
      hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
      hdfsServer_( CmpCommon::getDefaultString(LOB_HDFS_SERVER))
    {
@@ -2911,8 +2986,14 @@ public:
   LobsStorage &lobStorageType() { return lobStorageType_; }
   NAString &lobStorageLocation() { return lobStorageLocation_; }
   Int64 getLobMaxSize() {return lobMaxSize_; }
-  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_*1024*1024;}
-  Int64 getLobGCLimit() { return lobGCLimit_*1024*1024;}
+  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_;}
+  Int64 getLobGCLimit() 
+  { 
+    if (lobGCLimit_>0) 
+      return (Int64)lobGCLimit_;
+    else
+      return -1;
+  }
   Int32 getLobHdfsPort() { return hdfsPort_;}
   NAString &getLobHdfsServer(){return hdfsServer_;}
  protected:
@@ -2921,9 +3002,9 @@ public:
   short lobNum_;
   LobsStorage lobStorageType_;
   NAString lobStorageLocation_;
-  Int32 lobMaxSize_; // In MB units
-  Int32 lobMaxChunkMemSize_; //In MB Units
-  Int32 lobGCLimit_ ;//In MB Units
+  Int64 lobMaxSize_; // In byte units
+  Int64 lobMaxChunkMemSize_; //In MB Units
+  Int64 lobGCLimit_ ;//In MB Units
   Int32 hdfsPort_;
   NAString hdfsServer_;
   
@@ -2943,7 +3024,7 @@ class LOBinsert : public LOBoper
     objectUID_(-1),
     append_(isAppend),
     lobAsVarchar_(treatLobAsVarchar),
-    lobSize_(0),
+     lobSize_((Int64)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
     fsType_(REC_BLOB)
     {};
   
@@ -2968,7 +3049,7 @@ class LOBinsert : public LOBoper
 
   //  Lng32 & lobNum() { return lobNum_; }
 
-  Lng32 & lobSize() { return lobSize_; }
+  Int64 & lobSize() { return lobSize_; }
 
   Lng32 & lobFsType() { return fsType_; }
   NABoolean lobAsVarchar() const { return lobAsVarchar_;}
@@ -2984,7 +3065,7 @@ class LOBinsert : public LOBoper
   // column this blob is being inserted into.
   //  Lng32 lobNum_;
 
-  Lng32 lobSize_;
+  Int64 lobSize_;
 
   Lng32 fsType_;
 
@@ -3048,7 +3129,7 @@ class LOBupdate : public LOBoper
             NABoolean treatLobAsVarchar =FALSE)
     : LOBoper(ITM_LOBUPDATE, val1Ptr, val2Ptr,val3Ptr,fromObj),
       objectUID_(-1),
-      lobSize_(0),
+      lobSize_((Int64)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
       append_(isAppend),
       lobAsVarchar_(treatLobAsVarchar)
     {};
@@ -3070,7 +3151,7 @@ class LOBupdate : public LOBoper
   Int64 & updatedTableObjectUID() { return objectUID_; }
   
   NAString &updatedTableSchemaName() { return schName_; }
-  Lng32 & lobSize() { return lobSize_; }
+  Int64 & lobSize() { return lobSize_; }
   NABoolean lobAsVarchar() const { return lobAsVarchar_;}
  private:
   // ---------------------------------------------------------------//
@@ -3083,7 +3164,7 @@ class LOBupdate : public LOBoper
 
 
   NABoolean append_;
-  Lng32 lobSize_;
+  Int64 lobSize_;
   NABoolean lobAsVarchar_;//This means this lob insert will get it's input data 
                           // in varchar format
 }; // class LOBupdate
@@ -3092,7 +3173,7 @@ class LOBconvert : public LOBoper
 {
  public:
   
- LOBconvert(ItemExpr *val1Ptr, ObjectType toObj,  Lng32 tgtSize = 32000) 
+ LOBconvert(ItemExpr *val1Ptr, ObjectType toObj,  Lng32 tgtSize= CmpCommon::getDefaultNumeric(LOB_OUTPUT_SIZE) ) 
    : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL,NULL,toObj),
     tgtSize_(tgtSize)     
     {};
@@ -3137,23 +3218,6 @@ class LOBconvertHandle : public LOBoper
  private:
 }; // class LOBconvertHandle
 
-class LOBload : public LOBinsert
-{
- public:
-  
- LOBload(ItemExpr *val1Ptr, ObjectType fromObj)
-   : LOBinsert(val1Ptr, NULL, fromObj, FALSE, ITM_LOBLOAD)
-    {};
-  
-  // copyTopNode method
-  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
-				 CollHeap* outHeap = 0);
-  
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
- private:
-}; // class LOBload
 
 class LOBextract : public LOBoper
 {
@@ -4617,6 +4681,9 @@ public:
 
   // a virtual function for performing name binding within the query tree
   virtual ItemExpr * bindNode(BindWA *bindWA);
+  
+  // helper function used by bindNode; returns true if there is an error
+  bool enforceDateOrTimestampDatatype(BindWA *bindWA, CollIndex child, int operand);
 
   // the synthesizeType method is needed only when we process an item
   // expression at DDL time, for DML the function gets transformed into
@@ -5354,94 +5421,6 @@ public:
 
 } ;     // class ItmSeqNotTHISFunction
 
-
-
-//
-// This function creates an audit row image given the
-// name of the object (table or index - initially just index) and 
-// the list of expressions (column values) that make the row.
-//
-
-class AuditImage : public Function
-{
-public:
-  AuditImage(const CorrName &objectName,
-	     ItemExpr    *columnValueList);
- 
-  AuditImage(const CorrName &objectName)
-    : objectName_(objectName),
-      naTable_ (NULL),
-      columnTypeList_(CmpCommon::statementHeap()),
-      Function(ITM_AUDIT_IMAGE, CmpCommon::statementHeap(), 0){};
-
- 
-  // copy ctor
-  AuditImage (const AuditImage &, CollHeap * h=0) ; // not written
-
-  // virtual destructor
-  virtual ~AuditImage();
-
-  // get the degree of this node (it depends on the type of the operator)
-  virtual Int32 getArity() const;
-
-  // Does semantic checks and binds the function.
-  virtual ItemExpr * bindNode(BindWA * bindWA);
-
-  // a virtual function that does type synthesis.
-  //
-  virtual const NAType * synthesizeType();
-
-  // virtual method to do code generation
-  //
-  virtual short codeGen(Generator*);
-
-  // get a printable string that identifies the operator
-  //
-  virtual const NAString getText() const
-  {
-    return "AUDIT_IMAGE";
-  };
-
-  virtual HashValue topHash();
-  
-  virtual NABoolean duplicateMatch(const ItemExpr & other) const;
-  
-  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
-				 CollHeap* outHeap = 0);
-
-  // produce an ascii-version of the object (for display or saving into a file)
-  virtual void unparse(NAString &result,
-		       PhaseEnum phase = DEFAULT_PHASE,
-		       UnparseFormatEnum form = EXPLAIN_FORMAT,
-		       TableDesc * tabId = NULL) const;
-
-
-  const CorrName & getObjectName() const  { return objectName_; }
-        CorrName & getObjectName()        { return objectName_; }
-
-  inline const NATable  *getNATable()           const { return naTable_; }
-  void setNATable (NATable *naTable) {naTable_ = naTable;}
-
-private:
-  // ---------------------------------------------------------------//
-  // the user-specified name of the table or an index or any other
-  // SQL/MX object.
-  // -------------------------------------------------------------- //
-  CorrName objectName_;
-  // ---------------------------------------------------------------------
-  // This stores the original column values. The original column values 
-  // can be replaced with an equivalent value as a result of 
-  // VEGReference resolution. If this happens, we refer to this list to 
-  // cast the replaced value to the data type in this original list.
-  // ---------------------------------------------------------------------
-  LIST(const NAType *) columnTypeList_;
-
-  // NATable for the object (INDEX) referenced by objectName_. 
-  // This is needed to do semantic checks
-  const NATable *naTable_;
-
-};
-
 // lookup a column in a native hbase table that is being accessed in row format
 class HbaseColumnLookup : public BuiltinFunction
 {
@@ -5863,5 +5842,24 @@ public:
   NABoolean canBeUsedInGBorOB(NABoolean setErr);
 
 }; // class RowNumFunc
+
+class SplitPart : public CacheableBuiltinFunction
+{
+public: 
+  SplitPart(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr)
+    :CacheableBuiltinFunction(ITM_SPLIT_PART, 3, val1Ptr, val2Ptr, val3Ptr)
+    {
+      allowsSQLnullArg() = FALSE;
+    } 
+
+   virtual ~SplitPart();
+
+   // a virtual function for type propagating the node
+   virtual const NAType * synthesizeType();
+   
+   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+                      CollHeap *outheap = 0);
+   virtual ItemExpr * preCodeGen(Generator*);
+}; //class SplitPart
 
 #endif /* ITEMFUNC_H */

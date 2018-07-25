@@ -76,9 +76,7 @@ short Describe::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
   
   ex_cri_desc * returned_desc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(given_desc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
 
   ExpTupleDesc * tuple_desc = 0;
   ULng32 tupleLength;
@@ -91,9 +89,7 @@ short Describe::codeGen(Generator * generator)
 			    &tuple_desc, ExpTupleDesc::SHORT_FORMAT);
 
   // add this descriptor to the returned cri descriptor.
-#pragma nowarn(1506)   // warning elimination 
   returned_desc->setTupleDescriptor(returned_desc->noTuples()-1, tuple_desc);
-#pragma warn(1506)  // warning elimination 
   
   char * query = 
     space->allocateAndCopyToAlignedSpace(originalQuery_, 
@@ -106,7 +102,7 @@ short Describe::codeGen(Generator * generator)
   else if (format_ == SHOWSTATS_) type = ComTdbDescribe::SHOWSTATS_;
   else if (format_ == TRANSACTION_) type = ComTdbDescribe::TRANSACTION_;
   else if (format_ == SHORT_) type = ComTdbDescribe::SHORT_;
-  else if (format_ == LONG_) type = ComTdbDescribe::LONG_;
+  else if (format_ == SHOWDDL_) type = ComTdbDescribe::LONG_;
   else if (format_ == PLAN_) type = ComTdbDescribe::PLAN_;
   else if (format_ == LABEL_) type = ComTdbDescribe::LABEL_;
   else if (format_ == SHAPE_) type = ComTdbDescribe::SHAPE_;
@@ -135,12 +131,8 @@ short Describe::codeGen(Generator * generator)
 	          returned_desc,
 	          (queue_index)getDefault(GEN_DESC_SIZE_DOWN),
 	          (queue_index)getDefault(GEN_DESC_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	          getDefault(GEN_DESC_NUM_BUFFERS),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 	          getDefault(GEN_DESC_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(desc_tdb);
 
   if(!generator->explainDisabled()) {
@@ -231,7 +223,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   if (DFS2REC::isDoubleCharacter(newGivenType->getFSDatatype()))
     {
       asciiType =  
-        new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
+        new (h) SQLVarChar(h, sizeof(Int64)/2, newGivenType->supportsSQLnull(),
                            FALSE, FALSE, newGivenType->getCharSet(),
                            CharInfo::DefaultCollation,
                            CharInfo::COERCIBLE,
@@ -243,7 +235,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   else if (  needTranslate == TRUE )
     {
       asciiType =  
-        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+        new (h) SQLVarChar(h, sizeof(Int64), newGivenType->supportsSQLnull(),
                            FALSE, FALSE, CharInfo::GBK,
                            CharInfo::DefaultCollation,
                            CharInfo::COERCIBLE,
@@ -253,7 +245,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   else
     {
       asciiType = 
-        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+        new (h) SQLVarChar(h, sizeof(Int64), newGivenType->supportsSQLnull(),
                            FALSE, FALSE,
                            CharInfo::DefaultCharSet,
                            CharInfo::DefaultCollation,
@@ -355,7 +347,7 @@ int HbaseAccess::createAsciiColAndCastExpr3(Generator * generator,
       cvl = newGivenType->getNominalSize();
     }
 
-  asciiType = new (h) SQLVarChar(cvl, newGivenType->supportsSQLnull());
+  asciiType = new (h) SQLVarChar(h, cvl, newGivenType->supportsSQLnull());
 
   //  asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
   asciiValue = new (h) NATypeToItem(asciiType);
@@ -401,7 +393,8 @@ short FileScan::genForTextAndSeq(Generator * generator,
                                 char* &hdfsHostName,
                                 Int32 &hdfsPort,
                                 NABoolean &useCursorMulti,
-                                NABoolean &doSplitFileOpt)
+                                NABoolean &doSplitFileOpt,
+                                NABoolean &isCompressedFile)
 {
   Space * space          = generator->getSpace();
 
@@ -488,6 +481,9 @@ short FileScan::genForTextAndSeq(Generator * generator,
 	      hfi.bytesToRead_ = span;
 	      hfi.fileName_ = fnameInList;
 	      
+              isCompressedFile = FALSE;
+                  //if (file->getCompressionInfo().getCompressionMethod() != ComCompressionInfo::UNCOMPRESSED)
+                  //   isCompressedFile = TRUE;
 	      char * hfiInList = space->allocateAndCopyToAlignedSpace
 		((char*)&hfi, sizeof(HdfsFileInfo));
 	      
@@ -1152,13 +1148,14 @@ short FileScan::codeGenForHive(Generator * generator)
   }
   NABoolean useCursorMulti = FALSE;
   NABoolean doSplitFileOpt = FALSE;
+  NABoolean isCompressedFile = FALSE;
 
   if ((hTabStats->isTextFile()) || (hTabStats->isSequenceFile()))
     {
       genForTextAndSeq(generator, 
                        hdfsFileInfoList, hdfsFileRangeBeginList, hdfsFileRangeNumList,
                        hdfsHostName, hdfsPort,
-                       useCursorMulti, doSplitFileOpt);
+                       useCursorMulti, doSplitFileOpt, isCompressedFile);
     }
   else if (hTabStats->isOrcFile())
     {
@@ -1237,7 +1234,8 @@ if (hTabStats->isOrcFile())
      if (hdfsBufSizeTesting)
        hdfsBufSize = hdfsBufSizeTesting;
    }
-
+  UInt16 hdfsIoByteArraySize = (UInt16)
+      CmpCommon::getDefaultNumeric(HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB);
   UInt32 rangeTailIOSize = (UInt32)
       CmpCommon::getDefaultNumeric(HDFS_IO_RANGE_TAIL);
   if (rangeTailIOSize == 0) 
@@ -1285,7 +1283,7 @@ if (hTabStats->isOrcFile())
       (hTabStats->numOfPartCols() <= 0) &&
       (!getCommonSubExpr()))
     {
-      modTS = hTabStats->getModificationTS();
+      modTS = hTabStats->getModificationTSmsec();
       numOfPartLevels = hTabStats->numOfPartCols();
 
       // if specific directories are to checked based on the query struct
@@ -1304,7 +1302,7 @@ if (hTabStats->isOrcFile())
                  tiName,
                  TRUE, // isHive
                  (char*)hTabStats->tableDir().data(), // root dir
-                 hTabStats->getModificationTS(),
+                 modTS,
                  numOfPartLevels,
                  hdfsDirsToCheck,
                  hdfsHostName, hdfsPort);
@@ -1318,11 +1316,13 @@ if (hTabStats->isOrcFile())
             space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
                                                  hTabStats->tableDir().length(),
                                                  0);
-          modTS = hTabStats->getModificationTS();
-          numOfPartLevels = hTabStats->numOfPartCols();
         }
     }
 
+  if (getTableDesc()->getNATable()->isEnabledForDDLQI())
+    generator->objectUids().insert(
+         getTableDesc()->getNATable()->objectUid().get_value());
+  
   // create hdfsscan_tdb
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(
@@ -1367,7 +1367,7 @@ if (hTabStats->isOrcFile())
 
                    hdfsRootDir, modTS, numOfPartLevels, hdfsDirsToCheck
 		   );
-
+  hdfsscan_tdb->setHdfsIoByteArraySize(hdfsIoByteArraySize);
   generator->initTdbFields(hdfsscan_tdb);
 
   hdfsscan_tdb->setUseCursorMulti(useCursorMulti);
@@ -1398,6 +1398,11 @@ if (hTabStats->isOrcFile())
 
   hdfsscan_tdb->setUseCif(useCIF);
   hdfsscan_tdb->setUseCifDefrag(useCIFDegrag);
+
+  if (CmpCommon::getDefault(USE_LIBHDFS) == DF_ON)
+     hdfsscan_tdb->setUseLibhdfsScan(TRUE);
+
+  hdfsscan_tdb->setCompressedFile(isCompressedFile);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -1735,7 +1740,7 @@ short HbaseAccess::genRowIdExpr(Generator * generator,
 	      ie = new(generator->wHeap())
 		Cast (ie,
 		      (new(generator->wHeap())
-		       SQLChar(CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
+		       SQLChar(generator->wHeap(), CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
 			       givenType.supportsSQLnull(),
 			       FALSE, FALSE, FALSE,
 			       char_t.getCharSet(),
@@ -1828,7 +1833,7 @@ short HbaseAccess::genRowIdExprForNonSQ(Generator * generator,
 	  ie = new(generator->wHeap())
 	    Cast (ie,
 		  (new(generator->wHeap())
-		   ANSIChar(char_t.getDataStorageSize(),
+		   ANSIChar(generator->wHeap(), char_t.getDataStorageSize(),
 			    givenType.supportsSQLnull(),
 			    FALSE, FALSE, 
 			    char_t.getCharSet(),
@@ -3123,21 +3128,31 @@ short HbaseAccess::codeGen(Generator * generator)
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
   if (CmpCommon::getDefault(COMP_BOOL_184) == DF_ON)
     hbpa->setUseMinMdamProbeSize(TRUE);
+
+  Lng32 hbaseRowSize;
+  Lng32 hbaseBlockSize;
+   if(getIndexDesc() && getIndexDesc()->getNAFileSet())
+   {
+     const NAFileSet * fileset = getIndexDesc()->getNAFileSet() ;
+     hbaseRowSize = fileset->getRecordLength();
+     hbaseRowSize += ((NAFileSet *)fileset)->getEncodedKeyLength();
+     hbaseBlockSize = fileset->getBlockSize();
+   }
+   else
+   {
+     hbaseRowSize = computedHBaseRowSizeFromMetaData;
+     hbaseBlockSize = CmpCommon::getDefaultLong(HBASE_BLOCK_SIZE);
+   }
+
   generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),
                                         getMaxCardEst().getValue()), 
-                                  hbpa, samplePercent()) ;
-  generator->setHBaseCacheBlocks(computedHBaseRowSizeFromMetaData,
+                                  hbpa, hbaseRowSize,samplePercent()) ;
+  generator->setHBaseCacheBlocks(hbaseRowSize,
                                  getEstRowsAccessed().getValue(),hbpa);
-
-  Lng32 hbaseBlockSize = 65536; //default HBaseValue, should not be useful as the if statement should always pass
-  if(getIndexDesc() && getIndexDesc()->getNAFileSet())
-    hbaseBlockSize = getIndexDesc()->getNAFileSet()->getBlockSize();
-
-  generator->setHBaseSmallScanner(computedHBaseRowSizeFromMetaData,
-                                getEstRowsAccessed().getValue(),
-                                hbaseBlockSize,
-                                hbpa);
-
+  generator->setHBaseSmallScanner(hbaseRowSize,
+                                  getEstRowsAccessed().getValue(),
+                                  hbaseBlockSize,
+                                  hbpa);
   generator->setHBaseParallelScanner(hbpa);
 
 
@@ -3270,7 +3285,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   if ((accessOptions().userSpecified()) &&
     //      (accessOptions().getDP2LockFlags().getConsistencyLevel() == DP2LockFlags::READ_UNCOMMITTED))
-      (accessOptions().accessType() == BROWSE_))
+      (accessOptions().accessType() == TransMode::READ_UNCOMMITTED_ACCESS_))
     {
       hbasescan_tdb->setReadUncommittedScan(TRUE);
     }

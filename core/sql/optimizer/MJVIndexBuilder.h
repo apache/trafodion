@@ -175,9 +175,7 @@ public:
   
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   ColIndSetBucketVector& operator=(const ColIndSetBucketVector& other);
-#pragma warn(1026)  // warning elimination 
   ColIndSetBucketVector();
   ColIndSetBucketVector(const ColIndSetBucketVector& other);
 
@@ -236,9 +234,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   ColIndSetMatrix& operator=(const ColIndSetMatrix& other);
-#pragma warn(1026)  // warning elimination 
   //
   // ctors
   //
@@ -323,9 +319,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   NestingStack& operator=(const NestingStack& other);
-#pragma warn(1026)  // warning elimination 
   NestingStack();
   NestingStack(const NestingStack& other);
   
@@ -401,9 +395,7 @@ public:
 
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MJVIndCook& operator=(const MJVIndCook& other);
-#pragma warn(1026)  // warning elimination 
   MJVIndCook();
   MJVIndCook(const MJVIndCook& other);
   
@@ -452,9 +444,7 @@ public:
   
 private:
   // Prevent accidental use of default copy Ctor and = operator.
-#pragma nowarn(1026)   // warning elimination 
   MJVIndexBuilder& operator=(const MJVIndexBuilder& other);
-#pragma warn(1026)  // warning elimination 
   MJVIndexBuilder();
   MJVIndexBuilder(const MJVIndexBuilder& other);
   

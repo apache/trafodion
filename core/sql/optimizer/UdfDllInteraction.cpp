@@ -222,7 +222,7 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
       const ValueIdList &childCols = childInfo->getOutputs();
       const tmudr::PartitionInfo &childPartInfo = invocationInfo->in(c).getQueryPartitioning();
       const tmudr::OrderInfo &childOrderInfo = invocationInfo->in(c).getQueryOrdering();
-      TMUDFInputPartReq childPartType;
+      TMUDFInputPartReq childPartType = NO_PARTITIONING; 
       ValueIdSet childPartKey;
       ValueIdList childOrderBy;
 
@@ -1520,7 +1520,7 @@ NABoolean TMUDFInternalSetup::setPredicateInfoFromValueIdSet(
 
             if (val != NULL && columnNum != NULL_COLL_INDEX)
               {
-                tmudr::PredicateInfo::PredOperator predOp;
+                tmudr::PredicateInfo::PredOperator predOp = tmudr::PredicateInfo::UNKNOWN_OP;
 
                 pi = new tmudr::ComparisonPredicateInfo;
 
@@ -1851,31 +1851,27 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
     case tmudr::TypeInfo::TINYINT:
     case tmudr::TypeInfo::TINYINT_UNSIGNED:
       result = new(heap)
-        SQLTiny((typeCode == tmudr::TypeInfo::TINYINT),
-                src.getIsNullable(),
-                heap);
+        SQLTiny(heap, (typeCode == tmudr::TypeInfo::TINYINT),
+                src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::SMALLINT:
     case tmudr::TypeInfo::SMALLINT_UNSIGNED:
       result = new(heap)
-        SQLSmall((typeCode == tmudr::TypeInfo::SMALLINT),
-                 src.getIsNullable(),
-                 heap);
+        SQLSmall(heap, (typeCode == tmudr::TypeInfo::SMALLINT),
+                 src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::INT:
     case tmudr::TypeInfo::INT_UNSIGNED:
       result = new(heap)
-        SQLInt((typeCode == tmudr::TypeInfo::INT),
-               src.getIsNullable(),
-               heap);
+        SQLInt(heap, (typeCode == tmudr::TypeInfo::INT),
+               src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::LARGEINT:
-      result = new(heap) SQLLargeInt(TRUE,
-                                     src.getIsNullable(),
-                                     heap);
+      result = new(heap) SQLLargeInt(heap, TRUE,
+                                     src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::NUMERIC:
@@ -1893,33 +1889,29 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
           }
         else
           result = new(heap) 
-            SQLNumeric(storageSize,
+            SQLNumeric(heap, storageSize,
                        src.getPrecision(),
                        src.getScale(),
                        (typeCode == tmudr::TypeInfo::NUMERIC),
-                       src.getIsNullable(),
-                       heap);
+                       src.getIsNullable());
       }
       break;
 
     case tmudr::TypeInfo::DECIMAL_LSE:
     case tmudr::TypeInfo::DECIMAL_UNSIGNED:
       result = new(heap)
-        SQLDecimal(src.getPrecision(),
+        SQLDecimal(heap, src.getPrecision(),
                    src.getScale(),
                    (typeCode == tmudr::TypeInfo::DECIMAL_LSE),
-                   src.getIsNullable(),
-                   heap);
+                   src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::REAL:
-      result = new(heap) SQLReal(src.getIsNullable(),
-                                 heap);
+      result = new(heap) SQLReal(heap, src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::DOUBLE_PRECISION:
-      result = new(heap) SQLDoublePrecision(src.getIsNullable(),
-                                            heap);
+      result = new(heap) SQLDoublePrecision(heap, src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::CHAR:
@@ -1954,7 +1946,7 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
 
             if (typeCode == tmudr::TypeInfo::CHAR)
               result = new(heap)
-                SQLChar(lenInfo,
+                SQLChar(heap, lenInfo,
                         src.getIsNullable(),
                         FALSE,
                         FALSE,
@@ -1962,7 +1954,7 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
                         cs);
             else
               result = new(heap)
-                SQLVarChar(lenInfo,
+                SQLVarChar(heap, lenInfo,
                            src.getIsNullable(),
                            FALSE,
                            FALSE,
@@ -1972,20 +1964,17 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
       break;
 
     case tmudr::TypeInfo::DATE:
-      result = new(heap) SQLDate(src.getIsNullable(),
-                                 heap);
+      result = new(heap) SQLDate(heap, src.getIsNullable());
       break;
 
     case tmudr::TypeInfo::TIME:
-      result = new(heap) SQLTime(src.getIsNullable(),
-                                 src.getScale(),
-                                 heap);
+      result = new(heap) SQLTime(heap, src.getIsNullable(),
+                                 src.getScale());
       break;
 
     case tmudr::TypeInfo::TIMESTAMP:
-      result = new(heap) SQLTimestamp(src.getIsNullable(),
-                                      src.getScale(),
-                                      heap);
+      result = new(heap) SQLTimestamp(heap, src.getIsNullable(),
+                                      src.getScale());
       break;
 
     case tmudr::TypeInfo::INTERVAL:
@@ -2069,12 +2058,11 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
 
         if (startField != REC_DATE_UNKNOWN)
           {
-            result = new(heap) SQLInterval(src.getIsNullable(),
+            result = new(heap) SQLInterval(heap, src.getIsNullable(),
                                            startField,
                                            src.getPrecision(),
                                            endField,
-                                           src.getScale(),
-                                           heap);
+                                           src.getScale());
             if (!static_cast<SQLInterval *>(result)->checkValid(diags))
               {
                 *diags << DgSqlCode(-11152)
@@ -2088,8 +2076,7 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
       break;
 
     case tmudr::TypeInfo::BOOLEAN:
-      result = new(heap) SQLBooleanNative(src.getIsNullable(),
-                                          heap);
+      result = new(heap) SQLBooleanNative(heap, src.getIsNullable());
       break;
 
     default:

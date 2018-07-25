@@ -883,3 +883,42 @@ void SecInvalidKeyRequest::unpackObj(IpcMessageObjType objType,
     sikPtr_ = NULL;
 }
 
+LobLockRequest::LobLockRequest(NAMemory *heap,
+                               char *lobLockId
+                               ) :
+    RtsMessageObj(LOB_LOCK_REQ,
+                    CurrLobLockVersionNumber, heap)
+{
+  memcpy(lobLockId_,lobLockId,LOB_LOCK_ID_SIZE+1);
+}
+
+LobLockRequest::~LobLockRequest()
+{
+  memset(lobLockId_,0,LOB_LOCK_ID_SIZE+1); 
+}
+
+IpcMessageObjSize LobLockRequest::packedLength()
+{
+  IpcMessageObjSize result = baseClassPackedLength();
+  result += sizeof(lobLockId_);
+  return result;
+}
+
+IpcMessageObjSize LobLockRequest::packObjIntoMessage(
+                           IpcMessageBufferPtr buffer)
+{
+  IpcMessageObjSize result = packBaseClassIntoMessage(buffer);
+  result += packStrIntoBuffer(buffer, lobLockId_,LOB_LOCK_ID_SIZE+1);
+  return result;
+}
+
+void LobLockRequest::unpackObj(IpcMessageObjType objType,
+	       IpcMessageObjVersion objVersion,
+	       NABoolean sameEndianness,
+	       IpcMessageObjSize objSize,
+	       IpcConstMessageBufferPtr buffer)
+{
+  unpackBaseClass(buffer);
+  unpackStrFromBuffer(buffer,lobLockId_,LOB_LOCK_ID_SIZE+1);
+}
+

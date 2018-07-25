@@ -272,6 +272,31 @@ const NAString ElemDDLLikeOptWithoutRowFormat::getText() const
   return "ElemDDLLikeOptWithoutRowFormat";
 }
 
+
+// -----------------------------------------------------------------------
+// methods for class ElemDDLLikeOptWithoutLobColumns
+// -----------------------------------------------------------------------
+
+// virtual destructor
+ElemDDLLikeOptWithoutLobColumns::~ElemDDLLikeOptWithoutLobColumns()
+{
+}
+
+// casting
+ElemDDLLikeOptWithoutLobColumns * ElemDDLLikeOptWithoutLobColumns::castToElemDDLLikeOptWithoutLobColumns()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString ElemDDLLikeOptWithoutLobColumns::getText() const
+{
+  return "ElemDDLLikeOptWithoutLobColumns";
+}
+
 //
 // End of File
 //

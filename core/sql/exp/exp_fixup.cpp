@@ -36,7 +36,7 @@
  *****************************************************************************
  */
 
-#include "Platform.h"                                     // NT_PORT SK 02/10/97
+#include "Platform.h" 
 
 
 #include "exp_stdh.h"
@@ -47,7 +47,6 @@
 
 __declspec(dllimport) NABoolean ExExprComputeSpace(ex_tcb * tcb);
 
-NA_EIDPROC
 static void getCaseDatatypes(short attr_type1, Lng32 attr_len1, short &type_op1,
                              short attr_type2, Lng32 attr_len2, short &type_op2,
                              Lng32 scaleDifference)
@@ -167,7 +166,6 @@ static void getCaseDatatypes(short attr_type1, Lng32 attr_len1, short &type_op1,
     }  // end if type_op2 is an interval
 }
 
-NA_EIDPROC
 static void getConvCaseDatatypes(short attr_type1, Lng32 attr_len1, short &type_op1,
 				 short attr_type2, Lng32 attr_len2, short &type_op2,
 				 Lng32 scaleDifference)
@@ -538,9 +536,9 @@ const ArithInstruction ex_arith_clause::computeCaseIndex(OperatorTypeEnum op,
 {
   ArithInstruction instruction = ARITH_NOT_SUPPORTED;
 
-  short type_op1;
-  short type_op2;
-  short type_result;
+  short type_op1 = -1;
+  short type_op2 = -1;
+  short type_result = -1;
   getCaseDatatypes(attr1->getDatatype(), attr1->getLength(), type_op1,
                    result->getDatatype(), result->getLength(), type_result,
                    0 /* don't need to take scale difference into account here */);
@@ -1987,44 +1985,3 @@ ex_expr::exp_return_type ex_conv_clause::fixup(Space * space,
 			  persistentArea,
 			  fixupConstsAndTemps, spaceCompOnly);
 }
-
-ex_expr::exp_return_type ExAuditImage::fixup(Space * space,
-					     CollHeap * exHeap,
-					     char * constantsArea,
-					     char * tempsArea,
-					     char * persistentArea,
-					     short fixupFlag,
-					     NABoolean spaceCompOnly) 
-{
-
-  ex_expr::exp_return_type retcode;
-
-  assert ( auditImageContainerExpr_ != (ExpDP2ExprPtr) NULL );
-  ex_expr * auditRowImageExpr = (ex_expr *)auditImageContainerExpr_->getExpr();
-
-  assert (auditRowImageExpr != NULL);
-
-  retcode = auditRowImageExpr->fixup(0,       // base is really not use. so set it to zero.
-				     ex_expr::PCODE_NONE, 
-				     // The ExpressionMode enumeration specifies 
-				     // the type of PCODE to generate at expression 
-				     // fixup time.  Also, 
-				     // config's for error injection at fixup time.
-				     NULL,  // tcb. For error injection testing. 
-				     // We porbably don't need it, so setting it to NULL
-				     space, 
-				     exHeap, 
-				     spaceCompOnly, // computeSpaceOnly: if TRUE, then compute space 
-				     // requirement only. Do not make any changes to the
-				     // generated expressions,(like assigning tempsArea
-				     // , assigning generated pcode, etc).
-				     NULL);
-  
-  if (retcode != ex_expr::EXPR_OK) 
-    return retcode;
-  
-  
-  return ex_clause::fixup(space, exHeap, constantsArea,tempsArea, 
-			  persistentArea, fixupFlag, spaceCompOnly);
-}
-

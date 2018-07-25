@@ -434,9 +434,12 @@ ComObjectName::operator= (const ComObjectName &rhsObjectName)
 //
 
 const NAString &
-ComObjectName::getCatalogNamePartAsAnsiString(NABoolean) const
+ComObjectName::getCatalogNamePartAsAnsiString(NABoolean v) const
 {
-  return catalogNamePart_.getExternalName();
+  if (v == FALSE)
+    return catalogNamePart_.getExternalName();
+  else
+    return catalogNamePart_.getInternalName();
 }
 
 const NAString &
@@ -783,36 +786,6 @@ ComObjectName::scan( const NAString &externalObjectName
   size_t trailingJunkIsOk = bytesScanned;
   bytesScanned = 0;
 
-  if (( SqlParser_Initialized() && SqlParser_NAMETYPE == DF_NSK)       ||
-      //(ComRtIsNSKName((char *)externalObjectName.data()))            ||
-      //(*externalObjectName.data() == '\$') ) {
-      (!SqlParser_Initialized() && *externalObjectName.data() == '\\')) {
-
-    NAString nam(externalObjectName);
-    size_t b = externalObjectNameLen;
-
-    if (trailingJunkIsOk) {
-      #define LEGAL_PUNCTUATION		" \t,();"
-      size_t j = strcspn(externalObjectName, LEGAL_PUNCTUATION);
-      if (j < b) {
-        b = j;
-        nam.remove(b);
-      }
-    }
-
-    // Is this a valid 1, 2, 3, or 4-part NSK filename?
-    ComMPLoc loc(nam, ComMPLoc::FILE);
-    if (loc.isValid(ComMPLoc::FILE)) {
-      #define COPY_VALIDATED_STRING(x)		\
-   		 ComAnsiNamePart(x, ComAnsiNamePart::INTERNAL_FORMAT)
-      catalogNamePart_ = COPY_VALIDATED_STRING(loc.getSysDotVol());
-      schemaNamePart_  = COPY_VALIDATED_STRING(loc.getSubvolName());
-      objectNamePart_  = COPY_VALIDATED_STRING(loc.getFileName());
-      bytesScanned = b;
-      return TRUE;
-    }
-  } // end of if (( SqlParser_Initialized()  ...
-
   // ---------------------------------------------------------------------
   // Scan the leftmost ANSI SQL name part.
   // ---------------------------------------------------------------------
@@ -844,9 +817,7 @@ ComObjectName::scan( const NAString &externalObjectName
   // Scan the next ANSI SQL name part
   // ---------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
   Int32 remainingLen = externalObjectNameLen - bytesScanned;
-#pragma warn(1506)  // warning elimination 
   NAString remainingName = externalObjectName(bytesScanned, remainingLen);
   count = trailingJunkIsOk;
   ComAnsiNamePart part2(remainingName, count, 0, 
@@ -875,9 +846,7 @@ ComObjectName::scan( const NAString &externalObjectName
   // Scan the last ANSI SQL name part
   // ---------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
   remainingLen = externalObjectNameLen - bytesScanned;
-#pragma warn(1506)  // warning elimination 
   remainingName = externalObjectName(bytesScanned, remainingLen);
   count = trailingJunkIsOk;
   ComAnsiNamePart part3(remainingName, count, 0,

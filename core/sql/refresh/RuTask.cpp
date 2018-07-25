@@ -89,7 +89,6 @@ CRUTask::~CRUTask()
 //
 //	Prints the "standard" task's dump
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :dpm
 void CRUTask::Dump(CDSString &to)
 {
 	char idStr[10];
@@ -115,7 +114,6 @@ void CRUTask::Dump(CDSString &to)
 		}
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUTask::DumpGraphNode()
@@ -125,7 +123,6 @@ void CRUTask::Dump(CDSString &to)
 //	Prints the task's node dump acceptable for the Dotty GUI
 
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :dpm
 void CRUTask::DumpGraphNode(CDSString &to)
 {
 	char fromChr[10];
@@ -178,7 +175,6 @@ void CRUTask::DumpGraphNode(CDSString &to)
 	}
 	to += "];\n";
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUTask::DumpGraphNode()
@@ -188,7 +184,6 @@ void CRUTask::DumpGraphNode(CDSString &to)
 //	Prints the task's edges dump acceptable for the Dotty GUI
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :dpm
 void CRUTask::DumpGraphEdges(CDSString &to)
 {
 	if (0 == pSuccList_->GetCount())
@@ -211,7 +206,6 @@ void CRUTask::DumpGraphEdges(CDSString &to)
 	}	
 }
 #endif
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	MUTATORS

@@ -83,7 +83,6 @@ Qsort::Qsort(ULng32 runsize, ULng32 sortmaxmem, ULng32  recsize,
   rootRecord_ = (Record *)heap_->allocateMemory(sizeof(Record) * allocRunSize_);  
   recKeys_    = (RecKeyBuffer *)heap_->allocateMemory(sizeof(RecKeyBuffer) * allocRunSize_);  
  
-  // Below asserts useful in debug mode. Also asserts if longjmp did not happen.
   ex_assert(rootRecord_!= NULL, "Sort: Initial rootRecord_ allocation failed"); 
   ex_assert(recKeys_  != NULL, "Sort: Initial recKeys_ allocation failed");  
 
@@ -232,7 +231,7 @@ Lng32 Qsort::sortSend(void *rec, ULng32 len, void* tupp)
 			{
 			  char msg[500];
 			  str_sprintf(msg,
-						  "QSort::SortSend, Sort has overflowed due to unavailable memory request of size %d MB",
+						  "QSort::SortSend, Sort has overflowed due to unavailable memory request of size %ld MB",
 						   (sizeof(Record) * allocRunSize_ * 2)/ ONE_MB);
 			  SQLMXLoggingArea::logExecRtInfo(NULL,0,msg,explainNodeId_);
 		  sortUtil_->config()->setLogInfoEventDone();
@@ -570,8 +569,8 @@ NABoolean Qsort::iterativeQuickSort(RecKeyBuffer keysToSort[], Int64 left, Int64
   if (stack == NULL)
   {
   sortError_->setErrorInfo( EScrNoMemory   //sort error
-                    ,NULL          //syserr: the actual FS error
-                    ,NULL          //syserrdetail
+                    ,0          //syserr: the actual FS error
+                    ,0          //syserrdetail
                     ,"Qsort::iterativeQuicksort"     //methodname
                     );
     return SORT_FAILURE;

@@ -170,14 +170,12 @@ void CRUTaskExecutor::RollbackTransaction()
 
 		SetTransIdx(-1);
 	}
-	// LCOV_EXCL_START :rfi
 	catch(...) 
 	{
 		SetTransIdx(-1);
 		// If the system has already aborted the transaction 
 		// by itself - do nothing
 	}
-	// LCOV_EXCL_STOP
 }
 
 //--------------------------------------------------------------------------//
@@ -211,26 +209,22 @@ void CRUTaskExecutor::LeaveTransaction()
 //--------------------------------------------------------------------------//
 //	CRUTaskExecutor::StoreData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUTaskExecutor::
 	StoreData(CUOFsIpcMessageTranslator &translator)
 {
 	translator.WriteBlock(&state_,sizeof(Lng32));
 	translator.WriteBlock(&processId_,sizeof(Lng32));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUTaskExecutor::LoadData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUTaskExecutor::
 	LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	translator.ReadBlock(&state_,sizeof(Lng32));
 	translator.ReadBlock(&processId_,sizeof(Lng32));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUTaskExecutor::AllocateBuffer()
@@ -247,7 +241,6 @@ void CRUTaskExecutor::AllocateBuffer()
 	Lng32 bufsize = GetIpcBufferSize();
 
 #ifdef _DEBUG
-	// LCOV_EXCL_START :dpm
 	// Force here an artificially small buffer size for testing purposes
 	enum { MIN_BUFFER_SIZE = 50 };
 
@@ -260,7 +253,6 @@ void CRUTaskExecutor::AllocateBuffer()
 	{
 		bufsize = MIN_BUFFER_SIZE;
 	}
-	// LCOV_EXCL_STOP
 #endif
 
 	CreateBufferAndTranslator(bufsize);
@@ -318,9 +310,7 @@ ExecuteStatement(CDMPreparedStatement &stmt,
 	short retry_delay = 1000 ; // milliseconds.
 	for (Int32 retry = 0; retry < 2; retry++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		retry_delay = retry_delay * (retry + 1);
-#pragma warn(1506)  // warning elimination 
 
 		try
 		{
@@ -378,7 +368,6 @@ ExecuteStatement(CDMPreparedStatement &stmt,
 //	error code and (optionally) a string argument.
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRUTaskExecutor::HandleSqlError(CDSException &ex,
 									 Lng32 errorCode,
 									 const char *errorArgument)
@@ -392,7 +381,6 @@ void CRUTaskExecutor::HandleSqlError(CDSException &ex,
 
 	throw ex;	// Re-throw
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUTaskExecutor::CreateBufferAndTranslator()
@@ -403,7 +391,5 @@ void CRUTaskExecutor::CreateBufferAndTranslator(Int32 bufsize)
 	pIpcBuffer_ = new char[bufsize];
 
 	pIpcTranslator_ = 
-#pragma nowarn(1506)   // warning elimination 
 		new CUOFsIpcMessageTranslator(pIpcBuffer_, bufsize);
-#pragma warn(1506)  // warning elimination 
 }

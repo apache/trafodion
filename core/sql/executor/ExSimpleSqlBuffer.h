@@ -104,11 +104,6 @@ private:
   //
   ExSimpleSQLBufferEntry *next_;
 
-#ifndef NA_64BIT
-  // filler to make data_ fall on 8-byte aligned address
-  Int32 filler_;
-#endif
-
   // data_ - The begining of the tuple data.  When an
   // ExSimpleSQLBufferEntry is allocated, additional space is
   // allocated for the tuple data.  Initialization is done in the
@@ -124,23 +119,19 @@ class ExSimpleSQLBuffer : public ExGod {
 public:
   // ExSimpleSQLBuffer - constructor
   //
-  NA_EIDPROC
   ExSimpleSQLBuffer(Int32 numTuples, Int32 tupleSize, NAMemory *);
 
   // ExSimpleSQLBuffer - constructor specially designed for mapping
   // sql_buffer_pool construction calls to ExSimpleSQLBuffer calls.
   //
-  NA_EIDPROC
   ExSimpleSQLBuffer(Int32 numBuffers, Int32 bufferSize, Int32 tupleSize, NAMemory *);
 
   // ~ExSimpleSQLBuffer - destructor
   //
-  NA_EIDPROC
   ~ExSimpleSQLBuffer();
 
   // getFreeTuple - sets <tp> to reference a free tuple from the buffer
   //
-  NA_EIDPROC
   Int32 getFreeTuple(tupp &tp);
 
   // getNumTuples - returns the total number of tupps in the buffer
@@ -154,7 +145,6 @@ public:
 protected:
   // Get an entry from the free list.  Reclaim unreferenced
   // tuples if the free list is empty.
-  NA_EIDPROC
   ExSimpleSQLBufferEntry * getFreeEntry(void);
 
   ExSimpleSQLBufferEntry * getUsedList(void) { return usedList_; }
@@ -164,11 +154,9 @@ protected:
 
 private:
   // Common constructor initialization code
-  NA_EIDPROC
   void init(CollHeap * heap);
 
   // Move unreferenced tuples from the used list to the free list.
-  NA_EIDPROC
   void reclaimTuples(void);
 
   // numberTuples_ - The total number of tuples in the buffer (free and used).

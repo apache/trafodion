@@ -50,7 +50,6 @@
 // LM service: convertIn. 
 //////////////////////////////////////////////////////////////////////
 // Exclude the following methods for coverage as they are not used in LM.
-// LCOV_EXCL_START
 LmResult LmLanguageManager::convertIn(
   NAType   *src,
   NAType   **dst,
@@ -63,21 +62,21 @@ LmResult LmLanguageManager::convertIn(
   case NA_CHARACTER_TYPE:
   case NA_DATETIME_TYPE:
     // (VAR)CHAR and DATE/TIME.
-    *dst = new(mem) ANSIChar(src->getNominalSize(), FALSE);
+    *dst = new(mem) ANSIChar(mem, src->getNominalSize(), FALSE);
     return LM_CONV_REQUIRED;
 
   case NA_NUMERIC_TYPE:
     // NUMERIC and DECIMAL.
     if (((NumericType*)src)->decimalPrecision())
     {
-      *dst = new(mem) ANSIChar(src->getNominalSize(), FALSE);
+      *dst = new(mem) ANSIChar(mem, src->getNominalSize(), FALSE);
       return LM_CONV_REQUIRED;
     }
 
     // FLOAT.
     if (src->getPrecision() == SQL_FLOAT_PRECISION)
     {
-      *dst = new(mem) SQLDoublePrecision(src->supportsSQLnull());
+      *dst = new(mem) SQLDoublePrecision(mem, src->supportsSQLnull());
       return LM_CONV_REQUIRED;
     }
 
@@ -112,7 +111,6 @@ LmResult LmLanguageManager::convertOut(
 
   return convertIn(src, dst, mem);
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////
 // skipURLProtocol.

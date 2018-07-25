@@ -50,7 +50,7 @@
 // count in the trailing NAWchar null here.
 #define NAW_TO_NASTRING(w)	(const char *)w.data(), (w.length()+1) * BYTES_PER_NAWCHAR
 
-class SQLEXPORT_LIB_FUNC NAWString : public NABasicObject
+class NAWString : public NABasicObject
 {
 public:
   
@@ -111,19 +111,15 @@ public:
    NAWString ToQuotedWString();
 
 friend
-SQLEXPORT_LIB_FUNC
    NAWString operator+(const NAWString& s1, const NAWString& s2);
 
 friend
-SQLEXPORT_LIB_FUNC
 NABoolean operator==(const NAWString& s1, const NAWString& s2);
 
 friend
-SQLEXPORT_LIB_FUNC
 NABoolean operator< (const NAWString& s1, const NAWString& s2);
 
 friend
-SQLEXPORT_LIB_FUNC
 NABoolean operator> (const NAWString& s1, const NAWString& s2);
 
 protected:
@@ -160,29 +156,22 @@ private:
 }; //NAWString
 
 // NAWString Logical operators:
-NA_EIDPROC
-//#ifdef NA_NSK // :cnu -- As of 8/30/2011, there are no callers in SQ SQL
 inline NABoolean operator==(const NAWString& s1, const NAWString& s2)
                            { return s1.fbwstring_ == s2.fbwstring_; }
 
-NA_EIDPROC
 inline NABoolean operator< (const NAWString& s1, const NAWString& s2)
                            { return s1.fbwstring_ < s2.fbwstring_; }
 //#endif // :cnu
 
-NA_EIDPROC
 inline NABoolean operator!=(const NAWString& s1, const NAWString& s2)
                            { return !(s1 == s2); }
 
-NA_EIDPROC
 inline NABoolean operator> (const NAWString& s1, const NAWString& s2)
                            { return s1.fbwstring_ > s2.fbwstring_; }
 
-NA_EIDPROC
 inline NABoolean operator<=(const NAWString& s1, const NAWString& s2)
                            { return !(s1 > s2); }
 
-NA_EIDPROC
 inline NABoolean operator>=(const NAWString& s1, const NAWString& s2)
                            { return !(s1 < s2); }
 
@@ -191,13 +180,11 @@ inline NABoolean operator>=(const NAWString& s1, const NAWString& s2)
 // Returns TRUE if the string consists entirely of whitespace
 // (zero or more spaces or tabs, and nothing else), including none (empty str).
 // -----------------------------------------------------------------------
-SQLEXPORT_LIB_FUNC
 NABoolean IsNAWStringSpaceOrEmpty(const NAWString& naws);
 
 // -----------------------------------------------------------------------
 // Remove whitespace (spaces and tabs) from front or back or both
 // -----------------------------------------------------------------------
-SQLEXPORT_LIB_FUNC
 void TrimNAWStringSpace(NAWString& naws, NAString::stripType s = NAString::trailing);
 
 // -----------------------------------------------------------------------
@@ -212,7 +199,6 @@ void TrimNAWStringSpace(NAWString& naws, NAString::stripType s = NAString::trail
 // Use the NADELETEBASIC(returned_NAWchar_star_pointer, heap_pointer)
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
-SQLEXPORT_LIB_FUNC
 NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap = NULL);
 
 // -----------------------------------------------------------------------
@@ -228,7 +214,6 @@ NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap = NULL);
 // Use the NADELETEBASIC(returned_NAWchar_star_pointer, heap_pointer)
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
-SQLEXPORT_LIB_FUNC
 NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap = NULL);
 
 // // -----------------------------------------------------------------------
@@ -245,6 +230,5 @@ NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap = NULL);
 // //
 // // 3/21/2011  Comment out the function because it is not currently used.
 // // -----------------------------------------------------------------------
-// SQLEXPORT_LIB_FUNC
 // NAWString Latin1StrToUCS2(const NAString & latin1Str, CollHeap * workHeap = NULL);
 #endif 

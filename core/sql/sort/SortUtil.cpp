@@ -126,8 +126,8 @@ NABoolean SortUtil::scratchInitialize(void)
     if (scratch_ == NULL)
       {
         sortError_.setErrorInfo( EScrNoMemory   //sort error
-                                 ,NULL          //syserr: the actual FS error
-                                 ,NULL          //syserrdetail
+                                 ,0          //syserr: the actual FS error
+                                 ,0          //syserrdetail
                                  ,"SortUtil::scratchInitialize"  //methodname
                                 );
         return SORT_FAILURE;
@@ -214,8 +214,8 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
   if (sortAlgo_ == NULL)
   {
     sortError_.setErrorInfo(EScrNoMemory   //sort error
-                            ,NULL          //syserr: the actual FS error
-                            ,NULL          //syserrdetail
+                            ,0          //syserr: the actual FS error
+                            ,0          //syserrdetail
                             ,"SortUtil::sortInitialize"     //methodname
                             );
     return SORT_FAILURE;
@@ -337,7 +337,7 @@ Lng32 SortUtil::sortSendEnd(NABoolean& internalSort)
   {
     char msg[500];
     str_sprintf(msg,
-    "Sort is performing %s sort: NumRecs:%d",
+    "Sort is performing %s sort: NumRecs:%ld",
         internalSort? "internal":"external", stats_.numRecs_);
     SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
   }
@@ -371,10 +371,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
   stats_.scrNumBlocks_ = tempScratch->getTotalNumOfScrBlocks();
   
  // Total memory used
-#pragma nowarn(1506)   // warning elimination 
   stats_.memSizeB_ = sortAlgo_->getRunSize()*sizeof(Record) +
   sortAlgo_->getRunSize()*sizeof(RecKeyBuffer);
-#pragma warn(1506)  // warning elimination 
 
   initialRunSize = sortAlgo_->getRunSize();
  
@@ -428,7 +426,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
       {
         char msg[500];
         str_sprintf(msg,
-        "Sort Merge Phase encountered memory pressure: NumRuns:%d, MergeOrder:%d, NumRecs:%d, ScratchBlocks:%d",
+        "Sort Merge Phase encountered memory pressure: NumRuns:%d, MergeOrder:%d, NumRecs:%ld, ScratchBlocks:%d",
         stats_.numRuns_, config_->mergeOrder_, stats_.numRecs_,stats_.scrNumBlocks_);
         
         SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
@@ -467,8 +465,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
       //Also return error if merge order is least value of 2.
       //This is a really tight situation where memory is scarce.
       sortError_.setErrorInfo( EScrNoMemory   //sort error
-		              ,NULL          //syserr: the actual FS error
-		              ,NULL          //syserrdetail
+		              ,0          //syserr: the actual FS error
+		              ,0          //syserrdetail
 		              ,"SortUtil::sortSendEndProcessing1"     //methodname
 		              );
       return SORT_FAILURE;
@@ -492,8 +490,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
       if(result != SCRATCH_SUCCESS)
       {
         sortError_.setErrorInfo( EScrNoMemory   //sort error
-		              ,NULL          //syserr: the actual FS error
-		              ,NULL          //syserrdetail
+		              ,0          //syserr: the actual FS error
+		              ,0          //syserrdetail
 		              ,"SortUtil::sortSendEndProcessing2" //methodname
 		              );
         return SORT_FAILURE;
@@ -522,7 +520,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
     {
       char msg[500];
       str_sprintf(msg,
-      "Sort is performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%d, ScratchBlocks:%d",
+      "Sort is performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%ld, ScratchBlocks:%d",
       stats_.numRuns_,config_->mergeOrder_,stats_.numRecs_,stats_.scrNumBlocks_); 
     
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
@@ -580,8 +578,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
           if(tempScratch->cleanupScratchFiles(runnum-1) != SCRATCH_SUCCESS)
           {
             sortError_.setErrorInfo( EInterRuns   //sort error
-                                  ,NULL          //syserr: the actual FS error
-                                  ,NULL          //syserrdetail
+                                  ,0          //syserr: the actual FS error
+                                  ,0          //syserrdetail
                                   ,"SortUtil::sortSendEndprocessing4"     //methodname
                                 );
             return SORT_FAILURE;
@@ -612,8 +610,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
         if (sortAlgo_ == NULL)
         {
           sortError_.setErrorInfo( EScrNoMemory   //sort error
-                                  ,NULL          //syserr: the actual FS error
-                                  ,NULL          //syserrdetail
+                                  ,0          //syserr: the actual FS error
+                                  ,0          //syserrdetail
                                   ,"SortUtil::sortSendEndProcessing5"     //methodname
                                  );
           return SORT_FAILURE;
@@ -648,8 +646,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
           if(tempScratch->cleanupScratchFiles(runnum-1) != SCRATCH_SUCCESS)
           {
             sortError_.setErrorInfo( EInterRuns   //sort error
-                                  ,NULL          //syserr: the actual FS error
-                                  ,NULL          //syserrdetail
+                                  ,0          //syserr: the actual FS error
+                                  ,0          //syserrdetail
                                   ,"SortUtil::sortSendEndprocessing7"     //methodname
                                 );
             return SORT_FAILURE;
@@ -678,7 +676,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
     {
       char msg[500];
       str_sprintf(msg,
-      "Sort is not performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%d, ScratchBlocks:%d",
+      "Sort is not performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%ld, ScratchBlocks:%d",
       stats_.numRuns_,config_->mergeOrder_,stats_.numRecs_,stats_.scrNumBlocks_); 
       
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
@@ -711,8 +709,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
   if (sortAlgo_ == NULL)
   {
     sortError_.setErrorInfo( EScrNoMemory   //sort error
-                            ,NULL          //syserr: the actual FS error
-                            ,NULL          //syserrdetail
+                            ,0          //syserr: the actual FS error
+                            ,0          //syserrdetail
                             ,"SortUtil::sortSendEndprocessing8"     //methodname
                            );
     return SORT_FAILURE;
@@ -767,7 +765,7 @@ Lng32 SortUtil::sortReceive(void* record, ULng32& len)
     stats_.elapsedTime_ = currentTimeJ - stats_.beginSortTime_;
     if (config_->logInfoEvent()) {
       char msg[500];
-      str_sprintf(msg, "Sort elapsed time : %Ld; Num runs : %d; runsize :%d",
+      str_sprintf(msg, "Sort elapsed time : %ld; Num runs : %d; runsize :%d",
 		stats_.elapsedTime_,stats_.numInitRuns_,sortAlgo_->getRunSize());
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
     }
@@ -801,7 +799,7 @@ Lng32 SortUtil::sortReceive(void*& record,ULng32& len,void*& tupp)
     stats_.elapsedTime_ = currentTimeJ - stats_.beginSortTime_; 
     if (config_->logInfoEvent()) {
       char msg[500];
-      str_sprintf(msg, "Internal sort performed. Sort elapsed time : %Ld; Num runs : %d; runsize :%d",
+      str_sprintf(msg, "Internal sort performed. Sort elapsed time : %ld; Num runs : %d; runsize :%d",
 		stats_.elapsedTime_,stats_.numInitRuns_,sortAlgo_->getRunSize());
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
     }
@@ -928,7 +926,6 @@ NABoolean SortUtil::consumeMemoryQuota(UInt32 bufferSizeBytes)
     {
       return FALSE;
     }
-// LCOV_EXCL_START
     //artificially increase the quota before pressure check.
     //if pressure is detected, decrement the quota back.
     config_->memoryQuotaMB_ += (short)memNeededMB;
@@ -951,7 +948,6 @@ NABoolean SortUtil::consumeMemoryQuota(UInt32 bufferSizeBytes)
       config_->memoryQuotaMB_ -= (short)memNeededMB;
     }
   }
-// LCOV_EXCL_STOP
   return FALSE;//memory grab failed or reached limit.
 }
 
@@ -1042,7 +1038,7 @@ NABoolean SortUtil::withinMemoryLimitsAndPressure(Int64 reqMembytes)
   //BMO only enabled if greater than zero.
   if(config_ == NULL || config_->initialMemoryQuotaMB_ <= 0)
     return FALSE;
-
+/*
   //config_.heapAddr_->getUsage will return false as long as there exists a 
   //possibility of allocating additional executor segments when there
   //is demand for memory allocation. Once we reach a limit of allocating
@@ -1051,7 +1047,6 @@ NABoolean SortUtil::withinMemoryLimitsAndPressure(Int64 reqMembytes)
     
   size_t lastSegSize, freeSize, totalSize;
   if((config_->heapAddr_)->getUsage(&lastSegSize, &freeSize, &totalSize)) {
-// LCOV_EXCL_START
     if(config_->logInfoEvent())
     {
       char msg[500];
@@ -1062,16 +1057,13 @@ NABoolean SortUtil::withinMemoryLimitsAndPressure(Int64 reqMembytes)
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
     }
     return FALSE;
-// LCOV_EXCL_STOP
   }
-  
+*/  
   if(!memMonitor_)
   {
-// LCOV_EXCL_START
      memMonitor_ =
      config_->callingTcb_->getGlobals()->castToExExeStmtGlobals()->getMemoryMonitor();
      ex_assert(memMonitor_ != NULL, "SortUtil::withinMemoryLimitsAndPressure, memMonitor_ is NULL");
-// LCOV_EXCL_STOP
   }
 
 
@@ -1143,13 +1135,12 @@ if(!config_->getDisableCmpHintsOverflow())
   //do the following check if sort has not overflowed.
   if(state_ < SORT_SEND_END)
   {
-    Float32 E = config_->getSortMemEstInMbPerCpu();   //expected memory consumption by sort
+    Float32 E = config_->getSortMemEstInKBPerNode() / 1024;   //expected memory consumption by sort
     
 #ifdef FUTURE_WORK
     //check extreme case first. Expected cannot be more than
     //available quota.
     if( E >  config_->memoryQuotaMB_)
-// LCOV_EXCL_LINE
       return FALSE;
 #endif
 
@@ -1162,10 +1153,8 @@ if(!config_->getDisableCmpHintsOverflow())
     //large delta memory requirement for sort, which in essence may trigger overflow.
     if(C > E) //already
     {
-// LCOV_EXCL_START
       E = MAXOF( E, C *( 1 + estimateErrorPenalty));
-      config_->setSortMemEstInMbPerCpu(E);
-// LCOV_EXCL_STOP
+      config_->setSortMemEstInKBPerNode(E * 1024);
     }
 
     Float32 m = E - C;  //delta memory required to avoid overflow.
@@ -1174,7 +1163,6 @@ if(!config_->getDisableCmpHintsOverflow())
     //overflow.
     if( m > ( Z * (M -U)))
     {
-// LCOV_EXCL_START
       if(config_->logInfoEvent())
       {
         char msg[500];
@@ -1185,7 +1173,6 @@ if(!config_->getDisableCmpHintsOverflow())
         SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
       }
       return FALSE;
-// LCOV_EXCL_STOP
     }
   }
   else
@@ -1197,7 +1184,6 @@ if(!config_->getDisableCmpHintsOverflow())
 
     if( m > ( Z * (M - U)))
     {
-// LCOV_EXCL_START
       if(config_->logInfoEvent())
       {
         char msg[500];
@@ -1208,14 +1194,12 @@ if(!config_->getDisableCmpHintsOverflow())
         SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
       }
       return FALSE;
-// LCOV_EXCL_STOP
     }
   }
 }
 
   if(memMonitor_->memoryPressure() > config_->pressureThreshold_)
   {
-// LCOV_EXCL_START
     if(config_->logInfoEvent())
     {
       char msg[500];
@@ -1226,7 +1210,6 @@ if(!config_->getDisableCmpHintsOverflow())
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
     }
     return FALSE;
-// LCOV_EXCL_STOP
   }
 
   //The following checks any threshold limits set by the user. This
@@ -1246,12 +1229,8 @@ void SortUtil::setupComputations(SortUtilConfig& config)
   config_ = &config;
   config.runSize_ = 2*config.runSize_; 
   
-#pragma nowarn(1506)   // warning elimination 
     stats_.recLen_ = config.recSize_;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
     stats_.runSize_ = config.runSize_;
-#pragma warn(1506)  // warning elimination 
 
 }  
 

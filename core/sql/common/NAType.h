@@ -140,22 +140,21 @@ class NAType : public NABasicObject
 public:
 
   // copy ctor
-  NAType (const NAType & rhs, NAMemory * h=0) ;
+  NAType (const NAType & rhs, NAMemory * h) ;
 
   // ---------------------------------------------------------------------
   // Constructor function (storage size and alignment needs to be
   // specified for data field only, null indicator and variable len
   // field are handled automatically)
   // ---------------------------------------------------------------------
-  NAType (const NAString &   adtName,
+  NAType (NAMemory *h, const NAString &   adtName,
           NABuiltInTypeEnum  ev,
           Lng32               dataStorageSize,
           NABoolean          nullable = FALSE,
           Lng32               SQLnullHdrSize = 0,
           NABoolean          variableLength = FALSE,
           Lng32               lengthHeaderSize = 0,
-          Lng32               dataAlignment = 1,
-          NAMemory *         h=0
+          Lng32               dataAlignment = 1
         );
 
   // ---------------------------------------------------------------------
@@ -562,8 +561,9 @@ public:
                                  const char * displaydatatype,
 				 short displayCaseSpecific = 0);
 
-  short getMyTypeAsText(NAString * outputStr, 
-			NABoolean addNullability = TRUE) const; // output
+  short getMyTypeAsText(NAString * outputStr,  // output
+			NABoolean addNullability = TRUE,
+                        NABoolean addCollation = TRUE) const;
 
   short getMyTypeAsHiveText(NAString * outputStr) const;  // output
 

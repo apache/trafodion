@@ -83,6 +83,7 @@
 #include "ComSqlId.h"
 #include "MVInfo.h"
 #include "StmtDDLCreateTable.h"
+#include "CmpDDLCatErrorCodes.h"
 
 // need for authorization checks
 #include "ComUser.h"
@@ -185,9 +186,7 @@ short ExeUtilProcessVolatileTable::codeGen(Generator * generator)
 
   // remove trailing blanks and append a semicolon, if one is not present.
   char * ddlStmt = NULL;
-#pragma nowarn(1506)   // warning elimination
   Int32 i = strlen(getDDLStmtText());
-#pragma warn(1506)  // warning elimination
   while ((i > 0) && (getDDLStmtText()[i-1] == ' '))
     i--;
 
@@ -238,10 +237,8 @@ short ExeUtilProcessVolatileTable::codeGen(Generator * generator)
      (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
      (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
      (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
      getDefault(GEN_DDL_NUM_BUFFERS),
      getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(pvt_tdb);
 
   if(!generator->explainDisabled()) {
@@ -337,9 +334,7 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
   CollIndex i = 0;
   if (stmtText)
     {
-#pragma nowarn(1506)   // warning elimination 
       i = strlen(stmtText);
-#pragma warn(1506)  // warning elimination 
       while ((i > 0) && (getStmtText()[i-1] == ' '))
 	i--;
       
@@ -380,9 +375,7 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -508,9 +501,7 @@ short ExeUtilDisplayExplainComplex::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -535,10 +526,8 @@ short ExeUtilDisplayExplainComplex::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)1024,
-#pragma nowarn(1506)   // warning elimination 
 	 2, // num buffers
 	 32000); // bufferSIze
-#pragma warn(1506)  // warning elimination 
 
   exe_util_tdb->setIsVolatile(isVolatile_);
 
@@ -640,10 +629,8 @@ short ExeUtilWnrInsert::codeGen(Generator * generator)
                (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
                (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
                getDefault(GEN_DDL_NUM_BUFFERS),
                getDefault(GEN_DDL_BUFFER_SIZE)
-#pragma warn(1506)  // warning elimination 
          );
 
   generator->initTdbFields(exe_util_tdb);
@@ -706,9 +693,7 @@ short ExeUtilLoadVolatileTable::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -740,10 +725,8 @@ short ExeUtilLoadVolatileTable::codeGen(Generator * generator)
      (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
      (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
      (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
      getDefault(GEN_DDL_NUM_BUFFERS),
      getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
 
   generator->initTdbFields(exe_util_tdb);
   
@@ -783,9 +766,7 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -813,10 +794,8 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
 	 (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 	 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
 	 (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	 getDefault(GEN_DDL_NUM_BUFFERS),
 	 getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
 
   generator->initTdbFields(exe_util_tdb);
   
@@ -861,9 +840,7 @@ short ExeUtilGetVolatileInfo::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -912,10 +889,8 @@ short ExeUtilGetVolatileInfo::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000);  //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
  
   generator->initTdbFields(exe_util_tdb);
   
@@ -964,9 +939,7 @@ short ExeUtilGetErrorInfo::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -987,10 +960,8 @@ short ExeUtilGetErrorInfo::codeGen(Generator * generator)
 				 returnedDesc,
 				 (queue_index)8,
 				 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 				 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 				 32000);  //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   
   generator->initTdbFields(exe_util_tdb);
   
@@ -1052,9 +1023,7 @@ short ExeUtilCreateTableAs::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1085,10 +1054,8 @@ short ExeUtilCreateTableAs::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
 	 (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 1024); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   
   exe_util_tdb->setLoadIfExists(loadIfExists_);
   exe_util_tdb->setNoLoad(noLoad_);
@@ -1133,9 +1100,7 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1166,7 +1131,6 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
  
@@ -1182,7 +1146,6 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
  
@@ -1251,9 +1214,7 @@ short ExeUtilGetUID::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1274,10 +1235,8 @@ short ExeUtilGetUID::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
 
   generator->initTdbFields(exe_util_tdb);
 
@@ -1388,9 +1347,7 @@ short ExeUtilPopulateInMemStats::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1473,10 +1430,8 @@ short ExeUtilPopulateInMemStats::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
 
   generator->initTdbFields(exe_util_tdb);
 
@@ -1514,9 +1469,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1525,7 +1478,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
-      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -TRAF_HBASE_ACCESS_ERROR)
         *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
                             << DgInt0(CmpCommon::context()->hbaseErrNum())
                             << DgString0(CmpCommon::context()->hbaseErrStr());
@@ -1599,8 +1552,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "SYSTEM", "SCHEMAS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "ALL",    "SCHEMAS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
 
-    {  "USER",   "SEQUENCES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
-    {  "ALL",    "SEQUENCES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "USER",   "SEQUENCES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "ALL",    "SEQUENCES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "SYSTEM", "TABLES",    "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
@@ -1615,7 +1568,6 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "ALL",    "ROLES",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_ },
   
     {  "USER",   "USERS",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_ },
-    {  "USER",   "CURRENT_USER","",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CURRENT_USER_ },
     {  "SYSTEM", "USERS",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_ },
     {  "ALL",    "USERS",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_ },
   
@@ -1624,116 +1576,116 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "LIBRARIES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
     {  "USER",   "FUNCTIONS", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
     {  "USER",   "TABLE_FUNCTIONS", "","",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
-    {  "USER",   "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "USER",   "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "USER",   "PROCEDURES","",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
-    {  "USER",   "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
     {  "USER",   "OBJECTS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
+//    {  "USER",   "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "USER",   "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "USER",   "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
 
     {  "ALL",    "INDEXES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_ },
     {  "ALL",    "VIEWS",     "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_ },
     {  "ALL",    "LIBRARIES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
-    {  "ALL",    "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "ALL",    "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "ALL",    "PROCEDURES","",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
-    {  "ALL",    "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
     {  "ALL",    "OBJECTS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
+//    {  "ALL",    "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "ALL",    "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "ALL",    "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
 
     {  "USER",   "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "SYSTEM", "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "ALL",    "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
+
     {  "ALL",    "VIEWS",     "IN",    "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
     {  "USER",   "VIEWS",     "IN",    "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
-    {  "ALL",    "INVALID_VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_CATALOG_ },
+
     {  "USER",   "SEQUENCES", "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
     {  "ALL",    "SEQUENCES", "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+
     {  "USER",   "TABLES",    "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_ },
     {  "USER",   "OBJECTS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_ },
+
     {  "USER",   "HIVE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_VIEWS", "IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_SCHEMAS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_OBJECTS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_ },
     {  "USER",   "HIVE_EXT_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_ },
     {  "USER",   "HBASE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_ },
+//    {  "ALL",    "INVALID_VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "SYSTEM", "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "ALL",    "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
 
-    {  "ALL",    "SEQUENCES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_ },
-    {  "USER",    "SEQUENCES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_ },
+    {  "ALL",    "SEQUENCES",    "IN", "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_ },
+    {  "ALL",    "PRIVILEGES",   "ON", "SEQUENCE", 1,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SEQUENCE_  },
+    {  "USER",   "SEQUENCES",    "IN", "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_ },
+    {  "USER",   "PRIVILEGES",   "ON", "SEQUENCE", 1,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SEQUENCE_  },
 
     {  "USER",   "OBJECTS",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
     {  "SYSTEM", "OBJECTS",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
     {  "ALL",    "OBJECTS",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
-    {  "ALL",   "INVALID_VIEWS",   "IN",      "SCHEMA",         1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_SCHEMA_ },
+//    {  "ALL",   "INVALID_VIEWS",   "IN",      "SCHEMA",         1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_SCHEMA_ },
 
     {  "USER",   "INDEXES",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_ },
     {  "USER",   "VIEWS",     "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_ },
-    {  "USER",   "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "USER",   "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "USER",   "PRIVILEGES","ON",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SCHEMA_ },
     {  "USER",   "LIBRARIES", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
     {  "USER",   "PROCEDURES","IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
     {  "USER",   "FUNCTIONS", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
     {  "USER",   "TABLE_FUNCTIONS", "IN","SCHEMA",  1,     2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
-    {  "USER",   "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
+//    {  "USER",   "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "USER",   "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "USER",   "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
 
     {  "ALL",    "INDEXES",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_ },
     {  "ALL",    "VIEWS",     "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_ },
-    {  "ALL",    "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "ALL",    "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "ALL",    "LIBRARIES", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
     {  "ALL",    "PROCEDURES","IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
-    {  "ALL",   "FUNCTIONS", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
-    {  "ALL",   "TABLE_FUNCTIONS", "IN","SCHEMA",  1,     2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
-    {  "ALL",    "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
-    {  "IUDLOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLES_IN_SCHEMA_ },
-
-    {  "RANGELOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLES_IN_SCHEMA_ },
-    {  "TRIGTEMP",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLES_IN_SCHEMA_ },
+    {  "ALL",    "FUNCTIONS", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
+    {  "ALL",    "TABLE_FUNCTIONS", "IN","SCHEMA", 1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
+    {  "ALL",    "PRIVILEGES", "ON", "LIBRARY",    1,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_LIBRARY_ },
+    {  "ALL",    "PRIVILEGES", "ON", "PROCEDURE",  1,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_ROUTINE_ },
+    {  "ALL",    "PRIVILEGES", "ON", "ROUTINE",    1,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_ROUTINE_ },
+//    {  "ALL",    "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "ALL",    "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "ALL",    "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
+//    {  "IUDLOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLES_IN_SCHEMA_ },
+//    {  "RANGELOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLES_IN_SCHEMA_ },
+//    {  "TRIGTEMP",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLES_IN_SCHEMA_ },
 
     {  "USER",   "INDEXES",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_TABLE_ },
-    {  "USER",   "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
-    {  "USER",   "MVS",       "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
-    {  "USER",   "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
-    {  "USER",   "OBJECTS",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_ },
-    {  "USER",   "PRIVILEGES","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_ },
-    {  "USER",   "PRIVILEGES","ON",    "VIEW",     0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_ },
-    {  "USER",   "PRIVILEGES","ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_ },
-    {  "USER",   "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
     {  "USER",   "VIEWS",     "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_ },
-
+    {  "USER",   "OBJECTS",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_ },
+//    {  "USER",   "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
+//    {  "USER",   "MVS",       "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
+//    {  "USER",   "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
+//    {  "USER",   "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
 
     {  "ALL",    "INDEXES",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_TABLE_ },
-    {  "ALL",    "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
     {  "ALL",    "VIEWS",     "ON",    "TABLE",    0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_ },
-    {  "ALL",    "MVS",       "ON",    "TABLE",    0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
-    {  "ALL",    "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
-    {  "ALL",    "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
     {  "ALL",    "OBJECTS",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_ },
     {  "ALL",    "PRIVILEGES","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_ },
     {  "ALL",    "PRIVILEGES","ON",    "VIEW",     0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_ },
-    {  "IUDLOG",    "TABLES",   "ON",    "TABLE",    0,    3,        0,      0,       ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_TABLE_ },
-    {  "RANGELOG",    "TABLES",   "ON",    "TABLE",    0,  3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_TABLE_ },
-    {  "TRIGTEMP",    "TABLES",   "ON",    "TABLE",    0,  3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_TABLE_ },
+//    {  "ALL",    "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
+//    {  "ALL",    "MVS",       "ON",    "TABLE",    0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
+//    {  "ALL",    "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
+//    {  "ALL",    "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
+//
+//    {  "IUDLOG",    "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_TABLE_ },
+//    {  "RANGELOG",  "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_TABLE_ },
+//    {  "TRIGTEMP",  "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_TABLE_ },
+//    {  "IUDLOG",    "TABLES",   "ON",  "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_MV_ },
+//    {  "RANGELOG",  "TABLES",   "ON",  "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_MV_ },
+//    {  "TRIGTEMP",  "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_MV_ },
+//    {  "ALL",    "PRIVILEGES","ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_ },
+//    {  "USER",   "MVS",       "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
+//    {  "ALL",    "MVS",       "ON",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
 
-    {  "IUDLOG",    "TABLES",   "ON",    "MV",    0,       3,        0,      0,            ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_MV_ },
-    {  "RANGELOG",    "TABLES",   "ON",    "MV",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_MV_ },
-    //  {  "TRIGTEMP",    "TABLES",   "ON",    "TABLE",  0,   3,        0,      0,    ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_MV_ },
 
-   
-    {  "ALL",    "PRIVILEGES","ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_ },
-
-    {  "USER",   "MVS",       "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
-    {  "ALL",    "MVS",       "ON",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
-
-
-    {  "USER",   "PARTITIONS","FOR",   "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
-    {  "USER",   "PARTITIONS","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
-
-    {  "USER",   "PARTITIONS","FOR",   "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
-    {  "USER",   "PARTITIONS","ON",    "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
+//    {  "USER",   "PARTITIONS","FOR",   "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
+//    {  "USER",   "PARTITIONS","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
+//    {  "USER",   "PARTITIONS","FOR",   "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
+//    {  "USER",   "PARTITIONS","ON",    "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
 
     {  "USER",   "VIEWS",     "ON",    "VIEW",     0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_ },
     {  "ALL",    "VIEWS",     "ON",    "VIEW",     0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_ },
@@ -1746,13 +1698,13 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "ALL",    "VIEWS",     "IN",    "VIEW",     0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_ },
     {  "ALL",    "OBJECTS",   "IN",    "VIEW",     0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_ },
 
-    {  "USER",   "TABLES",    "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
-    {  "USER",   "MVS",       "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
-    {  "USER",   "OBJECTS",   "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
+//    {  "USER",   "TABLES",    "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
+//    {  "USER",   "MVS",       "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
+//    {  "USER",   "OBJECTS",   "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
 
-    {  "ALL",    "TABLES",    "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
-    {  "ALL",    "MVS",       "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
-    {  "ALL",    "OBJECTS",   "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
+//    {  "ALL",    "TABLES",    "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
+//    {  "ALL",    "MVS",       "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
+//    {  "ALL",    "OBJECTS",   "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
 
     {  "ALL",    "USERS",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_ },
     {  "ALL",    "ROLES",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_ROLE_ },
@@ -1763,62 +1715,59 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "USERS",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_ },
     {  "USER",   "ROLES",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_ROLE_ },
 
-    {  "ALL",    "PROCEDURES","FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
-    {  "USER",   "PROCEDURES","FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
-    {  "ALL",   "FUNCTIONS", "FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_ },
-    {  "ALL",   "TABLE_FUNCTIONS","FOR","LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_ },
+    {  "ALL",    "PROCEDURES","FOR",   "LIBRARY",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
+    {  "USER",   "PROCEDURES","FOR",   "LIBRARY",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
+    {  "ALL",    "FUNCTIONS", "FOR",   "LIBRARY",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_ },
+    {  "ALL",    "TABLE_FUNCTIONS","FOR","LIBRARY",  0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_ },
  
-    {  "ALL",    "CATALOGS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CATALOGS_FOR_USER_ },
     {  "ALL",    "INDEXES",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_ },
     {  "ALL",    "LIBRARIES", "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_ },
-    {  "ALL",    "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
-    {  "ALL",    "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
     {  "ALL",    "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
     {  "ALL",    "PRIVILEGES","FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_ },
     {  "ALL",    "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
     {  "ALL",    "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
     {  "ALL",    "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
     {  "ALL",    "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
-    {  "ALL",    "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
     {  "ALL",    "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
-    {  "ALL",    "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
     {  "ALL",    "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ },
+//    {  "ALL",    "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
+//    {  "ALL",    "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
+//    {  "ALL",    "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
+//    {  "ALL",    "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
 
-    {  "SYSTEM", "CATALOGS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CATALOGS_FOR_USER_ },
+    {  "SYSTEM", "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
+    {  "SYSTEM", "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
+    {  "SYSTEM", "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
+    {  "SYSTEM", "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
 //  {  "SYSTEM", "INDEXES",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_ },
 //  {  "SYSTEM", "LIBRARIES", "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_ },
 //  {  "SYSTEM", "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
 //  {  "SYSTEM", "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
 //  {  "SYSTEM", "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
 //  {  "SYSTEM", "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
-    {  "SYSTEM", "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
-    {  "SYSTEM", "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
-    {  "SYSTEM", "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
 //  {  "SYSTEM", "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
-    {  "SYSTEM", "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
 //  {  "SYSTEM", "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
 //  {  "SYSTEM", "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ },
 
-    {  "USER",   "CATALOGS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CATALOGS_FOR_USER_ },
     {  "USER",   "INDEXES",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_ },
     {  "USER",   "LIBRARIES", "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_ },
-    {  "USER",   "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
-    {  "USER",   "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
     {  "USER",   "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
     {  "USER",   "PRIVILEGES","FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_ },
     {  "USER",   "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
     {  "USER",   "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
     {  "USER",   "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
     {  "USER",   "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
-    {  "USER",   "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
     {  "USER",   "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
-    {  "USER",   "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
     {  "USER",   "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ },
+//    {  "USER",   "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
+//    {  "USER",   "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
+//    {  "USER",   "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
+//    {  "USER",   "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
 
-    {  "USER",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
-    {  "ALL",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
-    {  "SYSTEM",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
-    {  "EXTERNAL",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ }
+    {  "USER",    "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "ALL",     "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "SYSTEM",  "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "EXTERNAL","HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ }
 
 //==================================================================================================================================
    // AUSStr   InfoType     IOFStr   ObjectType  Version MaxParts  GroupBy OrderBy QueryType
@@ -2185,10 +2134,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 					 returnedDesc,
 					 (queue_index)8,
 					 (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
 					 2, 
 					 32000); 
-#pragma warn(1506)  // warning elimination 
 
       exe_util_tdb = gm_exe_util_tdb;
     }
@@ -2208,12 +2155,10 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 				     returnedDesc,
 				     (queue_index)8,
 				     (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
 				     2, 
 				     32000,
                                      server,
                                      zkPort);
-#pragma warn(1506)  // warning elimination 
 
       if (hbaseObjects())
 	{
@@ -2339,9 +2284,7 @@ short ExeUtilMaintainObject::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -2441,10 +2384,8 @@ short ExeUtilMaintainObject::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, 
 	 10240);
-#pragma warn(1506)  // warning elimination 
  
   generator->initTdbFields(exe_util_tdb);
 
@@ -3181,181 +3122,10 @@ short ExeUtilMaintainObject::codeGen(Generator * generator)
 
 /////////////////////////////////////////////////////////
 //
-// ExeUtilFastDelete::codeGen()
+// ExeUtilHiveTruncateLegacy::codeGen()
 //
 /////////////////////////////////////////////////////////
-short ExeUtilFastDelete::codeGen(Generator * generator)
-{
-  ExpGenerator * expGen = generator->getExpGenerator();
-  Space * space = generator->getSpace();
-
-  char * stmtText = getStmtText();
-
-  // remove trailing blanks and append a semicolon, if one is not present.
-  char * stmt = NULL;
-  CollIndex i = 0;
-  if (stmtText)
-    {
-#pragma nowarn(1506)   // warning elimination 
-      i = strlen(stmtText);
-#pragma warn(1506)  // warning elimination 
-      while ((i > 0) && (getStmtText()[i-1] == ' '))
-	i--;
-      
-      if (stmtText[i-1] != ';')
-	{
-	  // add a semicolon to the end of str (required by the parser)
-	  stmt = space->allocateAlignedSpace(i+1+1);
-	  strncpy(stmt, stmtText, i);
-	  stmt[i]   = ';' ;
-	  stmt[i+1] = '\0';
-	}
-      else
-	{
-	  stmt = space->allocateAlignedSpace(i+1);
-	  strncpy(stmt, stmtText, i);
-	  stmt[i] = '\0';
-	}
-    }
-
-  // allocate a map table for the retrieved columns
-  generator->appendAtEnd();
-
-  ex_cri_desc * givenDesc
-    = generator->getCriDesc(Generator::DOWN);
-
-  ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
-    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
-
-  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
-  const Int32 work_atp = 1;
-  const Int32 exe_util_row_atp_index = 2;
-
-  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
-                              returnedDesc);
-  if (rc)
-    {
-      return -1;
-    }
-
-  char * tablename = NULL;
-  if ((getUtilTableDesc()) && 
-      (getUtilTableDesc()->getNATable()) &&
-      (getUtilTableDesc()->getNATable()->isVolatileTable()))
-    {
-      tablename = space->AllocateAndCopyToAlignedSpace
-	(getTableName().getQualifiedNameObj().getObjectName(), 0);
-    }
-  else
-    {
-      tablename = space->AllocateAndCopyToAlignedSpace
-	(generator->genGetNameAsAnsiNAString(getTableName()), 0);
-    }
-
-  char * primaryPartnLoc = NULL;
-  if ((getUtilTableDesc()) && 
-      (getUtilTableDesc()->getNATable()) &&
-      (getUtilTableDesc()->getNATable()->isAnMV()))
-    {
-      primaryPartnLoc = space->AllocateAndCopyToAlignedSpace
-      (getUtilTableDesc()->getClusteringIndex()->getNAFileSet()->
-       getFileSetName().getQualifiedNameAsString(), 0);
-    }
-
-  Queue * deleteIndexList    = NULL;
-  if (getUtilTableDesc())
-    {
-      const LIST(IndexDesc *) indexList = 
-	getUtilTableDesc()->getIndexes();
-      if (indexList.entries() > 0)
-	deleteIndexList = new(space) Queue(space);
-      for (i=0; i<indexList.entries(); i++) 
-	{
-	  IndexDesc *index = indexList[i];
-	  
-	  // The base table itself is an index (the clustering index);
-	  // obviously IM need not deal with it.
-	  if (index->isClusteringIndex())
-	    continue;
-	  
-	  char * indexName = 
-	    space->AllocateAndCopyToAlignedSpace
-	    (index->getExtIndexName(), 0);
-	  
-	  deleteIndexList->insert(indexName);
-	}
-    }
-
-  Lng32 numEsps = -1;
-
-  ComTdbExeUtilFastDelete * exe_util_tdb = new(space) 
-    ComTdbExeUtilFastDelete(tablename, strlen(tablename),
-			    primaryPartnLoc,
-			    deleteIndexList,
-			    stmt,
-			    (stmt ? strlen(stmt) : 0),
-			    numEsps,
-			    (getUtilTableDesc() ? getUtilTableDesc()->getNATable()->
-			     objectUid().get_value() : 0),
-			    numLOBs_,
-			    NULL,
-			    0, 0, // no work cri desc
-			    (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-			    (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-			    (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
-			    (queue_index)getDefault(GEN_DDL_SIZE_UP),
-			    getDefault(GEN_DDL_NUM_BUFFERS),
-			    getDefault(GEN_DDL_BUFFER_SIZE));
-
-  if (doPurgedataCat_)
-    exe_util_tdb->setDoPurgedataCat(TRUE);
-
-  if (doParallelDelete_)
-    exe_util_tdb->setDoParallelDelete(TRUE);
-
-  if (doParallelDeleteIfXn_)
-    exe_util_tdb->setDoParallelDeleteIfXn(TRUE);
-
-  if (offlineTable_)
-    exe_util_tdb->setOfflineTable(TRUE);
-
-  if (doLabelPurgedata_)
-    exe_util_tdb->setDoLabelPurgedata(TRUE);
-
-  if ((getUtilTableDesc()) && 
-      (getUtilTableDesc()->getNATable()) &&
-      (getUtilTableDesc()->getNATable()->isAnMV()))
-    exe_util_tdb->setIsMV(TRUE);
-
-  generator->initTdbFields(exe_util_tdb);
-  
-  if(!generator->explainDisabled()) {
-    generator->setExplainTuple(
-       addExplainInfo(exe_util_tdb, 0, 0, generator));
-  }
-
-  // no tupps are returned 
-  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-			Generator::UP);
-  generator->setGenObj(this, exe_util_tdb);
-
-  // Set the transaction flag.
-  //  if (xnNeeded())
-  // {
-  generator->setTransactionFlag(0); // transaction is not needed.
-  //}
-  
-  return 0;
-}
-
-/////////////////////////////////////////////////////////
-//
-// ExeUtilHiveTruncate::codeGen()
-//
-/////////////////////////////////////////////////////////
-short ExeUtilHiveTruncate::codeGen(Generator * generator)
+short ExeUtilHiveTruncateLegacy::codeGen(Generator * generator)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
@@ -3441,6 +3211,7 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
                               hiveTableLocation, partn_loc,
                               hiveHdfsHost, hiveHdfsPort,
                               (doSimCheck ? hiveModTS_ : -1),
+                              NULL,
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
@@ -3452,7 +3223,9 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
 
   if (getDropTableOnDealloc())
     exe_util_tdb->setDropOnDealloc(TRUE);
-  
+
+  exe_util_tdb->setIsLegacy(TRUE);
+
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(exe_util_tdb, 0, 0, generator));
@@ -3470,10 +3243,10 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
 
 /////////////////////////////////////////////////////////
 //
-// ExeUtilHiveQuery::codeGen()
+// ExeUtilHiveTruncate::codeGen()
 //
 /////////////////////////////////////////////////////////
-short ExeUtilHiveQuery::codeGen(Generator * generator)
+short ExeUtilHiveTruncate::codeGen(Generator * generator)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
@@ -3498,21 +3271,43 @@ short ExeUtilHiveQuery::codeGen(Generator * generator)
       return -1;
     }
 
-  char * hive_query = 
-    space->AllocateAndCopyToAlignedSpace (hiveQuery(), 0);
-  Lng32 hive_query_len = hiveQuery().length();
+  char * tablename = NULL;
+  tablename = space->AllocateAndCopyToAlignedSpace
+    (generator->genGetNameAsAnsiNAString(getTableName()), 0);
 
-  ComTdbExeUtilHiveQuery * exe_util_tdb = 
-    new(space) 
-    ComTdbExeUtilHiveQuery(hive_query, hive_query_len,
-                           (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-                           (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-                           (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
-                           (queue_index)getDefault(GEN_DDL_SIZE_UP),
-                           getDefault(GEN_DDL_NUM_BUFFERS),
-                           getDefault(GEN_DDL_BUFFER_SIZE));
+  char * hiveTableName = NULL;
+  hiveTableName = space->AllocateAndCopyToAlignedSpace(getHiveTableName(), 0);
+
+  char * hiveTruncQuery = NULL;
+  hiveTruncQuery = space->AllocateAndCopyToAlignedSpace(getHiveTruncQuery(), 0);
+
+  ComTdbExeUtilHiveTruncate * exe_util_tdb = new(space) 
+    ComTdbExeUtilHiveTruncate(tablename, strlen(tablename),
+                              hiveTableName,
+                              NULL, NULL,
+                              NULL, -1,
+                              -1,
+                              hiveTruncQuery,
+                              (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                              (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                              (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                              (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                              getDefault(GEN_DDL_NUM_BUFFERS),
+                              getDefault(GEN_DDL_BUFFER_SIZE));
 
   generator->initTdbFields(exe_util_tdb);
+
+  if (getDropTableOnDealloc())
+    exe_util_tdb->setDropOnDealloc(TRUE);
+
+  if (getHiveExternalTable())
+    exe_util_tdb->setIsExternal(TRUE);
+
+  if (getIfExists())
+    exe_util_tdb->setIfExists(TRUE);
+
+  if (getTableNotExists())
+    exe_util_tdb->setTableNotExists(TRUE);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -3529,6 +3324,47 @@ short ExeUtilHiveQuery::codeGen(Generator * generator)
   return 0;
 }
 
+short ExeUtilHiveQuery::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+  generator->appendAtEnd();
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 1;
+  const Int32 exe_util_row_atp_index = 2;
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+  char * hive_query = 
+    space->AllocateAndCopyToAlignedSpace (hiveQuery(), 0);
+  Lng32 hive_query_len = hiveQuery().length();
+  ComTdbExeUtilHiveQuery * exe_util_tdb = 
+    new(space) 
+    ComTdbExeUtilHiveQuery(hive_query, hive_query_len,
+                           (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                           (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                           (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                           (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                           getDefault(GEN_DDL_NUM_BUFFERS),
+                           getDefault(GEN_DDL_BUFFER_SIZE));
+  generator->initTdbFields(exe_util_tdb);
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+			Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+  generator->setTransactionFlag(0); // transaction is not needed.
+  return 0;
+}
 ////////////////////////////////////////////////////////////////////
 // class ExeUtilRegionStats
 ////////////////////////////////////////////////////////////////////
@@ -3592,7 +3428,7 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
       ItemExpr * inputExpr = new(generator->wHeap())
         Cast(inputColList_, 
              new (generator->wHeap())
-             SQLVarChar(inputColList_->getValueId().getType().getNominalSize(),
+             SQLVarChar(generator->wHeap(), inputColList_->getValueId().getType().getNominalSize(),
                         inputColList_->getValueId().getType().supportsSQLnull()));
       
       inputExpr->bindNode(generator->getBindWA());
@@ -3811,6 +3647,8 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
 	 (queue_index)64,
 	 4, 
 	 64000); 
+
+  exe_util_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
   generator->initTdbFields(exe_util_tdb);
 
   if(!generator->explainDisabled()) {
@@ -3824,7 +3662,6 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
   
   // users should not start a transaction.
   generator->setTransactionFlag(0);
-  
   return 0;
 }
 
@@ -3948,9 +3785,7 @@ short ExeUtilShowSet::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -3990,10 +3825,8 @@ short ExeUtilShowSet::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, 
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(exe_util_tdb);
   
   if(!generator->explainDisabled()) {
@@ -4029,9 +3862,7 @@ short ExeUtilAQR::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   short rc = processOutputRow(generator, 0, returnedDesc->noTuples()-1,
                               returnedDesc);
@@ -4061,10 +3892,8 @@ short ExeUtilAQR::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, 
 	 32000); 
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(exe_util_tdb);
   
   exe_util_tdb->setParams(sqlcode_, nskcode_, retries_, delay_, type_);
@@ -4103,9 +3932,7 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4144,31 +3971,23 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
       strcpy(handle, h.data());
     }
 
-  // when handle is null and extract is from a file that is specified, then the params are:
-  //  stringParam1: file name
-  //  stringParam2: file dir
-  //  stringParam3: other info (like port num for hadoop)
+  // Use stringParam1 to pass in target file .
   char * stringParam1 = NULL;
   if (NOT stringParam_.isNull())
     {
-    stringParam1 =  space->allocateAlignedSpace(stringParam_.length() + 1);
-    strcpy(stringParam1, stringParam_.data());
+      stringParam1 = space->allocateAlignedSpace(stringParam_.length() + 1);
+      strcpy(stringParam1, stringParam_.data());
     }
 
   char * stringParam2 = NULL;
-  if (NOT stringParam2_.isNull())
-    {
-    stringParam2 = space->allocateAlignedSpace(stringParam2_.length() + 1);
-    strcpy(stringParam2, stringParam2_.data());
-    }
-  else if (handle_ == NULL)
-    {
-      const char* f = ActiveSchemaDB()->getDefaults().
-	getValue(LOB_STORAGE_FILE_DIR);
+  //use StringParam2 to pass in LOB storage dir  
+   const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_STORAGE_FILE_DIR);
 
-      stringParam2 = space->allocateAlignedSpace(strlen(f) + 1);
-      strcpy(stringParam2, f);
-    }
+   stringParam2 = space->allocateAlignedSpace(strlen(f) + 1);
+   strcpy(stringParam2, f);
+    
+  
 
   char * stringParam3 = NULL;
   if (NOT stringParam3_.isNull())
@@ -4215,19 +4034,15 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
 				   &input_expr);
     }
 
-  Lng32 lst = 0;
-  if (handle_ == NULL)
-    {
-      // extract from a file
-      lst = (Lng32)(CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE));
-    }
-
+  Lng32 lst = 0; 
+  lst = (Lng32)(CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE));
   Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
-  const char* f = ActiveSchemaDB()->getDefaults().
+  const char* hs = ActiveSchemaDB()->getDefaults().
     getValue(LOB_HDFS_SERVER);
-  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
-  strcpy(hdfsServer, f);
+  char * hdfsServer = space->allocateAlignedSpace(strlen(hs) + 1);
+  strcpy(hdfsServer, hs);
   
+
   ComTdbExeUtilLobExtract * exe_util_tdb = new(space) 
     ComTdbExeUtilLobExtract
     (
@@ -4235,11 +4050,13 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      handleLen,
      (toType_ == TO_BUFFER_ ? ComTdbExeUtilLobExtract::TO_BUFFER_ :
       (toType_ == RETRIEVE_LENGTH_ ? ComTdbExeUtilLobExtract::RETRIEVE_LENGTH_ :
+       (toType_ == RETRIEVE_HDFSFILENAME_ ? ComTdbExeUtilLobExtract::RETRIEVE_HDFSFILENAME_ :
+        (toType_ == RETRIEVE_OFFSET_ ? ComTdbExeUtilLobExtract::RETRIEVE_OFFSET_ :
        (toType_ == TO_STRING_ ? ComTdbExeUtilLobExtract::TO_STRING_ :
 	(toType_ == TO_FILE_ ? ComTdbExeUtilLobExtract::TO_FILE_ :
 	(toType_ == TO_EXTERNAL_FROM_STRING_ ? ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_ :
 	 (toType_ == TO_EXTERNAL_FROM_FILE_ ? ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_ :
-	  ComTdbExeUtilLobExtract::NOOP_)))))),
+	  ComTdbExeUtilLobExtract::NOOP_)))))))),
      bufAddr_,
      extractSizeAddr_,
      intParam_,
@@ -4258,12 +4075,11 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      returnedDesc,
      (queue_index)8,
      (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
      2,
      32000);
-#pragma warn(1506)  // warning elimination 
 
-if (handleInStringFormat_)
+  exe_util_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
+  if (handleInStringFormat_)
     exe_util_tdb->setHandleInStringFormat(TRUE);
 
   if (handle_ == NULL)
@@ -4298,6 +4114,14 @@ if (handleInStringFormat_)
     {
       exe_util_tdb->setRetrieveLength(TRUE);
     }
+  if (toType_ == RETRIEVE_HDFSFILENAME_)
+    {
+      exe_util_tdb->setRetrieveHdfsFileName(TRUE);
+    }
+  if (toType_ == RETRIEVE_OFFSET_)
+    {
+      exe_util_tdb->setRetrieveOffset(TRUE);
+    }
   exe_util_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024);
 
   generator->setCriDesc(givenDesc, Generator::DOWN);
@@ -4330,9 +4154,7 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4411,11 +4233,17 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
 
 
   Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
-  const char* f = ActiveSchemaDB()->getDefaults().
+  const char* hs = ActiveSchemaDB()->getDefaults().
     getValue(LOB_HDFS_SERVER);
-  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
-  strcpy(hdfsServer, f);
-  
+  char * hdfsServer = space->allocateAlignedSpace(strlen(hs) + 1);
+  strcpy(hdfsServer, hs);
+  const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_STORAGE_FILE_DIR);
+
+    
+
+  char *lobLoc = space->allocateAlignedSpace(strlen(f) + 1);
+  strcpy(lobLoc, f);
   ComTdbExeUtilLobUpdate * exe_util_lobupdate_tdb = new(space) 
     ComTdbExeUtilLobUpdate
     (
@@ -4430,6 +4258,7 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
      lst,
      hdfsServer,
      hdfsPort,
+     lobLoc,
      input_expr,
      inputRowLen,
      workCriDesc,
@@ -4438,13 +4267,10 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
      returnedDesc,
      (queue_index)8,
      (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
      2,
      32000);
-#pragma warn(1506)  // warning elimination 
 
-
-
+  exe_util_lobupdate_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
   if (updateAction_ == UpdateActionType::ERROR_IF_EXISTS_)
     exe_util_lobupdate_tdb->setErrorIfExists(TRUE);   
   else
@@ -4462,6 +4288,10 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
     exe_util_lobupdate_tdb->setAppend(TRUE);
   else
     exe_util_lobupdate_tdb->setAppend(FALSE);
+  if((ActiveSchemaDB()->getDefaults()).getToken(LOB_LOCKING) == DF_ON)
+    exe_util_lobupdate_tdb->setLobLocking(TRUE);
+  else
+    exe_util_lobupdate_tdb->setLobLocking(FALSE);
 
   generator->initTdbFields(exe_util_lobupdate_tdb);
 
@@ -4476,7 +4306,10 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
   exe_util_lobupdate_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024);
   exe_util_lobupdate_tdb->setLobMaxSize( CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024);
   exe_util_lobupdate_tdb->setLobMaxChunkSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024);
-  exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)*1024*1024);
+  if ((CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE) >=0))
+    exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)*1024*1024);
+  else
+    exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE));
                                            
                                         
   generator->setCriDesc(givenDesc, Generator::DOWN);
@@ -4509,9 +4342,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4612,11 +4443,10 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
      returnedDesc,
      (queue_index)8,
      (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
      2,
      32000);
-#pragma warn(1506)  // warning elimination 
 
+  exe_util_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
   generator->initTdbFields(exe_util_tdb);
   
   if(!generator->explainDisabled()) {
@@ -4820,9 +4650,7 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4928,9 +4756,7 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
   }
 
   // add this descriptor to the work cri descriptor.
-#pragma nowarn(1506)   // warning elimination
   returnedDesc->setTupleDescriptor(returnedDesc->noTuples()-1, tupleDesc);
-#pragma warn(1506)  // warning elimination
 
   ComTdbExeUtilHiveMDaccess::MDType type = ComTdbExeUtilHiveMDaccess::NOOP_;
   if (mdType_ == "TABLES")
@@ -5454,9 +5280,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
   = new (space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
     ////ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
     const Int32 work_atp = 1;
@@ -5481,12 +5305,10 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
          returnedDesc,
          (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
          (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
          getDefault(GEN_DDL_NUM_BUFFERS),
          1024,          //getDefault(GEN_DDL_BUFFER_SIZE));
          errCountTab,
          logLocation);
-#pragma warn(1506)  // warning elimination
 
   exe_util_tdb->setPreloadCleanup(CmpCommon::getDefault(TRAF_LOAD_PREP_CLEANUP) == DF_ON);
   exe_util_tdb->setPreparation(TRUE);
@@ -5664,9 +5486,7 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
   = new (space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
     ////ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
     const Int32 work_atp = 1;
@@ -5693,10 +5513,8 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
          returnedDesc,
          (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
          (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
          getDefault(GEN_DDL_NUM_BUFFERS),
          1024); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
 
   exe_util_tdb->setEmptyTarget(emptyTarget_);
   exe_util_tdb->setLogErrors(logErrors_);

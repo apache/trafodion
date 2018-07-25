@@ -154,7 +154,7 @@ short ProbeCache::codeGen(Generator *generator)
   ItemExpr *hvAsIe = new (generator->wHeap()) Cast(
        probeHashAsIe, 
        new (generator->wHeap()) 
-            SQLInt(FALSE,   // false == unsigned.
+            SQLInt(generator->wHeap(), FALSE,   // false == unsigned.
                    FALSE    // false == not nullable.
                   ));
 
@@ -205,7 +205,7 @@ short ProbeCache::codeGen(Generator *generator)
               Cast (inputIe,
                     (new(generator->wHeap())
                       SQLChar(
-		          CharLenInfo(char_type.getStrCharLimit(), char_type.getDataStorageSize()),
+		          generator->wHeap(), CharLenInfo(char_type.getStrCharLimit(), char_type.getDataStorageSize()),
                           char_type.supportsSQLnull(),
                           FALSE, FALSE, FALSE,
                           char_type.getCharSet(),
@@ -364,14 +364,14 @@ short ProbeCache::codeGen(Generator *generator)
       // that there is room enough for one row.
     }
 
-   double  memoryLimitPerCpu =
+   double  memoryLimitPerInstance =
       ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB) * 1024 * 1024;
    double estimatedMemory;
    
    if (numInnerTuples_ > 0) {
       estimatedMemory = numInnerTuples_ * innerRecLength;
-      if (estimatedMemory > memoryLimitPerCpu) {
-          numInnerTuples_ = memoryLimitPerCpu / innerRecLength;
+      if (estimatedMemory > memoryLimitPerInstance) {
+          numInnerTuples_ = memoryLimitPerInstance / innerRecLength;
           queue_index pUpSize_calc;
  
           pUpSize_calc = numInnerTuples_ ;
@@ -428,19 +428,12 @@ short ProbeCache::codeGen(Generator *generator)
                                         probeCacheTdb->getQueueResizeFactor());
   }
 
-  double probeCacheMemEst = getEstimatedRunTimeMemoryUsage(probeCacheTdb);
+  double probeCacheMemEst = getEstimatedRunTimeMemoryUsage(generator, probeCacheTdb);
   generator->addToTotalEstimatedMemory(probeCacheMemEst);
-
+  Lng32 pcMemEstInKBPerNode = getEstimatedRunTimeMemoryUsage(generator, TRUE).value() / 1024;
   if(!generator->explainDisabled()) {
-     Lng32 pcMemEstInKBPerCPU = (Lng32) (probeCacheMemEst / 1024) ;
-     pcMemEstInKBPerCPU = pcMemEstInKBPerCPU/
-      (MAXOF(generator->compilerStatsInfo().dop(),1));
-    generator->setOperEstimatedMemory(pcMemEstInKBPerCPU );
-
     generator->setExplainTuple(
        addExplainInfo(probeCacheTdb, childExplainTuple, 0, generator));
-
-    generator->setOperEstimatedMemory(0);
   }
 
   generator->setCriDesc(returned_desc, Generator::UP);
@@ -450,7 +443,7 @@ short ProbeCache::codeGen(Generator *generator)
   return 0;
 }
 
-CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   const Lng32 probeSize = 
       getGroupAttr()->getCharacteristicInputs().getRowLength();
@@ -470,30 +463,38 @@ CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
   }
   const double outputBufferSize = resultSize * numBufferPoolEntries;  // in bytes
 
-  // totalMemory is perCPU at this point of time.
+  // totalMemory is perNode at this point of time.
   double totalMemory = cacheSize + outputBufferSize;
-
-  if ( perCPU == FALSE ) {
-     const PhysicalProperty* const phyProp = getPhysicalProperty();
-
-     if (phyProp != NULL)
-     {
-       PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-       totalMemory *= partFunc->getCountOfPartitions();
-     }
+  Lng32 numOfStreams = 1;
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
+  if (phyProp)
+  {
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
+     double  memoryLimitPerInstance =
+          ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB) * 1024 * 1024;
+     if (totalMemory > memoryLimitPerInstance)
+        totalMemory = memoryLimitPerInstance;          
+     totalMemory *= numOfStreams;
   }
-
-  double  memoryLimitPerCpu =
-      ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB) * 1024 * 1024;
-  if (totalMemory > memoryLimitPerCpu)
-     totalMemory = memoryLimitPerCpu;          
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  if (perNode)
+     totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  else
+     totalMemory /= numOfStreams;
   return totalMemory;
 }
 
-double ProbeCache::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
+double ProbeCache::getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb)
 {
   // tdb is ignored for ProbeCache because this operator
   // does not participate in the BMO quota system.
-   return getEstimatedRunTimeMemoryUsage(FALSE).value();
+  Lng32 numOfStreams = 1;
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(generator, FALSE, &numOfStreams);
+  totalMemory = totalMemory * numOfStreams ;
+  return totalMemory.value();
 }
 

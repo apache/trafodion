@@ -1103,9 +1103,22 @@ public class TrafExportSnapshot extends Configured implements Tool {
   static int innerMain(final Configuration conf, final String [] args) throws Exception {
     return ToolRunner.run(conf, new TrafExportSnapshot(), args);
   }
-
+  private void testMobAvail()  {
+      MobUtils.getMobHome(HBaseConfiguration.create());
+  }
   public static void main(String[] args) throws Exception {
 	  LOG.info("Trafodion Export Snapshot Utility");
+    if(args.length == 1)
+    {
+      String cmd = args[0];
+      if (cmd.equals("-t") || cmd.equals("--test")) {
+        //test if MobUtils is aviable in this system
+        //doing something meanless
+        TrafExportSnapshot ti = new TrafExportSnapshot(); 
+        ti.testMobAvail();
+        System.exit(0); //normal
+      }
+    } 
     System.exit(innerMain(HBaseConfiguration.create(), args));
   }
 }

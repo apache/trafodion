@@ -98,12 +98,10 @@ protected:
 	enum { SIZE_OF_PACK_BUFFER = 1000 };
 
 	//-- Implementation of pure virtual 
-	// LCOV_EXCL_START :cnu
 	virtual Lng32 GetIpcBufferSize() const
 	{
 		return SIZE_OF_PACK_BUFFER; // Initial size 
 	}
-	// LCOV_EXCL_STOP
 
 private:
 	enum STATES {  EX_CHECK = REMOTE_STATES_START };

@@ -751,7 +751,7 @@ short CmpSeabaseDDL::upgradeReposUndo(ExeCliInterface * cliInterface,
 void CmpSeabaseDDL::processRepository(
                                       NABoolean createR, NABoolean dropR, NABoolean upgradeR)
 {
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
 
   if (createR)

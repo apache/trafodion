@@ -39,7 +39,7 @@
 
 
 #include <stdlib.h>
-#include "Platform.h"                                    // NT_PORT SK 02/08/97
+#include "Platform.h"
 #include "ComDiags.h"
 #include "CmpCommon.h"
 #include "cli_stdh.h"
@@ -54,7 +54,6 @@
 #define   SQLPARSERGLOBALS_FLAGS				  
 #include "SqlParserGlobals.h"
 #include "SchemaDB.h"
-#include "ReadTableDef.h"
 
 THREAD_P char *hs_input = NULL;
 THREAD_P HSGlobalsClass *hs_globals_y = NULL; // Declare global pointer to hs_globals.  Used by 
@@ -119,14 +118,12 @@ Lng32 ShowStats(const char* input, char* &outBuf,
     if (hs_globals_obj.tableFormat == SQLMX) 
       {
         HSGlobalsClass::schemaVersion = getTableSchemaVersion(*(hs_globals_obj.user_table));
-        // LCOV_EXCL_START :rfi
         if (HSGlobalsClass::schemaVersion == COM_VERS_UNKNOWN)
         {
           HSFuncMergeDiags(-UERR_INTERNAL_ERROR, "GET_SCHEMA_VERSION");
           retcode = -1;
           HSExitIfError(retcode);
         }
-        // LCOV_EXCL_STOP
       }
     if (LM->LogNeeded())
       {
@@ -173,6 +170,8 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     sortBuffer2 = NULL;
 
     HSLogMan *LM = HSLogMan::Instance();
+    if (LM->GetLogSetting() == HSLogMan::SYSTEM)
+      LM->StartLog();  // start a log automatically for each UPDATE STATS command
 
     ComDiagsArea *ptrDiags = CmpCommon::diags();
     if (!ptrDiags)
@@ -248,31 +247,18 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     // allow select * to return system added columns
     retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT MV_ALLOW_SELECT_SYSTEM_ADDED_COLUMNS 'ON'");
     HSExitIfError(retcode);
-    // the next 2 defaults are used to enable nullable primary and store by
-    // keys. If these are enabled, send these 2 cqds to the second mxcmp so
-    // the sample table could be created with nullable keys.
-    if (CmpCommon::getDefault(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT) == DF_ON)
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'ON'");
-	HSExitIfError(retcode);
-      }
-    else
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'OFF'");
-	HSExitIfError(retcode);
-      }
-
-    // OFF enables no error on nullable storeby
-    if (CmpCommon::getDefault(CAT_ERROR_ON_NOTNULL_STOREBY) == DF_OFF)
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT CAT_ERROR_ON_NOTNULL_STOREBY 'OFF'");
-	HSExitIfError(retcode);
-      }
-    else
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT CAT_ERROR_ON_NOTNULL_STOREBY 'ON'");
-	HSExitIfError(retcode);
-      }
+    
+    // The next 2 defaults are used to enable nullable primary and store by
+    // keys. We enable them even though the CQDs might be 'OFF' by default, 
+    // because the user might have created the table when they were 'ON'.
+    // They would only be needed if we choose to create a sample table; the
+    // sample table would have to be created using the same CQDs. In the future,
+    // perhaps CQDs should be captured at DDL time so that UPDATE STATISTICS
+    // can make use of them when creating sample tables.
+    
+    // Allow nullable primary key on a sample table
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'ON'");
+    HSExitIfError(retcode);
 
      if (CmpCommon::getDefault(WMS_CHILD_QUERY_MONITORING) == DF_OFF)
        {
@@ -333,21 +319,22 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
                                              /*==============================*/
     // Also checked in AddTableName() during parse.  Check again, just in case we don't 
     // reach that code.  HISTOGRAM corruption can occur if this is not set.
-    // LCOV_EXCL_START :rfi
     if (hs_globals_obj.tableFormat == SQLMX && HSGlobalsClass::schemaVersion == COM_VERS_UNKNOWN)
     {
       HSFuncMergeDiags(-UERR_INTERNAL_ERROR, "GET_SCHEMA_VERSION");
       retcode = -1;
       HSExitIfError(retcode);
     }
-    // LCOV_EXCL_STOP
 
                                                 /*==============================*/
                                                 /* HANDLE OPTIONS WHICH DO NOT  */
                                                 /* MODIFY HISTOGRAMS.           */
                                                 /*==============================*/
     if (hs_globals_obj.optFlags & LOG_OPT)            /* log option requested   */
-      return 0;
+      {
+        HSCleanUpLog();
+        return 0;
+      }
 
                                                 /*==============================*/
                                                 /* VERIFY THAT THE REQUESTOR    */
@@ -428,6 +415,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
         hs_globals_obj.optFlags & REMOVE_SAMPLE_OPT)  /* delete sample requested*/
     {
       retcode =  managePersistentSamples();
+      HSCleanUpLog();
       HSClearCLIDiagnostics();
       return retcode;
     }
@@ -439,6 +427,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
 
     if (hs_globals_obj.optFlags & VIEWONLY_OPT)
     {
+      HSCleanUpLog();
       return 0;
     }
 
@@ -522,40 +511,13 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
 
     hs_globals_y = NULL;
 
-    // Remove IUS persistent sample if necessary.
-    //@ZXhbase -- need to make sure seabase.seabase.persistent_samples exists, and
-    //            provide dynamic version of CURSOR_PST_REASON_CODE.
-#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
-    if (statsWritten)
-      {
-        // The update has completed successfully. If it was neither a persistent
-        // (i.e., using the PERSISTENT keyword) RUS nor an IUS, drop the target
-        // table's IUS persistent sample if it exists, and remove the corresponding
-        // row from the PERSISTENT_SAMPLES table.
-        HSGlobalsClass* hs_globals = GetHSContext();
-        if (!(hs_globals->optFlags & IUS_PERSIST ||
-              (hs_globals->okToPerformIUS() &&
-               hs_globals->wherePredicateSpecifiedForIUS())))
-          {
-            Int64 dummy1, dummy2;
-            double dummy3;
-            HSPersSamples* ps =
-                  HSPersSamples::Instance(hs_globals->objDef->getCatName(), FALSE);
-            NAString IUSSampTblName;
-            retcode = ps->find(hs_globals->objDef, char('I'), IUSSampTblName,
-                               dummy1, dummy2, dummy3);
-            if (retcode >= 0 && IUSSampTblName.length() > 0)
-              ps->removeSample(hs_globals->objDef, IUSSampTblName, TRUE,
-                               "DROP IUS PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST");
-          }
-      }
-#endif
-
     // Reset CQDs set above; ignore errors
     HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_BLOB_AS_VARCHAR RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_CLOB_AS_VARCHAR RESET");
 
     LM->StopTimer();
+
+    HSCleanUpLog();
 
     return retcode;
   }

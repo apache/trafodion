@@ -76,7 +76,7 @@ private:
        JM_GET_HOSTNAME,
        JM_GET_PORT,
        JM_GET_REGINFO,
-       JM_LAST
+       JM_MAPLAST
    };
    static JavaMethodInit* JavaMethods_;
    static jclass          javaClass_;
@@ -139,9 +139,9 @@ private:
       JM_REGTRUNCABORT,
       JM_DROPTABLE,
       JM_RQREGINFO,
-      JM_LAST
+      JM_TMLAST
    };
-   JavaMethodInit JavaMethods_[JM_LAST];
+   JavaMethodInit JavaMethods_[JM_TMLAST];
    static jclass       javaClass_;
 
 public:

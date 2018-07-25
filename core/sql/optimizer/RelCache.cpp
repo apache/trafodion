@@ -241,7 +241,7 @@ RelExpr* Scan::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
       HostVar * hv = 
 	new(bindWA.wHeap()) 
 	HostVar(hvName, 
-		new(bindWA.wHeap()) SQLChar(CACHED_MAX_ANSI_NAME_EXTERNAL_LEN));
+		new(bindWA.wHeap()) SQLChar(bindWA.wHeap(), CACHED_MAX_ANSI_NAME_EXTERNAL_LEN));
       hv->setPrototypeValue(origName.getQualifiedNameAsString());
       hv->synthTypeAndValueId();
       hv->setIsCachedParam(TRUE);
@@ -265,7 +265,7 @@ RelExpr* Scan::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
 	new(bindWA.wHeap()) char[CACHED_MAX_ANSI_NAME_EXTERNAL_LEN];
       strcpy(strval, origName.getQualifiedNameAsString().data());
       CharType * typ = 
-	new(bindWA.wHeap()) SQLChar(CACHED_MAX_ANSI_NAME_EXTERNAL_LEN, FALSE);
+	new(bindWA.wHeap()) SQLChar(bindWA.wHeap(), CACHED_MAX_ANSI_NAME_EXTERNAL_LEN, FALSE);
       ConstValue * cv = 
 	new(bindWA.wHeap()) ConstValue(typ, strval, CACHED_MAX_ANSI_NAME_EXTERNAL_LEN);
 
@@ -527,10 +527,6 @@ RelExpr* Insert::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
 // is this entire expression cacheable after this phase?
 NABoolean Delete::isCacheableExpr(CacheWA& cwa)
 {
-  // fastdelete (purgedata) is not a cacheable expression.
-  if (isFastDelete())
-    return FALSE; 
-
   return GenericUpdate::isCacheableExpr(cwa);
 }
 
@@ -1007,7 +1003,7 @@ void RelRoot::generateCacheKey(CacheWA &cwa) const
   tmode.updateTransMode(CmpCommon::transMode());
 
   StmtLevelAccessOptions &opts = ((RelRoot*)this)->accessOptions();
-  if (opts.accessType() != ACCESS_TYPE_NOT_SPECIFIED_) {
+  if (opts.accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_) {
     tmode.updateAccessModeFromIsolationLevel
       (TransMode::ATtoIL(opts.accessType()));
     tmode.setStmtLevelAccessOptions();
@@ -1208,10 +1204,6 @@ void Scan::generateCacheKey(CacheWA &cwa) const
   if (stream_) { 
     cwa += " stream "; 
   }
-  // mark mpalias queries so they can be decached upon user request
-  if (getTableDesc()->getNATable()->isAnMPTableWithAnsiName()) {
-    cwa += AM_AN_MPALIAS_QUERY;
-  }
 
   if (getHbaseAccessOptions())
     {
@@ -1237,11 +1229,7 @@ NABoolean Scan::isCacheableExpr(CacheWA& cwa)
     if (stream_) { // pub-sub streams are not cacheable
       return FALSE;
     }
-    // mpalias SELECT is not cacheable unless explicitly requested
-    if (getTableDesc()->getNATable()->isAnMPTableWithAnsiName() &&
-        CmpCommon::getDefault(QUERY_CACHE_MPALIAS) == DF_OFF) {
-      return FALSE;
-    }
+
     cwa.setConditionallyCacheable(); 
     if (CmpCommon::getDefaultLong(MVQR_REWRITE_LEVEL) >= 1 &&
         QRDescGenerator::hasRewriteEnabledMVs(getTableDesc())) {

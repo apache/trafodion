@@ -41,29 +41,21 @@
 #include <stdlib.h>
 #include <fstream>
 
-  #ifdef _DEBUG
-    #include <string.h>
-  #endif
-
-#if 0
-#define DllImport
-#include "guardian/pprcinfz.h"
+#ifdef _DEBUG
+#include <string.h>
 #endif
 
 #include <dlfcn.h>  
 
 
-  #include "ComMemoryDiags.h"		// ComMemoryDiags::DumpMemoryInfo()
-
-
-#define NA_LINUX_QT
+#include "ComMemoryDiags.h"		// ComMemoryDiags::DumpMemoryInfo()
 
 #include "CmpContext.h"
 #include "Analyzer.h"
 #include "AllRelExpr.h"
 #include "BindWA.h"
 #include "CacheWA.h"
-#include "catapirequest.h"
+
 #include "ComDiags.h"
 #include "CmpCommon.h"
 #include "CmpErrors.h"
@@ -81,7 +73,6 @@
 #include "OptimizerSimulator.h"
 #include "parser.h"
 #include "PhyProp.h"
-#include "ReadTableDef.h"
 #include "SQLCLIdev.h"
 #include "Sqlcomp.h"
 #include "StmtNode.h"
@@ -120,7 +111,7 @@ extern NABoolean FindLeaks;
 THREAD_P Int32 CostScalar::ovflwCount_ = 0;
 THREAD_P Int32 CostScalar::udflwCount_ = 0;
 
-#if !defined(NA_NSK) && !defined(NDEBUG)
+#if !defined(NDEBUG)
   NABoolean TraceCatManMemAlloc = FALSE;
 #endif
 
@@ -184,7 +175,6 @@ static Int32 sqlcompTestExit(QueryText& input)
 }
 
 #ifdef _DEBUG
-// LCOV_EXCL_START
 // for debugging only
 // +7 below is to get past "insert " in input_str, e.g. "insert INTOINSPECT;"
 static Int32 sqlcompTest(QueryText& input)
@@ -261,32 +251,10 @@ static Int32 sqlcompTest(QueryText& input)
   {
     return 1;
   }
-  else if (strncmp(input_str, "GETDEFAULTVOLUMES", 17) == 0)
-  {
-    NAString heading;
-    NAString listOfVols;
-    heading =
-      "List of DP2 Volumes derived from SQL_EXEC_GetListOfVolumes_Internal():";
-    const char *const * p = SQL_EXEC_GetListOfVolumes_Internal();
-    for (; p NEQ NULL AND *p NEQ NULL; p++)
-      listOfVols += *p + NAString(",");
-    if (listOfVols[listOfVols.length()-1] EQU ',')
-      listOfVols.remove(listOfVols.length()-1);
-    *CmpCommon::diags() << DgSqlCode(3066) << DgString0(heading);
-    *CmpCommon::diags() << DgSqlCode(3066) << DgString0(listOfVols);
-    return 1;
-  }
 
   return 0;
 }
-// LCOV_EXCL_STOP
 #endif  // !defined(NDEBUG)
-
-#if !defined(NA_NSK) && defined(NA_DEBUG_GUI)
-// On Windows XP, the call to LoadLibrary may fail with error 10093
-// ("Either the application has not called WSAStartup, or WSAStartup
-// failed").  This function calls WSAStartup() to fix the problem.
-#endif // NA_DEBUG_GUI
 
 // -----------------------------------------------------------------------
 // -----------------------------------------------------------------------
@@ -301,7 +269,6 @@ void CmpMain::initGuiDisplay(RelExpr *queryExpr)
                             const char *txt,
                             RelExpr *queryExpr )
   {
-    // LCOV_EXCL_START
     // for NSK only
     if (( CmpCommon::getDefault(NSK_DBG) == DF_ON ) &&
         ( CmpCommon::getDefault(nadef) == DF_ON ))
@@ -310,22 +277,16 @@ void CmpMain::initGuiDisplay(RelExpr *queryExpr)
       CURRCONTEXT_OPTDEBUG->showTree( queryExpr, NULL, "  " );
       CURRCONTEXT_OPTDEBUG->stream() << endl;
     }
-    // LCOV_EXCL_STOP
   }
 
 #ifdef NA_DEBUG_GUI
   NABoolean CmpMain::guiDisplay(Sqlcmpdbg::CompilationPhase phase, RelExpr* q)
   {
-#if defined(NA_LINUX_QT)
       if (((RelRoot *)q)->getDisplayTree() && CmpMain::pExpFuncs_)
       {
         initializeGUIData(CmpMain::pExpFuncs_);
         CmpMain::pExpFuncs_->fpDisplayQueryTree(phase, q, NULL);
       }
-#else
-      if (((RelRoot *)q)->getDisplayTree())
-        cout << "Sorry... gui display is not supported in this environment.\n";
-#endif
     return FALSE;
   }
 #endif
@@ -346,8 +307,6 @@ void CmpMain::initGuiDisplay(RelExpr *queryExpr)
 //--------------------------------------------------------------------
 void CmpMain::loadSqlCmpDbgDLL_msGui()
 {
-#if   defined(NA_LINUX_QT) // NA_WINNT
-
   if ( CmpMain::msGui_ == NULL ) // If no Compiler Instance is currently using debugger
   {
      CmpMain::msGui_ = CmpCommon::context();     // Claim ownership of debugger
@@ -372,8 +331,6 @@ void CmpMain::loadSqlCmpDbgDLL_msGui()
      if ( dlptr == NULL )
         CmpMain::msGui_ = NULL ;  //This Compiler Instance cannot use debugger
   }
-
-#endif // NA_LINUX_QT
   // free the DLL module
 }
 #endif // NA_DEBUG_GUI
@@ -492,7 +449,6 @@ void CmpMain::sqlcompCleanup(const char *input_str,
     cmpTracker->logCompilerStatusOnInterval(trackingInterval);
   }
   
-#if defined(NA_LINUX_QT)
   if( dlptr  &&  CmpMain::msGui_ == CmpCommon::context() && CURRENTSTMT->displayGraph())
   {	
     int ret = dlclose(dlptr);
@@ -501,10 +457,6 @@ void CmpMain::sqlcompCleanup(const char *input_str,
   }	
 
   CURRENTSTMT->clearDisplayGraph();
-#endif
-
-
-
 }
 
 RelExpr *CmpMain::transform(NormWA &normWA, RelExpr *queryExpr)
@@ -773,9 +725,13 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
 
     //if using special tables e.g. using index as base table
     //select * from table (index_table T018ibc);
-    //then refresh metadata cache
+    //then refresh metadata cache.  Make an exception for internal exeutil
+    // statements that use this parserflag. It causes too many long compiles 
+    // and affects performance - for eg LOB access which uses ghost tables and 
+    // has the SPECIALTABLETYPE flag set..  
     if(Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE) &&
-       CmpCommon::context()->schemaDB_->getNATableDB()->cachingMetaData())
+       CmpCommon::context()->schemaDB_->getNATableDB()->cachingMetaData() &&
+       !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) )
       CmpCommon::context()->schemaDB_->getNATableDB()->refreshCacheInThisStatement();
 
     MonitorMemoryUsage_Enter("Parser");
@@ -1784,11 +1740,7 @@ fixupCompilationStats(ComTdbRoot *rootTdb,
     //
     // converting the offset to a pointer.
     CompilationStatsData *cmpStatsData = 
-#ifdef NA_64BIT
       (CompilationStatsData*)rootSpace->convertToPtr(offset);
-#else
-      (CompilationStatsData*)rootSpace->convertToPtr(int64ToInt32(offset));
-#endif
               
     CMPASSERT(NULL != cmpStatsData);
     //
@@ -1863,7 +1815,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 
 
   if (useQueryCache != NOCACHE && CmpCommon::getDefault(NSK_DBG) == DF_ON) {
-    useQueryCache = NOCACHE; // LCOV_EXCL_LINE   
+    useQueryCache = NOCACHE;
   }
 
   // Every compile goes through here so we are guranteed that the
@@ -2008,7 +1960,6 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
   }
 #endif
 
-  // LCOV_EXCL_START
   // for NSK only
   if ( CmpCommon::getDefault(NSK_DBG) == DF_ON )
   {
@@ -2043,7 +1994,6 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
       CURRCONTEXT_OPTDEBUG->stream() << endl << endl;
     }
   }
-  // LCOV_EXCL_STOP
 
 #ifdef NA_DEBUG
 #ifdef NA_DEBUG_GUI
@@ -2145,11 +2095,6 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
     if (compileFromCache(input_str, charset, queryExpr, bindWA, cachewa,
                          gen_code, gen_code_len, (NAHeap*)heap, op,
                          bPatchOK, *begTime)) {
-      // binder (via bindNode->getNATable->NATable->readTableDef->
-      // beginTransaction...) does a "begin work;" which requires a
-      // matching "commit work;" or "rollback work;" (via endTransaction),
-      // otherwise, mxcmp emits "ERROR[8819] Begin transaction failed
-      // while preparing the statement" messages.
       if (cacheable) *cacheable = cachewa.isCacheable();
       if (!bPatchOK) {
         sqlcompCleanup(input_str, queryExpr, TRUE);

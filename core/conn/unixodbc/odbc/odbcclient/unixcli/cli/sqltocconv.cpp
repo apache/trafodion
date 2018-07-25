@@ -421,7 +421,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
                 break;
             }
 		case SQL_WCHAR:
-			charlength = srcLength-1;
+			charlength = srcLength - 1;
 			if (charlength == 0)
 			{
 				if (targetStrLenPtr != NULL)
@@ -587,17 +587,15 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			break;
 		case SQL_BIGINT:
 #if !defined MXHPUX && !defined MXOSS && !defined MXAIX && !defined MXSUNSPARC
-//			sprintf( cTmpBuf, "%Ld", *((__int64 *)srcDataPtr));
             if (srcUnsigned)
-                snprintf( cTmpBuf, sizeof(unsigned __int64), "%lu", *((unsigned __int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%lu", *((unsigned __int64 *)srcDataPtr));
             else
-                snprintf( cTmpBuf, sizeof(__int64), "%ld", *((__int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%ld", *((__int64 *)srcDataPtr));
 #else
-//			sprintf( cTmpBuf, "%lld", *((__int64 *)srcDataPtr));
             if (srcUnsigned)
-                snprintf( cTmpBuf, sizeof(unsigned __int64), "%llu", *((unsigned __int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%llu", *((unsigned __int64 *)srcDataPtr));
             else
-                snprintf( cTmpBuf, sizeof(__int64), "%lld", *((__int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%lld", *((__int64 *)srcDataPtr));
 #endif
 			DataLen = strlen(cTmpBuf);
 			if (DataLen > targetLength)
@@ -1686,6 +1684,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+                    DataLen = sizeof(DATE_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_DATE, 
@@ -1932,6 +1931,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+                    DataLen = sizeof(TIME_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIME, 
@@ -2151,6 +2151,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+                    DataLen = sizeof(TIMESTAMP_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIMESTAMP, 
@@ -3557,7 +3558,10 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			{
 				if(CDataType == SQL_C_CHAR)
 				{
-					DataLen = charlength-Offset;
+			                if(srcCharSet == SQLCHARSETCODE_UCS2)
+					    DataLen = charlength / 2 - Offset;
+					else
+					    DataLen = charlength  - Offset;
 					if (DataLen >= targetLength)
 					{
 						DataLenTruncated = DataLen;

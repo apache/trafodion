@@ -553,9 +553,7 @@ short HashGroupBy::codeGen(Generator * generator) {
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space); 
-#pragma warn(1506)  // warning elimination 
   
   generator->setCriDesc(returnedDesc, Generator::DOWN);
 
@@ -780,6 +778,8 @@ short HashGroupBy::codeGen(Generator * generator) {
 	BiRelat(ITM_EQUAL, itemExpr, convNode);
       biRelat->setSpecialNulls(-1);
       biRelat->bindNode(generator->getBindWA());
+      if (generator->getBindWA()->errStatus())
+        GenExit();
       hbSearchValIds.insert(biRelat->getValueId());
     }
   };
@@ -935,7 +935,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   }
 
   leftExpr = new (generator->wHeap()) Cast(leftExpr, new (generator->wHeap())
-					   SQLInt(FALSE, FALSE));
+					   SQLInt(generator->wHeap(), FALSE, FALSE));
   leftExpr->setConstFoldingDisabled(TRUE);      
 
   // bind/type propagate the hash evaluation tree
@@ -1363,9 +1363,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   ExplainTuple *childExplainTuple = generator->getExplainTuple();
 
   returnedDesc->
-#pragma nowarn(1506)   // warning elimination 
     setTupleDescriptor(returnedDesc->noTuples() - 1, tupleDesc);
-#pragma warn(1506)  // warning elimination 
 
   // This estimate on the number of groups should work correctly even when
   // under the right side of a NestedLoopJoin (i.e., multiple probes are
@@ -1474,6 +1472,9 @@ short HashGroupBy::codeGen(Generator * generator) {
   hashGrbyTdb->setScratchIOVectorSize((Int16)getDefault(SCRATCH_IO_VECTOR_SIZE_HASH));
 
   double memQuota = 0;
+  Lng32 numStreams;
+  double memQuotaRatio;
+  double bmoMemoryUsagePerNode = generator->getEstMemPerNode(getKey() ,numStreams);
 
   if(isPartialGroupBy) {
     // The Quota system does not apply to Partial GroupBy
@@ -1504,55 +1505,48 @@ short HashGroupBy::codeGen(Generator * generator) {
       // Apply quota system if either one the following two is true:
       //   1. the memory limit feature is turned off and more than one BMOs
       //   2. the memory limit feature is turned on
-      NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+      NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
 
-      if ( mlimitPerCPU || numBMOsInFrag > 1 ||
+      if ( mlimitPerNode || numBMOsInFrag > 1 ||
            (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
         memQuota =
            computeMemoryQuota(generator->getEspLevel() == 0,
-                              mlimitPerCPU,
-                              generator->getBMOsMemoryLimitPerCPU().value(),
-                              generator->getTotalNumBMOsPerCPU(),
-                              generator->getTotalBMOsMemoryPerCPU().value(),
+                              mlimitPerNode,
+                              generator->getBMOsMemoryLimitPerNode().value(),
+                              generator->getTotalNumBMOs(),
+                              generator->getTotalBMOsMemoryPerNode().value(),
                               numBMOsInFrag, 
-                              generator->getFragmentDir()->getBMOsMemoryUsage()
+                              bmoMemoryUsagePerNode,
+                              numStreams,
+                              memQuotaRatio
                              );
-
-        Lng32 hjGyMemoryLowbound = 
-            defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY);
-
-        if ( memQuota < hjGyMemoryLowbound )
-           memQuota = hjGyMemoryLowbound;
-
-        hashGrbyTdb->setMemoryQuotaMB( UInt16(memQuota) );
       }
+      Lng32 hjGyMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY);
+      Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
+      if ( memQuota < hjGyMemoryLowbound ) {
+          memQuota = hjGyMemoryLowbound;
+          memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+      }
+      else if (memQuota >  memoryUpperbound)
+          memQuota = memoryUpperbound;
+
+      hashGrbyTdb->setMemoryQuotaMB( UInt16(memQuota) );
+      hashGrbyTdb->setBmoQuotaRatio(memQuotaRatio);
     }
 
-    generator->addToTotalOverflowMemory(
-          getEstimatedRunTimeOverflowSize(memQuota)
-                                    );
   }
-
-  generator->addToTotalOverflowMemory(
-           getEstimatedRunTimeOverflowSize(memQuota)
-                                     );
 
   // For debugging overflow only (default is zero == not used).
   hashGrbyTdb->
     setForceOverflowEvery((UInt16)(ActiveSchemaDB()->getDefaults()).
 			  getAsULong(EXE_TEST_HASH_FORCE_OVERFLOW_EVERY));
 
-  double hashGBMemEst = getEstimatedRunTimeMemoryUsage(hashGrbyTdb);
+  double hashGBMemEst = generator->getEstMemPerInst(getKey());
+  hashGrbyTdb->setEstimatedMemoryUsage(hashGBMemEst / 1024);
   generator->addToTotalEstimatedMemory(hashGBMemEst);
 
   if ( generator->getRightSideOfFlow() ) 
     hashGrbyTdb->setPossibleMultipleCalls(TRUE);
-
-  Lng32 hgbMemEstInKBPerCPU = (Lng32)(hashGBMemEst / 1024) ;
-  hgbMemEstInKBPerCPU = hgbMemEstInKBPerCPU/
-    (MAXOF(generator->compilerStatsInfo().dop(),1));
-  hashGrbyTdb->setHgbMemEstInMbPerCpu
-    ( Float32(MAXOF(hgbMemEstInKBPerCPU/1024,1)) );
 
   // For now use variable size records whenever Aligned format is
   // used.
@@ -1565,16 +1559,12 @@ short HashGroupBy::codeGen(Generator * generator) {
   }
 
   hashGrbyTdb->setCIFON((tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT));
-  if(!generator->explainDisabled()) {
-    generator->setOperEstimatedMemory(hgbMemEstInKBPerCPU);
-
+  hashGrbyTdb->setHgbMemEstInKBPerNode(bmoMemoryUsagePerNode / 1024 );
+  if (!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(hashGrbyTdb, childExplainTuple, 0, generator));
 
-    generator->setOperEstimatedMemory(0);
   }
-
-
 
   // set the new up cri desc.
   generator->setCriDesc(returnedDesc, Generator::UP);
@@ -1626,101 +1616,53 @@ ExpTupleDesc::TupleDataFormat HashGroupBy::determineInternalFormat( const ValueI
 
 }
 
-CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(0).getGroupAttr();
   const CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
   const CostScalar childRowCount = getEstRowsUsed(); // the number of 
+  //TODO: Line below dumps core at times 
+  //const CostScalar maxCard = childGroupAttr->getResultMaxCardinalityForEmptyInput();
+  const CostScalar maxCard = 0;
+
                                                      // distinct rows groupped
   // Each record also uses a header (HashRow) in memory (8 bytes for 32bit).
   // Hash tables also take memory -- they are about %50 longer than the 
   // number of entries.
   const ULng32 
     memOverheadPerRecord = sizeof(HashRow) + sizeof(HashTableHeader) * 3 / 2 ;
-
+  CostScalar estMemPerNode;
+  CostScalar estMemPerInst;
   // totalHashTableMemory is for all CPUs at this point of time.
   CostScalar totalHashTableMemory = 
     childRowCount * (childRecordSize + memOverheadPerRecord);
-
-  if ( perCPU == TRUE ) {
-     const PhysicalProperty* const phyProp = getPhysicalProperty();
-     if (phyProp)
-     {
-       PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-
-      // totalHashTableMemory is per CPU at this point of time.
-       totalHashTableMemory /= partFunc->getCountOfPartitions();
-     }
-  }
-  return totalHashTableMemory;
-}
-
-double HashGroupBy::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
-{
-  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE);
-
-  double memoryLimitPerCpu;
-  ULng32 memoryQuotaInMB = ((ComTdbHashGrby *)tdb)->memoryQuotaMB();
-  if (memoryQuotaInMB)
-    memoryLimitPerCpu = memoryQuotaInMB * 1024 * 1024 ;
-  else if ( isNotAPartialGroupBy() == FALSE)
-  {
-    memoryLimitPerCpu = 
-      ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PARTIALHGB_IN_MB) * 1024 * 1024;
-  }
-  else
-  {
-    memoryLimitPerCpu = 
-        ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_AVAILABLE_IN_MB) * 1024 * 1024 ;
-  }
-
-  const PhysicalProperty* const phyProp = getPhysicalProperty();
   Lng32 numOfStreams = 1;
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
   if (phyProp)
   {
-    PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-    numOfStreams = partFunc->getCountOfPartitions();
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
   }
-
-  CostScalar memoryPerCpu = totalHashTableMemory/numOfStreams ;
-  if ( memoryPerCpu > memoryLimitPerCpu ) 
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  estMemPerNode =  totalHashTableMemory / MINOF(MAXOF(gpClusterInfo->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerInst =  totalHashTableMemory / numOfStreams;
+  NABoolean isPartialGroupBy = (isAPartialGroupByNonLeaf() ||
+                                isAPartialGroupByLeaf());
+  if (isPartialGroupBy)
   {
-      memoryPerCpu = memoryLimitPerCpu;
+     estMemPerNode = 1024;
+     estMemPerInst = 1024;
   }
-  totalHashTableMemory = memoryPerCpu * numOfStreams ;
-  return totalHashTableMemory.value();
-}
-
-double HashGroupBy::getEstimatedRunTimeOverflowSize(double memoryQuotaMB)
-{
-
-  if ( memoryQuotaMB > 0 ) {
-
-     CostScalar memoryUsage =
-        getEstimatedRunTimeMemoryUsage(TRUE /*per CPU*/);
-
-     double delta = memoryUsage.getValue() - memoryQuotaMB * COM_ONE_MEG ;
-
-     if ( delta > 0 ) {
-        const PhysicalProperty* const phyProp = getPhysicalProperty();
-        Lng32 pipelines = 1;
-   
-        if (phyProp)
-        {
-          PartitioningFunction * partFunc = 
-                   phyProp -> getPartitioningFunction() ;
-   
-          if ( partFunc )
-             pipelines = partFunc -> getCountOfPartitions();
-        }
-   
-   
-        return delta * pipelines;
-     } 
-  } 
-
-  return 0;
-
+  OperBMOQuota *operBMOQuota = new (generator->wHeap()) OperBMOQuota(getKey(), numOfStreams, 
+                                                  estMemPerNode, estMemPerInst, childRowCount, maxCard);
+  generator->getBMOQuotaMap()->insert(operBMOQuota);
+  if (perNode)
+     return estMemPerNode;
+  else
+     return estMemPerInst; 
 }
 
 /////////////////////////////////////////////////////////
@@ -1763,9 +1705,7 @@ short GroupByAgg::codeGen(Generator * generator) {
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space); 
-#pragma warn(1506)  // warning elimination 
   
   generator->setCriDesc(returnedDesc, Generator::DOWN);
 
@@ -1797,7 +1737,6 @@ short GroupByAgg::codeGen(Generator * generator) {
   ExplainTuple *childExplainTuple = generator->getExplainTuple();
 
   returnedDesc->
-#pragma nowarn(1506)   // warning elimination 
     setTupleDescriptor(returnedDesc->noTuples() - 1, tupleDesc); 
  
   ComTdbSortGrby * sortGrbyTdb 
@@ -1818,7 +1757,6 @@ short GroupByAgg::codeGen(Generator * generator) {
 				getDefault(GEN_SGBY_NUM_BUFFERS),
 				getDefault(GEN_SGBY_BUFFER_SIZE),
 				generator->getTolerateNonFatalError());
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(sortGrbyTdb);
 
   if (isRollup())

@@ -150,12 +150,10 @@ void yyerror(const char *errtext)
 	  if (tok.tokenStrLen) 
 	    {
 	      NAString *ti = unicodeToChar
-#pragma nowarn(1506)   // warning elimination 
 		(&inputStr[tok.tokenStrPos], tok.tokenStrLen,
 		 CharInfo::UTF8
 		 , 
 		 PARSERHEAP(), TRUE);
-#pragma warn(1506)  // warning elimination 
 	      cerr << "<" << (ti ? ti->data() : "") << "> ";
 	      delete ti;
 	    }
@@ -165,12 +163,10 @@ void yyerror(const char *errtext)
 	    }
 	}
       NAString *stmt = unicodeToChar
-#pragma nowarn(1506)   // warning elimination 
 	(inputStr, NAWstrlen(inputStr), 
 	 CharInfo::UTF8
 	 , 
 	 PARSERHEAP(), TRUE);
-#pragma warn(1506)  // warning elimination 
       cerr << " " << (stmt ? stmt->data() : "") << endl;
       delete stmt;
     }
@@ -186,7 +182,7 @@ void yyerror(const char *errtext)
 	*SqlParser_Diags << DgSqlCode(-SQLCI_SYNTAX_ERROR);
 	// Point to the end of offending token,
 	// knowing that the Lexer has looked ahead by 2 characters
- Int32 pos = SqlParser_CurrentParser->getLexer()->getInputPos();
+        Int32 pos = SqlParser_CurrentParser->getLexer()->getInputPos();
 	StoreSyntaxError(inputStr,pos,*SqlParser_Diags,0,
 			CharInfo::UTF8
 			);
@@ -319,9 +315,7 @@ void MarkInteriorNodesAsInCompoundStmt(RelExpr *node)
 
 NAWString* localeMBStringToUnicode(NAString* localeString, Lng32 charset, CollHeap *heap)
 {
-#pragma nowarn(1506)   // warning elimination 
    charBuf cbuf((unsigned char*)(localeString->data()), localeString->length());
-#pragma warn(1506)  // warning elimination 
    NAWcharBuf* wcbuf = 0;
    Int32 errorcode = 0;
    switch (charset) {
@@ -477,7 +471,7 @@ RelRoot *finalize(RelExpr *top, NABoolean outputVarCntValid)
                       argInfo = TheProcArgTypes->get(ivName);
                       if (!argInfo)
                         argInfo = new (PARSERHEAP()) HVArgType
-                          (ivName, new (PARSERHEAP()) SQLUnknown);
+                          (ivName, new (PARSERHEAP()) SQLUnknown(PARSERHEAP()));
                       argInfo->useCount()++;
                       argInfo->intoCount()++;
                     }
@@ -562,12 +556,12 @@ void ForUpdateSpec::finalizeUpdatability(RelExpr *top)
 
 
 NABoolean finalizeAccessOptions(RelExpr *top,
-                                AccessType at,
+                                TransMode::AccessType at,
                                 LockMode   lm)
 {
   if (top->getOperatorType() == REL_TUPLE ||
       top->getOperatorType() == REL_TUPLE_LIST) {
-    return (at == ACCESS_TYPE_NOT_SPECIFIED_ && lm == LOCK_MODE_NOT_SPECIFIED_);
+    return (at == TransMode::ACCESS_TYPE_NOT_SPECIFIED_ && lm == LockMode::LOCK_MODE_NOT_SPECIFIED_);
   }
 
   // In case of an INSERT VALUES statement, this is a Tuple node.
@@ -577,8 +571,8 @@ NABoolean finalizeAccessOptions(RelExpr *top,
 
   RelRoot *treeTop = (RelRoot *)top;
 
-  if (at != ACCESS_TYPE_NOT_SPECIFIED_) {
-    if (treeTop->accessOptions().accessType() != ACCESS_TYPE_NOT_SPECIFIED_) {
+  if (at != TransMode::ACCESS_TYPE_NOT_SPECIFIED_) {
+    if (treeTop->accessOptions().accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_) {
       *SqlParser_Diags << DgSqlCode(-3196);
       // Access type cannot be specified more than once.
       return FALSE;	// error
@@ -586,8 +580,8 @@ NABoolean finalizeAccessOptions(RelExpr *top,
     treeTop->accessOptions().accessType() = at;
   }
 
-  if (lm != LOCK_MODE_NOT_SPECIFIED_) {
-    if (treeTop->accessOptions().lockMode() != LOCK_MODE_NOT_SPECIFIED_) {
+  if (lm != LockMode::LOCK_MODE_NOT_SPECIFIED_) {
+    if (treeTop->accessOptions().lockMode() != LockMode::LOCK_MODE_NOT_SPECIFIED_) {
       *SqlParser_Diags << DgSqlCode(-3197);
       // Lock mode cannot be specified more than once.
       return FALSE;	// error
@@ -614,7 +608,6 @@ NAString * getSqlStmtStr(CharInfo::CharSet & refparam_targetCharSet, CollHeap * 
       if (NAWstrncmp(temp, WIDE_("DISPLAY"), 7) == 0) 
 	start_pos = 7;
     }
-#pragma nowarn(1506)   // warning elimination 
   
   // SqlParser_CurrentParser->charset_ is the encoding charset of the
   // sql stmt under parsing now. Target is the charset that the stmt
@@ -629,7 +622,6 @@ NAString * getSqlStmtStr(CharInfo::CharSet & refparam_targetCharSet, CollHeap * 
                                  , heap
                                  );
   ParScannedInputCharset = CharInfo::UTF8;
-#pragma warn(1506)  // warning elimination
 
   return stmt;
 }
@@ -658,7 +650,7 @@ HostVar *makeHostVar(NAString *hvName, NAString *indName, NABoolean isDynamic)
   HVArgType *argInfo = TheProcArgTypes ?
 		       TheProcArgTypes->get(hvName) : NULL;
   NAType    *naType  = argInfo ?
-		       argInfo->getType() : new (PARSERHEAP()) SQLUnknown;
+		       argInfo->getType() : new (PARSERHEAP()) SQLUnknown(PARSERHEAP());
   ComASSERT(naType);
   naType->setNullable(!!indName);
 
@@ -747,9 +739,7 @@ NABoolean literalToNumber(NAString *strptr, char sign, NAString *cvtstr,
     }
 
   if (strSize < 5) {
-#pragma nowarn(1506)   // warning elimination 
     shortVal = atoi(*cvtstr);
-#pragma warn(1506)  // warning elimination 
   } else if (strSize < 10) {
     longVal = atol(*cvtstr);
   } else if (strSize < 19) {
@@ -770,21 +760,15 @@ NABoolean literalToNumber(NAString *strptr, char sign, NAString *cvtstr,
       // aware that atoInt64(LLONG_MAX) even with overflow checking can 
       // kill mxcmp with a signal 31!
       // Prepare BCD representation of number
-#pragma nowarn(1506)   // warning elimination 
       Lng32 largestrSize = strSize + 1; // extra byte for sign
-#pragma warn(1506)  // warning elimination 
       char *largestr = new (PARSERHEAP()) char[largestrSize];
       largestr[0] = sign;
       size_t j = (sign == '+') ? 0 : 1;
       for (size_t i = 0; i < strSize; i++)	  // strSize, not largestrSize
-#pragma nowarn(1506)   // warning elimination 
         largestr[i+1] = (*cvtstr)[i+j] - '0';
-#pragma warn(1506)  // warning elimination 
 
       // Convert BCD to Big Num representation
-#pragma nowarn(1506)   // warning elimination 
       bigNumSize = BigNumHelper::ConvPrecisionToStorageLengthHelper(strSize);
-#pragma warn(1506)  // warning elimination 
       *bigNum = new (PARSERHEAP()) char[bigNumSize];
       BigNumHelper::ConvBcdToBigNumWithSignHelper(largestrSize,
                                                   bigNumSize, 
@@ -889,7 +873,7 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
 	returnValue = 
 	  new (PARSERHEAP()) ConstValue
 	  (new (PARSERHEAP()) SQLLargeInt
-	    ((Lng32)scale, 
+	    (PARSERHEAP(), (Lng32)scale, 
              (UInt16) 0, // 64-bit
 	     TRUE,
 	     FALSE),
@@ -900,7 +884,7 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
 	returnValue = 
 	  new (PARSERHEAP()) ConstValue
 	  (new (PARSERHEAP()) SQLNumeric
-	   (length,
+	   (PARSERHEAP(), length,
 	    (Lng32)strSize, // precision
 	    (Lng32)scale, 
 	    createSignedDatatype,
@@ -933,21 +917,15 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
       // aware that atoInt64(LLONG_MAX) even with overflow checking can 
       // kill mxcmp with a signal 31!
       // Prepare BCD representation of number
-#pragma nowarn(1506)   // warning elimination 
       Lng32 largestrSize = strSize + 1; // extra byte for sign
-#pragma warn(1506)  // warning elimination 
       char *largestr = new (PARSERHEAP()) char[largestrSize];
       largestr[0] = sign;
       size_t j = (sign == '+') ? 0 : 1;
       for (size_t i = 0; i < strSize; i++)	  // strSize, not largestrSize
-#pragma nowarn(1506)   // warning elimination 
         largestr[i+1] = (*cvtstr)[i+j] - '0';
-#pragma warn(1506)  // warning elimination 
 
       // Convert BCD to Big Num representation
-#pragma nowarn(1506)   // warning elimination 
       Lng32 bigNumSize = BigNumHelper::ConvPrecisionToStorageLengthHelper(strSize);
-#pragma warn(1506)  // warning elimination 
       char *bigNumData = new (PARSERHEAP()) char[bigNumSize];
       BigNumHelper::ConvBcdToBigNumWithSignHelper(largestrSize,
                                                   bigNumSize, 
@@ -955,17 +933,14 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
                                                   bigNumData);
     
       returnValue = new (PARSERHEAP()) ConstValue
-#pragma nowarn(1506)   // warning elimination 
-        (new (PARSERHEAP()) SQLBigNum(strSize, 
+        (new (PARSERHEAP()) SQLBigNum(PARSERHEAP(), strSize, 
                                       scale,
                                       TRUE,
                                       TRUE,
-                                      FALSE,
-				      NULL),
+                                      FALSE),
          (void *) bigNumData,
          bigNumSize,
          strptr);
-#pragma warn(1506)  // warning elimination 
       NADELETEBASIC(largestr, (PARSERHEAP()));	
       NADELETEBASIC(bigNumData, (PARSERHEAP()));
     } else { // precision >= FLT_MAX_10_EXP in a user-specified literal
@@ -1162,7 +1137,7 @@ ItemExpr *literalOfApproxNumeric(NAString *strptr, char sign)
     }
 
   returnValue = new (PARSERHEAP()) ConstValue (new (PARSERHEAP())
-					       SQLDoublePrecision(FALSE),
+					       SQLDoublePrecision(PARSERHEAP(), FALSE),
 					       (void *)&doubleVal,
 					       sizeof(double),
 					       strptr);
@@ -1184,12 +1159,11 @@ ItemExpr *literalOfInterval(NAString *strptr,
                               qualifier->getFractionPrecision(),
                               sign);
   IntervalType *intervalType = new (PARSERHEAP())
-		  SQLInterval(FALSE,
+		  SQLInterval(PARSERHEAP(), FALSE,
 			      qualifier->getStartField(),
 			      qualifier->getLeadingPrecision(),
 			      qualifier->getEndField(),
-			      qualifier->getFractionPrecision(),
-                              PARSERHEAP());
+			      qualifier->getFractionPrecision());
   strptr->prepend("'");
   strptr->append ("' ");
   strptr->append (intervalType->getIntervalQualifierAsString());
@@ -1229,7 +1203,7 @@ ItemExpr *literalOfDate(NAString *strptr, NABoolean noDealloc)
      *SqlParser_Diags << DgSqlCode(-3045) << DgString0(*strptr);
   else
     returnValue = new (PARSERHEAP()) ConstValue (new (PARSERHEAP())
-		    SQLDate(FALSE, PARSERHEAP()),
+		    SQLDate(PARSERHEAP(), FALSE),
 		    (void *) dtValue.getValue(),
 		    dtValue.getValueLen(),
 		    strptr);
@@ -1251,7 +1225,7 @@ ItemExpr *literalOfTime(NAString *strptr)
       *SqlParser_Diags << DgSqlCode(-3046) << DgString0(*strptr);
   else
     returnValue = new (PARSERHEAP()) ConstValue (new (PARSERHEAP())
-		    SQLTime(FALSE, fractionPrec,PARSERHEAP()),
+		    SQLTime(PARSERHEAP(), FALSE, fractionPrec),
 		    (void *) dtValue.getValue(),
 		    dtValue.getValueLen(),
 		    strptr);
@@ -1330,7 +1304,7 @@ ItemExpr *literalOfTimestamp(NAString *strptr)
   else
     returnValue = new (PARSERHEAP())
       ConstValue (new (PARSERHEAP())
-                  SQLTimestamp (FALSE, fractionPrec, PARSERHEAP()),
+                  SQLTimestamp (PARSERHEAP(), FALSE, fractionPrec),
                   (void *) dtValue.getValue(),
                   dtValue.getValueLen(),
                   strptr);
@@ -1681,6 +1655,71 @@ QualifiedName * qualifiedNameFromStrings(ShortStringSequence *names)
   return result;
 }
 
+SchemaName * schemaNameFromStrings(ShortStringSequence *names)
+{
+  assert(names);
+  UInt32 index = names->numParts();
+  assert(index>0);
+
+  NAString  schName;
+  NAString  catName;
+
+  getNamePart(schName,names,index);
+  getNamePart(catName,names,index);
+
+  if (index) {
+    // ~String0 is an invalid qualified name 
+    *SqlParser_Diags << DgSqlCode(-3011)
+      << DgWString0(badNameFromStrings(names));
+    return NULL;
+  }
+
+  StringPos startPos = names->getPosition();
+  delete names;
+  SchemaName *result = new (PARSERHEAP()) 
+    SchemaName(schName, catName, PARSERHEAP());
+  ComASSERT(result);
+  result->setNamePosition(startPos, CharHereIsaDoubleQuote(startPos));
+  return result;
+}
+
+// This method detects that a hive object is being processed and it
+// sets the field foundHiveDDL_ in passed in hiveDDLInfo object.
+// This field is later used to process hive DDL.
+short preprocessHiveDDL(const NAString &catalogName, 
+                        Parser::HiveDDLInfo *hiveDDLInfo)
+{
+  // In some cases, parser is called to process statements.
+  // For ex, binder calls parser during view expansion in dml queries.
+  // Or internal MD definitions are processed during process startup.
+  // In these internal cases, skip special hive ddl processing 
+  // Flag disableDDLcheck _ will be set  in these cases.
+  if ((NOT hiveDDLInfo->disableDDLcheck_) &&
+      (hiveDDLInfo->checkForDDL_) &&
+      (NOT hiveDDLInfo->foundDDL_))
+    {
+      hiveDDLInfo->checkForDDL_ = FALSE;
+      if (((NOT catalogName.isNull()) &&
+           (catalogName.compareTo
+            (HIVE_SYSTEM_CATALOG) == 0)) ||
+          ((catalogName.isNull()) &&
+           (CmpCommon::getDefaultString(CATALOG).compareTo
+            (HIVE_SYSTEM_CATALOG) == 0)))
+        {
+          hiveDDLInfo->foundDDL_ = TRUE;
+          hiveDDLInfo->userSpecifiedStmt_ = 
+            NAString(SqlParser_CurrentParser->inputStr(), 
+                     SqlParser_CurrentParser->inputStrLen());
+        }
+      else if (hiveDDLInfo->backquotedDelimFound_)
+        {
+          yyerror(""); // emit syntax error
+        }
+    }  
+
+  return 0;
+}
+
 // if the schemaName part inName contains volatile schema prefix, then
 // return an error. Don't do this if volatile schema prefix is allowed
 // for internal queries.
@@ -1773,10 +1812,7 @@ CorrName * corrNameFromStrings(ShortStringSequence *names)
 
   const NAString &tblName = qn->getObjectName();
 
-  if ((qn->getCatalogName() == "") && (SqlParser_NAMETYPE == DF_NSK))
-    result = new (PARSERHEAP()) CorrName(*qn, PARSERHEAP(), tblName);
-  else
-    result = new (PARSERHEAP()) CorrName(*qn, PARSERHEAP());
+  result = new (PARSERHEAP()) CorrName(*qn, PARSERHEAP());
 
   ComASSERT(result);
 
@@ -1881,9 +1917,7 @@ NABoolean transformIdentifier(NAString& delimIdent,
 void PicStream::skipPicture()
 {
    NAString   theIdentifier;
-#pragma nowarn(1506)   // warning elimination 
    while (isalpha(sgetc())) theIdentifier.append(toupper(sbumpc()));
-#pragma warn(1506)  // warning elimination 
    skipWhite();
    NAString string1 = "PIC";
    NAString string2 = "PICTURE";
@@ -1923,22 +1957,18 @@ NABoolean PicStream::skipCount (UInt32*result, const char pattern, NABoolean isC
 	    
          } while (isdigit(sgetc()));
          skipWhite();
-#pragma nowarn(1506)   // warning elimination 
          char ch = sbumpc();
-#pragma warn(1506)  // warning elimination 
 
          if ( isCharType == TRUE && ( ch=='C' || ch=='c' ) ) {
 
             char len_unit_array[11]; // len("CHARACTERS") = 10
             len_unit_array[0] = ch;  // store 'c'
             Int32 n = sgetn(len_unit_array+1, 9); // get the rest of "haracters"
-            len_unit_array[10] = NULL;
+            len_unit_array[10] = 0;
             assert(n == 9 && strcasecmp(len_unit_array, "CHARACTERS") == 0);
 
             skipWhite();
-#pragma nowarn(1506)   // warning elimination 
             ch = sbumpc();
-#pragma warn(1506)  // warning elimination 
          }
 
          assert(ch==')');
@@ -2057,7 +2087,7 @@ NAType *picNAType(const NABoolean      isString,
             Int32 maxBytesPerChar = CharInfo::maxBytesPerChar(charset);
             returnValue = new (PARSERHEAP())
               //            SQLChar(precision,TRUE,FALSE,isCaseinsensitive,FALSE,charset,collation,coerc);
-              SQLChar(CharLenInfo(characterLimit, maxLenInBytes),
+              SQLChar(PARSERHEAP(), CharLenInfo(characterLimit, maxLenInBytes),
                       TRUE,FALSE,isCaseinsensitive,FALSE,
                       charset,collation,coerc,eEncodingCharSet);
             assert(returnValue);
@@ -2065,9 +2095,7 @@ NAType *picNAType(const NABoolean      isString,
           break;
         case STYLE_UPSHIFT:
 	    returnValue = new (PARSERHEAP())
-#pragma nowarn(1506)   // warning elimination 
-  		SQLChar(precision,TRUE,TRUE,isCaseinsensitive,FALSE,charset,collation,coerc);
-#pragma warn(1506)  // warning elimination 
+  		SQLChar(PARSERHEAP(), precision,TRUE,TRUE,isCaseinsensitive,FALSE,charset,collation,coerc);
             assert(returnValue);
             break;
         case STYLE_LEADING_SIGN:
@@ -2104,9 +2132,7 @@ NAType *picNAType(const NABoolean      isString,
            }
            else
               returnValue = new (PARSERHEAP())
-#pragma nowarn(1506)   // warning elimination 
-		SQLDecimal(precision,scale,hasSign);
-#pragma warn(1506)  // warning elimination 
+		SQLDecimal(PARSERHEAP(), precision,scale,hasSign);
            assert(returnValue);
            break;
         case STYLE_UPSHIFT:
@@ -2127,9 +2153,7 @@ NAType *picNAType(const NABoolean      isString,
            else {
               const Int16 DisAmbiguate = 0; // added for 64bit project
               returnValue = new (PARSERHEAP())
-#pragma nowarn(1506)   // warning elimination 
-		SQLNumeric(hasSign, precision, scale, DisAmbiguate);
-#pragma warn(1506)  // warning elimination 
+		SQLNumeric(PARSERHEAP(), hasSign, precision, scale, DisAmbiguate);
               assert(returnValue);
            }
            break;
@@ -2726,8 +2750,8 @@ RelExpr * processReturningClause(RelExpr * re, UInt32 returningType)
   
   RelRoot * root = new (PARSERHEAP())
     RelRoot(insert, 
-	    ACCESS_TYPE_NOT_SPECIFIED_, 
-	    LOCK_MODE_NOT_SPECIFIED_, 
+	    TransMode::ACCESS_TYPE_NOT_SPECIFIED_, 
+	    LockMode::LOCK_MODE_NOT_SPECIFIED_, 
 	    REL_ROOT, cr);
   
   if ((insert->child(0)) &&
@@ -3272,7 +3296,7 @@ SqlParserAux_buildDescribeForFunctionAndAction
     pDescribe = new (PARSERHEAP())
       Describe ( SQLTEXT()
                , *optional_showddl_action_name_clause // in - const CorrName & - deep copy
-               , Describe::LONG_
+               , Describe::SHOWDDL_
                , COM_UUDF_ACTION_NAME                 // in - ComAnsiNameSpace labelAnsiNameSpace_
                , optional_showddlroutine_options      // in - long optional_showddlroutine_options
                );
@@ -3283,7 +3307,7 @@ SqlParserAux_buildDescribeForFunctionAndAction
     pDescribe = new (PARSERHEAP())
       Describe ( SQLTEXT()
                , *actual_routine_name_of_udf_or_uudf // in - const CorrName & - deep copy
-               , Describe::LONG_
+               , Describe::SHOWDDL_
                , COM_UDF_NAME                        // in - ComAnsiNameSpace labelAnsiNameSpace_
                , optional_showddlroutine_options     // in - long optional_showddlroutine_options
                );

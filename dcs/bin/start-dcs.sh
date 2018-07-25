@@ -47,8 +47,8 @@ then
 fi
 
 if [ -z "$master" ] ; then
-  if [ ! -z "${DCS_PRIMARY_MASTER}" ] && [ -s ${DCS_PRIMARY_MASTER} ] ; then
-    master_node=`cat ${DCS_PRIMARY_MASTER}| egrep -v '^#|^$'`
+  if [ ! -z "${DCS_MASTERS}" ] && [ -s ${DCS_MASTERS} ] ; then
+    master_node=`head -n 1 ${DCS_MASTERS}`
     if [ ! -z "$master_node" ] ; then
       master=`echo $master_node | awk '{print $1}'`
     fi
@@ -59,8 +59,9 @@ if [ "$master" == "" ] || [ "$master" == "localhost" ] || [ "$master" == "$(host
   "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" start master 
 else
   remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} start master"
-  ssh -q -n $DCS_SSH_OPTS $master $remote_cmd 2>&1 | sed "s/^/$master: /"
+  L_PDSH="ssh -q -n $DCS_SSH_OPTS"
+  ${L_PDSH} $master $remote_cmd 2>&1 | sed "s/^/$master: /"
 fi
 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_SERVERS}" start server
-"$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_BACKUP_MASTERS}" start master-backup
+"$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_MASTERS}" start master-backup

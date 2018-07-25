@@ -132,7 +132,6 @@ StmtDDLDropComponentPrivilege::castToStmtDDLDropComponentPrivilege()
 // methods for tracing
 //
 
-// LCOV_EXCL_START
 
 const NAString
 StmtDDLDropComponentPrivilege::displayLabel1() const
@@ -162,7 +161,6 @@ StmtDDLDropComponentPrivilege::getText() const
   return "StmtDDLDropComponentPrivilege";
 }
 
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // MV - RG
@@ -908,7 +906,8 @@ StmtDDLDropView::StmtDDLDropView(const QualifiedName & viewQualName,
           dropBehavior_(dropBehavior),
 	  isCleanupSpec_(cleanupSpec),
 	  isValidateSpec_(validateSpec),
-	  pLogFile_(pLogFile)
+	  pLogFile_(pLogFile),
+          dropIfExists_(FALSE)
 {
 }
 

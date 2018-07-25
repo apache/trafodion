@@ -40,7 +40,6 @@
 //--------------------------------------------------------------------------//
 //	CRUException::StoreData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUException::StoreData(CUOFsIpcMessageTranslator &translator)
 {
 	Int32 i;
@@ -59,14 +58,10 @@ void CRUException::StoreData(CUOFsIpcMessageTranslator &translator)
 		char *buffer = new char[bufsize];
 		
 		GetErrorMsg(i, buffer, bufsize);
-#pragma nowarn(1506)   // warning elimination 
 		Int32 strSize = strlen(buffer)+1;	// Can be smaller than bufsize
-#pragma warn(1506)  // warning elimination 
 
 		translator.WriteBlock(&strSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 		translator.WriteBlock(buffer, strSize);
-#pragma warn(1506)  // warning elimination 
 
 		delete [] buffer;
 
@@ -74,12 +69,10 @@ void CRUException::StoreData(CUOFsIpcMessageTranslator &translator)
 		// StoreErrorParams(translator,i);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUException::StoreErrorParams()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRUException::StoreErrorParams(CUOFsIpcMessageTranslator &translator,
 									Int32 index)
 {
@@ -98,21 +91,15 @@ void CRUException::StoreErrorParams(CUOFsIpcMessageTranslator &translator,
 	for (i=0;i<numStrParams;i++)
 	{
 		const char *param = GetStrArgument(index,i);
-#pragma nowarn(1506)   // warning elimination 
 		Int32 strSize = strlen(param) + 1;
-#pragma warn(1506)  // warning elimination 
 		translator.WriteBlock(&strSize,sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 		translator.WriteBlock(param,strSize);
-#pragma warn(1506)  // warning elimination 
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUException::LoadData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUException::LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	Int32 i;
@@ -127,9 +114,7 @@ void CRUException::LoadData(CUOFsIpcMessageTranslator &translator)
 		translator.ReadBlock(&strSize,sizeof(Int32));
 
 		char *buffer = new char[strSize];
-#pragma nowarn(1506)   // warning elimination 
 		translator.ReadBlock(buffer,strSize);
-#pragma warn(1506)  // warning elimination 
 		SetError(errorCode,buffer);
 
 		delete [] buffer;
@@ -138,12 +123,10 @@ void CRUException::LoadData(CUOFsIpcMessageTranslator &translator)
 		// LoadErrorParams(translator,i);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUException::LoadErrorParams()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRUException::
 LoadErrorParams(CUOFsIpcMessageTranslator &translator,
 				Int32 index)
@@ -167,12 +150,9 @@ LoadErrorParams(CUOFsIpcMessageTranslator &translator,
 		translator.ReadBlock(&strSize,sizeof(Int32));
 
 		char *buffer = new char[strSize];
-#pragma nowarn(1506)   // warning elimination 
 		translator.ReadBlock(buffer,strSize);
-#pragma warn(1506)  // warning elimination 
 		AddArgument(buffer);
 
 		delete [] buffer;
 	}
 }
-// LCOV_EXCL_STOP

@@ -46,16 +46,16 @@
 #include "ComSmallDefs.h"
 #include "Platform.h"
 
-NA_EIDPROC inline ComBoolean  IsMPLocPrefix(const char c)
+inline ComBoolean  IsMPLocPrefix(const char c)
   { return c == '$' || c == '\\'; }
 
-NA_EIDPROC inline ComBoolean  IsMPLocPrefix(const unsigned char c)
+inline ComBoolean  IsMPLocPrefix(const unsigned char c)
   { return c == '$' || c == '\\'; }
 
-NA_EIDPROC inline ComBoolean  HasMPLocPrefix(const char *s)
+inline ComBoolean  HasMPLocPrefix(const char *s)
   { return IsMPLocPrefix(*s); }
 
-NA_EIDPROC inline const char *ChopMPLocPrefix(const char *s)
+inline const char *ChopMPLocPrefix(const char *s)
   { return HasMPLocPrefix(s) ? &s[1] : s; }
 
 // Max length of an externally formatted name

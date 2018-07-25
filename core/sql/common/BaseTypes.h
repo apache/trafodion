@@ -38,16 +38,11 @@
 #include "Platform.h"
 
 
-  #include <stdio.h>
-  #include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifdef NA_STD_NAMESPACE
 #include <iostream>
 using namespace std;
-#else
-  #include <iostream>
-#endif
-
 
 #include "NAAssert.h"
 #include "NAHeap.h"
@@ -186,7 +181,7 @@ typedef NAUnsigned SimpleHashValue;
 #define BLANK_SPACE " "
 
 #define BUMP_INDENT(X) \
-  char newindent[MAX_INDENT_SIZE]; \
+  char newindent[MAX_INDENT_SIZE + 1]; \
   Int32 indentlen = strlen(X) + MIN_INDENT_SIZE;\
   indentlen = (indentlen < MAX_INDENT_SIZE ? indentlen : MAX_INDENT_SIZE);\
   for (Int32 fli = 0; fli < indentlen; fli++) \
@@ -237,14 +232,8 @@ extern void NADebug();
 // Abnormal program termination
 // -----------------------------------------------------------------------
 
-#include "SqlExportDllDefines.h"
-
-#ifdef __EID
-#define ABORT(msg)	{}
-#else
 #define ABORT(msg)	NAAbort (__FILE__, __LINE__, (msg))
-extern void SQLEXPORT_LIB_FUNC NAAbort (const char *, Int32, const char *);
-#endif
+extern void NAAbort (const char *, Int32, const char *);
 
 // -----------------------------------------------------------------------
 // the NAString datatype used to be Tools.h++'s RWCString; now it's a

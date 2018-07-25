@@ -55,7 +55,6 @@
 #include "HBaseClient_JNI.h"
 
 #include "vproc.h"
-#include "hdfs.h"
 #include "CmpSeabaseDDL.h"
 #include "ExExeUtilCli.h"
 #include "ComUser.h"
@@ -520,7 +519,7 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
         
     retcode = fetchAllRowsFromMetaContext(outQueue, query.data());
     if (retcode < 0 || retcode == 100/*rows not found*/) {
-           CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+           cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
            raiseOsimException("Errors Dumping Table DDL.");
     }
 
@@ -599,7 +598,7 @@ void OptimizerSimulator::dumpHistograms()
         debugMessage("Dumping histograms for %s\n", name->getQualifiedNameAsAnsiString().data());
         //dump histograms data to hdfs
         query =   "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query +=  "'"UNLOAD_HDFS_DIR"/";
+        query +=  "'" UNLOAD_HDFS_DIR"/";
         query +=  ComUser::getCurrentUsername();
         query +=  "/";
         query +=  std::to_string((long long unsigned int)(getpid())).c_str();
@@ -664,12 +663,12 @@ void OptimizerSimulator::dumpHistograms()
         //i.e. update stats hasn't been done for any table.
         else if(retcode < 0 && -4082 != retcode)
         {
-           CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+           cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
            raiseOsimException("Unload histogram data error: %d", retcode);
         }
         
         query =  "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query += "'"UNLOAD_HDFS_DIR"/";
+        query += "'" UNLOAD_HDFS_DIR"/";
         query += ComUser::getCurrentUsername();
         query += "/";
         query += std::to_string((long long unsigned int)(getpid())).c_str();
@@ -725,7 +724,7 @@ void OptimizerSimulator::dumpHistograms()
         //i.e. update stats hasn't been done for any table.
         else if(retcode < 0 && -4082 != retcode)
         {
-           CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+           cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
            raiseOsimException("Unload histogram data error: %d", retcode);
         }
     
@@ -767,7 +766,7 @@ void OptimizerSimulator::dumpHiveHistograms()
         
         //dump histograms data to hdfs
         query =   "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query +=  "'"UNLOAD_HDFS_DIR"/";
+        query +=  "'" UNLOAD_HDFS_DIR"/";
         query +=  ComUser::getCurrentUsername();
         query +=  "/";
         query +=  std::to_string((long long unsigned int)(getpid())).c_str();
@@ -821,12 +820,12 @@ void OptimizerSimulator::dumpHiveHistograms()
         //i.e. update stats hasn't been done for any table.
         else if(retcode < 0 && -4082 != retcode)
         {
-           CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+           cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
            raiseOsimException("Unload histogram data error: %d", retcode);
         }
         
         query =  "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query += "'"UNLOAD_HDFS_DIR"/";
+        query += "'" UNLOAD_HDFS_DIR"/";
         query += ComUser::getCurrentUsername();
         query += "/";
         query += std::to_string((long long unsigned int)(getpid())).c_str();
@@ -871,7 +870,7 @@ void OptimizerSimulator::dumpHiveHistograms()
         //i.e. update stats hasn't been done for any table.
         else if(retcode < 0 && -4082 != retcode)
         {
-           CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+           cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
            raiseOsimException("Unload histogram data error: %d", retcode);
         }
     
@@ -911,7 +910,7 @@ void OptimizerSimulator::dropObjects()
       retcode = executeFromMetaContext(query.data());
       if(retcode < 0)
       {
-          CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+          cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
           raiseOsimException("Drop Table %s error: %d", stdQualTblNm.c_str(), retcode);
       }
    }
@@ -944,8 +943,20 @@ void OptimizerSimulator::dropObjects()
           retcode = executeFromMetaContext(dropStmt.data());
           if(retcode < 0)
           {
-              CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+              cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
               raiseOsimException("drop external table: %d", retcode);
+          }
+          //unregister hive table
+          NAString unregisterStmt = "UNREGISTER HIVE TABLE IF EXISTS ";
+          unregisterStmt += name;
+          debugMessage("%s\n", unregisterStmt.data());
+          retcode = executeFromMetaContext(unregisterStmt.data());
+          if(retcode < 0)
+          {
+              //suppress errors for now, even with IF EXISTS this will
+              //give an error if the Hive table does not exist
+              //cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
+              //raiseOsimException("unregister hive table: %d", retcode);
           }
           //drop hive table
           NAString hiveSchemaName;
@@ -1010,7 +1021,7 @@ void OptimizerSimulator::loadDDLs()
             retcode = executeFromMetaContext(statement.data());
             if(retcode < 0)
             {
-                CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+                cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
                 raiseOsimException("Create Table Error: %d", retcode);
             }
         }
@@ -1033,7 +1044,7 @@ void OptimizerSimulator::loadDDLs()
             retcode = executeFromMetaContext(statement.data());
             if(retcode < 0)
             {
-                CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+                cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
                 raiseOsimException("Create View Error: %d %s", retcode, statement.data());
             }
         }
@@ -1048,10 +1059,12 @@ static const char* extractAsComment(const char* header, const NAString & stmt)
     {
         int end = stmt.index('\n', begin);
         if(end > begin)
-        {
-            stmt.extract(begin, end-1, tmp);
-            return tmp.data();
-        }
+          end -= 1;
+        else
+          end = stmt.length()-1;
+
+        stmt.extract(begin, end, tmp);
+        return tmp.data();
     }
     return NULL;
 }
@@ -1111,7 +1124,7 @@ void OptimizerSimulator::loadHiveDDLs()
          create_ext_schema += "\" AUTHORIZATION DB__ROOT";
          retcode = executeFromMetaContext(create_ext_schema);
          if(retcode < 0) {
-             CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+             cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
              raiseOsimException("create hive external schema: %d %s", retcode, statement.data());
          }
          //drop external table
@@ -1120,7 +1133,7 @@ void OptimizerSimulator::loadHiveDDLs()
          retcode = executeFromMetaContext(dropStmt.data());
          if(retcode < 0)
          {
-             CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+             cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
              raiseOsimException("drop external table: %d", retcode);
          }
 
@@ -1156,11 +1169,18 @@ void OptimizerSimulator::loadHiveDDLs()
     while(readHiveStmt(hiveCreateExternalTableSql, statement, comment))
    {
         if(statement.length() > 0) {
-            debugMessage("%s\n", extractAsComment("CREATE EXTERNAL TABLE", statement));
+            // this could be a create external table or just a register table
+            // if this Hive table just has stats but no external table
+            const char *stmtText = extractAsComment("CREATE EXTERNAL TABLE", statement);
+
+            if (!stmtText)
+              stmtText = extractAsComment("REGISTER  HIVE TABLE", statement);
+            debugMessage("%s\n", stmtText);
+
             retcode = executeFromMetaContext(statement.data()); //create hive external table
             if(retcode < 0)
             {
-                CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+                cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
                 raiseOsimException("Create hive external table error:  %d", retcode);
             }
             debugMessage("done\n");
@@ -1521,12 +1541,7 @@ NABoolean OptimizerSimulator::massageTableUID(OsimHistogramEntry* entry, NAHashD
 
 void OptimizerSimulator::execHiveSQL(const char* hiveSQL)
 {
-  HiveClient_JNI *hiveClient = CmpCommon::context()->getHiveClient();
-
-  if (hiveClient == NULL)
-    raiseOsimException("Error initialize hive client.");
-  else
-    if (!CmpCommon::context()->execHiveSQL(hiveSQL))
+    if (HiveClient_JNI::executeHiveSQL(hiveSQL) != HVC_OK)
       raiseOsimException("Error running hive SQL.");
 }
 
@@ -1603,13 +1618,13 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
                           "  , V4             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                           "  , V5             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                           "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-                          "  , constraint "HBASE_HIST_PK" primary key"
+                          "  , constraint " HBASE_HIST_PK" primary key"
                           "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
                           " )";
     retcode = executeFromMetaContext(cmd.data());
     if(retcode < 0)
     {
-        CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+        cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
         raiseOsimException("Load histogram data error:  %d", retcode);
     }
     
@@ -1630,7 +1645,7 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
     
     if(retcode < 0)
     {
-        CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+        cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
         raiseOsimException("Load histogram data error:  %d", retcode);
     }
     
@@ -1688,14 +1703,14 @@ short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, Qu
                        "  , V4                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                        "  , V5                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                        "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-                       "  , constraint "HBASE_HISTINT_PK" primary key"
+                       "  , constraint " HBASE_HISTINT_PK" primary key"
                        "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
                        " )";
 
     retcode = executeFromMetaContext(cmd.data());
     if(retcode < 0)
     {
-        CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+        cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
         raiseOsimException("Load histogram data error:  %d", retcode);
     }
     //from hive table to trafodion table.
@@ -1710,7 +1725,7 @@ short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, Qu
     retcode = executeFromMetaContext(cmd.data());
     if(retcode < 0)
     {
-        CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+        cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
         raiseOsimException("Load histogram data error:  %d", retcode);
     }
     return retcode;
@@ -1766,7 +1781,7 @@ void OptimizerSimulator::loadHistograms(const char* histogramPath, NABoolean isH
        short retcode = executeFromMetaContext(create_stats_schema);
        if(retcode < 0)
        {
-            CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+            cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
             raiseOsimException("create hive stats schema: return code %d", retcode);
        }
    }
@@ -1862,7 +1877,7 @@ short OptimizerSimulator::fetchAllRowsFromMetaContext(Queue * &q, const char* qu
    retcode = cliInterface_->fetchAllRows(queue_, query, 0, FALSE, FALSE, TRUE);
    //retrieve idag area runing the query above,
    //if there's any error, we can get the detail.
-   cliInterface_->retrieveSQLDiagnostics(0);
+   cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
 
    cmpSBD_->switchBackCompiler();
    
@@ -2932,8 +2947,8 @@ void OptimizerSimulator::dumpHiveTableDDLs()
         query = "SHOWDDL " + qualifiedName->getQualifiedNameAsAnsiString();
         retcode = fetchAllRowsFromMetaContext(outQueue, query.data());
         if (retcode < 0 || retcode == 100/*rows not found*/) {
-               CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
-               raiseOsimException("Errors Dumping Table DDL.");
+           cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
+           raiseOsimException("Errors Dumping Table DDL.");
         }
 
         if(outQueue)
@@ -2943,8 +2958,9 @@ void OptimizerSimulator::dumpHiveTableDDLs()
             for (int i = 0; i < outQueue->numEntries(); i++) {
                 OutputInfo * vi = (OutputInfo*)outQueue->getNext();
                 char * ptr = vi->get(0);
-                //write "CREATE EXTERNAL TABLE" DDL to another file.
-                if(strstr(ptr, "CREATE EXTERNAL TABLE"))
+                //write "CREATE EXTERNAL TABLE" and "REGISTER" DDL to another file.
+                if(strstr(ptr, "CREATE EXTERNAL TABLE") ||
+                   strstr(ptr, "REGISTER /*INTERNAL*/ HIVE TABLE"))
                     inExtDDL = TRUE;
                 if(inExtDDL){
                     (*writeLogStreams_[HIVE_CREATE_EXTERNAL_TABLE]) << ptr << endl;

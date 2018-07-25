@@ -112,7 +112,6 @@ ComTdbExplain::ComTdbExplain(ex_cri_desc *criDescParentDown,
 {
 }
 
-// LCOV_EXCL_START
 // Used by GUI, does nothing now.
 void
 ComTdbExplain::display() const
@@ -166,7 +165,6 @@ ComTdbExplain::getExpressionNode(Int32 expNum)
     }  
 }
 
-// LCOV_EXCL_STOP
 
 // Pack the explainTdb: Convert all pointers to offsets relative
 // to the space object.

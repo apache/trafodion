@@ -61,7 +61,6 @@ DBGDECL( static NAString unp; )
 
 // -----------------------------------------------------------------------
 // -----------------------------------------------------------------------
-// warning elimination (removed "inline")
 static NABoolean canBeSQLUnknown(const ItemExpr *ie,
                                  NABoolean typeMustBeSQLBoolean = TRUE)
 {
@@ -734,7 +733,6 @@ ItemExpr * Between::transformMultiValuePredicate(
   return tfm;
 }
 
-#pragma nowarn(1506)   // warning elimination
 void Between::transformNode(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -780,7 +778,6 @@ void Between::transformNode(NormWA & normWARef,
   setReplacementExpr(locationOfPointerToMe);
 
 } // Between::transformNode()
-#pragma warn(1506)  // warning elimination
 
 ItemExpr * Between::transformSubtreeOfNot(NormWA & normWARef,
                                           OperatorTypeEnum falseOrNot)
@@ -952,7 +949,8 @@ void UDFunction::transformToRelExpr(NormWA & normWARef,
 
        // The routine desc points to both the NARoutine structs.
        isUdf->setRoutineDesc(udfDesc_);
-    
+       isUdf->getGroupAttr()->setHasNonDeterministicUDRs(
+            !getRoutineDesc()->getEffectiveNARoutine()->isDeterministic());
 
        // Get the valueIds of the parameters
        isUdf->gatherParamValueIds(isUdf->getProcAllParamsTree(), 
@@ -1405,7 +1403,6 @@ ItemExpr * BiLogic::transformMultiValuePredicate(
   return tfm;
 }
 
-#pragma nowarn(1506)   // warning elimination
 void BiLogic::transformNode(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -1478,7 +1475,6 @@ void BiLogic::transformNode(NormWA & normWARef,
     setReplacementExpr(locationOfPointerToMe);
 
 } // BiLogic::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // Apply De-Morgan's Laws.  Distribute a NOT over each subtree.
@@ -1712,7 +1708,7 @@ DisjunctArray * BiLogic::mdamTreeWalk()
       break;
     }
 
-   return 0; // NT_PORT ( bd 1/14/96 ) Eliminate compiler warning
+   return 0;
 } // BiLogic::mdamTreeWalk()
 
 // MDAMR
@@ -1904,9 +1900,7 @@ static ItemExpr * transformMultiValueComparison(BiRelat *thisCmp,
                  // For exampl OneRow aggregate
   }
 
-#pragma nowarn(1506)   // warning elimination
   Int32 i = lhs.entries() - 1;
-#pragma warn(1506)  // warning elimination
 
   // As an extension to Ansi, we allow predicates like
   //   select x,y from xy where((select a,b from t),x) = (y,(select m,n from s))
@@ -1925,9 +1919,7 @@ static ItemExpr * transformMultiValueComparison(BiRelat *thisCmp,
           rr = ((Subquery *)rhs[i])->getSubquery()->getDegree();
         if (ll != rr) return NULL;
       }
-#pragma nowarn(1506)   // warning elimination
       i = lhs.entries() - 1;      // reset for loops following
-#pragma warn(1506)  // warning elimination
     }
 
   ItemExpr * tfm;
@@ -2107,7 +2099,6 @@ ItemExpr * BiRelat::transformMultiValuePredicate(
   return tfm;
 } // BiRelat::transformMultiValuePredicate()
 
-#pragma nowarn(1506)   // warning elimination
 void BiRelat::transformNode(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -2476,7 +2467,6 @@ void BiRelat::transformNode(NormWA & normWARef,
     setReplacementExpr(locationOfPointerToMe);
 
 } // BiRelat::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // predicateEliminatesNullAugmentedRows()
@@ -3950,7 +3940,6 @@ ItemExpr * UnLogicMayBeAnEliminableTruthTest(ItemExpr *unlogic, NABoolean aggOK)
   return NULL;
 } // UnLogicMayBeAnEliminableTruthTest()
 
-#pragma nowarn(1506)   // warning elimination
 
 //
 // transformNode2() - a helper routine for UnLogic::transformNode()
@@ -4123,7 +4112,6 @@ void UnLogic::transformNode(NormWA & normWARef,
   setReplacementExpr(locationOfPointerToMe);
 
 } // UnLogic::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // A method for transforming a subtree rooted in a NOT.
@@ -4772,7 +4760,7 @@ ItemExpr * ItmSeqDiff1::transformDiff1()
     {
      ItemExpr *castExpr   = new HEAP Cast (tfm2,
                                           new HEAP
-                                          SQLLargeInt(TRUE, TRUE)); // (must be) signed; nulls allowed
+                                          SQLLargeInt(HEAP, TRUE, TRUE)); // (must be) signed; nulls allowed
      tfm2 = castExpr;
     }
 
@@ -4849,7 +4837,7 @@ ItemExpr * ItmSeqDiff2::transformDiff2()
     {
      ItemExpr *castExpr   = new HEAP Cast (tfm2,
                                           new HEAP
-                                          SQLLargeInt(TRUE, TRUE)); // (must be) signed; nulls allowed
+                                          SQLLargeInt(HEAP, TRUE, TRUE)); // (must be) signed; nulls allowed
      tfm2 = castExpr;
     }
 
@@ -5015,7 +5003,7 @@ void ItmSeqRunningFunction::transformNode(NormWA & normWARef,
 //--------------------------------------------------------------------------------------
 ItemExpr * ItmSeqRunningFunction::transformRunningVariance()
 {
-  const NAType *desiredType    = new HEAP SQLDoublePrecision(TRUE);
+  const NAType *desiredType    = new HEAP SQLDoublePrecision(HEAP, TRUE);
   ItemExpr *childDouble        = new HEAP Cast(child(0), desiredType);
   ItemExpr *childDoubleSquared = new HEAP BiArith(ITM_TIMES,                       // x * x
                                                 childDouble,
@@ -5189,7 +5177,7 @@ void ItmSeqOlapFunction::transformNode(NormWA & normWARef,
 
 ItemExpr * ItmSeqOlapFunction::transformOlapVariance(CollHeap *wHeap)
 {
-  const NAType *desiredType    = new (wHeap) SQLDoublePrecision(TRUE);
+  const NAType *desiredType    = new (wHeap) SQLDoublePrecision(wHeap, TRUE);
   ItemExpr *childDouble        = new (wHeap) Cast(child(0), desiredType);
   ItemExpr *childDoubleSquared = new (wHeap) BiArith(ITM_TIMES,                       // x * x
                                                 childDouble,
@@ -5531,7 +5519,6 @@ ItemExpr *ItmSeqOlapFunction::transformOlapFunction(CollHeap *heap)
 
 
 ///---------------
-#pragma nowarn(1506)   // warning elimination
 void ItmSeqRowsSince::transformNode(NormWA & normWARef,
                                  ExprValueId & locationOfPointerToMe,
                                  ExprGroupId & introduceSemiJoinHere,
@@ -5569,7 +5556,6 @@ void ItmSeqRowsSince::transformNode(NormWA & normWARef,
   BuiltinFunction::transformNode(normWARef, locationOfPointerToMe,
                                  introduceSemiJoinHere, externalInputs);
 } // ItmSeqRowsSince::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // ***********************************************************************
 // $$$$ ItmSeqMovingFunction
@@ -5819,7 +5805,7 @@ ItemExpr * ItmSeqMovingFunction::transformMovingMinMax()
 //
 ItemExpr * ItmSeqMovingFunction::transformMovingVariance()
 {
-  const NAType *desiredType    = new HEAP SQLDoublePrecision(TRUE);
+  const NAType *desiredType    = new HEAP SQLDoublePrecision(HEAP, TRUE);
   ItemExpr *childDouble        = new HEAP Cast(child(0), desiredType);
   ItemExpr *childDoubleSquared = new HEAP BiArith(ITM_TIMES,                       // x * x
                                                 childDouble,

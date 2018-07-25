@@ -91,9 +91,7 @@ void MavRelRootBuilder::init()
   // Divide the MAV columns to groups:
   for (CollIndex i=0; i<mavCols_.entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *currentCol = mavCols_[i];
-#pragma warn(1506)  // warning elimination 
 
     if (currentCol->getColType() != COM_MVCOL_AGGREGATE)
     {  
@@ -428,7 +426,7 @@ RelRoot *MavRelRootBuilder::buildRootForDelta(RelExpr *topNode)
     const MVColumnInfo *currentMavColumn = otherCols_[i];
     const NAString& colName = currentMavColumn->getColName();
 
-    const NAType *desiredType = new(heap_) SQLDoublePrecision(TRUE);
+    const NAType *desiredType = new(heap_) SQLDoublePrecision(heap_, TRUE);
     ItemExpr *countDepCol = buildDepColExpr(emptyCorrName, currentMavColumn->getDepCol1());
     ItemExpr *sumDepCol   = buildDepColExpr(emptyCorrName, currentMavColumn->getDepCol2());
     ItemExpr *sum2DepCol  = NULL;
@@ -667,7 +665,7 @@ RelRoot *MavRelRootBuilder::buildRootForOthers(RelExpr *topNode)
     MVColumnInfo *currentCol = otherCols_[i];
     const NAString& colName = currentCol->getColName();
 
-    const NAType *desiredType = new(heap_) SQLDoublePrecision(TRUE);
+    const NAType *desiredType = new(heap_) SQLDoublePrecision(heap_, TRUE);
 
     // Find the dependent SYS_CALC COUNT and SUM columns.
     ItemExpr *calcDep1 = 
@@ -965,7 +963,6 @@ ItemExpr *MavRelRootBuilder::buildExtraMinMaxExpr(const ItemExpr  *pMinMaxExpr,
 // than op2 (called delVsInsertRelation) is the same as op1. Otherwise it 
 // does not cover the = case (which means it is < instead of <=, and > instead
 // of >=).
-#pragma nowarn(262)   // warning elimination 
 ItemExpr *MavRelRootBuilder::buildMinMaxRecomputeOnUpdateCondition(const NAString&  mavColName,
 								   ColReference    *deltaInsCol,
 								   ColReference    *deltaDelCol,
@@ -1021,7 +1018,6 @@ ItemExpr *MavRelRootBuilder::buildMinMaxRecomputeOnUpdateCondition(const NAStrin
 
   return finalCondition;
 }  // MavRelRootBuilder::buildMinMaxRecomputeOnUpdateCondition()
-#pragma warn(262)  // warning elimination 
 
 //----------------------------------------------------------------------------
 // Build the conditional expression for deciding if the min/max value of a

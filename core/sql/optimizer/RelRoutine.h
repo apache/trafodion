@@ -1105,7 +1105,7 @@ public:
                                const ValueIdSet & externalInputs,
                                ValueIdSet &pulledNewInputs);
 
-  virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb) ;
+  virtual double getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb) ;
 
   virtual short codeGen(Generator *);
 

@@ -138,7 +138,7 @@ The `java_options` should specify the Type 4 driver properties in a
 properties file on the java command line in the `-D` option.
 
 ```
--Dhpt4jdbc.properties=<properties file name>
+-Dt4jdbc.properties=<properties file name>
 ```
 
 where the properties file should include the following Type 4 driver properties, as applicable:
@@ -193,7 +193,7 @@ Apache Trafodion T4 Lob Admin Utility 1.0 (c) Copyright 2015-2016
 org.trafodion.jdbc.t4.T4LobAdmin [<prog_options>] [<table_name>]
 
 <java_options> is:
-     [-Dhpt4jdbc.properties=<properties file>]
+     [-Dt4jdbc.properties=<properties file>]
 where <properties file> has values for the following:
      clobTableName - CLOB table name
      blobTableName - BLOB table name
@@ -253,7 +253,7 @@ create the triggers for the base table `sales.paris.pictures`, which
 contains a BLOB column, and executes those statements.
 
 ```
-java -Dhpt4jdbc.blobTableName=sales.paris.lobTable4pictures /
+java -Dt4jdbc.blobTableName=sales.paris.lobTable4pictures /
 org.trafodion.jdbc.t4.T4LobAdmin -trigger -exec sales.paris.pictures
 ```
 

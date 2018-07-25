@@ -53,966 +53,12 @@
 #include  "ComRtUtils.h"
 #include  "ExStats.h"
 #include  "ComSmallDefs.h"
-//#include  "hdfs.h" //will replace with LOB interface
 #include <unistd.h>
-//#include  "catapirequest.h"
 
 //////////////////////////////////////////////////////////
 // classes defined in this file:
 //
-// class ExExeUtilFastDelete
-//
 //////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////
-ex_tcb * ExExeUtilFastDeleteTdb::build(ex_globals * glob)
-{
-  ExExeUtilTcb * exe_util_tcb;
-
-  exe_util_tcb = new(glob->getSpace()) ExExeUtilFastDeleteTcb(*this, glob);
-  exe_util_tcb->registerSubtasks();
-
-  return (exe_util_tcb);
-}
-
-////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilFastDeleteTcb
-///////////////////////////////////////////////////////////////
-ExExeUtilFastDeleteTcb::ExExeUtilFastDeleteTcb(
-     const ComTdbExeUtilFastDelete & exe_util_tdb,
-     ex_globals * glob)
-     : ExExeUtilTcb( exe_util_tdb, NULL, glob),
-       fastDelUsingResetEOF_(FALSE),
-       xnWasStarted_(FALSE)
-{
-  // Allocate the private state in each entry of the down queue
-  qparent_.down->allocatePstate(this);
-
-  step_ = INITIAL_;
-}
-
-ExExeUtilFastDeleteTcb::~ExExeUtilFastDeleteTcb()
-{
-}
-
-short ExExeUtilFastDeleteTcb::doPurgedataCat(char * stmt)
-{
-  Lng32 cliRC = 0;
-
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-
-  cliRC = holdAndSetCQD("EXE_PARALLEL_PURGEDATA", "OFF");
-  if (cliRC < 0)
-    {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-      return -1;
-    }
-
-  cliRC = cliInterface()->executeImmediate(stmt);
-  //  NADELETEBASIC(stmt, getHeap());
-
-  if (cliRC < 0)
-    {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
-      restoreCQD("EXE_PARALLEL_PURGEDATA");
-      return -1;
-    }
-  
-  restoreCQD("EXE_PARALLEL_PURGEDATA");
-
-  return 0;
-}
-
-short ExExeUtilFastDeleteTcb::doLabelPurgedata(char * objectName,
-					       NABoolean isIndex)
-{
-  Lng32 cliRC;
-  short retcode = 0;
-
-  // Get the globals stucture of the master executor.
-  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
-
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-
-  SQL_EXEC_ClearDiagnostics(NULL);
-
-  char * stmt = NULL;
-
-  // set sqlparserflags to allow special label_purgedata syntax
-  masterGlob->getStatement()->getContext()->setSqlParserFlags(0x1); // ALLOW_SPECIALTABLETYPE
-
-  stmt = new(getHeap()) char[4000];
-
-  if (isIndex)
-    str_sprintf(stmt, "label_purgedata index_table %s parallel execution on",
-		objectName);
-  else
-    str_sprintf(stmt, "label_purgedata table %s parallel execution on",
-		objectName);
-    
-  cliRC = cliInterface()->executeImmediate(stmt);
-  NADELETEBASIC(stmt, getHeap());
-
-  masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x1);
-
-  if (cliRC < 0)
-    {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-      retcode = -1;
-      goto cleanUpAndReturn;
-    }
-  
-cleanUpAndReturn:
-
-  if (retcode == 0)
-    {
-      if (NOT isIndex)
-	// Inject error to cause fastdelete of table to fail.
-	retcode = injectError("13");
-      else
-	// Inject error to cause fastdelete of index to fail.
-	retcode = injectError("14");
-    }
-
-  if (retcode < 0)
-    {
-      strcpy(failReason_, "Error during fast delete using reset EOF operation.");
-    }
-
-  return retcode;
-}
-
-short ExExeUtilFastDeleteTcb::doFastDelete(char * objectName,
-					   NABoolean isIndex,
-					   NABoolean fastDelUsingResetEOF)
-{
-  Lng32 cliRC;
-  short retcode = 0;
-  char * stmt = NULL;
-  Lng32 pneBufLen = 0;
-
-  // Get the globals stucture of the master executor.
-  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
-
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-
-  SQL_EXEC_ClearDiagnostics(NULL);
-
-  // turn ON parallelism to force execution using ESPs.
-  // But first, hold and save the current value for attempt_esp_parallelism.
-  retcode = holdAndSetCQD("ATTEMPT_ESP_PARALLELISM", "ON");
-  if (retcode < 0)
-    {
-      goto cleanUpAndReturn_restore_CQS;
-    }
-
-
-  // Issue a control query shape to use ESPs.
-  // 'Hold' any previously issued CQS.
-  cliRC = 
-    cliInterface()->
-    executeImmediate("control query shape hold;");
-  if (cliRC < 0)
-    {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-      retcode = -1;
-      goto cleanUpAndReturn;
-    }
-
-  cliRC = 
-    cliInterface()->executeImmediate("control query shape esp_exchange(cut);");
-  if (cliRC < 0)
-    {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-      retcode = -1;
-      goto cleanUpAndReturn;
-    }
-  
-  if (fdTdb().isMV())
-    {
-      cliRC = 
-	cliInterface()->
-	executeImmediate("control query default mv_internal_ignore_uninitialized 'ON';");
-      if (cliRC < 0)
-	{
-	  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-	  retcode = -1;
-	  goto cleanUpAndReturn;
-	}
-    }
-
-  stmt = new(getHeap()) char[strlen("delete ")
-			    + (fastDelUsingResetEOF ? strlen("using purgedata ")
-			       : strlen("no purgedata "))
-			    + strlen("from table ( ") 
-			    + (isIndex ? strlen("index_table ") 
-			       : strlen("table "))
-			    + strlen(objectName) + 
-			    + strlen (" ) ") 
-			    + 200];
-  strcpy(stmt, "delete ");
-  if (fastDelUsingResetEOF)
-    strcat(stmt, "using purgedata ");
-  else
-    strcat(stmt, "no purgedata ");
-  strcat(stmt, "from table ( ");
-  if (isIndex)
-    strcat(stmt, "index_table ");
-  else
-    strcat(stmt, "table ");
-  
-  strcat(stmt, objectName);
-  strcat(stmt, " ) ;");
-
-  // set sqlparserflags to allow special INDEX_TABLE name
-  if (isIndex)
-    masterGlob->getStatement()->getContext()->setSqlParserFlags(0x1); // ALLOW_SPECIALTABLETYPE
-  
-  cliRC = cliInterface()->executeImmediate(stmt,NULL,NULL,TRUE,NULL,TRUE);
-
-  if (isIndex)
-   masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x1); // ALLOW_SPECIALTABLETYPE
-
-  if (cliRC < 0)
-    {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-      retcode = -1;
-      goto cleanUpAndReturn;
-    }
-  
-cleanUpAndReturn:
-
-  // restore original value for attempt_esp_parallelism
-  cliRC = restoreCQD("attempt_esp_parallelism");
-
-
-cleanUpAndReturn_restore_CQS:
-
-  // restore original CQS
-  cliRC = 
-    cliInterface()->
-    executeImmediate("control query shape restore;");
-
-  if (fdTdb().isMV())
-    {
-      cliRC = 
-	cliInterface()->
-	executeImmediate("control query default mv_internal_ignore_uninitialized 'OFF';");
-    }
-
-  if (retcode == 0)
-    {
-      if (NOT isIndex)
-	// Inject error to cause fastdelete of table to fail.
-	retcode = injectError("13");
-      else
-	// Inject error to cause fastdelete of index to fail.
-	retcode = injectError("14");
-    }
-
-  if (retcode < 0)
-    {
-      if (fastDelUsingResetEOF)
-	strcpy(failReason_, "Error during fast delete using reset EOF operation.");
-      else
-	strcpy(failReason_, "Error during fast delete operation.");
-    }
-
-  return retcode;
-}
-
-short ExExeUtilFastDeleteTcb::injectError(const char * val)
-{
-  // Get the globals stucture of the master executor.
-  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
-
-  char * e1 = masterGlob->getCliGlobals()->getEnv("SQLMX_TEST_POINT");
-  char * e2 = masterGlob->getCliGlobals()->getEnv("SQLMX_PPD_ERR_TEST_POINT");
-  if (((e1) && (strcmp(e1, val) == 0)) ||
-      ((e2) && (strcmp(e2, val) == 0)))
-    {
-      ComDiagsArea * da = getDiagsArea();
-      *da << DgSqlCode(-EXE_ERROR_INJECTED)
-	  << (e1 ? DgString0("SQLMX_TEST_POINT") : DgString0("SQLMX_PPD_ERR_TEST_POINT"))
-	  << DgInt0((Lng32)str_atoi(val, strlen(val)));
-
-      return -EXE_ERROR_INJECTED;
-    }
-  
-  return 0;
-}
-
-
-short ExExeUtilFastDeleteTcb::purgedataLOBs()
-{
-  // purgedata from lobs for this table
-  if (fdTdb().numLOBs() > 0)
-    {
-      for (Lng32 i = 1; i <= fdTdb().numLOBs(); i++)
-	{
-	  Lng32 rc = ExpLOBoper::purgedataLOB
-	    (NULL, NULL, fdTdb().getObjectUID(), fdTdb().getLOBnum(i));
-	}
-    }
-
-  return 0;
-}
-
-
-//////////////////////////////////////////////////////
-// work() for ExExePurgedataUtilTcb
-//////////////////////////////////////////////////////
-short ExExeUtilFastDeleteTcb::work()
-{
-  short rc = 0;
-  Lng32 cliRC = 0;
-
-  // if no parent request, return
-  if (qparent_.down->isEmpty())
-    return WORK_OK;
-  
-  // if no room in up queue, won't be able to return data/status.
-  // Come back later.
-  if (qparent_.up->isFull())
-    return WORK_OK;
-  
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-  ExExeUtilPrivateState & pstate =
-    *((ExExeUtilPrivateState*) pentry_down->pstate);
-
-  // Get the globals stucture of the master executor.
-  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
-  ExTransaction *ta = masterGlob->getStatement()->getContext()->getTransaction();
-
-  char buf[4000];
-
-  while (1)
-    {
-      switch (step_)
-	{
-	case INITIAL_:
-	  {
-	    fastDelUsingResetEOF_ = FALSE;
-	    xnWasStarted_ = FALSE;
-	    parallelDeleteDone_ = FALSE;
-	    strcpy(failReason_, " ");
-
-	    if (fdTdb().doPurgedataCat())
-	      step_ = PURGEDATA_CAT_;
-	    else if (fdTdb().doParallelDelete())
-	      {
-		if (NOT ta->xnInProgress())
-		  {
-		    cliRC = cliInterface()->beginWork();
-		    if (cliRC < 0)
-		      {
-			cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-			step_ = ERROR_;
-			break;
-		      }
-		    
-		    xnWasStarted_ = TRUE;
-		  }
-
-		step_ = FASTDEL_TABLE_;
-
-		parallelDeleteDone_ = TRUE;
-	      }
-	    else if (NOT ta->xnInProgress())
-	      {
-		fastDelUsingResetEOF_ = TRUE;
-		step_ = ADD_DDL_LOCK_;
-	      }
-	    else
-	      {
-		// User transaction is in progress.
-		// We need to do fast delete without purgedata mode unless
-		// it has been turned off.
-		if (fdTdb().doParallelDeleteIfXn())
-		  {
-		    parallelDeleteDone_ = TRUE;
-		    step_ = FASTDEL_TABLE_;
-		  }
-		else
-		  step_ = PURGEDATA_CAT_;
-	      }
-
-	    if (step_ != PURGEDATA_CAT_)
-	      {
-		if (cliRC < 0)
-		  {
-		    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		    
-		    step_ = ERROR_;
-		    break;
-		  }
-	      }
-	  }
-	break;
-
-	case ADD_DDL_LOCK_:
-	  {
-	    cliRC = cliInterface()->beginWork();
-	    if (cliRC < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		step_ = ERROR_;
-		break;
-	      }
-
-	    xnWasStarted_ = TRUE;
-
-	    // first drop this ddl lock, if it exists. Ignore errors.
-	    rc = alterDDLLock(FALSE, fdTdb().getTableName(), failReason_,
-			      fdTdb().isMV(), COM_UTIL_PURGEDATA);
-	    if (rc < 0)
-	      {
-		SQL_EXEC_ClearDiagnostics(NULL);
-		
-		strcpy(failReason_, " ");
-
-		rc = 0;
-
-		// if this table was offline, and there was no ddl lock,
-		// let catman purgedata handle it.
-		// In this case, don't want to change the table back to
-		// online which is what will happen if exe purgedata is
-		// used.
-
-		if (fdTdb().offlineTable())
-		  {
-		    // Abort transaction which was started.
-		    // Ignore errors, and clear diags area.
-		    if ((xnWasStarted_) &&
-			(ta->xnInProgress()))
-		      {
-			cliRC = cliInterface()->rollbackWork();
-			
-			SQL_EXEC_ClearDiagnostics(NULL);
-			
-			xnWasStarted_ = FALSE;
-		      }
-		    
-		    step_ = PURGEDATA_CAT_;
-		    break;
-		  }
-	      }
-
-	    // now add a ddl lock.
-	    rc = alterDDLLock(TRUE, fdTdb().getTableName(), failReason_,
-			      fdTdb().isMV(), COM_UTIL_PURGEDATA);
-	    if (rc == 0)
-	      rc = injectError("10");
-	    if (rc < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
-		// could not acquire a ddl lock.
-		// try to purgedata using catman sequential purgedata.
-
-		// Abort transaction which was started.
-		// Ignore errors, and clear diags area.
-		if ((xnWasStarted_) &&
-		    (ta->xnInProgress()))
-		  {
-		    cliRC = cliInterface()->rollbackWork();
-		    
-		    SQL_EXEC_ClearDiagnostics(NULL);
-		    
-		    xnWasStarted_ = FALSE;
-		  }
-
-		// see if catman seq purgedata can fix this.
-		step_ = PURGEDATA_CAT_;
-		break;
-	      }
-
-	    step_ = MAKE_OBJECT_OFFLINE_;
-	  }
-	break;
-
-	case MAKE_OBJECT_OFFLINE_:
-	  {
-	    // make object offline
-	    rc = alterObjectState(FALSE, fdTdb().getTableName(), 
-				  failReason_, TRUE);
-	    NABoolean rollbackNoPDErr = FALSE;
-	    if (rc == 0)
-	      {
-		rc = injectError("11");
-		if (rc == 0)
-		  {
-		    rc = injectError("18");
-		    if (rc < 0)
-		      rollbackNoPDErr = TRUE;
-		  }
-	      }
-	    if (rc < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
-		// security validation failed
-		if ((getDiagsArea()->contains(-1017)) ||
-		    (rollbackNoPDErr))
-		  step_ = ROLLBACK_WORK_AND_NO_PD_ERROR_;
-		else
-		  step_ = ROLLBACK_WORK_AND_ERROR_;
-		break;
-	      }
-
-	    step_ = SET_CORRUPT_BIT_;
-	  }
-	break;
-
-	case SET_CORRUPT_BIT_:
-	  {
-	    // set the corrupt bit in the label of table and all indices
-	    rc = alterCorruptBit(1, fdTdb().getTableName(), failReason_,
-				 fdTdb().getIndexList());
-	    if (rc == 0)
-	      rc = injectError("12");
-	    if (rc < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		step_ = ROLLBACK_WORK_AND_ERROR_;
-		break;
-	      }
-
-	    if ((xnWasStarted_) &&
-		(ta->xnInProgress()))
-	      {
-		cliRC = cliInterface()->commitWork();
-		
-		xnWasStarted_ = FALSE;
-		
-		if (cliRC < 0)
-		  {
-		    strcpy(failReason_, "Error during commit work.");
-
-		    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		    step_ = ROLLBACK_WORK_AND_ERROR_;
-		    break;
-		  }
-	      }
-
-	    // inject error to test RECOVER.
-	    // DDL lock has been acquired and object has been made offline
-	    // but operation has not yet begun.
-	    if (injectError("1") || injectError("2"))
-	      {
-		// kill mxcmp
-		strcpy(buf, "SELECT TESTEXIT;");
-		cliRC = cliInterface()->executeImmediate(buf);
-		if (cliRC < 0)
-		  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		  
-		strcpy(failReason_, " ");
-
-		step_ = ROLLBACK_WORK_AND_ERROR_;
-		break;
-	      }
-
-	    // now start parallel purgedata
-	    step_ = BEGIN_WORK_;
-	  }
-	break;
-
-	case BEGIN_WORK_:
-	  {
-	    cliRC = cliInterface()->beginWork();
-	    if (cliRC < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		step_ = ERROR_;
-		break;
-	      }
-
-	    xnWasStarted_ = TRUE;
-	    step_ = FASTDEL_TABLE_;
-	  }
-	break;
-
-	case FASTDEL_TABLE_:
-	  {
-	    if ((fdTdb().doLabelPurgedata()) &&
-		(fastDelUsingResetEOF_))
-	      rc = doLabelPurgedata(fdTdb().getTableName(), 
-				    FALSE);
-	    else
-	      rc = doFastDelete(fdTdb().getTableName(), 
-				FALSE, fastDelUsingResetEOF_);
-
-	    if (rc)
-	      {
-		if (fastDelUsingResetEOF_)
-		  step_ = KILL_MXCMP_AND_ERROR_;
-		else
-		  step_ = ROLLBACK_WORK_AND_ERROR_;
-		break;
-	      }
-	    
-	    if (fdTdb().getIndexList())
-	      {
-		fdTdb().getIndexList()->position();
-		step_ = FASTDEL_INDEX_;
-	      }
-	    else 
-	      step_ = COMMIT_WORK_;
-	  }
-	break;
-
-	case FASTDEL_INDEX_:
-	  {
-	    if (fdTdb().getIndexList()->atEnd())
-	      {
-		step_ = COMMIT_WORK_;
-		break;
-	      }
-
-	    char * indexName = (char*)fdTdb().getIndexList()->getNext();
-	    if ((fdTdb().doLabelPurgedata()) &&
-		(fastDelUsingResetEOF_))
-	      rc = doLabelPurgedata(indexName, 
-				    TRUE);
-	    else
-	      rc = doFastDelete(indexName, TRUE,
-				fastDelUsingResetEOF_);
-	    if (rc)
-	      {
-		if (fastDelUsingResetEOF_)
-		  step_ = KILL_MXCMP_AND_ERROR_;
-		else
-		  step_ = ROLLBACK_WORK_AND_ERROR_;
-		break;
-	      }
-	  }
-	break;
-
-	case KILL_MXCMP_AND_ERROR_:
-	  {
-	    // Abort transaction which was started.
-	    // Ignore errors, and clear diags area.
-	    if ((xnWasStarted_) &&
-		(ta->xnInProgress()))
-	      {
-		cliRC = cliInterface()->rollbackWork();
-		
-		SQL_EXEC_ClearDiagnostics(NULL);
-
-		xnWasStarted_ = FALSE;
-	      }
-
-	    // kill mxcmp so a subsequent recover operation
-	    // can succeed. Ignore errors.
-	    strcpy(buf, "SELECT TESTEXIT;");
-	    cliRC = cliInterface()->executeImmediate(buf);
-	    SQL_EXEC_ClearDiagnostics(NULL);
-
-	    step_ = ROLLBACK_WORK_AND_ERROR_;
-	  }
-	break;
-
-	case ROLLBACK_WORK_AND_ERROR_:
-	case ROLLBACK_WORK_AND_NO_PD_ERROR_:
-	  {
-	    // We come here only if fastDeleteUsingResetEOF failed.
-	    // Abort transaction which was started.
-	    // Ignore errors, and clear diags area.
-	    if ((xnWasStarted_) &&
-		(ta->xnInProgress()))
-	      {
-		cliRC = cliInterface()->rollbackWork();
-		
-		SQL_EXEC_ClearDiagnostics(NULL);
-
-		xnWasStarted_ = FALSE;
-	      }
-
-	    if (step_ == ROLLBACK_WORK_AND_ERROR_)
-	      {
-		ComDiagsArea * da = getDiagsArea();
-		
-		// convert all errors into warnings
-		NegateAllErrors(da);
-		
-		// add a new error to indicate that parallel purgedata failed.
-		*da << DgSqlCode(-EXE_PARALLEL_PURGEDATA_FAILED)
-		    << DgString0(failReason_);
-	      }
-
-	    step_ = ERROR_;
-	  }
-	break;
-
-	case COMMIT_WORK_:
-	  {
-	    if ((xnWasStarted_) &&
-		(ta->xnInProgress()))
-	      {
-		cliRC = cliInterface()->commitWork();
-
-		xnWasStarted_ = FALSE;
-	      }
-
-	    if (injectError("3"))
-	      {
-		// kill mxcmp
-		strcpy(buf, "SELECT TESTEXIT;");
-		cliInterface()->executeImmediate(buf);
-		if (cliRC < 0)
-		  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		
-		step_ = ERROR_;
-		break;
-	      }
-
-	    if (parallelDeleteDone_) //fdTdb().doParallelDelete())
-	      {
-		// raise a warning that parallel purgedata was performed.
-		if (fdTdb().returnPurgedataWarn())
-		  {
-		    ComDiagsArea * da = getDiagsArea();
-		    *da << DgSqlCode(EXE_PURGEDATA_CAT)
-			<< DgString0("Parallel")
-			<< DgString1("");
-		  }
-		step_ = DONE_;
-	      }
-	    else
-	      step_ = RESET_CORRUPT_BIT_;
-	  }
-	break;
-
-	case RESET_CORRUPT_BIT_:
-	  {
-	    cliRC = cliInterface()->beginWork();
-	    if (cliRC < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		step_ = ERROR_;
-		break;
-	      }
-
-	    xnWasStarted_ = TRUE;
-
-	    // reset the corrupt bit in the label of table and all indices.
-	    rc = alterCorruptBit(0, fdTdb().getTableName(), failReason_,
-				 fdTdb().getIndexList());
-	    if (rc == 0)
-	      rc = injectError("15");
-
-	    if (rc < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		step_ = KILL_MXCMP_AND_ERROR_;
-		break;
-	      }
-
-	    step_ = MAKE_OBJECT_ONLINE_;
-	  }
-	break;
-
-	case MAKE_OBJECT_ONLINE_:
-	  {
-	    rc = alterObjectState(TRUE, fdTdb().getTableName(), 
-				  failReason_, TRUE);
-	    if (rc == 0)
-	      rc = injectError("16");
-	    if (rc < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		step_ = KILL_MXCMP_AND_ERROR_;
-		break;
-	      }
-	    
-	    step_ = DROP_DDL_LOCK_;
-	  }
-	break;
-
-	case DROP_DDL_LOCK_:
-	  {
-	    if (fastDelUsingResetEOF_)
-	      {
-		rc = alterDDLLock(FALSE, fdTdb().getTableName(), failReason_,
-				  fdTdb().isMV(), COM_UTIL_PURGEDATA);
-		if (rc == 0)
-		  rc = injectError("17");
-		if (rc < 0)
-		  {
-		    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		    step_ = KILL_MXCMP_AND_ERROR_;
-		    break;
-		  }
-	      }
-
-	    cliRC = cliInterface()->commitWork();
-	    if (cliRC < 0)
-	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		step_ = ERROR_;
-		break;
-	      }
-	    
-	    step_ = DONE_;
-
-	    // raise a warning that parallel purgedata was performed.
-	    if (fdTdb().returnPurgedataWarn())
-	      {
-		ComDiagsArea * da = getDiagsArea();
-		*da << DgSqlCode(EXE_PURGEDATA_CAT)
-		    << DgString0("Parallel")
-		    << DgString1("");
-	      }
-	  }
-	break;
-
-	case PURGEDATA_CAT_:
-	  {
-	    if ((getDiagsArea()) &&
-		(getDiagsArea()->getNumber(DgSqlCode::ERROR_) > 0))
-	      {
-		// convert all errors into warnings
-		NegateAllErrors(getDiagsArea());
-	      }
-
-	    // raise a warning that regular purgedata is being performed,
-	    // either because the query/object didn't meet the criteria
-	    // for parallel purgedata, or because parallel purgedata failed.
-	    if (fdTdb().returnPurgedataWarn())
-	      {
-		ComDiagsArea * da = getDiagsArea();
-		if (fdTdb().doPurgedataCat())
-		  *da << DgSqlCode(EXE_PURGEDATA_CAT)
-		      << DgString0("Regular")
-		      << DgString1("Reason: Query or the object did not meet the criteria for parallel purgedata.");
-		else
-		  *da << DgSqlCode(EXE_PURGEDATA_CAT)
-		      << DgString0("Regular")
-		      << DgString1("Reason: Parallel purgedata failed.");
-	      }
-
-	    rc = doPurgedataCat(fdTdb().purgedataStmt());
-	    if (rc)
-	      step_ = ERROR_;
-	    else
-	      step_ = DONE_;
-	  }
-	break;
-
-	case ERROR_:
-	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    // Return EOF.
-	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
-	      pentry_down->downState.parentIndex;
-	    
-	    up_entry->upState.setMatchNo(0);
-	    up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-	    ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	    
-	    if (diagsArea == NULL)
-	      diagsArea = 
-		ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-            else
-              diagsArea->incrRefCount (); // setDiagsArea call below will decr ref count
-
-	    if (getDiagsArea())
-	      diagsArea->mergeAfter(*getDiagsArea());
-	    
-	    up_entry->setDiagsArea (diagsArea);
-
-	    getDiagsArea()->clear();
-
-	    // insert into parent
-	    qparent_.up->insert();
-	    
-	    step_ = DONE_;
-	  }
-	break;
-
-	case DONE_:
-	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-
-	    // restore cqd and ignore errors
-	    SQL_EXEC_ClearDiagnostics(NULL);
-	    
-	    // Return EOF.
-	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
-	      pentry_down->downState.parentIndex;
-	    
-	    up_entry->upState.setMatchNo(0);
-	    up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-	    if (getDiagsArea()->getNumber(DgSqlCode::WARNING_) > 0) // must be a warning
-	      {
-		ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-		
-		if (diagsArea == NULL)
-		  diagsArea = 
-		    ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-                else
-                  diagsArea->incrRefCount (); // setDiagsArea call below will decr ref count
-		
-		if (getDiagsArea())
-		  diagsArea->mergeAfter(*getDiagsArea());
-		
-		up_entry->setDiagsArea (diagsArea);
-	      }
-
-	    // insert into parent
-	    qparent_.up->insert();
-	    
-	    pstate.matches_ = 0;
-	    step_ = INITIAL_;
-	    qparent_.down->removeHead();
-	    
-	    return WORK_OK;
-	  }
-	break;
-
-	} // switch
-    } // while
-
-}
-
-////////////////////////////////////////////////////////////////////////
-// Redefine virtual method allocatePstates, to be used by dynamic queue
-// resizing, as well as the initial queue construction.
-////////////////////////////////////////////////////////////////////////
-ex_tcb_private_state * ExExeUtilFastDeleteTcb::allocatePstates(
-     Lng32 &numElems,      // inout, desired/actual elements
-     Lng32 &pstateLength)  // out, length of one element
-{
-  PstateAllocator<ExExeUtilFastDeletePrivateState> pa;
-
-  return pa.allocatePstates(this, numElems, pstateLength);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Constructor and destructor for ExeUtil_private_state
-/////////////////////////////////////////////////////////////////////////////
-ExExeUtilFastDeletePrivateState::ExExeUtilFastDeletePrivateState()
-{
-}
-
-ExExeUtilFastDeletePrivateState::~ExExeUtilFastDeletePrivateState()
-{
-};
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilLongRunningTdb::build(ex_globals * glob)
@@ -1367,7 +413,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
         "control query default HIST_ON_DEMAND_STATS_SIZE '0'");
       if (cliRC < 0) 
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	  return cliRC;
         }
       
@@ -1376,7 +422,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
       short rtc = processInitial(rc);
       if ((rc != 0) && (rc != 100))
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
         }
 
       cliRC = 
@@ -1384,7 +430,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
             "control query default HIST_ON_DEMAND_STATS_SIZE 'RESET'");
       if (cliRC < 0) 
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	  return cliRC;
         }
       
@@ -1398,7 +444,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
 
           // str_printf() does not support %ld. Use %d instead.
           str_sprintf(lruQPInfo, 
-	             "Queries to be processed: \n\n%s\n\n%s\n\n\n Initial rows deleted: %d",
+	             "Queries to be processed: \n\n%s\n\n%s\n\n\n Initial rows deleted: %ld",
                       lruStmtAndPartInfo_,
                       lruStmtWithCKAndPartInfo_,
                       getRowsDeleted());
@@ -1420,14 +466,14 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
       short rtc = processContinuing(rc);
       if ((rc != 0) && (rc != 100))
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
         }
 
 #ifdef _DEBUG
       if ((rc == 100 || rc > 0) && lrTdb().longRunningQueryPlan()) {
 
         char lruQPInfo [100];
-        str_sprintf(lruQPInfo, "Total rows deleted: %d\n\n", getRowsDeleted());
+        str_sprintf(lruQPInfo, "Total rows deleted: %ld\n\n", getRowsDeleted());
 
         ComDiagsArea * diagsArea = getDiagAreaFromUpQueueTail();
         (*diagsArea) << DgSqlCode(8427) << DgString0(lruQPInfo);
@@ -1576,7 +622,7 @@ short ExExeUtilLongRunningTcb::processContinuing(Lng32 &rc)
 
         char lruQPInfo[100];
 
-        str_sprintf(lruQPInfo, "Continuing rows deleted: %d\n\n", 
+        str_sprintf(lruQPInfo, "Continuing rows deleted: %ld\n\n", 
                                 rowsAffected);
 
         ComDiagsArea * diagsArea = getDiagAreaFromUpQueueTail();
@@ -1819,14 +865,14 @@ ExExeUtilPopulateInMemStatsTcb::~ExExeUtilPopulateInMemStatsTcb()
 static const QueryString deleteStatsQuery[] =
 {
   {" delete from %s "},
-  {"  where table_uid = %Ld"}
+  {"  where table_uid = %ld"}
 };
 
 static const QueryString populateHistogramsStatsQuery[] =
 {
   {" insert into %s "},
   {" select  "},
-  {"   %Ld, "},
+  {"   %ld, "},
   {"   histogram_id, "},
   {"   col_position, column_number, colcount, interval_count, rowcount, "},
   {"   total_uec, stats_time, low_value, high_value, read_time, read_count, "},
@@ -1853,7 +899,7 @@ static const QueryString populateHistintsStatsQuery[] =
 {
   {" insert into %s "},
   {" select  "},
-  {"   %Ld, "},
+  {"   %ld, "},
   {"   histogram_id, "},
   {"   interval_number, interval_rowcount, interval_uec, interval_boundary, "},
   {"   std_dev_of_freq, "},
@@ -1982,8 +1028,7 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 	    
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 	      }
 	    else
@@ -2039,8 +1084,7 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 	    
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 	      }
 	    else
@@ -2096,8 +1140,7 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 	    
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 	      }
 	    else
@@ -2227,7 +1270,11 @@ ex_tcb * ExExeUtilHiveTruncateTdb::build(ex_globals * glob)
 {
   ExExeUtilTcb * exe_util_tcb;
 
-  exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveTruncateTcb(*this, glob);
+  if (getIsLegacy())
+    exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveTruncateLegacyTcb(*this, glob);
+  else
+    exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveTruncateTcb(*this, glob);
+    
   exe_util_tcb->registerSubtasks();
 
   return (exe_util_tcb);
@@ -2235,9 +1282,9 @@ ex_tcb * ExExeUtilHiveTruncateTdb::build(ex_globals * glob)
 
 
 ////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilHiveTruncateTcb
+// Constructor for class ExExeUtilHiveTruncateLegacyTcb
 ///////////////////////////////////////////////////////////////
-ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
+ExExeUtilHiveTruncateLegacyTcb::ExExeUtilHiveTruncateLegacyTcb(
      const ComTdbExeUtilHiveTruncate & exe_util_tdb,
      ex_globals * glob)
      : ExExeUtilTcb( exe_util_tdb, NULL, glob)
@@ -2250,38 +1297,33 @@ ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
   step_ = INITIAL_;
 }
 
-ExExeUtilHiveTruncateTcb::~ExExeUtilHiveTruncateTcb()
+ExExeUtilHiveTruncateLegacyTcb::~ExExeUtilHiveTruncateLegacyTcb()
 {
   freeResources();
 }
 
-void ExExeUtilHiveTruncateTcb::freeResources()
+void ExExeUtilHiveTruncateLegacyTcb::freeResources()
 {
   if (htTdb().getDropOnDealloc())
-    {
+  {
       NAString hiveDropDDL("drop table ");
-      HiveClient_JNI *hiveClient = HiveClient_JNI::getInstance();
-
       hiveDropDDL += htTdb().getHiveTableName();
 
-      // ignore errors on drop
-      if (!hiveClient->isInitialized() ||
-          !hiveClient->isConnected())
-        hiveClient->init();
-      hiveClient->executeHiveSQL(hiveDropDDL);
-    }
+      // TODO: is it ok to ignore the error 
+      HiveClient_JNI::executeHiveSQL(hiveDropDDL);
+  }
   if (lobGlob_) {
-    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+    ExpLOBinterfaceCleanup(lobGlob_);
     lobGlob_ = NULL;
   }
 }
 
-Int32 ExExeUtilHiveTruncateTcb::fixup()
+Int32 ExExeUtilHiveTruncateLegacyTcb::fixup()
 {
   lobGlob_ = NULL;
 
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),
+    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),
      getGlobals()->castToExExeStmtGlobals()->getContext(),FALSE, 
      htTdb().getHdfsHost(),
      htTdb().getHdfsPort());
@@ -2289,9 +1331,9 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
   return 0;
 }
 //////////////////////////////////////////////////////
-// work() for ExExeUtilHiveTruncateTsb
+// work() for ExExeUtilHiveTruncateLegacyTcb
 //////////////////////////////////////////////////////
-short ExExeUtilHiveTruncateTcb::work()
+short ExExeUtilHiveTruncateLegacyTcb::work()
 {
   short rc = 0;
   Lng32 cliRC = 0;
@@ -2344,8 +1386,7 @@ short ExExeUtilHiveTruncateTcb::work()
           Lng32 cliError = 0;
           
           Lng32 intParam1 = -cliRC;
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
                           NULL, &intParam1, 
                           &cliError, 
@@ -2353,7 +1394,6 @@ short ExExeUtilHiveTruncateTcb::work()
                           "HDFS",
                           (char*)"ExpLOBInterfaceEmptyDirectory",
                           getLobErrStr(intParam1));
-          pentry_down->setDiagsArea(diagsArea);
           step_ = ERROR_;
           break;
         }
@@ -2361,16 +1401,13 @@ short ExExeUtilHiveTruncateTcb::work()
         if (cliRC == 1) // data mod check failed
         {
           char errStr[200];
-          str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+          str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
                       htTdb().getModTS(), failedModTS);
           
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
                           NULL, NULL, NULL,
                           errStr);
-          pentry_down->setDiagsArea(diagsArea);
-          
           step_ = ERROR_;
           break;
         }
@@ -2398,8 +1435,7 @@ short ExExeUtilHiveTruncateTcb::work()
           Lng32 cliError = 0;
           
           Lng32 intParam1 = -cliRC;
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
                           NULL, &intParam1, 
                           &cliError, 
@@ -2423,13 +1459,11 @@ short ExExeUtilHiveTruncateTcb::work()
               strcpy(reason, "Reason: error occurred during deletion of one or more files at the specified location");
             }
           
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_HIVE_TRUNCATE_ERROR), NULL,
                           NULL, NULL, NULL,
                           reason,
                           NULL, NULL);
-          
-          pentry_down->setDiagsArea(diagsArea);
           step_ = ERROR_;
         }
         else
@@ -2441,48 +1475,21 @@ short ExExeUtilHiveTruncateTcb::work()
 
       case ERROR_:
       {
-        if (qparent_.up->isFull())
-          return WORK_OK;
-
-        // Return Error 
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-        up_entry->copyAtp(pentry_down);
-
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-        // insert into parent
-        qparent_.up->insert();
-
+        if (handleError())
+           return WORK_OK;
         step_ = DONE_;
       }
       break;
 
       case DONE_:
       {
-        if (qparent_.up->isFull())
-          return WORK_OK;
-
-        // Return EOF.
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-        // insert into parent
-        qparent_.up->insert();
-
-        //pstate.matches_ = 0;
+        if (handleDone())
+           return WORK_OK;
         step_ = INITIAL_;
-        qparent_.down->removeHead();
 
         return WORK_OK;
       }
-        break;
+      break;
 
     } // switch
   } // while
@@ -2490,11 +1497,11 @@ short ExExeUtilHiveTruncateTcb::work()
 }
 
 
-ex_tcb_private_state * ExExeUtilHiveTruncateTcb::allocatePstates(
+ex_tcb_private_state * ExExeUtilHiveTruncateLegacyTcb::allocatePstates(
      Lng32 &numElems,      // inout, desired/actual elements
      Lng32 &pstateLength)  // out, length of one element
 {
-  PstateAllocator<ExExeUtilHiveTruncatePrivateState> pa;
+  PstateAllocator<ExExeUtilHiveTruncateLegacyPrivateState> pa;
 
   return pa.allocatePstates(this, numElems, pstateLength);
 }
@@ -2502,33 +1509,19 @@ ex_tcb_private_state * ExExeUtilHiveTruncateTcb::allocatePstates(
 /////////////////////////////////////////////////////////////////////////////
 // Constructor and destructor for ExeUtil_private_state
 /////////////////////////////////////////////////////////////////////////////
-ExExeUtilHiveTruncatePrivateState::ExExeUtilHiveTruncatePrivateState()
+ExExeUtilHiveTruncateLegacyPrivateState::ExExeUtilHiveTruncateLegacyPrivateState()
 {
 }
 
-ExExeUtilHiveTruncatePrivateState::~ExExeUtilHiveTruncatePrivateState()
+ExExeUtilHiveTruncateLegacyPrivateState::~ExExeUtilHiveTruncateLegacyPrivateState()
 {
 };
 
 ////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilHiveQueryTdb
+// Constructor for class ExExeUtilHiveTruncateTcb
 ///////////////////////////////////////////////////////////////
-ex_tcb * ExExeUtilHiveQueryTdb::build(ex_globals * glob)
-{
-  ExExeUtilTcb * exe_util_tcb;
-
-  exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveQueryTcb(*this, glob);
-  exe_util_tcb->registerSubtasks();
-
-  return (exe_util_tcb);
-}
-
-
-////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilHiveQueryTcb
-///////////////////////////////////////////////////////////////
-ExExeUtilHiveQueryTcb::ExExeUtilHiveQueryTcb(
-     const ComTdbExeUtilHiveQuery & exe_util_tdb,
+ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
+     const ComTdbExeUtilHiveTruncate & exe_util_tdb,
      ex_globals * glob)
      : ExExeUtilTcb( exe_util_tdb, NULL, glob)
 {
@@ -2538,14 +1531,27 @@ ExExeUtilHiveQueryTcb::ExExeUtilHiveQueryTcb(
   step_ = INITIAL_;
 }
 
-ExExeUtilHiveQueryTcb::~ExExeUtilHiveQueryTcb()
+ExExeUtilHiveTruncateTcb::~ExExeUtilHiveTruncateTcb()
 {
+  freeResources();
+}
+
+void ExExeUtilHiveTruncateTcb::freeResources()
+{
+  if (htTdb().getDropOnDealloc())
+  {
+    NAString hiveDropDDL("drop table ");
+    hiveDropDDL += htTdb().getHiveTableName();
+
+    // TODO: is it ok to ignore the error 
+    HiveClient_JNI::executeHiveSQL(hiveDropDDL);
+  }
 }
 
 //////////////////////////////////////////////////////
-// work() for ExExeUtilHiveQueryTsb
+// work() for ExExeUtilHiveTruncateTcb
 //////////////////////////////////////////////////////
-short ExExeUtilHiveQueryTcb::work()
+short ExExeUtilHiveTruncateTcb::work()
 {
   short rc = 0;
   Lng32 cliRC = 0;
@@ -2568,32 +1574,100 @@ short ExExeUtilHiveQueryTcb::work()
         {
         case INITIAL_:
           {
-            step_ = PROCESS_QUERY_;
-          }
-          break;
-          
-        case PROCESS_QUERY_:
-          {
-            ComDiagsArea * diags = getDiagsArea();
-
-            if (!CmpCommon::context()->execHiveSQL(htTdb().getHiveQuery(),
-                                                   diags))
+            // if 'if exists' clause was specified and table does not exist
+            // during compile phase, return.
+            // If table was missing during compile and was created before
+            // execute, then QI/AQR/Timestamp check will recompile.
+            if (htTdb().getIfExists() && htTdb().getTableNotExists())
               {
-                step_ = ERROR_;
+                step_ = DONE_;
                 break;
               }
 
-            step_ = DONE_;
+            if (htTdb().getIsExternal())
+              step_ = ALTER_TO_MANAGED_;
+            else
+              step_ = TRUNCATE_TABLE_;
           }
           break;
           
+        case ALTER_TO_MANAGED_:
+          {
+            // A Hive table can be an External or Managed table.
+            // Currently, an External Hive table cannot be truncated.
+            // Maybe some future Hive version will allow that.
+            // Temporarily change the table attribute to be Managed,
+            // truncate the table and then change it back to be External.
+            NAString alterStmt("alter table ");
+            alterStmt += htTdb().getHiveTableName(); 
+            alterStmt += " set tblproperties ('EXTERNAL'='False')";
+            if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
+              {
+                // alter failed
+                ExRaiseSqlError(getHeap(), &diagsArea_, -1214,
+                                NULL, NULL, NULL,
+                                getSqlJniErrorStr(), htTdb().getHiveTruncQuery()); 
+                step_ = ERROR_;
+                break;
+              }
+            
+            step_ = TRUNCATE_TABLE_;
+          }
+          break;
+
+        case TRUNCATE_TABLE_:
+          {
+            if (HiveClient_JNI::executeHiveSQL(htTdb().getHiveTruncQuery()) != HVC_OK)
+              {
+                ExRaiseSqlError(getHeap(), &diagsArea_, -1214,
+                                NULL, NULL, NULL,
+                                getSqlJniErrorStr(), htTdb().getHiveTruncQuery());
+
+                if (htTdb().getIsExternal())
+                  {
+                    step_ = ALTER_TO_EXTERNAL_AND_ERROR_;
+                    break;
+                  }
+                
+                step_ = ERROR_;
+                break;
+              }
+ 
+            if (htTdb().getIsExternal())
+              step_ = ALTER_TO_EXTERNAL_;
+            else
+              step_= DONE_;
+          }
+          break;
+          
+         case ALTER_TO_EXTERNAL_:
+         case ALTER_TO_EXTERNAL_AND_ERROR_:
+          {
+            // table was altered to Managed. Alter it back to External.
+            NAString alterStmt("alter table ");
+            alterStmt += htTdb().getHiveTableName(); 
+            alterStmt += " set tblproperties ('EXTERNAL'='TRUE')";
+             if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
+              {
+                // alter failed
+                ExRaiseSqlError(getHeap(), &diagsArea_, -1214,
+                                NULL, NULL, NULL,
+                                getSqlJniErrorStr(), alterStmt.data());
+                step_ = ERROR_;
+                break;
+              }                    
+
+            if (step_ == ALTER_TO_EXTERNAL_AND_ERROR_)
+              step_ = ERROR_;
+            else
+              step_ = DONE_;
+          }
+          break;
+
         case ERROR_:
           {
             if (handleError())
               return WORK_OK;
-
-	    getDiagsArea()->clear();
-            
             step_ = DONE_;
           }
           break;
@@ -2602,7 +1676,6 @@ short ExExeUtilHiveQueryTcb::work()
           {
             if (handleDone())
               return WORK_OK;
-            
             step_ = INITIAL_;
             
             return WORK_OK;
@@ -2614,12 +1687,11 @@ short ExExeUtilHiveQueryTcb::work()
   
 }
 
-
-ex_tcb_private_state * ExExeUtilHiveQueryTcb::allocatePstates(
+ex_tcb_private_state * ExExeUtilHiveTruncateTcb::allocatePstates(
      Lng32 &numElems,      // inout, desired/actual elements
      Lng32 &pstateLength)  // out, length of one element
 {
-  PstateAllocator<ExExeUtilHiveQueryPrivateState> pa;
+  PstateAllocator<ExExeUtilHiveTruncatePrivateState> pa;
 
   return pa.allocatePstates(this, numElems, pstateLength);
 }
@@ -2627,10 +1699,95 @@ ex_tcb_private_state * ExExeUtilHiveQueryTcb::allocatePstates(
 /////////////////////////////////////////////////////////////////////////////
 // Constructor and destructor for ExeUtil_private_state
 /////////////////////////////////////////////////////////////////////////////
-ExExeUtilHiveQueryPrivateState::ExExeUtilHiveQueryPrivateState()
+ExExeUtilHiveTruncatePrivateState::ExExeUtilHiveTruncatePrivateState()
 {
 }
 
+ExExeUtilHiveTruncatePrivateState::~ExExeUtilHiveTruncatePrivateState()
+{
+};
+
+///////////////////////////////////////////////////////////////////////
+// ExExeUtilHiveQueryTdb
+///////////////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilHiveQueryTdb::build(ex_globals * glob)
+{
+  ExExeUtilTcb * exe_util_tcb;
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveQueryTcb(*this, glob);
+  exe_util_tcb->registerSubtasks();
+  return (exe_util_tcb);
+}
+ExExeUtilHiveQueryTcb::ExExeUtilHiveQueryTcb(
+     const ComTdbExeUtilHiveQuery & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob)
+{
+  qparent_.down->allocatePstate(this);
+  step_ = INITIAL_;
+}
+ExExeUtilHiveQueryTcb::~ExExeUtilHiveQueryTcb()
+{
+}
+short ExExeUtilHiveQueryTcb::work()
+{
+  short rc = 0;
+  Lng32 cliRC = 0;
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
+  while (1)
+    {
+      switch (step_)
+        {
+        case INITIAL_:
+          {
+            step_ = PROCESS_QUERY_;
+          }
+          break;
+        case PROCESS_QUERY_:
+          {
+            if (HiveClient_JNI::executeHiveSQL(htTdb().getHiveQuery()) != HVC_OK)
+            {
+                ExRaiseSqlError(getHeap(), &diagsArea_, -1214,
+                        NULL, NULL, NULL,
+                        getSqlJniErrorStr(), htTdb().getHiveQuery()); 
+                step_ = ERROR_;
+                break;
+            }
+            step_ = DONE_;
+          }
+          break;
+        case ERROR_:
+          {
+            if (handleError())
+              return WORK_OK;
+            step_ = DONE_;
+          }
+          break;
+        case DONE_:
+          {
+            if (handleDone())
+              return WORK_OK;
+            step_ = INITIAL_;
+            return WORK_OK;
+          }
+          break;
+        } // switch
+    } // while
+}
+ex_tcb_private_state * ExExeUtilHiveQueryTcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ExExeUtilHiveQueryPrivateState> pa;
+  return pa.allocatePstates(this, numElems, pstateLength);
+}
+ExExeUtilHiveQueryPrivateState::ExExeUtilHiveQueryPrivateState()
+{
+}
 ExExeUtilHiveQueryPrivateState::~ExExeUtilHiveQueryPrivateState()
 {
 };

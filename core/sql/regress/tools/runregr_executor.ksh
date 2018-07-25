@@ -356,6 +356,11 @@ if [ "$SQ_SEAMONSTER" != "1" ]; then
   skipTheseTests="$skipTheseTests TEST121 TEST123"
 fi
 
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST1" == "1" ]; then
+    skipTheseTests="$skipTheseTests $executorCT"
+fi
+
 for i in $testfiles; do 
   skipthis=0
   for j in $skipTheseTests; do

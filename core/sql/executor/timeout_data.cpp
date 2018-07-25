@@ -414,9 +414,7 @@ NABoolean TimeoutData::anyRelevantTimeoutData( ComTdbRoot * rootTdb )
   
   // now check each individual table used by this statement
   for (UInt32 ui = 0; ui < lnil->getNumEntries(); ui++) {
-#pragma nowarn(1506)   // warning elimination 
     char * tableName = lnil->getLateNameInfo(ui).resolvedPhyName();
-#pragma warn(1506)  // warning elimination 
     Lng32 dummyTimeoutValue;
     if ( timeoutsHT_.getTimeout( tableName, dummyTimeoutValue ) ) return TRUE ;
   }
@@ -449,9 +447,7 @@ void TimeoutData::copyData( TimeoutData ** anotherTD,
   // check for each table (used by this stmt) in the global hash array
   // if found -- make such an entry in the other TD's array
   for (UInt32 ui = 0; ui < lnil->getNumEntries(); ui++) {
-#pragma nowarn(1506)   // warning elimination 
     char * tableName = lnil->getLateNameInfo(ui).resolvedPhyName();
-#pragma warn(1506)  // warning elimination 
     Lng32 timeoutValue;
     if ( timeoutsHT_.getTimeout( tableName, timeoutValue ) )
       (*anotherTD)->timeoutsHT_.insert( tableName, timeoutValue ) ;
@@ -486,9 +482,7 @@ NABoolean TimeoutData::isUpToDate( TimeoutData * anotherTD ,
   
   // check timeout similarity for each table (used by this stmt)
   for (UInt32 ui = 0; ui < lnil->getNumEntries(); ui++) {
-#pragma nowarn(1506)   // warning elimination 
     char * tableName = lnil->getLateNameInfo(ui).resolvedPhyName();
-#pragma warn(1506)  // warning elimination 
     Lng32 globalTimeoutValue = 0 , stmtTimeoutValue = 0 ; 
     NABoolean globalFound = 
       timeoutsHT_.getTimeout( tableName, globalTimeoutValue );
@@ -544,18 +538,14 @@ void TimeoutData::unpackObj(IpcConstMessageBufferPtr &buffer)
   ULng32 flags = *(ULng32 *) buffer;
   buffer += sizeof(ULng32); 
 
-#pragma nowarn(1506)   // warning elimination 
   streamTimeoutSet_ =  flags & 0x01 ;
-#pragma warn(1506)  // warning elimination 
   if ( streamTimeoutSet_ ) {
     streamTimeoutValue_ = *(Lng32 *) buffer;
     buffer += sizeof(Lng32); 
   }
 
   noLockTimeoutsSet_ = ! ( flags & 0x02 );
-#pragma nowarn(1506)   // warning elimination 
   forAll_ = flags & 0x04 ;
-#pragma warn(1506)  // warning elimination 
   if ( ! noLockTimeoutsSet_ && forAll_ ) { 
     forAllTimeout_ = *(Lng32 *) buffer;
     buffer += sizeof(Lng32); 

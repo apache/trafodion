@@ -272,7 +272,6 @@ BOOL CRUTbl::IsUsedOnlyByMultiTxnMvs() const
 //------------------------------------------------------------------------//
 //	CRUTbl::Dump()
 //------------------------------------------------------------------------//
-// LCOV_EXCL_START :dpb
 void CRUTbl::Dump(CDSString &to, BOOL isExtended) 
 {
 	char statusStr[10];
@@ -301,7 +300,6 @@ void CRUTbl::Dump(CDSString &to, BOOL isExtended)
 		to += "\t" + (pMV->GetFullName()) + "\n";
 	}
 }
-// LCOV_EXCL_STOP
 #endif
 
 //------------------------------------------------------------------------//

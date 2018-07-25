@@ -460,9 +460,13 @@ void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
        TM_Txid_legacy lv_transid;
    } u;
 
-   char tname[2000], ername[50], rname[100], offline[20], regid[200], hostname[200], port[100];
+   char tname[2000];
+   tname[299] = '\0';
+/*
+   char ername[50], rname[100], offline[20], regid[200], hostname[200], port[100];
    tname[299] = '\0', ername[49] = '\0', rname[99] = '\0', offline[19] = '\0';
    regid[199]= '\0', hostname[199]='\0', port[99]='\0';
+*/
 
    TMTrace(2, ("tm_process_req_requestregioninfo ENTRY.\n"));
    HashMapArray* map = HbaseTM_process_request_regions_info();

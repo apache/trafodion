@@ -81,8 +81,8 @@
 >>
 >>create view games_by_player as
 +>  select player_name, game_time
-+>  from teams t, games g, players p
-+>  where p.player_team_number = t.team_number and
++>  from players_on_team p, games g, teams t
++>  where p.player_name = t.team_name and
 +>        t.team_number = g.home_team_number
 +>  order by player_name, team_number;
 
@@ -96,6 +96,9 @@
 >>set pattern $$QUOTE$$ '''';
 >>
 >>create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>grant usage on library t125_l1 to t125_role1;
 
 --- SQL operation complete.
 >>create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
@@ -125,6 +128,9 @@
 >>
 >>create library t125_l2
 +>   file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>grant all on library t125_l2 to sql_user8;
 
 --- SQL operation complete.
 >>
@@ -213,8 +219,8 @@
 >>
 >>create view games_by_player as
 +>  select player_name, game_time
-+>  from teams t, games g, players p
-+>  where p.player_team_number = t.team_number and
++>  from players_on_team p, games g, teams t
++>  where p.player_name = t.team_name and
 +>        t.team_number = g.home_team_number
 +>  order by player_name, team_number;
 
@@ -228,6 +234,9 @@
 >>set pattern $$QUOTE$$ '''';
 >>
 >>create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>grant usage on library t125_l1 to t125_role1;
 
 --- SQL operation complete.
 >>create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
@@ -257,6 +266,9 @@
 >>
 >>create library t125_l2
 +>   file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>grant all on library t125_l2 to sql_user8;
 
 --- SQL operation complete.
 >>
@@ -345,8 +357,8 @@
 >>
 >>create view games_by_player as
 +>  select player_name, game_time
-+>  from teams t, games g, players p
-+>  where p.player_team_number = t.team_number and
++>  from players_on_team p, games g, teams t
++>  where p.player_name = t.team_name and
 +>        t.team_number = g.home_team_number
 +>  order by player_name, team_number;
 
@@ -360,6 +372,9 @@
 >>set pattern $$QUOTE$$ '''';
 >>
 >>create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>grant usage on library t125_l1 to t125_role1;
 
 --- SQL operation complete.
 >>create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
@@ -389,6 +404,9 @@
 >>
 >>create library t125_l2
 +>   file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>grant all on library t125_l2 to sql_user8;
 
 --- SQL operation complete.
 >>
@@ -471,10 +489,16 @@
 Privileges for Role T125_ROLE1
 ==============================
 
+----G--    TRAFODION.T125SCH1.T125_L1
 S------    TRAFODION.T125SCH2.GAMES <Column> GAME_NUMBER
+----G--    TRAFODION.T125SCH2.T125_L1
 S------    TRAFODION.T125SCH2.TEAMS <Column> TEAM_NUMBER
 SIDU-R-    TRAFODION.T125SCH3.PLAYERS
+----G--    TRAFODION.T125SCH3.T125_L1
 ------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
+
+=======================
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for user sql_user1;
@@ -482,11 +506,16 @@ SIDU-R-    TRAFODION.T125SCH3.PLAYERS
 Privileges for User SQL_USER1
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 ----G--    TRAFODION.T125SCH2.PLAYERS_SEQUENCE
 ------E    TRAFODION.T125SCH2.TESTHIVE
 -I-----    TRAFODION.T125SCH3.GAMES
 S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER
 S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER <Column> PLAYER_NAME
+
+=======================
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for user sql_user2;
@@ -494,16 +523,24 @@ S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER <Column> PLAYER_NAME
 Privileges for User SQL_USER2
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 SIDU-R-    TRAFODION.T125SCH1.GAMES
 S------    TRAFODION.T125SCH1.GAMES_BY_PLAYER
+----G--    TRAFODION.T125SCH1.T125_L1
 SIDU-R-    TRAFODION.T125SCH2.GAMES
 S------    TRAFODION.T125SCH2.GAMES <Column> GAME_NUMBER
 S------    TRAFODION.T125SCH2.GAMES_BY_PLAYER
+----G--    TRAFODION.T125SCH2.T125_L1
 S------    TRAFODION.T125SCH2.TEAMS <Column> TEAM_NUMBER
 SIDU-R-    TRAFODION.T125SCH3.GAMES
 S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER
 SIDU-R-    TRAFODION.T125SCH3.PLAYERS
+----G--    TRAFODION.T125SCH3.T125_L1
 ------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
+
+=======================
+ 15 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for user sql_user7;
@@ -511,10 +548,18 @@ SIDU-R-    TRAFODION.T125SCH3.PLAYERS
 Privileges for User SQL_USER7
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+----G--    TRAFODION.T125SCH1.T125_L1
 S------    TRAFODION.T125SCH2.GAMES <Column> GAME_NUMBER
+----G--    TRAFODION.T125SCH2.T125_L1
 S------    TRAFODION.T125SCH2.TEAMS <Column> TEAM_NUMBER
 SIDU-R-    TRAFODION.T125SCH3.PLAYERS
+----G--    TRAFODION.T125SCH3.T125_L1
 ------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
+
+=======================
+ 9 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for user sql_user8;
@@ -522,6 +567,10 @@ SIDU-R-    TRAFODION.T125SCH3.PLAYERS
 Privileges for User SQL_USER8
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+---UG--    TRAFODION.T125SCH1.T125_L2
+---UG--    TRAFODION.T125SCH2.T125_L2
 SIDU-R-    TRAFODION.T125SCH3.GAMES
 S----R-    TRAFODION.T125SCH3.GAMES_BY_PLAYER
 S----R-    TRAFODION.T125SCH3.HOME_TEAMS_GAMES
@@ -537,7 +586,612 @@ SIDU-R-    TRAFODION.T125SCH3.TEAMS
 ------E    TRAFODION.T125SCH3.TESTHIVE
 ------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
 
+=======================
+ 18 row(s) returned
+
 --- SQL operation complete.
+>>
+>>set schema t125sch1;
+
+--- SQL operation complete.
+>>obey TEST125(get_privs);
+>>get privileges on table games;
+
+Privileges on Table T125SCH1.GAMES
+==================================
+
+SIDU-R-    DB__ROOT
+SIDU-R-    SQL_USER2
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user2;
+
+Privileges on Table T125SCH1.GAMES
+==================================
+
+SIDU-R-    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on table games for t125_adminrole;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+Privileges on View T125SCH1.GAMES_BY_PLAYER
+===========================================
+
+S----R-    DB__ROOT
+S------    SQL_USER2
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user2;
+
+Privileges on View T125SCH1.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for t125_adminrole;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+Privileges on Sequence T125SCH1.T125_L1
+=======================================
+
+---UG--    DB__ROOT
+----G--    T125_ROLE1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user2;
+
+Privileges on Sequence T125SCH1.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user7;
+
+Privileges on Sequence T125SCH1.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for t125_role1;
+
+Privileges on Sequence T125SCH1.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for t125_adminrole;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence;
+
+Privileges on Sequence T125SCH1.PLAYERS_SEQUENCE
+================================================
+
+----G--    DB__ROOT
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user2;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_adminrole;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch2;
+
+--- SQL operation complete.
+>>obey TEST125(get_privs);
+>>get privileges on table games;
+
+Privileges on Table T125SCH2.GAMES
+==================================
+
+SIDU-R-    DB__ROOT
+SIDU-R-    SQL_USER2
+S------    T125_ROLE1
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user2;
+
+Privileges on Table T125SCH2.GAMES
+==================================
+
+SIDU-R-    SQL_USER2
+S------    T125_ROLE1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user7;
+
+Privileges on Table T125SCH2.GAMES
+==================================
+
+S------    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
+Privileges on Table T125SCH2.GAMES
+==================================
+
+S------    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for t125_adminrole;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+Privileges on View T125SCH2.GAMES_BY_PLAYER
+===========================================
+
+S----R-    DB__ROOT
+S------    SQL_USER2
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user2;
+
+Privileges on View T125SCH2.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for t125_adminrole;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+Privileges on Sequence T125SCH2.T125_L1
+=======================================
+
+---UG--    DB__ROOT
+----G--    T125_ROLE1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user2;
+
+Privileges on Sequence T125SCH2.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user7;
+
+Privileges on Sequence T125SCH2.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for t125_role1;
+
+Privileges on Sequence T125SCH2.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for t125_adminrole;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence;
+
+Privileges on Sequence T125SCH2.PLAYERS_SEQUENCE
+================================================
+
+----G--    DB__ROOT
+----G--    SQL_USER1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user1;
+
+Privileges on Sequence T125SCH2.PLAYERS_SEQUENCE
+================================================
+
+----G--    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user2;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user8;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_adminrole;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch3;
+
+--- SQL operation complete.
+>>obey TEST125(get_privs);
+>>get privileges on table games;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+-I-----    SQL_USER1
+SIDU-R-    SQL_USER2
+SIDU-R-    T125_ADMINROLE
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user1;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+-I-----    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user2;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+SIDU-R-    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on table games for sql_user8;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+SIDU-R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on table games for t125_adminrole;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+SIDU-R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER1
+S------    SQL_USER2
+S----R-    T125_ADMINROLE
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user1;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user2;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for sql_user8;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S----R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for t125_adminrole;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S----R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+---UG--    T125_ADMINROLE
+----G--    T125_ROLE1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user2;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user7;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for sql_user8;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+---UG--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for t125_role1;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for t125_adminrole;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+---UG--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence;
+
+Privileges on Sequence T125SCH3.PLAYERS_SEQUENCE
+================================================
+
+----G--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user2;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user7;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for sql_user8;
+
+Privileges on Sequence T125SCH3.PLAYERS_SEQUENCE
+================================================
+
+----G--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_adminrole;
+
+Privileges on Sequence T125SCH3.PLAYERS_SEQUENCE
+================================================
+
+----G--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
 >>
 >>obey TEST125(get_tests);
 >>log LOG125;
@@ -562,6 +1216,9 @@ T125SCH1
 T125SCH2
 T125SCH3
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t125sch1;
@@ -579,6 +1236,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 TEAMS
 
+=======================
+ 6 row(s) returned
+
 --- SQL operation complete.
 >>get views;
 
@@ -589,6 +1249,9 @@ GAMES_BY_PLAYER
 HOME_TEAMS_GAMES
 PLAYERS_ON_TEAM
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get indexes;
 
@@ -596,6 +1259,9 @@ Indexes in Schema TRAFODION.T125SCH1
 ====================================
 
 PLAYERS_TEAMS
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get sequences, match 'T125SCH%';
@@ -607,14 +1273,20 @@ T125SCH1.PLAYERS_SEQUENCE
 T125SCH2.PLAYERS_SEQUENCE
 T125SCH3.PLAYERS_SEQUENCE
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 Libraries in Schema TRAFODION.T125SCH1
 ======================================
 
 T125_L1
 T125_L2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>get functions;
@@ -624,6 +1296,9 @@ Functions in Schema TRAFODION.T125SCH1
 
 TRANSLATEBITMAP
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get procedures;
 
@@ -631,6 +1306,80 @@ Procedures in Schema TRAFODION.T125SCH1
 =======================================
 
 TESTHIVE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+Indexes on Table T125SCH1.PLAYERS
+=================================
+
+PLAYERS_TEAMS
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get views on table players;
+
+Views on Table T125SCH1.PLAYERS
+===============================
+
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+Views ON View T125SCH1.PLAYERS_ON_TEAM
+======================================
+
+TRAFODION.T125SCH1.GAMES_BY_PLAYER
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+Tables in View T125SCH1.GAMES_BY_PLAYER
+=======================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.TEAMS
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+Views in View T125SCH1.GAMES_BY_PLAYER
+======================================
+
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
+
+Objects in View T125SCH1.GAMES_BY_PLAYER
+========================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+TRAFODION.T125SCH1.TEAMS
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -649,6 +1398,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 TEAMS
 
+=======================
+ 6 row(s) returned
+
 --- SQL operation complete.
 >>get views in schema t125sch2;
 
@@ -659,6 +1411,9 @@ GAMES_BY_PLAYER
 HOME_TEAMS_GAMES
 PLAYERS_ON_TEAM
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get indexes in schema t125sch2;
 
@@ -667,6 +1422,9 @@ Indexes in Schema TRAFODION.T125SCH2
 
 PLAYERS_TEAMS
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get sequences in schema t125sch2;
 
@@ -674,6 +1432,9 @@ Sequences in schema TRAFODION.T125SCH2
 ======================================
 
 PLAYERS_SEQUENCE
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get libraries in schema t125sch2;
@@ -684,6 +1445,9 @@ Libraries in Schema TRAFODION.T125SCH2
 T125_L1
 T125_L2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get functions in schema t125sch2;
 
@@ -692,6 +1456,9 @@ Functions in Schema TRAFODION.T125SCH2
 
 TRANSLATEBITMAP
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get procedures in schema t125sch2;
 
@@ -699,6 +1466,9 @@ Procedures in Schema TRAFODION.T125SCH2
 =======================================
 
 TESTHIVE
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -717,6 +1487,25 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 TEAMS
 
+=======================
+ 6 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+-I-----    SQL_USER1
+SIDU-R-    SQL_USER2
+SIDU-R-    T125_ADMINROLE
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
 --- SQL operation complete.
 >>get views in catalog trafodion, match 'T125SCH%';
 
@@ -733,6 +1522,33 @@ T125SCH3.GAMES_BY_PLAYER
 T125SCH3.HOME_TEAMS_GAMES
 T125SCH3.PLAYERS_ON_TEAM
 
+=======================
+ 9 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER1
+S------    SQL_USER2
+S----R-    T125_ADMINROLE
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for user sql_user8;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S----R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get indexes in schema t125sch3;
 
@@ -740,6 +1556,9 @@ Indexes in Schema TRAFODION.T125SCH3
 ====================================
 
 PLAYERS_TEAMS
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get sequences in catalog trafodion, match 'T125SCH%';
@@ -751,14 +1570,57 @@ T125SCH1.PLAYERS_SEQUENCE
 T125SCH2.PLAYERS_SEQUENCE
 T125SCH3.PLAYERS_SEQUENCE
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
->>get libraries;
+>>get privileges on sequence players_sequence;
+
+Privileges on Sequence T125SCH3.PLAYERS_SEQUENCE
+================================================
+
+----G--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get libraries, match 'T125%';
 
 Libraries in Schema TRAFODION.T125SCH3
 ======================================
 
 T125_L1
 T125_L2
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+---UG--    T125_ADMINROLE
+----G--    T125_ROLE1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for user sql_user8;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+---UG--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -768,6 +1630,9 @@ Functions in Schema TRAFODION.T125SCH3
 
 TRANSLATEBITMAP
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get procedures;
 
@@ -776,7 +1641,34 @@ Procedures in Schema TRAFODION.T125SCH3
 
 TESTHIVE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+Procedures for Library T125SCH3.T125_L2
+=======================================
+
+T125SCH3.TESTHIVE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
 >>
 >>
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
@@ -801,7 +1693,12 @@ SQL_USER8
 Schemas in Catalog TRAFODION
 ============================
 
+T125SCH1
+T125SCH2
 T125SCH3
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -824,14 +1721,37 @@ Sequences in catalog TRAFODION
 
 T125SCH3.PLAYERS_SEQUENCE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
 
 --- SQL operation complete.
 >>
@@ -875,6 +1795,23 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 TEAMS
 
+=======================
+ 6 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+SIDU-R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
 --- SQL operation complete.
 >>get views in catalog trafodion, match 'T125SCH%';
 
@@ -884,6 +1821,31 @@ Views in Catalog TRAFODION
 T125SCH3.GAMES_BY_PLAYER
 T125SCH3.HOME_TEAMS_GAMES
 T125SCH3.PLAYERS_ON_TEAM
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S----R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for user sql_user8;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S----R-    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get indexes in schema t125sch3;
@@ -896,14 +1858,56 @@ Sequences in catalog TRAFODION
 
 T125SCH3.PLAYERS_SEQUENCE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
->>get libraries;
+>>get privileges on sequence players_sequence;
+
+Privileges on Sequence T125SCH3.PLAYERS_SEQUENCE
+================================================
+
+----G--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get libraries, match 'T125%';
 
 Libraries in Schema TRAFODION.T125SCH3
 ======================================
 
 T125_L1
 T125_L2
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+---UG--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for user sql_user8;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+---UG--    T125_ADMINROLE
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -913,6 +1917,9 @@ Functions in Schema TRAFODION.T125SCH3
 
 TRANSLATEBITMAP
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get procedures;
 
@@ -921,7 +1928,34 @@ Procedures in Schema TRAFODION.T125SCH3
 
 TESTHIVE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+Procedures for Library T125SCH3.T125_L2
+=======================================
+
+T125SCH3.TESTHIVE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 
@@ -949,6 +1983,9 @@ Schemas in Catalog TRAFODION
 T125SCH2
 T125SCH3
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t125sch1;
@@ -970,14 +2007,37 @@ Sequences in catalog TRAFODION
 
 T125SCH2.PLAYERS_SEQUENCE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
 
 --- SQL operation complete.
 >>
@@ -1000,8 +2060,19 @@ Sequences in schema TRAFODION.T125SCH2
 
 PLAYERS_SEQUENCE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get libraries in schema t125sch2;
+
+Libraries in Schema TRAFODION.T125SCH2
+======================================
+
+T125_L2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get functions in schema t125sch2;
@@ -1013,6 +2084,9 @@ Procedures in Schema TRAFODION.T125SCH2
 =======================================
 
 TESTHIVE
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1026,6 +2100,23 @@ Tables in Schema TRAFODION.T125SCH3
 
 GAMES
 
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+-I-----    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
 --- SQL operation complete.
 >>get views in catalog trafodion, match 'T125SCH%';
 
@@ -1033,6 +2124,23 @@ Views in Catalog TRAFODION
 ==========================
 
 T125SCH3.GAMES_BY_PLAYER
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for user sql_user8;
 
 --- SQL operation complete.
 >>get indexes in schema t125sch3;
@@ -1045,8 +2153,23 @@ Sequences in catalog TRAFODION
 
 T125SCH2.PLAYERS_SEQUENCE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
->>get libraries;
+>>get privileges on sequence players_sequence;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get libraries, match 'T125%';
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for user sql_user8;
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -1055,6 +2178,14 @@ T125SCH2.PLAYERS_SEQUENCE
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 
@@ -1083,6 +2214,9 @@ T125SCH1
 T125SCH2
 T125SCH3
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t125sch1;
@@ -1095,6 +2229,9 @@ Tables in Schema TRAFODION.T125SCH1
 
 GAMES
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get views;
 
@@ -1103,6 +2240,9 @@ Views in Schema TRAFODION.T125SCH1
 
 GAMES_BY_PLAYER
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get indexes;
 
@@ -1110,13 +2250,60 @@ GAMES_BY_PLAYER
 >>get sequences, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+Tables in View T125SCH1.GAMES_BY_PLAYER
+=======================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.TEAMS
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+Views in View T125SCH1.GAMES_BY_PLAYER
+======================================
+
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
+
+Objects in View T125SCH1.GAMES_BY_PLAYER
+========================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+TRAFODION.T125SCH1.TEAMS
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1131,6 +2318,9 @@ Tables in Schema TRAFODION.T125SCH2
 GAMES
 TEAMS
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get views in schema t125sch2;
 
@@ -1138,6 +2328,9 @@ Views in Schema TRAFODION.T125SCH2
 ==================================
 
 GAMES_BY_PLAYER
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get indexes in schema t125sch2;
@@ -1167,6 +2360,23 @@ Tables in Schema TRAFODION.T125SCH3
 GAMES
 PLAYERS
 
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games;
+
+Privileges on Table T125SCH3.GAMES
+==================================
+
+SIDU-R-    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
 --- SQL operation complete.
 >>get views in catalog trafodion, match 'T125SCH%';
 
@@ -1177,6 +2387,23 @@ T125SCH1.GAMES_BY_PLAYER
 T125SCH2.GAMES_BY_PLAYER
 T125SCH3.GAMES_BY_PLAYER
 
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+Privileges on View T125SCH3.GAMES_BY_PLAYER
+===========================================
+
+S------    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for user sql_user8;
+
 --- SQL operation complete.
 >>get indexes in schema t125sch3;
 
@@ -1184,7 +2411,35 @@ T125SCH3.GAMES_BY_PLAYER
 >>get sequences in catalog trafodion, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get privileges on sequence players_sequence;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get libraries, match 'T125%';
+
+Libraries in Schema TRAFODION.T125SCH3
+======================================
+
+T125_L1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for user sql_user8;
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -1194,10 +2449,29 @@ Functions in Schema TRAFODION.T125SCH3
 
 TRANSLATEBITMAP
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 
@@ -1223,8 +2497,12 @@ SQL_USER7
 Schemas in Catalog TRAFODION
 ============================
 
+T125SCH1
 T125SCH2
 T125SCH3
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1243,13 +2521,33 @@ T125SCH3
 >>get sequences, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
 
 --- SQL operation complete.
 >>
@@ -1263,6 +2561,9 @@ Tables in Schema TRAFODION.T125SCH2
 
 GAMES
 TEAMS
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>get views in schema t125sch2;
@@ -1294,8 +2595,23 @@ Tables in Schema TRAFODION.T125SCH3
 
 PLAYERS
 
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table games;
+
+--- SQL operation complete.
+>>get privileges on table games for t125_role1;
+
 --- SQL operation complete.
 >>get views in catalog trafodion, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get privileges on view games_by_player;
+
+--- SQL operation complete.
+>>get privileges on view games_by_player for user sql_user8;
 
 --- SQL operation complete.
 >>get indexes in schema t125sch3;
@@ -1304,7 +2620,35 @@ PLAYERS
 >>get sequences in catalog trafodion, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get privileges on sequence players_sequence;
+
+--- SQL operation complete.
+>>get privileges on sequence players_sequence for t125_role1;
+
+--- SQL operation complete.
+>>get libraries, match 'T125%';
+
+Libraries in Schema TRAFODION.T125SCH3
+======================================
+
+T125_L1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1;
+
+Privileges on Sequence T125SCH3.T125_L1
+=======================================
+
+----G--    T125_ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on library t125_l1 for user sql_user8;
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -1314,10 +2658,29 @@ Functions in Schema TRAFODION.T125SCH3
 
 TRANSLATEBITMAP
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 

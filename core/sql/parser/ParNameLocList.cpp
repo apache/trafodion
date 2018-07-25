@@ -419,15 +419,11 @@ void ParSetEndOfOptionalColumnListPos(ParNameLocList * pNameLocList)
     tokStr.toUpper();
     ComASSERT(tokStr EQU ")");
     // Store position of ')' in global variable 
-#pragma nowarn(1506)   // warning elimination 
     ParEndOfOptionalColumnListPos = MVTokInfo.tokenStrPos;
-#pragma warn(1506)  // warning elimination 
     return;
   }
   // Store position of ')' in global variable 
-#pragma nowarn(1506)   // warning elimination 
   ParEndOfOptionalColumnListPos = tokInfo.tokenStrPos;
-#pragma warn(1506)  // warning elimination 
 }
 
 // ---------------------------------------------------------------------
@@ -448,9 +444,7 @@ void ParSetBeginingOfFileOptionsListPos(ParNameLocList * pNameLocList)
   tokStr.toUpper();
 
   // Store current position in global variable 
-#pragma nowarn(1506)   // warning elimination 
   ParBeginingOfFileOptionsListPos = tokInfo.tokenStrPos;
-#pragma warn(1506)  // warning elimination 
 
   NAString rewriteStr = NAString("REWRITE");
   
@@ -483,9 +477,7 @@ void ParSetBeginOfMVQueryPos(ParNameLocList * pNameLocList)
 
   ComASSERT("AS" == tokStr);
 
-#pragma nowarn(1506)   // warning elimination 
   Int32 nextWhiteSpacePos = tokInfo.tokenStrPos + sizeof("AS") - 1;
-#pragma warn(1506)  // warning elimination 
 
   NAString space(&pInputStr[nextWhiteSpacePos], 1);
   
@@ -527,9 +519,7 @@ void ParSetEndOfSelectColumnListPos(ParNameLocList * pNameLocList)
   if (IsNAStringSpace(tokStr))
   {
   // Store position in the global variable 
-#pragma nowarn(1506)   // warning elimination 
   ParEndOfSelectColumnListPos = MVTokInfo.tokenStrPos;
-#pragma warn(1506)  // warning elimination 
   }
   else
   { // Special cases:
@@ -537,9 +527,7 @@ void ParSetEndOfSelectColumnListPos(ParNameLocList * pNameLocList)
     // Ex #2: CREATE MV ... AS SELECT COUNT(*)FROM ...
 
     // Store position in the global variable 
-#pragma nowarn(1506)   // warning elimination 
     ParEndOfSelectColumnListPos = tokInfo.tokenStrPos;
-#pragma warn(1506)  // warning elimination 
   }
 }
 
@@ -560,9 +548,7 @@ void ParSetEndOfFileOptionsListPos(ParNameLocList * pNameLocList)
   // ComASSERT(tokStr EQU "AS");
 
   // Store the current (end) position in the global variable 
-#pragma nowarn(1506)   // warning elimination 
   ParEndOfFileOptionsListPos = tokInfo.tokenStrPos;
-#pragma warn(1506)  // warning elimination 
 
   ComASSERT( ParEndOfFileOptionsListPos > ParBeginingOfFileOptionsListPos );
   ComASSERT( ParBeginingOfFileOptionsListPos > 0 );
@@ -735,9 +721,7 @@ void ParSetBeginOfCreateTableAsQueryPos(ParNameLocList * pNameLocList)
 
   ComASSERT("AS" == tokStr);
 
-#pragma nowarn(1506)   // warning elimination 
   Int32 nextWhiteSpacePos = tokInfo.tokenStrPos + sizeof("AS") - 1;
-#pragma warn(1506)  // warning elimination 
 
   NAString space(&pInputStr[nextWhiteSpacePos], 1);
   
@@ -770,9 +754,7 @@ void ParSetBeginOfCreateTableAsAttrList(ParNameLocList * pNameLocList)
   Int32 nextPos = 0;
   if (")" == tokStr)
     {
-#pragma nowarn(1506)   // warning elimination 
       nextPos = tokInfo.tokenStrPos + sizeof(")") - 1;
-#pragma warn(1506)  // warning elimination 
     }
   else
     nextPos = tokInfo.tokenStrPos;
@@ -804,15 +786,11 @@ void ParSetEndOfCreateTableAsAttrList(ParNameLocList * pNameLocList)
   Int32 nextPos = 0;
   /*  if ("NO" == tokStr)
     {
-#pragma nowarn(1506)   // warning elimination 
       nextPos = tokInfo.tokenStrPos + sizeof("NO") - 1;
-#pragma warn(1506)  // warning elimination 
     }
   else if ("LOAD" == tokStr)
     {
-#pragma nowarn(1506)   // warning elimination 
       nextPos = tokInfo.tokenStrPos + sizeof("LOAD") - 1;
-#pragma warn(1506)  // warning elimination 
     }
   else*/
   nextPos = tokInfo.tokenStrPos;

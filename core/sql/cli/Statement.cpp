@@ -45,7 +45,6 @@
 #include "ComTdb.h"
 #include "ex_tcb.h"
 #include "ex_root.h"
-#include "ExMeas.h"
 #include "ExStats.h"
 #include "ExSqlComp.h"
 #include "ex_transaction.h"
@@ -65,17 +64,10 @@
 #include "Int64.h"
 #include "ComSqlId.h"
 #include "CmpErrors.h"
-#if !defined(__EID) && !defined(ARKFS_OPEN)
-#include "ComResWords.h"
-#endif
-
-// begin includes for similarity check.
-#include "exp_tuple_desc.h"
-// end includes for similarity check
 
 #include "TriggerEnable.h" // triggers
-# include "ComSmallDefs.h" // MV
-# include "ComMvAttributeBitmap.h" // MV
+#include "ComSmallDefs.h" // MV
+#include "ComMvAttributeBitmap.h" // MV
 
 #include "logmxevent.h"
 
@@ -88,22 +80,13 @@
 
 #include "ComAnsiNamePart.h"
 #include "ExRsInfo.h"
-#include "PortProcessCalls.h"
 
-#if (defined(NA_LINUX) && defined (SQ_NEW_PHANDLE))
-#include "nsk/nskport.h"
-#include "seabed/ms.h"
-#include "seabed/fs.h"
-#endif
-
-#ifdef NA_CMPDLL
 #include "arkcmp_proc.h"
 #include "CmpContext.h"
-#endif // NA_CMPDLL
 
 // Printf-style tracing macros for the debug build. The macros are
 // no-ops in the release build.
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <stdarg.h>
 #define StmtDebug0(s) StmtPrintf((s))
 #define StmtDebug1(s,a1) StmtPrintf((s),(a1))
@@ -144,9 +127,6 @@ const char *RetcodeToString(RETCODE r)
   }
 }
 
-#ifdef _DEBUG
-#endif  // _DEBUG
-
 class Dealloc
 {
   NAHeap *heap_;
@@ -157,6 +137,7 @@ public:
   NAHeap * setHeap(NAHeap *heap) { return heap_ = heap; }
   void * getAddr(void *addr) { return addr_ = addr; }
 };
+
 ////////////////////////////////////////////////////////////////////
 // class StatementInfo
 ////////////////////////////////////////////////////////////////////
@@ -237,10 +218,7 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
 {
   cliLevel_ = context_->getNumOfCliCalls();
 
-  space_.setJmpBuf(cliGlobals_->getJmpBuf());
-  heap_.setJmpBuf(cliGlobals_->getJmpBuf());
-
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   stmtDebug_ = FALSE;
   stmtListDebug_ = FALSE;
   Lng32 numCliCalls = context_->getNumOfCliCalls();
@@ -475,7 +453,7 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
     break;
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   switch (statement_id->name_mode)
   {
     case stmt_handle:
@@ -546,9 +524,6 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
                                     1 /* create gui scheduler */,
                                     &space_,
                                     &heap_);
-  
-  // set Measure sqlstmt counter flag
-  statementGlobals_->setMeasStmtEnabled(cliGlobals_->getMeasStmtEnabled());
 
   // stored the type in statementGlobals
   if(stmt_type_ == STATIC_STMT){
@@ -570,7 +545,6 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
 Statement::~Statement()
 {
   StmtDebug1("[BEGIN destructor] %p", this);
-
 
   dealloc();
   if (compileStatsArea_ != NULL)
@@ -700,18 +674,15 @@ Statement::~Statement()
   {
     if (stmtStats_ != NULL)
     {
-      short savedPriority, savedStopMode;
-      short error = cliGlobals_->getStatsGlobals()->getStatsSemaphore(cliGlobals_->getSemId(),
-                    cliGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = cliGlobals_->getStatsGlobals()->getStatsSemaphore(cliGlobals_->getSemId(),
+                    cliGlobals_->myPin());
       if (stmtStats_->getMasterStats() != NULL)
 	{
 	  stmtStats_->getMasterStats()->setStmtState(Statement::DEALLOCATED_);
 	  stmtStats_->getMasterStats()->setEndTimes(! stmtStats_->aqrInProgress());
 	}
       cliGlobals_->getStatsGlobals()->removeQuery(cliGlobals_->myPin(), stmtStats_);
-      cliGlobals_->getStatsGlobals()->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                      savedPriority, savedStopMode);
+      cliGlobals_->getStatsGlobals()->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
     }
   }
   else
@@ -1303,20 +1274,16 @@ NABoolean Statement::isExeDebug(char *src, Lng32 charset)
 
 Int32 Statement::octetLen(char *s, Lng32 charset)
 {
-#pragma nowarn(1506)   // warning elimination 
   return charset==SQLCHARSETCODE_UCS2 ?  
     na_wcslen((const NAWchar*)s) * 
     CharInfo::maxBytesPerChar((CharInfo::CharSet)charset) : str_len(s);
-#pragma warn(1506)  // warning elimination
 }
 
 Int32 Statement::octetLenplus1(char *s, Lng32 charset)
 {
-#pragma nowarn(1506)   // warning elimination 
   return charset==SQLCHARSETCODE_UCS2 ? 
     (na_wcslen((const NAWchar*)s)+1)*
     CharInfo::maxBytesPerChar((CharInfo::CharSet)charset) : str_len(s)+1;
-#pragma warn(1506)  // warning elimination 
 }
 
 Int32 Statement::sourceLenplus1()
@@ -1419,13 +1386,11 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
   char *fetched_gen_code = NULL;
   short retcode = SUCCESS;   
   short indexIntoCompilerArray = 0;
-#ifdef NA_CMPDLL
      
   // if there is any error using embedded cmpiler and we will switch to regular compiler
   NABoolean canUseEmbeddedArkcmp = ((cliFlags & PREPARE_USE_EMBEDDED_ARKCMP) != 0) ; // This flag 
   // will be set only by the master. If a Prepare call is made from the 
   // compiler(including the embedded compiler), it will use the regular compiler.
-#endif // NA_CMPDLL
 
   ExSqlComp::OperationStatus status;
   Dealloc dealloc; // DTOR calls NAHeap::deallocateMemory for an object
@@ -1502,39 +1467,34 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
   Lng32 rsa = getRowsetAtomicity();
   if (context_->getSessionDefaults()->getRowsetAtomicity() != -1)
     rsa = context_->getSessionDefaults()->getRowsetAtomicity(); //NOT_ATOMIC_;
-#ifdef NA_CMPDLL
-  //  if (context_->getSessionDefaults()->callEmbeddedArkcmp() && canUseEmbeddedArkcmp && !aqRetry)
-  //  {
-      if (canUseEmbeddedArkcmp && !context_->isEmbeddedArkcmpInitialized())
+
+  if (canUseEmbeddedArkcmp && !context_->isEmbeddedArkcmpInitialized())
+    {
+      Int32 embeddedArkcmpSetup;
+      // embeddedArkcmpSetup = arkcmp_main_entry();
+      embeddedArkcmpSetup = context_->switchToCmpContext((Int32)0);
+      if (embeddedArkcmpSetup == 0)           
         {
-          Int32 embeddedArkcmpSetup;
-       	  // embeddedArkcmpSetup = arkcmp_main_entry();
-       	  embeddedArkcmpSetup = context_->switchToCmpContext((Int32)0);
-          if (embeddedArkcmpSetup == 0)           
-            {
-	      context_->setEmbeddedArkcmpIsInitialized(TRUE);
-              //    context_->setEmbeddedArkcmpContext(CmpCommon::context());
-            }
-          else if (embeddedArkcmpSetup == -2)
-            {
-              diagsArea << DgSqlCode(-2079);
-              return ERROR;
-            }
-          else
-            {
-              context_->setEmbeddedArkcmpIsInitialized(FALSE);
-	      context_->setEmbeddedArkcmpContext(NULL);
-            }
+          context_->setEmbeddedArkcmpIsInitialized(TRUE);
         }
-      // Set the Global CmpContext from the one saved in the CLI context
-      // for proper operation
-      if (context_->isEmbeddedArkcmpInitialized() &&
-          context_->getEmbeddedArkcmpContext())
-      {
-          cmpCurrentContext = context_->getEmbeddedArkcmpContext();
-      }
-      //   }
-#endif // NA_CMPDLL
+      else if (embeddedArkcmpSetup == -2)
+        {
+          diagsArea << DgSqlCode(-2079);
+          return ERROR;
+        }
+      else
+        {
+          context_->setEmbeddedArkcmpIsInitialized(FALSE);
+          context_->setEmbeddedArkcmpContext(NULL);
+        }
+    }
+  // Set the Global CmpContext from the one saved in the CLI context
+  // for proper operation
+  if (context_->isEmbeddedArkcmpInitialized() &&
+      context_->getEmbeddedArkcmpContext())
+    {
+      cmpCurrentContext = context_->getEmbeddedArkcmpContext();
+    }
     
   if (newOperation)
     assert ((aqRetry && source) ||
@@ -1645,7 +1605,6 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 				   (reComp ? sourceLenplus1() : octetLenplus1(source, charset)),
 				   (Lng32) (reComp ? charset_ : charset),
 				   schemaName_, schemaNameLength_+1, 
-				   recompControlInfo_, recompControlInfoLen_,
 				   getInputArrayMaxsize(), (short)rsa);
 
 		  if (aqRetry)
@@ -1657,12 +1616,6 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		  if (standaloneQuery)
 		    c.setStandaloneQuery(standaloneQuery);
 
-		  // set the nametype that was specified when this stmt was
-		  // statically compiled. mxcmp will resolve table names based on
-		  // this nametype. This field is only valid for auto recomp of
-		  // static stmts. It is not looked at for dynamic stmt.
-		  c.setNametypeNsk(nametypeNsk());
-		  
 		  // if this statement was statically compiled with odbc process
 		  // on, then set it here. This will be used at auto recomp time.
 		  c.setOdbcProcess(odbcProcess());
@@ -1699,7 +1652,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 	      else
 		{
 		  CmpCompileInfo c(source, octetLenplus1(source, charset), (Lng32) charset,
-				   NULL, 0, NULL, 0,
+				   NULL, 0,
 				   getInputArrayMaxsize(), (short)rsa);
 
 		  if (aqRetry)
@@ -1734,7 +1687,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		  //!aqRetry  && cliGlobals_->isEmbeddedArkcmpInitialized())
                 {
                   Int32 compStatus;
-                  ComDiagsArea *da = ComDiagsArea::allocate(&heap_);
+                  ComDiagsArea *da = NULL;
 
                   // clean up diags area of regular arkcmp, it could contain
                   // old errors from last use
@@ -1745,14 +1698,17 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
                   compStatus = CmpCommon::context()->compileDirect(
                                    (char *)data, dataLen,
                                    // use arkcmp heap to store the plan
+                                   // check why indexIntoCompilerArray is used here?
                                    cliGlobals_->getArkcmp(indexIntoCompilerArray)->getHeap(),
                                    charset, op,
                                    fetched_gen_code, fetched_gen_code_len,
                                    context_->getSqlParserFlags(), 
                                    NULL, 0, da);
-
-                  diagsArea.mergeAfter(*da);
-                  da->decrRefCount();
+                  if (da != NULL) 
+                  {
+                     diagsArea.mergeAfter(*da);
+                     da->decrRefCount();
+                  }
 
                   if (compStatus == ExSqlComp::SUCCESS)
                     {
@@ -1868,11 +1824,7 @@ Lng32 Statement::unpackAndInit(ComDiagsArea &diagsArea,
   // CmpDescribePlan will unpack it.
   ComTdbRoot *thisTdb = root_tdb;
 
-  //#if defined (NA_WINNT)
-  //  if (root_tdb)
-  //#else
   if (root_tdb && !thisTdb->isFromShowplan())
-  //#endif
     {
       // Here, we have just freshly (re)prepared the plan using the latest
       // version of the compiler. Unpacking should be uneventful (i.e. no
@@ -1956,14 +1908,10 @@ Lng32 Statement::unpackAndInit(ComDiagsArea &diagsArea,
         rootTdb->getFragDir()->getExplainFragDirEntry
                  (fragOffset, fragLen, topNodeOffset) == 0)
     {
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-            cliGlobals_->myPin(), savedPriority, savedStopMode, 
-            FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+            cliGlobals_->myPin());
       stmtStats_->setExplainFrag((void *)(((char *)root_tdb)+fragOffset), fragLen, topNodeOffset);
-      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                          savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
     }
   }
   return prepareReturn ((RETCODE)retcode);
@@ -2072,7 +2020,7 @@ Statement * Statement::getCurrentOfCursorStatement(char * cursorName)
 }
 
 RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
-                                       void * lobGlob,
+                                       ExLobGlobals * lobGlob,
                                        NABoolean &simCheckFailed,
                                        ComDiagsArea &diagsArea)
 {
@@ -2103,11 +2051,21 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
                 << DgString2(getLobErrStr(intParam1))
                 << DgInt0(intParam1)
                 << DgInt1(0);
-
-      if (intParam1 == LOB_DATA_FILE_NOT_FOUND_ERROR)
+      if (intParam1 == LOB_DATA_READ_ERROR)
         {
-          diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
-                    << DgString0(si->tableName());
+          if ((failedLocBufLen > 0) && (strlen(failedLocBuf) > 0))
+            {
+              char errBuf[strlen(si->tableName()) + 100 + failedLocBufLen];
+              snprintf(errBuf,sizeof(errBuf), "%s (fileLoc: %s)", si->tableName(), failedLocBuf);
+              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                        << DgString0(errBuf);              
+            }
+          else
+            {
+              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                        << DgString0(si->tableName());
+            }
+          simCheckFailed = TRUE;
         }
 
       return ERROR;
@@ -2116,9 +2074,13 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
   if (retcode == 1) // check failed
     {
       char errStr[2000];
-      str_sprintf(errStr, "compiledModTS = %Ld, failedModTS = %Ld, failedLoc = %s", 
+      /* str_sprintf(errStr, "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
                   si->modTS(), failedModTS, 
-                  (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
+                  (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));*/
+      snprintf(errStr,sizeof(errStr), 
+               "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
+               si->modTS(), failedModTS, 
+               (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
       
       diagsArea << DgSqlCode(-EXE_HIVE_DATA_MOD_CHECK_ERROR)
                 << DgString0(errStr);
@@ -2145,7 +2107,7 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
       (qsi->siList()->numEntries() == 0))
     return SUCCESS;
 
-  void * lobGlob = NULL; //getRootTcb()->getGlobals()->getExLobGlobal();
+  ExLobGlobals * lobGlob = NULL; //getRootTcb()->getGlobals()->getExLobGlobal();
   NABoolean lobGlobInitialized = FALSE;
   qsi->siList()->position();
   for (Lng32 i = 0; i < qsi->siList()->numEntries(); i++)
@@ -2174,12 +2136,12 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
     } // for
 
   if (lobGlob)
-    ExpLOBinterfaceCleanup(lobGlob, &heap_);
+    ExpLOBinterfaceCleanup(lobGlob);
   return SUCCESS;
   
  error_return:
   if (lobGlob)
-    ExpLOBinterfaceCleanup(lobGlob, &heap_);
+    ExpLOBinterfaceCleanup(lobGlob);
   return ERROR;
 }
 
@@ -2674,21 +2636,16 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
             //  or an embedded static statement), then re-initizalize the stat
             // area.	    
             ExStatisticsArea *statsArea = getStatsArea();
-            if (statsArea != NULL &&
-                statsArea->getCollectStatsType() != ComTdb::MEASURE_STATS)
+            if (statsArea != NULL)
             {
               StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
               if (statsGlobals != NULL)
               {
-                short savedPriority, savedStopMode;
-                short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-						      cliGlobals->myPin(), savedPriority, savedStopMode, 
-                                                      FALSE /*shouldTimeout*/);
-                ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+						      cliGlobals->myPin());
                 statsArea->initEntries();
                 statsArea->restoreDop();
-                statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin(),
-                          savedPriority, savedStopMode);
+                statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin());
               }
               else
               {
@@ -2832,22 +2789,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		break;
 	      }
 
-	    // update Measure stmt counters for recompilation.
-	    // stats area is allocated in fixup (ex_root_tdb::build).
-
-            ExStatisticsArea *stats = getStatsArea();
-	    if ( reCompileTime > 0 &&
-		 /*root_tdb->getCollectStats() == ComTdb::MEASURE_STATS &&*/
-		 stats != NULL )
-            {
-              if (stats->getStmtCntrs() != NULL)
-              {
-                stats->getStmtCntrs()->incRecompiles(1);
-                stats->getStmtCntrs()->incElapsedCompileTime(reCompileTime);
-                reCompileTime = (Int64) 0;
-              }
-            }
-
 	    if (doSimCheck || partitionUnavailable)
             {
 	      state_ = DO_SIM_CHECK_;
@@ -2962,7 +2903,9 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                     break;
                   }
               }
-
+            // In case of master, the unused memory quota needs to be reset
+            // with every statement execution. 
+            statementGlobals_->resetMemoryQuota();
 	    /* execute it */
             if( root_tdb )
             {            
@@ -3044,7 +2987,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                         Descriptor::getCharDataFromCharHostVar
                           (diagsArea,
 			   heap_,
-                           (char *)cursor_name, 
+                           (char *)((long)cursor_name), 
                            string_length,
 			   "CURSOR NAME", 
                            input_desc,
@@ -3059,7 +3002,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		    if (currentOfCursorStatement_ == NULL)
 		      {
 			diagsArea << DgSqlCode(- CLI_NON_UPDATABLE_SELECT_CURSOR)
-				  << DgString0((char *)cursor_name);
+				  << DgString0((char *)((long)cursor_name));
 			state_ = ERROR_;
 			break;
 		      }
@@ -3068,7 +3011,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		// make sure that the table name in the update/del stmt is the
 		// same as the tablename specified in the cursor.
 		ex_root_tdb *cursorTdb = currentOfCursorStatement_->getRootTdb();
-#pragma nowarn(1506)   // warning elimination 
 		Int16 cursorTableNameLen = 
 		  str_len( cursorTdb->getLateNameInfoList()->
 						    getLateNameInfo(cursorTdb->baseTablenamePosition()).
@@ -3783,6 +3725,10 @@ RETCODE Statement::fetch(CliGlobals * cliGlobals, Descriptor * output_desc,
     {
       StmtDebug3("[END fetch] %p, result is %s, stmt state %s", this,
 		     RetcodeToString(ERROR), stmtState(getState()));
+      // In case there is a commit conflict, we need to reset the rowcount 
+      // since none of the rows would have got committed. 
+      diagsArea.setRowCount(0);
+      stmtStats_->getMasterStats()->setRowsAffected(0);
       return ERROR;
     }
 
@@ -4011,21 +3957,16 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
     }
   
   ExStatisticsArea *statsArea = getStatsArea();
-  if (statsArea != NULL &&
-      statsArea->getCollectStatsType() != ComTdb::MEASURE_STATS)
+  if (statsArea != NULL)
     {
       StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
       if (statsGlobals != NULL)
       {
-        short savedPriority, savedStopMode;
-        short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-					      cliGlobals->myPin(), savedPriority, savedStopMode,
-					      FALSE /*shouldTimeout*/);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+					      cliGlobals->myPin());
         statsArea->initEntries();
         statsArea->restoreDop();
-        statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin(),
-	  savedPriority, savedStopMode);
+        statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin());
       }
       else
       {
@@ -4258,11 +4199,8 @@ void Statement::releaseStats()
     if (statsGlobals != NULL && stmtStats_ != NULL &&
         (Int32)myStats->getCollectStatsType() != SQLCLI_ALL_STATS) 
     {
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-                            cliGlobals_->myPin(), 
-                            savedPriority, savedStopMode, FALSE );
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+                            cliGlobals_->myPin());
       // Make sure the ex_globals doesn't delete this stats area
       // in case of dynamic statements, since stmtStats is also
       // pointing to the same area
@@ -4274,8 +4212,7 @@ void Statement::releaseStats()
       // Set the StmtStats that can be used to reset the used flag
       context_->setPrevStmtStats(stmtStats_);
       statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),
-                                cliGlobals_->myPin(), 
-                                savedPriority, savedStopMode);
+                                cliGlobals_->myPin());
     }
     else
     {
@@ -4678,9 +4615,7 @@ void Statement::copyGenCode(char * gen_code, ULng32 gen_code_len,
   }
 
   if ((stmt_type == STATIC_STMT) && (root_tdb))
-#pragma nowarn(1506)   // warning elimination 
     setRecompWarn(root_tdb->recompWarn());
-#pragma warn(1506)  // warning elimination 
     
   } // if (unpackTDBs)
   
@@ -4757,55 +4692,6 @@ void Statement::copyRecompControlInfo(char * basePtr,
 				      char * recompControlInfo, 
 				      Lng32 recompControlInfoLength)
 {
-  if (recompControlInfo_)
-    NADELETEBASIC(recompControlInfo_, (&heap_));
-
-  // do some basic sanity checking
-  if ((recompControlInfo == 0) || (recompControlInfoLength <= 0))
-  {
-     recompControlInfo_ = 0;
-     recompControlInfoLen_ = 0;
-     return;
-  }
-
-  RtduRecompControlInfo inRCI;
-  str_cpy_all((char*)&inRCI, recompControlInfo, sizeof(RtduRecompControlInfo));
-  recompControlInfo_ = new (&heap_) char[inRCI.packedLength()];
-  RtduRecompControlInfo * stmtRCI = 
-    (RtduRecompControlInfo *)recompControlInfo_;
-
-  inRCI.unpackIt(basePtr);
-
-  char * cqdInfo = (char *)stmtRCI + sizeof(RtduRecompControlInfo);
-  char * ctoInfo = (char *)cqdInfo + inRCI.cqdInfoLength();
-  char * cqsInfo = (char *)ctoInfo + inRCI.ctoInfoLength();
-
-  stmtRCI->initialize(inRCI.numCqdInfoEntries(),
-		      cqdInfo, inRCI.cqdInfoLength(),
-		      ctoInfo, inRCI.ctoInfoLength(),
-		      cqsInfo, inRCI.cqsInfoLength());
-
-  if (stmtRCI->cqdInfoLength() > 0)
-    {
-      str_cpy_all(stmtRCI->cqdInfo(), inRCI.cqdInfo(), 
-		  inRCI.cqdInfoLength());
-    }
-
-  if (stmtRCI->ctoInfoLength() > 0)
-    {
-      str_cpy_all(stmtRCI->ctoInfo(), inRCI.ctoInfo(), 
-		  inRCI.ctoInfoLength());
-    }
-
-  if (stmtRCI->cqsInfoLength() > 0)
-    {
-      str_cpy_all(stmtRCI->cqsInfo(), inRCI.cqsInfo(), 
-		  inRCI.cqsInfoLength());
-    }
-
-  stmtRCI->packIt((char*)stmtRCI);
-
-  recompControlInfoLen_ = inRCI.packedLength();
 }
 
 
@@ -5009,7 +4895,15 @@ short Statement::commitTransaction(ComDiagsArea &diagsArea)
       // get current context and close all statements
       // started under the current transaction
       context_->closeAllCursors(ContextCli::CLOSE_ALL, ContextCli::CLOSE_CURR_XN);
-
+      // Capture any errors that happened and return eg. transaction 
+      // related errors that happen during 
+      // Statement::close-> ExTransaction::commitTransaction that get called 
+      // in ::closeAllCursors
+      if (diagsArea.mainSQLCODE() <0)
+        {
+          return ERROR;
+        }
+      
       // if transaction is still active(it may have been committed at
       // close cursor time if auto commit is on), commit it.
       if (context_->getTransaction()->xnInProgress())
@@ -5081,9 +4975,7 @@ short Statement::rollbackSavepoint(ComDiagsArea & diagsArea,
 
   if (rollbackSP)
     {
-#pragma nowarn(1506)   // warning elimination 
       short retcode = root_tcb->rollbackSavepoint();
-#pragma warn(1506)  // warning elimination 
       if (retcode)
 	{
 	  diagsArea.mergeAfter(*statementGlobals_->getDiagsArea());
@@ -5732,11 +5624,7 @@ void Statement::setUniqueStmtId(char * id)
       
       char tmpLong[ 20 ];
       if (statement_id->name_mode == stmt_handle)
-#ifdef NA_64BIT
 	str_ltoa((ULong)getStmtHandle(), tmpLong);
-#else
-	str_itoa((ULong)getStmtHandle(), tmpLong);
-#endif
       ComSqlId::createSqlQueryId(uniqueStmtId_,
 				 ComSqlId::MAX_QUERY_ID_LEN+1,
 				 uniqueStmtIdLen_,
@@ -5794,7 +5682,7 @@ ex_root_tdb * Statement::assignRootTdb(ex_root_tdb *new_root_tdb)
   root_tdb = new_root_tdb;
   StmtDebug2("  Stmt %p root TDB is now %p", this, root_tdb);
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   Lng32 rs = (Lng32) (root_tdb ? root_tdb->getMaxResultSets() : 0);
   if (rs > 0)
     StmtDebug1("  Max result sets: %d", rs);
@@ -5879,23 +5767,6 @@ NABoolean Statement::containsUdrInteractions() const
   return (root_tdb && root_tdb->containsUdrInteractions());
 }
 
-//-----------------------------------------------------------------------------
-//
-// Read the trigger status array for a given table from its resource fork.
-// fsRTMD.fetch() is used for the reading.
-//
-
-RETCODE  
-Statement::rforkReadTriggerStatus(TriggerStatusWA* triggerStatusWA, 
-				  char* physFileName,
-				  const char* ansiName,
-				  ComDiagsArea &diagsArea)
-{
-  return SUCCESS;
-
-}
-
-
 //------------------------------------------------------------------------------
 // 
 // For each stoi that is marked as subject table, get trigger status array from 
@@ -5911,45 +5782,41 @@ RETCODE Statement::getTriggersStatus(SqlTableOpenInfoPtr* stoiList, ComDiagsArea
   
   for (Int32 i=0; i< root_tcb->getTableCount(); i++)
     {
-	stoi=stoiList[i];
-    if (stoi->subjectTable())
-		{
-
-		  // save the current diags before entering CLI again
-		  ComDiagsArea* copyOfDiagsArea = diagsArea.copy(); 
-  		  rc = rforkReadTriggerStatus(&triggerStatusWA, 
-									  stoi->fileName(), 
-									  stoi->ansiName(),
-									  diagsArea);
-		  // remove warning 100 from diags.
-		  diagsArea.removeFinalCondition100();
-
-		  // merge diags
-		  diagsArea.mergeAfter(*copyOfDiagsArea);
-		  copyOfDiagsArea->decrRefCount();
-                  copyOfDiagsArea = NULL;
-
-		  // select the status of the triggers relevant to this statement
-		  // and update them in the root_tcb->triggerStatusVector_
-		  triggerStatusWA.updateTriggerStatusPerTable();
-		  triggerStatusWA.deallocateStatusArray();
-		}
+      stoi=stoiList[i];
+      if (stoi->subjectTable())
+        {
+          
+          // save the current diags before entering CLI again
+          ComDiagsArea* copyOfDiagsArea = diagsArea.copy(); 
+          // remove warning 100 from diags.
+          diagsArea.removeFinalCondition100();
+          
+          // merge diags
+          diagsArea.mergeAfter(*copyOfDiagsArea);
+          copyOfDiagsArea->decrRefCount();
+          copyOfDiagsArea = NULL;
+          
+          // select the status of the triggers relevant to this statement
+          // and update them in the root_tcb->triggerStatusVector_
+          triggerStatusWA.updateTriggerStatusPerTable();
+          triggerStatusWA.deallocateStatusArray();
+        }
     }
-
+  
 #ifdef _DEBUG
   if (getenv("SHOW_ENABLE"))
-  {
-	  char int64Str[128];
-	  cout << "Trigger Ids in TDB:" << endl;
-	  cout << "-------------------" << endl;
-	  for (Int32 i=0; i<triggerStatusWA.getTotalTriggersCount(); i++) 
-	  {
-		  convertInt64ToAscii(root_tdb->getTriggersList()[i], int64Str);
-		  cout << i << " : " << int64Str << endl;
-	  }
-	  cout << endl;
-
-  }
+    {
+      char int64Str[128];
+      cout << "Trigger Ids in TDB:" << endl;
+      cout << "-------------------" << endl;
+      for (Int32 i=0; i<triggerStatusWA.getTotalTriggersCount(); i++) 
+        {
+          convertInt64ToAscii(root_tdb->getTriggersList()[i], int64Str);
+          cout << i << " : " << int64Str << endl;
+        }
+      cout << endl;
+      
+    }
 #endif //_DEBUG
 
   // we cannot check that status was received for all triggers, since
@@ -6232,9 +6099,8 @@ ExStatisticsArea *Statement::getCompileStatsArea()
 void Statement::setStmtStats(NABoolean autoRetry)
 {
   StatsGlobals *statsGlobals = NULL;
-  short error;
+  int error;
   NABoolean stmtStatsRetained = FALSE;
-  short savedPriority, savedStopMode;
   StmtStats *stmtStats = NULL;
   if (stmtStats_ != NULL)
   {
@@ -6245,9 +6111,7 @@ void Statement::setStmtStats(NABoolean autoRetry)
   if (statsGlobals != NULL)
   {
     error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-                  cliGlobals_->myPin(), savedPriority, savedStopMode,
-                  FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                  cliGlobals_->myPin());
     if (autoRetry)
     {
       if (getUniqueStmtId() != NULL)
@@ -6310,8 +6174,7 @@ void Statement::setStmtStats(NABoolean autoRetry)
     }
     else
       stmtStats_ = NULL;
-    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(), cliGlobals_->myPin(),
-       savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(), cliGlobals_->myPin());
   }
   else
   {
@@ -6818,7 +6681,7 @@ RETCODE Statement::getExtractConsumerSyntax(char *proxy, Lng32 maxlength,
   return getProxySyntax(proxy, maxlength, spaceRequired, prefix, suffix);
 }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 void Statement::StmtPrintf(const char *formatString, ...) const
 {
   if (!stmtDebug_)
@@ -7175,11 +7038,8 @@ NABoolean Statement::updateChildQid()
   if (statsGlobals != NULL && uniqueStmtId_ != NULL && parentQid_ != NULL &&
       getStatsArea() != NULL && stmtStats_ != NULL && stmtStats_->updateChildQid())
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-          cliGlobals_->myPin(), savedPriority, savedStopMode, 
-          FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+          cliGlobals_->myPin());
     StmtStats *ss = statsGlobals->getMasterStmtStats(parentQid_, str_len(parentQid_), RtsQueryId::ANY_QUERY_);
     if (ss != NULL)
     {
@@ -7191,8 +7051,7 @@ NABoolean Statement::updateChildQid()
           parentIsCanceled = TRUE;
       }
     }
-    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                    savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
   }
   return parentIsCanceled;
 }

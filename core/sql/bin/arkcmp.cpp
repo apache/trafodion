@@ -40,9 +40,6 @@
  */
 
 
-#undef  NA_COMPILE_INSTANTIATE
-#define NA_COMPILE_INSTANTIATE
-
 #include "Platform.h"
 #include "NewDel.h"
 #include <fstream>
@@ -54,8 +51,6 @@ extern void my_mpi_fclose();
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(tdm_arkcmp)
 
-
-#include "SqlExportDllDefines.h"
 
 #include "CmpMessage.h"
 #include "CmpConnection.h"
@@ -87,12 +82,9 @@ DEFINE_DOVERS(tdm_arkcmp)
 #include "QRLogger.h"
 
 
-
-//  extern SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
 THREAD_P jmp_buf ExportJmpBuf;
 
 ostream &operator<<(ostream &dest, const ComDiagsArea& da);
-
 
 
 extern CmpISPInterface cmpISPInterface;
@@ -296,11 +288,6 @@ Int32 main(Int32 argc, char **argv)
 
 	  exCmpMessage.clearAllObjects();
 	  exCmpMessage.receive();
-#ifdef NA_LINUX_SETENV
-	  //SQ_TBD
-	  putenv("SQLMX_MODULE_DIR=../sqlmx/USERMODULES/");
-	  putenv("SQLMX_SYSMODULE_DIR=../sqlmx/SYSTEMMODULES/");
-#endif
 	}
       // in most (probably all?) cases, an mxci-spawned mxcmp calls NAExit
       // in CmpConnection.cpp. So, everything below this line is probably
@@ -325,7 +312,7 @@ Int32 main(Int32 argc, char **argv)
 
   return 0;  
 }
-#ifdef NA_CMPDLL
+
 // stubs
 Int32 arkcmp_main_entry()
 { // return 1 for embedded cmpiler not created
@@ -333,5 +320,5 @@ Int32 arkcmp_main_entry()
 }
 // no-op
 void arkcmp_main_exit() {}
-#endif // NA_CMPDLL
+
 

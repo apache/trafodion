@@ -223,7 +223,6 @@ void LmResultSetJava::initType4ResultSet(Int32 paramPos,
 }
 
 // Exclude the following functions for coverage as Type 2 JDBC is not used any more
-// LCOV_EXCL_START
 void
 LmResultSetJava::initType2ResultSet(Int32 paramPos,
                                     const char *routineName,
@@ -340,7 +339,7 @@ LmResultSetJava::initType2ResultSet(Int32 paramPos,
   }
 
   setCtxHandle( (SQLCTX_HANDLE)ia[1] );
-  setStmtID( (SQLSTMT_ID *)ia[2] );
+  setStmtID( (SQLSTMT_ID *)((long)ia[2]) );
 
   firstBufferedRow_		= ia[3];
   lastBufferedRow_		= ia[4];
@@ -391,7 +390,6 @@ LmResultSetJava::initType2ResultSet(Int32 paramPos,
   }
 
 }
-// LCOV_EXCL_STOP
 
 // Destructor:
 LmResultSetJava::~LmResultSetJava()

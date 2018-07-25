@@ -893,9 +893,7 @@ static ItemExpr *addCheckForTriggerEnabled(BindWA    *bindWA,
 
   ItemExpr *enableCheck = new(heap) 
     GetBitValueAt(new(heap) GetTriggersStatus(), 
-#pragma nowarn(1506)   // warning elimination 
 		  new(heap) ConstValue(triggerIndex) );
-#pragma warn(1506)  // warning elimination 
 
   // Check if whenClause is empty or TRUE
   if (whenClause == NULL || whenClause->getOperatorType() == ITM_RETURN_TRUE)
@@ -1563,7 +1561,6 @@ RelExpr *GenericUpdate::createTentativeSubTree(BindWA *bindWA,
 // child classes only.
 //////////////////////////////////////////////////////////////////////////////
 // we are not supposed to get here
-// LCOV_EXCL_START
 RelExpr *GenericUpdate::createEffectiveGU(BindWA   *bindWA, 
 					  CollHeap *heap, 
 					  TriggersTempTable& tempTableObj,
@@ -1573,7 +1570,6 @@ RelExpr *GenericUpdate::createEffectiveGU(BindWA   *bindWA,
   CMPASSERT(FALSE); // Not supposed to get here !!!
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Create an Insert node that inserts the NEW@ values into the subject table.
@@ -1634,14 +1630,10 @@ RelExpr *Update::createEffectiveGU(BindWA   *bindWA,
   for (CollIndex i=0; i<subjectColumns.entries(); i++)
   {
     // If this column was not SET into, no need to change it.
-#pragma nowarn(1506)   // warning elimination 
     if (!colsToSet->contains(i))
-#pragma warn(1506)  // warning elimination 
       continue;
 
-#pragma nowarn(1506)   // warning elimination 
     NAColumn *currentColumn = subjectColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination 
     const NAString &colName = currentColumn->getColName();
 
     // Cannot update a clustering/primary key column!
@@ -1896,7 +1888,7 @@ static RelExpr *createIMNode(BindWA *bindWA,
 			     NABoolean isIMInsert,
 			     NABoolean useInternalSyskey,
                              NABoolean isForUpdateOrMergeUpdate,
-                             NABoolean isForMerge, // mergeDelete OR mergeUpdate
+                             NABoolean mergeDeleteWithInsertOrMergeUpdate,
 			     NABoolean isEffUpsert)
 {
    
@@ -1914,7 +1906,8 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // that correspond to the base table. Hence we introduce 
   // robustDelete below. This flag could also be called 
   // isIMOnAUniqueIndexForMerge
-  NABoolean robustDelete = (isForMerge && index->isUniqueIndex()) || (isEffUpsert && index->isUniqueIndex());
+  NABoolean robustDelete = (mergeDeleteWithInsertOrMergeUpdate && index->isUniqueIndex()) || 
+                           (isEffUpsert && index->isUniqueIndex());
 
   tableCorrName.setCorrName(isIMInsert ?  NEWCorr : OLDCorr);
   
@@ -2135,8 +2128,15 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
   if (getOperatorType() == REL_UNARY_DELETE ||
       getOperatorType() == REL_UNARY_UPDATE ||
       isEffUpsert)
-    
-    indexDelete = indexOp = createIMNode(bindWA,
+    {
+      NABoolean mergeDeleteWithInsertOrMergeUpdate = isMerge();
+      if (mergeDeleteWithInsertOrMergeUpdate && 
+          (getOperatorType() == REL_UNARY_DELETE) && 
+          (!insertValues()))
+        // merge delete without an insert
+        mergeDeleteWithInsertOrMergeUpdate = FALSE;
+      
+      indexDelete = indexOp = createIMNode(bindWA,
 					 tableCorrName,
                                          indexCorrName,
 					 index,
@@ -2144,8 +2144,9 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 					 FALSE,
     			       		 useInternalSyskey,
                                          isForUpdateOrMergeUpdate,
-                                         isMerge(),
+                                         mergeDeleteWithInsertOrMergeUpdate,
 					 isEffUpsert);
+    }
 
   if ((getOperatorType() == REL_UNARY_UPDATE) || isEffUpsert){
     indexOp = new (bindWA->wHeap()) Union(indexDelete, indexInsert, 
@@ -2283,9 +2284,7 @@ RelExpr * GenericUpdate::createUndoTempTable(TriggersTempTable *tempTableObj,Bin
   tempCorrName.setCorrName( NEWCorr);
   for (CollIndex i=0; i<tempColumns.entries(); i++) 
     {
-#pragma nowarn(1506)   // warning elimination 
       NAString tempColName(tempColumns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
    
 
       ColReference *tempColRef = new(bindWA->wHeap()) 
@@ -2586,7 +2585,7 @@ RelExpr* GenericUpdate::createRISubtree(BindWA *bindWA,
   ItemExpr *newScanPredicate = parser.getItemExprTree 
     ((char *)scanPredicateTxt.data());
   newScan->addSelPredTree(newScanPredicate);
-  ((Scan *)newScan)->accessOptions().accessType() = REPEATABLE_;
+  ((Scan *)newScan)->accessOptions().accessType() = TransMode::REPEATABLE_READ_ACCESS_;
   // Do not collect STOI info for security checks.
   newScan->getInliningInfo().setFlags(II_AvoidSecurityChecks);
 
@@ -2680,7 +2679,7 @@ RelExpr* GenericUpdate::createRISubtree(BindWA *bindWA,
   // Create the Root Node.
   RelExpr *newRoot = new (heap) 
     RelRoot(newGrby,
-	    REPEATABLE_,
+	    TransMode::REPEATABLE_READ_ACCESS_,
 	    SHARE_);
 
   ((RelRoot *)newRoot)->setEmptySelectList();
@@ -2702,9 +2701,7 @@ RelExpr* GenericUpdate::inlineRI (BindWA *bindWA,
 
   CMPASSERT (!refConstraints->isEmpty())
   
-#pragma nowarn(1506)   // warning elimination 
   if ((entries = refConstraints->entries())) 
-#pragma warn(1506)  // warning elimination 
   {
     riSubtree = createRISubtree(bindWA, naTable, *(refConstraints->at(0)), heap);
     for (Int32 i=1; i < entries; i++) 
@@ -2723,7 +2720,7 @@ RelExpr* GenericUpdate::inlineRI (BindWA *bindWA,
   if (riSubtree->getOperatorType() != REL_ROOT) {
     riSubtree = new (heap) 
       RelRoot(riSubtree,
-              REPEATABLE_,
+              TransMode::REPEATABLE_READ_ACCESS_,
               SHARE_);
     ((RelRoot *)riSubtree)->setEmptySelectList();
   }
@@ -2829,7 +2826,6 @@ void GenericUpdate::prepareForMvLogging(BindWA   *bindWA,
   if (getOperatorType() == REL_UNARY_INSERT &&
       getTableDesc()->getNATable()->getMvAttributeBitmap().getAutomaticRangeLoggingRequired())
   {
-    // LCOV_EXCL_START
     // dead code, range logging is not supported
     ItemExpr *rowType  = new(heap) GenericUpdateOutputFunction(ITM_VSBBROWTYPE);
     ItemExpr *rowCount = new(heap) GenericUpdateOutputFunction(ITM_VSBBROWCOUNT);
@@ -2837,7 +2833,6 @@ void GenericUpdate::prepareForMvLogging(BindWA   *bindWA,
       addVirtualColumn(bindWA, rowType, InliningInfo::getRowTypeVirtualColName(), heap);
     rowCountId = 
       addVirtualColumn(bindWA, rowCount, InliningInfo::getRowCountVirtualColName(), heap);
-    // LCOV_EXCL_STOP
   }
 
   ItemExpr *tsOutExpr = new (heap) 
@@ -2895,7 +2890,6 @@ RelExpr *GenericUpdate::createMvLogInsert(BindWA   *bindWA,
   RelExpr *topNode = insertNode;
   if (logTableObj.needsRangeLogging() && projectMidRangeRows)
   {
-    // LCOV_EXCL_START
     // dead code, range logging is not supported
     RelRoot *rootNode = new (heap) RelRoot(insertNode);
     rootNode->setEmptySelectList();
@@ -2918,7 +2912,6 @@ RelExpr *GenericUpdate::createMvLogInsert(BindWA   *bindWA,
     ifNode->setCondUnary();
 
     topNode = ifNode;
-    // LCOV_EXCL_STOP
   }
 
   RelRoot *rootNode = new (heap) RelRoot(topNode);
@@ -3115,7 +3108,6 @@ GenericUpdate::getTriggeredMvs(BindWA                 *bindWA,
 //////////////////////////////////////////////////////////////////////////////
 
 // we are not supposed to get here
-// LCOV_EXCL_START
 void GenericUpdate::insertMvToTriggerList(BeforeAndAfterTriggers *list,
 					  BindWA                 *bindWA,
 					  CollHeap               *heap,
@@ -3126,7 +3118,6 @@ void GenericUpdate::insertMvToTriggerList(BeforeAndAfterTriggers *list,
 {
   CMPASSERT(false); // not implemented in GenericUpdate
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -3150,7 +3141,7 @@ RelExpr *GenericUpdate::inlineOnlyRIandIMandMVLogging(BindWA *bindWA,
 	{
 	  // create a firstN node to delete N rows.
 	  FirstN * firstn = new(bindWA->wHeap())
-	    FirstN(topNode, topNode->getFirstNRows());
+	    FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
 	  firstn->bindNode(bindWA);
 	  if (bindWA->errStatus())
 	    return NULL;
@@ -3332,7 +3323,7 @@ RelExpr *GenericUpdate::inlineAfterOnlyBackbone(BindWA *bindWA,
   {
     // create a firstN node to delete N rows.
     FirstN * firstn = new(bindWA->wHeap())
-      FirstN(topNode, topNode->getFirstNRows());
+      FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
     firstn->bindNode(bindWA);
     if (bindWA->errStatus())
       return NULL;
@@ -3447,7 +3438,7 @@ RelExpr *GenericUpdate::inlineAfterOnlyBackboneForUndo(BindWA *bindWA,
     {
       // create a firstN node to delete N rows.
       FirstN * firstn = new(bindWA->wHeap())
-	FirstN(topNode, topNode->getFirstNRows());
+	FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
 	return NULL;
@@ -4933,108 +4924,4 @@ RelExpr *Update::transformUpdatePrimaryKey(BindWA *bindWA)
    boundExpr = insNode->bindNode(bindWA);
    return boundExpr;
 }
-
-RelExpr *Update::transformHbaseUpdate(BindWA *bindWA)
-{
-
-   Delete * delNode = new (bindWA->wHeap())
-			Delete(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()),
-				NULL,
-				REL_UNARY_DELETE,
-				child(0),
-				NULL);
-   delNode->setNoLogOp(CONSISTENT_NOLOG);
-   delNode->setUpdateCKorUniqueIndexKey(TRUE);
-   delNode->rowsAffected() = GenericUpdate::DO_NOT_COMPUTE_ROWSAFFECTED;
-
-   ValueIdList selectList, sourceColsList, lhsOfSetClause;
-   
-   getTableDesc()->getUserColumnList(selectList);
-   getScanIndexDesc()->getPrimaryTableDesc()->getUserColumnList(sourceColsList);
-   ValueId vid ;
-   CollIndex pos;
-
-   // newRecExprArray is a list of assigns. For each assign
-   // child(0) is the LHS of the set clause and child(1) is
-   // the RHS of the SET clause
-
-   for (CollIndex i=0; i < newRecExprArray().entries(); i++)
-    {
-      lhsOfSetClause.insertAt(i,newRecExprArray().at(i).getItemExpr()->child(0).getValueId());
-    }
-
-   for (CollIndex i=0; i < selectList.entries(); i++)
-    {
-      if ((pos = lhsOfSetClause.index(selectList[i])) == NULL_COLL_INDEX)
-	selectList[i] = sourceColsList[i];
-      else
-	selectList[i] = newRecExprArray().at(pos).getItemExpr()->child(1).getValueId();
-    }
-
-    for (CollIndex i=0; i < oldToNewMap().getTopValues().entries(); i++) {
-      BaseColumn *col = (BaseColumn *) oldToNewMap().getBottomValues()[i].getItemExpr();
-      NABoolean addToOldToNewMap = TRUE;
-
-      // Copy the oldToNewMap.
-      if (col->getNAColumn()->isComputedColumnAlways()) {
-        // Computed columns can be copied from delete to insert if they don't
-        // change. Don't include the column in this map, though, if one of
-        // the underlying columns gets updated, because the value of the
-        // computed column has to be recomputed. That computation will be
-        // done in the new insert node.
-        ValueIdSet underlyingCols;
-
-        col->getUnderlyingColumnsForCC(underlyingCols);
-
-        if (NOT underlyingCols.intersect(lhsOfSetClause).isEmpty())
-          addToOldToNewMap = FALSE;
-      }
-
-      // Copy the oldToNewMap.
-      if (addToOldToNewMap)
-        delNode->oldToNewMap().addMapEntry(oldToNewMap().getTopValues()[i],
-                                           oldToNewMap().getBottomValues()[i]);
-    }
-
-   RelRoot * rootNode = new (bindWA->wHeap())
-			RelRoot(delNode, 
-				REL_ROOT,
-				selectList.rebuildExprTree(ITM_ITEM_LIST));
-
-   RelExpr * boundExpr;
-   Insert * insNode = new (bindWA->wHeap())
-		Insert(CorrName(getTableDesc()->getCorrNameObj(),bindWA->wHeap()),
-				getTableDesc(), // insert gets the same tabledesc as the update
-				REL_UNARY_INSERT,
-				rootNode,
-				NULL);
-   insNode->setNoLogOp(isNoLogOperation());
-   insNode->setSubqInUpdateAssign(subqInUpdateAssign());
-
-   if (this->rowsAffected() == GenericUpdate::DO_NOT_COMPUTE_ROWSAFFECTED)
-      insNode->rowsAffected() = GenericUpdate::DO_NOT_COMPUTE_ROWSAFFECTED;
-   else
-      insNode->rowsAffected() = GenericUpdate::COMPUTE_ROWSAFFECTED;
-      
-   insNode->setUpdateCKorUniqueIndexKey(TRUE);
-   InliningInfo inlineInfo = getInliningInfo();
-   insNode->setInliningInfo(&inlineInfo);
-   if (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) == DF_ON) {
-     insNode->setAvoidHalloween(TRUE);
-     insNode->setHalloweenCannotUseDP2Locks(TRUE);
-   }
-   // used to convey updated columns to insert node's stoi
-   // during inlining the update node is not present anymore, we read the 
-   // insert's stoi to figure out which columns are updated.
-   SqlTableOpenInfo * scanStoi = getLeftmostScanNode()->getOptStoi()->getStoi();
-   short updateColsCount = getOptStoi()->getStoi()->getColumnListCount();
-   scanStoi->setColumnListCount(updateColsCount);
-   scanStoi->setColumnList(new (bindWA->wHeap()) short[updateColsCount]);
-   for (short i=0; i<updateColsCount; i++)
-    scanStoi->setUpdateColumn(i,getOptStoi()->getStoi()->getUpdateColumn(i));
-
-   boundExpr = insNode->bindNode(bindWA);
-   return boundExpr;
-}
-
 

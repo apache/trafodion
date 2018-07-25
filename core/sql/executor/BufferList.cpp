@@ -39,21 +39,13 @@ namespace ExOverflow
   char*
   BufferList::back(void)
   {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
     return static_cast<char*>(bufferList_.getTail());
-#else
-    return (char*) bufferList_.getTail();
-#endif
   }
 
   char*
   BufferList::current(void)
   {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
-      return static_cast<char*>(bufferList_.getCurr());
-#else
-      return (char*) bufferList_.getCurr();
-#endif
+    return static_cast<char*>(bufferList_.getCurr());
   }
 
   bool
@@ -65,11 +57,7 @@ namespace ExOverflow
   char*
   BufferList::front(void)
   {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
     return static_cast<char*>(bufferList_.getHead());
-#else
-    return (char*) bufferList_.getHead();
-#endif
   }
 
   char*
@@ -117,11 +105,7 @@ namespace ExOverflow
   UInt32
   BufferList::size(void)
   {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
     return static_cast<UInt32>(bufferList_.numEntries());
-#else
-    return (UInt32) bufferList_.numEntries();
-#endif
   }
 
 }

@@ -33,6 +33,8 @@ import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.Connection;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,6 +64,7 @@ class SizeInfo {
 
 public class TrafRegionStats {
 
+    static Logger logger = Logger.getLogger(TrafRegionStats.class.getName());
     private Admin hbAdmin;
     private ClusterStatus clusterStatus;
     private Collection<ServerName> servers;
@@ -77,6 +80,14 @@ public class TrafRegionStats {
         new TreeMap<byte[], SizeInfo>(Bytes.BYTES_COMPARATOR);
 
     private SizeInfo currRegionSizeInfo = null;
+
+    static {
+    	String confFile = System.getProperty("trafodion.log4j.configFile");
+        System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
+    	if (confFile == null) 
+           confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
+      	PropertyConfigurator.configure(confFile);
+    }
 
     static final String ENABLE_REGIONSIZECALCULATOR = "hbase.regionsizecalculator.enable";
     
@@ -101,7 +112,7 @@ public class TrafRegionStats {
     public TrafRegionStats (HTable table, Admin admin) throws IOException {
         
             if (!enabled(table.getConfiguration())) {
-                System.out.println("Region size calculation disabled.");
+                logger.error("Region size calculation disabled for table " + table.getTableName());
                 return;
             }
             

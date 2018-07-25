@@ -332,7 +332,8 @@ public:
 
   NABoolean isHistograms() const;
   NABoolean isHistogramIntervals() const;
-
+  NABoolean isHistogramTable() const;
+  NABoolean isLOBDesc() const;
   void setObjectName(const NAString &objName)   { objectName_ = objName; }
   void setObjectNameSpace(ComAnsiNameSpace objNameSpace)   { objectNameSpace_ = objNameSpace; }
 
@@ -477,7 +478,6 @@ public:
 			  ISP_TABLE, 		// Internal Stored Procedure
 			  LOAD_TABLE,
 			  PARTITION_TABLE,
-			  RESOURCE_FORK,
 			  VIRTUAL_TABLE,
 			  IUD_LOG_TABLE, 
 			  RANGE_LOG_TABLE,
@@ -567,12 +567,14 @@ public:
 
   //can this type of object be put in the NATable cache
   NABoolean isCacheable() const
-  { return    (type_ == NORMAL_TABLE)
+  { 
+    return    (type_ == NORMAL_TABLE)
            || (type_ == TRIGTEMP_TABLE)
            || (type_ == EXCEPTION_TABLE)
            //|| (type_ == IUD_LOG_TABLE)
            //|| (type_ == RANGE_LOG_TABLE)
-           || (type_ == INDEX_TABLE)
+      || (type_ == INDEX_TABLE)  
+      || ((type_ == GHOST_TABLE)&& qualName_.isLOBDesc())
   ; }
   
   NABoolean hasPartnClause() const {return NOT partnClause_.isEmpty();}
@@ -667,11 +669,6 @@ private:
 // These are 'virtual' tables for special purpose needs.
 // Binder uses this information to 'generate' table descriptors.
 // Ustat does not fetch real histograms for virtual tables.
-//   E.g., RESOURCE_FORK is a SQL table that doesn't exist in metadata
-//   as a base table.
-//   So, any sql dml operation on resource fork is done by specifying a
-//   special syntax in the SQL statement that tells if this is a resource fork.
-//   "SELECT * FROM TABLE (RESOURCE_FORK <rfork-guardian-name>)" is an example.
 // -----------------------------------------------------------------------
 class CorrName : public NABasicObject
 {
@@ -741,19 +738,6 @@ public:
        flagbits_(corr.flagbits_)
   {}
 
-/*
-// c89 can't distinguish between the non-tandem version of
-// this constructor and the above constructor taking four NAString
-// arguments (what?  It can't tell a NABoolean is not a NAString, or,
-// somebody wrote a conversion operator from NABoolean to NAString?)
-// May need more investigation, but this fix certainly works.  -wlr-
-#ifndef __TANDEM
-  #define CORRNAME_CTOR_const const
-#else
-  #define CORRNAME_CTOR_const
-#endif
-  CorrName(CORRNAME_CTOR_const NAString& corrName,
-*/
   CorrName(const NAString& corrName,
   	   NABoolean isFabricated,
            CollHeap * h=0,
@@ -888,6 +872,7 @@ public:
   NABoolean isHbaseCell() const;
   NABoolean isHbaseRow() const;
   NABoolean isHbaseMap() const;
+ 
 
   NABoolean isExternal() const { return (flagbits_ & IS_EXTERNAL) != 0; }
   void setIsExternal(NABoolean v) 

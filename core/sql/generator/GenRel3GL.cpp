@@ -177,13 +177,11 @@ short PhysCompoundStmt::codeGen(Generator * generator)
 			         givenDesc, returnedCRI,
 			         (queue_index)getDefault(GEN_CS_SIZE_DOWN),
 			         (queue_index)getDefault(GEN_CS_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 			         getDefault(GEN_CS_NUM_BUFFERS), 
 			         getDefault(GEN_CS_BUFFER_SIZE),
                                  rowsFromLeft,
                                  rowsFromRight,
                                  afterUpdate);
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(tdb);
 
   // Add expain info.

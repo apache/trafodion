@@ -51,9 +51,7 @@ void ErrorMessage::insertParams(NAError * errcb)
       Int32	tmpLen = 0;
       Int32	truncation = FALSE;
 
-#pragma nowarn(1506)   // warning elimination 
       Int32	msgBufOrigLen = NAWstrlen(msgBuf_);
-#pragma warn(1506)  // warning elimination 
 
       for (Int32 i = 0; i < msgBufOrigLen; i++)
 	{
@@ -81,9 +79,7 @@ void ErrorMessage::insertParams(NAError * errcb)
 			NAWsprintf(paramVal,WIDE_("%s"),param->getStringNAErrorParam());
 			break;
 		      }	      
-#pragma nowarn(1506)   // warning elimination 
 		  paramLen = NAWstrlen(paramVal);
-#pragma warn(1506)  // warning elimination 
 
 		  NAWstrncpy(&tmp[tmpLen], paramVal, paramLen);
 	        }
@@ -91,9 +87,7 @@ void ErrorMessage::insertParams(NAError * errcb)
 		{
 		  tmp[tmpLen++] = ERRORPARAM_BEGINMARK;
 
-#pragma nowarn(1506)   // warning elimination 
 		  paramLen = NAWstrlen(paramName);
-#pragma warn(1506)  // warning elimination 
 		  NAWstrncpy(&tmp[tmpLen], paramName, paramLen);
 	        }
 	      tmpLen += paramLen;
@@ -169,9 +163,7 @@ void ErrorMessage::printErrorMessage(NAError * errcb)
   if (forceParamSubst)
     {
       // remove trailing blanks and unsubstituted substitution marks
-#pragma nowarn(1506)   // warning elimination 
       Int32 tmpLen = NAWstrlen(msgBuf_);
-#pragma warn(1506)  // warning elimination 
       while (--tmpLen >= 0 && 
       	     (msgBuf_[tmpLen] == NAWchar(' ')  || 
 	      msgBuf_[tmpLen] == NAWchar('\t') ||
@@ -347,10 +339,8 @@ void NADumpDiags(ostream& outStream, ComDiagsArea* diags,
     if (fp)			// if a logfile is open, mirror messages to it
     {
       char mbstr[DEST_BUF_SIZE + 16]; 
-#pragma nowarn(1506)   // warning elimination 
       UnicodeStringToLocale(terminal_cs, msg, NAWstrlen(msg),  
                             mbstr, DEST_BUF_SIZE);
-#pragma warn(1506)  // warning elimination
 
       FixCarriageReturn(mbstr);
       fprintf(fp, "%s\n", mbstr);
@@ -383,9 +373,7 @@ void NAWriteConsole(const NAWchar *str, ostream& outStream,
   if (!str) return;
   char mbstr[DEST_BUF_SIZE + 16];
 
-#pragma nowarn(1506)   // warning elimination 
   UnicodeStringToLocale(terminal_cs, str, NAWstrlen(str), mbstr, DEST_BUF_SIZE+16);
-#pragma warn(1506)  // warning elimination 
   NAWriteConsole(mbstr, outStream, newline, comment);
 }
 

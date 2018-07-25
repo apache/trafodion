@@ -130,6 +130,21 @@ CREATE TABLE TRAFODION.T144USER1.CUSTOMERS
 
 --- SQL operation complete.
 >>
+>>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+
+--- SQL operation complete.
+>>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
 >>obey TEST144(set_up);
 >>set schema "_PRIVMGR_MD_";
 
@@ -176,8 +191,91 @@ T144_TRANSLATEP                                                              333
 _TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
 
 --- 10 row(s) selected.
+>>get privileges on function gen_phone;
+
+Privileges on Routine T144USER1.GEN_PHONE
+=========================================
+
+------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_random;
+
+Privileges on Routine T144USER1.GEN_RANDOM
+==========================================
+
+------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_time;
+
+Privileges on Routine T144USER1.GEN_TIME
+========================================
+
+------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on procedure "_LIBMGR_".help;
+
+Privileges on Routine _LIBMGR_.HELP
+===================================
+
+------E    DB__LIBMGRROLE
+------E    DB__ROOT
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on table_mapping function "_LIBMGR_".event_log_reader;
+
+Privileges on Routine _LIBMGR_.EVENT_LOG_READER
+===============================================
+
+------E    DB__ROOT
+------E    PUBLIC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
 >>
->>-- user1 owns the udfs but does not have execute on procedure help
+>>-- user1 can execute udfs (as owner), but cannot execute procedure help,
+>>-- can execute table_mapping function event_log_reader through public grant
+>>get privileges on function gen_phone for sql_user1;
+
+Privileges on Routine T144USER1.GEN_PHONE
+=========================================
+
+------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on procedure "_LIBMGR_".help for sql_user1;
+
+--- SQL operation complete.
+>>get privileges on table_mapping function "_LIBMGR_".event_log_reader for sql_user1;
+
+Privileges on Routine _LIBMGR_.EVENT_LOG_READER
+===============================================
+
+------E    PUBLIC
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>sh sqlci -i "TEST144(cmds)" -u sql_user1;
 >>values (user);
 
@@ -188,6 +286,30 @@ SQL_USER1
 
 --- 1 row(s) selected.
 >>set schema t144user1;
+
+--- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+Privileges on Routine T144USER1.GEN_TIME
+========================================
+
+------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
+
+Privileges on Routine T144USER1.GEN_RANDOM
+==========================================
+
+------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>select customer_id, 
@@ -271,6 +393,14 @@ SQL_USER2
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
+
+--- SQL operation complete.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -332,6 +462,14 @@ SQL_USER3
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
+
+--- SQL operation complete.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -391,6 +529,14 @@ SQL_USER4
 
 --- 1 row(s) selected.
 >>set schema t144user1;
+
+--- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
 
 --- SQL operation complete.
 >>select customer_id, 
@@ -456,6 +602,50 @@ End of MXCI Session
 >>grant execute on procedure "_LIBMGR_".help to sql_user2 with grant option;
 
 --- SQL operation complete.
+>>get privileges on function gen_phone for sql_user2;
+
+Privileges on Routine T144USER1.GEN_PHONE
+=========================================
+
+------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_random for sql_user2;
+
+Privileges on Routine T144USER1.GEN_RANDOM
+==========================================
+
+------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_time for user sql_user2;
+
+Privileges on Routine T144USER1.GEN_TIME
+========================================
+
+------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on procedure "_LIBMGR_".help for user sql_user2;
+
+Privileges on Routine _LIBMGR_.HELP
+===================================
+
+------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>execute get_privs;
 
 OBJECT_NAME                                                   GRANTOR_ID            GRANTEE_ID            GRANTED_PRIVS         GRANTABLE_PRIVS
@@ -477,6 +667,7 @@ _TRAFODION_T144                                                                 
 
 --- 13 row(s) selected.
 >>
+>>
 >>-- user2 can execute
 >>sh sqlci -i "TEST144(cmds)" -u sql_user2;
 >>values (user);
@@ -488,6 +679,22 @@ SQL_USER2
 
 --- 1 row(s) selected.
 >>set schema t144user1;
+
+--- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+Privileges on Routine T144USER1.GEN_TIME
+========================================
+
+------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
 
 --- SQL operation complete.
 >>select customer_id, 
@@ -573,6 +780,14 @@ SQL_USER3
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
+
+--- SQL operation complete.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -637,9 +852,45 @@ End of MXCI Session
 >>-- user2 does not have WGO on gen_time
 >>grant execute on function gen_time to sql_user3 by sql_user2;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER2 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
+>>get privileges on function gen_phone for user sql_user3;
+
+Privileges on Routine T144USER1.GEN_PHONE
+=========================================
+
+------E    SQL_USER3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_random for user sql_user3;
+
+Privileges on Routine T144USER1.GEN_RANDOM
+==========================================
+
+------E    SQL_USER3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_time for user sql_user3;
+
+--- SQL operation complete.
+>>get privileges on procedure "_LIBMGR_".help for user sql_user3;
+
+Privileges on Routine _LIBMGR_.HELP
+===================================
+
+------E    SQL_USER3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>execute get_privs;
 
 OBJECT_NAME                                                   GRANTOR_ID            GRANTEE_ID            GRANTED_PRIVS         GRANTABLE_PRIVS
@@ -674,6 +925,14 @@ SQL_USER3
 
 --- 1 row(s) selected.
 >>set schema t144user1;
+
+--- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
 
 --- SQL operation complete.
 >>select customer_id, 
@@ -745,7 +1004,7 @@ End of MXCI Session
 --- SQL operation complete.
 >>grant execute on procedure "_LIBMGR_".help to sql_user5 by sql_user3;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER3 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>
@@ -760,6 +1019,53 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>grant role t144role1 to sql_user4;
+
+--- SQL operation complete.
+>>get privileges on function gen_phone for user sql_user4;
+
+--- SQL operation complete.
+>>get privileges on function gen_random for user sql_user4;
+
+Privileges on Routine T144USER1.GEN_RANDOM
+==========================================
+
+------E    T144ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_time for user sql_user4;
+
+Privileges on Routine T144USER1.GEN_TIME
+========================================
+
+------E    T144ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on procedure "_LIBMGR_".help for user sql_user4;
+
+Privileges on Routine _LIBMGR_.HELP
+===================================
+
+------E    T144ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_random for t144role1;
+
+Privileges on Routine T144USER1.GEN_RANDOM
+==========================================
+
+------E    T144ROLE1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>execute get_privs;
@@ -799,6 +1105,22 @@ SQL_USER4
 
 --- 1 row(s) selected.
 >>set schema t144user1;
+
+--- SQL operation complete.
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+Privileges on Routine T144USER1.GEN_TIME
+========================================
+
+------E    T144ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
 
 --- SQL operation complete.
 >>select customer_id, 
@@ -861,6 +1183,62 @@ RM - Remove a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.
 End of MXCI Session
 
 >>
+>>get privileges on function gen_phone;
+
+Privileges on Routine T144USER1.GEN_PHONE
+=========================================
+
+------E    SQL_USER1
+------E    SQL_USER2
+------E    SQL_USER3
+------E    SQL_USER5
+
+=======================
+ 4 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_random;
+
+Privileges on Routine T144USER1.GEN_RANDOM
+==========================================
+
+------E    SQL_USER1
+------E    SQL_USER2
+------E    SQL_USER3
+------E    T144ROLE1
+
+=======================
+ 4 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on function gen_time;
+
+Privileges on Routine T144USER1.GEN_TIME
+========================================
+
+------E    SQL_USER1
+------E    SQL_USER2
+------E    T144ROLE1
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get privileges on procedure "_LIBMGR_".help;
+
+Privileges on Routine _LIBMGR_.HELP
+===================================
+
+------E    DB__LIBMGRROLE
+------E    DB__ROOT
+------E    SQL_USER2
+------E    SQL_USER3
+------E    T144ROLE1
+
+=======================
+ 5 row(s) returned
+
+--- SQL operation complete.
 >>obey TEST144(test_revokes);
 >>-- ============================================================================
 >>-- verify that revoking privileges handle EXECUTE privilege correctly
@@ -911,7 +1289,7 @@ _TRAFODION_T144                                                                 
 >>
 >>drop role t144role1;
 
-*** ERROR[1348] Cannot drop role.  Role is granted to one or more users.
+*** ERROR[1348] Cannot drop role. Role is granted to one or more users.
 
 --- SQL operation failed with errors.
 >>revoke role t144role1 from sql_user4;
@@ -919,7 +1297,7 @@ _TRAFODION_T144                                                                 
 --- SQL operation complete.
 >>drop role t144role1;
 
-*** ERROR[1228] Cannot drop role.  Role T144ROLE1 has been granted privileges on TRAFODION.T144USER1.GEN_RANDOM.
+*** ERROR[1228] Cannot drop role. Role T144ROLE1 has been granted privileges on TRAFODION._LIBMGR_.HELP.
 
 --- SQL operation failed with errors.
 >>revoke execute on function gen_random from t144role1;
@@ -957,6 +1335,28 @@ _TRAFODION_T144                                                                 
 >>revoke execute on procedure "_LIBMGR_".help from sql_user2;
 
 --- SQL operation complete.
+>>obey TEST144(set_up);
+>>set schema "_PRIVMGR_MD_";
+
+--- SQL operation complete.
+>>prepare get_privs from
++>select distinct
++>   trim(substring (o.object_name,1,15)) as object_name,
++>   grantor_id, grantee_id,
++>   t144user1.t144_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>   t144user1.t144_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>from object_privileges p, "_MD_".objects o 
++>where p.object_uid in 
++>  (select object_uid
++>   from "_MD_".objects
++>     where schema_name like 'T144USER%'
++>       and object_name not like 'SB_%')
++>  and p.object_uid = o.object_uid
++>order by 1, 2, 3, 4
++>;
+
+--- SQL command prepared.
+>>
 >>execute get_privs;
 
 OBJECT_NAME                                                   GRANTOR_ID            GRANTEE_ID            GRANTED_PRIVS         GRANTABLE_PRIVS

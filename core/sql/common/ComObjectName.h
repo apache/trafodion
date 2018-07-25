@@ -47,12 +47,8 @@
  *****************************************************************************
  */
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-#include <iostream>
-#endif
 
 #include "NABoolean.h"
 #include "NAString.h"

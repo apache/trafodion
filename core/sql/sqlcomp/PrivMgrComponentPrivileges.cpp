@@ -74,10 +74,12 @@ public:
 // -------------------------------------------------------------------
    MyRow(std::string tableName)
    : PrivMgrMDRow(tableName, COMPONENT_PRIVILEGES_ENUM),
-     componentUID_(0)
+     componentUID_(0),
+     visited_(false)
    { };
    MyRow(const MyRow &other)
-   : PrivMgrMDRow(other)
+   : PrivMgrMDRow(other),
+     visited_(false)
    {
       componentUID_ = other.componentUID_;              
       operationCode_ = other.operationCode_;
@@ -88,6 +90,15 @@ public:
       grantDepth_ = other.grantDepth_;
    };
    virtual ~MyRow() {};
+
+   bool operator==(const MyRow & other) const
+   {
+      return ( ( componentUID_ == other.componentUID_ ) &&
+               ( operationCode_  == other.operationCode_ ) &&
+               ( granteeID_  == other.granteeID_ ) &&
+               ( grantorID_  == other.grantorID_ ) );
+   }
+
    inline void clear() {componentUID_ = 0;};
     
    void describeGrant(
@@ -107,6 +118,7 @@ public:
     int32_t            grantorID_;
     std::string        grantorName_;
     int32_t            grantDepth_;
+    bool               visited_;
     
 private: 
    MyRow();
@@ -141,6 +153,11 @@ public:
       const std::string & operationCode,
       int32_t & grantee);    
    
+   void getRowsForGrantee(
+      const MyRow &baseRow,
+      std::vector<MyRow> &masterRowList,
+      std::set<size_t> &rowsToDelete);
+
    virtual PrivStatus insert(const PrivMgrMDRow & row);
    
    PrivStatus selectAllWhere(
@@ -187,6 +204,12 @@ using namespace ComponentPrivileges;
 // -----------------------------------------------------------------------
 // Construct a PrivMgrComponentPrivileges object for a new component operation.
 // -----------------------------------------------------------------------
+PrivMgrComponentPrivileges::PrivMgrComponentPrivileges()
+: PrivMgr(),
+  fullTableName_(metadataLocation_ + "." + PRIVMGR_COMPONENT_PRIVILEGES),
+  myTable_(*new MyTable(fullTableName_,pDiags_)) 
+{ };
+
 PrivMgrComponentPrivileges::PrivMgrComponentPrivileges(
    const std::string & metadataLocation,
    ComDiagsArea * pDiags)
@@ -439,6 +462,120 @@ std::string whereClause("WHERE ");
 
 }
 //*********** End of PrivMgrComponentPrivileges::dropAllForOperation ***********
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrComponentPrivileges::dropAllForGrantee                   *
+// *                                                                           *
+// *    This function drops all component privileges that have been granted    *
+// *  to the user specified as "granteeID".  If the grantee had the WGO then   *
+// *  the branch of privileges started by granteeID are removed.               *
+// *                                                                           *
+// *  This code assumes that all roles have been revoked from the granteeID    *
+// *  prior to being called.                                                   *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <granteeID>                     const int32_t                   In       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true:  grantees were dropped                                             *
+// * false:  unexpected error occurred. Error is put into the diags area.      *
+// *                                                                           *
+// *****************************************************************************
+bool PrivMgrComponentPrivileges::dropAllForGrantee(
+  const int32_t granteeID)
+{
+   // Get the list of all privileges from component_privileges table
+   // Skip rows granted by the system (-2)
+   std::string whereClause (" WHERE GRANTOR_ID > 0");
+   std::string orderByClause= " ORDER BY COMPONENT_UID, GRANTOR_ID, GRANTEE_ID, OPERATION_CODE, GRANT_DEPTH";
+
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
+   std::vector<MyRow> masterRowList;
+
+   PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,masterRowList);
+   if (privStatus == STATUS_ERROR)
+     return false;
+
+   // Create a list of indexes into the masterRowList where the granteeID is 
+   // the target of one or more privileges
+   std::vector<size_t> granteeRowList;
+   for (size_t i = 0; i < masterRowList.size(); i++)
+   {
+      if (masterRowList[i].granteeID_ == granteeID)
+         granteeRowList.push_back(i);
+   }
+   
+   // if the granteeID has not been granted any privileges, we are done
+   if (granteeRowList.size() == 0)
+     return true;
+
+   // Add the rows from granteeRowList to rowsToDelete list
+   // If any privileges were granted WGO, also remove the branch.
+   std::set<size_t> rowsToDelete;
+   for (size_t i = 0; i < granteeRowList.size(); i++)
+   {
+      size_t baseIdx = granteeRowList[i];
+      MyRow baseRow = masterRowList[baseIdx];
+
+      // If grantDepth < 0, then WGO was specified, remove branch
+      if (baseRow.grantDepth_ < 0)
+        myTable.getRowsForGrantee(baseRow, masterRowList, rowsToDelete);
+      masterRowList[baseIdx].visited_ = true;
+      rowsToDelete.insert(baseIdx);
+   }
+   
+   // delete all the rows in affected list into statements of 10 rows 
+   if (rowsToDelete.size() > 0)
+   {
+      whereClause = "WHERE ";
+      bool isFirst = true;
+      size_t count = 0;
+      for (std::set<size_t>::iterator it = rowsToDelete.begin(); it!= rowsToDelete.end(); ++it)
+      {
+         if (count > 20)
+         {
+            privStatus ==  myTable.deleteWhere(whereClause);
+            if (privStatus == STATUS_ERROR)
+              return false;
+            whereClause = "WHERE ";
+            isFirst = true;
+            count = 0;
+         }
+         if (isFirst)
+           isFirst = false;
+         else
+           whereClause += " OR ";
+         size_t masterIdx = *it;
+         MyRow row = masterRowList[masterIdx];
+
+         const std::string componentUIDString = to_string((long long int)row.componentUID_);
+         whereClause += "(component_uid = ";
+         whereClause += componentUIDString.c_str();
+         whereClause += " AND grantor_name = '";
+         whereClause += row.grantorName_;
+         whereClause += "' AND grantee_name = '";
+         whereClause += row.granteeName_;
+         whereClause += "' AND operation_code = '";
+         whereClause += row.operationCode_;
+         whereClause += "')";
+         count++;
+      }
+      privStatus ==  myTable.deleteWhere(whereClause);
+      if (privStatus == STATUS_ERROR)
+        return false;
+   }
+
+   return true;
+}
+
 
 
 
@@ -709,13 +846,14 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilege(
       // more items in the list fail and in cases of "ALL".                                             
       if (!componentOperations.nameExists(componentUID,operationName))
       {
-         *pDiags_ << DgSqlCode(-CAT_TABLE_DOES_NOT_EXIST_ERROR)
-                  << DgTableName(operationName.c_str());
+         *pDiags_ << DgSqlCode(-CAT_INVALID_COMPONENT_PRIVILEGE)
+                  << DgString0(operationName.c_str())
+                  << DgString1(componentName.c_str());
          return STATUS_ERROR;
       }
-      
+
       std::string operationCode;
-      bool isSystemOperation;
+      bool isSystemOperation = FALSE;
       std::string operationDescription;
       
       componentOperations.fetchByName(componentUIDString,
@@ -1025,7 +1163,7 @@ PrivMgrComponentOperations componentOperations(metadataLocation_,pDiags_);
    }
    
 std::string operationCode;
-bool isSystemOperation;
+bool isSystemOperation = FALSE;
 std::string operationDescription;
    
    componentOperations.fetchByName(componentUIDString,
@@ -1168,7 +1306,7 @@ int64_t rowCount = 0;
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 // set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+int32_t diagsMark = (pDiags_ != NULL ? pDiags_->mark() : -1);
 
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
@@ -1176,7 +1314,8 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
         rowCount > 0)
       return true;
       
-   pDiags_->rewind(diagsMark);
+   if (diagsMark != -1)
+      pDiags_->rewind(diagsMark);
 
    return false;
 
@@ -1621,7 +1760,7 @@ std::vector<std::string> operationCodes;
       }
       
       std::string operationCode;
-      bool isSystemOperation;
+      bool isSystemOperation = FALSE;
       std::string operationDescription;
       
       componentOperations.fetchByName(componentUIDString,
@@ -2167,6 +2306,111 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
 
 
 
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: MyTable::getRowsForGrantee                                      *
+// *                                                                           *
+// *    Finds the list of rows (branch) that need to be removed if the         *
+// *  grantee no longer has WGO.                                               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <baseRow>                       const MyRow &                   In       *
+// *    contains the starting point for the branch                             *
+// *                                                                           *
+// *  <masterRowList>                       std::vector<MyRow> &      In/Out   *
+// *    contains the master list of privileges                                 *
+// *    this list is updated to set the "visited_" flag for performance        *
+// *                                                                           *
+// *  <rowsToDelete>                        std::set<size_t> &        Out      *
+// *    returns the list of privileges to be removed                           *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: No errors are generated                                          *
+// *                                                                           *
+// *****************************************************************************
+void MyTable::getRowsForGrantee(
+   const MyRow &baseRow,
+   std::vector<MyRow> &masterRowList,
+   std::set<size_t> &rowsToDelete)
+{
+   for (size_t i = 0; i < masterRowList.size(); i++)
+   {
+      // master list is ordered by component ID, grantorID, granteeID and operationCode
+      // If done checking rows for the grantorID_ from the baseRow, just return
+      if ((masterRowList[i].componentUID_ == baseRow.componentUID_) &&
+          (masterRowList[i].grantorID_ > baseRow.granteeID_))
+        break;
+ 
+      // If we have already processed the row or it is a row we are not 
+      // interested in - continue
+      if (masterRowList[i].visited_ || (masterRowList[i].grantorID_ < baseRow.granteeID_))
+        continue;
+
+      // If this is a row we are interested in, add to rowsToDelete
+      if ((masterRowList[i].componentUID_ == baseRow.componentUID_) &&
+          (masterRowList[i].grantorID_ == baseRow.granteeID_) &&
+          (masterRowList[i].operationCode_ == baseRow.operationCode_))
+      {
+         // no more leaves, done with the branch
+         if (masterRowList[i].grantDepth_ == 0)
+         {
+            masterRowList[i].visited_ = true;
+            rowsToDelete.insert(i);
+            continue;
+         }
+
+         // Privilege was granted WITH GRANT OPTION, see if there is anything 
+         // left on the branch to remove. If there are more leaves, check to 
+         // see if grantee gets the priv from other grantors (WGO). If so, then 
+         // no need to remove rest of branch
+         std::vector<size_t> grantList;
+         for (size_t g = 0; g < masterRowList.size(); g++)
+         {
+            // see if this is a row we are interested in
+            if ((masterRowList[g].visited_  == false) &&
+                (masterRowList[g].componentUID_ == baseRow.componentUID_) &&
+                (masterRowList[g].granteeID_ == baseRow.granteeID_) &&
+                (masterRowList[g].operationCode_ == baseRow.operationCode_))
+            {
+              // If this is the base row, skip
+              if (masterRowList[g] == baseRow)
+                continue;
+
+              // we are interested, save it
+              grantList.push_back(g);
+            }
+         }
+
+         // See if privilege has been granted by another grantor
+         if (grantList.size() > 0)
+         {
+            for (size_t j = 0; j < grantList.size(); j++)
+            {
+               size_t grantNdx = grantList[j];
+               if (masterRowList[grantNdx].grantDepth_ < 0)
+               {
+                  // this authID has been granted WGO privilege from another user
+                  // no need to remove branch
+                  masterRowList[i].visited_ = true;
+                  break;
+               }
+            }
+         }
+
+         // Check the next branch of privileges
+         getRowsForGrantee(masterRowList[i], masterRowList, rowsToDelete);
+
+         // found a leaf to remove
+         masterRowList[i].visited_;
+         rowsToDelete.insert(i);
+      }
+   }
+}
 
 
 // *****************************************************************************

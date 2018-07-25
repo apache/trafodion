@@ -718,9 +718,7 @@ NABoolean UnLogic::synthSupportedOp() const
       return FALSE;
     }
 
-#pragma nowarn(203)   // warning elimination 
   return TRUE;
-#pragma warn(203)  // warning elimination 
 }
 
 NABoolean UnLogic::applyDefaultPred(ColStatDescList & histograms,
@@ -1813,6 +1811,8 @@ NABoolean BuiltinFunction::calculateMinMaxUecs(ColStatDescList & histograms,
     }
     break;
   case ITM_CONVERTTIMESTAMP:
+  case ITM_UNIX_TIMESTAMP:
+  case ITM_SLEEP:
   case ITM_CURRENT_TIMESTAMP:
   case ITM_CURRENT_TIMESTAMP_RUNNING:
   case ITM_JULIANTIMESTAMP:

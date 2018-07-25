@@ -60,7 +60,6 @@
 //        : The space object is valid.
 // PSTCOND: ExpBitMuxFunction is constructed.
 //
-#pragma nowarn(1506)  // warning elimination 
 ExpBitMuxFunction::ExpBitMuxFunction(OperatorTypeEnum oper_type, Int32 arity,
 				     Attributes ** attr, Space * space)
   : ex_function_clause(oper_type, arity, attr, space) {
@@ -77,7 +76,6 @@ ExpBitMuxFunction::ExpBitMuxFunction(OperatorTypeEnum oper_type, Int32 arity,
 	      "ExpBitMuxFunction - NULL space pointer");
 #endif
 };
-#pragma warn(1506)  // warning elimination 
 
 // ExpBitMuxFunction::~ExpBitMuxFunction
 //
@@ -179,9 +177,7 @@ ex_expr::exp_return_type ExpBitMuxFunction::pCodeGenerate(Space *space, UInt32 f
 
   // Load and store each input value.
   //
-#pragma nowarn(1506)   // warning elimination 
   Int32 offset = attrs[0]->getOffset();
-#pragma warn(1506)  // warning elimination 
   AML aml(PCIT::MBIN8, PCIT::MBIN8, PCIT::IBIN32S);
   for(i=1; i<numOperands; i++) {
     if(attrs[i]->getNullFlag())
@@ -195,11 +191,9 @@ ex_expr::exp_return_type ExpBitMuxFunction::pCodeGenerate(Space *space, UInt32 f
 	offset += 2;
       }
 
-#pragma nowarn(1506)   // warning elimination 
     OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), offset,
 	  attrs[i]->getAtp(), attrs[i]->getAtpIndex(), attrs[i]->getOffset(),
 	  attrs[i]->getLength());
-#pragma warn(1506)  // warning elimination 
     PCI pci(PCIT::Op_MOVE, aml, ol);
     code.append(pci);
     offset += attrs[i]->getLength();
@@ -290,12 +284,8 @@ ex_expr::exp_return_type ExpBitMuxFunction::eval(char *op_data[],
 	    dataLength--;
 	}
 
-#pragma nowarn(1506)   // warning elimination 
       *((short*)dstData) = dataLength;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
       dstData += 2;
-#pragma warn(1506)  // warning elimination 
     } // source is a VARCHAR
 
     // If the attribute is NULL, then NULL out the data space.

@@ -1070,6 +1070,8 @@ OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const Corr
     return REL_TABLE_MAPPING_BUILTIN_LOG_READER;
   else if (funcName == "TIMESERIES")
     return REL_TABLE_MAPPING_BUILTIN_TIMESERIES;
+  else if (funcName == "SERIES")
+    return REL_TABLE_MAPPING_BUILTIN_SERIES;
   else if (funcName == "JDBC")
     return REL_TABLE_MAPPING_BUILTIN_JDBC;
   else
@@ -1085,6 +1087,8 @@ const NAString PredefinedTableMappingFunction::getText() const
       return "event_log_reader";
     case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
       return "timeseries";
+    case REL_TABLE_MAPPING_BUILTIN_SERIES:
+      return "series";
     case REL_TABLE_MAPPING_BUILTIN_JDBC:
       return "jdbc_udf";
 
@@ -1143,6 +1147,11 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
       libraryPath += getenv("SQ_MBTYPE");
       break;
 
+    case REL_TABLE_MAPPING_BUILTIN_SERIES:
+      externalName = "SERIES";
+      libraryPath += getenv("SQ_MBTYPE");
+      break;
+
     case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
       externalName = "TRAF_CPP_TIMESERIES";
       libraryPath += getenv("SQ_MBTYPE");
@@ -1186,7 +1195,7 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
 // -----------------------------------------------------------------------
 // methods for class PhysicalTableMappingUDF
 // -----------------------------------------------------------------------
-double PhysicalTableMappingUDF::getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
+double PhysicalTableMappingUDF::getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb) {return 0;}
 
 RelExpr * PhysicalTableMappingUDF::copyTopNode(RelExpr *derivedNode,
                                                CollHeap* outHeap)
@@ -1667,6 +1676,7 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
                       new(STMTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
 
    cmpSBD.buildColInfoArray(COM_USER_DEFINED_ROUTINE_OBJECT,
+                            FALSE,
                             &colArray, 
                             colInfoArray, 
                             FALSE, FALSE, NULL, NULL, NULL, NULL,

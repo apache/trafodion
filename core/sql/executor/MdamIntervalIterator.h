@@ -62,14 +62,14 @@ class MdamIntervalIterator
 public:
 
   // Constructor.
-  NA_EIDPROC MdamIntervalIterator(const MdamIntervalList * intervalListPtr,
+  MdamIntervalIterator(const MdamIntervalList * intervalListPtr,
 					 const Int32 logicalIntervalListNumber);
 
   // Destructor.
-  NA_EIDPROC ~MdamIntervalIterator();
+  ~MdamIntervalIterator();
 
   // Iteration operator returns the next endpoint on each call.
-  NA_EIDPROC NABoolean operator()(MdamEndPoint & mdamEndPoint);
+  NABoolean operator()(MdamEndPoint & mdamEndPoint);
 
 private:
 

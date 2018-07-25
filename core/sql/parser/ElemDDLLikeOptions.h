@@ -320,4 +320,32 @@ private:
 
 }; // class ElemDDLLikeOptWithoutRowFormat
 
+// -----------------------------------------------------------------------
+// definition of class ElemDDLLikeOptWithoutLobColumns
+// -----------------------------------------------------------------------
+class ElemDDLLikeOptWithoutLobColumns : public ElemDDLLikeOpt
+{
+
+public:
+
+  // constructor
+  ElemDDLLikeOptWithoutLobColumns()
+    : ElemDDLLikeOpt(ELM_LIKE_OPT_WITHOUT_LOB_COLUMNS)
+  { }
+
+  // virtual destructor
+  virtual ~ElemDDLLikeOptWithoutLobColumns();
+
+  // cast
+  virtual ElemDDLLikeOptWithoutLobColumns *
+    castToElemDDLLikeOptWithoutLobColumns();
+
+  // method for tracing
+  virtual const NAString getText() const;
+
+
+private:
+
+}; // class ElemDDLLikeOptWithoutLobColumns
+
 #endif // ELEMDDLLIKEOPTIONS_H

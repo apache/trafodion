@@ -691,7 +691,7 @@ void OptRangeSpec::addSubrange(ConstValue* start, ConstValue* end,
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                            FALSE, QRDescriptorException, 
                            "Unhandled data type: %d", typeQual);
         break;
@@ -701,7 +701,6 @@ void OptRangeSpec::addSubrange(ConstValue* start, ConstValue* end,
 
 ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
 {
-  // LCOV_EXCL_START :rfi
   if (checkConstraint->getOperatorType() != ITM_CASE)
     {
       QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
@@ -709,9 +708,7 @@ ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
         checkConstraint->getOperatorType());
       return NULL;
     }
-  // LCOV_EXCL_STOP
 
-  // LCOV_EXCL_START :rfi
   ItemExpr* itemExpr = checkConstraint->child(0);
   if (itemExpr->getOperatorType() != ITM_IF_THEN_ELSE)
     {
@@ -720,7 +717,6 @@ ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
         itemExpr->getOperatorType());
       return NULL;
     }
-  // LCOV_EXCL_STOP
 
   // Child of the if-then-else is either is_false, which is the parent of the
   // predicate (for most check constraints), or the predicate itself (for
@@ -752,7 +748,6 @@ void OptRangeSpec::intersectCheckConstraints(QRDescGenerator* descGen,
         }
       return;
     }
-  // LCOV_EXCL_START :rfi
   else if (itemExpr->getOperatorType() != ITM_BASECOLUMN)
     {
       QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
@@ -760,7 +755,6 @@ void OptRangeSpec::intersectCheckConstraints(QRDescGenerator* descGen,
         "%d instead of ITM_BASECOLUMN.", itemExpr->getOperatorType());
       return;
     }
-  // LCOV_EXCL_STOP
 
 #ifdef _DEBUG
     const NATable* tbl = colValId.getNAColumn()->getNATable();
@@ -872,7 +866,7 @@ void OptRangeSpec::intersectTypeConstraint(QRDescGenerator* descGen,
             break;
 
           default:
-            QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+            QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
               "No case in intersectTypeConstraint() for "
                         "approximate numeric of type %d",
                         colType.getFSDatatype());
@@ -1123,7 +1117,6 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* origPredExpr)
           isRange = FALSE;
         break;
 
-      // LCOV_EXCL_START :cnu -- Transformation phase rewrites between op
       case ITM_BETWEEN:
         startValue = getConstOperand(predExpr);
         if (startValue)
@@ -1140,7 +1133,6 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* origPredExpr)
         else
           isRange = FALSE;
         break;
-      // LCOV_EXCL_STOP
 
       case ITM_IS_NULL:
       case ITM_IS_NOT_NULL:
@@ -1261,28 +1253,28 @@ static void downcastRangespecInt(Int64 val, Lng32 scale, NAType*& type,
     {
       *((Int16*)numBuf) = static_cast<Int16>(val);
       if (scale == 0)
-        type = new(heap) SQLSmall(TRUE, FALSE, heap);
+        type = new(heap) SQLSmall(heap, TRUE, FALSE);
       else
-        type = new(heap) SQLNumeric(sizeof(Int16), precision, scale,
-                                    TRUE, FALSE, heap);
+        type = new(heap) SQLNumeric(heap, sizeof(Int16), precision, scale,
+                                    TRUE, FALSE);
     }
   else if (val <= INT_MAX && val >= INT_MIN)
     {
       *((Int32*)numBuf) = static_cast<Int32>(val);
       if (scale == 0)
-        type = new(heap) SQLInt(TRUE, FALSE, heap);
+        type = new(heap) SQLInt(heap, TRUE, FALSE);
       else
-        type = new(heap) SQLNumeric(sizeof(Int32), precision, scale,
-                                    TRUE, FALSE, heap);
+        type = new(heap) SQLNumeric(heap, sizeof(Int32), precision, scale,
+                                    TRUE, FALSE);
     }
   else
     {
       *numBuf = val;
       if(scale == 0)
-        type = new(heap) SQLLargeInt(TRUE, FALSE, heap);
+        type = new(heap) SQLLargeInt(heap, TRUE, FALSE);
       else
-        type = new(heap) SQLNumeric(sizeof(Int64), precision, scale,
-                                    TRUE, FALSE, heap);
+        type = new(heap) SQLNumeric(heap, sizeof(Int64), precision, scale,
+                                    TRUE, FALSE);
     }
 }
 
@@ -1342,7 +1334,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                   dtv.isValid(), QRLogicException,
                                   "Invalid date value reconstructed from Julian timestamp");
                 constValTextStr = dtv.getValueAsString(*dtType);
-                return new(mvqrHeap_) ConstValue(new(mvqrHeap_)SQLDate(FALSE, mvqrHeap_),
+                return new(mvqrHeap_) ConstValue(new(mvqrHeap_)SQLDate(mvqrHeap_, FALSE),
                                                  (void*)dtv.getValue(), dtv.getValueLen(),
                                                  &constValTextStr, mvqrHeap_);
                 break;
@@ -1367,9 +1359,8 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                   "Invalid time value reconstructed from Int64 value");
                 constValTextStr = dtv.getValueAsString(*dtType);
                 return new(mvqrHeap_)
-                        ConstValue(new(mvqrHeap_)SQLTime(FALSE,
-                                                         dtType->getFractionPrecision(),
-                                                         mvqrHeap_),
+                        ConstValue(new(mvqrHeap_)SQLTime(mvqrHeap_, FALSE,
+                                                         dtType->getFractionPrecision()),
                                   (void*)dtv.getValue(), dtv.getValueLen(),
                                   &constValTextStr, mvqrHeap_);
                 break;
@@ -1387,16 +1378,15 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                   "Invalid timestamp value reconstructed from Julian timestamp");
                 constValTextStr = dtv.getValueAsString(*dtType);
                 return new(mvqrHeap_) ConstValue(new(mvqrHeap_)
-                                                   SQLTimestamp(FALSE, 
-                                                                dtType->getFractionPrecision(),
-                                                                mvqrHeap_),
+                                                   SQLTimestamp(mvqrHeap_, FALSE, 
+                                                                dtType->getFractionPrecision()),
                                                  (void*)dtv.getValue(),
                                                  dtv.getValueLen(),
 		                            &constValTextStr, mvqrHeap_);
                 break;
 
               default:
-                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                    FALSE, QRLogicException,
                                    "Unknown datetime subtype -- %d",
                                    dtType->getSubtype());
@@ -1450,7 +1440,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                 break;
 
               default:
-                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                   FALSE, QRLogicException,
                                   "Invalid end field for interval type -- %d",
                                   intvlType->getEndField());
@@ -1509,12 +1499,11 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
           // the Normalizer rather than MVQR, because type constraints are not
           // incorporated in that case). See bug 2974.
           return new(mvqrHeap_) ConstValue(new(mvqrHeap_)SQLInterval
-                                                 (FALSE,
+                                                 (mvqrHeap_, FALSE,
                                                   intvlType->getEndField(),
                                                   leadingPrec,
                                                   intvlType->getEndField(),
-                                                  intvlType->getFractionPrecision(),
-                                                  mvqrHeap_),
+                                                  intvlType->getFractionPrecision()),
                                       (void*)intvlVal.getValue(),
                                       intvlVal.getValueLen(),
                                       &constValTextStr, mvqrHeap_);
@@ -1522,7 +1511,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
                            "Type not handled by reconstituteInt64Value() -- %d",
                            typeQual);
         return NULL;
@@ -1536,7 +1525,6 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
 ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) const
 {
   NABuiltInTypeEnum typeQual = type->getTypeQualifier();
-  // LCOV_EXCL_START :rfi
   if (typeQual != NA_NUMERIC_TYPE)
     {
       assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
@@ -1544,7 +1532,6 @@ ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) con
                          typeQual);
       return NULL;
     }
-  // LCOV_EXCL_STOP
 
   // Use these for the textual representation of a constant value, which is
   // passed to the ConstValue ctor.
@@ -1560,7 +1547,7 @@ ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) con
                     "Expecting approximate numeric type in "
                         "reconstituteDoubleValue");
 
-  NAType* constType = new(mvqrHeap_) SQLDoublePrecision(FALSE, mvqrHeap_);
+  NAType* constType = new(mvqrHeap_) SQLDoublePrecision(mvqrHeap_, FALSE);
   return new(mvqrHeap_) ConstValue(constType, &val, constType->getNominalSize(),
                                    &constValTextStr, mvqrHeap_);
 } // reconstituteDoubleValue()
@@ -1573,7 +1560,7 @@ ItemExpr* OptRangeSpec::makeSubrangeORBackbone(SubrangeBase* subrange,
   QRTRACER("makeSubrangeOrBackbone");
 
   NAType* type = getType()->newCopy(mvqrHeap_);
-  NAType* int64Type = new (mvqrHeap_) SQLLargeInt(TRUE, FALSE );
+  NAType* int64Type = new (mvqrHeap_) SQLLargeInt(mvqrHeap_, TRUE, FALSE );
   type->resetSQLnullFlag();
   type->resetSQLnullHdrSize();
   assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
@@ -1746,7 +1733,7 @@ ItemExpr* OptRangeSpec::makeSubrangeItemExpr(SubrangeBase* subrange,
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, 
                            FALSE, QRDescriptorException, 
                            "Unhandled data type in "
                            "OptRangeSpec::makeSubrangeItemExpr: %d",
@@ -2048,7 +2035,7 @@ static Int64 getInt64ValueFromDateTime(ConstValue* val,
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "Invalid datetime subtype -- %d", constType->getSubtype());
     }
@@ -2121,7 +2108,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         valWasNegative = (i64val < 0);
         break;
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "Invalid interval storage length -- %d",
                            storageSize);
@@ -2160,7 +2147,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         i64val *= (Int64)pow(10, 6 - constIntvlType->getFractionPrecision());
         break;
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "Invalid end field for interval -- %d",
                            constIntvlType->getEndField());
@@ -2204,7 +2191,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         i64val = i64val / scaleFactor * scaleFactor;
         break;
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                           FALSE, QRDescriptorException,
                           "Invalid end field for interval -- %d",
                           colIntvlType->getEndField());
@@ -2258,7 +2245,7 @@ Int64 getInt64Value(ConstValue* val, const NAType* rangeColType,
   // Scale factor for approximate (floating-point) constant values.
   double dblScaleFactor = pow(10, rangeColumnScale);
   Int64 i64val = 0;
-  Float64 flt64val;
+  Float64 flt64val = 0;
 
   if (constValNumType->isDecimal())
     {

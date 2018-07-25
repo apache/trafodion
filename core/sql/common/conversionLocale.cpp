@@ -69,7 +69,7 @@ cnv_charset convertCharsetEnum (Int32 inset)
 // The optional utf8String argument holds the buffer into which the Unicode string
 // will be stored. In case the argument is NULL or it is not big enough, 
 // the function allocates memory from the heap (if the heap pointer is not NULL), 
-// or from the C run-time system heap (if NA_NO_C_RUNTIME is not defined). 
+// or from the C run-time system heap.
 // If the memory allocation fails, the function returns 0. If any illegal 
 // characters are encountered, the function also returns 0.
 //
@@ -651,7 +651,6 @@ Int32 ComputeStrLenInNAWchars (const char * pStr,
 // error code values are defined in w:/common/csconvert.h.  Note that
 // this function does not need to use a workspace heap.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 ComputeStrLenInUCS4chars (const char * pStr,
                                 const Int32 strLenInBytes,
                                 const CharInfo::CharSet cs)

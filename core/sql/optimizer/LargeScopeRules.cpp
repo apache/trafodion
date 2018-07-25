@@ -48,7 +48,6 @@ extern THREAD_P NAUnsigned              MJStarJoinIRuleNumber;
 extern THREAD_P NAUnsigned              MJStarJoinIIRuleNumber;
 extern THREAD_P NAUnsigned              RoutineJoinToTSJRuleNumber;
 
-// LCOV_EXCL_START
 // Excluding MJExpandRule related code since it is there for testing purposes
 // MJExpandRule is not exercised during normal execution
 // -----------------------------------------------------------------------
@@ -113,7 +112,6 @@ Int32 MJExpandRule::promiseForOptimization (RelExpr * expr,
   // should be higher than the promise for MJEnumRule
   return DefaultTransRulePromise + 1;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // methods for MVQRRule
@@ -414,9 +412,7 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
 
     // Data flow optimization
     CostScalar childrenFlow = mjoin->getChildrenDataFlow();
-#pragma nowarn(1506)   // warning elimination
     const Lng32 numChildren = jbbcs.entries();
-#pragma warn(1506)  // warning elimination
     Lng32 childIter = -1; // temp iterator. *NOT* the same as child index
     RelExpr** potentialSubstitutes = new (CmpCommon::statementHeap()) RelExpr*[numChildren];
     CostScalar* substituteMetric = new (CmpCommon::statementHeap()) CostScalar[numChildren];
@@ -435,7 +431,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
     // is there are jbbc that provides an equalizing join
     NABoolean guaranteedEqualizerPresent = FALSE;
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
          CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -444,7 +439,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
       CURRCONTEXT_OPTDEBUG->stream() << "Level " << mjoin->getArity() << ": " << childrenFlow.value() << endl;
     }
 #endif
-// LCOV_EXCL_STOP
 
     // allow cross product control if:
     // 1) cross_product_control is active AND
@@ -546,7 +540,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
 
       if ((newSubgraphs > mySubgraphs) && allowCrossProductControl)
       {
-// LCOV_EXCL_START
 #ifdef _DEBUG
         if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
              CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -554,7 +547,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
           CURRCONTEXT_OPTDEBUG->stream() << " Unnecessary Cross Product when joining right child" << (CollIndex) i << endl;
         }
 #endif
-// LCOV_EXCL_STOP
         continue;
       }
 
@@ -600,7 +592,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
 
       substituteRightChild[numSubstitutes] = i;
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
         if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
              CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -611,7 +602,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
           " is "<< substituteMetric2[numSubstitutes].value() << endl;
         }
 #endif
-// LCOV_EXCL_STOP
 
       // Remembering the substitutes with min metric
       if ((substituteMetric[numSubstitutes] < minSubstituteMetric) ||
@@ -781,7 +771,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
           (CURRSTMT_OPTDEFAULTS->optimizerHeuristic5()) && // Data Flow Optimization
           (substituteMetric[childIter] > DATA_FLOW_FACTOR_1 * minSubstituteMetric + DATA_FLOW_FACTOR_2))
       {
-// LCOV_EXCL_START
 #ifdef _DEBUG
         if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
              CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -792,7 +781,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
             << " >> "<< minSubstituteMetric.value() << endl;
         }
 #endif
-// LCOV_EXCL_STOP
         potentialSubstitutes[childIter] = NULL;
         numPrunedSubstitutes++;
         continue;
@@ -808,7 +796,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
 
         if (mjoin->getArity() > 2)
         {
-// LCOV_EXCL_START
 #ifdef _DEBUG
           if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
                CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -820,7 +807,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
                << " ---- "<< minSubstituteMetric2.value() << endl;
           }
 #endif
-// LCOV_EXCL_STOP
           potentialSubstitutes[childIter] = NULL;
           numPrunedSubstitutes++;
           continue;
@@ -958,7 +944,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
     {
       RelExpr* substitute = resultPotentialSubstitutes[childIter];
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
         if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
              CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -969,7 +954,6 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
             << " ~~ "<< minSubstituteMetric.value() << endl;
         }
 #endif
-// LCOV_EXCL_STOP
       Int32 combinedPotential = groupPotential + potential;
 
       substitute->updatePotential(potential);
@@ -1064,7 +1048,6 @@ NABoolean MJStarJoinIRule::topMatch (RelExpr * expr,
      (!mjoin->scheduledLSRs().contains(MJStarJoinIRuleNumber)))
     return FALSE;
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -1074,7 +1057,6 @@ NABoolean MJStarJoinIRule::topMatch (RelExpr * expr,
     CURRCONTEXT_OPTDEBUG->stream() << "Superset is : " << mjoin->getJBBSubset().getJBB()->getMainJBBSubset().getText() << endl;
   }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
 
   // get a handle to the JBBSubset Analysis for the JBBSubset
   // represented by this MultiJoin (i.e. mjoin)
@@ -1086,7 +1068,6 @@ NABoolean MJStarJoinIRule::topMatch (RelExpr * expr,
 
   if (mjoinAnalysis->starJoinTypeIFeasible())
   {
-// LCOV_EXCL_START
 #ifdef _DEBUG
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
          CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -1095,12 +1076,10 @@ NABoolean MJStarJoinIRule::topMatch (RelExpr * expr,
       CURRCONTEXT_OPTDEBUG->stream() << "MJStarJoinIRule_TopMatch_End" <<endl;
     }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
     return TRUE;
   }
   else {
     mjoin->scheduledLSRs() += MJStarJoinIIRuleNumber;
-// LCOV_EXCL_START
 #ifdef _DEBUG
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
          CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -1110,12 +1089,10 @@ NABoolean MJStarJoinIRule::topMatch (RelExpr * expr,
       CURRCONTEXT_OPTDEBUG->stream() << "MJStarJoinIRule_TopMatch_End" <<endl;
     }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
   }
   return FALSE;
 }
 
-// LCOV_EXCL_START
 // the old topMatch method of MJStarJoinIRule, 
 // not used anymore this code is OFF by default
 NABoolean MJStarJoinIRule::topMatch_Old (RelExpr * expr,
@@ -1286,7 +1263,6 @@ NABoolean MJStarJoinIRule::topMatch_Old (RelExpr * expr,
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 RelExpr * MJStarJoinIRule::nextSubstitute(RelExpr * before,
                                           Context * context,
@@ -1295,7 +1271,6 @@ RelExpr * MJStarJoinIRule::nextSubstitute(RelExpr * before,
   if (CmpCommon::getDefault(COMP_BOOL_115) == DF_ON)
     return nextSubstitute_Old(before, context, memory);
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -1303,7 +1278,6 @@ RelExpr * MJStarJoinIRule::nextSubstitute(RelExpr * before,
     CURRCONTEXT_OPTDEBUG->stream() << "MJStarJoinIRule_nextSubstitute_Begin" <<endl;
   }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
 
   MultiJoin * mjoin = (MultiJoin *) before;
 
@@ -1411,7 +1385,6 @@ RelExpr * MJStarJoinIRule::nextSubstitute(RelExpr * before,
   RelExpr * result = mjoin->createLeftLinearJoinTree(leftDeepJoinSequence,
                                                      &joinDirectives);
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -1419,12 +1392,10 @@ RelExpr * MJStarJoinIRule::nextSubstitute(RelExpr * before,
     CURRCONTEXT_OPTDEBUG->stream() << "MJStarJoinIRule_nextSubstitute_End" <<endl;
   }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
 
   return result;
 }
 
-// LCOV_EXCL_START
 // This is old code, most of this work in now done during
 // analysis. This functionality was moved to the analysis
 // phase as part of Adaptive Segmentation. Since we need
@@ -2870,7 +2841,6 @@ void MJStarJoinIRule::sortMJJBBCs(NAList<CANodeId> &sortedJBBCs,const MultiJoin 
   }
 
 };//MJStarJoinIRule::sortMJJBBCs
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // methods for MJStarJoinIIRule
@@ -2896,7 +2866,6 @@ NABoolean MJStarJoinIIRule::topMatch (RelExpr * expr,
   if(!mjoin->scheduledLSRs().contains(MJStarJoinIIRuleNumber))
     return FALSE;
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -2906,7 +2875,6 @@ NABoolean MJStarJoinIIRule::topMatch (RelExpr * expr,
     CURRCONTEXT_OPTDEBUG->stream() << "Superset is : " << mjoin->getJBBSubset().getJBB()->getMainJBBSubset().getText() << endl;
   }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
 
   // get a handle to the JBBSubset Analysis for the JBBSubset
   // represented by this MultiJoin (i.e. mjoin)
@@ -2916,7 +2884,6 @@ NABoolean MJStarJoinIIRule::topMatch (RelExpr * expr,
 
   mjoinAnalysis->analyzeInitialPlan();
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -2924,7 +2891,6 @@ NABoolean MJStarJoinIIRule::topMatch (RelExpr * expr,
     CURRCONTEXT_OPTDEBUG->stream() << "MJStarJoinIIRule_TopMatch_End" <<endl;
   }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
 
   return TRUE;
 }
@@ -2936,7 +2902,6 @@ RelExpr * MJStarJoinIIRule::nextSubstitute(RelExpr * before,
   if (CmpCommon::getDefault(COMP_BOOL_115) == DF_ON)
     return nextSubstitute_Old(before, context, memory);
 
-// LCOV_EXCL_START
 #ifdef _DEBUG
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
@@ -2944,7 +2909,6 @@ RelExpr * MJStarJoinIIRule::nextSubstitute(RelExpr * before,
     CURRCONTEXT_OPTDEBUG->stream() << "MJStarJoinIIRule_nextSubstitute_Begin" <<endl;
   }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
 
   MultiJoin * mjoin = (MultiJoin *) before;
 
@@ -3031,7 +2995,6 @@ RelExpr * MJStarJoinIIRule::nextSubstitute(RelExpr * before,
                                          &joinDirectives);
 }
 
-// LCOV_EXCL_START
 // Below is the old nextSubstitute. The code is not exercised any more
 RelExpr * MJStarJoinIIRule::nextSubstitute_Old(RelExpr * before,
                                                Context * context,
@@ -3321,9 +3284,7 @@ RelExpr * MJStarJoinIIRule::nextSubstitute_Old(RelExpr * before,
   return mjoin->createLeftLinearJoinTree(&leftDeepJoinSequence,
                                          &joinDirectives);
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 // This class was used by old code, that is not exercised anymore
 MJRulesWA::MJRulesWA(JBBSubsetAnalysis * analysis)
 {
@@ -3344,4 +3305,3 @@ MJRulesWA::MJRulesWA(JBBSubsetAnalysis * analysis)
   largestTable_ = NULL_CA_ID;
   largestNode_ = NULL_CA_ID;
 }
-// LCOV_EXCL_STOP

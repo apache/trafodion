@@ -167,7 +167,6 @@
  * Driver routine for converting from UCS/UTF.
  **********/
 #ifdef USING_OPEN_SOURCE_from_ucs_exec /* JAC */
-NA_EIDPROC
 int 
 __from_ucs_exec (_LC_fcconv_iconv_t *cd,
 		 uchar_t** in_buff , size_t *in_bytes_left ,
@@ -367,7 +366,6 @@ __from_ucs_exec (_LC_fcconv_iconv_t *cd,
  **********/
 
 #ifdef USING_OPEN_SOURCE_sb_to_ucs_exec /* JAC */
-NA_EIDPROC
 int 
 __sb_to_ucs_exec(_LC_fcconv_iconv_t *cd,
 		 uchar_t** in_buff , size_t *in_bytes_left ,
@@ -457,7 +455,6 @@ __sb_to_ucs_exec(_LC_fcconv_iconv_t *cd,
  **********/
 
 #ifdef USING_OPEN_SOURCE_sb_to_sb_exec /* JAC */
-NA_EIDPROC
 int 
 __sb_to_sb_exec(_LC_fcconv_iconv_t *cd,
 		uchar_t** in_buff , size_t *in_bytes_left ,
@@ -600,7 +597,6 @@ __sb_to_sb_exec(_LC_fcconv_iconv_t *cd,
  **********/
 
 #ifdef USING_OPEN_SOURCE_to_ucs_exec /* JAC */
-NA_EIDPROC
 int 
 __to_ucs_exec(_LC_fcconv_iconv_t *cd,
 	      uchar_t** in_buff , size_t *in_bytes_left ,
@@ -746,7 +742,6 @@ __to_ucs_exec(_LC_fcconv_iconv_t *cd,
  **********/
 
 #ifdef USING_OPEN_SOURCE_cs_to_ucs_exec /* JAC */
-NA_EIDPROC
 int 
 __cs_to_ucs_exec(_LC_fcconv_iconv_t *cd,
 	         uchar_t** in_buff , size_t *in_bytes_left ,
@@ -857,7 +852,6 @@ __cs_to_ucs_exec(_LC_fcconv_iconv_t *cd,
  **********/
 
 #ifdef USING_OPEN_SOURCE_mb_to_mb_exec /* JAC */
-NA_EIDPROC
 int 
 __mb_to_mb_exec(_LC_fcconv_iconv_t *cd,
 		uchar_t** in_buff , size_t *in_bytes_left ,
@@ -1255,7 +1249,6 @@ typedef struct utf7_conv
 /*
  * UTF-7 conversion table initialization routine
  */
-NA_EIDPROC
 static void
 utf7_convtable_init(_LC_fcconv_iconv_t *cd)
 {
@@ -1312,7 +1305,6 @@ utf7_convtable_init(_LC_fcconv_iconv_t *cd)
 /*									*/
 /************************************************************************/
 //LCOV_EXCL_START :cnu -- As of 8/30/2011, not used on SQ platform, but may be used on Clients
-NA_EIDPROC
 int __input_ucs4(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 {
     ucs4_t *inptr = (ucs4_t *)*in ;
@@ -1349,7 +1341,6 @@ int __input_ucs4(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 //LCOV_EXCL_STOP
 /*#endif /* USING_OPEN_SOURCE_input_ucs4 // JAC */
 
-NA_EIDPROC
 int __input_ucs2(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 {
     ucs2_t *inptr = (ucs2_t *)*in ;
@@ -1404,7 +1395,6 @@ int __input_ucs2(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
     return((int)word)	   ;
 }
 
-NA_EIDPROC
 int __input_utf8(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 {
     int	     first	= !(cd->flags & CONV_INPUT_PROCESSED) ;
@@ -1497,7 +1487,6 @@ int __input_utf8(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
  * character-by-character basis.
  */
 #ifdef USING_OPEN_SOURCE_UTF7 /* JAC */
-NA_EIDPROC
 int __input_utf7(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 {
     uchar_t	*inptr = *in	;
@@ -1601,7 +1590,6 @@ int __input_utf7(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 /*									*/
 /************************************************************************/
 //LCOV_EXCL_START :cnu -- As of 8/30/2011, not used on SQ platform, but may be used on Clients
-NA_EIDPROC
 int __output_ucs4(_LC_fcconv_iconv_t *cd, uchar_t *out, int len, ucs4_t word)
 {
     ucs4_t *outptr = (ucs4_t *)out	;
@@ -1632,7 +1620,6 @@ int __output_ucs4(_LC_fcconv_iconv_t *cd, uchar_t *out, int len, ucs4_t word)
 //LCOV_EXCL_STOP
 /*#endif /* USING_OPEN_SOURCE_output_ucs4 // JAC */
 
-NA_EIDPROC
 int __output_ucs2(_LC_fcconv_iconv_t *cd, uchar_t *out, int len, ucs4_t word)
 {
     ucs2_t *outptr = (ucs2_t *)out ;
@@ -1681,7 +1668,6 @@ int __output_ucs2(_LC_fcconv_iconv_t *cd, uchar_t *out, int len, ucs4_t word)
     return((uchar_t *)outptr - out) ;
 }
 
-NA_EIDPROC
 int __output_utf8(_LC_fcconv_iconv_t *cd, uchar_t *out, int len, ucs4_t word)
 {
     uchar_t *outptr = out  ;
@@ -1725,7 +1711,6 @@ int __output_utf8(_LC_fcconv_iconv_t *cd, uchar_t *out, int len, ucs4_t word)
 }
 
 #ifdef USING_OPEN_SOURCE_output_utf7 /* JAC */
-NA_EIDPROC
 int __output_utf7(_LC_fcconv_iconv_t *cd, uchar_t *out, int len, ucs4_t word)
 {
     uchar_t	*outptr  = out	;

@@ -43,24 +43,13 @@
 #include "ComSizeDefs.h"
 #include "NAWinNT.h"
 
-#ifndef CLI_PRIV_SRL
 #include "NAString.h"
 #include "nawstring.h"
-#else
-// ComGetNameInterfaceCharSet() is declared and defined in NAString.h
-#include "ComCharSetDefs.h"
-inline SQLCHARSET_CODE ComGetNameInterfaceCharSet()
-{
-  return SQLCHARSETCODE_UTF8;
-}
-#endif
-#include "sqlcli.h"
 
+#include "sqlcli.h"
 
 // move this method to NAString.h later.
 NABoolean setMPLoc();
-
-
 
 // -----------------------------------------------------------------------
 static NABoolean NAString2_isUpper(unsigned char c,
@@ -124,9 +113,7 @@ char * ToAnsiIdentifier2(const char * nsData, size_t nsLen,
     return NULL;
 
   char * retBuf = new(heap) char[len + 1];
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(retBuf, buf, len);
-#pragma warn(1506)  // warning elimination 
   retBuf[len] = 0;
 
   return retBuf;
@@ -223,11 +210,9 @@ void ToAnsiIdentifier3(const char * inputData, size_t inputLen,
     // Verify that trailing blanks were excluded
     sptr--;
     if (isSpace8859_1((unsigned char)*sptr)) {
-//LCOV_EXCL_START :rfi
       ComASSERT(0);   // Note: no-op in Release build.
       *outputLen = 0; // sorry, this is not supposed to happen
       return;
-//LCOV_EXCL_STOP
     }
   }
   else {
@@ -255,15 +240,12 @@ void ToAnsiIdentifier3(const char * inputData, size_t inputLen,
   }
 
   // copy the converted identifier to the output
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(outputData, bptr, len);
-#pragma warn(1506)  // warning elimination 
   outputData[len] = 0;
   *outputLen = len;
 
 } // ToAnsiIdentifier3
 
-#ifndef CLI_PRIV_SRL
 // -----------------------------------------------------------------------
 // Remove whitespace (spaces and tabs) from front or back or both
 // -----------------------------------------------------------------------
@@ -330,5 +312,3 @@ void RemoveTrailingZeros(NAString &ns)
      ns.remove(++i);
   }
 }
-
-#endif

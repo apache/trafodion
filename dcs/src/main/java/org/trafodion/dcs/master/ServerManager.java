@@ -23,14 +23,12 @@ under the License.
 package org.trafodion.dcs.master;
 
 import java.net.InetAddress;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
-
 import java.util.Scanner;
 import java.util.Collections;
 import java.util.Iterator;
@@ -47,17 +45,13 @@ import java.util.Date;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.HashMap;
-
 import java.text.DateFormat;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
-
 import org.apache.hadoop.conf.Configuration;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.trafodion.dcs.master.RunningServer;
 import org.trafodion.dcs.master.RegisteredServer;
 import org.trafodion.dcs.master.Metrics;
@@ -66,7 +60,6 @@ import org.trafodion.dcs.script.ScriptContext;
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.util.*;
-
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -176,8 +169,8 @@ public class ServerManager implements Callable {
                 // But, if we are DcsMaster follower that is taking over from
                 // failed one then ignore timestamp issues described above.
                 // See MasterLeaderElection.elect()
-                if ((master.isFollower() == false)
-                        && (serverStartTimestamp > startupTimestamp)) {
+                if ((master.isFollower() == false && serverStartTimestamp > startupTimestamp)
+                        || (master.isFollower() && runningServers.size() < configuredServers.size())) {
                     scriptContext.setHostName(hostName);
                     scriptContext
                             .setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
@@ -240,15 +233,17 @@ public class ServerManager implements Callable {
                         }
                     }
                 } else {
-                    if (LOG.isDebugEnabled())
-                        LOG.debug("No restart for "
-                                + znodePath
-                                + "\nbecause DcsServer start time ["
-                                + DateFormat.getDateTimeInstance().format(
-                                        new Date(serverStartTimestamp))
-                                + "] was before DcsMaster start time ["
-                                + DateFormat.getDateTimeInstance().format(
-                                        new Date(startupTimestamp)) + "]");
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("No restart for ").append(znodePath).append(System.getProperty("line.separator"));
+                    sb.append("DCS Master isFollower [").append(master.isFollower()).append("], ");
+                    sb.append("DCS Master start time [")
+                            .append(DateFormat.getDateTimeInstance().format(new Date(startupTimestamp))).append("], ");
+                    sb.append("DCS Server start time [")
+                            .append(DateFormat.getDateTimeInstance().format(new Date(serverStartTimestamp))).append("], ");
+                    sb.append("running DCS Server num is [").append(runningServers.size())
+                            .append("], registered DCS Server num is [").append(registeredServers.size()).append("].");
+
+                    LOG.info(sb.toString());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -314,6 +309,7 @@ public class ServerManager implements Callable {
             getServersFile();
             createServersPortMap();
             getZkRunning();
+            getUnwathedServers();
             getZkRegistered();
 
             while (true) {
@@ -324,8 +320,12 @@ public class ServerManager implements Callable {
                     RestartHandler handler = restartQueue.poll();
                     Future<ScriptContext> runner = pool.submit(handler);
                     ScriptContext scriptContext = runner.get();// blocking call
-                    if (scriptContext.getExitCode() != 0)
+                    // In some situation, there may restart dcs server replicated.
+                    // Exit code == -2 means dcs server had been started,
+                    // no needs to add to restart queue.
+                    if (scriptContext.getExitCode() != 0 && scriptContext.getExitCode() != -2) {
                         restartQueue.add(handler);
+                    }
                 }
 
                 try {
@@ -503,6 +503,60 @@ public class ServerManager implements Callable {
             metrics.setTotalRunning(runningServers.size());
         } else {
             metrics.setTotalRunning(0);
+        }
+    }
+
+    private void getUnwathedServers() {
+        // In some situation when open HA, if DCS Server does not have znode info in zookeeper
+        // when DCS Master is starting, then server will never be watched by zookeeper,
+        // and if it downs, it will never be restarted.
+
+        // configuredServers
+        // hostName + ":" + lineNum + ":" + serverCount
+        // runningServers
+        // hostName + ":" + instance + ":" + infoPort + ":" + serverStartTimestamp
+        // eg : gy26.esgyncn.local:3:24413:1515056285028
+        // RestartHandler need to know hostName, instanceNum(lineNum), serverStartTimestamp(for if condition)
+        if (!master.isFollower() || runningServers.size() == configuredServers.size()) {
+            if (LOG.isDebugEnabled()) {
+                if (!master.isFollower()) {
+                    LOG.debug("dcs master start normally, no need to add watchers");
+                } else {
+                    LOG.debug("backup master start, all dcs servers have started, no need to add watchers");
+                }
+            }
+            return;
+        }
+
+        boolean found = false;
+        for (String configured : configuredServers) {
+            Scanner configuredScn = new Scanner(configured);
+            configuredScn.useDelimiter(":");
+            String hostName = configuredScn.next();
+            int instance = Integer.parseInt(configuredScn.next());
+            int serverCount = Integer.parseInt(configuredScn.next());
+            configuredScn.close();
+            for (String running : runningServers) {
+                Scanner runningScn = new Scanner(running);
+                runningScn.useDelimiter(":");
+                String runningHostName = runningScn.next();
+
+                runningScn.close();
+                if (runningHostName.equals(hostName)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                found = false;
+                continue;
+            } else {
+                LOG.error("DcsServer [" + hostName + ":" + instance + "] does not started when starting DcsMaster [" + master.getServerName() + "] add to restart queue.");
+                // add to the restart handler
+                String simulatePath = hostName + ":" + instance + ":0:" + System.currentTimeMillis();
+                RestartHandler handler = new RestartHandler(simulatePath, serverCount);
+                restartQueue.add(handler);
+            }
         }
     }
 

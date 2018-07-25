@@ -76,7 +76,7 @@ private:
 			 NABoolean nullTerminate = TRUE,
 			 Int64 * rowsAffected = NULL,
 			 NABoolean monitorThis = FALSE,
-			 ComDiagsArea * globalDiags = NULL);
+			 ComDiagsArea **globalDiags = NULL);
 
   Lng32 executeImmediatePrepare(const char * stmt,
 				char * outputBuf = NULL,
@@ -100,7 +100,7 @@ private:
                             Lng32 * outputBufLen = NULL,
                             NABoolean nullTerminate = TRUE,
                             Int64 * rowsAffected = NULL,
-                            ComDiagsArea *diagsArea = NULL);
+                            ComDiagsArea **diagsArea = NULL);
  
   Lng32 prepare(const char * stmtStr,
 		SQLMODULE_ID * module,
@@ -239,17 +239,18 @@ private:
   static Lng32 commitXn();
   static Lng32 rollbackXn();
   static Lng32 statusXn();
+  static Lng32 suspendXn();
+  static Lng32 resumeXn();
 
   Lng32 createContext(char* contextHandle); // out buf will return context handle
   Lng32 switchContext(char* contextHandle); // in buf contains context handle
   Lng32 currentContext(char* contextHandle); // out buf will return context handle
   Lng32 deleteContext(char* contextHandle); // in buf contains context handle
 
-  Lng32 retrieveSQLDiagnostics(ComDiagsArea * toDiags);
+  Lng32 retrieveSQLDiagnostics(ComDiagsArea *toDiags);
+  ComDiagsArea *allocAndRetrieveSQLDiagnostics(ComDiagsArea *&toDiags);
 
   CollHeap * getHeap() { return heap_; }
-
-  ComDiagsArea * getDiagsArea() { return diagsArea_; }
 
   char * outputBuf() { return outputBuf_; };
   Int32  outputDatalen() { return outputDatalen_; };
@@ -264,19 +265,20 @@ private:
 
   Lng32 GetRowsAffected(Int64 *rowsAffected);
 
-  Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue, ComDiagsArea * globalDiags = NULL);
-  Lng32 restoreCQD(const char * defaultName, ComDiagsArea * globalDiags = NULL);
+  Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue, ComDiagsArea *globalDiags = NULL);
+
+  Lng32 restoreCQD(const char * defaultName, ComDiagsArea *globalDiags = NULL);
 
   Lng32 getCQDval(const char * defaultName,
 		  char * val,
-		  ComDiagsArea * globalDiags = NULL);
+		  ComDiagsArea *globalDiags = NULL);
 
   void setNotExeUtilInternalQuery(NABoolean v)
     {(v ? flags_ |= NOT_EXEUTIL_INTERNAL_QUERY : flags_ &= ~NOT_EXEUTIL_INTERNAL_QUERY); };
   NABoolean notExeUtilInternalQuery() { return (flags_ & NOT_EXEUTIL_INTERNAL_QUERY) != 0; };
 
-  Lng32 setCQS(const char * shape, ComDiagsArea * globalDiags = NULL);
-  Lng32 resetCQS(ComDiagsArea * globalDiags = NULL);
+  Lng32 setCQS(const char * shape, ComDiagsArea *globalDiags = NULL);
+  Lng32 resetCQS(ComDiagsArea *globalDiags = NULL);
 
   // methods for routine invocation
   Lng32 getRoutine(
@@ -371,8 +373,6 @@ private:
 
   Int32 numQuadFields_;
   struct SQLCLI_QUAD_FIELDS * quadFields_;
-
-  ComDiagsArea * diagsArea_;
 
   CollHeap * heap_;
 

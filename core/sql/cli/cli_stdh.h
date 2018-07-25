@@ -21,7 +21,7 @@
 #include "Platform.h"
 #include "SQLCLIdev.h"
 #include "ex_god.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "NAHeap.h"
 #include "NAMemory.h"
 #include "str.h"
@@ -33,7 +33,6 @@
 #include "Module.h"
 #include "Context.h"
 #include "Globals.h"
-#include "rtdu.h"
 #include "ex_error.h"
 
 

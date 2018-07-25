@@ -49,9 +49,7 @@
 #include  "ExSqlComp.h"
 #include  "HeapLog.h"
 
-#ifdef NA_CMPDLL
 #include  "CmpContext.h"
-#endif // NA_CMPDLL
 #include  "ComSmallDefs.h"
 
 #include "ExExeUtil.h"
@@ -95,11 +93,9 @@ ExDDLTcb::ExDDLTcb(const ComTdbDDL & ddl_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(ddl_tdb.numBuffers_,
 				     ddl_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   // Allocate the queue to communicate with parent
   qparent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
@@ -205,8 +201,6 @@ short ExDDLTcb::work()
       CmpCompileInfo c(ddlTdb().query_, ddlTdb().queryLen_ + 1, 
                        (Lng32)ddlTdb().queryCharSet_,
                        ddlTdb().objectName_, ddlTdb().objectNameLen_+1,
-                       masterGlob->getStatement()->recompControlInfo(), 
-                       masterGlob->getStatement()->recompControlInfoLen(),
                        0, 0);
       
       size_t dataLen = c.getLength();
@@ -253,7 +247,6 @@ short ExDDLTcb::work()
  	    }
 	}
 
-#ifdef NA_CMPDLL
       // Call either the embedded arkcmp, if exists, or external arkcmp
       // but not both
       if ( currContext->isEmbeddedArkcmpInitialized() &&
@@ -265,8 +258,6 @@ short ExDDLTcb::work()
           const char *parentQid = masterGlob->getStatement()->
             getUniqueStmtId();
           CmpCommon::context()->sqlSession()->setParentQid(parentQid);
-          if (cpDiagsArea == NULL)
-	    cpDiagsArea = ComDiagsArea::allocate(getHeap());
           // Despite its name, the compileDirect method is where 
           // the DDL is actually performed. 
           Int32 cpStatus = CmpCommon::context()->compileDirect(
@@ -283,24 +274,17 @@ short ExDDLTcb::work()
             currContext->exHeap()->deallocateMemory((void*)dummyReply);
           if (cpStatus == ExSqlComp::SUCCESS)
             {
-           // CatSQLObjectCache &catCache = CatProcess.getSQLObjectCache();
-           // catCache.cleanupCache();
-              // clear diagsArea of cli context which may have warnings
-              // set when calling cli inside the embedded compiler
-              if (!currContext->diags().getNumber(DgSqlCode::ERROR_))
-                currContext->diags().clear();
               goto endOfData;
             }
           else
             {
               handleErrors(pentry_down, cpDiagsArea, cpStatus);
               //Don't proceed if its an error.
-              if (cpStatus == ExSqlComp::ERROR)
-                goto endOfData;
+              if (cpStatus == ExSqlComp::ERROR) 
+                 goto endOfData;
             }
         }
       else if (getArkcmp())  // regular arkcmp exists
-#endif
 	{  // start of calling the standard arkcmp process
 	  cmp = getArkcmp();
 
@@ -394,6 +378,7 @@ short ExDDLTcb::work()
 	  
           diagsArea->mergeAfter (*cpDiagsArea);
           up_entry->setDiagsArea(diagsArea);
+          cpDiagsArea->decrRefCount();
         }
 
       up_entry->upState.parentIndex = 
@@ -494,6 +479,8 @@ short ExDDLwithStatusTcb::work()
             currEntry_ = 0;
             currPtr_ = NULL;
 
+            queryStartTime_ = NA_JulianTimestamp();
+
             if (ddlTdb().hbaseDDL())
               {
                 if (ddlTdb().hbaseDDLNoUserXn())
@@ -529,9 +516,7 @@ short ExDDLwithStatusTcb::work()
             mdi_ = new(getHeap()) 
               CmpDDLwithStatusInfo(ddlTdb().query_, ddlTdb().queryLen_ + 1, 
                                    (Lng32)ddlTdb().queryCharSet_,
-                                   ddlTdb().objectName_, ddlTdb().objectNameLen_+1,
-                                   masterGlob->getStatement()->recompControlInfo(), 
-                                   masterGlob->getStatement()->recompControlInfoLen());
+                                   ddlTdb().objectName_, ddlTdb().objectNameLen_+1);
 
             if (ddlTdb().getMDVersion())
               mdi_->setGetMDVersion(TRUE);
@@ -547,6 +532,9 @@ short ExDDLwithStatusTcb::work()
                 if (ddlTdb().getReturnDetails())
                   mdi_->setReturnDetails(TRUE);
               }
+            else if (ddlTdb().getInitTraf())
+              mdi_->setInitTraf(TRUE);
+
             mdi_->setHbaseDDL(TRUE);            
 
             if (ddlTdb().inputExpr_)
@@ -578,9 +566,6 @@ short ExDDLwithStatusTcb::work()
               {
                 callEmbeddedCmp_ = FALSE;
               }
-
-            // TEMP, until embedded call is fixed to handle returning status.
-            callEmbeddedCmp_ = FALSE;
 
             step_ = SETUP_NEXT_STEP_;
          }
@@ -616,8 +601,6 @@ short ExDDLwithStatusTcb::work()
               getUniqueStmtId();
             CmpCommon::context()->sqlSession()->setParentQid(parentQid);
             
-            if (cpDiagsArea == NULL)
-              cpDiagsArea = ComDiagsArea::allocate(getHeap());
             cmpStatus = CmpCommon::context()->compileDirect(
                data_, dataLen_,
                currContext->exHeap(),
@@ -627,8 +610,9 @@ short ExDDLwithStatusTcb::work()
                currContext->getSqlParserFlags(),
                parentQid, str_len(parentQid), cpDiagsArea);
 
-            getHeap()->deallocateMemory(data_);
- 
+            if (currContext->getDiagsArea())
+              currContext->getDiagsArea()->clear();
+
             if ((cpDiagsArea) &&
                 ((cpDiagsArea->getNumber(DgSqlCode::WARNING_) > 0) ||
                  (cpDiagsArea->getNumber(DgSqlCode::ERROR_) > 0)))
@@ -699,15 +683,18 @@ short ExDDLwithStatusTcb::work()
                 
                 replyDWS_ = (CmpDDLwithStatusInfo*)(new(getHeap()) char[replyBufLen_]);
                 memcpy((char*)replyDWS_, replyBuf_, replyBufLen_);
-                cmp_->getHeap()->deallocateMemory((void*)replyBuf_);
+                if (cmp_)
+                  cmp_->getHeap()->deallocateMemory((void*)replyBuf_);
+                else
+                  currContext->exHeap()->deallocateMemory((void*)replyBuf_);
                 replyBuf_ = NULL;
                 replyBufLen_ = 0;
 
                 replyDWS_->unpack((char*)replyDWS_);
 
-                if (mdi_->computeST())
+                if (replyDWS_->computeST())
                   startTime_ = NA_JulianTimestamp();
-                else if (mdi_->computeET())
+                else if (replyDWS_->computeET())
                   endTime_ = NA_JulianTimestamp();
               }
             
@@ -738,7 +725,19 @@ short ExDDLwithStatusTcb::work()
             char buf[1000];
             if (strlen(replyDWS_->msg()) > 0)
               {
-                str_sprintf(buf, "%s", replyDWS_->msg());
+                if (replyDWS_->returnET())
+                  {
+                    if (replyDWS_->done())
+                      startTime_ = queryStartTime_;
+
+                    char timeBuf[100];
+                    ExExeUtilTcb::getTimeAsString((endTime_-startTime_), timeBuf,
+                                                  TRUE);
+                    str_sprintf(buf, "%s {ET: %s}", replyDWS_->msg(),
+                                timeBuf);
+                  }
+                else
+                  str_sprintf(buf, "%s", replyDWS_->msg());
                 if (moveRowToUpQueue(&qparent_, ddlTdb().tuppIndex(), buf, 0, &rc))
                   return rc;
               }
@@ -868,10 +867,8 @@ ExSqlComp * ExDDLTcb::getArkcmp (void)
   short indexIntoCompilerArray = currContext()->getIndexToCompilerArray();
   const COM_VERSION compilerVersionOnEntry = (COM_VERSION) currContext()->getVersionOfCompiler();
 
-#ifdef NA_CMPDLL
   if (!currContext()->getNumArkcmps())
     return NULL;  // no regular compiler exists
-#endif // NA_CMPDLL
 
   if (compilerVersionOnEntry != getCompilerVersion())
   {
@@ -963,6 +960,7 @@ short ExDescribeTcb::work()
   ComDiagsArea *da = NULL;  
   ComDiagsArea *diagsArea;  
   NAHeap *arkcmpHeap = currContext()->exHeap(); // same heap, see cli/Context.h
+  NABoolean deleteTmpDa = FALSE;
   while (1)
     {
       switch (pstate.step_)
@@ -988,7 +986,6 @@ short ExDescribeTcb::work()
  		  }
 	      }
 #endif
-#ifdef NA_CMPDLL
             // Call either the embedded arkcmp, if exists, or external arkcmp
             // but not both
             if (currContext() && currContext()->isEmbeddedArkcmpInitialized() &&
@@ -1000,8 +997,6 @@ short ExDescribeTcb::work()
                   getUniqueStmtId();
                 CmpCommon::context()->sqlSession()->setParentQid(parentQid);
 
-                if (da == NULL)
-                  da = ComDiagsArea::allocate(arkcmpHeap);
                 compStatus = CmpCommon::context()->compileDirect(
                                  describeTdb().query_,
                                  describeTdb().queryLen_,
@@ -1034,10 +1029,12 @@ short ExDescribeTcb::work()
                   {
                     pstate.step_ = HANDLE_ERROR_;
                   }
+                  // ComDiagsDa is allocated in compileDirect, needs to be deallocated
+                  if (da != NULL)
+                    deleteTmpDa = TRUE; 
               }
             else if (getArkcmp())  // regular arkcmp exists
               {
-#endif // NA_CMPDLL
                 // Build request and send to arkcmp. Wait for reply.
 	        // This could be a waited or a nowaited call.
 	        ExSqlComp *cmp = getArkcmp();
@@ -1164,6 +1161,8 @@ short ExDescribeTcb::work()
  	        up_entry->setDiagsArea(da);
 	        up_entry->getAtp()->getDiagsArea()->incrRefCount();
                 // Reset the da for the next error/warning.
+                if (deleteTmpDa)
+                   da->decrRefCount();
                 da = NULL;
               }
 
@@ -1208,6 +1207,8 @@ short ExDescribeTcb::work()
  	    // insert into parent
 	    qparent_.up->insert();
 	    
+            if (deleteTmpDa)
+               da->decrRefCount();
  	    // reset the diagsArea for the next error to be set properly.
  	    da = NULL;
  	    pstate.step_ = DONE_;
@@ -1280,12 +1281,8 @@ Lng32 ExDescribeTcb::returnLeaks(short &error)
   ex_queue_entry * up_entry = qparent_.up->getTailEntry();
 	    
   // allocate space 
-#pragma nowarn(1506)   // warning elimination 
   if (pool_->get_free_tuple(up_entry->getTupp(describeTdb().tuppIndex_),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 			    describeTdb().outputRowlen_))
-#pragma warn(1506)  // warning elimination 
 	      
     {
       // no more space in the pool.
@@ -1295,17 +1292,13 @@ Lng32 ExDescribeTcb::returnLeaks(short &error)
     }
 	
   char *entry = up_entry->
-#pragma nowarn(1506)   // warning elimination 
 		getTupp(describeTdb().tuppIndex_).getDataPointer();
-#pragma warn(1506)  // warning elimination 
 
   // For ARKCMP and/or SQLCI
   if (HeapLogRoot::fetchLine(entry,
 			     describeTdb().flags_, 
 			     pstate.dataPtr_,
-#pragma nowarn(1506)   // warning elimination 
 			     pstate.dataLen_) == 1)
-#pragma warn(1506)  // warning elimination 
     { // eof
       pstate.currLen_ = pstate.dataLen_;
       pstate.step_ = DONE_;
@@ -1480,8 +1473,6 @@ short ExProcessVolatileTableTcb::work()
 	    CmpCompileInfo c(pvtTdb().query_, pvtTdb().queryLen_ + 1,
 			     pvtTdb().queryCharSet_,
 			     pvtTdb().objectName_, pvtTdb().objectNameLen_+1,
-			     masterGlob->getStatement()->recompControlInfo(), 
-			     masterGlob->getStatement()->recompControlInfoLen(),
 			     0, 0);
 	    
 	    if (pvtTdb().hbaseDDL())
@@ -1514,133 +1505,132 @@ short ExProcessVolatileTableTcb::work()
 	    size_t dataLen = c.getLength();
 	    char * data = new(getHeap()) char[dataLen];
 	    c.pack(data);
-#ifdef NA_CMPDLL
-      // Call either the embedded arkcmp, if exists, or external arkcmp
-      // but not both
-      if ( currContext->isEmbeddedArkcmpInitialized() &&
-	   currContext->getSessionDefaults()->callEmbeddedArkcmp() 
-	   && pvtTdb().hbaseDDL() &&
-	   CmpCommon::context() && (CmpCommon::context()->getRecursionLevel() == 0)
-	  )
-        {
-          Int32 embCmpStatus;
-          const char *parentQid = masterGlob->getStatement()->
-            getUniqueStmtId();
-          CmpCommon::context()->sqlSession()->setParentQid(parentQid);
-          if (embCmpDiagsArea == NULL)
-	    embCmpDiagsArea = ComDiagsArea::allocate(getHeap());
-          embCmpStatus = CmpCommon::context()->compileDirect(
-                                 data, dataLen,
-                                 currContext->exHeap(),
-                                 SQLCHARSETCODE_UTF8,
-                                 EXSQLCOMP::PROCESSDDL,
-                                 dummyReply, dummyLength,
-                                 currContext->getSqlParserFlags(),
-                                 parentQid, str_len(parentQid),
-                                 embCmpDiagsArea);
-          getHeap()->deallocateMemory(data);
-          if (dummyReply != NULL)
-            currContext->exHeap()->deallocateMemory((void*)dummyReply);
-          if (embCmpStatus == ExSqlComp::SUCCESS)
-            {
-          
-              // clear diagsArea of cli context which may have warnings
-              // set when calling cli inside the embedded compiler
-              if (!currContext->diags().getNumber(DgSqlCode::ERROR_))
-                currContext->diags().clear();
-             
-            }
-          else
-            {
-              handleErrors(pentry_down, embCmpDiagsArea, embCmpStatus);
-              //Don't proceed if its an error.
-              if (embCmpStatus == ExSqlComp::ERROR)
-                {
-		  step_ = ERROR_;
-		  break;
-		}
 
-           }
-        }
-      else if (getArkcmp())  // regular arkcmp exists
-#endif
-	{	    
-	  cmp = getGlobals()->castToExExeStmtGlobals()->
-	    castToExMasterStmtGlobals()->getCliGlobals()->getArkcmp();
-
-	  // ddl data is already in iso mapping default value.
-	  // Indicate that.
-	  // We cannot use the enum SQLCHARSETCODE_ISO_MAPPING out here as that 
-	  // will cause mxcmp to use the default charset as iso88591.
-	  // So we send the charset of this input string.
-	  cmpStatus = 
-	    cmp->sendRequest(EXSQLCOMP::PROCESSDDL, data, dataLen,
-			     TRUE, NULL,
-			     SQLCHARSETCODE_UTF8,
-			     TRUE, /*resend, if needed*/
-                             masterGlob->getStatement()->getUniqueStmtId(),
-                             masterGlob->getStatement()->getUniqueStmtIdLen());
-	    
-	  getHeap()->deallocateMemory(data);
-	    
-	  if (cmpStatus != ExSqlComp::SUCCESS)
-	    {
-	      // If its an error don't proceed further.
-	      handleErrors(pentry_down, cmp->getDiags(), (Int32) cmpStatus);
-	      if (cmpStatus == ExSqlComp::ERROR)
-		{
-		  step_ = ERROR_;
-		  break;
-		}
-	    }
-	    
-	  cmpStatus = cmp->getReply(dummyReply, dummyLength);
-	  cmp->getHeap()->deallocateMemory((void*)dummyReply);
-	  if (cmpStatus != ExSqlComp::SUCCESS)
-	    {
-	      // If its an error don't proceed further.
-	      handleErrors(pentry_down, cmp->getDiags(), (Int32) cmpStatus);
-	      if (cmpStatus == ExSqlComp::ERROR)
-		{
-		  step_ = ERROR_;
-		  break;
-		}
-	    }
-	    
-	  if (cmp->status() != ExSqlComp::FETCHED)
-	    {
-	      handleErrors(pentry_down, cmp->getDiags(), (Int32) cmpStatus);
-
-	      step_ = ERROR_;
-	      break;
-	    }
-	}
-
-      if ((pvtTdb().isCreate()) &&
-	  (pvtTdb().isSchema()))
-	{
-	  masterGlob->getStatement()->getContext()->
-	    setVolatileSchemaCreated(TRUE);
-	}
-
-      if ((NOT pvtTdb().isCreate()) &&
-	  (pvtTdb().isSchema()))
-	{
-	  masterGlob->getStatement()->getContext()->
-	    setVolatileSchemaCreated(FALSE);
-	}
-
-      if ((pvtTdb().isCreate()) &&
-	  (pvtTdb().isTable()))
-	step_ = ADD_TO_VOL_TAB_LIST_;
-      else if ((NOT pvtTdb().isCreate()) &&
-	       (pvtTdb().isTable()))
-	step_ = REMOVE_FROM_VOL_TAB_LIST_;
-      else
-	step_ = DONE_;
+            // Call either the embedded arkcmp, if exists, or external arkcmp
+            // but not both
+            if ( currContext->isEmbeddedArkcmpInitialized() &&
+                 currContext->getSessionDefaults()->callEmbeddedArkcmp() 
+                 && pvtTdb().hbaseDDL() &&
+                 CmpCommon::context() && (CmpCommon::context()->getRecursionLevel() == 0)
+                 )
+              {
+                Int32 embCmpStatus;
+                const char *parentQid = masterGlob->getStatement()->
+                  getUniqueStmtId();
+                CmpCommon::context()->sqlSession()->setParentQid(parentQid);
+                if (embCmpDiagsArea == NULL)
+                  embCmpDiagsArea = ComDiagsArea::allocate(getHeap());
+                embCmpStatus = CmpCommon::context()->compileDirect(
+                     data, dataLen,
+                     currContext->exHeap(),
+                     SQLCHARSETCODE_UTF8,
+                     EXSQLCOMP::PROCESSDDL,
+                     dummyReply, dummyLength,
+                     currContext->getSqlParserFlags(),
+                     parentQid, str_len(parentQid),
+                     embCmpDiagsArea);
+                getHeap()->deallocateMemory(data);
+                if (dummyReply != NULL)
+                  currContext->exHeap()->deallocateMemory((void*)dummyReply);
+                if (embCmpStatus == ExSqlComp::SUCCESS)
+                  {
+                    
+                    // clear diagsArea of cli context which may have warnings
+                    // set when calling cli inside the embedded compiler
+                    if (!currContext->diags().getNumber(DgSqlCode::ERROR_))
+                      currContext->diags().clear();
+                    
+                  }
+                else
+                  {
+                    handleErrors(pentry_down, embCmpDiagsArea, embCmpStatus);
+                    //Don't proceed if its an error.
+                    if (embCmpStatus == ExSqlComp::ERROR)
+                      {
+                        step_ = ERROR_;
+                        break;
+                      }
+                    
+                  }
+              }
+            else if (getArkcmp())  // regular arkcmp exists
+              {	    
+                cmp = getGlobals()->castToExExeStmtGlobals()->
+                  castToExMasterStmtGlobals()->getCliGlobals()->getArkcmp();
+                
+                // ddl data is already in iso mapping default value.
+                // Indicate that.
+                // We cannot use the enum SQLCHARSETCODE_ISO_MAPPING out here as that 
+                // will cause mxcmp to use the default charset as iso88591.
+                // So we send the charset of this input string.
+                cmpStatus = 
+                  cmp->sendRequest(EXSQLCOMP::PROCESSDDL, data, dataLen,
+                                   TRUE, NULL,
+                                   SQLCHARSETCODE_UTF8,
+                                   TRUE, /*resend, if needed*/
+                                   masterGlob->getStatement()->getUniqueStmtId(),
+                                   masterGlob->getStatement()->getUniqueStmtIdLen());
+                
+                getHeap()->deallocateMemory(data);
+                
+                if (cmpStatus != ExSqlComp::SUCCESS)
+                  {
+                    // If its an error don't proceed further.
+                    handleErrors(pentry_down, cmp->getDiags(), (Int32) cmpStatus);
+                    if (cmpStatus == ExSqlComp::ERROR)
+                      {
+                        step_ = ERROR_;
+                        break;
+                      }
+                  }
+                
+                cmpStatus = cmp->getReply(dummyReply, dummyLength);
+                cmp->getHeap()->deallocateMemory((void*)dummyReply);
+                if (cmpStatus != ExSqlComp::SUCCESS)
+                  {
+                    // If its an error don't proceed further.
+                    handleErrors(pentry_down, cmp->getDiags(), (Int32) cmpStatus);
+                    if (cmpStatus == ExSqlComp::ERROR)
+                      {
+                        step_ = ERROR_;
+                        break;
+                      }
+                  }
+                
+                if (cmp->status() != ExSqlComp::FETCHED)
+                  {
+                    handleErrors(pentry_down, cmp->getDiags(), (Int32) cmpStatus);
+                    
+                    step_ = ERROR_;
+                    break;
+                  }
+              }
+            
+            if ((pvtTdb().isCreate()) &&
+                (pvtTdb().isSchema()))
+              {
+                masterGlob->getStatement()->getContext()->
+                  setVolatileSchemaCreated(TRUE);
+              }
+            
+            if ((NOT pvtTdb().isCreate()) &&
+                (pvtTdb().isSchema()))
+              {
+                masterGlob->getStatement()->getContext()->
+                  setVolatileSchemaCreated(FALSE);
+              }
+            
+            if ((pvtTdb().isCreate()) &&
+                (pvtTdb().isTable()))
+              step_ = ADD_TO_VOL_TAB_LIST_;
+            else if ((NOT pvtTdb().isCreate()) &&
+                     (pvtTdb().isTable()))
+              step_ = REMOVE_FROM_VOL_TAB_LIST_;
+            else
+              step_ = DONE_;
 	  }
 	  break;
-
+          
 	case ADD_TO_VOL_TAB_LIST_:
 	  {
 	    HashQueue * volTabList = currContext->getVolTabList();
@@ -1933,8 +1923,6 @@ short ExProcessInMemoryTableTcb::work()
 	    CmpCompileInfo c(pimtTdb().query_, pimtTdb().queryLen_ + 1,
 			     pimtTdb().queryCharSet_,
 			     pimtTdb().objectName_, pimtTdb().objectNameLen_+1,
-			     masterGlob->getStatement()->recompControlInfo(), 
-			     masterGlob->getStatement()->recompControlInfoLen(),
 			     0, 0);
 	    
 	    size_t dataLen = c.getLength();

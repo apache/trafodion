@@ -65,7 +65,6 @@ ex_tcb * ExTupleLeafTdb::build(ex_globals * glob)
   return tcb;
 }
 
-// LCOV_EXCL_START
 ///////////////////////////////////////
 // class ExTupleNonLeafTdb
 ///////////////////////////////////////
@@ -81,7 +80,6 @@ ex_tcb * ExTupleNonLeafTdb::build(ex_globals * glob)
 
   return tcb;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////
 // class ExTupleTcb
@@ -94,11 +92,9 @@ ExTupleTcb::ExTupleTcb(const ComTdbTuple & tupleTdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
 
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(tupleTdb.numBuffers_,
 				     tupleTdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
 
   // Allocate the queue to communicate with parent
   allocateParentQueues(qparent);
@@ -131,14 +127,12 @@ ExTupleTcb::~ExTupleTcb()
   freeResources();
 }
 
-// LCOV_EXCL_START
 short ExTupleTcb::work()
 {
   // should not reach here
   ex_assert(0, "ExTupleTcb::work() must be redefined");
   return WORK_OK;
 }
-// LCOV_EXCL_STOP
 
 void ExTupleTcb::freeResources()
 {
@@ -171,7 +165,7 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
   if (qparent.down->isEmpty())
     return WORK_OK;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   //
   // This block of code is for UDR testing only. It lets us create a 
   // situation where a non-UDR node in the dataflow tree returns
@@ -181,7 +175,7 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
   {
     return WORK_BAD_ERROR;
   }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
   ex_queue_entry * pentry_down = qparent.down->getHeadEntry();
   ExTuplePrivateState *  pstate 
@@ -233,9 +227,7 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
             {
               // allocate space to hold the tuple to be returned
               tupp p;
-#pragma nowarn(1506)   // warning elimination 
               if (pool_->get_free_tuple(p, tupleTdb().tupleLen_))
-#pragma warn(1506)  // warning elimination 
                 return WORK_POOL_BLOCKED; // couldn't allocate, try again later.
               up_entry->getTupp(tupleTdb().tuppIndex_) = p;
 
@@ -348,12 +340,9 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
 
 	} // switch
     } // while
-#pragma nowarn(203)   // warning elimination 
   return WORK_OK;
-#pragma warn(203)  // warning elimination 
 }
 
-// LCOV_EXCL_START
 ///////////////////////////////////////////////
 // class ExTupleNonLeafTcb
 ///////////////////////////////////////////////
@@ -641,11 +630,8 @@ ExWorkProcRetcode ExTupleNonLeafTcb::work()
 
 	} // switch
     } // while
-#pragma nowarn(203)   // warning elimination 
   return WORK_OK;
-#pragma warn(203)  // warning elimination 
 }
-// LCOV_EXCL_STOP
 
 /////////////////////////////////////////////
 // class ExTuplePrivateState

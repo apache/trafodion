@@ -101,9 +101,7 @@ IndexDesc::IndexDesc(TableDesc *tdesc,
 	  baseItemExpr = NULL;
 	}
 
-#pragma nowarn(1506)   // warning elimination 
       IndexColumn *ixcol = new(wHeap()) IndexColumn(fileSet_,i,baseValueId);
-#pragma warn(1506)  // warning elimination 
       ixcol->synthTypeAndValueId();
 
       // add the newly obtained value id to the index column list
@@ -125,7 +123,6 @@ IndexDesc::IndexDesc(TableDesc *tdesc,
   for (i = 0; i < indexKeyColumns.entries(); i++)
     {
       // which column of the index is this (usually this will be == i)
-#pragma nowarn(1506)   // warning elimination 
 
       if ( !naTable->isHbaseTable() )
          ixColNumber = allColumns.index(indexKeyColumns[i]);
@@ -139,7 +136,6 @@ IndexDesc::IndexDesc(TableDesc *tdesc,
          CMPASSERT(ixColNumber >= 0);
       }
 
-#pragma warn(1506)  // warning elimination 
 
       // insert the value id of the index column into the key column
       // value id list
@@ -173,9 +169,7 @@ IndexDesc::IndexDesc(TableDesc *tdesc,
   for (i = 0; i < clustKeyColumns.entries() AND found; i++)
     {
       // which column of the index is this?
-#pragma nowarn(1506)   // warning elimination 
       ixColNumber = allColumns.index(clustKeyColumns[i]);
-#pragma warn(1506)  // warning elimination 
 
       found = (ixColNumber != NULL_COLL_INDEX);
 
@@ -203,9 +197,7 @@ IndexDesc::IndexDesc(TableDesc *tdesc,
   for (i = 0; i < partitioningKeyColumns.entries(); i++)
     {
       // which column of the index is this 
-#pragma nowarn(1506)   // warning elimination 
       ixColNumber = allColumns.index(partitioningKeyColumns[i]);
-#pragma warn(1506)  // warning elimination 
 
       // insert the value id of the index column into the partitioningkey column
       // value id list
@@ -301,12 +293,9 @@ int IndexDesc::indexHintPriorityDelta() const
 }
 
 // Print function
-#pragma nowarn(770)   // warning elimination
 void IndexDesc::print(FILE* ofd, const char* indent, const char* title)
 {
-#pragma nowarn(1506)   // warning elimination 
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination  
   cout << title << " " << this << " "
     << indexLevels_ << "," << clusteringIndexFlag_
     << " pf=" << partFunc_ << " fs=" << fileSet_
@@ -316,7 +305,6 @@ void IndexDesc::print(FILE* ofd, const char* indent, const char* title)
   orderOfKeyValues_.print(ofd, indent, "IndexDesc::orderOfKeyValues_");
   clusteringKey_.print(ofd, indent, "IndexDesc::clusteringKey_");
 }
-#pragma warn(770)  // warning elimination 
 
 // Get the statement heap
 CollHeap* IndexDesc::wHeap()
@@ -469,10 +457,8 @@ IndexDesc::getEstimatedIndexBlocksLowerBound(const CostScalar& probes) const
       indexBlocksLowerBound = MINOF( indexBlocks, probes );
 
       // Index blocks touch by all probes for level three and above:
-#pragma warning (disable : 4018)   //warning elimination
       for (CollIndex i=2; i < levels; i++)
 	{
-#pragma warning (default : 4018)   //warning elimination
 	  indexBlocks = indexBlocks*40;
 	  indexBlocksLowerBound += MINOF( indexBlocks, probes );
 	}
@@ -573,9 +559,7 @@ NABoolean IndexDesc::isUniqueIndex() const
 
   return  getNAFileSet()->uniqueIndex();
 
-#pragma nowarn(269)   // warning elimination 
   ValueIdList nonKeyColumnList;
-#pragma warn(269)  // warning elimination 
   getNonKeyColumnList(nonKeyColumnList);
   
   // if there are some non-index-key columns(the key of base table),
@@ -818,10 +802,33 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
 
     const IndexDesc * index = getIndexDesc();
     const IndexDesc * otherIndex = ixProp->getIndexDesc();
-    if ( ((IndexColumn *)(index->getIndexKey()[0]).getItemExpr())->getDefinition() != 
-         ((IndexColumn *)(otherIndex->getIndexKey()[0]).getItemExpr())->getDefinition() )
-
-      return INCOMPATIBLE;
+    
+    // If the two indexes have differing leading columns, consider them incompatible.
+    // For this check, we ignore the "_SALT_" column if both are salted.
+    CollIndex columnToCheck = 0;
+    NABoolean done = FALSE;
+    while (!done)
+      {
+        if (columnToCheck >= index->getIndexKey().entries())
+          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" or "_DIVISION_1_" (seems unlikely actually)
+        else if (columnToCheck >= otherIndex->getIndexKey().entries())
+          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" or "_DIVISION_1_" (seems unlikely actually)
+        else
+          {
+            IndexColumn * indexCol = (IndexColumn *)(index->getIndexKey()[columnToCheck]).getItemExpr();
+            IndexColumn * otherIndexCol = (IndexColumn *)(otherIndex->getIndexKey()[columnToCheck]).getItemExpr();
+            if ( indexCol->getNAColumn()->isSaltColumn() &&
+                 otherIndexCol->getNAColumn()->isSaltColumn() )
+              columnToCheck++;
+            else if ( indexCol->getNAColumn()->isDivisioningColumn() &&
+                      otherIndexCol->getNAColumn()->isDivisioningColumn() )
+              columnToCheck++;
+            else if ( indexCol->getDefinition() != otherIndexCol->getDefinition() )
+              return INCOMPATIBLE;
+            else
+              done = TRUE;  // leading column (ignoring salt, divisioning if both have it) is the same; do Kb checks
+          }
+      }
 
      CostScalar myKbForLPred = index->getKbForLocalPred();
      CostScalar othKbForLPred = otherIndex->getKbForLocalPred();

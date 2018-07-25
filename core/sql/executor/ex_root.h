@@ -77,7 +77,6 @@ class ExMasterStats;
 // -----------------------------------------------------------------------
 // ex_root_tdb
 // -----------------------------------------------------------------------
-#pragma nowarn(1319)   // warning elimination 
 class ex_root_tdb : public ComTdbRoot
 {
 public:
@@ -87,16 +86,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_root_tdb()
+  ex_root_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_root_tdb()
+  virtual ~ex_root_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(CliGlobals *cliGlobals, 
+  virtual ex_tcb *build(CliGlobals *cliGlobals, 
                                    ex_globals *globals);
 
 private:
@@ -126,15 +125,10 @@ private:
   //    the classes to the comexe project.
   // ---------------------------------------------------------------------
 };
-#pragma warn(1319)  // warning elimination 
-
-
-
 
 /////////////////////////////////////
 // Task control block
 /////////////////////////////////////
-#pragma nowarn(1319)   // warning elimination 
 class ex_root_tcb : public ex_tcb
 {
 
@@ -211,7 +205,6 @@ public:
       return (ex_root_tdb &) tdb;
     };
 
-// warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const 
     { 
       ex_queue_pair temp;
@@ -303,7 +296,7 @@ public:
   void dumpCb();
 
   // Enforce query CPU limit.
-  NA_EIDPROC virtual void cpuLimitExceeded();
+  virtual void cpuLimitExceeded();
 
 private:
 
@@ -367,7 +360,6 @@ private:
   // or triggered by fragDirEventHandler_
   ExWorkProcRetcode workOnFragDir();
   // static version
-// warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkOnFragDir(ex_tcb *tcb)
                         { return ((ex_root_tcb *) tcb)->workOnFragDir(); }
 
@@ -390,7 +382,6 @@ private:
   void populateCancelDiags( ComDiagsArea &diags);
 
 };
-#pragma warn(1319)  // warning elimination 
 
 inline const ex_tcb* ex_root_tcb::getChild(Int32 pos) const
 {

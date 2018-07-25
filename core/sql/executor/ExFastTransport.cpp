@@ -47,9 +47,8 @@
 #include <errno.h>
 #include <pthread.h>
 #include "ComSysUtils.h"
-#ifndef __EID
 #include "SequenceFileReader.h" 
-#endif
+#include "HdfsClient_JNI.h" 
 #include  "cli_stdh.h"
 #include "ComSmallDefs.h"
 
@@ -459,6 +458,7 @@ ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
       childTcb,
       glob),
     sequenceFileWriter_(NULL)
+  , hdfsClient_(NULL)
 {
 
 } // ExHdfsFastExtractTcb::ExFastExtractTcb
@@ -467,7 +467,7 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 {
 
   if (lobGlob_) {
-    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+    ExpLOBinterfaceCleanup(lobGlob_);
     lobGlob_ = NULL;
   }
 
@@ -475,6 +475,12 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
      NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
      sequenceFileWriter_ = NULL;
   }
+
+  if (hdfsClient_ != NULL) {
+     NADELETE(hdfsClient_, HdfsClient, getHeap());
+     hdfsClient_ = NULL;
+  }
+
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
 
@@ -487,7 +493,7 @@ Int32 ExHdfsFastExtractTcb::fixup()
   strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
   hdfsPort_ = myTdb().getHdfsPortNum();
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
+    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
   
   modTS_ = myTdb().getModTSforDir();
 
@@ -599,12 +605,9 @@ void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
 
 ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 {
-#ifdef __EID 
-  // This class should not be instantiated in EID.
-  return WORK_BAD_ERROR;
-#else
   Lng32 retcode = 0;
   SFW_RetCode sfwRetCode = SFW_OK;
+  HDFS_Client_RetCode hdfsClientRetCode = HDFS_CLIENT_OK;
   ULng32 recSepLen = strlen(myTdb().getRecordSeparator());
   ULng32 delimLen = strlen(myTdb().getDelimiter());
   ULng32 nullLen = 
@@ -687,7 +690,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       if (retcode == 1) // check failed
       {
         char errStr[200];
-        str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+        str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
                     myTdb().getModTSforDir(), failedModTS);
         
         ComDiagsArea * diagsArea = NULL;
@@ -755,21 +758,25 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           hdfsPort_ = myTdb().getHdfsPortNum();
           memset (fileName_, '\0', sizeof(fileName_));
           memset (targetLocation_, '\0', sizeof(targetLocation_));
-
-          time_t t;
-          time(&t);
-          char pt[30];
-          struct tm * curgmtime = gmtime(&t);
-          strftime(pt, 30, "%Y%m%d%H%M%S", curgmtime);
-          srand(getpid());
           snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
-
+         	 
+          char pt[80]="";	
+          char usec_buf[6]="";  	
+          struct timeval tmnow;
+          struct tm *currgmtime;
+          gettimeofday(&tmnow, NULL);
+          currgmtime = gmtime(&tmnow.tv_sec);
+          strftime(pt, sizeof(pt), "%Y%m%d%H%M%S", currgmtime);
+          sprintf(usec_buf,"%d",(int)tmnow.tv_usec);
+          strcat(pt,usec_buf);
+          srand(getpid());
+          	                 
           if (myTdb().getIsHiveInsert())
             snprintf(fileName_,999, "%s%d-%s-%d", myTdb().getHiveTableName(), fileNum, pt,rand() % 1000);
           else
             snprintf(fileName_,999, "%s%d-%s-%d", "file", fileNum, pt,rand() % 1000);
 
-          if (!sequenceFileWriter_)
+          if (isSequenceFile() && sequenceFileWriter_ == NULL)
           {
             sequenceFileWriter_ = new(getHeap())
                                      SequenceFileWriter((NAHeap *)getHeap());
@@ -781,31 +788,54 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
               break;
             }
           }
+          else if (!isSequenceFile() && hdfsClient_ == NULL)
+          {
+             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetCode);
+             if (hdfsClientRetCode != HDFS_CLIENT_OK)
+             {
+                createHdfsClientFileError(hdfsClientRetCode);
+                pstate.step_ = EXTRACT_ERROR;
+                break;
+             }
+          }
 
           strcat(targetLocation_, "//");
           strcat(targetLocation_, fileName_);
           if (isSequenceFile())
+          {
             sfwRetCode = sequenceFileWriter_->open(targetLocation_, SFW_COMP_NONE);
-          else
-            sfwRetCode = sequenceFileWriter_->hdfsCreate(targetLocation_, isHdfsCompressed());
-          if (sfwRetCode != SFW_OK)
+            if (sfwRetCode != SFW_OK)
             {
               createSequenceFileError(sfwRetCode);
               pstate.step_ = EXTRACT_ERROR;
               break;
             }
-            
-          if (feStats)
-          {
-            feStats->setPartitionNumber(fileNum);
           }
-        }
-      else
-        {
-          updateWorkATPDiagsArea(__FILE__,__LINE__,"sockets are not supported");
-          pstate.step_ = EXTRACT_ERROR;
-          break;
-        }
+          else
+          {
+             hdfsClientRetCode = hdfsClient_->hdfsOpen(targetLocation_, isHdfsCompressed());
+             if (hdfsClientRetCode != HDFS_CLIENT_OK)
+             {
+                createHdfsClientFileError(hdfsClientRetCode);
+                NADELETE(hdfsClient_,
+                       HdfsClient,
+                       heap_);
+                hdfsClient_ = NULL;
+                pstate.step_ = EXTRACT_ERROR;
+                break;
+             }
+           }
+           if (feStats)
+           {
+             feStats->setPartitionNumber(fileNum);
+           }
+       }
+       else
+       {
+           updateWorkATPDiagsArea(__FILE__,__LINE__,"sockets are not supported");
+           pstate.step_ = EXTRACT_ERROR;
+           break;
+       }
 
       for (UInt32 i = 0; i < myTdb().getChildTuple()->numAttrs(); i++)
       {
@@ -1016,10 +1046,10 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         }
       else
         {
-          sfwRetCode = sequenceFileWriter_->hdfsWrite(currBuffer_->data_, bytesToWrite);
-          if (sfwRetCode != SFW_OK)
+          hdfsClient_->hdfsWrite(currBuffer_->data_, bytesToWrite, hdfsClientRetCode);
+          if (hdfsClientRetCode != HDFS_CLIENT_OK)
           {
-            createSequenceFileError(sfwRetCode);
+            createSequenceFileError(hdfsClientRetCode);
             pstate.step_ = EXTRACT_ERROR;
             break;
           }
@@ -1107,28 +1137,31 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         return WORK_OK;
 
       if (isSequenceFile())
-        {
-          sfwRetCode = sequenceFileWriter_->close();
-          if (!errorOccurred_ && sfwRetCode != SFW_OK )
-          {
-            createSequenceFileError(sfwRetCode);
-            pstate.step_ = EXTRACT_ERROR;
-            break;
-          }
-        }
-      else
-        {
-          if (sequenceFileWriter_)
+      {
+         if (sequenceFileWriter_) 
+         {
+            sfwRetCode = sequenceFileWriter_->close();
+            if (!errorOccurred_ && sfwRetCode != SFW_OK )
             {
-              sfwRetCode = sequenceFileWriter_->hdfsClose();
-              if (!errorOccurred_ && sfwRetCode != SFW_OK )
-                {
-                  createSequenceFileError(sfwRetCode);
-                  pstate.step_ = EXTRACT_ERROR;
-                  break;
-                }
+               createSequenceFileError(sfwRetCode);
+               pstate.step_ = EXTRACT_ERROR;
+               break;
             }
-        }
+         }
+      }
+      else
+      {
+         if (hdfsClient_)
+         {
+            hdfsClientRetCode = hdfsClient_->hdfsClose();
+            if (!errorOccurred_ && HDFS_CLIENT_OK != HDFS_CLIENT_OK )
+            {
+               createHdfsClientFileError(hdfsClientRetCode);
+               pstate.step_ = EXTRACT_ERROR;
+               break;
+            }
+         }   
+      }
 
       //insertUpQueueEntry will insert Q_NO_DATA into the up queue and
       //remove the head of the down queue
@@ -1159,7 +1192,6 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
   } // while
 
   return WORK_OK;
-#endif
 }//ExHdfsFastExtractTcb::work()
 
 void ExHdfsFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status, ComDiagsArea *diags, NABoolean popDownQueue)
@@ -1245,9 +1277,24 @@ void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
                   (ExeErrorCode)(8447),
                   NULL, NULL, NULL, NULL,
                   errorMsg,
-                (char *)currContext->getJniErrorStr().data());
+                (char *)GetCliGlobals()->getJniErrorStr());
   //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
   //pentry_down->setDiagsArea(diagsArea);
+  updateWorkATPDiagsArea(diagsArea);
+}
+
+void ExHdfsFastExtractTcb::createHdfsClientFileError(Int32 hdfsClientRetCode)
+{
+  ContextCli *currContext = GetCliGlobals()->currContext();
+
+  ComDiagsArea * diagsArea = NULL;
+  char* errorMsg = hdfsClient_->getErrorText((HDFS_Client_RetCode)hdfsClientRetCode);
+  ExRaiseSqlError(getHeap(),
+                  &diagsArea,
+                  (ExeErrorCode)(8447),
+                  NULL, NULL, NULL, NULL,
+                  errorMsg,
+                  (char *)GetCliGlobals()->getJniErrorStr());
   updateWorkATPDiagsArea(diagsArea);
 }
 

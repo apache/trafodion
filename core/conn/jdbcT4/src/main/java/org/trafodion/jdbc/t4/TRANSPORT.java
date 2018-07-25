@@ -172,6 +172,7 @@ class TRANSPORT {
 	static final short SRVR_API_UPDATELOB = 3031;
 
 	static final short SQL_ATTR_ROWSET_RECOVERY = 2000;
+    static final short SQL_ATTR_CLIPVARCHAR = 2001;
 
 	static final int MAX_REQUEST = 300;
 	static final int MAX_BUFFER_LENGTH = 32000;

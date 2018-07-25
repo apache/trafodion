@@ -74,11 +74,9 @@ ExFirstNTcb::ExFirstNTcb(const ExFirstNTdb & firstn_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : NULL);
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(firstn_tdb.numBuffers_,
 				     firstn_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   // get the queue that child use to communicate with me
   qchild_  = child_tcb.getParentQueue(); 
@@ -177,7 +175,6 @@ short ExFirstNTcb::moveChildDataToParent()
 ////////////////////////////////////////////////////////////////////////////
 // This is where the action is.
 ////////////////////////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 short ExFirstNTcb::work()
 {
   // if no parent request, return
@@ -205,7 +202,14 @@ short ExFirstNTcb::work()
 	    // 0 means process all but don't return any rows.
 	    // -1 means get all rows. Should not reach this state.
 	    // <-1 means return the last '-(N+2)' rows.
-            effectiveFirstN_ = firstnTdb().firstNRows();
+            //TRAFODION-2930
+            //fix [first 600000000000] crash
+	    //effectiveFirstN_ = firstnTdb().firstNRows();
+            Int64 nFirstN = firstnTdb().firstNRows();
+            Int64 nMaxInt = INT_MAX;
+            effectiveFirstN_ = Lng32( min( nMaxInt,nFirstN ) );
+            //TRAFODION-2930
+
             returnedSoFar_ = 0;
 
             if (firstnTdb().firstNRowsExpr_)
@@ -475,7 +479,6 @@ short ExFirstNTcb::work()
 
   return 0;
 }
-#pragma warn(262)  // warning elimination 
 
 short ExFirstNTcb::cancel()
 {

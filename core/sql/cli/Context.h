@@ -56,14 +56,13 @@
 #include "NAUserId.h"
 #include "SessionDefaults.h"
 #include "ex_transaction.h"
-#ifdef NA_CMPDLL
 #include "CmpCommon.h"
-#endif // NA_CMPDLL
 #include "ExSqlComp.h"
 #include "ExStats.h"
 #include "ExpSeqGen.h"
 #include "ssmpipc.h"
 #include "hdfs.h"
+#include "HdfsClient_JNI.h"
 
 class CliGlobals;
 class HashQueue;
@@ -75,8 +74,6 @@ class ExUdrServer;
 class UdrContextMsg;
 class SequenceValueGenerator;
 class LmRoutine;
-#pragma warning( disable : 4244 )  // warning elimination
-#pragma nowarn(1506)   // warning elimination 
 class ContextCli : public ExGod {
   
 public:
@@ -128,12 +125,6 @@ public:
      char *authNameBuffer, // OUT
      Int32 maxBufLen,      // IN
      Int32 &requiredLen);   // OUT optional
-  RETCODE getDBUserNameFromID(Int32 userID,         // IN
-                              char *userNameBuffer, // OUT
-                              Int32 maxBufLen,      // IN
-                              Int32 *requiredLen);  // OUT
-  RETCODE getDBUserIDFromName(const char *userName, // IN
-                              Int32 *userID);       // OUT
 
   // Function to be used only in ESPs to establish user identity. This
   // call will update data members and will NOT verify the input
@@ -204,6 +195,11 @@ public:
   HiveClient_JNI *getHiveClient() { return hiveClientJNI_; }
   void setHiveClient(HiveClient_JNI *hiveClientJNI)
   { hiveClientJNI_ = hiveClientJNI; }
+
+  HdfsClient *getHDFSClient() { return hdfsClientJNI_; }
+  void setHDFSClient(HdfsClient *hdfsClientJNI)
+  { hdfsClientJNI_ = hdfsClientJNI; }
+
   //expose cmpContextInfo_ to get HQC info of different contexts
   const NAArray<CmpContextInfo *> & getCmpContextInfo() const { return cmpContextInfo_; }
 
@@ -217,7 +213,21 @@ public:
   ExSqlComp::ReturnStatus sendXnMsgToArkcmp
   (char * data, Lng32 dataSize, 
    Lng32 xnMsgType, ComDiagsArea* &diagsArea);
-    
+
+  inline NABoolean grabMemoryQuotaIfAvailable(ULng32 size)
+  {
+    if ( unusedBMOsMemoryQuota_ < size ) return FALSE;
+    unusedBMOsMemoryQuota_ -= size ;
+    return TRUE;
+  }
+
+  inline void resetMemoryQuota() { unusedBMOsMemoryQuota_ = 0 ; }
+
+  inline ULng32 unusedMemoryQuota() { return unusedBMOsMemoryQuota_; }
+
+  inline void yieldMemoryQuota(ULng32 size)
+  { unusedBMOsMemoryQuota_ += size; }
+
 private:
 
   // The heap where executor 'stuff' will be allocated from.
@@ -285,11 +295,11 @@ private:
   // keeps track of current define context.
   unsigned short defineContext_;
 
-#ifdef NA_CMPDLL
   // flag and pointer to the embedded arkcmp context
   NABoolean isEmbeddedArkcmpInitialized_;
   CmpContext * embeddedArkcmpContext_;
-#endif // NA_CMPDLL
+
+  CmpContext * prevCmpContext_;
 
   // pointer to the array of server  versions used to communicate with ARKCMP.
   ARRAY(ExSqlComp *) arkcmpArray_;
@@ -419,10 +429,6 @@ private:
   inline HashQueue * cursorList(){return cursorList_;};
   inline HashQueue * openStatementList(){return openStatementList_;};
 
-  RETCODE allocateStmt(SQLSTMT_ID * stmt_id, char * cn,
-		       Statement::StatementType   stmt_type,
-                       Module *module = NULL);
-
   // Used to reclaim space from a list of closed statements.
   void addToCloseStatementList(Statement *statement);
 
@@ -508,11 +514,14 @@ private:
   NAString jniErrorStr_; 
   HBaseClient_JNI *hbaseClientJNI_;
   HiveClient_JNI *hiveClientJNI_;
+  HdfsClient *hdfsClientJNI_;
 
   // this points to data used by trafSE (traf storage engine) that is context specific.
   // It points to a list of 'black box' of data allocated by user and is returned
   // back whenever this context is in use.
   HashQueue * trafSElist_;
+  // memory quota allocation given back by BMOs to be used by other BMOs
+  ULng32 unusedBMOsMemoryQuota_;
 
   NABoolean deleteStats()
   {
@@ -615,18 +624,6 @@ public:
     xactAborted = udrXactAborted_;
   }
 
-  inline void setJniErrorStr(NAString errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline void setJniErrorStr(const char *errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline NAString getJniErrorStr()
-  { return jniErrorStr_; }
-
-  inline const char* getJniErrorStrPtr()
-  { return (const char*)jniErrorStr_.data(); }
-
   inline CLISemaphore *getSemaphore()
   { 
      return cliSemaphore_;
@@ -644,18 +641,7 @@ public:
   Lng32 initializeExeBDRConfigInfo(char *mgbltyCatName,
 				  ComDiagsArea * diagsArea);
 
-SQLCLI_LIB_FUNC
   short moduleAdded(const SQLMODULE_ID * module_name);
-
-SQLCLI_LIB_FUNC
-  RETCODE addModule(const SQLMODULE_ID * module_name, 
-		    NABoolean tsCheck = TRUE,
-		    NABoolean unpackTDBs = TRUE, char * moduleDir = NULL,
-		    NABoolean lookInGlobalModDir = TRUE);
-  
-SQLCLI_LIB_FUNC
-  RETCODE dropModule(const SQLMODULE_ID * module_name);
-  Module * getModule(const SQLMODULE_ID * module_id);
 
   RETCODE allocateDesc(SQLDESC_ID * desc_id, Lng32 max_entries);
   RETCODE deallocDesc(SQLDESC_ID * desc_id,
@@ -664,8 +650,7 @@ SQLCLI_LIB_FUNC
 
   RETCODE allocateStmt(SQLSTMT_ID * stmt_id, 
 		       Statement::StatementType stmt_type = Statement::DYNAMIC_STMT,
-                       SQLSTMT_ID * cloned_stmt_id = NULL,
-		       Module * module = NULL);
+                       SQLSTMT_ID * cloned_stmt_id = NULL);
 
   RETCODE deallocStmt(SQLSTMT_ID * stmt_id, 
 		      NABoolean deallocStaticStmt);
@@ -686,7 +671,6 @@ SQLCLI_LIB_FUNC
   short commitTransaction(NABoolean waited);
   short releaseAllTransactionalRequests();
 
-SQLCLI_LIB_FUNC
   void closeAllCursors(enum CloseCursorType, 
           enum closeTransactionType transType, const Int64 executorXnId = 0, 
           NABoolean inRollback = FALSE);
@@ -729,10 +713,8 @@ SQLCLI_LIB_FUNC
 
   // return the TimeoutData field of the context (if it is NULL --allocate it)
   // (If allocate == FALSE, just return it as is, even if it is NULL)
-SQLCLI_LIB_FUNC
   TimeoutData * getTimeouts( NABoolean allocate = TRUE );
 
-SQLCLI_LIB_FUNC
   void clearTimeoutData();  // deallocate the TimeoutData 
 
   // make these functions non-inline on NT and inline on NSK.
@@ -742,14 +724,11 @@ SQLCLI_LIB_FUNC
   // By making them non-inline on nt, a stub could be added.
   // This problem does not show up on nsk since inline functions
   // are really inline out there.
-SQLCLI_LIB_FUNC
   void incrementTimeoutChangeCounter();
-SQLCLI_LIB_FUNC
   UInt32 getTimeoutChangeCounter();
 
   void* &catmanInfo() {return catmanInfo_;}
 
-#ifdef NA_CMPDLL
   ////////////////////////////////////////////////////
   // Used to communicate with the embedded ARKCMP.
   ////////////////////////////////////////////////////
@@ -763,7 +742,6 @@ SQLCLI_LIB_FUNC
   void setEmbeddedArkcmpContext(CmpContext * cntx)
                 { embeddedArkcmpContext_ = cntx; }
 
-#endif // NA_CMPDLL
   ////////////////////////////////////////////////////
   // Used to communicate with the ARKCMP process.
   ////////////////////////////////////////////////////
@@ -816,6 +794,7 @@ SQLCLI_LIB_FUNC
   Int32 switchToCmpContext(Int32 cmpCntxtType);
   Int32 switchToCmpContext(void *cmpCntxt);
   Int32 switchBackCmpContext(void);
+  void copyDiagsAreaToPrevCmpContext();
   NABoolean isDropInProgress() { return dropInProgress_; }
   void setDropInProgress() { dropInProgress_ = TRUE; };
 
@@ -983,7 +962,7 @@ SQLCLI_LIB_FUNC
   void killIdleMxcmp();
   void killAndRecreateMxcmp();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 public:
   void StmtListPrintf(const Statement *s, const char *formatString, ...) const;
 #endif
@@ -1027,7 +1006,11 @@ public:
   Lng32 setSecInvalidKeys( 
            /* IN */    Int32 numSiKeys,
            /* IN */    SQL_QIKEY siKeys[]);
-
+  Int32 checkLobLock(char* inLobLockId, NABoolean *found);
+  
+  Lng32 setLobLock(
+       /* IN */   char *lobLockId// objID+column number
+                   );
   Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue);
   Lng32 restoreCQD(const char * defaultName);
 
@@ -1065,8 +1048,6 @@ public:
    ContextCli *context_;
 };
 
-#pragma warn(1506)   // warning elimination 
-#pragma warning( default : 4244 )  // warning elimination
 
 
 inline HashQueue *

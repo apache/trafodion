@@ -166,21 +166,11 @@ MdamColumn::MdamColumn(MdamColumn * previous,
     }
 
   // allocate storage to hold current, hi, lo, nonNullHi, nonNullLo values
-#pragma nowarn(1506)   // warning elimination 
   pool->get_free_tuple(currentValue_,columnGenInfo_->getLength());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   pool->get_free_tuple(hi_,columnGenInfo_->getLength());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   pool->get_free_tuple(lo_,columnGenInfo_->getLength());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   pool->get_free_tuple(nonNullHi_,columnGenInfo_->getLength());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   pool->get_free_tuple(nonNullLo_,columnGenInfo_->getLength());
-#pragma warn(1506)  // warning elimination 
 
   // go tell MdamColumnGen to fix up its expressions
   // (aside:  too bad we have to do it here -- if there were fixup
@@ -213,12 +203,10 @@ void MdamColumn::setNextColumn(MdamColumn *next)
 next_ = next;
 }
 
-// LCOV_EXCL_START
 MdamIntervalList & MdamColumn::getIntervalList()
 {
 return intervals_;
 }
-// LCOV_EXCL_STOP
 
 NABoolean MdamColumn::initNextValue()
 {
@@ -484,9 +472,7 @@ if (keyData)
   {
     // the sparse probe was successful -- save the key value
     Int32 len = Int32(columnGenInfo_->getLength());
-#pragma nowarn(1506)   // warning elimination 
     Lng32 offset = columnGenInfo_->getOffset();
-#pragma warn(1506)  // warning elimination 
     char * cv = currentValue_.getDataPointer();
 
     str_cpy_all(cv,keyData + offset,len);
@@ -588,11 +574,9 @@ while ((predIterator.positionToNextOr(&currentPred_)) &&
     
         tupp & pv  = workAtp->getTupp(valueAtpIndex);
         tupp & pv2 = workAtp->getTupp(valueAtpIndex+1);
-#pragma nowarn(1506)   // warning elimination 
         pool->get_free_tuple(pv,columnGenInfo_->getLength());
         if (predPtr->getPredType() == MdamPred::MDAM_BETWEEN)
           pool->get_free_tuple(pv2,columnGenInfo_->getLength());
-#pragma warn(1506)  // warning elimination 
     
         got_a_predicate = TRUE;
         dataConvErrorFlag = 0;  // The zero hard-coded here should be
@@ -734,7 +718,7 @@ while ((predIterator.positionToNextOr(&currentPred_)) &&
             }
           default:
             {
-              ex_assert(0,"Invalid predicate type"); //LCOV_EXCL_LINE
+              ex_assert(0,"Invalid predicate type");
               break;
             }
           }
@@ -1068,7 +1052,6 @@ keyRangeEx::getNextKeyRangeReturnType keyMdamEx::getNextKeyRange
   char *ektarget = ekData_.getDataPointer();
   ULng32 keyLength = getGenInfo().getKeyLength();
 
-  // LCOV_EXCL_START
   if (getGenInfo().getKeytag() > 0)
     {
       unsigned short keytag = getGenInfo().getKeytag();
@@ -1078,7 +1061,6 @@ keyRangeEx::getNextKeyRangeReturnType keyMdamEx::getNextKeyRange
       ektarget += sizeof(short);
       keyLength -= sizeof(short);
     }
-  // LCOV_EXCL_STOP
 
   if (complementKeysBeforeReturning_)
     {
@@ -1189,7 +1171,7 @@ keyRangeEx::getNextKeyRangeReturnType keyMdamEx::getNextKeyRange
 	  }
 	default:
 	  {
-	    ex_assert(0,"keyMdamEx::getNextKeyRange() invalid getNextValue rc"); // LCOV_EXCL_LINE
+	    ex_assert(0,"keyMdamEx::getNextKeyRange() invalid getNextValue rc");
 	    break;
 	  }
 	}

@@ -87,7 +87,6 @@ static void shortenTypeSQLname(const NAType &op,
   }
 }
 
-// This one's NOT static -- GenRfork calls it!
 void emitDyadicTypeSQLnameMsg(Lng32 sqlCode,
 			      const NAType &op1,
 			      const NAType &op2,
@@ -268,7 +267,6 @@ static void propagateCoAndCoToChildren(ItemExpr *parentOp,
   }
 }
 
-// LCOV_EXCL_START - cnu
 static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
 {
   Int32 n = 0;
@@ -280,7 +278,6 @@ static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
   }
   return n;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // The virtual NAType::isComparable() methods -- implemented here rather than
@@ -400,7 +397,6 @@ NABoolean CharType::isComparable(const NAType &otherNA,
   #ifndef NDEBUG
     if (NCHAR_DEBUG < 0) NCHAR_DEBUG = getenv("NCHAR_DEBUG") ? +1 : 0;
     if (NCHAR_DEBUG > 0) {
-// LCOV_EXCL_START - dpm
       NAString p(CmpCommon::statementHeap());
       parentOp->unparse(p);
       NAString s(getTypeSQLname(TRUE /*terse*/));
@@ -421,7 +417,6 @@ NABoolean CharType::isComparable(const NAType &otherNA,
 	   << endl;
       if (!cmpOK)
         cerr << endl;
-// LCOV_EXCL_STOP
     }
   #endif
 
@@ -550,7 +545,7 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 
       if ( DoCompatibilityTest && NOT operand1->isCompatible(*operand2) ) {
          // 4041 comparison between these two types is not allowed
-         emitDyadicTypeSQLnameMsg(-4041, *operand1, *operand2); // LCOV_EXCL_LINE - cnu
+         emitDyadicTypeSQLnameMsg(-4041, *operand1, *operand2);
          return FALSE;
       }
     }
@@ -748,30 +743,29 @@ static const NAType *synthAvgSum(const NAType& operand,
 	    {
 	      if (scale > 0)
 		return new HEAP
-		  SQLNumeric(8, // length = 8 bytes
+		  SQLNumeric(HEAP, 8, // length = 8 bytes
 			     precision,
 			     scale,
                              (precision > 9 ? TRUE : type->isSigned()),
 			     aggNeedsToBeNullable);
 
 	      else
-		return new HEAP SQLLargeInt(TRUE, aggNeedsToBeNullable);
+		return new HEAP SQLLargeInt(HEAP, TRUE, aggNeedsToBeNullable);
 
 	    }
 	  else
             {
 	      return new HEAP
-	        SQLBigNum(precision,
+	        SQLBigNum(HEAP, precision,
 			  scale,
 			  isARealBigNum,
 			  type->isSigned(),
-			  aggNeedsToBeNullable,
-			  NULL);
+			  aggNeedsToBeNullable);
             }
 	}
       else
 	{
-	  return new HEAP SQLDoublePrecision(aggNeedsToBeNullable);
+	  return new HEAP SQLDoublePrecision(HEAP, aggNeedsToBeNullable);
 	}
     }
   break;
@@ -782,7 +776,7 @@ static const NAType *synthAvgSum(const NAType& operand,
       if (type->isSupportedType())
       {
        return new HEAP
-         SQLInterval(aggNeedsToBeNullable,
+         SQLInterval(HEAP, aggNeedsToBeNullable,
                      type->getStartField(),
                      type->computeLeadingPrecision(type->getStartField(),
                                                    MAX_NUMERIC_PRECISION,
@@ -925,7 +919,7 @@ const NAType *ItemExpr::synthesizeType()
 {
   if (getArity() > 0)
     return &child(0)->castToItemExpr()->getValueId().getType();
-  return new HEAP SQLUnknown();
+  return new HEAP SQLUnknown(HEAP);
 }
 
 // Propagate type information down the ItemExpr tree.
@@ -933,8 +927,6 @@ const NAType *ItemExpr::synthesizeType()
 // does nothing.  Currently is only redefined by ValueIdUnion
 // to propagate the desired type to the sources of the ValueIdUnion.
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 ItemExpr::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -964,7 +956,6 @@ Cast::pushDownType(NAType& desiredType,
    return (NAType *)synthesizeType();
 }
 
-// LCOV_EXCL_START - cnu
 void ItemExpr::coerceChildType(NAType& desiredType,
                    enum NABuiltInTypeEnum defaultQualifier)
 {
@@ -972,9 +963,6 @@ void ItemExpr::coerceChildType(NAType& desiredType,
      child(i) -> getValueId().coerceType(desiredType, defaultQualifier);
    }
 }
-// LCOV_EXCL_STOP
-#pragma warning (default : 4018)   //warning elimination
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class BuiltinFunction.
@@ -993,7 +981,7 @@ const NAType *BuiltinFunction::synthesizeType()
 	ValueId vid1 = child(0)->getValueId();
 
 	// untyped param operands are typed as Int32 Unsigned.
-	SQLInt si(FALSE);
+	SQLInt si(NULL, FALSE);
 	vid1.coerceType(si, NA_NUMERIC_TYPE);
 
 	const NAType &typ1 = vid1.getType();
@@ -1005,17 +993,17 @@ const NAType *BuiltinFunction::synthesizeType()
 	if ( typ1.getTypeQualifier() == NA_CHARACTER_TYPE &&
 	     typ1.isVaryingLen() == TRUE )
 	  retType = new HEAP
-	    SQLVarChar(maxLength, typ1.supportsSQLnull());
+	    SQLVarChar(HEAP, maxLength, typ1.supportsSQLnull());
 	else
 	  retType = new HEAP
-	    SQLChar(maxLength, typ1.supportsSQLnull());
+	    SQLChar(HEAP, maxLength, typ1.supportsSQLnull());
       }
     break;
     case ITM_SHA1:
       {
         // type cast any params
         ValueId vid1 = child(0)->getValueId();
-        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
         vid1.coerceType(c1, NA_CHARACTER_TYPE);
         //input type must be string
         const NAType &typ1 = child(0)->getValueId().getType();
@@ -1027,7 +1015,7 @@ const NAType *BuiltinFunction::synthesizeType()
           }
 
         retType = new HEAP
-           SQLChar(128, FALSE);
+           SQLChar(HEAP, 128, FALSE);
 	if (typ1.supportsSQLnull())
 	  {
 	    retType->setNullable(TRUE);
@@ -1041,7 +1029,7 @@ const NAType *BuiltinFunction::synthesizeType()
     case ITM_SHA2_512:
       {
         ValueId vid1 = child(0)->getValueId();
-        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
         vid1.coerceType(c1, NA_CHARACTER_TYPE);
 
         const NAType &typ1 = child(0)->getValueId().getType();
@@ -1070,7 +1058,7 @@ const NAType *BuiltinFunction::synthesizeType()
             break;
         }
         retType = new HEAP
-          SQLChar(resultLen, typ1.supportsSQLnull());
+          SQLChar(HEAP, resultLen, typ1.supportsSQLnull());
       }
     break;
 
@@ -1078,7 +1066,7 @@ const NAType *BuiltinFunction::synthesizeType()
       {
         // type cast any params
         ValueId vid1 = child(0)->getValueId();
-        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
         vid1.coerceType(c1, NA_CHARACTER_TYPE);
         //input type must be string
         const NAType &typ1 = child(0)->getValueId().getType();
@@ -1090,7 +1078,7 @@ const NAType *BuiltinFunction::synthesizeType()
           }
 
         retType = new HEAP
-           SQLChar(32, FALSE);
+           SQLChar(HEAP, 32, FALSE);
 	if (typ1.supportsSQLnull())
 	  {
 	    retType->setNullable(TRUE);
@@ -1101,7 +1089,7 @@ const NAType *BuiltinFunction::synthesizeType()
       {
         const NAType &typ1 = child(0)->getValueId().getType();
         retType = new HEAP
-           SQLInt(FALSE, FALSE); //unsigned int
+           SQLInt(HEAP, FALSE, FALSE); //unsigned int
         if (typ1.supportsSQLnull())
           {
             retType->setNullable(TRUE);
@@ -1113,7 +1101,7 @@ const NAType *BuiltinFunction::synthesizeType()
       {
         // type cast any params
         ValueId vid1 = child(0)->getValueId();
-        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
         vid1.coerceType(c1, NA_CHARACTER_TYPE);
         //input type must be string
         const NAType &typ1 = child(0)->getValueId().getType();
@@ -1124,18 +1112,19 @@ const NAType *BuiltinFunction::synthesizeType()
 	    return NULL;
           }
         retType = new HEAP
-           SQLSmall(TRUE, FALSE);
+           SQLSmall(HEAP, TRUE, FALSE);
 	if (typ1.supportsSQLnull())
 	  {
 	    retType->setNullable(TRUE);
 	  }
       }
     break;
+
     case ITM_INET_ATON:
       {
         // type cast any params
         ValueId vid1 = child(0)->getValueId();
-        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
         vid1.coerceType(c1, NA_CHARACTER_TYPE);
 
         //input type must be string
@@ -1147,7 +1136,7 @@ const NAType *BuiltinFunction::synthesizeType()
 	    return NULL;
           }
         retType = new HEAP
-           SQLInt(FALSE, FALSE);
+           SQLInt(HEAP, FALSE, FALSE);
 	if (typ1.supportsSQLnull())
 	  {
 	    retType->setNullable(TRUE);
@@ -1174,7 +1163,7 @@ const NAType *BuiltinFunction::synthesizeType()
 	  }
 
 	retType = new HEAP
-	  SQLVarChar(15, FALSE);
+	  SQLVarChar(HEAP, 15, FALSE);
 
 	if (typ1.supportsSQLnull())
 	  {
@@ -1264,7 +1253,7 @@ const NAType *BuiltinFunction::synthesizeType()
         }
 
         retType = new HEAP
-        SQLVarChar(typ1.getNominalSize(), typ1.supportsSQLnull());
+        SQLVarChar(HEAP, typ1.getNominalSize(), typ1.supportsSQLnull());
     }
     break;
 
@@ -1272,35 +1261,31 @@ const NAType *BuiltinFunction::synthesizeType()
       {
 	// type cast any params
 	ValueId vid1 = child(0)->getValueId();
-	SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+	SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
 	vid1.coerceType(c1, NA_CHARACTER_TYPE);
 
 	ValueId vid2 = child(1)->getValueId();
-	SQLChar c2(40, FALSE);
+	SQLChar c2(NULL, 40, FALSE);
 	vid2.coerceType(c2, NA_CHARACTER_TYPE);
 
 	const CharType &typ1 = (CharType&)child(0)->getValueId().getType();
 	if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
 	  {
-// LCOV_EXCL_START - cnu
 	    // 4043 The operand of a $0~String0 function must be character.
 	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
 	    return NULL;
-// LCOV_EXCL_STOP
 	  }
 
 	const CharType &typ2 = (CharType&)child(1)->getValueId().getType();
 	if (typ2.getTypeQualifier() != NA_CHARACTER_TYPE)
 	  {
-// LCOV_EXCL_START - cnu
 	    // 4043 The operand of a $0~String0 function must be character.
 	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
 	    return NULL;
-// LCOV_EXCL_STOP
 	  }
 
 	retType = new HEAP
-	  SQLVarChar(ComSqlId::MAX_QUERY_ID_LEN,
+	  SQLVarChar(HEAP, ComSqlId::MAX_QUERY_ID_LEN,
                      (typ1.supportsSQLnull() || typ2.supportsSQLnull()),
                      FALSE, // not upshifted
                      FALSE, // not case-insensitive
@@ -1331,7 +1316,7 @@ const NAType *BuiltinFunction::synthesizeType()
 	  }
 
 	retType = new HEAP
-	  SQLVarChar(typ2.getNominalSize(), typ2.supportsSQLnull());
+	  SQLVarChar(HEAP, typ2.getNominalSize(), typ2.supportsSQLnull());
       }
     break;
 
@@ -1359,7 +1344,14 @@ const NAType *BuiltinFunction::synthesizeType()
 
     case ITM_UNIQUE_ID:
       {
-	retType = new HEAP SQLChar(16, FALSE);
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 36, FALSE);
+      }
+      break;
+    case ITM_UNIQUE_SHORT_ID:
+      {
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 21, FALSE);
       }
       break;
 
@@ -1367,7 +1359,7 @@ const NAType *BuiltinFunction::synthesizeType()
       {
           // type cast any params
           ValueId vid1 = child(0)->getValueId();
-          SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+          SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
           vid1.coerceType(c1, NA_CHARACTER_TYPE);
           
           //input type must be string
@@ -1379,7 +1371,7 @@ const NAType *BuiltinFunction::synthesizeType()
               return NULL;
           }
 
-          retType = new HEAP SQLChar(4, FALSE);
+          retType = new HEAP SQLChar(HEAP, 4, FALSE);
           if (typ1.supportsSQLnull())
           {
               retType->setNullable(TRUE);
@@ -1435,7 +1427,7 @@ const NAType *BuiltinFunction::synthesizeType()
         }
 
         retType = new HEAP
-            SQLVarChar(maxLength, TRUE);
+            SQLVarChar(HEAP, maxLength, TRUE);
       }
       break;
 
@@ -1483,7 +1475,7 @@ const NAType *Abs::synthesizeType()
 
   // type cast any params
   ValueId vid = child(0)->getValueId();
-  SQLDoublePrecision dp(TRUE);
+  SQLDoublePrecision dp(NULL, TRUE);
   vid.coerceType(dp, NA_NUMERIC_TYPE);
 
   const NAType &typ1 = child(0)->getValueId().getType();
@@ -1512,19 +1504,19 @@ const NAType *Abs::synthesizeType()
           else
             length = 8;
 
-          result = new HEAP SQLNumeric(length,
+          result = new HEAP SQLNumeric(HEAP, length,
                                        precision,
                                        ntyp1.getScale(),
                                        ntyp1.isSigned());
         }
       else if (NOT ntyp1.isBigNum() && (ntyp1.getScale()==0) ) // this must be LargeInt
-        result = new HEAP SQLLargeInt(ntyp1.isSigned());
+        result = new HEAP SQLLargeInt(HEAP, ntyp1.isSigned());
       else
-        result = new HEAP SQLDoublePrecision();
+        result = new HEAP SQLDoublePrecision(HEAP);
     }
   else
     {
-      result = new HEAP SQLDoublePrecision();
+      result = new HEAP SQLDoublePrecision(HEAP);
     }
 
   if (ntyp1.supportsSQLnullLogical()) result->setNullable(TRUE);
@@ -1557,7 +1549,6 @@ const NAType *CodeVal::synthesizeType()
 
   switch (getOperatorType())
   {
-// LCOV_EXCL_START - rfi
     case ITM_NCHAR_MP_CODE_VALUE:
        if ( CharInfo::is_NCHAR_MP(typ1.getCharSet()) != TRUE )
        {
@@ -1580,7 +1571,6 @@ const NAType *CodeVal::synthesizeType()
          return NULL;
        }
        break;
-// LCOV_EXCL_STOP
 
     case ITM_ASCII:
        {
@@ -1611,12 +1601,10 @@ const NAType *CodeVal::synthesizeType()
      {
        switch ( typ1.getCharSet() )
        {
-// LCOV_EXCL_START - mp
           case CharInfo::KANJI_MP:
           case CharInfo::KSC5601_MP:
             setOperatorType(ITM_NCHAR_MP_CODE_VALUE);
             break;
-// LCOV_EXCL_STOP
 
           case CharInfo::UNICODE:
             setOperatorType(ITM_UNICODE_CODE_VALUE);
@@ -1638,7 +1626,7 @@ const NAType *CodeVal::synthesizeType()
       return NULL;
   }
 
-  NAType *result = new (HEAP) SQLInt(FALSE, typ1.supportsSQLnullLogical());
+  NAType *result = new (HEAP) SQLInt(HEAP, FALSE, typ1.supportsSQLnullLogical());
 
   return result;
 }
@@ -1654,7 +1642,7 @@ const NAType *Aggregate::synthesizeType()
   case ITM_COUNT:
   case ITM_COUNT_NONULL:
     result = new HEAP
-      SQLLargeInt(TRUE /* 'long long' on NSK can't be unsigned */,
+      SQLLargeInt(HEAP, TRUE /* 'long long' on NSK can't be unsigned */,
 		  FALSE /*not null*/);
     break;
   case ITM_AVG:
@@ -1706,10 +1694,8 @@ const NAType *Aggregate::synthesizeType()
 
     if (!operand.isSupportedType())
     {
-// LCOV_EXCL_START - mp
       emitDyadicTypeSQLnameMsg(-4041, operand, operand);
       return NULL;
-// LCOV_EXCL_STOP
     }
 
     if (inScalarGroupBy())
@@ -1723,7 +1709,7 @@ const NAType *Aggregate::synthesizeType()
     {
 	  // grouping result is an unsigned int (32 bit)
       result = new HEAP
-        SQLInt(FALSE /*unsigned*/,
+        SQLInt(HEAP, FALSE /*unsigned*/,
                FALSE /*not null*/);
     }
   break;
@@ -1745,7 +1731,7 @@ const NAType *Aggregate::synthesizeType()
     // The argument of a ONE/ANY TRUE must be of type SQLBoolean
     CMPASSERT(operand.getTypeQualifier() == NA_BOOLEAN_TYPE);
 
-    result = new HEAP SQLBooleanRelat(operand.canBeSQLUnknown());
+    result = new HEAP SQLBooleanRelat(HEAP, operand.canBeSQLUnknown());
     break;
   }
   default:
@@ -1774,7 +1760,7 @@ const NAType *AggrMinMax::synthesizeType()
 const NAType *AggrGrouping::synthesizeType()
 {
   // result unsigned 32 bit integer
-  const NAType *result = new HEAP SQLInt(FALSE, FALSE);
+  const NAType *result = new HEAP SQLInt(HEAP, FALSE, FALSE);
 
   return result;
 }
@@ -1784,7 +1770,16 @@ const NAType *AggrGrouping::synthesizeType()
 // -----------------------------------------------------------------------
 const NAType *PivotGroup::synthesizeType()
 {
-  return new HEAP SQLVarChar(maxLen_, TRUE);
+  //for Character type, need to consider the charset
+  //the output charset should be same as input child 0
+  const NAType &operand = child(0)->getValueId().getType();
+  if(operand.getTypeQualifier() == NA_CHARACTER_TYPE)
+  {
+    CharType & origType = (CharType &) operand;
+    return new HEAP SQLVarChar(HEAP, maxLen_, TRUE, origType.isUpshifted(), FALSE, operand.getCharSet());
+  }
+  else
+    return new HEAP SQLVarChar(HEAP, maxLen_, TRUE);
 }
 
 // -----------------------------------------------------------------------
@@ -1798,7 +1793,7 @@ static const Lng32 OPT_MAX_USERNAME_LEN	 = ComSqlId::MAX_LDAP_USER_NAME_LEN+1;
 
 const NAType *AnsiUSERFunction::synthesizeType()
 {
-  return new HEAP SQLVarChar(OPT_MAX_USERNAME_LEN, FALSE);
+  return new HEAP SQLVarChar(HEAP, OPT_MAX_USERNAME_LEN, FALSE);
 }
 
 const NAType *MonadicUSERFunction::synthesizeType()
@@ -1808,7 +1803,7 @@ const NAType *MonadicUSERFunction::synthesizeType()
   //
   ValueId vid = child(0)->getValueId();
 
-  SQLInt si(TRUE);
+  SQLInt si(NULL, TRUE);
   vid.coerceType(si, NA_NUMERIC_TYPE);
 
   //
@@ -1841,7 +1836,7 @@ const NAType *MonadicUSERFunction::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLVarChar(OPT_MAX_USERNAME_LEN, typ1.supportsSQLnullLogical());
+  return new HEAP SQLVarChar(HEAP, OPT_MAX_USERNAME_LEN, typ1.supportsSQLnullLogical());
 }
 
 const NAType *MonadicUSERIDFunction::synthesizeType()
@@ -1864,7 +1859,7 @@ const NAType *MonadicUSERIDFunction::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLVarChar(OPT_MAX_USERNAME_LEN, operand.supportsSQLnullLogical());
+  return new HEAP SQLVarChar(HEAP, OPT_MAX_USERNAME_LEN, operand.supportsSQLnullLogical());
 }
 
 // -----------------------------------------------------------------------
@@ -2089,7 +2084,7 @@ const NAType *Between::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLBooleanRelat(allowsUnknown);
+  return new HEAP SQLBooleanRelat(HEAP, allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -2259,7 +2254,7 @@ const NAType *UnArith::synthesizeType()
       return NULL;
     }
 
-  NAType * retType = new HEAP SQLBooleanNative(operand1.supportsSQLnull());
+  NAType * retType = new HEAP SQLBooleanNative(HEAP, operand1.supportsSQLnull());
 
   return retType;
 }
@@ -2276,7 +2271,7 @@ const NAType *BiLogic::synthesizeType()
   NABoolean allowsUnknown = operand0.canBeSQLUnknown() OR
                             operand1.canBeSQLUnknown();
 
-  return new HEAP SQLBooleanRelat(allowsUnknown);
+  return new HEAP SQLBooleanRelat(HEAP, allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -2312,7 +2307,7 @@ const NAType *BiRelat::synthesizeType()
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
     return NULL;
-  return new HEAP SQLBooleanRelat(allowsUnknown);
+  return new HEAP SQLBooleanRelat(HEAP, allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -2321,7 +2316,7 @@ const NAType *BiRelat::synthesizeType()
 
 const NAType *BoolResult::synthesizeType()
 {
-  return new HEAP SQLBooleanRelat(getOperatorType() == ITM_RETURN_NULL);
+  return new HEAP SQLBooleanRelat(HEAP, getOperatorType() == ITM_RETURN_NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -2330,7 +2325,7 @@ const NAType *BoolResult::synthesizeType()
 
 const NAType *BoolVal::synthesizeType()
 {
-  return new HEAP SQLBooleanRelat(getOperatorType() == ITM_RETURN_NULL);
+  return new HEAP SQLBooleanRelat(HEAP, getOperatorType() == ITM_RETURN_NULL);
 }
 
 //------------------------------------------------------------------
@@ -2743,11 +2738,11 @@ const NAType *CastConvert::synthesizeType()
   CharType * origType = (CharType *)getType();
   if (DFS2REC::isAnyVarChar(origType->getFSDatatype()) == FALSE)
     type = new HEAP
-      SQLChar(maxLength, childType.supportsSQLnull(),
+      SQLChar(HEAP, maxLength, childType.supportsSQLnull(),
 	      origType->isUpshifted());
   else
     type = new HEAP
-      SQLVarChar(maxLength, childType.supportsSQLnull(),
+      SQLVarChar(HEAP, maxLength, childType.supportsSQLnull(),
 		 origType->isUpshifted());
 
   return type;
@@ -2782,7 +2777,7 @@ const NAType *CharFunc::synthesizeType()
   //
   // Type cast any params.
   //
-  SQLInt nType(FALSE);
+  SQLInt nType(NULL, FALSE);
   ValueId vid1 = child(0)->getValueId();
   vid1.coerceType(nType, NA_NUMERIC_TYPE);
 
@@ -2817,14 +2812,14 @@ const NAType *CharFunc::synthesizeType()
   CharType *result;
 
   if(charSet_ == CharInfo::UCS2 || charSet_ < 0)  // UCS2, kanji and KSC5601_MP
-    result = new (HEAP) SQLChar ( 1,
+    result = new (HEAP) SQLChar ( HEAP, 1,
                                   typ1.supportsSQLnullLogical(),
                                   FALSE/*not upshift*/,
                                   FALSE/*case sensitive*/,
                                   FALSE/*not varchar*/,
                                   charSet_);
   else
-    result = new (HEAP) SQLVarChar(CharInfo::maxBytesPerChar( cs_to_use )
+    result = new (HEAP) SQLVarChar(HEAP, CharInfo::maxBytesPerChar( cs_to_use )
                                   , typ1.supportsSQLnullLogical()
                                   , FALSE /*not upshift*/
                                   , FALSE /*case sensitive*/
@@ -2889,10 +2884,10 @@ const NAType *ConvertHex::synthesizeType()
        ( (const CharType*)operand)->getCharSet()==CharInfo::UTF8 )
      )
     type = new HEAP
-      SQLVarChar(maxLength, operand->supportsSQLnull());
+      SQLVarChar(HEAP, maxLength, operand->supportsSQLnull());
   else
     type = new HEAP
-      SQLChar(maxLength, operand->supportsSQLnull());
+      SQLChar(HEAP, maxLength, operand->supportsSQLnull());
 
   //
   // Return the result.
@@ -2953,7 +2948,7 @@ const NAType *CharLength::synthesizeType()
   // Return the result.
   //
   return new HEAP
-    SQLInt(FALSE  // unsigned
+    SQLInt(HEAP, FALSE  // unsigned
 	   ,operand.supportsSQLnullLogical()
 	   );
 }
@@ -3055,7 +3050,7 @@ const NAType *ConvertTimestamp::synthesizeType()
   // Type cast any params.
   //
   ValueId vid = child(0)->getValueId();
-  SQLLargeInt largeintType;
+  SQLLargeInt largeintType(NULL);
   vid.coerceType(largeintType);
   //
   // Check that the operands are compatible.
@@ -3070,10 +3065,25 @@ const NAType *ConvertTimestamp::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLTimestamp (operand.supportsSQLnullLogical(),
-                               SQLTimestamp::DEFAULT_FRACTION_PRECISION,
-                               HEAP);
+  return new HEAP SQLTimestamp (HEAP, operand.supportsSQLnullLogical(),
+                               SQLTimestamp::DEFAULT_FRACTION_PRECISION);
 
+}
+
+// -----------------------------------------------------------------------
+// member functions for class SleepFunction 
+// -----------------------------------------------------------------------
+const NAType *SleepFunction::synthesizeType()
+{
+    return  new HEAP SQLInt(HEAP, TRUE, TRUE);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class UnixTimestamp
+// -----------------------------------------------------------------------
+const NAType *UnixTimestamp::synthesizeType()
+{
+  return new HEAP SQLLargeInt(HEAP, FALSE,FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3082,9 +3092,8 @@ const NAType *ConvertTimestamp::synthesizeType()
 
 const NAType *CurrentTimestamp::synthesizeType()
 {
-  return new HEAP SQLTimestamp (FALSE,
-                                SQLTimestamp::DEFAULT_FRACTION_PRECISION,
-                                HEAP);
+  return new HEAP SQLTimestamp (HEAP, FALSE,
+                                SQLTimestamp::DEFAULT_FRACTION_PRECISION);
 }
 
 // -----------------------------------------------------------------------
@@ -3093,7 +3102,7 @@ const NAType *CurrentTimestamp::synthesizeType()
 
 const NAType *InternalTimestamp::synthesizeType()
 {
-  return new SQLTimestamp(FALSE);
+  return new HEAP SQLTimestamp(HEAP, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3102,7 +3111,7 @@ const NAType *InternalTimestamp::synthesizeType()
 
 const NAType *CurrentTimestampRunning::synthesizeType()
 {
-  return new HEAP SQLTimestamp(FALSE);
+  return new HEAP SQLTimestamp(HEAP, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3114,7 +3123,7 @@ const NAType *DateFormat::synthesizeType()
   // Type cast any params.
   //
   ValueId vid = child(0)->getValueId();
-  SQLTimestamp timestampType;
+  SQLTimestamp timestampType(NULL);
   vid.coerceType(timestampType);
   //
   // Check that the operands are compatible.
@@ -3179,13 +3188,13 @@ const NAType *DateFormat::synthesizeType()
     }
 
   if (formatAsDate)
-    return new HEAP SQLDate(vid.getType().supportsSQLnullLogical());
+    return new HEAP SQLDate(HEAP, vid.getType().supportsSQLnullLogical());
   else if (formatAsTimestamp)
-    return new HEAP SQLTimestamp(vid.getType().supportsSQLnullLogical());
+    return new HEAP SQLTimestamp(HEAP, vid.getType().supportsSQLnullLogical());
   else if (formatAsTime)
-    return new HEAP SQLTime(vid.getType().supportsSQLnullLogical());
+    return new HEAP SQLTime(HEAP, vid.getType().supportsSQLnullLogical());
   else
-    return new HEAP SQLChar(length, vid.getType().supportsSQLnullLogical());
+    return new HEAP SQLChar(HEAP, length, vid.getType().supportsSQLnullLogical());
 }
 
 // -----------------------------------------------------------------------
@@ -3198,7 +3207,7 @@ const NAType *DayOfWeek::synthesizeType()
   // Type cast any params.
   //
   ValueId vid = child(0)->getValueId();
-  SQLTimestamp timestampType;
+  SQLTimestamp timestampType(NULL);
   vid.coerceType(timestampType);
   //
   // Check that the operand contains a DAY field
@@ -3217,7 +3226,7 @@ const NAType *DayOfWeek::synthesizeType()
   // Return the result.
   //
   const Int16 DisAmbiguate = 0; // added for 64bit project
-  return new HEAP SQLNumeric(FALSE, 1, 0, DisAmbiguate,
+  return new HEAP SQLNumeric(HEAP, FALSE, 1, 0, DisAmbiguate,
                              operand.supportsSQLnullLogical());
 }
 
@@ -3228,16 +3237,14 @@ const NAType *DayOfWeek::synthesizeType()
 const NAType *DynamicParam::synthesizeType()
 {
   // dynamic params are always nullable.
-  return new HEAP SQLUnknown(TRUE);
+  return new HEAP SQLUnknown(HEAP, TRUE);
 }
 
 
-// LCOV_EXCL_START - cnu
 const NAType *ExplodeVarchar::synthesizeType()
 {
   return getType();
 }
-// LCOV_EXCL_STOP
 
 const NAType *Format::synthesizeType()
 {
@@ -3312,7 +3319,7 @@ if (0)
 const NAType *Hash::synthesizeType()
 {
   // result of hash function is always a non-nullable, unsigned 32 bit integer
-  return new HEAP SQLInt(FALSE, FALSE);
+  return new HEAP SQLInt(HEAP, FALSE, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3349,7 +3356,7 @@ const NAType *HashComb::synthesizeType()
 
   // result of hashcomb function is always a non-nullable,
   // unsigned 32 bit integer
-  return new HEAP SQLInt(FALSE, FALSE);
+  return new HEAP SQLInt(HEAP, FALSE, FALSE);
 }
 
 const NAType *HiveHashComb::synthesizeType()
@@ -3363,7 +3370,7 @@ const NAType *HiveHashComb::synthesizeType()
 
   // result of hashcomb function is always a non-nullable,
   // unsigned 32 bit integer
-  return new HEAP SQLInt(FALSE, FALSE);
+  return new HEAP SQLInt(HEAP, FALSE, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3376,7 +3383,7 @@ const NAType *HiveHashComb::synthesizeType()
 const NAType *HashDistPartHash::synthesizeType()
 {
   // result of hash function is always a non-nullable, unsigned 32 bit integer
-  return new HEAP SQLInt(FALSE, FALSE);
+  return new HEAP SQLInt(HEAP, FALSE, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3385,7 +3392,7 @@ const NAType *HashDistPartHash::synthesizeType()
 const NAType *HiveHash::synthesizeType()
 {
   // result of hivehash function is always a non-nullable, unsigned 32 bit integer
-  return new HEAP SQLInt(FALSE, FALSE);
+  return new HEAP SQLInt(HEAP, FALSE, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3424,7 +3431,7 @@ const NAType *HashDistPartHashComb::synthesizeType()
 
   // result of hashcomb function is always a non-nullable,
   // unsigned 32 bit integer
-  return new HEAP SQLInt(FALSE, FALSE);
+  return new HEAP SQLInt(HEAP, FALSE, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3451,7 +3458,7 @@ const NAType *JulianTimestamp::synthesizeType()
   // Type cast any params.
   //
   ValueId vid = child(0)->getValueId();
-  SQLTimestamp timestampType;
+  SQLTimestamp timestampType(NULL);
   vid.coerceType(timestampType);
   //
   // Check that the operands are compatible.
@@ -3465,7 +3472,7 @@ const NAType *JulianTimestamp::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLLargeInt(TRUE, operand.supportsSQLnullLogical());
+  return new HEAP SQLLargeInt(HEAP, TRUE, operand.supportsSQLnullLogical());
 }
 
 // -----------------------------------------------------------------------
@@ -3473,7 +3480,7 @@ const NAType *JulianTimestamp::synthesizeType()
 // -----------------------------------------------------------------------
 const NAType * StatementExecutionCount::synthesizeType()
 {
-  return new HEAP SQLLargeInt(TRUE,FALSE);
+  return new HEAP SQLLargeInt(HEAP, TRUE,FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3481,7 +3488,7 @@ const NAType * StatementExecutionCount::synthesizeType()
 // -----------------------------------------------------------------------
 const NAType * CurrentTransId::synthesizeType()
 {
-  return new HEAP SQLLargeInt(TRUE,FALSE);
+  return new HEAP SQLLargeInt(HEAP, TRUE,FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -3495,7 +3502,7 @@ const NAType *BitOperFunc::synthesizeType()
       // type cast any params
       ValueId vid = child(i)->getValueId();
       // untyped param operands are typed as Int32 Unsigned.
-      SQLInt dp(FALSE);
+      SQLInt dp(NULL, FALSE);
       vid.coerceType(dp, NA_NUMERIC_TYPE);
 
       const NAType &typ = vid.getType();
@@ -3541,7 +3548,7 @@ const NAType *BitOperFunc::synthesizeType()
 	// now it's safe to cast the types to numeric type
 	const NumericType &ntyp1 = (NumericType &) child(0)->getValueId().getType();
 	const NumericType &ntyp2 = (NumericType &) child(1)->getValueId().getType();
-	
+
 	if (NOT ntyp1.isExact() OR NOT ntyp2.isExact() OR
 	    ntyp1.isBigNum() OR ntyp2.isBigNum())
 	  {
@@ -3575,7 +3582,7 @@ const NAType *BitOperFunc::synthesizeType()
 
 	// now it's safe to cast the types to numeric type
 	const NumericType &ntyp1 = (NumericType &) child(0)->getValueId().getType();
-	
+
 	if (NOT ntyp1.isExact() OR ntyp1.isBigNum())
 	  {
 	    // 4046 BIT operation is only defined for exact numeric types.
@@ -3599,7 +3606,7 @@ const NAType *BitOperFunc::synthesizeType()
 	else
 	  {
 	    const Int16 DisAmbiguate = 0;
-	    result1 = new HEAP SQLNumeric(NOT ntyp1.isUnsigned(),
+	    result1 = new HEAP SQLNumeric(HEAP, NOT ntyp1.isUnsigned(),
 					  ntyp1.getPrecision(),
 					  ntyp1.getScale(),
 					  DisAmbiguate); // added for 64bit proj.
@@ -3647,19 +3654,17 @@ const NAType *BitOperFunc::synthesizeType()
 	// Make the result an Int32 or Int64.
 	NAType * result1 = NULL;
 	if (ntyp1.getNominalSize() <= 9)
-	  result = new HEAP SQLInt(TRUE, nullable);
+	  result = new HEAP SQLInt(HEAP, TRUE, nullable);
 	else
-	  result = new HEAP SQLLargeInt(TRUE, nullable);
+	  result = new HEAP SQLLargeInt(HEAP, TRUE, nullable);
       }
     break;
 
     default:
       {
-// LCOV_EXCL_START - rfi
 	// 4000 Internal Error. This function not supported.
 	*CmpCommon::diags() << DgSqlCode(-4000);
 	result = NULL;
-// LCOV_EXCL_STOP
       }
       break;
     }
@@ -3699,11 +3704,10 @@ NAType* MathFunc::findReturnTypeForFloorCeil(NABoolean nullable)
         // for SQLDecimal
         case REC_DECIMAL_UNSIGNED:
         case REC_DECIMAL_LSE:
-          return new HEAP SQLDecimal(nuTyp.getNominalSize()
+          return new HEAP SQLDecimal(HEAP, nuTyp.getNominalSize()
                                     ,0
                                     ,!nuTyp.isUnsigned()
                                     ,nuTyp.supportsSQLnull()
-                                    ,HEAP
                                     );
           break;
 
@@ -3716,19 +3720,18 @@ NAType* MathFunc::findReturnTypeForFloorCeil(NABoolean nullable)
         case REC_BIN16_SIGNED:
         case REC_BIN32_SIGNED:
         case REC_BIN64_SIGNED:
-           return new HEAP SQLNumeric(nuTyp.getNominalSize()
+           return new HEAP SQLNumeric(HEAP, nuTyp.getNominalSize()
                                      ,nuTyp.getPrecision()
                                      ,0
                                      ,!nuTyp.isUnsigned()
                                      ,nuTyp.supportsSQLnull()
-                                     ,HEAP
                                      );
 
         default: 
           break;
     }
   }
-  return new HEAP SQLDoublePrecision(nullable);
+  return new HEAP SQLDoublePrecision(HEAP, nullable);
 }
 
 const NAType *MathFunc::synthesizeType()
@@ -3742,7 +3745,7 @@ const NAType *MathFunc::synthesizeType()
       // type cast any params
       ValueId vid = child(i)->getValueId();
 
-      SQLDoublePrecision dp(TRUE);
+      SQLDoublePrecision dp(NULL, TRUE);
       vid.coerceType(dp, NA_NUMERIC_TYPE);
 
       const NAType &typ = vid.getType();
@@ -3794,7 +3797,7 @@ const NAType *MathFunc::synthesizeType()
     case ITM_TAN:
     case ITM_TANH:
       {
-	result = new HEAP SQLDoublePrecision(nullable);
+	result = new HEAP SQLDoublePrecision(HEAP, nullable);
       }
       break;
 
@@ -3807,11 +3810,9 @@ const NAType *MathFunc::synthesizeType()
 
     default:
       {
-// LCOV_EXCL_START - rfi
 	// 4000 Internal Error. This function not supported.
 	*CmpCommon::diags() << DgSqlCode(-4000);
 	result = NULL;
-// LCOV_EXCL_STOP
       }
       break;
     }
@@ -3835,7 +3836,7 @@ const NAType *Modulus::synthesizeType()
   //
   ValueId vid1 = child(0)->getValueId();
   ValueId vid2 = child(1)->getValueId();
-  SQLInt si(TRUE);
+  SQLInt si(NULL, TRUE);
   vid1.coerceType(si, NA_NUMERIC_TYPE);
   vid2.coerceType(si, NA_NUMERIC_TYPE);
 
@@ -4017,7 +4018,7 @@ const NAType *Repeat::synthesizeType()
     }
 
   NAType *result =
-    new (HEAP) SQLVarChar(CharLenInfo((Lng32)size_in_chars, (Lng32)size_in_bytes),
+    new (HEAP) SQLVarChar(HEAP, CharLenInfo((Lng32)size_in_chars, (Lng32)size_in_bytes),
 			  (typ1.supportsSQLnullLogical() ||
 			   typ2.supportsSQLnullLogical()),
 			  ctyp1.isUpshifted(),
@@ -4166,7 +4167,7 @@ const NAType *Replace::synthesizeType()
   CharLenInfo CLInfo( size_in_chars, size_in_bytes );
 
   NAType *result =
-    new (HEAP) SQLVarChar(CLInfo,
+    new (HEAP) SQLVarChar(HEAP, CLInfo,
 			  (typ1->supportsSQLnullLogical() ||
 			   typ2->supportsSQLnullLogical() ||
 			   typ3->supportsSQLnullLogical()),
@@ -4234,7 +4235,7 @@ const NAType *HashDistrib::synthesizeType()
 const NAType *ProgDistribKey::synthesizeType()
 {
   // return: Large Int.
-  return new HEAP SQLLargeInt(TRUE, FALSE);
+  return new HEAP SQLLargeInt(HEAP, TRUE, FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -4324,7 +4325,7 @@ const NAType *CompEncode::synthesizeType()
 
   if (src.getTypeQualifier() != NA_CHARACTER_TYPE)
     {
-      return new HEAP SQLChar(keyLength, supportsSQLnull);
+      return new HEAP SQLChar(HEAP, keyLength, supportsSQLnull);
     }
   else
     {
@@ -4355,17 +4356,17 @@ const NAType *CompEncode::synthesizeType()
 	    case CollationInfo::Sort:
 	      {
 		// in this case the encode is non nullable if not regularNullability
-		return new HEAP SQLChar(keyLength, 
+		return new HEAP SQLChar(HEAP, keyLength, 
 					supportsSQLnull); 
 	      }
 	    case CollationInfo::Compare:
 	      {
-		return new HEAP SQLChar(keyLength, 
+		return new HEAP SQLChar(HEAP, keyLength, 
 					cSrc.supportsSQLnull());
 	      }
 	    case CollationInfo::Search:
 	      {
-		return new HEAP SQLVarChar(keyLength,   
+		return new HEAP SQLVarChar(HEAP, keyLength,   
 					   cSrc.supportsSQLnull());
 	      }
 	    default:
@@ -4377,7 +4378,7 @@ const NAType *CompEncode::synthesizeType()
 	}
       else
 	{
-	  return new HEAP SQLChar(keyLength, supportsSQLnull);
+	  return new HEAP SQLChar(HEAP, keyLength, supportsSQLnull);
 	}
     }
 }
@@ -4394,7 +4395,6 @@ const NAType *CompDecode::synthesizeType()
 // member functions for class Extract
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 const NAType *Extract::synthesizeType()
 {
   // Assert that we are bound, or created by Generator, so we have type info.
@@ -4416,6 +4416,22 @@ const NAType *Extract::synthesizeType()
 
     return NULL;
   }
+  if ( type != NA_DATETIME_TYPE )
+    {
+      enum rec_datetime_field eField = getExtractField();
+      NAString sErr;
+      if ( REC_DATE_WEEK == eField
+          || REC_DATE_DOW == eField
+          || REC_DATE_DOY == eField
+          || REC_DATE_WOM == eField
+          || REC_DATE_CENTURY == eField)
+        sErr = dti.getFieldName(eField);
+      if (sErr.length() > 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4496) << DgString0(sErr);
+          return NULL;
+        }
+    }
   // ANSI 6.6 SR 3a.
   enum rec_datetime_field extractStartField = getExtractField();
   enum rec_datetime_field extractEndField = extractStartField;
@@ -4429,18 +4445,29 @@ const NAType *Extract::synthesizeType()
         extractEndField = REC_DATE_DAY; // extracting week requires the day
       else
         extractEndField = REC_DATE_MONTH; // months/quarters need only the month
+
+      if (type == NA_INTERVAL_TYPE)  // YEARQUARTER etc. are not supported on intervals
+        {
+          *CmpCommon::diags() << DgSqlCode(-4037)
+            << DgString0(dti.getFieldName(getExtractField()))
+            << DgString1(dti.getTypeSQLname(TRUE /*terse*/));
+          return NULL;
+        }
     }
 
-  if (dti.getStartField() > extractStartField ||
-      dti.getEndField()   < extractEndField ||
-      !dti.isSupportedType()) {
-    // 4037 cannot extract field from type
-    *CmpCommon::diags() << DgSqlCode(-4037)
-       << DgString0(dti.getFieldName(getExtractField()))
-       << DgString1(dti.getTypeSQLname(TRUE /*terse*/));
+  if ( !(extractStartField >=REC_DATE_CENTURY && extractStartField<=REC_DATE_WOM) )
+    {
+      if (dti.getStartField() > extractStartField ||
+          dti.getEndField()   < extractEndField ||
+          !dti.isSupportedType()) {
+        // 4037 cannot extract field from type
+        *CmpCommon::diags() << DgSqlCode(-4037)
+           << DgString0(dti.getFieldName(getExtractField()))
+           << DgString1(dti.getTypeSQLname(TRUE /*terse*/));
 
-    return NULL;
-  }
+        return NULL;
+      }
+    }
   // ANSI 6.6 SR 4.  Precision is implementation-defined:
   // EXTRACT(YEAR       from datetime):  result precision is 4 + scale
   // EXTRACT(other      from datetime):  result precision is 2 + scale
@@ -4462,21 +4489,38 @@ const NAType *Extract::synthesizeType()
   else if (getExtractField() == REC_DATE_YEARWEEK_EXTRACT ||
            getExtractField() == REC_DATE_YEARWEEK_D_EXTRACT)
     prec = 6;					// YEARMWEEK is yyyyww
+  else if (getExtractField() == REC_DATE_DECADE ||
+           getExtractField() == REC_DATE_DOY)
+    prec = 3;
+  else if (getExtractField() == REC_DATE_QUARTER ||
+           getExtractField() == REC_DATE_DOW)
+    prec = 1;
+  else if (getExtractField() == REC_DATE_EPOCH)
+    prec = 10;
   else
     prec = 2;					// else max of 12, 31, 24, 59
   if (getExtractField() == REC_DATE_SECOND) {
     prec  += dti.getFractionPrecision();
     scale += dti.getFractionPrecision();
   }
+  if (getExtractField() == REC_DATE_EPOCH)
+    {
+      prec  += dti.getFractionPrecision();
+      scale += dti.getFractionPrecision();
+    }
+  NABoolean bNegValue = FALSE;
+  if (getExtractField() == REC_DATE_DECADE
+      || getExtractField() == REC_DATE_QUARTER
+      || getExtractField() == REC_DATE_EPOCH )
+    bNegValue = TRUE;
   const Int16 disAmbiguate = 0; // added for 64bit project
   return new HEAP
-    SQLNumeric(type == NA_INTERVAL_TYPE, /*allowNegValues*/
+    SQLNumeric(HEAP, (type == NA_INTERVAL_TYPE) || bNegValue, /*allowNegValues*/
 	       prec,
 	       scale,
                disAmbiguate,
                dti.supportsSQLnull());
 }
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class Increment
@@ -4546,7 +4590,7 @@ const NAType *TriRelational::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLBooleanRelat(allowsUnknown);
+  return new HEAP SQLBooleanRelat(HEAP, allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -4556,7 +4600,7 @@ const NAType *TriRelational::synthesizeType()
 const NAType *RangeLookup::synthesizeType()
 {
   // the result is a signed 32 bit number
-  return new HEAP SQLInt(TRUE,FALSE);
+  return new HEAP SQLInt(HEAP, TRUE,FALSE);
 }
 
 // -----------------------------------------------------------------------
@@ -4625,7 +4669,7 @@ const NAType *PatternMatchingFunction::synthesizeType()
 
   if (getArity() > 2) {   // Escape clause was specified
     vid3 = child(2)->getValueId();
-    const SQLChar charType(1);
+    const SQLChar charType(NULL, 1);
     vid3.coerceType(charType);
     typ3 = &vid3.getType();
   }
@@ -4681,7 +4725,7 @@ const NAType *PatternMatchingFunction::synthesizeType()
 			   (typ3 AND
 			    typ3->supportsSQLnull());
 
-  return new HEAP SQLBooleanRelat(allowsUnknown);
+  return new HEAP SQLBooleanRelat(HEAP, allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -4708,12 +4752,10 @@ const NAType *Lower::synthesizeType()
   CharType *ct = (CharType *)&operand;
 
   if ( CharInfo::is_NCHAR_MP(ct->getCharSet()) ) {
-// LCOV_EXCL_START - mp
     // 3217: Character set KANJI/KSC5601 is not allowed in the LOWER function.
     *CmpCommon::diags() << DgSqlCode(-3217)
                         << DgString0(CharInfo::getCharSetName(ct->getCharSet()))
                         << DgString1("LOWER");
-// LCOV_EXCL_STOP
   }
 
   if ((ct->isUpshifted()) ||
@@ -4731,7 +4773,7 @@ const NAType *Lower::synthesizeType()
   //
   if (ct->getCharSet() == CharInfo::UTF8) {
     // NOTE: See comment near end of Upper::synthesizeType() for reason we don't multiply by 3 here.
-    ct =  new (HEAP) SQLVarChar(CharLenInfo(ct->getStrCharLimit(), (ct->getDataStorageSize()))
+    ct =  new (HEAP) SQLVarChar(HEAP, CharLenInfo(ct->getStrCharLimit(), (ct->getDataStorageSize()))
 				,ct->supportsSQLnull()
 				,ct->isUpshifted()
 				,ct->isCaseinsensitive()
@@ -4765,11 +4807,9 @@ const NAType *Upper::synthesizeType()
   CharType *ct = (CharType *)&operand;
 
   if ( CharInfo::is_NCHAR_MP(ct->getCharSet()) ) {
-// LCOV_EXCL_START - mp
     *CmpCommon::diags() << DgSqlCode(-3217)
                         << DgString0(CharInfo::getCharSetName(ct->getCharSet()))
                         << DgString1("UPPER");
-// LCOV_EXCL_STOP
   }
 
   if (NOT ct->isUpshifted()) {
@@ -4778,7 +4818,7 @@ const NAType *Upper::synthesizeType()
   }
 
   if (ct->getCharSet() == CharInfo::UNICODE) {
-    ct =  new (HEAP) SQLVarChar(3*(ct->getStrCharLimit())
+    ct =  new (HEAP) SQLVarChar(HEAP, 3*(ct->getStrCharLimit())
 				,ct->supportsSQLnull()
 				,ct->isUpshifted()
 				,ct->isCaseinsensitive()
@@ -4794,7 +4834,7 @@ const NAType *Upper::synthesizeType()
   // and for that reason, the UPPER function provides for 3 times as much output as the
   // input string is long.  HOWEVER, such is never the case for the LOWER function.
   //
-    ct =  new (HEAP) SQLVarChar(CharLenInfo(3*ct->getStrCharLimit(), 3*(ct->getDataStorageSize()))
+    ct =  new (HEAP) SQLVarChar(HEAP, CharLenInfo(3*ct->getStrCharLimit(), 3*(ct->getDataStorageSize()))
 				,ct->supportsSQLnull()
 				,ct->isUpshifted()
 				,ct->isCaseinsensitive()
@@ -4872,7 +4912,7 @@ const NAType *OctetLength::synthesizeType()
   //
   // Return the result.
   //
-  return new HEAP SQLInt(FALSE  // unsigned
+  return new HEAP SQLInt(HEAP, FALSE  // unsigned
 		     ,operand.supportsSQLnullLogical()
 		     );
 }
@@ -4883,21 +4923,6 @@ const NAType *OctetLength::synthesizeType()
 
 const NAType *PositionFunc::synthesizeType()
 {
-  NABoolean JDBC = (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON);
-  if ((NOT JDBC) && (getArity() == 3))
-    {
-      // third argument not supported for non-JDBC callers.
-      *CmpCommon::diags() << DgSqlCode(-3131);
-      return NULL;
-    }
-  else
-    {
-      // third argument is only supported for JDBC_PROCESS callers and
-      // is ignored. This is done for WLS/JDBC project who only want
-      // to not get a syntax error if a third argument is passed in.
-      // Go figure.
-      // They need this to get through some certification tests.
-   }
 
   //
   // Type cast any params.
@@ -4912,15 +4937,8 @@ const NAType *PositionFunc::synthesizeType()
   const NAType *operand1 = &vid1.getType();
   const NAType *operand2 = &vid2.getType();
   const NAType *operand3 = NULL;
+  const NAType *operand4 = NULL;
 
-  if (getArity() == 3)
-    {
-      ValueId vid3 = child(2)->getValueId();
-      SQLInt si;
-
-      vid3.coerceType(si, NA_NUMERIC_TYPE);
-      operand3 = &vid3.getType();
-    }
 
   //
   // Check that the operands are comparable.
@@ -4947,19 +4965,6 @@ const NAType *PositionFunc::synthesizeType()
     return NULL;
   }
 
-  if (operand3) {
-    if (operand3->getTypeQualifier() != NA_NUMERIC_TYPE) {
-      // 4053 The third operand of a POSITION function must be numeric.
-      *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
-      return NULL;
-    }
-
-    if (((NumericType*)operand3)->getScale() != 0) {
-      // 4047 The third operand of a POSITION function must have a scale of 0.
-      *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
-      return NULL;
-    }
-  }
 
 // 1/5/98: make sure position pattern and source types are comparable.
   const CharType *posPat = (CharType*)operand1;
@@ -5008,7 +5013,7 @@ const NAType *PositionFunc::synthesizeType()
   // Return the result.
   //
   return new HEAP
-    SQLInt(FALSE,  // unsigned
+    SQLInt(HEAP, FALSE,  // unsigned
 	   operand1->supportsSQLnullLogical() ||
 	   operand2->supportsSQLnullLogical()
 	  );
@@ -5027,7 +5032,7 @@ const NAType *Substring::synthesizeType()
   ValueId vid2 = child(1)->getValueId();
   vid1.coerceType(NA_CHARACTER_TYPE);
 
-  SQLInt si;
+  SQLInt si(NULL);
   vid2.coerceType(si, NA_NUMERIC_TYPE);
   if (getArity() == 3)
     {
@@ -5172,7 +5177,7 @@ const NAType *Substring::synthesizeType()
   if (operand1->getFSDatatype() == REC_CLOB)
     {
       return new HEAP
-	SQLClob(maxLength_bytes, Lob_Invalid_Storage,
+	SQLClob(HEAP, maxLength_bytes, Lob_Invalid_Storage,
 		operand1->supportsSQLnull() OR
 		operand2->supportsSQLnull() OR
 		((operand3 != NULL) AND operand3->supportsSQLnull()));
@@ -5182,7 +5187,7 @@ const NAType *Substring::synthesizeType()
     
 
       return new HEAP
-	SQLVarChar(CharLenInfo(maxLength_chars, maxLength_bytes), // OLD: maxLength
+	SQLVarChar(HEAP, CharLenInfo(maxLength_chars, maxLength_bytes), // OLD: maxLength
 		   operand1->supportsSQLnull() OR
 		   operand2->supportsSQLnull() OR
 		   ((operand3 != NULL) AND operand3->supportsSQLnull())
@@ -5286,7 +5291,7 @@ const NAType *Trim::synthesizeType()
   Int32 size = trimSource->getDataStorageSize();
 
   return new HEAP
-    SQLVarChar(CharLenInfo(trimSource->getStrCharLimit(), size )
+    SQLVarChar(HEAP, CharLenInfo(trimSource->getStrCharLimit(), size )
 	      ,trimChar->supportsSQLnull() OR trimSource->supportsSQLnull()
 	      ,trimSource->isUpshifted()
 	      ,trimSource->isCaseinsensitive()
@@ -5332,7 +5337,7 @@ const NAType *UnLogic::synthesizeType()
       break;
   }
 
-  return new HEAP SQLBooleanRelat(allowsUnknown);
+  return new HEAP SQLBooleanRelat(HEAP, allowsUnknown);
 }
 
 // -----------------------------------------------------------------------
@@ -5518,7 +5523,7 @@ const NAType *Translate::synthesizeType()
                                             translateSource->getNominalSize(),
                                             charsetTarget);
 
-      return new HEAP SQLVarChar(CharLenInfo(translateSource->getStrCharLimit(), resultLen),
+      return new HEAP SQLVarChar(HEAP, CharLenInfo(translateSource->getStrCharLimit(), resultLen),
                                  TRUE, FALSE, 
                                  translateSource->isCaseinsensitive(),
                                  charsetTarget,
@@ -5536,7 +5541,6 @@ const NAType *Translate::synthesizeType()
 // member functions for class ValueIdUnion
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 const NAType *ValueIdUnion::synthesizeType()
 {
   const NAType *result = NULL;
@@ -5623,7 +5627,6 @@ const NAType *ValueIdUnion::synthesizeType()
 
   return result;
 }
-#pragma warn(1506)  // warning elimination
 
 // ValueIdUnion::pushDownType() -----------------------------------
 // Propagate type information down the ItemExpr tree.  This method
@@ -5648,7 +5651,6 @@ const NAType *ValueIdUnion::synthesizeType()
 // and re-synthesize the Type of the inner ValueIdUnion node.
 //
 //
-#pragma nowarn(1506)   // warning elimination
 const NAType *
 ValueIdUnion::pushDownType(NAType& desiredType,
                            enum NABuiltInTypeEnum defaultQualifier)
@@ -5660,7 +5662,6 @@ ValueIdUnion::pushDownType(NAType& desiredType,
   return (NAType *)synthesizeType();
 
 }
-#pragma warn(1506)  // warning elimination
 
 
 const NAType *
@@ -5687,7 +5688,7 @@ HostVar::pushDownType(NAType& desiredType,
   // If this is a rowset host var, we need to propagate the desired type into it
   if (varType_->getTypeQualifier() == NA_ROWSET_TYPE) {
     SQLRowset *rw1 = (SQLRowset *) varType_;
-    SQLRowset *rw2 = new HEAP SQLRowset(&desiredType, rw1->getMaxNumElements(),
+    SQLRowset *rw2 = new HEAP SQLRowset(HEAP, &desiredType, rw1->getMaxNumElements(),
                                                       rw1->getNumElements());
     NAType *tempType = &desiredType;
     rw2->setNullable(*tempType);
@@ -5711,8 +5712,6 @@ const NAType *ValueIdProxy::synthesizeType()
 // Propagate type information down the node we are Proxy for.
 // Called by coerceType().  
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 ValueIdProxy::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -5727,7 +5726,7 @@ ValueIdProxy::pushDownType(NAType& desiredType,
 
 const NAType *VEGPredicate::synthesizeType()
 {
-  return new HEAP SQLBooleanRelat();
+  return new HEAP SQLBooleanRelat(HEAP);
 }
 
 // -----------------------------------------------------------------------
@@ -5792,7 +5791,7 @@ const NAType *VEGReference::synthesizeType()
   }
   else
   {
-    type = new HEAP SQLUnknown();
+    type = new HEAP SQLUnknown(HEAP);
   }
 
   getVEG()->markAsNotSeenBefore();
@@ -5802,7 +5801,7 @@ const NAType *VEGReference::synthesizeType()
 
 const NAType *ScalarVariance::synthesizeType()
 {
-  return new HEAP SQLDoublePrecision(TRUE); // Variance is always Nullable
+  return new HEAP SQLDoublePrecision(HEAP, TRUE); // Variance is always Nullable
 }
 
 // UnPackCol::synthesizeType() --------------------------------
@@ -5841,7 +5840,7 @@ const NAType *RandomNum::synthesizeType()
       //
       // Type cast any params.
       //
-      SQLInt nType(FALSE);
+      SQLInt nType(NULL, FALSE);
       ValueId vid = child(0)->getValueId();
       vid.coerceType(nType, NA_NUMERIC_TYPE);
 
@@ -5870,12 +5869,12 @@ const NAType *RandomNum::synthesizeType()
 	}
 
      // return: int unsigned 
-      result = (NAType *) new HEAP SQLInt(FALSE, ntyp1.supportsSQLnullLogical());
+      result = (NAType *) new HEAP SQLInt(HEAP, FALSE, ntyp1.supportsSQLnullLogical());
     }
   else
     {
       // return: int unsigned not null 
-      result = (NAType *) new HEAP SQLInt(FALSE,FALSE);
+      result = (NAType *) new HEAP SQLInt(HEAP, FALSE,FALSE);
     }
 
   return result;
@@ -5971,7 +5970,7 @@ const NAType * ZZZBinderFunction::synthesizeType()
     case ITM_DATEDIFF_MONTH:
     case ITM_DATEDIFF_QUARTER:
     case ITM_DATEDIFF_WEEK:
-      return new HEAP SQLInt(TRUE,
+      return new HEAP SQLInt(HEAP, TRUE,
                              child(0)->getValueId().getType().supportsSQLnull() ||
                              child(1)->getValueId().getType().supportsSQLnull());
       
@@ -5987,7 +5986,7 @@ const NAType * ZZZBinderFunction::synthesizeType()
 
     case ITM_YEARWEEK:
     case ITM_YEARWEEKD:
-      return new HEAP SQLNumeric(4,
+      return new HEAP SQLNumeric(HEAP, 4,
                                  6,
                                  0,
                                  TRUE,
@@ -6001,7 +6000,7 @@ const NAType * ZZZBinderFunction::synthesizeType()
 
 const NAType *Subquery::synthesizeType()
 {
-  return new HEAP SQLBooleanRelat();
+  return new HEAP SQLBooleanRelat(HEAP);
 }
 
 const NAType *RowSubquery::synthesizeType()
@@ -6015,8 +6014,6 @@ const NAType *RowSubquery::synthesizeType()
 // the RowSubquery is of degree 1 and the returned value in the select
 // list is of unknown or character type.
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 RowSubquery::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -6055,7 +6052,7 @@ const NAType *QuantifiedComp::synthesizeType()
   if (!synthItemExprLists(exprList1, exprList2, allowIncompatibleComparison,
 			  allowsUnknown, this))
     return NULL;
-  return new HEAP SQLBooleanRelat(allowsUnknown);
+  return new HEAP SQLBooleanRelat(HEAP, allowsUnknown);
 }
 
 // MV,
@@ -6069,7 +6066,7 @@ const NAType *GenericUpdateOutputFunction::synthesizeType()
     // Type cast any params.
     //
     ValueId vid = child(0)->getValueId();
-    SQLTimestamp timestampType;
+    SQLTimestamp timestampType(NULL);
     vid.coerceType(timestampType);
     //
     // Check that the operands are compatible.
@@ -6081,11 +6078,11 @@ const NAType *GenericUpdateOutputFunction::synthesizeType()
       return NULL;
     }
   
-    type = new HEAP SQLLargeInt(TRUE, operand.supportsSQLnullLogical());
+    type = new HEAP SQLLargeInt(HEAP, TRUE, operand.supportsSQLnullLogical());
   }
   else
   {
-    type = new HEAP SQLInt(TRUE, FALSE);
+    type = new HEAP SQLInt(HEAP, TRUE, FALSE);
   }
 
   return type;
@@ -6095,13 +6092,13 @@ const NAType *GenericUpdateOutputFunction::synthesizeType()
 
 const NAType *UniqueExecuteId::synthesizeType()
 {
-  return new HEAP SQLChar(SIZEOF_UNIQUE_EXECUTE_ID, FALSE);
+  return new HEAP SQLChar(HEAP, SIZEOF_UNIQUE_EXECUTE_ID, FALSE);
 }
 
 
 const NAType *GetTriggersStatus::synthesizeType()
 {
-  return new HEAP SQLChar(TRIGGERS_STATUS_VECTOR_SIZE, FALSE);
+  return new HEAP SQLChar(HEAP, TRIGGERS_STATUS_VECTOR_SIZE, FALSE);
 }
 
 const NAType *GetBitValueAt::synthesizeType()
@@ -6119,7 +6116,7 @@ const NAType *GetBitValueAt::synthesizeType()
     *CmpCommon::diags() << DgSqlCode(-4052) << DgString0(getTextUpper());
     return NULL;
   }
-  return new HEAP SQLInt(FALSE, FALSE);
+  return new HEAP SQLInt(HEAP, FALSE, FALSE);
 }
 
 //--Triggers,
@@ -6160,10 +6157,10 @@ const NAType *ItemList::synthesizeType()
   }
   else
   {
-    restOfRecord = new HEAP SQLRecord(&child(1)->getValueId().getType(),NULL);
+    restOfRecord = new HEAP SQLRecord(HEAP, &child(1)->getValueId().getType(),NULL);
   }
 
-  return new HEAP SQLRecord(elementType,restOfRecord);
+  return new HEAP SQLRecord(HEAP, elementType,restOfRecord);
 }
 // -----------------------------------------------------------------------
 // member functions for class ItmSeqOffset
@@ -6307,7 +6304,7 @@ const NAType *ItmSeqDiff1::synthesizeType()
   const NAType *result2 = operand2.synthesizeType(SYNTH_RULE_SUB, operand2, operand2, HEAP);
   if (result2->getTypeQualifier() == NA_INTERVAL_TYPE)
   {
-    result2 = new HEAP SQLLargeInt(TRUE, FALSE );
+    result2 = new HEAP SQLLargeInt(HEAP, TRUE, FALSE );
   }
   result = (NAType *)result2->synthesizeType(SYNTH_RULE_DIV, *result1, *result2, HEAP);
  }
@@ -6356,7 +6353,7 @@ const NAType *ItmSeqDiff2::synthesizeType()
   const NAType *result2 = operand2.synthesizeType(SYNTH_RULE_SUB, operand2, operand2, HEAP);
   if (result2->getTypeQualifier() == NA_INTERVAL_TYPE)
   {
-    result2 = new HEAP SQLLargeInt(TRUE, FALSE );
+    result2 = new HEAP SQLLargeInt(HEAP, TRUE, FALSE );
   }
   result = (NAType *)result2->synthesizeType(SYNTH_RULE_DIV, *result, *result2, HEAP);
  }
@@ -6379,7 +6376,7 @@ const NAType *ItmSeqRunningFunction::synthesizeType()
       (getOperatorType() == ITM_RUNNING_DRANK)  ||
       (getOperatorType() == ITM_RUNNING_CHANGE)) {
     result = new HEAP
-      SQLLargeInt(TRUE /* 'long long' on NSK can't be unsigned */,
+      SQLLargeInt(HEAP, TRUE /* 'long long' on NSK can't be unsigned */,
 		  FALSE /*not null*/);
   }
   else {
@@ -6388,7 +6385,7 @@ const NAType *ItmSeqRunningFunction::synthesizeType()
     switch (getOperatorType())  {
      case ITM_RUNNING_AVG:  {         // needs to mimic what will happen after transformation
        const NAType *operand1 = synthAvgSum(operand, FALSE);
-       const NAType *newInt =  new HEAP SQLLargeInt(TRUE,FALSE);
+       const NAType *newInt =  new HEAP SQLLargeInt(HEAP, TRUE,FALSE);
        if (operand1){
         result = operand1->synthesizeType(SYNTH_RULE_DIV, *operand1, *newInt, HEAP);
        }
@@ -6407,7 +6404,7 @@ const NAType *ItmSeqRunningFunction::synthesizeType()
 
      case ITM_RUNNING_SDEV:
      case ITM_RUNNING_VARIANCE:
-       result = new HEAP SQLDoublePrecision(TRUE); // See ScalarVariance::synthesizeType()
+       result = new HEAP SQLDoublePrecision(HEAP, TRUE); // See ScalarVariance::synthesizeType()
        break;
 
      default:
@@ -6431,7 +6428,7 @@ const NAType *ItmSeqOlapFunction::synthesizeType()
   if (getOperatorType() == ITM_OLAP_COUNT) 
   {
     result = new HEAP
-              SQLLargeInt(TRUE /* 'long long' on NSK can't be unsigned */,
+              SQLLargeInt(HEAP, TRUE /* 'long long' on NSK can't be unsigned */,
 		          TRUE /* null*/);
   }
   else
@@ -6440,7 +6437,7 @@ const NAType *ItmSeqOlapFunction::synthesizeType()
       (getOperatorType() == ITM_OLAP_DRANK)) 
   {
     result = new HEAP
-              SQLLargeInt(TRUE /* 'long long' on NSK can't be unsigned */,
+              SQLLargeInt(HEAP, TRUE /* 'long long' on NSK can't be unsigned */,
 		          FALSE /*not null*/);
   }
   else 
@@ -6452,7 +6449,7 @@ const NAType *ItmSeqOlapFunction::synthesizeType()
      case ITM_OLAP_AVG:  
      {         // needs to mimic what will happen after transformation
        const NAType *operand1 = synthAvgSum(operand, FALSE);
-       const NAType *newInt =  new HEAP SQLLargeInt(TRUE, TRUE /*FALSE*/);
+       const NAType *newInt =  new HEAP SQLLargeInt(HEAP, TRUE, TRUE /*FALSE*/);
        if (operand1)
        {
         result = operand1->synthesizeType(SYNTH_RULE_DIV, *operand1, *newInt, HEAP);
@@ -6471,7 +6468,7 @@ const NAType *ItmSeqOlapFunction::synthesizeType()
 
      case ITM_OLAP_SDEV:
      case ITM_OLAP_VARIANCE:
-       result = new HEAP SQLDoublePrecision(TRUE); 
+       result = new HEAP SQLDoublePrecision(HEAP, TRUE); 
        break;
 
      default:
@@ -6502,7 +6499,7 @@ const NAType *ItmSeqRowsSince::synthesizeType()
     }
   }
   return  new HEAP
-    SQLInt(TRUE /* 'long long' on NSK can't be unsigned */,
+    SQLInt(HEAP, TRUE /* 'long long' on NSK can't be unsigned */,
 	   TRUE /* nullable */);
 }
 
@@ -6510,7 +6507,6 @@ const NAType *ItmSeqRowsSince::synthesizeType()
 // member functions for class ItmSeqMovingFunction
 // -----------------------------------------------------------------------
 
-#pragma nowarn(262)   // warning elimination
 const NAType *ItmSeqMovingFunction::synthesizeType()
 {
   const NAType *result=NULL;
@@ -6542,7 +6538,7 @@ const NAType *ItmSeqMovingFunction::synthesizeType()
       (getOperatorType() == ITM_MOVING_RANK)  ||
       (getOperatorType() == ITM_MOVING_DRANK)) {
     result = new HEAP
-      SQLLargeInt(TRUE /* 'long long' on NSK can't be unsigned */,
+      SQLLargeInt(HEAP, TRUE /* 'long long' on NSK can't be unsigned */,
 		  FALSE /*not null*/);
   }
   else  {
@@ -6551,7 +6547,7 @@ const NAType *ItmSeqMovingFunction::synthesizeType()
    switch (getOperatorType())  {
     case ITM_MOVING_AVG: {          // needs to mimic what will happen after transformation
        const NAType *operand1 = synthAvgSum(operand, FALSE);
-       const NAType *newInt =  new HEAP SQLLargeInt(TRUE,FALSE);
+       const NAType *newInt =  new HEAP SQLLargeInt(HEAP, TRUE,FALSE);
        if (operand1) {
        result = operand1->synthesizeType(SYNTH_RULE_DIV, *operand1, *newInt, HEAP);
        }
@@ -6569,7 +6565,7 @@ const NAType *ItmSeqMovingFunction::synthesizeType()
 
     case ITM_MOVING_SDEV:
     case ITM_MOVING_VARIANCE:
-       result = new HEAP SQLDoublePrecision(TRUE); // See ScalarVariance::synthesizeType()
+       result = new HEAP SQLDoublePrecision(HEAP, TRUE); // See ScalarVariance::synthesizeType()
        break;
 
     default:
@@ -6583,7 +6579,6 @@ const NAType *ItmSeqMovingFunction::synthesizeType()
   return result;
 
 }
-#pragma warn(262)  // warning elimination
 // -----------------------------------------------------------------------
 // member functions for class ItmSeqThisFunction
 // -----------------------------------------------------------------------
@@ -6656,76 +6651,6 @@ const NAType *ItmSeqNotTHISFunction::synthesizeType()
  return result;
 }
 
-// -----------------------------------------------------------------------
-// member functions for class AuditImage
-// -----------------------------------------------------------------------
-
-const NAType *AuditImage::synthesizeType()
-{
-  const NAType * type = NULL;
-
-  const NATable *naTable = getNATable();
-
-  // The data types of the columns (in order) in the object
-  // must match the data types of columns specified in the
-  // expression list for AUDIT_IMAGE. The columns in the expression
-  // list form the children of AUDIT_IMAGE node.
-
-  const NAColumnArray &naColumns = naTable->getNAColumnArray();
-  for (UInt32 i=0; i < naColumns.entries(); i++)
-    {
-
-      const NAColumn *tableNACol = naColumns[i];
-      const NAType *tableColumnType = tableNACol->getType();
-
-      // Populate member varaible columnTypeList_ (to be used
-      // during codeGen. See AuditImage::codeGen()) with the
-      // column types of the object.
-      columnTypeList_.insert(tableColumnType);
-
-      // Actual datatype checking is done only for non-Constants.
-      // Compatiblity type checking is done for Constants.
-      // Note: Constants are used only for internal testing.
-      const NAType *childType = &children()[i].getValueId().getType();
-      if (children()[i].getPtr()->getOperatorType() == ITM_CONSTANT ||
-	  childType->getTypeQualifier() == NA_UNKNOWN_TYPE)
-	{
-	  children()[i].getValueId().coerceType(*tableColumnType);
-	  // the coerceType method above might have changed
-	  // the childType. So, get it one more time.
-	  childType = &children()[i].getValueId().getType();
-	  if (NOT childType->isCompatible(*tableColumnType))
- 	    {
-	      *CmpCommon::diags() << DgSqlCode(-4316)
-				  << DgTableName(getObjectName().getQualifiedNameAsString())
-				  << DgColumnName(tableNACol->getColName());
-	      return NULL;
-	    }
-	}
-      else
-	{
-	  // Not a constant, so enforce type checking; but w.r.t NULL - check
-	  // only if it's physical and not if the value of
-	  // has the exact enum NAType::SupportsSQLnull.
- 	  if (!(tableColumnType->equalPhysical(*childType)))
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-4316)
-				  << DgTableName(getObjectName().getQualifiedNameAsString())
-				  << DgColumnName(tableNACol->getColName());
-	      return NULL;
-	    }
-	}
-    }
-
-
-  const Lng32 recordLength = naTable->getRecordLength();
-
-  type = new HEAP
-    SQLVarChar(recordLength);
-
-  return type;
-}
-
 const NAType * HbaseColumnLookup::synthesizeType()
 {
   NAType * type = NULL;
@@ -6733,14 +6658,14 @@ const NAType * HbaseColumnLookup::synthesizeType()
   if (naType_)
     type = (NAType*)naType_;
   else
-    type = new HEAP SQLVarChar(100000);
+    type = new HEAP SQLVarChar(HEAP, 100000);
 
   return type;
 }
 
 const NAType * HbaseColumnsDisplay::synthesizeType()
 {
-  NAType * type = new HEAP SQLVarChar(displayWidth_);
+  NAType * type = new HEAP SQLVarChar(HEAP, displayWidth_);
 
   return type;
 }
@@ -6752,7 +6677,7 @@ const NAType * HbaseColumnCreate::synthesizeType()
   if (resultType_)
     type = (NAType*)resultType_;
   else
-    type = new HEAP SQLVarChar(100000);
+    type = new HEAP SQLVarChar(HEAP, 100000);
 
   return type;
 }
@@ -6761,7 +6686,7 @@ const NAType * SequenceValue::synthesizeType()
 {
   NAType * type = NULL;
 
-  type = new HEAP SQLLargeInt(TRUE, FALSE);
+  type = new HEAP SQLLargeInt(HEAP, TRUE, FALSE);
 
   return type;
 }
@@ -6770,7 +6695,7 @@ const NAType * HbaseTimestamp::synthesizeType()
 {
   NAType * type = NULL;
 
-  type = new HEAP SQLLargeInt(TRUE,  
+  type = new HEAP SQLLargeInt(HEAP, TRUE,  
                               col_->getValueId().getType().supportsSQLnull());
 
   return type;
@@ -6780,7 +6705,7 @@ const NAType * HbaseVersion::synthesizeType()
 {
   NAType * type = NULL;
 
-  type = new HEAP SQLLargeInt(TRUE, FALSE); 
+  type = new HEAP SQLLargeInt(HEAP, TRUE, FALSE); 
 
   return type;
 }
@@ -6789,7 +6714,7 @@ const NAType * RowNumFunc::synthesizeType()
 {
   NAType * type = NULL;
 
-  type = new HEAP SQLLargeInt(TRUE, FALSE);
+  type = new HEAP SQLLargeInt(HEAP, TRUE, FALSE);
 
   return type;
 }
@@ -6798,7 +6723,7 @@ const NAType *LOBoper::synthesizeType()
 {
   // Return blob or clob type
   
-  NAType *result = new HEAP SQLBlob(1000);
+  NAType *result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024));
 
   if (child(0))
     {
@@ -6807,12 +6732,12 @@ const NAType *LOBoper::synthesizeType()
       
       if (typ1.getFSDatatype() == REC_BLOB)
 	{
-	  result = new HEAP SQLBlob(1000, Lob_Local_File,
+	  result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
       else if (typ1.getFSDatatype() == REC_CLOB)
 	{
-	  result = new HEAP SQLClob(1000, Lob_Invalid_Storage,
+	  result = new HEAP SQLClob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
     } 
@@ -6883,12 +6808,12 @@ const NAType *LOBinsert::synthesizeType()
   NAType * result = NULL;
   if (lobFsType() == REC_BLOB)
     {
-      result = new HEAP SQLBlob(lobSize(), Lob_Invalid_Storage,
+      result = new HEAP SQLBlob(HEAP, lobSize(), Lob_Invalid_Storage,
 				(obj_ ==EMPTY_LOB_) ? FALSE:typ1->supportsSQLnull());
     }
   else if (lobFsType() == REC_CLOB)
     {
-      result = new HEAP SQLClob(lobSize(), Lob_Invalid_Storage,
+      result = new HEAP SQLClob(HEAP, lobSize(), Lob_Invalid_Storage,
 				(obj_ == EMPTY_LOB_)? FALSE:typ1->supportsSQLnull());
     }
     
@@ -6900,7 +6825,8 @@ const NAType *LOBupdate::synthesizeType()
   // Return blob type
 
   ValueId vid1,vid2 ;
-  const NAType *typ1,*typ2 = NULL;
+  const NAType *typ1 = NULL;
+  const NAType *typ2 = NULL;
 
   if(child(0))
     {
@@ -6978,14 +6904,14 @@ const NAType *LOBupdate::synthesizeType()
   if (typ2->getFSDatatype() == REC_BLOB)
     {
       SQLBlob &blob = (SQLBlob&)*typ2;
-      result = new HEAP SQLBlob(blob.getLobLength(), Lob_Invalid_Storage,
+      result = new HEAP SQLBlob(HEAP, blob.getLobLength(), Lob_Invalid_Storage,
 				(obj_ ==EMPTY_LOB_) ? FALSE:typ2->supportsSQLnull());
     }
   else if (typ2->getFSDatatype() == REC_CLOB)
     {
       SQLClob &clob = (SQLClob&)*typ2;
 
-      result = new HEAP SQLClob(clob.getLobLength(), Lob_Invalid_Storage,
+      result = new HEAP SQLClob(HEAP, clob.getLobLength(), Lob_Invalid_Storage,
 				(obj_ ==EMPTY_LOB_) ? FALSE:typ2->supportsSQLnull());
     }
     
@@ -7015,7 +6941,7 @@ const NAType *LOBconvertHandle::synthesizeType()
 	{
 	  SQLBlob& op1 = (SQLBlob&)vid1.getType();
 	  
-	  result = new HEAP SQLBlob(op1.getLobLength(), Lob_Invalid_Storage,
+	  result = new HEAP SQLBlob(HEAP, op1.getLobLength(), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull(), FALSE, 
 				    TRUE);
 	}
@@ -7023,7 +6949,7 @@ const NAType *LOBconvertHandle::synthesizeType()
 	{
 	  SQLClob& op1 = (SQLClob&)vid1.getType();
 	  
-	  result = new HEAP SQLClob(op1.getLobLength(), Lob_Invalid_Storage,
+	  result = new HEAP SQLClob(HEAP, op1.getLobLength(), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull(), FALSE, 
 				    TRUE);
 	}
@@ -7040,7 +6966,7 @@ const NAType *LOBconvertHandle::synthesizeType()
 	  return NULL;
 	}
       
-      result = new HEAP SQLBlob(1000, Lob_Invalid_Storage, typ1.supportsSQLnull(), FALSE, 
+     result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage, typ1.supportsSQLnull(), FALSE, 
 					FALSE);
       return result;
     }
@@ -7073,7 +6999,7 @@ const NAType *LOBconvert::synthesizeType()
 
       Lng32 tgtSize = MINOF((Lng32)op1.getLobLength(), tgtSize_);
 
-      NAType *result = new HEAP SQLVarChar(tgtSize, Lob_Invalid_Storage,
+      NAType *result = new HEAP SQLVarChar(HEAP, tgtSize, Lob_Invalid_Storage,
 					   typ1.supportsSQLnull());
       return result;
     }
@@ -7105,7 +7031,7 @@ const NAType *LOBextract::synthesizeType()
   
   Lng32 tgtSize = MINOF((Lng32)op1.getLobLength(), tgtSize_);
   
-  NAType *result = new HEAP SQLVarChar(tgtSize, Lob_Invalid_Storage,
+  NAType *result = new HEAP SQLVarChar(HEAP, tgtSize, Lob_Invalid_Storage,
 				       typ1.supportsSQLnull());
   return result;
 }
@@ -7213,3 +7139,72 @@ const NAType * ItmLeadOlapFunction::synthesizeType()
    return result;
 }
 
+const NAType * SplitPart::synthesizeType()
+{
+  ValueId vid1 = child(0)->getValueId(); 
+  ValueId vid2 = child(1)->getValueId();
+  ValueId vid3 = child(2)->getValueId();
+  vid1.coerceType(NA_CHARACTER_TYPE);
+  vid2.coerceType(NA_CHARACTER_TYPE);
+  SQLInt si(NULL);
+  vid3.coerceType(NA_NUMERIC_TYPE);
+
+  const NAType *operand1 = &child(0)->getValueId().getType();
+  const NAType *operand2 = &child(1)->getValueId().getType();
+  const NAType *operand3 = &child(2)->getValueId().getType();
+
+  if ((operand1->getTypeQualifier() != NA_CHARACTER_TYPE) 
+      && (operand1->getFSDatatype() != REC_CLOB))
+  {
+    //4051 The first operand of a split_part function must be character.
+    *CmpCommon::diags()<<DgSqlCode(-4051) << DgString0(getTextUpper());
+    return NULL;
+  }
+  if ((operand2->getTypeQualifier() != NA_CHARACTER_TYPE)
+      && (operand1->getFSDatatype() != REC_CLOB))
+  {
+    //4497 The second operand of a split_part function must be character.
+    *CmpCommon::diags()<<DgSqlCode(-4497) << DgString0("second")
+                                          << DgString1(getTextUpper())
+                                          << DgString2("character");
+    return NULL;
+  }
+
+  if (operand3->getTypeQualifier() != NA_NUMERIC_TYPE)
+  {
+    //4053 The third operand of a split_part function must be numeric.
+    *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
+    return NULL;
+  }
+
+  const CharType *charOperand = (CharType *)operand1; 
+  Lng32 maxLength_bytes = charOperand->getDataStorageSize();
+  Lng32 maxLength_chars = charOperand->getPrecisionOrMaxNumChars();
+  CharInfo::CharSet op1_cs = operand1->getCharSet();
+  if (maxLength_chars <= 0) //if unlimited
+    maxLength_chars = maxLength_bytes/CharInfo::minBytesPerChar(op1_cs);
+
+  if (operand1->getFSDatatype() == REC_CLOB)
+  {
+    return new HEAP SQLClob(HEAP
+                            , maxLength_bytes
+                            , Lob_Invalid_Storage
+                            , operand1->supportsSQLnull()
+                                OR operand2->supportsSQLnull()
+                                OR operand3->supportsSQLnull()
+                           );
+  } 
+
+  return new HEAP SQLVarChar(HEAP
+                             , CharLenInfo(maxLength_chars, maxLength_bytes)
+                             , operand1->supportsSQLnull()
+                                 OR operand2->supportsSQLnull()
+                                 OR operand3->supportsSQLnull()
+                             , charOperand->isUpshifted()
+                             , charOperand->isCaseinsensitive()
+                             , operand1->getCharSet()
+                             , charOperand->getCollation()
+                             , charOperand->getCoercibility()
+                             );
+
+}

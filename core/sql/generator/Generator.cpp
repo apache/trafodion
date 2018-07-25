@@ -104,6 +104,7 @@ Generator::Generator(CmpContext* currentCmpContext) :
     ,insertNodesList_(wHeap())  
     ,avgVarCharSizeList_(wHeap())  
     ,trafSimTableInfoList_(wHeap())
+    ,bmoQuotaMap_(wHeap())
 {
   // nothing generated yet.
   genObj = 0;
@@ -163,24 +164,11 @@ Generator::Generator(CmpContext* currentCmpContext) :
   tempSpace_ = NULL;
 
   numBMOs_ = 0;
-  totalNumBMOsPerCPU_ = 0;
 
-  BMOsMemoryPerFrag_ = 0;
-  totalBMOsMemoryPerCPU_ = 0;
+  totalBMOsMemoryPerNode_ = 0;
 
-  nBMOsMemoryPerCPU_ = 0;
+  BMOsMemoryLimitPerNode_ = 0;
 
-  BMOsMemoryLimitPerCPU_ = 0;
-
-  totalNumBMOsPerCPU_ = 0;
-
-  BMOsMemoryPerFrag_ = 0;
-  totalBMOsMemoryPerCPU_ = 0;
-
-  nBMOsMemoryPerCPU_ = 0;
-
-  BMOsMemoryLimitPerCPU_ = 0;
-  
   totalNumBMOs_ = 0;
 
   numESPs_ = 1;
@@ -208,7 +196,6 @@ Generator::Generator(CmpContext* currentCmpContext) :
   largeQueueSize_ = 0;
 
   totalEstimatedMemory_ = 0.0;
-  totalOverflowMemory_ = 0.0;
   operEstimatedMemory_ = 0;
 
   maxCpuUsage_ = 0;
@@ -288,6 +275,7 @@ Generator::Generator(CmpContext* currentCmpContext) :
   //
   computeStats_ = FALSE;
   explainInRms_ = TRUE;
+  topNRows_ = 0;
 }
 
 void Generator::initTdbFields(ComTdb *tdb)
@@ -415,8 +403,6 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
       	collectStatsType_ = ComTdb::ALL_STATS;
       else if (tmp == "ACCUMULATED")
 	collectStatsType_ = ComTdb::ACCUMULATED_STATS;
-      else if (tmp == "MEASURE")
-	collectStatsType_ = ComTdb::MEASURE_STATS;
       else if (tmp == "PERTABLE")
 	collectStatsType_ = ComTdb::PERTABLE_STATS;
       else if (tmp == "OPERATOR")
@@ -565,7 +551,7 @@ void Generator::genCode(const char *source, RelExpr * expr_node)
     disableExplain();
 
   foundAnUpdate_ = FALSE;
-
+  
   // walk through the tree of RelExpr and ItemExpr objects, generating
   // ComTdb, ex_expr and their relatives
   expr_node->codeGen(this);
@@ -1043,16 +1029,6 @@ Generator::remapESPAllocationAS()
       
     NABoolean cycleSegs = (layersInCycle > 0);
 
-    // Use CQD ESP_NUM_FRAGMENTS_WITH_QUOTAS when the multi-ESP is on. That is
-    // we will shift the layers within a SQ node subset <n> times before we
-    // advance to next SQ node subset. Here <n> is the value of the cqd
-    // ESP_NUM_FRAGMENTS_WITH_QUOTAS. When the layer (or fragment) contains BMOs, then, 
-    // the layer is counted twice.
-    // 
-    if ( CmpCommon::getDefault(ESP_MULTI_FRAGMENT_QUOTAS) ==  DF_ON ) 
-      layersInCycle = 
-          (ActiveSchemaDB()->getDefaults()).getAsLong(ESP_NUM_FRAGMENTS_WITH_QUOTAS);
-      
     // if shiftESPs TRUE, then shift node map within each segment.
     //
     NABoolean shiftESPs =
@@ -1837,7 +1813,7 @@ TrafDesc * Generator::createRefConstrDescStructs(
  
 }
 
-static Lng32 createDescStructs(char * rforkName,
+static Lng32 createDescStructs(char * tableName,
                                Int32 numCols,
                                ComTdbVirtTableColumnInfo * columnInfo,
                                Int32 numKeys,
@@ -1851,7 +1827,7 @@ static Lng32 createDescStructs(char * rforkName,
   UInt32 reclen = 0;
 
   // create column descs
-  colDescs = Generator::createColDescs(rforkName, columnInfo, (Int16) numCols,
+  colDescs = Generator::createColDescs(tableName, columnInfo, (Int16) numCols,
                                        reclen, space);
 
   keyDescs = Generator::createKeyDescs(numKeys, keyInfo, space);
@@ -2273,8 +2249,6 @@ TrafDesc * Generator::createVirtualTableDesc
   if (privInfo)
       priv_desc = createPrivDescs(privInfo, space);
 
-  // cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, space);
   i_files_desc->filesDesc()->setAudited(TRUE); // audited table
   index_desc->indexesDesc()->files_desc = i_files_desc;
@@ -3052,6 +3026,7 @@ void GeneratorAbort(const char *file, Int32 line, const char * message)
   *CmpCommon::diags() << DgSqlCode(-7000) << DgString0(file)
                       << DgInt0(line) << DgString1(message);
 
+  abort();
   CmpInternalException("GeneratorAbort", __FILE__ , __LINE__).throwException();
 #else
   if (CmpCommon::context()->isDoNotAbort())
@@ -3316,8 +3291,11 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
 
 void Generator::setHBaseNumCacheRows(double estRowsAccessed,
                                      ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
-                                     Float32 samplePercent)
+                                     Int32 hbaseRowSize,
+                                     Float32 samplePercent
+                                     )
 {
+ 
   // compute the number of rows accessed per scan node instance and use it
   // to set HBase scan cache size (in units of number of rows). This cache
   // is in the HBase client, i.e. in the java side of 
@@ -3359,6 +3337,11 @@ void Generator::setHBaseNumCacheRows(double estRowsAccessed,
       }
   }
 
+  // Limit the scanner cache size to a fixed number if we are dealing with
+  // very wide rows eg rows with varchar(16MB)
+  Int32 maxRowSizeInCache = CmpCommon::getDefaultNumeric(TRAF_MAX_ROWSIZE_IN_CACHE)*1024*1024;
+  if (hbaseRowSize > maxRowSizeInCache)
+    cacheRows = 2;
   hbpa->setNumCacheRows(cacheRows);
 }
 
@@ -3397,4 +3380,91 @@ void Generator::setHBaseSmallScanner(Int32 hbaseRowSize, double estRowsAccessed,
 void Generator::setHBaseParallelScanner(ComTdbHbaseAccess::HbasePerfAttributes * hbpa){
     hbpa->setDopParallelScanner(CmpCommon::getDefaultNumeric(HBASE_DOP_PARALLEL_SCANNER));
 }
+
+double Generator::getEstMemPerNode(NAString *key, Lng32 &numStreams)
+{
+  OperBMOQuota *operBMOQuota = bmoQuotaMap_.get(key); 
+  if (operBMOQuota != NULL) {
+     numStreams = operBMOQuota->getNumStreams();
+     return operBMOQuota->getEstMemPerNode();
+  } else {
+     numStreams = 0;
+     return 0;
+  }
+}
+
+double Generator::getEstMemForTdb(NAString *key)
+{
+  OperBMOQuota *operBMOQuota = bmoQuotaMap_.get(key); 
+  if (operBMOQuota != NULL) 
+     return operBMOQuota->getEstMemForTdb();
+  else
+     return 0;
+}
+
+double Generator::getEstMemPerInst(NAString *key)
+{
+  OperBMOQuota *operBMOQuota = bmoQuotaMap_.get(key); 
+  if (operBMOQuota != NULL) 
+     return operBMOQuota->getEstMemPerInst();
+  else
+     return 0;
+}
+
+void Generator::finetuneBMOEstimates()
+{
+   if (bmoQuotaMap_.entries() == 1)
+      return;
+   double bmoMemoryLimitPerNode = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB);
+   if (bmoMemoryLimitPerNode == 0)
+      return;
+   NAHashDictionaryIterator<NAString, OperBMOQuota> iter (bmoQuotaMap_) ;
+
+   double capMemoryRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_ESTIMATE_RATIO_CAP);
+   double bmoMemoryEstOutlier = 
+      ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_ESTIMATE_OUTLIER_FACTOR) * bmoMemoryLimitPerNode * 1024 * 1024;
+
+   double totalEstMemPerNode = totalBMOsMemoryPerNode_.value();
+   double bmoMemoryRatio;
+   double calcTotalEstMemPerNode = 0;
+   double calcOperEstMemPerNode;
+
+   NAString* key;
+   OperBMOQuota *operBMOQuota;
+   // Find the outliers and set it to the tolerable value first
+   iter.reset(); 
+   iter.getNext(key,operBMOQuota);
+   while(key) {
+     calcOperEstMemPerNode = operBMOQuota->getEstMemPerNode();
+     if (calcOperEstMemPerNode > bmoMemoryEstOutlier) {
+        operBMOQuota->setEstMemPerNode(bmoMemoryEstOutlier);
+        calcTotalEstMemPerNode += bmoMemoryEstOutlier;
+     }
+     else 
+       calcTotalEstMemPerNode += calcOperEstMemPerNode;
+     iter.getNext(key,operBMOQuota);
+   }
+   totalBMOsMemoryPerNode_ = calcTotalEstMemPerNode;   
+   
+   // Then check for the CAP to adjust it again
+   totalEstMemPerNode = totalBMOsMemoryPerNode_.value();
+   calcTotalEstMemPerNode = 0;
+   iter.reset();
+   iter.getNext(key,operBMOQuota);
+   while(key) {
+     calcOperEstMemPerNode = operBMOQuota->getEstMemPerNode();
+     bmoMemoryRatio = calcOperEstMemPerNode / totalEstMemPerNode;
+     if (capMemoryRatio > 0 && capMemoryRatio <=1 && bmoMemoryRatio > capMemoryRatio) {
+        bmoMemoryRatio = capMemoryRatio;
+        calcOperEstMemPerNode = bmoMemoryRatio * calcOperEstMemPerNode;
+        operBMOQuota->setEstMemPerNode(calcOperEstMemPerNode);
+        calcTotalEstMemPerNode += calcOperEstMemPerNode;
+     }
+     else
+        calcTotalEstMemPerNode += calcOperEstMemPerNode;
+     iter.getNext(key,operBMOQuota);
+   }
+   totalBMOsMemoryPerNode_ = calcTotalEstMemPerNode;   
+}
+
 

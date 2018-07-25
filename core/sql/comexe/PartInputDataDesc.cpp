@@ -45,7 +45,6 @@
 #include "ExpAtp.h"
 #include "ComPackDefs.h"
 
-#define NA_NO_C_RUNTIME
 #include "BaseTypes.h"
 
 // -----------------------------------------------------------------------
@@ -172,7 +171,7 @@ ExRangePartInputData::ExRangePartInputData(
 
 	  // just to be safe, initialize the array with NULLs
 	  for (Lng32 i = 0; i < (numPartitions + 1); i++)
-	    partRangeExpressions_[i] = NULL;
+	    partRangeExpressions_[i] = (ExExprPtrPtr)NULL;
 	}
       else
 	{
@@ -444,40 +443,28 @@ Lng32 ExHash2PartInputData::unpack(void * base, void * reallocator)
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-NA_EIDPROC char *ExPartInputDataDesc::findVTblPtr(short classID)
+char *ExPartInputDataDesc::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)
     {
     case HASH_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExHashPartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case RANGE_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExRangePartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case ROUNDROBIN_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExRoundRobinPartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case HASH1_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExHashDistPartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case HASH2_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExHash2PartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     default:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExPartInputDataDesc);
-#pragma warn(1506)  // warning elimination 
       break;
     }
   return vtblPtr;
@@ -485,14 +472,7 @@ NA_EIDPROC char *ExPartInputDataDesc::findVTblPtr(short classID)
 
 void ExPartInputDataDesc::fixupVTblPtr()
 {
-#if defined( NA_MSVC )
   char * to_vtbl_ptr =  (char *) this;
-#else
-    // virtual function in NABasicObject, so layout of objects
-    // is changed, now -wlr-
-    //    (char *) this + sizeof(ExPartInputDataDesc) - sizeof(char *);;
-  char * to_vtbl_ptr = (char *) this + sizeof(NABasicObject) - sizeof(char *);;
-#endif
   char * from_vtbl_ptr;
 
   switch (partType_)
@@ -500,67 +480,35 @@ void ExPartInputDataDesc::fixupVTblPtr()
   case HASH_PARTITIONED:
     {
       ExHashPartInputData partInputDataDesc (NULL,1);
-#if defined( NA_MSVC )
       from_vtbl_ptr = (char *)&partInputDataDesc;
-#else
-      // virtual function in NABasicObject, so layout of objects
-      // is changed, now -wlr-
-      //      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(ExPartInputDataDesc) - sizeof(char *);
-      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(NABasicObject) - sizeof(char *);
-#endif
       str_cpy_all(to_vtbl_ptr, from_vtbl_ptr, sizeof(char *));
     }
     break;
   case RANGE_PARTITIONED:
     {
       ExRangePartInputData partInputDataDesc (NULL,0,0,0,0,NULL,0);
-#if defined( NA_MSVC )
       from_vtbl_ptr = (char *)&partInputDataDesc;
-#else
-      // virtual function in NABasicObject, so layout of objects
-      // is changed, now -wlr-
-      //      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(ExPartInputDataDesc) - sizeof(char *);
-      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(NABasicObject) - sizeof(char *);
-#endif
       str_cpy_all(to_vtbl_ptr, from_vtbl_ptr, sizeof(char *));
     }
     break;
   case ROUNDROBIN_PARTITIONED:
     {
       ExRoundRobinPartInputData partInputDataDesc (NULL,1,1);
-#if defined( NA_MSVC )
       from_vtbl_ptr = (char *)&partInputDataDesc;
-#else
-      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(NABasicObject) - sizeof(char *);
-#endif
       str_cpy_all(to_vtbl_ptr, from_vtbl_ptr, sizeof(char *));
     }
     break;
   case HASH1_PARTITIONED:
     {
       ExHashDistPartInputData partInputDataDesc (NULL,1,1);
-#if defined( NA_MSVC )
       from_vtbl_ptr = (char *)&partInputDataDesc;
-#else
-      // virtual function in NABasicObject, so layout of objects
-      // is changed, now -wlr-
-      //      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(ExPartInputDataDesc) - sizeof(char *);
-      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(NABasicObject) - sizeof(char *);
-#endif
       str_cpy_all(to_vtbl_ptr, from_vtbl_ptr, sizeof(char *));
     }
     break;
   case HASH2_PARTITIONED:
     {
       ExHash2PartInputData partInputDataDesc (NULL,1);
-#if defined( NA_MSVC )
       from_vtbl_ptr = (char *)&partInputDataDesc;
-#else
-      // virtual function in NABasicObject, so layout of objects
-      // is changed, now -wlr-
-      //      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(ExPartInputDataDesc) - sizeof(char *);
-      from_vtbl_ptr = (char *)&partInputDataDesc + sizeof(NABasicObject) - sizeof(char *);
-#endif
       str_cpy_all(to_vtbl_ptr, from_vtbl_ptr, sizeof(char *));
     }
     break;

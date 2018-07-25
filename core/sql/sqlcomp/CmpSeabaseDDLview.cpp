@@ -441,7 +441,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 	  return -1;
 	}
       
-      str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
+      str_sprintf(query, "upsert into %s.\"%s\".%s values (%ld, %ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  usedObjUID,
@@ -463,7 +463,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
     {
 
       char query[1000];
-      str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
+      str_sprintf(query, "upsert into %s.\"%s\".%s values (%ld, %ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  uul[u]->getUDFUID(),
@@ -650,7 +650,7 @@ short CmpSeabaseDDL::getListOfDirectlyReferencedObjects (
   char buf[4000];
   str_sprintf(buf, "select object_type, object_uid, catalog_name," 
                    "schema_name, object_name from %s.\"%s\".%s T, %s.\"%s\".%s VU " 
-                   "where VU.using_view_uid = %Ld "
+                   "where VU.using_view_uid = %ld "
                    "and T.object_uid = VU.used_object_uid",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
@@ -701,7 +701,7 @@ void CmpSeabaseDDL::createSeabaseView(
   const NAString extViewName = viewName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
   
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
@@ -766,6 +766,13 @@ void CmpSeabaseDDL::createSeabaseView(
 
   if (retcode == 1) // already exists
     {
+      if (createViewNode->createIfNotExists())
+        {
+	  deallocEHI(ehi); 
+	  processReturn();
+	  return;          
+        }
+
       if (NOT ((createViewNode->isCreateOrReplaceViewCascade())|| 
 	       (createViewNode->isCreateOrReplaceView())))
 	{
@@ -932,7 +939,7 @@ void CmpSeabaseDDL::createSeabaseView(
   ComTdbVirtTableColumnInfo * colInfoArray = 
     new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
 
-  if (buildColInfoArray(COM_VIEW_OBJECT, &colDefArray, colInfoArray, FALSE, FALSE))
+  if (buildColInfoArray(COM_VIEW_OBJECT, FALSE, &colDefArray, colInfoArray, FALSE, FALSE))
     {
       deallocEHI(ehi); 
       processReturn();
@@ -1048,7 +1055,7 @@ void CmpSeabaseDDL::createSeabaseView(
 
 
   query = new(STMTHEAP) char[1000];
-  str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
+  str_sprintf(query, "upsert into %s.\"%s\".%s values (%ld, '%s', %d, %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
 	      objUID,
 	      computeCheckOption(createViewNode),
@@ -1060,11 +1067,7 @@ void CmpSeabaseDDL::createSeabaseView(
   NADELETEBASIC(query, STMTHEAP);
   if (cliRC < 0)
     {
-      if (cliRC == -8402)
-        // string overflow, view text does not fit into metadata table
-        *CmpCommon::diags() << DgSqlCode(-1198);
-      else
-        cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
       deallocEHI(ehi); 
       processReturn();
@@ -1141,7 +1144,7 @@ void CmpSeabaseDDL::dropSeabaseView(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = dropViewNode->getViewName();
@@ -1160,6 +1163,19 @@ void CmpSeabaseDDL::dropSeabaseView(
                         FALSE, FALSE,
                         &cliInterface,
                         COM_VIEW_OBJECT);
+
+  if (retcode == -2)
+    {
+      // table doesnt exist. return if 'if exists' clause is specified.
+      if (dropViewNode->dropIfExists())
+        {
+          // clear diags
+          CmpCommon::diags()->clear();
+          processReturn();
+          return;
+        }
+    }
+
   if (retcode < 0)
     {
       processReturn();
@@ -1492,6 +1508,33 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 	  param_[9] = SEABASE_MD_SCHEMA;
 	  param_[10] = COM_VIEW_OBJECT_LIT;
 	}
+      else if (strcmp(mdi.viewName, TRAF_OBJECT_COMMENT_VIEW) == 0)
+    {
+      param_[0] = getSystemCatalog();
+      param_[1] = SEABASE_MD_SCHEMA;
+      param_[2] = getSystemCatalog();
+      param_[3] = SEABASE_MD_SCHEMA;
+      param_[4] = SEABASE_OBJECTS;
+      param_[5] = getSystemCatalog();
+      param_[6] = SEABASE_MD_SCHEMA;
+      param_[7] = SEABASE_TEXT;
+      param_[8] = "3";//COM_OBJECT_COMMENT_TEXT
+    }
+      else if (strcmp(mdi.viewName, TRAF_COLUMN_COMMENT_VIEW) == 0)
+    {
+      param_[0] = getSystemCatalog();
+      param_[1] = SEABASE_MD_SCHEMA;
+      param_[2] = getSystemCatalog();
+      param_[3] = SEABASE_MD_SCHEMA;
+      param_[4] = SEABASE_OBJECTS;
+      param_[5] = getSystemCatalog();
+      param_[6] = SEABASE_MD_SCHEMA;
+      param_[7] = SEABASE_COLUMNS;
+      param_[8] = getSystemCatalog();
+      param_[9] = SEABASE_MD_SCHEMA;
+      param_[10] = SEABASE_TEXT;
+      param_[11] = "12";//COM_COLUMN_COMMENT_TEXT
+    }
       else
 	{
           NADELETEBASICARRAY(gluedQuery, STMTHEAP);
@@ -1568,7 +1611,6 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
 
   return 0;
 }
-
 
 // *****************************************************************************
 // *                                                                           *

@@ -63,7 +63,6 @@ public:
    }
   
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~NATypeToItem() { delete natype_pointer; }
 
   // a virtual function for type propagating the node

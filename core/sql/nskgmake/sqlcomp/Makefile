@@ -27,13 +27,16 @@ CPPSRC := CmpDescribe.cpp \
 	CmpSeabaseDDLcleanup.cpp \
 	CmpSeabaseDDLcommon.cpp \
 	CmpSeabaseDDLindex.cpp \
+	CmpSeabaseDDLinitraf.cpp \
 	CmpSeabaseDDLrepos.cpp \
 	CmpSeabaseDDLroutine.cpp \
 	CmpSeabaseDDLschema.cpp \
 	CmpSeabaseDDLtable.cpp \
 	CmpSeabaseDDLupgrade.cpp \
 	CmpSeabaseDDLview.cpp \
+	CmpSeabaseDDLcommentOn.cpp \
 	PrivMgr.cpp \
+        PrivMgrUserPrivs.cpp \
         PrivMgrCommands.cpp \
         PrivMgrDesc.cpp \
         PrivMgrComponents.cpp \

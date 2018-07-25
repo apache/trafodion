@@ -189,6 +189,23 @@ Lng32 HSHbaseTableDef::getColumnNames()
     return retcode;
   }
 
+// local function used by the X::DescribeColumnNames functions
+NAString getAnsiName(NAString & columnName)
+  {
+    NAString ansiName = ToAnsiIdentifier(columnName);
+    NAString dblQuote="\"";
+    NAString result;
+
+    // Surround ANSI name with double quotes, if not already delimited.
+    if (ansiName.data()[0] == '"')
+      result = ansiName;
+    else
+      result = dblQuote+ansiName+dblQuote;
+
+    return result;
+  }
+
+
 Lng32 HSSqTableDef::DescribeColumnNames()
   {
     Lng32 entry, len;
@@ -247,9 +264,7 @@ Lng32 HSSqTableDef::DescribeColumnNames()
                                     (Long)query.data(), 0);
     HSHandleError(retcode_);
     retcode_ = SQL_EXEC_SetDescItem(srcDesc, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination
                                     query.length() + 1, 0);
-#pragma warn(1506)  // warning elimination
     HSHandleError(retcode_);
     // SQLDESC_CHAR_SET must be the last descriptor item set, otherwise
     // it may get reset by other calls to SQL_EXEC_SetDescItem().
@@ -292,7 +307,7 @@ Lng32 HSSqTableDef::DescribeColumnNames()
         HSHandleError(retcode_);
         colName[len] = '\0';
         *colInfo_[i].colname = &*colName;
-        *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
+        *colInfo_[i].externalColumnName = getAnsiName(*colInfo_[i].colname);
                                                   /*== GET COLUMN DATATYPE ==*/
         retcode_ = SQL_EXEC_GetDescItem(outputDesc, entry,
                                         SQLDESC_TYPE_FS,
@@ -502,7 +517,6 @@ Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate,
     return 1000000;
   }
 
-// LCOV_EXCL_START :nt
 /***************************************************************************/
 /* METHOD:  getRowCountUsingSelect()                                       */
 /* PURPOSE: Get row count of a table using 'select count(*)'.              */ 
@@ -528,7 +542,6 @@ Int64 HSTableDef::getRowCountUsingSelect()
 
   return rows; 
 }
-// LCOV_EXCL_STOP
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // 10-060424-6040
@@ -543,7 +556,6 @@ NABoolean HSSqTableDef::publicSchemaExists()
   {
     return FALSE;
   }
-// LCOV_EXCL_STOP
 
 // Check to see if a system defined SYSKEY exists and set hasSyskey_ flag.
 Lng32 HSSqTableDef::setHasSyskeyFlag()
@@ -574,7 +586,7 @@ Lng32 HSSqTableDef::setHasSyskeyFlag()
 
     query  = "SELECT SYSKEY, * FROM ";
     if(objActualFormat_ == SQLMP)
-      query += getTableName(tableName_->data(), nameSpace_);  // LCOV_EXCL_LINE :nsk
+      query += getTableName(tableName_->data(), nameSpace_);
     else
       query += getTableName(ansiName_->data(), nameSpace_);
 
@@ -597,9 +609,7 @@ Lng32 HSSqTableDef::setHasSyskeyFlag()
                                     (Long)query.data(), 0);
     HSHandleError(retcode_);
     retcode_ = SQL_EXEC_SetDescItem(srcDesc, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination
                                     query.length() + 1, 0);
-#pragma warn(1506)  // warning elimination
     HSHandleError(retcode_);
     // SQLDESC_CHAR_SET must be the last descriptor item set, otherwise
     // it may get reset by other calls to SQL_EXEC_SetDescItem().
@@ -725,22 +735,18 @@ NAString HSSqTableDef::getNodeName() const
 
 NAString HSTableDef::getObjectFullName() const
   {
-    // LCOV_EXCL_START :nsk
     if(objActualFormat_ == SQLMP)
       return tableName_->data();
     else
-    // LCOV_EXCL_STOP
       return ansiName_->data();
   }
 
 
-// LCOV_EXCL_START :nsk
 NAString HSSqTableDef::getCatalogLoc(formatType format) const
   {
     NAString catalogName;
     return catalogName;
   }
-// LCOV_EXCL_STOP
 
 
 NAString HSTableDef::getPrimaryLoc(formatType format) const
@@ -755,7 +761,6 @@ NAString HSTableDef::getPrimaryLoc(formatType format) const
       }
     else
       {
-        // LCOV_EXCL_START :nsk
         if (objActualFormat_ == SQLMP)
           {
             loc.append(catalog_->data());
@@ -763,7 +768,6 @@ NAString HSTableDef::getPrimaryLoc(formatType format) const
             loc.append(ToAnsiIdentifier(schema_->data()));
           }
         else
-        // LCOV_EXCL_STOP
           {
             loc.append(ToAnsiIdentifier(catalog_->data()));
             loc.append(".");
@@ -924,7 +928,8 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
     {
       *CmpCommon::diags()
           << DgSqlCode(-1388)
-          << DgTableName(*object_);
+          << DgString0("Object")
+          << DgString1(*object_);
       return FALSE;
     }
 
@@ -951,7 +956,8 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
     {
       *CmpCommon::diags()
         << DgSqlCode(-1388)
-        << DgTableName(*object_);
+        << DgString0("Object")
+        << DgString1(*object_);
     }
     else
     {
@@ -1033,7 +1039,7 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
     {
       *(colInfo_[i].colname) = hiveColDesc->name_;
       colInfo_[i].colname->toUpper();
-      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
+      *colInfo_[i].externalColumnName = getAnsiName(*colInfo_[i].colname);
 
       NAType* natype = getSQColTypeForHive(hiveColDesc->type_, STMTHEAP);
       colInfo_[i].datatype = natype->getFSDatatype();
@@ -1328,7 +1334,7 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
     {
       colInfo_[i].colnum = i;  // position of col in table
       *(colInfo_[i].colname) = colArr[i]->getColName();
-      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
+      *colInfo_[i].externalColumnName = getAnsiName(*colInfo_[i].colname);
       natype = colArr[i]->getType();
       colInfo_[i].datatype = natype->getFSDatatype();
       colInfo_[i].nullflag = natype->supportsSQLnullLogical();
@@ -1353,7 +1359,7 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
 //          column references or a SUBSTRING
 //          on column references which truncates the
 //          column to the maximum length allowed in
-//          UPDATE STATISTICS.
+//          UPDATE STATISTICS. Also skips LOB columns.
 //
 // INPUT:   'qry' - the SQL query string to append the 
 //          select list to.
@@ -1363,7 +1369,13 @@ void HSTableDef::addTruncatedSelectList(NAString & qry)
     bool first = true;
     for (Lng32 i = 0; i < getNumCols(); i++)
       {
-        if (!ComTrafReservedColName(*getColInfo(i).colname))
+        if (DFS2REC::isLOB(getColInfo(i).datatype)) // skip LOB columns
+          continue;
+
+        // skip derived column names (e.g. "_SALT_", "_DIVISION_n_")
+        // but only in Trafodion tables
+        if ((getTblOrigin() != HBASE_TBL) ||
+            (!ComTrafReservedColName(*getColInfo(i).colname)))
           {
             if (!first)
               qry += ", ";

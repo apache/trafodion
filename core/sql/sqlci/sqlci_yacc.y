@@ -60,17 +60,12 @@
 #include "ComDistribution.h"
 #include "ComObjectName.h"
 #include "ComSchemaName.h"
-#pragma warning (disable : 4065)//don't complain about empty switch statements.
-
-//extern "C" { void yyerror(const char *sb); };
 
   extern char **environ;
-  #define ENVIRON environ
-  #define PUTENV putenv
+#define ENVIRON environ
+#define PUTENV putenv
 
 extern NAHeap sqlci_Heap;
-
-#	include <alloca.h>
 
   extern "C" {int yylex (void); }
 
@@ -102,9 +97,7 @@ static void sqlcierror(const char *)		// (const char *errtext)
         if (*SqlciParse_InputStr == '#')
 	  SqlciParse_InputPos = 0;
       SqlciError (SQLCI_SYNTAX_ERROR, (ErrorParam *) 0);
-#pragma nowarn(1506)  // warning elimination
       StoreSyntaxError(SqlciParse_InputStr, SqlciParse_InputPos, sqlci_DA, 0);
-#pragma warn(1506)  // warning elimination
     }
 } // sqlcierror
 
@@ -140,9 +133,7 @@ static short trimValueText(int/*offset*/ &i,
 
   if (!use_i_as_is)
     {
-#pragma nowarn(1506)  // warning elimination
       i = SqlciParse_InputPos - 1;
-#pragma warn(1506)  // warning elimination
 
       // Now the i'th character is a separator char that Lex found,
       // separating the Define name from its value.
@@ -230,9 +221,7 @@ static short trimValueText(int/*offset*/ &i,
   SqlciParse_InputPos = i;			// for sqlcierror message
   if (quoted && !quoting_allowed) return -1;	// error
 
-#pragma nowarn(1506)  // warning elimination
   int j = strlen(SqlciParse_OriginalStr) - 1;
-#pragma warn(1506)  // warning elimination
 
   // skip any blanks between end of SqlciParse_OriginalStr and the semicolon.
   while (isspace(SqlciParse_OriginalStr[j])) j--;
@@ -403,7 +392,6 @@ static char * FCString (const char *idString, int isFC)
 %token DISPLAY_QC_ENTRIES
 %token DISPLAY_QC_ENTRIES_NOTIME
 %token DISPLAY_USE_OF
-%token DUP
 %token EDIT
 %token MXCI_TOK_ENV
 %token EXIT
@@ -415,15 +403,11 @@ static char * FCString (const char *idString, int isFC)
 %token FILENAMES
 %token FILES
 %token GENERATEtoken
-%token MAINTAINtoken
 %token MERGEtoken
 %token METADATAtoken
-%token REORGtoken
 %token REPLICATEtoken
 %token GETtoken
 %token GETSTATISTICStoken
-%token GOAWAY
-%token HELP
 %token HISTORY
 %token HYPHEN
 %token INFER_CHARSET
@@ -433,12 +417,6 @@ static char * FCString (const char *idString, int isFC)
 %token SHOWSTATS
 %token SHOWTRANSACTION
 %token INVOKE
-%token LABEL_CREATE
-%token LABEL_DROP
-%token LABEL_ALTER
-%token LABEL_PURGEDATA
-// LISTX is a rename of LIST to avoid redefine warning (with collections.h)
-%token LISTX
 %token LISTCOUNT
 %token LISTMODULES
 %token LOADtoken
@@ -451,15 +429,9 @@ static char * FCString (const char *idString, int isFC)
 %token MODE
 %token MODIFY
 %token MODIFYV
-%token MODULE
-%token MODULES
-%token MODULE_DIR
-%token MXCS
+%token MSCKtoken
 %token NEXT
 %token NOEtoken
-%token NODE_NAME
-%token NODE_VOL_NAME
-%token NSK_NAME
 %token OBEY
 %token OBJECTtoken
 %token OFtoken
@@ -474,12 +446,10 @@ static char * FCString (const char *idString, int isFC)
 %token PATTERN_AS_IS
 %token PID_VALUE
 %token PROCEDUREtoken
-%token PURGE
 %token PURGEDATA
 %token POPULATE
 %token VALIDATEtoken
 %token QUIESCE
-%token RECOVER
 %token REFRESH
 %token REPEAT
 %token REPORT
@@ -491,8 +461,6 @@ static char * FCString (const char *idString, int isFC)
 %token SHOW
 %token SHOWCONTROL
 %token SHOWDDL
-%token SHOWLABEL
-%token SHOWLEAKS
 %token SHOWPLAN
 %token SHOWSHAPE
 %token SHOWSET
@@ -514,6 +482,7 @@ static char * FCString (const char *idString, int isFC)
 %token UNLOCK
 %token UPD_STATS
 %token UPD_HIST_STATS
+%token USERtoken
 %token USING
 %token TABLE
 %token VALUES
@@ -532,7 +501,7 @@ static char * FCString (const char *idString, int isFC)
 %token PERTABLEtoken PROGRESStoken 
 %token TOK_BEGIN COMMIT ROLLBACK WORK
 %token SQLCI_CMD SQL_STMT UTIL_STMT EXIT_STMT ERROR_STMT SHELL_CMD
-%token IDENTIFIER NUMBER DEFINE_NAME PARAM_NAME PATTERN_NAME FILENAME
+%token IDENTIFIER NUMBER PARAM_NAME PATTERN_NAME FILENAME
 %token QUOTED_STRING
 %token DQUOTED_STRING
 %token GRANTtoken REVOKEtoken
@@ -547,26 +516,20 @@ static char * FCString (const char *idString, int isFC)
 %token NAMETYPE
 %token SIGNAL
 %token UIDtoken
-// QSTUFF
 %token CURSORWITH
 %token WITHOUT
 %token HOLD
-// QSTUFF
-%token INTERNAL   // MV OZ_REFRESH
+%token INTERNAL  
 %token MVLOG
 %token UNLOAD   
 
 %token CALLToken
-
-// For upgrade/downgrade
-%token UPGRADEtoken DOWNGRADEtoken
-
+%token COMMENTtoken
 
 %union {
 	 enum ComRoutineSQLAccess sql_access_mode_type;
 	 SqlCliCmd * sqlcli_cmd_type;
          SqlciCmd * sqlci_cmd_type;
-	 SqlciRWCmd * report_cmd_type;
          SqlciNode * sql_cmd_type;
 	 ShellCmd * shell_cmd_type;
          int intval_type;
@@ -580,14 +543,9 @@ static char * FCString (const char *idString, int isFC)
 %type <sql_access_mode_type> sql_access_mode;
 %type <sqlcli_cmd_type> sqlcli_cmd
 %type <sqlci_cmd_type> sqlci_cmd
-%type <report_cmd_type> report_cmd
 %type <sql_cmd_type> sql_cmd
 %type <shell_cmd_type> shell_cmd
 %type <stringval_type> IDENTIFIER
-%type <stringval_type> NODE_NAME
-%type <stringval_type> NODE_VOL_NAME
-%type <stringval_type> NSK_NAME
-%type <stringval_type> DEFINE_NAME
 %type <stringval_type> PARAM_NAME
 %type <stringval_type> PATTERN_NAME
 %type <stringval_type> PID_VALUE
@@ -601,16 +559,11 @@ static char * FCString (const char *idString, int isFC)
 %type <reset_stmt_type_> reset_type_;
 %type <show_stmt_type_> show_type_;
 %type <stringval_type> section_name_;
-%type <stringval_type> help_topic_;
 %type <stringval_type> HYPHEN;
 %type <intval_type>    commands_only;
 %type <intval_type>    stats_active_clause;
 %type <intval_type>    stats_merge_clause;
 %type <stringval_type> explain_options;
-%type <intval_type>    noe_option;
-%type <stringval_type> module_dir_info;
-%type <stringval_type> module_info;
-%type <stringval_type> object_info;
 %type <cursor_info_type_> cursor_info;
 %type <intval_type> optional_rs_index;
 %type <stringval_type> qid_identifier;
@@ -657,25 +610,6 @@ statement :	sqlcli_cmd
 		   	SqlciParseTree = (SqlciNode *) $1;
 			YYACCEPT;
 		}
-
-	|	report_cmd
-		{
-			// Accept if we're at/past the end of the cmd
-			// or if only blanks and semicolons remain;
-			// otherwise, syntax error.
-			//
-			unsigned pos = SqlciParse_InputPos-1;
-			if (pos < strlen(SqlciParse_InputStr))
-			  {
-			    const char *s = &SqlciParse_InputStr[pos];
-			    for ( ; *s; s++)
-			      if (!isspace(*s) && *s != ';')
-				{sqlcierror("");YYERROR;}
-			  }
-
-			SqlciParseTree = (SqlciNode *) $1;
-			YYACCEPT;
-		}
 ;
 
 sqlcli_cmd :	CHECKVIOLATION
@@ -693,8 +627,8 @@ sqlcli_cmd :	CHECKVIOLATION
 	    |	CREATECONTEXT NoAutoXact
 		{
 		  $$ = new CreateContext(TRUE/* noAutoXact */);
-		}
-        |   CURRENTCONTEXT
+ 		}
+            |   CURRENTCONTEXT
                 {
 		  $$ = new CurrentContext();
 		}
@@ -731,65 +665,28 @@ sql_access_mode :   NOSQL
 		    }
 ;
 
-report_cmd : CANCEL
-		  {
-			$$ = new SqlciRWCancelCmd();
-		  }
-		|	LISTX FIRST
-		  {
-			if ((sqlcitext) && (sqlcitext[0] != ';'))
-		      {sqlcierror("");YYERROR;}
-
-			$$ = new SqlciRWListCmd(SqlciRWListCmd::FIRST_, -1, FALSE);
-		  }
-		|	LISTX FIRST NUMBER
-		  {
-			$$ = new SqlciRWListCmd(SqlciRWListCmd::FIRST_, atoi($3), TRUE);
-		  }
-		|	LISTX NEXT
-		  {
-			if ((sqlcitext) && (sqlcitext[0] != ';'))
-		      {sqlcierror("");YYERROR;}
-
-			$$ = new SqlciRWListCmd(SqlciRWListCmd::NEXT_, -1, FALSE);
-		  }
-		|	LISTX NEXT NUMBER 
-		  {
-			$$ = new SqlciRWListCmd(SqlciRWListCmd::NEXT_, atoi($3), TRUE);
-		  }
-		|  LISTX ALLtoken   
-		  {
-			$$ = new SqlciRWListCmd(SqlciRWListCmd::ALL_, -1, FALSE);
-		  }
-
-;			
-
-sqlci_cmd :	MODE REPORT 
-		  {
-			$$ = new Mode (Mode::REPORT_ , TRUE);
-		  }
-		|	 MODE SQL
+sqlci_cmd :	MODE SQL
 		  {
 			$$ = new Mode (Mode::SQL_ , TRUE);
 		  }	
-		|	MODE DISPLAY
-		  {
-			$$ = new Mode (Mode::DISPLAY_ , TRUE);
-		  }
-        	|   MODE MXCS
-          	  {
-            		$$ = new Mode (Mode::MXCS_ , TRUE);
-          	  }
 		|   OBEY FILENAME section_name_
                   { 
-#pragma nowarn(1506)  // warning elimination
 			$$ = new Obey($2, strlen($2), $3);
-#pragma warn(1506)  // warning elimination
 		  }
 		|	MXCI_TOK_ENV
 		  { 
 			$$ = new Env(0,0);
 		  }
+                |   USERtoken IDENTIFIER
+                  {
+                    char userName[strlen($2)+1];
+                    for (size_t i=0; i < strlen($2); i++)
+                      {
+                        userName[i] = toupper($2[i]);
+                      }
+                    userName[strlen($2)] = 0;
+                    $$ = new ChangeUser(userName, strlen(userName));
+                  }
 		|	REPEAT
           	  {
 		    // "!" command, a la SQL/MP aRepeat (0,0);
@@ -847,15 +744,11 @@ sqlci_cmd :	MODE REPORT
 		 }
 		 CLEAR
          { 
-#pragma nowarn(1506)  // warning elimination
 			$$ = new Log(identifier_name_internal, strlen(identifier_name_internal), Log::CLEAR_, $3);
-#pragma warn(1506)  // warning elimination
 		 }
 	    |	LOG IDENTIFIER commands_only 
 		 { 
-#pragma nowarn(1506)  // warning elimination
 			$$ = new Log($2, strlen($2), Log::APPEND_, $3);
-#pragma warn(1506)  // warning elimination
 		 }
     
 		|	LOG FILENAME commands_only
@@ -865,17 +758,13 @@ sqlci_cmd :	MODE REPORT
 		 }
 		 CLEAR
            {
-#pragma nowarn(1506)  // warning elimination 
 	   $$ = new Log(identifier_name_internal, strlen(identifier_name_internal), Log::CLEAR_, $3);
-#pragma warn(1506)  // warning elimination
 		 }
 
 		|	LOG FILENAME commands_only
 
 		 { 
-#pragma nowarn(1506)  // warning elimination
 			$$ = new Log($2, strlen($2), Log::APPEND_, $3);
-#pragma warn(1506)  // warning elimination
 		 }
 
 		|	LOG
@@ -890,9 +779,7 @@ sqlci_cmd :	MODE REPORT
 
 		|	HISTORY NUMBER
 		  { 
-#pragma nowarn(1506)  // warning elimination
 			$$ = new History($2,strlen($2));
-#pragma warn(1506)  // warning elimination
 		  }
 
 		|	EXIT
@@ -901,7 +788,6 @@ sqlci_cmd :	MODE REPORT
 		  }
         |       ERRORtoken NUMBER
                   { 
-#pragma nowarn(1506)  // warning elimination
 		  $$ = new Error($2, strlen($2), Error::DETAIL_);
 		  }
         |       ERRORtoken NUMBER COMMA BRIEF
@@ -909,21 +795,6 @@ sqlci_cmd :	MODE REPORT
 		  }
         |       ERRORtoken NUMBER COMMA DETAIL
                   { $$ = new Error($2, strlen($2), Error::DETAIL_);
-#pragma warn(1506)  // warning elimination
-		  }
-
-        |       HELP
-		  { $$ = new Help((char *)"ALL", 3, Help::SYNTAX_);
-		    SqlciParse_SyntaxErrorCleanup = 0;
-		    SqlciParse_IdentifierExpected = 0;
-		  }
-        |       HELP help_topic_
-		  { 
-#pragma nowarn(1506)  // warning elimination
-		  $$ = new Help($2, strlen($2), Help::SYNTAX_);
-#pragma warn(1506)  // warning elimination
-		    SqlciParse_SyntaxErrorCleanup = 0;
-		    SqlciParse_IdentifierExpected = 0;
 		  }
 
 	|	SETtoken PARAM PARAM_NAME
@@ -943,7 +814,6 @@ sqlci_cmd :	MODE REPORT
 		    if (len == 4 && !quoted)
 		      {
 			char buf[4];
-#pragma nowarn(1506)  // warning elimination
 			for (int k = 0; k < 4; k++)
 			  buf[k] = toupper(SqlciParse_OriginalStr[i+k]);
 
@@ -982,9 +852,7 @@ sqlci_cmd :	MODE REPORT
                                pSetParam->setTermCharSet(SqlciEnvGlobal->getTerminalCharset());
                              }
 // NADELETE() is not a const func while this routine is. Mask out the warning
-#pragma nowarn(317) // warning elimination
                              NADELETE(conv_pvalue, NAString, &sqlci_Heap);
-#pragma warn(317)  // warning elimination
                            } 
                            break;
 
@@ -994,9 +862,7 @@ sqlci_cmd :	MODE REPORT
 		             $$ = new SetParam($3, strlen($3), 
                                                (NAWchar*)(conv_pvalue->data()), conv_pvalue->length(), cs);
 // NADELETE() is not a const func while this routine is. Mask out the warning
-#pragma nowarn(317)  // warning elimination
                              NADELETE(conv_pvalue, NAWString, &sqlci_Heap);
-#pragma warn(317)  // warning elimination
                            } 
                            break;
 
@@ -1087,7 +953,6 @@ sqlci_cmd :	MODE REPORT
 		    if (trimValueText(i, len, quoted, cs, inhexadecimal)) {sqlcierror("");YYERROR;}
 		    $$ = new SetPattern($3, strlen($3),
 					&SqlciParse_OriginalStr[i], len);
-#pragma warn(1506)  // warning elimination
 		  }
 
 	|	SETtoken PATTERN_AS_IS PATTERN_NAME
@@ -1106,7 +971,6 @@ sqlci_cmd :	MODE REPORT
 		    {sqlcierror("");YYERROR;}
 		    $$ = new SetPattern($3, strlen($3),
 					&SqlciParse_OriginalStr[i], len);
-#pragma warn(1506)  // warning elimination
 		  }
 
         |       SETtoken SHOWSHAPE ON
@@ -1182,9 +1046,7 @@ sqlci_cmd :	MODE REPORT
 
         |       SETtoken LISTCOUNT NUMBER
                   {
-#pragma nowarn(1506)  // warning elimination
                     $$ = new ListCount($3, strlen($3));
-#pragma warn(1506)  // warning elimination
                   }
 
         |       SETtoken LISTCOUNT
@@ -1274,11 +1136,6 @@ sqlci_cmd :	MODE REPORT
 		  {
 		    $$ = new Reset(Reset::PATTERN_, $3, strlen($3));
 		  }
-	|	RESET DEFINEtoken DEFINE_NAME
-		  {
-		    $$ = new Reset(Reset::DEFINE_, $3, strlen($3));
-#pragma warn(1506)  // warning elimination
-		  }
 	|	RESET reset_type_
 		  {
 		    if ((sqlcitext) && (sqlcitext[0] != ';'))
@@ -1294,9 +1151,7 @@ sqlci_cmd :	MODE REPORT
     |       DISPLAY_QUERYID FORtoken IDENTIFIER
                   {
                     identifier_name_internal = new char[strlen($3)+1]; 
-#pragma nowarn(1506)  // warning elimination
                     str_cpy_convert(identifier_name_internal, $3, strlen($3), TRUE); 
-#pragma warn(1506)  // warning elimination
                     identifier_name_internal[strlen($3)] = 0;
                     $$ = new QueryId (identifier_name_internal,strlen(identifier_name_internal),
                                       FALSE, NULL);
@@ -1320,76 +1175,6 @@ sqlci_cmd :	MODE REPORT
 		    $$ = new Show(Show::PREPARED_, TRUE);
 		  }
 
-         |       ADDtoken DEFINEtoken DEFINE_NAME COMMA CLASStoken MAPtoken COMMA 
-                  {
-		    identifier_name_internal = new char[strlen($3)+1];
-		    strcpy(identifier_name_internal, $3);
-		  }
-                FILEtoken FILENAME
-                  {
-#pragma nowarn(1506)  // warning elimination
-		    $$ = new SetDefine(identifier_name_internal,
-				       strlen(identifier_name_internal),
-				       $10, strlen($10), FALSE);
-#pragma warn(1506)  // warning elimination
-		  }
-        |       ADDtoken DEFINEtoken DEFINE_NAME COMMA
-                  {
-		    identifier_name_internal = new char[strlen($3)+1];
-		    strcpy(identifier_name_internal, $3);
-		  }
-                FILEtoken FILENAME
-                  {
-#pragma nowarn(1506)  // warning elimination
-		    $$ = new SetDefine(identifier_name_internal,
-				       strlen(identifier_name_internal), 
-				       $7, strlen($7), FALSE);
-#pragma warn(1506)  // warning elimination
-		  }
-        |       ALTER DEFINEtoken DEFINE_NAME COMMA CLASStoken MAPtoken COMMA 
-                  {
-		    identifier_name_internal = new char[strlen($3)+1];
-		    strcpy(identifier_name_internal, $3);
-		  }
-                FILEtoken FILENAME
-                  {
-#pragma nowarn(1506)  // warning elimination
-		    $$ = new SetDefine(identifier_name_internal,
-				       strlen(identifier_name_internal),
-				       $10, strlen($10), TRUE);
-#pragma warn(1506)  // warning elimination
-		  }
-        |       ALTER DEFINEtoken DEFINE_NAME COMMA
-                  {
-		    identifier_name_internal = new char[strlen($3)+1];
-		    strcpy(identifier_name_internal, $3);
-		  }
-                FILEtoken FILENAME
-                  {
-#pragma nowarn(1506)  // warning elimination
-		    $$ = new SetDefine(identifier_name_internal,
-				       strlen(identifier_name_internal), 
-				       $7, strlen($7), TRUE);
-		  }
-        |       DELETEtoken DEFINEtoken DEFINE_NAME
-                  {
-		    $$ = new Reset(Reset::DEFINE_, $3, strlen($3));
-#pragma warn(1506)  // warning elimination
-		  }
-
-	|	INFOtoken DEFINEtoken
-		  {
-		    if ((sqlcitext) && (sqlcitext[0] != ';'))
-		      {sqlcierror("");YYERROR;}
-
-		    $$ = new Show(Show::DEFINE_, FALSE);
-		  }
-
-	|	INFOtoken DEFINEtoken ALLtoken
-		  {
-		    $$ = new Show(Show::DEFINE_, TRUE);
-		  }
-
         |       WAITtoken
                   {
                     $$ = new Wait(NULL, 0);
@@ -1402,12 +1187,6 @@ commands_only :
              | empty { $$ = 0; }
 ;
 
-help_topic_ :
-                IDENTIFIER
-                  {
-                    $$ = $1;
-		  }
-
 empty :
 ;
 
@@ -1418,7 +1197,6 @@ section_name_:
 
 reset_type_ :
                 PARAM   	{$$ = Reset::PARAM_;}
-	|	DEFINEtoken   	{$$ = Reset::DEFINE_;}
 ;
 
 show_type_ :
@@ -1465,40 +1243,13 @@ qid_identifier :
 sql_cmd :
 		dml_type
 			{
-				/* If we see a SELECT token then we have to parse it
-				   differently if we are in the Report Writer mode
-				   thus we do the checking here. We call a different
-				   type of command and not the DML command itself.
-				   THe DML command is called in non RW mode.*/
-				
-				if ((SqlciEnvGlobal->isReportWriterMode()) 
-				     && (!SqlciEnvGlobal->sqlciRWEnv()->isSelectInProgress())
-					 && ($1 == DML_SELECT_TYPE))
-				{
-					$$ = new SqlciRWSelectCmd(SqlciParse_OriginalStr);
-					REPOSITION_SqlciParse_InputPos;
-				}
-				else 
-				/* if not RW mode then call the original DML*/	
-				{
-					$$ = new DML(SqlciParse_OriginalStr, $1, NULL);
-					REPOSITION_SqlciParse_InputPos;
-				}
-					
-			}
-        |       SHOWLEAKS
-                        { // not ready to log.
-			  HEAPLOG_CONTROL(LOG_DELETE_ONLY); 
-			  $$ = new DML(SqlciParse_OriginalStr, 
-				       DML_DESCRIBE_TYPE,
-				       "__SQLCI_DML_SHOWLEAKS__");
-			  REPOSITION_SqlciParse_InputPos;
+                          $$ = new DML(SqlciParse_OriginalStr, $1, NULL);
+                          REPOSITION_SqlciParse_InputPos;
 			}
 
         |       DECLAREtoken IDENTIFIER 
 			{
 			  identifier_name_internal = new char[strlen($2)+1];
-#pragma nowarn(1506)  // warning elimination
 			  str_cpy_convert(identifier_name_internal, $2,
 					  strlen($2), TRUE);
 			  identifier_name_internal[strlen($2)] = 0;
@@ -1506,7 +1257,6 @@ sql_cmd :
                 CURSORWITH HOLD FORtoken
 			{
 			  pos_internal = SqlciParse_InputPos;
-#pragma warn(1506)  // warning elimination
 			}
 		       dml_simple_table_type
 			{
@@ -1555,7 +1305,6 @@ sql_cmd :
         |       OPENtoken IDENTIFIER
 			{
 			  identifier_name_internal = new char[strlen($2)+1];
-#pragma nowarn(1506)  // warning elimination
 			  str_cpy_convert(identifier_name_internal, $2,
 					  strlen($2), TRUE);
 			  identifier_name_internal[strlen($2)] = 0;
@@ -1607,7 +1356,6 @@ sql_cmd :
 			FROM
 			{
 			  pos_internal = SqlciParse_InputPos;
-#pragma warn(1506)  // warning elimination
 			}
 			dml_type
 			{
@@ -1619,7 +1367,6 @@ sql_cmd :
 		|	DESCRIBEToken IDENTIFIER
 			{
 			  identifier_name_internal = new char[strlen($2)+1];
-#pragma nowarn(1506)  // warning elimination
 			  str_cpy_convert(identifier_name_internal, $2,
 					  strlen($2), TRUE);
 			  identifier_name_internal[strlen($2)] = 0;
@@ -1642,23 +1389,8 @@ sql_cmd :
 					  strlen($2), TRUE);
 			  identifier_name_internal[strlen($2)] = 0;
 
-			  /*/////////////////////////////////////////
-			     If ReportWriter Mode is on and a Select is 
-				 not in progress, then call new command to 
-				 process the execute command.
-				 ///////////////////////////////////////
-			*/
-			  if ( (SqlciEnvGlobal->isReportWriterMode()) && 
-			          !SqlciEnvGlobal->sqlciRWEnv()->isSelectInProgress() 
-			     )
-			  {
-					$$ = new SqlciRWExecuteCmd(identifier_name_internal,NULL);
-			  }
-			  else
-			  {
-					$$ = new Execute(identifier_name_internal, 
-					                 identifier_name_internal, 0/*flag*/, SqlciEnvGlobal);
-			  }
+                          $$ = new Execute(identifier_name_internal, 
+                                           identifier_name_internal, 0/*flag*/, SqlciEnvGlobal);
 			}
 
 		|	EXECUTEtoken IDENTIFIER
@@ -1674,24 +1406,8 @@ sql_cmd :
               pos_internal = SqlciParse_InputPos;
 			  if (SqlciParse_OriginalStr[pos_internal-1] == ',')
 			    pos_internal--;
-			  /*/////////////////////////////////////////
-			     If ReportWriter Mode is on and a Select is 
-				 not in progress, then call new command to 
-				 process the execute command.
-				 ///////////////////////////////////////
-			*/
-			  if ( (SqlciEnvGlobal->isReportWriterMode()) && 
-			       (!SqlciEnvGlobal->sqlciRWEnv()->isSelectInProgress()) 
-			     )
-			  {
-					$$ = new SqlciRWExecuteCmd(identifier_name_internal,
-					       &SqlciParse_OriginalStr[pos_internal]);
-			  }
-			  else
-			  {
-					$$ = new Execute(identifier_name_internal, 
-			  	     &SqlciParse_OriginalStr[pos_internal], 1/*flag*/, SqlciEnvGlobal);
-			  }
+                          $$ = new Execute(identifier_name_internal, 
+                                           &SqlciParse_OriginalStr[pos_internal], 1/*flag*/, SqlciEnvGlobal);
 
             }
 
@@ -1789,7 +1505,6 @@ sql_cmd :
                   {
 		    identifier_name_internal = new char[strlen($2)+1];
 		    
-#pragma nowarn(1506)  // warning elimination
 		    str_cpy_convert(identifier_name_internal, $2,
 				    strlen($2), TRUE);
 		    identifier_name_internal[strlen($2)] = 0;
@@ -1928,39 +1643,6 @@ sql_cmd :
 					delete [] get_stats_str;
 					delete [] newStr1;
 				  }
-        |       DISPLAY_USE_OF noe_option module_dir_info module_info object_info 
-                        {
-			  if ((($3) && (strlen($3) == 0)) ||
-			      (($4) && (strlen($4) == 0)) ||
-			      (($5) && (strlen($5) == 0)))
-			    {
-			      {sqlcierror("");YYERROR;}
-			    }
-			  
-			  if (! $5)
-			    {
-			      if (sqlcitext[0] && sqlcitext[0] != ';')
-				{
-				  {sqlcierror("");YYERROR;}
-				}
-			    }
-			  else
-			    {
-			      unsigned int i = SqlciParse_InputPos - 1;
-			      while ((i < strlen(SqlciParse_OriginalStr)) &&
-				     (SqlciParse_OriginalStr[i] == ' '))
-				i++;
-			      if ((i == strlen(SqlciParse_OriginalStr)) ||
-				  (SqlciParse_OriginalStr[i] != ';'))
-				{
-				  {sqlcierror("");YYERROR;}
-				}
-			    }
-
-			  $$ = new Usage ($3, $4, $5,
-					  (($2 == 1) ? TRUE : FALSE));
-			}
-
 	| DISPLAY_QC
 	  {
 	    $$ = new QueryCacheSt(0);
@@ -1983,12 +1665,6 @@ sql_cmd :
 				       "__SQLCI_DML_DISPLAY__");
 			  REPOSITION_SqlciParse_InputPos;
 			}
-        |       GOAWAY
-                        {
-                          $$ = new GoAway(&SqlciParse_OriginalStr[7]);
-                                 REPOSITION_SqlciParse_InputPos;
-                        }
-
        |        GETtoken 
                         {
 			  $$ = new DML(SqlciParse_OriginalStr, DML_DISPLAY_NO_HEADING_TYPE, NULL);
@@ -2231,7 +1907,6 @@ dml_type :
         |       UNREGISTER              {$$ = DML_DDL_TYPE;}
 	|       SHOWCONTROL 		{$$ = DML_DESCRIBE_TYPE;}
 	|       SHOWDDL 		{$$ = DML_DESCRIBE_TYPE;}
-	|       SHOWLABEL		{$$ = DML_DESCRIBE_TYPE;}
 	|	SHOWSTATS               {$$ = DML_DESCRIBE_TYPE;}
         |	SHOWTRANSACTION         {$$ = DML_DESCRIBE_TYPE;}
 	|	INVOKE  		{$$ = DML_DESCRIBE_TYPE;}
@@ -2249,33 +1924,25 @@ dml_type :
 	|	IF			{$$ = DML_CONTROL_TYPE;}
 	|	WHILE			{$$ = DML_CONTROL_TYPE;}
 	|	SIGNAL			{$$ = DML_CONTROL_TYPE;}
-	|	INTERNAL		{$$ = DML_CONTROL_TYPE;} // MV OZ_REFRESH
+	|	INTERNAL		{$$ = DML_CONTROL_TYPE;}
 	|	MVLOG			{$$ = DML_CONTROL_TYPE;} 
-	|	DUP			{$$ = DML_DDL_TYPE;}
 	|	PURGEDATA		{$$ = DML_DDL_TYPE;}
 	|	TRUNCATE		{$$ = DML_DDL_TYPE;}
 	|	WITH                    {$$ = DML_DDL_TYPE;}
 	|	POPULATE		{$$ = DML_DDL_TYPE;}
         |       VALIDATEtoken           {$$ = DML_DDL_TYPE;}
-	|	RECOVER 		{$$ = DML_DDL_TYPE;}
 	|	REFRESH		        {$$ = DML_DDL_TYPE;}
 	|	TRANSFORM		{$$ = DML_DDL_TYPE;}
 	|	CALLToken		{$$ = DML_DDL_TYPE;}
 	|	LOADtoken		{$$ = DML_DDL_TYPE;}
+	|	MSCKtoken		{$$ = DML_DDL_TYPE;}
 	|	EXTRACTtoken		{$$ = DML_DESCRIBE_TYPE;}
-	|	REORGtoken		{$$ = DML_DESCRIBE_TYPE;}
 	|	REPLICATEtoken		{$$ = DML_DESCRIBE_TYPE;}
-	|	MAINTAINtoken		{$$ = DML_DESCRIBE_TYPE;}
 	|	GENERATEtoken		{$$ = DML_DESCRIBE_TYPE;}
         |	EXPLAIN		        {$$ = DML_DESCRIBE_TYPE;}
-	|	LABEL_CREATE	        {$$ = DML_DDL_TYPE;}
-	|	LABEL_DROP		{$$ = DML_DDL_TYPE;}
-        |       LABEL_PURGEDATA         {$$ = DML_DDL_TYPE;}
-        |       UPGRADEtoken            {$$ = DML_DDL_TYPE;}
-        |       DOWNGRADEtoken          {$$ = DML_DDL_TYPE;}
         |       GETtoken                {$$ = DML_DESCRIBE_TYPE;}
- 	|       LABEL_ALTER             {$$ = DML_DDL_TYPE;}
  	|       PROCESStoken            {$$ = DML_DDL_TYPE;}
+ 	|     COMMENTtoken       {$$ = DML_DDL_TYPE;}
 ;
 
 dml_simple_table_type :
@@ -2305,63 +1972,6 @@ explain_options : empty
                   $$ = $2;
                 } 
             } 
-;
-
-noe_option : empty
-             { 
-	       $$ = 0; 
-	     } 
-        | NOEtoken
-            { 
-	       $$ = 1;
-            } 
-;
-
-module_dir_info : empty
-                   {
-                     $$ = NULL;
-                   }
-                  | MODULE_DIR QUOTED_STRING
-                   {
-		     identifier_name_internal = new char[strlen($2)+1];
-		     strcpy(identifier_name_internal, $2);
-
-		     NAString md(identifier_name_internal);
-		     if (((md.data()[0] != '/') &&
-		          (md.data()[0] != '*')) ||
-			  (md.contains(' ')) ||
-			  (md.contains('$')) ||
-			  (md.contains('\\')))
-		       {sqlcierror("");YYERROR;}
-		       
-	             $$ = identifier_name_internal;
-                   }
-;
-
-module_info : empty
-                   {
-                     $$ = NULL;
-                   }
-               | MODULE QUOTED_STRING
-                   {
-		     identifier_name_internal = new char[strlen($2)+1];
-		     strcpy(identifier_name_internal, $2);
-
-	             $$ = identifier_name_internal;
-                   }
-;
-
-object_info : empty
-                   {
-                     $$ = NULL;
-                   }
-              | OBJECTtoken QUOTED_STRING
-                   {
-		     identifier_name_internal = new char[strlen($2)+1];
-		     strcpy(identifier_name_internal, $2);
-
-	             $$ = identifier_name_internal; 
-                   }
 ;
 
 shell_cmd :

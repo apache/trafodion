@@ -23,8 +23,8 @@
 >>--       testcase A4: SELECT WHERE column is LIKE a constant
 >>--       testcase A5: SELECT WHERE column is LIKE a constant,
 >>--                    using an ESCAPE character
->>--       testcase A6: use of for browse access, for stable access
->>--         and for repeatable access
+>>--       testcase A6: use of for read committed access, for read committed access
+>>--         and for read committed access
 >>--       testcase A7: SELECT aggregate functions with where predicate
 >>
 >>-- All testcases are documented further below.
@@ -313,14 +313,14 @@ sue      Q        on         200    400    100    100    400    100    100     5
 PIC_X_A  PIC_X_B  PIC_X_C
 -------  -------  -------
 
-P        P        P      
  al      F        al     
-al       F        al     
-al       E        bo     
  al      F        di     
 B        A        ed     
-jo       C        ek     
 JO       D        em     
+P        P        P      
+al       F        al     
+al       E        bo     
+jo       C        ek     
 
 --- 8 row(s) selected.
 >>--    <ufi-input>
@@ -344,12 +344,12 @@ LARGE_INT             PIC_252                                                   
 LARGE_INT             PIC_252                                                                                                                                                                                                                                                       PIC_1
 --------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----
 
-                4000  valley                                                                                                                                                                                                                                                        D    
+                 300  Q                                                                                                                                                                                                                                                             X    
+                 100  carltons                                                                                                                                                                                                                                                      E    
                 3000  george                                                                                                                                                                                                                                                        D    
                  400  joseph                                                                                                                                                                                                                                                        X    
-                 300  Q                                                                                                                                                                                                                                                             X    
                  200  squaw                                                                                                                                                                                                                                                         X    
-                 100  carltons                                                                                                                                                                                                                                                      E    
+                4000  valley                                                                                                                                                                                                                                                        D    
 
 --- 6 row(s) selected.
 >>--    <ufi-input>
@@ -528,10 +528,10 @@ Q
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4          
 ----------  -----------  ----------  --------------------
 
-        90         5.00  A             216172782159534337
-        80         6.00  7             216172782159534338
-        80         6.00  7             216172782159534342
-        80         6.00  B             216172782159534343
+        90         5.00  A            3348008712604909660
+        80         6.00  7            3348008712604933890
+        80         6.00  7            3348008712604972182
+        80         6.00  B            3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -542,10 +542,10 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500
+        90         5.00  A            3348008712604909660  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  B            3348008712604978694  bill                                                                                                                                                                                                                                                                2000  B                         500
 
 --- 4 row(s) selected.
 >>--    <end-input>
@@ -863,14 +863,14 @@ jo       Z        jo
 LARGE_INT             PIC_252                                                                                                                                                                                                                                                       PIC_1
 --------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----
 
-                4000  valley                                                                                                                                                                                                                                                        D    
-                3000  george                                                                                                                                                                                                                                                        D    
+                 300  Q                                                                                                                                                                                                                                                             X    
                 2000  alexander                                                                                                                                                                                                                                                     B    
+                 100  carltons                                                                                                                                                                                                                                                      E    
+                3000  george                                                                                                                                                                                                                                                        D    
                 1000  harveys                                                                                                                                                                                                                                                       B    
                  400  joseph                                                                                                                                                                                                                                                        X    
-                 300  Q                                                                                                                                                                                                                                                             X    
                  200  squaw                                                                                                                                                                                                                                                         X    
-                 100  carltons                                                                                                                                                                                                                                                      E    
+                4000  valley                                                                                                                                                                                                                                                        D    
 
 --- 8 row(s) selected.
 >>--    <ufi-input>
@@ -935,8 +935,8 @@ B
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
 
 --- 2 row(s) selected.
 >>--    <end-input>
@@ -1041,12 +1041,12 @@ sue      Q        on         200    400    100    100    400    100    100     5
 PIC_X_A  PIC_X_B  PIC_X_C
 -------  -------  -------
 
+B        A        ed     
+JO       D        em     
 al       F        al     
 al       Q        al     
 al       E        bo     
-B        A        ed     
 jo       C        ek     
-JO       D        em     
 jo       Z        jo     
 
 --- 7 row(s) selected.
@@ -1141,10 +1141,10 @@ dan      sue          100  ebediih             100              100             
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4          
 ----------  -----------  ----------  --------------------
 
-        90         5.00  A             216172782159534337
-        80         6.00  7             216172782159534338
-        80         6.00  7             216172782159534342
-        80         6.00  B             216172782159534343
+        90         5.00  A            3348008712604909660
+        80         6.00  7            3348008712604933890
+        80         6.00  7            3348008712604972182
+        80         6.00  B            3348008712604978694
 
 --- 4 row(s) selected.
 >>--    <ufi-input>
@@ -1159,9 +1159,9 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        90         5.00  A            3348008712604909660  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
 
 --- 3 row(s) selected.
 >>--    <end-input>
@@ -1264,11 +1264,11 @@ sue      Q        on         200    400    100    100    400    100    100     5
 PIC_X_A  PIC_X_B  PIC_X_C
 -------  -------  -------
 
-P        P        P      
  al      F        al     
  al      F        di     
 B        A        ed     
 JO       D        em     
+P        P        P      
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -1278,11 +1278,11 @@ JO       D        em
 PIC_X_A  PIC_X_B  PIC_X_C
 -------  -------  -------
 
-P        P        P      
  al      F        al     
  al      F        di     
 B        A        ed     
 JO       D        em     
+P        P        P      
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -1443,9 +1443,9 @@ michael        70.00  joan           50                4000.00
 VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
+bill                                                                                                                                                                                                                                                                2000  B                         500
 bob                                                                                                                                                                                                                                                                  999  A                         300
 bobby                                                                                                                                                                                                                                                                200  sue                       100
-bill                                                                                                                                                                                                                                                                2000  B                         500
 
 --- 3 row(s) selected.
 >>--    <ufi-input>
@@ -1504,15 +1504,15 @@ sue      Q        on         200    400    100    100    400    100    100     5
 PIC_X_A  PIC_X_B  PIC_X_C
 -------  -------  -------
 
-P        P        P      
  al      F        al     
+ al      F        di     
+B        A        ed     
+JO       D        em     
+P        P        P      
 al       F        al     
 al       Q        al     
 al       E        bo     
- al      F        di     
-B        A        ed     
 jo       C        ek     
-JO       D        em     
 jo       Z        jo     
 
 --- 10 row(s) selected.
@@ -1523,15 +1523,15 @@ jo       Z        jo
 PIC_X_A  PIC_X_B  PIC_X_C
 -------  -------  -------
 
-P        P        P      
  al      F        al     
+ al      F        di     
+B        A        ed     
+JO       D        em     
+P        P        P      
 al       F        al     
 al       Q        al     
 al       E        bo     
- al      F        di     
-B        A        ed     
 jo       C        ek     
-JO       D        em     
 jo       Z        jo     
 
 --- 10 row(s) selected.
@@ -1589,8 +1589,8 @@ al       E        bo
 LARGE_INT             PIC_252                                                                                                                                                                                                                                                       PIC_1
 --------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----
 
-                1000  harveys                                                                                                                                                                                                                                                       B    
                  100  carltons                                                                                                                                                                                                                                                      E    
+                1000  harveys                                                                                                                                                                                                                                                       B    
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
@@ -1936,7 +1936,7 @@ PIC_X_A  PIC_X_2  PIC_X_3  PIC_X_4  PIC_X_5  PIC_X_6  PIC_X_7
 >>
 >>--    <detail>
 >>--     select normal test case with where clause - this tests the use
->>--     of the for browse access, for stable access, and for repeatable access
+>>--     of the for read committed access, for read committed access, and for read committed access
 >>--     clauses. Only syntax is checked here.
 >>
 >>--    <switches>
@@ -1950,7 +1950,7 @@ PIC_X_A  PIC_X_2  PIC_X_3  PIC_X_4  PIC_X_5  PIC_X_6  PIC_X_7
 >>--    <ufi-input>
 >>       select * from btsel06
 +>       where col_7 = 100
-+>       for stable access;
++>       for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10  COL_21       COL_22       COL_23       COL_24       COL_25       COL_26       COL_27      COL_28      COL_29      COL_30      COL_41       COL_42       COL_43       COL_44       COL_45      COL_46      COL_47      COL_48      COL_61                COL_62                COL_63                COL_64                COL_65                COL_66                COL_67               COL_68               COL_69               COL_70
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------  -----------  -----------  -----------  -----------  -----------  -----------  ----------  ----------  ----------  ----------  -----------  -----------  -----------  -----------  ----------  ----------  ----------  ----------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  -------------------  -------------------  -------------------  -------------------
@@ -1962,7 +1962,7 @@ sue      Q        on         200    400    100    100    400    100    100     5
 >>--    <ufi-input>
 >>       select * from btsel04
 +>       where medium_int <= 1000
-+>       for browse access;
++>       for read committed access;
 
 VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
@@ -1978,19 +1978,19 @@ william                                                                         
 >>--    <ufi-input>
 >>       select * from btsel07
 +>       where pic_x_b < 'Q'
-+>       for repeatable access;
++>       for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C
 -------  -------  -------
 
-P        P        P      
  al      F        al     
-al       F        al     
-al       E        bo     
  al      F        di     
 B        A        ed     
-jo       C        ek     
 JO       D        em     
+P        P        P      
+al       F        al     
+al       E        bo     
+jo       C        ek     
 
 --- 8 row(s) selected.
 >>
@@ -1998,7 +1998,7 @@ JO       D        em
 >>--    <ufi-input>
 >>       select * from btsel05
 +>       where pic_x_a > 'abe'
-+>       for browse access;
++>       for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
@@ -2016,7 +2016,7 @@ not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk
 >>--    <ufi-input>
 >>       select * from btsel05
 +>       where pic_x_a > 'abe'
-+>       for stable access;
++>       for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
@@ -2034,7 +2034,7 @@ not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk
 >>--    <ufi-input>
 >>       select * from btsel05
 +>       where pic_x_a > 'abe'
-+>       for repeatable access;
++>       for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
@@ -2054,7 +2054,7 @@ not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk
 >>--    <ufi-input>
 >>       select * from pvsel04
 +>       where pic_comp_1 in (200,300)
-+>       for browse access;
++>       for read committed access;
 
 VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
@@ -2067,7 +2067,7 @@ bob                                                                             
 >>--    <ufi-input>
 >>       select * from pvsel01
 +>       where binary_signed > 50
-+>       for stable access;
++>       for read committed access;
 
 BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
 -------------  --------------------  ----------  -------------  -------  -------  ---------
@@ -2083,7 +2083,7 @@ BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7
 >>--    <ufi-input>
 >>       select * from svsel11
 +>       where col_1 > 50
-+>       for stable access;
++>       for read committed access;
 
 COL_1   COL_2                 COL_3       COL_4  COL_5  COL_6    COL_7   COL_8
 ------  --------------------  ----------  -----  -----  -------  ------  -------
@@ -2101,7 +2101,7 @@ COL_1   COL_2                 COL_3       COL_4  COL_5  COL_6    COL_7   COL_8
 >>--    <ufi-input>
 >>       select * from pvsel02
 +>       where pic_x_1 = 'B'
-+>       for repeatable access;
++>       for read committed access;
 
 PIC_X_1
 -------
@@ -2114,13 +2114,13 @@ B
 >>--    <ufi-input>
 >>       select * from svsel13
 +>       where medium_int = 1000
-+>       for repeatable access;
++>       for read committed access;
 
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
 
 --- 2 row(s) selected.
 >>--    <end-input>

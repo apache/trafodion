@@ -185,7 +185,12 @@ fi
 # For now, don't run these tests                      --
 # Add list of tests to script in "skipTheseTests"     --
 #-------------------------------------------------------
-skipTheseTests=""
+skipTheseTests="TEST133"
+
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST2" == "1" ]; then
+    skipTheseTests="$skipTheseTests $privs1CT"
+fi
 
 testfiles="$prettyfiles"
 prettyfiles=
@@ -286,8 +291,10 @@ for ix in $testfiles; do
     efile=$REGRTSTDIR/$exp
   fi
 
-  sqlci -i $scriptsdir/tools/reg_users.sql;
-  echo "Authorization has been enabled"
+  if [ $diffsonly -eq 0 ]; then
+    sqlci -i $scriptsdir/tools/reg_users.sql;
+    echo "Authorization has been enabled"
+  fi
 
   #--------------------------------------------------
   # Run test if the -diff option not specified     --

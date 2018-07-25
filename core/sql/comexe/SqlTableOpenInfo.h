@@ -48,7 +48,6 @@
 // --------------------------------------------------------------------------
 // Class SqlTableOpenInfo
 // --------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 class SqlTableOpenInfo : public NAVersionedObject
 {
 public:
@@ -134,7 +133,6 @@ public:
   NABoolean distributeOpens() { return (openFlags_ & DISTRIBUTE_OPENS) != 0; }
   NABoolean reuseOpens()      { return (openFlags_ & REUSE_OPENS) != 0; }
   NABoolean reuseOpensForWrite()      { return (openFlags_ & REUSE_OPENS_FOR_WRITE) != 0; }
-  NABoolean validateRforkTS() { return (openFlags_ & VALIDATE_RFORK_TS) != 0;}
   NABoolean readProtectedOpen() { return (openFlags_ & READ_PROTECTED_OPEN) != 0;}
   NABoolean insertToNonAudited() { return (openFlags_ & INSERT_TO_NONAUDITED_OPEN) != 0;}
 
@@ -217,9 +215,6 @@ public:
      { (v ? otherFlags_ |= IS_MX_METADATA_TABLE : otherFlags_ &= ~IS_MX_METADATA_TABLE); }
  void setIsInsertOfUpdateCK(NABoolean v)
      { (v ? otherFlags_ |= INSERT_OF_UPDATE_CK : otherFlags_ &= ~INSERT_OF_UPDATE_CK); }
- void setValidateRforkTS(NABoolean v) 	      
-     { (v ? openFlags_ |= VALIDATE_RFORK_TS : openFlags_ &= ~VALIDATE_RFORK_TS); }
-
 
   inline 
   void setSubjectTable(NABoolean v)
@@ -412,17 +407,6 @@ private:
     // Tables are closed if the process is exited, or if user id changes.
     REUSE_OPENS = 0x0100,
 
-    // if this flag is set, then we compare the compile TS against the
-    // redef TS of the rfork.
-    // This is to implement the feature of not blowing away opens of
-    // running queries unless it is required. 
-    // With this feature, catman changes the redef TS of the rfork for
-    // the cases where running queries need not be disrupted. For ex, if
-    // permissions are revoked. On the next execution of the query, executor
-    // validates the compile timestamp against the TS of rfork and recompiles,
-    // if rfork TS is greater.
-    VALIDATE_RFORK_TS = 0x0200,
-
     // sets exclusion mode to ARK_DML_PROTECTED. This does a read protected
     // open which prevents any write access to the table.
     READ_PROTECTED_OPEN = 0x0400,
@@ -523,7 +507,6 @@ private:
   char fillersSqlTableOpenInfo_[16];                               // 96-111
 
 };
-#pragma warn(1506)   // warning elimination 
 
 // --------------------------------------------------------------------------
 // Template instantiation to produce a 64-bit pointer emulator class

@@ -187,8 +187,8 @@ char schemaObjectLit[3] = {0};
          break;
       } 
    }
-   
-   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0)",
+
+   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                catalogName.data(), quotedSchName.data(), quotedObjName.data(),
                schemaObjectLit,
@@ -243,7 +243,7 @@ void CmpSeabaseDDL::createSeabaseSchema(
    ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
    NAString schName = schNameAsComAnsi.getInternalName();
 
-   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+   ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
    CmpCommon::context()->sqlSession()->getParentQid());
    ComSchemaClass schemaClass;
    Int32 objectOwner = NA_UserIdDefault;
@@ -302,7 +302,7 @@ void CmpSeabaseDDL::createSeabaseSchema(
    // not reserved
    NAString tableNotCreated;
 
-   if (!createSchemaNode->isVolatile() && !ComIsTrafodionReservedSchemaName(schName))
+   if (!ComIsTrafodionReservedSchemaName(schName))
    {
       if (createHistogramTables(&cliInterface, schemaName.getExternalName(), 
                                 FALSE, tableNotCreated))
@@ -371,9 +371,8 @@ ComObjectType objectType;
        output = "/* Hive DDL */";
        outlines.push_back(output.data());
 
-       output = "create database ";
+       output = "CREATE SCHEMA HIVE.";
        NAString lsch(schemaName);
-       lsch.toLower();
        output += lsch.data();
        output += ";";
 
@@ -383,7 +382,7 @@ ComObjectType objectType;
 
        if (isHiveRegistered)
          {
-           output = "REGISTER /*INTERNAL*/ HIVE SCHEMA hive.";
+           output = "REGISTER /*INTERNAL*/ HIVE SCHEMA HIVE.";
            output += lsch.data();
            output += ";";
            
@@ -410,7 +409,8 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,
  if (schemaUID < 0)
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(catalogName + "." + schemaName);
+                                  << DgString0(catalogName)
+                                  << DgString1(schemaName);
       cmpSBD.switchBackCompiler();
       return false;
    }
@@ -418,7 +418,7 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,
 char username[MAX_USERNAME_LEN+1];
 Int32 lActualLen = 0;
 Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username, 
-                                              MAX_USERNAME_LEN,lActualLen);
+                                              MAX_USERNAME_LEN+1,lActualLen);
    if (status != FEOK)
    {
       *CmpCommon::diags() << DgSqlCode(-20235) // Error converting user ID.
@@ -445,13 +445,39 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    output += catalogName.data();
    output += "\".\"";
    output += schemaName.data();
-   
+
 // AUTHORIZATION clause is rarely used, but include it for replay.
    output += "\" AUTHORIZATION \"";
    output += username;
    output += "\";";
    
    outlines.push_back(output.data());
+
+   // Display Comment of schema
+    {
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      if (cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo, STMTHEAP))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
+          return -1;
+        }
+
+      if (objCommentInfo.objectComment != NULL)
+        {
+          outlines.push_back(" ");
+
+          output = "COMMENT ON SCHEMA ";
+          output += catalogName.data();
+          output += ".";
+          output += schemaName.data();
+          output += " IS '";
+          output += objCommentInfo.objectComment;
+          output += "' ;";
+
+          outlines.push_back(output.data());
+        }
+    }
 
    cmpSBD.switchBackCompiler();
    return true;
@@ -486,7 +512,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    NAString schName = schNameAsComAnsi.getInternalName();
    ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
 
-   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+   ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                 CmpCommon::context()->sqlSession()->getParentQid());
    Int32 objectOwnerID = 0;
    Int32 schemaOwnerID = 0;
@@ -521,7 +547,8 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(schemaName.getExternalName().data());
+                                  << DgString0(catName.data())
+                                  << DgString1(schName.data());
       goto label_error;
    }
 
@@ -561,7 +588,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    str_sprintf(query,"SELECT distinct TRIM(object_name), TRIM(object_type) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                     "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                      "object_type <> 'PK' "
                      "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
@@ -918,12 +945,12 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    str_sprintf(query,"SELECT COUNT(*) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"'" 
+                     "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"'" 
                      "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data());
                
-   cliRC = cliInterface.executeImmediate(query,(char*)&rowCount,&length,NULL);
+   cliRC = cliInterface.executeImmediate(query,(char*)&rowCount,&length,FALSE);
   
    if (cliRC < 0)
    {
@@ -938,7 +965,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        str_sprintf(query,"SELECT TRIM(object_name) "
                    "FROM %s.\"%s\".%s "
                    "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                   "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                   "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                    "object_type <> 'PK' "
                    "FOR READ COMMITTED ACCESS",
                    getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
@@ -976,7 +1003,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    dirtiedMetadata = TRUE;
    str_sprintf(buf,"DELETE FROM %s.\"%s\".%s "
                    "WHERE CATALOG_NAME = '%s' AND SCHEMA_NAME = '%s' AND " 
-                   "OBJECT_NAME = '"SEABASE_SCHEMA_OBJECTNAME"'",
+                   "OBJECT_NAME = '" SEABASE_SCHEMA_OBJECTNAME"'",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data());
    cliRC = cliInterface.executeImmediate(buf);
@@ -990,7 +1017,18 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
                           << DgString0(reason);
       goto label_error;
    }
-  
+
+   //Drop comment in TEXT table for schema
+   str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_TEXT,
+               schemaUID);
+   cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+     {
+       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+       goto label_error;
+     }
+
   // Everything succeeded, return
   return;
     
@@ -1035,7 +1073,7 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
    NAString schName = schNameAsComAnsi.getInternalName();
    ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
 
-   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+   ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                 CmpCommon::context()->sqlSession()->getParentQid());
    Int32 objectOwnerID = 0;
    Int32 schemaOwnerID = 0;
@@ -1070,7 +1108,8 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(schemaName.getExternalName().data());
+                                  << DgString0(catName.data())
+                                  << DgString1(schName.data());
       goto label_error;
    }
 
@@ -1130,7 +1169,7 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
    str_sprintf(query,"SELECT distinct TRIM(object_name), TRIM(object_type), object_uid "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                     "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                      "(object_type = 'BT' OR "
                      " object_type = 'VI') "
                      "FOR READ COMMITTED ACCESS",
@@ -1285,7 +1324,7 @@ NAString schemaName = giveSchemaNode->getSchemaName();
    if (catalogName.isNull())
       catalogName = currentCatalogName;  
 
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
 CmpCommon::context()->sqlSession()->getParentQid());
 Int32 objectOwnerID = 0;
 Int32 schemaOwnerID = 0;
@@ -1300,7 +1339,8 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catalogName.data(),
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(schemaName.data());
+                                  << DgString0(catalogName.data())
+                                  << DgString1(schemaName.data());
       return;
    }
    
@@ -1379,7 +1419,7 @@ char buf[4000];
    {
       str_sprintf(buf,"UPDATE %s.\"%s\".%s "
                       "SET object_owner = %d "
-                      "WHERE object_UID = %Ld",
+                      "WHERE object_UID = %ld",
                   getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                   newOwnerID,schemaUID);
       cliRC = cliInterface.executeImmediate(buf);
@@ -1427,7 +1467,7 @@ char buf[4000];
    str_sprintf(buf,"SELECT COUNT(*) "
                    "FROM %s.\"%s\".%s "
                    "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                   "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                   "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                    "object_owner <> %d " 
                    "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
@@ -1436,7 +1476,7 @@ char buf[4000];
 int32_t length = 0;
 Int64 rowCount = 0;
 
-   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
+   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,FALSE);
   
    if (cliRC < 0)
    {
@@ -1705,7 +1745,10 @@ Lng32 cliRC = 0;
 
 
 
-   if (isVolatile)
+   if (isVolatile && 
+       strcmp(objectName, HBASE_HIST_NAME) != 0 && 
+       strcmp(objectName, HBASE_HISTINT_NAME) != 0 && 
+       strcmp(objectName, HBASE_PERS_SAMP_NAME) != 0)
       strcpy(volatileString,"VOLATILE");
 
    if (ifExists)

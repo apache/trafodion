@@ -64,8 +64,6 @@ NAAssert((errMsg), __FILE__, __LINE__); }
 #include "Platform.h"
 #include "NAMemory.h"
 
-#include "SqlExportDllDefines.h"
-
 #include <setjmp.h>
 
 #include <pthread.h>
@@ -76,15 +74,15 @@ NAAssert((errMsg), __FILE__, __LINE__); }
 int NAAssertMutexCreate(); // Function to create mutex to serialize termination
 int NAAssertMutexLock();  // Function to lock mutext when a process terminates of a thread asserts
 
-extern NA_EIDPROC void SQLEXPORT_LIB_FUNC NAAssert(const char *ex, const char *fil, Int32 lin);
+extern void NAAssert(const char *ex, const char *fil, Int32 lin);
 
-extern void SQLEXPORT_LIB_FUNC NABreakPoint();
+extern void NABreakPoint();
 
 extern void NAInlineBreakpointFunc(const char *fil, Int32 lin);
 
-NA_EIDPROC void assert_botch_no_abend( const char *f, Int32 l, const char * m);
+void assert_botch_no_abend( const char *f, Int32 l, const char * m);
 // Add condition pointer (fourth argument) for certain SeaMonster asserts
-NA_EIDPROC void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c = NULL);
+void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c = NULL);
 #ifdef NDEBUG
   #define NAInlineBreakpoint
 #else
@@ -99,18 +97,11 @@ public:
   inline jmp_buf *getJmpBuf()             { return &longJmpTgt_; }
   inline jmp_buf *getJmpBufPtr()         { return longJmpTgtPtr_; }
   inline void setJmpBufPtr(jmp_buf *longJmpTgtPtr) { longJmpTgtPtr_ = longJmpTgtPtr; }
-  inline NABoolean getLogEmsEvents() const { return logEmsEvents_; }
-  inline void setLogEmsEvents(NABoolean logEmsEvents) { logEmsEvents_ = logEmsEvents; }
-  inline void setQfoProcessing() { qfoProcessing_ = TRUE; }
-  inline void clearQfoProcessing() { qfoProcessing_ = FALSE; }
-  inline NABoolean isQfoProcessing() { return qfoProcessing_; }
 protected:
   NABoolean globalsAreInitialized_;
   jmp_buf  *longJmpTgtPtr_;
   jmp_buf  longJmpTgt_;
   long     numCliCalls_;
-  NABoolean logEmsEvents_;
-  NABoolean qfoProcessing_;
 };
 
 NAAssertGlobals * GetNAAssertGlobals(NABoolean *logEmsEvents = NULL);

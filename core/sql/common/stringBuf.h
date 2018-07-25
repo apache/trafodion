@@ -48,24 +48,24 @@
 #include "NAWinNT.h"
 #endif
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <iostream>
-#endif // NA_DEBUG_C_RUNTIME 
+#endif // _DEBUG 
 
 template <class T> class stringBuf
 {
 
 public:
 
-NA_EIDPROC stringBuf(T* buf, Int32 len, CollHeap* heap = 0) : 
+stringBuf(T* buf, Int32 len, CollHeap* heap = 0) : 
       buf_(buf), bufSize_(len), count_(len), alloc_(FALSE), heap_(heap) {};
 
-NA_EIDPROC stringBuf(T* buf, Int32 iBufSize, Int32 iStrLen, CollHeap* heap = 0) : 
+stringBuf(T* buf, Int32 iBufSize, Int32 iStrLen, CollHeap* heap = 0) : 
       buf_(buf), bufSize_(iBufSize),
       count_(iStrLen <= iBufSize? iStrLen : iBufSize),
       alloc_(FALSE), heap_(heap) {};
 
-NA_EIDPROC  stringBuf(Int32 len, CollHeap* heap = 0) : 
+ stringBuf(Int32 len, CollHeap* heap = 0) : 
       bufSize_(len),
       count_(len), // should be set to 0, but keep the existing behavior for now
       alloc_(FALSE), heap_(heap)
@@ -84,7 +84,6 @@ NA_EIDPROC  stringBuf(Int32 len, CollHeap* heap = 0) :
     }
   };
 
-NA_EIDPROC
   ~stringBuf() 
   {
      if ( alloc_ ) {
@@ -95,34 +94,24 @@ NA_EIDPROC
      }
   };
 
-NA_EIDPROC
   inline Int32 getBufSize() const { return bufSize_; }
 
-NA_EIDPROC
   inline Int32 getStrLen() const { return count_; } // same as length()
 
-NA_EIDPROC
   inline Int32 length() const { return count_; }
 
-NA_EIDPROC
   inline void setStrLen(Int32 x) { count_ = (x <= bufSize_) ? x : bufSize_; } // avoid buffer overrun
 
-NA_EIDPROC
   inline void setLength(Int32 x) { count_ = x; }
 
-NA_EIDPROC
   inline T* data() const { return buf_; }
 
-NA_EIDPROC
   T operator() (Int32 i) const { return buf_[i]; };
 
-NA_EIDPROC
   T last() const { return buf_[getStrLen()-1]; };
 
-NA_EIDPROC
   void decrementAndNullTerminate() { /* if (count > 0) */ buf_[--count_]=0; }
 
-NA_EIDPROC
   void zeroOutBuf(Int32 startPos = 0)
   {
     if (startPos >= 0 && buf_ && bufSize_ > 0 && bufSize_ - startPos > 0)
@@ -132,8 +121,7 @@ NA_EIDPROC
     }
   };
 
-#ifdef NA_DEBUG_C_RUNTIME
-NA_EIDPROC
+#ifdef _DEBUG
   ostream& print(ostream& out) { 
 
       Int32 i=0;
@@ -147,7 +135,7 @@ NA_EIDPROC
       out << endl;
       return out;
   };
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
 private:
   T* buf_;
@@ -172,17 +160,14 @@ typedef stringBuf<unsigned char> charBuf;
 //        is returned; otherwise, NULL is returned. 
 //  case 2: target buffer pointer 'target' is NULL 
 //        a buffer of SIZE is allocated from the heap (if the heap argument 
-//        is not NULL), or from the C runtime system heap if NA_NO_C_RUNTIME is
-//        not defined. Otherwise, a NULL is returned.
+//        is not NULL), or from the C runtime system heap. 
 //  For either case, SIZE is defined as olen + (addNullAtEnd) ? 1 : 0.
 //
 //  If addNullAtEnd is TRUE, a NULL will be inserted at the beginning of 'target' 
 //  if it is not NULL. 
 //
-NA_EIDPROC
 NAWcharBuf* checkSpace(CollHeap* heap, Int32 olen, NAWcharBuf*& target, NABoolean addNullAtEnd);
 
-NA_EIDPROC
 charBuf* checkSpace(CollHeap* heap, Int32 olen, charBuf*& target, NABoolean addNullAtEnd);
 
 #endif

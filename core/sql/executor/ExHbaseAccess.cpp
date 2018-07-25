@@ -39,8 +39,8 @@
 #include  "cli_stdh.h"
 #include "exp_function.h"
 #include "jni.h"
-#include "hdfs.h"
 #include <random>
+#include "HdfsClient_JNI.h"
 
 // forward declare
 Int64 generateUniqueValueFast ();
@@ -241,6 +241,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   , colValVecSize_(0)
   , colValEntry_(0)
   , loggingErrorDiags_(NULL)
+  , logFileHdfsClient_(NULL)
+  , loggingFileCreated_(FALSE)
+  , loggingFileName_(NULL)
 {
   Space * space = (glob ? glob->getSpace() : NULL);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : NULL);
@@ -354,15 +357,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   registerSubtasks();
   registerResizeSubtasks();
 
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
-					//					(char*)"localhost", 
 					(char*)hbaseAccessTdb.server_, 
-					//                                        (char*)"2181", 
-					(char*)hbaseAccessTdb.zkPort_,
-                                        jniDebugPort,
-                                        jniDebugTimeout);
+					(char*)hbaseAccessTdb.zkPort_);
 
   asciiRow_ = NULL;
   asciiRowMissingCols_ = NULL;
@@ -502,6 +499,10 @@ void ExHbaseAccessTcb::freeResources()
      NADELETEBASIC(directRowBuffer_, getHeap());
   if (colVal_.val != NULL)
      NADELETEBASIC(colVal_.val, getHeap());
+  if (logFileHdfsClient_ != NULL) 
+     NADELETE(logFileHdfsClient_, HdfsClient, getHeap());
+  if (loggingFileName_ != NULL)
+     NADELETEBASIC(loggingFileName_, getHeap());
 }
 
 
@@ -721,7 +722,7 @@ short ExHbaseAccessTcb::setupError(NAHeap *heap, ex_queue_pair &qparent, Lng32 r
 		      (str ? (char*)str : (char*)" "),
 		      getHbaseErrStr(retcode),
                       (str2 ? (char*)str2 : 
-                      (char *)currContext->getJniErrorStr().data())); 
+                      (char *)GetCliGlobals()->getJniErrorStr())); 
       pentry_down->setDiagsArea(diagsArea);
       return -1;
     }
@@ -751,7 +752,7 @@ short ExHbaseAccessTcb::setupError(Lng32 retcode, const char * str, const char *
 		      (str ? (char*)str : (char*)" "),
 		      getHbaseErrStr(retcode),
                       (str2 ? (char*)str2 : 
-                      (char *)currContext->getJniErrorStr().data())); 
+                      (char *)GetCliGlobals()->getJniErrorStr())); 
       pentry_down->setDiagsArea(diagsArea);
       return -1;
     }
@@ -1346,7 +1347,7 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
                       else if (colName.length() == sizeof(ULng32))
                         v = *(ULng32*)colName.data();
                       
-                      str_sprintf(buf, "%Ld", v);
+                      str_sprintf(buf, "%ld", v);
                     }
                   
                   ComDiagsArea * diagsArea = NULL;
@@ -2840,7 +2841,7 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
   char *colVal;
   char *str;
   NABoolean prependNullVal;
-  char nullValChar;
+  char nullValChar = 0;
   Attributes * attr;
   int numCols = 0;
   short *numColsPtr;
@@ -2990,7 +2991,8 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
     {
       // Overwrite trailing delimiter with newline.
       hiveBuff[hiveBuffInx-1] = '\n';
-      hdfsWrite(getHdfs(), getHdfsSampleFile(), hiveBuff, hiveBuffInx);
+      HDFS_Client_RetCode hdfsClientRetcode;
+      sampleFileHdfsClient()->hdfsWrite(hiveBuff, hiveBuffInx, hdfsClientRetcode);
     }
   return 0;
 }
@@ -3251,30 +3253,28 @@ void ExHbaseAccessTcb::buildLoggingPath(
 void ExHbaseAccessTcb::handleException(NAHeap *heap,
                                     char *logErrorRow,
                                     Lng32 logErrorRowLen,
-                                    ComCondition *errorCond,
-                                    ExpHbaseInterface * ehi,
-                                    NABoolean & LoggingFileCreated,
-                                    char *loggingFileName,
-                                    ComDiagsArea **loggingErrorDiags)
+                                    ComCondition *errorCond)
 {
   Lng32 errorMsgLen = 0;
   charBuf *cBuf = NULL;
   char *errorMsg;
-  Lng32 retcode;
+  HDFS_Client_RetCode hdfsClientRetcode;
 
-  if (*loggingErrorDiags != NULL)
+  if (loggingErrorDiags_ != NULL)
      return;
 
-  if (!LoggingFileCreated) {
-     retcode = ehi->hdfsCreateFile(loggingFileName);
-     if (retcode == HBASE_ACCESS_SUCCESS)
-        LoggingFileCreated = TRUE;
+  if (!loggingFileCreated_) {
+     logFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetcode);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        hdfsClientRetcode = logFileHdfsClient_->hdfsCreate(loggingFileName_, TRUE, FALSE);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        loggingFileCreated_ = TRUE;
      else 
         goto logErrorReturn;
   }
   
-  retcode = ehi->hdfsWrite(logErrorRow, logErrorRowLen);
-  if (retcode != HBASE_ACCESS_SUCCESS) 
+  logFileHdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen, hdfsClientRetcode);
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) 
      goto logErrorReturn;
   if (errorCond != NULL) {
      errorMsgLen = errorCond->getMessageLength();
@@ -3289,13 +3289,13 @@ void ExHbaseAccessTcb::handleException(NAHeap *heap,
      errorMsg = (char *)"[UNKNOWN EXCEPTION]\n";
      errorMsgLen = strlen(errorMsg);
   }
-  retcode = ehi->hdfsWrite(errorMsg, errorMsgLen);
+  logFileHdfsClient_->hdfsWrite(errorMsg, errorMsgLen, hdfsClientRetcode);
 logErrorReturn:
-  if (retcode != HBASE_ACCESS_SUCCESS) {
-     *loggingErrorDiags = ComDiagsArea::allocate(heap);
-     **loggingErrorDiags << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
-                 << DgString0(loggingFileName)
-                 << DgString1((char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+     loggingErrorDiags_ = ComDiagsArea::allocate(heap);
+     *loggingErrorDiags_ << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
+                 << DgString0(loggingFileName_)
+                 << DgString1((char *)GetCliGlobals()->getJniErrorStr());
   }
   return;
 }
@@ -3344,7 +3344,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadTaskTcb::work()
   short rc = 0;
   Queue * indexList = NULL; // this list includes the base table too.
   char * indexName ;
-  NABoolean cleanupAfterComplete;
+  NABoolean cleanupAfterComplete = FALSE;
   Text tabName;
 
   // if no parent request, return

@@ -55,52 +55,51 @@
 class MdamEndPoint;
 // End of forward declarations.
 
-#pragma nowarn(1103)   // warning elimination 
 class MdamPoint
 {
 
 public:
   
   // Constructor that accepts tupp and inclusion.
-  NA_EIDPROC MdamPoint(const tupp & tupp,
+  MdamPoint(const tupp & tupp,
 	    const MdamEnums::MdamInclusion inclusion);
 
   // Constructor that accepts an MdamEndPoint.
-  NA_EIDPROC MdamPoint(MdamEndPoint & endPoint);
+  MdamPoint(MdamEndPoint & endPoint);
 
   // Determine if v could be within an interval for which this MdamPoint
   // is the begin endpoint.
-  NA_EIDPROC NABoolean beginContains
+  NABoolean beginContains
     (const ULng32 keyLen, const char * v) const;
 
   // Compare function.
-  NA_EIDPROC MdamEnums::MdamOrder compare(const MdamPoint * other,
+  MdamEnums::MdamOrder compare(const MdamPoint * other,
 					  const ULng32 keyLen) const;
 
   // Determine if v could be within an interval for which this MdamPoint
   // is the end endpoint.
-  NA_EIDPROC NABoolean endContains
+  NABoolean endContains
     (const ULng32 keyLen, const char * v) const;
 
   // Get function for data pointer.
-  NA_EIDPROC inline char * getDataPointer() const;
+  inline char * getDataPointer() const;
 
   // Get function for inclusion_.
-  NA_EIDPROC MdamEnums::MdamInclusion getInclusion() const;
+  MdamEnums::MdamInclusion getInclusion() const;
 
   // Determine if the MdamPoint is included.
-  NA_EIDPROC NABoolean included() const;
+  NABoolean included() const;
 
   // Reverse inclusion.
-  NA_EIDPROC void reverseInclusion();
+  void reverseInclusion();
 
   // Release tupp storage
-  NA_EIDPROC inline void release();
+  inline void release();
 
   // Print functions.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC void print(const char * header = "") const;
-  NA_EIDPROC void printBrief() const;
+  void print(const char * header = "") const;
+  void printBrief() const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
   
 private:
@@ -113,8 +112,6 @@ private:
 
 }; // class MdamPoint
 
-
-#pragma warn(1103)   // warning elimination 
 
 // *****************************************************************************
 // Inline member functions for class MdamPoint
@@ -133,11 +130,9 @@ inline MdamPoint::MdamPoint(const tupp & tupp,
 inline MdamEnums::MdamOrder MdamPoint::compare
              (const MdamPoint * other, const ULng32 keyLen) const
 {
-#pragma nowarn(1506)   // warning elimination 
   short retVal = str_cmp(tupp_.getDataPointer(), 
                                       other->tupp_.getDataPointer(),
                                       Int32(keyLen));
-#pragma warn(1506)  // warning elimination 
   if (retVal < 0)
      return MdamEnums::MDAM_LESS;
   else

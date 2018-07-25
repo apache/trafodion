@@ -141,7 +141,7 @@ public:
   #define CURRCONTEXT_OPTDEBUG (CmpCommon::context()->getOptDbg())
   #define CURRCONTEXT_HISTCACHE (CmpCommon::context()->getHistogramCache())
   #define CURRCONTEXT_OPTSIMULATOR (CmpCommon::context()->getOptimizerSimulator())
-  #define GLOBAL_EMPTY_INPUT_LOGPROP (CmpCommon::context()->getGEILP())
+  #define GLOBAL_EMPTY_INPUT_LOGPROP (CmpCommon::statement()->getGEILP())
   #define CURRSTMT_OPTDEFAULTS (CmpCommon::context()->getOptDefaults())
 
   // For some routines that do care about the current CmpContext*. 
@@ -200,18 +200,11 @@ public:
 // request if possible.
 // Notice this *always* asserts something, even if NDEBUG is TRUE.
 //
-#ifdef NA_NO_CMPCONTEXT
-  // This is for the common code (e.g. parser) shared by sqlc and arkcmp:
-  // It won't put the internal error into Diags area, instead just print it.
-  #define CMPASSERT(b) \
-    { if (!(b)) NAAssert("" # b "", __FILE__, __LINE__); }
-#else  
-  #define CMPASSERT(b) \
-    { if (!(b)) CmpAssertInternal("" # b "", __FILE__, __LINE__); }
-#endif
+#define CMPASSERT(b)                                                    \
+  { if (!(b)) CmpAssertInternal("" # b "", __FILE__, __LINE__); }
 
-  #define CMPASSERT_STRING(b,str)	\
-    { if (!(b)) { cerr << str << endl; CMPASSERT(b); }}
+#define CMPASSERT_STRING(b,str)                         \
+  { if (!(b)) { cerr << str << endl; CMPASSERT(b); }}
 
 // The following DCMPASSERT is for supporting an assert mechanism for the
 // compiler that gets disabled in RELEASE (NDEBUG) code:

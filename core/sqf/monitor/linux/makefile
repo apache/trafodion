@@ -45,11 +45,10 @@ FLAGS+= -UNDEBUG
 # Uncomment the following line to see which compiler option controls
 #   a particular diagnostic (GNU compiler).
 # FLAGS+= -fdiagnostics-show-option
-FLAGS+= -Wall -Wextra
+FLAGS+= -Wall -Wextra -Werror
 
 # Flags for use in compiling Seabed trace modules
 SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
-SBDIR = ../../src/seabed/src
 
 COMMONLOGGERDIR = ../../commonLogger
 
@@ -72,11 +71,10 @@ ifeq ($(SQ_BUILD_TYPE), debug)
     FLAGS+= -DMON_DEBUG
 endif
 
-INCLUDES = -I$(INCEXPDIR)
-
 ifeq ($(USE_DMALLOC),1)
     INCLUDES+= -I$(DMALLOCROOT)
 endif
+
 INCLUDES+= -I../../inc
 INCLUDES+= -I../../commonLogger
 INCLUDES+= -I$(LOG4CXX_INC_DIR) 
@@ -109,15 +107,12 @@ MONITORSRC += montrace.cxx
 MONITORSRC += monsonar.cxx
 MONITORSRC += redirector.cxx
 MONITORSRC += lock.cxx
-MONITORSRC += clusterconf.cxx
-MONITORSRC += lnodeconfig.cxx
-MONITORSRC += pnodeconfig.cxx
-MONITORSRC += persistconfig.cxx
 MONITORSRC += lnode.cxx
 MONITORSRC += pnode.cxx
 MONITORSRC += intprocess.cxx
 MONITORSRC += healthcheck.cxx
 MONITORSRC += commaccept.cxx
+MONITORSRC += ptpcommaccept.cxx
 ifeq ($(USE_DMALLOC),1)
     MONITORSRC += $(OUTDIR)/dm.cxx
 endif
@@ -139,6 +134,10 @@ MONITORSRC += reqnodeinfo.cxx
 MONITORSRC += reqnodename.cxx
 MONITORSRC += reqnodeup.cxx
 MONITORSRC += reqnotify.cxx
+MONITORSRC += reqnsadd.cxx
+MONITORSRC += reqnsdelete.cxx
+MONITORSRC += reqnsstart.cxx
+MONITORSRC += reqnsstop.cxx
 MONITORSRC += reqopen.cxx
 MONITORSRC += reqprocinfo.cxx
 MONITORSRC += reqset.cxx
@@ -155,6 +154,7 @@ MONITORSRC += monrobsem.cxx
 MONITOROBJS = $(OUTDIR)/versmon.o
 MONITOROBJS += $(OUTDIR)/monitor.o
 MONITOROBJS += $(OUTDIR)/cluster.o
+MONITOROBJS += $(OUTDIR)/nameserver.o
 MONITOROBJS += $(OUTDIR)/open.o
 MONITOROBJS += $(OUTDIR)/process.o
 MONITOROBJS += $(OUTDIR)/notice.o
@@ -176,11 +176,13 @@ MONITOROBJS += $(OUTDIR)/clusterconf.o
 MONITOROBJS += $(OUTDIR)/lnodeconfig.o
 MONITOROBJS += $(OUTDIR)/pnodeconfig.o
 MONITOROBJS += $(OUTDIR)/persistconfig.o
+MONITOROBJS += $(OUTDIR)/nameserverconfig.o
 MONITOROBJS += $(OUTDIR)/lnode.o
 MONITOROBJS += $(OUTDIR)/pnode.o
 MONITOROBJS += $(OUTDIR)/intprocess.o
 MONITOROBJS += $(OUTDIR)/healthcheck.o
 MONITOROBJS += $(OUTDIR)/commaccept.o
+MONITOROBJS += $(OUTDIR)/ptpcommaccept.o
 ifeq ($(USE_DMALLOC),1)
     MONITOROBJS += $(OUTDIR)/dm.o
 endif
@@ -203,6 +205,10 @@ MONITOROBJS += $(OUTDIR)/reqnodename.o
 MONITOROBJS += $(OUTDIR)/reqpnodeinfo.o
 MONITOROBJS += $(OUTDIR)/reqnodeup.o
 MONITOROBJS += $(OUTDIR)/reqnotify.o
+MONITOROBJS += $(OUTDIR)/reqnsadd.o
+MONITOROBJS += $(OUTDIR)/reqnsdelete.o
+MONITOROBJS += $(OUTDIR)/reqnsstart.o
+MONITOROBJS += $(OUTDIR)/reqnsstop.o
 MONITOROBJS += $(OUTDIR)/reqopen.o
 MONITOROBJS += $(OUTDIR)/reqprocinfo.o
 MONITOROBJS += $(OUTDIR)/reqset.o
@@ -221,6 +227,59 @@ MONITOROBJS += $(OUTDIR)/monrobsem.o
 MONITOROBJS += $(OUTDIR)/CommonLogger.o
 MONITOROBJS += $(OUTDIR)/zclient.o
 MONITOROBJS += $(OUTDIR)/type2str.o
+MONITOROBJS += $(OUTDIR)/ptpclient.o
+MONITOROBJS += $(OUTDIR)/meas.o
+
+NSOBJS = $(OUTDIR)/versns.o
+NSOBJS += $(OUTDIR)/nsmonitor.o
+NSOBJS += $(OUTDIR)/nscluster.o
+NSOBJS += $(OUTDIR)/open.o
+NSOBJS += $(OUTDIR)/nsprocess.o
+NSOBJS += $(OUTDIR)/props.o
+NSOBJS += $(OUTDIR)/nsconfig.o
+NSOBJS += $(OUTDIR)/monlogging.o
+NSOBJS += $(OUTDIR)/monprof.o
+NSOBJS += $(OUTDIR)/nsmontrace.o
+NSOBJS += $(OUTDIR)/monsonar.o
+NSOBJS += $(OUTDIR)/threadtls.o
+NSOBJS += $(OUTDIR)/trace.o
+NSOBJS += $(OUTDIR)/otrace.o
+NSOBJS += $(OUTDIR)/nsredirector.o
+NSOBJS += $(OUTDIR)/lock.o
+NSOBJS += $(OUTDIR)/clusterconf.o
+NSOBJS += $(OUTDIR)/lnodeconfig.o
+NSOBJS += $(OUTDIR)/pnodeconfig.o
+NSOBJS += $(OUTDIR)/persistconfig.o
+NSOBJS += $(OUTDIR)/nameserverconfig.o
+NSOBJS += $(OUTDIR)/nslnode.o
+NSOBJS += $(OUTDIR)/nspnode.o
+NSOBJS += $(OUTDIR)/intprocess.o
+NSOBJS += $(OUTDIR)/nshealthcheck.o
+NSOBJS += $(OUTDIR)/nscommaccept.o
+NSOBJS += $(OUTDIR)/nscommacceptmon.o
+ifeq ($(USE_DMALLOC),1)
+    NSOBJS += $(OUTDIR)/dm.o
+endif
+NSOBJS += $(OUTDIR)/nsreqworker.o
+NSOBJS += $(OUTDIR)/nsreqqueue.o
+NSOBJS += $(OUTDIR)/nsreqdelproc.o
+NSOBJS += $(OUTDIR)/nsreqstop.o
+NSOBJS += $(OUTDIR)/nsreqnewproc.o
+NSOBJS += $(OUTDIR)/nsreqprocinfo.o
+NSOBJS += $(OUTDIR)/nsreqprocinfons.o
+NSOBJS += $(OUTDIR)/nsreqstart.o
+NSOBJS += $(OUTDIR)/nsreqshutdown.o
+ifeq ($(USE_FORK_SUSPEND_RESUME),1)
+    NSOBJS += $(OUTDIR)/rs.o
+endif
+NSOBJS += $(OUTDIR)/nsreplicate.o
+NSOBJS += $(OUTDIR)/gentrap.o
+NSOBJS += $(OUTDIR)/monrobsem.o
+NSOBJS += $(OUTDIR)/CommonLogger.o
+NSOBJS += $(OUTDIR)/zclient.o
+NSOBJS += $(OUTDIR)/type2str.o
+NSOBJS += $(OUTDIR)/meas.o
+
 
 SHELLOBJS = $(OUTDIR)/shell.o
 SHELLOBJS += $(OUTDIR)/monclio.o
@@ -230,6 +289,7 @@ SHELLOBJS += $(OUTDIR)/clusterconf.o
 SHELLOBJS += $(OUTDIR)/lnodeconfig.o
 SHELLOBJS += $(OUTDIR)/pnodeconfig.o
 SHELLOBJS += $(OUTDIR)/persistconfig.o
+SHELLOBJS += $(OUTDIR)/nameserverconfig.o
 SHELLOBJS += $(OUTDIR)/cmsh.o
 SHELLOBJS += $(OUTDIR)/phnode.o
 SHELLOBJS += $(OUTDIR)/system.o
@@ -280,6 +340,7 @@ ZOOMONOBJS += $(OUTDIR)/zclient.o
 ZOOMONOBJS += $(OUTDIR)/lock.o
 ZOOMONOBJS += $(OUTDIR)/montrace.o
 ZOOMONOBJS += $(OUTDIR)/CommonLogger.o
+ZOOMONOBJS += $(OUTDIR)/type2str.o
 
 MSG_LOG_OBJS = $(OUTDIR)/monlogging.o
 
@@ -295,38 +356,13 @@ CONFOBJS += $(OUTDIR)/clusterconf.o
 CONFOBJS += $(OUTDIR)/lnodeconfig.o
 CONFOBJS += $(OUTDIR)/pnodeconfig.o
 CONFOBJS += $(OUTDIR)/persistconfig.o
-
-TRAFCONFOBJS = $(OUTDIR)/trafconf.o
-TRAFCONFOBJS += $(OUTDIR)/clusterconf.o
-TRAFCONFOBJS += $(OUTDIR)/lnodeconfig.o
-TRAFCONFOBJS += $(OUTDIR)/pnodeconfig.o
-TRAFCONFOBJS += $(OUTDIR)/persistconfig.o
-
-TCDB_SRC = tcdb.cxx
-TCDB_OBJS = $(OUTDIR)/tcdb.o
-
-TCDBSQLITE_SRC = tcdbsqlite.cxx
-TCDBSQLITE_OBJS = $(OUTDIR)/tcdbsqlite.o
-
-TCDBSTORE_SRC = tcdbstore.cxx
-TCDBSTORE_OBJS = $(OUTDIR)/tcdbstore.o
-
-TCDBZSTORE_SRC = tcdbzstore.cxx
-TCDBZSTORE_OBJS = $(OUTDIR)/tcdbzstore.o
-
-TCLOG_SRC = tclog.cxx
-TCLOG_OBJS = $(OUTDIR)/tclog.o
-
-TCTRACE_SRC = tctrace.cxx
-TCTRACE_OBJS = $(OUTDIR)/tctrace.o
-
-TRAFCONFIG_SRC = trafconfig.cxx
-TRAFCONFIG_OBJS = $(OUTDIR)/trafconfig.o
+CONFOBJS += $(OUTDIR)/nameserverconfig.o
 
 TYPE2STR_SRC = type2str.cxx
 TYPE2STR_OBJS = $(OUTDIR)/type2str.o
 
 ALLOBJS = $(MONITOROBJS)
+ALLOBJS += $(NSOBJS)
 ALLOBJS += $(SHELLOBJS)
 ALLOBJS += $(CLIENTOBJS)
 ALLOBJS += $(WATCHDOGOBJS)
@@ -338,14 +374,6 @@ ALLOBJS += $(CONFOBJS)
 ALLOBJS += $(MEMLOGOBJS)
 ALLOBJS += $(RTSIGBLOCK_OBJS)
 ALLOBJS += $(ZOOMONOBJS)
-ALLOBJS += $(TRAFCONFOBJS)
-ALLOBJS += $(TCDB_OBJS)
-ALLOBJS += $(TCDBSQLITE_OBJS)
-ALLOBJS += $(TCDBSTORE_OBJS)
-#ALLOBJS += $(TCDBZSTORE_OBJS)
-ALLOBJS += $(TCLOG_OBJS)
-ALLOBJS += $(TCTRACE_OBJS)
-ALLOBJS += $(TRAFCONFIG_OBJS)
 ALLOBJS += $(TYPE2STR_OBJS)
 
 SHAREDLIBS =   $(LIBEXPDIR)/libtrafconfig.so
@@ -356,7 +384,7 @@ PGMS +=  $(BINEXPDIR)/shell
 PGMS +=  $(BINEXPDIR)/sqwatchdog
 PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
-PGMS +=  $(BINEXPDIR)/trafconf
+PGMS +=  $(BINEXPDIR)/trafns
 
 TEST_PGMS = $(OUTDIR)/client
 TEST_PGMS += $(OUTDIR)/client2
@@ -372,18 +400,7 @@ TEST_PGMS += $(OUTDIR)/testspx
 TEST_PGMS += $(OUTDIR)/testconf
 TEST_PGMS += $(OUTDIR)/zootest
 
-#	    $(OUTDIR)/attach \
-#	    $(OUTDIR)/testenv \
-
 # Compile rules for building sources
-
-#$(OUTDIR)/%:%.cxx $(INCLUDE)
-#	@echo 'Building target: $@'
-#	@echo 'Invoking: C++ Compile & Linker'
-#	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(OUTDIR)/clio.o $(OUTDIR)/props.o $<
-#	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(OUTDIR)/clio.o $(OUTDIR)/props.o $<
-#	@echo 'Finished building target: $@'
-#	@echo ' '
 
 $(BINEXPDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
@@ -420,11 +437,20 @@ $(OUTDIR)/%.o:%.cc
 	@echo ' '
 
 # For compiling Seabed trace modules
-$(OUTDIR)/%.o:$(SBDIR)/%.cpp $(INCLUDE)
+$(OUTDIR)/%.o:$(SRCSBDIR)/%.cpp $(INCLUDE)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compiler'
-	@echo $(CXX) $(SBFLAGS) -I$(INCEXPDIR) -I$(SBDIR) -c -o $@ $<
-	@$(CXX) $(SBFLAGS) -I../../export/include -I../../src/seabed/src -c -o $@ $<
+	@echo $(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
+	@$(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+# For compiling Trafodion Configuration  modules
+$(OUTDIR)/%.o:$(SRCTCDIR)/%.cpp
+	@echo 'Building target: $@'
+	@echo 'Invoking: C++ Compiler'
+	@echo $(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
+	@$(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -439,7 +465,7 @@ $(OUTDIR)/%.o:$(COMMONLOGGERDIR)/%.cpp $(INCLUDE)
 
 # Targets
 # Uncomment the following target to disable parallel make
-.NOTPARALLEL:
+#.NOTPARALLEL:
 
 all: programs examples
 
@@ -468,21 +494,9 @@ $(OUTDIR)/notify : notify.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
 $(OUTDIR)/testtm : testtm.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
-#$(OUTDIR)/attach : attach.cxx $(OUTDIR)/clio.o
-
-#$(OUTDIR)/testenv : testenv.cxx
-
 $(OUTDIR)/pingpong2 : pingpong2.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
-	@echo 'Building target: $@'
-	@echo 'Invoking: Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
-	@echo 'Finished building target: $@'
-	@echo ' '
-
-$(BINEXPDIR)/trafconf : $(TRAFCONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
@@ -522,7 +536,7 @@ $(BINEXPDIR)/pstartd: $(PSTARTDOBJS) $(OUTDIR)/monclio.o $(TRACE_LOG_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-$(BINEXPDIR)/monmemlog : $(MEMLOGOBJS)
+$(BINEXPDIR)/monmemlog : $(MEMLOGOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
@@ -541,6 +555,14 @@ $(BINEXPDIR)/monitor: $(MONITOROBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+$(BINEXPDIR)/trafns: $(NSOBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: Linker'
+	@echo $(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto
+	@$(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto
+	@echo 'Finished building target: $@'
+	@echo ' '
+
 $(LIBEXPDIR)/libseabasesig.so: $(RTSIGBLOCK_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
@@ -548,23 +570,6 @@ $(LIBEXPDIR)/libseabasesig.so: $(RTSIGBLOCK_OBJS)
 	@$(CXX) $(LNK_FLGS) -shared -o $@ $(RTSIGBLOCK_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
-
-#$(LIBEXPDIR)/libtrafconfig.so: $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TCDBZSTORE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-#	@echo 'Building target: $@'
-#	@echo 'Invoking: Linker'
-#	@echo $(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TCDBZSTORE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-#	@$(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TCDBZSTORE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-#	@echo 'Finished building target: $@'
-#	@echo ' '
-
-$(LIBEXPDIR)/libtrafconfig.so: $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-	@echo 'Building target: $@'
-	@echo 'Invoking: Linker'
-	@echo $(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-	@$(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-	@echo 'Finished building target: $@'
-	@echo ' '
-
 
 setup:
 	@# do nothing
@@ -574,7 +579,6 @@ clean:
 	-rm -f $(ALLOBJS)
 	-rm -f $(CDEP_DIR)/*.dep
 	-rm -f $(LIBEXPDIR)/libseabasesig.so
-	-rm -f $(LIBEXPDIR)/libtrafconfig.so
 	@echo ' '
 
 cleanall: clean
@@ -582,18 +586,6 @@ cleanall: clean
 
 cleaner: clean
 	-rm -f *~
-
-#install:
-#	@echo 'Installing programs in $(INSTALL_DIR)'
-#	-cp $(PGMS) $(INSTALL_DIR)
-#	@echo 'Finished installing programs'
-#	@echo ' '
-
-#uninstall:
-#	@echo 'Uninstalling programs from $(INSTALL_DIR)'
-#	-cd $(INSTALL_DIR);rm -f $(PGMS) $(TEST_PGMS)
-#	@echo 'Finished uninstalling programs'
-#	@echo ' '
 
 rebuild: clean all
 	-@echo ' '

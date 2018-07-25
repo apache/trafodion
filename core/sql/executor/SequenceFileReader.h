@@ -99,7 +99,7 @@ public:
 
   SFR_RetCode    fetchRowsIntoBuffer(Int64 stopOffset, char* buffer, Int64 buffSize, Int64& bytesRead, char rowDelimiter);
 
-  virtual char*  getErrorText(SFR_RetCode errEnum);
+  static char*  getErrorText(SFR_RetCode errEnum);
 
 protected:
   jstring getLastError();
@@ -144,20 +144,6 @@ typedef enum {
  ,SFW_ERROR_WRITE_PARAM
  ,SFW_ERROR_WRITE_EXCEPTION
  ,SFW_ERROR_CLOSE_EXCEPTION
- ,SFW_ERROR_HDFS_CREATE_PARAM
- ,SFW_ERROR_HDFS_CREATE_EXCEPTION
- ,SFW_ERROR_HDFS_WRITE_PARAM
- ,SFW_ERROR_HDFS_WRITE_EXCEPTION
- ,SFW_ERROR_HDFS_CLOSE_EXCEPTION
- ,SFW_ERROR_HDFS_MERGE_FILES_PARAM
- ,SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION
- ,SFW_ERROR_HDFS_CLEANUP_PARAM
- ,SFW_ERROR_HDFS_CLEANUP_EXCEPTION
- ,SFW_ERROR_HDFS_EXISTS_PARAM
- ,SFW_ERROR_HDFS_EXISTS_EXCEPTION
- ,SFW_ERROR_HDFS_EXISTS_FILE_EXISTS
- ,SFW_ERROR_HDFS_DELETE_PATH_PARAM
- ,SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION
  ,SFW_LAST
 } SFW_RetCode;
 
@@ -199,18 +185,9 @@ public:
   
   // Close the file.
   SFW_RetCode    close();
-
-  SFW_RetCode    hdfsCreate(const char* path, NABoolean compress);
-  SFW_RetCode    hdfsWrite(const char* data, Int64 size);
-  SFW_RetCode    hdfsMergeFiles(const NAString& srcPath,
-                                 const NAString& dstPath);
-  SFW_RetCode    hdfsDeletePath(const NAString& delPath);
-  SFW_RetCode    hdfsCleanUnloadPath(const NAString& uldPath );
-  SFW_RetCode    hdfsExists(const NAString& uldPath,  NABoolean & exists );
-  SFW_RetCode    hdfsClose();
   SFW_RetCode    release();
 
-  virtual char*  getErrorText(SFW_RetCode errEnum);
+  static char*  getErrorText(SFW_RetCode errEnum);
 
 
 
@@ -222,13 +199,6 @@ private:
     JM_OPEN,
     JM_WRITE,
     JM_CLOSE,
-    JM_HDFS_CREATE,
-    JM_HDFS_WRITE,
-    JM_HDFS_CLOSE,
-    JM_HDFS_MERGE_FILES,
-    JM_HDFS_CLEAN_UNLOAD_PATH,
-    JM_HDFS_EXISTS,
-    JM_HDFS_DELETE_PATH,
     JM_LAST
   };
   

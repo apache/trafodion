@@ -33,7 +33,9 @@
 
 namespace ODBC {
 
-unsigned long ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
+unsigned long ConvertSQLToC(CConnect *ConnectHandle,
+                            SQLHANDLE InputHandle,
+                            SQLINTEGER	ODBCAppVersion,
 							DWORD		DataLangId,
 							SQLSMALLINT	SQLDataType,
 							SQLSMALLINT	ODBCDataType,

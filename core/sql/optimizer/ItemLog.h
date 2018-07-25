@@ -82,7 +82,6 @@ public:
   }
 
   // virtual destructor
-  // warning elimination (removed "inline")
   virtual ~BiLogic() {}
 
   // we want BiLogic to be cacheable
@@ -215,7 +214,6 @@ public:
   {}
 
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~UnLogic() {}
 
   // get the degree of this node (it is a unary op).
@@ -357,7 +355,6 @@ public:
   }
  
   // virtual destructor
-  // warning elimination (removed "inline")
   virtual ~BiRelat() {}
 
   // we want BiRelat to be cacheable

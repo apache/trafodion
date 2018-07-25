@@ -101,9 +101,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   MvRefreshBuilder(const MvRefreshBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   MvRefreshBuilder& operator=(const MvRefreshBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
   enum { MAX_EPOCH_FOR_UNION_BACKBONE = 50 };
@@ -276,9 +274,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   MvRecomputeBuilder(const MvRecomputeBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   MvRecomputeBuilder& operator=(const MvRecomputeBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
   virtual RelExpr *buildRefreshTree();
@@ -310,9 +306,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   MavBuilder(const MavBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   MavBuilder& operator=(const MavBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
   enum  GroupOpNumbers { GOP_INSERT = 1, 
@@ -464,9 +458,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   MinMaxOptimizedMavBuilder(const MinMaxOptimizedMavBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   MinMaxOptimizedMavBuilder& operator=(const MinMaxOptimizedMavBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 protected:
   virtual RelExpr *buildMinMaxRecomputationBlock() const;
@@ -493,9 +485,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   MultiDeltaMavBuilder(const MultiDeltaMavBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   MultiDeltaMavBuilder& operator=(const MultiDeltaMavBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
 
@@ -545,9 +535,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   MvMultiTxnMavBuilder(const MvMultiTxnMavBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   MvMultiTxnMavBuilder& operator=(const MvMultiTxnMavBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
 
@@ -612,7 +600,6 @@ protected:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Exclude from coverage testing - used only with range loggiing
-// LCOV_EXCL_START
 class MultiTxnDEMavBuilder : public MvMultiTxnMavBuilder
 {
 public:
@@ -627,9 +614,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   MultiTxnDEMavBuilder(const MultiTxnDEMavBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   MultiTxnDEMavBuilder& operator=(const MultiTxnDEMavBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
 
@@ -693,7 +678,6 @@ private:
   static const char   lastNotNullPrefixColName_[];
 
 };  // MultiTxnDEMavBuilder
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Builds the refresh tree of a single-delta pipelined MAV. 
@@ -711,9 +695,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   PipelinedMavBuilder(const PipelinedMavBuilder& other);
-#pragma nowarn(1026)   // warning elimination 
   PipelinedMavBuilder& operator=(const PipelinedMavBuilder& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
   virtual ~PipelinedMavBuilder() {}
@@ -749,9 +731,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   LogsInfo(const LogsInfo& other);
-#pragma nowarn(1026)   // warning elimination 
   LogsInfo& operator=(const LogsInfo& other);
-#pragma warn(1026)  // warning elimination 
 
 public:
 

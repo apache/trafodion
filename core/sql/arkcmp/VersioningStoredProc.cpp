@@ -448,7 +448,6 @@ SP_STATUS
       {
         // Provide output values from current element
         const ComVersion_NodeInfo & element = nodeSet[rowIndex];
-#pragma nowarn(1506)
         // First two columns are copies of the corresponding input columns
         fFunc(0,  outputData, strlen(context->getInputType()),  (void *)context->getInputType(),  TRUE);
         fFunc(1,  outputData, strlen(context->getInputValue()), (void *)context->getInputValue(), TRUE);
@@ -457,7 +456,6 @@ SP_STATUS
         fFunc(2,  outputData, sizeof(Lng32),                     (void *)&outputVersion,           FALSE);
         // Fourth column is the node name from the element
         fFunc(3,  outputData, strlen(element.getNodeName()),    (void *)&element.getNodeName(),   TRUE);
-#pragma warn(1506)
         // Fifth column is the MXV of the node from the element.
         outputVersion = element.getMXV();
         fFunc (4, outputData, sizeof(Lng32), (void *)&outputVersion, FALSE);

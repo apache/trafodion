@@ -29,6 +29,5 @@ DEFS := -DSQLMXEVENTS_LIB
 
 ifeq ($(TARGTYPE),linux)
 EXTERN_LIBS := $(XMPIROOT)/libevlsq.so
-#EXTERN_LIBS += $(SP_EXPORT_LIB)/libwrappersq.so
 CPPSRC += vers_libtdm_sqlmxevents.cpp
 endif

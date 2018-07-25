@@ -75,13 +75,11 @@ public:
   // Used when unpacking the UnPackRows TDB.  Used to get a pointer
   // to the Virtual Method Table.
   //
-  NA_EIDPROC
   ComTdbUnPackRows();
   
   // Construct a copy of the given node.
   // (This constructor does not seem to be used)
   // 
-  NA_EIDPROC
   ComTdbUnPackRows(const ComTdbUnPackRows *UnPackRowsTdb);
         
   // Construct a new UnPackRows TDB.
@@ -137,7 +135,6 @@ public:
   //  IN: Used to set flags_ if nonfatal errors are tolerated.
   //
 
-  NA_EIDPROC
   ComTdbUnPackRows(ComTdb *childTdb,
 		   ex_expr *packingFactor,
 		   ex_expr *unPackColsExpr,
@@ -171,18 +168,18 @@ public:
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                 { return (short)sizeof(ComTdbUnPackRows); }
 
   // ComTdbUnPackRows::pack() ---------------------------------------------
@@ -200,7 +197,6 @@ public:
   //       that can be reached from this TDB points to memory outside 
   //       this space object.
   //
-  NA_EIDPROC
   Long pack(void *);
 
   // ComTdbUnPackRows::unpack() ---------------------------------------------
@@ -215,7 +211,6 @@ public:
   //  IN - The base address of the TDB fragment.  Pointers are calculated
   //       by adding the offset to the base address (more or less).
   //
-  NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
 
   // methods used for rowwise rowset processing
@@ -228,12 +223,10 @@ public:
   // (Don't know why this is here.  It does not seem to be virtual and
   // on class seems to do anything for this method.)
   //
-  NA_EIDPROC
   void display() const;
 
   // Return a pointer to the child TBD of this UnPackRows TDB.
   //
-  NA_EIDPROC
   inline ComTdb * getChildTdb() { return childTdb_; }
 
   // We are observing order queue protocol. Results from
@@ -242,15 +235,11 @@ public:
   //
   // Exclude this code from coverage analysis.
   // This code could be deleted since it is the same as the base implementation.
-  // LCOV_EXCL_START
-  NA_EIDPROC
   Int32 orderedQueueProtocol() const { return -1; }
-  // LCOV_EXCL_STOP
 
   // return a pointer to the specifed (by position) child TDB.
   // UnPackRows has only one child.
   //
-  NA_EIDPROC
   virtual const ComTdb *getChild(Int32 pos) const
   {
     if(pos == 0) 
@@ -261,12 +250,10 @@ public:
   // Return the number of children for this node.
   // UnPackRows has one child.
   //
-  NA_EIDPROC
   virtual Int32 numChildren() const { return (childTdb_ ? 1 : 0); }
 
   // Return the number of expression this node has.
   //
-  NA_EIDPROC
   virtual Int32 numExpressions() const 
   { 
     if (rowwiseRowset()) 
@@ -279,7 +266,6 @@ public:
   // The UnPackRows expressions come first, followed
   // by the selection pred.
   //
-  NA_EIDPROC
   virtual ex_expr * getExpressionNode(Int32 pos) 
   {
     switch(pos) {
@@ -307,7 +293,6 @@ public:
   // The UnPackRows expressions come first, followed
   // by the selection pred.
   //
-  NA_EIDPROC
   virtual const char * getExpressionName(Int32 pos) const
   {
     switch(pos) {
@@ -336,15 +321,12 @@ public:
     return "EX_UNPACK_ROWS";
   }
 
-  NA_EIDPROC
   short isRowsetIterator()
   { return short(flags_ & ROWSET_ITERATOR);}
  
-  NA_EIDPROC
   NABoolean rowwiseRowset()
   { return (flags_ & ROWWISE_ROWSET) != 0;}
 
-  NA_EIDPROC
   NABoolean rowwiseRowset() const
   { return (flags_ & ROWWISE_ROWSET) != 0;}
 
@@ -354,7 +336,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 protected:
 

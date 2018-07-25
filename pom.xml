@@ -59,7 +59,7 @@
 
   <issueManagement>
     <system>JIRA</system>
-    <url>http://issues.apache.org/jira/browse/TRAFODION</url>
+    <url>https://issues.apache.org/jira/browse/TRAFODION</url>
   </issueManagement>
 
   <scm>
@@ -107,6 +107,10 @@
       <unsubscribe>issues-unsubscribe@trafodion.apache.org</unsubscribe>
       <archive>http://mail-archives.apache.org/mod_mbox/trafodion-issues/</archive>
     </mailingList>
+    <mailingList>
+      <name>Security Issues</name>
+      <post>security@trafodion.apache.org</post>
+    </mailingList>
   </mailingLists>
 
   <developers>
@@ -143,6 +147,7 @@
     <module>docs/odb_user</module>
     <module>docs/spj_guide</module>
     <module>docs/sql_reference</module>
+    <module>docs/lob_guide</module>
     <module>docs/jdbct4ref_guide</module>
   </modules>
 

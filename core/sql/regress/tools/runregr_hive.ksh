@@ -233,6 +233,11 @@ if [ "$REGRCONCURRENT" -ne 0 ]; then
   skipTheseTests="$skipTheseTests $exclusiveTests"
 fi
 
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST2" == "1" ]; then
+    skipTheseTests="$skipTheseTests $hiveCT"
+fi
+
 for i in $testfiles; do
   skipthis=0
   for j in $skipTheseTests; do
@@ -434,9 +439,9 @@ for i in $prettyfiles; do
 
     if [ "$REGRCONCURRENT" -eq 1 ]; then
       echo "create schema ${TEST_SCHEMA}; set schema ${TEST_SCHEMA};" \
-        | cat $defsfile - $testrun > $test.tmp
+        | cat $sbdefsfile $defsfile - $testrun > $test.tmp
     else
-      cat $defsfile $testrun > $test.tmp
+      cat $sbdefsfile $defsfile $testrun > $test.tmp
     fi
 
 

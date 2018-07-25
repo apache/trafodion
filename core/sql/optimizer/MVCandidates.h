@@ -64,7 +64,6 @@ typedef NAHashDictionary<CollIndex, Scan> NodeIdScanHash;
  * file.
  */
 
-// LCOV_EXCL_START :rfi
 /**
  * Exception thrown when a candidate in the result descriptor must be discarded
  * because an internal error occurred when processing it, or it requires a
@@ -95,7 +94,6 @@ class MVCandidateException : public QRException
     {}
 
 }; //MVCandidateException
-// LCOV_EXCL_STOP
 
 /**
  * Class used to analyze the result descriptor corresponding to a match

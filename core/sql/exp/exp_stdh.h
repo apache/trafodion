@@ -37,18 +37,17 @@
  *****************************************************************************
  */
 
-#include "SqlExpDllDefines.h"
 #include "Platform.h"
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include	<stdio.h>
 #include	<iostream>
 #include	<stdlib.h>
-#endif  // NA_DEBUG_C_RUNTIME
+#endif  // _DEBUG
 
 #include "ComPackDefs.h"
 #include "dfs2rec.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "str.h"
 #include "exp_expr.h"
 #include "exp_clause.h"

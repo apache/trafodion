@@ -155,16 +155,13 @@ static const UInt32 DEST_BUF_SIZE = 2 * ErrorMessage::MSG_BUF_SIZE;
 static inline void Encode36(char &dst, Int32 src)
 {
   char tc = (char) src;
-#pragma nowarn(1506)   // warning elimination 
   dst = (tc < 10 ? '0' + tc : 'A' + tc - 10);
-#pragma warn(1506)  // warning elimination 
 }
 
 NABoolean GetSqlstateInfo(Lng32 sqlcode, char * sqlstate,
 			  NABoolean &fabricatedSqlstate);
 void AddSqlstateInfo(Lng32 sqlcode, char * sqlstate,
 		     NABoolean fabricatedSqlstate);
-#pragma nowarn(770)   // warning elimination 
 NABoolean ComSQLSTATE(Lng32 theSQLCODE, char *theSQLSTATE)
 {
   // ---------------------------------------------------------------------
@@ -360,9 +357,7 @@ NABoolean ComSQLSTATE(Lng32 theSQLCODE, char *theSQLSTATE)
       case 3:  // 7
       case 4:  // 8
       case 5:  // 9 - not really used
-#pragma nowarn(1506)   // warning elimination 
 	state2 = '4' + (char) codeLeft;
-#pragma warn(1506)  // warning elimination 
 	break;
       case 6:  // I
       case 7:  // J
@@ -374,9 +369,7 @@ NABoolean ComSQLSTATE(Lng32 theSQLCODE, char *theSQLSTATE)
       case 13: // P
       case 14: // Q - not used so far (Nov 2001)
       case 15: // R
-#pragma nowarn(1506)   // warning elimination 
 	state2 = 'I' + (char) (codeLeft - 6);
-#pragma warn(1506)  // warning elimination 
 	break;
       case 19: // S
 	state2 = 'S';
@@ -392,9 +385,7 @@ NABoolean ComSQLSTATE(Lng32 theSQLCODE, char *theSQLSTATE)
 	// are also not yet used
 
       default:
-#pragma nowarn(1506)   // warning elimination 
 	state2 = 'Y' + (char) (codeLeft % 2);
-#pragma warn(1506)  // warning elimination 
 	break;
       }
     theSQLSTATE[2] = state2;
@@ -415,7 +406,6 @@ saveAndReturnSqlstate:
   
 
 }
-#pragma warn(770)   // warning elimination 
 
 static const char *returnClassOrigin(Lng32 theSQLCODE, size_t offset)
 {
@@ -761,7 +751,7 @@ Int32 displayWCHAR(NAWchar* wstr, NAWchar* wend = NULL)	// for debugging
   unsigned char str[2000+1];
   if (wend) *wend = '\0';
   Int32 i=0;
-  for (; wstr[i] && i<2000; i++)
+  for (; i<2000 && wstr[i]; i++)
     str[i] = (unsigned char)wstr[i];
   str[i] = '\0';
   cerr << "{{{" << endl << str << "}}}" << endl;
@@ -1242,19 +1232,15 @@ void emitError( Lng32 ErrNum, char *stringType, Lng32 numArgs, ... )
       va_start( ap, numArgs );
       assert( numArgs < 11 ); // at most, 10 arguments are acceptable
 
-      for( UInt32 argNum = 0; argNum < (UInt32)numArgs; argNum++ )  // NT_PORT ( bd 12/9/96 )
+      for( UInt32 argNum = 0; argNum < (UInt32)numArgs; argNum++ )
          if ( stringType[ argNum ] == 'T' )  {
             assert( strIdx < 5 );
-#pragma nowarn(1506)   // warning elimination 
             currentErr.setOptionalString( strIdx, va_arg( ap, const char * ) );
-#pragma warn(1506)  // warning elimination 
             strIdx++;
             }
          else  {
             assert( intIdx < 5 );
-#pragma nowarn(1506)   // warning elimination 
             currentErr.setOptionalInteger( intIdx,
-#pragma warn(1506)  // warning elimination 
                                            * (Lng32 *) va_arg(ap, UInt32 *) );
             intIdx++;
             }

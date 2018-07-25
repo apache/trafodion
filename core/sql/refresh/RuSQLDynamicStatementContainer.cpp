@@ -99,9 +99,7 @@ void CRUSQLDynamicStatementContainer::PrepareSQL()
 {
 	for (Int32 i=0; i < GetNumOfStmt(); i++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		PrepareStatement(i);
-#pragma warn(1506)  // warning elimination 
 	}
 }
 
@@ -289,9 +287,7 @@ void CRUSQLDynamicStatementContainer::DynamicStmt::PrepareStatement(BOOL DeleteU
 	short retry_delay = 1000 ; // milliseconds.
 	for (Int32 retry = 0; retry < 2; retry++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		retry_delay = retry_delay * (retry + 1);
-#pragma warn(1506)  // warning elimination 
 		try 
 		{
 		  // need to add here the handling of compiled params
@@ -428,9 +424,7 @@ StoreData(CUOFsIpcMessageTranslator &translator)
 		return;
 	}
 
-#pragma nowarn(1506)   // warning elimination 
 	size = strlen(sql_)+1;
-#pragma warn(1506)  // warning elimination 
 	translator.WriteBlock(&size, sizeof(short));
 	
 	translator.WriteBlock(&paramNum_, sizeof(Lng32));

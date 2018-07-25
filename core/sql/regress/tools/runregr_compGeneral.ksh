@@ -205,7 +205,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST023 TEST071 TEST042 TEST043 TEST045 TESTTOK TESTTOK2 TEST062"
+  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST023 TEST071 TEST072 TEST042 TEST043 TEST045 TESTTOK TESTTOK2 TEST062"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -289,12 +289,12 @@ if [ "$BUILD_FLAVOR" = "RELEASE" ]; then
 fi
 
 if [ `uname` = "Linux" ]; then 
-  # previously executed tests:
-  #skipTheseTests="$skipTheseTests"
-  # embedded tests
-  #skipTheseTests="$skipTheseTests"
-  # tests that hang
-  skipTheseTests="$skipTheseTests TEST070 TESTTOK TEST066"
+  skipTheseTests="$skipTheseTests TEST070 TEST066"
+fi
+
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST1" == "1" ]; then
+    skipTheseTests="$skipTheseTests $compGeneralCT"
 fi
 
 for i in $testfiles; do 
@@ -378,6 +378,12 @@ cp $scriptsdir/tools/runmxci.ksh $REGRRUNDIR 2>$NULL
 
 echo "copying FILTER042 to $REGRRUNDIR"
 cp $REGRTSTDIR/FILTER042 $REGRRUNDIR 2>$NULL
+
+echo "copying FILTER045 to $REGRRUNDIR"
+cp $REGRTSTDIR/FILTER045 $REGRRUNDIR 2>$NULL
+
+echo "copying FILTER072 to $REGRRUNDIR"
+cp $REGRTSTDIR/FILTER072 $REGRRUNDIR 2>$NULL
 
 if [ $diffOnly -eq 0 ]; then
    if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
@@ -540,9 +546,9 @@ for i in $prettyfiles; do
        cp -f $REGRTSTDIR/$test $REGRRUNDIR/$test 2>$NULL
     fi
 
-    if [ $tnum = "TOK" ]; then
-      $wDir/toolbin/parserToks.ksh $wDir/parser/SqlParser.y NO-POPUP 2>&1 | tee LOGTOK;
-    elif [ $tnum = "TOK2" -a `uname` = "Windows_NT" ]; then
+#    if [ $tnum = "TOK" ]; then
+#      $wDir/toolbin/parserToks.ksh $wDir/parser/SqlParser.y NO-POPUP 2>&1 | tee LOGTOK;
+    if [ $tnum = "TOK2" -a `uname` = "Windows_NT" ]; then
       $REGRTSTDIR/tok2.ksh 2>&1 | tee LOGTOK2;
     else
     # special case for TEST002, where we want mxci to be licensed

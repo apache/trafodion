@@ -27,7 +27,7 @@ SQLRETURN WCharToUTF8(wchar_t *wst, int wstlen, char *st, int stlen, int *transl
 {
 	int len;
 	SQLRETURN rc = SQL_SUCCESS;
-	if (!error)
+	if (NULL != error)
 		error[0] ='\0';
 	if(translen != NULL)
 		*translen = 0;
@@ -42,14 +42,14 @@ SQLRETURN WCharToUTF8(wchar_t *wst, int wstlen, char *st, int stlen, int *transl
 					len = wcslen((const wchar_t *)wst);
 				else // Invalid length, return SQL_ERROR
 				{
-					if (!error)
+					if (NULL != error)
 						strcpy(error,"WCharToUTF8: Invalid Length");
 					return SQL_ERROR;
 				}
 			}
 			if (stlen == 1) // no room for translation, just null terminator
 			{
-				if (!error)
+				if (NULL != error)
 					strcpy(error,"WCharToUTF8: Insufficient Buffer "); 
 				rc = SQL_SUCCESS_WITH_INFO;  
 			}
@@ -69,22 +69,22 @@ SQLRETURN WCharToUTF8(wchar_t *wst, int wstlen, char *st, int stlen, int *transl
 						}
 						strcpyUTF8(st, (const char*)temp, stlen);
 						*translen = strlen(st);
-						if (!error)
+						if (NULL != error)
 							strcpy(error,"WCharToUTF8: Insufficient Buffer "); 
 						delete[] temp;
 						return SQL_SUCCESS_WITH_INFO;
 					}
 					break;
 				case ERROR_INVALID_FLAGS:
-					if (!error)
+					if (NULL != error)
 						strcpy(error,"WCharToUTF8: Invalid Flags");
 					break;
 				case ERROR_INVALID_PARAMETER:
-					if (!error)
+					if (NULL != error)
 						strcpy(error,"WCharToUTF8: Invalid parameter");
 					break;
 				default:
-					if (!error)
+					if (NULL != error)
 						strcpy(error,"WCharToUTF8: Unknown Translation Error");
 					break;
 				}
@@ -112,7 +112,7 @@ SQLRETURN UTF8ToWChar(char *st, int stlen, wchar_t *wst, int wstlen, int *transl
 {
 	short len;
 	SQLRETURN rc = SQL_SUCCESS;
-	if (!error)
+	if (NULL != error)
 		error[0] ='\0';
 	if(translen != NULL)
 		*translen = 0;
@@ -127,14 +127,14 @@ SQLRETURN UTF8ToWChar(char *st, int stlen, wchar_t *wst, int wstlen, int *transl
 					len = strlen((const char *)st);
 				else
 				{
-					if (!error)
+					if (NULL != error)
 						strcpy(error, "UTF8ToWChar: Invalid String Length"); 
 					return SQL_ERROR;
 				}
 			}
 			if (wstlen == 1) // no room for translation, just null terminator
 			{
-				if (!error)
+				if (NULL != error)
 					strcpy(error,"UTF8ToWChar: Insufficient Buffer ");
 				rc = SQL_SUCCESS_WITH_INFO; 
 			}
@@ -155,26 +155,26 @@ SQLRETURN UTF8ToWChar(char *st, int stlen, wchar_t *wst, int wstlen, int *transl
 						wcsncpy(wst, (const wchar_t*)temp, wstlen-1);
 						wst[wstlen-1] = L'\0';
 						*translen = wcslen(wst);
-						if (!error)
+						if (NULL != error)
 							strcpy(error,"UTF8ToWChar: Insufficient Buffer ");
 						delete[] temp;
 						return SQL_SUCCESS_WITH_INFO;
 					}
 					break;
 					case ERROR_INVALID_FLAGS:
-						if (!error)
+						if (NULL != error)
 							strcpy(error,"UTF8ToWChar: Invalid Flags");
 						break;
 					case ERROR_INVALID_PARAMETER:
-						if (!error)	
+						if (NULL != error)	
 							strcpy(error,"UTF8ToWChar: Invalid parameter");
 						break;
 					case ERROR_NO_UNICODE_TRANSLATION:
-						if (!error)
+						if (NULL != error)
 							strcpy(error,"UTF8ToWChar: No Unicode Translation");
 						break;
 					default:
-						if (!error)
+						if (NULL != error)
 							strcpy(error,"UTF8ToWChar: Unknown Translation Error");
 						break;
 				}
@@ -208,7 +208,7 @@ SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int ou
 
 	if(translen != NULL)
 		*translen = 0;
-	if (!errorMsg)
+	if (NULL != errorMsg)
 		errorMsg[0] ='\0';
 	if (forward)
 	{
@@ -231,23 +231,23 @@ SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int ou
 				switch (GetLastError())
 				{
 					case ERROR_INSUFFICIENT_BUFFER:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Insufficient Buffer ");  
 						break;
 					case ERROR_INVALID_FLAGS:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Invalid Flags");
 						break;
 					case ERROR_INVALID_PARAMETER:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Invalid parameter");
 						break;
 					case ERROR_NO_UNICODE_TRANSLATION:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: No Unicode Translation");
 						break;
 					default:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Unknown Translation Error");
 						break;
 				}
@@ -260,7 +260,7 @@ SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int ou
 
 			if (outlen == 1) // no room for translation, just null terminator
 			{
-				if (!errorMsg)
+				if (NULL != errorMsg)
 					strcpy(errorMsg,"TranslateUTF8: Insufficient Buffer "); 
 				rc = SQL_SUCCESS_WITH_INFO; 
 			}
@@ -271,7 +271,7 @@ SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int ou
 					case ERROR_INSUFFICIENT_BUFFER:
 					{
 						outst[outlen-1] ='\0';
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Insufficient Buffer "); 
 						if (wst != NULL) 
 						{
@@ -282,15 +282,15 @@ SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int ou
 					}
 					break;
 					case ERROR_INVALID_FLAGS:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Invalid Flags");
 						break;
 					case ERROR_INVALID_PARAMETER:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Invalid parameter");
 						break;
 					default:
-						if (!errorMsg)
+						if (NULL != errorMsg)
 							strcpy(errorMsg,"TranslateUTF8: Unknown Translation Error");
 						break;
 				}
@@ -312,7 +312,7 @@ SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int ou
 	{
 		if(outst != NULL)
 			*outst = '\0';
-		if (!errorMsg)
+		if (NULL != errorMsg)
 			strcpy(errorMsg,"TranslateUTF8: Out string is NULL ");
 		return SQL_ERROR;
 	}
@@ -325,7 +325,7 @@ SQLRETURN WCharToLocale(wchar_t *wst, int wstlen, char *st, int stlen, int *tran
 {
 	int len;
 	SQLRETURN rc = SQL_SUCCESS;
-	if(!error)
+	if(NULL != error)
 		error[0] ='\0';
 	if(translen != NULL)
 		*translen = 0;
@@ -341,14 +341,14 @@ SQLRETURN WCharToLocale(wchar_t *wst, int wstlen, char *st, int stlen, int *tran
 					len = wcslen((const wchar_t *)wst);
 				else
 				{
-					if(!error)
+					if(NULL != error)
 						strcpy(error, "WCharToLocale: Invalid Length for in WChar string"); 
 					return SQL_ERROR;
 				}
 			}
 			if (stlen == 1) // no room for translation, just null terminator
 			{
-				if(!error)
+				if(NULL != error)
 					strcpy(error,"WCharToLocale: Insufficient Buffer "); 
 				rc = SQL_SUCCESS_WITH_INFO; 
 			}
@@ -361,7 +361,7 @@ SQLRETURN WCharToLocale(wchar_t *wst, int wstlen, char *st, int stlen, int *tran
 						char *temp = new char[len*4+1];
 						if ((*translen=(int)WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)wst, len, temp, len*4, (LPCSTR)replacementChar, NULL)) == 0)
 						{
-							if(!error)
+							if(NULL != error)
 								strcpy(error,"WCharToLocale: Unknown Translation Error");
 							*translen = 0;
 							delete[] temp;
@@ -370,22 +370,22 @@ SQLRETURN WCharToLocale(wchar_t *wst, int wstlen, char *st, int stlen, int *tran
 						strncpy(st, (const char*)temp, stlen-1);
 						st[stlen-1] ='\0';
 						*translen = strlen(st);
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"WCharToLocale: Insufficient Buffer "); 
 						delete[] temp;
 						return SQL_SUCCESS_WITH_INFO;
 					}
 					break;
 					case ERROR_INVALID_FLAGS:
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"WCharToLocale: Invalid Flags");
 						break;
 					case ERROR_INVALID_PARAMETER:
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"WCharToLocale: Invalid parameter");
 						break;
 					default:
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"WCharToLocale: Unknown Translation Error");
 						break;
 				}
@@ -410,7 +410,7 @@ SQLRETURN WCharToLocale(wchar_t *wst, int wstlen, char *st, int stlen, int *tran
 SQLRETURN LocaleToWChar(char *st, int stlen, wchar_t *wst, int wstlen, int *translen, char* error)
 {
 	int len;
-	if(!error)
+	if(NULL != error)
 		error[0] = '\0';
 	SQLRETURN rc = SQL_SUCCESS;
 	if(translen != NULL)
@@ -426,14 +426,14 @@ SQLRETURN LocaleToWChar(char *st, int stlen, wchar_t *wst, int wstlen, int *tran
 					len = strlen((const char *)st);
 				else
 				{
-					if(!error)
+					if(NULL != error)
 						strcpy(error, "LocaleToWChar: Invalid Length for in Locale string"); 
 					return SQL_ERROR;
 				}
 			}
 			if (wstlen == 1) // no room for translation, just null-terminator
 			{
-				if(!error)
+				if(NULL != error)
 					strcpy(error,"LocaleToWChar: Insufficient Buffer ");
 				rc = SQL_SUCCESS_WITH_INFO; 
 			}
@@ -454,22 +454,22 @@ SQLRETURN LocaleToWChar(char *st, int stlen, wchar_t *wst, int wstlen, int *tran
 						wcsncpy(wst, (const wchar_t*)temp, wstlen-1);
 						wst[wstlen-1] =L'\0';
 						*translen = wcslen(wst);
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"LocaleToWChar: Insufficient Buffer "); 
 						delete[]  temp;
 						return SQL_SUCCESS_WITH_INFO;
 					}
 					break;
 					case ERROR_INVALID_FLAGS:
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"LocaleToWChar: Invalid Flags");
 						break;
 					case ERROR_INVALID_PARAMETER:
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"LocaleToWChar: Invalid parameter");
 						break;
 					default:
-						if(!error)
+						if(NULL != error)
 							strcpy(error,"LocaleToWChar: Unknown Translation Error");
 						break;
 				}

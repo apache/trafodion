@@ -247,18 +247,14 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
   NAType *desiredType = NULL;
   switch (desiredQualifier) {
   case NA_BOOLEAN_TYPE:
-    desiredType = new STMTHEAP SQLBooleanNative(originalType.supportsSQLnull());
+    desiredType = new STMTHEAP SQLBooleanNative(STMTHEAP, originalType.supportsSQLnull());
     break;
   case NA_CHARACTER_TYPE:
     {
-#pragma warning (disable : 4244)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       Lng32 len = CmpCommon::getDefaultNumeric(VARCHAR_PARAM_DEFAULT_SIZE);
-#pragma warn(1506)  // warning elimination
-#pragma warning (default : 4244)  // warning elimination
 
       desiredType = new STMTHEAP
-	SQLVarChar(len, //DEFAULT_CHARACTER_LENGTH,
+	SQLVarChar(STMTHEAP, len, //DEFAULT_CHARACTER_LENGTH,
 		   originalType.supportsSQLnull(),
 		   FALSE/*isUpShifted*/,
 		   FALSE/*isCaseinsensitive*/,
@@ -271,7 +267,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
     {
       Int16 DisAmbiguate = 0;
       desiredType = new STMTHEAP
-      SQLNumeric(TRUE,   		// signed
+      SQLNumeric(STMTHEAP, TRUE,   		// signed
                  MAX_NUMERIC_PRECISION,	// precision
                  6,    			// scale
                  DisAmbiguate, // added for 64bit proj.
@@ -355,16 +351,14 @@ void ValueId::coerceType(const NAType& desiredType,
     {
       if (desiredType.getFSDatatype() == REC_FLOAT32)
         newType = new STMTHEAP
-          SQLReal(desiredType.supportsSQLnull(),
-                  STMTHEAP,
+          SQLReal(STMTHEAP, desiredType.supportsSQLnull(),
                   desiredType.getPrecision());
       else
         // ieee double, tandem real and tandem double are all
         // cast as IEEE double. Tandem real is cast as ieee double as
         // it won't 'fit' into ieee real.
         newType = new STMTHEAP
-          SQLDoublePrecision(desiredType.supportsSQLnull(),
-                             STMTHEAP,
+          SQLDoublePrecision(STMTHEAP, desiredType.supportsSQLnull(),
                              desiredType.getPrecision());
     }
   else {
@@ -383,10 +377,10 @@ void ValueId::coerceType(const NAType& desiredType,
              NABoolean isSigned = numType.isSigned();
              if (numType.getScale() == 0)
                newType = new (STMTHEAP)
-                 SQLSmall(isSigned, desiredType.supportsSQLnull());
+                 SQLSmall(STMTHEAP, isSigned, desiredType.supportsSQLnull());
              else
                newType = new (STMTHEAP)
-                 SQLNumeric(sizeof(short), 
+                 SQLNumeric(STMTHEAP, sizeof(short), 
                             numType.getPrecision(), 
                             numType.getScale(),
                             isSigned, 
@@ -401,28 +395,26 @@ void ValueId::coerceType(const NAType& desiredType,
                {
 		 Int16 DisAmbiguate = 0;
                  newType = new (STMTHEAP)
-                   SQLLargeInt(nTyp.getScale(),
+                   SQLLargeInt(STMTHEAP, nTyp.getScale(),
                                DisAmbiguate,
                                TRUE,
-                               nTyp.supportsSQLnull(),
-                               NULL);
+                               nTyp.supportsSQLnull());
                }
              else
                {
                  newType = new (STMTHEAP)
-                   SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                   SQLBigNum(STMTHEAP, MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
                              nTyp.getScale(),
                              FALSE,
                              FALSE,
-                             nTyp.supportsSQLnull(),
-                             NULL);
+                             nTyp.supportsSQLnull());
                }
            }
 	 else if ((desiredType.getFSDatatype() == REC_BOOLEAN) &&
                   (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF))
            {
              newType = new (STMTHEAP)
-               SQLVarChar(SQL_BOOLEAN_DISPLAY_SIZE, 
+               SQLVarChar(STMTHEAP, SQL_BOOLEAN_DISPLAY_SIZE, 
                           desiredType.supportsSQLnull());
            }
 	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
@@ -455,11 +447,10 @@ void ValueId::coerceType(const NAType& desiredType,
 			 CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED));
 		 Lng32 scale     = MINOF(desiredType.getScale(), precision);
 		 newType = new (STMTHEAP)
-		   SQLBigNum(precision, scale, 
+		   SQLBigNum(STMTHEAP, precision, scale, 
 			     ((SQLBigNum&)desiredType).isARealBigNum(),
 			     ((NumericType&)desiredType).isSigned(),
-			     desiredType.supportsSQLnull(),
-			     NULL);
+			     desiredType.supportsSQLnull());
 	       }
 	     else
 	       {
@@ -472,7 +463,7 @@ void ValueId::coerceType(const NAType& desiredType,
 		   
 		 Int16 DisAmbiguate = 0;
 		 newType = new (STMTHEAP)
-		   SQLNumeric(isSigned,
+		   SQLNumeric(STMTHEAP, isSigned,
 			      precision,
 			      scale,
 			      DisAmbiguate, // added for 64bit proj.
@@ -539,7 +530,7 @@ ValueId::getNAColumn(NABoolean okIfNotColumn) const
       return NULL;
     CMPASSERT(okIfNotColumn);
   }
-  return NULL;  // NT_PORT
+  return NULL;
 }
 
 
@@ -558,7 +549,7 @@ NABoolean ValueId::isColumnWithNonNullNonCurrentDefault() const{
   default:
       break;
   }
-  if (nac &&  nac->getDefaultValue() && nac->getDefaultClass()!=COM_NULL_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_DEFAULT)
+  if (nac &&  nac->getDefaultValue() && nac->getDefaultClass()!=COM_NULL_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_UT_DEFAULT)
       return TRUE;
   else
       return FALSE;
@@ -1741,9 +1732,7 @@ void ValueIdList::replaceOperandsOfInstantiateNull
 void ValueIdList::print(FILE* ofd, const char* indent, const char* title,
                         CollHeap *c, char *buf) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   Space * space = (Space *)c;
   char mybuf[1000];
 
@@ -2162,7 +2151,6 @@ NABoolean ValueIdSet::hasRandom() const
 // Check whether any of the members of this ValueIdSet are contained
 // in the provided ValueIdSet.  Return the number of members found.
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 Int32 ValueIdSet::membersCoveredInSet (const ValueIdSet& vidSet, NABoolean lookBelowInstantiateNull) const
 {
   NABoolean coverFlag = FALSE;
@@ -2189,7 +2177,6 @@ Int32 ValueIdSet::membersCoveredInSet (const ValueIdSet& vidSet, NABoolean lookB
 
   return (membersFound);
 }
-#pragma warn(262)  // warning elimination
 
 //-------------------------------------------------------
 //removeCoveredVidSet()
@@ -3121,7 +3108,7 @@ ValueIdSet ValueIdSet::createMirrorPreds(ValueId &computedCol,
          case ITM_ASSIGN:
          default:
             // XXX Don't expect this case to ever happen
-           CMPASSERT(0); // LCOV_EXCL_LINE
+           CMPASSERT(0);
            break;
        }
    }
@@ -4603,7 +4590,6 @@ void ValueIdSet::unparse(NAString &result,
   result += ")";
 } // ValueIdSet::unparse
 
-#pragma nowarn(1506)   // warning elimination
 void ValueIdSet::print(FILE* ofd, const char* indent, const char* title,
                        CollHeap *c, char *buf) const
 {
@@ -4626,14 +4612,12 @@ void ValueIdSet::print(FILE* ofd, const char* indent, const char* title,
     PRINTIT(ofd, c, space, buf, mybuf);
   }
 } // ValueIdSet::print()
-#pragma warn(1506)  // warning elimination
 
 void ValueIdSet::display() const	// To be called from the debugger
 {
   print();
 }
 
-#pragma nowarn(1506)   // warning elimination
 ex_expr::exp_return_type ValueIdList::evalAtCompileTime
 (short addConvNodes, // (IN) : 1 to add conv nodes, 0 otherwise
  ExpTupleDesc::TupleDataFormat tf, // (IN) : tuple format of resulting expr(s)
@@ -4736,7 +4720,6 @@ ex_expr::exp_return_type ValueIdList::evalAtCompileTime
   return rc;
 
 }
-#pragma warn(1506)  // warning elimination
 
 // Used by constant folding. Calls the executor evaluator. The parameters are:
 // 1.- The root of the expression tree to evaluate. It is assumed that it
@@ -4767,7 +4750,6 @@ short ValueIdList::evaluateTree( const ItemExpr * root,
 // Parent is the parent of ch and childNumber is the number of ch. The function
 // computes the value represented by the subtree rooted at ch and puts
 // the new value in the position of ch.	Used by constant folding.
-#pragma nowarn(262)   // warning elimination
 Lng32 ValueIdList::evaluateConstantTree( const ValueId &parent,
 				        const ValueId & ch,
 					Int32 childNumber,
@@ -4889,7 +4871,6 @@ Lng32 ValueIdList::evaluateConstantTree( const ValueId &parent,
   return error;
 
 }
-#pragma warn(262)  // warning elimination
 
 ////////////////////////////////////////////////////////////////////////////
 // Tells us if some sort of algebraic simplification can be done in a tree.
@@ -5128,7 +5109,7 @@ NABoolean ValueIdList::canSimplify(ItemExpr *itemExpr,
 	return FALSE;
 
       NumericType * ntyp = new (CmpCommon::statementHeap())
-	SQLNumeric(4, scale, scale, TRUE, FALSE);
+	SQLNumeric(CmpCommon::statementHeap(), 4, scale, scale, TRUE, FALSE);
       Lng32 cval = (Lng32)div;
       char cvalStr[20];
       cvalStr[0] = '.';
@@ -5970,7 +5951,6 @@ ValueId ValueDesc::create(ItemExpr *expr, const NAType *type, CollHeap *h)
 // ***********************************************************************
 // Methods for class ValueDescArray
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
 void ValueDescArray::print(FILE* ofd, const char* indent, const char* title,
 			   NABoolean dontDisplayErrors) const
 {
@@ -6010,7 +5990,6 @@ void ValueDescArray::print(FILE* ofd, const char* indent, const char* title,
     }
 #endif
 } // ValueDescArray::print()
-#pragma warn(1506)  // warning elimination
 
 void ValueDescArray::display(NABoolean dontDisplayErrors) const
 {
@@ -6279,7 +6258,6 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
        const NAType *constType = constVal->getType();
 
        NAString val = *constVal->getRawText();
-       //       val = val.strip(NAString::leading, ' ');
        short len = 0;
 
        ///////////////////////////////////////////////////////////////////////
@@ -6402,35 +6380,72 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 	 }
        else
 	 {
-	   short vLen = val.length();
+           short vLen = val.length();
 
-	   if ((constType->getTypeQualifier()  == NA_NUMERIC_TYPE) &&
+	   if (constType->getTypeQualifier() == NA_INTERVAL_TYPE)
+	     {
+	       // In some code paths, the text may have "INTERVAL 'xxx' <qualifier>"
+	       // junk around it so we have to strip that off. (Example: An equality
+	       // predicate when query caching has been turned off via 
+	       // CQD QUERY_CACHE '0'. Another example happens with BETWEEN, whether 
+	       // or not query caching is turned off. See JIRA TRAFODION-3088 for
+	       // that example.)
+	       Lng32 start = val.index("'");
+	       Lng32 minus = val.index("-");
+	       if (start > 0)
+	         {
+	           Lng32 end = val.index("'", start+1);
+	           if (end > 0)
+	             {
+	               val = val(start+1, (end-start-1));
+	               if ((minus > 0) && (minus < start))  // '-' before the string part
+	                 {
+	                   // prepend '-' to the output
+	                   val.prepend('-', 1);
+	                 }
+	               vLen = val.length();		         
+	             }
+	         }             
+	     }
+	   else if ((constType->getTypeQualifier()  == NA_NUMERIC_TYPE) &&
 	       (((NumericType*)constType)->isExact()) &&
-               (NOT ((NumericType&)type).isBigNum()) &&
+               (NOT ((NumericType*)constType)->isBigNum()) &&
 	       (constType->getScale() > 0))
 	     {
-	       NAString newVal;
-	       if (vLen <= constType->getScale())
-		 {
-		   newVal = "0.";
-		   for (Lng32 i = 0; i < (constType->getScale() - vLen); i++)
-		     {
-		       newVal += "0";
-		     }
-		   newVal += val;
-		 }
-	       else
-		 {
-                   // get digits to the left of scale
-		   newVal = val(0, vLen - constType->getScale() );
+               // See how many positions the result will take in the display
+               Lng32 t = constType->getDisplayLength(constType->getFSDatatype(),
+                                               constType->getNominalSize(),
+                                               constType->getPrecision(),
+                                               constType->getScale(),
+                                               0);
 
-		   newVal += ".";
-		   newVal += val(vLen - constType->getScale(), constType->getScale());
-		 }
+               char strval[t+1];
+               memset( strval, ' ', t );
 
-	       val = newVal;
+               // Get the ASCII representation
+               ex_expr::exp_return_type retcode =
+                 convDoIt((char*)constVal->getConstValue(),
+                          constVal->getStorageSize(),
+                          (short)constType->getFSDatatype(),
+                          constType->getPrecision(),
+                          constType->getScale(),
+                          strval,
+                          t,                          // target length
+                          REC_BYTE_F_ASCII,           // target type
+                          0,                          // no char limit
+                          SQLCHARSETCODE_ISO88591,    // ISO 8859-1
+                          NULL,                       // no vc length
+                          0);                         // not a varchar
+
+               if ( retcode == ex_expr::EXPR_OK )
+                 {
+                   strval[t] = 0;
+                   val = strval;
+                   val = val.strip(NAString::trailing, ' ');
+                 }
+
 	       vLen = val.length();
-	     }
+	     } // exact numeric
 
 	   len += vLen;
 	   

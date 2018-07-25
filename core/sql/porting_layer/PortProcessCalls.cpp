@@ -41,8 +41,6 @@
 #include <string.h>
 
 #include "PortProcessCalls.h"
-
-
 #include "seabed/fs.h" 
 
 
@@ -94,9 +92,6 @@ NAProcessHandle::NAProcessHandle(const SB_Phandle_Type *phandle)
 // ------------------------------------------------------------------------------
 // DECOMPOSE
 // ------------------------------------------------------------------------------
-// Encapsulates the PROCESSHANDLE_DECOMPOSE_ request for the different supported
-// platforms - NSK, WINNT, and LINUX
-//
 // After decomposing phandle, various phandle components can be extracted 
 // using accessor methods provided.
 //
@@ -122,15 +117,9 @@ short NAProcessHandle::decompose()
                                    ,(SB_Int64_Type *)&this->seqNum_
                                   );
   processName[processNameLen] = '\0';
-#ifdef SQ_PHANDLE_VERIFIER
-  this->phandleStringLen_ = sprintf(this->phandleString_, "%s:%ld",
-                                    processName, this->seqNum_);
-#else
-  this->phandleStringLen_ = strlen(processName);
-  strcpy(this->phandleString_, processName);
-  this->phandleString_[this->phandleStringLen_] = '\0';
-#endif
 
+  this->phandleStringLen_ = sprintf(this->phandleString_, "%s:%ld",		
+                                    processName, this->seqNum_);
   return err;
 }
 
@@ -138,8 +127,6 @@ short NAProcessHandle::decompose()
 // ---------------------------------------------------------------------------
 // GETMINE
 // ---------------------------------------------------------------------------
-// Encapsulates the PROCESSHANDLE_GETMINE_ request for the different supported
-// platforms - NSK, WINNT, and LINUX
 //
 // Keeps a copy of phandle in the NAProcessHandle instance and copies to
 // phandle input parameter to be returned to the caller.
@@ -148,28 +135,25 @@ short NAProcessHandle::decompose()
 // ---------------------------------------------------------------------------
 short NAProcessHandle::getmine(SB_Phandle_Type *phandle)
 {
-
-Int32 err=0;
-
-    err = XPROCESSHANDLE_GETMINE_( (SB_Phandle_Type *) &this->phandle_);
-
- memcpy (phandle, &this->phandle_, PhandleSize); 
-
+  Int32 err=0;
+  
+  err = XPROCESSHANDLE_GETMINE_( (SB_Phandle_Type *) &this->phandle_);
+  
+  memcpy (phandle, &this->phandle_, PhandleSize); 
+  
   return err;
 }
 
 short NAProcessHandle::getmine()
 {
-
-    short  err=0;
-
-    err = XPROCESSHANDLE_GETMINE_( (SB_Phandle_Type *) &this->phandle_);
-    return err;
+  short  err=0;
+  
+  err = XPROCESSHANDLE_GETMINE_( (SB_Phandle_Type *) &this->phandle_);
+  return err;
 }
+
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// Encapsulates the PROCESSHANDLE_NULLIT_ request for the different supported
-// platforms - NSK, WINNT, and LINUX
 //
 // Keeps a copy of phandle in the NAProcessHandle instance and copies to
 // phandle input parameter to be returned to the caller.
@@ -179,12 +163,12 @@ short NAProcessHandle::getmine()
 short NAProcessHandle::nullit(SB_Phandle_Type *phandle)
 {
 
-Int32 err=0;
-
-    err = XPROCESSHANDLE_NULLIT_( (SB_Phandle_Type *) &this->phandle_);
-
- memcpy (phandle, &this->phandle_, 20);
-
+  Int32 err=0;
+  
+  err = XPROCESSHANDLE_NULLIT_( (SB_Phandle_Type *) &this->phandle_);
+  
+  memcpy (phandle, &this->phandle_, 20);
+  
   return err;
 }
 
@@ -198,7 +182,6 @@ void NAProcessHandle::setPhandle(SB_Phandle_Type *phandle)
 
 char *NAProcessHandle::getNodeName()
 {
-
   return nodeName_;
 }
 
@@ -212,7 +195,6 @@ short NAProcessHandle::getNodeNameLen()
 
 char *NAProcessHandle::getPhandleString()
 {
-
   return phandleString_;
 }
 

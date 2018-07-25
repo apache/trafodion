@@ -73,7 +73,7 @@
 
 DEFINE_DOVERS(sqlci)
 
-#if defined(_DEBUG) && !defined(NA_NSK)
+#if defined(_DEBUG)
 #include "security/dsecure.h"
 #define psecure_h_including_section
 #define psecure_h_security_psb_set_
@@ -87,7 +87,6 @@ DEFINE_DOVERS(sqlci)
 #endif
 
 #include "EHException.h"
-#include "MxciEHCallBack.h"
 
 #ifdef _DEBUG_RTS
 #include "ComQueue.h"
@@ -209,15 +208,14 @@ _callable void removeProcess()
 {
   CliGlobals *cliGlobals = GetCliGlobals();
   StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
-  short savedPriority, savedStopMode;
   if (statsGlobals != NULL)
   {
-    short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                cliGlobals->myPin(),savedPriority, savedStopMode, TRUE /*shouldTimeout*/);
+    int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                cliGlobals->myPin());
     if (error == 0)
     {
       statsGlobals->removeProcess(cliGlobals->myPin());
-      statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin(), savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
     }
     else if (error == 4011)
     {
@@ -344,15 +342,3 @@ Int32 main (Int32 argc, char *argv[])
 #endif  // _DEBUG
   return 0;
 }
-
-
-#ifndef NA_CMPDLL
-#include "NAType.h"
-NABoolean NAType::isComparable(const NAType &other,
-			       ItemExpr *parentOp,
-			       Int32 emitErr) const
-{ return FALSE; }
-
-#endif  // Not NA_CMPDLL
-
-

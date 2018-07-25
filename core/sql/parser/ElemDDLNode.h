@@ -139,6 +139,7 @@ class ElemDDLLikeSaltClause;
 class ElemDDLLikeOptWithoutDivision;
 class ElemDDLLikeLimitColumnLength;
 class ElemDDLLikeOptWithoutRowFormat;
+class ElemDDLLikeOptWithoutLobColumns;
 class ElemDDLList;
 class ElemDDLLocation;
 class ElemDDLOptionList;
@@ -349,6 +350,8 @@ class StmtDDLRegOrUnregObject;
 class StmtDDLCreateRole;
 class StmtDDLRoleGrant;
 class StmtDDLCleanupObjects;
+class StmtDDLonHiveObjects;
+class StmtDDLCommentOn;
 
 class QualifiedName;
 
@@ -464,6 +467,7 @@ public:
   virtual ElemDDLLikeOptWithoutDivision * castToElemDDLLikeOptWithoutDivision();
   virtual ElemDDLLikeLimitColumnLength  * castToElemDDLLikeLimitColumnLength();
   virtual ElemDDLLikeOptWithoutRowFormat* castToElemDDLLikeOptWithoutRowFormat();
+  virtual ElemDDLLikeOptWithoutLobColumns * castToElemDDLLikeOptWithoutLobColumns();
   virtual ElemDDLList                   * castToElemDDLList();
   virtual ElemDDLLocation               * castToElemDDLLocation();
   virtual ElemDDLOptionList             * castToElemDDLOptionList();
@@ -688,6 +692,8 @@ public:
   virtual StmtDDLCreateRole             * castToStmtDDLCreateRole();
   virtual StmtDDLRoleGrant              * castToStmtDDLRoleGrant();
   virtual StmtDDLCleanupObjects         * castToStmtDDLCleanupObjects();
+  virtual StmtDDLCommentOn              * castToStmtDDLCommentOn();
+  virtual StmtDDLonHiveObjects            * castToStmtDDLonHiveObjects();
 
   //
   // operator

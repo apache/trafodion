@@ -360,7 +360,7 @@ else if ((*token == '"') || (*token == '\''))
    }
 else if ((*token == '#') || (*token == '?'))
   {
-  char temp[12];
+  char temp[13];
   int j;
 
   for (j = 1; (j < 13) && (isalnum(token[j])); j++)

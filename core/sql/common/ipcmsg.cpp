@@ -69,8 +69,6 @@ enum {FS_SMS_VERSION_MAY94 = 1};
 #include <fcntl.h>
 #include "logmxevent.h"
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
-// all of these files are OK in the executor environment (PRIV, no globals)
 extern "C" {
 //#include <cextdecs.h>
 #include "cextdecs.h(PROCESSHANDLE_TO_FILENAME_,PROCESSHANDLE_DECOMPOSE_,FILE_OPEN_,SETMODE,FILE_GETINFO_,FILE_CLOSE_, AWAITIOX,PROCESS_DELAY_)"
@@ -78,7 +76,6 @@ extern "C" {
 // should be #include <zsysc.h>
 #include "zsysc.h"
 }
-#endif
 
 //Function used to get a pointer to the pfs
 _callable void fs2_get_pfsaddr(Long *);
@@ -135,9 +132,7 @@ GuaMsgConnectionToServer::GuaMsgConnectionToServer(
       activeIOs_[i].transid_ = -1;
       activeIOs_[i].buffer_ = activeIOs_[i].readBuffer_ = NULL;
     }
-#pragma nowarn(1506)   // warning elimination 
   lastAllocatedEntry_       = nowaitDepth_-1;
-#pragma warn(1506)  // warning elimination 
 
   numOutstandingIOs_        = 0;
   partiallySentBuffer_      = NULL;
@@ -228,9 +223,7 @@ WaitReturnStatus GuaMsgConnectionToServer::wait(IpcTimeout timeout, UInt32 *even
   short waitField = LDONE | LSIG;
   short status = 0;
   direct_globals_template * pfsptr;
-#pragma nowarn(252)   // warning elimination 
   fs2_get_pfsaddr((Long*)&pfsptr);
-#pragma warn(252)  // warning elimination 
 
   if ((ULng32)(openFile_) >= (ULng32)(pfsptr->numftentries))
   {
@@ -357,9 +350,7 @@ WaitReturnStatus GuaMsgConnectionToServer::wait(IpcTimeout timeout, UInt32 *even
             {
               getEnvironment()->setLsigConsumed(FALSE);
               short oldsigmod = PK_SUSPEND_DISALLOW_SET_(1);
-#pragma nowarn(1506)   // warning elimination 
               error = PK_SIG_SYSTEMCALL_ABORTINQUIRE_();
-#pragma warn(1506)  // warning elimination 
               PK_SUSPEND_DISALLOW_SET_(oldsigmod);
               if (error > 0)
                 {
@@ -673,16 +664,12 @@ GuaMsgConnectionToServer * GuaMsgConnectionToServer::castToGuaMsgConnectionToSer
 
 Int32 GuaMsgConnectionToServer::numQueuedSendMessages()
 {
-#pragma nowarn(1506)   // warning elimination 
   return sendQueueEntries();
-#pragma warn(1506)  // warning elimination 
 }
 
 Int32 GuaMsgConnectionToServer::numQueuedReceiveMessages()
 {
-#pragma nowarn(1506)   // warning elimination 
   return receiveQueueEntries();
-#pragma warn(1506)  // warning elimination 
 }
 
 void GuaMsgConnectionToServer::populateDiagsArea(ComDiagsArea *&diags,
@@ -971,9 +958,7 @@ NABoolean GuaMsgConnectionToServer::tryToStartNewIO()
 
   // Get the pointer to the acb - needed in order to decrement the count
   // of outstanding requests in the ACB on errors.
-#pragma nowarn(252)   // warning elimination 
   fs2_get_pfsaddr((Long*)&pfsptr);
-#pragma warn(252)  // warning elimination 
 
   // check that the file is actually open, i.e., that this is a valid 
   // filenum.
@@ -990,10 +975,8 @@ NABoolean GuaMsgConnectionToServer::tryToStartNewIO()
   if (NOT GuardianError)
     {
       // lock memory used for the control info buffer
-#pragma nowarn(1506)   // warning elimination 
       GuardianError = ADDRESS_WIRE_((unsigned char *)entry.controlBuf_,
                                     sizeof(fs_fs_writeread), wireOptions);
-#pragma warn(1506)  // warning elimination
     }
 
   if (NOT GuardianError)
@@ -1204,7 +1187,6 @@ void GuaMsgConnectionToServer::openPhandle(char * processName)
   _cc_status stat;
   while (1)
     {
-#pragma nowarn(1506)   // warning elimination 
       guaErrorInfo_ = FILE_OPEN_(procFileName,
                                  procFileNameLen,
                                  &openFile_,
@@ -1213,7 +1195,6 @@ void GuaMsgConnectionToServer::openPhandle(char * processName)
                                  nowaitDepth_,
                                  0, // sync depth 0 (target proc is not NonStop)
                                  openFlags); // options
-#pragma warn(1506)  // warning elimination 
       if (guaErrorInfo_ != GuaOK)
         break;
 
@@ -1269,9 +1250,7 @@ void GuaMsgConnectionToServer::openPhandle(char * processName)
       Int32 errcode2 = FILE_GETINFO_(openFile_,&guaErrorInfo_);
 
       if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
 	guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
       setErrorInfo(-1);
       setState(ERROR_STATE);
       return;
@@ -1285,9 +1264,7 @@ void GuaMsgConnectionToServer::openPhandle(char * processName)
       Int32 errcode2 = FILE_GETINFO_(openFile_,&guaErrorInfo_);
 
       if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
 	guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
       setErrorInfo(-1);
       setState(ERROR_STATE);
       return;
@@ -1303,9 +1280,7 @@ void GuaMsgConnectionToServer::openPhandle(char * processName)
 	  Int32 errcode2 = FILE_GETINFO_(openFile_,&guaErrorInfo_);
 
 	  if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
 	    guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
 	  setErrorInfo(-1);
 	  setState(ERROR_STATE);
 	  return;
@@ -1392,9 +1367,7 @@ short GuaMsgConnectionToServer::setupRequestInfo(void * control, Int64 transid){
   short error = FEOK; //variable to catch errors
   
   //first get pointer to the PFS
-#pragma nowarn(252)   // warning elimination 
   fs2_get_pfsaddr((Long*)&pfsptr);
-#pragma warn(252)  // warning elimination 
  
   //then get pointer to the acb in the 
   //PFS Filetable at the index openFile_
@@ -1500,18 +1473,14 @@ void GuaMsgConnectionToServer::putMsgIdinACB(UInt32 msgid){
   acb_standard_template * acb;//pointer to the acb for openFile_
   
   //first get pointer to the PFS
-#pragma nowarn(252)   // warning elimination 
   fs2_get_pfsaddr((Long*)&pfsptr);
-#pragma warn(252)  // warning elimination 
   
   //then get pointer to the acb in the PFS 
   //Filetable at the index openFile_
   acb = (acb_standard_template *) pfsptr->file_table[openFile_];
   
   //get the index into the array of acb requests
-#pragma nowarn(1506)   // warning elimination 
   int_16 next = acb->acb_numreqs - 1;
-#pragma warn(1506)  // warning elimination 
   
   void ** acb_reqaddrs = (void **)((char *)&(acb->req.acb_requestbase_addr) + 
                                    sizeof(acb->req.acb_requestbase_addr) );
@@ -1524,9 +1493,7 @@ void GuaMsgConnectionToServer::putMsgIdinACB(UInt32 msgid){
   acb_reqptr->mid.acb_mid = msgid;
   if (acb_reqptr->tub.acb_tubaddr != 0)
      acb_reqptr->tub.acb_tub->pending_count = 
-#pragma nowarn(1506)   // warning elimination 
             (ULng32)(acb_reqptr->tub.acb_tub->pending_count) + 1u;
-#pragma warn(1506)  // warning elimination
 #endif 
 }
 
@@ -1545,9 +1512,7 @@ void  GuaMsgConnectionToServer::resetAfterReply(UInt32 msgid, short error,
   short i;
 
  //first get pointer to the PFS
-#pragma nowarn(252)   // warning elimination 
   fs2_get_pfsaddr((Long*)&pfsptr);
-#pragma warn(252)  // warning elimination 
   
   //then get pointer to the acb in the 
   //PFS Filetable at the index openFile_
@@ -1581,9 +1546,7 @@ void  GuaMsgConnectionToServer::resetAfterReply(UInt32 msgid, short error,
   
   if (acb_reqptr->tub.acb_tubaddr != 0)
      acb_reqptr->tub.acb_tub->pending_count = 
-#pragma nowarn(1506)   // warning elimination 
             (ULng32)(acb_reqptr->tub.acb_tub->pending_count) - 1u;
-#pragma warn(1506)  // warning elimination 
  
   //decrement the numreqs
   acb->acb_numreqs = acb->acb_numreqs - 1;
@@ -1597,9 +1560,7 @@ void  GuaMsgConnectionToServer::resetAfterReply(UInt32 msgid, short error,
      while (i != acb->acb_numreqs)
      {
         acb_reqaddrs[i] = acb_reqaddrs[i + 1];
-#pragma nowarn(1506)   // warning elimination 
         i = i + 1;
-#pragma warn(1506)  // warning elimination 
      }
      acb_reqaddrs[acb->acb_numreqs] = (void *)acb_reqptr;
   }
@@ -1827,11 +1788,9 @@ short GuaMsgConnectionToServer::addressWire(ActiveIOQueueEntry &entry,
       if (entry.buffer_->getLockCount(entry.offset_) == 0)
         {
           // if the write buffer chunk is not locked, lock it
-#pragma nowarn(1506)   // warning elimination 
           GuardianError = ADDRESS_WIRE_
             ((unsigned char *)entry.buffer_->data(entry.offset_),
              entry.bytesSent_, wireOptions);
-#pragma warn(1506)  // warning elimination 
           if (GuardianError)
             return GuardianError;
         }
@@ -1843,13 +1802,11 @@ short GuaMsgConnectionToServer::addressWire(ActiveIOQueueEntry &entry,
     {
       // write buffer is only used by a single connection
       // entry.buffer_ = entry.readBuffer_ = send buffer
-#pragma nowarn(1506)   // warning elimination
       ULng32 maxDataBufferLength =
         MAXOF(entry.receiveBufferSizeLeft_, entry.bytesSent_);
       GuardianError= ADDRESS_WIRE_
         ((unsigned char *)entry.buffer_->data(entry.offset_),
          maxDataBufferLength, wireOptions);
-#pragma warn(1506)  // warning elimination 
       if (GuardianError)
         return GuardianError;
     }
@@ -1862,11 +1819,9 @@ short GuaMsgConnectionToServer::addressWire(ActiveIOQueueEntry &entry,
       // entry.buffer_ = send buffer (shared)
       // entry.readBuffer_ = reply buffer
       assert(entry.buffer_->isShared());
-#pragma nowarn(1506)   // warning elimination 
       GuardianError = ADDRESS_WIRE_
         ((unsigned char *)entry.readBuffer_->data(0),
          entry.receiveBufferSizeLeft_, wireOptions);
-#pragma warn(1506)  // warning elimination 
       if (GuardianError)
         {
           // if error, unlock write buffer that must be shared

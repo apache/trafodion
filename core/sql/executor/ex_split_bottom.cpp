@@ -50,7 +50,7 @@
 #include  "str.h"
 #include  "exp_clause_derived.h"
 #include "ExSMGlobals.h"
-
+#include "ExpLOBaccess.h"
 
 // -----------------------------------------------------------------------
 // Methods for class ex_split_bottom_tdb
@@ -135,11 +135,8 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
     }
     else
     {
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(espInstanceDir->getSemId(),
-                      espInstanceDir->getPid(), savedPriority, savedStopMode,
-                      FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(espInstanceDir->getSemId(),
+                      espInstanceDir->getPid());
       statsArea = new(espInstanceDir->getStatsHeap())
         ExStatisticsArea(espInstanceDir->getStatsHeap(), numOfParentInstances,
 		       getCollectStatsType());
@@ -151,8 +148,7 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
       statsArea->setRtsStatsCollectEnabled(getCollectRtsStats());
       glob->setStatsArea(statsArea);
       result->allocateStatsEntry();
-      statsGlobals->releaseStatsSemaphore(espInstanceDir->getSemId(), espInstanceDir->getPid(),
-                savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(espInstanceDir->getSemId(), espInstanceDir->getPid());
     }
   }
   else
@@ -167,7 +163,7 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
 
   if (processLOB())
     {
-      glob->initLOBglobal(glob->getCliGlobals()->currContext());
+      glob->initLOBglobal(glob->getCliGlobals()->currContext(), useLibHdfs());
     }
 
   return result;
@@ -461,11 +457,10 @@ ExOperStats * ex_split_bottom_tcb::doAllocateStatsEntry(CollHeap *heap,
       if (ss != NULL)
         ((ExFragRootOperStats *)stat)->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
     }
-    else if ((statsType == ComTdb::MEASURE_STATS) ||
-	   (statsType == ComTdb::ACCUMULATED_STATS))
+  else if (statsType == ComTdb::ACCUMULATED_STATS)
     {
-      // if measure or accumulated statistics are to be collected, allocate
-      // one measure stats entry and insert it into the queue.
+      // if accumulated statistics are to be collected, allocate
+      // one stats entry and insert it into the queue.
       // All executor operators that collect stats will use this
       // entry to update stats.
       // These stats are not associated with any particular
@@ -809,7 +804,6 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
             // should be logged.  On other platforms we skip the 
             // the core-file and Seapilot event.  The Seaquest
             // logic is encapsulated in ComDiags.cpp and ComRtUtils.cpp.
-            // LCOV_EXCL_START
             // I tested this code with regress/executor/TEST082.
             // However, that test is disabled.
             for (CollIndex i = 0; i < sendNodes_.entries(); i++)
@@ -840,7 +834,6 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
               }
             }
             break;
-            // LCOV_EXCL_STOP
           }
         case ComTdbSplitBottom::TEST_LOG4CXX:
           {
@@ -1703,7 +1696,7 @@ const ex_tcb* ex_split_bottom_tcb::getChild(Int32 pos) const
   ex_assert((pos >= 0), "");
   if (pos == 0)
     return tcbChild_;
-  else if (pos > 0 AND pos <= (Int32)sendNodes_.entries())  // NT_PORT ( bd 12/6/96 )
+  else if (pos > 0 AND pos <= (Int32)sendNodes_.entries())
     return (ex_tcb *) sendNodes_[pos-1];
   else
     return NULL;

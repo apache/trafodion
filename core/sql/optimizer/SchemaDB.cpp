@@ -81,7 +81,7 @@ void InitSchemaDB()
 // there were a statement heap, as soon as it was "wiped away" these data
 // members would be time bombs, since their internal heap pointers would be
 // invalid.
-SchemaDB::SchemaDB(ReadTableDef *rtd)
+SchemaDB::SchemaDB()
   : tableDB_(
           new CTXTHEAP NAHeap("NATable Heap", (NAHeap *)CTXTHEAP, 
           16 * 1024,
@@ -90,7 +90,6 @@ SchemaDB::SchemaDB(ReadTableDef *rtd)
     actionRoutineDB_(CmpCommon::contextHeap()),
     valueDArray_(),
     domainDList_(CmpCommon::contextHeap()),
-    readTableDef_(rtd),
     defaults_(CmpCommon::contextHeap()),
     defaultSchema_(CmpCommon::contextHeap()),
 	// triggers -- eliezer
@@ -150,16 +149,10 @@ void SchemaDB::initPerStatement(NABoolean lightweight)
 }
 
 // By default, this returns the ANSI default schema.
-// You need to pass in a flag bit to get the MPLOC, if NAMETYPE is NSK
-// (BindWA does this).
-//
 const SchemaName &SchemaDB::getDefaultSchema(UInt32 flags)
 {
-  if (flags & REFRESH_CACHE) initPerStatement();
-
-  if (flags & APPLY_NAMETYPE_RULES)
-    if (SqlParser_Initialized() && SqlParser_NAMETYPE == DF_NSK)
-      return SqlParser_MPLOC_as_SchemaName;
+  if (flags & REFRESH_CACHE) 
+    initPerStatement();
 
   return defaultSchema_;
 }

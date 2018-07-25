@@ -366,6 +366,7 @@ prepare xx from select date_trunc('month',a) from t006t1;
 prepare xx from select date_trunc('century',a) from t006t1;
 prepare xx from select datediff(year,a, a) from t006t1;
 prepare xx from select datediff(month,a, a) from t006t1;
+prepare xx from select datediff(day,current_timestamp,a) from t006t1;
 prepare xx from select datediff(hour,a, a) from t006t1;
 prepare xx from select datediff(minute,a, a) from t006t1;
 prepare xx from select datediff(second,a, a) from t006t1;
@@ -439,10 +440,6 @@ prepare xx from select cast(?p as char(3) not null) from t006t1;
 control query default OVERRIDE_SYSKEY 'ON';
 prepare xx from select * from t006t7;
 control query default OVERRIDE_SYSKEY reset;
-
-control query default VALIDATE_RFORK_REDEF_TS 'ON';
-prepare xx from select * from t006t7;
-control query default VALIDATE_RFORK_REDEF_TS reset;
 
 control query default COMP_BOOL_108 'OFF';
 prepare xx from select * from t006t2, t006t3 where log(t006t2.a)  =  log(t006t3.a);
@@ -539,13 +536,6 @@ cqd COMP_INT_51 reset;
 -- cancelled so the test cases are commented out.
 --cqd PUBLISHING_ROLES 'a.b';
 --cqd PUBLISHING_ROLES reset;
-
-
-cqd EID_TRACE_STR 'abc';
-cqd EID_TRACE_STR reset;
-
-cqd POS_ABSOLUTE_MAX_TABLE_SIZE '123,456,789';
-cqd POS_ABSOLUTE_MAX_TABLE_SIZE reset;
 
 cqd DEFAULT_SCHEMA_NAMETYPE 'user';
 cqd DEFAULT_SCHEMA_NAMETYPE reset;

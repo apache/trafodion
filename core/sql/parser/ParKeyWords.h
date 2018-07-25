@@ -76,8 +76,6 @@ enum {
                                 // used only for notation.  The Parser also 
                                 // maintains this list.
 
-  MPWORD_      = 0x040,         // a SQL/MP Reserved word.
-
   ALLOWOLDNEW_ = 0x080,         // Indicates that the word is allowed if the
                                 // ALLOWOLDNEW parser flag is set.  In certain
                                 // contexts the words OLD and NEW are allowed
@@ -104,7 +102,6 @@ enum {
 //  ParKeyWord : A description of a key word.
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
 class ParKeyWord : public NABasicObject
 {
 public:
@@ -134,19 +131,14 @@ public:
   // Is the word an identifier.
   //
   inline NABoolean isIdentifier() const {
-    return ((tokenCode_ == IDENTIFIER) ||
-	    (inMPContext() && !isMPReserved() && !(flags_ & NONRESTOKEN_)));
+    return (tokenCode_ == IDENTIFIER);
   };
 
-  // Is the word reserved, depends on isMPContext.
+  // Is the word reserved.
   //
   inline NABoolean isReserved() const { 
-    if (inMPContext()) {
-      return isMPReserved();
-    } else {
       return ((flags_ & RESWORD_) &&
 	      !(allowOldAndNew() && (flags_ & ALLOWOLDNEW_)));
-    }
   };
 
   inline NABoolean isConditionallyReserved() const {
@@ -162,18 +154,7 @@ private:
   inline static NABoolean allowOldAndNew(void) {
     return Get_SqlParser_Flags(ALLOW_OLD_AND_NEW_KEYWORD) ? TRUE : FALSE;
   }
-
-  // Are we parsing/lexing MP Stored text.
-  // This affect which words are reserved, identifiers, or tokens.
-  //
-  inline static NABoolean inMPContext(void) {
-    return FALSE;
-  }
   
-  // Is the word reserved by SQL/MP.
-  // 
-  inline NABoolean isMPReserved() const { return flags_ & MPWORD_; };
-
 
   // The keyword.
   //
@@ -187,7 +168,6 @@ private:
   //
   UInt32 flags_;
 };
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 //

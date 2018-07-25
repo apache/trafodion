@@ -63,26 +63,23 @@
 #include <setjmp.h>
 
 #include "NAMemory.h"
-#ifndef BUILD_MUSE
-#include "ExMeas.h"
-#endif
 #include "sqlcli.h"
-#include "QuasiFileManager.h"
 #include "Ipc.h"
 #include "ComQueue.h"
 #include "logmxevent.h"
 #include "ComExeTrace.h"
 #include "ComRtUtils.h"
 #include "ComSmallDefs.h"
+#include "JavaObjectInterface.h"
+
 class ContextCli;
-class CliStatement;  // $$$ possibly a stub for QuasiFileberManager
-class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
+class Statement;  
+class ComDiagsArea; 
 class ExEspManager;
 class ExSsmpManager;
 class ExSqlComp;
 class IpcEnvironment;
 class MemoryMonitor;
-class QuasiFileManager;
 class HashQueue;
 class ExUdrServerManager;
 class ExControlArea;
@@ -93,6 +90,7 @@ class CliGlobals;
 class CLISemaphore;
 class HBaseClient_JNI;
 class HiveClient_JNI;
+class HdfsClient;
 class TransMode;
 class ContextTidMap;
 class LmLanguageManager;
@@ -109,7 +107,6 @@ enum ArkcmpFailMode { arkcmpIS_OK_ = FALSE/*no failure*/,
 arkcmpWARN_,
 arkcmpERROR_ };
 
-#pragma nowarn(1506)   // warning elimination
 class CliGlobals : public NAAssertGlobals
 {
 public:
@@ -149,7 +146,6 @@ public:
   void setExProcessStats(ExProcessStats *processStats)
   { processStats_ = processStats; }
 
-SQLCLI_LIB_FUNC
   ExSqlComp * getArkcmp(short index = 0);
 
   IpcEnvironment *getEnvironment();
@@ -164,55 +160,11 @@ SQLCLI_LIB_FUNC
   ExUdrServerManager *getUdrServerManager();
   inline MemoryMonitor * getMemoryMonitor()     { return memMonitor_; }
   inline void setMemoryMonitor(MemoryMonitor *memMon) { memMonitor_ = memMon; }
-  inline QuasiFileManager * getQuasiFileManager() { return quasiFileManager_; }
 
-  // ss_cc_change This is an unused feature on seaquest
   inline NAHeap * getExecutorMemory()      { return &executorMemory_; }
-  inline NAHeap * getNoWaitHeap()  { return noWaitSQLHeap_; }
-
-  inline short getSegId(Lng32 &index)
-                                { return segGlobals_.getSegId(index); }
-  inline const NASegGlobals * getSegGlobals() const
-      
-                                         { return &segGlobals_; }
-  //ss_cc_change : these are unused methods in seaquest
-  //LCOV_EXCL_START
-  inline UInt32 getDefaultVolSeed()       { return defaultVolSeed_; }
-  inline void     setDefaultVolSeed( UInt32 seed)
-                                            { defaultVolSeed_ = seed; }
-  inline char **  getListOfVolNames()       { return listOfVolNames_; }
-  inline void     setListOfVolNames( char ** pVols)
-                                           { listOfVolNames_ = pVols; }
-  inline void *   getListOfAuditedVols() { return listOfAuditedVols_; }
-  inline void     setListOfAuditedVols( void *p)
-                                            { listOfAuditedVols_ = p; }
-  inline Int64   getListOfVolNamesCacheTime()  // 64-bit
-                                   { return listOfVolNamesCacheTime_; }
-  inline void     setListOfVolNamesCacheTime(Int64 cacheTime)
-                              { listOfVolNamesCacheTime_ = cacheTime; }
-  //LCOV_EXCL_STOP
-  inline NABoolean isSysVolNameInitialized()
-                                     { return sysVolNameInitialized_; }
-  inline void setSysVolNameIsInitialized() 
-                                     { sysVolNameInitialized_ = TRUE; }
-  inline char * getSysVolName()                 { return sysVolName_; }
-
-  void clearQualifiedDiskInfo();
-  void addQualifiedDiskInfo(const char *volumeName, Lng32 primaryCpu,
-                            Lng32 capacity, Lng32 freeSpace, Lng32 largestFragment);
-  // ss_cc_change
-  //LCOV_EXCL_START
   inline void setNodeName(const char *nodeName)
                     { strncpy(nodeName_, nodeName, sizeof(nodeName_)); }
   inline char *getNodeName() { return nodeName_; }
-
-  inline Lng32 getNumOfQualifyingVols() { return qualifyingVolsPerNode_.entries(); }
-  inline char *getQualifyingVolume(Lng32 i) { return qualifyingVolsPerNode_[i]; }
-  inline Lng32 getCpuNumberForVol(Lng32 i) { return cpuNumbers_[i]; }
-  inline Lng32 getCapacityForVol(Lng32 i) { return capacities_[i]; }
-  inline Lng32 getFreespaceForVol(Lng32 i) { return freespaces_[i]; }
-  inline Lng32 getLargestFragmentForVol(Lng32 i) { return largestFragments_[i]; }
-  //LCOV_EXCL_STOP
 
   inline Lng32 incrNumOfCliCalls()                   { return ++numCliCalls_; }
   inline Lng32 decrNumOfCliCalls()                   
@@ -227,7 +179,6 @@ SQLCLI_LIB_FUNC
     return ++totalCliCalls_; 
   }
 
-  //LCOV_EXCL_STOP
   inline UInt32 * getEventConsumed()   { return &eventConsumed_; }
   inline NABoolean processIsStopping() { return processIsStopping_; }
   
@@ -243,16 +194,6 @@ SQLCLI_LIB_FUNC
   Lng32 boundsCheck(void          *startAddress,
 		   ULng32 length,
 		   Lng32          &retcode);
-
-  // Measure support
-  inline NABoolean getMeasStmtEnabled() { return measStmtEnabled_; }
-  inline NABoolean getMeasProcEnabled() { return measProcEnabled_; }
-  inline NABoolean getMeasSubsysRunning() { return measSubsysRunning_; }
-#ifndef BUILD_MUSE
-  inline ExMeasProcCntrs * getMeasProcCntrs() { return measProcCntrs_; }
-#else
-  inline void * getMeasProcCntrs() { return measProcCntrs_; }
-#endif
 
   inline NABoolean breakEnabled() { return breakEnabled_; }
   inline void setBreakEnabled(NABoolean enabled) 
@@ -299,13 +240,11 @@ SQLCLI_LIB_FUNC
   inline void setUncProcess() { isUncProcess_ = TRUE; }
   inline NABoolean isUncProcess() {return isUncProcess_;}
   NAHeap *getCurrContextHeap();
-  void setJniErrorStr(NAString errorStr); 
-  void setJniErrorStr(const char *errorStr); 
-  NAString getJniErrorStr();
-  const char* getJniErrorStrPtr();
+  void setJniErrorStr(NAString errorStr) { setSqlJniErrorStr(errorStr);  }
+  void setJniErrorStr(const char *errorStr)  { setSqlJniErrorStr(errorStr); }
+  const char* getJniErrorStr() { return getSqlJniErrorStr(); }
   void updateTransMode(TransMode *transMode);
 
-SQLCLI_LIB_FUNC
 
 inline
   short getGlobalSbbCount()
@@ -356,9 +295,7 @@ inline
   char * myNodeName() { return myNodeName_; }
   Int32 myCpu() { return myCpu_; };
   Int32 myPin() { return myPin_; };
-#ifdef SQ_PHANDLE_VERIFIER
   SB_Verif_Type myVerifier() const {return myVerifier_;}
-#endif
 
   Lng32 myNodeNumber() { return myNodeNumber_; };
   Int64 myStartTime() { return myStartTime_; };
@@ -381,10 +318,8 @@ inline
 
   IpcPriority myPriority() { return myPriority_; }
   void setMyPriority(IpcPriority p) { myPriority_= p; }
-  //LCOV_EXCL_START
   NABoolean priorityChanged() { return priorityChanged_;}
   void setPriorityChanged(NABoolean v) { priorityChanged_ = v; }
-  //LCOV_EXCL_STOP
   IpcPriority myCurrentPriority();
 
   Int64 getNextUniqueNumber()
@@ -402,7 +337,7 @@ inline
   Long &getSemId() { return semId_; };
   void setSemId(Long semId) { semId_ = semId; }
 
-  void setSavedVersionOfCompiler(short version) { savedCompilerVersion_ = version;}  //LCOV_EXCL_LINE
+  void setSavedVersionOfCompiler(short version) { savedCompilerVersion_ = version;}
   short getSavedVersionOfCompiler() { return savedCompilerVersion_;}
   void setSavedSqlTerminateAction(short val) { savedSqlTerminateAction_ = val; }
   short getSavedSqlTerminateAction() { return savedSqlTerminateAction_; }
@@ -431,11 +366,14 @@ inline
   LmLanguageManagerC * getLanguageManagerC();
   LmLanguageManagerJava * getLanguageManagerJava();
 
-
 #ifdef _DEBUG
   void deleteContexts();
 #endif  // _DEBUG
-
+  NABoolean grabMemoryQuotaIfAvailable(ULng32 size);
+  void resetMemoryQuota();
+  ULng32 unusedMemoryQuota();
+  void yieldMemoryQuota(ULng32 size);
+  NABoolean isEspProcess() { return espProcess_; }
 private:
   enum {
     DEFAULT_CONTEXT_HANDLE = 2000
@@ -467,52 +405,11 @@ private:
   // executor memory that maintains all heap memory for this executor
   NAHeap executorMemory_;
 
-  // Object that contains: 1) attributes of the first flat segment
-  //                       2) array of secondary segment ids
-  NASegGlobals segGlobals_;
-
   // heap used by the IPC procedures
   NAHeap * ipcHeap_;
   
   // memory monitor for this process
   MemoryMonitor *memMonitor_;
-
-  // heap used by no-wait SQL procedures
-  NAHeap * noWaitSQLHeap_;
-
-  // quasi file manager for this process
-  QuasiFileManager * quasiFileManager_;
-
-  // Cache of descriptive table information from resource forks. Used
-  // in the audit reading CLI procedures called by utilities and by
-  // TMFARLB2. Code for these audit reading procedures is in
-  // CliMxArLib.cpp.
-  NAHeap *arlibHeap_;
-  //
-  // used by the catalog manager get-default-volume algorithm
-  //
-  UInt32 defaultVolSeed_;
-  char **  listOfVolNames_;
-  void *   listOfAuditedVols_;
-  Int64   listOfVolNamesCacheTime_;  // 64-bit
-
-  //
-  // cache the Tandem System Volume name
-  //
-  NABoolean sysVolNameInitialized_;
-  char sysVolName_[ 18 ];  // '$' + VOLNAME +  '.' +
-                          // SUBVOL + null-terminator
-
-
-  NABoolean measProcEnabled_;
-  NABoolean measStmtEnabled_;
-  NABoolean measSubsysRunning_;
-
-#ifndef BUILD_MUSE
-  ExMeasProcCntrs * measProcCntrs_;
-#else
-  void * measProcCntrs_;
-#endif
 
   // copy of the oss envvars
   char ** envvars_;
@@ -557,8 +454,6 @@ private:
 
   // location of the application program which is calling SQL.
   // Fully qualified oss pathname for OSS processes.
-  // \sys.$vol.subvol for guardian processes. Currently, programDir_
-  // is not set or used for guardian processes.
   char * programDir_;
   short  processType_; // 0, oss process.  1, guardian process.
   NABoolean logReclaimEventDone_;
@@ -566,9 +461,7 @@ private:
   // node, cpu and pin this process is running at.
   char myNodeName_[8];
   Int32 myCpu_;
-#ifdef SQ_PHANDLE_VERIFIER
   SB_Verif_Type myVerifier_;
-#endif
   pid_t myPin_;
   Lng32  myNodeNumber_;
 
@@ -594,13 +487,7 @@ private:
   // EMS event descriptor
   SQLMXLoggingArea::ExperienceLevel emsEventExperienceLevel_;
 
-  // these vars are used by GetListOfQualifyingVolumes.. methods.
   char nodeName_[9];
-  LIST(char *) qualifyingVolsPerNode_;
-  LIST(Lng32) cpuNumbers_;
-  LIST(Lng32) capacities_;
-  LIST(Lng32) freespaces_;
-  LIST(Lng32) largestFragments_;
 
   StatsGlobals *statsGlobals_;
 // heap used for the Stats collection
@@ -622,8 +509,8 @@ private:
   // for trusted UDR invocations from executor and compiler
   LmLanguageManagerC *langManC_;
   LmLanguageManagerJava *langManJava_;
+  NABoolean espProcess_;
 };
-#pragma warn(1506)   // warning elimination
 
 // -----------------------------------------------------------------------
 // A global method to get a pointer to the CLI globals. The method
@@ -634,7 +521,6 @@ private:
 // a lot of times. It is better to cache the pointer to the globals.
 // -----------------------------------------------------------------------
 
-SQLCLI_LIB_FUNC
 CliGlobals * GetCliGlobals();
 
 #endif /* __cplusplus */

@@ -81,7 +81,7 @@ script files. To install `trafci` on a client workstation, see the
 {docs-url}/client_install/index.html[{project-name} Client Installation Guide].
 
 [[hp-jdbc-type-4-driver]]
-=== HP JDBC Type 4 Driver
+=== Trafodion JDBC Type 4 Driver
 
 If you plan to use `trafci`, you must have a compatible version of the {project-name}
 JDBC Type-4 Driver installed on the client workstation.

@@ -41,9 +41,8 @@
 
 #include "exp_attrs.h"
 
-#pragma warning ( disable : 4251 )
 
-class SQLEXP_LIB_FUNC  BigNum : public ComplexType {
+class BigNum : public ComplexType {
 
   Int32               length_;               // 00-03
   Int32               precision_;            // 04-07
@@ -63,118 +62,94 @@ class SQLEXP_LIB_FUNC  BigNum : public ComplexType {
   char                fillers_[4];           // 20-23      
 
   // Temporary space starting point at runtime
-#ifdef NA_64BIT
   ULong              tempSpacePtr_;         // 24-31 //Put on 8-byte boundary
-#else
-  Int32               tempSpacePtr_;         // 24-27
-  char                fillers_b[4];           // 28-31      
-#endif
 
 public:
-NA_EIDPROC
+  // some internal computation use bignum as temp storage.
+  // Use 38 digit precision and 16 bytes length for them.
+  enum {BIGNUM_TEMP_LEN = 16 };
+  enum {BIGNUM_TEMP_PRECISION = 38 };
+
   BigNum(Lng32 length, Lng32 precision, short scale, short unSigned);
 
-NA_EIDPROC
   BigNum();
 
-NA_EIDPROC
   ~BigNum();
 
-NA_EIDPROC
   void init(char * op_data, char * str);
   
-NA_EIDPROC
   short add  (Attributes * left,
 	      Attributes * right,
 	      char * op_data[]);
 
-NA_EIDPROC
   short sub  (Attributes * left,
 	      Attributes * right,
 	      char * op_data[]);
 
-NA_EIDPROC
   short mul  (Attributes * left,
 	      Attributes * right,
 	      char * op_data[]);
 
-NA_EIDPROC
   short div  (Attributes * left,
 	      Attributes * right,
 	      char * op_data[],
 	      NAMemory *heap,
 	      ComDiagsArea** diagsArea);
 
-NA_EIDPROC
   short conv (Attributes * source, 
 	      char * op_data[]);
  
-NA_EIDPROC
   short comp (OperatorTypeEnum compOp,
 	      Attributes * other, 
 	      char * op_data[]);
 
-NA_EIDPROC
   short castFrom (Attributes * source /*source*/, 
 		  char * op_data[],
 		  NAMemory *heap,
 		  ComDiagsArea** diagsArea);
 
   // if desc <> 0, then this is a descending key.
-NA_EIDPROC
   void encode(const char * inBuf, char * outBuf, short desc = 0);
 
-NA_EIDPROC
   void decode(const char * inBuf, char * outBuf, short desc = 0);
   
-NA_EIDPROC
   Lng32 getDisplayLength()
     {
       return precision_ + (scale_ > 0 ? 2 : 1);
     };
   
-NA_EIDPROC
   Lng32   getPrecision(){return precision_;};
 
-NA_EIDPROC 
+
   void setLength(Int32 length)
   {length_ = length;}
 
-NA_EIDPROC
   Lng32   getLength()   {return length_;};
 
-NA_EIDPROC
   short  getScale()    {return scale_;};
 
-NA_EIDPROC
   short  isUnsigned()  {return unSigned_;};
   
-NA_EIDPROC
   Lng32 getStorageLength()
     {
       return length_ + (getNullFlag() ? getNullIndicatorLength() : 0);
     };
 
-NA_EIDPROC
   Lng32 getDefaultValueStorageLength()
     {
       return length_ + (getNullFlag() ? ExpTupleDesc::NULL_INDICATOR_LENGTH : 0);
     };
 
-NA_EIDPROC
   Attributes * newCopy();
 
-NA_EIDPROC
   Attributes * newCopy(NAMemory *);
   
-NA_EIDPROC
   void copyAttrs(Attributes * source); 
 
-NA_EIDPROC
   Lng32 setTempSpaceInfo(OperatorTypeEnum operType,
 			 ULong offset, Lng32 length = 0);
 
-NA_EIDPROC 
+
   void fixup(Space * space,
              char * constantsArea,
              char * tempsArea,
@@ -185,45 +160,46 @@ NA_EIDPROC
 // ---------------------------------------------------------------------
 // Redefinition of methods inherited from NAVersionedObject.
 // ---------------------------------------------------------------------
-NA_EIDPROC virtual unsigned char getClassVersionID()
+virtual unsigned char getClassVersionID()
 {
   return 1;
 };
 
-NA_EIDPROC virtual void populateImageVersionIDArray()
+virtual void populateImageVersionIDArray()
 {
   setImageVersionID(2,getClassVersionID());
   ComplexType::populateImageVersionIDArray();
 };
 
-NA_EIDPROC virtual short getClassSize() { return (short) sizeof(*this); };
+virtual short getClassSize() { return (short) sizeof(*this); };
 
 
 // ---------------------------------------------------------------------
 };
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 short EXP_FIXED_BIGN_OV_MUL(Attributes * op1,
                         Attributes * op2,
                         char * op_data[]);
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 short EXP_FIXED_BIGN_OV_DIV(Attributes * op1,
                         Attributes * op2,
                         char * op_data[]);
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
-                        Attributes * op2,
-                        char * op_data[],
-                        short * ov);
+                            Attributes * op2,
+                            char * op_data[],
+                            short * ov,
+                            Int64 * quotient = NULL);
 
+short EXP_FIXED_BIGN_OV_ADD(Attributes * op1,
+                        Attributes * op2,
+                        char * op_data[]);
+
+short EXP_FIXED_BIGN_OV_SUB(Attributes * op1,
+                        Attributes * op2,
+                        char * op_data[]);
 
  
-#pragma warning ( default : 4251 )
 
 #endif
 

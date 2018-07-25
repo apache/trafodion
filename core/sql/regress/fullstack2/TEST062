@@ -100,12 +100,10 @@ control query default def_chunk_size '';	-- 2055
 control query default def_chunk_size '1000';
 control query default def_chunk_size '-1000';	-- 2055
 control query default def_chunk_size '1.5e+12';	-- 2055
-control query default CPUCOST_DM_GET '1.5e+12';	-- valid
 showcontrol query default def_chunk;
 showcontrol all zzfoo;			-- no settings in effect; no attr
 showcontrol query default def_chunk;
 showcontrol query default;
-control query default CPUCOST_DM_GET '';	-- valid (revert to orig deflt)
 set schema $$TEST_SCHEMA$$;			-- revert to original regress setting
 
 control query default timeout '144';

@@ -37,9 +37,6 @@
  */
 
 
-#undef  NA_COMPILE_INSTANTIATE
-#define NA_COMPILE_INSTANTIATE
-
 #include "Platform.h"
 #include "NewDel.h"
 #include <fstream>
@@ -52,8 +49,6 @@ extern void my_mpi_fclose();
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(tdm_arkcmp)
 
-
-#include "SqlExportDllDefines.h"
 
 #include "CmpMessage.h"
 #include "CmpConnection.h"

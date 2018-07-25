@@ -26,8 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <alsa/iatomic.h>
-
+#include "seabed/atomic.h"
 #include "seabed/fs.h"
 #include "seabed/ms.h"
 #include "seabed/thread.h"
@@ -39,7 +38,7 @@
 #include "tutilp.h"
 
 enum { MAX_THREADS = 100 };
-atomic_t           cli_count;
+SB_Atomic_Int      cli_count;
 int                loop = 10;
 bool               mq = false;
 char               my_name[BUFSIZ];
@@ -92,8 +91,8 @@ void *thread_send(void *arg) {
     if (verbose)
         printf("client %s, OPENED fnum=%d\n", my_name, filenum);
     for (inx = 0; inx < loop; inx++) {
-        atomic_inc(&cli_count);
-        lcount = atomic_read(&cli_count);
+        cli_count.add_val(1);
+        lcount = cli_count.read_val();
         if (verbose)
             printf("client %s, inx=%d, count=%d\n", my_name, inx, lcount);
         sprintf(send_buffer, "hello, greetings from %s, inx=%d, fnum=%d",
@@ -167,7 +166,7 @@ int main(int argc, char *argv[]) {
     util_check("msg_mon_get_my_process_name", ferr);
 
     if (client) {
-        atomic_set(&cli_count, 0);
+        cli_count.set_val(0);
         ferr = BFILE_OPEN_((char *) sname, 4, &filenum,
                            0, 0, 0, 0, 0, 0, 0, NULL);
         TEST_CHK_FEOK(ferr);

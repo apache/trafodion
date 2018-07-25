@@ -43,8 +43,6 @@
 
 
 
-//#include "SqlExportDllDefines.h"
-
 /**
 *** _m64_popcnt is an instruction-level intrinsic routine supported in the
 *** IA64 compiler.  It quickly counts the number of bits set in a 64-bit 
@@ -58,7 +56,6 @@
 // File contents
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 
 template <class T> class NACollection;
 template <class T> class NASubCollection;
@@ -312,11 +309,7 @@ const NAUnsigned MAX_COLL_INDEX        = MINOF(100000000,LONG_MAX);
 // syntax in other modules)
 // -----------------------------------------------------------------------
 #define SET(Type)      NASet<Type>
-#pragma warning (disable : 4005)  //warning elimination
-#pragma nowarn(140)   // warning elimination
 #define LIST(Type)     NAList<Type>
-#pragma warn(140)  // warning elimination
-#pragma warning (default : 4005)  //warning elimination
 #define ARRAY(Type)    NAArray<Type>
 #define SUBARRAY(Type) NASubArray<Type>
 #define HASHDICTIONARY(Key,Value) NAHashDictionary<Key,Value>
@@ -344,39 +337,28 @@ public:
 
   inline CollIndex getUsedLength() const {return usedLength_; }
 
-// The c89 compiler doesn't recognize the friend declaration above.
-// For now, make all methods public when using c89.
-
-#if !defined( NA_MSVC ) && !defined(NA_NO_FRIENDS_WITH_TEMPLATE_REFS)
-
-protected:                                                // NT_PORT SK 04/08/97
-#endif // ! NA_MSVC && ! NA_NO_FRIENDS_WITH_TEMPLATE_REFS
+  //protected:      
 
   // default constructor(empty collection)
-  NA_EIDPROC NACollection(CollIndex initLen = 0) : heap_(NULL)
+  NACollection(CollIndex initLen = 0) : heap_(NULL)
   { allocate(initLen); }
 
   // constructor for a collection with user-defined heap management
-  NA_EIDPROC NACollection(CollHeap *heap, CollIndex initLen = 0) : heap_(heap)
+  NACollection(CollHeap *heap, CollIndex initLen = 0) : heap_(heap)
   { allocate(initLen); }
 
   // copy ctor
-  NA_EIDPROC NACollection(const NACollection<T> &other, CollHeap *heap=0)
+  NACollection(const NACollection<T> &other, CollHeap *heap=0)
        : heap_( (heap==NULL) ? other.heap_ : heap )
   { copy(other); }
 
   // virtual destructor
-#if   !defined(PRIV_SRL) 
-  NA_EIDPROC virtual ~NACollection();
-#else
-  NA_EIDPROC ~NACollection();
-#endif // NA_HSC 
-
+  virtual ~NACollection();
 
   // copy another collection into this one
   // NOTE: this method is called by a constructor and it
   // assumes that the collection is in the deallocated state!!!
-  NA_EIDPROC void copy(const NACollection<T> &other) ;
+  void copy(const NACollection<T> &other) ;
 
   // assignment operator (deep copy instead of shallow one)
   inline NACollection<T> & operator =(const NACollection<T> &other)
@@ -389,29 +371,29 @@ protected:                                                // NT_PORT SK 04/08/97
   void clearFrom( CollIndex entry );
 
   // return entry ix(create entry, if it doesn't exist already)
-  NA_EIDPROC T & rawEntry(CollIndex ix);
+  T & rawEntry(CollIndex ix);
 
   // overloaded operator [] to access elements of the collection
  T & usedEntry(CollIndex ix)
   {
-#if defined(_DEBUG) && !defined(PRIV_SRL)
+#if defined(_DEBUG)
     if((ix >= usedLength_) OR
        (usages_[ix] == UNUSED_COLL_ENTRY))
       ABORT("referencing an unused element of a collection");
-#endif // PRIV_SRL 
+#endif
     return arr_[ix];
   }
 
   // the const version of usedEntry
  const T & constEntry(CollIndex ix) const 
   {
-#if defined(_DEBUG) && !defined(PRIV_SRL)
+#if defined(_DEBUG)
     if((ix >= usedLength_) OR
        (usages_[ix] == UNUSED_COLL_ENTRY)) 
       {
 	ABORT("referencing an unused element of a collection");
       }
-#endif // PRIV_SRL 
+#endif
     return arr_[ix];
   }
   
@@ -433,7 +415,7 @@ protected:                                                // NT_PORT SK 04/08/97
     { return sizeof(*this) + (maxLength_ * (sizeof(T)+sizeof(CollIndex))); }
 
   // Resize the arrays to a new size(return new size)
-  NA_EIDPROC CollIndex resize(CollIndex newSize);  
+  CollIndex resize(CollIndex newSize);  
 
   inline void setUsage(CollIndex pos, CollIndex newUsage)
   {
@@ -446,10 +428,10 @@ protected:                                                // NT_PORT SK 04/08/97
 
   // allocate the arrays(used in constructor, don't assume
   // that the data members except "heap_" are initialized yet)
-  NA_EIDPROC void allocate(CollIndex initLen);
+  void allocate(CollIndex initLen);
 
   //inline void deallocate()
-  NA_EIDPROC virtual void deallocate()
+  virtual void deallocate()
   {
     // NOTE: dirty deallocate, no cleanup!!!
     if ( heap_ == NABasicObject::systemHeapPtr() )
@@ -464,11 +446,12 @@ protected:                                                // NT_PORT SK 04/08/97
       // Note : this won't call the destructor of each arr_ element. 
       // after the compiler supports delete[] operator to be supprted,
       // it should be changed to
-      // if (!arr_) delete [] arr_;
-      // if (!usages_) delete [] usages_;
+      //if (arr_) delete [] arr_;
+      //if (usages_) delete [] usages_;
 
       if (arr_ != NULL) heap_->deallocateMemory(arr_);
       if (usages_ != NULL) heap_->deallocateMemory(usages_);
+
     }
     arr_ = NULL;
     usages_ = NULL;
@@ -525,7 +508,7 @@ protected:                                                // NT_PORT SK 04/08/97
     return;
   }
 
-  NA_EIDPROC void insert(CollIndex posToInsert,
+  void insert(CollIndex posToInsert,
 	      const T   &newElement,
 	      CollIndex newUsage = NULL_COLL_INDEX);
 
@@ -632,7 +615,7 @@ const Lng32 bitsSet[] = {
 // 
 // ***********************************************************************
 
-NA_EIDPROC inline Lng32 firstOne( ULng32 x )
+inline Lng32 firstOne( ULng32 x )
 {
   #define FIRSTHALFWORDBITS            0xFFFF0000
   #define FIRSTQUARTERWORDBITS         0xFF000000
@@ -839,7 +822,6 @@ NA_EIDPROC inline Lng32 firstOne( ULng32 x )
 //        to compiler intrinsic _m64_popcnt - much *MUCH* faster.
 // 
 // ***********************************************************************
-NA_EIDPROC
 inline Lng32 lastOne( ULng32 x )
 {
   #define LASTHALFWORDBITS             0x0000FFFF
@@ -1040,7 +1022,6 @@ inline Lng32 lastOne( ULng32 x )
 // argument.
 // 
 // ***********************************************************************
-NA_EIDPROC
 inline Lng32 ones( ULng32 x )
 {
   unsigned char * px = (unsigned char *) &x;
@@ -1071,7 +1052,7 @@ public:
   // set heap after constructor has been called but before object is used
   void setHeap(CollHeap *heap);
 
-  NA_EIDPROC inline CollIndex resize( CollIndex newSize )
+  inline CollIndex resize( CollIndex newSize )
    {
    if (newSize > maxLength_)
       {
@@ -1131,10 +1112,10 @@ public:
     return( wordSize_ * BitsPerWord );
 	   }
 
-  NA_EIDPROC CollIndex getWordSize   () const { return( wordSize_ ); }
-  NA_EIDPROC CollIndex getLastStaleBit() const { return( lastStaleBit_ ); }
+  CollIndex getWordSize   () const { return( wordSize_ ); }
+  CollIndex getLastStaleBit() const { return( lastStaleBit_ ); }
 
-  NA_EIDPROC inline void extendWordSize( CollIndex minWordSize )
+  inline void extendWordSize( CollIndex minWordSize )
    {
    // resize the array
    resize( minWordSize );
@@ -1223,7 +1204,6 @@ public:
    else
       {
       // NOTE: for performance reasons we return arbitrary numbers for TRUE
-      // cast to NABoolean added for warning elimination
       return( (NABoolean) (pBits_[ wn ] LAND SingleBitArray[ bitNo( b ) ]) );  
       }
    }
@@ -1261,7 +1241,7 @@ public:
   // e.g. in a for-loop:  for(CollIndex i = 0; nextUsed(i); i++) ...
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC inline NABoolean nextUsed( CollIndex & start ) const
+  inline NABoolean nextUsed( CollIndex & start ) const
    {
    CollIndex limit = wordSize_ << LogBitsPerWord;
 
@@ -1432,7 +1412,7 @@ public:
   NASubCollection<T> & intersectSet(const NASubCollection<T> & other);
   NASubCollection<T> & subtractSet(const NASubCollection<T> & other);
 
-  NA_EIDPROC inline NASubCollection<T> & addElement( CollIndex elem )
+  inline NASubCollection<T> & addElement( CollIndex elem )
   {
   CollIndex wordNumber = wordNo( elem );
 
@@ -1465,7 +1445,7 @@ public:
   // Fast path when elem is probably less than 64.  
   inline NASubCollection<T> & addElementFast(CollIndex elem);
   
-  NA_EIDPROC inline NASubCollection<T> & subtractElement( CollIndex elem )
+  inline NASubCollection<T> & subtractElement( CollIndex elem )
    {
    CollIndex wordNumber = wordNo( elem );
 
@@ -1600,7 +1580,7 @@ inline CollIndex NASubCollection<T>::prevUsed(CollIndex start) const
 
 // Returns the ordinal position of the last bit set in the uint64_t passed as
 // an argument.
-NA_EIDPROC inline ULng32 FindLastOne(uint64_t x)
+inline ULng32 FindLastOne(uint64_t x)
 {
   // Set bits right of, and clear bits left of, last bit set.
   uint64_t y = x ^ (x - 1);
@@ -1886,7 +1866,7 @@ public:
     { return NACollection<T>::getByteSize() + sizeof(*this) - 
         sizeof(NACollection<T>); }
 
-  NA_EIDPROC inline NABoolean insert(const T &elem)
+  inline NABoolean insert(const T &elem)
   {
     invalidateCache();
     if (NACollection<T>::find(elem) == NULL_COLL_INDEX)
@@ -1899,7 +1879,7 @@ public:
   }
 
   // A dumb but easy implementation for insert one SET into another
-  NA_EIDPROC inline NABoolean insert(const NASet<T> &other)
+  inline NABoolean insert(const NASet<T> &other)
   {
     CollIndex count = other.entries();
     for (CollIndex i = 0; i < count; i++)
@@ -1909,7 +1889,7 @@ public:
     return TRUE;
   } // insert(SET(T))
 
-  NA_EIDPROC inline NABoolean remove(const T &elem)
+  inline NABoolean remove(const T &elem)
   {
     CollIndex ix = NACollection<T>::find(elem);
 
@@ -1924,7 +1904,7 @@ public:
   }
 
   // A dumb but easy implementation for remove one SET from  another
-  NA_EIDPROC inline NABoolean remove(const NASet<T> &other)
+  inline NABoolean remove(const NASet<T> &other)
   {
     CollIndex count = this->entries();
     for (CollIndex i = 0; i < count; i++)
@@ -1969,7 +1949,7 @@ public:
   }
 
   // virtual destructor
-  NA_EIDPROC virtual ~NAList();
+  virtual ~NAList();
 
   // assignment
   
@@ -1979,12 +1959,12 @@ public:
   NABoolean operator ==(const NAList<T> &other) const;
 
   // insert a new entry
-  inline void insert(const T &elem) { insertAt(this->entries(),elem); }
+  inline void insert(const T &elem) { this->insertAt(this->entries(),elem); }
 
   // insert a set, array, or list
   // void insert(const SET(T) &other);
 
-  NA_EIDPROC void insert(const LIST(T) &other);
+  void insert(const LIST(T) &other);
 
   // remove an element(the first that matches) that is given by its value
   //(returns whether the element was found and removed)
@@ -2013,7 +1993,7 @@ public:
   { return(NACollection<T>::find(elem) != NULL_COLL_INDEX); }
 
   // find a given element in the collection and return it
-  NA_EIDPROC NABoolean find(const T &elem, T &returnedElem) const;
+  NABoolean find(const T &elem, T &returnedElem) const;
 
   // find the index of a given element or return NULL_COLL_INDEX if not found
   inline CollIndex index (const T &elem) const
@@ -2038,7 +2018,7 @@ public:
   }
 
   // index access(both reference and value), zero based
-  NA_EIDPROC T & operator [](CollIndex i);
+  T & operator [](CollIndex i);
   const T & operator [](CollIndex i) const;
 
   inline T & at(CollIndex i) { return operator [](i); }
@@ -2059,7 +2039,7 @@ public:
 
   // remove the index'th element from the list
   //(returns TRUE if list[index] was found, FALSE if index was out of bounds)
-  NA_EIDPROC inline NABoolean removeAt(const CollIndex index)
+  inline NABoolean removeAt(const CollIndex index)
   {
     // check whether index is legal
     if (index >= this->entries())
@@ -2102,7 +2082,7 @@ public:
   // insert a new entry at a given position(new element becomes element # i,
   // the rest of the list moves 1 entry up)
   // use i = entries() to insert at the end, i = 0 to insert at the front
-  NA_EIDPROC inline CollIndex insertAt(CollIndex i, const T &elem)
+  inline CollIndex insertAt(CollIndex i, const T &elem)
   {
     CollIndex newIndex = this->freePos();
     CollIndex newUsage;
@@ -2157,7 +2137,7 @@ public:
   // remove the first entry from the list and store it in "elem"
   //(returns FALSE if the list is empty and no value is returned)
 
-  NA_EIDPROC inline NABoolean getFirst(T &elem)
+  inline NABoolean getFirst(T &elem)
   {
     if (this->entries() > 0)
     {
@@ -2367,7 +2347,7 @@ public:
   
   void append( T newItem)
   {
-    insertAt( entries(), newItem);
+    this->insertAt( entries(), newItem);
   }
   
   CollIndex entries() const
@@ -2590,7 +2570,6 @@ friend class NAHashDictionaryIterator<K,V>;
   // --------------------------------------------------------------------
   // Constructor functions.
   // --------------------------------------------------------------------
-//#if defined(NA_UNIX) && !defined(NA_LINUX) 
   // Previously the code was ugly -- it used a hash function that was defined
   // in the scope of the file using the NAHashDictionary template. New 
   // compilers produce an error ("undeclared variable" ) in case the template
@@ -2703,14 +2682,12 @@ private:
 
 private: 
 
-//#if !defined(NA_UNIX) || defined(NA_LINUX)
   // Needed only for the old way of NAHashDictionary -- see comment above
   // --------------------------------------------------------------------
   // The hash function that is applied to the key for determining the 
   // bucket to which it belongs.				  
   // --------------------------------------------------------------------
   ULng32(*hash_)(const K&);
-//#endif
   
   // --------------------------------------------------------------------
   // The hash table is an array of hash buckets.
@@ -2936,7 +2913,7 @@ public:
 
   inline V* get(const K* kk) const                      // retrieve a tuple
   {
-    return getFirstValue(kk);
+    return this->getFirstValue(kk);
   }
        		
   inline void insert(const V* vv)			// insert a tuple
@@ -3033,7 +3010,6 @@ private:
 }; // NAKeyLookup
 
 
-#pragma warn(1506)   // warning elimination
 
 
 // -----------------------------------------------------------------------

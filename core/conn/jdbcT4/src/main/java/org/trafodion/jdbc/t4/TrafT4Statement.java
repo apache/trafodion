@@ -354,7 +354,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 				{};
 			}
 
-			batchRowCount_ = new int[batchCommands_.size()];
 			for (i = 0; i < batchCommands_.size(); i++) {
 				String sql = (String) batchCommands_.get(i);
 
@@ -397,7 +396,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 
 					checkSQLWarningAndClose();
 
-					batchRowCount[i] = batchRowCount_[0]; // the member will
+					batchRowCount[i] = (int)ist_.getRowCount(); // the member will
 					// be set by
 					// execute...keep
 					// them in our local
@@ -416,7 +415,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 				BatchUpdateException be;
 
 				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-						"batch_command_failed", null);
+						"batch_command_failed", e.getMessage());
 				be = new BatchUpdateException(se.getMessage(), se.getSQLState(), batchRowCount_);
 				be.setNextException(e);
 
@@ -1277,9 +1276,9 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			} else {
 				 if(resultSet_[result_set_offset].keepRawBuffer_ == true)
 			          resultSet_[result_set_offset].rawBuffer_ = values;
-				 
+				//if setExecute2FetchOutputs is not called by fetch set flag to false , data has not been clipped 
 				resultSet_[result_set_offset].irs_.setExecute2FetchOutputs(resultSet_[result_set_offset], 1, true,
-						values);
+						values,false);
 			}
 		} else {
 			resultSet_[result_set_offset] = null;

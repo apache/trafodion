@@ -154,7 +154,7 @@ HYC00 Unsupported feature - {0}
 
 *Cause*: An attempt was made to set the transaction isolation level to an invalid value.
 
-*Effect*: `HPT4Connection.setTransactionIsolation` does not set the transaction isolation value.
+*Effect*: `TrafT4Connection.setTransactionIsolation` does not set the transaction isolation value.
 
 *Recovery*: Valid isolation values are:
 `SQL_TXN_READ_COMMITTED`,
@@ -186,7 +186,7 @@ If no isolation value is specified, the default is `SQL_TXN_READ_COMMITTED`.
 
 *Cause*: An attempt was made to set an invalid result-set concurrency value.
 
-*Effect*: The `HPT4Statement` call with `resultSetConcurrency` fails.
+*Effect*: The `TrafT4Statement` call with `resultSetConcurrency` fails.
 
 *Recovery*: Valid resultSetConcurrency values are: CONCUR_READ_ONLY and
 CONCUR_UPDATABLE.
@@ -759,26 +759,26 @@ the `getPooledConnection()` method.
 ```
 
 *Cause*: Attempted to access a BLOB column without setting the property
-`hpt4jdbc.blobTableName`, or the property is set to an invalid value.
+`t4jdbc.blobTableName`, or the property is set to an invalid value.
 
 *Effect*:  The application cannot access BLOB columns.
 
-*Recovery*: Set the `hpt4jdbc.blobTableName` property to a valid LOB table
+*Recovery*: Set the `t4jdbc.blobTableName` property to a valid LOB table
 name. The LOB table name is of format `catalog.schema.lobTableName`.
 
 === 29060 HY000
 
 ```
-29060 HY000 'hpt4jdbc.clobTableName' property is not set or set to null value or set to invalid value.
+29060 HY000 't4jdbc.clobTableName' property is not set or set to null value or set to invalid value.
 ```
 
 *Cause*: Attempted to access a CLOB column without setting the
-`propertyhpt4jdbc.clobTableName` property, or the property is set to null
+property `t4jdbc.clobTableName`, or the property is set to null
 value or set to an invalid value.
 
 *Effect*:  The application cannot access CLOB columns.
 
-*Recovery*: Set the `hpt4jdbc.clobTableName` property to a valid LOB table
+*Recovery*: Set the `t4jdbc.clobTableName` property to a valid LOB table
 name. The LOB table name is of format `catalog.schema.lobTableName`.
 
 === 29061 HY00
@@ -1657,7 +1657,7 @@ Expected: <expected_version> Actual: <actual_version>.
 *Effect*:  Operation fails.
 
 *Recovery*: Evaluate any error or error detail information accompanying the
-message. Install compatible versions of the driver and HP connectivity
+message. Install compatible versions of the driver and Trafodion connectivity
 server.
 
 <<<
@@ -1673,7 +1673,7 @@ Expected: <expected_signature> Actual: <actual_signature>.
 *Effect*:  Operation fails.
 
 *Recovery*: Evaluate any error or error detail information accompanying the
-message. Install compatible versions of the driver and HP connectivity
+message. Install compatible versions of the driver and Trafodion connectivity
 server.
 
 

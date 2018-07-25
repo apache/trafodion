@@ -70,18 +70,14 @@ class HashTableCursor : public NABasicObject {
   ULng32 currHeader_;
 
 public:
-NA_EIDPROC
   HashTableCursor();
-NA_EIDPROC
   ~HashTableCursor();
-NA_EIDPROC
   void init() {
     beginRow_ =
       endRow_ =
       currRow_ = NULL;
     currHeader_ = 0;
   };
-NA_EIDPROC
   inline HashRow * getBeginRow() {return beginRow_;};
 };
 
@@ -91,11 +87,8 @@ NA_EIDPROC
 class HashTableHeader {
   friend class HashTable;
 public:
-NA_EIDPROC
   HashTableHeader();
-NA_EIDPROC
   inline ~HashTableHeader() {};
-NA_EIDPROC
   void init();
 private:
   // for now we disable the rowCount_. This cuts the size of the hash table
@@ -139,20 +132,16 @@ public:
   //   doResize: If TRUE (HGB) then this table is resizable - when the table
   //             becomes %75 full, then allocate a new one of twice the
   //             previous size, move the entries and deallocate the old one.
-NA_EIDPROC
   HashTable(ULng32 headerCount,
 	    NABoolean evenFactor,
 	    ULng32 primeFactor,
 	    NABoolean noHVDups = TRUE,
 	    NABoolean doResize = FALSE
 	    ); 
-NA_EIDPROC
   ~HashTable();
 
-NA_EIDPROC
   void init();
 
-NA_EIDPROC
   void insert(atp_struct * workAtp,
 	      HashRow * newRow,
               tupp& workAtpTupp1,
@@ -160,38 +149,26 @@ NA_EIDPROC
 	      ex_expr * searchExpr);
 
   // Used only by Hash-Groupby; return TRUE is HT need be resized
-NA_EIDPROC
   NABoolean insert(HashRow * newRow);
 
   // Used only by Hash-Groupby; resize the HT (only if enough memory)
-NA_EIDPROC
   ULng32 resize(NABoolean enoughMemory);
-
-#ifndef __EID
-  // this is only used by Hash Join, so does not need to be in EID code
 
   // An insert method used by UniqueHashJoin.
   // Assumes input is unique and so does not need to check for
   // duplicates.
   // Entries are inserted in HashValue order.
   //
-  NA_EIDPROC
   void insertUniq(HashRow *newRow);
-#endif
 
-NA_EIDPROC
   void insertSingleChain(HashRow * newRow);
 
-NA_EIDPROC
   void convertToOffsets();
 
-NA_EIDPROC
   HashRow * getNext(HashTableCursor * cursor);
 
-NA_EIDPROC
   void position(HashTableCursor * cursor);
 
-NA_EIDPROC
   void position(HashTableCursor * cursor,
 		atp_struct * rowAtp,
 		atp_struct * workAtp,
@@ -202,43 +179,32 @@ NA_EIDPROC
                                                   // (anti)semi-joins.
 		NABoolean returnOrdered = FALSE );
 
-#ifndef __EID
-  // this is only used by Hash Join, so does not need to be in EID code
-
   // A position method used by UniqueHashJoin.
   // Assumes entries are unique and so does not need to check for
   // duplicates.
   // Returns first match found.
   //
-  NA_EIDPROC
   ex_expr::exp_return_type positionUniq(HashRow **currRow,
                                         atp_struct * leftRowAtp,
                                         atp_struct * workAtp,
                                         short rightRowAtpIndex,
                                         ex_expr * searchExpr,
                                         SimpleHashValue hashValue);
-#endif
 
-NA_EIDPROC
   void positionSingleChain(HashTableCursor * cursor);
 
-NA_EIDPROC
   inline ULng32 getHeaderCount() const {
   return headerCount_;
 };
 
-NA_EIDPROC
   ULng32 getChainSize(ULng32 i);
 
   // In case the object was created, but not enough memory for the actual HT
-NA_EIDPROC
   inline NABoolean noTableAllocated() { return header_ == NULL ; };
 
   // Return the size the HT would be resized-to (used to check mem availability)
-NA_EIDPROC
   ULng32 resizeTo() { return headerCount_ * HT_RESIZE_FACTOR ; };
 
-NA_EIDPROC
   inline NABoolean originalSize() { return originalSize_ ; };
 
 private:

@@ -20,4 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
+if [ "$SQ_VIRTUAL_NODES" != "1" ]; then
+	export nid1="nid 0"
+fi
 goshell t141ms t141ms $*

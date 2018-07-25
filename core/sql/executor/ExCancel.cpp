@@ -249,16 +249,15 @@ ExWorkProcRetcode ExCancelTcb::work()
               break;
             }
           }
-          ComDiagsArea *tempDiagsArea =
-                ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-          tempDiagsArea->clear();
+          
+          ComDiagsArea *tempDiagsArea = NULL;
  
           ContextCli *context = getGlobals()->castToExExeStmtGlobals()->
                 castToExMasterStmtGlobals()->getStatement()->getContext();
           ExSsmpManager *ssmpManager = context->getSsmpManager(); 
-          cbServer_ = ssmpManager->getSsmpServer(
-                                 cliGlobals->myNodeName(), 
-                                 cliGlobals->myCpu(), tempDiagsArea);
+          cbServer_ = ssmpManager->getSsmpServer((NAHeap *)getGlobals()->getDefaultHeap(),
+                                 nodeName_,
+                                 cpu_, tempDiagsArea);
           if (cbServer_ == NULL) {
              reportError(tempDiagsArea, true, EXE_CANCEL_PROCESS_NOT_FOUND, 
                           nodeName_, cpu_);
@@ -266,8 +265,6 @@ ExWorkProcRetcode ExCancelTcb::work()
              step_ = DONE;
              break;
           }
-          else
-             tempDiagsArea->decrRefCount();
 
           //Create the stream on the IpcHeap, since we don't dispose 
           // of it immediately.  We just add it to the list of completed 
@@ -285,7 +282,6 @@ ExWorkProcRetcode ExCancelTcb::work()
         break;
       }  // end case NOT_STARTED
 
-#pragma warning (disable : 4291)
 
       case SEND_MESSAGE:
       {
@@ -320,7 +316,6 @@ ExWorkProcRetcode ExCancelTcb::work()
                       pid_,
                       cancelTdb().getCancelPidBlockThreshold());
 
-#pragma warning (default : 4291)
 
           *cancelStream_ << *cancelMsg;
 
@@ -332,13 +327,11 @@ ExWorkProcRetcode ExCancelTcb::work()
           bool suspendLogging = (TRUE == cliGlobals->currContext()->
                     getSessionDefaults()->getSuspendLogging());
 
-#pragma warning (disable : 4291)
           SuspendQueryRequest * suspendMsg = new (cliGlobals->getIpcHeap()) 
             SuspendQueryRequest(rtsHandle, cliGlobals->getIpcHeap(),
                                 ComTdbCancel::Force ==
                                 cancelTdb().forced_,
                                 suspendLogging);
-#pragma warning (default : 4291)
 
           *cancelStream_ << *suspendMsg;
 
@@ -353,11 +346,9 @@ ExWorkProcRetcode ExCancelTcb::work()
           bool suspendLogging = (TRUE == cliGlobals->currContext()->
                     getSessionDefaults()->getSuspendLogging());
 
-#pragma warning (disable : 4291)
           ActivateQueryRequest * activateMsg = new (cliGlobals->getIpcHeap()) 
             ActivateQueryRequest(rtsHandle, cliGlobals->getIpcHeap(),
                                  suspendLogging);
-#pragma warning (default : 4291)
 
           *cancelStream_ << *activateMsg;
 
@@ -370,10 +361,8 @@ ExWorkProcRetcode ExCancelTcb::work()
           char * qid = cancelTdb().qid_;
           Lng32 qid_len = str_len(qid);
 
-#pragma warning (disable : 4291)
           RtsQueryId *rtsQueryId = new (cliGlobals->getIpcHeap())
                            RtsQueryId( cliGlobals->getIpcHeap(), qid, qid_len);
-#pragma warning (default : 4291)
 
           *cancelStream_ << *rtsQueryId;
           rtsQueryId->decrRefCount();
@@ -430,12 +419,10 @@ ExWorkProcRetcode ExCancelTcb::work()
         if (!cancelStream_->moreObjects())
           return WORK_OK; 
 
-#pragma warning (disable : 4291)
 
         ControlQueryReply *reply = new (cliGlobals->getIpcHeap()) 
               ControlQueryReply(INVALID_RTS_HANDLE, cliGlobals->getIpcHeap());
 
-#pragma warning (default : 4291)
 
         *cancelStream_ >> *reply;
 

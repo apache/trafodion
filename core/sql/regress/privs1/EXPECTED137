@@ -43,7 +43,7 @@
 +>  and p.operation_code = d.operation_code
 +>  and p.component_uid = d.component_uid
 +>  and c.component_name like 'LIBRARY%'
-+>order by 1, 2, d.grantor_ID, d.grantee_name, grant_depth
++>order by 1, 2, d.grantee_name, grant_depth
 +>for read uncommitted access;
 
 --- SQL command prepared.
@@ -210,14 +210,6 @@ LIBRARY_USERS         TEST COMPONENT 3
 *** ERROR[15001] A syntax error occurred at or before: 
 register component user;
                       ^ (23 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
->>register component "delimited not supported";
-
-*** ERROR[15001] A syntax error occurred at or before: 
-register component "delimited not supported";
-                                           ^ (44 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -578,7 +570,7 @@ LIBRARY_USERS         LIB_VIEW_USERS        SQL_USER3                           
 >>-- error: unknown privilege
 >>grant component privilege lib_view_xxx on library_books to sql_user9;
 
-*** ERROR[1004] Object LIB_VIEW_XXX does not exist or object type is invalid for the current operation.
+*** ERROR[1194] Component operation LIB_VIEW_XXX does not exist for component LIBRARY_BOOKS
 
 --- SQL operation failed with errors.
 >>grant component privilege lib_view_checkouts,
@@ -586,7 +578,7 @@ LIBRARY_USERS         LIB_VIEW_USERS        SQL_USER3                           
 +>                          lib_view_xxx
 +>  on library_books to sql_user9;
 
-*** ERROR[1004] Object LIB_VIEW_XXX does not exist or object type is invalid for the current operation.
+*** ERROR[1194] Component operation LIB_VIEW_XXX does not exist for component LIBRARY_BOOKS
 
 --- SQL operation failed with errors.
 >>
@@ -692,13 +684,6 @@ SQL_USER1
 
 --- 1 row(s) selected.
 >>-- These tests should succeed
->>-- returns 2 rows
->>showddl role db__rootrole;
-
-CREATE ROLE "DB__ROOTROLE";
-  -- GRANT ROLE "DB__ROOTROLE" TO "DB__ROOT" WITH ADMIN OPTION;
-
---- SQL operation complete.
 >>execute get_component_operations;
 
 COMPONENT             OPERATION_NAME        OPERATION_CODE
@@ -827,7 +812,7 @@ SQL_USER5
 --- 1 row(s) selected.
 >>grant component privilege lib_view_repository on library_books to sql_user7;
 
-*** ERROR[1004] Object LIB_VIEW_REPOSITORY does not exist or object type is invalid for the current operation.
+*** ERROR[1194] Component operation LIB_VIEW_REPOSITORY does not exist for component LIBRARY_BOOKS
 
 --- SQL operation failed with errors.
 >>grant component privilege lib_view_checkouts on library_books to sql_user7;
@@ -852,7 +837,7 @@ SQL_USER5
 --- 1 row(s) selected.
 >>grant component privilege lib_view_repository on library_books to sql_user7;
 
-*** ERROR[1004] Object LIB_VIEW_REPOSITORY does not exist or object type is invalid for the current operation.
+*** ERROR[1194] Component operation LIB_VIEW_REPOSITORY does not exist for component LIBRARY_BOOKS
 
 --- SQL operation failed with errors.
 >>grant component privilege lib_view_checkouts on library_books to sql_user7;
@@ -884,7 +869,7 @@ SQL_USER5
 --- 1 row(s) selected.
 >>grant component privilege lib_view_repository on library_books to sql_user7;
 
-*** ERROR[1004] Object LIB_VIEW_REPOSITORY does not exist or object type is invalid for the current operation.
+*** ERROR[1194] Component operation LIB_VIEW_REPOSITORY does not exist for component LIBRARY_BOOKS
 
 --- SQL operation failed with errors.
 >>grant component privilege lib_view_checkouts on library_books to sql_user7;
@@ -1058,6 +1043,13 @@ CREATE COMPONENT PRIVILEGE CREATE_LIBRARY AS 'CL' ON SQL_OPERATIONS SYSTEM
 -- GRANT COMPONENT PRIVILEGE "CREATE_LIBRARY" ON "SQL_OPERATIONS" TO "DB__ROOT" WITH GRANT OPTION;
 GRANT COMPONENT PRIVILEGE "CREATE_LIBRARY" ON "SQL_OPERATIONS" TO
   "DB__ROOTROLE" WITH GRANT OPTION;
+
+CREATE COMPONENT PRIVILEGE COMMENT AS 'CO' ON SQL_OPERATIONS SYSTEM DETAIL
+  'Allow grantee to comment on objects and columns';
+
+-- GRANT COMPONENT PRIVILEGE "COMMENT" ON "SQL_OPERATIONS" TO "DB__ROOT" WITH GRANT OPTION;
+GRANT COMPONENT PRIVILEGE "COMMENT" ON "SQL_OPERATIONS" TO "DB__ROOTROLE" WITH
+  GRANT OPTION;
 
 CREATE COMPONENT PRIVILEGE CREATE_PROCEDURE AS 'CP' ON SQL_OPERATIONS SYSTEM
   DETAIL 'Allow grantee to create procedures';
@@ -1615,6 +1607,13 @@ CREATE COMPONENT PRIVILEGE CREATE_LIBRARY AS 'CL' ON SQL_OPERATIONS SYSTEM
 GRANT COMPONENT PRIVILEGE "CREATE_LIBRARY" ON "SQL_OPERATIONS" TO
   "DB__ROOTROLE" WITH GRANT OPTION;
 
+CREATE COMPONENT PRIVILEGE COMMENT AS 'CO' ON SQL_OPERATIONS SYSTEM DETAIL
+  'Allow grantee to comment on objects and columns';
+
+-- GRANT COMPONENT PRIVILEGE "COMMENT" ON "SQL_OPERATIONS" TO "DB__ROOT" WITH GRANT OPTION;
+GRANT COMPONENT PRIVILEGE "COMMENT" ON "SQL_OPERATIONS" TO "DB__ROOTROLE" WITH
+  GRANT OPTION;
+
 CREATE COMPONENT PRIVILEGE CREATE_PROCEDURE AS 'CP' ON SQL_OPERATIONS SYSTEM
   DETAIL 'Allow grantee to create procedures';
 
@@ -1986,6 +1985,7 @@ drop component privilege lib_view_benefactors cascade;
 *** ERROR[1008] Authorization identifier LIB_ROLE_TEST does not exist.
 
 --- SQL operation failed with errors.
+>>
 >>revoke role lib_role_test from sql_user5;
 
 *** ERROR[1338] Role LIB_ROLE_TEST is not defined in the database.
@@ -2024,6 +2024,9 @@ drop component privilege lib_view_benefactors cascade;
 >>
 >>-- run tests for revoke.
 >>obey TEST137(revoke_comp_privs_setup);
+>>cqd ALLOW_WGO_FOR_ROLES 'on';
+
+--- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.

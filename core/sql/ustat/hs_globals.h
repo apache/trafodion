@@ -1810,6 +1810,12 @@ private:
                          NABoolean internalSortWhenBetter,
                          NABoolean trySampleTableBypass = FALSE);
 
+    // If we decide to create and load a sample table, deallocate column memory
+    // and reset PENDING group states back to UNPROCESSED before creating and
+    // loading the sample table. We'll call getColsToProcess to reallocate it
+    // again afterwards.
+    void deallocatePendingMemory(void);
+
     // After an allocation failure, this is called to reduce the amount of
     // memory we estimate is available.
     static void memReduceAllowance();

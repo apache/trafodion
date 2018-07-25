@@ -390,7 +390,6 @@ RelExpr *MvRefreshBuilder::buildLogsScanningBlock(const QualifiedName& baseTable
 
 //----------------------------------------------------------------------------
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 Union *MvRefreshBuilder::buildUnionBetweenRangeAndIudBlocks(RelExpr *scanIUDLogBlock,
 							    RelExpr *scanRangeLogBlock) const
 {
@@ -415,20 +414,16 @@ Union *MvRefreshBuilder::buildUnionBetweenRangeAndIudBlocks(RelExpr *scanIUDLogB
 
   return unionNode;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 NABoolean MvRefreshBuilder::needAlternateCIorder() const
 {
   return isGroupByAprefixOfTableCKeyColumns();
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvRefreshBuilder::buildAlternateCIorder(ItemExpr *ciColumns, const CorrName &tableNameCorr) const
 {
   const NAString endRangePrefix(COMMV_ENDRANGE_PREFIX);
@@ -452,7 +447,6 @@ ItemExpr *MvRefreshBuilder::buildAlternateCIorder(ItemExpr *ciColumns, const Cor
 
   return alternateOrderVector.convertToItemExpr();
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Construct the expression for @Op, according to the value of the ROW_TYPE
@@ -493,7 +487,6 @@ ItemExpr *MvRefreshBuilder::constructOpExpression() const
 //----------------------------------------------------------------------------
 // Build a vector of clustering index columns with @BR_ prefix
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvRefreshBuilder::buildBeginRangeVector() const
 {
   const NAString beginRangePrefix(COMMV_BEGINRANGE_PREFIX);
@@ -506,12 +499,10 @@ ItemExpr *MvRefreshBuilder::buildBeginRangeVector() const
 					       getLogsInfo().getBaseTableDirectionVector(),						
 					       &beginRangePrefix);
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Build a vector of clustering index columns with @ER_ prefix
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvRefreshBuilder::buildEndRangeVector() const
 {
   const NAString endRangePrefix(COMMV_ENDRANGE_PREFIX);
@@ -524,7 +515,6 @@ ItemExpr *MvRefreshBuilder::buildEndRangeVector() const
 					getLogsInfo().getBaseTableDirectionVector(),
 					&endRangePrefix);
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // The Join predicate between the Range log and the base table on the 
@@ -535,7 +525,6 @@ ItemExpr *MvRefreshBuilder::buildEndRangeVector() const
 // For multi transactional refresh, this method is overridden and two 
 // additional predicates are added.
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvRefreshBuilder::buildRangeLogJoinPredicate() const
 {
   
@@ -558,7 +547,6 @@ ItemExpr *MvRefreshBuilder::buildRangeLogJoinPredicate() const
 
   return buildRangeLogJoinPredicateWithCols(rangeType, baseCI, beginCI, endCI);
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 //   a) BASE_TABLE.CI >= RANGE_LOG.BEGIN_CI DIRECTEDBY <direction-vector>
@@ -572,7 +560,6 @@ ItemExpr *MvRefreshBuilder::buildRangeLogJoinPredicate() const
 //   c0)  WHEN 0 CI<> RANGE_LOG.BEGIN_CI AND CI<> RANGE_LOG.END_CI
 //      END
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvRefreshBuilder::buildRangeLogJoinPredicateWithCols(
 						       ItemExpr *rangeType,
 						       ItemExpr *baseCI,
@@ -628,7 +615,6 @@ ItemExpr *MvRefreshBuilder::buildRangeLogJoinPredicateWithCols(
 
   return predicate;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // This virtual method is overridden by MvMultiTxnMavBuilder for some specific
@@ -636,7 +622,6 @@ ItemExpr *MvRefreshBuilder::buildRangeLogJoinPredicateWithCols(
 // the one in the Scan node on the range log itself - not to confuse with the
 // range log join predicate in the method above.
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvRefreshBuilder::buildSelectionPredicateForScanOnRangeLog() const
 { 
   if (!useUnionBakeboneToMergeEpochs())
@@ -647,7 +632,6 @@ ItemExpr *MvRefreshBuilder::buildSelectionPredicateForScanOnRangeLog() const
   }
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Have a uniform select list over the IUD log.
@@ -677,7 +661,6 @@ RelRoot *MvRefreshBuilder::buildRootOverIUDLog(RelExpr *topNode) const
     return root;
 
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 
   const NAString beginRangePrefix(COMMV_BEGINRANGE_PREFIX);
   const NAString endRangePrefix(COMMV_ENDRANGE_PREFIX);
@@ -707,7 +690,6 @@ RelRoot *MvRefreshBuilder::buildRootOverIUDLog(RelExpr *topNode) const
   root->addCompExprTree(rangeIdCol);
 
   return root;
-// LCOV_EXCL_STOP
 }  // MvRefreshBuilder::buildRootOverIUDLog()
 
 //----------------------------------------------------------------------------
@@ -720,7 +702,6 @@ RelRoot *MvRefreshBuilder::buildRootOverIUDLog(RelExpr *topNode) const
 //                    5. Range ID
 //----------------------------------------------------------------------------
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 RelRoot *MvRefreshBuilder::buildRootOverRangeBlock(RelExpr *topNode) const
 {
   ItemExpr *opExpr = new(heap_) SystemLiteral(1); // Range log has only inserts.
@@ -762,7 +743,6 @@ RelRoot *MvRefreshBuilder::buildRootOverRangeBlock(RelExpr *topNode) const
 
   return root;
 }  // MvRefreshBuilder::buildRootOverRangeBlock()
-// LCOV_EXCL_STOP
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -803,7 +783,6 @@ RelRoot *MvRefreshBuilder::buildRootWithUniformSelectList(RelExpr *topNode,
 //	         (Range Log)  (Base table)
 //
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 RelExpr *MvRefreshBuilder::buildReadRangesBlock() const
 {
   CMPASSERT(getLogsInfo().getDeltaDefinition().useRangeLog());
@@ -835,14 +814,11 @@ RelExpr *MvRefreshBuilder::buildReadRangesBlock() const
   
   return root;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Build the scan on the table and rename the table syskey column if exists
 // to @SYSKEY
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
-#pragma nowarn(1506)   // warning elimination 
 RelExpr *MvRefreshBuilder::buildReadBaseTable() const
 {
   RelExpr *topNode = new(heap_) Scan(getLogsInfo().getBaseTableName());
@@ -854,9 +830,7 @@ RelExpr *MvRefreshBuilder::buildReadBaseTable() const
   // For nested-join because the fact that the ranges in the range log
   // do not overlap the scan on the table will not produce more than
   // the table cardinality .
-#pragma warning (disable : 4244)   //warning elimination
   fixScanCardinality(topNode, 1.0, coveredRows);
-#pragma warning (default : 4244)   //warning elimination
 
   // The root select list is (*, isLastExpr).
   ColRefName *star = new(heap_) ColRefName(1);  // isStar
@@ -878,12 +852,9 @@ RelExpr *MvRefreshBuilder::buildReadBaseTable() const
 
   return rootNode;
 }
-#pragma warn(1506)  // warning elimination 
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 RelExpr *MvRefreshBuilder::buildJoinBaseTableWithRangeLog(RelExpr *scanRangeLog, 
 							  RelExpr *scanBaseTable) const
 {
@@ -902,14 +873,12 @@ RelExpr *MvRefreshBuilder::buildJoinBaseTableWithRangeLog(RelExpr *scanRangeLog,
 
   return joinNode;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // This function builds a sub-tree that will read the range log records.
 // For optimization reasons, in some cases , we prefer to use a merge union
 // sub-tree instead of using a simple scan and a sort node on top.
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 RelExpr *MvRefreshBuilder::buildReadRangeLogBlock() const
 {
   // This is the Scan on the range log table.
@@ -941,7 +910,6 @@ RelExpr *MvRefreshBuilder::buildReadRangeLogBlock() const
 
   return topNode;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Set the ForceCardinalityInfo for this node in order to fix the estimated 
@@ -1625,7 +1593,6 @@ RelExpr *MavBuilder::buildDeltaProcessingBlock(DeltaDefinition *deltaDef)
 // WHERE expressions: b = tableForWhere.b
 // This method is also used by MinMaxMavBuilder.
 //////////////////////////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
 RelExpr *MavBuilder::buildDPBUpdate(const NAString& tableForSet,
 				    const NAString& tableForWhere) const
 {
@@ -1675,7 +1642,6 @@ RelExpr *MavBuilder::buildDPBUpdate(const NAString& tableForSet,
   updateRoot->setEmptySelectList();
   return updateRoot;
 }
-#pragma warn(1506)  // warning elimination 
 
 //////////////////////////////////////////////////////////////////////////////
 // Build the Delete sub-tree of the MAV Delta Processing Block.
@@ -1733,7 +1699,6 @@ RelExpr *MavBuilder::buildDPBInsert(DeltaDefinition *deltaDef, RelExpr *topNode)
 
 //////////////////////////////////////////////////////////////////////////////
 // Build the Insert sub-tree of the MAV Delta Processing Block.
-#pragma nowarn(1506)   // warning elimination 
 RelExpr *MavBuilder::buildDPBInsertNodes(const NAString& sourceTable) const
 {
   // The group-by columns are always taken from the DELTA table.
@@ -1788,7 +1753,6 @@ RelExpr *MavBuilder::buildDPBInsertNodes(const NAString& sourceTable) const
 
   return insertRoot;
 }
-#pragma warn(1506)  // warning elimination 
 
 // ===========================================================================
 // ==== Methods for supporting Min/Max.
@@ -1873,7 +1837,6 @@ NABoolean MavBuilder::useUnionBakeboneToMergeEpochs() const
 // Check if the Group by columns are a prefix of the base table clustering 
 // index. The order of the group by columns is not important.
 //----------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 Int32 MavBuilder::isGroupByAprefixOfTableCKeyColumns() const
 {
   if (isGroupByAprefixOfTableCKeyColumns_ != -1)
@@ -1912,7 +1875,6 @@ Int32 MavBuilder::isGroupByAprefixOfTableCKeyColumns() const
   
   return isGroupByAprefixOfTableCKeyColumns_;
 }
-#pragma warn(1506)  // warning elimination 
 
 
 // ===========================================================================
@@ -2020,7 +1982,6 @@ void MinMaxOptimizedMavBuilder::fixGroupingColumns(RelRoot* pRoot) const
 // Remove the GroupBy columns from the select list of the MV select tree.
 // After removing the GroupBy volumns from the GroupBy node, these columns
 // can no longer be used in the select list above the GroupBy node.
-#pragma nowarn(1506)   // warning elimination 
 void MinMaxOptimizedMavBuilder::removeGroupingColsFromSelectList(RelRoot* pRoot) const
 {
   // Convert the root select list from an ItemExpr tree to a list.
@@ -2054,7 +2015,6 @@ void MinMaxOptimizedMavBuilder::removeGroupingColsFromSelectList(RelRoot* pRoot)
   // Set it as the Select list.
   pRoot->addCompExprTree(nonGroupedSelectList);
 }
-#pragma warn(1506)  // warning elimination 
 
 // ===========================================================================
 // ===========================================================================
@@ -2227,7 +2187,6 @@ void MultiDeltaMavBuilder::bindJoinProduct(RelRoot  *product, NABoolean isSignPl
 //    @OP as well as @EPOCH, @IGNORE etc. should be deleted from the RETDesc, 
 //    for both T1 and T3. A new column called @OP should be adde instead: 
 //    (T1.@OP * T3.@OP * -1).
-#pragma nowarn(1506)   // warning elimination 
 void MultiDeltaMavBuilder::prepareRetdescForUnion(RETDesc  *retDesc, NABoolean isSignPlus)
 {
   CMPASSERT(retDesc != NULL);
@@ -2346,7 +2305,6 @@ void MultiDeltaMavBuilder::prepareRetdescForUnion(RETDesc  *retDesc, NABoolean i
   // And add it to the RETDesc.
   retDesc->addColumn(bindWA_, opName, newOpExpr->getValueId());
 }
-#pragma warn(1506)  // warning elimination 
 
 // This method returns TRUE if the columnDesc parameter is an @OP column
 // That needs to be deleted from the RETDesc.
@@ -2767,7 +2725,6 @@ void MultiDeltaRefreshMatrixRow::addColumn(scanType type)
 
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MultiDeltaRefreshMatrixRow::print(FILE* ofd,
 	     const char* indent,
 	     const char* title) const
@@ -2787,7 +2744,6 @@ void MultiDeltaRefreshMatrixRow::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 #endif
 
 // ===========================================================================
@@ -2797,7 +2753,6 @@ void MultiDeltaRefreshMatrixRow::display() const
 // ===========================================================================
 
 //----------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 // Construct the matrix from the join graph solution, and add the first row.
 MultiDeltaRefreshMatrix::MultiDeltaRefreshMatrix(Int32	        maxNumOfRows,
 						 MVJoinGraph   *joinGraph,
@@ -2853,7 +2808,6 @@ MultiDeltaRefreshMatrix::MultiDeltaRefreshMatrix(Int32	        maxNumOfRows,
   // And insert it into the matrix.
   theMatrix_[0] = firstRow;
 }
-#pragma warn(1506)  // warning elimination
 
 //----------------------------------------------------------------------------
 MultiDeltaRefreshMatrix::~MultiDeltaRefreshMatrix()
@@ -2971,7 +2925,6 @@ const MultiDeltaRefreshMatrixRow *MultiDeltaRefreshMatrix::getRow(Int32 i) const
 
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MultiDeltaRefreshMatrix::print(FILE* ofd,
 	     const char* indent,
 	     const char* title) const
@@ -2996,7 +2949,6 @@ void MultiDeltaRefreshMatrix::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 #endif
 
 

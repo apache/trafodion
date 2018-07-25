@@ -63,10 +63,45 @@ import java.security.PrivilegedExceptionAction;
  *   order
  *
  **/
-public class LmClassLoader extends URLClassLoader
+public class LmClassLoader extends ClassLoader
 {
   private final static boolean DEBUG = false; // static DEBUG
 
+    private ChildURLClassLoader childClassLoader;
+
+    private static class FindClassClassLoader extends ClassLoader {
+        public FindClassClassLoader(ClassLoader parent) {
+            super(parent);
+        }
+
+        @Override
+        public Class<?> findClass(String name) throws ClassNotFoundException {
+            return super.findClass(name);
+        }
+    }
+
+    private static class ChildURLClassLoader extends URLClassLoader {
+        private FindClassClassLoader realParent;
+
+        
+        public ChildURLClassLoader(URL[] urls, FindClassClassLoader realParent) {
+            super(urls, null);
+
+            this.realParent = realParent;
+        }
+
+        @Override
+        public Class<?> findClass(String name) throws ClassNotFoundException {
+            try {
+                Class<?> loaded = super.findLoadedClass(name);
+                if (loaded != null)
+                    return loaded;
+                return super.findClass(name);
+            } catch (ClassNotFoundException e) {
+                return realParent.loadClass(name);
+            }
+        }
+    }
 
   /**
    * Creates a new instance for a given set of URLs.
@@ -77,13 +112,15 @@ public class LmClassLoader extends URLClassLoader
    **/
   public LmClassLoader(URL[] urls)
   {
-      super(urls);
+      //super(urls);
+      super(Thread.currentThread().getContextClassLoader());
+      childClassLoader = new ChildURLClassLoader(urls, new FindClassClassLoader(this.getParent()));
   }
 
   String getContainerPath()
   {
       // The first URL points to the container. Get the path of that URL
-      return getURLs()[0].getPath();
+      return childClassLoader.getURLs()[0].getPath();
   }
 
   /**
@@ -164,4 +201,15 @@ public class LmClassLoader extends URLClassLoader
         System.out.println("LmClassLoader::findResourceInternal did not find resource " + name + "in container " + path);
     return null;
   }
+    @Override
+    protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        try {
+            Class<?> result = childClassLoader.findClass(name);
+            if (resolve)
+                resolveClass(result);
+            return result;
+        } catch (ClassNotFoundException e) {
+            return super.loadClass(name, resolve);
+        }
+    }
 }

@@ -58,7 +58,6 @@
 // -----------------------------------------------------------------------
 // Copy a string.  A null terminated buffer is returned.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 char *UDRCopyString ( const ComString &sourceString, CollHeap *heap )
 {
   char *string = new(heap)char [sourceString.length()+1];
@@ -68,7 +67,6 @@ char *UDRCopyString ( const ComString &sourceString, CollHeap *heap )
 	      );
   return string;
 } // UDRCopyString
-#pragma warn(1506)  // warning elimination 
 
 
 
@@ -219,7 +217,7 @@ NARoutine::NARoutine (  const QualifiedName &name
   for (CollIndex currentCol=0; currentCol<colCount; currentCol++)
   {
      // Create the new NAType.
-    newColType = new (heap) SQLVarChar ( 255
+    newColType = new (heap) SQLVarChar (heap, 255
                                         , 1
                                         , FALSE
 					, FALSE /*not caseinsensitive, for now*/

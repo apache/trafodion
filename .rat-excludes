@@ -34,7 +34,7 @@ RAT_README
 readme.md
 README.md
 run_me*
-# documentation and build info 
+# documentation and build info
 eclipse.*cproject*
 eclipse.project
 doxygen_tmudr.1.6.config
@@ -44,9 +44,8 @@ __init__.py*
 # SQL messages file
 SqlciErrors.txt
 # DCS config files
-backup-masters
 servers
-master
+masters
 # jquery
 jquery-ui.css*
 jquery-ui.js*
@@ -163,6 +162,7 @@ UpsertSelectAutoCommitTest.java
 UpsertSelectTest.java
 UpsertValuesTest.java
 VariableLengthPKTest.java
+TrafConfiguration.java
 # asciidoc extention file -- MIT license
 google-analytics-postprocessor.rb
 
@@ -179,3 +179,10 @@ theme.json
 # they have BSD-3 license that RAT does not recognize
 prettytable.py
 socks.py
+
+# SqlCompilerDebugger bmp
+.*.bmp
+
+# To be located
+security_dll
+

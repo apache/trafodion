@@ -79,13 +79,13 @@ properties, see
 <<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
 
 ```
-Data type: int
+Data type: short
 
 Units: seconds
 
 Default: -1 (Use the ConnTimeout value set on the server-side data source.)
 
-Range: -1, 0 to 2147483647
+Range: -1, 0 to 32767
 ```
 
 * Zero (0) specifies infinity as the timeout value.
@@ -395,7 +395,7 @@ applies.
 To set the maximum idle time to 5 minutes (300 seconds):
 
 ```
-java -Dhpt4jdbc.maxIdleTime=300
+java -Dt4jdbc.maxIdleTime=300
 ```
 
 <<<
@@ -649,7 +649,7 @@ The following command reserves 150 data
 locators for program class `myProgramClass`.
 
 ```
-java -Dhpt4jdbc.reserveDataLocators=150 myProgramClass
+java -Dt4jdbc.reserveDataLocators=150 myProgramClass
 ```
 
 <<<
@@ -830,7 +830,7 @@ to the level of tracing provided when calling the `setLogWriter()` method of the
 
 *Example*
 
-To enable tracing, use the `hpt4jdbc.T4LogLevel` property specified in the command line:
+To enable tracing, use the `t4jdbc.T4LogLevel` property specified in the command line:
 
 ```
 -Dt4jdbc.T4LogLevel=FINE

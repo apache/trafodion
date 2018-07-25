@@ -85,9 +85,7 @@ class ExpDatetime;
 // static const UInt32 ExpVoaSize = sizeof(Int32);
 
 
-#pragma warning ( disable : 4251 )
-#pragma nowarn(1506)  // warning elimination 
-class SQLEXP_LIB_FUNC  Attributes : public NAVersionedObject
+class Attributes : public NAVersionedObject
 {
 public:
 
@@ -104,7 +102,7 @@ public:
   enum DefaultClass
   {
     NO_DEFAULT, DEFAULT_NULL, DEFAULT_CURRENT, 
-    DEFAULT_USER, DEFAULT_USER_FUNCTION, DEFAULT_IDENTITY,
+    DEFAULT_USER, DEFAULT_USER_FUNCTION, DEFAULT_IDENTITY,DEFAULT_CURRENT_UT, DEFAULT_UUID, DEFAULT_FUNCTION,
     INVALID_DEFAULT
   };
 
@@ -380,6 +378,9 @@ public:
   NABoolean isForceFixed()     { return (flags_ & FORCE_FIXED_) != 0; }
   void setForceFixed()         { flags_ |= FORCE_FIXED_; }
 
+  NABoolean isLengthInKB()     { return (flags_ & LENGTH_IN_KB_) != 0; }
+  void setLengthInKB()         { flags_ |= LENGTH_IN_KB_; }
+
   // Bulk move flags
   void setBulkMoveable( NABoolean flag = TRUE ) { (flag ? flags_ |= BULK_MOVE_ : flags_ &= ~BULK_MOVE_); }
   NABoolean isBulkMoveable()       { return (flags_ & BULK_MOVE_) != 0; }
@@ -586,9 +587,10 @@ private:
 
     CASEINSENSITIVE_ = 0x0400,    // caseinsensitive char/varchar datatype
 
-    FORCE_FIXED_   = 0x0800       // Force this attribute to be treated as fixed
+    FORCE_FIXED_   = 0x0800,       // Force this attribute to be treated as fixed
                                   // in an aligned row.  Used by HashGroupby for
                                   // varchar aggregates
+    LENGTH_IN_KB_ =0x1000 // Indicates length is in KB 
 
   };
  
@@ -657,7 +659,6 @@ private:
 // resolve an ambiguity with an LLVM class that is also named Attributes
 typedef Attributes exp_Attributes;
 
-#pragma warn(1506)  // warning elimination 
 
 
 inline void Attributes::needDataAlignment()
@@ -672,9 +673,7 @@ inline void Attributes::dontNeedDataAlignment()
 
 inline Int32 Attributes::isNotAlwaysAligned()
 {
-#pragma nowarn(1506)   // warning elimination 
   return (flags_ & DATA_ALIGNMENT_FLAG);
-#pragma warn(1506)  // warning elimination 
 }
 
 ///////////////////////////////////////////////////////////////
@@ -683,7 +682,7 @@ inline Int32 Attributes::isNotAlwaysAligned()
 //   Operations on these are supported by underlying hardware
 //   and thus are performed as a 'fastpath'.
 ///////////////////////////////////////////////////////////////
-class SQLEXP_LIB_FUNC  SimpleType : public Attributes 
+class SimpleType : public Attributes 
 {
 public:
 
@@ -875,7 +874,7 @@ private:
 //    classes derived from ComplexType.
 //    
 /////////////////////////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ComplexType : public Attributes
+class ComplexType : public Attributes
 {
 public:
 
@@ -1011,7 +1010,7 @@ private:
   char            fillers_[22];        // 02-23
 };
 
-class SQLEXP_LIB_FUNC  ShowplanAttributes : public Attributes
+class ShowplanAttributes : public Attributes
 {
 public:
   ShowplanAttributes(Int32 valueId, char * text);
@@ -1051,5 +1050,4 @@ private:
   char            fillers_[4];        // 60-63
 };
 
-#pragma warning ( default : 4251 )
 #endif

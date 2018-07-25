@@ -42,10 +42,8 @@
 
 #include "Platform.h"
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#endif 
 
 // -----------------------------------------------------------------------
 //
@@ -66,10 +64,7 @@ using namespace std;
 
 #include "FBString.h"
 
-#ifndef __EID
-// no use for this in EID
 #include "ComGuardianFileNameParts.h"
-#endif
 #include "Collections.h"
 
 // -----------------------------------------------------------------------
@@ -114,18 +109,6 @@ typedef size_t    StringPos;
 // Number of bits per byte 
 const size_t BITSPERBYTE = 8;  
 
-// Check pre- and post-conditions used in 
-// /export/NAStringDef.cpp and /common/rawstring.cpp
-// ps: Copied from rw/defs.h
-#if defined(NA_C89_VERSION3)
-#include <assert.h>
-#define RWPRECONDITION(a)     assert( (a) != 0 ) 
-#define RWPOSTCONDITION(a)    assert( (a) != 0 )
-#define RWPRECONDITION2(a,b)  assert((b, (a) !=0))
-#define RWPOSTCONDITION2(a,b) assert((b, (a) !=0))
-#define RWASSERT(a)           assert( (a) != 0 )
-#endif
-
 // classes in this file:
 class NASubString ; // rewrite of RWCSubString, from cstring.h/cstring.cpp
 class NAString ;    // rewrite of RWCString,    from cstring.h/cstring.cpp
@@ -143,7 +126,7 @@ class NAString ;    // rewrite of RWCString,    from cstring.h/cstring.cpp
  */
 
 
-class SQLEXPORT_LIB_FUNC NASubString
+class NASubString
 {
 public:
   NASubString(const NASubString& sp)
@@ -199,15 +182,12 @@ private:
   size_t              extent_;// Length of NASubString
 
 friend
-SQLEXPORT_LIB_FUNC
 NABoolean operator==(const NASubString& s1, const NASubString& s2);
 
 friend
-SQLEXPORT_LIB_FUNC
 NABoolean operator==(const NASubString& s1, const NAString& s2);
 
 friend
-SQLEXPORT_LIB_FUNC
 NABoolean operator==(const NASubString& s1, const char* s2);
 
 friend class NAString;
@@ -229,7 +209,7 @@ friend class NAString;
 //
 //////////////////////////////////////////////////////////////////////////
 
-class SQLEXPORT_LIB_FUNC NAString : public NABasicObject 
+class NAString : public NABasicObject 
 {
 public:
 
@@ -262,34 +242,25 @@ public:
   NAString(signed char c, NAMemory *h=NASTRING_UNINIT_HEAP_PTR)    ;
   NAString(const FBString & fbs, NAMemory *h=NASTRING_UNINIT_HEAP_PTR) ;
 
-#ifndef __EID
-// not supposed to be in executor-in-DP2
   NAString(const ComGuardianFileNamePart & e, NAMemory *h=NASTRING_UNINIT_HEAP_PTR)
     :fbstring_(e.castToConstChar(), e.length(), 
                       (h == NASTRING_UNINIT_HEAP_PTR) ? this->defaultHeapPtr() : h)
     {}
-#endif
 
   NAString(char c, size_t N, NAMemory *h=NASTRING_UNINIT_HEAP_PTR)         ;
   virtual ~NAString() ;
 
   // Type conversion:
   operator const char*() const {return fbstring_.data();}
-#ifndef __EID
-// not supposed to be in executor-in-DP2
   operator const ComNodeName() const {return ComNodeName(fbstring_.data());}
   operator const ComVolumeName() const {return ComVolumeName(fbstring_.data());}
-#endif
 
   // Assignment:
   NAString&    operator=(const char*);         // Replace string
   NAString&    operator=(const NAString&);    // Replace string
  
-#ifndef __EID
-// not supposed to be in executor-in-DP2
   NAString&    operator=(const ComGuardianFileNamePart & e)
     {return operator= (e.castToConstChar());};
-#endif
   NAString&    operator=(const char c)
     {return operator= (NAString(c, heap()));};
 
@@ -299,12 +270,8 @@ public:
 
   NAString& operator+=(const char c);
 
-#ifndef __EID
-// not supposed to be in executor-in-DP2
   NAString& operator+=(const ComGuardianFileNamePart & e)
     {return operator+= (e.castToConstChar());};
-#endif
-
   
   // Indexing operators:
   char&         operator[](size_t);             // Indexing with bounds checking
@@ -348,11 +315,8 @@ public:
   
   NAString&     append(const char c, size_t rep=1);   // Append c rep times
 
-#ifndef __EID
-// not supposed to be in executor-in-DP2
   NAString&     append(const ComGuardianFileNamePart & e)
     {return append (e.castToConstChar());}
-#endif
 
   //RWspace       binaryStoreSize() const         {return length()+sizeof(size_t);}
   // total memory allocated, including the NAStringRef object in front of
@@ -471,6 +435,8 @@ public:
   
   // useful for supplying hash functions to template hash collection ctors:
   static UInt32       hash(const NAString&);
+
+  NAMemory * heap() const { return fbstring_.heap(); }
 protected:
 
   // Special concatenation constructor:
@@ -492,29 +458,22 @@ private:
 
   void          clone(size_t nc); // Make self a distinct copy w. capacity nc
 
-  NAMemory * heap() const { return fbstring_.heap(); }
-  
   FBString fbstring_;
 friend
-SQLEXPORT_LIB_FUNC 
 NAString operator+(const NAString& s1, const NAString& s2);
 
 friend
-SQLEXPORT_LIB_FUNC
 NAString operator+(const NAString& s,  const char* cs);
 
 friend
-SQLEXPORT_LIB_FUNC
 NAString operator+(const NAString& s,  const char c);
 
 friend
-SQLEXPORT_LIB_FUNC
 NAString operator+(const char* cs, const NAString& s);
 
 
 
 friend
-SQLEXPORT_LIB_FUNC
 NABoolean operator==(const NAString& s1, const char* s2);
 
 
@@ -524,15 +483,13 @@ friend class NASubString;
 
 typedef NAString* NAStringPtr;
 
-SQLEXPORT_LIB_FUNC NAString toLower(const NAString&);   // Return lower-case version of argument.
+NAString toLower(const NAString&);   // Return lower-case version of argument.
 
 
-SQLEXPORT_LIB_FUNC NAString toUpper(const NAString&);   // Return upper-case version of argument.
+NAString toUpper(const NAString&);   // Return upper-case version of argument.
 
 
-NA_EIDPROC
 inline    UInt32 rwhash(const NAString& s) { return s.hash(); }
-NA_EIDPROC
 inline    UInt32 rwhash(const NAString* s) { return s->hash(); }
 #ifndef RW_NO_LOCALE
 NAString strXForm(const NAString&);  // strxfrm() interface
@@ -651,8 +608,6 @@ inline char NAString::operator()(size_t i) const
   return fbstring_[i];
 }
 
-#ifndef __EID
-// not supposed to be in executor-in-DP2
 inline NAString operator+(const NAString& s, const ComGuardianFileNamePart & e)
   {return operator+(s, e.castToConstChar());};
 
@@ -664,7 +619,6 @@ inline NAString operator+(const ComGuardianFileNamePart & e, const char * cs )
 
 inline NAString operator+(const char * cs, const ComGuardianFileNamePart & e )
   {return operator+(cs, NAString(e));};
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -706,106 +660,80 @@ inline char NASubString::operator()(size_t i) const
 }
 
 // String Logical operators:
-NA_EIDPROC
 inline NABoolean        operator==(const NAString& s1, const NAString& s2)
                                   { return ((s1.length() == s2.length()) &&
                                     !memcmp(s1.data(), s2.data(), s1.length())); }
 
-NA_EIDPROC
 inline NABoolean        operator< (const NAString& s1, const NAString& s2)
                                   { return s1.compareTo(s2)< 0;}
 
-NA_EIDPROC
 inline NABoolean        operator!=(const NAString& s1, const NAString& s2)
                                   { return !(s1 == s2); }
 
-NA_EIDPROC
 inline NABoolean        operator> (const NAString& s1, const NAString& s2)
                                   { return s1.compareTo(s2)> 0;}
 
-NA_EIDPROC
 inline NABoolean        operator<=(const NAString& s1, const NAString& s2)
                                   { return s1.compareTo(s2)<=0;}
 
-NA_EIDPROC
 inline NABoolean        operator>=(const NAString& s1, const NAString& s2)
                                   { return s1.compareTo(s2)>=0;}
 
-NA_EIDPROC
 inline NABoolean        operator!=(const NAString& s1, const char* s2)
                                   { return !(s1 == s2); }
 
-NA_EIDPROC
 inline NABoolean        operator< (const NAString& s1, const char* s2)
                                   { return s1.compareTo(s2)< 0; }
 
-NA_EIDPROC
 inline NABoolean        operator> (const NAString& s1, const char* s2)
                                   { return s1.compareTo(s2)> 0; }
 
-NA_EIDPROC
 inline NABoolean        operator<=(const NAString& s1, const char* s2)
                                   { return s1.compareTo(s2)<=0; }
 
-NA_EIDPROC
 inline NABoolean        operator>=(const NAString& s1, const char* s2)
                                   { return s1.compareTo(s2)>=0; }
 
-NA_EIDPROC
 inline NABoolean        operator==(const char* s1, const NAString& s2)
                                   { return (s2 == s1); }
 
-NA_EIDPROC
 inline NABoolean        operator!=(const char* s1, const NAString& s2)
                                   { return !(s2 == s1); }
 
-NA_EIDPROC
 inline NABoolean        operator< (const char* s1, const NAString& s2)
                                   { return s2.compareTo(s1)> 0; }
 
-NA_EIDPROC
 inline NABoolean        operator> (const char* s1, const NAString& s2)
                                   { return s2.compareTo(s1)< 0; }
 
-NA_EIDPROC
 inline NABoolean        operator<=(const char* s1, const NAString& s2)
                                   { return s2.compareTo(s1)>=0; }
 
-NA_EIDPROC
 inline NABoolean        operator>=(const char* s1, const NAString& s2)
                                   { return s2.compareTo(s1)<=0; }
 
 // SubString Logical operators:
-NA_EIDPROC
 inline NABoolean operator==(const NAString& s1,    const NASubString& s2)
                            { return (s2 == s1); }
 
-NA_EIDPROC
 inline NABoolean operator==(const char* s1,        const NASubString& s2)
                            { return (s2 == s1); }
 
-NA_EIDPROC
 inline NABoolean operator!=(const NASubString& s1, const char* s2)
                            { return !(s1 == s2); }
 
-NA_EIDPROC
 inline NABoolean operator!=(const NASubString& s1, const NAString& s2)
                            { return !(s1 == s2); }
 
-NA_EIDPROC
 inline NABoolean operator!=(const NASubString& s1, const NASubString& s2)
                            { return !(s1 == s2); }
 
-NA_EIDPROC
 inline NABoolean operator!=(const NAString& s1,    const NASubString& s2)
                            { return !(s2 == s1); }
 
-NA_EIDPROC
 inline NABoolean operator!=(const char* s1,        const NASubString& s2)
                            { return !(s2 == s1); }
 
-#ifndef __EID
-// not supposed to be in executor-in-DP2
 inline NABoolean operator==(const NAString& s1, const ComGuardianFileNamePart& s2)
                            {return (s1 == s2.castToConstChar());}
 inline NABoolean operator==(const ComGuardianFileNamePart& s1, const NAString& s2)
@@ -816,16 +744,15 @@ inline NABoolean operator==(const ComNodeName& s1, const NAString& s2)
                            {return (s2 == s1.castToConstChar());}
 inline NABoolean operator==(const NAString& s1, const char c)
                            {return (s1.length() == 1 && *s1.data() == c);}
-#endif
 
 // $$$NB: besides usage of c-string-lib functions inside the NAString code,
 // if we #ifdef the following two functions then we ought to be able to 
 // use NAString objects inside the executor ...
 
 // input/output
-SQLEXPORT_LIB_FUNC istream&  operator>>(istream& str   , NAString& cstr);
+istream&  operator>>(istream& str   , NAString& cstr);
 
-SQLEXPORT_LIB_FUNC ostream&  operator<<(ostream& str   , const NAString& cstr);
+ostream&  operator<<(ostream& str   , const NAString& cstr);
 
 #endif /* __NASTRING_DEF_H__ */
 

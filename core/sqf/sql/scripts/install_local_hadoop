@@ -594,7 +594,8 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
-    HADOOP_TAR=hadoop-2.5.2.tar.gz
+    HADOOP_MIRROR_URL=https://archive.apache.org/dist/hadoop/common/hadoop-2.6.0/
+    HADOOP_TAR=hadoop-2.6.0.tar.gz
 fi
 
 # Alternative: Use MariaDB (not validated)
@@ -624,7 +625,7 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
-    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/hbase-${HBASE_DEP_VER_APACHE}
+    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/${HBASE_DEP_VER_APACHE}
     HBASE_TAR=hbase-${HBASE_DEP_VER_APACHE}-bin.tar.gz
 fi
 
@@ -725,21 +726,27 @@ else
   if [ $? -ne 0 ]; then
     (${JAVA_EXE} -version 2>&1) | grep '1.7' >/dev/null
     if [ $? -ne 0 ]; then
-      echo '**** ERROR:'
-      cat <<EOF
-      Please make sure you are using the Java 1.6 or 1.7 SDK.
-      Otherwise, download it into ${MY_SW_ROOT}, extract it and
-      make a symbolic link ${MY_SW_ROOT}/java that points  to it and
-      export JAVA_HOME=${MY_SW_ROOT}/java
+      (${JAVA_EXE} -version 2>&1) | grep '1.8' >/dev/null
+      if [ $? -ne 0 ]; then
+        echo '**** ERROR:'
+        cat <<EOF
+        Please make sure you are using the Java 1.6, 1.7 or 1.8 SDK.
+        Otherwise, download it into ${MY_SW_ROOT}, extract it and
+        make a symbolic link ${MY_SW_ROOT}/java that points  to it and
+        export JAVA_HOME=${MY_SW_ROOT}/java
 EOF
-      echo exiting...
-      exit 1
+        echo exiting...
+        exit 1
+      else
+       echo "Java version 1.8 is ok"
+      fi
     else
       echo "Java version 1.7 is ok"
     fi
   else
     echo "Java version 1.6 is ok"
   fi
+
   # end of check Java version
 
   echo
@@ -1318,7 +1325,7 @@ lc-messages-dir=${MY_SW_ROOT}/mysql/share
 
 # Enable logging by default to help find problems
 general-log=1
-general-log-file=${MY_SW_ROOT}/log/mysql-general.\${HOSTNAME}.log
+general-log-file=${MY_SW_ROOT}/log/mysql-general.${HOSTNAME}.log
 
 EOF
 
@@ -1640,6 +1647,11 @@ EOF
 
 fi
 # end of HBase setup
+
+if [[ ! -z $FAST_LOCAL_HADOOP ]]; then
+    echo "FAST_LOCAL_HADOOP is set. Exiting..."
+    exit 0
+fi
 
 cd $MY_SW_ROOT
 

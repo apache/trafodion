@@ -134,7 +134,6 @@ void CRUOptions::AddDebugOption(Int32 testpoint, const CDSString &objName)
 //--------------------------------------------------------------------------//
 //	CRUOptions::Dump()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :dpm
 void CRUOptions::Dump(CDSString &to) 
 {
 	to += "\n\t\tCOMMAND OPTIONS DUMP\n\n";
@@ -195,7 +194,6 @@ void CRUOptions::Dump(CDSString &to)
 		to += CDSString(buf);
 	}
 }
-// LCOV_EXCL_STOP
 #endif
 
 //--------------------------------------------------------------------------//
@@ -217,7 +215,6 @@ operator = (const CRUOptions::DebugOption &other)
 //	The LoadData/StoreData methods move only the output 
 //	file's name and the debug options between the processes.
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUOptions::StoreData(CUOFsIpcMessageTranslator &translator)
 {
  Int32 stringSize;
@@ -225,16 +222,12 @@ void CRUOptions::StoreData(CUOFsIpcMessageTranslator &translator)
 	// Output filename
 	stringSize = outFilename_.GetLength() + 1;
 	translator.WriteBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.WriteBlock(outFilename_.c_string(), stringSize);
-#pragma warn(1506)  // warning elimination 
 	
 	// Force filename
 	stringSize = forceFilename_.GetLength() + 1;
 	translator.WriteBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.WriteBlock(forceFilename_.c_string(), stringSize);
-#pragma warn(1506)  // warning elimination 
 
 	// Debug options 
  Int32 size = debugOptionList_.GetCount();
@@ -249,17 +242,13 @@ void CRUOptions::StoreData(CUOFsIpcMessageTranslator &translator)
 		
 		stringSize = opt.objName_.GetLength() + 1;
 		translator.WriteBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 		translator.WriteBlock(opt.objName_.c_string(), stringSize);
-#pragma warn(1506)  // warning elimination 
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUOptions::LoadData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUOptions::LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	char buf[PACK_BUFFER_SIZE];
@@ -267,18 +256,14 @@ void CRUOptions::LoadData(CUOFsIpcMessageTranslator &translator)
 	
 	// Output filename
 	translator.ReadBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.ReadBlock(buf, stringSize);
-#pragma warn(1506)  // warning elimination 
 	
 	CDSString outFileName(buf);
 	SetOutputFilename(outFileName);
 
 	// Force filename
 	translator.ReadBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.ReadBlock(buf, stringSize);
-#pragma warn(1506)  // warning elimination 
 	
 	CDSString forceFileName(buf);
 	SetForceFilename(forceFileName);
@@ -297,12 +282,9 @@ void CRUOptions::LoadData(CUOFsIpcMessageTranslator &translator)
 		
 		RUASSERT(PACK_BUFFER_SIZE > stringSize);
 
-#pragma nowarn(1506)   // warning elimination 
 		translator.ReadBlock(buf, stringSize);
-#pragma warn(1506)  // warning elimination 
 		
 		CDSString objName(buf);
 		AddDebugOption(testpoint, objName);
 	}
 }
-// LCOV_EXCL_STOP

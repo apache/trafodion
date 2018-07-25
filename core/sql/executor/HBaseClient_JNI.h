@@ -115,6 +115,7 @@ typedef enum {
  ,HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE
  ,HTC_ERROR_WRITETOWAL_EXCEPTION
  ,HTC_ERROR_WRITEBUFFERSIZE_EXCEPTION
+ ,HTC_PREPARE_FOR_NEXTCELL_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -141,6 +142,8 @@ public:
      jKvFamOffset_ = NULL;
      jTimestamp_ = NULL;
      jKvBuffer_ = NULL;
+     jKvFamArray_ = NULL;
+     jKvQualArray_ = NULL;
      jRowIDs_ = NULL;
      jKvsPerRow_ = NULL;
      currentRowNum_ = -1;
@@ -162,6 +165,8 @@ public:
      p_kvQualOffset_ = NULL;
      p_timestamp_ = NULL;
      jba_kvBuffer_ = NULL;
+     jba_kvFamArray_ = NULL;
+     jba_kvQualArray_ = NULL;
      jba_rowID_ = NULL;
      fetchMode_ = UNKNOWN;
      p_rowID_ = NULL;
@@ -205,7 +210,8 @@ public:
         jintArray jKvQualLen, jintArray jKvQualOffset,
         jintArray jKvFamLen, jintArray jKvFamOffset,
         jlongArray jTimestamp, 
-        jobjectArray jKvBuffer, jobjectArray jRowIDs,
+        jobjectArray jKvBuffer, 
+        jobjectArray jKvFamArray, jobjectArray jKvQualArray, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned);
   void getResultInfo();
   void cleanupResultInfo();
@@ -232,6 +238,7 @@ public:
                  HbaseStr &colVal,
                  Int64 &timestamp);
   HTC_RetCode completeAsyncOperation(int timeout, NABoolean *resultArray, short resultArrayLen);
+  HTC_RetCode prepareForNextCell(int idx);
 
   //  HTC_RetCode codeProcAggrGetResult();
 
@@ -239,7 +246,7 @@ public:
   std::string* getHTableName();
 
   // Get the error description.
-  virtual char* getErrorText(HTC_RetCode errEnum);
+  static char* getErrorText(HTC_RetCode errEnum);
 
   void setTableName(const char *tableName)
   {
@@ -275,11 +282,8 @@ public:
   }
 
 private:
-  NAString getLastJavaError();
-
   enum JAVA_METHODS {
-    JM_GET_ERROR
-   ,JM_SCAN_OPEN 
+    JM_SCAN_OPEN 
    ,JM_DELETE    
    ,JM_COPROC_AGGR
    ,JM_GET_NAME
@@ -299,6 +303,8 @@ private:
   jintArray jKvFamOffset_;
   jlongArray jTimestamp_;
   jobjectArray jKvBuffer_;
+  jobjectArray jKvFamArray_;
+  jobjectArray jKvQualArray_;
   jobjectArray jRowIDs_;
   jintArray jKvsPerRow_;
   jint *p_kvValLen_;
@@ -309,6 +315,8 @@ private:
   jint *p_kvFamOffset_;
   jlong *p_timestamp_;
   jbyteArray jba_kvBuffer_;
+  jbyteArray jba_kvFamArray_;
+  jbyteArray jba_kvQualArray_;
   jbyteArray jba_rowID_;
   jbyte *p_rowID_;
   jint *p_kvsPerRow_;
@@ -418,7 +426,7 @@ typedef enum {
 class HBaseClient_JNI : public JavaObjectInterface
 {
 public:
-  static HBaseClient_JNI* getInstance(int debugPort, int debugTimeout);
+  static HBaseClient_JNI* getInstance();
   static void deleteInstance();
 
   // Destructor
@@ -452,13 +460,13 @@ public:
                    NABoolean force);
   NAArray<HbaseStr>* listAll(NAHeap *heap, const char* pattern);
   NAArray<HbaseStr>* getRegionStats(NAHeap *heap, const char* tblName);
-  Int32 getRegionStatsEntries();
 
   HBC_RetCode exists(const char* fileName, Int64 transID);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
   HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
-                               Int32 numCols, Int32 retryLimitMilliSeconds, Int64& rowCount, Int32 & breadCrumb);
+                               Int32 numCols, Int32 retryLimitMilliSeconds, NABoolean useCoprocessor,
+                               Int64& rowCount, Int32 & breadCrumb);
   HBC_RetCode getLatestSnapshot(const char * tabname, char *& snapshotName, NAHeap * heap);
   HBC_RetCode cleanSnpTmpLocation(const char * path);
   HBC_RetCode setArchivePermissions(const char * path);
@@ -476,7 +484,7 @@ public:
   HBaseClientRequest* getHBaseRequest();
   bool workerThreadsStarted() { return (threadID_[0] ? true : false); }
   // Get the error description.
-  virtual char* getErrorText(HBC_RetCode errEnum);
+  static char* getErrorText(HBC_RetCode errEnum);
   
   static void logIt(const char* str);
 
@@ -495,6 +503,7 @@ public:
                         HbaseStr rowID,
                         HbaseStr row, Int64 timestamp,bool checkAndPut, 
                         bool asyncOperation, bool useRegionXn, 
+			short colIndexToCheck,
                         HTableClient_JNI **outHtc);
   HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
@@ -529,13 +538,10 @@ public:
 
 private:   
   // private default constructor
-  HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
+  HBaseClient_JNI(NAHeap *heap);
   NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex);
 
 private:
-  NAString  getLastJavaError();
-
-private:  
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_INIT
@@ -549,13 +555,13 @@ private:
    ,JM_DROP_ALL
    ,JM_LIST_ALL
    ,JM_GET_REGION_STATS
-   ,JM_GET_REGION_STATS_ENTRIES
    ,JM_COPY
    ,JM_EXISTS
    ,JM_GRANT
    ,JM_REVOKE
    ,JM_GET_HBLC
    ,JM_EST_RC
+   ,JM_EST_RC_COPROC
    ,JM_REL_HBLC
    ,JM_GET_CAC_FRC
    ,JM_GET_LATEST_SNP
@@ -597,115 +603,13 @@ private:
 };
 
 // ===========================================================================
-// ===== The HiveClient_JNI class implements access to the Java 
-// ===== HiveClient class.
-// ===========================================================================
-
-typedef enum {
-  HVC_OK     = JOI_OK
- ,HVC_FIRST  = HBC_LAST
- ,HVC_DONE   = HVC_FIRST
- ,HVC_ERROR_INIT_PARAM
- ,HVC_ERROR_INIT_EXCEPTION
- ,HVC_ERROR_CLOSE_EXCEPTION
- ,HVC_ERROR_EXISTS_PARAM
- ,HVC_ERROR_EXISTS_EXCEPTION
- ,HVC_ERROR_GET_HVT_PARAM
- ,HVC_ERROR_GET_HVT_EXCEPTION
- ,HVC_ERROR_GET_REDEFTIME_PARAM
- ,HVC_ERROR_GET_REDEFTIME_EXCEPTION
- ,HVC_ERROR_GET_ALLSCH_EXCEPTION
- ,HVC_ERROR_GET_ALLTBL_PARAM
- ,HVC_ERROR_GET_ALLTBL_EXCEPTION
- ,HVC_ERROR_HDFS_CREATE_PARAM
- ,HVC_ERROR_HDFS_CREATE_EXCEPTION
- ,HVC_ERROR_HDFS_WRITE_PARAM
- ,HVC_ERROR_HDFS_WRITE_EXCEPTION
- ,HVC_ERROR_HDFS_CLOSE_EXCEPTION
- ,HVC_LAST
-} HVC_RetCode;
-
-class HiveClient_JNI : public JavaObjectInterface
-{
-public:
-  
-  static HiveClient_JNI* getInstance();
-  static void deleteInstance();
-
-  // Destructor
-  virtual ~HiveClient_JNI();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  HVC_RetCode init();
-  
-  HVC_RetCode initConnection(const char* metastoreURI); 
-  bool isConnected() 
-  {
-    return isConnected_;
-  }
-
-  HVC_RetCode close();
-  HVC_RetCode exists(const char* schName, const char* tabName);
-  HVC_RetCode getHiveTableStr(const char* schName, const char* tabName, 
-                              Text& hiveTblStr);
-  HVC_RetCode getRedefTime(const char* schName, const char* tabName, 
-                           Int64& redefTime);
-  HVC_RetCode getAllSchemas(LIST(Text *)& schNames);
-  HVC_RetCode getAllTables(const char* schName, LIST(Text *)& tblNames);
-
-  HVC_RetCode hdfsCreateFile(const char* path);
-  HVC_RetCode hdfsWrite(const char* data, Int64 len);
-  HVC_RetCode hdfsClose();
-  HVC_RetCode executeHiveSQL(const char* hiveSQL);
-  // Get the error description.
-  virtual char* getErrorText(HVC_RetCode errEnum);
-  
-  static void logIt(const char* str);
-
-private:   
-  // Private Default constructor		
-  HiveClient_JNI(NAHeap *heap)
-  :  JavaObjectInterface(heap)
-  , isConnected_(FALSE)
-  {}
-
-private:
-  NAString getLastJavaError();
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0
-   ,JM_GET_ERROR 
-   ,JM_INIT
-   ,JM_CLOSE
-   ,JM_EXISTS     
-   ,JM_GET_HVT
-   ,JM_GET_RDT
-   ,JM_GET_ASH
-   ,JM_GET_ATL
-   ,JM_HDFS_CREATE_FILE
-   ,JM_HDFS_WRITE
-   ,JM_HDFS_CLOSE
-   ,JM_EXEC_HIVE_SQL
-   ,JM_LAST
-  };
-  static jclass          javaClass_; 
-  static JavaMethodInit* JavaMethods_;
-  static bool javaMethodsInitialized_;
-  // this mutex protects both JaveMethods_ and javaClass_ initialization
-  static pthread_mutex_t javaMethodsInitMutex_;
-  bool isConnected_;
-};
-
-// ===========================================================================
 // ===== The HBulkLoadClient_JNI class implements access to the Java
 // ===== HBulkLoadClient class.
 // ===========================================================================
 
 typedef enum {
   HBLC_OK     = JOI_OK
- ,HBLC_FIRST  = HVC_LAST
+ ,HBLC_FIRST  = HTC_LAST
  ,HBLC_DONE   = HBLC_FIRST
  ,HBLC_ERROR_INIT_PARAM
  ,HBLC_ERROR_INIT_EXCEPTION
@@ -754,13 +658,10 @@ public:
 
   HBLC_RetCode  bulkLoadCleanup(const HbaseStr &tblName, const Text& location);
   // Get the error description.
-  virtual char* getErrorText(HBLC_RetCode errEnum);
+  static char* getErrorText(HBLC_RetCode errEnum);
 
 
 private:
-  NAString getLastJavaError();
-
-
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_INIT_HFILE_PARAMS

@@ -115,9 +115,7 @@ static ExScratchDiskDrive * genScratchDisks(const NAString &def,
   // ---------------------------------------------------------------------
   // Calculate total generated space needed and allocate it
   // ---------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
   numDirs = tempList.entries();
-#pragma warn(1506)  // warning elimination 
  
   Lng32 allDirNamesLen = 0;
   char *generatedDirNames = NULL;

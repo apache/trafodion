@@ -133,7 +133,6 @@ ex_expr::exp_return_type ex_aggregate_clause::init()
 {
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_aggregate_clause::eval(char * /*op_data*/[],
 						   CollHeap *heap,
 						   ComDiagsArea** diagsArea)
@@ -141,7 +140,6 @@ ex_expr::exp_return_type ex_aggregate_clause::eval(char * /*op_data*/[],
   ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
   return ex_expr::EXPR_ERROR;
 }
-// LCOV_EXCL_STOP
 /////////////////////////////////////////////////
 // class ex_aggr_one_row_clause
 /////////////////////////////////////////////////
@@ -199,7 +197,6 @@ ex_expr::exp_return_type ex_aggr_any_true_max_clause::eval(char *op_data[],
     case -1:  // operand is NULL
       {
 	// remember that a null was seen.
-   // LCOV_EXCL_START
 	nullSeen_ = 1;
 
 	// Genesis 10-040203-2921
@@ -225,7 +222,6 @@ ex_expr::exp_return_type ex_aggr_any_true_max_clause::eval(char *op_data[],
       {
 	ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
 	retcode = ex_expr::EXPR_ERROR;
-	// LCOV_EXCL_STOP
       }
       break;
 
@@ -269,9 +265,7 @@ ex_expr::exp_return_type ex_aggr_min_max_clause::eval(char * op_data[],
 	{
 	  // variable length operand. Note that first child (operand1)
 	  // and result have the SAME attributes for min/max aggr.
-#pragma nowarn(1506)   // warning elimination 
 	  Lng32 src_length = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
-#pragma warn(1506)  // warning elimination 
 	  Lng32 tgt_length = getOperand(0)->getLength(); // max varchar length
 	
 	  str_cpy_all(op_data[0], op_data[1], src_length);

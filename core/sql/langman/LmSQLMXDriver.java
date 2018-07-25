@@ -201,10 +201,10 @@ public class LmSQLMXDriver implements java.sql.Driver
 
     DriverManager.registerDriver( d );
 
-    // Cache the Method Id for joinUDRTransaction of jdbc T4 driver HPT4Connection class
+    // Cache the Method Id for joinUDRTransaction of jdbc T4 driver TrafT4Connection class
     try
     {
-      Class connClass = Class.forName("com.hp.jdbc.HPT4Connection");
+      Class connClass = Class.forName("org.trafodion.jdbc.t4.TrafT4Connection");
       Class parTypes[] = new Class[1];
       parTypes[0] = Long.TYPE;
       joinUDRTransMethodId_ = connClass.getMethod("joinUDRTransaction", parTypes);
@@ -213,7 +213,7 @@ public class LmSQLMXDriver implements java.sql.Driver
     {
       String msg = "The SQL/MX language manager encountered an unexpected"
                    + " error trying to lookup joinUDRTransaction method" 
-	           + " in the JDBC/MX driver HPT4Connection class: " + e.toString();
+	           + " in the JDBC/MX driver TrafT4Connection class: " + e.toString();
       throw new SQLException( msg );
     }
 
@@ -490,7 +490,7 @@ public class LmSQLMXDriver implements java.sql.Driver
       {
         msg = "The SQL/MX language manager encountered an unexpected"
   		      + " error trying to invoke joinUDRTransaction method" 
-		      + " in the JDBC/MX driver HPT4Connection class: " + ite.toString()
+		      + " in the JDBC/MX driver TrafT4Connection class: " + ite.toString()
 	              + " :" + ite.getCause();	      
         throw new SQLException( msg );
       } 
@@ -498,7 +498,7 @@ public class LmSQLMXDriver implements java.sql.Driver
       {
         msg = "The SQL/MX language manager encountered an unexpected"
   		      + " error trying to invoke joinUDRTransaction method" 
-		      + " in the JDBC/MX driver HPT4Connection class: " + e.toString();
+		      + " in the JDBC/MX driver TrafT4Connection class: " + e.toString();
         throw new SQLException( msg );
       }
     }

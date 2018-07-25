@@ -45,10 +45,7 @@
 
 #include <stdarg.h>
 
-
-#if !defined(__EID) && !defined(ARKFS_OPEN)
 #include "ComResWords.h"
-#endif
 
 /*
  ******************************************************************
@@ -56,13 +53,11 @@
  *
  */
 
-NA_EIDPROC
 Int32 isUpper8859_1(NAWchar c)
 {
   if ((c >= 'A') && (c <= 'Z'))
     return TRUE;
 
-#ifdef NA_WIDE_CHARACTER
   if ((c >= 0xc0) && (c <= 0xde))  // between cap A with grave accent
   {                                // and cap icelandic letter thorn
     if (c == 0xd7)     // but not multiplication symbol
@@ -70,18 +65,16 @@ Int32 isUpper8859_1(NAWchar c)
     else
        return TRUE;
   }
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 
 
-NA_EIDPROC
 Int32 isLower8859_1(NAWchar c)
 {
   if ((c >= 'a') && (c <= 'z'))
     return TRUE;
 
-#ifdef NA_WIDE_CHARACTER
   if ((c >= 0xdf) && (c <= 0xff))  // between lower german sharp S
   {                                // and lower y with diaeresis
     if (c == 0xf7)     // but not division symbol
@@ -89,12 +82,11 @@ Int32 isLower8859_1(NAWchar c)
     else
        return TRUE;
   }
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 
 
-NA_EIDPROC
 Int32 isAlpha8859_1(NAWchar c)
 {
   if (((c >= 'a') && (c <= 'z')) ||
@@ -103,7 +95,6 @@ Int32 isAlpha8859_1(NAWchar c)
     return TRUE;
   }
 
-#ifdef NA_WIDE_CHARACTER
   if ((c >= 0xc0) && (c <= 0xff))   // possible european letter
   {
     if ((c == 0xd7) || (c == 0xf7))  // multiple or divide sign
@@ -111,23 +102,20 @@ Int32 isAlpha8859_1(NAWchar c)
     else
       return TRUE;
   }
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 
-NA_EIDPROC
 Int32 isHexDigit8859_1(NAWchar c)
 {
    return (isDigit8859_1(c) || ('A' <= c AND c <= 'F' ) || ( 'a' <= c AND c <= 'f'));
 }
 
-NA_EIDPROC
 Int32 isAlNum8859_1(NAWchar c)
 {
   return (isAlpha8859_1(c) || isDigit8859_1(c));
 }
 
-NA_EIDPROC
 Int32 isSpace8859_1(NAWchar c)
 {
   if (((c >= 0x09) && (c <= 0x0d))  ||
@@ -137,7 +125,6 @@ Int32 isSpace8859_1(NAWchar c)
   return FALSE;
 }
 
-NA_EIDPROC
 Int32 isDigit8859_1(NAWchar c) // ISO 8859-1 char set safe isdigit routine
 {
   if ((c >= '0') && (c <= '9'))
@@ -145,14 +132,12 @@ Int32 isDigit8859_1(NAWchar c) // ISO 8859-1 char set safe isdigit routine
   return FALSE;
 }
 
-NA_EIDPROC
 Int32 isCaseInsensitive8859_1(NAWchar c) // ISO 8859-1 char for which there is no
                                // upcase equivalent.  hex values 0xDF & 0xFF
 {
-#ifdef NA_WIDE_CHARACTER
   if ((c==0xDF) || (c==0xFF))
     return TRUE;
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 
@@ -162,11 +147,9 @@ Int32 isCaseInsensitive8859_1(NAWchar c) // ISO 8859-1 char for which there is n
 // the compiler is fixed to inline routines with calls to assert, 
 // Remove callAssert() in callers and replace with direct call to 
 // assert.
-//LCOV_EXCL_START :rfi
 void callAssert(const char* tgt, const char* src, Lng32 length) {
   assert((tgt && src) || !length);
 }
-//LCOV_EXCL_STOP
 
 Int32 str_cmp_ne(const char *left, const char *right)
 {
@@ -259,9 +242,7 @@ char *str_itoa(ULng32 i, char *outstr)
       temp = i;
       while (temp > 0)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  outstr[j--] = '0' + (char) (temp%10);
-#pragma warn(1506)  // warning elimination
 	  temp = temp / 10;
 	}
     }
@@ -308,9 +289,7 @@ char *str_ltoa(Int64 i, char *outstr)
       temp = ii;
       while (temp > 0)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  outstr[j--] = '0' + (char) (temp%10);
-#pragma warn(1506)  // warning elimination
 	  temp = temp / 10;
 	}
       if (neg)
@@ -472,14 +451,10 @@ Int32 str_cpy_convert(char * tgt, char * src,
    for (Lng32 i = 0; i < length; i++)
     {
       if (upshift)
-#pragma nowarn(1506)   // warning elimination
 	tgt[i] = TOUPPER(src[i]);
-#pragma warn(1506)  // warning elimination
 
       if (!upshift)
-#pragma nowarn(1506)   // warning elimination
 	tgt[i] = TOLOWER(src[i]);
-#pragma warn(1506)  // warning elimination
     }
 
    return 0;
@@ -523,300 +498,7 @@ Int32 str_inc(const ULng32 length, char * s)
 void str_complement(const ULng32 length, char * s)
 {
   for (ULng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination
     s[i] = ~(s[i]);
-#pragma warn(1506)  // warning elimination
-}
-
-Int32 str_sprintf(char * buffer, const char * format, ...)
-{
-  va_list ap;
-  va_start(ap, format);
-
-  enum State {INITIAL, PERC_SEEN, NUMBER_SEEN,
-//NA_LINUX	      PERC_PERC, PERC_D, PERC_D64, PERC_S, PERC_F, PERC_B, ERROR};
-	      PERC_PERC, PERC_D, PERC_D64, PERC_S, PERC_F, PERC_B, PERC_ERROR};
-
-  State state = INITIAL;
-
-  Lng32 formatLen = str_len(format);
-  Int32 i = 0;
-  Int32 j = 0;
-  Lng32 width = -1;
-  NABoolean zeroPad = FALSE;
-  NABoolean leadingMinusSeen = FALSE;
-  Int64 d = 0; // used for "f" and "Ld" formats
-
-  while (i < formatLen)
-    {
-      switch (state)
-	{
-	case INITIAL:
-	  {
-	    if (format[i] == '%')
-	      state = PERC_SEEN;
-	    else
-	      {
-		buffer[j] = format[i];
-		j++;
-	      }
-	    i++;
-	  }
-	break;
-
-	case NUMBER_SEEN:
-	  {
-	    if ((format[i] >= '0') && (format[i] <= '9'))
-	      {
-		width = width*10 + format[i] - '0';
-		i++;
-	      }
-	    else
-	      state = PERC_SEEN;
-	  }
-	break;
-
-	case PERC_SEEN:
-	  {
-	    if (format[i] == '%')
-	      state = PERC_PERC;
-	    else if ((format[i] == 'd') || (format[i] == 'u'))
-	      state = PERC_D;
-	    else if ((format[i] == 'L') && (format[i+1] == 'd'))
-	      state = PERC_D64;
-	    else if (format[i] == 's')
-	      state = PERC_S;
-	    else if (format[i] == 'b')
-	      state = PERC_B;
-	    else if (format[i] == 'f')
-	      state = PERC_F;
-	    else if (format[i] == '-')
-	      {
-		leadingMinusSeen = TRUE;
-		state = PERC_SEEN;
-		i++;
-	      }
-	    else if (format[i] >= '0' && format[i] <= '9')
-	      {
-		state = NUMBER_SEEN;
-		width = 0;
-
-		if (format[i] == '0')
-		  zeroPad = TRUE;
-		else
-		  zeroPad = FALSE;
-	      }
-	    else
-	      state = PERC_ERROR;
-	  }
-	break;
-
-	case PERC_PERC:
-	  {
-	    buffer[j] = format[i];
-	    j++;
-	    i++;
-	    state = INITIAL;
-	  }
-	break;
-
-	case PERC_D:
-	  {
-	    Lng32 d = va_arg(ap, Lng32);
-            NABoolean maxNegative = (d == 0x80000000); // i.e. -2147483648
-	    if (d < 0)
-	      {
-		buffer[j] = '-';
-		j++;
-                if (!maxNegative) // guard against trap on negation
-		  d = -d;
-                width--;
-	      }
-
-	    if (width > 0)
-	      {
-		char temp[20];
-                if (maxNegative)
-                  {
-                    strcpy(temp,"2147483648");
-                  }
-                else
-                  {
-	            str_itoa(d, temp);
-                  }
-		if (zeroPad)
-		  str_pad(&buffer[j], width, '0');
-		else
-		  str_pad(&buffer[j], width, ' ');
-	 Int32 l = str_len(temp);
-
-		// truncate string if l is greater than width
-                if (l > width)
-		  { l = width; }
-		if ((leadingMinusSeen) && (NOT zeroPad))// left align
-		  str_cpy_all(&buffer[j], temp, l);
-		else
-		  str_cpy_all(&buffer[j+(width-l)], temp, l);
-		buffer[j+width] = 0;
-		width = 0;
-		zeroPad = FALSE;
-	      }
-	    else
-              {
-              if (maxNegative)
-                {
-                  strcpy(&buffer[j],"2147483648");
-                }
-              else
-                {
-	          str_itoa(d, &buffer[j]);
-                }
-              }
-	    j = str_len(buffer);
-	    i++;
-	    state = INITIAL;
-	  }
-	break;
-
-	case PERC_F:
-	  {
-	    double dd = va_arg(ap, double);
-
-	    if (dd > LLONG_MAX)
-	      d = LLONG_MAX;
-	    else if (dd < LLONG_MIN)
-	      d = LLONG_MIN;
-	    else
-	      d = (Int64) dd;
-	  }
-	// fall through to the next case
-
-	case PERC_D64:
-	  {
-	    if (state == PERC_D64)
-              {
-	        d = va_arg(ap, Int64);
-                i++; // 2 format characters, "Ld"
-              }
-	    const Int32 tempStrW = 20;
-	    char      temp[tempStrW];
-	    Int32       numDigits=0;
-	    if (d < 0)
-	      {
-		buffer[j] = '-';
-		j++;
-		d = -d;
-                width--;
-	      }
-
-	    // convert argument to a string, right-aligned in temp array
-	    do
-	      {
-#pragma nowarn(1506)   // warning elimination
-		temp[tempStrW - 1 - numDigits] = (char) (d % 10) + '0';
-#pragma warn(1506)  // warning elimination
-		d = d / 10;
-		numDigits++;
-	      }
-	    while (d != 0);
-
-	    // handle limited width strings (unlike printf which treats
-	    // the width argument as a minimum length we treat it as
-	    // the exact length here)
-	    if (width > 0)
-	      {
-		if (numDigits > width)
-		  {
-		    // print overflow characters (unlike printf)
-		    str_pad(&buffer[j], width, '*');
-		    numDigits = 0;
-		  }
-		else
-		  {
-		    if (zeroPad)
-		      str_pad(&buffer[j], width-numDigits, '0');
-		    else
-		      str_pad(&buffer[j], width-numDigits, ' ');
-		    j += width-numDigits;
-		  }
-		width = 0;
-		zeroPad = FALSE;
-	      }
-
-	    str_cpy_all(&buffer[j], &temp[tempStrW-numDigits], numDigits);
-	    j += numDigits;
-	    buffer[j] = 0;
-	    i++;
-	    state = INITIAL;
-	  }
-	break;
-
-	case PERC_S:
-	  {
-	    char * s = va_arg(ap, char *);
-	    Lng32 len = str_len(s);
-
-	    if ((leadingMinusSeen) && 
-		(width > len)) // means blankpad to the left
-	      {
-		str_pad(&buffer[j], width-len, ' ');
-		j += (width - len);
-	      }
-	    str_cpy_all(&buffer[j], s, len);
-	    j = j + len;
-	    if ((NOT leadingMinusSeen) && (width > len))
-	      {
-		str_pad(&buffer[j], width-len, ' ');
-		j += (width - len);
-	      }
-
-	    buffer[j] = 0;
-	    i++;
-	    state = INITIAL;
-	  }
-	break;
-
-	case PERC_B:
-	  {
-	    Lng32 d = va_arg(ap, Lng32);
-	    char tempbuf[17];
-	    for(Int32 k=16;k>0;k--)
-	      {
-		if(d == 0)
-		  {
-		    tempbuf[k-1] = '0';
-		    continue;
-		  }
-		if(d%2)
-		  tempbuf[k-1] = '1';
-		else
-		  tempbuf[k-1] = '0';
-		d = d/2;
-	      }
-	    tempbuf[16] = '\0';
-	    str_cpy_all(&buffer[j],tempbuf,str_len(tempbuf));
-	    j = j + str_len(tempbuf);
-	    i++;
-	    state = INITIAL;
-	  }
-	break;
-
-	case PERC_ERROR:
-	  {
-	    //LCOV_EXCL_START :rfi
-	    assert(0);
-	    return -1;
-	    //LCOV_EXCL_STOP
-	  }
-	break;
-
-	} // switch
-
-    }
-
-  buffer[j] = 0;
-
-  return 0;
 }
 
 // ----------------------------------------------------------------------
@@ -841,10 +523,8 @@ Lng32 str_encoded_len(Lng32 byteLen)
       // with two extra bytes add three more characters (6+6+4 bits)
       return threes*4+3;
     }
-//LCOV_EXCL_START :rfi -- modulo 3 cannot produce values other than 0, 1, & 2
   assert(0);
   return 0; // should be hard to get here but compiler doesn't know that
-//LCOV_EXCL_STOP
 }
 
 // -----------------------------------------------------------------------
@@ -876,22 +556,16 @@ Lng32 str_encode(char *tgt, Lng32 tgtMaxLen, void *src, Lng32 srcLen)
   while (srcix < srcLen)
     {
       // high-order 6 bits of input byte 0 go into output char 0
-#pragma nowarn(1506)   // warning elimination
       key_out[tgtix]   = (key_in[srcix] >> 2) + minChar;
-#pragma warn(1506)  // warning elimination
       // low-order 2 bits of input byte 0 go into output char 1
-#pragma nowarn(1506)   // warning elimination
       key_out[tgtix+1] = ((key_in[srcix] & 0x3) << 4) + minChar;
-#pragma warn(1506)  // warning elimination
 
       if (srcix+1 < srcLen)
 	{
 	  // add high-order 4 bits of input byte 1 to output char 1
 	  key_out[tgtix+1] += key_in[srcix+1] >> 4;
 	  // low-order 4 bits of input byte 1 go to output char 2
-#pragma nowarn(1506)   // warning elimination
 	  key_out[tgtix+2]  = ((key_in[srcix+1] & 0xf) << 2) + minChar;
-#pragma warn(1506)  // warning elimination
 	}
 
       if (srcix+2 < srcLen)
@@ -899,9 +573,7 @@ Lng32 str_encode(char *tgt, Lng32 tgtMaxLen, void *src, Lng32 srcLen)
 	  // add high-order 2 bits of input byte 2 to output char 2
 	  key_out[tgtix+2] += key_in[srcix+2] >> 6;
 	  // low-order 6 bits of input byte 2 go to output char 3
-#pragma nowarn(1506)   // warning elimination
 	  key_out[tgtix+3]  = (key_in[srcix+2] & 0x3f) + minChar;
-#pragma warn(1506)  // warning elimination
 	}
 
       srcix += 3;
@@ -926,7 +598,7 @@ Lng32 str_decoded_len(Lng32 charLen)
       return fours * 3;
     case 1:
       // this length cannot have been generated by str_encoded_len!!
-      assert(0); //LCOV_EXCL_LINE :rfi
+      assert(0);
     case 2:
       // one extra byte in two extra characters
       return fours*3+1;
@@ -934,10 +606,8 @@ Lng32 str_decoded_len(Lng32 charLen)
       // two extra bytes in the three extra characters
       return fours*3+2;
     }
-//LCOV_EXCL_START :rfi -- modulo 4 cannot produce values other than 0, 1, 2, & 3
   assert(0);
   return 0;
-//LCOV_EXCL_STOP
 }
 
 // -----------------------------------------------------------------------
@@ -1037,7 +707,6 @@ char * str_strip_blanks(char *src , Lng32 &len,
   return &src[i];
 }
 
-#if !defined(__EID) && !defined(ARKFS_OPEN)
 //------------------------------------------------
 //See .h file for explanation on parameters etc
 //------------------------------------------------
@@ -1073,9 +742,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
   NABoolean empty = TRUE;
   if (dQuoteSeen)
     {
-#pragma warning (disable : 4018)   //warning elimination
       for (i = 0; i < tgtLen;i++)
-#pragma warning (default : 4018)   //warning elimination
 	{
 	  if (isSpace8859_1(tgt[i])) // Convert all tabs to spaces
 	    tgt[i] = ' ';
@@ -1095,9 +762,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
   UInt32 j = 0;
 
   i = 0;
-#pragma warning (disable : 4018)   //warning elimination
   for (i = 0; i < tgtLen; i++)
-#pragma warning (default : 4018)   //warning elimination
     {
       if (dQuoteSeen)
 	{
@@ -1111,10 +776,8 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
 	      // a double quote has been seen inside the string
 	      // remove the second double quote by shifting all
 	      // the chars to the right of it by
-#pragma warning (disable : 4018)   //warning elimination
 	      for (j = i; j < tgtLen; j++)
 		tgt[j] = tgt[j+1];
-#pragma warning (default : 4018)   //warning elimination
 	      tgtLen--;
 
 	    }
@@ -1129,9 +792,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
 	      if (allowedChars)
 		{
 		  short found = 0;
-#pragma warning (disable : 4018)   //warning elimination
 		  for (UInt32 j = 0; j <str_len(allowedChars); j++)
-#pragma warning (default : 4018)   //warning elimination
 		    {
 		      if (tgt[i] == allowedChars[j])
 			found = 1;
@@ -1143,9 +804,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
 	      else
 		return -1;
 	    }
-#pragma nowarn(1506)   // warning elimination
 	  tgt[i] = TOUPPER(tgt[i]);
-#pragma warn(1506)  // warning elimination
 	}
     } // end for
 
@@ -1164,17 +823,12 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
   tgt = pBuf;
   return 0;
 }
-#endif
-
-
-
 
 // -----------------------------------------------------------------------
 // following two functions are used to return the catalog and schema names
 // given a qualified table name. Either the catalog or schema name can be
 // a delimited identifier name.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 extractDelimitedName (char* tgt,  const char* const src, const char sep)
 {
    Int32 i = 0, j = 0;
@@ -1208,7 +862,6 @@ Int32 extractDelimitedName (char* tgt,  const char* const src, const char sep)
    return (i);
 }
 
-NA_EIDPROC
 void extractCatSchemaNames (char* catName, char *schName, char* qualTabName)
 {
    assert(catName && schName && qualTabName);

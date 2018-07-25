@@ -283,7 +283,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
 
   Lng32 diagsPad = 1000;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   //
   // In a debug build we can get the pad size from the Java system
   // property UDR_BUFFER_PAD.
@@ -297,7 +297,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
       diagsPad = tempPad;
     }
   }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
   maxBufSize += diagsPad;
   IpcMessageBuffer::alignOffset(maxBufSize);
@@ -607,7 +607,6 @@ void SPInfo::resetLastCallTs()
   numResultSets_ = 0;
 }
 
-// LCOV_EXCL_START
 // displaySPInfo - Used when tracing objects
 void SPInfo::displaySPInfo(Lng32 indent)
 {
@@ -763,7 +762,6 @@ void SPInfo::displaySPInfoId(Lng32 indent)
   ServerDebug("%sObject ID         : " INT64_SPEC , ind, udrHandle_ );
 
 } // SPInfo::displaySPInfoId
-// LCOV_EXCL_STOP
 
 // createUniqueIdentifier
 Int64 SPInfo::createUniqueIdentifier()
@@ -895,7 +893,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   Lng32 retcode = 0;
 
   retcode = SQL_EXEC_ClearDiagnostics(NULL);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_ClearDiagnostics")
@@ -917,7 +915,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   stmt->handle = 0;
 
   retcode = SQL_EXEC_AllocStmt(stmt, 0);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_AllocStmt")
@@ -940,7 +938,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   sqlsrc_desc.identifier = 0;
   sqlsrc_desc.handle = 0;
   retcode = SQL_EXEC_AllocDesc(&sqlsrc_desc, 1);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_AllocDesc")
@@ -968,7 +966,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   desc_items[2].num_val_or_len = (Lng32) strlen(sql_str) + 1;
 
   retcode = SQL_EXEC_SetDescItems2(&sqlsrc_desc, 3, desc_items);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_SetDescItem2")
@@ -984,7 +982,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
 
   // Prepare the statement; stmt has the prepared plan
   retcode = SQL_EXEC_Prepare(stmt, &sqlsrc_desc);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     SQL_EXEC_MergeDiagnostics_Internal(d);
 
@@ -1002,7 +1000,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
 
   // Execute the statement
   retcode = SQL_EXEC_ExecClose(stmt, 0, 0, 0);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     SQL_EXEC_MergeDiagnostics_Internal(d);
 
@@ -1287,7 +1285,7 @@ void SPInfo::quiesceExecutor()
                     "Message carried a transaction. About to quiesce.");
       
       Lng32 sqlcode = SQL_EXEC_Xact(SQLTRANS_QUIESCE, NULL);
-      if (sqlcode != 0)
+      if (sqlcode < 0)
       {
         char msg[MAXERRTEXT];
         str_sprintf(msg, "SQL_EXEC_Xact returned error %d", (Int32) sqlcode);
@@ -1689,7 +1687,7 @@ SPInfo::processOneRequestRow(SqlBuffer *reqSqlBuf,
     udrGlobals_->numErrInvokeSP_++;
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // In the debug build we allow the UDR server to corrupt the reply
   // by reversing the diags flag for this reply row. In response the
   // executor should cause the statement to fail due to some sort of

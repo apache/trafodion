@@ -49,7 +49,6 @@ class DatetimeIntervalCommonType;
 //  DatetimeIntervalCommonType : Ancestor class to DatetimeType & IntervalType
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class DatetimeIntervalCommonType : public NAType
 {
 public:
@@ -59,24 +58,22 @@ public:
     UNSUPPORTED_DDL_DATA_TYPE = 1
   };
 
-  DatetimeIntervalCommonType (const NAString & adtName, 
+  DatetimeIntervalCommonType (NAMemory *h, const NAString & adtName, 
                               NABuiltInTypeEnum typeEnum,
                               Lng32 storageSize,
                               NABoolean allowSQLnull,
                               rec_datetime_field startField,
                               rec_datetime_field endField,
                               UInt32 fractionPrecision,
-                              Lng32 dataAlignment = 1 /* no data alignment */,
-                              NAMemory * h=0)
-       : NAType (adtName,
+                              Lng32 dataAlignment = 1 /* no data alignment */)
+       : NAType (h, adtName,
                  typeEnum,
                  storageSize,
                  allowSQLnull,
                  SQL_NULL_HDR_SIZE,
                  FALSE, /* fixed length */
                  0, /* length header size */
-                 dataAlignment,
-                 h),
+                 dataAlignment),
          startField_(startField),
          endField_(endField),
          fractionPrecision_(fractionPrecision)
@@ -157,6 +154,5 @@ private:
   NABitVector DTIFlags_;
  
 }; // class DatetimeIntervalCommonType
-#pragma warn(1506)  // warning elimination 
 
 #endif /* DTICOMMONTYPE_H */

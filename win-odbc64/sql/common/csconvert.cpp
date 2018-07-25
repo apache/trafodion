@@ -1136,7 +1136,7 @@ int lightValidateUTF8Str(const char *bufr,
     {
       int blankPos = pos-1; // the previous character is already past the char. limit
 
-      while (bufr[blankPos] == ' ' && blankPos < in_len)
+      while (blankPos < in_len && bufr[blankPos] == ' ')
         blankPos++;
 
       if (blankPos >= in_len)

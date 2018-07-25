@@ -98,7 +98,6 @@ Lng32 ComTdbCompoundStmt::unpack(void * base, void * reallocator)
 } // ComTdbCompoundStmt::unpack
 
 
-// LCOV_EXCL_START
 // exclude from code coverage analysis sind it is used only by GUI
 inline const ComTdb* ComTdbCompoundStmt::getChild(Int32 pos) const
 {
@@ -110,5 +109,4 @@ inline const ComTdb* ComTdbCompoundStmt::getChild(Int32 pos) const
     return NULL;
 
 } // ComTdbCompoundStmt::getChild
-// LCOV_EXCL_STOP
 

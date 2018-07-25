@@ -54,6 +54,7 @@ class ExSqlComp;
 class ExProcessStats;
 
 class ExpHbaseInterface;
+class HdfsClient;
 
 //class FILE_STREAM;
 #include "ComAnsiNamePart.h"
@@ -85,7 +86,6 @@ class ExpHbaseInterface;
 class ExExeUtilTdb;
 class ExExeUtilDisplayExplainTdb;
 class ExExeUtilDisplayExplainComplexTdb;
-class ExExeUtilFastDeleteTdb;
 class ExExeUtilHiveTruncateTdb;
 class ExExeUtilHiveQueryTdb;
 class ExExeUtilSuspendTdb;
@@ -109,16 +109,16 @@ class ExExeUtilTdb : public ComTdbExeUtil
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilTdb()
+  ExExeUtilTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilTdb()
+  virtual ~ExExeUtilTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -235,7 +235,8 @@ class ExExeUtilTcb : public ex_tcb
 
   NABoolean isUpQueueFull(short size);
 
-  char * getTimeAsString(Int64 t, char * timeBuf);
+  static char * getTimeAsString(Int64 t, char * timeBuf,
+                                NABoolean noUsec = FALSE);
   char * getTimestampAsString(Int64 t, char * timeBuf);
 
   short initializeInfoList(Queue* &infoList);
@@ -269,7 +270,7 @@ class ExExeUtilTcb : public ex_tcb
   ExeCliInterface * cliInterface() { return cliInterface_; };
   ExeCliInterface * cliInterface2() { return cliInterface2_; };
 
-  ComDiagsArea * getDiagsArea() { return diagsArea_; }
+  ComDiagsArea *&getDiagsArea() { return diagsArea_; }
 
   void setDiagsArea(ComDiagsArea * d) { diagsArea_ = d; }
 
@@ -279,6 +280,7 @@ class ExExeUtilTcb : public ex_tcb
 
   short holdAndSetCQD(const char * defaultName, const char * defaultValue,
                       ComDiagsArea * globalDiags = NULL);
+
   short restoreCQD(const char * defaultName, ComDiagsArea * globalDiags = NULL);
 
   short setCS(const char * csName, char * csValue,
@@ -289,8 +291,9 @@ class ExExeUtilTcb : public ex_tcb
   void restoreMaintainControlTableTimeout(char * catalog);
 
   static Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue,
-                            ExeCliInterface * cliInterface,
-                            ComDiagsArea * globalDiags = NULL);
+                         ExeCliInterface * cliInterface,
+                         ComDiagsArea * globalDiags = NULL);
+
   static Lng32 restoreCQD(const char * defaultName,
                          ExeCliInterface * cliInterface,
                          ComDiagsArea * globalDiags = NULL);
@@ -419,8 +422,7 @@ private:
 
   NABoolean restoreTimeout_;
 
-  AnsiOrNskName *extractedPartsObj_;
-
+  AnsiName *extractedPartsObj_;
 
   Int64 startTime_;
   Int64 endTime_;
@@ -434,7 +436,6 @@ class ExExeUtilPrivateState : public ex_tcb_private_state
   friend class ExExeUtilTcb;
   friend class ExExeUtilCleanupVolatileTablesTcb;
   friend class ExExeUtilCreateTableAsTcb;
-  friend class ExExeUtilFastDeleteTcb;
   friend class ExExeUtilHiveTruncateTcb;
   friend class ExExeUtilHiveQueryTcb;
   friend class ExExeUtilAQRTcb;
@@ -463,16 +464,16 @@ class ExExeUtilDisplayExplainTdb : public ComTdbExeUtilDisplayExplain
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilDisplayExplainTdb()
+  ExExeUtilDisplayExplainTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilDisplayExplainTdb()
+  virtual ~ExExeUtilDisplayExplainTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -521,7 +522,7 @@ class ExExeUtilDisplayExplainTcb : public ExExeUtilTcb
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
                                                             Lng32 &numElems,      // inout, desired/actual elements
                                                             Lng32 &pstateLength); // out, length of one element
 
@@ -669,16 +670,16 @@ class ExExeUtilDisplayExplainComplexTdb : public ComTdbExeUtilDisplayExplainComp
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilDisplayExplainComplexTdb()
+  ExExeUtilDisplayExplainComplexTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilDisplayExplainComplexTdb()
+  virtual ~ExExeUtilDisplayExplainComplexTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -727,7 +728,7 @@ class ExExeUtilDisplayExplainComplexTcb : public ExExeUtilTcb
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state *
+  virtual ex_tcb_private_state *
   allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
@@ -784,7 +785,7 @@ class ExExeUtilDisplayExplainShowddlTcb : public ExExeUtilTcb
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state *
+  virtual ex_tcb_private_state *
   allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
@@ -833,16 +834,16 @@ class ExExeUtilCreateTableAsTdb : public ComTdbExeUtilCreateTableAs
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilCreateTableAsTdb()
+  ExExeUtilCreateTableAsTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilCreateTableAsTdb()
+  virtual ~ExExeUtilCreateTableAsTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -889,7 +890,7 @@ class ExExeUtilCreateTableAsTcb : public ExExeUtilTcb
       return (ExExeUtilCreateTableAsTdb &) tdb;
     };
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -898,7 +899,7 @@ class ExExeUtilCreateTableAsTcb : public ExExeUtilTcb
     {
       INITIAL_,
       CREATE_,
-      DELETE_DATA_,
+      TRUNCATE_TABLE_,
       INSERT_SIDETREE_,
       INSERT_VSBB_,
       ALTER_TO_NOAUDIT_,
@@ -906,7 +907,7 @@ class ExExeUtilCreateTableAsTcb : public ExExeUtilTcb
       ALTER_TO_AUDIT_AND_INSERT_VSBB_,
       UPD_STATS_,
       DONE_,
-      HANDLE_ERROR_, DELETE_DATA_AND_ERROR_, ERROR_,
+      HANDLE_ERROR_, TRUNCATE_TABLE_AND_ERROR_, ERROR_,
       DROP_AND_ERROR_,
       DROP_AND_DONE_,
       INSERT_SIDETREE_EXECUTE_,
@@ -944,16 +945,16 @@ class ExExeUtilCleanupVolatileTablesTdb : public ComTdbExeUtilCleanupVolatileTab
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilCleanupVolatileTablesTdb()
+  ExExeUtilCleanupVolatileTablesTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilCleanupVolatileTablesTdb()
+  virtual ~ExExeUtilCleanupVolatileTablesTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -1020,10 +1021,10 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   static short dropVolatileSchema(ContextCli * currContext,
                                   char * schemaName,
                                   CollHeap * heap,
-                                  ex_globals *globals = NULL,
-                                  ComDiagsArea * diagsArea = NULL);
+                                  ComDiagsArea *&diagsArea,
+                                  ex_globals *globals = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
-  short dropHiveTempTablesForCSEs(ComDiagsArea * diagsArea = NULL);
+  short dropHiveTempTablesForCSEs();
 
  private:
   enum Step
@@ -1074,16 +1075,16 @@ class ExExeUtilGetVolatileInfoTdb : public ComTdbExeUtilGetVolatileInfo
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetVolatileInfoTdb()
+  ExExeUtilGetVolatileInfoTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetVolatileInfoTdb()
+  virtual ~ExExeUtilGetVolatileInfoTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -1169,16 +1170,16 @@ class ExExeUtilGetErrorInfoTdb : public ComTdbExeUtilGetErrorInfo
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetErrorInfoTdb()
+  ExExeUtilGetErrorInfoTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetErrorInfoTdb()
+  virtual ~ExExeUtilGetErrorInfoTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -1272,16 +1273,16 @@ class ExExeUtilLoadVolatileTableTdb : public ComTdbExeUtilLoadVolatileTable
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilLoadVolatileTableTdb()
+  ExExeUtilLoadVolatileTableTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilLoadVolatileTableTdb()
+  virtual ~ExExeUtilLoadVolatileTableTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -1357,141 +1358,6 @@ class ExExeUtilLoadVolatileTablePrivateState : public ex_tcb_private_state
  protected:
 };
 
-// -----------------------------------------------------------------------
-// ExExeUtilFastDeleteTdb
-// -----------------------------------------------------------------------
-class ExExeUtilFastDeleteTdb : public ComTdbExeUtilFastDelete
-{
- public:
-
-  // ---------------------------------------------------------------------
-  // Constructor is only called to instantiate an object used for
-  // retrieval of the virtual table function pointer of the class while
-  // unpacking. An empty constructor is enough.
-  // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilFastDeleteTdb()
-    {}
-
-  NA_EIDPROC virtual ~ExExeUtilFastDeleteTdb()
-    {}
-
-  // ---------------------------------------------------------------------
-  // Build a TCB for this TDB. Redefined in the Executor project.
-  // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
-
- private:
-  // ---------------------------------------------------------------------
-  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
-  // *********************************************************************
-  // The Executor TDB's are only used for the sole purpose of providing a
-  // way to supplement the Compiler TDB's (in comexe) with methods whose
-  // implementation depends on Executor objects. This is done so as to
-  // decouple the Compiler from linking in Executor objects unnecessarily.
-  //
-  // When a Compiler generated TDB arrives at the Executor, the same data
-  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
-  // a requirement that a Compiler TDB has the same object layout as its
-  // corresponding Executor TDB. As a result of this, all Executor TDB's
-  // must have absolutely NO data members, but only member functions. So,
-  // if you reach here with an intention to add data members to a TDB, ask
-  // yourself two questions:
-  //
-  // 1. Are those data members Compiler-generated?
-  //    If yes, put them in the ComTdbDLL instead.
-  //    If no, they should probably belong to someplace else (like TCB).
-  //
-  // 2. Are the classes those data members belong defined in the executor
-  //    project?
-  //    If your answer to both questions is yes, you might need to move
-  //    the classes to the comexe project.
-  // ---------------------------------------------------------------------
-};
-
-///////////////////////////////////////////////////////////////
-// ExExeUtilFastDeleteTcb
-///////////////////////////////////////////////////////////////
-class ExExeUtilFastDeleteTcb : public ExExeUtilTcb
-{
- public:
-  // Constructor
-  ExExeUtilFastDeleteTcb(const ComTdbExeUtilFastDelete & exe_util_tdb,
-                         ex_globals * glob = 0);
-
-  ~ExExeUtilFastDeleteTcb();
-
-  virtual short work();
-
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
-                                                            Lng32 &numElems,      // inout, desired/actual elements
-                                                            Lng32 &pstateLength); // out, length of one element
-
- private:
-  enum Step
-    {
-      INITIAL_,
-
-      ADD_DDL_LOCK_,
-      MAKE_OBJECT_OFFLINE_,
-      SET_CORRUPT_BIT_,
-
-      FASTDEL_TABLE_,
-      FASTDEL_INDEX_,
-
-      RESET_CORRUPT_BIT_,
-      MAKE_OBJECT_ONLINE_,
-      DROP_DDL_LOCK_,
-
-      BEGIN_WORK_,
-      COMMIT_WORK_,
-
-      PURGEDATA_CAT_,
-
-      KILL_MXCMP_AND_ERROR_,
-      ROLLBACK_WORK_AND_ERROR_,
-      ROLLBACK_WORK_AND_NO_PD_ERROR_,
-      ERROR_,
-
-      DONE_
-    };
-
-  ExExeUtilFastDeleteTdb & fdTdb() const
-    {return (ExExeUtilFastDeleteTdb &) tdb;};
-
-  short doPurgedataCat(char * objectName);
-  short doFastDelete(char * objectName,
-                     NABoolean isIndex,
-                     NABoolean fastDelUsingResetEOF);
-  short doLabelPurgedata(char * objectName,
-                         NABoolean isIndex);
-  
-  short injectError(const char * val);
-
-  
-  short purgedataLOBs();
-  
-
-  Step step_;
-
-  NABoolean fastDelUsingResetEOF_;
-
-  NABoolean xnWasStarted_;
-
-  NABoolean parallelDeleteDone_;
-
-  char failReason_[2000];
-};
-
-class ExExeUtilFastDeletePrivateState : public ex_tcb_private_state
-{
-  friend class ExExeUtilFastDeleteTcb;
-
- public:
-  ExExeUtilFastDeletePrivateState();
-  ~ExExeUtilFastDeletePrivateState();        // destructor
- protected:
-};
-
 //////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------
 // ExExeUtilGetStatisticsTdb
@@ -1505,16 +1371,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetStatisticsTdb()
+  ExExeUtilGetStatisticsTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetStatisticsTdb()
+  virtual ~ExExeUtilGetStatisticsTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -1563,7 +1429,7 @@ public:
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -1635,16 +1501,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetProcessStatisticsTdb()
+  ExExeUtilGetProcessStatisticsTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetProcessStatisticsTdb()
+  virtual ~ExExeUtilGetProcessStatisticsTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
 };
@@ -1663,16 +1529,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetUIDTdb()
+  ExExeUtilGetUIDTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetUIDTdb()
+  virtual ~ExExeUtilGetUIDTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -1720,7 +1586,7 @@ public:
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -1764,16 +1630,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetQIDTdb()
+  ExExeUtilGetQIDTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetQIDTdb()
+  virtual ~ExExeUtilGetQIDTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -1821,7 +1687,7 @@ public:
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -1865,16 +1731,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilPopulateInMemStatsTdb()
+  ExExeUtilPopulateInMemStatsTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilPopulateInMemStatsTdb()
+  virtual ~ExExeUtilPopulateInMemStatsTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -1922,7 +1788,7 @@ public:
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -1972,16 +1838,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilAqrWnrInsertTdb()
+  ExExeUtilAqrWnrInsertTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilAqrWnrInsertTdb()
+  virtual ~ExExeUtilAqrWnrInsertTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -2067,16 +1933,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilLongRunningTdb()
+  ExExeUtilLongRunningTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilLongRunningTdb()
+  virtual ~ExExeUtilLongRunningTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -2123,7 +1989,7 @@ public:
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -2208,7 +2074,7 @@ public:
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -2281,7 +2147,6 @@ private:
   SQLSTATS_ITEM *masterStatsItems_;
   SQLSTATS_ITEM *measStatsItems_;
   SQLSTATS_ITEM* operatorStatsItems_;
-  SQLSTATS_ITEM* dp2OperatorStatsItems_;
   SQLSTATS_ITEM *rootOperStatsItems_;
   SQLSTATS_ITEM* partitionAccessStatsItems_;
   SQLSTATS_ITEM *pertableStatsItems_;
@@ -2296,7 +2161,6 @@ private:
   Lng32 maxMasterStatsItems_;
   Lng32 maxMeasStatsItems_;
   Lng32 maxOperatorStatsItems_;
-  Lng32 maxDp2OperatorStatsItems_;
   Lng32 maxRootOperStatsItems_;
   Lng32 maxPartitionAccessStatsItems_;
   Lng32 maxPertableStatsItems_;
@@ -2349,16 +2213,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetMetadataInfoTdb()
+  ExExeUtilGetMetadataInfoTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetMetadataInfoTdb()
+  virtual ~ExExeUtilGetMetadataInfoTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -2406,7 +2270,7 @@ public:
 
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -2491,6 +2355,13 @@ protected:
   Lng32 getUsedObjects(Queue * infoList,
                       NABoolean isShorthandView,
                       char* &viewName, Lng32 &len);
+  void setReturnRowCount( Lng32 n) { returnRowCount_ = n; }
+
+  Lng32 getReturnRowCount() {return returnRowCount_;}
+
+  void incReturnRowCount() {returnRowCount_++; }
+
+  Lng32 returnRowCount_;
 
 private:
 
@@ -2501,15 +2372,23 @@ private:
     const char *schName,
     const char *objName);
 
+  Int32 colPrivsFrag(
+    const char *authName,
+    const char *catName,
+    const NAString &privWhereClause,
+    NAString &colPrivsStmt);
+
   NAString getGrantedPrivCmd(
     const NAString &roleList,
-    const char * cat);
+    const char * cat,
+    const NAString &inColumn = NAString("object_uid"));
 
   char * getRoleList(
     const Int32 userID,
     const char *catName,
     const char *schName,
     const char *objName);
+
 
 };
 
@@ -2601,16 +2480,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilGetHiveMetadataInfoTdb()
+  ExExeUtilGetHiveMetadataInfoTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilGetHiveMetadataInfoTdb()
+  virtual ~ExExeUtilGetHiveMetadataInfoTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -2701,16 +2580,16 @@ class ExExeUtilShowSetTdb : public ComTdbExeUtilShowSet
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilShowSetTdb()
+  ExExeUtilShowSetTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilShowSetTdb()
+  virtual ~ExExeUtilShowSetTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -2788,16 +2667,16 @@ class ExExeUtilAQRTdb : public ComTdbExeUtilAQR
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilAQRTdb()
+  ExExeUtilAQRTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilAQRTdb()
+  virtual ~ExExeUtilAQRTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -2876,16 +2755,16 @@ class ExExeUtilLobExtractTdb : public ComTdbExeUtilLobExtract
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilLobExtractTdb()
+  ExExeUtilLobExtractTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilLobExtractTdb()
+  virtual ~ExExeUtilLobExtractTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -2938,7 +2817,7 @@ public:
   {
     return (ExExeUtilLobExtractTdb &) tdb;
   };
-  LOBglobals *getLobGlobals() { return lobGlobals_;}
+  ExLobGlobals *&getLobGlobals() { return exLobGlobals_;}
  protected:
   enum Step
   {
@@ -2946,6 +2825,8 @@ public:
     GET_NO_CHILD_HANDLE_,
     GET_LOB_HANDLE_,
     RETRIEVE_LOB_LENGTH_,
+    EXTRACT_HDFSFILENAME_,
+    RETRIEVE_OFFSET_,
     EXTRACT_LOB_DATA_,
     RETURN_STATUS_,
     SEND_REQ_TO_CHILD_,
@@ -2988,7 +2869,7 @@ public:
   ExLobStats lobStats_;
   char statusString_[200];
   fstream indata_;
-  LOBglobals *lobGlobals_;
+  ExLobGlobals *exLobGlobals_;
 };
 
 
@@ -3006,17 +2887,17 @@ class ExExeUtilLobUpdateTdb : public ComTdbExeUtilLobUpdate
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilLobUpdateTdb()
+  ExExeUtilLobUpdateTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilLobUpdateTdb()
+  virtual ~ExExeUtilLobUpdateTdb()
     {}
 
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 private:
 };
 
@@ -3044,7 +2925,7 @@ public:
   {
     return (ExExeUtilLobUpdateTdb &) tdb;
   };
-  LOBglobals *getLobGlobals() { return lobGlobals_;}
+  ExLobGlobals *&getLobGlobals() { return exLobGlobals_;}
  protected:
   enum Step
     {
@@ -3074,7 +2955,8 @@ public:
   ExLobStats lobStats_;
   char statusString_[200];
   fstream indata_;
-  LOBglobals *lobGlobals_;
+  char lobLockId_[LOB_LOCK_ID_SIZE];
+  ExLobGlobals *exLobGlobals_;
 };
 // -----------------------------------------------------------------------
 // ExExeUtilFileUpdateTcb
@@ -3135,16 +3017,16 @@ class ExExeUtilLobShowddlTdb : public ComTdbExeUtilLobShowddl
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilLobShowddlTdb()
+  ExExeUtilLobShowddlTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilLobShowddlTdb()
+  virtual ~ExExeUtilLobShowddlTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -3278,16 +3160,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilHiveMDaccessTdb()
+  ExExeUtilHiveMDaccessTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilHiveMDaccessTdb()
+  virtual ~ExExeUtilHiveMDaccessTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -3340,15 +3222,21 @@ public:
     return (ExExeUtilHiveMDaccessTdb &) tdb;
   };
 
-NA_EIDPROC virtual ex_tcb_private_state *
+virtual ex_tcb_private_state *
   allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
 protected:
-  Lng32 getFSTypeFromHiveColType(const char* hiveType);
-  Lng32 getLengthFromHiveColType(const char* hiveType);
-
+  Lng32 getTypeAttrsFromHiveColType(const char* hiveType,
+                                    NABoolean isORC,
+                                    Lng32 &fstype,
+                                    Lng32 &length,
+                                    Lng32 &precision,
+                                    Lng32 &scale,
+                                    char *sqlType,
+                                    char *displayType,
+                                    char *charset);
   enum Step
   {
     INITIAL_,
@@ -3412,16 +3300,16 @@ class ExExeUtilHiveTruncateTdb : public ComTdbExeUtilHiveTruncate
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilHiveTruncateTdb()
+  ExExeUtilHiveTruncateTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilHiveTruncateTdb()
+  virtual ~ExExeUtilHiveTruncateTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -3452,23 +3340,23 @@ class ExExeUtilHiveTruncateTdb : public ComTdbExeUtilHiveTruncate
 };
 
 ///////////////////////////////////////////////////////////////
-// ExExeUtilHiveTruncateTcb
+// ExExeUtilHiveTruncateLegacyTcb
 ///////////////////////////////////////////////////////////////
-class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
+class ExExeUtilHiveTruncateLegacyTcb : public ExExeUtilTcb
 {
  public:
   // Constructor
-  ExExeUtilHiveTruncateTcb(const ComTdbExeUtilHiveTruncate & exe_util_tdb,
+  ExExeUtilHiveTruncateLegacyTcb(const ComTdbExeUtilHiveTruncate & exe_util_tdb,
                            ex_globals * glob = 0);
 
-  ~ExExeUtilHiveTruncateTcb();
+  ~ExExeUtilHiveTruncateLegacyTcb();
 
   virtual void freeResources();
   virtual short work();
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
-                                                            Lng32 &numElems,      // inout, desired/actual elements
-                                                            Lng32 &pstateLength); // out, length of one element
+  virtual ex_tcb_private_state * allocatePstates(
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
   virtual Int32 fixup();
  private:
   enum Step
@@ -3488,7 +3376,53 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
   Step step_;
 
   int   numExistingFiles_;
-  void * lobGlob_;
+  ExLobGlobals * lobGlob_;
+};
+
+class ExExeUtilHiveTruncateLegacyPrivateState : public ex_tcb_private_state
+{
+  friend class ExExeUtilHiveTruncateLegacyTcb;
+
+ public:
+  ExExeUtilHiveTruncateLegacyPrivateState();
+  ~ExExeUtilHiveTruncateLegacyPrivateState();        // destructor
+ protected:
+};
+
+///////////////////////////////////////////////////////////////
+// ExExeUtilHiveTruncateTcb
+///////////////////////////////////////////////////////////////
+class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
+{
+ public:
+  // Constructor
+  ExExeUtilHiveTruncateTcb(const ComTdbExeUtilHiveTruncate & exe_util_tdb,
+                                ex_globals * glob = 0);
+
+  ~ExExeUtilHiveTruncateTcb();
+
+  virtual ex_tcb_private_state * allocatePstates(
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
+  virtual void freeResources();
+  virtual short work();
+
+ private:
+  enum Step
+    {
+      INITIAL_,
+      ALTER_TO_MANAGED_,
+      TRUNCATE_TABLE_,
+      ALTER_TO_EXTERNAL_,
+      ALTER_TO_EXTERNAL_AND_ERROR_,
+      ERROR_,
+      DONE_
+    };
+
+  ExExeUtilHiveTruncateTdb & htTdb() const
+    {return (ExExeUtilHiveTruncateTdb &) tdb;};
+
+  Step step_;
 };
 
 class ExExeUtilHiveTruncatePrivateState : public ex_tcb_private_state
@@ -3501,75 +3435,29 @@ class ExExeUtilHiveTruncatePrivateState : public ex_tcb_private_state
  protected:
 };
 
-// -----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////
 // ExExeUtilHiveQueryTdb
-// -----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////
 class ExExeUtilHiveQueryTdb : public ComTdbExeUtilHiveQuery
 {
  public:
-
-  // ---------------------------------------------------------------------
-  // Constructor is only called to instantiate an object used for
-  // retrieval of the virtual table function pointer of the class while
-  // unpacking. An empty constructor is enough.
-  // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilHiveQueryTdb()
+  ExExeUtilHiveQueryTdb()
     {}
-
-  NA_EIDPROC virtual ~ExExeUtilHiveQueryTdb()
+  virtual ~ExExeUtilHiveQueryTdb()
     {}
-
-  // ---------------------------------------------------------------------
-  // Build a TCB for this TDB. Redefined in the Executor project.
-  // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
-
+  virtual ex_tcb *build(ex_globals *globals);
  private:
-  // ---------------------------------------------------------------------
-  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
-  // *********************************************************************
-  // The Executor TDB's are only used for the sole purpose of providing a
-  // way to supplement the Compiler TDB's (in comexe) with methods whose
-  // implementation depends on Executor objects. This is done so as to
-  // decouple the Compiler from linking in Executor objects unnecessarily.
-  //
-  // When a Compiler generated TDB arrives at the Executor, the same data
-  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
-  // a requirement that a Compiler TDB has the same object layout as its
-  // corresponding Executor TDB. As a result of this, all Executor TDB's
-  // must have absolutely NO data members, but only member functions. So,
-  // if you reach here with an intention to add data members to a TDB, ask
-  // yourself two questions:
-  //
-  // 1. Are those data members Compiler-generated?
-  //    If yes, put them in the ComTdbDLL instead.
-  //    If no, they should probably belong to someplace else (like TCB).
-  //
-  // 2. Are the classes those data members belong defined in the executor
-  //    project?
-  //    If your answer to both questions is yes, you might need to move
-  //    the classes to the comexe project.
-  // ---------------------------------------------------------------------
 };
-
-///////////////////////////////////////////////////////////////
-// ExExeUtilHiveQueryTcb
-///////////////////////////////////////////////////////////////
 class ExExeUtilHiveQueryTcb : public ExExeUtilTcb
 {
  public:
-  // Constructor
   ExExeUtilHiveQueryTcb(const ComTdbExeUtilHiveQuery & exe_util_tdb,
                         ex_globals * glob = 0);
-
   ~ExExeUtilHiveQueryTcb();
-
   virtual short work();
-
   virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
-
  private:
   enum Step
     {
@@ -3578,23 +3466,18 @@ class ExExeUtilHiveQueryTcb : public ExExeUtilTcb
       PROCESS_QUERY_,
       DONE_
     };
-
   ExExeUtilHiveQueryTdb & htTdb() const
     {return (ExExeUtilHiveQueryTdb &) tdb;};
-
   Step step_;
 };
-
 class ExExeUtilHiveQueryPrivateState : public ex_tcb_private_state
 {
   friend class ExExeUtilHiveQueryTcb;
-
  public:
   ExExeUtilHiveQueryPrivateState();
   ~ExExeUtilHiveQueryPrivateState();        // destructor
  protected:
 };
-
 //////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------
 // ExExeUtilHbaseLoadTdb
@@ -3608,16 +3491,16 @@ class ExExeUtilHBaseBulkLoadTdb : public ComTdbExeUtilHBaseBulkLoad
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilHBaseBulkLoadTdb()
+  ExExeUtilHBaseBulkLoadTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilHBaseBulkLoadTdb()
+  virtual ~ExExeUtilHBaseBulkLoadTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -3678,7 +3561,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
                                        short * rc,
                                        int bufPos = 0,
                                        NABoolean   withtime = FALSE);
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
   void setLoggingLocation();
@@ -3748,16 +3631,16 @@ class ExExeUtilHBaseBulkUnLoadTdb : public ComTdbExeUtilHBaseBulkUnLoad
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilHBaseBulkUnLoadTdb()
+  ExExeUtilHBaseBulkUnLoadTdb()
     {}
 
-  NA_EIDPROC virtual ~ExExeUtilHBaseBulkUnLoadTdb()
+  virtual ~ExExeUtilHBaseBulkUnLoadTdb()
     {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
  private:
   // ---------------------------------------------------------------------
@@ -3819,7 +3702,7 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
                                        short * rc,
                                        int bufPos = 0,
                                        NABoolean   withtime = FALSE);
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
@@ -3889,7 +3772,6 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   Int64 endTime_;
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
-  SequenceFileWriter* sequenceFileWriter_;
   NAList<struct snapshotStruct *> * snapshotsList_;
   NABoolean emptyTarget_;
   NABoolean oneFile_;
@@ -3919,16 +3801,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilRegionStatsTdb()
+  ExExeUtilRegionStatsTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilRegionStatsTdb()
+  virtual ~ExExeUtilRegionStatsTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -4132,16 +4014,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExExeUtilLobInfoTdb()
+  ExExeUtilLobInfoTdb()
   {}
 
-  NA_EIDPROC virtual ~ExExeUtilLobInfoTdb()
+  virtual ~ExExeUtilLobInfoTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------

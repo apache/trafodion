@@ -76,14 +76,12 @@
 #define HUGE_VAL_REAL64         1.15792089237316192E+77
 #define HUGE_VAL_INT64          0777777777777777777777
 
-NA_EIDPROC
 ex_expr::exp_return_type convInt64ToDec(char *target,
                                         Lng32 targetLen,
                                         Int64 source,
                                         CollHeap *heap,
                                         ComDiagsArea** diagsArea);
 
-NA_EIDPROC
 ex_expr::exp_return_type convDoubleToBigNum(char *target,
                                             Lng32 targetLen,
                                             Lng32 targetType,
@@ -107,10 +105,8 @@ ex_expr::exp_return_type ex_function_abs::eval(char *op_data[],
       break;
       
     case REC_BIN16_SIGNED:
-#pragma nowarn(1506)   // warning elimination 
       *(short *)op_data[0] = (*(short *)op_data[1] < 0 ? -*(short *)op_data[1]
 			      : *(short *)op_data[1]);
-#pragma warn(1506)   // warning elimination 
       break;
       
     case REC_BIN32_SIGNED:
@@ -130,7 +126,6 @@ ex_expr::exp_return_type ex_function_abs::eval(char *op_data[],
       ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
       retcode = ex_expr::EXPR_ERROR;
       break;
-      // LCOV_EXCL_STOP
     }
   
   return retcode;
@@ -138,7 +133,6 @@ ex_expr::exp_return_type ex_function_abs::eval(char *op_data[],
 ;
 
 #define PIVALUE 3.1415926E0;
-// LCOV_EXCL_START
 ex_expr::exp_return_type ExFunctionMath::evalUnsupportedOperations(
      char *op_data[],
      CollHeap *heap,
@@ -147,7 +141,6 @@ ex_expr::exp_return_type ExFunctionMath::evalUnsupportedOperations(
   ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
   return ex_expr::EXPR_ERROR;
 }
-// LCOV_EXCL_STOP
 ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 					      CollHeap *heap,
 					      ComDiagsArea** diagsArea)
@@ -203,11 +196,9 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
           op = *((double*)op_data[1]);
           break;
         default:
-            // LCOV_EXCL_START
           ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
           **diagsArea << DgString0("ROUND");
           return ex_expr::EXPR_ERROR;
-          // LCOV_EXCL_STOP
       }
 
       //
@@ -263,7 +254,6 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 
     case ITM_SCALE_TRUNC:
       {
-          // LCOV_EXCL_START
 	ExRaiseSqlError(heap, diagsArea, EXE_MATH_FUNC_NOT_SUPPORTED);
 	if (getOperType() == ITM_ROUND)
 	  **diagsArea << DgString0("ROUND");
@@ -273,7 +263,6 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 	retcode = ex_expr::EXPR_ERROR;
       }
      break;
-     // LCOV_EXCL_STOP
 
     case ITM_ACOS:
       if ((*(double *)op_data[1] < -1) ||
@@ -671,7 +660,6 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
     {
     case ITM_BITAND:
       {
-          // LCOV_EXCL_START
 	if (getOperand(0)->getDatatype() == REC_BIN32_UNSIGNED)
 	  *(UInt32 *)op_data[0] =
 	    *(UInt32 *)op_data[1] & *(UInt32 *)op_data[2];
@@ -730,7 +718,6 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
 	  }
       }
     break;
-    // LCOV_EXCL_STOP
     case ITM_BITEXTRACT:
       {
 	UInt32 startBit   = *(UInt32 *)op_data[2];
@@ -776,7 +763,6 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
 	  case REC_IEEE_FLOAT32:
 	    {
 	      UInt32 temp;
-	      // LCOV_EXCL_START
 	      temp = *(UInt32*)op_data[1] << startBit;
 	      temp = temp >> (32 - numBits);
 	      result = temp;
@@ -800,7 +786,6 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
 	      **diagsArea << DgString0("BITEXTRACT");
 	      return ex_expr::EXPR_ERROR;
 	    }
-	      // LCOV_EXCL_STOP
 	  break;
 	  } // switch
 
@@ -813,9 +798,7 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
 
     case ITM_CONVERTTOBITS:
       {
-#pragma nowarn(1506)   // warning elimination 
 	Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
 	Int32 i;
 	if ( DFS2REC::isDoubleCharacter(getOperand(1)->getDatatype()) ) 
 	  {

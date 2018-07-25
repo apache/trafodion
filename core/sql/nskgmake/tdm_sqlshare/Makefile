@@ -21,8 +21,7 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC := catapirequest.cpp \
-	CatSQLShare.cpp
+CPPSRC := CatSQLShare.cpp
 
 SRCPATH := sqlshare
 

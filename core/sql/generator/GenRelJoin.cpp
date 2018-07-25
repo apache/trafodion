@@ -560,9 +560,7 @@ short HashJoin::codeGen(Generator * generator) {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-#pragma nowarn(1506)   // warning elimination
     returnedTuples = givenDesc->noTuples();
-#pragma warn(1506)  // warning elimination
 
     if (leftOutputValIds.entries())
       returnedLeftRowAtpIndex = returnedTuples++;
@@ -884,9 +882,9 @@ short HashJoin::codeGen(Generator * generator) {
     // common/BaseType.h). It could be made a bigger datatype,
     // if need be.
     buildHashTree = new (generator->wHeap())
-	Cast(buildHashTree, new (generator->wHeap()) SQLInt(FALSE, FALSE));
+	Cast(buildHashTree, new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE, FALSE));
     probeHashTree = new (generator->wHeap())
-	Cast(probeHashTree, new (generator->wHeap()) SQLInt(FALSE, FALSE));
+	Cast(probeHashTree, new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE, FALSE));
     buildHashTree->setConstFoldingDisabled(TRUE);
     probeHashTree->setConstFoldingDisabled(TRUE);
 
@@ -1784,7 +1782,9 @@ short HashJoin::codeGen(Generator * generator) {
   UInt16 numBMOsInFrag = (UInt16)generator->getFragmentDir()->getNumBMOs();
         
   double memQuota = 0;
-
+  double memQuotaRatio;
+  Lng32 numStreams;
+  double bmoMemoryUsagePerNode = generator->getEstMemPerNode(getKey(), numStreams);
   if (mmu != 0) {
     memQuota = mmu;
     hashj_tdb->setMemoryQuotaMB(mmu);
@@ -1792,43 +1792,42 @@ short HashJoin::codeGen(Generator * generator) {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs 
     //   2. the memory limit feature is turned on
-    NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
-
-    if ( mlimitPerCPU || numBMOsInFrag > 1 ||
+    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
+    
+    if ( mlimitPerNode || numBMOsInFrag > 1 ||
          (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
-
         memQuota = 
            computeMemoryQuota(generator->getEspLevel() == 0,
-                              mlimitPerCPU,
-                              generator->getBMOsMemoryLimitPerCPU().value(),
-                              generator->getTotalNumBMOsPerCPU(),
-                              generator->getTotalBMOsMemoryPerCPU().value(),
+                              mlimitPerNode,
+                              generator->getBMOsMemoryLimitPerNode().value(),
+                              generator->getTotalNumBMOs(),
+                              generator->getTotalBMOsMemoryPerNode().value(),
                               numBMOsInFrag, 
-                              generator->getFragmentDir()->getBMOsMemoryUsage()
+                              bmoMemoryUsagePerNode,
+                              numStreams,
+                              memQuotaRatio
                              );
-                                  
-        Lng32 hjMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN);
+    }                                
+    Lng32 hjMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN);
+    Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
 
-        if ( memQuota < hjMemoryLowbound )
-           memQuota = hjMemoryLowbound;
-           
-        hashj_tdb->setMemoryQuotaMB( UInt16(memQuota) );
+    if ( memQuota < hjMemoryLowbound ) {
+       memQuota = hjMemoryLowbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
     }
+    else if (memQuota >  memoryUpperbound)
+       memQuota = memoryUpperbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+    hashj_tdb->setMemoryQuotaMB( UInt16(memQuota) );
+    hashj_tdb->setBmoQuotaRatio(memQuotaRatio);
   }
 
   if (beforeJoinPredOnOuterOnly())
     hashj_tdb->setBeforePredOnOuterOnly();
 
-  generator->addToTotalOverflowMemory(
-                      getEstimatedRunTimeOverflowSize(memQuota)
-                                     );
-
-  double hjMemEst = getEstimatedRunTimeMemoryUsage(hashj_tdb);
+  double hjMemEst = generator->getEstMemPerInst(getKey());
+  hashj_tdb->setEstimatedMemoryUsage(hjMemEst / 1024);
   generator->addToTotalEstimatedMemory(hjMemEst);
-
-  generator->addToTotalOverflowMemory(
-                      getEstimatedRunTimeOverflowSize(memQuota)
-                                     );
 
   if ( generator->getRightSideOfFlow() )
     hashj_tdb->setPossibleMultipleCalls(TRUE);
@@ -1845,12 +1844,6 @@ short HashJoin::codeGen(Generator * generator) {
   defs.getFloat(BMO_CITIZENSHIP_FACTOR, bmoCtzFactor);
   hashj_tdb->setBmoCitizenshipFactor((Float32)bmoCtzFactor);
 
-  Lng32 hjMemEstInKBPerCPU = (Lng32)(hjMemEst / 1024) ;
-  hjMemEstInKBPerCPU = hjMemEstInKBPerCPU/
-    (MAXOF(generator->compilerStatsInfo().dop(),1));
-  hashj_tdb->setHjMemEstInMbPerCpu
-    ( Float32(MAXOF(hjMemEstInKBPerCPU/1024,1)) );
-
 
   // For now, use variable for all CIF rows based on resizeCifRecord
   if(resizeCifRecord){ //tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT) {
@@ -1861,14 +1854,12 @@ short HashJoin::codeGen(Generator * generator) {
     }
   }
 
-
-  if(!generator->explainDisabled()) {
-    generator->setOperEstimatedMemory(hjMemEstInKBPerCPU);
+  hashj_tdb->setHjMemEstInKBPerNode(bmoMemoryUsagePerNode / 1024);
+  if (!generator->explainDisabled()) {
 
     generator->setExplainTuple(
        addExplainInfo(hashj_tdb, leftExplainTuple, rightExplainTuple, generator));
 
-    generator->setOperEstimatedMemory(0);
   }
 
   hashj_tdb->setReturnRightOrdered( returnRightOrdered() );
@@ -2064,16 +2055,22 @@ ExpTupleDesc::TupleDataFormat HashJoin::determineInternalFormat( const ValueIdLi
 }
 
 
-CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(1).getGroupAttr();
   const CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
   const CostScalar childRowCount = child(1).getPtr()->getEstRowsUsed();
+  //TODO: Line below dumps core at times 
+  //const CostScalar maxCard = childGroupAttr->getResultMaxCardinalityForEmptyInput();
+  const CostScalar maxCard = 0;
   // Each record also uses a header (HashRow) in memory (8 bytes for 32bit).
   // Hash tables also take memory -- they are about %50 longer than the 
   // number of entries.
   const ULng32 
     memOverheadPerRecord = sizeof(HashRow) + sizeof(HashTableHeader) * 3 / 2 ;
+
+  CostScalar estMemPerNode;
+  CostScalar estMemPerInst;
 
   CostScalar totalHashTableMemory = 
     childRowCount * (childRecordSize + memOverheadPerRecord);
@@ -2087,86 +2084,22 @@ CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
   {
     partFunc = phyProp -> getPartitioningFunction() ;
     numOfStreams = partFunc->getCountOfPartitions();
+    if (numOfStreams <= 0)
+       numOfStreams = 1;
     if ( partFunc -> isAReplicationPartitioningFunction() == TRUE ) 
-    {
       totalHashTableMemory *= numOfStreams;
-    }
   }
-
-  if ( perCPU == TRUE ) {
-     totalHashTableMemory /= numOfStreams;
-  }
-
-  return totalHashTableMemory;
-}
-
-double HashJoin::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
-{
-  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE);
-
-  double memoryLimitPerCpu;
-  ULng32 memoryQuotaInMB = ((ComTdbHashj *)tdb)->memoryQuotaMB();
-  if (memoryQuotaInMB)
-    memoryLimitPerCpu = memoryQuotaInMB * 1024 * 1024 ;
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  estMemPerNode = totalHashTableMemory / MINOF(MAXOF(gpClusterInfo->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerInst = totalHashTableMemory / numOfStreams;
+  OperBMOQuota *operBMOQuota = new (generator->wHeap()) OperBMOQuota(getKey(), numOfStreams,         
+                                                  estMemPerNode, estMemPerInst, childRowCount, maxCard);
+  generator->getBMOQuotaMap()->insert(operBMOQuota);
+  if (perNode)
+     return estMemPerNode;
   else
-  {
-    memoryLimitPerCpu = 
-        ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_AVAILABLE_IN_MB) * 1024 * 1024 ;
-  }
-
-  Lng32 numOfStreams = 1;
-  const PhysicalProperty* const phyProp = getPhysicalProperty() ;
-  if (phyProp)
-  {
-    PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-    numOfStreams = partFunc->getCountOfPartitions();
-  }
-
- CostScalar memoryPerCpu = totalHashTableMemory/numOfStreams ;
-  if ( memoryPerCpu > memoryLimitPerCpu ) 
-  {
-      memoryPerCpu = memoryLimitPerCpu;
-  }
-  totalHashTableMemory = memoryPerCpu * numOfStreams ;
-  return totalHashTableMemory.value();
-}
-
-double HashJoin::getEstimatedRunTimeOverflowSize(double memoryQuotaMB)
-{
-  // Setup overflow size for join with formula ov = ((s0-m)/s0)*(s0+s1), where
-  // s0 = size of child0, s1 = size of child1 and m the memory quota for NJ
-  //
-  if ( memoryQuotaMB > 0 ) {
-
-     GroupAttributes * c0 = child(0).getGroupAttr();
-     double c0RLen = c0->getCharacteristicOutputs().getRowLength();
-     double c0Rows = (child(0).getPtr()->getEstRowsUsed()).getValue();
-
-     GroupAttributes * c1 = child(1).getGroupAttr();
-     double c1RLen = c1->getCharacteristicOutputs().getRowLength();
-     double c1Rows = (child(1).getPtr()->getEstRowsUsed()).getValue();
-
-     double s0 = c0RLen * c0Rows;
-     double s1 = c1RLen * c1Rows;
-
-     Lng32 pipelines = 1;
-     const PhysicalProperty* const phyProp = getPhysicalProperty() ;
-     if (phyProp)
-     {
-       PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-       if ( partFunc )
-          pipelines = partFunc->getCountOfPartitions();
-     }
-
-     double delta = s1 / pipelines - memoryQuotaMB * COM_ONE_MEG ;
-     if ( delta > 0 ) {
-       double ov = ((delta / s1) * (s0 + s1)) * pipelines;
-       return ov;
-     }
-
-  } 
-   
-  return 0;
+     return estMemPerInst; 
 }
 
 // NABoolean HashJoin::canUseUniqueHashJoin()
@@ -3097,43 +3030,50 @@ short MergeJoin::codeGen(Generator * generator)
 
   double BMOsMemoryLimit = 0;
   UInt16 quotaMB = 0;
+  Lng32 numStreams;
+  double memQuotaRatio;
+  double bmoMemoryUsage = generator->getEstMemPerNode(getKey(), numStreams);
 
+  NADefaults &defs = ActiveSchemaDB()->getDefaults();
   if ( CmpCommon::getDefaultLong(MJ_BMO_QUOTA_PERCENT) != 0) 
   {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs
     //   2. the memory limit feature is turned on
-    NADefaults &defs = ActiveSchemaDB()->getDefaults();
-    NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
   
-    if ( mlimitPerCPU || numBMOsInFrag > 1 ||
+    if ( mlimitPerNode || numBMOsInFrag > 1 ||
          (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
   
       quotaMB = (UInt16)
           computeMemoryQuota(generator->getEspLevel() == 0,
-                             mlimitPerCPU,
-                             generator->getBMOsMemoryLimitPerCPU().value(),
-                             generator->getTotalNumBMOsPerCPU(),
-                             generator->getTotalBMOsMemoryPerCPU().value(),
+                             mlimitPerNode,
+                             generator->getBMOsMemoryLimitPerNode().value(),
+                             generator->getTotalNumBMOs(),
+                             generator->getTotalBMOsMemoryPerNode().value(),
                              numBMOsInFrag, 
-                             generator->getFragmentDir()->getBMOsMemoryUsage()
+                             bmoMemoryUsage,
+                             numStreams,
+                             memQuotaRatio
                              );
-
-       Lng32 mjMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN);
-
-       if ( quotaMB < mjMemoryLowbound )
-           quotaMB = (UInt16)mjMemoryLowbound;
     }
+    Lng32 mjMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN);
+    Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
+
+    if ( quotaMB < mjMemoryLowbound ) {
+       quotaMB = (UInt16)mjMemoryLowbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+    }
+    else if (quotaMB >  memoryUpperbound)
+      quotaMB = memoryUpperbound;
   } else {
-    Lng32 memoryMB = getExeMemoryAvailable(generator->getEspLevel() == 0, 0);
-    quotaMB =  (UInt16)( (numBMOsInFrag > 1) ? (memoryMB/numBMOsInFrag) : 0 ) ;
+    Lng32 quotaMB = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN);
   }
 
 
   bool yieldQuota = !(generator->getRightSideOfFlow());
   UInt16 quotaPct = (UInt16) getDefault(MJ_BMO_QUOTA_PERCENT);
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbMj * mj_tdb =
     new(space) ComTdbMj(child_tdb1,
 			child_tdb2,
@@ -3172,7 +3112,6 @@ short MergeJoin::codeGen(Generator * generator)
 			quotaMB,
 			quotaPct,
 			yieldQuota);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(mj_tdb);
 
   if (CmpCommon::getDefault(EXE_DIAGNOSTIC_EVENTS) == DF_ON)
@@ -3181,7 +3120,7 @@ short MergeJoin::codeGen(Generator * generator)
   }
   mj_tdb->setOverflowMode(generator->getOverflowMode());
 
-  if(!generator->explainDisabled()) {
+  if (!generator->explainDisabled()) {
     generator->setExplainTuple(
          addExplainInfo(mj_tdb, leftExplainTuple, rightExplainTuple, generator));
   }
@@ -3503,7 +3442,6 @@ short NestedJoin::codeGen(Generator * generator)
   OperatorTypeEnum rightChildOp = rightChildExpr->getOperatorType();
   NABoolean usedForMvLogging = FALSE;
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbOnlj * nlj_tdb =
     new(space) ComTdbOnlj(tdb1,
 			  tdb2,
@@ -3534,7 +3472,6 @@ short NestedJoin::codeGen(Generator * generator)
 			  tolerateNonFatalError,
 			  usedForMvLogging 
 			  );
-#pragma warn(1506)  // warning elimination
 // getRowsetRowCountArraySize() should return positive values
 // only if isRowsetIterator() returns TRUE.
   GenAssert((((getRowsetRowCountArraySize() > 0) && isRowsetIterator()) ||
@@ -3545,9 +3482,11 @@ short NestedJoin::codeGen(Generator * generator)
 
   // Make sure that the LHS up queue can grow as large as the RHS down
   // queue.
-  if(tdb1->getMaxQueueSizeUp() < tdb2->getInitialQueueSizeDown()) {
-    tdb1->setMaxQueueSizeUp(tdb2->getInitialQueueSizeDown());
-  }
+  //We can't let upqueue of unpack to grow beyond what was calculated and set earlier in codeGen of the unpack operator
+  if (tdb1->getClassID() != ComTdb::ex_UNPACKROWS)
+    if(tdb1->getMaxQueueSizeUp() < tdb2->getInitialQueueSizeDown()) {
+      tdb1->setMaxQueueSizeUp(tdb2->getInitialQueueSizeDown());
+    }
 
   // If this NestedJoin itself is not on the RHS of a Flow/NestedJoin,
   // Then reset the largeQueueSize to 0.
@@ -3712,13 +3651,11 @@ short NestedJoinFlow::codeGen(Generator * generator)
 			       (Cardinality) getGroupAttr()->
 			       getOutputLogPropList()[0]->
 			       getResultCardinality().value(),
-#pragma nowarn(1506)   // warning elimination
 			       getDefault(GEN_TFLO_NUM_BUFFERS),
 			       getDefault(GEN_TFLO_BUFFER_SIZE),
 			       generator->getVSBBInsert(),
 			       isRowsetIterator(),
 			       tolerateNonFatalError);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(tflow_tdb);
 
   // turn off the VSBB insert flag in the generator, it has been

@@ -39,4 +39,4 @@ shift
 #   node-name=n2
 # second cut trims output to something like:
 #   n2
-showConfigDb -x | grep -v Physical | sed -n -e "$line p" | cut -d, -f2|cut -d= -f2
+showConfigDb -x | grep -v excFirstCore | grep -v Physical | sed -n -e "$line p" | cut -d, -f2|cut -d= -f2

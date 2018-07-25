@@ -79,9 +79,9 @@ private:
 
 public:
 
-  NA_EIDPROC keySingleSubsetGen() {};  // default constructor used by UNPACK
+  keySingleSubsetGen() {};  // default constructor used by UNPACK
 
-  NA_EIDPROC keySingleSubsetGen(ULng32 keyLen,
+  keySingleSubsetGen(ULng32 keyLen,
 				ex_cri_desc * workCriDesc,
 				unsigned short keyValuesAtpIndex,
 				unsigned short excludeFlagAtpIndex,
@@ -96,46 +96,46 @@ public:
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     keyRangeGen::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                              { return (short)sizeof(keySingleSubsetGen); }
 
-  NA_EIDPROC virtual ~keySingleSubsetGen();
+  virtual ~keySingleSubsetGen();
   
-  NA_EIDPROC virtual Long pack(void * space);
-  NA_EIDPROC virtual Lng32 unpack(void * base, void * reallocator);
+  virtual Long pack(void * space);
+  virtual Lng32 unpack(void * base, void * reallocator);
 
-  NA_EIDPROC virtual ex_expr* getExpressionNode(Int32 pos);
+  virtual ex_expr* getExpressionNode(Int32 pos);
 
   virtual keySingleSubsetGen * castToKeySingleSubsetGen() { return this; }
 
   // accessor functions
-  NA_EIDPROC inline ex_expr * bkPred() const
+  inline ex_expr * bkPred() const
     { return bkPred_; };
 
-  NA_EIDPROC inline ex_expr * ekPred() const
+  inline ex_expr * ekPred() const
     { return ekPred_; };
 
-  NA_EIDPROC inline ex_expr * bkExcludedExpr() const
+  inline ex_expr * bkExcludedExpr() const
     { return lowKeyExcludedExpr_; }
 
-  NA_EIDPROC inline ex_expr * ekExcludedExpr() const
+  inline ex_expr * ekExcludedExpr() const
     { return highKeyExcludedExpr_; }
 
-  NA_EIDPROC inline short isBkeyExcluded() const 
+  inline short isBkeyExcluded() const 
     { return lowKeyExcluded_;}
 
-  NA_EIDPROC inline short isEkeyExcluded() const 
+  inline short isEkeyExcluded() const 
     { return highKeyExcluded_;}
 
 

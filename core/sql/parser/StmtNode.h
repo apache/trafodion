@@ -266,7 +266,6 @@ public:
     {};
 };
 
-#pragma nowarn(1319)   // warning elimination 
 class StmtModule : public StmtNode
 {
 public:
@@ -304,8 +303,6 @@ private:
    QualifiedName name_;
    NAString      charSet_;
 };
-#pragma warn(1319)  // warning elimination 
-
 
 class StmtSourceFile : public StmtNode
 {

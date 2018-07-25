@@ -59,6 +59,8 @@ values from a group.
 evaluation of the expression argument.
 | <<min_function,MIN Function>>                 | Determines a minimum value from the group of values derived from the
 evaluation of the expression argument.
+| <<rollup_function,ROLLUP Function>>           | Calculates multiple levels of subtotals aggregating from right to left through the 
+comma-separated list of columns, and provides a grand total.
 | <<stddev_function,STDDEV Function>>           | Computes the statistical standard deviation of a group of numbers
 derived from the evaluation of the expression argument of the function.
 The numbers can be weighted.
@@ -150,68 +152,128 @@ See the individual entry for the function.
 These functions use either a datetime value expression as an argument or
 return a result of datetime data type:
 
-[cols="25%,75%"]
+[caption="Table 7-3 "]
+.Overview of DATETIME Functions
+[cols="25%,50%,25%"]
 |===
+| *Name* | *Description* | *Return Data Type*
 | <<add_months_function,ADD_MONTHS Function>>                               | Adds the integer number of months specified by _intr_expr_
 to _datetime_expr_ and normalizes the result.
+| DATE
 | <<converttimestamp_function,CONVERTTIMESTAMP Function>>                   | Converts a Julian timestamp to a TIMESTAMP value.
+| TIMESTAMP
 | <<current_function,CURRENT Function>> | Returns the current timestamp. You can also use the
 <<current_timestamp_function,CURRENT_TIMESTAMP Function>>.
+| TIMESTAMP
 | <<current_date_function,CURRENT_DATE Function>>                           | Returns the current date.
+| DATE
 | <<current_time_function,CURRENT_TIME Function>>                           | Returns the current time.
+| TIME
 | <<current_timestamp_function,CURRENT_TIMESTAMP Function>> | Returns the current timestamp. You can also use the <<current_function,CURRENT Function>>.
+| TIMESTAMP
 | <<date_add_function,DATE_ADD Function>>                                   | Adds the interval specified by _interval_expression_
 to _datetime_expr_.
+| DATE
 | <<date_part_function_of_an_interval,DATE_PART Function (of an Interval)>> | Extracts the datetime field specified by _text_ from the interval value
-specified by interval and returns the result as an exact numeric value.
+specified by interval and returns the result as an exact numeric.
+| NUMERIC 
 | <<date_part_function_of_a_timestamp,DATE_PART Function (of a Timestamp)>> | Extracts the datetime field specified by _text_ from the datetime value
-specified by timestamp and returns the result as an exact numeric value.
+specified by timestamp and returns the result as an exact numeric.
+| NUMERIC 
 | <<date_sub_function,DATE_SUB Function>>                                   | Subtracts the specified _interval_expression_ from
 _datetime_expr._
+| DATE or TIMESTAMP
 | <<date_trunc_function,DATE_TRUNC Function>>                               | Returns the date with the time portion of the day truncated.
+| TIMESTAMP
 | <<dateadd_function,DATEADD Function>>                                     | Adds the interval specified by _datepart_ and _num_expr_
 to _datetime_expr_.
-| <<datediff_function,DATEDIFF Function>>                                   | Returns the integer value for the number of _datepart_ units of time
+| DATE or TIMESTAMP
+| <<datediff_function,DATEDIFF Function>>                                   | Returns the integer for the number of _datepart_ units of time
 between _startdate_ and _enddate_.
+| INTEGER 
 | <<dateformat_function,DATEFORMAT Function>>                               | Formats a datetime value for display purposes.
-| <<day_function,DAY Function>>                                             | Returns an integer value in the range 1 through 31 that represents the
+| CHAR
+| <<day_function,DAY Function>>                                             | Returns an integer in the range 1 through 31 that represents the
 corresponding day of the month. You can also use DAYOFMONTH.
+| INTEGER (from 1 to 31)
 | <<dayname_function,DAYNAME Function>>                                     | Returns the name of the day of the week from a date or timestamp
 expression.
-| <<dayofmonth_function,DAYOFMONTH Function>>                               | Returns an integer value in the range 1 through 31 that represents the
+| CHAR
+| <<dayofmonth_function,DAYOFMONTH Function>>                               | Returns an integer in the range 1 through 31 that represents the
 corresponding day of the month. You can also use DAY.
-| <<dayofweek_function,DAYOFWEEK Function>>                                 | Returns an integer value in the range 1 through 7 that represents the
+| INTEGER (from 1 to 31)
+| <<dayofweek_function,DAYOFWEEK Function>>                                 | Returns an integer in the range 1 through 7 that represents the
 corresponding day of the week.
-| <<dayofyear_function,DAYOFYEAR Function>>                                 | Returns an integer value in the range 1 through 366 that represents the
+| INTEGER (from 1 to 7)
+| <<dayofyear_function,DAYOFYEAR Function>>                                 | Returns an integer in the range 1 through 366 that represents the
 corresponding day of the year.
+| INTEGER (from 1 to 366)
 | <<extract_function,EXTRACT Function>>                                     | Returns a specified datetime field from a datetime value expression or
 an interval value expression.
-| <<hour_function,HOUR Function>>                                           | Returns an integer value in the range 0 through 23 that represents the
+| NUMERIC 
+| <<hour_function,HOUR Function>>                                           | Returns an integer in the range 0 through 23 that represents the
 corresponding hour of the day.
+| INTEGER (from 0 to 23)
 | <<juliantimestamp_function,JULIANTIMESTAMP Function>>                     | Converts a datetime value to a Julian timestamp.
-| <<minute_function,MINUTE Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
+| TIMESTAMP
+| <<minute_function,MINUTE Function>>                                       | Returns an integer in the range 0 through 59 that represents the
 corresponding minute of the hour.
-| <<month_function,MONTH Function>>                                         | Returns an integer value in the range 1 through 12 that represents the
+| INTEGER (from 0 to 59)
+| <<month_function,MONTH Function>>                                         | Returns an integer in the range 1 through 12 that represents the
 corresponding month of the year.
+| INTEGER (from 1 to 12)
 | <<monthname_function,MONTHNAME Function>>                                 | Returns a character literal that is the name of the month of the year
 (January, February, and so on).
-| <<quarter_function,QUARTER Function>>                                     | Returns an integer value in the range 1 through 4 that represents the
+| CHAR
+| <<quarter_function,QUARTER Function>>                                     | Returns an integer in the range 1 through 4 that represents the
 corresponding quarter of the year.
-| <<second_function,SECOND Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
+| INTEGER (from 1 to 4)
+| <<second_function,SECOND Function>>                                       | Returns an integer in the range 0 through 59 that represents the
 corresponding second of the minute.
+| INTEGER (from 0 to 59)
+| <<sysdate_function,SYSDATE Function>>                                     | Retrieves the current date of the server rather than the session.
+| DATE
+| <<systimestamp_function,SYSTIMESTAMP Function>>                           | Retrieves the current date and time (including fractional seconds with six-digit precision) of the server rather than the session.
+| TIMESTAMP
 | <<timestampadd_function,TIMESTAMPADD Function>>                           | Adds the interval of time specified by _interval-ind_ and
 _num_expr_ to _datetime_expr_.
-| <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_units of time between _startdate_ and _enddate_.
+| DATE or TIMESTAMP
+| <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer for the number of _interval-ind_units of time between _startdate_ and _enddate_.
+| INTEGER  
 | <<to_char_function,TO_CHAR Function>>                                     | Converts a datetime value to a character value.
+| CHAR
 | <<to_date_function,TO_DATE Function>>                                     | Converts a character value to a date or timestamp value.
+| DATE or TIMESTAMP
 | <<to_time_function,TO_TIME Function>>                                     | Converts a character value to a time value.
+| TIME
 | <<to_timestamp_function,TO_TIMESTAMP Function>>                           | Converts a character value to a timestamp value.
-| <<week_function,WEEK Function>>                                           | Returns an integer value in the range 1 through 54 that represents the
+| TIMESTAMP
+| <<week_function,WEEK Function>>                                           | Returns an integer in the range 1 through 54 that represents the
 corresponding week of the year.
-| <<year_function,YEAR Function>>                                           | Returns an integer value that represents the year.
+| INTEGER (from 1 to 54)
+| <<year_function,YEAR Function>>                                           | Returns an integer that represents the year.
+| INTEGER 
 |===
 
 See the individual entry for the function.
+
+[[lob_functions]]
+== LOB Functions
+
+Trafodion provides following LOB functions to process LOB data.
+
+[cols="25%,75%"]
+|===
+| <<emptyblob_function,EMPTY_BLOB() Function>>   | Creates a dummy LOB handle of type BLOB.
+| <<emptyclob_function,EMPTY_CLOB() Function>>   | Creates a dummy LOB handle of type CLOB.
+| <<stringtolob_function,STRINGTOLOB Function>>  | Converts a simple string literal into LOB format.
+| <<filetolob_function,FILETOLOB Function>>      | Converts data from a local linux/hdfs file into LOB format.
+| <<buffertolob_function,BUFFERTOLOB_Function>>     | Takes the address and size of an input buffer, and converts the contents of that buffer into LOB format.
+| <<externaltolob_function,EXTERNALTOLOB_Function>> | Converts data from an external file into LOB format.
+| LOBTOSTRING                     | Converts LOB data into a simple string literal.
+| LOBTOFILE                       | Converts LOB data into a linux/hdfs file.
+| LOBTOBUFFER                     | Converts LOB data into a buffer.
+|===
 
 [[mathematical_functions]]
 == Mathematical Functions
@@ -443,7 +505,7 @@ _int_expr_ to _datetime_expr_ and normalizes the result. ADD_MONTHS is a {projec
 extension.
 
 ```
-ADDMONTHS (datetimeexpr, intexpr [, int2 ])
+ADD_MONTHS (datetimeexpr, intexpr [, int2 ])
 ```
 
 * `_datetime_expr_`
@@ -502,7 +564,7 @@ ADD_MONTHS(timestamp'2008-02-29 00:00:00',12,1)
 == ASCII Function
 
 The ASCII function returns the integer that is the ASCII code of the
-first character in a character string expression associated with either
+first character in a character string expression associated with 
 the ISO88591 character set or the UTF8 character set.
 
 ASCII is a {project-name} SQL extension.
@@ -511,21 +573,577 @@ ASCII is a {project-name} SQL extension.
 ASCII (character-expression)
 ```
 
-* `_character-expression`
+* `_character-expression_`
 +
 is an SQL character value expression that specifies a string of
-characters. See <<character_value_expressions,Character Value Expressions>>.
+characters. 
++
+For more information, see <<character_value_expressions,Character Value Expressions>>.
 
 [[considerations_for_ascii]]
 === Considerations For ASCII
 
-For a string expression in the UTF8 character set, if the value of the
-first byte in the string is greater than 127, {project-name} SQL returns this
-error message:
+The ASCII function handles string literals and columns differently:
 
+* For a string, the value of the character or *the value of each character* in the string cannot be greater than 255, or else it returns the following error:
++
 ```
-ERROR[8428] The argument to function ASCII is not valid.
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591
 ```
+
++
+*Example*
+
++
+```
+SQL>SELECT ASCII('ÿ') FROM DUAL;
+
+(EXPR)
+----------
+       255
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('u') FROM DUAL;
+
+(EXPR)
+----------
+       117
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('ÿu') FROM DUAL;
+
+(EXPR)
+----------
+       255
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('昱') FROM DUAL;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591. [2018-05-07 06:01:55]
+```
+
++
+```
+SQL>SELECT ASCII('ÿu昱') FROM DUAL;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591. [2018-05-08 08:21:34]
+```
+
+* For a column, the string expression(s) in this column can be only single-byte, or else it returns the following error:
+
++
+```
+*** ERROR[8428] The argument to function ASCII is not valid.
+```
+
++
+** For a string in a column with definition of UTF8, the value of the first byte in the string cannot be greater than 127.
+** For a string in a column with definition of ISO88591, the value of the first byte in the string can be all characters in the ISO88591 character set.
+
++
+*Example*
+
++
+.UTF8 (with and without error) -- Table with One Row
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *UTF8* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t25;
+
+CREATE TABLE TRAFODION.SEABASE.T25
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T25 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t24;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T24
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T24 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t25;
+
+C1
+
+----
+
+昱u    
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t24;
+
+C1
+
+----
+
+u昱   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t25;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:14:08]`
+|
+`SQL>SELECT ASCII(c1) FROM t24;
+
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+
+|===
+
+
++
+.UTF8 (with and without error) -- Table with Two Rows
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *UTF8* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t26;
+
+CREATE TABLE TRAFODION.SEABASE.T26
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T26 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t27;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T27
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T27 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t26;
+
+C1
+
+----
+
+u昱 
+
+昱u    
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t27;
+
+C1
+
+----
+
+u昱 
+
+u昱   
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t26;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:29:03]`
+|
+`SQL>SELECT ASCII(c1) FROM t27;
+
+
+(EXPR)
+
+----------
+
+       117
+
+       117
+
+--- 2 row(s) selected.`
+
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (with error) -- Table with One Row 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t11;
+
+CREATE TABLE TRAFODION.SEABASE.T11
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T11 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t12;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T12
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T12 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t11;
+
+C1
+
+----
+
+ÿu   
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t12;
+
+C1
+
+----
+
+ÿu   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t1;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-07 02:13:42]`
+|
+`SQL>SELECT ASCII(c1) FROM t2;
+
+(EXPR)
+
+----------
+
+       255
+
+--- 1 row(s) selected.`
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (without error) -- Table with One Row 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t17;
+
+CREATE TABLE TRAFODION.SEABASE.T17
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T17 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t18;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T18
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T18 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t17;
+
+C1
+
+----
+
+uÿ   
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t18;
+
+C1
+
+----
+
+uÿ   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t17;
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT ASCII(c1) FROM t18;
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (with error) -- Table with Two Rows 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t22;
+
+CREATE TABLE TRAFODION.SEABASE.T22
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T22 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t23;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T23
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T23 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t22;
+
+C1
+
+----
+
+uÿ
+
+ÿu
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t23;
+
+C1
+
+----
+
+uÿ
+
+ÿu 
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t22;
+
+*** ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:01:29]`
+|
+`SQL>SELECT ASCII(c1) FROM t23;
+
+(EXPR)
+
+----------
+
+       117
+       
+       255
+
+--- 2 row(s) selected.`
+|===
+
+
+
+
+
++
+.Comparison between UTF8 and ISO88591 (without error) -- Table with Two Rows
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t20;
+
+CREATE TABLE TRAFODION.SEABASE.T20
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T20 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t21;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T21
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T21 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t20;
+
+C1
+
+----
+
+uÿ
+
+uÿ 
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t21;
+
+C1
+
+----
+
+uÿ
+
+uÿ 
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t20;
+
+(EXPR)
+
+----------
+
+       117
+       
+       117
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT ASCII(c1) FROM t21;
+
+(EXPR)
+
+----------
+
+       117
+       
+       117
+
+--- 2 row(s) selected.`
+|===
 
 [[examples_of_ascii]]
 === Examples of ASCII
@@ -924,6 +1542,45 @@ The following are BITAND restrictions:
              1
 
 --- 1 row(s) selected
+```
+
+<<<
+[[buffertolob_function]]
+== BUFFERTOLOB Function 
+
+[[buffertolob_function_syntax]]
+=== Syntax Descriptions of BUFFERTOLOB Function
+
+The BUFFERTOLOB function takes the address and size of an input buffer, and converts the contents of that buffer into LOB. This function can be used in an INSERT or UPDATE statement.
+
+BUFFERTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+BUFFERTOLOB(LOCATION lob source buffer address, LENGTH lob length value)   
+```
+
+* _lob source buffer address_
++
+The int64 value of the user buffer address.
+
+* _lob length value_
++
+The int64 value of the user specified lob buffer.
+                 
+[[buffertolob_function_examples]]
+=== Examples of BUFFERTOLOB Function
+* This example takes an int64 value as an input which is an address to a buffer and a size parameter. The buffer contents are converted to LOB format and stored in HDFS.
++
+```
+insert into tlob1 values (1, buffertolob(LOCATION 124647474, SIZE 2048));
+```
+
+* In the table tlob1, this example updates (overwrites) the c2 to the buffer location at 1254674 with 4000-byte length.
++
+```
+update tlob1 set c2=buffertolob(LOCATION 12546474, SIZE 4000);
 ```
 
 <<<
@@ -1435,7 +2092,7 @@ is a character string.
 
 <<<
 [[concat_function]]
-=== CONCAT Function
+== CONCAT Function
 
 The CONCAT function returns the concatenation of two character value
 expressions as a character string value. You can also use the
@@ -1477,7 +2134,7 @@ An operand can be any SQL value expression of data type CHAR or VARCHAR.
 === Considerations for CONCAT
 
 [[operands]]
-=== Operands
+==== Operands
 
 
 A string value can be specified by any character value expression, such
@@ -1490,7 +2147,7 @@ VARCHAR.
 
 
 [[sql-parameters]]
-=== SQL Parameters
+==== SQL Parameters
 
 You can concatenate an SQL parameter and a character value expression.
 The concatenated parameter takes on the data type attributes of the
@@ -1754,7 +2411,7 @@ COSH (1.25)
 
 <<<
 [[count_function]]
-=== COUNT Function
+== COUNT Function
 
 The COUNT function counts the number of rows that result from a query or
 the number of rows that contain a distinct value in a specific column.
@@ -2296,15 +2953,18 @@ DATEADD(DAY, 7, timestamp'2008-02-29 00:00:00')
 [[datediff_function]]
 == DATEDIFF Function
 
-The DATEDIFF function returns the integer value for the number of
-_datepart_ units of time between _startdate_ and _enddate_. If
-_enddate_ precedes _startdate_, the return value is negative or zero.
+The DATEDIFF function returns the integer for the number of
+_datepart_ units of time between _startdate_ and _enddate_. 
 
 DATEDIFF is a {project-name} SQL extension.
 
 ```
 DATEDIFF (datepart, startdate, enddate)
 ```
+
+<<<
+[[syntax_description_of_datediff]]
+=== Syntax Description of DATEDIFF 
 
 * `datepart`
 +
@@ -2325,87 +2985,211 @@ following abbreviations:
 
 * `startdate`
 +
-may be of type DATE or TIMESTAMP.
+may be of type DATE or TIMESTAMP, should be enclosed in quotation marks.
 See <<datetime_value_expressions,Datetime Value Expressions>>.
 
 * `enddate`
 +
-may be of type DATE or TIMESTAMP.
+may be of type DATE or TIMESTAMP, should be enclosed in quotation marks.
 See <<datetime_value_expressions,Datetime Value Expressions>>.
 
-The method of counting crossed boundaries such as days, minutes, and
-seconds makes the result given by DATEDIFF consistent across all data
-types. The result is a signed integer value equal to the number of
-datepart boundaries crossed between the first and second date.
+[[considerations_for_datediff]]
+=== Considerations for DATEDIFF 
 
-For example, the number of weeks between Sunday, January 4, and Sunday,
-January 1 , is 1. The number of months between March 31 and April 1
-would be 1 because the month boundary is crossed from March to April.
-The DATEDIFF function generates an error if the result is out of range
-for integer values. For seconds, the maximum number is equivalent to
-approximately 68 years. The DATEDIFF function generates an error if a
-difference in weeks is requested and one of the two dates precedes
-January 7 of the year 0001.
+[[boundary]]
+==== Boundary
+
+The method of counting crossed boundaries such as days, minutes, and seconds makes the result given by DATEDIFF consistent across all data types. 
+
+The result is a signed integer value equal to the number of _datepart_ boundaries crossed between _startdate_ and _enddate_, because the DATEDIFF function does not calculate the full _datepart_, it counts the difference between _startdate_  and _enddate_.
+
+For example:  
+
+* The difference between 2017-12-31 23:59:59 and 2018-01-01 00:00:00 is only a single second. 
+
++
+However, the DATEDIFF difference is 1 minute, 1 hour, 1 day, 0 week^1^, 1 month, 1 quarter or 1 month depending on the specified _datepart_.
+
++
+^1^ NOTE: 2017-12-31 (_startdate_) falls on a Sunday, which is in the same week as 2018-01-01. For more information, see <<the_first_day_of_week,The first day of week>>.
+
+* Likewise, the difference between 2017-01-01 and 2018-12-31 is almost two years.
+
++
+However, the DATEDIFF difference is 1 year if the specified _datepart_ is YEAR.
+
+[[the_first_day_of_week]]
+==== The first day of week
+
+* The first day of the week is Sunday. Changing the first day of the week is not supported.
+
+* The DATEDIFF function returns the number of Sundays between _startdate_ and _enddate_. This function counts _enddate_ if it falls on a Sunday, but doesn't count _startdate_ even if it does fall on a Sunday.
+
++
+For example,
+
+** The DATEDIFF difference is 1 between 2017-11-19 and 2017-11-26 if the specified _datepart_ is WEEK.
+
+** The DATEDIFF difference is 0 between 2017-11-19 and 2017-11-25 if the specified _datepart_ is WEEK.
+
+[[the_first_week_of_year]]
+==== The first week of year
+
+The first week of the year is the week in which January 1 occurs. Changing the first week of the year is not supported.  
+
+[[negative_or_zero]]
+==== Negative or zero
+
+If _enddate_ precedes _startdate_, the return value is negative or zero.
+
+[[error]]
+==== Error
+
+* The DATEDIFF function generates an error if the result is out of range for integer values. 
+
+** For seconds, the maximum number is equivalent to approximately 68 years. 
+
+** For weeks, the dates must be later than 0001-01-07.
 
 <<<
 [[examples_of_datediff]]
 === Examples of DATEDIFF
 
-* This function returns the value of 0 because no one-second boundaries
-are crossed.
+[[date_difference_in_second]]
+==== Date Difference in SECOND
+
+* This function returns the value of 0 because no one-second boundary
+is crossed.
 +
 ```
-DATEDIFF( SECOND
-        , TIMESTAMP '2006-09-12 11:59:58.999998'
-        , TIMESTAMP '2006-09-12 11:59:58.999999'
-        )
+SELECT DATEDIFF( SECOND
+                 , TIMESTAMP '2006-09-12 11:59:58.999998'
+                 , TIMESTAMP '2006-09-12 11:59:58.999999'
+               )
+FROM DUAL;
 ```
 
-* This function returns the value 1 because a one-second boundary is
+* This function returns the value of 1 because a one-second boundary is
 crossed even though the two timestamps differ by only one microsecond.
 +
 ```
-DATEDIFF( SECOND
-        , TIMESTAMP '2006-09-12 11:59:58.999999'
-        , TIMESTAMP '2006-09-12 11:59:59.000000'
-        )
+SELECT DATEDIFF( SECOND
+                 , TIMESTAMP '2006-09-12 11:59:58.999999'
+                 , TIMESTAMP '2006-09-12 11:59:59.000000'
+               )
+FROM DUAL;
 ```
+
+[[date_difference_in_minute]]
+==== Date Difference in MINUTE
+
+* This function returns the value of 2 because two minute boundaries are crossed.
++
+```
+SELECT DATEDIFF( MINUTE
+                 , TIMESTAMP '2011-12-30 08:54:55'
+                 , TIMESTAMP '2011-12-30 08:56:01'
+               ) 
+FROM DUAL;
+```
+
+[[date_difference_in_day]]
+==== Date Difference in DAY
+
+* This function returns the value of -29.
++
+```
+SELECT DATEDIFF( DAY
+                 , DATE '2008-03-01'
+                 , DATE '2008-02-01'
+               ) 
+FROM DUAL;
+```
+
+* This statement calculates how long buyers have to wait. 
++
+```
+SELECT id, DATEDIFF( DAY, order_date, delivery_date ), price 
+FROM orders 
+ORDER BY price DESC;
+```
+
++
+```
+ID           (EXPR)       PRICE 
+-----------  -----------  ------
+
+     700300          145     926
+     312203          147     621
+     800660           23     568
+     100350          160     543
+     500450          148     324
+     700510          141     229
+     100210            3     228
+     600480          151     197
+     300380          154     183
+     200490          227     123
+     200320          153      91
+     400410          158      65
+     600250          143      32
+
+--- 13 row(s) selected.
+```
+
+[[date_difference_in_week]]
+==== Date Difference in WEEK
+
+* This function returns the value of 1 because only a one-week boundary is
+crossed.
++
+```
+SELECT DATEDIFF( WEEK
+                 , DATE '2006-01-01'
+                 , DATE '2006-01-09'
+               )
+FROM DUAL;
+```
+
+[[date_difference_in_quarter]]
+==== Date Difference in QUARTER
+
+* This function returns the value of 3 because three quarter boundaries are crossed.
++
+```
+SELECT DATEDIFF( QUARTER
+                 , DATE '2017-03-05'
+                 , DATE '2017-11-17'
+               ) 
+FROM DUAL;
+```
+
+[[date_difference_in_year]]
+==== Date Difference in YEAR
 
 * This function returns the value of 0.
 +
 ```
-DATEDIFF( YEAR
-        , TIMESTAMP '2006-12-31 23:59:59.999998'
-        , TIMESTAMP '2006-12-31 23:59:59.999999'
-        )
+SELECT DATEDIFF( YEAR
+                 , TIMESTAMP '2006-12-31 23:59:59.999998'
+                 , TIMESTAMP '2006-12-31 23:59:59.999999'
+               )
+FROM DUAL;
 ```
 
 * This function returns the value of 1 because a year boundary is
 crossed.
 +
 ```
-DATEDIFF( YEAR
-        , TIMESTAMP '2006-12-31 23:59:59.999999'
-        , TIMESTAMP '2007-01-01 00:00:00.000000'
-        )
-```
-
-* This function returns the value of 2 because two WEEK boundaries are
-crossed.
-+
-```
-DATEDIFF(WEEK, DATE '2006-01-01', DATE '2006-01-09')
-```
-
-* This function returns the value of -29.
-+
-```
-DATEDIFF(DAY, DATE '2008-03-01', DATE '2008-02-01')
+SELECT DATEDIFF( YEAR
+                 , TIMESTAMP '2006-12-31 23:59:59.999999'
+                 , TIMESTAMP '2007-01-01 00:00:00.000000'
+               )
+FROM DUAL;
 ```
 
 <<<
 [[dateformat_function]]
-=== DATEFORMAT Function
+== DATEFORMAT Function
 
 The DATEFORMAT function returns a datetime value as a character string
 literal in the DEFAULT, USA, or EUROPEAN format. The data type of the
@@ -2573,7 +3357,7 @@ DATE_PART('year', date'12/05/2006')
 DATE_PART('day', TIMESTAMP '2006-12-31 11:59:59.999999')
 ```
 
-* This function returns the value 201 07.
+* This function returns the value 201107.
 +
 ```
 DATE_PART('YEARMONTH', date '2011-07-25')
@@ -2697,7 +3481,7 @@ The DAYNAME function returns the name of the day in ISO88591.
 
 Return the name of the day of the week from the start date column in the
 project table:
-+
+
 ```
 SELECT start_date, ship_timestamp, DAYNAME(start_date)
 FROM persnl.project
@@ -2713,7 +3497,7 @@ Start/Date Time/Shipped               (EXPR)
 == DAYOFMONTH Function
 
 The DAYOFMONTH function converts a DATE or TIMESTAMP expression into an
-INTEGER value in the range 1 through 31 that represents the
+INTEGER in the range 1 through 31 that represents the
 corresponding day of the month. The result returned by the DAYOFMONTH
 function is equal to the result returned by the DAY function.
 
@@ -2749,7 +3533,7 @@ Start/Date Time/Shipped               (EXPR)
 == DAYOFWEEK Function
 
 The DAYOFWEEK function converts a DATE or TIMESTAMP expression into an
-INTEGER value in the range 1 through 7 that represents the corresponding
+INTEGER in the range 1 through 7 that represents the corresponding
 day of the week. The value 1 represents Sunday, 2 represents Monday, and
 so forth.
 
@@ -2787,7 +3571,7 @@ The value returned is 5, representing Thursday. The week begins on Sunday.
 == DAYOFYEAR Function
 
 The DAYOFYEAR function converts a DATE or TIMESTAMP expression into an
-INTEGER value in the range 1 through 366 that represents the
+INTEGER in the range 1 through 366 that represents the
 corresponding day of the year.
 
 DAYOFYEAR is a {project-name} SQL extension.
@@ -3167,7 +3951,6 @@ The results are equivalent to the quotient of the results from the two
 preceding examples. For example, in the second row of the output of this
 example, 0.0007319 is equal to 21959 divided by 30002620.
 
-
 <<<
 [[diff2_function]]
 == DIFF2 Function
@@ -3276,6 +4059,92 @@ DIFF2_I1TS
               .000191
 
 --- 5 row(s) selected.
+```
+
+<<<
+[[emptyblob_function]]
+== EMPTY_BLOB() Function
+
+[[syntax_descriptions_of_emptyblob_function]]
+=== Syntax Descriptions of EMPTY_BLOB() Function
+
+The EMPTY_BLOB() function creates a dummy LOB handle of type BLOB.
+
+This function can be used in an INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+
+EMPTY_BLOB() function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+EMPTY_BLOB()
+```
+
+[[considerations_for_emptyblob_function]]
+=== Considerations for EMPTY_BLOB() Function
+
+* If EMPTY_BLOB() is specified, then a dummy lob handle is created.
+
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate the LOB with new data. If the LOB had data previously associated with it, it will be erased.
+
+** The dummy LOB handle will get the same datatype as the underlying column.
++
+For example,
++
+*** If the LOB column is defined as `'EXTERNAL'` during table creation, then the dummy LOB handle will get the type `'EXTERNAL'` and can only process external LOB data.
++
+*** If the LOB column is not defined as `'EXTERNAL'` during table creation, then the dummy LOB handle will be considered as a regular LOB dummy handle. If this handle is used to perform an insert or update operation, the LOB data will be maintained within the Trafodion space in the internal location maintained by Trafodion.
+
+* An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
+
+[[examples_of_emptyblob_function]]
+=== Examples of EMPTY_BLOB() Function
+
+* This example uses the EMPTY_BLOB to insert an empty LOB and creates a dummy LOB handle. 
++
+```
+insert into test1 values (1, empty_blob());
+```
+
+<<<
+[[emptyclob_function]]
+== EMPTY_CLOB() Function
+
+[[syntax_descriptions_of_emptyclob_function]]
+=== Syntax Descriptions of EMPTY_CLOB() Function
+
+The EMPTY_CLOB() function creates a dummy LOB handle of type CLOB.
+
+This function can be used in an INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+
+EMPTY_CLOB() function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion LOB Guide].
+
+```
+EMPTY_CLOB()
+```
+
+[[considerations_for_emptyclob_function]]
+=== Considerations for EMPTY_CLOB() Function
+
+* If EMPTY_CLOB() is specified, then a dummy lob handle is created.
+
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate the LOB with new data. If the LOB had data previously associated with it, it will be erased.
+
+** The dummy LOB handle will get the same datatype as the underlying column.
++
+For example, if the LOB column was defined as `‘EXTERNAL’` during table creation, then the LOB column gets that type. If it’s not defined, then it is considered as a regular LOB. 
+
+* An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
+
+[[examples_of_emptyclob_function]]
+=== Examples of EMPTY_CLOB() Function
+
+* This example uses the EMPTY_CLOB to insert an empty LOB and creates a dummy LOB handle. 
++
+```
+insert into test2 values (1, empty_clob());
 ```
 
 <<<
@@ -3512,6 +4381,52 @@ function. It first uses the EXPLAIN function to generate the table and
 then selects the desired columns.
 
 <<<
+[[externaltolob_function]]
+== EXTERNALTOLOB Function
+
+[[externaltolob_function_syntax]]
+=== Syntax Descriptions of EXTERNALTOLOB Function
+
+The EXTERNALTOLOB function converts data from an external file into LOB format. This function can be used in an INSERT or UPDATE statement.          
+
+EXTERNALTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+EXTERNALTOLOB('external lob source file name')              
+```
+
+```
+external lob source file name is: 
+hdfs:///{local hdfs file name}
+```
+
+[[externaltolob_function_considerations]]
+=== Considerations for EXTERNALTOLOB Function
+
+* When an external LOB is specified via `EXTERNALTOLOB('external lob source file name')`, the data associated with the external HDFS file is not transferred into the Trafodion LOB. Instead, Trafodion stores the file path/handle of the external file. 
++
+For example, if you have a directory of pictures, you can specify the full hdfs path to each picture file to this function and the path will get stored in the Trafodion table. Later during retrieval, the file name will be used to go to the actual file to retrieve the data. 
+
+[[externaltolob_function_examples]]
+=== Examples of EXTERNALTOLOB Function
+
+* This example uses different functions to convert strings, files, external lob into LOB data. The EXTERNALTOLOB function takes an external file. 
++
+```
+insert into tlob130ext values(1, stringtolob('first lob'),                                           
+filetolob('hdfs:///lobs/lob_input_a1.txt'), 
+externaltolob('hdfs:///lobs/lob_input_a1.txt'));
+```
+
+* In the table tlob130ext where c1 is 2, this example updates (overwrites) the c4 to lob_input_d1.txt stored in hdfs:///lobs/.
++
+```
+update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_d1.txt') where c1=2;
+```
+
+<<<
 [[extract_function]]
 == EXTRACT Function
 
@@ -3552,40 +4467,43 @@ EXTRACT (YEAR FROM INTERVAL '01-09' YEAR TO MONTH)
 +
 The result is 1.
 
-
 <<<
-[[hour_function]]
-=== HOUR Function
+[[filetolob_function]]
+== FILETOLOB Function
 
-The HOUR function converts a TIME or TIMESTAMP expression into an
-INTEGER value in the range 0 through 23 that represents the
-corresponding hour of the day.
+[[filetolob_function_syntax]]
+=== Syntax Descriptions of FILETOLOB Function
 
-HOUR is a {project-name} SQL extension.
+The FILETOLOB function converts data from a local linux/hdfs file into LOB format. This function can be used in an INSERT or UPDATE statement.          
+
+FILETOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
-HOUR (datetime-expression)
+FILETOLOB('lob source file name')
+```     
+
+lob source file name is:
 ```
-* `_datetime-expression_`
+hdfs:///{local hdfs file name} |  
+{local linux file name}        |
+{file:///linux file name} 
+```
+
+[[filetolob_function_examples]]
+=== Examples of FILETOLOB Function
+
+* This example converts data from a local file into LOB format, and stores all data into HDFS associated with that column/row.
 +
-is an expression that evaluates to a datetime value of type TIME or
-TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
+```
+insert into tlob130txt1 values(1,filetolob('lob_input_a1.txt'));
+```
 
-[[examples_of_hour]]
-=== Examples of HOUR
-
-* Return an integer that represents the hour of the day from the
-ship timestamp column in the project table:
+* In the table tlob1 where c1 is 3, this example updates (appends) the c2 to lob_update.txt stored in hdfs:///lobs/.
 +
 ```
-SELECT start_date, ship_timestamp, HOUR(ship_timestamp)
-FROM persnl.project
-WHERE projcode = 1000;
-
-
-Start/Date Time/Shipped               (EXPR)
----------- -------------------------- ------
-2007-04-10 2007-04-21 08:15:00.000000      8
+update tlob1 set c2=filetolob('hdfs:///lobs/lob_update.txt', append) where c1 = 3;
 ```
 
 <<<
@@ -3627,6 +4545,41 @@ STUDENT_NAME     (EXPR)
 --------------  --------------
 scott            91 90 80 56
 tom              91 77 43
+```
+
+<<<
+[[hour_function]]
+== HOUR Function
+
+The HOUR function converts a TIME or TIMESTAMP expression into an
+INTEGER in the range 0 through 23 that represents the
+corresponding hour of the day.
+
+HOUR is a {project-name} SQL extension.
+
+```
+HOUR (datetime-expression)
+```
+* `_datetime-expression_`
++
+is an expression that evaluates to a datetime value of type TIME or
+TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
+
+[[examples_of_hour]]
+=== Examples of HOUR
+
+* Return an integer that represents the hour of the day from the
+ship timestamp column in the project table:
++
+```
+SELECT start_date, ship_timestamp, HOUR(ship_timestamp)
+FROM persnl.project
+WHERE projcode = 1000;
+
+
+Start/Date Time/Shipped               (EXPR)
+---------- -------------------------- ------
+2007-04-10 2007-04-21 08:15:00.000000      8
 ```
 
 <<<
@@ -4262,7 +5215,7 @@ See <<upper_function,UPPER Function>>.
 
 <<<
 [[lpad_function]]
-=== LPAD Function
+== LPAD Function
 
 The LPAD function pads the left side of a string with the specified
 string. Every character in the string, including multi-byte characters,
@@ -4520,7 +5473,7 @@ SELECT MIN (salary) FROM persnl.employee;
 == MINUTE Function
 
 The MINUTE function converts a TIME or TIMESTAMP expression into an
-INTEGER value, in the range 0 through 59, that represents the
+INTEGER, in the range 0 through 59, that represents the
 corresponding minute of the hour.
 
 MINUTE is a {project-name} SQL extension.
@@ -5985,6 +6938,301 @@ SET jobdesc = RIGHT (jobdesc, 12);
 ```
 
 <<<
+[[rollup_function]]
+== ROLLUP Function
+
+The ROLLUP function calculates multiple levels of subtotals aggregating from right to left through the comma-separated list of columns, and provides a grand total. 
+
+ROLLUP is an extension to the `GROUP BY` clause. Related features such as the GROUPING function can be used with `ORDER BY` to control the placement of summary results.
+
+```
+SELECT…GROUP BY ROLLUP (column 1, [column 2,]…[column n])
+```
+
+ROLLUP generates n+1 levels of subtotals, including a grand total, where n is the number of the selected column(s).
+
+For example, a query that contains three rollup columns returns the following rows:
+
+* First-level: the usual aggregate values as calculated by GROUP BY clause without using ROLLUP.
+* Second-level: subtotals aggregating across column 3 for each combination of column 1 and column 2.
+* Third-level: subtotals aggregating across column 2 and column 3 for each column 1.
+* Fourth-level: the grand total row.
+
+NOTE: Trafodion does not support CUBE function which works slightly differently from ROLLUP.
+
+[[considerations_for_rollup]]
+=== Considerations for ROLLUP
+
+[[null_in_result_sets]]
+==== NULL in Result Sets
+
+* In super-aggregate rows representing subtotals or the grand total, lower level grouping columns are replaced by NULLs.
+* The NULLs in selected columns are considered equal and sorted into one NULL group in result sets.
+
+[[using_rollup_with_the_column_order_reversed]]
+==== Using ROLLUP with the Column Order Reversed
+
+ROLLUP removes the right-most column at each step, therefore the result sets vary with the column order specified in the comma-separated list. 
+
+[cols="50%,50%"]
+|===
+| If the column order is _country_, _state_, _city_ and _name_, ROLLUP returns following groupings. 
+| If the column order is _name_, _city_, _state_ and _country_, ROLLUP returns following groupings.
+| _country_, _state_, _city_ and _name_      | _name_, _city_, _state_ and _country_
+| _country_, _state_ and _city_              | _name_, _city_ and _state_
+| _country_ and _state_                      | _name_ and _city_
+| _country_                                  | _name_
+| grand total                                | grand total
+|===
+
+[[examples_of_rollup]]
+=== Examples of ROLLUP
+
+[[examples_of_grouping_by_one_or_multiple_rollup_columns]]
+==== Examples of Grouping By One or Multiple Rollup Columns
+
+Suppose that we have a _sales1_ table like this:
+
+```
+SELECT * FROM sales1;
+
+DELIVERY_YEAR REGION PRODUCT                          REVENUE    
+------------- ------ -------------------------------- -----------
+         2016 A      Dress                                    100
+         2016 A      Dress                                    200
+         2016 A      Pullover                                 300
+         2016 B      Dress                                    400
+         2017 A      Pullover                                 500
+         2017 B      Dress                                    600
+         2017 B      Pullover                                 700
+         2017 B      Pullover                                 800
+
+--- 8 row(s) selected.
+```
+
+* This is an example of grouping by one rollup column.
++
+```
+SELECT delivery_year, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year);
+```
+
++
+```
+DELIVERY_YEAR TOTAL_REVENUE       
+------------- --------------------
+         2016                 1000
+         2017                 2600
+         NULL                 3600
+
+--- 3 row(s) selected.
+```
+
+* This is an example of grouping by two rollup columns.
++ 
+ROLLUP firstly aggregates at the lowest level (_region_) and then rolls up those aggregations to the next
+level (_delivery_year_), finally it produces a grand total across these two levels.
+
++
+```
+SELECT delivery_year, region, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region);
+```
+
++
+```
+DELIVERY_YEAR REGION TOTAL_REVENUE       
+------------- ------ --------------------
+         2016 A                       600
+         2016 B                       400
+         2016 NULL                   1000
+         2017 A                       500
+         2017 B                      2100
+         2017 NULL                   2600
+         NULL NULL                   3600
+
+--- 7 row(s) selected.
+```
++
+* This is an example of grouping by three rollup columns.
++
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
++
+.Grouping By Three Rollup Columns
+image::grouping-by-three-rollup-columns.jpg[700,700]
+
++
+** First-level: the rows marked in *blue* are the total revenue for each year (_2016_ and _2017_), each region (_A_ and _B_) and each product (_Dress_ and _Pullover_), they are caculated by GROUP BY instead of ROLLUP.
+
++
+** Second-level: the rows marked in *red* provide the total revenue for the given _delivery_year_ and _region_ by _product_.
++ 
+These rows have the _product_ columns set to NULL.
+
++
+** Third-level: the rows marked in *yellow* show the total revenue in each year (_2016_ and _2017_).
++ 
+These rows have the _region_ and _product_ columns set to NULL.
+
++
+** Fourth-level: the row marked in *purple* aggregates over all rows in the _delivery_year_, _region_ and _product_ columns.
++ 
+This row has the _delivery_year_, _region_ and _product_ columns set to NULL. 
+ 
+[[examples_of_null]]
+==== Examples of NULL
+
+The example below demonstrates how ROLLUP treats NULLs in the selected columns and generates NULLs for super-aggregate rows.
+
+Suppose that we have a _sales2_ table like this:
+
+```
+SELECT * FROM sales2;
+
+DELIVERY_YEAR REGION PRODUCT                          REVENUE    
+------------- ------ -------------------------------- -----------
+         NULL A      Dress                                    100
+         NULL A      Dress                                    200
+         2016 A      Pullover                                 300
+         2016 B      Dress                                    400
+         2017 A      Pullover                                 500
+         2017 B      Dress                                    600
+         NULL B      Pullover                                 700
+         NULL B      Pullover                                 800
+
+--- 8 row(s) selected.
+```
+
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue 
+FROM sales2
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
+```
+DELIVERY_YEAR REGION PRODUCT                          TOTAL_REVENUE       
+------------- ------ -------------------------------- --------------------
+         2016 A      Pullover                                          300
+         2016 A      NULL                                              300
+         2016 B      Dress                                             400
+         2016 B      NULL                                              400
+         2016 NULL   NULL                                              700
+         2017 A      Pullover                                          500
+         2017 A      NULL                                              500
+         2017 B      Dress                                             600
+         2017 B      NULL                                              600
+         2017 NULL   NULL                                             1100
+         NULL A      Dress                                             300
+         NULL A      NULL                                              300
+         NULL B      Pullover                                         1500
+         NULL B      NULL                                             1500
+         NULL NULL   NULL                                             1800
+         NULL NULL   NULL                                             3600
+
+--- 16 row(s) selected.
+```
+
+[[examples_of_using_rollup_with_the_column_order_reversed]]
+==== Examples of Using ROLLUP with the Column Order Reversed
+
+Suppose that we have the same _sales1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
+
+* The column order of the example below is _delivery_year_, _region_ and _product_.
+
++
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
++
+```
+DELIVERY_YEAR REGION PRODUCT                          TOTAL_REVENUE       
+------------- ------ -------------------------------- --------------------
+         2016 A      Dress                                             300
+         2016 A      Pullover                                          300
+         2016 A      NULL                                              600
+         2016 B      Dress                                             400
+         2016 B      NULL                                              400
+         2016 NULL   NULL                                             1000
+         2017 A      Pullover                                          500
+         2017 A      NULL                                              500
+         2017 B      Dress                                             600
+         2017 B      Pullover                                         1500
+         2017 B      NULL                                             2100
+         2017 NULL   NULL                                             2600
+         NULL NULL   NULL                                             3600
+
+--- 13 row(s) selected.
+```
+
+* The column order of the example below is _product_, _region_ and _delivery_year_, the output is different than the result sets above. 
+
++
+```
+SELECT product, region, delivery_year, SUM (revenue) AS total_revenue
+FROM sales1
+GROUP BY ROLLUP (product, region, delivery_year);
+```
+
++
+```
+PRODUCT                          REGION DELIVERY_YEAR TOTAL_REVENUE       
+-------------------------------- ------ ------------- --------------------
+Dress                            A               2016                  300
+Dress                            A               NULL                  300
+Dress                            B               2016                  400
+Dress                            B               2017                  600
+Dress                            B               NULL                 1000
+Dress                            NULL            NULL                 1300
+Pullover                         A               2016                  300
+Pullover                         A               2017                  500
+Pullover                         A               NULL                  800
+Pullover                         B               2017                 1500
+Pullover                         B               NULL                 1500
+Pullover                         NULL            NULL                 2300
+NULL                             NULL            NULL                 3600
+
+--- 13 row(s) selected.
+```
+
+[[examples_of_using_rollup_with_order_by]]
+==== Examples of Using ROLLUP with ORDER BY
+
+Suppose that we have the same _sale1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
+
+This example uses ROLLUP with the ORDER BY clause to sort the results.
+
+```
+SELECT delivery_year, product, SUM (revenue) AS total_revenue 
+FROM sales1 
+GROUP BY ROLLUP (delivery_year, product)
+ORDER BY total_revenue;
+```
+
+```
+DELIVERY_YEAR PRODUCT                          TOTAL_REVENUE       
+------------- -------------------------------- --------------------
+         2016 Pullover                                          300
+         2017 Dress                                             600
+         2016 Dress                                             700
+         2016 NULL                                             1000
+         2017 Pullover                                         2000
+         2017 NULL                                             2600
+         NULL NULL                                             3600
+
+--- 7 row(s) selected.
+```
+
+<<<
 [[round_function]]
 == ROUND Function
 
@@ -7019,10 +8267,10 @@ STDDEV (PARTCOST * QTY_ORDERED)
 STDDEV is evaluated after eliminating all nulls from the set. If the
 result table is empty, STDDEV returns NULL.
 
-[[float54_and_double_precision_data]]
-==== FLOAT(54) and DOUBLE PRECISION Data
+[[float52_and_double_precision_data]]
+==== FLOAT(52) and DOUBLE PRECISION Data
 
-Avoid using large FLOAT(54) or DOUBLE PRECISION values as arguments to
+Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 STDDEV. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during the computation
 of STDDEV(x), a numeric overflow occurs.
 
@@ -7053,6 +8301,40 @@ SELECT STDDEV (price * qty_available) FROM sales.parts;
  7.13899499999999808E+006
 
 --- 1 row(s) selected.
+```
+
+<<<
+[[stringtolob_function]]
+== STRINGTOLOB Function
+
+[[stringtolob_function_syntax]]
+=== Syntax Descriptions of STRINGTOLOB Function
+
+The STRINGTOLOB function converts a simple string literal into LOB format. This function can be used in an INSERT or UPDATE statement.
+
+STRINGTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+STRINGTOLOB('string literal expression')  
+```
+
+* STRINGTOLOB   
++
+Converts a simple string literal into LOB format.
+
+** string literal expression
++
+is a series of characters enclosed in single quotes.
+
+[[stringtolob_function_examples]]
+=== Examples of STRINGTOLOB Function
+
+* This example converts a simple string literal into LOB format before inserting.
++
+```
+insert into tlob1 values(1,stringtolob('inserted row'));
 ```
 
 <<<
@@ -7269,6 +8551,211 @@ SELECT SUM (price * qty_available) FROM sales.parts;
 ```
 
 <<<
+[[sysdate_function]]
+== SYSDATE Function
+
+The SYSDATE function, which is equivalent to the `CURRENT_DATE` function, retrieves the current date of the server rather than the session.
+
+The returned value is `DATE` and the default format is `YYYY-MM-DD`.
+
+For example, if you execute a query on your local machine located in Shanghai on 2018-03-14 06:00:00 (UTC+8) against a database server located in Berlin on 2018-03-13 23:00:00 (UTC+1), the result of `SELECT SYSDATE FROM DUAL;` is 2018-03-13 rather than 2018-03-14.
+
+```
+SYSDATE
+```
+
+[[examples_of_sysdate]]
+=== Examples of SYSDATE
+
+* This example returns the current date.
+
++
+```
+SQL>SELECT SYSDATE FROM DUAL;
+
+(EXPR)
+----------
+2018-03-15
+
+--- 1 row(s) selected.
+```
+
+* This example returns the date of yesterday, today and tomorrow.
+
++
+```
+SQL>SELECT SYSDATE -1 AS yesterday, 
+SYSDATE AS today,
+SYSDATE +1 AS tomorrow FROM DUAL;
+ 
+YESTERDAY  TODAY      TOMORROW  
+---------- ---------- ----------
+2018-03-14 2018-03-15 2018-03-16
+ 
+--- 1 row(s) selected.
+```
+
+* The following examples show that the values of `SYSDATE` can be converted to character values.
+
++
+```
+SQL>SELECT TO_CHAR (SYSDATE, 'DD-MON-YYYY') FROM DUAL;
+ 
+(EXPR)
+-----------
+15-MAR-2018
+ 
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT TO_CHAR (SYSDATE,'HH:MI:SS') FROM DUAL;
+ 
+*** ERROR[4072] The operand of function TO_CHAR must be a datetime containing a time. [2018-03-15 11:49:22]
+```
+
++
+``` 
+SQL>SELECT TO_CHAR (SYSDATE, 'MM/DD/YYYY HH24:MI:SS') FROM DUAL;
+ 
+(EXPR)
+-------------------
+03/15/2018 00:00:00
+ 
+--- 1 row(s) selected.
+```
+
+* This example converts days to minutes using `SYSDATE`.
++
+```
+SQL>SELECT (SYSDATE-(SYSDATE-7))*1440 FROM DUAL;
+ 
+(EXPR)
+-----------------
+           10080 
+ 
+--- 1 row(s) selected.
+```
+
+* This example demonstrates how the SYSDATE function works in SQL statement.
++
+Suppose that we have the following table:
+
++
+```
+SQL>SELECT * FROM orders;
+
+ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM
+-------- ---------- ---------- -------- -------
+  100210 2018-03-02 2018-04-10      220     127
+  100250 2018-01-23 2018-06-16      220     123
+  101220 2018-02-21 2018-12-15      221     156
+  200300 2018-02-06 2018-07-15      222     126
+  200320 2018-03-08 2018-07-20      223     121
+  200490 2018-02-19 2018-11-01      226     123
+  300350 2018-03-03 2018-08-10      231     123
+  300380 2018-01-19 2018-08-15      226     156
+  400410 2018-01-27 2018-09-14      227     154
+  500450 2018-03-12 2018-09-16      220     124
+  600480 2018-02-12 2018-10-14      226     123
+  700510 2018-02-01 2018-10-16      220     143
+  800660 2018-01-09 2018-11-01      229     100
+
+--- 13 row(s) selected.
+```
+
++
+The SYSDATE is 2018-03-15.
++
+```
+SQL>SELECT SYSDATE FROM DUAL;
+ 
+(EXPR)
+----------
+2018-03-15
+ 
+--- 1 row(s) selected.
+```
+
++
+This statement returns qualified rows using `SYSDATE` function.
++
+```
+SQL>SELECT * FROM orders 
+WHERE DAY(deliv_date) = DAY(sysdate+1) 
+AND ordernum <>100210 
+AND salesrep=220 
+ORDER BY order_date DESC;
+ 
+ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM
+-------- ---------- ---------- -------- -------
+  500450 2018-03-12 2018-09-16      220     124
+  700510 2018-02-01 2018-10-16      220     143
+  100250 2018-01-23 2018-06-16      220     123
+ 
+--- 3 row(s) selected.
+```
+
+<<<
+[[systimestamp_function]]
+== SYSTIMESTAMP Function
+
+The SYSTIMESTAMP function, which is equivalent to the `CURRENT_TIMESTAMP` function, provides much high granularity than the `SYSDATE` function and retrieves the current date and time (including fractional seconds with six-digit precision) of the server rather than the session.
+
+The returned value is `TIMESTAMP` and the default format is `YYYY-MM-DD HH:MM:SS.FFFFFF`.
+
+For example, if you execute a query on your local machine located in Shanghai on 2018-03-14 06:00:00 (UTC+8) against a database server located in Berlin on 2018-03-13 23:00:00 (UTC+1), the result of `SELECT SYSTIMESTAMP FROM DUAL;` is 2018-03-13 23:00:00 rather than 2018-03-14 06:00:00.
+
+```
+SYSTIMESTAMP
+```
+
+[[examples_of_systimestamp]]
+=== Examples of SYSTIMESTAMP
+
+* This example calculates the date and time of anniversary using SYSTIMESTAMP function.
+
++
+```
+SELECT SYSTIMESTAMP AS today, SYSTIMESTAMP + INTERVAL '12' MONTH AS Annisversary FROM DUAL; 
+
+TODAY                      ANNISVERSARY              
+-------------------------- --------------------------
+2018-03-15 11:19:42.400382 2019-03-15 11:19:42.400382
+ 
+--- 1 row(s) selected.
+```
+
+* This example demonstrates how to insert the value of SYSTIMESTAMP into a column.
+
++
+```
+SQL>CREATE TABLE test1 (C1 TIMESTAMP, C2 VARCHAR(40));
+
+--- SQL operation complete.
+```
+
++
+```
+SQL>INSERT INTO test1 VALUES (SYSTIMESTAMP, 'This is the time that I insert values');
+
+--- 1 row(s) inserted.
+```
+
++
+```
+SQL>SELECT * FROM test1;
+
+C1                         C2                                      
+-------------------------- ----------------------------------------
+2018-03-15 11:33:32.091057 This is the time that I insert values        
+
+--- 1 row(s) selected.
+```
+
+
+<<<
 [[tan_function]]
 == TAN Function
 
@@ -7481,7 +8968,7 @@ TIMESTAMPADD (SQL_TSI_SECOND, -5, DATE '2008-07-01')
 [[timestampdiff_function]]
 == TIMESTAMPDIFF Function
 
-The TIMESTAMPDIFF function returns the integer value for the number of
+The TIMESTAMPDIFF function returns the integer for the number of
 _interval-ind_ units of time between _startdate_ and _enddate_. If
 _enddate_ precedes _startdate_, the return value is negative or zero.
 
@@ -8101,6 +9588,178 @@ WHERE UPSHIFT(D1.deptname) = UPSHIFT(D2.deptname);
 ```
 
 <<<
+[[rand_function]]
+== RAND Function
+
+The RAND function generates pseudo-random numbers that are uniformly distributed 
+in the range between 0 and 2^32^ (=4294967296), 
+using an integer as an optional seed value.
+
+NOTE: The RAND function does not always behaves in predictive ways. It is non-deterministic 
+and may cause unexpected side effect. It evaluates only once or per row depending on the optimizer. 
+So it can only be used in very few places, please do not use it in a predicate.
+
+```
+RAND ([numeric-expression])
+```
+
+[[rand_function_syntax]]
+=== Syntax Descriptions of RAND Function
+
+* _numeric-expression_
+
++
+is an SQL numeric value expression that specifies the value for the argument of the RAND function. For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[rand_function_considerations]]
+=== Considerations for RAND Function
+
+* When invoked with a seed value,
+
+** the seed value should be an integer greater than or equal to 0, and cannot be NULL.
+
++
+For example,
+
++
+```
+SQL>SELECT RAND(1-100) FROM DUAL;
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-99 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW. [2018-04-18 04:44:37]
+
+
+SQL>SELECT RAND(NULL) FROM DUAL;
+
+*** ERROR[4097] A NULL operand is not allowed in function (RANDOMNUM(NULL)). [2018-04-18 04:44:48]
+```
+
+** the RAND function will use the value to seed the random number generator.
+
+** the RAND function will produce same series of numbers each time you seed the generator with an equal argument value 
+for each run of the program.
+
+* When invoked with no seed value,
+
+** the RAND function is automatically seeded with a value of system clock.
+** the RAND function will produce different series of numbers even it is called consecutively within a query.
+
++
+For example,
+
++
+```
+SQL>SELECT RAND(), RAND(), RAND() FROM DUAL;
+
+(EXPR)     (EXPR)     (EXPR)    
+---------- ---------- ----------
+1958129868 1958398780 1958482815
+
+--- 1 row(s) selected. 
+```
+
+* To get desired numbers within a specified range, you can use a combination of built-in functions, operators and clauses.
+
++
+For example,
+
++
+```
+SQL>SELECT POWER(RAND(1)*10,3) FROM DUAL;
+
+(EXPR)
+------------------------
+       4.747561509943E15
+
+--- 1 row(s) selected.
+```
+
+[[rand_function_example]]
+=== Examples of RAND Function
+
+* This example demostrates how to use the RAND function with built-in function (ABS function).
+
++
+```
+SQL>SELECT RAND(ABS(1-100)) FROM DUAL;
+
+(EXPR)
+----------
+   1663893
+
+--- 1 row(s) selected.
+```
+
+* This example shows that the RAND function works with builts-in function (MOD function) to generate the number from 1 to 5 and gets
+the randomized results sorted by ORDER BY clause. The 100,000 rows of c1 are neary evenly distributed for each number.
+
++
+```
+SQL>SELECT COUNT(*) FROM t1;
+ 
+(EXPR)
+--------------------
+              100000
+ 
+--- 1 row(s) selected.
+```
++
+```
+SQL>SHOWDDL t1;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T1
+  ( 
+    IDX                              INT DEFAULT NULL NOT SERIALIZED
+  )
+ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- SQL operation complete.
+```
++
+```
+SQL>CREATE TABLE t2(idx int,c1 int);
+ 
+--- SQL operation complete.
+ 
+```
++
+```
+SQL>UPSERT USING LOAD INTO t2 SELECT idx, MOD(RAND(),5)+1 FROM t1;
+ 
+--- 100000 row(s) inserted.
+```
++
+```
+SQL>SELECT c1, COUNT(*) FROM t2 GROUP BY c1 ORDER BY c1;
+ 
+C1          (EXPR)              
+----------- --------------------
+          1                19837
+          2                19951
+          3                20023
+          4                19913
+          5                20276
+ 
+--- 5 row(s) selected.
+```
+
++
+At this point, the RAND function can also be used in the ORDER BY clause in conjunction with the LIMIT clause 
+to output rows.
++
+```
+SQL>SELECT c1, COUNT(*) FROM t2 GROUP BY c1 ORDER BY c1 LIMIT 3;
+
+C1          (EXPR)              
+----------- --------------------
+          1                19837
+          2                19951
+          3                20023
+ 
+--- 3 row(s) selected.
+```
+
+<<<
 [[user_function]]
 == USER Function
 
@@ -8267,10 +9926,10 @@ VARIANCE is evaluated after eliminating all nulls from the set. If the
 result table is empty, VARIANCE returns NULL.
 
 
-[[float54_and_double_precision_data]]
-==== FLOAT(54) and DOUBLE PRECISION Data
+[[float52_and_double_precision_data]]
+==== FLOAT(52) and DOUBLE PRECISION Data
 
-Avoid using large FLOAT(54) or DOUBLE PRECISION values as arguments to
+Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 VARIANCE. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during
 the computation of VARIANCE(x), then a numeric overflow occurs.
 
@@ -8347,7 +10006,7 @@ Start/Date Time/Shipped               (EXPR)
 == YEAR Function
 
 The YEAR function converts a DATE or TIMESTAMP expression into an
-INTEGER value that represents the year.
+INTEGER that represents the year.
 
 YEAR is a {project-name} SQL extension.
 

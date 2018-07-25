@@ -86,6 +86,12 @@ public:
   //
   Cost* scmComputeCostForSingleSubset();
 
+  // Return the cached value for single subset size
+  // The size of the single subset scanned by this Scan node.
+  // Computed and cached by computeSingleSubsetSize()
+  //
+  inline const CostScalar &getSingleSubsetSize() const
+                                                  { return singleSubsetSize_; }
 
 private:
 
@@ -115,13 +121,6 @@ private:
   // key predicates that define the single subset.
   //
   void computeSingleSubsetSize();
-
-  // Return the cached value for single subset size
-  // The size of the single subset scanned by this Scan node.
-  // Computed and cached by computeSingleSubsetSize()
-  //
-  inline const CostScalar &getSingleSubsetSize() const
-                                                  { return singleSubsetSize_; }
 
   // Return the cached set of single subset predicates.
   // The key predicates which define the single subset. 

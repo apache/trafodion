@@ -292,8 +292,96 @@ static short genUpdExpr(
   return 0;
 }
 
-static short genUpdConstraintExpr(Generator *generator)
+// Used to generate update or insert constraint expressions for update operators
+static short genUpdConstraintExpr(Generator * generator,
+                                  ItemExpr * constrTree,
+                                  const ValueIdSet & constraintColumns,
+                                  ValueIdArray & targetRecExprArray,
+                                  ex_expr ** targetExpr /* out */)
 {
+  ExpGenerator * expGen = generator->getExpGenerator();
+
+  // The ValueIds in the constrTree refer to the source values of the columns.
+  // Construct a ValueIdMap so we can rewrite the constrTree to refer to the
+  // target value of the columns.
+
+  ValueIdMap sourceToTarget;  // top values will be source, bottom will be target
+ 
+  for (ValueId sourceValId = constraintColumns.init();
+       constraintColumns.next(sourceValId);
+       constraintColumns.advance(sourceValId))
+    {
+      GenAssert(sourceValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN,
+      		"unexpected type of constraint expression column");
+      NAColumn * sourceCol = ((IndexColumn*)sourceValId.getItemExpr())->getNAColumn();
+      ValueId targetValId;
+      for (CollIndex ni = 0; (ni < targetRecExprArray.entries()); ni++)
+        {
+          const ItemExpr *assignExpr = targetRecExprArray[ni].getItemExpr();
+          targetValId = assignExpr->child(0)->castToItemExpr()->getValueId();
+          NAColumn *targetCol = NULL;         
+          if (targetValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+            targetCol = ((BaseColumn*)targetValId.getItemExpr())->getNAColumn();
+          else if (targetValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN)
+            targetCol = ((IndexColumn*)targetValId.getItemExpr())->getNAColumn();
+
+          if (targetCol && sourceCol->getPosition() == targetCol->getPosition())
+            {
+              GenAssert(sourceCol->getNATable() == targetCol->getNATable(),
+                        "expecting same NATable for constraint source and target");             
+
+              // We found the target column matching the source column in the
+              // targetRecExprArray. Now, an optimization: If the assignment
+              // merely moves the old column value to the new, there is no need
+              // to map it.
+
+              ValueId rhsValId = assignExpr->child(1)->castToItemExpr()->getValueId();
+              NAColumn *rhsCol = NULL;
+              if (rhsValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+                rhsCol = ((BaseColumn*)rhsValId.getItemExpr())->getNAColumn();
+              else if (rhsValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN)
+                rhsCol = ((IndexColumn*)rhsValId.getItemExpr())->getNAColumn();
+
+              if (rhsCol && rhsCol->getPosition() == targetCol->getPosition())
+                {
+                  // assignment copies old column value to target without change;
+                  // no need to map
+                  GenAssert(rhsCol->getNATable() == targetCol->getNATable(),
+                            "expecting same NATable for assignment source and target");
+                }
+              else
+                {
+                  // the column value is changing (or maybe this is an insert),
+                  // so map it
+                  sourceToTarget.addMapEntry(sourceValId, targetValId);
+                }
+              ni = targetRecExprArray.entries();  // found it, no need to search further
+            }
+        }
+    } 
+
+  // If there is anything to map, rewrite the constraint expression
+  // and generate it. If there is nothing to map, that means none of
+  // the constraint expression columns is changed (which implies this
+  // is an update expr and not an insert, by the way). In that case, we
+  // don't need to generate the constraint expression as the constraint
+  // should already be satisfied by the old values.
+
+  if (sourceToTarget.entries() > 0)
+    {
+      // map the ValueIds in the constraint tree to target values
+      ValueId mappedConstrTree;
+      sourceToTarget.rewriteValueIdDown(constrTree->getValueId(),mappedConstrTree /* out */);
+
+      // generate the expression
+      expGen->generateExpr(mappedConstrTree, ex_expr::exp_SCAN_PRED,
+                           targetExpr);
+    }
+  else
+    {
+      targetExpr = NULL;
+    }
+
   return 0;
 }
 
@@ -1112,7 +1200,7 @@ short HbaseDelete::codeGen(Generator * generator)
   if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
-  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
+  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa,rowIdAsciiRowLen) ;
 
   // create hdfsscan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 
@@ -1718,19 +1806,52 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
   else if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
     {
-      GenAssert(FALSE, "Should not reach here. This update should have been transformed to delete/insert");
-      // To be uncommented when TRAFODION-1610 is implemented
-      // Need to generate insConstraintExpr also
-/*
+      // Generate the update and insert constraint check expressions
+
+      // The constraint expressions at this time refer to the source values 
+      // of the columns. We want to evaluate the constraints aganst the target 
+      // values, though. So, we collect the source column ValueIds here so
+      // we can map them to the appropriate target, which is dependent on
+      // which constraint expression we are generating.
+
+      ValueId constraintId;
+      ValueIdSet constraintColumns;
+      for (CollIndex ci = 0; ci < getCheckConstraints().entries(); ci++)
+        {
+          constraintId = getCheckConstraints()[ci];
+          constraintId.getItemExpr()->findAll(ITM_INDEXCOLUMN,
+                                              constraintColumns, // out, has append semantics
+                                              TRUE, // visitVEGmembers
+                                              FALSE); // don't visit index descriptors
+        }
+
+      // Prepare the constraint tree for generation
+
       ItemExpr *constrTree =
         getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
 
       if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
-        constrTree = generator->addCompDecodeForDerialization(constrTree);
+        constrTree = generator->addCompDecodeForDerialization(constrTree, isAlignedFormat);
 
-      expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
-                            &updConstraintExpr);
-*/
+      // Generate the update constraint expression
+
+      genUpdConstraintExpr(generator,
+                           constrTree,
+                           constraintColumns,
+                           newRecExprArray(),
+                           &updConstraintExpr /* out */);
+
+      if ((isMerge()) && (mergeInsertRecExprArray().entries() > 0))
+        {
+          // Generate the insert constraint expression
+
+          genUpdConstraintExpr(generator,
+                               constrTree,
+                               constraintColumns,
+                               mergeInsertRecExprArray(),
+                               &insConstraintExpr /* out */);   
+        }
+
     }
  
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
@@ -2042,7 +2163,7 @@ short HbaseUpdate::codeGen(Generator * generator)
   if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
-  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
+  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa,asciiRowLen) ;
 
 
   // create hdfsscan_tdb
@@ -2258,6 +2379,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
+  Int16 colIndexOfPK1 = -1;
 
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
   {
@@ -2283,6 +2405,12 @@ short HbaseInsert::codeGen(Generator *generator)
              space->AllocateAndCopyToAlignedSpace(cnInList, 0);
           listOfOmittedColNames->insert(colNameInList);
       }
+      else
+      {
+	if (col->isClusteringKey() && !isAlignedFormat && colIndexOfPK1 == -1)
+	  colIndexOfPK1 = (listOfOmittedColNames == NULL) ?  ii : 
+	    ii - listOfOmittedColNames->entries();
+      }
       colArray.insert( col );
 
       if (returnRow)
@@ -2301,7 +2429,7 @@ short HbaseInsert::codeGen(Generator *generator)
           Lng32 cvl = givenType.getDisplayLength();
 
           NAType * asciiType = 
-            new (generator->wHeap()) SQLVarChar(cvl, givenType.supportsSQLnull());
+            new (generator->wHeap()) SQLVarChar(generator->wHeap(), cvl, givenType.supportsSQLnull());
           ie = new(generator->wHeap()) Cast(ie, asciiType);
         }
 
@@ -2387,8 +2515,10 @@ short HbaseInsert::codeGen(Generator *generator)
       FALSE,                                 // [IN] add convert nodes?
       1,                                     // [IN] target atp number (work atp 1)
       loggingTuppIndex,                      // [IN] target tupp index
-      tupleFormat,                           // [IN] target tuple data format
-      loggingRowLen,                          // [OUT] target tuple length
+      // The target format should be exploded format always because the column delimiter
+      // added during execution assumes exploded format
+      ExpTupleDesc::SQLARK_EXPLODED_FORMAT,  // [IN] target tuple data format 
+      loggingRowLen,                         // [OUT] target tuple length
       &loggingDataExpr,                      // [OUT] move expression
       &loggingDataTupleDesc,                 // [optional OUT] target tuple desc
       ExpTupleDesc::LONG_FORMAT              // [optional IN] target desc format
@@ -2409,9 +2539,6 @@ short HbaseInsert::codeGen(Generator *generator)
   ex_expr * rowIdExpr = NULL;
   ULng32 rowIdLen = 0;
 
-  ValueIdList savedInputVIDlist;
-  NAList<Attributes*> savedInputAttrsList(generator->wHeap());
-
   const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
     {
@@ -2427,65 +2554,6 @@ short HbaseInsert::codeGen(Generator *generator)
       
       colAttr->copyLocationAttrs(castAttr);
       indexAttr->copyLocationAttrs(castAttr);
-      // To be removed when TRAFODION-1610 is implemented
-      //  `
-      // if any of the target column is also an input value to this operator, then
-      // make the value id of that input point to the location of the target column.
-      // This is done as the input column value will become the target after this
-      // insert expr is evaluated.
-      // This is done if this value will be part of an expression that need to
-      // be evaluated on the updated columns.
-      const ValueIdSet& inputSet = getGroupAttr()->getCharacteristicInputs();
-      ValueId inputValId;
-      if ((inputSet.entries() > 0) &&
-          (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries()))
-	{
-	  NAColumn *inputCol = NULL;
-	  NABoolean found = FALSE;
-	  for (inputValId = inputSet.init();
-	       ((NOT found) && (inputSet.next(inputValId)));
-	       inputSet.advance(inputValId) )
-	    {
-	      if ((inputValId.getItemExpr()->getOperatorType() != ITM_BASECOLUMN) &&
-		  (inputValId.getItemExpr()->getOperatorType() != ITM_INDEXCOLUMN))
-		{
-		  continue;
-		}
-	      
-	      if (inputValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
-		{
-		  inputCol = ((BaseColumn*)inputValId.getItemExpr())->getNAColumn();
-		}
-	      else
-		{
-		  inputCol = ((IndexColumn*)inputValId.getItemExpr())->getNAColumn();
-		}
-	      
-	      if ((col->getColName() == inputCol->getColName()) &&
-                  (col->getHbaseColFam() == inputCol->getHbaseColFam()) &&
-                  (col->getHbaseColQual() == inputCol->getHbaseColQual()) &&
-                  (col->getNATable()->getTableName().getQualifiedNameAsAnsiString() ==
-                   inputCol->getNATable()->getTableName().getQualifiedNameAsAnsiString()))
-		{
-		  found = TRUE;
-		  break;
-		}
-	    } // for
-
-	  if (found)
-	    {
-	      Attributes * inputValAttr = (generator->addMapInfo(inputValId, 0))->getAttr();
-
-              // save original location attributes. These will be restored back once
-              // constr expr has been generated.
-              Attributes * savedValAttr = new(generator->wHeap()) Attributes();
-              savedValAttr->copyLocationAttrs(inputValAttr);
-              savedInputAttrsList.insert(savedValAttr);
-              savedInputVIDlist.insert(inputValId);
-
-	      inputValAttr->copyLocationAttrs(castAttr);
-	    }
-	} // if
     }
 
   ex_expr* preCondExpr = NULL;
@@ -2520,15 +2588,6 @@ short HbaseInsert::codeGen(Generator *generator)
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
 			   &insConstraintExpr);
-
-      // restore original attribute values
-      // To be removed when TRAFODION-1610 is implemented
-      for (Lng32 i = 0; i < savedInputVIDlist.entries(); i++)
-        {
-          ValueId inputValId = savedInputVIDlist[i];
-          Attributes * inputValAttr = (generator->getMapInfo(inputValId, 0))->getAttr();
-          inputValAttr->copyLocationAttrs(savedInputAttrsList[i]);
-        }
     }
   
   listOfUpdatedColNames = new(space) Queue(space);
@@ -2886,6 +2945,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	// without code change
 	if (loadFlushSizeinRows >= USHRT_MAX/2)
 	  loadFlushSizeinRows = ((USHRT_MAX/2)-1);
+	else if (loadFlushSizeinRows < 1)  // make sure we don't fall to zero on really long rows
+	  loadFlushSizeinRows = 1;
 	hbasescan_tdb->setTrafLoadFlushSize(loadFlushSizeinRows);
 
         // For sample file, set the sample location in HDFS and the sampling rate.
@@ -2957,6 +3018,9 @@ short HbaseInsert::codeGen(Generator *generator)
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());
+
+      if (colIndexOfPK1 >=0 && t ==  ComTdbHbaseAccess::INSERT_)
+	hbasescan_tdb->setColIndexOfPK1(colIndexOfPK1);
     }
   else
     {

@@ -68,31 +68,24 @@ keyRangeGen::keyRangeGen(key_type keyType,
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-NA_EIDPROC char *keyRangeGen::findVTblPtr(short classID)
+char *keyRangeGen::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)
   {
     case KEYSINGLESUBSET:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, keySingleSubsetGen);
-#pragma warn(1506)  // warning elimination 
       break;
     case KEYMDAM:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, keyMdamGen);
-#pragma warn(1506)  // warning elimination 
       break;
     default:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, keyRangeGen);
-#pragma warn(1506)  // warning elimination 
       break;
   }
   return vtblPtr;
 }
 
-// LCOV_EXCL_START
 void keyRangeGen::fixupVTblPtr()
 {
   switch (getType())
@@ -115,7 +108,6 @@ void keyRangeGen::fixupVTblPtr()
       break;
     }
 }
-// LCOV_EXCL_STOP
 
 Long keyRangeGen::pack(void * space)
 {

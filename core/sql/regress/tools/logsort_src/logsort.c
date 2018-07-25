@@ -544,6 +544,9 @@ else
             /* error message after a blank line can happen with Trafodion sqlci */
             else if (line_iserror(linebuf))
                state = 0;  /* for Trafodion */
+            /* warning messages occur after a blank line also in Trafodion sqlci */
+            else if (line_iswarning(linebuf))
+               state = 9;  /* there will be a blank line after the warning */
             else if (line_isoptstats(linebuf))
                state = 8;  /* must be Trafodion Optimizer stats output */
             else
@@ -675,6 +678,16 @@ else
                printf("%s",linebuf);
                state = 0;
                }
+            myFputs(linebuf,out,strip_stats_option,mightbestats(state));
+            break;
+            }
+         case 9:   /* after a warning */
+            {
+             /* we expect a blank line or another warning */
+            if (line_isblank(linebuf))
+               state = 3;
+            else if (!line_iswarning(linebuf))
+               state = 0;
             myFputs(linebuf,out,strip_stats_option,mightbestats(state));
             break;
             }

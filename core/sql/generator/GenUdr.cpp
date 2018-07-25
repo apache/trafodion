@@ -43,9 +43,7 @@
 #include "sql_buffer.h"
 #include "NAUserId.h"
 #include "ComUser.h"
-#pragma warning ( disable : 4244 )
 #include "ExplainTuple.h"
-#pragma warning ( default : 4244 )
 
 #include "ExplainTupleMaster.h"
 #include "ComQueue.h"
@@ -557,8 +555,7 @@ static short udr_codegen(Generator *generator,
 
       childInfo = op->getChildInfo(0);
       numChildInputCols = childInfo->getOutputs().entries();
-      if (numChildInputCols > 0)
-        childInput_exprs = new(space)ex_expr*[1];
+      childInput_exprs = new(space)ex_expr*[1];
     }
   }
   

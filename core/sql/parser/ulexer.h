@@ -90,7 +90,6 @@ typedef Int32 yy_state_type;
 
 union YYSTYPE;
 
-#pragma nowarn(1506)   // warning elimination 
 class ULexer {
 public:
 	virtual ~ULexer()	{ }
@@ -112,7 +111,6 @@ protected:
 
 	{ for (NAWchar* c=yytext_; *c; c++) *c = toupper(*c); }
 
-	#ifdef NA_WIDE_CHARACTER
 	  char yynarrow_[400];
 	  void yyToNarrow()
 	  { 
@@ -126,12 +124,7 @@ protected:
 	    }
 	    *n = '\0';
 	  }
-	#else
-	  #define yynarrow_ yytext_
-	  void yyToNarrow() {}
-	#endif
 };
-#pragma warn(1506)  // warning elimination 
 
 }
 #endif	// __U_LEXER_H

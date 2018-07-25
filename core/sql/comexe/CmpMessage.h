@@ -69,7 +69,6 @@ class FragmentDir;
 // -----------------------------------------------------------------------
 // The base class for all the executor/compiler messages 
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 class CmpMessageObj : public IpcMessageObj
 {
 public:
@@ -90,7 +89,6 @@ public:
       INTERNALSP_REQUEST,
       INTERNALSP_GETNEXT,
       ENVS_REFRESH,
-      READTABLEDEF_REQUEST,
       SQLTEXT_RECOMPILE, // tells mxcmp to decache & recompile query
       SQLTEXT_STATIC_RECOMPILE,
       END_SESSION,
@@ -185,7 +183,7 @@ protected:
                       char* strPtr, ULng32 maxSize,
                       ULng32& sizeMoved);
 
-  NA_EIDPROC void advanceSize(IpcMessageObjSize &size, 
+  void advanceSize(IpcMessageObjSize &size, 
 		   const void * const buffPtr, Lng32 sz=0)
     {
       const Int32 lenSize = sizeof(CmpMsgBufLenType);
@@ -196,7 +194,7 @@ protected:
 
   ID id_;
   
-  NA_EIDPROC void advanceSize(IpcMessageObjSize &size, Int64 i64)
+  void advanceSize(IpcMessageObjSize &size, Int64 i64)
   { size += sizeof(i64); }
 
   IpcMessageObjSize packIntoBuffer(char* &buffer, Int64 i64)
@@ -221,7 +219,6 @@ private:
   CollHeap* h_;
   
 }; // end of CmpMessageObj
-#pragma warn(1506)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // Basic request objects
@@ -303,14 +300,12 @@ protected:
 // Information that is sent to recompile a dynamic or static statement.
 // This class is sent as part of the data() field.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 class CmpCompileInfo 
 {
 public:
   CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
 		 Lng32 sourceStrCharSet,
 		 char * schemaName, Lng32 schemaNameLen, 
-		 char * recompControlInfo, Lng32 recompControlInfoLen,
 		 ULng32 inputArrayMaxsize,
 		 short rowsetAtomicity);
   CmpCompileInfo();
@@ -326,16 +321,11 @@ public:
   void unpack(char * base);
   
   void getUnpackedFields(char* &sqltext,
-			 char* &schemaName,
-			 char* &recompControlInfo);
+			 char* &schemaName);
 
   const ULng32 getInputArrayMaxsize() {return inputArrayMaxsize_ ;}
 
   const short getRowsetAtomicity();
-
-  NABoolean nametypeNsk() { return (flags_ & NAMETYPE_NSK) != 0; }
-  void setNametypeNsk(NABoolean v)      
-           { (v ? flags_ |= NAMETYPE_NSK : flags_ &= ~NAMETYPE_NSK); }
 
   NABoolean odbcProcess() { return (flags_ & ODBC_PROCESS) != 0; }
   void setOdbcProcess(NABoolean v)      
@@ -382,7 +372,7 @@ public:
   void setDoNotCachePlan(NABoolean v)
     { (v ? flags_ |= DO_NOT_CACHE_PLAN : flags_ &= ~DO_NOT_CACHE_PLAN); }
 
-  enum { FILLERSIZE = 56 /* used to be 60 - took 4 bytes for sqlTextCharSet_ */ } ; // of original 72
+  enum { FILLERSIZE = 60 };
 
 protected:
   enum Flags 
@@ -430,12 +420,9 @@ protected:
   ULng32 inputArrayMaxsize_;  // 32-35
   ULng32 flags_;              // 36-39
 
-  char * recompControlInfo_;         // 40-43
-  Lng32  recompControlInfoLen_;      // 44-47
-  Lng32  sqlTextCharSet_;            // 48-51   
-  char fillerBytes_[FILLERSIZE];     // 52-107   
+  Lng32  sqlTextCharSet_;            // 40-43
+  char fillerBytes_[FILLERSIZE];     // 44-103
 };
-#pragma warn(1506)  // warning elimination 
 
 class CmpMessageRequest : public CmpMessageRequestBasic
 {
@@ -501,7 +488,6 @@ private:
 // Basic class for reply to executor
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
 class CmpMessageReply : public CmpMessageReplyBasic
 {
 public:
@@ -569,7 +555,6 @@ private:
   // This CollHeap* is used to allocate data_.
   CollHeap* outh_;
 }; // end of CmpMessageReply
-#pragma warn(1506)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // connection control messages
@@ -833,19 +818,22 @@ class CmpDDLwithStatusInfo : public CmpCompileInfo
 
   enum
   {
-    DONE_                = 0x0001,
-    COMPUTE_ST_    = 0x0002,
-    COMPUTE_ET_    = 0x0004,
-    RETURN_ET_       = 0x0008,
-    START_               = 0x0010,
-    END_                   = 0x0020,
+    DONE_           = 0x0001,
+    COMPUTE_ST_     = 0x0002,
+    COMPUTE_ET_     = 0x0004,
+    RETURN_ET_      = 0x0008,
+    START_          = 0x0010,
+    END_            = 0x0020,
     XN_STARTED_     = 0x0040,
     MD_UPGRADE_     = 0x0080,
-    GET_MD_VERSION_    = 0x0100,
-    GET_SW_VERSION_    = 0x0200,
-    MD_CLEANUP_           = 0x0400,
-    CHECK_ONLY_          = 0x0800,
-    RETURN_DETAILS_    = 0x1000
+    GET_MD_VERSION_ = 0x0100,
+    GET_SW_VERSION_ = 0x0200,
+    MD_CLEANUP_     = 0x0400,
+    CHECK_ONLY_     = 0x0800,
+    RETURN_DETAILS_ = 0x1000,
+    INIT_TRAF_      = 0x2000,
+    MINIMAL_IT_     = 0x4000,
+    DDL_XNS_        = 0x8000,
   };
 
  public:
@@ -854,8 +842,7 @@ class CmpDDLwithStatusInfo : public CmpCompileInfo
 
   CmpDDLwithStatusInfo(char * sourceStr, Lng32 sourceStrLen,
                        Lng32 sourceStrCharSet,
-                       char * schemaName, Lng32 schemaNameLen, 
-                       char * recompControlInfo, Lng32 recompControlInfoLen);
+                       char * schemaName, Lng32 schemaNameLen);
   
   short getClassSize() { return (short)sizeof(CmpDDLwithStatusInfo); }
   Lng32 getLength();
@@ -912,6 +899,18 @@ class CmpDDLwithStatusInfo : public CmpCompileInfo
   void setReturnDetails(NABoolean v)
   {(v ? statusFlags_ |= RETURN_DETAILS_ : statusFlags_ &= ~RETURN_DETAILS_); }
   NABoolean getReturnDetails() { return (statusFlags_ & RETURN_DETAILS_) != 0;}
+
+  void setInitTraf(NABoolean v)
+  {(v ? statusFlags_ |= INIT_TRAF_ : statusFlags_ &= ~INIT_TRAF_); }
+  NABoolean getInitTraf() { return (statusFlags_ & INIT_TRAF_) != 0;}
+
+  void setMinimalInitTraf(NABoolean v)
+  {(v ? statusFlags_ |= MINIMAL_IT_ : statusFlags_ &= ~MINIMAL_IT_); }
+  NABoolean getMinimalInitTraf() { return (statusFlags_ & MINIMAL_IT_) != 0;}
+
+  void setDDLXns(NABoolean v)
+  {(v ? statusFlags_ |= DDL_XNS_ : statusFlags_ &= ~DDL_XNS_); }
+  NABoolean getDDLXns() { return (statusFlags_ & DDL_XNS_) != 0;}
 
   void setMsg(const char * msg)
   {
@@ -1096,9 +1095,7 @@ public:
   IpcMessageObjSize mypackedLength();
   IpcMessageObjSize packMyself(IpcMessageBufferPtr& buffer);
 
-#ifdef NA_CMPDLL
   IpcMessageObjSize copyFragsToBuffer(IpcMessageBufferPtr& buffer);
-#endif // NA_CMPDLL
 
 private:
   

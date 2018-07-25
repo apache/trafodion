@@ -1,0 +1,195 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[[About_This_Document]]
+= About This Document
+This guide describes how to use Large Object (LOB) datatypes in Trafodion SQL.
+
+[[Intended_Audience]]
+== Intended Audience
+This manual is intended for programmers who use LOB datatypes. 
+
+[[New_and_Changed_Information]]
+== New and Changed Information
+This is a new guide.
+
+[[Document_Organization]]
+== Document Organization
+
+[cols="30%,70%",options="header"]
+|===
+|Chapter                                       | Description
+| <<Introduction,Introduction>>                | Introduces LOBs and covers following topics: +
+&#8226; 1.1 <<what is a lob,What is a LOB>> +
+&#8226; 1.2 <<lob data types,LOB Data Types>> +
+&#8226; 1.3 <<lob storage,LOB Storage>> +
+&#8226; 1.4 <<lob handle,LOB Handle>> +
+&#8226; 1.5 <<lob restrictions,LOB Restrictions>> +
+&#8226; 1.6 <<lob related sql statements and functions,LOB Related SQL Statements and Functions>>.
+
+| <<working with LOBs,Working With LOBs>>              | Explains how to use a LOB with SQL statement and covers following topics: +
+&#8226; 2.1  <<creating a sql table with lob columns,Creating a SQL Table with LOB Columns>> +
+&#8226; 2.2  <<inserting into a sql table containing lob columns,Inserting into a SQL Table Containing LOB Columns>> +
+&#8226; 2.3  <<inserting into a sql table containing lob columns using select clause,Inserting into a SQL Table Containing LOB Columns Using Select Clause>> +
+&#8226; 2.4  <<updating a sql table containing lob columns,Updating a SQL Table Containing LOB Columns>> +
+&#8226; 2.5  <<selecting column from a sql table containing lob columns,Selecting Column from a SQL Table Containing LOB Columns>> +
+&#8226; 2.6  <<extracting lob data from a sql table containing lob columns,Extracting LOB Data from a SQL Table Containing LOB Columns>> +
+&#8226; 2.7  <<deleting column from a sql table containing lob columns,Deleting Column from a SQL Table Containing LOB columns>> +
+&#8226; 2.8  <<dropping a sql table containing lob columns,Dropping a SQL Table Containing LOB Columns>> +
+&#8226; 2.9  <<garbage collection,Garbage Collection>> +
+&#8226; 2.10 <<cleanup of a sql table containing lob columns,Cleanup of a SQL Table Containing LOB Columns>> +
+&#8226; 2.11 <<showddl for lobs,SHOWDDL for LOBs>> +
+&#8226; 2.12 <<getting statement for lob tables,Getting Statement for LOB Tables>>
+|===
+
+== Notation Conventions
+This list summarizes the notation conventions for syntax presentation in this manual.
+
+* UPPERCASE LETTERS
++
+Uppercase letters indicate keywords and reserved words. Type these items exactly as shown. Items not enclosed in brackets are required. 
++
+```
+SELECT
+```
+
+* lowercase letters
++
+Lowercase letters, regardless of font, indicate variable items that you supply. Items not enclosed in brackets are required.
++
+```
+file-name
+```
+
+* &#91; &#93; Brackets 
++
+Brackets enclose optional syntax items.
++
+```
+DATETIME [start-field TO] end-field
+```
++
+A group of items enclosed in brackets is a list from which you can choose one item or none.
++
+The items in the list can be arranged either vertically, with aligned brackets on each side of the list, or horizontally, enclosed in a pair of brackets and separated by vertical lines.
++
+For example: 
++
+```
+DROP SCHEMA schema [CASCADE]
+DROP SCHEMA schema [ CASCADE | RESTRICT ]
+```
+
+<<<
+* { } Braces 
++
+Braces enclose required syntax items.
++
+```
+FROM { grantee [, grantee ] ... }
+```
++ 
+A group of items enclosed in braces is a list from which you are required to choose one item.
++
+The items in the list can be arranged either vertically, with aligned braces on each side of the list, or horizontally, enclosed in a pair of braces and separated by vertical lines.
++
+For example:
++
+```
+INTERVAL { start-field TO end-field }
+{ single-field } 
+INTERVAL { start-field TO end-field | single-field }
+``` 
+* | Vertical Line 
++
+A vertical line separates alternatives in a horizontal list that is enclosed in brackets or braces.
++
+```
+{expression | NULL} 
+```
+* &#8230; Ellipsis
++
+An ellipsis immediately following a pair of brackets or braces indicates that you can repeat the enclosed sequence of syntax items any number of times.
++
+```
+ATTRIBUTE[S] attribute [, attribute] ...
+{, sql-expression } ...
+```
++ 
+An ellipsis immediately following a single syntax item indicates that you can repeat that syntax item any number of times.
++
+For example:
++
+```
+expression-n ...
+```
+
+* Punctuation
++
+Parentheses, commas, semicolons, and other symbols not previously described must be typed as shown.
++
+```
+DAY (datetime-expression)
+@script-file 
+```
++
+Quotation marks around a symbol such as a bracket or brace indicate the symbol is a required character that you must type as shown.
++
+For example:
++
+```
+"{" module-name [, module-name] ... "}"
+```
+
+* Item Spacing
++
+Spaces shown between items are required unless one of the items is a punctuation symbol such as a parenthesis or a comma.
++
+```
+DAY (datetime-expression) DAY(datetime-expression)
+```
++
+If there is no space between two items, spaces are not permitted. In this example, no spaces are permitted between the period and any other items:
++
+```
+myfile.sh
+```
+
+* Line Spacing
++
+If the syntax of a command is too long to fit on a single line, each continuation line is indented three spaces and is separated from the preceding line by a blank line.
++
+This spacing distinguishes items in a continuation line from items in a vertical list of selections. 
++
+```
+match-value [NOT] LIKE _pattern
+   [ESCAPE esc-char-expression] 
+```
+
+== Comments Encouraged
+We encourage your comments concerning this document. We are committed to providing documentation that meets your
+needs. Send any errors found, suggestions for improvement, or compliments to user@trafodion.apache.org.
+
+Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.

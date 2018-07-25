@@ -53,6 +53,10 @@ void HSFuncMergeDiags( Lng32 sqlcode
                      , Lng32 fsError = 0
                      );
 
+// Clean up logs as determined by log settings; assumes that it
+// is called after diagnostics have been merged into CmpCommon::diags()
+void HSCleanUpLog();
+
 // -----------------------------------------------------------------------
 // Class to catch and summarize diagnostic info at procedure return.
 //
@@ -171,6 +175,7 @@ void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno);
               (retcode == 6007) || \
               (retcode == 4030) || \
               (retcode == 2053) || \
+              (retcode == 2024) || \
               (retcode == HS_WARNING)) \
             retcode = 0; \
         }
@@ -215,6 +220,7 @@ void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno);
          if (retcode) { \
            HSFuncLogError(retcode, (char *)HS_FILE, (Lng32)__LINE__); \
            HSFilterError(retcode); \
+           HSCleanUpLog(); \
            HSClearCLIDiagnostics(); \
            return retcode; \
          } \
@@ -233,9 +239,9 @@ class HSLogMan
          static HSLogMan* Instance();
          inline NABoolean LogNeeded() const {return logNeeded_;}
          void Log(const char *data);      /* data string to write to log     */
-         void StartLog(NABoolean needExplain = TRUE,     /* start the log    */
-                       const char* logFileName = NULL);  /* allow override of default */
+         void StartLog(NABoolean needExplain = TRUE);    /* start the log    */
          void StopLog();                  /* stop the log                    */
+         void StopAndDeleteLog();         /* stop the log and delete it      */
          void ClearLog();                 /* erase the log file              */
          void StartTimer(const char *title = ""); /* start time-watch        */
          void StopTimer();                /* stop time-watch                 */
@@ -245,11 +251,23 @@ class HSLogMan
                                           /* formmatting messages            */
 
          NAString* logFileName() { return logFile_; };
-         NABoolean ContainDirExist(const char* path);
-         NABoolean GetLogFile(NAString & logFile, const char* cqc_value);
+
+         enum LogSetting 
+           {
+             ON,      // log all activity continuously in one log until explicitly 
+                      // turned off
+             OFF,     // do not log any activity 
+             SYSTEM   // log each UPDATE STATS command in a separate log; keep log
+                      // only if interesting errors occur
+           };
+
+         LogSetting GetLogSetting() const { return logSetting_; }
+         void SetLogSetting(LogSetting logSetting);
+
     protected:
          HSLogMan();                      /* ensure only 1 instance of class */
     private:
+         LogSetting logSetting_;
          NABoolean logNeeded_;            /* T: logging is needed            */
          NAString *logFile_;              /* log filename                    */
 

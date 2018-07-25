@@ -31,16 +31,8 @@ if not dcsconfig_dir:
 doc = minidom.parse(dcsconfig_dir+"/dcs-site.xml")
 props = doc.getElementsByTagName("property")
 for prop in props:
-        pname = prop.getElementsByTagName("name")[0]
-        if (pname.firstChild.data == "dcs.master.port"):
-           pvalue = prop.getElementsByTagName("value")[0]
-           dcsPort=pvalue.firstChild.data
-           print("%s" % (dcsPort))
-        if (pname.firstChild.data == "dcs.master.floating.ip.external.ip.address"):
-           pvalue = prop.getElementsByTagName("value")[0]
-           float_ipaddress=pvalue.firstChild.data
-           print("%s" % (float_ipaddress))
-        if (pname.firstChild.data == "dcs.master.floating.ip.external.interface"):
-           pvalue = prop.getElementsByTagName("value")[0]
-           float_interface=pvalue.firstChild.data
-           print("%s" % (float_interface))
+      tagName = prop.getElementsByTagName ("name")[0]
+      pname=tagName.childNodes[0].data
+      tagValue = prop.getElementsByTagName("value")[0]
+      pvalue=tagValue.childNodes[0].data
+      print("%s:%s" % (pname,pvalue))

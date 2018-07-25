@@ -38,8 +38,6 @@
 ******************************************************************************
 */
 
-#include <setjmp.h>
-
 #include "Platform.h"
 #include "ExCollections.h"
 #include "Int64.h"
@@ -59,6 +57,8 @@ class StatsGlobals;
 class sql_buffer_pool;
 class LOBglobals;
 class SequenceValueGenerator;
+class ExLobGlobals;
+class ContextCli;
 
 /////////////////////////////////////////////////////////////
 // class ex_globals
@@ -70,67 +70,63 @@ class ex_globals : public ExGod
 {
 public:
 
-  NA_EIDPROC ex_globals(short num_temps,
+  ex_globals(short num_temps,
 			short create_gui_sched = 0,
 			Space    * space = NULL,
 			CollHeap * heap  = NULL);
 
   // reallocate members
-  NA_EIDPROC void reAllocate(short create_gui_sched = 0);
+  void reAllocate(short create_gui_sched = 0);
 
   // to be called instead of a destructor
-  NA_EIDPROC virtual void deleteMe(NABoolean fatalError);
+  virtual void deleteMe(NABoolean fatalError);
 
   // operator to delete memory allocated with ::operator new(ex_globals *)
   // NOTE: this of course does NOT call the destructor for the object to delete
-  NA_EIDPROC void deleteMemory(void *mem);
+  void deleteMemory(void *mem);
   
-  NA_EIDPROC inline ExScheduler * getScheduler()            { return sch_; }
+  inline ExScheduler * getScheduler()            { return sch_; }
 
-  NA_EIDPROC inline void ** getTempsList()             { return tempList_; }
-  NA_EIDPROC inline Lng32 getNumTemps() const           { return numTemps_; }
-  NA_EIDPROC void setNumOfTemps(Lng32 numTemps);
+  inline void ** getTempsList()             { return tempList_; }
+  inline Lng32 getNumTemps() const           { return numTemps_; }
+  void setNumOfTemps(Lng32 numTemps);
 
-  NA_EIDPROC inline void setSpace(Space * space)           {space_ = space;}
-  NA_EIDPROC inline Space * getSpace()                      {return space_;}
+  inline void setSpace(Space * space)           {space_ = space;}
+  inline Space * getSpace()                      {return space_;}
 
   // return a pointer to default heap, which is the heap specified
   // as an argument to the constructor
-  NA_EIDPROC inline CollHeap *getDefaultHeap()             { return heap_; }
+  inline CollHeap *getDefaultHeap()             { return heap_; }
 
-  NA_EIDPROC virtual ExExeStmtGlobals * castToExExeStmtGlobals();
-  NA_EIDPROC virtual ExEidStmtGlobals * castToExEidStmtGlobals();
+  virtual ExExeStmtGlobals * castToExExeStmtGlobals();
+  virtual ExEidStmtGlobals * castToExEidStmtGlobals();
 
-  NA_EIDPROC inline void setStatsArea(ExStatisticsArea * statsArea)
+  inline void setStatsArea(ExStatisticsArea * statsArea)
     { statsArea_ = statsArea; }
 
   // returns stats area, if allocated AND if stats are enabled
-  NA_EIDPROC ExStatisticsArea* getStatsArea() 
+  ExStatisticsArea* getStatsArea() 
   { return (statsEnabled() ? statsArea_ : NULL); }
 
   // returns stats area, if it were allocated
-  NA_EIDPROC ExStatisticsArea* getOrigStatsArea() 
+  ExStatisticsArea* getOrigStatsArea() 
   { return statsArea_; }
 
-  NA_EIDPROC inline jmp_buf *getJmpBuf()             { return &longJmpTgt_; }
-  NA_EIDPROC inline void setJmpInScope(NABoolean jmpInScope)
-    { jmpInScope_ = jmpInScope; }
-  NA_EIDPROC inline NABoolean IsJmpInScope() { return jmpInScope_; }
 
-  NA_EIDPROC inline void setEventConsumed(UInt32 *eventConsumed)
+  inline void setEventConsumed(UInt32 *eventConsumed)
     { eventConsumedAddr_ = eventConsumed; }
 
-  NA_EIDPROC inline UInt32 *getEventConsumed()
+  inline UInt32 *getEventConsumed()
 					      { return eventConsumedAddr_; }
 
-  NA_EIDPROC inline void registerTcb( ex_tcb *newTcb)  
+  inline void registerTcb( ex_tcb *newTcb)  
     { tcbList_.insert(newTcb); }
 
-  NA_EIDPROC void cleanupTcbs();
+  void cleanupTcbs();
 
-  NA_EIDPROC void testAllQueues();
+  void testAllQueues();
 
-  NA_EIDPROC ExMeasStmtCntrs* getMeasStmtCntrs();
+  ExMeasStmtCntrs* getMeasStmtCntrs();
  
 
   // get the fragment id, the number of instances for my fragment,
@@ -139,43 +135,39 @@ public:
   virtual Lng32 getNumOfInstances() const = 0;
   virtual Lng32 getMyInstanceNumber() const = 0;
 
-NA_EIDPROC 
+
   inline ULng32 getInjectErrorAtExpr() const 
                                         { return injectErrorAtExprFreq_; }
-NA_EIDPROC 
+
   inline void setInjectErrorAtExpr(ULng32 cif) 
                                         { injectErrorAtExprFreq_ = cif; }
-NA_EIDPROC 
+
   inline ULng32 getInjectErrorAtQueue() const 
                                         { return injectErrorAtQueueFreq_; }
-NA_EIDPROC 
+
   inline void setInjectErrorAtQueue(ULng32 cif) 
                                         { injectErrorAtQueueFreq_ = cif; }
 
-NA_EIDPROC
   const LIST(ex_tcb *) &tcbList() const { return tcbList_; }
 
-NA_EIDPROC 
+
   NABoolean computeSpace(){return (flags_ & COMPUTE_SPACE) != 0;};
-NA_EIDPROC
   void setComputeSpace(NABoolean v)
   { (v ? flags_ |= COMPUTE_SPACE : flags_ &= ~COMPUTE_SPACE); };
 
-NA_EIDPROC 
+
   NABoolean measStmtEnabled(){return (flags_ & MEAS_STMT_ENABLED) != 0;};
-NA_EIDPROC
   void setMeasStmtEnabled(NABoolean v)
   { (v ? flags_ |= MEAS_STMT_ENABLED : flags_ &= ~MEAS_STMT_ENABLED); };
 
-NA_EIDPROC 
+
   NABoolean statsEnabled() {return (flags_ & STATS_ENABLED) != 0;};
-NA_EIDPROC
   void setStatsEnabled(NABoolean v)
   { (v ? flags_ |= STATS_ENABLED : flags_ &= ~STATS_ENABLED); };
 
   // getStreamTimeout: return TRUE (FALSE) if the stream-timeout was set (was
   // not set). If set, the timeoutValue parameter would return that value
-  NA_EIDPROC virtual NABoolean getStreamTimeout( Lng32 & timeoutValue ) = 0;
+  virtual NABoolean getStreamTimeout( Lng32 & timeoutValue ) = 0;
 
   UInt32 planVersion() {return planVersion_;};
   void setPlanVersion(UInt32 pv){planVersion_ = pv; };
@@ -189,10 +181,9 @@ NA_EIDPROC
   inline sql_buffer_pool *getSharedPool() { return sharedPool_; }
   inline void setSharedPool(sql_buffer_pool *p) { sharedPool_ = p; }
 
-  void *& getExLobGlobal();
-  LOBglobals * lobGlobals() { return lobGlobals_; }
+  ExLobGlobals *&getExLobGlobal();
   
-  void initLOBglobal(void *context);
+  void initLOBglobal(ContextCli *context, NABoolean useLibHdfs);
   
   SequenceValueGenerator * seqGen();
   
@@ -200,6 +191,7 @@ NA_EIDPROC
 
   void setRollupColumnNum(Int16 v) { rollupColumnNum_ = v; }
   Int16 getRollupColumnNum() { return rollupColumnNum_; }
+  ExLobGlobals *getLobGlobals() {return exLobGlobals_; }
 
 private:
   enum FlagsTypeEnum 
@@ -238,10 +230,6 @@ private:
   // pointer to the statsArea (if statistics are collected)
   ExStatisticsArea * statsArea_;
 
-  // for handling tcb-build-time errors, and memory alloc errors.
-  jmp_buf  longJmpTgt_;
-  NABoolean jmpInScope_;
-
   // for cleanup.
   LIST(ex_tcb *) tcbList_;
 
@@ -270,8 +258,7 @@ private:
 
   // pool shared by among PAs under PAPA
   sql_buffer_pool *sharedPool_;
-
-  LOBglobals * lobGlobals_;
+  ExLobGlobals *exLobGlobals_;
 
   // pointer passed to interface methods that store and retrieve lob data
   // from flatfile or hdfs filesystem.

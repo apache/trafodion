@@ -53,15 +53,13 @@
 #include "NewDel.h"
 #include "opt.h"
 #include "NAExit.h"
-#include "SqlExportDllDefines.h"
 #include "QCache.h"
 #include "CompException.h"
 #include "CostMethod.h"
-#include "ReadTableDef.h"
 #include "NAExecTrans.h"
 
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf CmpInternalErrorJmpBuf;
+extern THREAD_P jmp_buf ExportJmpBuf;
+extern THREAD_P jmp_buf CmpInternalErrorJmpBuf;
 
 // This is a global variable used per process to identify whether this 
 // arkcmp process is spawned for internal stored procedure execution.
@@ -338,22 +336,10 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
       // CmpMessageDescribe
       // CmpMessageUpdateHist
       // CmpMessageSetTrans
-      // CmpMessageReadTableDef
       // CmpMessageEndSession
       // Reset the parent qid and the requests that has parent qid will set it later
       if (CmpCommon::context() && CmpCommon::context()->sqlSession())
         CmpCommon::context()->sqlSession()->setParentQid(NULL);
-
-      // Checks to see if there is currently an active TMF transaction
-      // and set a flag in the readTableDef structure
-      CmpContext *pContext = CmpCommon::context();
-      /* 
-	 Int64 transId = -1;
-	 NABoolean transInProgress = FALSE;
-	 // this call inherits transaction id, if one has been passed in.
-	 if (NAExecTrans(0, transId))
-	 transInProgress = TRUE;
-      */
 
       switch (typ=getNextObjType()) 
       {
@@ -363,7 +349,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
           // The number of NAMemory objects that reside in SYSTEM_MEMORY
           // is currently restricted to one at a time--see explanation in
           // NAMemory.h.
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageSQLText sqltext(NULL,0,CTXTHEAP,SQLCHARSETCODE_UNKNOWN,
                                     (CmpMessageObj::MessageTypeEnum)typ);
           receiveAndSetUp(this, sqltext);
@@ -402,7 +388,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
 
       case (CmpMessageObj::DDL) :
         {
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageDDL statement(NULL, 0, CTXTHEAP);
 	  receiveAndSetUp(this, statement);
           cmpStatement->process(statement);
@@ -411,7 +397,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
 
       case (CmpMessageObj::DESCRIBE) :
         {
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageDescribe statement(NULL, 0, CTXTHEAP);
 	  receiveAndSetUp(this, statement);
           cmpStatement->process(statement);
@@ -447,7 +433,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
 
       case (CmpMessageObj::DDL_WITH_STATUS) :
         {
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageDDLwithStatus statement(NULL, 0, CTXTHEAP);
 	  receiveAndSetUp(this, statement);
           cmpStatement->process(statement);
@@ -568,7 +554,9 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
   
   if (cmpStatement)
   {
-    *this << *cmpStatement->diags();
+    ComDiagsArea *diags = cmpStatement->diags();
+    if (diags->getNumber() > 0)
+       *this << *cmpStatement->diags();
     if (cmpStatement->reply()) 
       *this << *cmpStatement->reply();
   }

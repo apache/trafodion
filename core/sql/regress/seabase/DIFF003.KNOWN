@@ -1,0 +1,12 @@
+1181a1182
+> 
+1182a1184
+> *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:NUMERIC(REC_NUM_BIG_SIGNED) Source Value:0x09000000000000000100 to Target Type:LARGEINT(REC_BIN64_SIGNED).
+1539a1542
+> 
+1540a1544
+> *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:NUMERIC(REC_NUM_BIG_SIGNED) Source Value:0x09000000000000000100 to Target Type:LARGEINT(REC_BIN64_SIGNED).
+1900a1905
+> 
+1901a1907
+> *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:NUMERIC(REC_NUM_BIG_SIGNED) Source Value:0x09000000000000000100 to Target Type:LARGEINT(REC_BIN64_SIGNED).

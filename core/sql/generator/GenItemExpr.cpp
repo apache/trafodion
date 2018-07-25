@@ -314,9 +314,7 @@ short BiArith::codeGen(Generator * generator)
   if (attr[0]->isComplexType())
     {
       eg->addTempsLength(((ComplexType *)attr[0])->setTempSpaceInfo(getOperatorType(),
-#pragma nowarn(1506)   // warning elimination 
 								    eg->getTempsLength()));
-#pragma warn(1506)  // warning elimination 
     }
 			      
   attr[0]->resetlastdaymonthflag();
@@ -353,9 +351,7 @@ short BiArithSum::codeGen(Generator * generator)
   if (attr[0]->isComplexType())
     {
       eg->addTempsLength(((ComplexType *)attr[0])->setTempSpaceInfo(getOperatorType(),
-#pragma nowarn(1506)   // warning elimination 
 								    eg->getTempsLength()));
-#pragma warn(1506)  // warning elimination 
     }
 			      
   ex_arith_sum_clause * arith_clause =
@@ -363,6 +359,8 @@ short BiArithSum::codeGen(Generator * generator)
     ex_arith_sum_clause(getOperatorType(), 
 			attr, 
 			generator->getSpace());
+  if (eg->inSequenceFuncExpr())
+     arith_clause->setAugmentedAssignOperation(FALSE);
   
   generator->getExpGenerator()->linkClause(this, arith_clause);
 
@@ -382,9 +380,7 @@ short BiArithCount::codeGen(Generator * generator)
   if (attr[0]->isComplexType())
     {
       eg->addTempsLength(((ComplexType *)attr[0])->setTempSpaceInfo(getOperatorType(),
-#pragma nowarn(1506)   // warning elimination 
 								    eg->getTempsLength()));
-#pragma warn(1506)  // warning elimination 
     }
 			      
   ex_arith_count_clause * arith_clause =

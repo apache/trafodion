@@ -32,14 +32,12 @@
 #include "QueryRewriteServer.h"
 #include "QRIpc.h"
 
-#if defined (NA_LINUX)
 #include "nsk/nskport.h"
 #include "seabed/ms.h"
 #include "seabed/fs.h"
 extern void my_mpi_fclose();
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(tdm_arkqms)
-#endif
 
 /**
  * \file
@@ -66,16 +64,13 @@ static QmsGuaReceiveControlConnection* initializeIPC(IpcEnvironment*& env)
   return conn;
 }
 
-#ifdef NA_LINUX
 extern "C"
 {
 Int32 sq_fs_dllmain();
 }
-#endif
 
 Int32 main(Int32 argc, char *argv[])
 {
-#ifdef NA_LINUX
   dovers(argc, argv);
 
   try
@@ -86,14 +81,11 @@ Int32 main(Int32 argc, char *argv[])
     file_mon_process_startup(true);
     atexit(my_mpi_fclose);
   }
-  // LCOV_EXCL_START :rfi
   catch (...)
   {
     cerr << "Error while initializing messaging system. Exiting..." << endl;
     exit(1);
   }
-  // LCOV_EXCL_STOP
-#endif
 
   NABoolean performSMDInit = FALSE;
   NABoolean performXMLInit = FALSE;
@@ -102,13 +94,6 @@ Int32 main(Int32 argc, char *argv[])
   // MessageBox thing below uses an env var and won't work unless QMS is run
   // from a command-line in the shell that defines the env var.
   //Sleep(30000);
-
-#ifdef NA_WINNT
-  if (getenv("QMS_MSGBOX_PROCESS") != NULL)
-  {
-    MessageBox( NULL, "QMS Process Launched", (CHAR *)argv[0], MB_OK|MB_ICONINFORMATION );
-  };
-#endif
 
   QRLogger::instance().setModule(QRLogger::QRL_QMS);
   QRLogger::instance().initLog4cxx("log4cxx.qms.config");
@@ -126,11 +111,7 @@ Int32 main(Int32 argc, char *argv[])
 
   // If invoked via the message interface, -oss will be the program
   // parameter after the program name.
-#if defined (NA_WINNT) || defined (NA_LINUX)
   NABoolean commandLineInterface = (strncmp(argv[1], "-guardian", 9) != 0);
-#else
-  NABoolean commandLineInterface = (strncmp(argv[1], "-oss", 4) != 0);
-#endif
 
   // For message interface, initialize IPC so it will return to qmm from the
   // process creation code before we begin qms initialization.

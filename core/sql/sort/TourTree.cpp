@@ -85,7 +85,6 @@ Tree::Tree(ULng32 numruns, ULng32 runsize, ULng32 recsize,
       assert(scratch_ != NULL);
     }
 
-   //Allocation failure will cause longjmp to jmp handler in ex_sort.
    rootNode_ = (TreeNode*)heap_->allocateMemory(numRuns_ * sizeof(TreeNode));
    rootRecord_ = (Record*)heap_->allocateMemory(numRuns_ * sizeof(Record));
    keyOfLastWinner_ = (char*)heap_->allocateMemory(sizeof(char) * keysize);
@@ -94,9 +93,7 @@ Tree::Tree(ULng32 numruns, ULng32 runsize, ULng32 recsize,
    ex_assert(rootNode_ != NULL, "Tree::Tree, root_Node_ is NULL");
    ex_assert(rootRecord_ != NULL, "Tree::Tree, rootRecord_ is NULL");
    
-#pragma nowarn(1506)   // warning elimination 
    str_pad(keyOfLastWinner_, keysize, '\377');
-#pragma warn(1506)  // warning elimination 
    baseRun_    = runnum;
    winner_     = rootNode_;
 
@@ -418,7 +415,6 @@ Lng32 Tree::generateInterRuns()
 }
 
 //  **********************UNUSED METHODS ********************************
-// LCOV_EXCL_START
 
 Lng32 Tree::sortClientOutOfMem(void)
 {
@@ -507,7 +503,6 @@ UInt32 Tree::getOverheadPerRecord(void)
   return(2 * (sizeof(TreeNode) + sizeof(Record)));
 }
 
-// LCOV_EXCL_STOP
 
 
 

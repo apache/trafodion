@@ -460,13 +460,11 @@ StmtDDLCreateMV::getMVNameAsQualifiedName() const
   return MVQualName_;
 }
 
-// LCOV_EXCL_START :cnu (MV on View not supported)
 inline CollIndex
 StmtDDLCreateMV::getCurViewColNum() const
 {
   return getViewUsages().getCurViewColNum();
 }
-// LCOV_EXCL_STOP
 
 inline const StringPos
 StmtDDLCreateMV::getEndPosition() const
@@ -542,7 +540,6 @@ StmtDDLCreateMV::getMVName() const
   return MVQualName_.getQualifiedNameAsAnsiString();
 }
 
-// LCOV_EXCL_START :cnu (MV on View not supported)
 inline const ParViewUsages &
 StmtDDLCreateMV::getViewUsages() const
 {
@@ -554,7 +551,6 @@ StmtDDLCreateMV::getViewUsages()
 {
   return viewUsages_;
 }
-// LCOV_EXCL_STOP
 
 inline const LIST(OptUDFInfo *) &
 StmtDDLCreateMV::getUDFList() const
@@ -574,13 +570,11 @@ StmtDDLCreateMV::isItmColRefInColInRowVals() const
   return getViewUsages().isItmColRefInColInRowVals();
 }
 
-// LCOV_EXCL_START :cnu (MV on View not supported)
 inline NABoolean
 StmtDDLCreateMV::isProcessingViewColList() const
 {
   return getCurViewColNum() NEQ NULL_COLL_INDEX;
 }
-// LCOV_EXCL_STOP
 
 //
 // mutators
@@ -592,13 +586,11 @@ StmtDDLCreateMV::resetCurViewColNum()
   getViewUsages().setCurViewColNum(NULL_COLL_INDEX);
 }
 
-// LCOV_EXCL_START :cnu (MV on View not supported)
 inline void
 StmtDDLCreateMV::setCurViewColNum(const CollIndex curVwCol)
 {
   getViewUsages().setCurViewColNum(curVwCol);
 }
-// LCOV_EXCL_STOP
 
 inline void
 StmtDDLCreateMV::setEndPosition(const StringPos endPos)

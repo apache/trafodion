@@ -227,12 +227,10 @@ public:
 
   // These functions allow split bottom tcb initialization methods to read
   // the hash values for the skewed partitioning key values.
-// LCOV_EXCL_START
   SplitBottomSkewInfo *getSkewInfo()                     { return skewInfo_; }
   const Int32 getNumSkewValues(void) 
                                  { return getSkewInfo()->numSkewHashValues_; }
 // those 3 lines won't be covered, code nowhere used
-// LCOV_EXCL_STOP
   Int64 const * hashValueArray(void) 
                                     { return getSkewInfo()->skewHashValues_; }
 

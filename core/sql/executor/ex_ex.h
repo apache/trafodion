@@ -38,38 +38,15 @@
  */
 
 // -----------------------------------------------------------------------
-#include <setjmp.h>
 #include "Platform.h"
-
-#ifndef __EID
-extern jmp_buf ExeBuf;
-#endif
 
 //typedef	int		(*funcptr) (void *);
 typedef	Int32	funcptr;    // for now
 
-#if !defined(NA_WINNT) && defined(__EID)
-  // The following fn is defined in ex_dp2exe_root.cpp
-NA_EIDPROC short logInternalErrorCode( const char * filename, Int32 line, Lng32 r );
-
-#define logInternalError(r) logInternalErrorCode(__FILE__, __LINE__, (r))
-
-#else
 #define logInternalError(r) ((short)r)
-#endif
 
-NA_EIDPROC
-void ex_log_ems( const char *f, Int32 l, const char * m);
+#define ex_assert(p, msg) if (!(p)) { assert_botch_abend( __FILE__ , __LINE__ , msg); };
 
-NA_EIDPROC
-void assert_botch_longjmp( const char *f, int l, const char * m);
-
-#ifndef __EID
-#define ex_assert(p, msg) if (!(p)) { assert_botch_abend( __FILE__ , __LINE__ , msg); }; // LCOV_EXCL_LINE
-#else
-void assert_botch_in_eid( const char *f, Int32 l, const char * m);
-#define ex_assert(p, msg) if (!(p)) { assert_botch_in_eid( __FILE__ , __LINE__ , msg); }; // LCOV_EXCL_LINE
-#endif
 class	ex_expr;	// to be defined
 
 // other classes referenced

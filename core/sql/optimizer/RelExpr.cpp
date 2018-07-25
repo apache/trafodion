@@ -288,6 +288,7 @@ RelExpr::RelExpr(OperatorTypeEnum otype,
   ,cachedResizeCIFRecord_(FALSE)
   ,dopReduced_(FALSE)
   ,originalExpr_(NULL)
+  ,operKey_(outHeap)
 {
 
   child_[0] = leftChild;
@@ -1078,7 +1079,33 @@ void RelExpr::pushDownGenericUpdateRootOutputs( const ValueIdSet &outputs)
 //QSTUFF
 
 void RelExpr::needSortedNRows(NABoolean val)
-{
+{ 
+  // The operators listed below can create OR propogate a GET_N
+  // request. Other operatots will turn a GET_N request into GET_ALL
+  // There are a few exceptions like right side of NJ for semi join etc.
+  // but these are not relevant for FirstN sort
+  // This method should only in the generator since we are using 
+  // physical node types.
+  OperatorTypeEnum operatorType = getOperatorType();
+  if ((operatorType != REL_FIRST_N) &&
+      (operatorType != REL_EXCHANGE) &&
+      (operatorType != REL_MERGE_UNION) &&
+      (operatorType != REL_PROBE_CACHE) &&
+      (operatorType != REL_ROOT) && 
+      (operatorType != REL_LEFT_NESTED_JOIN) &&
+      (operatorType != REL_LEFT_TSJ) &&
+      (operatorType != REL_MAP_VALUEIDS))
+    return ;
+      
+  if ((operatorType == REL_LEFT_NESTED_JOIN) || 
+      (operatorType == REL_LEFT_TSJ)) {
+    // left side of left tsj propagates a GET_N request if afterPred is empty.
+    if (getSelectionPred().isEmpty())
+      child(0)->castToRelExpr()->needSortedNRows(val);
+
+    return ;
+  }
+ 
   for (Int32 i=0; i < getArity(); i++) {
     if (child(i))
       child(i)->castToRelExpr()->needSortedNRows(val);
@@ -1988,77 +2015,52 @@ NABoolean RelExpr::containsNode(OperatorTypeEnum nodeType)
 }
 
 double RelExpr::computeMemoryQuota(NABoolean inMaster,
-                                   NABoolean perCPU,
-                                   double BMOsMemoryLimit, // in bytes 
-                                   UInt16 totalNumBMOs, // per CPU
-                                   double totalBMOsMemoryUsage, // per CPU, in bytes 
+                                   NABoolean perNode,
+                                   double BMOsMemoryLimit, // in MB 
+                                   UInt16 totalNumBMOs, // per query 
+                                   double totalBMOsMemoryUsage, // for all BMOs per node in bytes 
                                    UInt16 numBMOsPerFragment, // per fragment
-                                   double BMOsMemoryUsagePerFragment // per fragment, in bytes
+                                   double bmoMemoryUsage, // for the current BMO/Operator per node in bytes
+                                   Lng32 numStreams,
+                                   double &bmoQuotaRatio
                                    ) 
 {
-   if ( perCPU == TRUE ) {
-     Lng32 exeMem = Lng32(BMOsMemoryLimit/(1024*1024));
+   if ( perNode == TRUE ) {
+      Lng32 exeMem = Lng32(BMOsMemoryLimit/(1024*1024));
 
-     if ( inMaster && CmpCommon::getDefault(ODBC_PROCESS) == DF_ON ) {
-        
-        // Limiting the total memory in the master process when in both
-        // the per-CPU estimation and the ODBC mode.
-
-        NADefaults &defs = ActiveSchemaDB()->getDefaults();
-
-        Lng32 inCpuLimitDelta = 
-                    defs.getAsLong(EXE_MEMORY_AVAILABLE_IN_MB)
-                       -
-                    defs.getAsLong(EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB);
-
-        if ( inCpuLimitDelta < 0 )
-          inCpuLimitDelta = 50;
-
-        if (exeMem > inCpuLimitDelta)
-           exeMem = inCpuLimitDelta;
+     // the quota is allocated in 2 parts
+     // The constant part divided equally across all bmo operators
+     // The variable part allocated in proportion of the given BMO operator
+     // estimated memory usage to the total estimated memory usage of all BMOs
+   
+     // The ratio can be capped by the CQD
+     double equalQuotaShareRatio = 0;
+     equalQuotaShareRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO);
+     double constMemQuota = 0;
+     double variableMemLimit = exeMem;
+     if (equalQuotaShareRatio > 0 && totalNumBMOs > 1) {
+        constMemQuota = (exeMem * equalQuotaShareRatio )/ totalNumBMOs;
+        variableMemLimit = (1-equalQuotaShareRatio) * exeMem;
      }
-
-     // the quota is propotional to both the # of BMOs and the estimated memory 
-     // usage in the fragment, and evenly distrbuted among BMOs in the fragment.
-     return ((exeMem/2) * (BMOsMemoryUsagePerFragment/totalBMOsMemoryUsage + 
-                        double(numBMOsPerFragment)/totalNumBMOs)
-            ) / numBMOsPerFragment;
+     double bmoMemoryRatio = bmoMemoryUsage / totalBMOsMemoryUsage;
+     bmoQuotaRatio = bmoMemoryRatio;
+     double bmoMemoryQuotaPerNode = constMemQuota + (variableMemLimit * bmoMemoryRatio);
+     double numInstancesPerNode = numStreams / MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numStreams);
+     double bmoMemoryQuotaPerInstance =  bmoMemoryQuotaPerNode / numInstancesPerNode;
+     return bmoMemoryQuotaPerInstance;
   } else {
      // the old way to compute quota 
      Lng32 exeMem = getExeMemoryAvailable(inMaster);
+     bmoQuotaRatio = BMOQuotaRatio::NO_RATIO;
      return exeMem / numBMOsPerFragment; 
   }
 }
-
-Lng32 RelExpr::getExeMemoryAvailable(NABoolean inMaster, 
-                                    Lng32 BMOsMemoryLimit) const
-{
-  Lng32 exeMemAvailMB = BMOsMemoryLimit;
-
-  if ((CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) &&
-       inMaster  &&
-      (exeMemAvailMB != 0))  // if the cqd is zero, then we do not do BMO quota
-  {
-    // Adjustment because MXOSRVR has QIO segments in competition with 
-    // executor.
-    exeMemAvailMB -= 
-      ActiveSchemaDB()->getDefaults().getAsLong(
-                            EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB);
-
-    if (exeMemAvailMB < 50)
-      exeMemAvailMB = 50;
-  }
-
-  return exeMemAvailMB;
-}  // RelExpr::getExeMemoryAvailable() 
-
 
 Lng32 RelExpr::getExeMemoryAvailable(NABoolean inMaster) const
 {
    Lng32 exeMemAvailMB = 
       ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_AVAILABLE_IN_MB);
-
-   return getExeMemoryAvailable(inMaster, exeMemAvailMB);
+   return exeMemAvailMB;
 }
 
 // -----------------------------------------------------------------------
@@ -2266,6 +2268,7 @@ Int32 WildCardOp::getArity() const
     case REL_ANY_GROUP:
     case REL_FORCE_EXCHANGE:
     case REL_ANY_UNARY_TABLE_MAPPING_UDF:
+    case REL_ANY_EXTRACT:
       return 1;
 
     case REL_ANY_BINARY_OP:
@@ -2343,6 +2346,8 @@ const NAString WildCardOp::getText() const
       return "REL_ANY_HASH_JOIN";
     case REL_ANY_MERGE_JOIN:
       return "REL_ANY_MERGE_JOIN";
+    case REL_ANY_EXTRACT:
+      return "REL_ANY_EXTRACT";
     case REL_FORCE_ANY_SCAN:
       return "REL_FORCE_ANY_SCAN";
     case REL_FORCE_EXCHANGE:
@@ -2386,9 +2391,7 @@ RelExpr * WildCardOp::copyTopNode(RelExpr * derivedNode,
 	}
     }
 
-#pragma nowarn(203)   // warning elimination
   return NULL; // shouldn't really reach here
-#pragma warn(203)  // warning elimination
 }
 
 // -----------------------------------------------------------------------
@@ -3465,8 +3468,8 @@ void Sort::addLocalExpr(LIST(ExprNode *) &xlist,
 void Sort::needSortedNRows(NABoolean val)
 {
   sortNRows_ = val;
-
-  RelExpr::needSortedNRows(val);
+  // Sort changes a GET_N to GET_ALL, so it does not propagate a 
+  // Get_N request. It can simply act on one.
 }
 
 // -----------------------------------------------------------------------
@@ -6688,7 +6691,7 @@ void Join::rewriteNotInPredicate( ValueIdSet & origVidSet, ValueIdSet & newVidSe
 Intersect::Intersect(RelExpr *leftChild,
 	     RelExpr *rightChild)
 : RelExpr(REL_INTERSECT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Intersect::~Intersect() {}
 
@@ -6705,7 +6708,7 @@ const NAString Intersect::getText() const
 Except::Except(RelExpr *leftChild,
              RelExpr *rightChild)
 : RelExpr(REL_EXCEPT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Except::~Except() {}
 
@@ -6850,9 +6853,7 @@ void Union::getPotentialOutputValues(ValueIdSet & outputValues) const
   // The output of the union is defined by the ValueIdUnion
   // expressions that are maintained in the colMapTable_.
   //
-#pragma nowarn(1506)   // warning elimination
   Lng32 ne = unionMap_->colMapTable_.entries();
-#pragma warn(1506)  // warning elimination
   for (Lng32 index = 0; index < ne; index++)
     {
       // Accumulate the ValueIds of the result of the union
@@ -7305,7 +7306,6 @@ HashValue MergeUnion::topHash()
   return result;
 }
 
-#pragma nowarn(262)   // warning elimination
 NABoolean MergeUnion::duplicateMatch(const RelExpr & other) const
 {
   if (!RelExpr::duplicateMatch(other))
@@ -7319,7 +7319,6 @@ NABoolean MergeUnion::duplicateMatch(const RelExpr & other) const
   return FALSE;
 
 }
-#pragma warn(262)  // warning elimination
 
 RelExpr * MergeUnion::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
@@ -7816,6 +7815,8 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
   myLocalExpr += child(0).getGroupAttr()->getCharacteristicInputs();
   myLocalExpr += groupExpr();
   myLocalExpr += aggregateExpr();
+  // make sure we can still produce our characteristic outputs too
+  myLocalExpr += getGroupAttr()->getCharacteristicOutputs();
           
   // consider only preds that we can evaluate in the parent
   if (optionalMap)
@@ -7879,11 +7880,17 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
       else
         pulledPredicates += tempPulledPreds;
 
+      // just remove pulled up predicates from char. input
+      ValueIdSet newInputs(getGroupAttr()->getCharacteristicInputs());
+      myLocalExpr += selectionPred();
+      myLocalExpr -= tempPulledPreds;
+      myLocalExpr.weedOutUnreferenced(newInputs);
+      
       // adjust char. inputs - this is not exactly
       // good style, just overwriting the char. inputs, but
       // hopefully we'll get away with it at this stage in
       // the processing
-      getGroupAttr()->setCharacteristicInputs(myNewInputs);
+      getGroupAttr()->setCharacteristicInputs(newInputs);
     }
 
   // note that we removed these predicates from our node, it's the
@@ -8794,10 +8801,12 @@ void Scan::addIndexInfo()
               for (CollIndex i = 0; i < possibleIndexJoins_.entries(); i++)
                 {
                   NABoolean isASupersetIndex =
-                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex);
+                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex) &&
+                      possibleIndexJoins_[i]->indexPredicates_.contains(newIndexPredicates);
 
                   NABoolean isASubsetIndex =
-                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) ;
+                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) &&
+                      newIndexPredicates.contains(possibleIndexJoins_[i]->indexPredicates_);
 
                   NABoolean isASuperOrSubsetIndex = isASupersetIndex || isASubsetIndex;
 
@@ -9949,7 +9958,6 @@ const NAString FileScan::getTypeText() const
   return descr;
 }
 
-#pragma nowarn(262)   // warning elimination
 void FileScan::addLocalExpr(LIST(ExprNode *) &xlist,
 			    LIST(NAString) &llist) const
 {
@@ -10091,7 +10099,6 @@ void FileScan::addLocalExpr(LIST(ExprNode *) &xlist,
 
   RelExpr::addLocalExpr(xlist,llist);
 }
-#pragma warn(262)  // warning elimination
 
 const Disjuncts& FileScan::getDisjuncts() const
 {
@@ -10256,7 +10263,6 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
       return this;
     }
 
-  //  CorrName &corrName = (CorrName&)getCorrName();
   CorrName &corrName = getTableName();
   NATable * naTable = NULL;
 
@@ -10267,7 +10273,8 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
     {
       *CmpCommon::diags()
 	<< DgSqlCode(-1388)
-	<< DgTableName(corrName.getExposedNameAsAnsiString());
+        << DgString0("Object")
+	<< DgString1(corrName.getExposedNameAsAnsiString());
       
       bindWA->setErrStatus();
       return this;
@@ -10801,13 +10808,13 @@ RelRoot::RelRoot(RelExpr *input,
     firstNRowsParam_(NULL),
     flags_(0)
 {
-  accessOptions().accessType() = ACCESS_TYPE_NOT_SPECIFIED_;
+  accessOptions().accessType() = TransMode::ACCESS_TYPE_NOT_SPECIFIED_;
   accessOptions().lockMode() = LOCK_MODE_NOT_SPECIFIED_;
   isCIFOn_ = FALSE;
 }
 
 RelRoot::RelRoot(RelExpr *input,
-		 AccessType at,
+		 TransMode::AccessType at,
 		 LockMode lm,
 		 OperatorTypeEnum otype,
 		 ItemExpr *compExpr,
@@ -11394,8 +11401,9 @@ void RelRoot::setMvBindContext(MvBindContext * pMvBindContext)
   pMvBindContextForScope_ = pMvBindContext;
 }
 
-void RelRoot::addOneRowAggregates(BindWA* bindWA)
+NABoolean RelRoot::addOneRowAggregates(BindWA* bindWA, NABoolean forceGroupByAgg)
 {
+  NABoolean groupByAggNodeAdded = FALSE;
   RelExpr * childOfRoot = child(0);
   GroupByAgg *aggNode = NULL;
   // If the One Row Subquery is already enforced by a scalar aggregate
@@ -11410,7 +11418,11 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
   // way out and add a one row aggregate.
   // Also if the groupby is non scalar then we need to add a one row aggregate.
   // Also if we have select max(a) + select b from t1 from t2;
-  if (childOfRoot->getOperatorType() == REL_GROUPBY)
+  // Still another exception is if there is a [last 0] on top of this node. We
+  // need an extra GroupByAgg node with one row aggregates in this case so
+  // we can put the FirstN node underneath that.
+  if (!forceGroupByAgg &&
+      (childOfRoot->getOperatorType() == REL_GROUPBY))
     {
       aggNode = (GroupByAgg *)childOfRoot;
 
@@ -11427,7 +11439,7 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
 
     }
   if (aggNode)
-    return ;
+    return groupByAggNodeAdded;
 
   const RETDesc *oldTable = getRETDesc();
   RETDesc *resultTable = new(bindWA->wHeap()) RETDesc(bindWA);
@@ -11475,9 +11487,12 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
 
   newGrby->bindNode(bindWA) ;
   child(0) = newGrby ;
+  groupByAggNodeAdded = TRUE;
   // Set the return descriptor
   //
   setRETDesc(resultTable);
+
+  return groupByAggNodeAdded;
 }
 // -----------------------------------------------------------------------
 // member functions for class PhysicalRelRoot
@@ -11506,9 +11521,7 @@ Tuple::Tuple(const Tuple & other) : RelExpr(other.getOperatorType())
 
 Tuple::~Tuple() {}
 
-#pragma nowarn(1026)   // warning elimination
 Int32 Tuple::getArity() const { return 0; }
-#pragma warn(1026)  // warning elimination
 
 // -----------------------------------------------------------------------
 // A virtual method for computing output values that an operator can
@@ -11659,12 +11672,14 @@ RelExpr * FirstN::copyTopNode(RelExpr *derivedNode,
   FirstN *result;
 
   if (derivedNode == NULL) {
-    result = new (outHeap) FirstN(NULL, getFirstNRows(), getFirstNRowsParam(),
+    result = new (outHeap) FirstN(NULL, getFirstNRows(), isFirstN(), getFirstNRowsParam(),
                                   outHeap);
     result->setCanExecuteInDp2(canExecuteInDp2());
   }
   else
     result = (FirstN *) derivedNode;
+
+  result->reqdOrder().insert(reqdOrder());
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -11914,9 +11929,7 @@ RelExpr * BeforeTrigger::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 	  else
 	  {
 		CMPASSERT(setList_ != NULL);  // Must have either SET or SIGNAL clause.
-#pragma nowarn(1506)   // warning elimination
 		ItemExprList *setList = new(outHeap) ItemExprList(setList_->entries(), outHeap);
-#pragma warn(1506)  // warning elimination
 		for (CollIndex i=0; i<setList_->entries(); i++)
 		  setList->insert(setList_->at(i)->copyTree(outHeap));
 
@@ -13328,6 +13341,40 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
 				newExternalInputs,
 				predicatesOnParent,
 				&localExprs);
+
+/*to fix jira 18-20180111-2901  
+ *For query " insert into to t1 select seqnum(seq1, next) from t1;", there is no SORT as left child of TSJ, and it 
+ *is a self-referencing updates Halloween problem. In NestedJoin::genWriteOpLeftChildSortReq(), child(0)
+ *producing no outputs for this query, which means that there is no column to sort on. So we solve this by 
+ *having the source for Halloween insert produce at least one output column always.
+ * */
+  if (avoidHalloween() && child(0) &&
+      child(0)->getOperatorType() == REL_SCAN &&
+      child(0)->getGroupAttr())
+    {
+      if (child(0)->getGroupAttr()->getCharacteristicOutputs().isEmpty())
+        {
+          ValueId exprId;
+          ValueId atLeastOne;
+
+          ValueIdSet output_source = child(0)->getTableDescForExpr()->getColumnList();
+          for (exprId = output_source.init();
+               output_source.next(exprId);
+               output_source.advance(exprId))
+            {
+              atLeastOne = exprId;
+              if (!(exprId.getItemExpr()->doesExprEvaluateToConstant(FALSE, TRUE)))
+                {
+                  child(0)->getGroupAttr()->addCharacteristicOutputs(exprId);
+                  break;
+                }
+            }
+         if (child(0)->getGroupAttr()->getCharacteristicOutputs().isEmpty())
+           {
+             child(0)->getGroupAttr()->addCharacteristicOutputs(atLeastOne);
+           }
+        }
+    }	
 }
 
 /*
@@ -13540,6 +13587,12 @@ MergeUpdate::MergeUpdate(const CorrName &name,
   setCacheableNode(CmpMain::BIND);
   
   setIsMergeUpdate(TRUE);
+
+  // if there is a WHERE NOT MATCHED INSERT action, then the scan
+  // has to take place in the merge node at run time, so we have
+  // to suppress the TSJ transformation on this node
+  if (insertValues)
+    setNoFlow(TRUE);
 }
 
 MergeUpdate::~MergeUpdate() {}
@@ -13581,7 +13634,6 @@ Delete::Delete(const CorrName &name, TableDesc *tabId, OperatorTypeEnum otype,
 	       ConstStringList * csl,
 	       CollHeap *oHeap)
   : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
-    isFastDelete_(FALSE),
     csl_(csl),estRowsAccessed_(0)
 {
   setCacheableNode(CmpMain::BIND);
@@ -13611,7 +13663,6 @@ RelExpr * Delete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   else
     result = (Delete *) derivedNode;
 
-  result->isFastDelete_       = isFastDelete_;
   result->csl() = csl();
   result->setEstRowsAccessed(getEstRowsAccessed());
 
@@ -13634,6 +13685,12 @@ MergeDelete::MergeDelete(const CorrName &name,
   setCacheableNode(CmpMain::BIND);
   
   setIsMergeDelete(TRUE);
+
+  // if there is a WHERE NOT MATCHED INSERT action, then the scan
+  // has to take place in the merge node at run time, so we have
+  // to suppress the TSJ transformation on this node
+  if (insertValues)
+    setNoFlow(TRUE);
 }
 
 MergeDelete::~MergeDelete() {}
@@ -16314,3 +16371,14 @@ CostScalar RelExpr::getChild0Cardinality(const Context* context)
    return ch0RowCount;
 }
 
+NAString *RelExpr::getKey()
+{
+
+   if (operKey_.length() == 0)
+   {
+     char keyBuffer[30];
+     snprintf(keyBuffer, sizeof(keyBuffer), "%ld", (Int64)this);
+     operKey_ = keyBuffer;
+   }
+   return &operKey_;
+}

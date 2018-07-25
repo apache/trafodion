@@ -21,7 +21,6 @@
 #ifndef BitMuxFunction_h
 #define BitMuxFunction_h
 
-// LCOV_EXCL_START
 // This class is obsolete in the sense
 // that it had been added long time ago during the data
 // mining days (late 90s) but is not used anymore
@@ -54,7 +53,6 @@ public:
   ItemExpr *copyTopNode(ItemExpr *derivedNode =NULL,
 			NAMemory *outHeap =0);
 };
-// LCOV_EXCL_STOP
 
 #endif
 

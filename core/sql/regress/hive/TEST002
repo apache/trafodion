@@ -58,7 +58,7 @@ select count(*) from time_dim ;
 
 cqd hive_max_esps '2';
 prepare s1 from select count(*) from hive.store_sales;
-explain options 'f' s1;
+explain options 'fc' s1;
 execute s1;
 
 

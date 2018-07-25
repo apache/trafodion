@@ -227,22 +227,23 @@ select count(*) from table(index_table a5iraey10);
 drop  index T017TTCIDXb;
 
 create index T017TTCIDXb on T017TTC (b) HBASE_OPTIONS (DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ') SALT LIKE TABLE;
-
+cqd traf_reload_natable_cache 'ON';
 select * from table (index_table T017TTCIDXb) order by "_SALT_@","B@","A";
 
 explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "_SALT_","B","A" from T017TTC for read uncommitted access;
 
 explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "_SALT_","B","A" from T017TTC <<+ cardinality 10e1 >> for read uncommitted access;
-
+cqd traf_reload_natable_cache reset;
 
 drop  index T017TTCIDXb;
 
 create index T017TTCIDXb on T017TTC (b);
-
+cqd traf_reload_natable_cache 'ON';
 select * from table (index_table T017TTCIDXb) order by "B@","_SALT_","A";
 
 explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "B","_SALT_","A" from T017TTC for read uncommitted access;
 
 explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "B","_SALT_","A" from T017TTC <<+ cardinality 10e1 >> for read uncommitted access;
+cqd traf_reload_natable_cache reset;
 
 

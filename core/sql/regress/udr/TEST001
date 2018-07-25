@@ -366,6 +366,19 @@ where operator = 'TMUDF'
   and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
 execute s;
 
+-- eliminate all columns
+prepare s from
+SELECT COUNT(*)
+FROM UDF(sessionize_java(TABLE(SELECT userid,
+                                      JULIANTIMESTAMP(ts) as TS,
+                                      ipAddr
+                               FROM clicks
+                               PARTITION BY ipaddr ORDER BY ts),
+                         'IPADDR',
+                         cast('TS' as char(2)),
+                         60000000)) XO;
+execute s;
+
 -- will fail until tinyint support is added for spj/procedures
 cqd traf_tinyint_spj_support 'ON';
 select *

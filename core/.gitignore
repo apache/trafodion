@@ -3,4 +3,4 @@
 *.o
 *.jar
 trafodion*.tgz
-
+sqf/sql/scripts/DUMPENVS

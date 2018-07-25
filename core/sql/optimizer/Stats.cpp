@@ -136,17 +136,14 @@ void HistInt::setCardinality (CostScalar card)
 {
   if (card < csZero)
   {
-// LCOV_EXCL_START - rfi
     // min cardinality of an interval is zero
     CCMPASSERT (card >= csZero) ;
     card = csZero;
-// LCOV_EXCL_STOP
   }
   card.roundIfZero();
   rows_ = card ;
 }
 
-// LCOV_EXCL_START  - cnu
 void HistInt::setCardinality2mfv (CostScalar card)
 {
   if (card < csZero)
@@ -158,17 +155,14 @@ void HistInt::setCardinality2mfv (CostScalar card)
   card.roundIfZero();
   rows2mfv_ = card ;
 }
-// LCOV_EXCL_STOP
 
 void HistInt::setUec (CostScalar uec)
 {
   if (uec < csZero)
   {
-// LCOV_EXCL_START - rfi
      // min UEC of an interval is zero
      CCMPASSERT (uec >= csZero)  ;
      uec = csZero;
-// LCOV_EXCL_STOP
   }
   uec.roundIfZero();
   uec_ = uec ;
@@ -289,7 +283,6 @@ HistInt::mergeInterval(const HistInt & left,
   return maxUEC;
 } // mergeInterval
 
-// LCOV_EXCL_START  - dpm
 void
 HistInt::display (FILE *f, const char * prefix, const char * suffix,
                   CollHeap *c, char *buf) const
@@ -314,7 +307,6 @@ HistInt::display (FILE *f, const char * prefix, const char * suffix,
 	   rows_.value(), uec_.value(), suffix);
   PRINTIT(f, c, space, buf, mybuf);
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 //  methods on Interval "wrapper class"
@@ -382,10 +374,8 @@ Interval::merge (Interval & other)
   // for simplicity, we only merge low-to-high
   if (loIndex_+1 != other.loIndex_ )
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT ( loIndex_+1 == other.loIndex_ ) ;
     return FALSE;
-// LCOV_EXCL_STOP
   }
 
   CostScalar newUec  = getUec()      + other.getUec() ;
@@ -462,26 +452,20 @@ Interval::OK () const
 {
   if (!isValid() )
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT( isValid() ) ;
     return FALSE;
-// LCOV_EXCL_STOP
   }
 
   if (hist_->entries() == 1 )
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT( hist_->entries() != 1 ) ;
     return FALSE;
-// LCOV_EXCL_STOP
   }
 
   if ((*hist_)[loIndex_+1].getUec().isLessThanZero() )
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT( (*hist_)[loIndex_+1].getUec().isGreaterOrEqualThanZero() ) ; // getUec() >= 0
     (*hist_)[loIndex_+1].setCardAndUec(0,0);
-// LCOV_EXCL_STOP
   }
 
   if ((*hist_)[loIndex_+1].getCardinality().isLessThanZero() )
@@ -607,11 +591,9 @@ ColStats::setNullRowsAndUec (CostScalar nulls, CostScalar nullUec)
 {
   if (!isNullInstantiated() )
   {
-// LCOV_EXCL_START - rfi
     // if the histogram does not contain a NULL Interval, nothing to do
     CCMPASSERT ( isNullInstantiated() ) ;
     return;
-// LCOV_EXCL_STOP
   }
   Interval null = histogram_->getLastInterval() ;
   null.setRowsAndUec (nulls, nullUec) ;
@@ -658,11 +640,9 @@ void ColStats::setRowcount (CostScalar row)
 {
   if (row < csZero)
   {
-// LCOV_EXCL_START - rfi
     // min rowcount is zero
     CCMPASSERT (row >= csZero) ;
     row = csZero;
-// LCOV_EXCL_STOP
   }
   else
     row.roundIfZero();
@@ -677,11 +657,9 @@ void ColStats::setTotalUec (CostScalar uec, NABoolean allowMinusOne)
        uec = csMinusOne;
     else
     {
-// LCOV_EXCL_START - rfi
        // min UEC is zero
        CCMPASSERT (uec >= csZero) ;
        uec = csZero;
-// LCOV_EXCL_STOP
     }
   }
   else
@@ -693,11 +671,9 @@ void ColStats::setBaseUec (CostScalar uec)
 {
   if (uec < csZero)
   {
-// LCOV_EXCL_START - rfi
     // min UEC is zero
     CCMPASSERT (uec >= csZero) ;
     uec = csZero;
-// LCOV_EXCL_STOP
   }
   else
     uec.roundIfZero();
@@ -708,11 +684,9 @@ void ColStats::setBaseRowCount (CostScalar row)
 {
   if (row < -1)
   {
-// LCOV_EXCL_START - rfi
     // reset baserowcount to -1
     CCMPASSERT (row >= -1) ;
     return;
-// LCOV_EXCL_STOP
   }
 
   row.roundIfZero() ;
@@ -725,11 +699,9 @@ void ColStats::setSumOfMaxUec (CostScalar value)
 {
   if (value < 0)
   {
-// LCOV_EXCL_START - rfi
     // min sum of max UEC is zero
     CCMPASSERT (value >= 0) ;
     value = 0;
-// LCOV_EXCL_STOP
   }
   sumOfMaxUec_ = value;
 }
@@ -738,16 +710,13 @@ void ColStats::setSumOfMaxUec (CostScalar value)
 // because they can legitimately become very close to zero but not equal
 // to zero (e.g., join between 2 1-billion row tables returns 1 row ==>
 // redfactor == 1e-18)
-// warning elimination (remove "inline")
 void ColStats::setRedFactor (CostScalar rowred)
 {
   if (rowred < 0)
   {
-// LCOV_EXCL_START - rfi
     // min row reduction is 0, resulting in 0 rows
     CCMPASSERT (rowred >= 0) ;
     rowred = 0;
-// LCOV_EXCL_STOP
   }
   else
     rowred.roundIfExactlyZero() ;
@@ -758,11 +727,9 @@ void ColStats::setUecRedFactor (CostScalar uecred)
 {
   if (uecred < 0)
   {
-// LCOV_EXCL_START - rfi
     // min uec reduction is zero, resulting in 0 uec
     CCMPASSERT (uecred >= 0) ;
     uecred = 0;
-// LCOV_EXCL_STOP
   }
   else
     uecred.roundIfExactlyZero() ;
@@ -961,7 +928,6 @@ Histogram::insertZeroInterval (const EncodedValue & loBound,
   {
     // if the histogram is not valid, clear the histogram
     // and insert an interval with given boundaries
-// LCOV_EXCL_START - rfi
     CCMPASSERT ( last.isValid() ) ;
     this->clear();
     HistInt newLo (loBound, FALSE) ;
@@ -969,7 +935,6 @@ Histogram::insertZeroInterval (const EncodedValue & loBound,
     insert (newLo) ;
     insert (newHi) ;
     return ;
-// LCOV_EXCL_STOP
   }
 
   // otherwise, this function shouldn't have been called!
@@ -983,7 +948,6 @@ Histogram::insertZeroInterval (const EncodedValue & loBound,
     }
 
   // CASE 3: hiBound == the first Interval's boundary value
-// LCOV_EXCL_START - rfi
   Interval first = getFirstInterval() ;
 
   if (first.isNull())
@@ -1002,7 +966,6 @@ Histogram::insertZeroInterval (const EncodedValue & loBound,
       // the HistInt flag
       insertAt (0, newLo) ;
       return ;
-// LCOV_EXCL_STOP
     }
 
   CCMPASSERT(FALSE) ; // misuse of this function!
@@ -1041,11 +1004,9 @@ Histogram::condenseToSingleInterval()
 {
   if (numIntervals() == 0)
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT (numIntervals() > 0) ; // makes no sense for an empty histogram
     insertZeroInterval (UNINIT_ENCODEDVALUE, UNINIT_ENCODEDVALUE, TRUE) ;
     return;
-// LCOV_EXCL_STOP
   }
 
   if ( numIntervals() == 1 ) return ; // already a single interval
@@ -1105,10 +1066,8 @@ Histogram::isNullInstantiated() const
         // HistInts besides the NULL interval
         if (entries() == 3)
         {
-// LCOV_EXCL_START - rfi
           CCMPASSERT ("Illegal number of intervals in the histogram");
           return FALSE;
-// LCOV_EXCL_STOP
         }
 
         return TRUE ;
@@ -1121,7 +1080,6 @@ Histogram::isNullInstantiated() const
 }
 
 // removing that NULL interval (assuming it exists)
-// warning elimination (removed "inline")
 void
 Histogram::removeNullInterval()
 {
@@ -1137,7 +1095,6 @@ Histogram::removeNullInterval()
 }
 
 // inserting a NULL interval (assuming it doesn't already exist)
-// warning elimination (removed "inline")
 void
 Histogram::insertNullInterval()
 {
@@ -2426,7 +2383,6 @@ NABoolean Interval::satisfiesCriterion2(Source invokedFrom, Interval & other)
 	return TRUE;
 }
 
-// LCOV_EXCL_START  - dpm
 void
 Interval::display (FILE *f, const char * prefix, const char * suffix) const
 {
@@ -2446,7 +2402,6 @@ Interval::display (FILE *f, const char * prefix, const char * suffix) const
     fprintf (f, "<  ");
   hiBound().display(f);
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 //  methods on Histogram class
@@ -2522,7 +2477,6 @@ Histogram::createMergeTemplate (const HistogramSharedPtr& otherHistogram,
   // -----------------------------------------------------------------------------
   if ( this->entries() < 2 || otherHistogram->entries() < 2 )
     {
-// LCOV_EXCL_START - rfi
       if ( equiMerge )
         return histTemplate ; // no qualifying intervals
       else
@@ -2546,7 +2500,6 @@ Histogram::createMergeTemplate (const HistogramSharedPtr& otherHistogram,
 
           return histTemplate ;
         }
-// LCOV_EXCL_STOP
     }
 
   // OK, at this point we know both histograms have Intervals
@@ -2756,14 +2709,12 @@ Histogram::createMergeTemplate (const HistogramSharedPtr& otherHistogram,
     if ( (histTemplate->entries() == 1) ||
          !validHistTemp)
     {
-// LCOV_EXCL_START - rfi
        // sanity check
       CCMPASSERT(histTemplate->entries() != 1);
       // clear whatever has been done till now
       histTemplate->clear();
       // insert an interval with boundaries equal to overlapMin and overlapMax
       histTemplate->insertZeroInterval(minVal, maxVal, TRUE);
-// LCOV_EXCL_STOP
     }
 
   return histTemplate;
@@ -2983,7 +2934,6 @@ ColStats::populateTemplate (const ColStatsSharedPtr& otherStats)
    }
    else if ( newRowcount.isZero() AND requiredMinimum.isGreaterThanZero() )
    {
-// LCOV_EXCL_START - rfi
      // create a 1-interval histogram, no fuss
      CostScalar calculatedUec =
        ColStatDesc::calculateCorrectResultUec (otherStats->getRowcount(),
@@ -2999,7 +2949,6 @@ ColStats::populateTemplate (const ColStatsSharedPtr& otherStats)
      // populate that first interval with rc/uec
      Interval first = histogram_->getFirstInterval() ;
      first.setRowsAndUec (requiredMinimum, calculatedUec) ;
-// LCOV_EXCL_STOP
    }
 }
 
@@ -3124,7 +3073,7 @@ void
 ColStats::insertZeroInterval()
 {
   if (histogram_ == NULL)
-    histogram_ = HistogramSharedPtr(new (HISTHEAP) Histogram(HISTHEAP)); // LCOV_EXCL_LINE - rfi
+    histogram_ = HistogramSharedPtr(new (HISTHEAP) Histogram(HISTHEAP));
 
   histogram_->insertZeroInterval(getMinValue(), getMaxValue(), TRUE);
   Interval first = histogram_->getFirstInterval();
@@ -3243,7 +3192,6 @@ ColStats::removeRedundantEmpties()
 // -----------------------------------------------------------------------
 
 // to be called from the debugger
-// LCOV_EXCL_START  - dpm
 void
 Histogram::display() const
 {
@@ -3264,7 +3212,6 @@ Histogram::print (FILE *f, const char * prefix, const char * suffix,
       (*this)[i].display(f, "     ", "", c, buf);
     }
 }
-// LCOV_EXCL_STOP
 
 THREAD_P Int64 ColStats::fakeHistogramIDCounter_=ColStats::USTAT_HISTOGRAM_ID_THRESHOLD;
 
@@ -3495,7 +3442,6 @@ ColStats::createFakeHist()
 // This method calls Histogram::condenseToSingleInterval, and also sets
 // the isCompressed flag to TRUE
 // --------------------------------------------------------------------
-// LCOV_EXCL_START - rfi
 void
 ColStats::compressToSingleInt()
 {
@@ -3523,7 +3469,6 @@ ColStats::compressToSingleInt()
 
   this->setIsCompressed(TRUE);
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // After we've mangled the heck out of the histogram, we've often lost
@@ -3661,7 +3606,6 @@ ColStats::modifyStats (ItemExpr * pred, CostScalar *maxSelectivity)
 
   if ( histogram_ == NULL || histogram_->numIntervals() == 0 )
     {
-// LCOV_EXCL_START - rfi
       CCMPASSERT (histogram_ != NULL) ;
       // $$$ synthesize the effect on just the MIN and MAX values??
       // $$$ Weird special case: Can we have a non-NULL min/max if the
@@ -3669,7 +3613,6 @@ ColStats::modifyStats (ItemExpr * pred, CostScalar *maxSelectivity)
       // If there is no histogram_, create an empty histogram and return.
       insertZeroInterval();
       return;
-// LCOV_EXCL_STOP
     }
 
   // Begin Set-Up to perform the given Predicate........
@@ -4228,18 +4171,14 @@ void ColStats::recoverFromMergeColStats(const ColStatsSharedPtr& otherStats,
 {
    if (histogram_ == NULL)
    {
-// LCOV_EXCL_START - rfi
     CCMPASSERT (histogram_ != NULL) ;
     insertZeroInterval();
-// LCOV_EXCL_STOP
    }
 
    if (otherStats->histogram_ == NULL)
    {
-// LCOV_EXCL_START - rfi
      CCMPASSERT (otherStats->getHistogram() != NULL );
      otherStats->insertZeroInterval();
-// LCOV_EXCL_STOP
    }
   // Can't always construct a precise result histogram, but when one
   //   can't one sometimes *can* produce a meaningful single-interval
@@ -4569,7 +4508,7 @@ Criterion ColStats::decideReductionCriterion(Source invokedFrom,
 {
 	//cannot reduce multicolumn stats
 	if(getStatColumns().entries() > 1)
-		return NONE; // LCOV_EXCL_LINE - rfi
+          return NONE;
 
 	//if invoked histograms for base tables
 	//have been obtained using FetchHistograms
@@ -4652,9 +4591,7 @@ Criterion ColStats::decideReductionCriterion(Source invokedFrom,
 			}
 
 	}
-#pragma nowarn(203)   // warning elimination
 	return NONE;
-#pragma warn(203)  // warning elimination
 };
 
 //reduce the number of histogram intervals in the histogram
@@ -4663,7 +4600,7 @@ void ColStats::reduceNumHistInts(Source invokedFrom, Criterion reductionCriterio
 {
 	//if there is no histogram return
 	if(!histogram_)
-		return; // LCOV_EXCL_LINE - rfi
+		return; 
 
 	//dont do anything for fake histograms
 	if(isFakeHistogram())
@@ -4820,7 +4757,7 @@ void
 ColStats::copyAndScaleHistogram (CostScalar scale)
 {
   if ( getHistogram() == NULL )
-    return ; // LCOV_EXCL_LINE - rfi
+    return ;
 
   histogram_ = HistogramSharedPtr(new (heap_) Histogram(*histogram_, heap_));
 
@@ -4839,7 +4776,7 @@ ColStats::scaleHistogram (CostScalar scale,
                           NABoolean scaleFreqValList)
 {
   if ( getHistogram() == NULL )
-    return; // LCOV_EXCL_LINE - rfi
+    return;
 
   // set the scale factor of the histogram with what ever the histogram
   // is being scaled by. The method is called for making deep copies. We 
@@ -4905,10 +4842,8 @@ ColStats::scaleHistogram (CostScalar scale,
   {
         if (uecScale > csOne)
         {
-// LCOV_EXCL_START - rfi
           CCMPASSERT ("UEC can never increase");
           uecScale = csOne;
-// LCOV_EXCL_STOP
         }
 
 	for ( iter = hist->getFirstInterval() ;
@@ -5078,7 +5013,6 @@ ColStats::scaleHistogram (CostScalar scale,
 // This method returns the total row count and total UEC of intervals
 // whose frequency is greater than or equal to the threshold value
 // --------------------------------------------------------------------
-// LCOV_EXCL_START  - cnu
 void 
 ColStats::getAccRowCountAboveOrEqThreshold ( CostScalar & accRowCnt, /* out */
 											 CostScalar & accUec,   /* out */
@@ -5128,7 +5062,6 @@ ColStats::getAccRowCountAboveOrEqThreshold ( CostScalar & accRowCnt, /* out */
 
   return;
 } // ColStats::getAccRowCountAboveOrEqThreshold
-// LCOV_EXCL_STOP
 
 void
 ColStats::setMaxFreq(CostScalar val)
@@ -5245,7 +5178,6 @@ ColStats::reduceToMaxIntervalCount()
   if ( intervalCount < 4 || maxIntervalCount < 4 || maxIntervalCount >= intervalCount )
     return ;
 
-// LCOV_EXCL_START - cnu
   // otherwise, we're definitely going to be modifying this histogram
   getHistogramToModify() ;
   HistogramSharedPtr hist = histogram_ ; // convenience
@@ -5301,7 +5233,6 @@ ColStats::reduceToMaxIntervalCount()
           numMerged = 0 ;
         }
     }
-// LCOV_EXCL_STOP
 } // ColStats::reduceToMaxIntervalCount()
 
 //
@@ -5994,7 +5925,6 @@ ColStats::makeGrouped()
 
 // -----------------------------------------------------------------------
 // To be called from the debugger
-// LCOV_EXCL_START - dpm
 void
 ColStats::display() const
 {
@@ -6134,7 +6064,6 @@ void ColStats::trace(FILE* f, NATable* table)
   fprintf (f, "rowcount:" PF64 " ", templl);
   fprintf (f, "intervals:%d \n", (*histogram_).entries());
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // When one, or both, of the two to-be-combined column statistics has no
@@ -7347,14 +7276,12 @@ ColStats::setToSingleValue (const EncodedValue & newValue, ConstValue* constExpr
   setMaxSetByPred (TRUE) ;
   if (histogram_->entries() < 2)
   {
-// LCOV_EXCL_START - rfi
     // we messed up somewhere. recover by clearing the histogram and 
     // inserting an interval with boundary equal to the new value
     // since we messed up somewhere, lets set the fake histogram flag to true
     CCMPASSERT (histogram_->entries() == 2) ;
     insertZeroInterval();
     setFakeHistogram(TRUE);
-// LCOV_EXCL_STOP
   }
 
   // check to make sure the results are what we wanted
@@ -7702,9 +7629,7 @@ void StatsList::reduceNumHistIntsAfterFetch(NATable& table)
 
 void StatsList::deepDelete()
 {
-#pragma nowarn(1506)   // warning elimination
   unsigned short members = (UInt32)this->entries();
-#pragma warn(1506)  // warning elimination
 	for( unsigned short i=0;i<members;i++)
 	{
 		(*this)[i]->deepDelete();
@@ -7717,7 +7642,6 @@ void StatsList::deepDelete()
 // groupUecValues_ and groupUecColumns_ do not need to be deep copied
 // because FetchHistograms does not return/load these two members
 //------------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
 void StatsList::deepCopy(const StatsList& other, NAMemory * heap)
 {
 	unsigned short members = (short)other.entries();
@@ -7729,7 +7653,6 @@ void StatsList::deepCopy(const StatsList& other, NAMemory * heap)
 	DCMPASSERT(NOT this->groupUecColumns_.entries())
 	DCMPASSERT(NOT this->groupMCSkewedValueLists_.entries())
 }
-// LCOV_EXCL_STOP
 
 //-------------------------------------------------------------------------
 // StatsList::insertByPosition()
@@ -7907,7 +7830,6 @@ StatsList& StatsList::operator=(const StatsList& list)
 	return *this;
 }
 
-// LCOV_EXCL_START - dpm
 void
 StatsList::display() const
 {
@@ -7977,7 +7899,6 @@ void StatsList::trace (FILE *f, NATable* table) const
     (*this)[i]->trace(f, table);
   }
 }
-// LCOV_EXCL_STOP
 
 // return true iff all fake histograms
 NABoolean StatsList::allFakeStats() const
@@ -8025,7 +7946,6 @@ ColumnSet::ColumnSet(const NAColumnArray& colArray, NAMemory *heap)
   }
 }
 
-// LCOV_EXCL_START - dpm
 void 
 ColumnSet::display() const
 {
@@ -8046,7 +7966,6 @@ void ColumnSet::print() const
   }
   printf("}");
 }
-// LCOV_EXCL_STOP
 
 // define "<" ordering of NAColumn names
 bool operator< (const NAColumn& col1, const NAColumn& col2)
@@ -8095,7 +8014,6 @@ void ColumnSet::printColsFromTable(FILE *ofd, NATable *table) const
   fprintf(ofd," ");
 }
 
-// LCOV_EXCL_START  - dpm
 void MultiColumnHistogram::display() const
 {
   MultiColumnHistogram::print();
@@ -8111,7 +8029,6 @@ void MultiColumnHistogram::print(FILE *ofd, NATable* table) const
   fprintf(ofd, "rowcount:" PF64 " ", templl);
   fprintf(ofd, "intervals:2 \n");
 }
-// LCOV_EXCL_STOP
 
 MultiColumnHistogramList::~MultiColumnHistogramList()
 {
@@ -8217,7 +8134,7 @@ void ColStats::compressColStatsForQueryPreds(ItemExpr * lowerBound,
 {
   //if there is no histogram return
   if(!histogram_)
-    return; // LCOV_EXCL_LINE - rfi
+    return;
 
   //dont do anything for fake histograms
   if(isFakeHistogram())
@@ -8225,7 +8142,7 @@ void ColStats::compressColStatsForQueryPreds(ItemExpr * lowerBound,
 
   //multicolumn stats, dont reduce
   if(columns_.entries() > 1)
-    return; // LCOV_EXCL_LINE - rfi
+    return;
 
   //if there are only two histints or less
   //we dont need to reduce
@@ -8921,7 +8838,6 @@ void ColStats::addMCSkewedValue(const NAWchar * boundary, CostScalar frequency)
 }
 
 // to be called from the debugger
-// LCOV_EXCL_START - dpm
 void
 FrequentValueList::display() const
 {
@@ -8960,7 +8876,6 @@ void FrequentValue::print (FILE *f,
   snprintf(mybuf, sizeof(mybuf), "%s  Probab. = %f \n", prefix, getProbability().value());
   PRINTIT(f, c, space, buf, mybuf);
 }
-// LCOV_EXCL_STOP
 
 FrequentValue::FrequentValue(UInt32 hashValue, 
                              CostScalar frequency, 

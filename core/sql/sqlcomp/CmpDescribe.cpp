@@ -66,7 +66,6 @@
 #include "FragDir.h"
 #include "HeapLog.h"
 #include "parser.h"
-#include "ReadTableDef.h"
 #include "RelControl.h"
 #include "RelExpr.h"
 #include "RelExeUtil.h"
@@ -182,37 +181,6 @@ static short CmpDescribeTransaction(
    char         *&outbuf,
    ULng32 &outbuflen,
    NAMemory      *h);
-
-short CmpDescribeHiveTable ( 
-                             const CorrName  &dtName,
-                             short type, // 1, invoke. 2, showddl. 3, createLike
-                             char* &outbuf,
-                             ULng32 &outbuflen,
-                             CollHeap *heap,
-                             UInt32 columnLengthLimit = UINT_MAX);
-
-short CmpDescribeSeabaseTable ( 
-     const CorrName  &dtName,
-     short type, // 1, invoke. 2, showddl. 3, createLike
-     char* &outbuf,
-     ULng32 &outbuflen,
-     CollHeap *heap,
-     const char * pkeyStr = NULL,
-     NABoolean withPartns = FALSE,
-     NABoolean withoutSalt = FALSE,
-     NABoolean withoutDivisioning = FALSE,
-     NABoolean withoutRowFormat = FALSE,
-     UInt32 columnLengthLimit = UINT_MAX,
-     NABoolean noTrailingSemi = FALSE,
-     
-     // used to add,rem,alter column definition from col list.
-     // valid for 'createLike' mode. 
-     // Used for 'alter add/drop/alter col'.
-     char * colName = NULL,
-     short ada = 0, // 0,add. 1,drop. 2,alter
-     const NAColumn * nacol = NULL,
-     const NAType * natype = NULL,
-     Space *inSpace = NULL);
 
 short CmpDescribeSequence ( 
                              const CorrName  &dtName,
@@ -633,8 +601,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
               CmpCommon::diags()->clear();
 
               *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                                  << DgSchemaName(objQualName.getCatalogName() +
-                                                  "." +  objQualName.getSchemaName());
+                                  << DgString0(objQualName.getCatalogName())
+                                  << DgString1(objQualName.getSchemaName());
 
               rc = -1;
               goto finally;
@@ -666,11 +634,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // If SHOWDDL USER, go get description and return
   if (d->getIsUser())
     {
-      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_USERS))
-        {
-          rc = -1;
-          goto finally;
-        }
       NAString userText;
       CmpSeabaseDDLuser userInfo;
       if (!userInfo.describe(d->getAuthIDName(), userText))
@@ -690,11 +653,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // If SHOWDDL ROLE, go get description and return
   if (d->getIsRole())
   {
-      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_ROLES))
-        {
-          rc = -1;
-          goto finally;
-        }
       NAString roleText;
       CmpSeabaseDDLrole roleInfo(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
       if (!roleInfo.describe(d->getAuthIDName(),roleText))
@@ -834,8 +792,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       goto finally;  // we are done
     }
 
-  if (d->getFormat() >= Describe::CONTROL_FIRST_ &&
-      d->getFormat() <= Describe::CONTROL_LAST_)
+  if (d->getIsControl())
     {
       rc = CmpDescribeControl(d, outbuf, outbuflen, heap);
       goto finally;  // we are done
@@ -875,14 +832,15 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // For now, schemaName of HIVE indicates a hive table.
   // Need to fix that at a later time when multiple hive schemas are supported.
   if (((d->getFormat() == Describe::INVOKE_) ||
-       (d->getFormat() == Describe::LONG_)) &&
+       (d->getFormat() == Describe::SHOWDDL_)) &&
       (d->getDescribedTableName().isHive()) &&
       (!d->getDescribedTableName().isSpecialTable()))
     {
       rc = 
         CmpDescribeHiveTable(d->getDescribedTableName(), 
                              (d->getFormat() == Describe::INVOKE_ ? 1 : 2),
-                             outbuf, outbuflen, heap);
+                             outbuf, outbuflen, heap,
+                             d->getIsDetail());
       goto finally;  // we are done
     }
 
@@ -896,14 +854,17 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
   // check if this is an hbase/seabase table. If so, describe using info from NATable.
   if (((d->getFormat() == Describe::INVOKE_) ||
-       (d->getFormat() == Describe::LONG_)) &&
+       (d->getFormat() == Describe::SHOWDDL_)) &&
       ((d->getDescribedTableName().isHbase()) ||
        (d->getDescribedTableName().isSeabase())))
     {
       rc = 
         CmpDescribeSeabaseTable(d->getDescribedTableName(), 
                                 (d->getFormat() == Describe::INVOKE_ ? 1 : 2),
-                                outbuf, outbuflen, heap, NULL, TRUE);
+                                outbuf, outbuflen, heap, NULL, NULL, TRUE,
+                                FALSE, FALSE, FALSE, FALSE, UINT_MAX, FALSE,
+                                NULL, 0, NULL, NULL, NULL,
+                                d->getIsDetail());
       goto finally;  // we are done
     }
 
@@ -1097,7 +1058,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
  }  // end of try block
 
- // LCOV_EXCL_START
  // exception handling
  catch(...)
  {
@@ -1112,7 +1072,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
     }
     rc = -1;
  }
- // LCOV_EXCL_STOP
 
 finally:
 
@@ -1399,7 +1358,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                         char* &srcStrBuf, Lng32 &srcStrSize)
 {
   Lng32 retcode = 0;
-  ULong stmtHandle = (ULong)stmt_id.handle;  // NA_64BIT
+  ULong stmtHandle = (ULong)stmt_id.handle;
 
   // Now get the generated code to describe the plan.
   // do not advance to next statement yet, if all stmts are to be retrieved.
@@ -1412,9 +1371,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                                            &stmt_id);
 
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   rootTdbBuf = new (heap) char[rootTdbSize];
   srcStrBuf  = new (heap) char[srcStrSize+1];
@@ -1430,9 +1387,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                                        srcStrSize,
                                        &stmt_id);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   if (srcStrSize > 0)
     srcStrBuf[srcStrSize] = 0;
@@ -1670,9 +1625,7 @@ static short CmpDescribePlan(
 
   retcode = SQL_EXEC_ClearDiagnostics(NULL);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   //Allocate a SQL statement
   stmt_id.name_mode = stmt_handle;
@@ -1779,9 +1732,7 @@ static short CmpDescribePlan(
    // free up resources
   retcode = SQL_EXEC_DeallocDesc(&sql_src);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   retcode = SQL_EXEC_DeallocStmt(&stmt_id);
   if (retcode)
@@ -2239,10 +2190,11 @@ short CmpDescribeHiveTable (
                              char* &outbuf,
                              ULng32 &outbuflen,
                              CollHeap *heap,
+                             NABoolean isDetail,
                              UInt32 columnLengthLimit)
 {
   const NAString& tableName =
-    dtName.getQualifiedNameObj().getObjectName();
+    dtName.getQualifiedNameObj().getQualifiedNameAsString();
  
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   NATable *naTable = bindWA.getNATable((CorrName&)dtName); 
@@ -2322,7 +2274,7 @@ short CmpDescribeHiveTable (
           NAString bufnas(buf);
           outputLongLine(space, bufnas, 0);
 
-          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(space, buf);
         }
 
@@ -2352,8 +2304,13 @@ short CmpDescribeHiveTable (
     {
       outputShortLine(space,"/* Hive DDL */");
 
-      sprintf(buf,  "CREATE TABLE %s",
-              tableName.data());
+      if (naTable->isHiveExternalTable())
+        sprintf(buf,  "CREATE EXTERNAL TABLE %s",
+                tableName.data());
+      else
+        sprintf(buf,  "CREATE TABLE %s",
+                tableName.data());
+            
       outputShortLine(space, buf);
     }
   
@@ -2424,33 +2381,53 @@ short CmpDescribeHiveTable (
       else if (hTabStats->isSequenceFile())
         {
           if (type == 1)
-            outputShortLine(space, "  /* stored as sequence */");
+            outputShortLine(space, "  /* stored as sequencefile */");
           else if (type == 2)
-            outputShortLine(space, "  stored as sequence ");
+            outputShortLine(space, "  stored as sequencefile ");
         }
     }
 
   if (type == 2)
-    outputShortLine(space, ";");
+    {
+      outputShortLine(space, ";");
+
+      outputShortLine(space," ");
+      outputShortLine(space,"/* Trafodion DDL */");
+    }
 
   // if this hive table is registered in traf metadata, show that.
-  if ((type == 2) &&
-      (naTable->isRegistered()))
+  if (type == 2)
     {
-      Int64 objectUID = (Int64)naTable->objectUid().get_value();
+      if (naTable->isRegistered())
+        {
+          Int64 objectUID = (Int64)naTable->objectUid().get_value();
+          
+          outputShortLine(space, " ");
+          
+          sprintf(buf,  "REGISTER%sHIVE %s %s;",
+                  (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
+                  (isView ? "VIEW" : "TABLE"),
+                  naTable->getTableName().getQualifiedNameAsString().data());
+          
+          NAString bufnas(buf);
+          outputLongLine(space, bufnas, 0);
+          
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
+          outputShortLine(space, buf);
+        }
+      else if (isDetail)
+        {
+          // show a comment that this object should be registered
+          outputShortLine(space, " ");
 
-      outputShortLine(space, " ");
-
-      sprintf(buf,  "REGISTER%sHIVE %s %s;",
-              (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
-              (isView ? "VIEW" : "TABLE"),
-              naTable->getTableName().getQualifiedNameAsString().data());
-
-      NAString bufnas(buf);
-      outputLongLine(space, bufnas, 0);
-
-      str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
-      outputShortLine(space, buf);
+          outputShortLine(space, "-- Object is not registered in Trafodion Metadata.");
+          outputShortLine(space, "-- Register it using the next command:");
+          sprintf(buf, "--   REGISTER HIVE %s %s;",
+                  (isView ? "VIEW" : "TABLE"),
+                  naTable->getTableName().getQualifiedNameAsAnsiString().data());
+          NAString bufnas(buf);
+          outputLongLine(space, bufnas, 0);
+        }
     }
 
   // if this hive table has an associated external table, show ddl
@@ -2475,14 +2452,12 @@ short CmpDescribeHiveTable (
       QualifiedName qn(extName, 3);
       CorrName cn(qn);
 
-      outputShortLine(space," ");
-      outputShortLine(space,"/* Trafodion DDL */");
- 
       short rc = CmpDescribeSeabaseTable(cn, 
                                          type,
                                          dummyBuf, dummyLen, heap, 
-                                         NULL, 
+                                         NULL, NULL,
                                          TRUE, FALSE, FALSE, FALSE, 
+                                         FALSE,
                                          UINT_MAX, TRUE,
                                          NULL, 0, NULL, NULL, &space);
 
@@ -2658,9 +2633,13 @@ short cmpDisplayColumn(const NAColumn *nac,
     defVal = "DEFAULT NULL";
   else if (nac->getDefaultClass() == COM_CURRENT_DEFAULT)
     defVal = "DEFAULT CURRENT";
+  else if (nac->getDefaultClass() == COM_CURRENT_UT_DEFAULT)
+    defVal = "DEFAULT CURRENT UNIXTIME";
   else if (nac->getDefaultClass() == COM_USER_FUNCTION_DEFAULT)
     defVal = "DEFAULT USER";
-  else if (nac->getDefaultClass() == COM_USER_DEFINED_DEFAULT)
+  else if (nac->getDefaultClass() == COM_UUID_DEFAULT)
+    defVal = "DEFAULT UUID";
+  else if (nac->getDefaultClass() == COM_USER_DEFINED_DEFAULT || nac->getDefaultClass() == COM_FUNCTION_DEFINED_DEFAULT)
     {
       defVal = "DEFAULT ";
       
@@ -2758,6 +2737,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
                         Lng32 &identityColPos,
                         NABoolean isExternalTable,
                         NABoolean isAlignedRowFormat,
+                        NABoolean omitLobColumns = FALSE,
                         char * inColName = NULL,
                         short ada = 0, // 0,add. 1,drop. 2,alter
                         const NAColumn * nacol = NULL,
@@ -2774,6 +2754,12 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
 
       if ((NOT displaySystemCols) &&
           (nac->isSystemColumn()))
+        {
+          continue;
+        }
+
+      if (omitLobColumns &&
+          (nac->getType()->isLob()))
         {
           continue;
         }
@@ -2900,18 +2886,21 @@ short CmpDescribeSeabaseTable (
                                char* &outbuf,
                                ULng32 &outbuflen,
                                CollHeap *heap,
+                               const char * pkeyName,
                                const char * pkeyStr,
                                NABoolean withPartns,
                                NABoolean withoutSalt,
                                NABoolean withoutDivisioning,
                                NABoolean withoutRowFormat,
+                               NABoolean withoutLobColumns,
                                UInt32 columnLengthLimit,
                                NABoolean noTrailingSemi,
                                char * colName,
                                short ada,
                                const NAColumn * nacol,
                                const NAType * natype,
-                               Space *inSpace)
+                               Space *inSpace,
+                               NABoolean isDetail)
 {
   const NAString& tableName =
     dtName.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
@@ -2949,8 +2938,8 @@ short CmpDescribeSeabaseTable (
     }
 
   NABoolean isVolatile = naTable->isVolatileTable();
-  NABoolean isExternalTable = naTable->isExternalTable();
-  NABoolean isImplicitExternalTable = naTable->isImplicitExternalTable();
+  NABoolean isExternalTable = naTable->isTrafExternalTable();
+  NABoolean isImplicitExternalTable = naTable->isImplicitTrafExternalTable();
   NABoolean isHbaseMapTable = naTable->isHbaseMapTable();
   NABoolean isHbaseCellOrRowTable = 
     (naTable->isHbaseCellTable() || naTable->isHbaseRowTable());
@@ -3013,6 +3002,16 @@ short CmpDescribeSeabaseTable (
   {
     if (type != 3)
       {
+        // For native HBase tables that have no objectUID, we can't check 
+        // user privileges so only allow operation for privileged users
+        if (isHbaseCellOrRowTable && 
+            !ComUser::isRootUserID() && !ComUser::currentUserHasRole(HBASE_ROLE_ID) &&
+            naTable->objectUid().get_value() == 0) 
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          return -1;
+        }
+ 
         PrivMgrUserPrivs privs; 
         PrivMgrUserPrivs *pPrivInfo = NULL;
     
@@ -3034,7 +3033,7 @@ short CmpDescribeSeabaseTable (
                *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
                return -1;
             }
- 
+           
             PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
                                                              naTable->getObjectType(),
                                                              ComUser::getCurrentUser(),
@@ -3053,13 +3052,19 @@ short CmpDescribeSeabaseTable (
         else
           pPrivInfo = naTable->getPrivInfo();
 
-
-        if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
-                                     pPrivInfo,
-                                     COM_BASE_TABLE_OBJECT))
-          return -1;
+        // Allow object owners to perform showddl operation
+        if ((naTable->getOwner() != ComUser::getCurrentUser()) &&
+            !ComUser::currentUserHasRole(naTable->getOwner()))
+        {
+          if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
+                                       pPrivInfo,
+                                       COM_BASE_TABLE_OBJECT))
+            return -1;
+        }
       }
     }
+  
+  Int64 objectUID = (Int64) naTable->objectUid().get_value();
 
   if ((type == 2) && (isView))
     {
@@ -3069,6 +3074,55 @@ short CmpDescribeSeabaseTable (
       viewtext += " ;";
 
       outputLongLine(*space, viewtext, 0);
+
+      //display comment for VIEW
+      if (objectUID > 0)
+        {
+          if (cmpSBD.switchCompiler())
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+              return -1;
+            }
+
+          ComTdbVirtObjCommentInfo objCommentInfo;
+          if (cmpSBD.getSeabaseObjectComment(objectUID, COM_VIEW_OBJECT, objCommentInfo, heap))
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+              cmpSBD.switchBackCompiler();
+              return -1;
+            }
+
+          //display VIEW COMMENT statements
+          if (objCommentInfo.objectComment != NULL)
+            {
+              //new line
+              outputLine(*space, "", 0);
+
+              sprintf(buf, "COMMENT ON VIEW %s IS '%s' ;",
+                           tableName.data(),
+                           objCommentInfo.objectComment);
+              outputLine(*space, buf, 0);
+            }
+
+          if (objCommentInfo.numColumnComment > 0 && objCommentInfo.columnCommentArray != NULL)
+            {
+              //display Column COMMENT statements
+              outputLine(*space, "", 0);
+              for (int idx = 0; idx < objCommentInfo.numColumnComment; idx++)
+                {
+                  sprintf(buf,  "COMMENT ON COLUMN %s.%s IS '%s' ;",
+                           tableName.data(),
+                           objCommentInfo.columnCommentArray[idx].columnName,
+                           objCommentInfo.columnCommentArray[idx].columnComment);
+                   outputLine(*space, buf, 0);
+                }
+            }
+
+          //do a comment info memory clean
+          NADELETEARRAY(objCommentInfo.columnCommentArray, objCommentInfo.numColumnComment, ComTdbVirtColumnCommentInfo, heap);
+
+          cmpSBD.switchBackCompiler();
+        }
 
       // Display grant statements
       if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
@@ -3166,6 +3220,7 @@ short CmpDescribeSeabaseTable (
                         identityColPos,
                         (isExternalTable && (NOT isHbaseMapTable)),
                         naTable->isSQLMXAlignedTable(),
+                        withoutLobColumns,
                         colName, ada, nacol, natype,
                         columnLengthLimit,
                         &truncatedColumnList);
@@ -3177,7 +3232,7 @@ short CmpDescribeSeabaseTable (
   NABoolean forceStoreBy = FALSE;
   NABoolean isSalted = FALSE;
   NABoolean isDivisioned = FALSE;
-  ItemExpr *saltExpr;
+  ItemExpr *saltExpr = NULL;
   LIST(NAString) divisioningExprs(heap);
   LIST(NABoolean) divisioningExprAscOrders(heap);
 
@@ -3241,23 +3296,75 @@ short CmpDescribeSeabaseTable (
 
   if ((type == 3) && (pkeyStr))
     {
-      outputShortLine(*space, " , PRIMARY KEY ");
-      
+      if (pkeyName)
+        {
+          NAString pkeyPrefix(", CONSTRAINT ");
+          pkeyPrefix += NAString(pkeyName) + " PRIMARY KEY ";
+          outputLine(*space, pkeyPrefix.data(), 0);
+        }
+      else
+        {
+          outputShortLine(*space, " , PRIMARY KEY ");
+        }
+
       outputLine(*space, pkeyStr, 2);
     }
   else
     {
-      if ((naTable->getClusteringIndex()) &&
+      if ((naf) &&
           (nonSystemKeyCols > 0) &&
           (NOT isStoreBy))
         {
+          NAString pkeyConstrName;
+          NAString pkeyConstrObjectName;
+          if (type == 2) // showddl
+            {
+              const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
+              
+              for (Int32 i = 0; i < uniqueList.entries(); i++)
+                {
+                  AbstractRIConstraint *ariConstr = uniqueList[i];
+                  
+                  UniqueConstraint * uniqConstr = (UniqueConstraint*)ariConstr;
+                  if (uniqConstr->isPrimaryKeyConstraint())
+                    {                  
+                      pkeyConstrName =
+                        uniqConstr->getConstraintName().getQualifiedNameAsAnsiString(TRUE);
+                      pkeyConstrObjectName =
+                        uniqConstr->getConstraintName().getObjectName();
+                      break;
+                    }
+                } // for
+            } // type 2
+
           numBTpkeys = naf->getIndexKeyColumns().entries();
           
           if (type == 1)
             sprintf(buf,  "  PRIMARY KEY ");
           else
-            sprintf(buf,  "  , PRIMARY KEY ");
-          
+            {
+              // Display primary key name for showddl (type == 2).
+              // First check to see if pkey name is a generated random name or 
+              // a user specified name.
+              // If it is a generated random name, then dont display it.
+              // This is being done for backward compatibility in showddl
+              // output as well as avoid the need to update multiple
+              // regressions files.
+              // Currently we check to see if the name has random generated
+              // format to determine whether to display it or not.
+              // If it so happens that a user specified primary key constraint 
+              // has that exact format, then it will not be displayed.
+              // At some point in future, we can store in metadata if pkey 
+              // name was internally generated or user specified.
+              if ((type == 2) &&
+                  (NOT pkeyConstrObjectName.isNull()) &&
+                  (NOT ComIsRandomInternalName(pkeyConstrObjectName)))
+                sprintf(buf, " , CONSTRAINT %s PRIMARY KEY ",
+                        pkeyConstrName.data());
+              else
+                sprintf(buf,  "  , PRIMARY KEY ");
+            }
+
           // if all primary key columns are 'not serialized primary key',
           // then display that.
           NABoolean serialized = FALSE;
@@ -3568,7 +3675,8 @@ short CmpDescribeSeabaseTable (
 				(type == 2),
                                 dummy,
                                 isExternalTable,
-                                isAligned);
+                                isAligned,
+                                withoutLobColumns);
 	      outputShortLine(*space, "  )");
 	      
 	      sprintf(buf,  "  PRIMARY KEY ");
@@ -3755,7 +3863,6 @@ short CmpDescribeSeabaseTable (
         } // showddl
     }
 
-  Int64 objectUID = (Int64)naTable->objectUid().get_value();
   if ((type == 2) &&
       (naTable->isHbaseCellTable() || naTable->isHbaseRowTable()) &&
       (NOT isView))
@@ -3772,7 +3879,7 @@ short CmpDescribeSeabaseTable (
       if (naTable->isRegistered())
         {
           outputShortLine(*space, " ");
-          
+
           sprintf(buf,  "REGISTER%sHBASE %s %s;",
                   (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
                   "TABLE",
@@ -3781,9 +3888,92 @@ short CmpDescribeSeabaseTable (
           NAString bufnas(buf);
           outputLongLine(*space, bufnas, 0);
 
-          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(*space, buf);
         }
+      else if (isDetail)
+        {
+          // show a comment that this object should be registered
+          outputShortLine(*space, " ");
+
+          outputShortLine(*space, "-- Object is not registered in Trafodion Metadata.");
+          outputShortLine(*space, "-- Register it using the next command:");
+          sprintf(buf, "--   REGISTER HBASE TABLE %s;",
+                  naTable->getTableName().getQualifiedNameAsAnsiString().data());
+          NAString bufnas(buf);
+          outputLongLine(*space, bufnas, 0);
+        }
+    }
+
+  //display comments
+  if (type == 2 && objectUID > 0)
+    {
+      enum ComObjectType objType = COM_BASE_TABLE_OBJECT;
+
+      if (isView)
+        {
+          objType = COM_VIEW_OBJECT;
+        }
+
+      if (cmpSBD.switchCompiler())
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          return -1;
+        }
+ 
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      if (cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo, heap))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
+          return -1;
+        }
+
+      //display Table COMMENT statements
+      if (objCommentInfo.objectComment != NULL)
+        {
+           //new line
+           outputLine(*space, "", 0);
+
+           sprintf(buf,  "COMMENT ON %s %s IS '%s' ;",
+                   objType == COM_BASE_TABLE_OBJECT? "TABLE" : "VIEW",
+                   tableName.data(),
+                   objCommentInfo.objectComment);
+           outputLine(*space, buf, 0);
+        }
+
+      //display Column COMMENT statements
+      if (objCommentInfo.numColumnComment > 0 && objCommentInfo.columnCommentArray != NULL)
+        {
+          outputLine(*space, "", 0);
+          for (int idx = 0; idx < objCommentInfo.numColumnComment; idx++)
+            {
+              sprintf(buf,  "COMMENT ON COLUMN %s.%s IS '%s' ;",
+                       tableName.data(),
+                       objCommentInfo.columnCommentArray[idx].columnName,
+                       objCommentInfo.columnCommentArray[idx].columnComment);
+               outputLine(*space, buf, 0);
+            }
+        }
+
+      //display Index COMMENT statements
+      if (objCommentInfo.numIndexComment > 0 && objCommentInfo.indexCommentArray != NULL)
+        {
+          outputLine(*space, "", 0);
+          for (int idx = 0; idx < objCommentInfo.numIndexComment; idx++)
+            {
+              sprintf(buf,  "COMMENT ON INDEX %s IS '%s' ;",
+                       objCommentInfo.indexCommentArray[idx].indexFullName,
+                       objCommentInfo.indexCommentArray[idx].indexComment);
+               outputLine(*space, buf, 0);
+            }
+        }
+
+      //do a comment info memory clean
+      NADELETEARRAY(objCommentInfo.columnCommentArray, objCommentInfo.numColumnComment, ComTdbVirtColumnCommentInfo, heap);
+      NADELETEARRAY(objCommentInfo.indexCommentArray, objCommentInfo.numIndexComment, ComTdbVirtIndexCommentInfo, heap);
+
+      cmpSBD.switchBackCompiler();
     }
 
   // If SHOWDDL and authorization is enabled, display GRANTS
@@ -3903,11 +4093,45 @@ short CmpDescribeSequence(
       (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF))
     displayPrivilegeGrants = FALSE;
 
+  int64_t objectUID = (int64_t)naTable->objectUid().get_value();
+  CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
+  //display comment
+  if (objectUID > 0)
+    {
+      if (cmpSBD.switchCompiler())
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          return -1;
+        }
+ 
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      if (cmpSBD.getSeabaseObjectComment(objectUID, COM_SEQUENCE_GENERATOR_OBJECT, objCommentInfo, heap))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
+          return -1;
+        }
+ 
+      if (objCommentInfo.objectComment != NULL)
+        {
+          //new line
+          outputLine(*space, "", 0);
+ 
+          sprintf(buf,  "COMMENT ON SEQUENCE %s IS '%s' ;",
+                        cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
+                        objCommentInfo.objectComment);
+          outputLine(*space, buf, 0);
+        }
+ 
+      cmpSBD.switchBackCompiler();
+    }
+
+
   // If authorization enabled, display grant statements
   if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
   {
     // now get the grant stmts
-    int64_t objectUID = (int64_t)naTable->objectUid().get_value();
     NAString privMDLoc;
     CONCAT_CATSCH(privMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_MD_SCHEMA);
     NAString privMgrMDLoc;
@@ -3918,7 +4142,6 @@ short CmpDescribeSequence(
 
     std::string privilegeText;
     PrivMgrObjectInfo objectInfo(naTable); 
-    CmpSeabaseDDL cmpSBD((NAHeap*)heap);
     if (cmpSBD.switchCompiler())
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
@@ -4138,6 +4361,38 @@ char buf[1000];
        ((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM)
            && getenv("SQLMX_REGRESS"))) ? FALSE : TRUE;
 
+//display library comment
+   if (libraryUID > 0)
+   {
+     if (cmpSBD.switchCompiler())
+       {
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+         return -1;
+       }
+
+     ComTdbVirtObjCommentInfo objCommentInfo;
+     if (cmpSBD.getSeabaseObjectComment(libraryUID, COM_LIBRARY_OBJECT, objCommentInfo, heap))
+       {
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+         cmpSBD.switchBackCompiler();
+         return -1;
+       }
+
+     if (objCommentInfo.objectComment != NULL)
+       {
+         //new line
+         outputLine(*space, "", 0);
+
+         sprintf(buf,  "COMMENT ON LIBRARY %s IS '%s' ;",
+                       cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
+                       objCommentInfo.objectComment);
+         outputLine(*space, buf, 0);
+
+       }
+
+     cmpSBD.switchBackCompiler();
+   }
+
 // If authorization is enabled, display grant statements for library
    if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
    {
@@ -4190,7 +4445,7 @@ short CmpDescribeRoutine (const CorrName   & cn,
 {
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-  NARoutine *routine = bindWA.getNARoutine(cn.getQualifiedNameObj()); 
+  NARoutine *routine = bindWA.getNARoutine(cn.getQualifiedNameObj());
   const NAString& rName =
     cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
   if (routine == NULL || bindWA.errStatus())
@@ -4643,11 +4898,49 @@ short CmpDescribeRoutine (const CorrName   & cn,
 
   outputShortLine (*space, "  ;");
 
+  CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
   char * sqlmxRegr = getenv("SQLMX_REGRESS");
   NABoolean displayPrivilegeGrants = TRUE;
   if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
        (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF))
     displayPrivilegeGrants = FALSE;
+
+  //display comment of routine
+  Int64 routineUID = routine->getRoutineID();
+  if ( routineUID > 0)
+    {
+      if (cmpSBD.switchCompiler())
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+         return -1;
+      }
+
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      if (cmpSBD.getSeabaseObjectComment(routineUID, COM_USER_DEFINED_ROUTINE_OBJECT, objCommentInfo, heap))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
+          return -1;
+        }
+
+     
+      if (objCommentInfo.objectComment != NULL)
+        {
+          //new line
+          outputLine(*space, "", 0);
+     
+          sprintf(buf,  "COMMENT ON %s %s IS '%s' ;",
+                        routine->getRoutineType() == COM_PROCEDURE_TYPE ? "PROCEDURE" : "FUNCTION",
+                        cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
+                        objCommentInfo.objectComment);
+          outputLine(*space, buf, 0);
+        }
+     
+      cmpSBD.switchBackCompiler();
+
+    }
+
 
   // If authorization enabled, display grant statements
   if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
@@ -4670,8 +4963,6 @@ short CmpDescribeRoutine (const CorrName   & cn,
       (int32_t)routine->getSchemaOwner(),
       COM_USER_DEFINED_ROUTINE_OBJECT);
 
-
-    CmpSeabaseDDL cmpSBD((NAHeap*)heap);
     if (cmpSBD.switchCompiler())
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
@@ -4686,8 +4977,6 @@ short CmpDescribeRoutine (const CorrName   & cn,
 
     cmpSBD.switchBackCompiler();
   }
-
-
 
   outbuflen = space->getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];

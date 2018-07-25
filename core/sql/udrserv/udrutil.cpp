@@ -53,7 +53,6 @@ FILE *UdrTraceFile = stdout;
 
 #define TF_STRING(x) ( (x) ? ("TRUE") : ("FALSE") )
 
-// LCOV_EXCL_START
 void displaySqlBuffer(SqlBuffer *sbuf, Lng32 sbuflen, ostream &os)
 {
   os << "Display an SQL Buffer:" << endl;
@@ -567,9 +566,7 @@ void dumpDiagnostics (ComDiagsArea *diags, Lng32 indent)
   return;
   
   // errors and warnings in order added
-#pragma nowarn(220)   // warning elimination 
   for (ii=1; ii <= nbrA; ii++)
-#pragma warn(220)  // warning elimination 
   {
     ServerDebug("%sErrors/Warnings(%ld)  :",     ind, (Lng32) ii);
     dumpComCondition(cc, ind);
@@ -618,9 +615,8 @@ void doMessageBox(UdrGlobals *UdrGlob, Int32 trLevel,
                UdrGlob->serverName_, MB_OK|MB_ICONINFORMATION);
   }
 }
-// LCOV_EXCL_STOP
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 void sleepIfPropertySet(LmLanguageManager &lm,
 	const char *property,
 	ComDiagsArea *d)
@@ -648,7 +644,7 @@ NABoolean getLmProperty(LmLanguageManager &lm,
   }
   return ok;
 }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
 // This function is used by the signal/trap/exit handler code.
 // It is moved from UdrFFDC.cpp file to avoid compilation errors.

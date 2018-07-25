@@ -31,7 +31,7 @@
 namespace ExOverflow
 {
   BufferReference::BufferReference(ByteCount bufferSize)
-    : buffer_(NULL), maxOffset_(bufferSize), offset_(NULL)
+    : buffer_(NULL), maxOffset_(bufferSize), offset_(0)
   {}
 
   BufferReference::BufferReference(const BufferReference& br)
@@ -81,7 +81,7 @@ namespace ExOverflow
   BufferReference::invalidate(void)
   {
     buffer_ = NULL;
-    offset_ = NULL;
+    offset_ = 0;
   }
 
   bool

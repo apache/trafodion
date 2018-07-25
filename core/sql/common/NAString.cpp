@@ -166,14 +166,10 @@ char *convertNAString(const NAString& ns, CollHeap *heap, NABoolean wideNull)
   else {
     buf = new char[len + nullSpaceLen];
     #ifndef NDEBUG
-//LCOV_EXCL_START :rfi
       cerr << "Possible memory leak: convertNAString called with NULL heap\n";
-//LCOV_EXCL_STOP
     #endif
   }
-#pragma nowarn(1506)   // warning elimination
   str_cpy_all(buf, ns.data(), len);
-#pragma warn(1506)  // warning elimination
   if (wideNull == TRUE)
     ((NAWchar *)buf)[len / sizeof(NAWchar)] = L'\0';
   else
@@ -264,7 +260,6 @@ NAString LongToNAString(Lng32 l)
   sprintf(resultstr,"%d",l);
   return NAString(resultstr);
 }
-
 
 NAString UnsignedToNAString(UInt32 u)
 {
@@ -382,7 +377,7 @@ NAString LookupDefineName(const NAString &ns, NABoolean iterate)
 // an ANSI, PotentialANSI, or Tandem reserved word.
 NABoolean IsSqlReservedWord(const char *sqlText)
 {
-  return FALSE;
+  return ComResWords::isSqlReservedWord(sqlText,0);
 }
 
 NABoolean IsCIdentifier(const char *id)
@@ -404,7 +399,7 @@ NABoolean IsCIdentifier(const char *id)
 
 NABoolean /*NAString::*/setMPLoc()
 {
-  if (!SqlParser_Initialized() || SqlParser_NAMETYPE == DF_NSK)
+  if (!SqlParser_Initialized() )
     return TRUE;
   else
     return FALSE;
@@ -430,10 +425,8 @@ NAString ToAnsiIdentifier(const NAString &ns, NABoolean assertShort)
   if ((Int32) internalFormatNameInUCS2.length() >
       (Int32) (assertShort ? ComMAX_1_PART_INTERNAL_UCS2_NAME_LEN_IN_NAWCHARS : SMAX))
   {
-//LCOV_EXCL_START :rfi
     ComASSERT(0);
     return NAString();
-//LCOV_EXCL_STOP
   }
 
   char buf[SMAX];
@@ -459,9 +452,7 @@ NAString ToAnsiIdentifier(const NAString &ns, NABoolean assertShort)
 static Lng32 illegalCharInIdentifier(NAString &ansiIdent,
 				    size_t i, size_t countOfRemoved)
 {
-#pragma nowarn(1506)   // warning elimination
   ansiIdent[(size_t)0] = i + countOfRemoved;
-#pragma warn(1506)  // warning elimination
   return -3127;
 }
 
@@ -569,7 +560,12 @@ Lng32 ToInternalIdentifier( NAString &ansiIdent
 
   size_t countOfRemoved = i;
   i = 0;
-  if (ansiIdent[i] != '"') {	// REGULAR identifier
+  // Handle double quotes or backquotes as delimited identifiers.
+  // Backquotes are used for hive objects.
+  // An error will be returned later if they are used for traf objects.
+  NABoolean isDquote = (ansiIdent[i] == '"');
+  if ((ansiIdent[i] != '"') && 
+      (ansiIdent[i] != '`')) {	// REGULAR identifier
 
     // ANSI 5.2 SR 13 + 14 and 8.2 SR 3a say that trailing spaces are
     // insignificant in equality-testing of identifiers, so remove them
@@ -768,7 +764,7 @@ Lng32 ToInternalIdentifier( NAString &ansiIdent
   } // end REGULAR identifier
   else {
 
-    UInt32 state = 1;
+    UInt32 state = (isDquote ? 1 : 3);
     ansiIdent.remove(0,1);         // remove initial dquote
     countOfRemoved++;
 
@@ -946,12 +942,28 @@ Lng32 ToInternalIdentifier( NAString &ansiIdent
             return illegalCharInIdentifier(ansiIdent, i, countOfRemoved);
           i++;
           break;
+	case 3:
+          if (c == '`') {
+            ansiIdent.remove(i,1);
+            countOfRemoved++;
+            state = 4;
+          } else
+            i++;
+          break;
+	case 4:
+          if (c == '`')
+            state = 3;
+          else if (c != ' ')		// tab became space
+            return illegalCharInIdentifier(ansiIdent, i, countOfRemoved);
+          i++;
+          break;
 	default:
-          ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi  (Note: no-op in Release build)
+          ComASSERT(FALSE); 
         }		 // switch
       }		 // while
 
-      if (state != 2)
+      if ((isDquote && (state != 2)) ||
+          (NOT isDquote && (state != 4)))
         return illegalCharInIdentifier(ansiIdent, i, countOfRemoved);
 
       // ANSI 5.2 SR 13 + 14 and 8.2 SR 3a say that trailing spaces
@@ -1125,6 +1137,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"COS ",                // Tandem-extension
 	"COSH ",               // Tandem-extension
 	"COUNT ",              // ANSI
+	"CRC32 ",              // Trafodion extension
 	"CURDATE ",            // Tandem-extension
 	"CURRENT ",            // ANSI
 	"CURRENT_DATE ",       // ANSI
@@ -1163,6 +1176,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"LPAD ",               // Tandem-extension
 	"LTRIM ",              // Tandem-extension
 	"MAX ",                // ANSI
+	"MD5 ",                // Trafodion extension
 	"MIN ",                // ANSI
 	"MINUTE ",             // Datatype with scales/precisions/length
 	"MOD ",                // Tandem-extension
@@ -1189,6 +1203,9 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"RTRIM ",              // Tandem-extension
 	"SECOND ",             // Datatype with scales/precisions/length
 	"SESSION_USER ",       // ANSI
+	"SHA ",                // Trafodion extension
+	"SHA1 ",               // Trafodion extension
+	"SHA2 ",               // Trafodion extension
 	"SIGN ",               // Tandem-extension
 	"SIN ",                // Tandem-extension
 	"SINH ",               // Tandem-extension
@@ -1255,15 +1272,12 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
     }
   if (pic)
     {
-//LCOV_EXCL_START : cnu - SeaQuest does not support COBOL
       if (tok == " B "  || tok == " X " ||
           tok == " S9 " || tok == " S 9 " || tok == " SV9 " || tok == " V9 ")
 	return TRUE;
-//LCOV_EXCL_STOP
     }
   if (tok == " V9 ")	// PICTURE S V9(nnn)
     {
-//LCOV_EXCL_START : cnu - SeaQuest does not support COBOL
       if (prevtok.length() > 3)
 	{
 	  prevtok.remove(3);
@@ -1283,7 +1297,6 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 		}
 	    }
 	}
-//LCOV_EXCL_STOP
     }
 
   return FALSE;
@@ -1828,7 +1841,8 @@ size_t LineBreakSqlText(NAString &sqlText,
 
 	  } // unquoted space
 
-	else if (*s == '.')
+	else if ((*s == '.') &&
+                 (!isDigit8859_1((unsigned char)s[1]))) // ignore dots in numeric constants
 	  {
 	    dot[2] = dot[1];
 	    dot[1] = dot[0];

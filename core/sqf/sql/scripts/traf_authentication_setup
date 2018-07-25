@@ -93,10 +93,10 @@ function change_sqenvcom
   echo "INFO: Modifying sqenvcom.sh to adjust the authentication default"
   cp $TRAF_HOME/sqenvcom.sh sqenvcom.sh_temp
   if [ $authOn -eq 1 ]; then
-    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=NO@TRAFODION_ENABLE_AUTHENTICATION=YES@" <sqenvcom.sh_temp >$TRAF_HOME/sqenvcom.sh
+    sed -e 's@TRAFODION_ENABLE_AUTHENTICATION=.*$@TRAFODION_ENABLE_AUTHENTICATION=YES@' <sqenvcom.sh_temp >$TRAF_HOME/sqenvcom.sh
     echo "INFO: Authentication has been enabled"
   else
-    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=YES@TRAFODION_ENABLE_AUTHENTICATION=NO@" <sqenvcom.sh_temp >$TRAF_HOME/sqenvcom.sh
+    sed -e 's@TRAFODION_ENABLE_AUTHENTICATION.*$@TRAFODION_ENABLE_AUTHENTICATION=NO@' <sqenvcom.sh_temp >$TRAF_HOME/sqenvcom.sh
     echo "INFO: Authentication has been disabled"
   fi
   rm sqenvcom.sh_temp > /dev/null 2>&1

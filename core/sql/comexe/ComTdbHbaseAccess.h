@@ -588,7 +588,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   // Virtual routines to provide a consistent interface to TDB's
 
@@ -882,6 +882,12 @@ public:
    UInt16 getTrafLoadFlushSize()
    { return trafLoadFlushSize_; } 
 
+   void setColIndexOfPK1(Int16 val)
+   { colIndexOfPK1_ = val; }
+   Int16 getColIndexOfPK1()
+   { return colIndexOfPK1_; } 
+
+
    void setLogErrorRows(NABoolean v)
      {(v ? flags2_ |= TRAF_LOAD_LOG_ERROR_ROWS : flags2_ &= ~TRAF_LOAD_LOG_ERROR_ROWS); };
    NABoolean getLogErrorRows() { return (flags2_ & TRAF_LOAD_LOG_ERROR_ROWS) != 0; };
@@ -1050,8 +1056,12 @@ public:
   // col name of primary key. Format colFam:colName.
   // Currently used for HbaseMapped tables with a single primary key.
   NABasicPtr pkeyColName_;
+  // 0-based column index of first primary key column for hbase format tables
+  // has value 0 for aligned format and native hbase access. This is the index
+  // number of column in row being inserted, not of the column in table.
+  Int16 colIndexOfPK1_ ;
 
-  char fillers[2];
+  char fillers[4];
 };
 
 class ComTdbHbaseCoProcAccess : public ComTdbHbaseAccess

@@ -65,9 +65,7 @@
 ExpSequenceFunction::ExpSequenceFunction
 (OperatorTypeEnum oper_type, Int32 arity, Int32 index,
  Attributes ** attr, Space * space)
-#pragma nowarn(1506)   // warning elimination 
   : ex_function_clause(oper_type, arity, attr, space), offsetIndex_(index), flags_(0) {
-#pragma warn(1506)  // warning elimination 
 };
 
 // ExpSequenceFunction::ExpSequenceFunction
@@ -101,19 +99,13 @@ ex_expr::exp_return_type ExpSequenceFunction::pCodeGenerate(Space *space, UInt32
     return ex_clause::pCodeGenerate(space, f);
 
   if(getNumOperands() != 2 && getNumOperands() != 3)
-    // LCOV_EXCL_START
     return ex_clause::pCodeGenerate(space, f);
-    // LCOV_EXCL_STOP
 
   if(!nullRowIsZero())
-    // LCOV_EXCL_START
     return ex_clause::pCodeGenerate(space, f);
-    // LCOV_EXCL_STOP
 
   if(!isLeading() || (winSize() != 0))
-    // LCOV_EXCL_START
     return ex_clause::pCodeGenerate(space, f);
-    // LCOV_EXCL_STOP
 
   AttributesPtr *attrs = getOperand();
   Lng32 fsDataType = attrs[1]->getDatatype();
@@ -127,9 +119,7 @@ ex_expr::exp_return_type ExpSequenceFunction::pCodeGenerate(Space *space, UInt32
     length = attrs[2]->getLength();
 
     if(fsDataType != REC_BIN32_SIGNED || length != 4)
-     // LCOV_EXCL_START
       return ex_clause::pCodeGenerate(space, f);
-     // LCOV_EXCL_STOP
   }
 
   // If we get to this point, we have decided to generate PCode for this
@@ -157,15 +147,9 @@ ex_expr::exp_return_type ExpSequenceFunction::pCodeGenerate(Space *space, UInt32
             PCIT::getMemoryAddressingMode(attrs[0]->getDatatype()),
             PCIT::getMemoryAddressingMode(attrs[1]->getDatatype()));
 
-#ifdef NA_64BIT
     OL ol((Int64)isOLAP(), (Int64)0, index, 
           attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
           attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#else
-    OL ol((PCIType::Operand)isOLAP(), (PCIType::Operand)0, index, 
-          attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
-          attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#endif
 
     // Add the OFFSET instruction.
     //
@@ -184,17 +168,10 @@ ex_expr::exp_return_type ExpSequenceFunction::pCodeGenerate(Space *space, UInt32
             PCIT::getMemoryAddressingMode(attrs[0]->getDatatype()),
             PCIT::getMemoryAddressingMode(attrs[1]->getDatatype()));
 
-#ifdef NA_64BIT
     OL ol((Int64)(isOLAP()), (Int64)0,
           attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset(),
           attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
           attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#else
-    OL ol((PCIType::Operand)(isOLAP()), (PCIType::Operand)0,
-          attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset(),
-          attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
-          attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#endif
 
     // Add the OFFSET instruction.
     //
@@ -236,9 +213,7 @@ ex_expr::exp_return_type ExpSequenceFunction::eval(char *op_data[],
   Int32 index;
   if(getNumOperands() >= 3) {
     if(attrs[2]->getNullFlag() && !op_data[-2 * MAX_OPERANDS + 2])
-      // LCOV_EXCL_START
       index = -1;
-      // LCOV_EXCL_STOP
     else
       index = *((Int32 *)op_data[2]);
   }
@@ -259,10 +234,8 @@ ex_expr::exp_return_type ExpSequenceFunction::eval(char *op_data[],
 
     if(rc == -1)
       {
-        // LCOV_EXCL_START
         ExRaiseSqlError(heap, diagsArea, EXE_HISTORY_BUFFER_TOO_SMALL);
         return ex_expr::EXPR_ERROR;
-        // LCOV_EXCL_STOP
       }
     if(row) 
       {
@@ -311,21 +284,17 @@ ex_expr::exp_return_type ExpSequenceFunction::eval(char *op_data[],
         case REC_BIN16_UNSIGNED:
         case REC_BIN16_SIGNED: 
         {
-          // LCOV_EXCL_START
           // hiding code from code coverag tool-- 
           short value = 0;
           str_cpy_all(dstData, (char *) &value, sizeof(value));
           break;
-          // LCOV_EXCL_STOP
         }
         case REC_BIN32_SIGNED:
         case REC_BIN32_UNSIGNED:
         {
-          // LCOV_EXCL_START
           Lng32 value = 0;
           str_cpy_all(dstData, (char *) &value, sizeof(value));
           break;
-          // LCOV_EXCL_STOP
         }
         case REC_BIN64_SIGNED:
         {
@@ -335,11 +304,9 @@ ex_expr::exp_return_type ExpSequenceFunction::eval(char *op_data[],
         }
         case REC_IEEE_FLOAT32:
         {
-          // LCOV_EXCL_START
           float value = 0;
           str_cpy_all(dstData, (char *) &value, sizeof(value));
           break;
-          // LCOV_EXCL_STOP
         }
         case REC_IEEE_FLOAT64:
         {
@@ -362,9 +329,7 @@ ex_expr::exp_return_type ExpSequenceFunction::eval(char *op_data[],
                        getOperand(1)->getScale(),
                        NULL, 0, heap, diagsArea,
                        CONV_UNKNOWN) != ex_expr::EXPR_OK) {
-            // LCOV_EXCL_START
             return ex_expr::EXPR_ERROR;
-            // LCOV_EXCL_STOP
           }
 
           break;

@@ -110,9 +110,7 @@ ComTdbSequence::ComTdbSequence
 {
   if ( noOverflow )            
   {
-// LCOV_EXCL_START
     OLAPFlags_ |= NO_OVERFLOW ;
-// LCOV_EXCL_STOP
 
   }
   if ( unboundedFollowing )   
@@ -121,9 +119,7 @@ ComTdbSequence::ComTdbSequence
   }
   if ( logDiagnostics )       
   {
-// LCOV_EXCL_START
     OLAPFlags_ |= LOG_DIAGNOSTICS ;
-// LCOV_EXCL_STOP
   }
   if ( possibleMultipleCalls ) 
   {
@@ -146,7 +142,7 @@ void ComTdbSequence::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "\nFor ComTdbSequence :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       
-      str_sprintf(buf,"recLen_ = %d, maxHistoryRows_ = %d, OLAPFlags_ = %b %s",
+      str_sprintf(buf,"recLen_ = %d, maxHistoryRows_ = %d, OLAPFlags_ = %x %s",
 		  recLen_, maxHistoryRows_, OLAPFlags_,
 		  isUnboundedFollowing() ? ", UNBOUNDED_FOLLOWING" : "");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));

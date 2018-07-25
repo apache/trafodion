@@ -64,7 +64,7 @@ OBJS  = $(OUTDIR)/CommonDiags.o \
         $(OUTDIR)/srvrothers.o \
         $(OUTDIR)/libmxocore_version.o
 
-INCLUDES = -I. -I../Common -I../EventMsgs -I../SrvrMsg -I../dependencies/include -I../dependencies/linux -I../Krypton/generated_incs  -I$(TRAF_HOME)/export/include/sql -I$(TRAF_HOME)/inc/tmf_tipapi  -I$(TRAF_HOME)/inc  -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/sql/nq_w/common -I../OssCfgCl/src -I../CmdCfgDll -I$(PROTOBUFS_INC) -I$(TRAF_HOME)/../sql/cli -I$(TRAF_HOME)/commonLogger -I$(TRAF_HOME)/../dbsecurity/cert/inc -I$(TRAF_HOME)/../dbsecurity/auth/inc -I$(LOG4CXX_INC_DIR) -I$(TRAF_HOME)/../mpi/src/include/intern
+INCLUDES = -I. -I ../nsksrvr/Interface/ -I../Common -I../EventMsgs -I../SrvrMsg -I../dependencies/include -I../dependencies/linux -I../Krypton/generated_incs  -I$(TRAF_HOME)/export/include/sql -I$(TRAF_HOME)/inc/tmf_tipapi  -I$(TRAF_HOME)/inc  -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/sql/nq_w/common -I../OssCfgCl/src -I../CmdCfgDll -I$(PROTOBUFS_INC) -I$(TRAF_HOME)/../sql/cli -I$(TRAF_HOME)/commonLogger -I$(TRAF_HOME)/../dbsecurity/cert/inc -I$(TRAF_HOME)/../dbsecurity/auth/inc -I$(LOG4CXX_INC_DIR) -I$(TRAF_HOME)/../mpi/src/include/intern
 
 DEFINES =  -DNA_LINUX -DSIZEOF_LONG_INT=4 -DUSE_NEW_PHANDLE -DSQ_GUARDIAN_CALL -D_M_DG -DINC_QPID_EVENT -w
 

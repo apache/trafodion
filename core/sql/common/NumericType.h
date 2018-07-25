@@ -247,22 +247,22 @@ public:
   // A virtual function to return a copy of the type.
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const 
-    { return new(h) NumericType(*this,h); }
+    { return new(h) NumericType(*this, h); }
 
 protected:
 
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  NumericType ( const NAString&  adtName, 
+  NumericType ( NAMemory *heap,
+                       const NAString&  adtName, 
 	    	       Lng32             dataStorageSize,
 		       Lng32             precision,
 		       Lng32             scale,
 		       Lng32             alignment,
 		       NABoolean        allowNegValues = TRUE,
 		       NABoolean        allowSQLnull = TRUE,
- 		       NABoolean        varLenFlag = FALSE,
-			   CollHeap * heap = 0
+ 		       NABoolean        varLenFlag = FALSE
                      );
    NumericType ( const NumericType& numeric, CollHeap * heap =0);
 
@@ -363,10 +363,9 @@ class SQLBPInt : public NumericType
 {
 public: 
   // Constructor function
-   SQLBPInt (UInt32 declared, 
+   SQLBPInt (NAMemory *heap, UInt32 declared, 
                    NABoolean allowSQLnull = TRUE, 
-                   NABoolean allowNegValues = FALSE,
-				   CollHeap * heap=0
+                   NABoolean allowNegValues = FALSE
                   );
 
   short getFSDatatype () const
@@ -433,7 +432,7 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLBPInt(declaredSize_, supportsSQLnull(), !isUnsigned(),h);
+    return new(h) SQLBPInt(h, declaredSize_, supportsSQLnull(), !isUnsigned());
   }
 
 private:
@@ -452,10 +451,8 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLTiny (NABoolean allowNegValues = TRUE, 
-           NABoolean allowSQLnull = TRUE,
-           CollHeap * heap =0);
-  
+  SQLTiny (NAMemory *heap, NABoolean allowNegValues = TRUE, 
+           NABoolean allowSQLnull = TRUE);
    short getFSDatatype() const
     {
       if (isUnsigned())
@@ -517,8 +514,8 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLTiny(!isUnsigned()
-                          ,supportsSQLnull(),h
+    return new(h) SQLTiny(h, !isUnsigned()
+                          ,supportsSQLnull()
                           );
   }
 
@@ -545,9 +542,8 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLSmall (NABoolean allowNegValues = TRUE, 
-                   NABoolean allowSQLnull = TRUE,
-				   CollHeap * heap =0);
+  SQLSmall (NAMemory *heap, NABoolean allowNegValues = TRUE, 
+                   NABoolean allowSQLnull = TRUE);
 
    short getFSDatatype() const
     {
@@ -610,8 +606,8 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLSmall(!isUnsigned()
-			   ,supportsSQLnull(),h
+    return new(h) SQLSmall(h, !isUnsigned()
+			   ,supportsSQLnull()
 			   );
   }
 
@@ -638,9 +634,8 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLInt (NABoolean allowNegValues = TRUE, 
-		 NABoolean allowSQLnull = TRUE,
-		 CollHeap * heap =0 );
+  SQLInt (NAMemory *heap, NABoolean allowNegValues = TRUE, 
+		 NABoolean allowSQLnull = TRUE);
 
   short getFSDatatype() const
     {
@@ -703,8 +698,8 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLInt(!isUnsigned()
-			 ,supportsSQLnull(),h
+    return new(h) SQLInt(h, !isUnsigned()
+			 ,supportsSQLnull()
 			 );
   }
 
@@ -733,15 +728,13 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLLargeInt (NABoolean allowNegValues = TRUE, 
-	       NABoolean allowSQLnull = TRUE,
-	       CollHeap * heap =0);
+  SQLLargeInt (NAMemory *heap, NABoolean allowNegValues = TRUE, 
+	       NABoolean allowSQLnull = TRUE);
 
-  SQLLargeInt (Lng32 scale,
+  SQLLargeInt (NAMemory *heap, Lng32 scale,
                UInt16 disAmbiguate,  // 64bit
 	       NABoolean allowNegValues = TRUE, 
-	       NABoolean allowSQLnull = TRUE,
-	       CollHeap * heap =0);
+	       NABoolean allowSQLnull = TRUE);
 
   short getFSDatatype() const
     {
@@ -810,11 +803,10 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLLargeInt(getScale(),
+    return new(h) SQLLargeInt(h, getScale(),
                               (UInt16) 0,
 			      !isUnsigned()
 			      ,supportsSQLnull()
-				  ,h
 			      );
   }
 
@@ -861,18 +853,16 @@ class SQLBigInt : public SQLLargeInt
     
 public: 
       
-  SQLBigInt (NABoolean allowNegValues = TRUE, 
-		      NABoolean allowSQLnull = TRUE,
-			  CollHeap * heap =0);
+  SQLBigInt (NAMemory *heap, NABoolean allowNegValues = TRUE, 
+		      NABoolean allowSQLnull = TRUE);
 
   // ---------------------------------------------------------------------
   // A virtual function to return a copy of the type.
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLBigInt(!isUnsigned()
+    return new(h) SQLBigInt(h, !isUnsigned()
 			    ,supportsSQLnull()
-				,h
 			    );
   }
 
@@ -894,14 +884,13 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLNumeric (Lng32 length, Lng32 precision, Lng32 scale,
+  SQLNumeric (NAMemory *heap, Lng32 length, Lng32 precision, Lng32 scale,
 		     NABoolean allowNegValues = TRUE, 
-		     NABoolean allowSQLnull = TRUE,
-			 CollHeap * heap =0);
+		     NABoolean allowSQLnull = TRUE);
 
    // Note: DisAmbiguate arg added so Compiler can distinguish between
    //       this constructor and the one above....for 64bit project.
-   SQLNumeric (NABoolean allowNegValues,
+   SQLNumeric (NAMemory *heap, NABoolean allowNegValues,
                      Lng32 precision,
                      Lng32 scale,
                      const Int16 DisAmbiguate,
@@ -975,12 +964,11 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLNumeric(getNominalSize()
+    return new(h) SQLNumeric(h, getNominalSize()
 			     ,getPrecision()
 			     ,getScale()
 			     ,!isUnsigned()
 			     ,supportsSQLnull()
-				 ,h
 			     );
   }
 
@@ -1004,10 +992,9 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLDecimal (Lng32 length, Lng32 scale,
+  SQLDecimal (NAMemory *heap, Lng32 length, Lng32 scale,
 		     NABoolean allowNegValues = TRUE, 
-		     NABoolean allowSQLnull = TRUE,
-			 CollHeap * heap =0);
+		     NABoolean allowSQLnull = TRUE);
 
    short getFSDatatype() const
     {
@@ -1051,11 +1038,10 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLDecimal(getNominalSize()
+    return new(h) SQLDecimal(h, getNominalSize()
 			     ,getScale()
 			     ,!isUnsigned()
 			     ,supportsSQLnull()
-				 ,h
 			     );
   }
 
@@ -1072,18 +1058,16 @@ private:
 //                    this values (ex. precision > 18).
 //
 // ***********************************************************************
-#pragma nowarn(1319)   // warning elimination
 class SQLBigNum : public NumericType
 {
 public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-   SQLBigNum ( Lng32 precision, Lng32 scale,
+   SQLBigNum ( NAMemory *heap, Lng32 precision, Lng32 scale,
 	       NABoolean isARealBigNum, // = TRUE,
 	       NABoolean allowNegValues, // = TRUE, 
-	       NABoolean allowSQLnull, // = TRUE,
-	       CollHeap * heap);
+	       NABoolean allowSQLnull ); // = TRUE);
 
    short getFSDatatype() const
     {
@@ -1159,12 +1143,11 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLBigNum(getPrecision()
+    return new(h) SQLBigNum(h, getPrecision()
 			    ,getScale()
 			    ,isARealBigNum()
 			    ,!isUnsigned()
 			    ,supportsSQLnull()
-			    , h
 			    );
   }
 
@@ -1179,8 +1162,6 @@ private:
   //             are non-bignums)
   NABoolean isARealBigNum_;
 }; // class SQLBigNum
-#pragma warn(1319)  // warning elimination 
-
 
 // ***********************************************************************
 //
@@ -1194,10 +1175,9 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-   LSDecimal (Lng32 length,
+   LSDecimal (NAMemory *heap, Lng32 length,
 		    Lng32 scale, 
-		    NABoolean allowSQLnull = TRUE,
-			CollHeap * heap =0);
+		    NABoolean allowSQLnull = TRUE);
 
    short getFSDatatype() const
     {
@@ -1211,7 +1191,7 @@ public:
 
    NAType * equivalentType(CollHeap* h=0) const
     {
-      return new(h) SQLDecimal(getNominalSize() - 1, getScale(),
+      return new(h) SQLDecimal(h, getNominalSize() - 1, getScale(),
 			       TRUE, supportsSQLnull());
     }
 
@@ -1244,10 +1224,9 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) LSDecimal(getNominalSize()
+    return new(h) LSDecimal(h, getNominalSize()
 			    ,getScale()
 			    ,supportsSQLnull()
-				,h
 			    );
   }
 
@@ -1268,14 +1247,13 @@ public:
   // Constructor functions
   // ---------------------------------------------------------------------
   SQLFloat
-  ( NABoolean allowSQLnull
+  ( NAMemory *heap, NABoolean allowSQLnull
   , Lng32 dataStorageSize
   , Lng32 precision = SQL_FLOAT_PRECISION
   , const NAString& adtName = LiteralFloat
-  , CollHeap * heap =0
   )
   : NumericType
-  ( adtName
+  ( heap, adtName
   , dataStorageSize
   , precision
   , 0
@@ -1283,7 +1261,6 @@ public:
   , TRUE
   , allowSQLnull
   ,FALSE
-  ,heap
   )
   { 
     // Should not assert precision <= SQL_FLOAT_PRECISION. 
@@ -1356,12 +1333,11 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLFloat(
+    return new(h) SQLFloat(h,
 			   supportsSQLnull(), 
 			   getNominalSize(),
 			   getPrecision(), 
-			   getSimpleTypeName(),
-			   h);
+			   getSimpleTypeName());
   }
 
   virtual double getMaxValue() const { return 1.7976931348623157e+308; }
@@ -1385,9 +1361,9 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-   SQLReal (NABoolean allowSQLnull = TRUE,CollHeap * heap = 0,
+   SQLReal (NAMemory *heap, NABoolean allowSQLnull = TRUE,
 		  Lng32 precision = 0)
-  : SQLFloat(allowSQLnull, SQL_REAL_SIZE, 0, LiteralReal,heap)
+  : SQLFloat(heap, allowSQLnull, SQL_REAL_SIZE, 0, LiteralReal)
   {}
  
   // The above constructor can mislead callers of getPrecision() into
@@ -1401,7 +1377,7 @@ public:
   // A virtual function to return a copy of the type.
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const 
-    { return new(h) SQLReal(supportsSQLnull(),h); }
+    { return new(h) SQLReal(h, supportsSQLnull()); }
 
   virtual double getMaxValue() const { return 3.40282347e+38; }
 
@@ -1422,12 +1398,11 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-   SQLDoublePrecision (NABoolean allowSQLnull = TRUE,
-                       CollHeap * heap =0,
+   SQLDoublePrecision (NAMemory *heap, NABoolean allowSQLnull = TRUE,
                        Lng32 precision = SQL_DOUBLE_PRECISION,
                        NABoolean fromFloat = FALSE)
-  : SQLFloat(allowSQLnull, SQL_DOUBLE_PRECISION_SIZE, 
-	     precision, LiteralDoublePrecision,heap),
+  : SQLFloat(heap, allowSQLnull, SQL_DOUBLE_PRECISION_SIZE, 
+	     precision, LiteralDoublePrecision),
     fromFloat_(fromFloat),
     origPrecision_(precision)
   {}
@@ -1445,7 +1420,7 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLDoublePrecision(supportsSQLnull(),h,getPrecision(), fromFloat());
+    return new(h) SQLDoublePrecision(h, supportsSQLnull(),getPrecision(), fromFloat());
   }
 
   // ---------------------------------------------------------------------

@@ -144,7 +144,6 @@ void lmUtilityInitConnList( JNIEnv *jni, jmethodID connCloseId )
 // Returns the 'connList' as a reference
 NAList<jobject> &lmUtilityGetConnList() { return lmUtilityConnList; }
 
-// LCOV_EXCL_START
 static void Throw(JNIEnv *env, const char *msg)
 {
   jclass c = env->FindClass("java/lang/Exception");
@@ -163,7 +162,6 @@ void SQL_ERROR_HANDLER(Lng32 sqlCode)
   // This is a no-op for now. Might be useful in the future for logic
   // that needs to be executed after any CLI error.
 }
-// LCOV_EXCL_STOP
 
 // The MXStatement class provides a simple interface into the SQL/MX
 // CLI and can be used for SQL operations in a C++ program that is not
@@ -216,7 +214,6 @@ public:
     numOutColumns_ = 0;
   }
   
-// LCOV_EXCL_START
   Lng32 init(const char *&status)
   {
     Lng32 result = 0;
@@ -286,7 +283,6 @@ public:
     SQL_ERROR_HANDLER(result);
     return result;
   }
-// LCOV_EXCL_STOP
 
   ~MXStatement()
   {
@@ -301,7 +297,6 @@ public:
     delete [] stmtText_;
   }
 
-// LCOV_EXCL_START
   Lng32 prepare(const char *stmtText)
   {
     if (!initialized_)
@@ -525,7 +520,6 @@ public:
 
   Lng32 getNumInColumns() { return numInColumns_; }
   Lng32 getNumOutColumns() { return numOutColumns_; }
-// LCOV_EXCL_STOP
 
 protected:
   SQLSTMT_ID stmtId_;
@@ -572,7 +566,6 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_udr_LmUtility_nativeUtils
 
   static MXStatement staticStmt;
 
-// LCOV_EXCL_START
   if (action.compareTo("GetTxName", NAString::ignoreCase) == 0)
   {
     Int64 transid;
@@ -998,7 +991,6 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_udr_LmUtility_nativeUtils
     result += action;
     Throw(env, result);
   }
-// LCOV_EXCL_STOP
 
   //
   // Create the Java output string

@@ -70,7 +70,6 @@ CPPSRC := Allocator.cpp \
 	ExHbaseSelect.cpp \
 	ExHbaseIUD.cpp \
 	ExHbaseDDL.cpp \
-	ExMeas.cpp \
 	ExPack.cpp \
 	ExPackedRows.cpp \
 	ExProbeCache.cpp \
@@ -104,10 +103,7 @@ CPPSRC := Allocator.cpp \
 	SqlStats.cpp \
 	rts_msg.cpp \
 	sql_buffer.cpp \
-	stubs.cpp \
-	stubs2.cpp \
 	SwapSpace.cpp \
-	tempfile.cpp \
 	timeout_data.cpp \
 	TriggerEnable.cpp \
 	TupleSpace.cpp \
@@ -116,6 +112,8 @@ CPPSRC := Allocator.cpp \
         JavaObjectInterface.cpp \
         SequenceFileReader.cpp \
         OrcFileReader.cpp \
+        HdfsClient_JNI.cpp \
+        HiveClient_JNI.cpp \
         HBaseClient_JNI.cpp
 CPPSRC += vers_libexecutor.cpp \
 	ssmpipc.cpp \
@@ -134,8 +132,5 @@ CPPSRC += vers_libexecutor.cpp \
 	ExSMReadyList.cpp \
 	ExFastTransport.cpp
 
-ifneq ($(SP_DIS),)
-EXTERN_LIBS := $(SP_EXPORT_LIB)/libwrappersq.so
-endif
 SYS_LIBS := -lrt -lpthread
 SRCPATH := bin executor runtimestats porting_layer qmscommon

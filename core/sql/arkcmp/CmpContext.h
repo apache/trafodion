@@ -62,13 +62,10 @@
 #include "hs_cmp.h"		// for uStatID_;
 #include "NAAssert.h"		// required after including a RogueWave file!
 
-#ifdef NA_CMPDLL
 #include "CmpMessage.h"
-#endif // NA_CMPDLL
 
 #include "SharedPtr.h"
 
-class ReadTableDef;
 class SchemaDB;
 class ControlDB;
 class CmpStatement;
@@ -157,7 +154,6 @@ private :
   Int32 useCount_;
 }; 
 
-#pragma nowarn(1506)   // warning elimination 
 class CmpContext
 {
 public :
@@ -287,9 +283,6 @@ public :
   
   UInt32 getStatementNum() const { return statementNum_; }
 
-  HiveClient_JNI *getHiveClient(ComDiagsArea *diags = NULL);
-  NABoolean execHiveSQL(const char* hiveSQL, ComDiagsArea *diags = NULL);
-
   // access the NAHeap* for context
   NAHeap* statementHeap();
   NAHeap* heap() { return heap_; }
@@ -302,9 +295,6 @@ public :
 
   // clean up globals at the end of each statement. 
   void cleanup(NABoolean exception=TRUE);
-
-  // sqlcat globals
-  ReadTableDef* readTableDef_;
 
   // optimizer globals
 
@@ -383,13 +373,12 @@ public :
   void switchBackContext();
   void resetContext();
 
-#ifdef NA_CMPDLL
   Int32
   compileDirect(char *data, UInt32 dataLen, CollHeap *outHeap, Int32 charset,
                 CmpMessageObj::MessageTypeEnum op, char *&gen_code,
                 UInt32 &gen_code_len, UInt32 parserFlags,
                 const char *parentQid, Int32 parentQidLen,
-                ComDiagsArea *diagsArea = NULL);
+                ComDiagsArea *&diagsArea);
 
   // set/reset an env in compiler envs
   void setArkcmpEnvDirect(const char *name, const char *value,
@@ -401,7 +390,6 @@ public :
   void setNumSQNodes(CollIndex n) { numSQNodes_ = n; }
   NABoolean getHasVirtualSQNodes() { return hasVirtualSQNodes_; }
   void setHasVirtualSQNodes(NABoolean v) { hasVirtualSQNodes_ = v; }
-#endif // NA_CMPDLL
 
   // used by sendAllControlsAndFlags() and restoreAllControlsAndFlags()
   Int32 getCntlCount() { return allControlCount_; }
@@ -458,11 +446,6 @@ public :
   // optimizer cached defaults
   OptDefaults* getOptDefaults() { return optDefaults_; }
 
-  // context global empty input logical property
-  EstLogPropSharedPtr* getGEILP() { return &emptyInLogProp_; }
-  void setGEILP(EstLogPropSharedPtr inLogProp)
-                             { emptyInLogProp_ = inLogProp; }
-    
   MDDescsInfo *getTrafMDDescsInfo() { return trafMDDescsInfo_; }
 
   void setCIClass(CmpContextInfo::CmpContextClassType x) { ciClass_ = x; }
@@ -624,9 +607,6 @@ private:
   // query defaults using during a statement compilation
   OptDefaults* optDefaults_;
 
-  // context global empty input logical property
-  EstLogPropSharedPtr emptyInLogProp_;
-
   MDDescsInfo * trafMDDescsInfo_;
 
   CmpContextInfo::CmpContextClassType ciClass_;
@@ -655,7 +635,6 @@ private:
   // for any Hive SQL operations we may want to do
   HiveClient_JNI* hiveClient_;
 }; // end of CmpContext 
-#pragma warn(1506)  // warning elimination 
 
 static inline CmpContext::InternalCompileEnum &InternalCompile() 
 { return cmpCurrentContext->internalCompile(); }

@@ -77,12 +77,10 @@ Lng32 QmsInitializer::performInitialization()
   NABoolean collectQMSStats = sqlInterface_.getCollectQMSStatsEnabled();
   if (collectQMSStats)
   {
-    // LCOV_EXCL_START :cnu CQD that controls this is not defined.
     collectQMSStats_ = TRUE;
 
     // report initial heap size of QMS
     logQMSStats ();
-    // LCOV_EXCL_STOP
   }
 
   // Obtain all the MV descriptor text for all the MVs known for
@@ -108,7 +106,6 @@ Lng32 QmsInitializer::performInitialization()
 
 }  // End of performInitialization
 
-// LCOV_EXCL_START :cnu The cqd does not exist.
 /**
  * dump QMS statistics to the log
  * statistics collection and logging is controlled
@@ -127,7 +124,6 @@ void QmsInitializer::logQMSStats ()
    QRLogger::log(CAT_MEMORY, LL_DEBUG, "QMS total memory size: (%Ld)", totalSize);
    QRLogger::log(CAT_MEMORY, LL_DEBUG, "QMS allocated memory size: (%Ld)", allocatedSize);
 }
-// LCOV_EXCL_STOP
 
 // ***************************************************************
 // * processCharset
@@ -138,7 +134,6 @@ void QmsInitializer::logQMSStats ()
 // * to read the ISO_MAPPING and DEFAULT_CHARSET attribute values
 // * from the system defaults table.  
 // *************************************************************** 
-// LCOV_EXCL_START :cnu
 void QmsInitializer::processCharset()
 {
   isoMapping_ = sqlInterface_.getIsoMapping();
@@ -147,7 +142,6 @@ void QmsInitializer::processCharset()
   return;
 
 }  // End of processCharset
-// LCOV_EXCL_STOP
 
 // *************************************************************** 
 // * Process the results of the catalog and MV searches
@@ -249,12 +243,10 @@ void QmsInitializer::processMvDescriptor(const QRMVDefinition* mvDef,
     // something else.
     if (mvDescriptor->getElementType() !=  ET_MVDescriptor)
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_QMS_INIT, LL_WARN,
         "XML document parsed ok, but had wrong document element -- %s",
                   mvDescriptor->getElementName());
       return;
-      // LCOV_EXCL_STOP
     }
 
     QRMVDescriptorPtr mvDesc = static_cast<QRMVDescriptorPtr>(mvDescriptor);
@@ -280,7 +272,6 @@ void QmsInitializer::processMvDescriptor(const QRMVDefinition* mvDef,
 
     qms_->insert(mvDesc, mvDef);   
   }
-  // LCOV_EXCL_START :rfi
   catch (QRException ex)
   {
     QRLogger::log(CAT_QMS_INIT, LL_MVQR_FAIL,
@@ -291,7 +282,6 @@ void QmsInitializer::processMvDescriptor(const QRMVDefinition* mvDef,
     QRLogger::log(CAT_QMS_INIT, LL_MVQR_FAIL,
       "Unknown exception thrown processing MV Descriptor. Skipping.");
   }
-  // LCOV_EXCL_STOP
 
   return;
 

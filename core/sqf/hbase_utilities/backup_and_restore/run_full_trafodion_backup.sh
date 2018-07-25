@@ -119,6 +119,15 @@ do
   esac
 done
 
+#check the HBase compatiblity if TrafExportSnapshot is able to be used
+java org.trafodion.utility.backuprestore.TrafExportSnapshot -t
+if [[ $? -ne 0 ]]; then
+  echo 'not able to use TrafExportSnapshot'
+  mr_limit=0
+else
+  echo 'able to use TrafExportSnapshot'
+fi
+
 echo "logging output to: ${log_file}"
 
 #create tmp and log folders if they don't exist

@@ -21,9 +21,7 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC := CliDll.cpp \
-	StoredProcInterface.cpp \
-	rtdu.cpp \
+CPPSRC := StoredProcInterface.cpp \
 	vers_libcli.cpp
 
 SRCPATH := cli catman smdio

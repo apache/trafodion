@@ -42,6 +42,7 @@
 #ifndef _CMP_SEABASE_MD_H_
 #define _CMP_SEABASE_MD_H_
 
+
 #define COL_MAX_CATALOG_LEN 256
 #define COL_MAX_SCHEMA_LEN 256
 #define COL_MAX_TABLE_LEN 256
@@ -71,7 +72,7 @@ public:
 
 static const QString seabaseAuthsDDL[] =
 {
-  {" create table "SEABASE_AUTHS" "},
+  {" create table " SEABASE_AUTHS " "},
   {" ( "},
   {"  auth_id int unsigned not null not serialized, "},
   {"  auth_db_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -90,7 +91,7 @@ static const QString seabaseAuthsDDL[] =
 
 static const QString seabaseColumnsDDL[] =
 {
-  {" create table "SEABASE_COLUMNS" "},
+  {" create table " SEABASE_COLUMNS" "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   column_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -130,7 +131,7 @@ enum SeabaseColumnsFlags {
 
 static const QString seabaseDefaultsDDL[] =
 {
-  {" create table "SEABASE_DEFAULTS" "},
+  {" create table " SEABASE_DEFAULTS" "},
   {" ( "},
   {"   attribute varchar(100 bytes) character set utf8 not null not serialized, "},
   {"   attr_value varchar(1000 bytes) character set utf8 not null not serialized, "},
@@ -144,7 +145,7 @@ static const QString seabaseDefaultsDDL[] =
 
 static const QString seabaseKeysDDL[] =
 {
-  {" create table "SEABASE_KEYS" "},
+  {" create table " SEABASE_KEYS" "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   column_name varchar( 256 bytes ) character set utf8 not null not serialized, "},
@@ -161,7 +162,7 @@ static const QString seabaseKeysDDL[] =
 
 static const QString seabaseIndexesDDL[] =
 {
-  {" create table "SEABASE_INDEXES" "},
+  {" create table " SEABASE_INDEXES" "},
   {" ( "},
   {"   base_table_uid largeint not null not serialized, "},
   {"   keytag int not null not serialized, "},
@@ -179,7 +180,7 @@ static const QString seabaseIndexesDDL[] =
 
 static const QString seabaseLibrariesDDL[] =
 {
-  {" create table "SEABASE_LIBRARIES" "},
+  {" create table " SEABASE_LIBRARIES" "},
   {" ( "},
   {"   library_uid largeint not null not serialized, "},
   {"   library_filename varchar(512) character set iso88591 not null not serialized, "},
@@ -193,7 +194,7 @@ static const QString seabaseLibrariesDDL[] =
 
 static const QString seabaseLibrariesUsageDDL[] =
 {
-  {" create table "SEABASE_LIBRARIES_USAGE" "},
+  {" create table " SEABASE_LIBRARIES_USAGE" "},
   {" ( "},
   {"   using_library_uid largeint not null not serialized, "},
   {"   used_udr_uid largeint not null not serialized, "},
@@ -206,7 +207,7 @@ static const QString seabaseLibrariesUsageDDL[] =
 
 static const QString seabaseObjectsDDL[] =
 {
-  {" create table "SEABASE_OBJECTS" "},
+  {" create table " SEABASE_OBJECTS" "},
   {" ( "},
   {"   catalog_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
   {"   schema_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
@@ -228,7 +229,7 @@ static const QString seabaseObjectsDDL[] =
 
 static const QString seabaseObjectsUniqIdxIndexDDL[] =
 {
-  {" create unique index "SEABASE_OBJECTS_UNIQ_IDX" on "TRAFODION_SYSCAT_LIT".\""SEABASE_MD_SCHEMA"\"."SEABASE_OBJECTS" "},
+  {" create unique index " SEABASE_OBJECTS_UNIQ_IDX" on " TRAFODION_SYSCAT_LIT".\"" SEABASE_MD_SCHEMA"\"." SEABASE_OBJECTS" "},
   {" ( "},
   {"   object_uid "},
   {" ) "},
@@ -238,7 +239,7 @@ static const QString seabaseObjectsUniqIdxIndexDDL[] =
 
 static const QString seabaseObjectsUniqIdxDDL[] =
 {
-  {" create table "SEABASE_OBJECTS_UNIQ_IDX" "},
+  {" create table " SEABASE_OBJECTS_UNIQ_IDX" "},
   {" ( "},
   {"   \"OBJECT_UID@\" largeint not null not serialized, "},
   {"   catalog_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -278,7 +279,7 @@ enum SeabaseObjectsFlags {
 
 static const QString seabaseRefConstraintsDDL[] =
 {
-  {" create table "SEABASE_REF_CONSTRAINTS" "},
+  {" create table " SEABASE_REF_CONSTRAINTS" "},
   {" ( "},
   {"   ref_constraint_uid largeint not null not serialized, "},
   {"   unique_constraint_uid largeint not null not serialized, "},
@@ -294,7 +295,7 @@ static const QString seabaseRefConstraintsDDL[] =
 
 static const QString seabaseRoutinesDDL[] =
 {
-  {" create table "SEABASE_ROUTINES" "},
+  {" create table " SEABASE_ROUTINES" "},
   {" ( "},
   {"   udr_uid largeint not null not serialized, "},
   {"   udr_type char(2) not  null, "},
@@ -323,7 +324,7 @@ static const QString seabaseRoutinesDDL[] =
 
 static const QString seabaseSeqGenDDL[] =
 {
-  {" create table "SEABASE_SEQ_GEN" "},
+  {" create table " SEABASE_SEQ_GEN" "},
   {" ( "},
   {"   seq_type char(2) character set iso88591 not null not serialized, "},
   {"   seq_uid largeint not null not serialized, "},
@@ -353,7 +354,7 @@ static const QString seabaseSeqGenDDL[] =
 
 static const QString seabaseTablesDDL[] =
 {
-  {" create table "SEABASE_TABLES" "},
+  {" create table " SEABASE_TABLES" "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   row_format char(2) character set iso88591 not null not serialized, "},
@@ -379,7 +380,7 @@ enum SeabaseTablesFlags
 
 static const QString seabaseTableConstraintsDDL[] =
 {
-  {" create table "SEABASE_TABLE_CONSTRAINTS" "},
+  {" create table " SEABASE_TABLE_CONSTRAINTS" "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   constraint_uid largeint not null not serialized, "},
@@ -401,7 +402,7 @@ static const QString seabaseTableConstraintsDDL[] =
 
 static const QString seabaseTableConstraintsIdxIndexDDL[] =
 {
-  {" create index "SEABASE_TABLE_CONSTRAINTS_IDX" on "TRAFODION_SYSCAT_LIT".\""SEABASE_MD_SCHEMA"\"."SEABASE_TABLE_CONSTRAINTS" "},
+  {" create index " SEABASE_TABLE_CONSTRAINTS_IDX" on " TRAFODION_SYSCAT_LIT".\"" SEABASE_MD_SCHEMA"\"." SEABASE_TABLE_CONSTRAINTS" "},
   {" ( "},
   {"   constraint_uid "},
   {" ) "},
@@ -410,7 +411,7 @@ static const QString seabaseTableConstraintsIdxIndexDDL[] =
 
 static const QString seabaseTableConstraintsIdxDDL[] =
 {
-  {" create table "SEABASE_TABLE_CONSTRAINTS_IDX" "},
+  {" create table " SEABASE_TABLE_CONSTRAINTS_IDX" "},
   {" ( "},
   {"   \"CONSTRAINT_UID@\" largeint not null not serialized, "},
   {"   table_uid largeint not null not serialized, "},
@@ -423,7 +424,7 @@ static const QString seabaseTableConstraintsIdxDDL[] =
 
 static const QString seabaseTextDDL[] =
 {
-  {" create table "SEABASE_TEXT" "},
+  {" create table " SEABASE_TEXT" "},
   {" ( "},
   {"   text_uid largeint not null not serialized, "},
   {"   text_type int not null not serialized, "},
@@ -439,7 +440,7 @@ static const QString seabaseTextDDL[] =
 
 static const QString seabaseUniqueRefConstrUsageDDL[] =
 {
-  {" create table "SEABASE_UNIQUE_REF_CONSTR_USAGE" "},
+  {" create table " SEABASE_UNIQUE_REF_CONSTR_USAGE" "},
   {" ( "},
   {"   unique_constraint_uid largeint not null not serialized, "},
   {"   foreign_constraint_uid largeint not null not serialized, "},
@@ -452,7 +453,7 @@ static const QString seabaseUniqueRefConstrUsageDDL[] =
 
 static const QString seabaseVersionsDDL[] =
 {
-  {" create table "SEABASE_VERSIONS" "},
+  {" create table " SEABASE_VERSIONS" "},
   {" ( "},
   {"   version_type char(50 bytes) character set utf8 not null not serialized, "},
   {"   major_version largeint not null not serialized, "},
@@ -467,7 +468,7 @@ static const QString seabaseVersionsDDL[] =
 
 static const QString seabaseViewsDDL[] =
 {
-  {" create table "SEABASE_VIEWS" "},
+  {" create table " SEABASE_VIEWS" "},
   {" ( "},
   {"   view_uid largeint not null not serialized, "},
   {"   check_option char(2) character set iso88591 not null not serialized, "},
@@ -482,7 +483,7 @@ static const QString seabaseViewsDDL[] =
 
 static const QString seabaseViewsUsageDDL[] =
 {
-  {" create table "SEABASE_VIEWS_USAGE" "},
+  {" create table " SEABASE_VIEWS_USAGE" "},
   {" ( "},
   {"   using_view_uid largeint not null not serialized, "},
   {"   used_object_uid largeint not null not serialized, "},
@@ -515,7 +516,7 @@ static const ComTdbVirtTableColumnInfo seabaseMDValidateRoutineColInfo[] =
 
 static const QString seabaseHistogramsDDL[] =
 {
-  {" create table "HBASE_HIST_NAME" "},
+  {" create table " HBASE_HIST_NAME" "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   histogram_id int unsigned not null not serialized, "},
@@ -541,7 +542,7 @@ static const QString seabaseHistogramsDDL[] =
   {"   v4 largeint not null not serialized, "},
   {"   v5 varchar(250) character set ucs2 not null not serialized, "},
   {"   v6 varchar(250) character set ucs2 not null not serialized "},
-  {" , constraint "HBASE_HIST_PK" primary key "},
+  {" , constraint " HBASE_HIST_PK" primary key "},
   {"     (table_uid, histogram_id, col_position) "},
   {" ) "},
   {" attribute hbase format "},
@@ -550,7 +551,7 @@ static const QString seabaseHistogramsDDL[] =
 
 static const QString seabaseHistogramIntervalsDDL[] =
 {
-  {" create table "HBASE_HISTINT_NAME" "},
+  {" create table " HBASE_HISTINT_NAME" "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   histogram_id int unsigned not null not serialized, "},
@@ -565,7 +566,7 @@ static const QString seabaseHistogramIntervalsDDL[] =
   {"   v4 largeint not null not serialized, "},
   {"   v5 varchar(250) character set ucs2 not null not serialized, "},
   {"   v6 varchar(250) character set ucs2 not null not serialized"},
-  {" , constraint "HBASE_HISTINT_PK" primary key "},
+  {" , constraint " HBASE_HISTINT_PK" primary key "},
   {"    (table_uid, histogram_id, interval_number) "},
   {" ) "},
   {" attribute hbase format "},
@@ -574,7 +575,7 @@ static const QString seabaseHistogramIntervalsDDL[] =
 
 static const QString seabasePersistentSamplesDDL[] = 
 {
-  {" create table "HBASE_PERS_SAMP_NAME" "},
+  {" create table " HBASE_PERS_SAMP_NAME" "},
   {" ( "},
   {"   TABLE_UID LARGEINT NOT NULL NOT SERIALIZED, "},
   {"   REQUESTED_SAMPLE_ROWS LARGEINT NOT NULL NOT SERIALIZED, "},
@@ -588,7 +589,7 @@ static const QString seabasePersistentSamplesDDL[] =
   {"   UPDATER_INFO VARCHAR(128) CHARACTER SET ISO88591 NOT NULL  NOT SERIALIZED, "},
   {"   V1 VARCHAR(250) CHARACTER SET UCS2 NOT NULL  NOT SERIALIZED, "},
   {"   V2 VARCHAR(250) CHARACTER SET UCS2 NOT NULL  NOT SERIALIZED, "},
-  {"   constraint "HBASE_PERS_SAMP_PK" primary key (TABLE_UID) "},
+  {"   constraint " HBASE_PERS_SAMP_PK" primary key (TABLE_UID) "},
   {" ) "},
   {" attribute hbase format "},
   {" ; "}
@@ -760,7 +761,7 @@ static const MDTableInfo allMDHistInfo[] = {
 
 static const QString seabaseOldTrafMDv11AuthsDDL[] =
 {
-  {" create table "SEABASE_AUTHS_OLD_MD" "},
+  {" create table " SEABASE_AUTHS_OLD_MD " "},
   {" ( "},
   {"  auth_id int unsigned not null not serialized, "},
   {"  auth_db_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -778,7 +779,7 @@ static const QString seabaseOldTrafMDv11AuthsDDL[] =
 
 static const QString seabaseOldTrafMDv11ColumnsDDL[] =
 {
-  {" create table "SEABASE_COLUMNS_OLD_MD" "},
+  {" create table " SEABASE_COLUMNS_OLD_MD " "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   column_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -817,7 +818,7 @@ enum SeabaseOldTrafMDv11ColumnsFlags {
 
 static const QString seabaseOldTrafMDv11DefaultsDDL[] =
 {
-  {" create table "SEABASE_DEFAULTS_OLD_MD" "},
+  {" create table " SEABASE_DEFAULTS_OLD_MD " "},
   {" ( "},
   {"   attribute varchar(100 bytes) character set utf8 not null not serialized, "},
   {"   attr_value varchar(1000 bytes) character set utf8 not null not serialized, "},
@@ -829,7 +830,7 @@ static const QString seabaseOldTrafMDv11DefaultsDDL[] =
 
 static const QString seabaseOldTrafMDv11KeysDDL[] =
 {
-  {" create table "SEABASE_KEYS_OLD_MD" "},
+  {" create table " SEABASE_KEYS_OLD_MD " "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   column_name varchar( 256 bytes ) character set utf8 not null not serialized, "},
@@ -845,7 +846,7 @@ static const QString seabaseOldTrafMDv11KeysDDL[] =
 
 static const QString seabaseOldTrafMDv11IndexesDDL[] =
 {
-  {" create table "SEABASE_INDEXES_OLD_MD" "},
+  {" create table " SEABASE_INDEXES_OLD_MD " "},
   {" ( "},
   {"   base_table_uid largeint not null not serialized, "},
   {"   keytag int not null not serialized, "},
@@ -862,7 +863,7 @@ static const QString seabaseOldTrafMDv11IndexesDDL[] =
 
 static const QString seabaseOldTrafMDv11LibrariesDDL[] =
 {
-  {" create table "SEABASE_LIBRARIES_OLD_MD" "},
+  {" create table " SEABASE_LIBRARIES_OLD_MD " "},
   {" ( "},
   {"   library_uid largeint not null not serialized, "},
   {"   library_filename varchar(512) character set iso88591 not null not serialized, "},
@@ -874,7 +875,7 @@ static const QString seabaseOldTrafMDv11LibrariesDDL[] =
 
 static const QString seabaseOldTrafMDv11LibrariesUsageDDL[] =
 {
-  {" create table "SEABASE_LIBRARIES_USAGE_OLD_MD" "},
+  {" create table " SEABASE_LIBRARIES_USAGE_OLD_MD " "},
   {" ( "},
   {"   using_library_uid largeint not null not serialized, "},
   {"   used_udr_uid largeint not null not serialized "},
@@ -885,7 +886,7 @@ static const QString seabaseOldTrafMDv11LibrariesUsageDDL[] =
 
 static const QString seabaseOldTrafMDv11ObjectsDDL[] =
 {
-  {" create table "SEABASE_OBJECTS_OLD_MD" "},
+  {" create table " SEABASE_OBJECTS_OLD_MD " "},
   {" ( "},
   {"   catalog_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
   {"   schema_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
@@ -906,7 +907,7 @@ static const QString seabaseOldTrafMDv11ObjectsDDL[] =
 
 static const QString seabaseOldTrafMDv11ObjectsUniqIdxIndexDDL[] =
 {
-  {" create unique index "SEABASE_OBJECTS_UNIQ_IDX_OLD_MD" on "TRAFODION_SYSCAT_LIT".\""SEABASE_MD_SCHEMA"\"."SEABASE_OBJECTS_OLD_MD" "},
+  {" create unique index " SEABASE_OBJECTS_UNIQ_IDX_OLD_MD " on " TRAFODION_SYSCAT_LIT".\"" SEABASE_MD_SCHEMA"\"." SEABASE_OBJECTS_OLD_MD" "},
   {" ( "},
   {"   object_uid "},
   {" ) "},
@@ -915,7 +916,7 @@ static const QString seabaseOldTrafMDv11ObjectsUniqIdxIndexDDL[] =
 
 static const QString seabaseOldTrafMDv11ObjectsUniqIdxDDL[] =
 {
-  {" create table "SEABASE_OBJECTS_UNIQ_IDX_OLD_MD" "},
+  {" create table " SEABASE_OBJECTS_UNIQ_IDX_OLD_MD " "},
   {" ( "},
   {"   \"OBJECT_UID@\" largeint not null not serialized, "},
   {"   catalog_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -939,7 +940,7 @@ enum SeabaseOldTrafMDv11ObjectsFlags {
 
 static const QString seabaseOldTrafMDv11RefConstraintsDDL[] =
 {
-  {" create table "SEABASE_REF_CONSTRAINTS_OLD_MD" "},
+  {" create table " SEABASE_REF_CONSTRAINTS_OLD_MD " "},
   {" ( "},
   {"   ref_constraint_uid largeint not null not serialized, "},
   {"   unique_constraint_uid largeint not null not serialized, "},
@@ -954,7 +955,7 @@ static const QString seabaseOldTrafMDv11RefConstraintsDDL[] =
 
 static const QString seabaseOldTrafMDv11RoutinesDDL[] =
 {
-  {" create table "SEABASE_ROUTINES_OLD_MD" "},
+  {" create table " SEABASE_ROUTINES_OLD_MD " "},
   {" ( "},
   {"   udr_uid largeint not null not serialized, "},
   {"   udr_type char(2) not  null, "},
@@ -981,7 +982,7 @@ static const QString seabaseOldTrafMDv11RoutinesDDL[] =
 
 static const QString seabaseOldTrafMDv11SeqGenDDL[] =
 {
-  {" create table "SEABASE_SEQ_GEN_OLD_MD" "},
+  {" create table " SEABASE_SEQ_GEN_OLD_MD " "},
   {" ( "},
   {"   seq_type char(2) character set iso88591 not null not serialized, "},
   {"   seq_uid largeint not null not serialized, "},
@@ -1010,7 +1011,7 @@ static const QString seabaseOldTrafMDv11SeqGenDDL[] =
 
 static const QString seabaseOldTrafMDv11TablesDDL[] =
 {
-  {" create table "SEABASE_TABLES_OLD_MD" "},
+  {" create table " SEABASE_TABLES_OLD_MD " "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   row_format char(2) character set iso88591 not null not serialized, "},
@@ -1027,7 +1028,7 @@ static const QString seabaseOldTrafMDv11TablesDDL[] =
 
 static const QString seabaseOldTrafMDv11TableConstraintsDDL[] =
 {
-  {" create table "SEABASE_TABLE_CONSTRAINTS_OLD_MD" "},
+  {" create table " SEABASE_TABLE_CONSTRAINTS_OLD_MD " "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   constraint_uid largeint not null not serialized, "},
@@ -1048,7 +1049,7 @@ static const QString seabaseOldTrafMDv11TableConstraintsDDL[] =
 
 static const QString seabaseOldTrafMDv11TextDDL[] =
 {
-  {" create table "SEABASE_TEXT_OLD_MD" "},
+  {" create table " SEABASE_TEXT_OLD_MD " "},
   {" ( "},
   {"   text_uid largeint not null not serialized, "},
   {"   text_type int not null not serialized, "},
@@ -1063,7 +1064,7 @@ static const QString seabaseOldTrafMDv11TextDDL[] =
 
 static const QString seabaseOldTrafMDv11UniqueRefConstrUsageDDL[] =
 {
-  {" create table "SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD" "},
+  {" create table " SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD " "},
   {" ( "},
   {"   unique_constraint_uid largeint not null not serialized, "},
   {"   foreign_constraint_uid largeint not null not serialized, "},
@@ -1075,7 +1076,7 @@ static const QString seabaseOldTrafMDv11UniqueRefConstrUsageDDL[] =
 
 static const QString seabaseOldTrafMDv11VersionsDDL[] =
 {
-  {" create table "SEABASE_VERSIONS_OLD_MD" "},
+  {" create table " SEABASE_VERSIONS_OLD_MD " "},
   {" ( "},
   {"   version_type char(50 bytes) character set utf8 not null not serialized, "},
   {"   major_version largeint not null not serialized, "},
@@ -1089,7 +1090,7 @@ static const QString seabaseOldTrafMDv11VersionsDDL[] =
 
 static const QString seabaseOldTrafMDv11ViewsDDL[] =
 {
-  {" create table "SEABASE_VIEWS_OLD_MD" "},
+  {" create table " SEABASE_VIEWS_OLD_MD " "},
   {" ( "},
   {"   view_uid largeint not null not serialized, "},
   {"   check_option char(2) character set iso88591 not null not serialized, "},
@@ -1103,7 +1104,7 @@ static const QString seabaseOldTrafMDv11ViewsDDL[] =
 
 static const QString seabaseOldTrafMDv11ViewsUsageDDL[] =
 {
-  {" create table "SEABASE_VIEWS_USAGE_OLD_MD" "},
+  {" create table " SEABASE_VIEWS_USAGE_OLD_MD " "},
   {" ( "},
   {"   using_view_uid largeint not null not serialized, "},
   {"   used_object_uid largeint not null not serialized, "},
@@ -1135,7 +1136,7 @@ static const ComTdbVirtTableColumnInfo seabaseOldTrafMDv11MDValidateRoutineColIn
 
 static const QString seabaseOldTrafMDv11HistogramsDDL[] =
 {
-  {" create table "HBASE_HIST_NAME"_OLD_MD "},
+  {" create table " HBASE_HIST_NAME" _OLD_MD "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   histogram_id int unsigned not null not serialized, "},
@@ -1161,7 +1162,7 @@ static const QString seabaseOldTrafMDv11HistogramsDDL[] =
   {"   v4 largeint not null not serialized, "},
   {"   v5 varchar(250) character set ucs2 not null not serialized, "},
   {"   v6 varchar(250) character set ucs2 not null not serialized "},
-  {" , constraint "HBASE_HIST_PK" primary key "},
+  {" , constraint " HBASE_HIST_PK" primary key "},
   {"     (table_uid, histogram_id, col_position) "},
   {" ) "},
   {" ; "}
@@ -1169,7 +1170,7 @@ static const QString seabaseOldTrafMDv11HistogramsDDL[] =
 
 static const QString seabaseOldTrafMDv11HistogramIntervalsDDL[] =
 {
-  {" create table "HBASE_HISTINT_NAME"_OLD_MD "},
+  {" create table " HBASE_HISTINT_NAME" _OLD_MD "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   histogram_id int unsigned not null not serialized, "},
@@ -1184,7 +1185,7 @@ static const QString seabaseOldTrafMDv11HistogramIntervalsDDL[] =
   {"   v4 largeint not null not serialized, "},
   {"   v5 varchar(250) character set ucs2 not null not serialized, "},
   {"   v6 varchar(250) character set ucs2 not null not serialized"},
-  {" , constraint "HBASE_HISTINT_PK" primary key "},
+  {" , constraint " HBASE_HISTINT_PK" primary key "},
   {"    (table_uid, histogram_id, interval_number) "},
   {" ) "},
   {" ; "}
@@ -1206,7 +1207,7 @@ static const QString seabaseOldTrafMDv11HistogramIntervalsDDL[] =
 
 static const QString seabaseOldMDv23AuthsDDL[] =
 {
-  {" create table "SEABASE_AUTHS_OLD_MD" "},
+  {" create table " SEABASE_AUTHS_OLD_MD " "},
   {" ( "},
   {"  auth_id int unsigned not null not serialized, "},
   {"  auth_db_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -1223,7 +1224,7 @@ static const QString seabaseOldMDv23AuthsDDL[] =
 
 static const QString seabaseOldMDv23ColumnsDDL[] =
 {
-  {" create table "SEABASE_COLUMNS_OLD_MD" "},
+  {" create table " SEABASE_COLUMNS_OLD_MD " "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   column_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -1253,7 +1254,7 @@ static const QString seabaseOldMDv23ColumnsDDL[] =
 
 static const QString seabaseOldMDv23IndexesDDL[] =
 {
-  {" create table "SEABASE_INDEXES_OLD_MD" "},
+  {" create table " SEABASE_INDEXES_OLD_MD " "},
   {" ( "},
   {"   base_table_uid largeint not null not serialized, "},
   {"   keytag int not null not serialized, "},
@@ -1269,7 +1270,7 @@ static const QString seabaseOldMDv23IndexesDDL[] =
 
 static const QString seabaseOldMDv23KeysDDL[] =
 {
-  {" create table "SEABASE_KEYS_OLD_MD" "},
+  {" create table " SEABASE_KEYS_OLD_MD " "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   column_name varchar( 256 bytes ) character set utf8 not null not serialized, "},
@@ -1284,7 +1285,7 @@ static const QString seabaseOldMDv23KeysDDL[] =
 
 static const QString seabaseOldMDv23ObjectsDDL[] =
 {
-  {" create table "SEABASE_OBJECTS_OLD_MD" "},
+  {" create table " SEABASE_OBJECTS_OLD_MD " "},
   {" ( "},
   {"   catalog_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
   {"   schema_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
@@ -1302,7 +1303,7 @@ static const QString seabaseOldMDv23ObjectsDDL[] =
 
 static const QString seabaseOldMDv23RefConstraintsDDL[] =
 {
-  {" create table "SEABASE_REF_CONSTRAINTS_OLD_MD" "},
+  {" create table " SEABASE_REF_CONSTRAINTS_OLD_MD " "},
   {" ( "},
   {"   ref_constraint_uid largeint not null not serialized, "},
   {"   unique_constraint_uid largeint not null not serialized, "},
@@ -1316,7 +1317,7 @@ static const QString seabaseOldMDv23RefConstraintsDDL[] =
 
 static const QString seabaseOldMDv23SeqGenDDL[] =
 {
-  {" create table "SEABASE_SEQ_GEN_OLD_MD" "},
+  {" create table " SEABASE_SEQ_GEN_OLD_MD " "},
   {" ( "},
   {"   seq_type char(2) character set iso88591 not null not serialized, "},
   {"   seq_uid largeint not null not serialized, "},
@@ -1341,7 +1342,7 @@ static const QString seabaseOldMDv23SeqGenDDL[] =
 
 static const QString seabaseOldMDv23TablesDDL[] =
 {
-  {" create table "SEABASE_TABLES_OLD_MD" "},
+  {" create table " SEABASE_TABLES_OLD_MD " "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   is_audited char(2) character set iso88591 not null not serialized, "},
@@ -1353,7 +1354,7 @@ static const QString seabaseOldMDv23TablesDDL[] =
 
 static const QString seabaseOldMDv23TableConstraintsDDL[] =
 {
-  {" create table "SEABASE_TABLE_CONSTRAINTS_OLD_MD" "},
+  {" create table " SEABASE_TABLE_CONSTRAINTS_OLD_MD " "},
   {" ( "},
   {"   table_uid largeint not null not serialized, "},
   {"   constraint_uid largeint not null not serialized, "},
@@ -1367,7 +1368,7 @@ static const QString seabaseOldMDv23TableConstraintsDDL[] =
 
 static const QString seabaseOldMDv23TextDDL[] =
 {
-  {" create table "SEABASE_TEXT_OLD_MD" "},
+  {" create table " SEABASE_TEXT_OLD_MD " "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   seq_num int not null not serialized, "},
@@ -1379,7 +1380,7 @@ static const QString seabaseOldMDv23TextDDL[] =
 
 static const QString seabaseOldMDv23UniqueRefConstrUsageDDL[] =
 {
-  {" create table "SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD" "},
+  {" create table " SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD " "},
   {" ( "},
   {"   unique_constraint_uid largeint not null not serialized, "},
   {"   foreign_constraint_uid largeint not null not serialized "},
@@ -1390,7 +1391,7 @@ static const QString seabaseOldMDv23UniqueRefConstrUsageDDL[] =
 
 static const QString seabaseOldMDv23ViewsDDL[] =
 {
-  {" create table "SEABASE_VIEWS_OLD_MD" "},
+  {" create table " SEABASE_VIEWS_OLD_MD " "},
   {" ( "},
   {"   view_uid largeint not null not serialized, "},
   {"   check_option char(2) character set iso88591 not null not serialized, "},
@@ -1403,7 +1404,7 @@ static const QString seabaseOldMDv23ViewsDDL[] =
 
 static const QString seabaseOldMDv23ViewsUsageDDL[] =
 {
-  {" create table "SEABASE_VIEWS_USAGE_OLD_MD" "},
+  {" create table " SEABASE_VIEWS_USAGE_OLD_MD " "},
   {" ( "},
   {"   using_view_uid largeint not null not serialized, "},
   {"   used_object_uid largeint not null not serialized, "},
@@ -1425,7 +1426,7 @@ static const QString seabaseOldMDv23ViewsUsageDDL[] =
 
 static const QString seabaseOldMDv21ObjectsDDL[] =
 {
-  {" create table "SEABASE_OBJECTS_OLD_MD" "},
+  {" create table " SEABASE_OBJECTS_OLD_MD " "},
   {" ( "},
   {"   catalog_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
   {"   schema_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
@@ -1453,7 +1454,7 @@ static const QString seabaseOldMDv21ObjectsDDL[] =
 
 static const QString seabaseOldMDv11ColumnsDDL[] =
 {
-  {" create table "SEABASE_COLUMNS_OLD_MD" "},
+  {" create table " SEABASE_COLUMNS_OLD_MD " "},
   {" ( "},
   {"   object_uid largeint not null not serialized, "},
   {"   column_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -1481,7 +1482,7 @@ static const QString seabaseOldMDv11ColumnsDDL[] =
 
 static const QString seabaseOldMDv11IndexesDDL[] =
 {
-  {" create table "SEABASE_INDEXES_OLD_MD" "},
+  {" create table " SEABASE_INDEXES_OLD_MD " "},
   {" ( "},
   {"   base_table_uid largeint not null not serialized, "},
   {"   catalog_name varchar(256 bytes) character set utf8 not null not serialized, "},
@@ -1498,7 +1499,7 @@ static const QString seabaseOldMDv11IndexesDDL[] =
 
 static const QString seabaseOldMDv11ObjectsDDL[] =
 {
-  {" create table "SEABASE_OBJECTS_OLD_MD" "},
+  {" create table " SEABASE_OBJECTS_OLD_MD " "},
   {" ( "},
   {"   catalog_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
   {"   schema_name varchar ( 256 bytes ) character set utf8 not null not serialized, "},
@@ -1515,7 +1516,7 @@ static const QString seabaseOldMDv11ObjectsDDL[] =
 
 static const QString seabaseOldMDv11ViewsDDL[] =
 {
-  {" create table "SEABASE_VIEWS_OLD_MD" "},
+  {" create table " SEABASE_VIEWS_OLD_MD " "},
   {" ( "},
   {"   view_uid largeint not null not serialized, "},
   {"   check_option char(2) character set iso88591 not null not serialized, "},
@@ -1543,10 +1544,13 @@ static const QString seabaseOldMDv11ViewsDDL[] =
 #define TRAF_SEQUENCES_VIEW "SEQUENCES_VIEW"
 #define TRAF_TABLES_VIEW "TABLES_VIEW"
 #define TRAF_VIEWS_VIEW "VIEWS_VIEW"
+#define TRAF_OBJECT_COMMENT_VIEW "OBJECT_COMMENT_VIEW"
+#define TRAF_COLUMN_COMMENT_VIEW "COLUMN_COMMENT_VIEW"
+
 
 static const QString createTrafColumnsViewQuery[] =
 {
-  {" create view %s.\"%s\"."TRAF_COLUMNS_VIEW" as "},
+  {" create view %s.\"%s\"." TRAF_COLUMNS_VIEW" as "},
   {" select O.catalog_name, O.schema_name, O.object_name table_name, "},
   {"           C.column_name, C.column_number, "},
   {"           cast (case when char_length(trim(sql_data_type)) = 0 then 'UNKNOWN' else sql_data_type end as char(24)) sql_data_type,        "},
@@ -1577,7 +1581,7 @@ static const QString createTrafColumnsViewQuery[] =
 
 static const QString createTrafIndexesViewQuery[] =
 {
-  {" create view %s.\"%s\"."TRAF_INDEXES_VIEW" as "},
+  {" create view %s.\"%s\"." TRAF_INDEXES_VIEW" as "},
   {" select O.catalog_name, O.schema_name, O.object_name index_name, "},
   {"           O2.object_name table_name, "},
   {"           I.is_unique, I.key_colcount, I.nonkey_colcount "},
@@ -1595,7 +1599,7 @@ static const QString createTrafIndexesViewQuery[] =
 
 static const QString createTrafKeysViewQuery[] =
 {
-  {" create view %s.\"%s\"."TRAF_KEYS_VIEW" as "},
+  {" create view %s.\"%s\"." TRAF_KEYS_VIEW" as "},
   {" select O.catalog_name, O.schema_name, O.object_name table_name, "},
   {"           O2.object_name constraint_name, "},
   {"           cast(case "},
@@ -1621,7 +1625,7 @@ static const QString createTrafKeysViewQuery[] =
 
 static const QString createTrafRefConstraintsViewQuery[] =
 {
-  {" create view %s.\"%s\"."TRAF_REF_CONSTRAINTS_VIEW" as "},
+  {" create view %s.\"%s\"." TRAF_REF_CONSTRAINTS_VIEW" as "},
   {" select O2.catalog_name, O2.schema_name, O2.object_name table_name, "},
   {"           O.object_name constraint_name, "},
   {"           O3.schema_name unique_constraint_schema_name, "},
@@ -1644,7 +1648,7 @@ static const QString createTrafRefConstraintsViewQuery[] =
 
 static const QString createTrafSequencesViewQuery[] =
 {
-  {" create view %s.\"%s\"."TRAF_SEQUENCES_VIEW" as "},
+  {" create view %s.\"%s\"." TRAF_SEQUENCES_VIEW" as "},
   {" select O.catalog_name, O.schema_name, O.object_name seq_name, "},
   {"           S.start_value, S.increment, S.max_value, S.min_value, "},
   {"           S.cycle_option, case when S.cache_size = 0 then 'N' else 'Y' end cache_option, "},
@@ -1662,7 +1666,7 @@ static const QString createTrafSequencesViewQuery[] =
 
 static const QString createTrafTablesViewQuery[] =
 {
-  {" create view %s.\"%s\"."TRAF_TABLES_VIEW" as "},
+  {" create view %s.\"%s\"." TRAF_TABLES_VIEW" as "},
   {" select catalog_name, schema_name, object_name table_name, "},
   {"          T.key_length, T.row_data_length, T.row_total_length, T.num_salt_partns  "},
   {"   from %s.\"%s\".\"%s\" O, "},
@@ -1678,7 +1682,7 @@ static const QString createTrafTablesViewQuery[] =
 
 static const QString createTrafViewsViewQuery[] =
 {
-  {" create view %s.\"%s\"."TRAF_VIEWS_VIEW" as "},
+  {" create view %s.\"%s\"." TRAF_VIEWS_VIEW" as "},
   {" select O.catalog_name, O.schema_name, O.object_name view_name, "},
   {"           V.check_option, V.is_updatable, V.is_insertable "},
   {"   from %s.\"%s\".\"%s\" O, "},
@@ -1691,6 +1695,28 @@ static const QString createTrafViewsViewQuery[] =
   {"  order by 1,2,3,6 "},
   {"  ; "}
 };
+
+
+static const QString createTrafObjectCommentViewQuery[] =
+{
+  {" create view %s.\"%s\"." TRAF_OBJECT_COMMENT_VIEW" as "},
+  {" select O.catalog_name, O.schema_name, O.object_name, T.text as comment "},
+  {"   from %s.\"%s\".\"%s\" as O, %s.\"%s\".\"%s\" as T "},
+  {"  where O.object_uid = T.text_uid and T.text_type = %s "},
+  {"  order by O.OBJECT_UID "},
+  {" ; "}
+};
+
+static const QString createTrafColumnCommentViewQuery[] =
+{
+  {" create view %s.\"%s\"." TRAF_COLUMN_COMMENT_VIEW" as "},
+  {" select O.CATALOG_NAME, O.SCHEMA_NAME, O.OBJECT_NAME, C.COLUMN_NAME, T.TEXT as COMMENT "},
+  {"   from %s.\"%s\".\"%s\" as O, %s.\"%s\".\"%s\" as C, %s.\"%s\".\"%s\" as T "},
+  {"  where O.OBJECT_UID = C.OBJECT_UID and T.TEXT_UID = O.OBJECT_UID and T.TEXT_TYPE = %s and T.SUB_ID = C.COLUMN_NUMBER "},
+  {"  order by O.OBJECT_UID, C.COLUMN_NUMBER "},
+  {" ; "}
+};
+
 
 struct MDViewInfo
 {
@@ -1746,7 +1772,18 @@ static const MDViewInfo allMDviewsInfo[] = {
     sizeof(createTrafViewsViewQuery),
     FALSE
   },
-
+  {
+    TRAF_OBJECT_COMMENT_VIEW,
+    createTrafObjectCommentViewQuery,
+    sizeof(createTrafObjectCommentViewQuery),
+    FALSE
+  },
+  {
+    TRAF_COLUMN_COMMENT_VIEW,
+    createTrafColumnCommentViewQuery,
+    sizeof(createTrafColumnCommentViewQuery),
+    FALSE
+  },
 };
 
 #endif

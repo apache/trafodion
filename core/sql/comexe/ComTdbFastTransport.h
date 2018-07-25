@@ -117,18 +117,15 @@ public:
   //----------------------------------------------------------------------
   // Redefine virtual functions required for versioning
   //----------------------------------------------------------------------
-  NA_EIDPROC
   virtual unsigned char getClassVersionID()
   {
     return 1;
   }
-  NA_EIDPROC
   virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
-  NA_EIDPROC
   virtual short getClassSize()
   {
     return (short) sizeof(ComTdbFastExtract);
@@ -137,41 +134,33 @@ public:
   //----------------------------------------------------------------------
   // Pack/unpack
   //----------------------------------------------------------------------
-  NA_EIDPROC
   Long pack(void *);
-  NA_EIDPROC
   Lng32 unpack(void *, void *);
 
   //----------------------------------------------------------------------
   // Other required TDB support functions
   //----------------------------------------------------------------------
-  NA_EIDPROC
   Int32 orderedQueueProtocol() const
   {
     return -1;
   }
-  NA_EIDPROC
   void display() const
   {
     // All TDBs have an no-op display() function. Not sure why.
   }
-  NA_EIDPROC
   virtual Int32 numChildren() const
   {
     return 1;
   }
-  NA_EIDPROC
   virtual const char *getNodeName() const
   {
     return "EX_FAST_EXTRACT";
   }
-  NA_EIDPROC
   virtual const ComTdb *getChild() const
   {
       return childTdb_;
   }
 
-  NA_EIDPROC
   virtual const ComTdb* getChild(Int32 pos) const
   {
     if (pos == 0)
@@ -180,12 +169,10 @@ public:
       return NULL;
   }
 
-  NA_EIDPROC
   virtual Int32 numExpressions() const
   {
     return 3;
   }
-  NA_EIDPROC
   virtual const char *getExpressionName(Int32 pos) const
   {
     if (pos == 0)
@@ -198,7 +185,6 @@ public:
       return NULL;
   }
 
-  NA_EIDPROC
   virtual ex_expr *getExpressionNode(Int32 pos)
   {
     if (pos == 0)
@@ -211,7 +197,6 @@ public:
       return NULL;
   }
 
-  NA_EIDPROC
   virtual void displayContents(Space *space, ULng32 flag);
 
   NABoolean getIsAppend() const
@@ -345,18 +330,18 @@ public:
   NABoolean getContinueOnError() const
   { return ((flags_ & CONTINUE_ON_ERROR) != 0); }
   
-  NA_EIDPROC inline const char *getTargetName() const { return targetName_; }
-  NA_EIDPROC inline const char *getHdfsHostName() const { return hdfsHostName_; }
-  NA_EIDPROC inline const Int32 getHdfsPortNum() const {return (Int32)hdfsPortNum_;}
-  NA_EIDPROC inline const char *getHiveTableName() const { return hiveTableName_; }
-  NA_EIDPROC inline const char *getHeader() const { return header_; }
-  NA_EIDPROC inline const char *getNullString() const { return nullString_; }
-  NA_EIDPROC inline const char *getDelimiter() const { return delimiter_; }
-  NA_EIDPROC inline const char *getRecordSeparator() const
+  inline const char *getTargetName() const { return targetName_; }
+  inline const char *getHdfsHostName() const { return hdfsHostName_; }
+  inline const Int32 getHdfsPortNum() const {return (Int32)hdfsPortNum_;}
+  inline const char *getHiveTableName() const { return hiveTableName_; }
+  inline const char *getHeader() const { return header_; }
+  inline const char *getNullString() const { return nullString_; }
+  inline const char *getDelimiter() const { return delimiter_; }
+  inline const char *getRecordSeparator() const
   { return recordSeparator_; }
 
-  NA_EIDPROC Int32 getNumIOBuffers() {return (Int32)numIOBuffers_;}
-  NA_EIDPROC Int32 getIoTimeout() {return (Int32)ioTimeout_;}
+  Int32 getNumIOBuffers() {return (Int32)numIOBuffers_;}
+  Int32 getIoTimeout() {return (Int32)ioTimeout_;}
   Int64 getHdfsIoBufferSize() const
   {
     return hdfsIOBufferSize_;
@@ -384,6 +369,10 @@ public:
   void setModTSforDir(Int64 v) { modTSforDir_ = v; }
   Int64 getModTSforDir() const { return modTSforDir_; }
 
+  void setHdfsIoByteArraySize(int size)             
+    { hdfsIoByteArraySizeInKB_ = size; }                          
+  Lng32 getHdfsIoByteArraySize()                             
+    { return hdfsIoByteArraySizeInKB_; }
 protected:
   NABasicPtr   targetName_;                                  // 00 - 07
   NABasicPtr   delimiter_;                                   // 08 - 15
@@ -410,9 +399,10 @@ protected:
   UInt16       filler_;                                      // 130 - 131
   UInt32       childDataRowLen_;                             // 132 - 135
   Int64        modTSforDir_;                                 // 136 - 143
+  Lng32        hdfsIoByteArraySizeInKB_;                     // 144 - 147 
 
   // Make sure class size is a multiple of 8
-  char fillerComTdbFastTransport_[8];                        // 144 - 151
+  char fillerComTdbFastTransport_[4];                        // 148 - 151
 
 };
 

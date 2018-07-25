@@ -67,7 +67,6 @@
 #include "CmpStoredProc.h"
 #include "CmpDescribe.h"
 #include "ProcessEnv.h"
-#include "ReadTableDef.h"
 #include "SchemaDB.h"
 #include "ControlDB.h"
 #include "Context.h"
@@ -109,11 +108,9 @@
 
 #include "UdfDllInteraction.h"
 
-#include "rtdu.h"
-
 //#include "SqlParserGlobals.h"  // must be the last #include.
 
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
+extern THREAD_P jmp_buf ExportJmpBuf;
 
 // -----------------------------------------------------------------------
 // helper routines for CmpStatement class
@@ -139,23 +136,21 @@ CmpStatement::error(Lng32 no, const char* s)
 
 
 CmpStatement::CmpStatement(CmpContext* context,
-                           CollHeap* outHeap,
-                           NAMemory::NAMemoryType memoryType)
+                           CollHeap* outHeap)
  : parserStmtLiteralList_(outHeap)
 {
   exceptionRaised_ = FALSE;
-  reply_ = 0;
+  reply_ = NULL;
+  bound_ = NULL;
   context_ = context;
   storedProc_ = 0;
   prvCmpStatement_ = 0;
   sqlTextStr_ = NULL;
   sqlTextLen_ = 0;
   sqlTextCharSet_ = (Lng32)SQLCHARSETCODE_UNKNOWN;
-  measureStatementIndex_ = 0;
   recompiling_ = FALSE;
   isDDL_ = FALSE;
   isSMDRecompile_ = FALSE;
-  isParallelLabelOp_ = FALSE;
   displayGraph_ = FALSE;
   cses_ = NULL;
   detailsOnRefusedRequirements_ = NULL;
@@ -169,22 +164,22 @@ CmpStatement::CmpStatement(CmpContext* context,
   {
     // set up statement heap with 32 KB allocation units
     size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_CMPSTMT_UPPER_KB);
-    heap_ = new (context_->heap()) NAHeap("Cmp Statement Heap",
+    heap_ = new (context_->heap()) NAHeap((const char *)"Cmp Statement Heap",
                        context_->heap(),
                        (Lng32)32768,
                        memLimit);
-
-    heap_->setJmpBuf(&ExportJmpBuf);
     heap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
   }
+  
+  // Embedded arkcmp reply is consumed by the caller before the CmpStatement
+  // is deleted, hence use CmpStatement Heap itself to avoid any leaks
 
-  // The default output heap will be the context heap, because the
-  // CmpMessageReply object might last after the CmpStatement goes
-  // out of scope.
-  outHeap_ = outHeap ? outHeap : context_ ? context_->heap() : 0;
+  if (context_->isEmbeddedArkcmp())
+     outHeap_ = heap_;
+  else
+     outHeap_ = context_->heap();
 
   context->setStatement(this);
-
 
   compStats_   = new (heap_) CompilationStats();
 
@@ -216,8 +211,18 @@ CmpStatement::~CmpStatement()
   // to end the interface.
   delete storedProc_; 
 
-  if (reply_)
+  if (reply_ != NULL)
     reply_->decrRefCount();
+
+/*
+  // At times, this delete can cause corruption in the heap
+  // Hence, it is commented out for now - Selva
+  // To miminze the leak from this the heap_ that used for this
+  // objects comes from CmpStatement Heap in case of embedded arkcmp,
+  // and from CmpContext Heap in case of standalone arkcmp.
+  if (bound_ != NULL)
+    bound_->decrRefCount();
+*/
 
   // GLOBAL_EMPTY_INPUT_LOGPROP points to an EstLogProp object in the heap.
   // Because it is a SharedPtr, it must be set to NULL before the statement
@@ -324,7 +329,6 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 					    NABoolean &catSchNameRecvd,
 					    NAString &currCatName,
 					    NAString &currSchName,
-					    char* &recompControlInfo,
 					    NABoolean &nametypeNsk,
 					    NABoolean &odbcProcess,
 					    NABoolean &noTextCache,
@@ -333,7 +337,7 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 					    NABoolean &doNotCachePlan)
 {
   char * catSchStr = NULL;
-  cmpInfo->getUnpackedFields(sqlStr, catSchStr, recompControlInfo);
+  cmpInfo->getUnpackedFields(sqlStr, catSchStr);
   sqlStrLen = cmpInfo->getSqlTextLen();
   
   catSchNameRecvd = FALSE;
@@ -363,15 +367,6 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
   aqrPrepare  = cmpInfo->aqrPrepare();
   standaloneQuery = cmpInfo->standaloneQuery();
   doNotCachePlan = cmpInfo->doNotCachePlan();
-
-  if (recompControlInfo)
-    {
-      // if recompControlInfo is received, then ignore the specialized
-      // default values (catSchStr, nametypeNsk, odbcProcess).
-      // Values from recompControlInfo will be used to get to
-      // them. Return from here.
-      return FALSE;
-    }
 
   if (catSchStr)
     {
@@ -403,7 +398,6 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
        }
     }
 
-  nametypeNsk = cmpInfo->nametypeNsk();
   odbcProcess = cmpInfo->odbcProcess();
 
   return FALSE;				// no error
@@ -421,7 +415,6 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -438,7 +431,6 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName, 
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -540,76 +532,6 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
 }
 
 CmpStatement::ReturnStatus
-CmpStatement::setupRecompControlInfo(char * recompControlInfo,
-				     CmpMain * cmpmain,
-				     Lng32 charset)
-{
-  // process recompControlInfo, if received
-  if (! recompControlInfo)
-    return CmpStatement_SUCCESS;
-
-  RtduRecompControlInfo * rci = (RtduRecompControlInfo*)recompControlInfo;
-  rci->unpackIt((char*)rci);
-  
-  // unpack the defaults in rci->defaults..
-  context_->schemaDB_->getDefaults().unpackDefaultsFromBuffer(rci->numCqdInfoEntries(),
-							      rci->cqdInfo());
-  // set up current defaults from rci->defaults.
-  context_->schemaDB_->getDefaults().createNewDefaults(rci->numCqdInfoEntries(),
-						       rci->cqdInfo());
-  
-  
-  // save current CTO and reset ctList_.
-  context_->controlDB_->saveCurrentCTO();
-  
-  if (rci->ctoInfoLength() > 0)
-    {
-      context_->controlDB_->unpackControlTableOptionsFromBuffer(rci->ctoInfo());
-    }
-  
-  // save current CQS and reset requiredShape.
-  context_->controlDB_->saveCurrentCQS();
-  
-  // if a shape as been sent, use it.
-  if (rci->cqsInfoLength() > 0)
-    {
-      // compile the CQS passed in. Do not generate code for it.
-      char * genCode = NULL;
-      ULng32 genCodeLen = 0;
-      QueryText qText(rci->cqsInfo(), SQLCHARSETCODE_ISO88591);
-
-      CmpMain::ReturnStatus rs = 
-	cmpmain->sqlcompStatic(qText, 0, 
-			       &genCode, &genCodeLen,
-			       outHeap_, CmpMain::PRECODEGEN, 
-			       charset);
-    }
-
-  return CmpStatement_SUCCESS;
-}
-
-CmpStatement::ReturnStatus
-CmpStatement::restoreRecompControlInfo(char * recompControlInfo)
-{
-  if (! recompControlInfo)
-    return CmpStatement_SUCCESS;
-
-  RtduRecompControlInfo * rci = (RtduRecompControlInfo*)recompControlInfo;
-
-  // restore the original cqd.
-  context_->schemaDB_->getDefaults().restoreDefaults(rci->numCqdInfoEntries(),
-						     rci->cqdInfo());
-  
-  // restore saved CTO
-  context_->controlDB_->restoreCurrentCTO();
-  
-  // restore saved CQS
-  context_->controlDB_->restoreCurrentCQS();
-
-  return CmpStatement_SUCCESS;
-}
-
-CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
 {
   CmpMain cmpmain;
@@ -621,7 +543,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -638,7 +559,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName,
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -657,11 +577,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
 
   sqlTextStr_ = sqlStr;
   sqlTextLen_ = sqlStrLen;
-
-  // process recompControlInfo, if received
-  if (recompControlInfo)
-    setupRecompControlInfo(recompControlInfo, &cmpmain, inputCS);
-
 
   // set ODBC_PROCESS default.
   NABoolean odbcProcessChanged = FALSE;
@@ -718,10 +633,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
       context_->schemaDB_->getDefaults().setSchemaTrustedFast(currSchName);
     }
 
-  if (recompControlInfo)
-    restoreRecompControlInfo(recompControlInfo);
-
-
   if (odbcProcessChanged)
     {
       // restore the original odbc process setting
@@ -758,7 +669,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -777,7 +687,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName, 
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -788,9 +697,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
 
   CmpCommon::context()->sqlSession()->setParentQid(
     statement.getParentQid());
-  // process recompControlInfo, if received
-  if (recompControlInfo)
-    setupRecompControlInfo(recompControlInfo, &cmpmain);
 
   cmpmain.setSqlParserFlags(statement.getFlags());
 
@@ -833,9 +739,7 @@ CmpStatement::process (const CmpMessageDDL& statement)
       // from the UpdateStats() method.
       
       char *userStr= new (heap()) char[2000];
-#pragma nowarn(1506)   // warning elimination 
       Int32 len=strlen(sqlStr);
-#pragma warn(1506)  // warning elimination 
       
       if (len > 1999)
         len=1999;
@@ -850,16 +754,13 @@ CmpStatement::process (const CmpMessageDDL& statement)
         {
 	  sqlTextStr_ = NULL;
 	  sqlTextLen_ = 0;
-	  if (recompControlInfo)
-	    restoreRecompControlInfo(recompControlInfo);
+
 	  return CmpStatement_ERROR;
         }
       
       sqlTextStr_ = NULL;
       sqlTextLen_ = 0;
-      
-      if (recompControlInfo)
-	restoreRecompControlInfo(recompControlInfo);
+
       return CmpStatement_SUCCESS;
     }
 
@@ -869,9 +770,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
       CmpMain::ReturnStatus rs = CmpMain::SUCCESS;
       
       QueryText qText(sqlStr, inputCS);
-
-      CmpMessageReplyCode
-	*bound = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
 
       //      CmpMain cmpmain;
       Set_SqlParser_Flags(DELAYED_RESET);	// sqlcompCleanup resets for us
@@ -938,16 +836,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
       }
       Set_SqlParser_Flags (0);
 
-      // TEMPTEMP.
-      // Until support for metadata invalidation is in, clear up query cache for
-      // this process. That way statements issued later from this session will
-      // not see stale definitions.
-      // This also helps in running tests where tables are modified and accessed from
-      // the same session.
-      // This does not solve the issue of stale definition seen by other processes,
-      // that will be fixed once we have metadata invalidation.
-      CURRENTQCACHE->makeEmpty();
-
       return CmpStatement_SUCCESS;
     } // hbaseDDL
 
@@ -981,9 +869,6 @@ short CmpStatement::getDDLExprAndNode(char * sqlStr, Lng32 inputCS,
   CmpMain::ReturnStatus rs = CmpMain::SUCCESS;
   
   QueryText qText(sqlStr, inputCS);
-  
-  //  CmpMessageReplyCode
-  //    *bound = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
   
   Set_SqlParser_Flags(DELAYED_RESET);	// sqlcompCleanup resets for us
   Parser parser(CmpCommon::context());
@@ -1058,7 +943,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -1077,7 +961,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName, 
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -1086,10 +969,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
 				 doNotCachePlan))
     return CmpStatement_ERROR;
   CmpCommon::context()->sqlSession()->setParentQid(statement.getParentQid());
-
-  // process recompControlInfo, if received
-  if (recompControlInfo)
-    setupRecompControlInfo(recompControlInfo, &cmpmain);
 
   cmpmain.setSqlParserFlags(statement.getFlags());
 
@@ -1116,7 +995,7 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
                                          currCatName, currSchName))
         return CmpStatement_ERROR;
     }
-  else if (dws->getMDcleanup())
+  else if (dws->getMDcleanup() || dws->getInitTraf())
     {
       CmpSeabaseDDL cmpSBD(heap_);
       if (cmpSBD.executeSeabaseDDL(ddlExpr, ddlNode,
@@ -1158,15 +1037,9 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
 CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageDescribe& statement)
 {
-#pragma nowarn(262)   // warning elimination 
   ReturnStatus ret = CmpStatement_SUCCESS;
-  // There will be memory leak handling CmpMessageReplyCode *bound this way. 
-  // The correct way should be making bound a local variable with statementHeap passed in.
-  // But Matt has tried it, there seem to be some memory problems show up later, 
-  // so in the future, when time allows in the memory cleanup stage, this code should be
-  // revisited.
-  CmpMessageReplyCode
-  *bound = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
+
+  bound_ = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
   reply_ = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
 
   // A pointer to user SQL query is stored in CmpStatement; if an exception is
@@ -1174,9 +1047,7 @@ CmpStatement::process (const CmpMessageDescribe& statement)
   // the sqlcomp() method.
 
   char *userStr= (char *) (heap())->allocateMemory(sizeof(char) * (2000));
-#pragma nowarn(1506)   // warning elimination 
   Int32 len=strlen(statement.data());
-#pragma warn(1506)  // warning elimination 
 
   if (len > 1999)
     len=1999;
@@ -1196,11 +1067,11 @@ CmpStatement::process (const CmpMessageDescribe& statement)
   // pass this (casting to RelExpr, which it really is) to CmpDescribe
   CmpMain cmpmain;
   if (cmpmain.sqlcomp(qText, 0,				   //IN
-		      &bound->data(), &bound->size(), bound->outHeap(),	   //OUT
+		      &bound_->data(), &bound_->size(), bound_->outHeap(),	   //OUT
 		      CmpMain::BIND)					   //IN
      ||
       CmpDescribe(statement.data(),					   //IN
-		      (RelExpr*)bound->data(),				   //IN
+		      (RelExpr*)bound_->data(),				   //IN
 		      reply_->data(), reply_->size(), reply_->outHeap()))  //OUT
     {
       error(arkcmpErrorNoDiags, statement.data());
@@ -1211,7 +1082,6 @@ CmpStatement::process (const CmpMessageDescribe& statement)
   sqlTextStr_=NULL;
   return CmpStatement_SUCCESS;
 }
-#pragma warn(262)  // warning elimination 
 
 CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageUpdateHist& statement)
@@ -1221,9 +1091,7 @@ CmpStatement::process (const CmpMessageUpdateHist& statement)
   // the UpdateStats() method.
   
   char *userStr= new (heap()) char[2000];
-#pragma nowarn(1506)   // warning elimination 
   Int32 len=strlen(statement.data());
-#pragma warn(1506)  // warning elimination 
 
   if (len > 1999)
     len=1999;
@@ -1367,7 +1235,6 @@ CmpStatement::process (const CmpMessageObj& request)
   // CmpMessageDescribe
   // CmpMessageUpdateHist
   // CmpMessageSetTrans
-  // CmpMessageReadTableDef
   // CmpMessageEndSession
   // Reset the parent qid and the requests that has parent qid will set it later
   CmpCommon::context()->sqlSession()->setParentQid(NULL);
@@ -1488,7 +1355,6 @@ static NABoolean ISPFetchPut(CmpInternalSP* storedProc, // to fetch data
 {
   NABoolean bufferFull = FALSE;    
   // fetch until there is no more data
-#pragma nowarn(770)   // warning elimination 
   CmpStoredProc::ExecStatus execStatus;
   short putStatus;
   while ( !bufferFull &&
@@ -1508,7 +1374,6 @@ static NABoolean ISPFetchPut(CmpInternalSP* storedProc, // to fetch data
   }
   return bufferFull;
 }
-#pragma warn(770)  // warning elimination 
 
 static  NABoolean ISPPrepareReply(CmpISPDataObject* ispData, 
                                         CmpMessageReply* reply,
@@ -1525,7 +1390,6 @@ static  NABoolean ISPPrepareReply(CmpISPDataObject* ispData,
 CmpStatement::ReturnStatus
 CmpStatementISP::process (CmpMessageISPRequest& isp)
 {
-#pragma nowarn(262)   // warning elimination 
   ReturnStatus ret = CmpStatement_ERROR;
 
 #ifdef _DEBUG
@@ -1581,7 +1445,6 @@ CmpStatementISP::process (CmpMessageISPRequest& isp)
 
   return CmpStatement_SUCCESS;
 }
-#pragma warn(262)  // warning elimination 
 
 CmpStatement::ReturnStatus
 CmpStatementISP::process (const CmpMessageISPGetNext& getNext)
@@ -1650,17 +1513,18 @@ QueryAnalysis* CmpStatement::initQueryAnalysis()
   // do any necessary initialization work here (unless this
   // initialization work fits in the constructor)
 
-  // Initialize the global "empty input logprop".
-  context_->setGEILP(EstLogPropSharedPtr(new (STMTHEAP)
-                              EstLogProp(1,
-                                         NULL,
-                                         EstLogProp::NOT_SEMI_TSJ,
-                                         new (STMTHEAP) CANodeIdSet(),
-                                         TRUE)));
-
-    //++MV
-    // This input cardinality is not estimated , so we keep this knowledge
-    // in a special attribute.
+  // Initialize the global "empty input logprop"
+  if (emptyInLogProp_ == NULL)
+    emptyInLogProp_ = EstLogPropSharedPtr(
+         new (STMTHEAP) EstLogProp(1,
+                                   NULL,
+                                   EstLogProp::NOT_SEMI_TSJ,
+                                   new (STMTHEAP) CANodeIdSet(STMTHEAP),
+                                   TRUE));
+  
+  //++MV
+  // This input cardinality is not estimated , so we keep this knowledge
+  // in a special attribute.
   (*GLOBAL_EMPTY_INPUT_LOGPROP)->setCardinalityEqOne();
 
 #ifdef _DEBUG

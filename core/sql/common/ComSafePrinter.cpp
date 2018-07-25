@@ -69,7 +69,7 @@ Int32 ComSafePrinter::vsnPrintf(char *str, size_t n,
   if (!outfile_)
   {
     outfile_ = tmpfile();
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
     if (!outfile_)
     {
       fprintf(stderr,

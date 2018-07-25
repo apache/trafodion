@@ -174,7 +174,6 @@ public:
   };
 
   // Constructor for a queue
-  NA_EIDPROC
     ex_queue(const queue_type    type,
 	     queue_index         initialSize,
 	     ex_cri_desc *       criDesc,
@@ -184,7 +183,6 @@ public:
   
   // allocate ATPs for entries that don't have one already,
   // use pre-allocated ATPs if they are passed in
-  NA_EIDPROC
     NABoolean allocateAtps(CollHeap * space,
 			   atp_struct * atps = NULL,
 			   queue_index numNewAtps = 0,
@@ -195,43 +193,32 @@ public:
   // PSTATE as a sample (deprecated method, use the other method that
   // doesn't need the pstate to be passed in and that supports
   // preallocated pstates and allocation as an array)
-  NA_EIDPROC
     void allocatePstate(ex_tcb_private_state *p,
 			ex_tcb * tcb);
   // allocate PSTATE objects for queue entries that don't have a
   // PSTATE yet, using an array of pre-allocated PSTATEs if passed in
-  NA_EIDPROC
     NABoolean allocatePstate(ex_tcb * tcb,
 			     ex_tcb_private_state *pstates = NULL,
 			     queue_index numNewPstates = 0,
 			     Lng32 pstateLength = 0,
 			     NABoolean failureIsFatal = TRUE);
   
-  NA_EIDPROC
     void deallocateAtps();
-  NA_EIDPROC
     void deallocatePstate();
 
   // does this queue need its own ATPs?
-  NA_EIDPROC
   Int32 needsAtps() const                               { return needsAtps_; }
 
   // resize a queue (including the ATPs and the pstates), return new size
-  NA_EIDPROC
   NABoolean needsResize() const                     { return needsResize_; }
-  NA_EIDPROC
   Lng32 getResizeLimit() const                { return (Lng32) resizeLimit_; }
-  NA_EIDPROC
   void setResizeLimit(Lng32 l)          { resizeLimit_ = (ULng32) l; }
-  NA_EIDPROC
     queue_index resize(ex_tcb *    tcb,
 		       queue_index newSize);
 
-  NA_EIDPROC
     ex_cri_desc * getCriDesc();
   
   // destructor
-  NA_EIDPROC
     ~ex_queue();
 
   //
@@ -244,39 +231,36 @@ public:
   // gets address/index of empty queue_entry to modify it
   // (the entry is not yet inserted into the queue)
   //
-  NA_EIDPROC ex_queue_entry *  getTailEntry() const;
-  NA_EIDPROC
+  ex_queue_entry *  getTailEntry() const;
     queue_index       getTailIndex() const;
   
   // next queue_entry now becomes tail_
-  NA_EIDPROC
     void insert();
   
   //
   // Cancel a down request already inserted into the queue; cancel 
   // a request with a given value for parentIndex.
   //
-  NA_EIDPROC void cancelRequest();
-  NA_EIDPROC
+  void cancelRequest();
     void cancelRequest(const queue_index i);
-  NA_EIDPROC void cancelRequestWithParentIndex(queue_index pindex);
-  NA_EIDPROC void cancelRequestWithParentIndexRange(queue_index startPI, queue_index endPI);
+  void cancelRequestWithParentIndex(queue_index pindex);
+  void cancelRequestWithParentIndexRange(queue_index startPI, queue_index endPI);
 
   //?johannes?
-  NA_EIDPROC void getNextNRequestInit(const Lng32 tuples);
-  NA_EIDPROC void getNextNRequest(const Lng32 tuples);
+  void getNextNRequestInit(const Lng32 tuples);
+  void getNextNRequest(const Lng32 tuples);
 
-  NA_EIDPROC void getNextNMaybeWaitRequestInit(const Lng32 tuples);
-  NA_EIDPROC void getNextNMaybeWaitRequest(const Lng32 tuples);
+  void getNextNMaybeWaitRequestInit(const Lng32 tuples);
+  void getNextNMaybeWaitRequest(const Lng32 tuples);
 
-  NA_EIDPROC void getNextNSkipRequestInit(const Lng32 tuples);
-  NA_EIDPROC void getNextNSkipRequest(const Lng32 tuples);
+  void getNextNSkipRequestInit(const Lng32 tuples);
+  void getNextNSkipRequest(const Lng32 tuples);
 
-  NA_EIDPROC void getNextNMaybeWaitSkipRequestInit(const Lng32 tuples);
-  NA_EIDPROC void getNextNMaybeWaitSkipRequest(const Lng32 tuples);
+  void getNextNMaybeWaitSkipRequestInit(const Lng32 tuples);
+  void getNextNMaybeWaitSkipRequest(const Lng32 tuples);
 
-  NA_EIDPROC void getNext0MaybeWaitRequest(void);
-  NA_EIDPROC void getNext0MaybeWaitRequestInit(void);
+  void getNext0MaybeWaitRequest(void);
+  void getNext0MaybeWaitRequestInit(void);
   //?johannes??
 
   //
@@ -287,28 +271,21 @@ public:
   //
   // gets address of i-th queue-entry
   //
-  NA_EIDPROC
     ex_queue_entry *  getQueueEntry(const queue_index i) const;
-  NA_EIDPROC
     ex_queue_entry *  getHeadEntry() const;
-  NA_EIDPROC
     queue_index       getHeadIndex() const;
 
   // check whether a certain entry exists (used to loop through entries)
-  NA_EIDPROC
   inline Int32        entryExists(queue_index ix) const;
 
   void handleFullQueue();
   void handleEmptyQueue();
 
   // removes the head and it becomes empty;
-NA_EIDPROC
 #ifndef _DEBUG
 inline
 #endif
-  //#pragma nowarn(734)
   void removeHead();
-  //#pragma warn(734)
 
   // soln 10-040111-2308 start
   // removes the head entry. Same as removeHead except that it doesn't 
@@ -320,36 +297,28 @@ inline
   // the queue is just looking for a Q_NO_DATA. Hence these shouldnt be
   // considered for qresizing as the query has been satisfied.
 
-  NA_EIDPROC
   void deleteHeadEntry();
   // soln 10-040111-2308 end
 
   // queue the size of the queue and the number of entries in it.
-  NA_EIDPROC
     queue_index    getSize() const;  //allocated size
-  NA_EIDPROC
     queue_index inline getLength() const;  //occupied entries between 0 and size-1
-  NA_EIDPROC
     Int32 inline     isFull() const;  // returns true if queue is full
-  NA_EIDPROC
     Int32 inline     isEmpty() const;  // returns true if queue is full
 
-  NA_EIDPROC inline void setInsertSubtask(ExSubtask *insertSubtask)
+  inline void setInsertSubtask(ExSubtask *insertSubtask)
                                        { insertSubtask_ = insertSubtask; }
-  NA_EIDPROC inline void setUnblockSubtask(ExSubtask *unblockSubtask)
+  inline void setUnblockSubtask(ExSubtask *unblockSubtask)
                                      { unblockSubtask_ = unblockSubtask; }
-// warning elimination (removed "inline")
-  NA_EIDPROC void setCancelSubtask(ExSubtask *cancelSubtask)
+  void setCancelSubtask(ExSubtask *cancelSubtask)
   { ExQueueAssert(upDown_ == DOWN_QUEUE,""); cancelSubtask_ = cancelSubtask; }
-  NA_EIDPROC inline void setResizeSubtask(ExSubtask *resizeSubtask)
+  inline void setResizeSubtask(ExSubtask *resizeSubtask)
                                        { resizeSubtask_ = resizeSubtask; }
 
-//?johannes?
-  // warning elimination (removed "inline")
-  NA_EIDPROC void setNextSubtask(ExSubtask *nextSubtask)
+  void setNextSubtask(ExSubtask *nextSubtask)
   { ExQueueAssert(upDown_ == DOWN_QUEUE,""); nextSubtask_ = nextSubtask; }
-//?johannes??
 
+  static queue_index roundUp2Power(queue_index i);
 
 private:
 
@@ -398,34 +367,27 @@ private:
   //?johannes??
 
   // is queue entry i vacant?
-  NA_EIDPROC inline Int32 isVacant(const queue_index i) const;
+  inline Int32 isVacant(const queue_index i) const;
 
-  NA_EIDPROC void injectErrorOrCancel();
+  void injectErrorOrCancel();
 
   // for debuggin'
 
-  NA_EIDPROC
  
 	void logHeader();
  
-  NA_EIDPROC
     void logCancel(queue_index i)
     {
     #if 0  
-    #if (!defined (__EID) && !defined(NA_C89))
       logHeader();
       cerr << " cancel " << i << " (" << (i  & (size_-1)) << ")" << endl;
-    #endif
     #endif
     }
 
 
-  NA_EIDPROC
     void logInsert()
     {
     #if 0  
-    #if (!defined (__EID) && !defined(NA_C89))
-
       ex_queue_entry *qe = &queue_[tail_ & (size_ - 1)];
 
       logHeader();
@@ -474,12 +436,10 @@ private:
 	}
       cerr << endl;
     #endif
-    #endif
     }
 
-  NA_EIDPROC
     void logRemoveHead();  
-
+  
 };  // ex_queue
 
 
@@ -514,7 +474,7 @@ public:
   
   queue_index             parentIndex;
 
-  NA_EIDPROC inline NABoolean operator==(const down_state &other) const
+  inline NABoolean operator==(const down_state &other) const
   {
     return (request      == other.request) &&
            (requestValue == other.requestValue) &&
@@ -534,7 +494,7 @@ friend class SqlBufferOlt;
 friend class SqlBufferOltSmall;
 
 public:
-  NA_EIDPROC inline NABoolean operator==(const up_state &other) const
+  inline NABoolean operator==(const up_state &other) const
   {
     return (parentIndex  == other.parentIndex) &&
            (status       == other.status);
@@ -545,12 +505,12 @@ public:
   ex_queue::up_status    status; // type of entry (end-of-data, error, etc.)
 
   // accessors
-  NA_EIDPROC inline Lng32 getMatchNo(void) const;
-  NA_EIDPROC inline NABoolean getDoneNoRowsMatchNo(void) const;
+  inline Lng32 getMatchNo(void) const;
+  inline NABoolean getDoneNoRowsMatchNo(void) const;
 
   // mutators
-  NA_EIDPROC inline Lng32 setMatchNo(Int64 n);
-  NA_EIDPROC inline void setDoneNoRowsMatchNo(void);
+  inline Lng32 setMatchNo(Int64 n);
+  inline void setDoneNoRowsMatchNo(void);
 
 private:
   // matchNo is private to handle overflow situations.  There is only one
@@ -583,38 +543,36 @@ class ex_queue_entry
 
   ex_tcb_private_state * pstate;  // private (reader's) state
   
-  NA_EIDPROC 
+  
     inline ex_cri_desc *   criDesc() const;
-  NA_EIDPROC 
+  
     inline unsigned short  numTuples() const;
-  NA_EIDPROC 
+  
     inline tupp &          getTupp(Lng32 i) const;
-  NA_EIDPROC 
+  
      void            passAtp(const ex_queue_entry *from);
-  NA_EIDPROC 
+  
      void            passAtp(atp_struct *from);
-  NA_EIDPROC 
+  
     inline void            copyAtp(const ex_queue_entry *from);
-  NA_EIDPROC 
+  
     inline void            copyAtp(atp_struct *from);
-  NA_EIDPROC 
+  
     inline atp_struct *    getAtp() const;
 
   // 
   // Routines to get and set diagnostics area.
   //
-  NA_EIDPROC 
+  
     inline ComDiagsArea    *getDiagsArea() const;
-  NA_EIDPROC 
+  
     inline void            setDiagsArea(ComDiagsArea* diagsArea);
 
  private:
 
-  NA_EIDPROC
     void      initializeState (const ex_queue::queue_type type);
 
   // Used to check that an entry being inserted is intialized properly
-  NA_EIDPROC
   inline Int32 checkState(const ex_queue::queue_type type)
   {
     return (type == ex_queue::UP_QUEUE
@@ -747,7 +705,6 @@ inline Int32 ex_queue::isVacant(const queue_index i) const
     return !((head_ <= i) || (i < tail_));  
 }
 
-//#pragma nowarn(734)
 #ifndef _DEBUG
 inline void ex_queue::removeHead()
 {
@@ -777,7 +734,6 @@ inline void ex_queue::removeHead()
     }
 } // ex_queue::removeHead()
 #endif
-//#pragma warn(734)
 
 inline void ex_queue::cancelRequest(const queue_index i)
 {

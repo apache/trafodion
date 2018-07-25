@@ -44,6 +44,7 @@ public:
 
     int  PopulateClusterState( void );
     int  GetClusterState( PhysicalNodeNameMap_t &physicalNodeMap );
+    int  GetNodeState( char *name ,CPhysicalNode  *physicalNode );
     bool  IsInitialized( void ); 
     void ClearClusterState( void ) { nodeStateList_.clear(); }
     NodeState_t GetNodeState( char nodeName[] );
@@ -52,6 +53,7 @@ private:
     NodeStateList_t    nodeStateList_;
     
     void ParseNodeStatus( string &nodeStatus, string &nodeName, NodeState_t &state );
+    int  PopulateNodeState( const char *nodeName );
 };
 
 #endif /*CMSH_H_*/

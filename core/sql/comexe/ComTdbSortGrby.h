@@ -75,10 +75,8 @@ protected:
 
 public:
   // Constructor
-NA_EIDPROC
   ComTdbSortGrby(); // dummy constructor. Used by 'unpack' routines.
   
-NA_EIDPROC
   ComTdbSortGrby(ex_expr * aggr_expr,
 		 ex_expr * grby_expr,
 		 ex_expr * move_expr,
@@ -95,7 +93,6 @@ NA_EIDPROC
 		 ULng32 buffer_size,
 		 NABoolean tolerateNonFatalError);
 
-NA_EIDPROC
   ~ComTdbSortGrby();
 
   AggrExpr * aggrExpr() { return (AggrExpr*)((ex_expr*)aggrExpr_); }
@@ -106,49 +103,36 @@ NA_EIDPROC
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-NA_EIDPROC
   virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-NA_EIDPROC
   virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
 
-NA_EIDPROC
   virtual short getClassSize() { return (short)sizeof(ComTdbSortGrby); }  
   Long pack(void *);
-NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
   
-NA_EIDPROC
   void display() const;
 
-NA_EIDPROC
   inline ComTdb * getChildTdb();
 
-NA_EIDPROC
   Int32 orderedQueueProtocol() const;
 
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-NA_EIDPROC
   virtual void displayContents(Space *space,ULng32 flag);
 
-NA_EIDPROC
   virtual const ComTdb* getChild(Int32 pos) const;
-NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }
-NA_EIDPROC
   virtual const char *getNodeName() const { return "EX_SORT_GRBY"; };
-NA_EIDPROC
   virtual Int32 numExpressions() const { return 4; }
-NA_EIDPROC
   virtual ex_expr* getExpressionNode(Int32 pos) {
      if (pos == 0)
 	return aggrExpr_;
@@ -161,7 +145,6 @@ NA_EIDPROC
      else
 	return NULL;
   }
-NA_EIDPROC
   virtual const char * getExpressionName(Int32 pos) const {
      if (pos == 0)
 	return "aggrExpr_";
@@ -181,7 +164,6 @@ NA_EIDPROC
   
 };
 
-NA_EIDPROC
 inline ComTdb * ComTdbSortGrby::getChildTdb(){
   return tdbChild_;
 };

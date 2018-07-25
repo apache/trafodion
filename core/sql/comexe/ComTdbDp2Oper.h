@@ -44,9 +44,6 @@
 ///////////////////////////////////////////////////////
 // class ComTdbDp2Oper
 ///////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
-#pragma nowarn(1103)   // warning elimination 
-#pragma nowarn(161)  // warning elimination 
 class ComTdbDp2Oper : public ComTdb
 {
 
@@ -55,11 +52,6 @@ public:
   { KEY_SEQ_, KEY_SEQ_WITH_SYSKEY_, ENTRY_SEQ_, RELATIVE_, NOOP_ };
   
 };
-
-
-#pragma warn(161)  // warning elimination 
-#pragma warn(1506)  // warning elimination 
-#pragma warn(1103)  // warning elimination 
 
 #endif
 

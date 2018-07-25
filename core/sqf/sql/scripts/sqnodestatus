@@ -34,25 +34,34 @@ my $node_context=readpipe("trafconf -name");
 my %node_hash=();
 my $sq_mon_ssh_options=readpipe("echo -n \$SQ_MON_SSH_OPTIONS");
 my $json=$ARGV[0];
+my $node_name=$ARGV[1];
 
 &main();
 
 sub main()
 {
-  #$node_context=~s/-w//ig;
-  #print "node_context=${node_context}";
-  chomp($node_context);
-  my @nodes=split(' ',$node_context);
-  foreach my $node(@nodes)
+  #print "json=${json}\n";
+  #print "node_name=${node_name}\n";
+  if ($ARGV[0] ne '-n')
   {
-     $check_flag=check_node_status($node);
+     #print "node_context=${node_context}";
+     chomp($node_context);
+     my @nodes=split(' ',$node_context);
+     foreach my $node(@nodes)
+     {
+        $check_flag=check_node_status($node);
+     }
+  }
+  else
+  {
+     $check_flag=check_node_status($node_name);
   }
   print_node_status();
 }
 
 sub print_node_status()
 {
-    if ($json) 
+    if ($json eq '-json')
     {
         $comma="";
         print "[";

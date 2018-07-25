@@ -21,6 +21,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- Verify sql_user1 does not have CREATE or CREATE_TABLE privilege
@@ -36,6 +39,9 @@ Tables in Schema TRAFODION.T138SCH
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
@@ -67,7 +73,8 @@ SB_PERSISTENT_SAMPLES
 
 *** ERROR[4082] Object TRAFODION.T138SCH.USER1_T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>create table user1_t2 (c1 int, c2 int);
 
@@ -90,7 +97,8 @@ SB_PERSISTENT_SAMPLES
 
 *** ERROR[4082] Object TRAFODION.T138SCH.USER1_T2 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>exit;
 
@@ -111,6 +119,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER1
 
 CREATE_TABLE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
 >>get tables;
@@ -121,6 +132,9 @@ Tables in Schema TRAFODION.T138SCH
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
@@ -206,6 +220,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -400,6 +417,9 @@ SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>drop table user1_t1 cascade;
 
@@ -422,6 +442,9 @@ SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>
 >>exit;
@@ -439,6 +462,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -461,6 +487,9 @@ SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>drop table user1_t1 cascade;
 
@@ -477,6 +506,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>
 >>
@@ -488,6 +520,9 @@ Tables in Schema TRAFODION.T138SCH
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -511,6 +546,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- Verify sql_user2 does not have ALTER or ALTER_TABLE privilege
@@ -531,6 +569,9 @@ Tables in Schema TRAFODION.T138SCH
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
@@ -620,6 +661,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -818,6 +862,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1020,6 +1067,9 @@ ALTER_ROUTINE
 ALTER_SEQUENCE
 ALTER_VIEW
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(alter_tbl)" -u sql_user2;
 >>get tables;
@@ -1032,6 +1082,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1240,6 +1293,9 @@ SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>drop table user1_t1 cascade;
 
@@ -1255,6 +1311,9 @@ Tables in Schema TRAFODION.T138SCH
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1272,6 +1331,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for sql_user1;
@@ -1310,6 +1372,9 @@ Tables in Schema TRAFODION.T138SCH
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>create table user1_t1 (c1 int not null primary key, c2 int);
@@ -1423,6 +1488,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER1
 
 CREATE_VIEW
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(create_view)" -u sql_user1;
 >>get views;
@@ -1443,6 +1511,9 @@ Views in Schema TRAFODION.T138SCH
 USER1_V1
 USER1_V2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>exit;
@@ -1459,6 +1530,9 @@ Views in Schema TRAFODION.T138SCH
 
 USER1_V1
 USER1_V2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>drop view user1_v1;
@@ -1479,6 +1553,9 @@ Views in Schema TRAFODION.T138SCH
 USER1_V1
 USER1_V2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>exit;
@@ -1497,6 +1574,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER2
 
 DROP_VIEW
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(drop_view)" -u sql_user2;
 >>get views;
@@ -1506,6 +1586,9 @@ Views in Schema TRAFODION.T138SCH
 
 USER1_V1
 USER1_V2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>drop view user1_v1;
@@ -1555,6 +1638,9 @@ SB_PERSISTENT_SAMPLES
 USER1_T1
 USER1_T2
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>drop table user1_t1 cascade;
 
@@ -1570,6 +1656,9 @@ Tables in Schema TRAFODION.T138SCH
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1628,6 +1717,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER1
 
 CREATE_SEQUENCE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(create_sequence)" -u sql_user1;
 >>get sequences in schema t138sch;
@@ -1647,6 +1739,9 @@ Sequences in schema TRAFODION.T138SCH
 USER1_SEQ1
 USER1_SEQ2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>exit;
@@ -1663,6 +1758,9 @@ Sequences in schema TRAFODION.T138SCH
 
 USER1_SEQ1
 USER1_SEQ2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>drop sequence user1_seq1;
@@ -1683,6 +1781,9 @@ Sequences in schema TRAFODION.T138SCH
 USER1_SEQ1
 USER1_SEQ2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>exit;
@@ -1701,6 +1802,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER2
 
 DROP_SEQUENCE
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(drop_sequence)" -u sql_user2;
 >>get sequences in schema t138sch;
@@ -1710,6 +1814,9 @@ Sequences in schema TRAFODION.T138SCH
 
 USER1_SEQ1
 USER1_SEQ2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>drop sequence user1_seq1;

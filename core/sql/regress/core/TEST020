@@ -408,14 +408,10 @@ operator
 
 --QUERY 19
 -- Solution 10-060524-6738. Make sure "explain" with access options
--- work.  This also turns off the fast_dp2_subset_opt option so the
--- plans are identical under Windows and NSK.  This is only tested
--- under MX because the output is easier to deal with, and this test
--- is mainly to ensure that the parser deals with the syntax correctly.
+-- work.  
 #ifMX
-control query default fast_dp2_subset_opt 'off';
 explain options 'f' select * from TAB1 where col1 < 15
- for serializable access;
+ for read committed access;
 #ifMX
 
 --QUERY 20

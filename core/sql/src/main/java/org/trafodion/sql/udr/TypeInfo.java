@@ -396,22 +396,22 @@ public class TypeInfo extends TMUDRSerializableObject {
             break;
             
         case TIME:
-            // string hh:mm:ss
+            // string hh:mm:ss[.fffffffff]
             length_ = 8;
             if (scale > 0)
                 length_ += scale+1;
-            if (scale < 0 || scale > 6)
-                throw new UDRException(38900,"Scale %d of time in TypeInfo::TypeInfo is outside the allowed range of 0-6", scale);
+            if (scale < 0 || scale > 9)
+                throw new UDRException(38900,"Scale %d of time in TypeInfo::TypeInfo is outside the allowed range of 0-9", scale);
             break;
             
         case TIMESTAMP:
-            // string yyyy-mm-dd hh:mm:ss.ffffff
-            //        12345678901234567890123456
+            // string yyyy-mm-dd hh:mm:ss[.fffffffff]
+            //        1234567890123456789 0123456789
             length_ = 19;
             if (scale > 0)
                 length_ += scale+1;
-            if (scale < 0 || scale > 6)
-                throw new UDRException(38900,"Scale %d of timestamp in TypeInfo::TypeInfo is outside the allowed range of 0-6", scale);
+            if (scale < 0 || scale > 9)
+                throw new UDRException(38900,"Scale %d of timestamp in TypeInfo::TypeInfo is outside the allowed range of 0-9", scale);
             break;
 
         case INTERVAL:
@@ -421,8 +421,8 @@ public class TypeInfo extends TMUDRSerializableObject {
           
           if (intervalCode_ == SQLIntervalCode.UNDEFINED_INTERVAL_CODE.getSQLIntervalCode())
               throw new UDRException(38900,"Interval code in TypeInfo::TypeInfo is undefined");
-        if (scale < 0 || scale > 6)
-            throw new UDRException(38900,"Scale %d of interval in TypeInfo::TypeInfo is outside the allowed range of 0-6", sqlType);
+          if (scale < 0 || scale > 9)
+            throw new UDRException(38900,"Scale %d of interval in TypeInfo::TypeInfo is outside the allowed range of 0-9", sqlType);
 
         // all intervals are treated like signed numbers, need to compute
         // the length from the combined precision of all parts, see method

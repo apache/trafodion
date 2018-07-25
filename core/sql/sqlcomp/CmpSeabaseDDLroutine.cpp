@@ -229,7 +229,7 @@ short CmpSeabaseDDL::getUsingRoutines(ExeCliInterface *cliInterface,
   char buf[4000];
   str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), "
                    "object_type, object_uid from %s.\"%s\".%s T, %s.\"%s\".%s LU "
-                   "where LU.using_library_uid = %Ld and "
+                   "where LU.using_library_uid = %ld and "
                    "T.object_uid = LU.used_udr_uid  and T.valid_def = 'Y' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
@@ -291,7 +291,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     }
 
   // Check to see if user has the authority to create the library
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
@@ -389,7 +389,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     }
  
   char * query = new(STMTHEAP) char[1000];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, 0)",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, '%s', %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
 	      objUID,
               libFileName.data(),
@@ -445,7 +445,7 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
     getObjectNamePartAsAnsiString(TRUE);
   const NAString extLibraryName = libraryName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -584,7 +584,7 @@ void  CmpSeabaseDDL::alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
   NAString libNamePart = libName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extLibName = libName.getExternalName(TRUE);
   
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
 			       CmpCommon::context()->sqlSession()->getParentQid());
   
   retcode = existsInSeabaseMDTable(&cliInterface, 
@@ -643,7 +643,7 @@ void  CmpSeabaseDDL::alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
   
   char buf[2048]; // filename max length is 512. Additional bytes for long
   // library names.
-  str_sprintf(buf, "update %s.\"%s\".%s set library_filename = '%s' where library_uid = %Ld",
+  str_sprintf(buf, "update %s.\"%s\".%s set library_filename = '%s' where library_uid = %ld",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
 	      libFileName.data(),
 	      libUID);
@@ -722,7 +722,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   NABoolean isJava              = (language == COM_LANGUAGE_JAVA);
 
   // Check to see if user has the authority to create the routine
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
@@ -808,7 +808,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
 
   char * buf = new(STMTHEAP) char[200];
   str_sprintf(buf, "select library_filename from %s.\"%s\".%s"
-              " where library_uid = %Ld for read uncommitted access",
+              " where library_uid = %ld for read uncommitted access",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, libUID);
 
   cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
@@ -1236,7 +1236,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   
 
   char * query = new(STMTHEAP) char[2000+MAX_SIGNATURE_LENGTH];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %Ld, '%s', 0)",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %ld, '%s', 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
 	      objUID,
               udrType.data(),
@@ -1267,7 +1267,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
     }
 
   char * query1 = new(STMTHEAP) char[1000];
-  str_sprintf(query1, "insert into %s.\"%s\".%s values (%Ld, %Ld, 0)",
+  str_sprintf(query1, "insert into %s.\"%s\".%s values (%ld, %ld, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
 	      libUID, objUID);
   
@@ -1322,7 +1322,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
   const NAString extRoutineName = routineName.getExternalName(TRUE);
   
   ExpHbaseInterface * ehi = NULL;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
 
   ehi = allocEHI();
@@ -1527,8 +1527,6 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
   cliInterface->getPtrAndLen(2, ptr, len);
   errCode = *(Int32 *)ptr;
 
-  // in code below methodName may need to be added to the signature that is printed 
-  // out in some error messages.
   // Check for errors returned from VALIDATEROUTINE
   switch (errCode)
   {
@@ -1560,25 +1558,25 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
     case 11231://Method found but not public
       if(signature[0] NEQ '\0')
         *CmpCommon::diags() << DgSqlCode(-errCode)
-                            << DgString0(signature)
+                            << DgString0(NAString(methodName) + signature)
                             << DgString1(className);
       break;
     case 11232://Method found but not static
       if(signature[0] NEQ '\0')
         *CmpCommon::diags() << DgSqlCode(-errCode)
-                            << DgString0(signature)
+                            << DgString0(NAString(methodName) + signature)
                             << DgString1(className);
       break;
     case 11233://Method found but not void
         if(signature[0] NEQ '\0')
           *CmpCommon::diags() << DgSqlCode(-errCode)
-                              << DgString0(signature)
+                              << DgString0(NAString(methodName) + signature)
                               << DgString1(className);
         break;
     case 11234://Method not found
         if(signature[0] NEQ '\0')
           *CmpCommon::diags() << DgSqlCode(-errCode)
-                              << DgString0(signature)
+                              << DgString0(NAString(methodName) + signature)
                               << DgString1(className);
         break;
     default://Unknown error code
@@ -1599,9 +1597,9 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
   Lng32 cliRC = 0;
   
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
-      (CmpCommon::context()->uninitializedSeabaseErrNum() == -1393))
+      (CmpCommon::context()->uninitializedSeabaseErrNum() == -TRAF_NOT_INITIALIZED))
     {
-      *CmpCommon::diags() << DgSqlCode(-1393);
+      *CmpCommon::diags() << DgSqlCode(-TRAF_NOT_INITIALIZED);
       return -1;
     }
 
@@ -1612,8 +1610,9 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
                 jarLocation.length() + 100];
 
   // Create the SEABASE_LIBMGR_SCHEMA schema
-  str_sprintf(queryBuf, "create schema if not exists %s.\"%s\" authorization %s ",
-              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
+  snprintf(queryBuf, sizeof(queryBuf),
+           "create schema if not exists %s.\"%s\" authorization %s ",
+           getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
 
   cliRC = cliInterface->executeImmediate(queryBuf);
   if (cliRC < 0)
@@ -1623,9 +1622,10 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
     }
 
   // Create the SEABASE_LIBMGR_LIBRARY library
-  str_sprintf(queryBuf, "create library %s.\"%s\".%s file '%s'",
-                         getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, SEABASE_LIBMGR_LIBRARY,
-                         jarLocation.data());
+  snprintf(queryBuf, sizeof(queryBuf),
+           "create library %s.\"%s\".%s file '%s'",
+           getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, SEABASE_LIBMGR_LIBRARY,
+           jarLocation.data());
 
   cliRC = cliInterface->executeImmediate(queryBuf);
   if (cliRC < 0)
@@ -1633,6 +1633,9 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
     }
+
+  if (createSeabaseLibmgrCPPLib(cliInterface) < 0)
+    return -1;
 
   return (createLibmgrProcs(cliInterface));
 }
@@ -1649,6 +1652,7 @@ short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
 
       const QString * qs = NULL;
       Int32 sizeOfqs = 0;
+      const char *libName = NULL;
 
       qs = prd.newDDL;
       sizeOfqs = prd.sizeOfnewDDL;
@@ -1659,25 +1663,38 @@ short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
       glueQueryFragments(qryArraySize,  qs,
                          gluedQuery, gluedQuerySize);
 
+      switch (prd.whichLib)
+        {
+        case LibmgrRoutineInfo::JAVA_LIB:
+          libName = SEABASE_LIBMGR_LIBRARY;
+          break;
+        case LibmgrRoutineInfo::CPP_LIB:
+          libName = SEABASE_LIBMGR_LIBRARY_CPP;
+          break;
+        default:
+          CMPASSERT(0);
+        }
+
       param_[0] = getSystemCatalog();
       param_[1] = SEABASE_LIBMGR_SCHEMA;
       param_[2] = getSystemCatalog();
       param_[3] = SEABASE_LIBMGR_SCHEMA;
-      param_[4] = SEABASE_LIBMGR_LIBRARY;
+      param_[4] = libName;
 
       // Review comment - make sure size of queryBuf is big enough to hold
       // generated text.
       char queryBuf[strlen(getSystemCatalog())*2 + strlen(SEABASE_LIBMGR_SCHEMA)*2 +
                     strlen(SEABASE_LIBMGR_LIBRARY) + gluedQuerySize + 200]; 
 
-      str_sprintf(queryBuf, gluedQuery, param_[0], param_[1], param_[2], param_[3], param_[4]);
+      snprintf(queryBuf, sizeof(queryBuf),
+               gluedQuery, param_[0], param_[1], param_[2], param_[3], param_[4]);
       NADELETEBASICARRAY(gluedQuery, STMTHEAP);
 
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)
         {
           cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-        return -1;
+          return -1;
         }
     } // for
 
@@ -1692,18 +1709,36 @@ short CmpSeabaseDDL::grantLibmgrPrivs(ExeCliInterface *cliInterface)
 
   Lng32 cliRC = 0;
   char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) +
-                strlen(SEABASE_LIBMGR_LIBRARY) + strlen(DB__LIBMGRROLE) + 200];
+                strlen(SEABASE_LIBMGR_LIBRARY) +
+                MAXOF(strlen(DB__LIBMGRROLE), strlen(PUBLIC_AUTH_NAME)) + 200];
   for (Int32 i = 0; i < sizeof(allLibmgrRoutineInfo)/sizeof(LibmgrRoutineInfo); i++)
     {
       // Get the next procedure routine details
       const LibmgrRoutineInfo &prd = allLibmgrRoutineInfo[i];
+      const char *grantee = NULL;
+      const char *grantOption = "";
 
-      str_sprintf (queryBuf, "grant execute on %s %s.\"%s\".%s to %s with grant option",
-                              prd.udrType,
-                              getSystemCatalog(),
-                              SEABASE_LIBMGR_SCHEMA,
-                              prd.newName,
-                              DB__LIBMGRROLE);
+      switch (prd.whichRole)
+        {
+        case LibmgrRoutineInfo::LIBMGR_ROLE:
+          grantee = DB__LIBMGRROLE;
+          grantOption = " with grant option";
+          break;
+        case LibmgrRoutineInfo::PUBLIC:
+          grantee = PUBLIC_AUTH_NAME;
+          break;
+        default:
+          CMPASSERT(0);
+        }
+
+      snprintf(queryBuf, sizeof(queryBuf),
+               "grant execute on %s %s.\"%s\".%s to %s%s",
+               prd.udrType,
+               getSystemCatalog(),
+               SEABASE_LIBMGR_SCHEMA,
+               prd.newName,
+               grantee,
+               grantOption);
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)
         {
@@ -1733,11 +1768,98 @@ short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
 
   if (cliRC == 0) // does not exist
     {
+      // give an error if the Java library does not exist, since that is
+      // an indication that we never ran
+      // INITIALIZE TRAFODION, CREATE LIBRARY MANAGEMENT
       NAString libraryName(getSystemCatalog());
       libraryName + ".\"" + SEABASE_LIBMGR_SCHEMA + "\"" + SEABASE_LIBMGR_LIBRARY;
       *CmpCommon::diags() << DgSqlCode(-1389)
                           << DgString0(libraryName.data());
       return -1;
+    }
+
+  // Update the jar locations for system procedures and functions.  This should 
+  // be done before adding any new jar's since we use a system procedure to add
+  // procedures.
+  NAString jarLocation(getenv("TRAF_HOME"));
+  jarLocation += "/export/lib";
+
+  char queryBuf[1000];
+
+  // trafodion-sql_currversion.jar 
+  Int32 stmtSize = snprintf(queryBuf, sizeof(queryBuf), "update %s.\"%s\".%s  "
+           "set library_filename = '%s/trafodion-sql-currversion.jar' "
+           "where library_uid = "
+           "(select object_uid from %s.\"%s\".%s "
+           " where object_name = '%s'  and object_type = 'LB')",
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, jarLocation.data(),
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_OBJECTS, SEABASE_VALIDATE_LIBRARY);
+  CMPASSERT(stmtSize < sizeof(queryBuf));
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  // lib_mgmt.jar
+  stmtSize = snprintf(queryBuf, sizeof(queryBuf), "update %s.\"%s\".%s  "
+           "set library_filename = '%s/lib_mgmt.jar' "
+           "where library_uid = "
+           "(select object_uid from %s.\"%s\".%s "
+           " where object_name = '%s'  and object_type = 'LB')",
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, jarLocation.data(),
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_OBJECTS, SEABASE_LIBMGR_LIBRARY);
+  CMPASSERT(stmtSize < sizeof(queryBuf));
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  // libudr_predef.so
+  NAString dllLocation(getenv("TRAF_HOME"));
+  dllLocation += "/export/lib64";
+  if (strcmp(getenv("SQ_MBTYPE"), "64d") == 0)
+    dllLocation += "d";
+
+  stmtSize = snprintf(queryBuf, sizeof(queryBuf), "update %s.\"%s\".%s  "
+           "set library_filename = '%s/libudr_predef.so' "
+           "where library_uid = "
+           "(select object_uid from %s.\"%s\".%s "
+           " where object_name = '%s'  and object_type = 'LB')",
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, dllLocation.data(),
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_OBJECTS, SEABASE_LIBMGR_LIBRARY_CPP);
+  CMPASSERT(stmtSize < sizeof(queryBuf));
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+
+  // now check for the C++ library, which was added in Trafodion 2.3
+  cliRC = existsInSeabaseMDTable(cliInterface,
+                                 getSystemCatalog(), SEABASE_LIBMGR_SCHEMA,
+                                 SEABASE_LIBMGR_LIBRARY_CPP,
+                                 COM_LIBRARY_OBJECT, TRUE, FALSE);
+  if (cliRC < 0)
+    return -1;
+
+  if (cliRC == 0)
+    {
+      // The Java library exists, but the C++ library does not yet
+      // exist. This means that we last created or upgraded the
+      // library management subsystem in Trafodion 2.2 or earlier.
+      // Create the C++ library, as it is needed for Trafodion 2.3
+      // and higher.
+      if (createSeabaseLibmgrCPPLib(cliInterface) < 0)
+        return -1;
     }
 
   return (createLibmgrProcs(cliInterface));
@@ -1760,7 +1882,7 @@ short CmpSeabaseDDL::dropSeabaseLibmgr(ExeCliInterface *cliInterface)
   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
 
   str_sprintf(queryBuf, "drop schema if exists %s.\"%s\" cascade ",
-              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
+              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA);
 
   // Drop the SEABASE_LIBMGR_SCHEMA schema
   cliRC = cliInterface->executeImmediate(queryBuf);
@@ -1775,6 +1897,31 @@ short CmpSeabaseDDL::dropSeabaseLibmgr(ExeCliInterface *cliInterface)
     }
   return 0;
 }
-
-
   
+short CmpSeabaseDDL::createSeabaseLibmgrCPPLib(ExeCliInterface * cliInterface)
+{
+  Int32 cliRC = 0;
+  NAString dllLocation(getenv("TRAF_HOME"));
+  dllLocation += "/export/lib64";
+  if (strcmp(getenv("SQ_MBTYPE"), "64d") == 0)
+    dllLocation += "d";
+  // for now we use the same DLL as for the predefined UDRs
+  dllLocation += "/libudr_predef.so";
+  char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) +
+                strlen(SEABASE_LIBMGR_LIBRARY_CPP) +
+                dllLocation.length() + 100];
+
+  // Create the SEABASE_LIBMGR_LIBRARY_CPP library
+  snprintf(queryBuf, sizeof(queryBuf),
+           "create library %s.\"%s\".%s file '%s'",
+           getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, SEABASE_LIBMGR_LIBRARY_CPP,
+           dllLocation.data());
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+  return 0;
+}

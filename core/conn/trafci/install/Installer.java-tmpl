@@ -53,6 +53,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -3055,6 +3056,13 @@ void processCmdMode(String zipfile)
            
           int from = "jar:file:".length();
           int to = urlStr.indexOf("!/");
+          if(to == -1){
+              try {
+                  return new File(this.getClass().getResource("/").toURI()).getParent() + File.separator + "trafciInstaller.jar";
+              } catch (URISyntaxException e) {
+                  e.printStackTrace();
+              }
+          }
           return urlStr.substring(from, to);
       }
    }
@@ -3287,12 +3295,8 @@ void processCmdMode(String zipfile)
 
       StringBuffer path = new StringBuffer();
       for (String jarFile : jarFiles) {
-         if (isTrafHome) {
-            path.append(INSTALL_DIR_STR);
-         } else {
             path.append(outputDir.getAbsolutePath());
-         }
-         path.append(File.separator).append(jarFile).append(File.pathSeparator);
+	    path.append(File.separator).append(jarFile).append(File.pathSeparator);
       }
       String replaceStr = path.substring(0, path.length() - File.pathSeparator.length());
 
@@ -3318,7 +3322,19 @@ void processCmdMode(String zipfile)
       replacePythonLib=replacePythonLib.replaceAll("\\$","\\\\\\$");
            
       batchfile=batchfile.replaceAll(classVarToReplace,replace).replaceAll("#####PATH#####",File.separator+File.separator+File.separator+File.separator);
+      String[] split = replacePython.split(File.pathSeparator);
+		List list = new ArrayList<String>();
+		for (String str : split) {
+			list.add("\""+str+"\"");
+		}
+      replacePython = list.toString();
       batchfile=batchfile.replaceAll(pythonClassVarToReplace,replacePython).replaceAll("#####PATH#####",File.separator+File.separator+File.separator+File.separator);
+     /* String[] split = batchfile.split(File.pathSeparator);
+		List list = new ArrayList<String>();
+		for (String str : split) {
+			list.add(str);
+		}
+      batchfile = list.toString(); */
       batchfile=batchfile.replaceAll(perlClassVarToReplace,replacePerl).replaceAll("#####PATH#####",File.separator+File.separator+File.separator+File.separator);
       batchfile =batchfile.replaceAll(perlLibPathToReplace, replacePerlLib).replaceAll("#####PATH#####", File.separator + File.separator + File.separator + File.separator);
       batchfile =batchfile.replaceAll(pythonLibPathToReplace, replacePythonLib).replaceAll("#####PATH#####", File.separator + File.separator + File.separator + File.separator);

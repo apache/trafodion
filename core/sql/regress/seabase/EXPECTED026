@@ -37,7 +37,8 @@
 
 *** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>drop table t026t1;
 
 *** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
@@ -105,12 +106,14 @@
 
 *** ERROR[4082] Object TRAFODION.SCH026.T026T0 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>invoke t026t1;
 
 *** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>set parserflags 131072;
 
@@ -304,9 +307,8 @@ Metadata Cleanup: done
 
 
 --- SQL operation complete.
->>drop hbase table "TRAFODION.SCH026.T026T10";
-
---- SQL operation complete.
+>>-- drop hbase table "TRAFODION.SCH026.T026T10" from hbase shell
+>>sh regrhbase.ksh $REGRTSTDIR/TEST026_drop_hbase &> $REGRRUNDIR/TEST026_drop_hbase.log ;
 >>set parserflags 131072;
 
 --- SQL operation complete.
@@ -355,14 +357,14 @@ Metadata Cleanup: started, check only
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_438564838_6459
-    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_442664838_6459
+    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_623875359_1692
+    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_736875359_1692
     Entry #4(OBJECT): TRAFODION.SCH026.SB_HISTOGRAMS_PK
     Entry #5(OBJECT): TRAFODION.SCH026.SB_HISTOGRAM_INTERVALS_PK
     Entry #6(OBJECT): TRAFODION.SCH026.SB_PERSISTENT_SAMPLES_PK
-    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD__0210724475547_466795482_9143
-    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks__02107_334895482_9143
-    Entry #9(UID):    2107244755479165497
+    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD__0550637332294_683639881_4496
+    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks__05506_433739881_4496
+    Entry #9(UID):    5506373322942721563
   End:   Cleanup Inconsistent Objects Entries (9 entries found)
 
   Start: Cleanup Inconsistent Views Entries
@@ -388,14 +390,14 @@ Metadata Cleanup: started
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_438564838_6459
-    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_442664838_6459
+    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_623875359_1692
+    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_736875359_1692
     Entry #4(OBJECT): TRAFODION.SCH026.SB_HISTOGRAMS_PK
     Entry #5(OBJECT): TRAFODION.SCH026.SB_HISTOGRAM_INTERVALS_PK
     Entry #6(OBJECT): TRAFODION.SCH026.SB_PERSISTENT_SAMPLES_PK
-    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD__0210724475547_466795482_9143
-    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks__02107_334895482_9143
-    Entry #9(UID):    2107244755479165497
+    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD__0550637332294_683639881_4496
+    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks__05506_433739881_4496
+    Entry #9(UID):    5506373322942721563
   End:   Cleanup Inconsistent Objects Entries (9 entries cleaned up)
 
   Start: Cleanup Inconsistent Views Entries

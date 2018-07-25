@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <errno.h>
 #include "seabed/pctl.h"
+#include "Platform.h"
 #include "ExSMGlobals.h"
 #include "ExSMTask.h"
 #include "ExSMReader.h"
@@ -220,7 +221,7 @@ const char *ExSMGlobals::createSessionID(ExExeStmtGlobals *stmtGlob)
     return NULL;
   }
 
-  str_sprintf(smIDStr, "%d_%d_%Ld", (Int32) sqNodeNumber, (Int32) masterPID,
+  str_sprintf(smIDStr, "%d_%d_%ld", (Int32) sqNodeNumber, (Int32) masterPID,
               (Int64) masterStart);
 
   return smIDStr;

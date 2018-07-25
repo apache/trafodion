@@ -394,6 +394,11 @@ public:
         // returns TURE if table feature clause appears;
         // returns FALSE otherwise
 
+  inline const NAString &getHiveOptions()
+  {return hiveOptions_; }
+  void setHiveOptions(NAString h)
+  {hiveOptions_ = h;}
+
   // POS
   inline NABoolean isPOSNumPartnsSpecified() const;
   inline NABoolean isPOSInitialTableSizeSpecified() const;
@@ -855,6 +860,9 @@ private:
 
   // create only if table doesnt exist. Otherwise just return.
   NABoolean createIfNotExists_;
+
+  // optional options specified during CTAS into a hive table
+  NAString hiveOptions_;
 
 }; // class StmtDDLCreateTable
 

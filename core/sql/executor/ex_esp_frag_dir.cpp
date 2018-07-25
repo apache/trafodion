@@ -48,7 +48,7 @@
 #include "ex_tcb.h"
 #include "ex_split_bottom.h"
 #include "ex_send_bottom.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "ComDiags.h"
 #include "LateBindInfo.h"
 #include "NAHeap.h"
@@ -75,13 +75,11 @@
 // -----------------------------------------------------------------------
 
 ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
-					   CollHeap *heap,
-					   CollHeap *exHeap,
+					   NAHeap *heap,
                                            StatsGlobals *statsGlobals)
   : instances_(heap),
     cliGlobals_(cliGlobals),
     heap_(heap),
-    exHeap_(exHeap),
     statsGlobals_(statsGlobals),
     userIDEstablished_(FALSE),
     localStatsHeap_(NULL)
@@ -92,7 +90,7 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
   numActiveInstances_ = 0;
   highWaterMark_      = 0;
   numMasters_         = 1;
-  short error;
+  int error;
 
   //Phandle wrapper in porting layer
   NAProcessHandle phandle;
@@ -103,13 +101,21 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
   pid_ = phandle.getPin();
 
   tid_ = syscall(SYS_gettid);
-  if (statsGlobals_ == NULL
-    || (statsGlobals_ != NULL && 
-      statsGlobals_->getVersion() != StatsGlobals::CURRENT_SHARED_OBJECTS_VERSION_))
+  NABoolean reportError = FALSE;
+  char msg[256];;
+  if ((statsGlobals_ == NULL)
+     || ((statsGlobals_ != NULL) &&  (statsGlobals_->getInitError(pid_, reportError))))
   {
+    if (reportError) {
+         snprintf(msg, sizeof(msg), 
+          "Version mismatch or Pid %d,%d is higher than the configured pid max %d",
+           cpu_, pid_, statsGlobals_->getConfiguredPidMax()); 
+         SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
+    }
     statsGlobals_ = NULL;
-    statsHeap_ = new (exHeap_) 
-        NAHeap("Process Stats Heap", (NAHeap *)exHeap_,
+
+    statsHeap_ = new (heap_) 
+        NAHeap("Process Stats Heap", (NAHeap *)heap_,
         8192,
         0);
     semId_ = -1;
@@ -121,16 +127,13 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
     if (error != 0)
     {
         statsGlobals_ = NULL;
-        statsHeap_ = (NAHeap *)exHeap_;
+        statsHeap_ = (NAHeap *)heap_;
     }
     else
     {
       cliGlobals_->setStatsGlobals(statsGlobals_);
       cliGlobals_->setSemId(semId_);
-      short savedPriority, savedStopMode;
-      error = statsGlobals_->getStatsSemaphore(semId_, pid_,savedPriority, savedStopMode,
-                      FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      error = statsGlobals_->getStatsSemaphore(semId_, pid_);
       statsHeap_ = (NAHeap *)statsGlobals->getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_);
       statsHeap_ = new (statsHeap_, statsGlobals->getStatsHeap()) 
         NAHeap("Process Stats Heap", statsGlobals->getStatsHeap(),
@@ -144,7 +147,7 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
            statsGlobals_->getExProcessStats(pid_);
       processStats->setStartTime(cliGlobals_->myStartTime());
       cliGlobals_->setExProcessStats(processStats);
-      statsGlobals_->releaseStatsSemaphore(semId_, pid_, savedPriority, savedStopMode);
+      statsGlobals_->releaseStatsSemaphore(semId_, pid_);
     }
   }
   cliGlobals_->setStatsHeap(statsHeap_);
@@ -185,13 +188,10 @@ ExEspFragInstanceDir::~ExEspFragInstanceDir()
   // no point in making error checks
   if (statsGlobals_ != NULL)
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals_->getStatsSemaphore(semId_, pid_, savedPriority, savedStopMode,
-                        FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals_->getStatsSemaphore(semId_, pid_);
     statsGlobals_->removeProcess(pid_);
-    statsGlobals_->releaseStatsSemaphore(semId_, pid_, savedPriority, savedStopMode);
-   sem_close((sem_t *)semId_);
+    statsGlobals_->releaseStatsSemaphore(semId_, pid_);
+    sem_close((sem_t *)semId_);
   }
 }
 
@@ -233,26 +233,24 @@ ExFragInstanceHandle ExEspFragInstanceDir::addEntry(ExMsgFragment *msgFragment,
 
   if (msgFragment->getFragType() == ExFragDir::ESP)
     {
-      Space * stmtSpace = new(exHeap_) Space(Space::EXECUTOR_SPACE);
-      NAHeap *stmtHeap = new(exHeap_) NAHeap("Statement Heap",
-					   (NAHeap *) exHeap_,32768);
-      stmtSpace->setParent(exHeap_);
+      NAHeap *fragHeap = new(heap_) NAHeap("ESP Fragment Heap",
+					   (NAHeap *) heap_,32768);
+      Space * fragSpace = new(fragHeap) Space(Space::EXECUTOR_SPACE);
+      fragSpace->setParent(fragHeap);
 
       // allocate the globals in their own heap, like the master
       // executor does it
-#pragma nowarn(1506)   // warning elimination 
-      inst->globals_ = new(stmtHeap) ExEspStmtGlobals(
+      inst->globals_ = new(fragHeap) ExEspStmtGlobals(
 	   (short) msgFragment->getNumTemps(),
 	   cliGlobals_,
 	   msgFragment->getDisplayInGui(),
-	   stmtSpace,
-	   stmtHeap,
+	   fragSpace,
+	   fragHeap,
 	   this,
 	   inst->handle_,
 	   msgFragment->getInjectErrorAtExpr(),
            inst->queryId_,
            inst->queryIdLen_);
-#pragma warn(1506)  // warning elimination 
     }
   else
     inst->globals_ = NULL; // no globals needed for DP2 fragments
@@ -553,7 +551,6 @@ void ExEspFragInstanceDir::releaseOrphanEntries()
     }
 }
 
-#pragma nowarn(770)   // warning elimination 
 void ExEspFragInstanceDir::hasTransidReleaseRequest(
      ExFragInstanceHandle handle)
 {
@@ -635,7 +632,6 @@ void ExEspFragInstanceDir::hasReleaseRequest(
 }
 
 
-#pragma warn(770)  // warning elimination 
 
 void ExEspFragInstanceDir::work(Int64 prevWaitTime)
 {
@@ -870,8 +866,8 @@ void ExEspFragInstanceDir::destroyEntry(ExFragInstanceHandle handle)
 
       entry->globals_->deleteMe(FALSE);
       entry->globals_ = NULL;
-      delete sp;
-      delete hp;
+      NADELETE(sp, Space, hp);
+      NADELETE(hp, NAHeap, heap_);
     }
 
   entry->msgFragment_->decrRefCount();
@@ -956,14 +952,11 @@ void ExEspFragInstanceDir::traceIdleMemoryUsage()
     success = fseek(traceFile, 0, SEEK_END); // append to end of file
     fprintf(traceFile, "%d:%02d:%02d,%d,%d,", localTime->tm_hour,
             localTime->tm_min, localTime->tm_sec, myPid, count);
-    fprintf(traceFile, PFSZ "," PFSZ "," PFSZ "," PFSZ "," PFSZ "," PFSZ "," PFSZ ",%ld,%ld\n",
-            exHeap_->getAllocSize(),
-            exHeap_->getAllocCnt(),
-            exHeap_->getTotalSize(),
-            exHeap_->getHighWaterMark(),
+    fprintf(traceFile, PFSZ "," PFSZ "," PFSZ "," PFSZ ",%ld,%ld\n",
             heap_->getAllocSize(),
             heap_->getAllocCnt(),
-            contextHeap->getAllocSize(),
+            heap_->getTotalSize(),
+            heap_->getHighWaterMark(),
             (Long)memSize * 1024,
             (Long)memPeak * 1024);
     fflush(traceFile);
@@ -986,8 +979,8 @@ NAHeap *ExEspFragInstanceDir::getLocalStatsHeap()
       if (statsGlobals_ == NULL)
         localStatsHeap_ = statsHeap_;
       else
-          localStatsHeap_ = new (exHeap_) 
-            NAHeap("Process Local Stats Heap", (NAHeap *)exHeap_,
+          localStatsHeap_ = new (heap_) 
+            NAHeap("Process Local Stats Heap", (NAHeap *)heap_,
             8192, 0);
     }
   return localStatsHeap_;
@@ -1182,9 +1175,7 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
                 int otherCPU, otherPID, otherNode_unused;
                 SB_Int64_Type seqNum = -1;
                 phandle.decompose(otherCPU, otherPID, otherNode_unused
-#ifdef SQ_PHANDLE_VERIFIER
                                  , seqNum
-#endif
                                  );
                 
                 sm_target_t target;
@@ -1313,7 +1304,6 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
   send(FALSE);
 }
 
-#pragma nowarn(262)   // warning elimination 
 void ExEspControlMessage::actOnLoadFragmentReq(
      IpcConnection *connection,
      ComDiagsArea & /*da*/)
@@ -1367,7 +1357,6 @@ void ExEspControlMessage::actOnLoadFragmentReq(
   
   // the reply is handled by the caller
 }
-#pragma warn(262)  // warning elimination 
 
 void ExEspControlMessage::actOnFixupFragmentReq(ComDiagsArea &da)
 {

@@ -109,7 +109,7 @@
 
 #endif
 
-#if defined (NA_LITTLE_ENDIAN) || defined(NA_MXCS)                            // NT_PORT SK 08/13/96
+#if defined (NA_LITTLE_ENDIAN) || defined(NA_MXCS)
 #ifndef LLONG_MAX
 #define LLONG_MAX _I64_MAX
 #endif
@@ -155,7 +155,7 @@ static short BigNumHelper_ConvBcdToBigNumHelper(Lng32 sourceLength,
 
   // Ignore leading zeros in BCD. If all zeros, return.
   Lng32 zeros = 0;
-  while (!sourceData[zeros] && zeros < sourceLength)
+  while (zeros < sourceLength && !sourceData[zeros])
     zeros++;
   if (zeros == sourceLength)
     return 0;
@@ -401,9 +401,7 @@ static short convInt64ToDecMxcs(char *target, Lng32 targetLen, Int64 source)
       return EXE_STRING_OVERFLOW;
     };
 
-#pragma nowarn(1506)   // warning elimination 
     target[currPos--] = '0' + (char)(source % 10);
-#pragma warn(1506)  // warning elimination 
     source /= 10;
   };
   
@@ -712,7 +710,7 @@ static short convAsciiToDecMxcs(char *target,
   };
    
   // skip leading zeros
-  while((source[sourceStart] == '0') && (sourceStart < sourceLen))
+  while((sourceStart < sourceLen) && (source[sourceStart] == '0'))
     sourceStart++;
 
   // only zeros found, target is 0
@@ -1331,7 +1329,7 @@ static short convAsciiToIntervalMxcs(char *target,
 	    }
 	  else
 	    {
-	      *(UInt32 *)target = (UInt32) interm;
+              fraction = (UInt32) interm;
 	    }
 	};
 
@@ -1610,7 +1608,7 @@ static short convIntervalToAsciiMxcs(char *source,
     }
 
   Int64 factor = 1;
-  Int64 fieldVal;
+  Int64 fieldVal = 0;
   if (fractionPrecision)
   {
     //    realTargetLen += fractionPrecision + 1; // 1 for '.'

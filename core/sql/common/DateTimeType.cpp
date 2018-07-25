@@ -83,13 +83,12 @@ static const UInt32 daysInMonth[]   =  { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 
 //
 // ***********************************************************************
 
-DatetimeType::DatetimeType (const NAString & adtName,
+DatetimeType::DatetimeType (NAMemory *h, const NAString & adtName,
 			    NABoolean allowSQLnull,
 			    rec_datetime_field startField,
 			    rec_datetime_field endField,
-			    UInt32 fractionPrecision,
-			    NAMemory * h)
-     : DatetimeIntervalCommonType (adtName,
+			    UInt32 fractionPrecision)
+     : DatetimeIntervalCommonType (h, adtName,
 				   NA_DATETIME_TYPE,
 				   getStorageSize(startField,
 						  endField,
@@ -98,8 +97,8 @@ DatetimeType::DatetimeType (const NAString & adtName,
 				   startField,
 				   endField,
 				   fractionPrecision,
-				   1, /* no data alignment */
-				   h)
+				   1 /* no data alignment */
+				   )
        , displayFormat_(h)
 {
   assert(validate(startField, endField, fractionPrecision) != SUBTYPE_ILLEGAL);
@@ -234,16 +233,13 @@ void DatetimeType::datetimeToLong(void *bufPtr,
   char *str = (char *)bufPtr;
   short sw;
   Lng32 size;
-
   Int32 start = getStartField();
   Int32 end = getExtendedEndField(getEndField(), getFractionPrecision());
+  ULng32 val = 0;
 
   for (Int32 i = start; i <= end; i++)
     {
-      ULng32 val;
-#pragma nowarn(1506)   // warning elimination
       size = storageLen[i - 1];
-#pragma warn(1506)   // warning elimination
       switch (size) {
       case sizeof(char):
 	val = *str;
@@ -277,16 +273,12 @@ void DatetimeType::datetimeToLong(void *bufPtr,
 
 Lng32 DatetimeType::gregorianDays(const ULng32 values[])
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 year = values[0] - 1;
-#pragma warn(1506)   // warning elimination
 
   Lng32 leapDays = year/4 + year/400 - year/100;
   Lng32 days = year * 365 + leapDays;
 
-#pragma nowarn(1506)   // warning elimination
   Lng32 month = values[1];
-#pragma warn(1506)   // warning elimination
 
   for (Int32 i = 1; i < month; i++)
     days += daysInMonth[i];
@@ -322,9 +314,13 @@ Int64 DatetimeType::julianTimestampValue(const char * value, const short valueLe
     {
       str_cpy_all((char *) &fraction, datetimeOpData, sizeof(fraction));
       if (fractionPrec > 0)
-        // Adjust the fractional seconds part to be the number of microseconds.
-        fraction *= (Lng32)pow(10, (DatetimeType::MAX_FRACTION_PRECISION
-                                        - fractionPrec));
+        {
+          if (fractionPrec > DatetimeType::MAX_FRACTION_PRECISION_USEC)
+            // Adjust the fractional seconds part to be the number of microseconds
+            fraction /= (Lng32)pow(10, (fractionPrec - DatetimeType::MAX_FRACTION_PRECISION_USEC));
+          else 
+            fraction *= (Lng32)pow(10, (DatetimeType::MAX_FRACTION_PRECISION_USEC - fractionPrec));
+        }
     }
   short timestamp[] = {
     year, month, day, hour, minute, second, (short)(fraction / 1000), (short)(fraction % 1000)
@@ -345,14 +341,12 @@ Int64 DatetimeType::julianTimestampValue(const char * value, const short valueLe
 //
 // ***********************************************************************
 
-#pragma nowarn(1506)   // warning elimination
 Lng32 DatetimeType::secondsInTime(const ULng32 values[])
 {
   return (values[0] * 60 * 60 +
           values[1] * 60 +
           values[2]);
 }
-#pragma warn(1506)   // warning elimination
 
 enum DatetimeType::Subtype DatetimeType::validate(rec_datetime_field startField,
 						  rec_datetime_field endField,
@@ -396,11 +390,9 @@ enum DatetimeType::Subtype DatetimeType::validate(rec_datetime_field startField,
          case REC_DATE_DAY:
            return SUBTYPE_ILLEGAL;
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
          case REC_DATE_HOUR:
          case REC_DATE_MINUTE:
            return SUBTYPE_SQLMPDatetime;
-//LCOV_EXCL_STOP : cnu
 
          default:
            assert (FALSE);
@@ -434,15 +426,13 @@ DatetimeType* DatetimeType::constructSubtype(NABoolean allowSQLnull,
 					     NAMemory* h)
 {
   switch (validate(startField, endField, precision)) {
-    case SUBTYPE_SQLDate:       return new (h) SQLDate(allowSQLnull,h);
-    case SUBTYPE_SQLTime:       return new (h) SQLTime(allowSQLnull, precision,h);
-    case SUBTYPE_SQLTimestamp:  return new (h) SQLTimestamp(allowSQLnull, precision, h);
-
-    case SUBTYPE_SQLMPDatetime: return new (h) SQLMPDatetime( startField,
+    case SUBTYPE_SQLDate:       return new (h) SQLDate(h, allowSQLnull);
+    case SUBTYPE_SQLTime:       return new (h) SQLTime(h, allowSQLnull, precision);
+    case SUBTYPE_SQLTimestamp:  return new (h) SQLTimestamp(h, allowSQLnull, precision);
+    case SUBTYPE_SQLMPDatetime: return new (h) SQLMPDatetime(h, startField,
 							      endField,
 							      allowSQLnull,
-							      precision,
-							      h);
+							      precision);
 
     default:		       return NULL;
   }
@@ -598,7 +588,7 @@ const NAType* DatetimeType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                  (datetime2->supportsSQLnull())) ? TRUE : FALSE);
 
         UInt32 fractionPrecision = MAXOF(datetime1->getFractionPrecision(),
-					   datetime2->getFractionPrecision());
+                                         datetime2->getFractionPrecision());
 
         if ((modeSpecial4) &&
             (fractionPrecision == 0) &&
@@ -607,13 +597,21 @@ const NAType* DatetimeType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
           {
             // this is DATE subtraction in modespecial4.
             // Result is numeric.
-            return new(h) SQLInt(); 
+            return new(h) SQLInt(h); 
           }
         else
           {
-            return new(h) SQLInterval(allowNulls, datetime1->getEndField(),
-                                      12, datetime1->getEndField(),
-                                      fractionPrecision,h);
+            Int32 leadingPrecision = IntervalType::computeLeadingPrecision
+              (datetime1->getEndField(), 
+               SQLInterval::MAX_LEADING_PRECISION, 
+               datetime1->getEndField(),
+               fractionPrecision);
+            
+            return new(h) SQLInterval(h, allowNulls, 
+                                      datetime1->getEndField(),
+                                      leadingPrecision, 
+                                      datetime1->getEndField(),
+                                      fractionPrecision);
           }
       }
     break;
@@ -673,7 +671,7 @@ const NAType* DatetimeType::synthesizeTernary(enum NATypeSynthRuleEnum synthRule
     const DatetimeType& op1 = (DatetimeType&) operand1;
     const DatetimeType& op2 = (DatetimeType&) operand2;
     const IntervalType& op3 = (IntervalType&) operand3;
-    return new(h) SQLInterval(op1.supportsSQLnull() || op2.supportsSQLnull(),
+    return new(h) SQLInterval(h, op1.supportsSQLnull() || op2.supportsSQLnull(),
 			      op3.getStartField(),
 			      op3.getLeadingPrecision(),
 			      op3.getEndField(),
@@ -700,10 +698,8 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
   Int32 endIndex   = getEndField()   - REC_DATE_YEAR;
   Int32 startOff, endOff, i = 0;
   UInt32 fracPrec = 0;
-#pragma nowarn(1506)   // warning elimination
   for (startOff = 0;        i < startIndex; i++) startOff = startOff + maxFieldLen[i] + 1;
   for (endOff   = startOff; i <= endIndex;  i++) endOff   = endOff + maxFieldLen[i] + 1;
-#pragma warn(1506)   // warning elimination
   if (getFractionPrecision())
   {
    endOff += getFractionPrecision() + 1;
@@ -712,20 +708,16 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
   endOff--;	// was at offset of next field, now at offset of the delimiter
   i = endOff - startOff;		// length (endOff is one past last char)
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
   if (getSubtype() == SUBTYPE_SQLMPDatetime)
   {
    fracPrec = getFractionPrecision();
    if (getStartField() == REC_DATE_FRACTION_MP)
    {
-#pragma nowarn(1506)   // warning elimination
      Int32 adjust = (6-fracPrec) + 2; // move past "00." (seconds + decimal pt.)
-#pragma warn(1506)   // warning elimination
      startOff += adjust;
      i -= adjust;
    }
   }
-//LCOV_EXCL_STOP : cnu
 
   char valueString[valueStringLen];
   str_cpy_all(valueString, &inValueString[startOff], i /*length*/);
@@ -743,13 +735,10 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
       **stringLiteral += "\'";
       **stringLiteral += valueString;
       **stringLiteral += "\'";
-
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
       if (getSubtype() == SUBTYPE_SQLMPDatetime)
        {
         **stringLiteral += getDatetimeQualifierAsString(FALSE);
        }
-//LCOV_EXCL_STOP : cnu
     }
 } // DatetimeType::getRepresentableValue
 
@@ -1303,8 +1292,6 @@ double SQLTimestamp::getMaxValue()  const
 }
 
 
-
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
 double SQLMPDatetime::encode(void *bufPtr) const
 {
   char * valPtr = (char *)bufPtr;
@@ -1325,7 +1312,6 @@ double SQLMPDatetime::encode(void *bufPtr) const
   val += (double)w[6] / pow(10, getFractionPrecision());
   return val;
 }
-//LCOV_EXCL_STOP : cnu
 
 
 // ***********************************************************************
@@ -1342,29 +1328,28 @@ NABoolean SQLMPDatetime::isSupportedType(void) const
     return TRUE;
  }
 
+
 // ***********************************************************************
 //
 //  SQLMPDatetime::synthesizeType
 //
 // ***********************************************************************
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
 const NAType*SQLMPDatetime::synthesizeType(enum NATypeSynthRuleEnum synthRule,
-					   const NAType& operand1,
-					   const NAType& operand2,
-					   NAMemory* h,
-					   UInt32 *flags) const
+                                          const NAType& operand1,
+                                          const NAType& operand2,
+                                          NAMemory* h,
+                                          UInt32 *flags) const
 {
   if (!operand1.isSupportedType() || !operand2.isSupportedType())
     return NULL;
   else
     return DatetimeType::synthesizeType(synthRule,
-					operand1,
-					operand2,
-					h,
-					flags);
+                                       operand1,
+                                       operand2,
+                                       h,
+                                       flags);
 }
-//LCOV_EXCL_STOP : cnu
 
 
 // ***********************************************************************
@@ -1380,6 +1365,7 @@ NABoolean SQLMPDatetime::isCompatible(const NAType& other, UInt32 * flags) const
   else
     return DatetimeType::isCompatible(other, flags);
  }
+
 
 // ***********************************************************************
 //
@@ -1409,7 +1395,7 @@ DatetimeValue::DatetimeValue
 
   ComDiagsArea *diags = NULL;
 
-  Lng32 trueFP = 6;
+  Lng32 trueFP = DatetimeType::MAX_FRACTION_PRECISION;
   ULng32 flags = 0;
   flags |= CONV_NO_HADOOP_DATE_FIX;
   short rc = 
@@ -1425,7 +1411,7 @@ DatetimeValue::DatetimeValue
   if (endField == REC_DATE_SECOND)
     {
       Lng32 fp = trueFP;
-      for (; fp < 6; fp++)
+      for (; fp < DatetimeType::MAX_FRACTION_PRECISION; fp++)
         {
           if (startField == REC_DATE_YEAR)
             *(Lng32*)&dstValue[7] /= 10;
@@ -1875,7 +1861,7 @@ NAString DatetimeValue::getValueAsString(const DatetimeType& dt) const
 
   char cbuf[DatetimeType::MAX_FRACTION_PRECISION + 1];	// +1 for sprintf '\0'
   Int32  clen;
-  ULng32  ulbuf;
+  ULng32  ulbuf = 0;
   unsigned short usbuf;
   unsigned char  ucbuf;
   const unsigned char *value = getValue();
@@ -1905,37 +1891,17 @@ NAString DatetimeValue::getValueAsString(const DatetimeType& dt) const
     }
     value += storageLen[index];
     if (index != FRACTION)
-#pragma nowarn(1506)   // warning elimination
       clen = maxFieldLen[index];
-#pragma warn(1506)  // warning elimination
     else
-#pragma nowarn(1506)   // warning elimination
       clen = dt.getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     if (! result.isNull()) {
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       sprintf(cbuf, "%c", precedingPunc[index]);
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       result += cbuf;
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     }
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(203)   // warning elimination
     sprintf(cbuf, "%0*u", clen, ulbuf);
-#pragma warn(203)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     result += cbuf;
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   }
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   return result;
-#pragma warn(1506)  // warning elimination
 } // DatetimeValue::getValueAsString
 
 void DatetimeValue::print(const DatetimeType& dt,

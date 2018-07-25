@@ -38,15 +38,6 @@
 #include "Platform.h"
 #include <string.h>
 
-// -----------------------------------------------------------------------
-// The purpose of this file is to define C RUNTIME stuff found in the
-// system library if NA_NO_C_RUNTIME is defined. Otherwise, the regular
-// headers are included.
-// -----------------------------------------------------------------------
-
-// -----------------------------------------------------------------------
-// NT or NSK with C runtime available, use the standard header files
-// -----------------------------------------------------------------------
 #include <stdlib.h>
 #include <memory.h>
 

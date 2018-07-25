@@ -46,10 +46,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#pragma warning (disable : 4005)   //warning elimination
 // Use a reserved UCS-2 character (but not the last one) as EOF substitute
 #define WEOF (NAWchar)(0xFFEF)
-#pragma warning (default : 4005)   //warning elimination
 #include  "arkcmp_parser_defs.h"
 #undef    SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
 #define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
@@ -120,6 +118,7 @@ class IntegerList;
 #include "SqlParserAux.h"
 #include "StmtDDLCreateMV.h"
 #include "ElemDDLHbaseOptions.h"
+#include "StmtDDLCommentOn.h"
 
 // Need the definition of the Parsers Union.  If this is not defined,
 // sqlparser.h will only define the Tokens.
@@ -192,9 +191,7 @@ void yyULexer::yyULexer_ctor(const NAWchar *str, Int32 charCount)
   /* yy_ch_buf has to be 2 characters longer than the size given because
    * we need to put in 2 end-of-buffer characters.
    */
-#pragma nowarn(1506)   // warning elimination 
   Int32 buf_size = charCount * BYTES_PER_NAWCHAR;
-#pragma warn(1506)  // warning elimination 
   b->yy_ch_buf = b->yy_buf_pos = yy_c_buf_p_ = new (PARSERHEAP()) NAWchar[charCount+2];
   if ( ! b->yy_ch_buf )
     // UR2-CNTNSK
@@ -572,13 +569,15 @@ Int32 yyULexer::setStringval(Int32 tokCod, const char *dbgstr, YYSTYPE *lvalp)
     (YYText(),YYLeng(),targetMBCS,PARSERHEAP());
 
   if (
-      (tokCod == DELIMITED_IDENTIFIER || tokCod == IDENTIFIER)
+      (tokCod == DELIMITED_IDENTIFIER || tokCod == IDENTIFIER ||
+       tokCod == BACKQUOTED_IDENTIFIER)
       && targetMBCS != CharInfo::ISO88591
       )
   {
     NAString* tempstr = lvalp->stringval; // targetMBCS == ParScannedInputCharset
     if (tempstr == NULL)
       return invalidStrLitNonTranslatableChars(lvalp);
+
     Int32 TSLen = (Int32)tempstr->length();
     Int32 YYLen = (Int32)YYLeng();
     if(TSLen != YYLen){  // need offset of ORIGINAL string
@@ -1394,9 +1393,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
           }     // switch (keyWordEntry1->getTokenCode())
           // control should not reach here. but if it does, we may be
           // seeing an identifier beginning with letter [Cc]
-#pragma nowarn(203)   // warning elimination 
           return anIdentifier(lvalp);
-#pragma warn(203)  // warning elimination 
           break;
         case L'G': case L'g':
           // identifier prefix specified by [Gg]
@@ -2032,6 +2029,27 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                       //
                       return setStringval(DELIMITED_IDENTIFIER, 
                                           DBGMSG("Delimited identifier %s\n"),
+                                          lvalp);
+                  }
+            }
+          return prematureEOF(lvalp);
+        case L'`':
+          // "delimited identifier" enclosed within backquotes (`)
+          //
+          advance();
+          while ((cc=peekAdvance()) != WEOF)
+            {
+              if (cc == L'`')
+                if ((cc= peekChar()) == L'`')
+                  advance();
+                else
+                  {
+                    doBeforeAction();
+                      // In Trafodion text, double quoted strings are
+                      // delimited identifiers.
+                      //
+                      return setStringval(BACKQUOTED_IDENTIFIER, 
+                                          DBGMSG("Backquoted identifier %s\n"),
                                           lvalp);
                   }
             }
@@ -2916,28 +2934,22 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                           // retract to end of kwd1.
                           retractToMark(end1);
                           return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
-                        case TOK_BROWSE:
 			case TOK_MAXRUNTIME:
                         case TOK_REPEATABLE:
                         case TOK_SERIALIZABLE:
-                        case TOK_STABLE:
                         case TOK_SKIP:				// QSTUFF
                           // un-null-terminate 1st kwd
                           *end1 = holdChar1;
                           doBeforeAction();
                           // FOR <kwd2> is a compound kwd
                           return aCompoundKeyword
-                            (keyWordEntry2->getTokenCode() == TOK_BROWSE
-                             ? TOK_FOR_BROWSE 
-                             : (keyWordEntry2->getTokenCode() == TOK_REPEATABLE
-                                ? TOK_FOR_REPEATABLE
-                                : (keyWordEntry2->getTokenCode() == TOK_STABLE
-                                   ? TOK_FOR_STABLE
-                                   : (keyWordEntry2->getTokenCode() == TOK_SKIP
-                                      ? TOK_FOR_SKIP             // QSTUFF
-                                      : (keyWordEntry2->getTokenCode() == TOK_SERIALIZABLE
-					 ? TOK_FOR_SERIALIZABLE : TOK_FOR_MAXRUNTIME)))), lvalp);
-
+                            (keyWordEntry2->getTokenCode() == TOK_REPEATABLE
+                             ? TOK_FOR_REPEATABLE
+                             : (keyWordEntry2->getTokenCode() == TOK_SKIP
+                                ? TOK_FOR_SKIP             // QSTUFF
+                                : (keyWordEntry2->getTokenCode() == TOK_SERIALIZABLE
+                                   ? TOK_FOR_SERIALIZABLE : TOK_FOR_MAXRUNTIME)), lvalp);
+                      
                         case TOK_READ:
                           // un-null-terminate 1st kwd
                           *end1 = holdChar1;
@@ -2980,13 +2992,6 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                             return aCompoundKeyword(TOK_FOR_READ_ONLY, lvalp);
                           }
 			}
-                      break;
-                    case TOK_BROWSE:
-                      return eitherCompoundOrSimpleKeyword
-                        (keyWordEntry2->getTokenCode() == TOK_ACCESS,
-                         TOK_BROWSE_ACCESS,
-                         keyWordEntry1->getTokenCode(),
-                         end1, holdChar1, lvalp);
                       break;
                     case TOK_INITIALIZE:
 		      if (keyWordEntry2->getTokenCode() == TOK_MAINTAIN)
@@ -3111,13 +3116,6 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                          keyWordEntry1->getTokenCode(),
                          end1, holdChar1, lvalp);
                       break;
-                    case TOK_STABLE:
-                      return eitherCompoundOrSimpleKeyword
-                        (keyWordEntry2->getTokenCode() == TOK_ACCESS,
-                         TOK_STABLE_ACCESS,
-                         keyWordEntry1->getTokenCode(),
-                         end1, holdChar1, lvalp);
-                      break;
                     case TOK_SKIP:				// QSTUFF
                       if (keyWordEntry2->getTokenCode() == TOK_CONFLICT){
 			// un-null-terminate 1st kwd
@@ -3232,9 +3230,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
         return setTokval(0, DBGMSG("The end symbol %s\n"), lvalp);
       }
     }
-#pragma nowarn(203)   // warning elimination 
   return 0;
-#pragma warn(203)  // warning elimination 
 }
 
 

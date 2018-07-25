@@ -39,7 +39,6 @@
 #include "RelMisc.h"
 
 // MVLOG command is not supported
-// LCOV_EXCL_START
 
 class MvLogInternalNames;
 
@@ -167,9 +166,7 @@ private:
 private:
   // Copy Ctor and = operator are not implemented.
   MvLog(const MvLog& other);
-#pragma nowarn(1026)   // warning elimination 
   MvLog& operator=(const MvLog& other);
-#pragma warn(1026)  // warning elimination 
 
   const QualifiedName	*tableName_;
   const ItemExpr	*pColumnNamesItem_;
@@ -248,6 +245,5 @@ private:
   static const char simpleRangeTuple_[];
 };  // class MvLogInternalNames
 
-// LCOV_EXCL_STOP
 
 #endif // MVLOG_H

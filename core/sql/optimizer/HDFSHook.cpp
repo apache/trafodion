@@ -29,6 +29,7 @@
 
 // for DNS name resolution
 #include <netdb.h>
+#include "HdfsClient_JNI.h"
 #include "Globals.h"
 #include "Context.h"
 // Initialize static variables
@@ -894,7 +895,13 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
       // put back fully qualified URI
       tableDir = hsd->location_;
 
-      // visit the directory
+      // get the fine-resolution timestamp before visiting
+      // the tree, to avoid losing any updates while this
+      // method is executing
+      computeModificationTSmsec();
+
+      if (diags_.isSuccess())
+        // visit the directory
       processDirectory(tableDir, hsd->buckets_, 
                        hsd->isTrulyText(), 
                        hsd->getRecordTerminator());
@@ -1148,6 +1155,32 @@ void HHDFSTableStats::disconnectHDFS()
   // is dropped or the thread exits.
 }
 
+void HHDFSTableStats::computeModificationTSmsec()
+{
+  if (modificationTSInMillisec_ <= 0)
+    {
+      HDFS_Client_RetCode rc;
+
+      // get a millisecond-resolution timestamp via JNI
+      rc = HdfsClient::getHiveTableMaxModificationTs(
+               modificationTSInMillisec_,
+               tableDir_.data(),
+               numOfPartCols_);
+      // check for errors and timestamp mismatches
+      if (rc != HDFS_CLIENT_OK || modificationTSInMillisec_ <= 0)
+        {
+          NAString errMsg;
+
+          errMsg.format("Error %d when reading msec timestamp for HDFS URL %s",
+                        rc,
+                        tableDir_.data());
+          diags_.recordError(errMsg, "HHDFSTableStats::computeModificationTSmsec");
+          modificationTSInMillisec_ = -1;
+        }
+    }
+
+  return;
+}
 
 OsimHHDFSStatsBase* HHDFSTableStats::osimSnapShot(NAMemory * heap)
 {

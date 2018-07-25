@@ -83,7 +83,6 @@ NABoolean XAWAITIOX_MINUS_ONE = TRUE;
 // Methods for class IpcNodeName
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 IpcNodeName::IpcNodeName(IpcNetworkDomain dom,
 			 const char *name)
 {
@@ -125,7 +124,6 @@ IpcNodeName & IpcNodeName::operator = (const IpcNodeName &other)
 
   return *this;
 }
-// LCOV_EXCL_STOP
 
 NABoolean IpcNodeName::operator == (const IpcNodeName &other)
 {
@@ -160,13 +158,8 @@ SockIPAddress IpcNodeName::getIPAddress() const
 
 NABoolean GuaProcessHandle::operator == (const GuaProcessHandle &other) const
 {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
-  // on NSK, do the right thing and call a system procedure to compare
+  // call a system procedure to compare
   return compare(other);
-#else
-  // on other platforms, a byte compare will have to suffice
-  return (str_cmp((char *) phandle_, (char *) other.phandle_, 20) == 0);
-#endif
 }
 
 void GuaProcessHandle::dumpAndStop(bool doDump, bool doStop) const
@@ -177,12 +170,7 @@ void GuaProcessHandle::dumpAndStop(bool doDump, bool doStop) const
   if (doDump)
     msg_mon_dump_process_name(NULL, phandle.getPhandleString(), coreFile);
   if (doStop)
-#ifdef SQ_PHANDLE_VERIFIER
     msg_mon_stop_process_name(phandle.getPhandleString()); 
-#else
-    msg_mon_stop_process(phandle.getPhandleString(), 
-                         phandle.getCpu(), phandle.getPin());
-#endif
 }
 
 // -----------------------------------------------------------------------
@@ -203,7 +191,6 @@ IpcProcessId::IpcProcessId(
   phandle_ = phandle;
 }
 
-// LCOV_EXCL_START
 IpcProcessId::IpcProcessId(
      const SockIPAddress &ipAddr,
      SockPortNumber port) : IpcMessageObj(IPC_PROCESS_ID,
@@ -214,7 +201,6 @@ IpcProcessId::IpcProcessId(
   pid_.ipAddress_ = ipAddr.getRawAddress();
   pid_.listnerPort_ = port;
 }
-// LCOV_EXCL_STOP
 
 IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
      IpcMessageObj(IPC_PROCESS_ID,
@@ -222,11 +208,9 @@ IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
 {
   domain_ = IPC_DOM_INVALID;
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
   // On NSK, try to interpret the string as a PHANDLE first
   if (phandle_.fromAscii(asciiRepresentation))
     domain_ = IPC_DOM_GUA_PHANDLE;
-#endif
 
   if (domain_ == IPC_DOM_INVALID)
     {
@@ -237,7 +221,6 @@ IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
 	colonPos++;
 
       if (asciiRepresentation[colonPos] == ':')
-// LCOV_EXCL_START
 	{
 	  char asciiIpAddr[300];
 	  SockIPAddress ipAddr;
@@ -262,7 +245,6 @@ IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
 	      domain_ = IPC_DOM_INTERNET;
 	    }
 	}
-// LCOV_EXCL_STOP
     }
 }
 
@@ -275,7 +257,7 @@ IpcProcessId::IpcProcessId(
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     phandle_ = other.phandle_;
   else if (domain_ == IPC_DOM_INTERNET)
-    pid_ = other.pid_; // LCOV_EXCL_LINE
+    pid_ = other.pid_;
 }
 
 IpcProcessId & IpcProcessId::operator = (const IpcProcessId &other)
@@ -285,7 +267,7 @@ IpcProcessId & IpcProcessId::operator = (const IpcProcessId &other)
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     phandle_ = other.phandle_;
   else if (domain_ == IPC_DOM_INTERNET)
-    pid_ = other.pid_; // LCOV_EXCL_LINE
+    pid_ = other.pid_;
 
   return *this;
 }
@@ -312,7 +294,7 @@ NABoolean IpcProcessId::match(const IpcNodeName &name,
     {
       // IP addresses don't tell the CPU, just compare a normalized
       // form of the IP addresses
-      return (getNodeName() == name); // LCOV_EXCL_LINE
+      return (getNodeName() == name);
     }
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
@@ -328,7 +310,6 @@ NABoolean IpcProcessId::match(const IpcNodeName &name,
     return FALSE;
 }
 
-// LCOV_EXCL_START
 SockIPAddress IpcProcessId::getIPAddress() const
 {
   assert(domain_ == IPC_DOM_INTERNET);
@@ -342,7 +323,6 @@ SockPortNumber IpcProcessId::getPortNumber() const
 
   return pid_.listnerPort_;
 }
-// LCOV_EXCL_STOP
 
 const GuaProcessHandle & IpcProcessId::getPhandle() const
 {
@@ -356,14 +336,12 @@ IpcNodeName IpcProcessId::getNodeName() const
   // getting to the node name is somewhat convoluted, sorry about that
   if (domain_ == IPC_DOM_INTERNET)
     {
-      return IpcNodeName(SockIPAddress(pid_.ipAddress_)); // LCOV_EXCL_LINE
+      return IpcNodeName(SockIPAddress(pid_.ipAddress_));
     }
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       return IpcNodeName(phandle_);
     }
-#endif
   else 
     ABORT("Can't get node name of an invalid process id");
 
@@ -373,20 +351,16 @@ IpcNodeName IpcProcessId::getNodeName() const
 //    Perhaps we should set pid_.ipAddress_ =  some meaningless ip address?;
 	  
       return IpcNodeName(SockIPAddress(pid_.ipAddress_));
-#pragma nowarn(1252)   // warning elimination 
 }
-#pragma warn(1252)  // warning elimination 
 
 IpcCpuNum IpcProcessId::getCpuNum() const
 {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       // ask Guardian to get the CPU number out of the phandle
       return getCpuNumFromPhandle();
     }
   else
-#endif
     {
       // for the internet we don't have control over the assignment of CPU
       // numbers, return a don't care value
@@ -400,16 +374,13 @@ Int32 IpcProcessId::toAscii(char *outBuf, Int32 outBufLen) const
   char outb[300] = "";	  // Initialize in case this is called
   Int32 outLen = 0;
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       outLen = phandle_.toAscii(outb,300);
     }
-#endif
 
   if (domain_ == IPC_DOM_INTERNET)
     {
-// LCOV_EXCL_START
       sprintf(outb,"%d.%d.%d.%d:%d",
 	      pid_.ipAddress_.ipAddress_[0],
 	      pid_.ipAddress_.ipAddress_[1],
@@ -418,7 +389,6 @@ Int32 IpcProcessId::toAscii(char *outBuf, Int32 outBufLen) const
 	      pid_.listnerPort_);
       outLen = str_len(outb);
     }
-// LCOV_EXCL_STOP
 
   // copy the result and terminate it with a NUL character
   str_cpy_all(outBuf,outb,MINOF(outLen,outBufLen-1));
@@ -470,12 +440,9 @@ IpcConnection * IpcProcessId::createConnectionToServer(
 
   if (domain_ == IPC_DOM_INTERNET)
     {
-// LCOV_EXCL_START
       usesTransactions = usesTransactions; // make compiler happy
       return new(env->getHeap()) SockConnection(env,*this,FALSE);
-// LCOV_EXCL_STOP
     }
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
 	return new(env->getHeap()) GuaConnectionToServer(env,
@@ -489,7 +456,6 @@ IpcConnection * IpcProcessId::createConnectionToServer(
                                               dataConnectionToEsp
                                               );
     }
-#endif //defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG)
   else
     {
       return NULL;
@@ -500,20 +466,16 @@ IpcMessageObjSize IpcProcessId::packedLength()
 {
   // we pack the domain type and then the phandle or socket process id
   IpcMessageObjSize result = baseClassPackedLength() + sizeof(domain_);
-#ifdef NA_64BIT
   result += sizeof(spare_);
-#endif
 
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       result += sizeof(phandle_);
     }
-// LCOV_EXCL_START
   else if (domain_ == IPC_DOM_INTERNET)
     {
       result += sizeof(pid_);
     }
-// LCOV_EXCL_STOP
 
   return result;
 }
@@ -525,10 +487,8 @@ IpcMessageObjSize IpcProcessId::packObjIntoMessage(IpcMessageBufferPtr buffer)
   str_cpy_all(buffer,(const char *) &domain_, sizeof(domain_));
   result += sizeof(domain_);
   buffer += sizeof(domain_);
-#ifdef NA_64BIT
   result += sizeof(spare_);
   buffer += sizeof(spare_);
-#endif
 
   // ---------------------------------------------------------------------
   // NOTE: this code assumes that the OS dependent information (phandle
@@ -536,7 +496,6 @@ IpcMessageObjSize IpcProcessId::packObjIntoMessage(IpcMessageBufferPtr buffer)
   // ---------------------------------------------------------------------
 
   // pack the object of the right domain
-// LCOV_EXCL_START
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       str_cpy_all(buffer,(const char *) &phandle_,sizeof(phandle_));
@@ -547,7 +506,6 @@ IpcMessageObjSize IpcProcessId::packObjIntoMessage(IpcMessageBufferPtr buffer)
       str_cpy_all(buffer,(const char *) &pid_,sizeof(pid_));
       result += sizeof(pid_);
     }
-// LCOV_EXCL_STOP
   
   return result;
 }
@@ -566,9 +524,7 @@ void IpcProcessId::unpackObj(IpcMessageObjType objType,
 
   str_cpy_all((char *) &domain_, buffer, sizeof(domain_));
   buffer += sizeof(domain_);
-#ifdef NA_64BIT
   buffer += sizeof(spare_);
-#endif
 
   // check the supplied length
   assert(objSize == packedLength());
@@ -578,11 +534,9 @@ void IpcProcessId::unpackObj(IpcMessageObjType objType,
       str_cpy_all((char *) &phandle_, buffer, sizeof(phandle_));
     }
   else if (domain_ == IPC_DOM_INTERNET)
-// LCOV_EXCL_START
     {
       str_cpy_all((char *) &pid_, buffer, sizeof(pid_));
     }
-// LCOV_EXCL_STOP
 }
 
 // -----------------------------------------------------------------------
@@ -642,7 +596,6 @@ void IpcServer::logEspRelease(const char * filename, int lineNum,
       cc->getEnvironment() &&
       cc->getEnvironment()->getLogReleaseEsp())
   {
-    // LCOV_EXCL_START
     /*
     Coverage notes: to test this code in a dev regression requires
     changing $TRAF_HOME/etc/ms.env.  However, it was tested in
@@ -715,7 +668,6 @@ void IpcServer::logEspRelease(const char * filename, int lineNum,
       state);
     
     SQLMXLoggingArea::logExecRtInfo(filename, lineNum, logMsg, 0);
-    // LCOV_EXCL_STOP
   }
 }
 
@@ -868,12 +820,10 @@ NABoolean IpcConnection::moreWaitsAllowed()
   return TRUE;
 }
 
-// LCOV_EXCL_START
 SockConnection *IpcConnection::castToSockConnection()
 {
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 GuaConnectionToServer *IpcConnection::castToGuaConnectionToServer()
 {
@@ -1385,9 +1335,7 @@ Int32 IpcAllConnections::printConnTrace(Int32 lineno, char *buf)
           GuaProcessHandle *otherEnd = (GuaProcessHandle *)&(c->getOtherEnd().getPhandle().phandle_);
           if (otherEnd)
             otherEnd->decompose(cpu, pin, node
-#ifdef SQ_PHANDLE_VERIFIER
                                , seqNum
-#endif
                                );
         }
       rv = sprintf(buf, "%.4d  %8p  %.4s  %.3d,%.8d %" PRId64 " %s\n",
@@ -1665,7 +1613,6 @@ WaitReturnStatus IpcSetOfConnections::waitOnSet(IpcTimeout timeout,
                         {
                           if (env->getLogEspIdleTimeout())
                           {
-                            // LCOV_EXCL_START
                             /*
                             Coverage notes: to test this code in a dev 
                             regression requires changing 
@@ -1683,7 +1630,6 @@ WaitReturnStatus IpcSetOfConnections::waitOnSet(IpcTimeout timeout,
                               myName);
                             SQLMXLoggingArea::logExecRtInfo(__FILE__, 
                                                   __LINE__, buf, 0);
-                            // LCOV_EXCL_STOP
                           }
 			  // stop esp if it has become idle and timed out
 			  NAExit(0);
@@ -2078,12 +2024,10 @@ void IpcSetOfConnections::checkLocalIntegrity(void)
 
 IpcControlConnection::~IpcControlConnection() {}
 
-// LCOV_EXCL_START
 SockControlConnection * IpcControlConnection::castToSockControlConnection()
 {
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 GuaReceiveControlConnection *
 IpcControlConnection::castToGuaReceiveControlConnection()
@@ -2126,11 +2070,7 @@ InternalMsgHdrInfoStruct::InternalMsgHdrInfoStruct(
     swapTwoBytes(sockReplyTag_);
     swapFourBytes(eyeCatcher_);
     swapFourBytes(seqNum_);
-#ifdef NA_64BIT
     assert(0); // Need swapEightBytes() to swap msgStreamId_!
-#else
-    swapFourBytes(msgStreamId_);
-#endif // NA_64BIT
     setEndianness(IpcMyEndianness);
     }
   }
@@ -2699,7 +2639,7 @@ IpcMessageStream & IpcMessageStream::operator << (IpcMessageObj & toAppend)
       bufObj->setMyVPtr(NULL);
       bufObj->s_.refCount_ = 1;
       bufObj->s_.next_ = NULL;
-      tail_->s_.next_ = (IpcMessageObj *) startOffset;
+      tail_->s_.next_ = (IpcMessageObj *) ((long)startOffset);
       tail_ = bufObj;
     }
   return *this;
@@ -4091,9 +4031,7 @@ void IpcBufferedMsgStream::cleanupBuffers()
   }
   if (inUseBufList_.entries() < (CollIndex) inUseBufferLimit_)
   { // optimize garbage collection limit until inuse limit reached
-#pragma nowarn(1506)   // warning elimination 
     garbageCollectLimit_ = inUseBufList_.entries(); 
-#pragma warn(1506)  // warning elimination 
   }
   
 }
@@ -4627,44 +4565,21 @@ IpcServerClass::IpcServerClass(IpcEnvironment *env,
   }
   if (allocationMethod_ == IPC_ALLOC_DONT_CARE)
     {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
-	  // NA_WINNT is set and NA_GUARDIAN_IPC is set
-	  // The standard method on NT is to create a Guardian process
-	  // in order to run in an NT only or simulated environment we can set an environment
-	  // variable to override that mechanism.
-	  if (getenv("SQL_NO_NSK_LITE") == NULL)
-	  {
-	   allocationMethod_ = IPC_LAUNCH_GUARDIAN_PROCESS;
-	  }
-	  else 
-	  {
-	   allocationMethod_ = IPC_LAUNCH_NT_PROCESS;
+      // NA_WINNT is set and NA_GUARDIAN_IPC is set
+      // The standard method on NT is to create a Guardian process
+      // in order to run in an NT only or simulated environment we can set an environment
+      // variable to override that mechanism.
+      if (getenv("SQL_NO_NSK_LITE") == NULL)
+        {
+          allocationMethod_ = IPC_LAUNCH_GUARDIAN_PROCESS;
+        }
+      else 
+        {
+          allocationMethod_ = IPC_LAUNCH_NT_PROCESS;
           time_t tp;
           time(&tp);
 	  nextPort_ = IPC_SQLESP_PORTNUMBER + tp % 10000; // arbitrary
-	  };
-
-#else // NA_GUARDIAN_IPC
-
-	  // NA_WINNT is set and NA_GUARDIAN_IPC is NOT set
-	  // The standard method on NT is to create an NT process
-	  // We use socket based communication but launch the process ourself rather
-	  // than using INETD.
-	  // Eventually we will use nsk lite to create new processes and to
-	  // communicate via the message system.
-	  // in order to run in an NT only or simulated environment we can set an environment
-	  // variable to override that mechanism.
-	  if (getenv("SQL_NO_NSK_LITE") == NULL)
-	  {allocationMethod_ = IPC_LAUNCH_GUARDIAN_PROCESS;
-	  }
-	  else 
-	  {
-	  allocationMethod_ = IPC_LAUNCH_NT_PROCESS;
-          time_t tp;
-          time(&tp);
-	  nextPort_ = IPC_SQLESP_PORTNUMBER + tp % 10000; // arbitrary
-	  };
-#endif // NA_GUARDIAN_IPC
+        };
     }
 }
 
@@ -4909,7 +4824,6 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
   switch (allocationMethod_)
     {
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
     case IPC_LAUNCH_GUARDIAN_PROCESS:
     case IPC_SPAWN_OSS_PROCESS:
     case IPC_USE_PROCESS:
@@ -4948,7 +4862,6 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
           }
       }
       break;
-#endif
 
     case IPC_INETD:
       {
@@ -5148,19 +5061,19 @@ short getDefineShort( char * defineName )
 
   const char *lre = getenv("LOG_ESP_RELEASE");
   if (lre && *lre == '1')
-    logReleaseEsp_ = true;        // LCOV_EXCL_LINE
+    logReleaseEsp_ = true;
 
   const char *liet = getenv("LOG_IDLE_ESP_TIMEOUT");
   if (liet && *liet == '1')
-    logEspIdleTimeout_ = true;    // LCOV_EXCL_LINE
+    logEspIdleTimeout_ = true;
 
   const char *legcm = getenv("LOG_ESP_GOT_CLOSE_MSG");
   if (legcm && *legcm == '1')
-    logEspGotCloseMsg_ = true;    // LCOV_EXCL_LINE
+    logEspGotCloseMsg_ = true;
 
   const char *etis = getenv("ESP_TIME_IPCCONNECTION_STATES");
   if (etis && *etis == '1')
-    logTimeIpcConnectionState_ = true;    // LCOV_EXCL_LINE
+    logTimeIpcConnectionState_ = true;
   
   const char *smEnv = getenv("SQ_SEAMONSTER");
   if (smEnv && *smEnv == '1')
@@ -5357,12 +5270,8 @@ IpcProcessId IpcEnvironment::getMyOwnProcessId(IpcNetworkDomain dom)
     }
   else if (dom == IPC_DOM_GUA_PHANDLE)
     {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
       // for Guardian, just get the phandle from the operating system
       return IpcProcessId(MyGuaProcessHandle());
-#else
-      ABORT("Can't get Guardian phandle on this platform");
-#endif
     }
   else
     {
@@ -5814,9 +5723,7 @@ void IpcAllConnections::printConnTraceLine(char *buffer, int *rsp_len, IpcConnec
         GuaProcessHandle *otherEnd = (GuaProcessHandle *)&(conn->getOtherEnd().getPhandle().phandle_);
         if (otherEnd)
           otherEnd->decompose(cpu, pin, node
-#ifdef SQ_PHANDLE_VERIFIER
                              , seqNum
-#endif
                              );
       }
 

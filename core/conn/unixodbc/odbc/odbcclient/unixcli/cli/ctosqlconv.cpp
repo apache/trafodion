@@ -2308,7 +2308,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 								pSQLTimestamp->hour,pSQLTimestamp->minute,pSQLTimestamp->second,
 								cTmpFraction);
 				else
-					DataLen = sprintf(cTmpBuf,"%02d",
+					DataLen = sprintf(cTmpBuf,"%02d:%02d:%02d",
 								pSQLTimestamp->hour,pSQLTimestamp->minute,pSQLTimestamp->second);
 				break;
 			case SQLDTCODE_YEAR_TO_HOUR:
@@ -2862,7 +2862,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				if (intervalTmp->interval_sign == SQL_TRUE)
 					sprintf(cTmpBuf,"-%ld",intervalTmp->intval.day_second.hour);
 				else
-					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
+					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour);
 				break;
 			case SQL_INTERVAL_MINUTE:
 				if (intervalTmp->interval_sign == SQL_TRUE)
@@ -2924,7 +2924,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				if (intervalTmp->interval_sign == SQL_TRUE)
 					sprintf(cTmpBuf,"-%ld",intervalTmp->intval.day_second.hour);
 				else
-					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
+					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour);
 				break;
 			case SQL_INTERVAL_MINUTE:
 				if (intervalTmp->interval_sign == SQL_TRUE)
@@ -3511,6 +3511,13 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			if (OutLen < DataLen)
 				return IDS_22_001;
 			memcpy(outDataPtr, DataPtr, DataLen);
+            if (Offset != 0)    //When Datalen = 0, length was not stored in buffer
+            {
+                if(targetPrecision > SHRT_MAX)
+                    *(unsigned int *)targetDataPtr = DataLen;
+                else
+                    *(unsigned short *)targetDataPtr = DataLen;
+            }
 		}
 		if (byteSwap)
 		{
@@ -4286,7 +4293,7 @@ unsigned long ODBC::CheckIntervalOverflow(char *intervalValue, SWORD ODBCDataTyp
 	char	*token;
 	short	i = 0;
 	short   j = 0;
-	char	in_value[128];
+	char	in_value[128 + 1];
 	char	delimiters[] = " :.-";
 	char	sep[5]={0,0,0,0,0};
 	SQLINTEGER leadingPrecision;

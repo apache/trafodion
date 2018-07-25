@@ -448,6 +448,8 @@ public:
   const SET(IndexDesc *)& deriveIndexOnlyIndexDesc();
   const SET(IndexDesc *)& deriveIndexJoinIndexDesc();
   const SET(IndexDesc *)& getIndexJoinIndexDesc(){ return indexJoinScans_; }
+  inline void setComputedPredicates(const ValueIdSet &ccPreds)
+                                             { generatedCCPreds_ = ccPreds; }
 
   const LIST(ScanIndexInfo *) &getIndexInfo()
                                            { return possibleIndexJoins_; }
@@ -660,9 +662,6 @@ protected:
   CostScalar computeCpuResourceForIndexJoin(CANodeId tableId, IndexDesc* iDesc,
                                             const ValueIdList& ikeys,
                                             CostScalar& rowsToScan);
-
-  inline void setComputedPredicates(const ValueIdSet &ccPreds)
-                                             { generatedCCPreds_ = ccPreds; }
 
 private:
 
@@ -883,7 +882,8 @@ public:
                              char* &hdfsHostName,
                              Int32 &hdfsPort,
                              NABoolean &doMultiCursor,
-                             NABoolean &doSplitFileOpt);
+                             NABoolean &doSplitFileOpt,
+                             NABoolean &isHdfsCompressed);
   static short genForOrc(Generator * generator,
                          const HHDFSTableStats* hTabStats,
                          const PartitioningFunction * mypart,
@@ -1607,7 +1607,6 @@ public:
 // The Describe class represents scan on a 'virtual' table that contains
 // the output of the DESCRIBE(SHOWDDL) command.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 class Describe : public Scan
 {
 public:
@@ -1616,7 +1615,7 @@ public:
     INVOKE_,  // describe sql/mp INVOKE style
     SHOWSTATS_, //display histograms for specified table
     SHORT_,   // just show ddl for table
-    LONG_,    // show everything about this table (ddl, indexes, views, etc)
+    SHOWDDL_,    // show everything about this table (ddl, indexes, views, etc)
     PLAN_,    // return information about runtime plan. Currently, details
               // about expressions and clauses are the only info returned.
               // For internal debugging use only. Not externalized to users.
@@ -1659,7 +1658,7 @@ public:
 
   Describe(char * originalQuery,
            const CorrName &describedTableName,
-           Format format = LONG_,
+           Format format = SHOWDDL_,
            ComAnsiNameSpace labelAnsiNameSpace = COM_TABLE_NAME,
            ULng32 flags = 0,
 	   NABoolean header = TRUE)
@@ -1690,7 +1689,7 @@ public:
 
   Describe(char * originalQuery,
            const SchemaName &schemaName,
-           Format format = LONG_,
+           Format format = SHOWDDL_,
            ULng32 flags = 0,
 	   NABoolean header = TRUE)
     : Scan(REL_DESCRIBE),
@@ -1733,7 +1732,7 @@ public:
   Describe(char * originalQuery,
            ComIdClass authIDClass,
            const NAString &authIDName,
-           Format format = LONG_,
+           Format format = SHOWDDL_,
            ULng32 flags = 0,
            NABoolean header = TRUE)
     : Scan(REL_DESCRIBE),
@@ -1766,7 +1765,7 @@ public:
   // constructor used for SHOWDDL USER and SHOWDDL ROLE
   Describe(char * originalQuery,
            const NAString &componentName,
-           Format format = LONG_,
+           Format format = SHOWDDL_,
            ULng32 flags = 0,
            NABoolean header = TRUE)
     : Scan(REL_DESCRIBE),
@@ -1874,6 +1873,9 @@ public:
   {
     return labelAnsiNameSpace_;
   }
+
+  NABoolean getIsControl() const { return ((getFormat() >= CONTROL_FIRST_) &&
+                                           (getFormat() <= CONTROL_LAST_)); }
 
   // TRUE  => output detail (long) label info
   // FALSE => output short label info
@@ -2009,7 +2011,7 @@ public:
       format_ == INVOKE_    ||
       format_ == SHOWSTATS_ ||
       format_ == SHORT_     ||
-      format_ == LONG_      ||
+      format_ == SHOWDDL_   ||
       format_ == LABEL_) ;
   }
 
@@ -2044,6 +2046,5 @@ private:
   // copy ctor
   Describe (const Describe & des) ;  // not defined - DO NOT USE
 }; // class Describe
-#pragma warn(1506)  // warning elimination
 
 #endif /* RELSCAN_H */

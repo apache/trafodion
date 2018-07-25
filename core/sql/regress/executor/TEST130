@@ -88,6 +88,10 @@ prepare s from insert into t130lob2 values (1, ?);
 execute s using 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
 select lobtostring(c2,50) from t130lob2;
 
+--negative test for values tuple list
+prepare s from insert into t130lob2 values (1,'gg'),(2,'hh');
+prepare s from insert into t130lob2 values (1,stringtolob('hh')),(2,stringtolob('gg'));
+
 --test update with param 
 prepare s from update t130lob2 set c2=? where c1 =1;
 execute s using 'xyxyxyxyxyxyx';
@@ -554,6 +558,23 @@ create table tlob130_not_external (c1 int not null , c2 blob, c3 blob, c4 blob, 
 insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));
 insert into tlob130ext values(2, stringtolob('second lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt'));
 insert into tlob130ext values(3, stringtolob('third lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_c1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_c1.txt'));
+
+
+log;
+log TMP130 clear;
+select c3 from tlob130ext where c1=3;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract name(LOB '/g" | sed "s/$/');/g" >> t130_extract_command;
+obey t130_extract_command;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract offset(LOB '/g" | sed "s/$/');/g" >> t130_extract_command;
+obey t130_extract_command;
+
+
+
 
 --negative cases
 insert into tlob130ext values(2, externaltolob('first lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));

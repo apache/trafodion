@@ -29,7 +29,7 @@
 //    The constructor of NT version of DiskPool.
 //--------------------------------------------------------------------------
 SQDisk::SQDisk(SortError* sorterror, CollHeap *heap) :DiskPool(heap),
-sortError_(sorterror) {  // NT_PORT ( ls 2/7/97 )
+sortError_(sorterror) {
   
   factorImportanceTotalFreeSpace_ = 30;
   factorImportanceNumScrFiles_ = 70;   
@@ -96,8 +96,8 @@ NABoolean SQDisk::returnBestDisk(char** diskname,
    {
       *diskname = NULL;
       sortError_->setErrorInfo( EScrNoDisks       //sort error
-        ,NULL             //syserr: the actual FS error
-        ,NULL             //syserrdetail
+        ,0             //syserr: the actual FS error
+        ,0             //syserrdetail
         ,"SQDisk::returnBestDisk"     //methodname
      );
       return SORT_FAILURE;

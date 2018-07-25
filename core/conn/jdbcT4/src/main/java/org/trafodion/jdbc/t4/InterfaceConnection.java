@@ -37,10 +37,12 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.Connection;
+import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.util.Hashtable;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 
@@ -226,6 +228,7 @@ class InterfaceConnection {
 
 		inContext.queryTimeoutSec = t4props.getQueryTimeout();
 		inContext.idleTimeoutSec = (short) t4props.getConnectionTimeout();
+		inContext.clipVarchar = (short) t4props.getClipVarchar();
 		inContext.loginTimeoutSec = (short) t4props.getLoginTimeout();
 		inContext.txnIsolationLevel = (short) SQL_TXN_READ_COMMITTED;
 		inContext.rowSetSize = t4props.getFetchBufferSize();
@@ -385,6 +388,9 @@ class InterfaceConnection {
 
 	int getConnectionTimeout() {
 		return inContext.idleTimeoutSec;
+	}
+	short getClipVarchar() {
+		return inContext.clipVarchar;
 	}
 
 	String getCatalog() {
@@ -698,7 +704,7 @@ class InterfaceConnection {
 			_security.openCertificate();
 			this.encryptPassword();
 		}catch(SecurityException se) {	
-			if(se.getErrorCode() != 29713) {
+			if(se.getErrorCode() != 29713 && se.getErrorCode() != 29721) {
 				throw se; //we have a fatal error
 			}
 				
@@ -907,6 +913,7 @@ class InterfaceConnection {
 			this.oldEncryptPassword();
 			this.initDiag(false,false);
 		}
+        this.setConnectionAttr(this._t4Conn, TRANSPORT.SQL_ATTR_CLIPVARCHAR, this.inContext.clipVarchar, String.valueOf(this.inContext.clipVarchar));
 	}
 
 	// @deprecated
@@ -1416,5 +1423,21 @@ class InterfaceConnection {
 
 	public String getApplicationName() {
 		return this.t4props_.getApplicationName();
+	}
+	
+	void setClientInfoProperties(Properties prop) {
+		this.t4props_.setClientInfoProperties(prop);
+	}
+
+	Properties getClientInfoProperties() {
+		return this.t4props_.getClientInfoProperties();
+	}
+
+	public void setClientInfo(String name, String value) throws SQLClientInfoException {
+		this.t4props_.getClientInfoProperties().setProperty(name, value);
+	}
+
+	String getClientInfo(String name) {
+		return this.t4props_.getClientInfoProperties().getProperty(name);
 	}
 }

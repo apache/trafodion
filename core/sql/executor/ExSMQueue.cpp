@@ -20,7 +20,7 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-
+#include "Platform.h"
 #include "ExSMQueue.h"
 #include "NAMemory.h"
 

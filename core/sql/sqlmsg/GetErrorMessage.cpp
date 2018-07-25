@@ -57,9 +57,9 @@
 #include "NLSConversion.h"
 #include "ExSMCommon.h"
 
-  #include <fcntl.h>
-	#include <signal.h>	
-  #include "MsgCat.h"
+#include <fcntl.h>
+#include <signal.h>	
+#include <nl_types.h>
 
 // ----------------------------------------------------
 // Definitions common to both _WINDOWS and non-WINDOWS.
@@ -138,7 +138,6 @@ private:
 static NAList<SqlstateInfo*> listOfSqlstates_(NULL);
 static pthread_mutex_t       listOfSqlstates_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-SQLERRORS_LIB_FUNC 
 NABoolean GetSqlstateInfo(Lng32 sqlcode, char * sqlstate,
 			  NABoolean &fabricatedSqlstate)
 {
@@ -168,7 +167,6 @@ NABoolean GetSqlstateInfo(Lng32 sqlcode, char * sqlstate,
   return found;
 }
 
-SQLERRORS_LIB_FUNC 
 void AddSqlstateInfo(Lng32 sqlcode, char * sqlstate,
 		     NABoolean fabricatedSqlstate)
 {
@@ -345,9 +343,7 @@ NABoolean getErrorMessageFromCatalog(NAErrorCode error_code_abs,
 
   // convert to Unicode
   Lng32 wMsgLen = LocaleStringToUnicode(CharInfo::ISO88591, 
-#pragma nowarn(1506)   // warning elimination 
                         msg, strlen(msg), msgBuf, msgBufLen);
-#pragma warn(1506)  // warning elimination 
 
 
   if ( wMsgLen == 0 )
@@ -641,9 +637,7 @@ static short kludgeReadStraightFromMessageFile
   if (!msg) { *msgBuf = -1; return FALSE; }		// nonzero: msgfile fnd
   msg += strlen(numAscii);
   UInt32 i = 0;
-#pragma warning (disable : 4018)   //warning elimination
   for (; i < bufSize; i++) { // cvt char* to WCHAR*
-#pragma warning (default : 4018)   //warning elimination
     char c = msg[i];
     if (c == '\n' || c == '\r') break;
     msgBuf[i] = c;
@@ -679,16 +673,10 @@ void ErrorMessageOverflowCheckW (NAWchar *buf, size_t max)
       cerr << endl << "ERROR: msg overflow " << len << " " << max-1 << endl;
 
       char* buf8bit = new char[len+1];
-#pragma nowarn(1506)   // warning elimination 
       Lng32 l = UnicodeStringToLocale(CharInfo::ISO88591, buf, len, 
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
                                      buf8bit, len+1);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (disable : 4018)   //warning elimination
       if ( l != len )
          ABORT("Unicode To Locale Translation");  
-#pragma warning (default : 4018)   //warning elimination
 
       printf("%s\n", buf8bit);
       ABORT("ErrorMessageOverflowCheck");  // memory overrun/corruption, unsafe to continue

@@ -259,7 +259,7 @@ public:
   }
 
   // Constructor that allows construction with a NULL pointer
-  SharedPtr(const Int32 i) : refCount_(0), objectP_((T*)i) {}
+  SharedPtr(const long i) : refCount_(0), objectP_((T*)i) {}
 
   // Copy constructor
   SharedPtr(SharedPtr<T> const & r) :
@@ -300,7 +300,7 @@ public:
   }
 
   // Allow assignment of pointer to NULL.
-  SharedPtr<T>& operator= (const Int32 i)
+  SharedPtr<T>& operator= (const long i)
   {
     if (refCount_) {
 #ifdef _DEBUG
@@ -390,7 +390,7 @@ public:
   }
 
   // Allow construction with a NULL
-  IntrusiveSharedPtr(const Int32 i) : SharedPtr<T>(i) {} 
+  IntrusiveSharedPtr(const long i) : SharedPtr<T>(i) {} 
 
   // Return a pointer to a shared pointer given an object with an intrusive
   // shared pointer.
@@ -408,7 +408,7 @@ public:
   }
 
   // Provide an assignment operator to prevent the compiler from writing one.
-  IntrusiveSharedPtr<T>& operator= (const Int32 i)
+  IntrusiveSharedPtr<T>& operator= (const long i)
   {
     (void)SharedPtr<T>::operator=(i);
     return *this;

@@ -1702,7 +1702,7 @@ After executing all the script files, `PRUN` returns a summary of the operation:
          Total errors.................................... 4
          Total warnings.................................. 0
          Total successes................................ 36
-         Total connections............................... 5
+         Total connections............................... 3
          Total connection failures....................... 0
 
          Please verify the error log file c:\log\error\prun.err.log

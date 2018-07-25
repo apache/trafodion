@@ -109,12 +109,10 @@ ExTransposeTcb::ExTransposeTcb(const ExTransposeTdb &transTdbLocal,
   //transTdb().bufferSize_,
   //space);
   //
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) ExSimpleSQLBuffer(transTdb().numBuffers_,
 				       transTdb().bufferSize_, 
 				       transTdb().transRowLen_,
 				       space);
-#pragma warn(1506)  // warning elimination
  
   // get the queue used by my child to communicate with me
   //

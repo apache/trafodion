@@ -86,8 +86,7 @@ public:
   // memoryType parameter is ignored 
   CmpStatement(
       CmpContext*,
-      NAMemory* outHeap = 0,
-      NAMemory::NAMemoryType memoryType=NAMemory::DERIVED_MEMORY);
+      NAMemory *outHeap = NULL);
   
   // requests process
   ReturnStatus process(const CmpMessageObj&);
@@ -132,10 +131,6 @@ public:
   void setSqlTextLen(Lng32 txtLen) { sqlTextLen_ = txtLen; }
   void setSqlTextCharSet(Lng32 charSet) { sqlTextCharSet_ = charSet; }
 
-  // get/set statement index
-  Int32 getStmtIndex() const { return measureStatementIndex_; }
-  void setStmtIndex(Int32 si) { measureStatementIndex_ = si; }
-
   void setSMDRecompile(NABoolean TorF ) {isSMDRecompile_ = TorF;}
   // set the exceptionRaised_ flag;
   void exceptionRaised();
@@ -164,9 +159,6 @@ public:
   inline NABoolean isSMDRecompile() {return isSMDRecompile_;}
   //is this statement a DDL statement
   inline NABoolean isDDL(){return isDDL_;}
-
-  inline NABoolean isParallelLabelOp() { return isParallelLabelOp_; }
-  inline void setParallelLabelOp(NABoolean flag) { isParallelLabelOp_ = flag; }
 
   QueryAnalysis* getQueryAnalysis() { return queryAnalysis_; };
   QueryAnalysis* initQueryAnalysis();
@@ -234,6 +226,9 @@ public:
   const LIST(CSEInfo *) *getCSEInfoList() const { return cses_; }
   void addCSEInfo(CSEInfo *info);
 
+  // context global empty input logical property
+  EstLogPropSharedPtr* getGEILP() { return &emptyInLogProp_; }
+    
 protected:
   // CmpStatement(const CmpStatement&); please remove this line
   CmpStatement& operator=(const CmpStatement&);
@@ -254,6 +249,11 @@ protected:
 
   // The reply to be sent back to executor after processing the request in CmpStatement
   CmpMessageReply* reply_;
+
+  // The result of Compile for statements like invoke, get tables, show stats
+  // that calls CmpDescribe internally immediately after compilation.
+
+  CmpMessageReply *bound_;
 
   // The flag to record whether exception has been raised in the
   // statement compilation/execution. This is used to clean up properly once the 
@@ -282,17 +282,12 @@ private:
   Lng32  sqlTextLen_;
   Lng32  sqlTextCharSet_;
 
-  // statement index stored in the module file, mainly used by MEASURE
-  Int32 measureStatementIndex_;
-
   //flag, indicates if this is a recompilation
   NABoolean recompiling_;
 
   NABoolean isSMDRecompile_;
   //flag, indicates if this is a DDL statment
   NABoolean isDDL_;
-
-  NABoolean isParallelLabelOp_;
 
   // CompilationStats object that is recording the compilation stats for this statement
   CompilationStats* compStats_;
@@ -302,11 +297,6 @@ private:
 
   // force a shape
   CqsWA*       cqsWA_;
-
-  ReturnStatus setupRecompControlInfo(char * recompControlInfo,
-				      CmpMain * cmpmain,
-				      Lng32 charset=SQLCHARSETCODE_UNKNOWN);
-  ReturnStatus restoreRecompControlInfo(char * recompControlInfo);
 
   QueryAnalysis* queryAnalysis_;
 
@@ -338,6 +328,9 @@ private:
   // indicates whether we are retrying the compile in
   // CmpMain::sqlcomp(QueryText, ...
   Int32 numOfCompilationRetries_;
+
+  // context global empty input logical property
+  EstLogPropSharedPtr emptyInLogProp_;
 
 }; // end of CmpStatement
 

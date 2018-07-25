@@ -45,6 +45,7 @@
 #include "PrivMgrMD.h"
 #include "ElemDDLHbaseOptions.h"
 #include "CmpContext.h"
+#include "parser.h"
 
 class ExpHbaseInterface;
 class ExeCliInterface;
@@ -128,6 +129,22 @@ struct MDDescsInfo;
 class CmpDDLwithStatusInfo;
 
 #include "CmpSeabaseDDLmd.h"
+
+// The define below gives the maximum rowID length that we will permit
+// for Trafodion tables and indexes. The actual HBase limit is more 
+// complicated: For Puts, HBase compares the key length to 
+// HConstants.MAX_ROW_LENGTH (= Short.MAX_VALUE = 32767). It raises an
+// exception if the key length is greater than that. But there are also
+// some internal data structures that HBase uses (the WAL perhaps?) that
+// are keyed. Experiments show that a Trafodion key of length n causes
+// a hang if n + strlen(Trafodion object name) + 16 > 32767. The HBase
+// log in these cases shows an IllegalArgumentException Row > 32767 in
+// this case. So it seems best to limit Trafodion key lengths to something
+// sufficiently smaller than 32767 so we don't hit these hangs. A value
+// of 32000 seems safe, since the longest Trafodion table name will be
+// TRAFODION.something.something, with each of the somethings topping out
+// at 256 bytes.
+#define MAX_HBASE_ROWKEY_LEN 32000
 
 #define SEABASEDDL_INTERNAL_ERROR(text)                                   \
    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR) 	  \
@@ -253,6 +270,11 @@ class CmpSeabaseDDL
 				    const ComObjectType objType,
 				    NABoolean includeInvalidDefs = FALSE);
 
+  short getSeabaseObjectComment(Int64 object_uid, 
+	                            enum ComObjectType object_type, 
+	                            ComTdbVirtObjCommentInfo & comment_info,
+	                            CollHeap * heap);
+
   short getObjectOwner(ExeCliInterface *cliInterface,
                         const char * catName,
                         const char * schName,
@@ -337,6 +359,7 @@ class CmpSeabaseDDL
 
   short buildColInfoArray(
                           ComObjectType objType,
+                          NABoolean isMetadataHistOrReposObject,
 			  ElemDDLColDefArray * colArray,
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  NABoolean implicitPK,
@@ -591,6 +614,7 @@ protected:
 		    ULng32 &colFlags);
 
   short getColInfo(ElemDDLColDef * colNode, 
+                   NABoolean isMetadataHistOrReposColumn,
                    NAString &colFamily,
 		   NAString &colName,
                    NABoolean alignedFormat,
@@ -985,6 +1009,7 @@ protected:
      Int32 ownerID,
      NABoolean ignoreIfExists);
      
+  short createDefaultSystemSchema(ExeCliInterface * cliInterface);
   short createSchemaObjects(ExeCliInterface * cliInterface);
   
   void  createSeabaseSchema(
@@ -1062,6 +1087,17 @@ protected:
                                    const ComObjectName &tgtTableName,
                                    const ComObjectName &srcTableName);
 
+public:
+  static NABoolean setupQueryTreeForHiveDDL(
+       Parser::HiveDDLInfo * hiveDDLInfo,
+       char * inputStr, 
+       CharInfo::CharSet inputStrCharSet,
+       NAString currCatName,
+       NAString currSchName,
+       ExprNode** node);
+
+protected:
+
   // makes a copy of underlying hbase table
   short cloneHbaseTable(
        const NAString &srcTable, const NAString &clonedTable,
@@ -1076,6 +1112,12 @@ protected:
        ExpHbaseInterface * ehi,
        ExeCliInterface * cilInterface,
        NABoolean withCreate);
+
+  short cloneAndTruncateTable(
+       const NATable * naTable, // IN: source table
+     NAString &tempTable, // OUT: temp table
+     ExpHbaseInterface * ehi,
+     ExeCliInterface * cliInterface);
 
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,
@@ -1299,6 +1341,7 @@ protected:
   short dropSeabaseLibmgr(ExeCliInterface *inCliInterface);
   short createLibmgrProcs(ExeCliInterface * cliInterface);
   short grantLibmgrPrivs(ExeCliInterface *cliInterface);
+  short createSeabaseLibmgrCPPLib(ExeCliInterface * cliInterface);
 
   short registerNativeTable
   (
@@ -1344,6 +1387,14 @@ protected:
        NABoolean cascade
    );
 
+  short unregisterHiveSchema
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       ExeCliInterface &cliInterface,
+       NABoolean cascade
+   );
+
   void regOrUnregNativeObject (
        StmtDDLRegOrUnregObject * regOrUnregObject,
        NAString &currCatName, NAString &currSchName);
@@ -1382,20 +1433,26 @@ protected:
   
 
  void createNativeHbaseTable(
-			     StmtDDLCreateHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLCreateHbaseTable * createTableNode,
+                             NAString &currCatName, NAString &currSchName);
 
  void dropNativeHbaseTable(
-			     StmtDDLDropHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLDropHbaseTable * dropTableNode,
+                             NAString &currCatName, NAString &currSchName);
   
-  void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
+  void processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
+                               NAString &currCatName, NAString &currSchName);
+
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
   void dropSeabaseMDviews();
   void createSeabaseSchemaObjects();
   void updateVersion();
 
+  short initTrafMD(CmpDDLwithStatusInfo *mdti);
+  
   short createPrivMgrRepos(ExeCliInterface *cliInterface, NABoolean ddlXns);
   short initSeabaseAuthorization(ExeCliInterface *cliInterface,
                                  NABoolean ddlXns,
@@ -1404,6 +1461,10 @@ protected:
 
   void dropSeabaseAuthorization(ExeCliInterface *cliInterface, 
                                 NABoolean doCleanup = FALSE);
+
+  void doSeabaseCommentOn(StmtDDLCommentOn *commentOnNode,
+					 NAString &currCatName, 
+					 NAString &currSchName);
 
   NABoolean insertPrivMgrInfo(const Int64 objUID,
                               const NAString &objName,
@@ -1423,7 +1484,7 @@ protected:
   short truncateHbaseTable(const NAString &catalogNamePart, 
                            const NAString &schemaNamePart, 
                            const NAString &objectNamePart,
-                           NATable * naTable,
+                           const NABoolean hasSaltedColumn,
                            ExpHbaseInterface * ehi);
 
   void purgedataHbaseTable(DDLExpr * ddlExpr,

@@ -251,9 +251,9 @@ UInt32 IntervalType::getPrecision(rec_datetime_field startField,
 } // IntervalType::getPrecision
 
 UInt32 IntervalType::computeLeadingPrecision(rec_datetime_field startField,
-					       UInt32 precision,
-					       rec_datetime_field endField,
-					       UInt32 fractionPrecision)
+                                             UInt32 precision,
+                                             rec_datetime_field endField,
+                                             UInt32 fractionPrecision)
 {
   UInt32 leadingPrecision;
   switch (getIntervalFSDatatype(startField, endField)) {
@@ -299,9 +299,11 @@ Lng32 IntervalType::getStorageSize(rec_datetime_field startField,
 				  UInt32 fractionPrecision)
 {
   Lng32 size = getBinaryStorageSize(getPrecision(startField, 
-                                                 leadingPrecision,
-                                                 endField,
-                                                 fractionPrecision));
+                            leadingPrecision,
+                            endField,
+                            fractionPrecision));
+  
+
   // interval datatypes are stored as 2(smallint),4(int) or 8(largeint) bytes.
   // If size is tinyint size based on precision, change it to smallint size.
   if (size == SQL_TINY_SIZE)
@@ -425,7 +427,7 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                            fractionPrecision);
     if (totalPrecision > SQLInterval::MAX_LEADING_PRECISION)
       leadingPrecision -= totalPrecision - SQLInterval::MAX_LEADING_PRECISION;
-    return new(h) SQLInterval(
+    return new(h) SQLInterval(h,
 		 op1.supportsSQLnull() || op2.supportsSQLnull(),
 		 startField,
 		 leadingPrecision,
@@ -445,7 +447,7 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 
     if ((op1.getLeadingPrecision() < leadingPrecision) ||
        (op2.supportsSQLnull() && !op1.supportsSQLnull()))
-      return new(h) SQLInterval (op1.supportsSQLnull() || op2.supportsSQLnull(),
+      return new(h) SQLInterval (h, op1.supportsSQLnull() || op2.supportsSQLnull(),
                                  op1.getStartField(),
                                  leadingPrecision,
                                  op1.getEndField(),
@@ -481,7 +483,7 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                            intervalOp->getFractionPrecision());
     if (totalPrecision > SQLInterval::MAX_LEADING_PRECISION)
       leadingPrecision -= totalPrecision - SQLInterval::MAX_LEADING_PRECISION;
-    return new(h) SQLInterval(
+    return new(h) SQLInterval(h,
 		 intervalOp->supportsSQLnull() || numericOp->supportsSQLnull(),
 		 intervalOp->getStartField(),
 		 leadingPrecision,
@@ -493,7 +495,6 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
   } // switch
 } // synthesizeType()
 
-#pragma nowarn(1319)   // warning elimination 
 Lng32 IntervalType::getDisplayLength() const
   {
     //
@@ -501,7 +502,6 @@ Lng32 IntervalType::getDisplayLength() const
     //
     return getStringSize() - 1;
   }
-#pragma warn(1319)  // warning elimination 
 
 // ***********************************************************************
 //  IntervalType : Min and max values, and encoding
@@ -523,9 +523,7 @@ void IntervalType::getRepresentableValue(char sign,
     *v++ = sign;
     digit = '9';
   }
-#pragma nowarn(1506)   // warning elimination 
   Int32 i = getLeadingPrecision();
-#pragma warn(1506)  // warning elimination 
   for (; i > 0; i--) *v++ = digit;
   if (getStartField() != REC_DATE_FRACTION_MP) {
     for (Int32 field = getStartField() + 1; field <= getEndField(); field++) {
@@ -534,9 +532,7 @@ void IntervalType::getRepresentableValue(char sign,
             digit == '0' ? 0 : maxITVal[index]);
     v += IntervalFieldStringSize;
     }
-#pragma nowarn(1506)   // warning elimination 
     if (i = getFractionPrecision()) {
-#pragma warn(1506)  // warning elimination 
     *v++ = '.';
     for ( ; i > 0; i--) *v++ = digit;
     }
@@ -757,7 +753,7 @@ IntervalValue::IntervalValue
 						  endField,
 						  fractionPrecision);
   if (storageSize == 0) {
-    SQLInterval triggerErrmsg(FALSE,
+    SQLInterval triggerErrmsg(NULL, FALSE,
 			      startField, leadingPrecision,
 			      endField,   fractionPrecision);
     return;
@@ -1029,22 +1025,12 @@ double SQLInterval::encode(void *bufPtr) const
     val = temp;
     break;
   }
-#ifdef NA_64BIT
-  // dg64 - a bit of a guess
   case sizeof(Int32): {
     Int32 temp;
     memcpy((char *) &temp, valPtr, sizeof(Int32));
     val = temp;
     break;
   }
-#else
-  case sizeof(Lng32): {
-    Lng32 temp;
-    memcpy((char *) &temp, valPtr, sizeof(Lng32));
-    val = temp;
-    break;
-  }
-#endif
   case sizeof(Int64): {
     Int64 temp;
     memcpy((char *) &temp, valPtr, sizeof(Int64));

@@ -76,24 +76,21 @@ ComTdbSort::ComTdbSort(ex_expr * sort_key_expr,
 	   buffer_size),
   sortKeyExpr_(sort_key_expr),
   sortRecExpr_(sort_rec_expr),
-#pragma nowarn(1506)   // warning elimination
   sortRecLen_(sort_rec_len),
   sortKeyLen_(sort_key_len),
   sortPartialKeyLen_(sort_partial_key_len),
   minimalSortRecs_(0),
-#pragma warn(1506)  // warning elimination
   tuppIndex_(tupp_index),
   tdbChild_(child_tdb),
   workCriDesc_(work_cri_desc),
-#pragma nowarn(1506)   // warning elimination 
   maxNumBuffers_(maxNumBuffers),
-#pragma warn(1506)  // warning elimination 
   sortOptions_(sort_options),
   flags_(0),
-  sortMemEstInMbPerCpu_(0),
+  sortMemEstInKBPerNode_(0),
   sortGrowthPercent_(sortGrowthPercent),
   bmoCitizenshipFactor_(0),
-  pMemoryContingencyMB_(0)
+  pMemoryContingencyMB_(0),
+  topNThreshold_(-1) 
 {
 
 }
@@ -135,7 +132,7 @@ void ComTdbSort::displayContents(Space * space,ULng32 flag)
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
                                                     sizeof(short));
 
-            str_sprintf(buf,"Flags = %b, sortRecLen = %d, sortKeyLen = %d",
+            str_sprintf(buf,"Flags = %x, sortRecLen = %d, sortKeyLen = %d",
 		      	  flags_,sortRecLen_,sortKeyLen_);
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
                                                     sizeof(short));
@@ -151,8 +148,8 @@ void ComTdbSort::displayContents(Space * space,ULng32 flag)
 	    str_sprintf(buf,"tuppIndex_ = %d", tuppIndex_);
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-            str_sprintf(buf,"sortMemEstInMbPerCpu = %f, estimateErrorPenalty = %d ",
-                sortMemEstInMbPerCpu_, sortGrowthPercent_);
+            str_sprintf(buf,"sortMemEstInKBPerNode_ = %f, estimateErrorPenalty = %d ",
+                sortMemEstInKBPerNode_, sortGrowthPercent_);
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
             str_sprintf(buf,"bmoCitizenshipFactor = %f, PhyMemoryContingencyMB = %d ",
@@ -175,11 +172,11 @@ void SortOptions::displayContents(Space *space)
 {
 	char buf[100];
 
-   str_sprintf(buf, "\nFor SortOptions:\nsortNRows = %d, sortType = %d, internalSort = %d",
-   							sortNRows_,sortType_,internalSort_);
+   str_sprintf(buf, "\nFor SortOptions:\nsortType = %d, internalSort = %d",
+   							sortType_,internalSort_);
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-   str_sprintf(buf,"Sort Option Flags = %b", flags_);
+   str_sprintf(buf,"Sort Option Flags = %x", flags_);
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf),sizeof(short));
    
    str_sprintf(buf, "sortMaxHeapSizeMB = %d, scratchFreeSpaceThreshold = %d",

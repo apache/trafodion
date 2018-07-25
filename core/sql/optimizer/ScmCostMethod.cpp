@@ -1154,13 +1154,14 @@ FileScanOptimizer::scmComputeCostForSingleSubset()
     Cost* c = 
       sfso->optimize(searchKey, mdamKey);//scmComputeCostForSingleSubset();
 			      
-  // transfer probe counters from sfso to this (the FileScan optimizer)
+  // transfer various counters from sfso to this (the FileScan optimizer)
   setProbes(sfso->getProbes());
   setSuccessfulProbes(sfso->getSuccessfulProbes());
   setUniqueProbes(sfso->getUniqueProbes());
   setDuplicateSuccProbes(sfso->getDuplicateSuccProbes());
   setTuplesProcessed(sfso->getTuplesProcessed());
   setEstRowsAccessed(sfso->getEstRowsAccessed());
+  setSingleSubsetSize(sfso->getSingleSubsetSize());
 
   return c;
 } // FileScanOptimizer::ScmComputeCostForSingleSubset()
@@ -3688,7 +3689,6 @@ NABoolean CostMethodHbaseUpdateOrDelete::allKeyColumnsHaveHistogramStatistics(
 // result of applying key predicates. Assumes that histograms exist for
 // all key columns.
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 CostScalar
 CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms(
   IndexDescHistograms & histograms,
@@ -3769,7 +3769,6 @@ CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms(
 
   return numRowsToScan;
 }   // CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms()
-#pragma warn(262)  // warning elimination
 
 // -----------------------------------------------------------------------
 // CostMethodHbaseUpdateOrDelete::computeIOCostsForCursorOperation().

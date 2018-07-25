@@ -59,7 +59,6 @@ class PCIType;
 extern char * exClauseGetText(OperatorTypeEnum ote);
 extern char * getDatatypeAsString( Int32 Datatype, NABoolean extFormat );
 
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExAddCondition(CollHeap* heap, ComDiagsArea** diagsArea,
 			     Lng32 err, ComCondition** newCond,
 			     Lng32 * intParam1,
@@ -123,8 +122,6 @@ ComDiagsArea *ExAddCondition(CollHeap* heap, ComDiagsArea** diagsArea,
   return *diagsArea;
 }
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ComDiagsArea** diagsArea,
                               ExeErrorCode err, ComCondition** cond,
 			      Lng32 * intParam1,
@@ -138,9 +135,21 @@ ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ComDiagsArea** diagsArea,
 			intParam1, intParam2, intParam3, 
 			stringParam1, stringParam2, stringParam3);
 }
+ 
+ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ComDiagsArea** diagsArea,
+              Lng32 err,
+              Lng32 * intParam1,
+              Lng32 * intParam2,
+              Lng32 * intParam3,
+              const char * stringParam1,
+              const char * stringParam2,
+              const char * stringParam3)
+{
+  return ExAddCondition(heap, diagsArea, err, NULL,
+             intParam1, intParam2, intParam3, 
+             stringParam1, stringParam2, stringParam3);
+}
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlWarning(CollHeap* heap, ComDiagsArea** diagsArea,
                               ExeErrorCode err, ComCondition** cond,
                               Lng32 * intParam1,
@@ -154,16 +163,12 @@ ComDiagsArea *ExRaiseSqlWarning(CollHeap* heap, ComDiagsArea** diagsArea,
                         intParam1, intParam2, intParam3,
                         stringParam1, stringParam2, stringParam3);
 }
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlWarning(CollHeap* heap, ComDiagsArea** diagsArea,
                                 ExeErrorCode err, ComCondition** cond)
 {
   return ExAddCondition(heap, diagsArea, (Lng32) err, cond, NULL, NULL, NULL);
 }
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseFunctionSqlError(CollHeap* heap, 
 				      ComDiagsArea** diagsArea,
 				      ExeErrorCode err, 
@@ -181,8 +186,6 @@ ComDiagsArea *ExRaiseFunctionSqlError(CollHeap* heap,
   return *diagsArea;
 }
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 Int32 convertToHexAscii(char *src, Int32 srcLength, char *result,
                       Int32 maxResultSize)
 {
@@ -218,8 +221,6 @@ Int32 convertToHexAscii(char *src, Int32 srcLength, char *result,
 }
 
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 void ExConvertErrorToString(CollHeap* heap, 
 		            ComDiagsArea** diagsArea,
                             char *src,
@@ -307,8 +308,6 @@ void ExConvertErrorToString(CollHeap* heap,
 }
 
 //Detailed error support for pcode expression evaluation.
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap, 
 				    ComDiagsArea** diagsArea,
 				    ExeErrorCode err, 
@@ -444,8 +443,6 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
 }
  
 //Detailed error support for clause expression evaluation.
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap, 
 				    ComDiagsArea** diagsArea,
 				    ExeErrorCode err, 
@@ -524,8 +521,6 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
 
 
 //Detailed error support for conversions, especially for use in convdoit.
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap, 
 				    ComDiagsArea** diagsArea,
 				    ExeErrorCode err, 
@@ -627,17 +622,18 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
 
 char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
 {
-  //clear out buffer first
-  memset(out,0,outLen);
 
-  outLen = (outLen / 2) -1 ;
-
-  if(inLen < outLen) outLen = inLen;
-
+  Int32 hexLen = (outLen / 2) -1 ;
+  if (inLen < hexLen) 
+     hexLen = inLen;
+  if (hexLen < 0)
+     hexLen = 0;
+  if (outLen > 0)
+     out[0] = '\0';
   char hex[3];
-  for(int i = 0; i < outLen; i++)
+  for(int i = 0; i < hexLen; i++)
   {
-    sprintf(hex, "%02x", in[i]);
+    snprintf(hex, sizeof(hex), "%02x", (unsigned char)in[i]);
     strcat(out,hex);
   }
   return out;

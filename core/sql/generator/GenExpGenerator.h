@@ -42,7 +42,7 @@
 #include "Generator.h"
 #include "exp_expr.h"
 #include "GenMapTable.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "exp_tuple_desc.h"
 #include "parser.h"
 #include "ComKeyRange.h"
@@ -394,7 +394,9 @@ class ExpGenerator : public NABasicObject
     // if pcode has been generated, then expression generator removes the
     // clauses (except for in case of showplan or clause_eval).
     // If this flag is set, then clauses are not removed.
-    SAVE_CLAUSES_IN_EXPR = 0x0100
+    SAVE_CLAUSES_IN_EXPR   = 0x0100,
+
+    IN_SEQUENCE_FUNC_EXPR  = 0x0200
   };
 
   UInt16 pCodeMode_;
@@ -614,21 +616,6 @@ public:
 			   const ItemExprList *spOutParams,
                            ConstNAStringPtr *colNamesForExpr,
                            ConstQualifiedNamePtr *tblNamesForExpr);
-
-  // generate code to extract columns from an audit row image, as required
-  // by the INTERPRET_AS_ROW function.
-  short generateIarExtractionExpr(Int32 workAtp,
-                                  Int32 workAtpIndex,
-                                  const ValueIdList &extractedColIdList,
-                                  Int32 extractedRowLen,
-                                  const ValueId &auditImageId,
-                                  const ValueId &mfMapId,
-                                  ExpTupleDesc *extractedRowDesc,
-                                  ExpTupleDesc *auditImageDesc,
-                                  ULng32 *extractColList,
-                                  UInt32 compressedAuditFlag,
-                                  ULng32 encodedKeyLength,
-                                  ex_expr ** expr );
 
   //////////////////////////////////////////////////////////////////////
   // Input is a ValueIdList to be copied into a contiguous buffer.
@@ -1053,9 +1040,14 @@ public:
       flags_ &= ~SAVE_CLAUSES_IN_EXPR;
   };
 
-  NA_EIDPROC NABoolean saveClausesInExpr() {
+  NABoolean saveClausesInExpr() {
     return ((flags_ & SAVE_CLAUSES_IN_EXPR) != 0);
   };
+
+  NABoolean inSequenceFuncExpr()
+    { return (flags_ & IN_SEQUENCE_FUNC_EXPR) != 0; }
+  void setInSequenceFuncExpr(NABoolean v)
+    { (v ? flags_ |= IN_SEQUENCE_FUNC_EXPR : flags_ &= ~IN_SEQUENCE_FUNC_EXPR); }	
 
   // The working heap for dynamic memory allocation, will be
   // be destroyed at the end of each statement.

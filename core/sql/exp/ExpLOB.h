@@ -41,128 +41,14 @@
  */
 
 
-#include "SqlExpDllDefines.h"
 #include "exp_clause.h"
 #include "ExpLOBenums.h"
 
+class ContextCli;
+class ExLobGlobals;
+
 
 class ExLobInMemoryDescChunksEntry;
-////////////////////////////////
-// class LOBglobals
-////////////////////////////////
-class LobLoadInfo
-{
- private:
-  class LobLoadEntry
-  {
-  public:
-    LobLoadEntry() 
-      { 
-	handle_ = NULL; 
-	handleLen_ = 0;
-      };
-    
-    char* &handle() { return handle_; }
-    Lng32 &handleLen() { return handleLen_; }
-
-  private:
-    char *handle_;
-    Lng32 handleLen_;
-  };
-
- public:
-  LobLoadInfo(CollHeap * heap)
-    : heap_(heap)
-    , lobEntryList_(heap)
-  {};
-  ~LobLoadInfo(){}
-  void setLobLoadEntries(Lng32 num)
-  {
-  }
-
-  void setLobHandle(Lng32 pos, Lng32 handleLen, char * handle) 
-  {
-    if (lobEntryList_.used(pos))
-      {
-	NADELETEBASIC(lobEntryList_[pos]->handle(), heap_);
-      }
-    else
-      {
-	LobLoadEntry* lle = new(heap_) LobLoadEntry();
-	lobEntryList_.insertAt(pos, lle);
-      }
-
-    lobEntryList_[pos]->handleLen() = handleLen;
-    lobEntryList_[pos]->handle() = new(heap_) char[handleLen];
-    str_cpy_all(lobEntryList_[pos]->handle(), handle, handleLen);
-  }
-
-  char * lobHandle(Lng32 pos) 
-  { 
-    if (lobEntryList_.used(pos))
-      return lobEntryList_[pos]->handle(); 
-    else
-      return NULL;
-  };
-
-  Lng32 lobHandleLen(Lng32 pos) 
-  { 
-    if (lobEntryList_.used(pos))
-      return lobEntryList_[pos]->handleLen(); 
-    else
-      return -1;
-  };
-
- private:
-  CollHeap * heap_;
-
-  NAArray<LobLoadEntry*> lobEntryList_;
-};
-  
-class LOBglobals : public NABasicObject {
- public:
- LOBglobals(CollHeap * heap) : heap_(heap),
-    lobAccessGlobals_(NULL),
-    xnId_(-1),
-    lobOperInProgressList_(heap)
-      {
-	lobLoadInfo_ = new(heap) LobLoadInfo(heap);
-      };
-  ~LOBglobals() { NADELETE(lobLoadInfo_,LobLoadInfo,heap_); lobLoadInfo_=NULL;}
-  void* &lobAccessGlobals() { return lobAccessGlobals_; };
-  LobLoadInfo * lobLoadInfo() { return lobLoadInfo_; }
-
-  Int64 &xnId() { return xnId_; };
-
-  void setLobOperInProgress(Lng32 pos, NABoolean v) 
-  {
-    if (lobOperInProgressList_.used(pos))
-      lobOperInProgressList_[pos] = (v ? 1 : 0);
-    else
-      lobOperInProgressList_.insertAt(pos, v);
-  }
-
-  NABoolean getLobOperInProgress(Lng32 pos)
-  {
-    return (lobOperInProgressList_[pos] != 0);
-  }
-
-  void setCurrLobOperInProgress(NABoolean v) { currLobOperInProgress_ = v; }
-  NABoolean getCurrLobOperInProgress() { return currLobOperInProgress_; }
- private:
-  CollHeap * heap_;
-  void * lobAccessGlobals_;
-  LobLoadInfo * lobLoadInfo_;
-
-  // transaction id of the current transaction in progress.
-  // -1, if no transaction is associated with the current request.
-  Int64 xnId_;
-
-  NAArray<Lng32> lobOperInProgressList_;
-
-  NABoolean currLobOperInProgress_;
- 
-};
 
 
 /////////////////////////////////////////
@@ -234,23 +120,26 @@ public:
 				Int64 uid,  
 				char * outBuf, Lng32 outBufLen);
   static void calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries);
-  static Lng32 compactLobDataFile(void *lobGlob, ExLobInMemoryDescChunksEntry *dcArray, Int32 numEntries, char *tgtLobName, Int64 lobMaxChunkSize, void *lobHeap,void *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation);
-  static Int32 restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap, void *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation );
-  static Int32 purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobHeap, void *currContext, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
+  static Lng32 compactLobDataFile(ExLobGlobals *lobGlob, ExLobInMemoryDescChunksEntry *dcArray, Int32 numEntries, char *tgtLobName, Int64 lobMaxChunkSize, NAHeap *lobHeap, ContextCli *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation);
+  static Int32 restoreLobDataFile(ExLobGlobals *lobGlob, char *lobName, NAHeap *lobHeap, ContextCli *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation );
+  static Int32 purgeBackupLobDataFile(ExLobGlobals *lobGlob,char *lobName, NAHeap *lobHeap, ContextCli *currContext, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
 
-  static Lng32 createLOB(void * lobGlob, void *currContext,void * lobHeap,
+  static Lng32 createLOB(ExLobGlobals * lobGlob, ContextCli *currContext,
 			 char * lobLoc, Int32 hdfsPort, char *hdfsServer,
 			 Int64 uid, Lng32 lobNum, Int64 lobMAxSize);
 
-  static Lng32 dropLOB(void * lobGlob, void *currContext,void * lobHeap, 
+  static Lng32 dropLOB(ExLobGlobals * lobGlob, ContextCli *currContext, 
 		       char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 		       Int64 uid, Lng32 lobNum);
 
-  static Lng32 purgedataLOB(void * lobGlob, 
+  static Lng32 purgedataLOB(ExLobGlobals * lobGlob, 
 			    char * lobLob,
 			    Int64 uid, Lng32 lobNum);
 
-  static Lng32 initLOBglobal(void *& lobGlob, void * heap, void *currContext,char *server, Int32 port );
+  static Lng32 initLOBglobal(ExLobGlobals *& lobGlob, NAHeap *heap, ContextCli *currContext,char *server, Int32 port, NABoolean isHiveRead = FALSE);
+  static ExLobGlobals *initLOBglobal(NAHeap *parentHeap, ContextCli *currContext, NABoolean useLibHdfs, NABoolean isHiveRead = FALSE);
+  static void deleteLOBglobal(ExLobGlobals *lobGlob, NAHeap *parentHeap);
+  static void genLobLockId(Int64 objUid,Int32 lobNum, char *llid);
 
   // Extracts values from the LOB handle stored at ptr
   static Lng32 extractFromLOBhandle(Int16 *flags,
@@ -422,91 +311,100 @@ class ExpLOBiud : public ExpLOBoper {
 				      CollHeap*h,
 				      ComDiagsArea** diagsArea);
 
-  NA_EIDPROC NABoolean isAppend()
+  NABoolean isAppend()
   {
     return ((liudFlags_ & IS_APPEND) != 0);
   };
 
-  NA_EIDPROC inline void setIsAppend(NABoolean v)
+  inline void setIsAppend(NABoolean v)
   {
     (v) ? liudFlags_ |= IS_APPEND: liudFlags_ &= ~IS_APPEND;
   };
 
-  NA_EIDPROC NABoolean fromString()
+  NABoolean fromString()
   {
     return ((liudFlags_ & FROM_STRING) != 0);
   };
 
-  NA_EIDPROC inline void setFromString(NABoolean v)
+  inline void setFromString(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_STRING: liudFlags_ &= ~FROM_STRING;
   };
-  NA_EIDPROC NABoolean fromBuffer()
+  NABoolean fromBuffer()
   {
     return ((liudFlags_ & FROM_BUFFER) != 0);
   };
-  NA_EIDPROC inline void setFromBuffer(NABoolean v)
+  inline void setFromBuffer(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_BUFFER: liudFlags_ &= ~FROM_BUFFER;
   };
-  NA_EIDPROC inline void setFromEmpty(NABoolean v)
+  inline void setFromEmpty(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_EMPTY: liudFlags_ &= ~FROM_EMPTY;
   };
-  NA_EIDPROC NABoolean fromEmpty()
+  NABoolean fromEmpty()
   {
     return ((liudFlags_ & FROM_EMPTY) != 0);
   };
  
-  NA_EIDPROC NABoolean fromFile()
+  NABoolean fromFile()
   {
     return ((liudFlags_ & FROM_FILE) != 0);
   };
 
-  NA_EIDPROC inline void setFromFile(NABoolean v)
+  inline void setFromFile(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_FILE: liudFlags_ &= ~FROM_FILE;
   };
 
-  NA_EIDPROC NABoolean fromLoad()
+  NABoolean fromLoad()
   {
     return ((liudFlags_ & FROM_LOAD) != 0);
   };
 
-  NA_EIDPROC inline void setFromLoad(NABoolean v)
+  inline void setFromLoad(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_LOAD: liudFlags_ &= ~FROM_LOAD;
   };
 
-  NA_EIDPROC NABoolean fromLob()
+  NABoolean fromLob()
   {
     return ((liudFlags_ & FROM_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setFromLob(NABoolean v)
+  inline void setFromLob(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_LOB: liudFlags_ &= ~FROM_LOB;
   };
-  NA_EIDPROC NABoolean fromLobExternal()
+  NABoolean fromLobExternal()
   {
     return ((liudFlags_ & FROM_LOB_EXTERNAL) != 0);
   };
 
-  NA_EIDPROC inline void setFromLobExternal(NABoolean v)
+  inline void setFromLobExternal(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_LOB_EXTERNAL: liudFlags_ &= ~FROM_LOB_EXTERNAL;
   };
 
-  NA_EIDPROC NABoolean fromExternal()
+  NABoolean fromExternal()
   {
     return ((liudFlags_ & FROM_EXTERNAL) != 0);
   };
 
-  NA_EIDPROC inline void setFromExternal(NABoolean v)
+  inline void setFromExternal(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_EXTERNAL: liudFlags_ &= ~FROM_EXTERNAL;
   };
-  
+ 
+ NABoolean lobLocking()
+  {
+    return ((liudFlags_ & LOB_LOCKING) != 0);
+  };
+
+  inline void setLobLocking(NABoolean v)
+  {
+    (v) ? liudFlags_ |= LOB_LOCKING: liudFlags_ &= ~LOB_LOCKING;
+  };
 
  protected:
   Int64 objectUID_;
@@ -521,7 +419,8 @@ class ExpLOBiud : public ExpLOBoper {
     FROM_EXTERNAL      = 0x0020,
     FROM_BUFFER        = 0x0040,
     FROM_EMPTY         = 0x0080,
-    FROM_LOB_EXTERNAL  = 0x0100
+    FROM_LOB_EXTERNAL  = 0x0100,
+    LOB_LOCKING        = 0x0200
   };
 
   Lng32 liudFlags_;
@@ -696,21 +595,21 @@ public:
 
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
-   NA_EIDPROC NABoolean toLob()
+   NABoolean toLob()
   {
     return ((lsFlags_ & TO_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setToLob(NABoolean v)
+  inline void setToLob(NABoolean v)
   {
     (v) ? lsFlags_ |= TO_LOB: lsFlags_ &= ~TO_LOB;
   };
-  NA_EIDPROC NABoolean toFile()
+  NABoolean toFile()
   {
     return ((lsFlags_ & TO_FILE) != 0);
   };
 
-  NA_EIDPROC inline void setToFile(NABoolean v)
+  inline void setToFile(NABoolean v)
   {
     (v) ? lsFlags_ |= TO_FILE: lsFlags_ &= ~TO_FILE;
   };
@@ -779,31 +678,31 @@ public:
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC NABoolean toString()
+  NABoolean toString()
   {
     return ((lcFlags_ & TO_STRING) != 0);
   };
 
-  NA_EIDPROC inline void setToString(NABoolean v)
+  inline void setToString(NABoolean v)
   {
     (v) ? lcFlags_ |= TO_STRING: lcFlags_ &= ~TO_STRING;
   };
 
-  NA_EIDPROC NABoolean toLob()
+  NABoolean toLob()
   {
     return ((lcFlags_ & TO_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setToLob(NABoolean v)
+  inline void setToLob(NABoolean v)
   {
     (v) ? lcFlags_ |= TO_LOB: lcFlags_ &= ~TO_LOB;
   };
-  NA_EIDPROC NABoolean toFile()
+  NABoolean toFile()
   {
     return ((lcFlags_ & TO_FILE) != 0);
   };
 
-  NA_EIDPROC inline void setToFile(NABoolean v)
+  inline void setToFile(NABoolean v)
   {
     (v) ? lcFlags_ |= TO_FILE: lcFlags_ &= ~TO_FILE;
   };
@@ -872,22 +771,22 @@ public:
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC NABoolean toString()
+  NABoolean toString()
   {
     return ((lchFlags_ & TO_STRING) != 0);
   };
 
-  NA_EIDPROC inline void setToString(NABoolean v)
+  inline void setToString(NABoolean v)
   {
     (v) ? lchFlags_ |= TO_STRING: lchFlags_ &= ~TO_STRING;
   };
 
-  NA_EIDPROC NABoolean toLob()
+  NABoolean toLob()
   {
     return ((lchFlags_ & TO_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setToLob(NABoolean v)
+  inline void setToLob(NABoolean v)
   {
     (v) ? lchFlags_ |= TO_LOB: lchFlags_ &= ~TO_LOB;
   };
@@ -903,49 +802,7 @@ public:
   char  filler1_[4];
 };
 
-class ExpLOBload : public ExpLOBinsert {
-public:
-  ExpLOBload(OperatorTypeEnum oper_type,
-	     Lng32 numAttrs,
-	     Attributes ** attr, 
-	     Int64 objectUID,
-	     short descSchNameLen,
-	     char * descSchName,
-	     Space * space);
-  ExpLOBload();
-
-  virtual ex_expr::exp_return_type eval(char *op_data[],
-					CollHeap*,
-					ComDiagsArea** diagsArea = 0);
-  
-  // Display
-  //
-  virtual void displayContents(Space * space, const char * displayStr, 
-			       Int32 clauseNum, char * constsArea);
-
-  // ---------------------------------------------------------------------
-  // Redefinition of methods inherited from NAVersionedObject.
-  // ---------------------------------------------------------------------
-  virtual unsigned char getClassVersionID()
-  {
-    return 1;
-  }
-
-  virtual void populateImageVersionIDArray()
-  {
-    setImageVersionID(2,getClassVersionID());
-    ExpLOBoper::populateImageVersionIDArray();
-  }
-
-  virtual short getClassSize() { return (short)sizeof(*this); }
-  // ---------------------------------------------------------------------
-
- private:
-
-  Lng32 llFlags_;
-  char  filler1_[4];
-};
-
+	   
 /////////////////////////////////////////
 // Class ExpLOBfunction                //
 /////////////////////////////////////////
@@ -992,18 +849,18 @@ public:
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ExpLOBoper::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
  
  private:
 }

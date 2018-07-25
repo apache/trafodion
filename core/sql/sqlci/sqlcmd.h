@@ -57,9 +57,15 @@ extern void HandleCLIErrorInit();
 extern void HandleCLIError(Lng32 &err, SqlciEnv *sqlci_env, 
 			   NABoolean displayErr = TRUE,
 			   NABoolean * isEOD = NULL,
+                           Int32 prepcode = 0, NABoolean getWarningsWithEOF = FALSE);
+extern void HandleCLIError(SQLSTMT_ID *stmt, Lng32 &err, SqlciEnv *sqlci_env, 
+			   NABoolean displayErr = TRUE,
+			   NABoolean * isEOD = NULL,
                            Int32 prepcode = 0);
-void handleLocalError(ComDiagsArea &diags, SqlciEnv *sqlci_env);
 
+void handleLocalError(ComDiagsArea *diags, SqlciEnv *sqlci_env);
+Int64 getRowsAffected(SQLSTMT_ID *stmt);
+Int32 getDiagsCondCount(SQLSTMT_ID *stmt);
 // for unnamed parameters
 #define MAX_NUM_UNNAMED_PARAMS  128
 #define MAX_LEN_UNNAMED_PARAM 300
@@ -159,10 +165,6 @@ public:
                                  SQLDESC_ID *output_desc,
                                  SQLDESC_ID *input_desc,
                                  NABoolean resetLastExecStmt);
-
-  NABoolean isAllowedInSIP() { return FALSE; };
-  NABoolean isAllowedInRWMode() { return TRUE; };
-  NABoolean isAllowedInCSMode() { return FALSE;};  
 };
 
 class DML : public SqlCmd {
@@ -270,14 +272,6 @@ private:
   Lng32 resultSetIndex_;
 };
 
-class GoAway : public SqlCmd {
-  char * tableName_;
-public:
-  GoAway(const char *tableName);
-  ~GoAway();
-  short process(SqlciEnv * sqlci_env);
-};
-
 // This class is used by the query cache virtual interface to execute
 // the commands "display_qc" and "display_qc_entries" which will show
 // some important fields of the SQL/MX query cache.
@@ -300,18 +294,6 @@ public:
   ~StoreExplain()
     {}
   short process(SqlciEnv * sqlciEnv);
-};
-
-class Usage : public SqlCmd {
-  char * moduleDir_;
-  char * module_;
-  char * table_;
-  NABoolean noe_;
-public:
-  Usage(char * module_dir, char * module, char * table,
-	NABoolean noe);
-  ~Usage();
-  short process(SqlciEnv * sqlci_env);
 };
 
 class Quiesce : public SqlCmd

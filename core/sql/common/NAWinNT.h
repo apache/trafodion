@@ -42,12 +42,8 @@
 
 #include <ctype.h>
 
-#ifdef ARKFS_OPEN
-  typedef unsigned short NAWchar;
-#else
-  // We generally use NAWchar as the C data type for wide characters. 
-  #define NAWchar	wchar_t
-#endif
+// We generally use NAWchar as the C data type for wide characters. 
+#define NAWchar	wchar_t
 
 #ifndef BYTES_PER_NAWCHAR
 #define BYTES_PER_NAWCHAR 2
@@ -64,7 +60,7 @@
 // We avoid sourcing in more header files into this simple header NAWinNT.h
 // file due to the complexity of the build of the SQL Engine products.
 //
-// NA_EIDPROC inline void wc_str_pad(NAWchar *str, Int32 length,
+// inline void wc_str_pad(NAWchar *str, Int32 length,
 //                                   NAWchar padchar = unicode_char_set::SPACE);
 
 
@@ -86,7 +82,6 @@
 #define NAWwcstol       na_wcstol
 
 // inline wchar functions
-NA_EIDPROC
 inline
 UInt32 na_wcslen (const NAWchar * wstr)
 {
@@ -95,18 +90,18 @@ UInt32 na_wcslen (const NAWchar * wstr)
    return s - wstr;
 }
 
-NA_EIDPROC inline
+inline
 Int32 na_iswspace (NAWchar wc)
 {
    return ( wc == NAWCHR(' ') );
 }
 
-NA_EIDPROC NAWchar *  na_wcscat (NAWchar*, const NAWchar*);
-NA_EIDPROC Int32      na_wcscmp (const NAWchar *, const NAWchar *);
-NA_EIDPROC Int32      na_wcsicmp (const NAWchar *, const NAWchar *);
-NA_EIDPROC Int32      na_wcsncmp (const NAWchar *, const NAWchar *, UInt32);
-NA_EIDPROC Int32      na_wcsincmp (const NAWchar *, const NAWchar *, UInt32);
-NA_EIDPROC NAWchar *  na_wcsncpy (NAWchar * dest, const NAWchar * src, UInt32 n);
+NAWchar *  na_wcscat (NAWchar*, const NAWchar*);
+Int32      na_wcscmp (const NAWchar *, const NAWchar *);
+Int32      na_wcsicmp (const NAWchar *, const NAWchar *);
+Int32      na_wcsncmp (const NAWchar *, const NAWchar *, UInt32);
+Int32      na_wcsincmp (const NAWchar *, const NAWchar *, UInt32);
+NAWchar *  na_wcsncpy (NAWchar * dest, const NAWchar * src, UInt32 n);
 
 // We define these functions on Linux because we have chosen to use the
 // short version of wchar_t (i.e., the 2-byte-size NAWchar data type)
@@ -115,15 +110,14 @@ NA_EIDPROC NAWchar *  na_wcsncpy (NAWchar * dest, const NAWchar * src, UInt32 n)
 // Functions na_wcstombs(), na_mbstowcs(), and na_wcswcs are defined in
 // the source file w:/common/wstr.cpp.
 // 
-NA_EIDPROC size_t    na_wcstombs(char *, const NAWchar*, size_t);
-NA_EIDPROC size_t    na_mbstowcs(NAWchar*, const char*,  size_t);
-NA_EIDPROC NAWchar * na_wcswcs(const NAWchar*, const NAWchar*);
+size_t    na_wcstombs(char *, const NAWchar*, size_t);
+size_t    na_mbstowcs(NAWchar*, const char*,  size_t);
+NAWchar * na_wcswcs(const NAWchar*, const NAWchar*);
 
 // This compares two strings that can have embedded nulls.
-NA_EIDPROC Int32      na_wcsnncmp (const NAWchar *wstr1, UInt32 len1,
+Int32      na_wcsnncmp (const NAWchar *wstr1, UInt32 len1,
                                    const NAWchar *wstr2, UInt32 len2);
 
-NA_EIDPROC
 inline
 NAWchar *na_wcscpy (NAWchar * dest, const NAWchar * src)
 {
@@ -134,7 +128,6 @@ NAWchar *na_wcscpy (NAWchar * dest, const NAWchar * src)
    return dest;
 }
 
-NA_EIDPROC
 inline
 Int32 na_wcs_has_only_ascii_chars (const NAWchar * src, size_t srcLenInNAWchars)
 {
@@ -146,7 +139,6 @@ Int32 na_wcs_has_only_ascii_chars (const NAWchar * src, size_t srcLenInNAWchars)
 }
 
 /*
-NA_EIDPROC
 inline
 NAWchar *na_wcsncpy (NAWchar * dest, const NAWchar * src, unsigned int n)
 {
@@ -168,39 +160,34 @@ NAWchar *na_wcsncpy (NAWchar * dest, const NAWchar * src, unsigned int n)
 }
 */
 
-NA_EIDPROC
 inline
 NAWchar na_towupper (NAWchar wc)
 {
    if ( NAWCHR('a') <= wc && wc <= NAWCHR('z') )
-#pragma nowarn(1506)   // warning elimination
       return wc - NAWCHR('a') + NAWCHR('A');
-#pragma warn(1506)  // warning elimination
    else
       return wc;
 }
 
-NA_EIDPROC
 inline
 NAWchar na_towlower (NAWchar wc)
 {
    if ( NAWCHR('A') <= wc && wc <= NAWCHR('Z') )
-#pragma nowarn(1506)   // warning elimination
       return wc - NAWCHR('A') + NAWCHR('a');
-#pragma warn(1506)  // warning elimination
    else
       return wc;
 }
 
-NA_EIDPROC Int64 na_wcstoll (const NAWchar *);
-NA_EIDPROC Lng32 na_wcstol (const NAWchar *);
-NA_EIDPROC NAWchar *na_wcschr (const NAWchar *, NAWchar);
-NA_EIDPROC NAWchar *na_wcsrchr (const NAWchar *, NAWchar);
-NA_EIDPROC Int32 na_wsprintf(NAWchar *buffer, const NAWchar *format, ... );
-NA_EIDPROC NAWchar *na_wmemchr(const NAWchar *ws, NAWchar wc, Int32 n); // used by swsprintf
+Int64 na_wcstoll (const NAWchar *);
+Lng32 na_wcstol (const NAWchar *);
+NAWchar *na_wcschr (const NAWchar *, NAWchar);
+NAWchar *na_wcschrSkipOverParenText (const NAWchar *, NAWchar);
+NAWchar *na_wcsrchr (const NAWchar *, NAWchar);
+Int32 na_wsprintf(NAWchar *buffer, const NAWchar *format, ... );
+NAWchar *na_wmemchr(const NAWchar *ws, NAWchar wc, Int32 n); // used by swsprintf
 
-NA_EIDPROC Int32 na_swscanf(const NAWchar *buffer, const NAWchar *format, ... );
-NA_EIDPROC double   na_wcstod (const NAWchar *, NAWchar **); // used by swscanf
+Int32 na_swscanf(const NAWchar *buffer, const NAWchar *format, ... );
+double   na_wcstod (const NAWchar *, NAWchar **); // used by swscanf
 
 
   #define T_TEXT(q)	WIDE_(q)        // q is "string"

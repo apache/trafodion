@@ -235,7 +235,7 @@ public:
     paramInfo_[i] = info;
   }
 
-  NA_EIDPROC inline const char *getSqlName() const { return sqlName_; }
+  inline const char *getSqlName() const { return sqlName_; }
 
   inline const char *getRuntimeOptions() const { return runtimeOptions_; }
   inline const char *getRuntimeOptionDelimiters() const

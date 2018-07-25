@@ -244,11 +244,9 @@ public:
   static const char *getEpochVirtualColName()    { return epochVirtualColName_; }
   static const char *getMvLogTsColName()         { return mvLogTsColName_; }
 
-  // LCOV_EXCL_START
   // only used for range logging which is a not supported feature
   static const char *getRowTypeVirtualColName()  { return rowtypeVirtualColName_; }
   static const char *getRowCountVirtualColName() { return rowcountVirtualColName_; }
-  // LCOV_EXCL_STOP
   
   // Mutators
   inline void setFlags(Int64 flags)                {flags_ |= flags;}
@@ -301,7 +299,7 @@ public:
   // copy Ctor
   ForceCardinalityInfo(const ForceCardinalityInfo &other);
 
-  virtual ~ForceCardinalityInfo() {}; // LCOV_EXCL_LINE
+  virtual ~ForceCardinalityInfo() {};
 
   // This value is used to force the cardinality.
   // It will be set to 0 when it should be ignored
@@ -331,7 +329,7 @@ public:
   // copy Ctor
   TriggerBindInfo(const TriggerBindInfo &other);
 
-  virtual ~TriggerBindInfo() {}; // LCOV_EXCL_LINE
+  virtual ~TriggerBindInfo() {};
 
   // forwards definition
   typedef UniqueExecuteId *UniqueExecuteIdPtr ;

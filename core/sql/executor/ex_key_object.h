@@ -51,7 +51,6 @@ class KeyObject : public ExGod
   ULng32 keyLength_;
   
 public:
-  NA_EIDPROC
   KeyObject(ex_expr * lkey_expr, ex_expr * hkey_expr,
 	    ULng32 key_length);
   ~KeyObject();

@@ -104,8 +104,8 @@ Lng32 RunDirectory::startNewRun(SBN scrblocknum)
    if (newRDListPtr == NULL)
     {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-			       ,NULL          //syserr: the actual FS error
-			       ,NULL          //syserrdetail
+			       ,0          //syserr: the actual FS error
+			       ,0          //syserrdetail
 			       ,"RunDirectory::startNewRun"     //methodname
 			       );
       return SORT_FAILURE;
@@ -138,7 +138,6 @@ Lng32 RunDirectory::startNewRun(SBN scrblocknum)
 //  run number of the newly started run.
 //
 //-----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination 
 void RunDirectory::endCurrentRun(void)
 {
   RunDirectoryEntry *tempRdListPtr;
@@ -146,7 +145,6 @@ void RunDirectory::endCurrentRun(void)
   tempRdListPtr = rdListPtr_ + numRunsGenerated_;
   // TIMESTAMP(tempRdListPtr->endTime_);     
 }
-#pragma warn(770)  // warning elimination 
 
 //-----------------------------------------------------------------------
 // Name         : getTotalNumOfRuns

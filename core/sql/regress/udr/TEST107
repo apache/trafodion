@@ -417,7 +417,6 @@ select num_lookups, num_cache_hits, num_entries, max_cache_size from table(narou
 -----------------------------------------------------------------------------
 -- COLLATION
 -----------------------------------------------------------------------------
-control query default COMP_BOOL_215 'ON';
 control query default ROUTINE_CACHE_SIZE '0';
 control query default QUERY_CACHE '0';
 
@@ -449,7 +448,6 @@ deterministic no sql final call allow any parallelism state area size 1024 ;
 values(getCollation('ghi'));
 
 cqd query_cache 'reset';
-control query default COMP_BOOL_215 reset;
 control query default ROUTINE_CACHE_SIZE reset;
 control query default QUERY_CACHE reset;
 

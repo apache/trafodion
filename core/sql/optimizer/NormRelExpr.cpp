@@ -62,6 +62,8 @@
 #include "ItemOther.h"
 #include "ItemExpr.h"
 #include "QRDescGenerator.h"
+#include "HBaseClient_JNI.h"
+#include "HiveClient_JNI.h"
 
 #ifndef TRANSFORM_DEBUG_DECL		// artifact of NSK's OptAll.cpp ...
 #define TRANSFORM_DEBUG_DECL
@@ -1464,7 +1466,8 @@ void Join::transformNode(NormWA & normWARef,
   //   reference the left subtree data.
   // 
   // For RoutineJoins/Udfs we also want to convert it to a join if the UDF
-  // does not need any inputs from the left. 
+  // does not need any inputs from the left and if the routine is
+  // deterministic.
   // ---------------------------------------------------------------------
   if (isTSJ())
     {
@@ -1597,18 +1600,21 @@ void Join::transformNode(NormWA & normWARef,
          if (crossReferences2.isEmpty() && 
              !isTSJForWrite()           &&
              !getInliningInfo().isDrivingPipelinedActions() &&
-             !getInliningInfo().isDrivingTempInsert() )// Triggers -
+             !getInliningInfo().isDrivingTempInsert() && // Triggers -
+             !(isRoutineJoin() &&
+               child(1).getGroupAttr()->getHasNonDeterministicUDRs()))
          {
            // Remember we used to be a RoutineJoin. This is used to determine
            // what type of contexts for partitioning we will try in OptPhysRel.
-           if (isRoutineJoin()) setDerivedFromRoutineJoin();
+           if (isRoutineJoin())
+             setDerivedFromRoutineJoin();
            convertToNotTsj();
          }
     
       else
          {
            // We have a TSJ that will be changed to Nested join 
-           // safe to change NOtIn here to non equi-predicate form (NE)
+           // safe to change NotIn here to non equi-predicate form (NE)
            // at this point only the case on single column NotIn can reach here
            // and the either the outer or inner column or both is nullable
            // and may have null values
@@ -2319,17 +2325,20 @@ RelExpr * Join::normalizeNode(NormWA & normWARef)
   // and if a value that is produced by the left subtree is not
   // referenced in the right subtree, 
   // ---------------------------------------------------------------------
-  if (isATSJ AND NOT isTSJForWrite() AND //NOT isRoutineJoin() AND
+  if (isATSJ AND NOT isTSJForWrite() AND
       NOT child(1)->getGroupAttr()->
             getCharacteristicInputs().referencesOneValueFromTheSet
                (child(0)->getGroupAttr()->getCharacteristicOutputs())
       && !getInliningInfo().isDrivingPipelinedActions() 
       && !getInliningInfo().isDrivingTempInsert() // Triggers -
+      && !(isRoutineJoin() &&
+           child(1).getGroupAttr()->getHasNonDeterministicUDRs())
      )
   {
     // Remember we used to be a RoutineJoin. This is used to determine
     // what type of contexts for partitioning we will try in OptPhysRel.
-    if (isRoutineJoin()) setDerivedFromRoutineJoin();
+    if (isRoutineJoin())
+      setDerivedFromRoutineJoin();
 
     convertToNotTsj();
     // ---------------------------------------------------------------
@@ -2758,28 +2767,44 @@ Here t2.a is a unique key of table t2.
 The following transformation is made
          Semi Join {pred : t1.b = t2.a}          Join {pred : t1.b = t2.a} 
         /         \                   ------->  /    \
-      /             \                         /        \
-Scan t1     Scan t2                 Scan t1     Scan t2
+       /           \                           /      \
+ Scan t1        Scan t2                   Scan t1     Scan t2
                                                 
 
 						
 b) If the right child is not unique in the joining column then 
 we transform the semijoin into an inner join followed by a groupby
 as the join's right child. This transformation is enabled by default
-only if the right side is an IN list, otherwise a CQD has to be used.
+only if the right side is an IN list or if the groupby's reduction 
+ratio is greater than 5.0, otherwise a CQD has to be used.
+
+Examples:
 
 select t1.a
 from t1
 where t1.b in (1,2,3,4,...,101) ;
 
 
-  Semi Join {pred : t1.b = t2.a}          Join {pred : t1.b = InList.col} 
+  Semi Join {pred : t1.b = InList.col}  Join {pred : t1.b = InList.col}
  /         \                   ------->  /    \
 /           \                           /      \
-Scan t1     Scan t2                 Scan t1     GroupBy {group cols: InList.col}
+Scan t1   TupleList                 Scan t1   GroupBy {group cols: InList.col}
                                                   |
                                                   |
                                                 TupleList
+
+select t1.a
+from t1
+where t1.b in (select t2.c from t2 where whatever) ;
+
+
+  Semi Join {pred : t1.b = t2.c }       Join {pred : t1.b = t2.c}
+ /         \                   ------->  /    \
+/           \                           /      \
+Scan t1   Scan t2                   Scan t1   GroupBy {group cols: t2.c}
+                                                  |
+                                                  |
+                                                Scan t2
 
 */
 
@@ -2817,18 +2842,42 @@ RelExpr* Join::transformSemiJoin(NormWA& normWARef)
 
  /* Apply the transformation described in item b) above.
    The transformation below is done if there are no non-equijoin preds either 
-  and the inner side has no base tables (i.e. is an IN LIST) or if we have
-  used a CQD to turn this transformation on for a specific user. For the general
-  case we are not certain if this transformation is always beneficial, so it is 
-  not on by default */
+  and the inner side has no base tables (i.e. is an IN LIST) OR if the groupby
+  is expected to provide a reduction > SEMIJOIN_TO_INNERJOIN_REDUCTION_RATIO
+  (default is 5.0) OR the inner row count is small OR if we have used a CQD to 
+  turn this transformation on. Some rationale: A data reduction might reduce
+  the amount of data for the inner table of a hash join (or it might not!
+  hash-semi-join sometimes does duplicate elimination itself, but not always).
+  Converting to a join allows the join to be commuted; if the number of rows
+  is small, nested join might be profitably chosen in that case. */
 
       ValueIdSet preds ;
       preds += joinPred();
       preds += selectionPred();
       preds -= getEquiJoinPredicates() ;
 
+      EstLogPropSharedPtr innerEstLogProp = child(1)->getGroupAttr()->outputLogProp((*GLOBAL_EMPTY_INPUT_LOGPROP));
+      CostScalar innerRowCount = innerEstLogProp->getResultCardinality(); 
+      CostScalar innerUec = innerEstLogProp->getAggregateUec(equiJoinCols1);
+      NABoolean haveSignificantReduction = FALSE;
+      CostScalar reductionThreshold = 
+        ((ActiveSchemaDB()->getDefaults()).getAsDouble(SEMIJOIN_TO_INNERJOIN_REDUCTION_RATIO));
+      NABoolean noInnerStats = innerEstLogProp->getColStats().containsAtLeastOneFake();
+      // have a valid value of uec, have something other than default 
+      // cardinality and satisfy reduction requirement.
+      if ((innerUec > 0) && (!noInnerStats) && 
+          (innerRowCount/innerUec > reductionThreshold))
+        haveSignificantReduction = TRUE;
+      CostScalar innerAllowance =
+        ((ActiveSchemaDB()->getDefaults()).getAsDouble(SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE));
+      NABoolean haveSmallInner = FALSE;
+      if ((innerRowCount < innerAllowance) && (!noInnerStats))
+        haveSmallInner = TRUE;
+
       if (preds.isEmpty() && 
-	  ((child(1)->getGroupAttr()->getNumBaseTables() == 0) || 
+	  ((child(1)->getGroupAttr()->getNumBaseTables() == 0) ||
+           haveSignificantReduction ||
+           haveSmallInner ||
 	    (CmpCommon::getDefault(SEMIJOIN_TO_INNERJOIN_TRANSFORMATION) == DF_ON)))
   {                     
     CollHeap *stmtHeap = CmpCommon::statementHeap() ;
@@ -2839,6 +2888,8 @@ RelExpr* Join::transformSemiJoin(NormWA& normWARef)
 				child(1)->castToRelExpr()) ;
 	newGrby->setGroupAttr(new (stmtHeap) 
 	  GroupAttributes(*(child(1)->getGroupAttr())));
+	// must reset numJoinedTables_; we might be copying GroupAttributes from a join
+	newGrby->getGroupAttr()->resetNumJoinedTables(1);
 	newGrby->getGroupAttr()->clearLogProperties();
 	  
 	newGrby->setGroupExpr(equiJoinCols1);
@@ -5865,7 +5916,6 @@ void Scan::rewriteNode(NormWA & normWARef)
   // -------------------------------------------------------------------------
   // Normalize the indexes.
   // -------------------------------------------------------------------------
-  // NT_PORT ( bd 7/16/96 ) cast to int
   for (i = 0;
        i < (Int32)getTableDesc()->getIndexes().entries();
        i++)
@@ -6626,7 +6676,6 @@ void GenericUpdate::rewriteNode(NormWA & normWARef)
   // -------------------------------------------------------------------------
   // Normalize the indexes.
   // -------------------------------------------------------------------------
-  // NT_PORT ( bd 7/16/96 ) cast to int
   for (j = 0;
        j < (Int32)getTableDesc()->getIndexes().entries();
        j++)
@@ -6927,6 +6976,22 @@ RelExpr * Insert::normalizeNode(NormWA & normWARef)
   if (normalizedThis->getOperatorType() == REL_LEAF_INSERT)
     return normalizedThis;
 
+  // If there is an ORDER BY + a [first n], copy the ORDER BY ValueIds
+  // down to the FirstN node so we order the rows before taking the first n.
+  // If it is ORDER BY + [any n] we don't do this, as it is sufficient
+  // and more efficient to sort the rows after taking just n of them.
+  // Note: We do this at normalize time instead of bind time because if
+  // there are complex expressions in the ORDER BY, the binder will get
+  // different ValueIds for the non-leaf nodes which screws up coverage
+  // tests. Doing it here the ValueIds have already been uniquely computed.
+  if ((reqdOrder().entries() > 0) && 
+      (child(0)->getOperatorType() == REL_FIRST_N))
+    {
+      FirstN * firstn = (FirstN *)child(0)->castToRelExpr();
+      if (firstn->isFirstN())  // that is, [first n], not [any n] or [last n]
+        firstn->reqdOrder().insert(reqdOrder());
+    }
+
   // If the child is not a Tuple node - nothing to do here.
   CMPASSERT(normalizedThis->getArity() > 0);
   if (normalizedThis->child(0)->getOperatorType() != REL_TUPLE)
@@ -6997,18 +7062,13 @@ NABoolean RelRoot::isUpdatableBasic(NABoolean isView,
   // QSTUFF
 
     {
-      // if child is a FirstN node, skip it.
-      if ((child(0)->castToRelExpr()->getOperatorType() == REL_FIRST_N) &&
-	  (child(0)->child(0)))
-	scan = (Scan *)child(0)->child(0)->castToRelExpr();
-      else
 	scan = (Scan *)child(0)->castToRelExpr();
     }
 
   if (scan->getOperatorType() != REL_SCAN)
     return FALSE;
 
-  if (scan->accessOptions().accessType() == BROWSE_)    // "read-only table"
+  if (scan->accessOptions().accessType() == TransMode::READ_UNCOMMITTED_ACCESS_)    // "read-only table"
     return FALSE;
 
   TransMode::IsolationLevel il;
@@ -7020,7 +7080,7 @@ NABoolean RelRoot::isUpdatableBasic(NABoolean isView,
     ActiveSchemaDB()->getDefaults().getIsolationLevel
       (il,
        CmpCommon::getDefault(ISOLATION_LEVEL_FOR_UPDATES));
-  if (scan->accessOptions().accessType() == ACCESS_TYPE_NOT_SPECIFIED_ &&
+  if (scan->accessOptions().accessType() == TransMode::ACCESS_TYPE_NOT_SPECIFIED_ &&
       il == TransMode::READ_UNCOMMITTED_)
     return FALSE;
 
@@ -7411,7 +7471,15 @@ void RelRoot::transformNode(NormWA & normWARef,
         }
       else
         updatableSelect() = FALSE;
-
+      
+      if ((child(0)->castToRelExpr()->getOperatorType() == REL_FIRST_N) )
+      {
+         FirstN* firstn = (FirstN *)child(0)->castToRelExpr();
+         if(firstn->reqdOrderInSubquery().entries() >0 )
+         {
+           reqdOrder().insert( firstn->reqdOrderInSubquery());
+         }
+      }
     }
   else
     {
@@ -7430,6 +7498,14 @@ void RelRoot::transformNode(NormWA & normWARef,
     
       locationOfPointerToMe = child(0); // my parent now -> my child
       child(0)->setFirstNRows(getFirstNRows());
+
+      //keep the order if there is FIRSTN
+      if (child(0)->getOperatorType()==REL_FIRST_N)
+      {
+         FirstN* firstn = (FirstN *)child(0)->castToRelExpr();
+         firstn->reqdOrderInSubquery().insert(reqdOrder()) ;
+      }
+
       deleteInstance();                 // Goodbye!
       
       
@@ -7602,6 +7678,24 @@ RelExpr * RelRoot::normalizeNode(NormWA & normWARef)
 
     childGAPtr->addCharacteristicInputs(inputsNeededForOrderBy);
   }
+
+  // ---------------------------------------------------------------------
+  // If there is an ORDER BY + a [first n], copy the ORDER BY ValueIds
+  // down to the FirstN node so we order the rows before taking the first n.
+  // If it is ORDER BY + [any n] we don't do this, as it is sufficient
+  // and more efficient to sort the rows after taking just n of them.
+  // Note: We do this at normalize time instead of bind time because if
+  // there are complex expressions in the ORDER BY, the binder will get
+  // different ValueIds for the non-leaf nodes which screws up coverage
+  // tests. Doing it here the ValueIds have already been uniquely computed.
+  // ---------------------------------------------------------------------
+  if ((reqdOrder().entries() > 0) && 
+      (child(0)->getOperatorType() == REL_FIRST_N))
+    {
+      FirstN * firstn = (FirstN *)child(0)->castToRelExpr();
+      if (firstn->isFirstN())  // that is, [first n], not [any n] or [last n]
+        firstn->reqdOrder().insert(reqdOrder());
+    }
 
   // ---------------------------------------------------------------------
   // Normalize the child.
@@ -8673,7 +8767,6 @@ void TupleList::rewriteNode(NormWA & normWARef)
 // but here we need to tranform each member of each ValueIdUnion of
 // transUnionVals().
 //
-#pragma nowarn(1506)   // warning elimination 
 void Transpose::transformNode(NormWA &normWARef,
                               ExprGroupId &locationOfPointerToMe)
 {
@@ -8771,7 +8864,6 @@ void Transpose::transformNode(NormWA &normWARef,
   transformSelectPred(normWARef, locationOfPointerToMe);
 
 } // Transpose::transformNode()
-#pragma warn(1506)  // warning elimination 
 
 // Transpose::rewriteNode() ---------------------------------------------
 // rewriteNode() is the virtual function that computes
@@ -8787,7 +8879,6 @@ void Transpose::transformNode(NormWA &normWARef,
 // but here we need to normalize each member of each ValueIdUnion of
 // transUnionVals().
 //
-#pragma nowarn(1506)   // warning elimination 
 void Transpose::rewriteNode(NormWA & normWARef)
 {
   // Rewrite the expressions of the child node.
@@ -8832,7 +8923,6 @@ void Transpose::rewriteNode(NormWA & normWARef)
   //
   getGroupAttr()->normalizeInputsAndOutputs(normWARef);
 } // Transpose::rewriteNode()
-#pragma warn(1506)  // warning elimination 
 
 // Transpose::recomputeOuterReferences() --------------------------------
 // This method is used by the normalizer for recomputing the
@@ -8842,7 +8932,6 @@ void Transpose::rewriteNode(NormWA & normWARef)
 //
 // Side Effects: sets the characteristicInputs of the groupAttr.
 //
-#pragma nowarn(1506)   // warning elimination 
 void Transpose::recomputeOuterReferences()
 {
   // This is virtual method on RelExpr.
@@ -8899,7 +8988,6 @@ void Transpose::recomputeOuterReferences()
   //
   getGroupAttr()->setCharacteristicInputs(outerRefs);
 } // Transpose::recomputeOuterReferences()  
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 // Member functions for class Pack
@@ -9694,7 +9782,6 @@ NABoolean CommonSubExprRef::createTempTable(CSEInfo &info)
   // ------------------------------
 
   // we create a name of this form:
-  // CSE_TEMP_ppppp_MXIDiiiii_Ssss_ccc
   // where
   //   ppp... is a prefix of the CTE name or an internal name
   //          (just to make it easier to identify, not really needed,
@@ -9823,8 +9910,7 @@ NABoolean CommonSubExprRef::createTempTable(CSEInfo &info)
     if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
       {
         int m = CmpCommon::diags()->mark();
-        if (!CmpCommon::context()->execHiveSQL(tempTableDDL,
-                                               CmpCommon::diags()))
+        if (HiveClient_JNI::executeHiveSQL(tempTableDDL) != HVC_OK)
           {
             if (CmpCommon::statement()->recompiling() ||
                 CmpCommon::statement()->getNumOfCompilationRetries() > 0)
@@ -10306,9 +10392,7 @@ CANodeId  CqsWA::findCANodeId(const NAString &tableName)
 
   //if you are here, invoke error handling
   AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
   return CANodeId();  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
 
 } // CqsWA::findCANodeId()
 
@@ -10600,9 +10684,7 @@ RelExpr * CqsWA::checkAndProcessGroupByJBBC( RelExpr *relExpr,
   }
 
   // error
-#pragma nowarn(203)   // warning elimination
    return NULL; // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
 
 }// CqsWA::checkAndProcessGroupByJBBC()
 
@@ -10659,9 +10741,7 @@ RelExpr *ScanForceWildCard::generateMatchingExpr(CANodeIdSet &lChildSet,
   else
   {
     AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
     return NULL;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
   }
 } // ScanForceWildCard::generateMatchingExpr()
 
@@ -10669,9 +10749,7 @@ RelExpr * RelExpr::generateLogicalExpr(CANodeIdSet &lChildSet,
                                        CANodeIdSet &rChildSet)
 {
   AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
     return NULL;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination 
 }
 
 //**************************************************************
@@ -10700,9 +10778,7 @@ RelExpr * GroupByAgg::generateLogicalExpr(CANodeIdSet &lChildSet,
 {
 
   AssertException("", __FILE__, __LINE__).throwException(); 
-#pragma nowarn(203)   // warning elimination
     return NULL;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
 }
 
 NABoolean RelRoot::forceCQS(RelExpr *cqsExpr)
@@ -10924,9 +11000,7 @@ NABoolean CqsWA::isMPTable(const NAString &tableName)
     else
     {
       AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
     return FALSE;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
     }
   }
   else
@@ -10934,5 +11008,5 @@ NABoolean CqsWA::isMPTable(const NAString &tableName)
     return FALSE;
   }
 } // CqsWA::isMPTable()
- 
+
  

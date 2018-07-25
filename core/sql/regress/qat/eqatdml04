@@ -18,7 +18,7 @@
 >>--       testcase A1: HAVING
 >>--       testcase A2: ORDER BY
 >>--       testcase A3: complex queries - combinations of all features
->>--       testcase A4: use of locking clauses (for stable access, for browse access, keep
+>>--       testcase A4: use of locking clauses (for read committed access, for read committed access, keep
 >>--                    lock) with above clauses
 >>--       testcase A5: variation of ordering of WHERE,GROUP BY,HAVING,
 >>--                    ORDER ,locking clauses
@@ -237,11 +237,11 @@ LARGE_INT
 PIC_X_5
 -------
 
-      7
-      3
-      5
-      4
       0
+      5
+      7
+      4
+      3
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -277,8 +277,8 @@ DECIMAL_10
 NEW_NAME_1
 ----------
 
-        90
         80
+        90
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
@@ -288,8 +288,8 @@ NEW_NAME_1
 NEW_NAME_1
 ----------
 
-        80
         90
+        80
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
@@ -300,14 +300,14 @@ NEW_NAME_1
 SYSKEY              
 --------------------
 
-  216172782152933121
-  216172782152933122
-  216172782152933125
-  216172782152933127
-  216172782152933128
-  216172782152933123
-  216172782152933124
-  216172782152933126
+ 3348008712607180201
+ 3348008712607260739
+ 3348008712607352949
+ 3348008712607424153
+ 3348008712607462000
+ 3348008712607291728
+ 3348008712607326460
+ 3348008712607403214
 
 --- 8 row(s) selected.
 >>--    <ufi-input>
@@ -456,9 +456,9 @@ PIC_1  LARGE_INT
 -----  --------------------
 
 B                      2000
+E                       100
 B                      1000
 X                       200
-E                       100
 
 --- 4 row(s) selected.
 >>--    <ufi-input>
@@ -469,8 +469,8 @@ E                       100
 PIC_X_5
 -------
 
-      7
       5
+      7
       4
 
 --- 3 row(s) selected.
@@ -531,14 +531,14 @@ NEW_NAME_1
 SYSKEY              
 --------------------
 
-  216172782152933121
-  216172782152933122
-  216172782152933125
-  216172782152933127
-  216172782152933128
-  216172782152933123
-  216172782152933124
-  216172782152933126
+ 3348008712607180201
+ 3348008712607260739
+ 3348008712607352949
+ 3348008712607424153
+ 3348008712607462000
+ 3348008712607291728
+ 3348008712607326460
+ 3348008712607403214
 
 --- 8 row(s) selected.
 >>--    <ufi-input>
@@ -580,8 +580,8 @@ A       bobby       A        bobby    bop                                       
 C       maureen     E        jimmy    rum                                                                                                                                                                                                       marilyn                                                                                                                                                                                                                                                                 3000        80.00               2000.000                   500         .50     100.70000       9000        1000                  2000          8               .97                 150            7.1           .700              7
 C       marcia      Z        johnny   dum                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                  4000        40.00               2000.000                    50         .60     100.60000       8000        5000                     0          9               .99                 110            8.1           .800              8
 D       melissa     C        7        pop                                                                                                                                                                                                       jimmy                                                                                                                                                                                                                                                                   1000        80.00               1500.000                   500         .20     100.99990         80        9000                   999          5               .80                 120            4.1           .400              4
-D       michelle    D        michael  rat                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                 -5000        90.00               2000.000                   500         .40     100.80000         90        8000                   200          7               .93                 140            6.1           .600              6
 D       steven      B        9        bat                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                  8000        70.00               2000.000                   500         .10     100.99900         90       10000                  1000          7               .70                 110            3.1           .300              3
+D       michelle    D        michael  rat                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                 -5000        90.00               2000.000                   500         .40     100.80000         90        8000                   200          7               .93                 140            6.1           .600              6
 E       monica      Q        sue      pat                                                                                                                                                                                                       christopher                                                                                                                                                                                                                                                             2000        90.00               1200.000                  3000         .30     100.99999       2000        8000              -1000000          1               .90                  80            5.1           .500              5
 
 --- 8 row(s) selected.
@@ -619,8 +619,8 @@ can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk
 deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk  
 box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk  
 red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk  
-not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk  
 why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk  
+not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk  
 sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge 
 joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy 
 
@@ -743,17 +743,17 @@ LARGE_INT             PIC_252                                                   
 PIC_X_A  PIC_X_2  PIC_X_3  PIC_X_4  PIC_X_5  PIC_X_6  PIC_X_7
 -------  -------  -------  -------  -------  -------  -------
 
-%t_      junk     j        %_             0        0        0
 _t%      junk     j        _%             0        0        0
+%t_      junk     j        %_             0        0        0
 \ts      t_go     j        to%go          0        0        0
 \t_      junk     j        \%             0        0        0
 sue      mary     Z        MARY           3       10       20
 deb      bill     Y        BILL           4       10       30
-box      here     R        debby          5       11       50
 red      long     S        tommy          5       15       70
+box      here     R        debby          5       11       50
+joe      over     W        maria          7       90      100
 can      come     X        TED            7       77       77
 not      time     P        diane          7       20       40
-joe      over     W        maria          7       90      100
 why      gone     R        billy          7       15       30
 
 --- 12 row(s) selected.
@@ -764,11 +764,11 @@ why      gone     R        billy          7       15       30
 PIC_X_A  PIC_X_7  PIC_9_7  CHAR_10     DECIMAL_10   BINARY_UNSIGNED  BINARY_32_SIGNED
 -------  -------  -------  ----------  -----------  ---------------  ----------------
 
-bob      bobby          2  ebediih              90              100             -1000
 rob      bobby          2  ebediih              90              100             -1000
-tom      tom            3  abadefih            100              100              -100
+bob      bobby          2  ebediih              90              100             -1000
 don      who           50  outside           10000              100              -100
 ron      they        2000  onsides           10000              100              -100
+tom      tom            3  abadefih            100              100              -100
 rod      for          400  inside               25               60                 0
 jon      does        1000  offsides          50000              500               100
 sue      sue            1  ebedafiih           110               80               100
@@ -782,11 +782,11 @@ PIC_X_A  PIC_X_7  PIC_9_7  CHAR_10     DECIMAL_10   BINARY_UNSIGNED  BINARY_32_S
 -------  -------  -------  ----------  -----------  ---------------  ----------------
 
 mar      why           50  house                50             7777                 0
-tar      what         500  none                100             8888                 0
 dan      sue          100  ebediih             100              100                60
+tar      what         500  none                100             8888                 0
 jar      how          600  inside              160              500               500
-car      who          400  done                160              500               500
 bob      bob          100  abadefih            160              200               200
+car      who          400  done                160              500               500
 boe      tommy        200  ebedafiih           200               50                50
 bar      where        300  gone                200             9999              -100
 
@@ -798,10 +798,10 @@ bar      where        300  gone                200             9999             
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4          
 ----------  -----------  ----------  --------------------
 
-        80         6.00  7             216172782159534338
-        80         6.00  B             216172782159534343
-        80         6.00  7             216172782159534342
-        90         5.00  A             216172782159534337
+        80         6.00  7            3348008712604933890
+        80         6.00  7            3348008712604972182
+        80         6.00  B            3348008712604978694
+        90         5.00  A            3348008712604909660
 
 --- 4 row(s) selected.
 >>--    <ufi-input>
@@ -811,10 +811,10 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  B            3348008712604978694  bill                                                                                                                                                                                                                                                                2000  B                         500
+        90         5.00  A            3348008712604909660  bob                                                                                                                                                                                                                                                                  999  A                         300
 
 --- 4 row(s) selected.
 >>
@@ -827,14 +827,14 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR             
 SYSKEY                PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S
 --------------------  -------  -----------  --------  -------  ---------------------
 
-  216172782159534337  A               5.00  make           90                 200.00
-  216172782159534338  7               6.00  joe            80                1200.00
-  216172782159534339  8               6.00  joe            80                1200.00
-  216172782159534340  5            1000.00  5             100                1000.00
-  216172782159534341  michael        50.00  dave           50                1500.00
-  216172782159534342  7               6.00  john           80                2000.00
-  216172782159534343  B               6.00  mark           80                3000.00
-  216172782159534344  michael        70.00  joan           50                4000.00
+ 3348008712604909660  A               5.00  make           90                 200.00
+ 3348008712604933890  7               6.00  joe            80                1200.00
+ 3348008712604944398  8               6.00  joe            80                1200.00
+ 3348008712604960677  5            1000.00  5             100                1000.00
+ 3348008712604966498  michael        50.00  dave           50                1500.00
+ 3348008712604972182  7               6.00  john           80                2000.00
+ 3348008712604978694  B               6.00  mark           80                3000.00
+ 3348008712604984276  michael        70.00  joan           50                4000.00
 
 --- 8 row(s) selected.
 >>--    <ufi-input>
@@ -845,14 +845,14 @@ SYSKEY                PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S
 PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S            SYSKEY
 -------  -----------  --------  -------  ---------------------  --------------------
 
-A               5.00  make           90                 200.00    216172782159534337
-7               6.00  joe            80                1200.00    216172782159534338
-8               6.00  joe            80                1200.00    216172782159534339
-5            1000.00  5             100                1000.00    216172782159534340
-michael        50.00  dave           50                1500.00    216172782159534341
-7               6.00  john           80                2000.00    216172782159534342
-B               6.00  mark           80                3000.00    216172782159534343
-michael        70.00  joan           50                4000.00    216172782159534344
+A               5.00  make           90                 200.00   3348008712604909660
+7               6.00  joe            80                1200.00   3348008712604933890
+8               6.00  joe            80                1200.00   3348008712604944398
+5            1000.00  5             100                1000.00   3348008712604960677
+michael        50.00  dave           50                1500.00   3348008712604966498
+7               6.00  john           80                2000.00   3348008712604972182
+B               6.00  mark           80                3000.00   3348008712604978694
+michael        70.00  joan           50                4000.00   3348008712604984276
 
 --- 8 row(s) selected.
 >>--    <ufi-input>
@@ -863,14 +863,14 @@ michael        70.00  joan           50                4000.00    21617278215953
 PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S            SYSKEY
 -------  -----------  --------  -------  ---------------------  --------------------
 
-michael        50.00  dave           50                1500.00    216172782159534341
-michael        70.00  joan           50                4000.00    216172782159534344
-7               6.00  joe            80                1200.00    216172782159534338
-8               6.00  joe            80                1200.00    216172782159534339
-7               6.00  john           80                2000.00    216172782159534342
-B               6.00  mark           80                3000.00    216172782159534343
-A               5.00  make           90                 200.00    216172782159534337
-5            1000.00  5             100                1000.00    216172782159534340
+michael        50.00  dave           50                1500.00   3348008712604966498
+michael        70.00  joan           50                4000.00   3348008712604984276
+7               6.00  joe            80                1200.00   3348008712604933890
+8               6.00  joe            80                1200.00   3348008712604944398
+7               6.00  john           80                2000.00   3348008712604972182
+B               6.00  mark           80                3000.00   3348008712604978694
+A               5.00  make           90                 200.00   3348008712604909660
+5            1000.00  5             100                1000.00   3348008712604960677
 
 --- 8 row(s) selected.
 >>
@@ -885,12 +885,12 @@ SMALL_INT
 
      9000
      8000
-       90
-     1000
      2000
-       80
-       10
+     1000
        90
+       80
+       90
+       10
 
 --- 8 row(s) selected.
 >>
@@ -917,7 +917,7 @@ SMALL_INT
 +>      group by char_1,decimal_1
 +>      having decimal_1 between 2 and 8
 +>      order by decimal_1   DESC
-+>      for repeatable access;
++>      for read committed access;
 
 CHAR_1  DECIMAL_1
 ------  ---------
@@ -939,7 +939,7 @@ A               4
 +>      group by binary_64_s,pic_comp_1, var_char
 +>      having binary_64_s > pic_comp_1
 +>      order by binary_64_s, binary_64_s DESC
-+>      for repeatable access;
++>      for read committed access;
 
 VAR_CHAR                                                                                                                                                                                                                                                       BINARY_64_S            PIC_COMP_1
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------------------  --------------------
@@ -961,7 +961,7 @@ thomas                                                                          
 +>      group by new_name_1,new_name_3
 +>      having new_name_1 = 80
 +>      order by new_name_3 ASC
-+>      for stable access;
++>      for read committed access;
 
 --- 0 row(s) selected.
 >>--    <ufi-input>
@@ -973,14 +973,14 @@ thomas                                                                          
 +>      group by new_name_1,new_name_4
 +>      having new_name_1 = 80
 +>      order by new_name_1
-+>      for browse access;
++>      for read committed access;
 
 NEW_NAME_1  NEW_NAME_4          
 ----------  --------------------
 
-        80    216172782159534338
-        80    216172782159534342
-        80    216172782159534343
+        80   3348008712604933890
+        80   3348008712604972182
+        80   3348008712604978694
 
 --- 3 row(s) selected.
 >>--    <ufi-input>
@@ -994,12 +994,12 @@ NEW_NAME_1  NEW_NAME_4
 MEDIUM_INT   SYSKEY              
 -----------  --------------------
 
-        999    216172782152933122
-       1000    216172782152933121
-       1000    216172782152933127
-       1000    216172782152933126
-       2000    216172782152933125
-       2000    216172782152933128
+        999   3348008712607260739
+       1000   3348008712607180201
+       1000   3348008712607403214
+       1000   3348008712607424153
+       2000   3348008712607462000
+       2000   3348008712607352949
 
 --- 6 row(s) selected.
 >>--    <ufi-input>
@@ -1040,9 +1040,9 @@ PIC_1  LARGE_INT
 -----  --------------------
 
 B                      2000
+E                       100
 B                      1000
 X                       200
-E                       100
 
 --- 4 row(s) selected.
 >>--    <ufi-input>
@@ -1084,8 +1084,8 @@ DECIMAL_10
 >>-- <testcase A4>
 >>
 >>--    <detail>
->>--     select normal test case - this tests the use of the for browse access,
->>--     for stable access, and for repeatable access clauses with GROUP BY
+>>--     select normal test case - this tests the use of the for read committed access,
+>>--     for read committed access, and for read committed access clauses with GROUP BY
 >>--     HAVING, and ORDER BY clauses. This is a test for syntax only - no actual
 >>--     checking of the locks obtained is done.
 >>
@@ -1096,7 +1096,7 @@ DECIMAL_10
 >>--    <ufi-input>
 >>      select large_int from btsel08
 +>      group by large_int
-+>      for browse access;
++>      for read committed access;
 
 LARGE_INT           
 --------------------
@@ -1115,19 +1115,19 @@ LARGE_INT
 >>      select pic_x_5 from btsel09
 +>      group by pic_x_5
 +>      having pic_x_5 > 4
-+>      for stable access;
++>      for read committed access;
 
 PIC_X_5
 -------
 
-      7
       5
+      7
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
 >>      select * from btsel10
 +>      order by pic_9_7
-+>      for repeatable access;
++>      for read committed access;
 
 PIC_X_A  PIC_X_7  PIC_9_7  CHAR_10     DECIMAL_10   BINARY_UNSIGNED  BINARY_32_SIGNED
 -------  -------  -------  ----------  -----------  ---------------  ----------------
@@ -1147,7 +1147,7 @@ ron      they        2000  onsides           10000              100             
 >>--    <ufi-input>
 >>      select pic_x_b from btsel05
 +>      group by pic_x_b
-+>      for stable access;
++>      for read committed access;
 
 PIC_X_B
 -------
@@ -1162,7 +1162,7 @@ C
 >>      select pic_x_b from btsel05
 +>      group by pic_x_b
 +>      having (pic_x_b = 'D') or (pic_x_b = 'B')
-+>      for repeatable access;
++>      for read committed access;
 
 PIC_X_B
 -------
@@ -1174,13 +1174,13 @@ B
 >>--    <ufi-input>
 >>      select * from btsel05
 +>      order by pic_x_b
-+>      for browse access;
++>      for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
 
-joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy 
 sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge 
+joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy 
 red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk  
 not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk  
 why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk  
@@ -1194,32 +1194,32 @@ can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk
 >>--    <ufi-input>
 >>      select new_name_1 from pvsel03
 +>      group by new_name_1
-+>      for repeatable access;
++>      for read committed access;
 
 NEW_NAME_1
 ----------
 
-        90
         80
+        90
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
 >>      select new_name_1 from svsel13
 +>      group by new_name_1
-+>      for repeatable access;
++>      for read committed access;
 
 NEW_NAME_1
 ----------
 
-        80
         90
+        80
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
 >>      select new_name_1 from pvsel03
 +>      group by new_name_1
 +>      having new_name_1 = 80
-+>      for browse access;
++>      for read committed access;
 
 NEW_NAME_1
 ----------
@@ -1231,7 +1231,7 @@ NEW_NAME_1
 >>      select new_name_1 from svsel13
 +>      group by new_name_1
 +>      having new_name_1 = 80
-+>      for browse access;
++>      for read committed access;
 
 NEW_NAME_1
 ----------
@@ -1242,29 +1242,29 @@ NEW_NAME_1
 >>--    <ufi-input>
 >>      select * from pvsel03
 +>      order by new_name_1
-+>      for stable access;
++>      for read committed access;
 
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4          
 ----------  -----------  ----------  --------------------
 
-        80         6.00  7             216172782159534338
-        80         6.00  B             216172782159534343
-        80         6.00  7             216172782159534342
-        90         5.00  A             216172782159534337
+        80         6.00  7            3348008712604933890
+        80         6.00  7            3348008712604972182
+        80         6.00  B            3348008712604978694
+        90         5.00  A            3348008712604909660
 
 --- 4 row(s) selected.
 >>--    <ufi-input>
 >>      select * from svsel13
 +>      order by new_name_1
-+>      for stable access;
++>      for read committed access;
 
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  B            3348008712604978694  bill                                                                                                                                                                                                                                                                2000  B                         500
+        90         5.00  A            3348008712604909660  bob                                                                                                                                                                                                                                                                  999  A                         300
 
 --- 4 row(s) selected.
 >>--    <end-input>
@@ -1281,7 +1281,7 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR             
 >>--    All other clauses may appear in any order after that. The following
 >>--    tests will have the order of these clauses randomly varied from
 >>--    the standard order of SELECT-FROM-WHERE-GROUP BY-HAVING-ORDER BY-
->>--    for browse access or for stable access or for repeatable access.
+>>--    for read committed access or for read committed access or for read committed access.
 >>
 >>
 >>--    <templates>
@@ -1297,7 +1297,7 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR             
 +>      group by char_1,decimal_1
 +>      having decimal_1 between 2 and 8
 +>      order by decimal_1   DESC
-+>      for repeatable access;
++>      for read committed access;
 
 --- 0 row(s) selected.
 >>
@@ -1313,7 +1313,7 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR             
 +>      group by binary_64_s,pic_comp_1, var_char
 +>      having binary_64_s > pic_comp_1
 +>      order by binary_64_s, binary_64_s DESC
-+>      for stable access;
++>      for read committed access;
 
 --- 0 row(s) selected.
 >>
@@ -1332,9 +1332,9 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR             
 NEW_NAME_1  NEW_NAME_4          
 ----------  --------------------
 
-        80    216172782159534338
-        80    216172782159534342
-        80    216172782159534343
+        80   3348008712604933890
+        80   3348008712604972182
+        80   3348008712604978694
 
 --- 3 row(s) selected.
 >>
@@ -1350,12 +1350,12 @@ NEW_NAME_1  NEW_NAME_4
 MEDIUM_INT   SYSKEY              
 -----------  --------------------
 
-        999    216172782152933122
-       1000    216172782152933121
-       1000    216172782152933127
-       1000    216172782152933126
-       2000    216172782152933125
-       2000    216172782152933128
+        999   3348008712607260739
+       1000   3348008712607180201
+       1000   3348008712607403214
+       1000   3348008712607424153
+       2000   3348008712607462000
+       2000   3348008712607352949
 
 --- 6 row(s) selected.
 >>
@@ -1398,9 +1398,9 @@ PIC_1  LARGE_INT
 -----  --------------------
 
 B                      2000
+E                       100
 B                      1000
 X                       200
-E                       100
 
 --- 4 row(s) selected.
 >>--    <ufi-input>
@@ -1513,7 +1513,7 @@ DECIMAL_10
 +>       by
 +>        decimal_1
 +>          DESC
-+>      repeatable
++>      read committed
 +>       access
 +>       ;
 
@@ -1540,7 +1540,7 @@ DECIMAL_10
 +>
 +>      order by binary_64_s, 2 DESC
 +>
-+>      for repeatable access
++>      for read committed access
 +>
 +>
 +>      ;
@@ -1557,7 +1557,7 @@ DECIMAL_10
 +>            new_name_1,new_name_3
 +>      having new_name_1=80
 +>      order by new_name_3 ASC
-+>      stable                                                        access;
++>      for read committed access;
 
 --- 0 row(s) selected.
 >>--    <ufi-input>
@@ -1574,7 +1574,7 @@ DECIMAL_10
 +>      FOR
 +>
 +>
-+>                              broWSE
++>                              read committed
 +>
 +>
 +>
@@ -1583,9 +1583,9 @@ DECIMAL_10
 NEW_NAME_1  NEW_NAME_4          
 ----------  --------------------
 
-        80    216172782159534338
-        80    216172782159534342
-        80    216172782159534343
+        80   3348008712604933890
+        80   3348008712604972182
+        80   3348008712604978694
 
 --- 3 row(s) selected.
 >>--    <ufi-input>
@@ -1599,12 +1599,12 @@ NEW_NAME_1  NEW_NAME_4
 MEDIUM_INT   SYSKEY              
 -----------  --------------------
 
-        999    216172782152933122
-       1000    216172782152933121
-       1000    216172782152933127
-       1000    216172782152933126
-       2000    216172782152933125
-       2000    216172782152933128
+        999   3348008712607260739
+       1000   3348008712607180201
+       1000   3348008712607403214
+       1000   3348008712607424153
+       2000   3348008712607462000
+       2000   3348008712607352949
 
 --- 6 row(s) selected.
 >>--    <ufi-input>
@@ -1646,9 +1646,9 @@ PIC_1  LARGE_INT
 -----  --------------------
 
 B                      2000
+E                       100
 B                      1000
 X                       200
-E                       100
 
 --- 4 row(s) selected.
 >>--    <ufi-input>
@@ -1709,8 +1709,8 @@ BINARY_64_S            (EXPR)
 ---------------------  --------------------
 
              2000.000                     4
-              200.000                     1
              1200.000                     2
+              200.000                     1
              1500.000                     1
 
 --- 4 row(s) selected.
@@ -1722,11 +1722,11 @@ BINARY_64_S            (EXPR)
 (EXPR)              
 --------------------
 
-             -333600
-           500000500
                  999
-                2000
                    0
+             -333600
+                2000
+           500000500
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -1737,11 +1737,11 @@ BINARY_64_S            (EXPR)
 BINARY_64_S            PIC_COMP_1            (EXPR)
 ---------------------  --------------------  ------
 
-             2000.000                   500     .70
-              200.000                    50     .50
              1200.000                    60     .60
              1500.000                   500     .80
              1200.000                  3000     .90
+             2000.000                   500     .70
+              200.000                    50     .50
              2000.000                    50     .99
 
 --- 6 row(s) selected.
@@ -1780,8 +1780,8 @@ PIC_COMP_1            (EXPR)
 PIC_COMP_1            (EXPR)               
 --------------------  ---------------------
 
-                 500                  80.00
                   50                  45.00
+                 500                  80.00
                   60                  60.00
                 3000                  90.00
 
@@ -1795,8 +1795,8 @@ PIC_COMP_1            (EXPR)
 NEW_NAME_1  (EXPR)              
 ----------  --------------------
 
-        90                     1
         80                     2
+        90                     1
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
@@ -1808,8 +1808,8 @@ BINARY_64_S            (EXPR)
 ---------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
              2000.000  marilyn                                                                                                                                                                                                                                                      
-              200.000  B                                                                                                                                                                                                                                                            
              1200.000  B                                                                                                                                                                                                                                                            
+              200.000  B                                                                                                                                                                                                                                                            
              1500.000  jimmy                                                                                                                                                                                                                                                        
 
 --- 4 row(s) selected.
@@ -1824,8 +1824,8 @@ BINARY_64_S            (EXPR)
 ---------------------  ---------------------
 
              2000.000                 457.50
-              200.000                 100.00
              1200.000                1605.00
+              200.000                 100.00
              1500.000                 580.00
 
 --- 4 row(s) selected.
@@ -1837,11 +1837,11 @@ BINARY_64_S            (EXPR)
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
-      8000           -2000000000
-     10000                 90000
       9000                 79920
-      1000              18000000
       5000                     0
+      8000           -2000000000
+      1000              18000000
+     10000                 90000
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -1852,11 +1852,11 @@ MEDIUM_INT  (EXPR)
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
-      8000           -8000000000
-     10000              10000000
       9000               8991000
-      1000               2000000
       5000                     0
+      8000           -8000000000
+      1000               2000000
+     10000              10000000
 
 --- 5 row(s) selected.
 >>
@@ -1869,11 +1869,11 @@ MEDIUM_INT  (EXPR)
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
-      8000                    31
-     10000                     1
       9000                     0
-      1000                    90
       5000                    80
+      8000                    31
+      1000                    90
+     10000                     1
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -1884,11 +1884,11 @@ MEDIUM_INT  (EXPR)
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
-      8000                   240
-     10000                   200
       9000                    90
-      1000                    10
       5000                    50
+      8000                   240
+      1000                    10
+     10000                   200
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -1912,11 +1912,11 @@ PIC_COMP_1            (EXPR)
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
-      8000                    26
-     10000                    22
       9000                    10
-      1000                    16
       5000                    18
+      8000                    26
+      1000                    16
+     10000                    22
 
 --- 5 row(s) selected.
 >>
@@ -1930,11 +1930,11 @@ MEDIUM_INT  (EXPR)
 MEDIUM_INT  (EXPR)                (EXPR)                (EXPR)  (EXPR)  (EXPR)                (EXPR)
 ----------  --------------------  --------------------  ------  ------  --------------------  --------------------
 
-      8000                    13                     4       6       2                     3                     3
-     10000                     4                     2       3       1                     2                     2
       9000                     4                     4       4       4                     1                     1
-      1000                     7                     7       7       7                     1                     1
       5000                     8                     8       8       8                     1                     1
+      8000                    13                     4       6       2                     3                     3
+      1000                     7                     7       7       7                     1                     1
+     10000                     4                     2       3       1                     2                     2
 
 --- 5 row(s) selected.
 >>
@@ -1974,8 +1974,8 @@ PIC_COMP_1            (EXPR)
 NEW_NAME_1  (EXPR)              
 ----------  --------------------
 
-        90                     1
         80                     2
+        90                     1
 
 --- 2 row(s) selected.
 >>
@@ -1988,8 +1988,8 @@ NEW_NAME_1  (EXPR)
 PIC_COMP_1            (EXPR)               
 --------------------  ---------------------
 
-                 500                 580.00
                   50                  95.00
+                 500                 580.00
                 3000                3090.00
 
 --- 3 row(s) selected.
@@ -2003,8 +2003,8 @@ BINARY_64_S            (EXPR)
 ---------------------  --------------------
 
              2000.000                    30
-              200.000                     8
              1200.000                    12
+              200.000                     8
              1500.000                    10
 
 --- 4 row(s) selected.
@@ -2017,10 +2017,10 @@ BINARY_64_S            (EXPR)
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
-      8000               -333600
-     10000             500000500
       9000                   999
+      8000               -333600
       1000                  2000
+     10000             500000500
 
 --- 4 row(s) selected.
 >>
@@ -2033,14 +2033,14 @@ MEDIUM_INT  (EXPR)
 (EXPR)              
 --------------------
 
-                 200
+                 500
                  300
                  100
-                 100
-                 500
                 1000
-                2000
                 3000
+                 100
+                 200
+                2000
 
 --- 8 row(s) selected.
 >>--    <end-input>
@@ -2120,8 +2120,8 @@ BINARY_64_S            (EXPR)
 ---------------------  --------------------
 
              2000.000                     4
-              200.000                     1
              1500.000                     1
+              200.000                     1
 
 --- 3 row(s) selected.
 >>--    <ufi-input>
@@ -2186,9 +2186,9 @@ BINARY_64_S            (EXPR)
 (EXPR)              
 --------------------
 
-           500000500
                  999
                 2000
+           500000500
 
 --- 3 row(s) selected.
 >>--    <ufi-input>
@@ -2200,11 +2200,11 @@ BINARY_64_S            (EXPR)
 BINARY_64_S            PIC_COMP_1            (EXPR)
 ---------------------  --------------------  ------
 
-             2000.000                   500     .70
-              200.000                    50     .50
              1200.000                    60     .60
              1500.000                   500     .80
              1200.000                  3000     .90
+             2000.000                   500     .70
+              200.000                    50     .50
 
 --- 5 row(s) selected.
 >>--    <ufi-input>
@@ -2240,8 +2240,8 @@ PIC_COMP_1            (EXPR)
 PIC_COMP_1            (EXPR)               
 --------------------  ---------------------
 
-                 500                  80.00
                   50                  45.00
+                 500                  80.00
                 3000                  90.00
 
 --- 3 row(s) selected.
@@ -2254,8 +2254,8 @@ PIC_COMP_1            (EXPR)
 NEW_NAME_1
 ----------
 
-        80
         90
+        80
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
@@ -2311,8 +2311,8 @@ PIC_COMP_1            (EXPR)
 NEW_NAME_1  (EXPR)              
 ----------  --------------------
 
-        90                     1
         80                     2
+        90                     1
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
@@ -2325,8 +2325,8 @@ NEW_NAME_1  (EXPR)
 PIC_COMP_1            (EXPR)               
 --------------------  ---------------------
 
-                 500                 580.00
                   50                  95.00
+                 500                 580.00
 
 --- 2 row(s) selected.
 >>--    <ufi-input>
@@ -2354,9 +2354,9 @@ BINARY_64_S            (EXPR)
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
+      9000                   999
       8000               -333600
      10000             500000500
-      9000                   999
 
 --- 3 row(s) selected.
 >>
@@ -2368,7 +2368,7 @@ MEDIUM_INT  (EXPR)
 +>      group by pic_comp_1
 +>      having sum(binary_signed) > 5000
 +>      order by pic_comp_1, 2
-+>      for repeatable access;
++>      for read committed access;
 
 PIC_COMP_1            (EXPR)               
 --------------------  ---------------------
@@ -2383,7 +2383,7 @@ PIC_COMP_1            (EXPR)
 +>      group by new_name_1
 +>      having avg(new_name_2) in (5,6)
 +>      order by 1, 2 ASC
-+>      for stable access;
++>      for read committed access;
 
 NEW_NAME_1  (EXPR)              
 ----------  --------------------
@@ -2430,7 +2430,7 @@ BINARY_64_S            (EXPR)
 +>      group by medium_int
 +>      having max(pic_x_1) <> 'E'
 +>      order by medium_int
-+>      for browse access;
++>      for read committed access;
 
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
@@ -2451,12 +2451,12 @@ MEDIUM_INT  (EXPR)
 PIC_COMP_1          
 --------------------
 
+                1000
                  200
+                2000
+                 500
                  300
                  100
-                 500
-                1000
-                2000
                 3000
 
 --- 7 row(s) selected.
@@ -2597,11 +2597,11 @@ A                     B
 MEDIUM_INT  (EXPR)              
 ----------  --------------------
 
-      8000                  3560
-     10000                   550
       9000                   500
-      1000                   500
       5000                    50
+      8000                  3560
+      1000                   500
+     10000                   550
 
 --- 5 row(s) selected.
 >>
@@ -2632,11 +2632,11 @@ A
 A                     (EXPR)               
 --------------------  ---------------------
 
+             2000000            4000000.000
              9600000           19200000.000
             10000000           10000000.000
             20000000           20000000.000
             16000000           16000000.000
-             2000000            4000000.000
             13500000           13500000.000
 
 --- 6 row(s) selected.
@@ -2650,11 +2650,11 @@ A                     (EXPR)
 A                     (EXPR)              
 --------------------  --------------------
 
+             2000000                 11000
              9600000                 16000
             10000000                  5000
             20000000                 10000
             16000000                  8000
-             2000000                 11000
             13500000                  9000
 
 --- 6 row(s) selected.

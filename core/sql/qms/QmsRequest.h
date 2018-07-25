@@ -349,7 +349,7 @@ class QRCommandLineRequest : public QRRequest
      virtual size_t readXml(char *buffer, size_t bufferSize)
      {
        if (isInlined_)
-         return readXmlInlined(buffer, bufferSize);  // LCOV_EXCL_LINE :cnu
+         return readXmlInlined(buffer, bufferSize);
        else
          return readXmlFile(buffer, bufferSize);
      }
@@ -371,7 +371,6 @@ protected:
         return xmlFile_.gcount();
       }
 
-    // LCOV_EXCL_START :cnu
     size_t readXmlInlined(char *buffer, size_t bufferSize)
       {
         if (!inFile_.rdbuf()->is_open() || inlinedLineRead_)
@@ -382,7 +381,6 @@ protected:
         inFile_.getline(buffer, bufferSize);
         return strlen(buffer);
       }
-    // LCOV_EXCL_STOP
 
 private:
     // Copy construction/assignment not defined.

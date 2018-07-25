@@ -50,6 +50,8 @@
 #include "NLSConversion.h"
 #include "nawstring.h"
 
+extern NAHeap sqlci_Heap;
+
 short convDoItMxcs(char * source,
 		   Lng32 sourceLen,
 		   short sourceType,
@@ -242,7 +244,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 			  Lng32 targetPrecision,
 			  Lng32 targetScale,
                           Lng32 vcIndLen,
-   			  ComDiagsArea* diags) {
+   			  ComDiagsArea *&diags) {
 
   // get rid of the old converted value
   if (converted_value) {
@@ -372,7 +374,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       converted_value = new char[targetLen];
 
 
-#pragma nowarn(1506)   // warning elimination 
     ex_expr::exp_return_type ok;
     CharInfo::CharSet TCS = sqlci_env->getTerminalCharset();
     CharInfo::CharSet ISOMAPCS = sqlci_env->getIsoMappingCharset();
@@ -419,7 +420,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 		  targetScale,
 		  VCLen,
 		  VCLenSize,
-		  0,
+		  &sqlci_Heap,
 		  &diags);
     
     if ( ok != ex_expr::EXPR_OK)
@@ -429,7 +430,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       // desctructor.
       return SQL_Error; // error case
     }
-#pragma warn(1506)  // warning elimination
     
   };
   break;
@@ -444,7 +444,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     UInt32 flags = 0;
     flags |= CONV_NO_HADOOP_DATE_FIX;
 
-#pragma nowarn(1506)   // warning elimination 
     ex_expr::exp_return_type ok = convDoIt(value,
 					   sourceLen, 
 					   sourceType,
@@ -457,7 +456,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 					   targetScale,
 					   VCLen,
 					   VCLenSize,
-					   0,
+					   &sqlci_Heap,
 					   &diags,
                                            CONV_UNKNOWN,
                                            NULL,
@@ -467,7 +466,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       {
 	return SQL_Error; // error case
       }
-#pragma warn(1506)  // warning elimination
   };
   break;
 
@@ -488,7 +486,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     // convert target back to string.
     converted_value = new char[targetLen];
     Lng32 convFlags = CONV_ALLOW_SIGN_IN_INTERVAL;
-#pragma nowarn(1506)   // warning elimination 
     short ok = 
       convDoItMxcs(value,
 		   sourceLen, 
@@ -509,7 +506,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       // desctructor.
       return SQL_Error; // error case
     }
-#pragma warn(1506)  // warning elimination
   };
   break;
 
@@ -517,7 +513,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   case REC_NUM_BIG_SIGNED:
   {
     converted_value = new char[targetLen];
-#pragma nowarn(1506)   // warning elimination 
     short ok = 
       convDoItMxcs(value,
 		   sourceLen, 
@@ -538,7 +533,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       // desctructor.
       return SQL_Error; // error case
     }
-#pragma warn(1506)  // warning elimination
     
   };
   break;

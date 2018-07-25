@@ -26,20 +26,14 @@
 
 #include "Platform.h"
 
-  #ifdef __EID
-    #define SQLLM_LIB_FUNC
-  #else
-    #ifdef LM_DLL
-      #define SQLLM_LIB_FUNC __declspec( dllexport )
-    #else
-      #define SQLLM_LIB_FUNC __declspec( dllimport )
-    #endif
-  #endif
-#ifdef NA_64BIT
-  // dg64 - get rid of __declspec
-  #undef SQLLIM_LIB_FUNC
-  #define SQLLIM_LIB_FUNC
+#ifdef LM_DLL
+#define SQLLM_LIB_FUNC __declspec( dllexport )
+#else
+#define SQLLM_LIB_FUNC __declspec( dllimport )
 #endif
+
+#undef SQLLIM_LIB_FUNC
+#define SQLLIM_LIB_FUNC
 
 #endif
 

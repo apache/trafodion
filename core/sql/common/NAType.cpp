@@ -78,15 +78,15 @@ NAType::NAType (const NAType & rhs, NAMemory * h)
        displayDataType_ (rhs.displayDataType_, h)
 {}
 
-NAType::NAType( const NAString&    adtName,
+NAType::NAType( NAMemory *h, 
+                const NAString&    adtName,
                 NABuiltInTypeEnum  ev,
                 Lng32               dataStorageSize,
                 NABoolean          nullable,
                 Lng32               SQLnullHdrSize,
                 NABoolean          varLenFlag,
                 Lng32               lengthHdrSize,
-                Lng32               dataAlignment,
-                NAMemory *         h
+                Lng32               dataAlignment
                 ) : typeName_ (h) // memleak fix
                   , displayDataType_ (h)
 {
@@ -335,7 +335,6 @@ NABoolean NAType::isNumeric() const
 // Methods that return the binary form of the minimum and the maximum
 // representable values.
 // ---------------------------------------------------------------------
-//LCOV_EXCL_START : - Derived types MUST define the real routines
 void NAType::minRepresentableValue(void*, Lng32*, NAString**,
 				   NAMemory * h) const {}
 
@@ -395,17 +394,14 @@ NABoolean NAType::computeNextKeyValue(NAString &keyValue) const
   ComASSERT(keyValue == temp);
   return FALSE;
 }
-//LCOV_EXCL_STOP : - Derived types MUST define the real routines
 
-//LCOV_EXCL_START :
 void NAType::print(FILE* ofd, const char* indent)
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(ofd,"%s nominal size %d, total %d\n",
           indent,getNominalSize(),getTotalSize());
 #endif
 }
-//LCOV_EXCL_STOP :
 
 // -- The external name for the type (text representation)
 
@@ -443,12 +439,10 @@ Lng32 NAType::getPrecision() const
   return -1;
 }
 
-//LCOV_EXCL_START : Routine must be defined, but used only by numeric types.
 Lng32 NAType::getMagnitude() const
 {
   return -1;
 }
-//LCOV_EXCL_STOP :
 
 Lng32 NAType::getScale() const
 {
@@ -556,14 +550,14 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
 
     case REC_NUM_BIG_SIGNED:
       {
-	SQLBigNum tmp(precision,scale,FALSE,TRUE,FALSE,NULL);
+	SQLBigNum tmp(NULL, precision,scale,FALSE,TRUE,FALSE);
 	d_len = tmp.getDisplayLength();
       }
       break;
 
     case REC_NUM_BIG_UNSIGNED:
       {
-	SQLBigNum tmp(precision,scale,FALSE,FALSE,FALSE,NULL);
+	SQLBigNum tmp(NULL, precision,scale,FALSE,FALSE,FALSE);
 	d_len = tmp.getDisplayLength();
       }
       break;
@@ -622,14 +616,12 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
         rec_datetime_field startField;
         rec_datetime_field endField;
         getIntervalFields(datatype, startField, endField);
-        SQLInterval interval(FALSE,
+        SQLInterval interval(NULL, FALSE,
                              startField,
                              (UInt32) precision,
                              endField,
                              (UInt32) scale);
-#pragma nowarn(1506)   // warning elimination 
         d_len = interval.getDisplayLength();
-#pragma warn(1506)  // warning elimination 
       }
       break;
 
@@ -698,7 +690,15 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
   switch (fs_datatype)
     {
     case REC_MIN_F_CHAR_H ... REC_MAX_F_CHAR_H:
-      *outputStr = "string";
+      {
+        SQLChar * ct = (SQLChar*)this;
+        char buf[20];
+        Int32 size = ct->getStrCharLimit();
+        str_itoa(size, buf);
+        *outputStr = "char(";
+        *outputStr += buf;
+        *outputStr += ")";
+      }
       break;
 
     case REC_MIN_V_CHAR_H ... REC_MAX_V_CHAR_H:
@@ -785,7 +785,8 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
 }
 
 short NAType::getMyTypeAsText(NAString * outputStr,  // output
-			      NABoolean addNullability) const
+			      NABoolean addNullability,
+                              NABoolean addCollation) const
 {
   // get the right value for all these
   Lng32		      fs_datatype		= getFSDatatype();
@@ -826,12 +827,8 @@ short NAType::getMyTypeAsText(NAString * outputStr,  // output
       
       dtStartField = (ComDateTimeStartEnd)dtiCommonType.getStartField();
       dtEndField = (ComDateTimeStartEnd)dtiCommonType.getEndField();
-#pragma nowarn(1506)   // warning elimination 
       dtTrailingPrecision = dtiCommonType.getFractionPrecision();
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
       dtLeadingPrecision = dtiCommonType.getLeadingPrecision();
-#pragma warn(1506)  // warning elimination 
     }
   
   // Prepare parameters in case of a CHARACTER type
@@ -841,7 +838,8 @@ short NAType::getMyTypeAsText(NAString * outputStr,  // output
       isUpshifted       = charType.isUpshifted();
       isCaseinsensitive = charType.isCaseinsensitive();
       characterSet      = charType.getCharSet();
-      collationSequence = charType.getCollation();
+      if (addCollation)
+        collationSequence = charType.getCollation();
       if ( characterSet == CharInfo::UTF8 /*  || (characterSet == CharInfo::SJIS */ )
       {
          // If byte length limit is EXACTLY (maxBytesPerChar * character limit), then use character limit
@@ -888,16 +886,12 @@ short NAType::getMyTypeAsText(NAString * outputStr,  // output
 
 Lng32 NAType::getSize() const  
 {
-#pragma nowarn(1506)   // warning elimination 
   return sizeof(*this) + typeName_.length();
-#pragma warn(1506)  // warning elimination 
 }
 
 Lng32 NAType::hashKey() const  
 {
-#pragma nowarn(1506)   // warning elimination 
   return typeName_.hash();
-#pragma warn(1506)  // warning elimination 
 }
 
 // return true iff it is safe to call NAType::hashKey on me
@@ -966,22 +960,22 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
   if ( !strcmp(hiveType, "tinyint"))
     {
       if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
-        return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+        return new (heap) SQLSmall(heap, TRUE /* neg */, TRUE /* allow NULL*/);
       else
-        return new (heap) SQLTiny(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+        return new (heap) SQLTiny(heap, TRUE /* neg */, TRUE /* allow NULL*/);
     }
 
   if ( !strcmp(hiveType, "smallint"))
-    return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    return new (heap) SQLSmall(heap, TRUE /* neg */, TRUE /* allow NULL*/);
  
   if ( !strcmp(hiveType, "int")) 
-    return new (heap) SQLInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    return new (heap) SQLInt(heap, TRUE /* neg */, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "bigint"))
-    return new (heap) SQLLargeInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    return new (heap) SQLLargeInt(heap, TRUE /* neg */, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "boolean"))
-    return new (heap) SQLBooleanNative(TRUE, heap);
+    return new (heap) SQLBooleanNative(heap, TRUE);
  
   if ( !strcmp(hiveType, "string"))
     {
@@ -993,7 +987,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
       Int32 maxNumChars = 0;
       Int32 storageLen = lenInBytes;
       SQLVarChar * nat = 
-        new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+        new (heap) SQLVarChar(heap, CharLenInfo(maxNumChars, storageLen),
                               TRUE, // allow NULL
                               FALSE, // not upshifted
                               FALSE, // not case-insensitive
@@ -1005,16 +999,16 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     }
   
   if ( !strcmp(hiveType, "float"))
-    return new (heap) SQLReal(TRUE /* allow NULL*/, heap);
+    return new (heap) SQLReal(heap, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "double"))
-    return new (heap) SQLDoublePrecision(TRUE /* allow NULL*/, heap);
+    return new (heap) SQLDoublePrecision(heap, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "timestamp"))
-    return new (heap) SQLTimestamp(TRUE /* allow NULL */ , 6, heap);
+    return new (heap) SQLTimestamp(heap, TRUE /* allow NULL */ , DatetimeType::MAX_FRACTION_PRECISION);
 
   if ( !strcmp(hiveType, "date"))
-    return new (heap) SQLDate(TRUE /* allow NULL */ , heap);
+    return new (heap) SQLDate(heap, TRUE /* allow NULL */);
 
   if ( (!strncmp(hiveType, "varchar", 7)) ||
        (!strncmp(hiveType, "char", 4)))
@@ -1059,7 +1053,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     }
 
     if (!strncmp(hiveType, "char", 4))
-      return new (heap) SQLChar(CharLenInfo(maxNumChars, storageLen),
+      return new (heap) SQLChar(heap, CharLenInfo(maxNumChars, storageLen),
                                 TRUE, // allow NULL
                                 FALSE, // not upshifted
                                 FALSE, // not case-insensitive
@@ -1068,7 +1062,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
                                 CharInfo::DefaultCollation,
                                 CharInfo::IMPLICIT);
     else
-      return new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+      return new (heap) SQLVarChar(heap, CharLenInfo(maxNumChars, storageLen),
                                    TRUE, // allow NULL
                                    FALSE, // not upshifted
                                    FALSE, // not case-insensitive
@@ -1079,6 +1073,8 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
 
   if ( !strncmp(hiveType, "decimal", 7) )
   {
+    const Int16 DisAmbiguate = 0;
+
     Int32 i=0, pstart=-1, pend=-1, sstart=-1, send=-1, p=-1, s = -1;
     Int32 hiveTypeLen = strlen(hiveType);
     char pstr[MAX_NUM_LEN], sstr[MAX_NUM_LEN];
@@ -1128,14 +1124,14 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
     {
       if( ( s >=0 )  &&  ( s<= p) ) //have valid scale
-        return new (heap) SQLDecimal( p, s, TRUE, TRUE);
+        return new (heap) SQLNumeric(heap, TRUE, p, s, DisAmbiguate, TRUE);
       else
         return NULL;
     }
     else if( p > MAX_PRECISION_ALLOWED)  
     {
       if ( (s>=0) && ( s<= p ) ) //have valid scale
-        return new (heap) SQLBigNum( p, s, TRUE, TRUE, TRUE, NULL);
+        return new (heap) SQLBigNum(heap, p, s, TRUE, TRUE, TRUE);
       else
         return NULL;
     }
@@ -1143,7 +1139,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     else if( ( p == -1 ) && ( s == -1 ) )
     {
       // hive define decimal as decimal ( 10, 0 )
-      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
+      return new (heap) SQLNumeric(heap, TRUE, 10, 0, DisAmbiguate, TRUE);
     }
     else
     {

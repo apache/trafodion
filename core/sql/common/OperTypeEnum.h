@@ -94,6 +94,7 @@ enum OperatorTypeEnum {
                         REL_BINARY_TABLE_MAPPING_UDF,
                         REL_TABLE_MAPPING_BUILTIN_LOG_READER,
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
+                        REL_TABLE_MAPPING_BUILTIN_SERIES, //series
                         REL_TABLE_MAPPING_BUILTIN_JDBC,
                         REL_ANY_TABLE_MAPPING_UDF,
                         REL_ANY_LEAF_TABLE_MAPPING_UDF,
@@ -282,6 +283,7 @@ enum OperatorTypeEnum {
                         REL_FAST_EXTRACT,
 
                         REL_HIVE_INSERT,
+                        REL_ANY_EXTRACT,
                         REL_BULK_UNLOAD,
 
                         REL_COMMON_SUBEXPR_REF,
@@ -428,9 +430,6 @@ enum OperatorTypeEnum {
                         // returns operand2 if operand1 is null
                         ITM_NVL               = 2150,
 
-                        // Functions for Utilities
-                        ITM_AUDIT_IMAGE = 2151,
-
                         // return NULL if 2 arguments match, else return 1st arg
                         ITM_NULLIF            = 2152,
 
@@ -474,6 +473,9 @@ enum OperatorTypeEnum {
 
                         // Regular Expression
                         ITM_REGEXP = 2178,
+			ITM_UNIX_TIMESTAMP = 2179,
+			ITM_SLEEP = 2180,
+			ITM_UNIQUE_SHORT_ID = 2181,
 
                         // numeric functions
                         ITM_ABS = 2200,
@@ -517,6 +519,7 @@ enum OperatorTypeEnum {
                         ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
+                        ITM_SPLIT_PART = 2249,
                         ITM_TRUNC = 2250,
                         ITM_ASCII = 2251,
                         ITM_POSITION = 2252,
@@ -586,6 +589,7 @@ enum OperatorTypeEnum {
                         ITM_DAYOFYEAR = 2311,
                         ITM_FIRSTDAYOFYEAR = 2312,
                         ITM_INTERNALTIMESTAMP = 2313, // ++ Triggers,
+                        ITM_DAYOFMONTH = 2314,
 
                         ITM_DATE_TRUNC_YEAR    = 2315,
                         ITM_DATE_TRUNC_MONTH   = 2316,
@@ -645,7 +649,6 @@ enum OperatorTypeEnum {
                         ITM_PAGROUP = 2370,
                         ITM_HASH2_DISTRIB = 2371,
                         ITM_IDENTITY = 2372,
-                        ITM_EXTRACT_COLUMNS = 2373,
                         ITM_QUERYID_EXTRACT = 2374,
                         ITM_HEADER = 2375,
                         ITM_RANGE_SPEC_FUNC = 2376,
@@ -967,6 +970,10 @@ enum OperatorTypeEnum {
                         DDL_CLEANUP_OBJECTS,
                         DDL_LAST_STMT_OP,
                         DDL_INITIALIZE_SECURITY,
+                        DDL_COMMENT_ON,
+
+                        // ddl operations on hive objects
+                        DDL_ON_HIVE_OBJECTS,
 
                         //
                         // Elements in DDL statements
@@ -1089,6 +1096,7 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
                         ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH,
                         ELM_LIKE_OPT_WITHOUT_ROW_FORMAT_ELEM,
+                        ELM_LIKE_OPT_WITHOUT_LOB_COLUMNS,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

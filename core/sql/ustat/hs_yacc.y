@@ -47,10 +47,6 @@
 #include "hs_parser.h"
 
 
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4065)//don't complain about empty switch statements.
-
-
 extern "C" { void yyerror(void* scanner, const char *sb); };
 
 union YYSTYPE;
@@ -93,6 +89,7 @@ extern int yylex(YYSTYPE * lvalp, void* scanner);
 %token  TOK_SET ROWCOUNT SAMPLE ROWS RANDOM PERIODIC TOK_PERCENT CLUSTERS BLOCKS OF
 %token  EXISTING COLUMNS NECESSARY CREATE REMOVE ALL WITH SKEWED VALUES 
 %token  INCREMENTAL WHERE WHERE_CONDITION PERSISTENT NO
+%token  SYSTEM
 %%
 
 /*
@@ -109,13 +106,19 @@ statement   :  UPDATE STATISTICS { hs_globals_y->isUpdatestatsStmt = TRUE; } FOR
               | UPDATE STATISTICS LOG ON
                    {
                      HSLogMan *LM = HSLogMan::Instance();
-                     LM->StartLog();
+                     LM->SetLogSetting(HSLogMan::ON);
                      hs_globals_y->optFlags |= LOG_OPT;
                    }
               | UPDATE STATISTICS LOG TOK_OFF
                    {
                      HSLogMan *LM = HSLogMan::Instance();
-                     LM->StopLog();
+                     LM->SetLogSetting(HSLogMan::OFF);
+                     hs_globals_y->optFlags |= LOG_OPT;
+                   }
+              | UPDATE STATISTICS LOG SYSTEM
+                   {
+                     HSLogMan *LM = HSLogMan::Instance();
+                     LM->SetLogSetting(HSLogMan::SYSTEM);
                      hs_globals_y->optFlags |= LOG_OPT;
                    }
               | UPDATE STATISTICS LOG CLEAR
@@ -132,7 +135,6 @@ statement   :  UPDATE STATISTICS { hs_globals_y->isUpdatestatsStmt = TRUE; } FOR
 
 column_name :  identifier
                    {
-#pragma warn(1506)   // warning elimination
 
                      HSColumnStruct *hist_pt = new(STMTHEAP) HSColumnStruct;
 
@@ -326,6 +328,12 @@ identifier :   REGULAR_IDENTIFIER
                    {
                      NAString *buf = new(STMTHEAP) NAString(STMTHEAP);
                      *buf = "STATISTICS";
+                     $$ = buf;
+                   }
+            |  SYSTEM
+                   {
+                     NAString *buf = new(STMTHEAP) NAString(STMTHEAP);
+                     *buf = "SYSTEM";
                      $$ = buf;
                    }
             |  TOK_PERCENT

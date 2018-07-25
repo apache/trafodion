@@ -91,7 +91,6 @@
 #include "ItemConstr.h"
 #include "NATable.h"
 
-// LCOV_EXCL_START :cnu
 /*static*/ void Constraint::makeColSignature(const ValueIdSet &assigns,
 					     ColSignature &outsig)
 {
@@ -102,7 +101,6 @@
 	//## or (to save a little space) size <highest col position + 1>
 	//## depending on how the bitvec is implemented
 } // Constraint::makeColSignature
-// LCOV_EXCL_STOP
 
 AbstractRIConstraint::~AbstractRIConstraint()
 {

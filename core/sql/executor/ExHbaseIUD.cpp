@@ -33,6 +33,7 @@
 #include "NLSConversion.h"
 #include "ExHdfsScan.h"
 #include "Context.h"
+#include "HdfsClient_JNI.h"
 
 ExHbaseAccessInsertTcb::ExHbaseAccessInsertTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb, 
@@ -541,7 +542,8 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
                                               hbaseAccessTdb().useHbaseXn(),
                                               hbaseAccessTdb().useRegionXn(),
                                               insColTSval_,
-                                              asyncOperation_);
+                                              asyncOperation_,
+					      hbaseAccessTdb().getColIndexOfPK1());
 
 	    if (retcode == HBASE_DUP_ROW_ERROR) // row exists, return error
 	      {
@@ -1139,10 +1141,8 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
           ex_globals * glob ) :
     ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob),
     prevRowId_ (NULL),
-    hdfs_(NULL),
-    hdfsSampleFile_(NULL),
-    loggingFileName_(NULL),
-    lastErrorCnd_(NULL)
+    lastErrorCnd_(NULL),
+    sampleFileHdfsClient_(NULL)
 {
    hFileParamsInitialized_ = false;
    //sortedListOfColNames_ = NULL;
@@ -1157,27 +1157,13 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
                       "traf_upsert_err",
                       fileNum,
                       loggingFileName_);
-   LoggingFileCreated_ = FALSE;
    loggingRow_ =  new(glob->getDefaultHeap()) char[hbaseAccessTdb.updateRowLen_];
 }
 
 ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
 {
-  if (loggingFileName_ != NULL) {
-     NADELETEBASIC(loggingFileName_, getHeap());
-     loggingFileName_ = NULL;
-  }
-  // Flush and close sample file if used
-  if (hdfs_)
-    {
-      if (hdfsSampleFile_)
-        {
-          hdfsFlush(hdfs_, hdfsSampleFile_);
-          hdfsCloseFile(hdfs_, hdfsSampleFile_);
-        }
-     
-    }
-
+  if (sampleFileHdfsClient_ != NULL)
+     NADELETE(sampleFileHdfsClient_, HdfsClient, getHeap()); 
 }
 
 // Given the type information available via the argument, return the name of
@@ -1398,7 +1384,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       if (!hFileParamsInitialized_)
       {
-              importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
+        importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
             ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
         familyLocation_ = std::string(importLocation_ + "/#1");
         Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
@@ -1428,15 +1414,30 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
             // Set up HDFS file for sample table.
            
             ContextCli *currContext = getGlobals()->castToExExeStmtGlobals()->getCliGlobals()->currContext();
-            hdfs_ = currContext->getHdfsServerConnection((char*)"default",0);
             Text samplePath = std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getSampleLocation()) +
                                           ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
             char filePart[10];
             sprintf(filePart, "/%d", fileNum);
+            HDFS_Client_RetCode hdfsClientRetcode;
             samplePath.append(filePart);
-            hdfsSampleFile_ = hdfsOpenFile(hdfs_, samplePath.data(), O_WRONLY|O_CREAT, 0, 0, 0);
+            if (sampleFileHdfsClient_ == NULL)
+                sampleFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetcode);
+            if (hdfsClientRetcode == HDFS_CLIENT_OK) {
+                hdfsClientRetcode = sampleFileHdfsClient_->hdfsOpen(samplePath.data(), FALSE);
+                if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+                    NADELETE(sampleFileHdfsClient_, HdfsClient, getHeap());
+                    sampleFileHdfsClient_ = NULL;
+                }
+            } 
+            if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+              ComDiagsArea * diagsArea = NULL;
+              ExRaiseSqlError(getHeap(), &diagsArea,
+                              (ExeErrorCode)(8110));
+              pentry_down->setDiagsArea(diagsArea);
+              step_ = HANDLE_ERROR;
+              break;
+            }
           }
-
           posVec_.clear();
           hbaseAccessTdb().listOfUpdatedColNames()->position();
           while (NOT hbaseAccessTdb().listOfUpdatedColNames()->atEnd())
@@ -1675,10 +1676,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         createLoggingRow( hbaseAccessTdb().updateTuppIndex_,  updateRow_,
             loggingRow_ , loggingRowLen);
         ExHbaseAccessTcb::handleException((NAHeap *)getHeap(), loggingRow_, loggingRowLen,
-               lastErrorCnd_,
-               ehi_,
-               LoggingFileCreated_,
-               loggingFileName_, &loggingErrorDiags_);
+               lastErrorCnd_);
       }
       if (pentry_down->getDiagsArea())
         pentry_down->getDiagsArea()->clear();
@@ -1770,7 +1768,10 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           if (eodSeen)
           {
             ehi_->closeHFile(table_);
-            ehi_->hdfsClose();
+            if (logFileHdfsClient_ != NULL)
+               logFileHdfsClient_->hdfsClose();
+            if (sampleFileHdfsClient_ != NULL)
+               sampleFileHdfsClient_->hdfsClose();
             hFileParamsInitialized_ = false;
             retcode = ehi_->close();
           }
@@ -2272,7 +2273,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
                                                      tcb_->hbaseAccessTdb().useRegionXn(),
 						     -1, // colTS
-                                                     tcb_->asyncOperation_); 
+                                                     tcb_->asyncOperation_,
+						     tcb_->hbaseAccessTdb().getColIndexOfPK1()); 
 
 	    if (retcode == HBASE_DUP_ROW_ERROR)
 	      {
