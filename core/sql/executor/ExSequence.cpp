@@ -1487,7 +1487,35 @@ void ExSequenceTcb::updateDiagsArea(  ExeErrorCode rc_)
     }
     if (!da->contains((Lng32) -rc_))
     {
-      *da << DgSqlCode(-rc_);
+      char msg[512];
+      if(rc_ == EXE_SORT_ERROR)
+      {
+        char errorMsg[100];
+        Lng32 scratchError = 0;
+        Lng32 scratchSysError = 0;
+        Lng32 scratchSysErrorDetail = 0;
+
+        if(clusterDb_)
+        {
+          clusterDb_->getScratchErrorDetail(scratchError,
+                                 scratchSysError,
+                                 scratchSysErrorDetail,
+                                 errorMsg);
+
+          str_sprintf(msg, "Sequence Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
+              scratchError, scratchSysError, scratchSysErrorDetail, errorMsg);
+        }
+        else
+        {
+          str_sprintf(msg, "Sequence Scratch IO Error occurred." );
+        }
+      }
+      else
+      {
+        str_sprintf(msg, "Sequence Operator Error occurred."); 
+      }
+      
+      *da << DgString0(msg);
     }
 }
 //
