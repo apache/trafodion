@@ -332,6 +332,7 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
 #endif
   if (evalRetCode == ex_expr::EXPR_TRUE)
     retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
+
   return retcode;
 }
 
@@ -475,7 +476,21 @@ short ExExeUtilConnectbyTcb::work()
            }
          }
          cliInterface()->fetchRowsEpilogue(0, FALSE);
-         step_ = DO_CONNECT_BY_;
+
+         if( matchRowNum > exeUtilTdb().maxSize_ )
+         {
+           ComDiagsArea * diags = getDiagsArea();
+           if(diags == NULL)
+           {
+              setDiagsArea(ComDiagsArea::allocate(getHeap()));
+              diags = getDiagsArea();              
+           }
+           *diags << DgSqlCode(-8039);
+
+           step_ = ERROR_;
+         }
+         else
+           step_ = DO_CONNECT_BY_;
         }
        break;
       case DO_CONNECT_BY_:
@@ -606,7 +621,20 @@ short ExExeUtilConnectbyTcb::work()
        case NEXT_LEVEL_:
          {
             currLevel++;
-            step_ = DO_CONNECT_BY_;
+           if( currLevel > exeUtilTdb().maxDeep_ )
+           {
+             ComDiagsArea * diags = getDiagsArea();
+             if(diags == NULL)
+             {
+               setDiagsArea(ComDiagsArea::allocate(getHeap()));
+               diags = getDiagsArea();              
+             }
+             *diags << DgSqlCode(-8038);
+
+             step_ = ERROR_;
+           }
+           else
+             step_ = DO_CONNECT_BY_;
          }
        break;
        case NEXT_ROOT_:
@@ -637,7 +665,15 @@ short ExExeUtilConnectbyTcb::work()
          if (qparent_.up->isFull())
            return WORK_OK;
 
-         step_ = INITIAL_;
+        step_ = INITIAL_;
+#if 1
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = INITIAL_;
+#endif
+#if 0
 	 // Return EOF.
 	 up_entry = qparent_.up->getTailEntry();
 	 up_entry->upState.parentIndex = 
@@ -655,11 +691,13 @@ short ExExeUtilConnectbyTcb::work()
          for(int i = 0; i< currRootId ; i++)
          {
            currQueue = getCurrQueue( i, seedQueue);
-           releaseCurrentQueue(currQueue, getHeap());
+           //releaseCurrentQueue(currQueue, getHeap());
            NADELETE(currQueue, Queue, getHeap());
          }
          NADELETE(seedQueue, Queue, getHeap());
+#endif
          return WORK_OK;
+
        break;
      }
     }

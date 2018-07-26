@@ -2130,8 +2130,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		rel_subquery
 %type <item>      		row_subquery
 %type <item>      		predicate
-//%type <item>                    connect_by
-//%type <item>                    startwith
 %type <item>                    dml_column_reference
 %type <item>      		null_predicate
 %type <boolean>                 scan_key_hint
@@ -13777,6 +13775,7 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
 query_spec_body : query_select_list table_expression access_type  optional_lock_mode
 			{
                           if( ! ((Scan *)$2)->hasConnectBy()) {
+
 			  // use a compute node to attach select list
 			  RelRoot *temp=  new (PARSERHEAP())
                             RelRoot($2, $3, $4, REL_ROOT, $1);
@@ -13825,11 +13824,12 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
                             }
                             euc->noCycle_ = ((Scan*)$2)->getBiConnectBy()->getNoCycle();
                             euc->scan_ = $2;
-                            euc->myTableName_ = "_CONN_"+((Scan*)$2)->getTableName().getQualifiedNameAsString();
+                            euc->myselection_ = ((Scan*)$2)->getBiConnectBy()->where_clause ;
+                            euc->myTableName_ = "_CONNECTBY_"+((Scan*)$2)->getTableName().getQualifiedNameAsString();
                             euc->parentColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getParentColName();
                             euc->childColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getChildColName();
                             
-                            euc->addSelPredTree( ((Scan*)$2)->getBiConnectBy()->where_clause );
+                            //euc->addSelPredTree( ((Scan*)$2)->getBiConnectBy()->where_clause );
 
                             $$ = temp;                              
                           }

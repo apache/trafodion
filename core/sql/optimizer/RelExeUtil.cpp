@@ -6191,8 +6191,6 @@ RelExpr * ExeUtilConnectby::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->childColName_ = childColName_;
   result->startWithExprString_ = startWithExprString_;
   result->noCycle_ = noCycle_;
-  result->myselection_= myselection_;
-  result->mypredicates_= mypredicates_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
@@ -6205,7 +6203,14 @@ RelExpr * ExeUtilConnectby::bindNode(BindWA *bindWA)
   RelExpr * boundExpr = NULL;
   bindChildren(bindWA);
 
+  scan_->bindNode(bindWA);
   boundExpr = ExeUtilExpr::bindNode(bindWA);
+  
+  if( myselection_ ) 
+  {
+    myselection_->bindNode(bindWA);
+    myselection_->convertToValueIdSet(mypredicates_, bindWA, ITM_AND);
+  }
 
   if (bindWA->errStatus()) 
     return NULL;

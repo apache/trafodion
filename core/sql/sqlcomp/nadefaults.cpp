@@ -879,6 +879,9 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DD_____(COMP_STRING_5,	    ""),
 
 
+  DDint__(CONNECTBY_MAX_DEEP,                   "200"),
+  DDint__(CONNECTBY_MAX_SIZE,                   "100000"),
+
   DDkwd__(CONSTANT_FOLDING,                     "OFF"),
 
   DDkwd__(COSTING_SHORTCUT_GROUPBY_FIX,                "ON"),

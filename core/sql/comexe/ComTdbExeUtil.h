@@ -4153,6 +4153,8 @@ public:
   NAString startWithExprString_;
   NABoolean hasStartWith_;
   NABoolean noCycle_;
+  Int32 maxDeep_;
+  Int32 maxSize_;
 private:
   ExCriDescPtr myWorkCriDesc_;  
   Int32 flags_;
