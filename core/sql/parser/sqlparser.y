@@ -2085,7 +2085,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>	  		table_value_constructor
 %type <relx>      		table_expression
 %type <relx>      		from_clause
-%type <item>            startwith_clause
+%type <item>                    startwith_clause
 %type <item>      		join_specification
 %type <item>      		join_condition
 %type <item>      		where_clause
@@ -13808,7 +13808,7 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 
                             ExeUtilConnectby *euc = new (PARSERHEAP()) 
                              ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()), (char*) stmt->data(), 
-                                        stmtCharSet, NULL, PARSERHEAP());
+                                        stmtCharSet, $2, PARSERHEAP());
 
   			    RelRoot *temp = new (PARSERHEAP())
 			      RelRoot(euc, REL_ROOT , $1);

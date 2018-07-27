@@ -1110,7 +1110,7 @@ public:
   virtual TrafDesc * createVirtualTableDesc();
 
   virtual const char * getVirtualTableName();
-#if 0
+#if 1
   virtual
   void pushdownCoveredExpr(const ValueIdSet & outputExprOnOperator,
                            const ValueIdSet & newExternalInputs,

@@ -102,11 +102,9 @@ ExExeUtilConnectbyTcb::ExExeUtilConnectbyTcb(
   qparent_.down->allocatePstate(this);
   pool_->get_free_tuple(tuppData_, exe_util_tdb.tupleLen_);
   data_ = tuppData_.getDataPointer();
-//  workAtp_ = allocateAtp(exe_util_tdb.workCriDesc_, glob->getSpace());
-  
-//  pool_->get_free_tuple(workAtp_->getTupp(1), 0);
-//  pool_->get_free_tuple(workAtp_->getTupp(2), 0);
 
+  //pool_->get_free_tuple(workAtp_->getTupp(2), 0);
+  //pool_->get_free_tuple(workAtp_->getTupp(3), 0);
 }
 
 ex_tcb_private_state *  ExExeUtilConnectbyTcb::allocatePstates(
@@ -117,105 +115,7 @@ ex_tcb_private_state *  ExExeUtilConnectbyTcb::allocatePstates(
 
   return pa.allocatePstates(this, numElems, pstateLength);
 }
-#if 0
-short ExExeUtilConnectbyTcb::emitRows(Queue *q, ExpTupleDesc * tDesc)
-{
-  short retcode = 0, rc =0;
-  char * ptr;
-  Lng32   len;
 
-  q->position();
-#if 1         
-    for (Lng32 idx = 0; idx < q->numEntries(); idx++)
-    {
-      OutputInfo * vi = (OutputInfo*)q->getNext();
-
-      if (vi == NULL) break;
-	  for (UInt32 i = 1; i < tDesc->numAttrs() ; i++)
-	  {
-	   // OutputInfo * vi = (OutputInfo*)q->getNext();
-
-	    char * src = (char*)vi->get(i);
-	    Attributes * attr = tDesc->getAttr(i);
-	    short srcType;
-	    Lng32 srcLen;
-	    short valIsNull = 0;
-            if(attr->getDatatype() < REC_MAX_CHARACTER)
-              srcType = REC_BYTE_F_ASCII;
-            else
-              srcType = attr->getDatatype(); 
-	    srcLen = attr->getLength();
-            if(src == NULL) valIsNull = 1;
-#if 1
-	    if (attr->getNullFlag())
-	      {
-		// target is nullable
-		if (attr->getNullIndicatorLength() == 2)
-		  {
-		    // set the 2 byte NULL indicator to -1
-		    *(short *) (&data_[attr->getNullIndOffset()]) =
-		      valIsNull;
-		  }
-		else
-		  {
-		    ex_assert(attr->getNullIndicatorLength() == 4,
-			      "NULL indicator must be 2 or 4 bytes");
-		    *(Lng32 *) (&data_[attr->getNullIndOffset()]) =
-		      valIsNull;
-		  }
-	      }
-	    else
-	      ex_assert(!valIsNull,
-			"NULL source for NOT NULL stats column");
-#endif
-	    if (!valIsNull)
-	      {
-
-#if 1
-		if (
-		    ::convDoIt(src, srcLen, srcType, 0, 0,
-			       &data_[attr->getOffset()], 
-			       attr->getLength(),
-			       attr->getDatatype(),0,0,
-			       0, 0, NULL) != ex_expr::EXPR_OK)
-		  {
-		    ex_assert(
-			 0,
-			 "Error from ExStatsTcb::work::convDoIt.");
-		  }
-#endif
-	      }
-	  }
-#endif
-
-      retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
-    }
-
-  return retcode;
-}
-
-short ExExeUtilConnectbyTcb::emitOneRow(ExpTupleDesc * tDesc, int level)
-{
-  short retcode = 0, rc = 0;
-  char * ptr;
-  Lng32   len;  
-  ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_OK;
-  UInt32 rowLen = exeUtilTdb().outputRowlen_; //TODO
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-
-  cliInterface()->getPtrAndLen(1, ptr, len); //start from second column
-  //setup ATP
-  workAtp_->getTupp(exeUtilTdb().sourceDataTuppIndex_)
-    .setDataPointer(data_);
-  workAtp_->getTupp(2) 
-    .setDataPointer(ptr);
-
-  evalRetCode = (exeUtilTdb().outputExpr())->eval(pentry_down->getAtp(), workAtp_, NULL, 
-                                exeUtilTdb().tupleLen_, &rowLen);
-  retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
-  return retcode;
-}
-#endif
 short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle)
 {
   short retcode = 0, rc =0;
@@ -280,7 +180,7 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
       }  
   }
 
-#if 1
+
   short srcType = REC_BIN32_UNSIGNED;
   Lng32 srcLen = 4;
   int src = isleaf;
@@ -310,26 +210,18 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
         0,
         "Error from ExStatsTcb::work::convDoIt.");
   }
-#endif
 
   //apply the expression
-#if 0
-  ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_OK;
-  UInt32 rowLen = exeUtilTdb().outputRowlen_; //TODO
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-
-  //setup ATP
-  workAtp_->getTupp(exeUtilTdb().workAtpIndex())
-    .setDataPointer(data_);
-  
-  evalRetCode = (exeUtilTdb().scanExpr_)->eval(pentry_down->getAtp(), workAtp_, NULL, 
-                                exeUtilTdb().tupleLen_, &rowLen);
-#endif
-#if 1 
   ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_TRUE;
   if(exeUtilTdb().scanExpr_ )
-    evalRetCode = evalScanExpr((char*)data_,  exeUtilTdb().tupleLen_, FALSE);
-#endif
+  {
+    //evalRetCode = evalScanExpr((char*)data_,  exeUtilTdb().tupleLen_, FALSE);
+
+      workAtp_->getTupp(exeUtilTdb().workAtpIndex())
+	.setDataPointer((char*)data_);
+      evalRetCode =
+	exeUtilTdb().scanExpr_->eval(workAtp_, NULL);
+  }
   if (evalRetCode == ex_expr::EXPR_TRUE)
     retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
 
@@ -665,37 +557,21 @@ short ExExeUtilConnectbyTcb::work()
          if (qparent_.up->isFull())
            return WORK_OK;
 
-        step_ = INITIAL_;
-#if 1
-	    retcode = handleDone();
-	    if (retcode == 1)
+         retcode = handleDone();
+	 if (retcode == 1)
 	      return WORK_OK;
 
-	    step_ = INITIAL_;
-#endif
-#if 0
-	 // Return EOF.
-	 up_entry = qparent_.up->getTailEntry();
-	 up_entry->upState.parentIndex = 
-	   pentry_down->downState.parentIndex;
-	    
-	 up_entry->upState.setMatchNo(matchRowNum);
-	 up_entry->upState.status = ex_queue::Q_NO_DATA;
-	    
-	 // insert into parent
-	 qparent_.up->insert();
-	  
-	 qparent_.down->removeHead();
+	 step_ = INITIAL_;
 
          //release the currentQueue
          for(int i = 0; i< currRootId ; i++)
          {
            currQueue = getCurrQueue( i, seedQueue);
-           //releaseCurrentQueue(currQueue, getHeap());
+           releaseCurrentQueue(currQueue, getHeap());
            NADELETE(currQueue, Queue, getHeap());
          }
          NADELETE(seedQueue, Queue, getHeap());
-#endif
+
          return WORK_OK;
 
        break;

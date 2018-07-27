@@ -6205,7 +6205,7 @@ RelExpr * ExeUtilConnectby::bindNode(BindWA *bindWA)
 
   scan_->bindNode(bindWA);
   boundExpr = ExeUtilExpr::bindNode(bindWA);
-  
+ 
   if( myselection_ ) 
   {
     myselection_->bindNode(bindWA);

@@ -5461,8 +5461,9 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   ex_cri_desc * returnedDesc
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);  
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
-  const Int32 work_atp = 1;
-  const Int32 outputAtpIndex = 2;
+  const Int32 work_atp = 0;
+  Int32 theAtpIndex = returnedDesc->noTuples()-1;
+  const Int32 outputAtpIndex =theAtpIndex;
 
   Attributes ** attrs =
     new(generator->wHeap())
@@ -5492,10 +5493,6 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   // add this descriptor to the work cri descriptor.
   workCriDesc->setTupleDescriptor(outputAtpIndex , tupleDesc);
 
-  Int32 theAtpIndex = returnedDesc->noTuples()-1;
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       work_atp, outputAtpIndex);
-
   TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
   Lng32 colDescSize =  column_desc->columnsDesc()->length;
 
@@ -5505,13 +5502,21 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   ex_expr * selectPred = NULL;
 
   if (!mypredicates_.isEmpty())
+  //if(NOT selectionPred().isEmpty())
     {
       ItemExpr * selPredTree =
         mypredicates_.rebuildExprTree(ITM_AND,TRUE,TRUE);
+        //selectionPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
       expGen->generateExpr(selPredTree->getValueId(),
                             ex_expr::exp_SCAN_PRED,
                             &selectPred);
+
+
+     expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+			       0, theAtpIndex);
+
     }
+
 
   ComTdbExeUtilConnectby  * exe_util_tdb = new(space)  
   ComTdbExeUtilConnectby (stmtText , (stmtText ? strlen(stmtText) : 0), getStmtTextCharSet(), tblnm , NULL, 
