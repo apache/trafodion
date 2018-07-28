@@ -1037,7 +1037,6 @@ void CPStartD::startProcs ( bool requiresDTM )
             case ProcessType_TMID:
             case ProcessType_PERSIST:
             case ProcessType_SSMP:
-            case ProcessType_NameServer:
                 if ( persistConfig->GetRequiresDTM() && !requiresDTM )
                 {
                     if ( tracing )
@@ -1114,6 +1113,7 @@ void CPStartD::startProcs ( bool requiresDTM )
                 break;
             case ProcessType_DTM:
             case ProcessType_PSD:
+            case ProcessType_NameServer:
             case ProcessType_Watchdog:
             default:
                 // Skip these, they are managed by DTM Lead and monitor processes
