@@ -581,12 +581,6 @@ char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
-    case ex_FAST_DELETE:
-    {
-      GetVTblPtr(vtblptr,ComTdbExeUtilFastDelete);
-      break;
-    }
-
     case ex_HIVE_TRUNCATE:
     {
       GetVTblPtr(vtblptr,ComTdbExeUtilHiveTruncate);

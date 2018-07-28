@@ -118,6 +118,62 @@ TC_Export int tc_initialize( bool traceEnabled
     return( rc );
 }
 
+TC_Export int tc_delete_nameserver( const char *node_name )
+{
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
+    int rc = TCDBOPERROR;
+
+    rc = TrafConfigDb.DeleteNameServer( node_name );
+
+    return( rc );
+}
+
+TC_Export int tc_get_nameserver( const char *node_name )
+{
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
+    int rc = TCDBOPERROR;
+
+    rc = TrafConfigDb.GetNameServer( node_name );
+
+    return( rc );
+}
+
+TC_Export int tc_get_nameservers( int   *count
+                                , int    max
+                                , char **nodeNames )
+{
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
+    int rc = TCDBOPERROR;
+
+    rc = TrafConfigDb.GetNameServers( count, max, nodeNames );
+
+    return( rc );
+}
+
+TC_Export int tc_put_nameserver( const char* node_name )
+{
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
+    int rc = TrafConfigDb.AddNameServer( node_name );
+
+    return( rc );
+}
+
 TC_Export int tc_delete_node( int nid
                             , const char *node_name )
 {

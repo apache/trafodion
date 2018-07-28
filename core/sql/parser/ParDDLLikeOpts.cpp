@@ -127,6 +127,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptColumnLengthLimit_   = likeOptions.isLikeOptColumnLengthLimit_;
   isLikeOptWithoutRowFormat_    = likeOptions.isLikeOptWithoutRowFormat_;
   isLikeOptWithoutLobColumns_    = likeOptions.isLikeOptWithoutLobColumns_;
+  likeOptHiveOptions_           = likeOptions.likeOptHiveOptions_;
 
   if (this != &likeOptions)  // make sure not assigning to self
     {

@@ -3782,6 +3782,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	if ((srvrGlobal->drvrVersion.componentId == JDBC_DRVR_COMPONENT) && ((long) (inContext->idleTimeoutSec) > JDBC_DATASOURCE_CONN_IDLE_TIMEOUT))
 		srvrGlobal->javaConnIdleTimeout = inContext->idleTimeoutSec;
 
+    srvrGlobal->clipVarchar = 0;
 	// collect information for resource statistics
 	char nodename[100];
 	short error;

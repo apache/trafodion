@@ -217,7 +217,7 @@ void CExtGetReq::performRequest()
             sprintf( buf, "%s@%d - Can't find group(%s).\n"
                    , method_name, __LINE__
                    , msg_->u.request.u.get.group);
-            mon_log_write(MON_MONITOR_GETCONF_3, SQ_LOG_ERR, buf);
+            mon_log_write(MON_MONITOR_GETCONF_3, SQ_LOG_INFO, buf);
              
             msg_->u.reply.type = ReplyType_Get;
             msg_->u.reply.u.get.type = ConfigType_Undefined;

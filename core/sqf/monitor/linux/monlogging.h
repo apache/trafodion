@@ -128,6 +128,8 @@ public:
         MON_REINTEGRATE_9,
         MON_UPDATE_CLUSTER_5,
         MON_UPDATE_CLUSTER_6,
+        MON_NSCONNTONEWMON_1,
+        MON_NSCONNTONEWMON_2
     };
 
 private:

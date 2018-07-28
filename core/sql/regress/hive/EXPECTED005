@@ -72,7 +72,7 @@
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763081810, failedModTS = 1521763182817, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149450876, failedModTS = 1529149578260, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -108,7 +108,7 @@ Y                                          9525
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763081810, failedModTS = 1521763182817, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149450876, failedModTS = 1529149578260, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -177,7 +177,7 @@ Y                                          9525
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763188079, failedModTS = 1521763198786, failedLoc = hdfs://localhost:24200/user/hive/warehouse/newtable
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149581595, failedModTS = 1529149591176, failedLoc = hdfs://localhost:24200/user/hive/warehouse/newtable
 
 A                        
 -------------------------
@@ -227,7 +227,7 @@ xyz
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763182817, failedModTS = 1521763227396, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149578260, failedModTS = 1529149609405, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -242,7 +242,7 @@ Y                                         18984
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763182817, failedModTS = 1521763227396, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149578260, failedModTS = 1529149609405, failedLoc = hdfs://localhost:24200/user/trafodion/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -298,7 +298,7 @@ Y                                         18984
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763223181, failedModTS = 1521763236557, failedLoc = hdfs://localhost:24200/user/hive/warehouse/newtable
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149606436, failedModTS = 1529149616936, failedLoc = hdfs://localhost:24200/user/hive/warehouse/newtable
 
 A            B                        
 -----------  -------------------------
@@ -456,10 +456,10 @@ ID           CHAPTER                    ENGLISH                    TRANSLATOR
 >>
 >>select * from tbl_type;
 
-TINT  SM      I            BIG                   STR                        F                D                          T                           DT          VC                                        D10                   D18           D181                  D30
-----  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------------------------------------  --------------------  ------------  --------------------  -------------------------------
+TINT  SM      I            BIG                   STR                        F                D                          T                              DT          VC                                        D10                   D18           D181                  D30
+----  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  -----------------------------  ----------  ----------------------------------------  --------------------  ------------  --------------------  -------------------------------
 
- 101     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar                                             1234567890     123456.11                 12345    11111111111111111111111111111
+ 101     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222000  2022-02-02  varchar                                             1234567890     123456.11                 12345    11111111111111111111111111111
 
 --- 1 row(s) selected.
 >>insert into tbl_type_temp select * from tbl_type;
@@ -467,10 +467,10 @@ TINT  SM      I            BIG                   STR                        F   
 --- 1 row(s) inserted.
 >>select * from tbl_type_temp;
 
-TINT  SM      I            BIG                   STR                        F                D                          T                           DT          VC                                        D10                   D18           D181                  D30
-----  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------  ----------  ----------------------------------------  --------------------  ------------  --------------------  -------------------------------
+TINT  SM      I            BIG                   STR                        F                D                          T                              DT          VC                                        D10                   D18           D181                  D30
+----  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  -----------------------------  ----------  ----------------------------------------  --------------------  ------------  --------------------  -------------------------------
 
- 101     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222  2022-02-02  varchar                                             1234567890     123456.11                 12345    11111111111111111111111111111
+ 101     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222000  2022-02-02  varchar                                             1234567890     123456.11                 12345    11111111111111111111111111111
 
 --- 1 row(s) selected.
 >>
@@ -571,17 +571,17 @@ C1           C2
 --- SQL operation complete.
 >>select * from tbl_bad;
 
-C1           C2                    C3                         C4               C5      C6                          C7                         C8
------------  --------------------  -------------------------  ---------------  ------  --------------------------  -------------------------  ----
+C1           C2                    C3                         C4               C5      C6                             C7                         C8
+-----------  --------------------  -------------------------  ---------------  ------  -----------------------------  -------------------------  ----
 
-          ?                     ?  c                                        ?       ?  ?                                                   ?     ?
-          ?                     ?  c                                        ?       ?  2017-01-01 10:10:10.000000   1.01000000000000000E+000     1
-          ?                     ?                                           ?       ?  ?                                                   ?     ?
-          1                     1  averylongstring            -1.0000000E+000       0  2017-01-01 10:10:10.000000   1.00010000000000000E+002     1
-          2                     2  good                        1.1000000E+000       2  2017-01-01 10:10:10.000000   2.00000000000000000E+002   100
-          3                     3  good                        1.0000000E+000       2  2017-01-01 10:10:10.000000   2.10000000000000000E+002    10
-          ?            4294967295  good                        3.3999999E+038       ?  2017-01-01 10:10:10.000000   1.69999999999999968E+308    10
-          0            9999999999  bad                                      ?       ?  ?                                                   ?     ?
+          ?                     ?  c                                        ?       ?  ?                                                      ?     ?
+          ?                     ?  c                                        ?       ?  2017-01-01 10:10:10.000000000   1.01000000000000000E+000     1
+          ?                     ?                                           ?       ?  ?                                                      ?     ?
+          1                     1  averylongstring            -1.0000000E+000       0  2017-01-01 10:10:10.000000000   1.00010000000000000E+002     1
+          2                     2  good                        1.1000000E+000       2  2017-01-01 10:10:10.000000000   2.00000000000000000E+002   100
+          3                     3  good                        1.0000000E+000       2  2017-01-01 10:10:10.000000000   2.10000000000000000E+002    10
+          ?            4294967295  good                        3.3999999E+038       ?  2017-01-01 10:10:10.000000000   1.69999999999999968E+308    10
+          0            9999999999  bad                                      ?       ?  ?                                                      ?     ?
 
 --- 8 row(s) selected.
 >>cqd HIVE_SCAN_SPECIAL_MODE reset;
@@ -617,18 +617,18 @@ C1           C2                    C3                         C4               C
 --- 1 row(s) selected.
 >>load with continue on error into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2018-03-23 00:02:16.72820
-Task:  CLEANUP         Status: Ended      Time: 2018-03-23 00:02:16.87954
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.015
-Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:16.88001
+Task:  CLEANUP         Status: Started    Time: 2018-06-16 11:47:50.919693
+Task:  CLEANUP         Status: Ended      Time: 2018-06-16 11:47:50.927679
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.008
+Task:  LOADING DATA    Status: Started    Time: 2018-06-16 11:47:50.927713
        Rows Processed: 8 
        Error Rows:     5 
-Task:  LOADING DATA    Status: Ended      Time: 2018-03-23 00:02:16.505744
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.418
-Task:  COMPLETION      Status: Started    Time: 2018-03-23 00:02:16.505804
+Task:  LOADING DATA    Status: Ended      Time: 2018-06-16 11:47:51.85803
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.158
+Task:  COMPLETION      Status: Started    Time: 2018-06-16 11:47:51.85854
        Rows Loaded:    3 
-Task:  COMPLETION      Status: Ended      Time: 2018-03-23 00:02:17.132726
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.627
+Task:  COMPLETION      Status: Ended      Time: 2018-06-16 11:47:52.476978
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.391
 
 --- 3 row(s) loaded.
 >>select count(*) from trafodion.seabase.traf_tbl_bad;
@@ -644,19 +644,19 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.627
 --- 3 row(s) deleted.
 >>load with log error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2018-03-23 00:02:18.222742
-Task:  CLEANUP         Status: Ended      Time: 2018-03-23 00:02:18.238737
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.016
-       Logging Location: /user/trafodion/bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20180323_000218
-Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:18.238844
+Task:  CLEANUP         Status: Started    Time: 2018-06-16 11:47:53.526469
+Task:  CLEANUP         Status: Ended      Time: 2018-06-16 11:47:53.536440
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.010
+       Logging Location: /user/trafodion/bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20180616_114753
+Task:  LOADING DATA    Status: Started    Time: 2018-06-16 11:47:53.536510
        Rows Processed: 8 
        Error Rows:     5 
-Task:  LOADING DATA    Status: Ended      Time: 2018-03-23 00:02:18.652144
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.413
-Task:  COMPLETION      Status: Started    Time: 2018-03-23 00:02:18.652182
+Task:  LOADING DATA    Status: Ended      Time: 2018-06-16 11:47:53.760748
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.224
+Task:  COMPLETION      Status: Started    Time: 2018-06-16 11:47:53.760793
        Rows Loaded:    3 
-Task:  COMPLETION      Status: Ended      Time: 2018-03-23 00:02:19.268334
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.616
+Task:  COMPLETION      Status: Ended      Time: 2018-06-16 11:47:56.167112
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:02.406
 
 --- 3 row(s) loaded.
 >>select count(*) from trafodion.seabase.traf_tbl_bad;
@@ -669,19 +669,19 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.616
 --- 1 row(s) selected.
 >>load with log error rows to '/user/trafodion/bulkload/logs/TEST005' into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2018-03-23 00:02:20.268608
-Task:  CLEANUP         Status: Ended      Time: 2018-03-23 00:02:20.278195
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.010
-       Logging Location: /user/trafodion/bulkload/logs/TEST005/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20180323_000220
-Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:20.278249
+Task:  CLEANUP         Status: Started    Time: 2018-06-16 11:47:57.157930
+Task:  CLEANUP         Status: Ended      Time: 2018-06-16 11:47:57.165444
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.008
+       Logging Location: /user/trafodion/bulkload/logs/TEST005/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20180616_114757
+Task:  LOADING DATA    Status: Started    Time: 2018-06-16 11:47:57.165499
        Rows Processed: 8 
        Error Rows:     5 
-Task:  LOADING DATA    Status: Ended      Time: 2018-03-23 00:02:20.743348
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.465
-Task:  COMPLETION      Status: Started    Time: 2018-03-23 00:02:20.743404
+Task:  LOADING DATA    Status: Ended      Time: 2018-06-16 11:47:57.352294
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.187
+Task:  COMPLETION      Status: Started    Time: 2018-06-16 11:47:57.352327
        Rows Loaded:    3 
-Task:  COMPLETION      Status: Ended      Time: 2018-03-23 00:02:21.350084
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.607
+Task:  COMPLETION      Status: Ended      Time: 2018-06-16 11:47:57.916072
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.564
 
 --- 3 row(s) loaded.
 >>select count(*) from trafodion.seabase.traf_tbl_bad;
@@ -697,10 +697,10 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.607
 --- 6 row(s) deleted.
 >>load with stop after 3 error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2018-03-23 00:02:22.398357
-Task:  CLEANUP         Status: Ended      Time: 2018-03-23 00:02:22.409109
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.011
-Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:22.409145
+Task:  CLEANUP         Status: Started    Time: 2018-06-16 11:47:58.929152
+Task:  CLEANUP         Status: Ended      Time: 2018-06-16 11:47:58.937786
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.009
+Task:  LOADING DATA    Status: Started    Time: 2018-06-16 11:47:58.937815
 
 *** ERROR[8113] The maximum number of error rows is exceeded.
 
@@ -715,11 +715,11 @@ Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:22.409145
 --- 1 row(s) selected.
 >>load with log error rows, stop after 3 error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2018-03-23 00:02:23.773372
-Task:  CLEANUP         Status: Ended      Time: 2018-03-23 00:02:23.788799
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.015
-       Logging Location: /user/trafodion/bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20180323_000223
-Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:23.788861
+Task:  CLEANUP         Status: Started    Time: 2018-06-16 11:48:00.37617
+Task:  CLEANUP         Status: Ended      Time: 2018-06-16 11:48:00.45699
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.008
+       Logging Location: /user/trafodion/bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20180616_114800
+Task:  LOADING DATA    Status: Started    Time: 2018-06-16 11:48:00.45732
 
 *** ERROR[8113] The maximum number of error rows is exceeded.
 
@@ -789,10 +789,10 @@ Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:23.788861
 
 --- SQL operation complete.
 >>
->>process hive statement 'drop table thive';
+>>drop table if exists hive.hive.thive;
 
 --- SQL operation complete.
->>process hive statement 'create table thive(a int)';
+>>create table hive.hive.thive(a int);
 
 --- SQL operation complete.
 >>
@@ -800,14 +800,16 @@ Task:  LOADING DATA    Status: Started    Time: 2018-03-23 00:02:23.788861
 
 --- 0 row(s) selected.
 >>
->>sh echo "insert into thive values (1);" > TEST005_junk;
->>sh regrhive.ksh -f TEST005_junk;
+>>--process hive statement 'insert into thive values (1)';
+>>insert into hive.hive.thive values (1);
+
+--- 1 row(s) inserted.
 >>
 >>select a from hive.hive.thive;
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763369777, failedModTS = 1521763389102, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149699813, failedModTS = 1529149706160, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
 
 A          
 -----------
@@ -828,21 +830,19 @@ A
 
 --- 2 row(s) selected.
 >>
->>process hive statement 'drop table thive';
+>>drop table hive.hive.thive;
 
 --- SQL operation complete.
->>process hive statement 'create table thive(a int, b int)';
+>>create table hive.hive.thive(a int, b int);
 
 --- SQL operation complete.
 >>
->>sh echo "insert into thive values (1,2);" > TEST005_junk;
->>sh regrhive.ksh -f TEST005_junk;
+>>--process hive statement 'insert into thive values (1,2)';
+>>insert into hive.hive.thive values (1,2);
+
+--- 1 row(s) inserted.
 >>
 >>select a from hive.hive.thive;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
-
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763391527, failedModTS = 1521763411540, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
 
 A          
 -----------
@@ -860,16 +860,15 @@ A            B
 
 --- 1 row(s) selected.
 >>
->>-- truncate of hive data
->>--cqd query_cache '0';
->>truncate hive.hive.thive;
+>>-- truncate of regular hive table
+>>truncate table hive.hive.thive;
 
 --- SQL operation complete.
 >>select * from hive.hive.thive;
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763411540, failedModTS = 1521763418274, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149722198, failedModTS = 1529149723553, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
 
 --- 0 row(s) selected.
 >>insert into hive.hive.thive values (10, 20);
@@ -883,25 +882,27 @@ A            B
          10           20
 
 --- 1 row(s) selected.
->>truncate hive.hive.thive;
+>>truncate table hive.hive.thive;
 
 --- SQL operation complete.
->>truncate hive.hive.thive;
+>>truncate table hive.hive.thive;
 
 --- SQL operation complete.
 >>select * from hive.hive.thive;
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1521763422992, failedModTS = 1521763425613, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149724776, failedModTS = 1529149727335, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
 
 --- 0 row(s) selected.
 >>
 >>-- truncate of partitioned hive table
->>process hive statement 'drop table t005part';
+>>-- When partitioned hive tables are supported, then inserts and selects below
+>>-- can be executed directly from traf instead of through hive shell.
+>>drop table if exists hive.hive.t005part;
 
 --- SQL operation complete.
->>process hive statement 'create table t005part(a int) partitioned by (b int, c int)';
+>>create table hive.hive.t005part(a int) partitioned by (b int, c int);
 
 --- SQL operation complete.
 >>
@@ -912,7 +913,7 @@ A            B
 t005part.a	t005part.b	t005part.c
 5	10	11
 >>
->>truncate hive.hive.t005part;
+>>truncate table hive.hive.t005part;
 
 --- SQL operation complete.
 >>sh echo "select * from t005part;" > TEST005_junk;
@@ -921,17 +922,16 @@ t005part.a	t005part.b	t005part.c
 >>
 >>sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
 >>sh regrhive.ksh -f TEST005_junk;
->>truncate hive.hive.t005part partition ('b=10');
+>>truncate table hive.hive.t005part partition (b=10);
 
 --- SQL operation complete.
 >>sh echo "select * from t005part;" > TEST005_junk;
 >>sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 t005part.a	t005part.b	t005part.c
 >>
->>
 >>sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
 >>sh regrhive.ksh -f TEST005_junk;
->>truncate hive.hive.t005part partition ('b=10','c=11');
+>>truncate table hive.hive.t005part partition (b=10,c=11);
 
 --- SQL operation complete.
 >>sh echo "select * from t005part;" > TEST005_junk;
@@ -948,7 +948,7 @@ t005part.a	t005part.b	t005part.c
 5	10	11
 6	10	12
 >>
->>truncate hive.hive.t005part partition ('b=10','c=11');
+>>truncate table hive.hive.t005part partition (b=10,c=11);
 
 --- SQL operation complete.
 >>sh echo "select * from t005part;" > TEST005_junk;
@@ -956,7 +956,7 @@ t005part.a	t005part.b	t005part.c
 t005part.a	t005part.b	t005part.c
 6	10	12
 >>
->>truncate hive.hive.t005part partition ('b=10');
+>>truncate table hive.hive.t005part partition (b=10);
 
 --- SQL operation complete.
 >>sh echo "select * from t005part;" > TEST005_junk;
@@ -964,27 +964,24 @@ t005part.a	t005part.b	t005part.c
 t005part.a	t005part.b	t005part.c
 >>
 >>-- should return error
->>truncate hive.hive.t005part partition ('b=12');
+>>truncate table hive.hive.t005part partition (b=10,c=13);
 
-*** ERROR[8442] Unable to access HDFS interface. Call to ExpLOBInterfaceEmptyDirectory returned error LOB_DIR_NAME_ERROR(535). Error detail 0.
-
-*** ERROR[8035] Truncation of hive table failed. Reason: specified partition does not exist
+*** ERROR[1214] Error encountered when executing HiveQL statement "TRUNCATE TABLE `default`.T005PART partition (b=10,c=13)". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: SemanticException [Error 10006]: Partition not found {b=10, c=13}
 
 --- SQL operation failed with errors.
 >>
 >>-- should return error
 >>purgedata hive.hive.thive;
 
-*** ERROR[3242] This statement is not supported. Reason: Purgedata is not allowed for hive tables. Use Truncate command.
+*** ERROR[3242] This statement is not supported. Reason: Purgedata is not allowed for Hive tables. Use 'Truncate Table' command.
 
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL operation failed with errors.
 >>
 >>-- tests for hive insert error modes
 >>invoke hive.hive.thive_insert_smallint;
 
--- Definition of hive table THIVE_INSERT_SMALLINT
--- Definition current  Fri Mar 23 00:07:13 2018
+-- Definition of hive table HIVE.HIVE.THIVE_INSERT_SMALLINT
+-- Definition current  Sat Jun 16 11:51:20 2018
 
   (
     A                                SMALLINT
@@ -995,7 +992,7 @@ t005part.a	t005part.b	t005part.c
 >>showddl hive.hive.thive_insert_smallint;
 
 /* Hive DDL */
-CREATE TABLE THIVE_INSERT_SMALLINT
+CREATE TABLE HIVE.HIVE.THIVE_INSERT_SMALLINT
   (
     A                                smallint
   )
@@ -1004,9 +1001,12 @@ CREATE TABLE THIVE_INSERT_SMALLINT
 
 /* Trafodion DDL */
 
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE_INSERT_SMALLINT;
+/* ObjectUID = 7436169711789392123 */
+
 --- SQL operation complete.
 >>
->>truncate hive.hive.thive_insert_smallint;
+>>truncate table hive.hive.thive_insert_smallint;
 
 --- SQL operation complete.
 >>cqd hive_insert_error_mode '0';
@@ -1014,6 +1014,10 @@ CREATE TABLE THIVE_INSERT_SMALLINT
 --- SQL operation complete.
 >>insert into hive.hive.thive_insert_smallint select * from 
 +> (values (10), (11111111), (21), (22222222));
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149537134, failedModTS = 1529149881411, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive_insert_smallint
 
 --- 4 row(s) inserted.
 >>select * from hive.hive.thive_insert_smallint;
@@ -1027,7 +1031,7 @@ A
 
 --- 1 row(s) selected.
 >>
->>truncate hive.hive.thive_insert_smallint;
+>>truncate table hive.hive.thive_insert_smallint;
 
 --- SQL operation complete.
 >>cqd hive_insert_error_mode '1';
@@ -1043,7 +1047,7 @@ A
 
 --- 0 row(s) selected.
 >>
->>truncate hive.hive.thive_insert_smallint;
+>>truncate table hive.hive.thive_insert_smallint;
 
 --- SQL operation complete.
 >>cqd hive_insert_error_mode '2';
@@ -1051,6 +1055,10 @@ A
 --- SQL operation complete.
 >>insert into hive.hive.thive_insert_smallint select * from 
 +> (values (10), (11111111), (21), (22222222));
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149883896, failedModTS = 1529149886157, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive_insert_smallint
 
 --- 2 row(s) inserted.
 >>select * from hive.hive.thive_insert_smallint;
@@ -1063,7 +1071,7 @@ A
 
 --- 2 row(s) selected.
 >>
->>truncate hive.hive.thive_insert_smallint;
+>>truncate table hive.hive.thive_insert_smallint;
 
 --- SQL operation complete.
 >>cqd hive_insert_error_mode '3';
@@ -1090,8 +1098,8 @@ A
 --- SQL operation complete.
 >>invoke hive.hive.thive_insert_varchar;
 
--- Definition of hive table THIVE_INSERT_VARCHAR
--- Definition current  Fri Mar 23 00:07:23 2018
+-- Definition of hive table HIVE.HIVE.THIVE_INSERT_VARCHAR
+-- Definition current  Sat Jun 16 11:51:32 2018
 
   (
     A                                VARCHAR(1 CHAR) CHARACTER SET UTF8 COLLATE
@@ -1105,7 +1113,7 @@ A
 >>showddl hive.hive.thive_insert_varchar;
 
 /* Hive DDL */
-CREATE TABLE THIVE_INSERT_VARCHAR
+CREATE TABLE HIVE.HIVE.THIVE_INSERT_VARCHAR
   (
     A                                varchar(1)
   , B                                string
@@ -1115,14 +1123,21 @@ CREATE TABLE THIVE_INSERT_VARCHAR
 
 /* Trafodion DDL */
 
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE_INSERT_VARCHAR;
+/* ObjectUID = 7436169711789392374 */
+
 --- SQL operation complete.
 >>cqd hive_insert_error_mode '1';
 
 --- SQL operation complete.
->>truncate hive.hive.thive_insert_varchar;
+>>truncate table hive.hive.thive_insert_varchar;
 
 --- SQL operation complete.
 >>insert into hive.hive.thive_insert_varchar values ('abcddcba','efghijkl');
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1529149539689, failedModTS = 1529149893202, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive_insert_varchar
 
 --- 1 row(s) inserted.
 >>
@@ -1137,6 +1152,5 @@ A     B
 abcd  efghijkl            
 
 --- 1 row(s) selected.
->>
 >>
 >>log;

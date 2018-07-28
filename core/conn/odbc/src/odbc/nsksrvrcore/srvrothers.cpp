@@ -3552,6 +3552,117 @@ odbc_SQLSvc_ExecDirect_sme_(
 }
 //LCOV_EXCL_STOP
 
+
+// Cut extra parts of varchar in outputDataValue  to make data compaction
+long long  clipVarchar(SRVR_STMT_HDL *pSrvrStmt )
+{
+    if(srvrGlobal->clipVarchar == 0)
+    {
+        return pSrvrStmt->outputDescVarBufferLen*pSrvrStmt->rowsAffected;
+    }
+    BYTE * desc = pSrvrStmt->outputDescBuffer; 
+    BYTE *VarPtr = pSrvrStmt->outputDescVarBuffer;
+    long long remainLen = 0;
+    int numEntries = pSrvrStmt->columnCount;
+    int rowsAffected = pSrvrStmt->rowsAffected ;
+    int bufferRowLen = pSrvrStmt->outputDescVarBufferLen;
+    long long * colBuferLen = new long long [numEntries] ;
+    long startOffset = 0;
+    long varcharCount = 0; //counter of varchar column per row 
+    BYTE * cpStart = VarPtr;
+    BYTE * cpEnd   = cpStart;
+    BYTE * colEnd  = cpStart;
+    BYTE * bufferOffset  = cpStart;
+    int IndBuf,VarBuf;
+    int i = 0,j = 0;
+    for(j = 0 ; j < numEntries ; j++)//Calculate the data length of each column
+    {
+        if(pSrvrStmt->SqlDescInfo[j].DataType ==SQLTYPECODE_VARCHAR_WITH_LENGTH)
+            varcharCount ++;
+        if(j == numEntries -1 ){
+            colBuferLen[j] = bufferRowLen - remainLen;
+            if(varcharCount == 0)
+            {
+                // if there is no varchar in the data do nothing and  return
+                delete [] colBuferLen;
+                return pSrvrStmt->outputDescVarBufferLen*pSrvrStmt->rowsAffected;
+            }
+        }
+        else
+        {
+            IndBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j+1].IndBuf) ;
+            VarBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j+1].VarBuf);
+            if(IndBuf == -1)
+            {
+                colBuferLen[j] = VarBuf - startOffset;
+                startOffset = VarBuf;
+            }
+            else
+            {
+                colBuferLen[j] = IndBuf - startOffset;
+                startOffset = IndBuf;
+            }
+            remainLen += colBuferLen[j];
+        }
+    }
+    for( i = 0; i < rowsAffected ; i++){//do clip 
+        for (j = 0 ; j < numEntries ; j++)
+        {
+            switch (pSrvrStmt->SqlDescInfo[j].DataType)
+            {
+                case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+                    /*
+                                             |--------------column 1 ------|--------------column 2 ------|
+                     column format nullable: |align_1|indPtr|align_2|varPtr|align_1|indPtr|align_2|varPtr|
+
+                                             |--column 1--|--column 2--|
+                     column format not null: |align|varPtr|align|varPtr|
+                     indPtr is the pointer to store nullable info ,if column value is null indPtr = -1
+                     if varPtr is pointer to store column value 
+                     IndBuf is the offset of indPtr
+                     VarBuf is the offset of varPtr
+
+                    */
+                    IndBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j].IndBuf);
+                    VarBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j].VarBuf);
+                    if(IndBuf != -1 && (*(short*)(VarPtr+IndBuf + i*bufferRowLen) == -1))
+                    {
+                        cpEnd = cpStart+VarBuf-IndBuf;
+                        colEnd = cpStart + colBuferLen[j];
+                        break;
+                    }
+                    if( pSrvrStmt->SqlDescInfo[j].Length > SHRT_MAX )
+                    {
+                        cpEnd = VarPtr+VarBuf + i*bufferRowLen + 4 + *(int*)(VarPtr+VarBuf+i*bufferRowLen);
+                    }
+                    else
+                    {
+                        cpEnd =  VarPtr+VarBuf + i*bufferRowLen + 2 + *(short*)(VarPtr+VarBuf+i*bufferRowLen);
+
+                    }
+                    colEnd = cpStart + colBuferLen[j];
+                    break;
+                default:
+                    cpEnd = cpStart + colBuferLen[j];
+                    colEnd = cpEnd;
+                    break;
+            }
+            if(cpStart != bufferOffset)
+            {
+                memcpy(bufferOffset,cpStart,cpEnd-cpStart);
+            }
+
+            bufferOffset += cpEnd-cpStart;
+            cpStart = colEnd;
+        }
+    }
+
+    delete [] colBuferLen;
+    return bufferOffset-VarPtr;
+}
+//for setting in the indicator and Varpointers.
+
+
 //LCOV_EXCL_START
 /*
  * Synchronous method function for
@@ -4761,7 +4872,6 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 			}
 			break;
 		case SQL_API_SQLCOLUMNS :
-		case SQL_API_SQLCOLUMNS_JDBC :
 			if (!checkIfWildCard(catalogNm, catalogNmNoEsc) && !metadataId)
 			{
 				exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
@@ -4973,6 +5083,140 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                 }
 			}
 			break;
+        case SQL_API_SQLCOLUMNS_JDBC :
+
+            if (!checkIfWildCard(catalogNm, catalogNmNoEsc) && !metadataId)
+            {
+                exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+                goto MapException;
+            }
+            if (tableNm[0] != '$' && tableNm[0] != '\\')
+            {
+                if (strcmp(catalogNm,"") == 0)
+                    strcpy(tableName1,SEABASE_MD_CATALOG);
+                else
+                    strcpy(tableName1, catalogNm);
+
+                /*
+                   if (APIType == SQL_API_SQLCOLUMNS)
+                   strcpy((char *)catStmtLabel, "SQL_COLUMNS_UNICODE_Q4");
+
+                   else
+                   strcpy((char *)catStmtLabel, "SQL_JAVA_COLUMNS_ANSI_Q4");
+                   */
+                tableParam[0] = tableName1;
+                convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+                convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+                convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+                convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+                convertWildcard(metadataId, TRUE, columnNm, expColumnNm);
+                convertWildcardNoEsc(metadataId, TRUE, columnNm, columnNmNoEsc);
+                inputParam[0] = schemaNmNoEsc;
+                inputParam[1] = expSchemaNm;
+                inputParam[2] = tableNmNoEsc;
+                inputParam[3] = expTableNm;
+                inputParam[4] = columnNmNoEsc;
+                inputParam[5] = expColumnNm;
+                inputParam[6] = odbcAppVersion;
+                inputParam[7] = NULL;
+
+                snprintf(CatalogQuery,sizeof(CatalogQuery),
+                        "select "
+                        "cast('%s' as varchar(128) ) TABLE_CAT, "
+                        "cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
+                        "cast(trim(ob.OBJECT_NAME) as varchar(128) ) TABLE_NAME, "
+                        "cast(trim(co.COLUMN_NAME) as varchar(128) ) COLUMN_NAME, "
+                        "cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then -8 "
+                        "when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then -9 else dt.DATA_TYPE end) as smallint) DATA_TYPE, "
+                        "trim(dt.TYPE_NAME) TYPE_NAME, "
+                        "cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then co.COLUMN_SIZE/2 "
+                        "when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then co.COLUMN_SIZE/2 "
+                        "when dt.USEPRECISION = -1 then co.COLUMN_SIZE when dt.USEPRECISION = -2 then co.COLUMN_PRECISION "
+                        "when co.FS_DATA_TYPE = 192 then dt.USEPRECISION "
+                        "when co.FS_DATA_TYPE >= 195 and co.FS_DATA_TYPE <= 207 then dt.USEPRECISION + 1 "
+                        "else dt.USEPRECISION end) as integer) COLUMN_SIZE, "
+                        "cast((case when dt.USELENGTH = -1 then co.COLUMN_SIZE when dt.USELENGTH = -2 then co.COLUMN_PRECISION "
+                        "when dt.USELENGTH = -3 then co.COLUMN_PRECISION + 2  "
+                        "else dt.USELENGTH end) as integer) BUFFER_LENGTH, "
+                        "cast(co.COLUMN_SCALE as smallint) DECIMAL_DIGITS, "
+                        "cast(dt.NUM_PREC_RADIX as smallint) NUM_PREC_RADIX, "
+                        "cast(co.NULLABLE as smallint) NULLABLE, "
+                        "cast('' as varchar(128)) REMARKS, "
+                        "trim(co.DEFAULT_VALUE) COLUMN_DEF, "
+                        "cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then -8 "
+                        "when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then -9 else dt.SQL_DATA_TYPE end) as smallint) SQL_DATA_TYPE, "
+                        "cast(dt.SQL_DATETIME_SUB as smallint) SQL_DATETIME_SUB, cast((case dt.DATA_TYPE when 1 then co.COLUMN_SIZE "
+                        "when -1 then co.COLUMN_SIZE when 12 then co.COLUMN_SIZE else NULL end) as integer) CHAR_OCTET_LENGTH, "
+                        "cast((case when (trim(co1.COLUMN_CLASS) <> 'S') then co.column_number+1 else "
+                        "co.column_number end) as integer) ORDINAL_POSITION, "
+                        "cast((case when co.NULLABLE = 0 then 'NO' else 'YES' end) as varchar(3)) IS_NULLABLE,  "
+                        "cast(NULL as varchar(128)) SCOPE_CATALOG, "
+                        "cast(NULL as varchar(128)) SCOPE_SCHEMA, "
+                        "cast(NULL as varchar(128)) SCOPE_TABLE, "
+                        "cast(NULL as smallint) SOURCE_DATA_TYPE, "
+                        "cast((case when co.DEFAULT_CLASS = 6 then 'YES' else 'NO' end) as varchar(8)) IS_AUTOINCREMENT, "
+                        "cast((case when co.DEFAULT_CLASS = 5 then 'YES' else 'NO' end) as varchar(8)) IS_GENERATEDCOLUMN "
+                        "from  "
+                        "TRAFODION.\"_MD_\".objects ob, "
+                        "TRAFODION.\"_MD_\".columns co, "
+                        "TRAFODION.\"_MD_\".columns co1, "
+                        "(VALUES ("
+                        "cast('BIGINT' as varchar(128)),cast(-5 as smallint), cast(19 as integer), cast (NULL as varchar(128)), cast (NULL as varchar(128)), "
+                        "cast (NULL as varchar(128)), cast(1 as smallint), cast(0 as smallint), cast(2 as smallint) , cast(0 as smallint), cast(0 as smallint), "
+                        "cast(0 as smallint), cast('LARGEINT' as varchar(128)), cast(NULL as smallint), cast(NULL as smallint), cast('SIGNED LARGEINT' as varchar(128)), cast(134 as integer), "
+                        "cast(10 as smallint), cast(19 as integer), cast(20 as integer), cast(-402 as smallint), cast(NULL as smallint), cast(NULL as smallint), "
+                        "cast(0 as smallint), cast(0 as smallint), cast(3 as smallint), cast(0 as smallint)), "
+                        "('CHAR', 1, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'CHARACTER', NULL, NULL, 'CHARACTER', 0, NULL, -1, -1, 1, NULL, NULL, 0, 0, 3, 0), "
+                        "('DATE', 91, 10, '{d ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'DATE', NULL, NULL, 'DATE', 192, NULL, 10, 6, 9, 1, NULL, 1, 3, 3, 0), "
+                        "('DECIMAL', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'DECIMAL', 0, 18, 'SIGNED DECIMAL', 152, 10, -2, -3, 3, NULL, NULL, 0, 0, 3, 0), "
+                        "('DECIMAL UNSIGNED', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 1, 0, 0, 'DECIMAL', 0, 18, 'UNSIGNED DECIMAL', 150, 10, -2, -3, -301, NULL, NULL, 0, 0, 3, 0), "
+                        "('DOUBLE PRECISION', 8, 15, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'DOUBLE', NULL, NULL, 'DOUBLE', 143, 2, 54, -1, 8, NULL, NULL, 0, 0, 3, 0), "
+                        "('INTEGER', 4, 10, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'INTEGER', NULL, NULL, 'SIGNED INTEGER', 132, 10, 10, -1, 4, NULL, NULL, 0, 0, 3, 0), "
+                        "('INTEGER UNSIGNED', 4, 10, NULL, NULL, NULL, 1, 0, 2, 1, 0, 0, 'INTEGER', NULL, NULL, 'UNSIGNED INTEGER', 133, 10, 10, -1, -401, NULL, NULL, 0, 0, 3, 0), "
+                        "('INTERVAL', 113, 0, '{INTERVAL ''', ''' MINUTE TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 205, NULL, 3, 34, 100, 13, 2, 5, 6, 3, 0), "
+                        "('INTERVAL', 105, 0, '{INTERVAL ''', ''' MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 201, NULL, 0, 34, 100, 5, 2, 5, 5, 3, 0), "
+                        "('INTERVAL', 101, 0, '{INTERVAL ''', ''' YEAR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 195, NULL, 0, 34, 100, 1, 2, 1, 1, 3, 0), "
+                        "('INTERVAL', 106, 0, '{INTERVAL ''', ''' SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 204, NULL, 0, 34, 100, 6, 2, 6, 6, 3, 0), "
+                        "('INTERVAL', 104, 0, '{INTERVAL ''', ''' HOUR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 199, NULL, 0, 34, 100, 4, 2, 4, 4, 3, 0), "
+                        "('INTERVAL', 107, 0, '{INTERVAL ''', ''' YEAR TO MONTH}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 197, NULL, 3, 34, 100, 7, 2, 1, 2, 3, 0), "
+                        "('INTERVAL', 108, 0, '{INTERVAL ''', ''' DAY TO HOUR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 200, NULL, 3, 34, 100, 8, 2, 3, 4, 3, 0), "
+                        "('INTERVAL', 102, 0, '{INTERVAL ''', ''' MONTH}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 196, NULL, 0, 34, 100, 2, 2, 2, 2, 3, 0), "
+                        "('INTERVAL', 111, 0, '{INTERVAL ''', ''' HOUR TO MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 202, NULL, 3, 34, 100, 11, 2, 4, 5, 3, 0), "
+                        "('INTERVAL', 112, 0, '{INTERVAL ''', ''' HOUR TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 206, NULL, 6, 34, 100, 12, 2, 4, 6, 3, 0), "
+                        "('INTERVAL', 110, 0, '{INTERVAL ''', ''' DAY TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 207, NULL, 9, 34, 100, 10, 2, 3, 6, 3, 0), "
+                        "('INTERVAL', 109, 0, '{INTERVAL ''', ''' DAY TO MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 203, NULL, 6, 34, 100, 9, 2, 3, 5, 3, 0), "
+                        "('INTERVAL', 103, 0, '{INTERVAL ''', ''' DAY}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 198, NULL, 0, 34, 100, 3, 2, 3, 3, 3, 0), "
+                        "('NUMERIC', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'NUMERIC', 0, 128, 'SIGNED NUMERIC', 156, 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0), "
+                        "('NUMERIC UNSIGNED', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 1, 0, 0, 'NUMERIC', 0, 128, 'UNSIGNED NUMERIC', 155, 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0), "
+                        "('REAL', 7, 7, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'REAL', NULL, NULL, 'REAL', 142, 2, 22, -1, 7, NULL, NULL, 0, 0, 3, 0), "
+                        "('SMALLINT', 5, 5, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'SMALLINT', NULL, NULL, 'SIGNED SMALLINT', 130, 10, 5, -1, 5, NULL, NULL, 0, 0, 3, 0), "
+                        "('SMALLINT UNSIGNED', 5, 5, NULL, NULL, NULL, 1, 0, 2, 1, 0, 0, 'SMALLINT', NULL, NULL, 'UNSIGNED SMALLINT', 131, 10, 5, -1, -502, NULL, NULL, 0, 0, 3, 0), "
+                        "('TIME', 92, 8, '{t ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'TIME', NULL, NULL, 'TIME', 192, NULL, 8, 6, 9, 2, NULL, 4, 6, 3, 0), "
+                        "('TIMESTAMP', 93, 26, '{ts ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'TIMESTAMP', 0, 6, 'TIMESTAMP', 192, NULL, 19, 16, 9, 3, NULL, 1, 6, 3, 0), "
+                        "('VARCHAR', 12, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'VARCHAR', NULL, NULL, 'VARCHAR', 64, NULL, -1, -1, 12, NULL, NULL, 0, 0, 3, 0) "
+                        " ) "
+                        "dt(\"TYPE_NAME\", \"DATA_TYPE\", \"PREC\", \"LITERAL_PREFIX\", \"LITERAL_SUFFIX\", \"CREATE_PARAMS\", \"IS_NULLABLE\", \"CASE_SENSITIVE\", \"SEARCHABLE\", "
+                        "\"UNSIGNED_ATTRIBUTE\", \"FIXED_PREC_SCALE\", \"AUTO_UNIQUE_VALUE\", \"LOCAL_TYPE_NAME\", \"MINIMUM_SCALE\", \"MAXIMUM_SCALE\", \"SQL_TYPE_NAME\", \"FS_DATA_TYPE\", "
+                        "\"NUM_PREC_RADIX\", \"USEPRECISION\", \"USELENGTH\", \"SQL_DATA_TYPE\", \"SQL_DATETIME_SUB\", \"INTERVAL_PRECISION\", \"DATETIMESTARTFIELD\", "
+                        "\"DATETIMEENDFIELD\", \"APPLICATION_VERSION\", \"TRANSLATION_ID\") "
+                        "where  ob.OBJECT_UID = co.OBJECT_UID "
+                        "and dt.FS_DATA_TYPE = co.FS_DATA_TYPE "
+                        "and co.OBJECT_UID = co1.OBJECT_UID and co1.COLUMN_NUMBER = 0 "
+                        "and (dt.DATETIMESTARTFIELD = co.DATETIME_START_FIELD) "
+                        "and (dt.DATETIMEENDFIELD = co.DATETIME_END_FIELD) "
+                        "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+                        "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+                        "and (co.COLUMN_NAME = '%s' or trim(co.COLUMN_NAME) LIKE '%s' ESCAPE '\\')  "
+                        "and (ob.OBJECT_TYPE in ('BT' , 'VI') ) "
+                        "and (trim(co.COLUMN_CLASS) not in ('S', 'M')) "
+                        "and dt.APPLICATION_VERSION = 3 "
+                        "FOR READ UNCOMMITTED ACCESS order by 1, 2, 3, co.COLUMN_NUMBER ; ",
+                    tableParam[0], inputParam[0], inputParam[1],
+                    inputParam[2], inputParam[3], inputParam[4],
+                    inputParam[5], inputParam[6]);
+            }
+            break;
 		case SQL_API_SQLPRIMARYKEYS :
 			if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc) || !checkIfWildCard(tableNm, tableNmNoEsc)) && !metadataId)
 			{
@@ -5201,6 +5445,144 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     inputParam[2], inputParam[3],
                     uniqueness == 1 ? "" : "and idx.is_unique=1"
                     );
+            break;
+        case SQL_API_SQLTABLEPRIVILEGES:
+            convertWildcard(metadataId, TRUE, catalogNm, expCatalogNm);
+            convertWildcardNoEsc(metadataId, TRUE, catalogNm, catalogNmNoEsc);
+            convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+            convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+            convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+            convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+            inputParam[0] = catalogNmNoEsc;
+            inputParam[1] = expCatalogNm;
+            inputParam[2] = schemaNmNoEsc;
+            inputParam[3] = expSchemaNm;
+            inputParam[4] = tableNmNoEsc;
+            inputParam[5] = expTableNm;
+            snprintf(CatalogQuery, sizeof(CatalogQuery), "select cast(ob.CATALOG_NAME as varchar(128) ) TABLE_CAT,"
+                    "cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+                    "cast(trim(ob.OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
+                    "cast(trim(op.GRANTOR_NAME) as varchar(128) ) GRANTOR,"
+                    "cast(trim(op.GRANTEE_NAME) as varchar(128) ) GRANTEE,"
+                    "cast(trim(case op.PRIVILEGES_BITMAP "
+                    "when 1 then 'SELECT' "
+                    "when 2 then 'INSERT' "
+                    "when 3 then 'SELECT,INSERT' "
+                    "when 4 then 'DELETE' "
+                    "when 5 then 'SELECT,DELETE' "
+                    "when 6 then 'INSERT,DELETE' "
+                    "when 7 then 'SELECT,INSERT,DELETE' "
+                    "when 8 then 'UPDATE' "
+                    "when 9 then 'SELECT,UPDATE' "
+                    "when 10 then 'INSERT,UPDATE' "
+                    "when 11 then 'SELECT,INSERT,UPDATE' "
+                    "when 12 then 'DELETE,UPDATE' "
+                    "when 13 then 'SELECT,DELETE,UPDATE' "
+                    "when 14 then 'INSERT,DELETE,UPDATE' "
+                    "when 15 then 'SELECT,INSERT,DELETE,UPDATE' "
+                    "when 32 then 'REFERENCES' "
+                    "when 33 then 'SELECT,REFERENCES' "
+                    "when 34 then 'INSERT,REFERENCES' "
+                    "when 35 then 'SELECT,INSERT,REFERENCES' "
+                    "when 36 then 'DELETE,REFERENCES' "
+                    "when 37 then 'SELECT,DELETE,REFERENCES' "
+                    "when 38 then 'INSERT,DELETE,REFERENCES' "
+                    "when 39 then 'SELECT,INSERT,DELETE,REFERENCES' "
+                    "when 40 then 'UPDATE,REFERENCES' "
+                    "when 41 then 'SELECT,UPDATE,REFERENCES' "
+                    "when 42 then 'INSERT,UPDATE,REFERENCES' "
+                    "when 43 then 'SELECT,INSERT,UPDATE,REFERENCES' "
+                    "when 44 then 'DELETE,UPDATE,REFERENCES' "
+                    "when 45 then 'SELECT,DELETE,UPDATE,REFERENCES' "
+                    "when 46 then 'INSERT,DELETE,UPDATE,REFERENCES' "
+                    "when 47 then 'SELECT,INSERT,DELETE,UPDATE,REFERENCES' end) as varchar(128)) PRIVILEGE,"
+                    "cast (trim(case op.GRANTABLE_BITMAP "
+                    "when 0 then 'NO' else 'YES' "
+                    "end) as varchar(128)) IS_GRANTABLE "
+                    "from TRAFODION.\"_PRIVMGR_MD_\".OBJECT_PRIVILEGES as op, TRAFODION.\"_MD_\".OBJECTS as ob "
+                    "where ob.OBJECT_UID = op.OBJECT_UID "
+                    "%s"
+                    "and (ob.CATALOG_NAME = '%s' or trim(ob.CATALOG_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+                    , (strlen(inputParam[4]) == 0 || inputParam[4][0] == '%') ? " " : "and op.GRANTEE_NAME <> 'DB__ROOT' "
+                    , inputParam[0], inputParam[1]
+                    , inputParam[2], inputParam[3]
+                    , inputParam[4], inputParam[5]
+                    );
+            break;
+        case SQL_API_SQLCOLUMNPRIVILEGES:
+            convertWildcard(metadataId, TRUE, catalogNm, expCatalogNm);
+            convertWildcardNoEsc(metadataId, TRUE, catalogNm, catalogNmNoEsc);
+            convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+            convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+            convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+            convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+            convertWildcard(metadataId, TRUE, columnNm, expColumnNm);
+            convertWildcardNoEsc(metadataId, TRUE, columnNm, columnNmNoEsc);
+            inputParam[0] = catalogNmNoEsc;
+            inputParam[1] = expCatalogNm;
+            inputParam[2] = schemaNmNoEsc;
+            inputParam[3] = expSchemaNm;
+            inputParam[4] = tableNmNoEsc;
+            inputParam[5] = expTableNm;
+            inputParam[6] = columnNmNoEsc;
+            inputParam[7] = expColumnNm;
+            snprintf(CatalogQuery, sizeof(CatalogQuery), "select cast(mob.CATALOG_NAME as varchar(128)) TABLE_CAT,"
+                    "cast(mob.SCHEMA_NAME as varchar(128)) TABLE_SCHEM,"
+                    "cast(mob.OBJECT_NAME as varchar(128)) TABLE_NAME,"
+                    "cast(mco.COLUMN_NAME as varchar(128)) COLUMN_NAME,"
+                    "cast(pmcp.GRANTOR_NAME as varchar(128)) GRANTOR,"
+                    "cast(pmcp.GRANTEE_NAME as varchar(128)) GRANTEE,"
+                    "cast(trim(case pmcp.PRIVILEGES_BITMAP "
+                    "when 1 then 'SELECT' "
+                    "when 2 then 'INSERT' "
+                    "when 3 then 'SELECT,INSERT' "
+                    "when 4 then 'DELETE' "
+                    "when 5 then 'SELECT,DELETE' "
+                    "when 6 then 'INSERT,DELETE' "
+                    "when 7 then 'SELECT,INSERT,DELETE' "
+                    "when 8 then 'UPDATE' "
+                    "when 9 then 'SELECT,UPDATE' "
+                    "when 10 then 'INSERT,UPDATE' "
+                    "when 11 then 'SELECT,INSERT,UPDATE' "
+                    "when 12 then 'DELETE,UPDATE' "
+                    "when 13 then 'SELECT,DELETE,UPDATE' "
+                    "when 14 then 'INSERT,DELETE,UPDATE' "
+                    "when 15 then 'SELECT,INSERT,DELETE,UPDATE' "
+                    "when 32 then 'REFERENCES' "
+                    "when 33 then 'SELECT,REFERENCES' "
+                    "when 34 then 'INSERT,REFERENCES' "
+                    "when 35 then 'SELECT,INSERT,REFERENCES' "
+                    "when 36 then 'DELETE,REFERENCES' "
+                    "when 37 then 'SELECT,DELETE,REFERENCES' "
+                    "when 38 then 'INSERT,DELETE,REFERENCES' "
+                    "when 39 then 'SELECT,INSERT,DELETE,REFERENCES' "
+                    "when 40 then 'UPDATE,REFERENCES' "
+                    "when 41 then 'SELECT,UPDATE,REFERENCES' "
+                    "when 42 then 'INSERT,UPDATE,REFERENCES' "
+                    "when 43 then 'SELECT,INSERT,UPDATE,REFERENCES' "
+                    "when 44 then 'DELETE,UPDATE,REFERENCES' "
+                    "when 45 then 'SELECT,DELETE,UPDATE,REFERENCES' "
+                    "when 46 then 'INSERT,DELETE,UPDATE,REFERENCES' "
+                    "when 47 then 'SELECT,INSERT,DELETE,UPDATE,REFERENCES' end) as varchar(128)) PRIVILEGE, "
+                    "cast (trim(case pmcp.GRANTABLE_BITMAP "
+                    "when 0 then 'NO' else 'YES' "
+                    "end) as varchar(128)) IS_GRANTABLE "
+                    "from TRAFODION.\"_MD_\".OBJECTS as mob, TRAFODION.\"_MD_\".COLUMNS as mco, TRAFODION.\"_PRIVMGR_MD_\".COLUMN_PRIVILEGES as pmcp "
+                    "where pmcp.OBJECT_UID = mob.OBJECT_UID "
+                    "and pmcp.OBJECT_UID = mco.OBJECT_UID "
+                    "and pmcp.COLUMN_NUMBER = mco.COLUMN_NUMBER "
+                    "and mco.COLUMN_NAME <> 'SYSKEY' "
+                    "and (mob.CATALOG_NAME = '%s' or trim(mob.CATALOG_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (mob.SCHEMA_NAME = '%s' or trim(mob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (mob.OBJECT_NAME = '%s' or trim(mob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+                    "and (mco.COLUMN_NAME = '%s' or trim(mco.COLUMN_NAME) LIKE '%s' ESCAPE '\\') "
+                    "order by pmcp.COLUMN_NUMBER;",
+                inputParam[0], inputParam[1],
+                inputParam[2], inputParam[3],
+                inputParam[4], inputParam[5],
+                inputParam[6], inputParam[7]);
 
             break;
                default :
@@ -5242,6 +5624,8 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                  if (retcode == SQL_ERROR)
                  {
                     ERROR_DESC_def *p_buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
+                    char             errNumStr[128] = {0};
+                    sprintf(errNumStr, "%d", (int)p_buffer->sqlcode);
                     strncpy(RequestError, p_buffer->errorText,sizeof(RequestError) -1);
                     RequestError[sizeof(RequestError) - 1] = '\0';
 
@@ -5251,7 +5635,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                                  ODBCMX_SERVER,
                                  srvrGlobal->srvrObjRef,
                                  2,
-                                 p_buffer->sqlcode,
+                                 errNumStr,
                                  RequestError);
 
                     exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
@@ -5579,6 +5963,7 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 
 	switch (connectionOption) {
 //Special Case//
+   
 	case SQL_ACCESSMODE_AND_ISOLATION:
 			switch (optionValueNum) {
 		case SQL_TXN_READ_UNCOMMITTED:
@@ -6043,6 +6428,10 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 	case WMS_QUERY_MONITORING:
 		strcpy(sqlString, "CONTROL QUERY DEFAULT WMS_QUERY_MONITORING 'OFF'");
 		break;
+    case SQL_ATTR_CLIPVARCHAR:
+        srvrGlobal->clipVarchar = optionValueNum;
+		sqlStringNeedsExecution = false;
+        break;
 	default:
 		exception_->exception_nr = odbc_SQLSvc_SetConnectionOption_ParamError_exn_;
 		exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_CONNECTION_OPTION;
@@ -6115,7 +6504,7 @@ odbc_SQLSrvr_FetchPerf_sme_(
 	int outputDataOffset = 0;
 
 	*returnCode = SQL_SUCCESS;
-
+    long long tmpLength;
 	if (maxRowCnt < 0)
 	{
 		*returnCode = SQL_ERROR;
@@ -6244,12 +6633,12 @@ odbc_SQLSrvr_FetchPerf_sme_(
 				*outValuesFormat = ROWWISE_ROWSETS;
 
 				rc = FETCH2bulk(pSrvrStmt);
-				if (pSrvrStmt->rowsAffected > 0)
-				{
+				tmpLength = clipVarchar(pSrvrStmt);
+				if (pSrvrStmt->rowsAffected > 0){
 					if(pSrvrStmt->outputDataValue._length == 0 && pSrvrStmt->outputDataValue._buffer == NULL)
 					{
 						outputDataValue->_buffer = pSrvrStmt->outputDescVarBuffer;
-						outputDataValue->_length = pSrvrStmt->outputDescVarBufferLen*pSrvrStmt->rowsAffected;
+						outputDataValue->_length = tmpLength;
 					}
 					else
 					{
@@ -6533,6 +6922,8 @@ odbc_SQLSrvr_ExtractLob_sme_(
         if (retcode == SQL_ERROR)
         {
             ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
+            char            errNumStr[128] = {0};
+            sprintf(errNumStr, "%d", (int)p_buffer->sqlcode);
             strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
 
             SendEventMsg(MSG_SQL_ERROR,
@@ -6541,7 +6932,7 @@ odbc_SQLSrvr_ExtractLob_sme_(
                          ODBCMX_SERVER,
                          srvrGlobal->srvrObjRef,
                          2,
-                         p_buffer->sqlcode,
+                         errNumStr,
                          RequestError);
 
             exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
@@ -6616,6 +7007,9 @@ odbc_SQLSrvr_UpdateLob_sme_(
         if (retcode == SQL_ERROR)
         {
             ERROR_DESC_def * p_buffer = QryLobUpdateSrvrStmt->sqlError.errorList._buffer;
+            char             errNumStr[128] = {0};
+            sprintf(errNumStr, "%d", (int)p_buffer->sqlcode);
+
             strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
 
             SendEventMsg(MSG_SQL_ERROR,
@@ -6624,7 +7018,7 @@ odbc_SQLSrvr_UpdateLob_sme_(
                          ODBCMX_SERVER,
                          srvrGlobal->srvrObjRef,
                          2,
-                         p_buffer->sqlcode,
+                         errNumStr,
                          RequestError);
             exception_->exception_nr = odbc_SQLSvc_UpdateLob_ParamError_exn_;
             exception_->u.SQLError.errorList._length = QryLobUpdateSrvrStmt->sqlError.errorList._length;

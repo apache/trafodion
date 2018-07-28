@@ -442,6 +442,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get views;
 
@@ -452,6 +455,9 @@ U3V1
 U3V2
 U3V3
 U3V4
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -800,6 +806,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get views;
 
@@ -810,6 +819,9 @@ U3V1
 U3V2
 U3V3
 U3V4
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>

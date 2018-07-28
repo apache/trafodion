@@ -429,6 +429,7 @@ static char * FCString (const char *idString, int isFC)
 %token MODE
 %token MODIFY
 %token MODIFYV
+%token MSCKtoken
 %token NEXT
 %token NOEtoken
 %token OBEY
@@ -460,8 +461,6 @@ static char * FCString (const char *idString, int isFC)
 %token SHOW
 %token SHOWCONTROL
 %token SHOWDDL
-%token SHOWLABEL
-%token SHOWLEAKS
 %token SHOWPLAN
 %token SHOWSHAPE
 %token SHOWSET
@@ -1247,14 +1246,6 @@ sql_cmd :
                           $$ = new DML(SqlciParse_OriginalStr, $1, NULL);
                           REPOSITION_SqlciParse_InputPos;
 			}
-        |       SHOWLEAKS
-                        { // not ready to log.
-			  HEAPLOG_CONTROL(LOG_DELETE_ONLY); 
-			  $$ = new DML(SqlciParse_OriginalStr, 
-				       DML_DESCRIBE_TYPE,
-				       "__SQLCI_DML_SHOWLEAKS__");
-			  REPOSITION_SqlciParse_InputPos;
-			}
 
         |       DECLAREtoken IDENTIFIER 
 			{
@@ -1916,7 +1907,6 @@ dml_type :
         |       UNREGISTER              {$$ = DML_DDL_TYPE;}
 	|       SHOWCONTROL 		{$$ = DML_DESCRIBE_TYPE;}
 	|       SHOWDDL 		{$$ = DML_DESCRIBE_TYPE;}
-	|       SHOWLABEL		{$$ = DML_DESCRIBE_TYPE;}
 	|	SHOWSTATS               {$$ = DML_DESCRIBE_TYPE;}
         |	SHOWTRANSACTION         {$$ = DML_DESCRIBE_TYPE;}
 	|	INVOKE  		{$$ = DML_DESCRIBE_TYPE;}
@@ -1945,6 +1935,7 @@ dml_type :
 	|	TRANSFORM		{$$ = DML_DDL_TYPE;}
 	|	CALLToken		{$$ = DML_DDL_TYPE;}
 	|	LOADtoken		{$$ = DML_DDL_TYPE;}
+	|	MSCKtoken		{$$ = DML_DDL_TYPE;}
 	|	EXTRACTtoken		{$$ = DML_DESCRIBE_TYPE;}
 	|	REPLICATEtoken		{$$ = DML_DESCRIBE_TYPE;}
 	|	GENERATEtoken		{$$ = DML_DESCRIBE_TYPE;}

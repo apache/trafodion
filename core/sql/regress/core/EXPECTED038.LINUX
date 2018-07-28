@@ -4670,6 +4670,140 @@ test      55  trim on non-s
 --- 4 row(s) selected.
 >>-- 4 rows
 >>
+>>-- test SPLIT_PART function
+>>
+>>select split_part('sa:sbl:sc', ':', 1) from t038sf;
+
+(EXPR)   
+---------
+
+sa       
+sa       
+sa       
+sa       
+
+--- 4 row(s) selected.
+>>select split_part('sa:sbl:sc', ':', 2) from t038sf;
+
+(EXPR)   
+---------
+
+sbl      
+sbl      
+sbl      
+sbl      
+
+--- 4 row(s) selected.
+>>select split_part('sa:sbl:sc', ':', 3) from t038sf;
+
+(EXPR)   
+---------
+
+sc       
+sc       
+sc       
+sc       
+
+--- 4 row(s) selected.
+>>
+>>-- **EMPTY RESULT** 
+>>select split_part('sa:sbl:sc', ':', 0) from t038sf;
+
+*** ERROR[8691] Field position must be greater than zero, currently is 0.
+
+--- 0 row(s) selected.
+>>select split_part('sa:sbl:sc', ':', 4) from t038sf;
+
+(EXPR)   
+---------
+
+         
+         
+         
+         
+
+--- 4 row(s) selected.
+>>select split_part('sa:sbl:sc', ':', -4) from t038sf;
+
+*** ERROR[8691] Field position must be greater than zero, currently is -4.
+
+--- 0 row(s) selected.
+>>
+>>insert into T038sf values(110, 'a/b/c', 'sa/dsd/s');
+
+--- 1 row(s) inserted.
+>>insert into T038sf values(111, 'sasd', 'dsa:/~sd');
+
+--- 1 row(s) inserted.
+>>insert into T038sf values(112, '#$%$#@', 'dsasggggsad');
+
+--- 1 row(s) inserted.
+>>insert into T038sf values(114, 'a', '这是^中文：测试');
+
+--- 1 row(s) inserted.
+>>
+>>select split_part(c, '/', 2) from t038sf;
+
+(EXPR)                        
+------------------------------
+
+                              
+                              
+                              
+                              
+dsd                           
+~sd                           
+                              
+                              
+
+--- 8 row(s) selected.
+>>select split_part(c, 'ggg', 2) from t038sf;
+
+(EXPR)                        
+------------------------------
+
+                              
+                              
+                              
+                              
+                              
+                              
+gsad                          
+                              
+
+--- 8 row(s) selected.
+>>select split_part(c, 'sd', 1) from t038sf;
+
+(EXPR)                        
+------------------------------
+
+                              
+                              
+                              
+                              
+sa/d                          
+dsa:/~                        
+                              
+                              
+
+--- 8 row(s) selected.
+>>select split_part(c, '：', 1) from t038sf;
+
+(EXPR)                        
+------------------------------
+
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+这是^中文                 
+
+--- 8 row(s) selected.
+>>
+>>
 >>-- Test for Genesis soln: 10-071004-7982
 >>-- Previously this would run out of memory in the Generator.
 >>-- Now it compiles successfully with Query Cache off.

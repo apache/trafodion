@@ -2850,6 +2850,10 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
      if (purgedata() || upgradeRepos())
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
+
+     if (initHbase() && producesOutput())  // returns status
+       xnCanBeStarted = FALSE;
+
      if ((ddlNode && ddlNode->castToStmtDDLNode() &&
           ddlNode->castToStmtDDLNode()->ddlXns()) &&
             ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
@@ -2858,9 +2862,11 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
              (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS) ||
              (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS) ||
-             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)))
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME) ||
+             (ddlNode->getOperatorType() == DDL_ON_HIVE_OBJECTS)))
      {
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
@@ -4198,7 +4204,8 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
         {
           // assign individual files and blocks to each ESPs
           ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
-          generator->setProcessLOB(TRUE);
+          if (CmpCommon::getDefault(USE_LIBHDFS) == DF_ON)
+             generator->setProcessLOB(TRUE);
 	  
 	  // flag set for HBase scan in HbaseAccess::preCodeGen
 	  // unique scan unlikely for hive scans except 
@@ -4520,7 +4527,9 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
     {
       oltOptInfo().setOltOpt(FALSE);
       generator->oltOptInfo()->setOltOpt(FALSE);
-      generator->setAqrEnabled(FALSE);
+      //enabling AQR to take care of the lock conflict error 8558 that
+      // should be retried.
+      //      generator->setAqrEnabled(FALSE);
       generator->setUpdAbortOnError(TRUE);
       generator->setUpdSavepointOnError(FALSE);
     }
@@ -5473,7 +5482,6 @@ RelExpr * HiveInsert::preCodeGen(Generator * generator,
     return this;
 
   generator->setHiveAccess(TRUE);
-  generator->setProcessLOB(TRUE);
   return GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs);
 }
 
@@ -5738,19 +5746,9 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   return this;
 }
 
-RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
-					const ValueIdSet & externalInputs,
-					ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
-}
-
-RelExpr * ExeUtilHiveTruncate::preCodeGen(Generator * generator,
-                                          const ValueIdSet & externalInputs,
-                                          ValueIdSet &pulledNewInputs)
+RelExpr * ExeUtilHiveTruncateLegacy::preCodeGen(Generator * generator,
+                                                const ValueIdSet & externalInputs,
+                                                ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;
@@ -12370,5 +12368,41 @@ RelExpr * ExeUtilOrcFastAggr::preCodeGen(Generator * generator,
   markAsPreCodeGenned();
   
   // Done.
+  return this;
+}
+
+ItemExpr * SplitPart::preCodeGen(Generator *generator)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  child(0) = child(0)->preCodeGen(generator);
+  if (! child(0).getPtr())
+    return NULL;
+
+  child(1) = child(1)->preCodeGen(generator);
+  if (! child(1).getPtr())
+    return NULL;
+
+  for (Int32 i = 2; i < getArity(); i++)
+    {
+      if (child(i))
+        {
+          const NAType &typ1 = child(i)->getValueId().getType();
+          
+          //Insert a cast node to convert child to an INT.
+          child(i) = new (generator->wHeap())
+            Cast(child(i), new (generator->wHeap()) SQLInt(generator->wHeap(), TRUE,
+                                                         typ1.supportsSQLnullLogical()));
+
+          child(i)->bindNode(generator->getBindWA());
+          child(i) = child(i)->preCodeGen(generator);
+          if (! child(i).getPtr())
+            return NULL;
+
+        }
+    }
+
+  markAsPreCodeGenned();
   return this;
 }

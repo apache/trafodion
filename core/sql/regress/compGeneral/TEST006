@@ -366,6 +366,7 @@ prepare xx from select date_trunc('month',a) from t006t1;
 prepare xx from select date_trunc('century',a) from t006t1;
 prepare xx from select datediff(year,a, a) from t006t1;
 prepare xx from select datediff(month,a, a) from t006t1;
+prepare xx from select datediff(day,current_timestamp,a) from t006t1;
 prepare xx from select datediff(hour,a, a) from t006t1;
 prepare xx from select datediff(minute,a, a) from t006t1;
 prepare xx from select datediff(second,a, a) from t006t1;

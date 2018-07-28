@@ -181,6 +181,9 @@ TEST024SEQ5
 TEST024SEQ6
 TEST024SEQ7
 
+=======================
+ 7 row(s) returned
+
 --- SQL operation complete.
 >>set schema seqsch;
 

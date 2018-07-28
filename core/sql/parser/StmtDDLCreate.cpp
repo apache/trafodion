@@ -4255,9 +4255,12 @@ StmtDDLCreateTable::synthesize()
     }
 
   NABoolean userSpecifiedPKey = FALSE;
-  if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
+  NABoolean nullablePKeySpecified = FALSE;
+  if ((CmpCommon::getDefault(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL) == DF_ON) ||
+      (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
       (isVolatile()) ||
-      ((isPkeyStoreByKeylist) && pTableDefBody && (pTableDefBody->castToElemDDLLikeCreateTable() == NULL)))
+      ((isPkeyStoreByKeylist) && pTableDefBody && 
+       (pTableDefBody->castToElemDDLLikeCreateTable() == NULL)))
     {
       NABoolean addPrimaryKeyClause = FALSE;
 
@@ -4388,6 +4391,9 @@ StmtDDLCreateTable::synthesize()
 
 		  keyColsList = 
 		    currElem->castToElemDDLConstraintPK()->getColumnRefList();
+
+                  nullablePKeySpecified = 
+                    currElem->castToElemDDLConstraintPK()->isNullableSpecified();
 		}
 	    }
 	} // while
@@ -4493,9 +4499,13 @@ StmtDDLCreateTable::synthesize()
 
       // loop over all cols and make nullable columns which are part
       // of pkey specification, not-null-non-droppable.
-      // Do this only if cqd VOLATILE_TABLE_FIND_SUITABLE_KEY is 
-      // set to OFF.
-      if (CmpCommon::getDefault(VOLATILE_TABLE_FIND_SUITABLE_KEY) == DF_OFF)
+      // For volatile tables, do this only if cqd 
+      // VOLATILE_TABLE_FIND_SUITABLE_KEY is set to OFF.
+      if (((NOT isVolatile()) &&
+           (CmpCommon::getDefault(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL) == DF_ON) &&
+           (NOT nullablePKeySpecified)) ||
+          ((isVolatile()) && 
+           (CmpCommon::getDefault(VOLATILE_TABLE_FIND_SUITABLE_KEY) == DF_OFF)))
 	{
 	  currListElem = pTableDefBody;
 	  while (currListElem)
@@ -4527,7 +4537,13 @@ StmtDDLCreateTable::synthesize()
 		  NABoolean makeThisColNNND = FALSE;
 		  
 		  if (col->isPrimaryKeyConstraintSpecified())
-		    makeThisColNNND = TRUE;
+                    {
+                      makeThisColNNND = TRUE;
+
+                      if (col->getConstraintPK() && 
+                          col->getConstraintPK()->isNullableSpecified())
+                        makeThisColNNND = FALSE;
+                    }
 		  else if (keyColsList NEQ NULL)
 		    {
 		      // See if this col is in pkey or store by clause.
@@ -6834,7 +6850,8 @@ StmtDDLCreateView::StmtDDLCreateView(const QualifiedName & viewQualName,
           pWithCheckOption_(optionalWithCheckOption),
           columnDefArray_(heap),
           viewUsages_(heap),
-	  udfList_(heap)
+	  udfList_(heap),
+          createIfNotExists_(FALSE)
 {
   setChild(INDEX_VIEW_OWNER, pOwner);
 }

@@ -1,0 +1,7 @@
+327c327,330
+< --- SQL command prepared.
+---
+> *** ERROR[4002] Column T00804.A is not found. Table T00804 not exposed. Tables in scope: HIVE.HIVE.T00804. Default schema: HIVE.SCH008.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 

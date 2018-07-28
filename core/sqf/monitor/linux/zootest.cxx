@@ -55,6 +55,14 @@ int MyPid = -1;
 CZClient    *ZClient = NULL;
 CMonLog     *MonLog =  NULL;
 
+void HandleAssignMonitorLeader ( const char* failedMaster )
+{
+    const char method_name[] = "HandleAssignMonitorLeader";
+    TRACE_ENTRY;
+    failedMaster = failedMaster;
+    TRACE_EXIT;
+}
+
 void HandleMyNodeExpiration( void )
 {
     const char method_name[] = "HandleMyNodeExpiration";
@@ -185,7 +193,7 @@ void CreateZookeeperClient( void )
  * each child. A missing child znode will is assumed to be a down node.
  *
  */
-int main( int argc, char *argv[], char *envp[] )
+int main( int argc, char *argv[] )
 {
     const char method_name[] = "main";
     TRACE_ENTRY;

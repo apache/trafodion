@@ -69,7 +69,10 @@ class DatetimeType : public DatetimeIntervalCommonType
 public:
 
   enum { DEFAULT_FRACTION_PRECISION = 0 };      // See ANSI 6.1 SR 25: zero
-  enum { MAX_FRACTION_PRECISION = 6 };  // See ANSI 6.1 SR 26: max is at least 6
+  enum { MAX_FRACTION_PRECISION_USEC = 6 }; // max microseconds fract precision
+  enum { MAX_FRACTION_PRECISION = 9 };  // See ANSI 6.1 SR 26: max is at least 6.
+                                        // Changed to 9 to support nano secs 
+                                        // fractional precision
 
   enum Subtype { SUBTYPE_ILLEGAL,
                  SUBTYPE_SQLDate, 

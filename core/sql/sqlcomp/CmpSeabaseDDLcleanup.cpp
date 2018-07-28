@@ -66,7 +66,8 @@ CmpSeabaseMDcleanup::CmpSeabaseMDcleanup(NAHeap *heap)
     numOrphanHbaseEntries_(0),
     numOrphanObjectsEntries_(0),
     numOrphanViewsEntries_(0),
-    numInconsistentHiveEntries_(0)
+    numInconsistentHiveEntries_(0),
+    isHive_(FALSE)
 {};
 
 Int64 CmpSeabaseMDcleanup::getCleanupObjectUID(
@@ -298,15 +299,28 @@ short CmpSeabaseMDcleanup::validateInputValues(
       objectOwner_ = -1;
     }
 
+  isHive_ = FALSE;
+  if (catName_ == HIVE_SYSTEM_CATALOG)
+    isHive_ = TRUE;
+
   // generate hbase name that will be used to drop underlying hbase object
   extNameForHbase_ = "";
-  if ((objType_ == COM_BASE_TABLE_OBJECT_LIT) ||
-      (objType_ == COM_INDEX_OBJECT_LIT))
+  if ((NOT isHive_) &&
+      ((objType_ == COM_BASE_TABLE_OBJECT_LIT) ||
+       (objType_ == COM_INDEX_OBJECT_LIT)))
     {
       if (NOT (catName_.isNull() || schName_.isNull() || objName_.isNull()))
         {
           extNameForHbase_ = catName_ + "." + schName_ + "." + objName_;
         }
+    }
+  else if (isHive_)
+    {
+      if (NOT ((schName_.compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) ||
+               (schName_.compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0)))              
+        extNameForHive_ = schName_ + ".";
+
+      extNameForHive_ += objName_;
     }
 
   // Make sure user has necessary privileges to perform drop
@@ -472,6 +486,34 @@ short CmpSeabaseMDcleanup::gatherDependentObjects(ExeCliInterface *cliInterface)
         {
           if (processCleanupErrors(NULL, errorSeen))
             return -1;
+        }
+    }
+
+  if (isHive_)
+    {
+      // if this hive table has an external table, get its uid
+      NAString extTableName;
+      extTableName = ComConvertNativeNameToTrafName(catName_, schName_, objName_);
+      if (NOT extTableName.isNull())
+        {
+          QualifiedName qn(extTableName, 3);
+          Int64 extObjUID = 
+            getObjectUID(cliInterface, 
+                         qn.getCatalogName(), qn.getSchemaName(), qn.getObjectName(),
+                         COM_BASE_TABLE_OBJECT_LIT,
+                         NULL, NULL, FALSE,
+                         FALSE);
+          if (extObjUID > 0)
+            {
+              char query[1000];
+              str_sprintf(query, "cleanup uid %ld", extObjUID);
+              cliRC = cliInterface->executeImmediate(query);
+              if (cliRC < 0)
+                {
+                  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+                  return -1;
+                }
+            }
         }
     }
 
@@ -733,8 +775,19 @@ short CmpSeabaseMDcleanup::deleteHistogramEntries(ExeCliInterface *cliInterface)
       (objUID_ > 0) &&
       (NOT catName_.isNull()) &&
       (NOT schName_.isNull()))
-    if (dropSeabaseStats(cliInterface, catName_.data(), schName_.data(), objUID_))
-      return -1;
+    {
+      if (NOT isHive_)
+        {
+          if (dropSeabaseStats(cliInterface, catName_.data(), schName_.data(), objUID_))
+            return -1;
+        }
+      else
+        {
+          if (dropSeabaseStats(cliInterface, HIVE_STATS_CATALOG, 
+                               HIVE_STATS_SCHEMA_NO_QUOTES, objUID_))
+            return -1;
+        }
+    }
 
   return 0;
 }
@@ -1033,81 +1086,6 @@ short CmpSeabaseMDcleanup::cleanupUIDs(ExeCliInterface *cliInterface,
     }
   
   return 0;
-}
-
-void CmpSeabaseMDcleanup::cleanupHiveObject(const StmtDDLCleanupObjects * stmtCleanupNode,
-                                             ExeCliInterface *cliInterface)
-{
-
-  Lng32 cliRC = 0;
-  char query[1000];
-  NABoolean errorSeen = FALSE;
-
-  // check if this table exists in hive metadata
-  NABoolean hiveObjExists = TRUE;
-  NAString objName(stmtCleanupNode->getTableNameAsQualifiedName()->getObjectName());
-  objName.toLower();
-  str_sprintf(query, "select * from (get %s in schema %s.%s, no header, match '%s') x(a)",
-              (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
-              ? "tables" : "views",
-               stmtCleanupNode->getTableNameAsQualifiedName()->getCatalogName().data(),
-              stmtCleanupNode->getTableNameAsQualifiedName()->getSchemaName().data(),    
-              objName.data());
-  cliRC = cliInterface->fetchRowsPrologue(query, TRUE/*no exec*/);
-  if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
-    }
-  
-  cliRC = cliInterface->clearExecFetchClose(NULL, 0);
-  if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
-    }
-  
-  if (cliRC == 100) // did not find the row
-    {
-      hiveObjExists = FALSE;
-    }
-    
-  // if underlying hive object doesn't exist, drop external table and unregister
-  // objects
-  if (NOT hiveObjExists)
-    {
-      // drop external table
-      if (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
-        {
-          str_sprintf(query, "drop external table if exists %s for %s;",
-                      objName.data(),
-                      stmtCleanupNode->getTableNameAsQualifiedName()->
-                      getQualifiedNameAsString().data());
-          cliRC = cliInterface->executeImmediate(query);
-          if (cliRC < 0)
-            {
-              if (processCleanupErrors(NULL, errorSeen))
-                return;
-            }          
-        }
-      
-      // unregister registered table or view
-      if (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
-        str_sprintf(query, "unregister hive table if exists %s cleanup;",
-                    stmtCleanupNode->getTableNameAsQualifiedName()->getQualifiedNameAsString().data());
-      else
-        str_sprintf(query, "unregister hive view if exists %s cleanup;",
-                    stmtCleanupNode->getTableNameAsQualifiedName()->getQualifiedNameAsString().data());
-      
-      cliRC = cliInterface->executeImmediate(query);
-      if (cliRC < 0)
-        {
-          if (processCleanupErrors(NULL, errorSeen))
-            return;
-        }
-    }
-
-  return;
 }
 
 void CmpSeabaseMDcleanup::cleanupHBaseObject(const StmtDDLCleanupObjects * stmtCleanupNode,
@@ -1754,7 +1732,7 @@ void CmpSeabaseMDcleanup::cleanupMetadataEntries(ExeCliInterface *cliInterface,
               {
               case 0:
                 {
-                  dws->setMsg("  Start: Cleanup Orphan Objects Entries");              
+                  dws->setMsg("  Start: Cleanup Orphan Objects Entries");
                   dws->subStep()++;
                   dws->setEndStep(FALSE);
                   
@@ -1908,6 +1886,16 @@ void CmpSeabaseMDcleanup::cleanupMetadataEntries(ExeCliInterface *cliInterface,
                   dws->setBlackBoxLen(blackBoxLen);
                   dws->setBlackBox(blackBox);
                    
+                  if ((numOrphanViewsEntries_ == 0) &&
+                      (blackBoxLen > 0))
+                    {
+                      str_sprintf(buf, "  End:   Cleanup Inconsistent Views Entries (%d %s %s) [internal error: blackBoxLen = %d] ",
+                                  numOrphanViewsEntries_,
+                                  (numOrphanViewsEntries_ == 1 ? "entry" : "entries"),
+                                  (checkOnly_ ? "found" : "cleaned up"),
+                                  blackBoxLen);
+                    }
+                  
                   dws->setMsg(buf);
                   dws->setStep(HIVE_ENTRIES);
                   dws->setSubstep(0);
@@ -2021,7 +2009,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
         checkOnly_ = TRUE;
       if (dws->getReturnDetails())
         returnDetails_ = TRUE;
-      return cleanupMetadataEntries(&cliInterface, ehi, dws);
+      cleanupMetadataEntries(&cliInterface, ehi, dws);
+      return;
     }
 
   if (cleanupMetadataEntries_)
@@ -2033,13 +2022,6 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       (objType_ == COM_SHARED_SCHEMA_OBJECT_LIT))
     {
       return cleanupSchemaObjects(&cliInterface);
-    }
-
-  if (stmtCleanupNode &&
-      ((stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_) ||
-       (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_VIEW_)))
-    {
-      return cleanupHiveObject(stmtCleanupNode, &cliInterface);
     }
 
   if (stmtCleanupNode &&
@@ -2056,6 +2038,7 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
 
   if (((objType_ == COM_BASE_TABLE_OBJECT_LIT) ||
        (objType_ == COM_INDEX_OBJECT_LIT)) &&
+      (NOT isHive_) &&
       (extNameForHbase_.isNull()))
     {
       // add warning that name couldnt be found. Hbase object cannot be removed.
@@ -2091,7 +2074,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
     if (stopOnError_)
       goto label_error;
 
-  if (NOT extNameForHbase_.isNull())
+  if ((NOT isHive_) &&
+      (NOT extNameForHbase_.isNull()))
     {
       HbaseStr hbaseObject;
       hbaseObject.val = (char*)extNameForHbase_.data();
@@ -2102,6 +2086,29 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       if (cliRC)
           if (stopOnError_)
             goto label_return;
+    }
+
+  // drop underlying Hive object
+  if (isHive_)
+    {
+      NAString hiveQuery;
+      if (objType_ == COM_BASE_TABLE_OBJECT_LIT)
+        {
+          hiveQuery = "drop table if exists " + extNameForHive_;
+        }
+      else if (objType_ == COM_VIEW_OBJECT_LIT)
+        {
+          hiveQuery = "drop view if exists " + extNameForHive_;
+        }
+
+      if (NOT hiveQuery.isNull())
+        {
+          if (HiveClient_JNI::executeHiveSQL(hiveQuery.data()) != HVC_OK)
+            {
+              if (stopOnError_)
+                goto label_return;
+            }
+        }
     }
 
   cliRC = dropIndexes(&cliInterface);
@@ -2138,7 +2145,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
         (
              cn,
              ComQiScope::REMOVE_FROM_ALL_USERS, 
-             COM_BASE_TABLE_OBJECT,
+             (objType_ == COM_VIEW_OBJECT_LIT ? COM_VIEW_OBJECT :
+              COM_BASE_TABLE_OBJECT),
              FALSE, FALSE);
     }
 

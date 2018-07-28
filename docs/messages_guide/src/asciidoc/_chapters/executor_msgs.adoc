@@ -464,6 +464,19 @@ or rollback.
 commit or rollback. {project-name} must start any transactions it will later commit or rollback.
 
 <<<
+[[SQL-8691]]                                                                                    
+== SQL 8691
+```
+Field position must be great than zero.
+```
+
+*Cause:* You attempted to use an invalid value for the third operand of the split_part function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
 [[SQL-8808]]
 == SQL 8808
 

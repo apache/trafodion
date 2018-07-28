@@ -673,17 +673,31 @@ export SQ_LUNMGR_VERBOSITY=1
 # Control SQ default startup behavior (c=cold, w=warm, if removed sqstart will autocheck)
 export SQ_STARTUP=r
 
-# Monitor process creator:
+#
+# NOTE: in a Python installation when SQ_MON_RUN_MODE below
+#       is AGENT the SQ_MON_CREATOR must be MPIRUN
+#
 #   MPIRUN - monitor process is created by mpirun
-# Uncomment SQ_MON_CREATOR when running monitor in AGENT mode
+#            (meaning that mpirun is the parent process of the monitor process)
+#   AGENT  - monitor process runs in agent mode versus MPI collective
+#
+# Uncomment the next four environment variables
 #export SQ_MON_CREATOR=MPIRUN
-
-# Monitor process run mode:
-#   AGENT - monitor process runs in agent mode versus MPI collective
-# Uncomment the three environment variables below
 #export SQ_MON_RUN_MODE=AGENT
-#export MONITOR_COMM_PORT=23399
-#export MONITOR_SYNC_PORT=23398
+#export MONITOR_COMM_PORT=23390
+#export MONITOR_SYNC_PORT=23380
+
+#
+#   NAME-SERVER - to disable process replication and enable the name-server
+#
+# Uncomment the next environment variable
+#export SQ_NAMESERVER_ENABLED=1
+if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
+  export NS_COMM_PORT=${NS_COMM_PORT:-23370}
+  export NS_SYNC_PORT=${NS_SYNC_PORT:-23360}
+  export NS_M2N_COMM_PORT=${NS_M2N_COMM_PORT:-23350}
+  export MON2MON_COMM_PORT=${MON2MON_COMM_PORT:-23340}
+fi
 
 # Alternative logging capability in monitor
 export SQ_MON_ALTLOG=0

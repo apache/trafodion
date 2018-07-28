@@ -1,0 +1,361 @@
+-- Tests for Hive DDL from Traf
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+drop schema hive.sch008 cascade;
+revoke role DB__HIVEROLE from SQL_USER4;
+
+log LOG008 clear;
+cqd traf_ddl_on_hive_objects 'ON';
+
+set schema hive.sch008;
+
+showddl schema hive.sch008;
+create database hive.sch008;
+create schema if not exists hive.sch008;
+showddl schema hive.sch008;
+
+drop table if exists hive.sch008.t00801;
+create table hive.sch008.t00801 (a int, b int);
+invoke hive.sch008.t00801;
+showddl hive.sch008.t00801;
+drop table hive.sch008.t00801;
+
+set schema hive.sch008;
+create table t00802 (a int, b int);
+invoke t00802;
+
+insert into t00802 values (1,2);
+select * from t00802;
+
+-- hive execution of create as select... runs into an error due to a 
+-- security issue.
+-- Use regrhive until that issue is fixed.
+sh echo "create table sch008.t00803 as select * from sch008.t00802;" > TEST008_junk;
+sh regrhive.ksh -f TEST008_junk;
+cqd hive_ctas_in_native_mode 'ON';
+-- create table t00803 as select * from sch008.t00802;
+cqd hive_ctas_in_native_mode reset;
+invoke t00803;
+select * from t00803;
+
+-- ctas create executed in Hive and insert executed in sql
+drop table if exists t008032;
+explain options 'f' create table t008032 no load as select * from t00802;
+create table t008032 no load as select * from sch008.t00802;
+invoke t008032;
+
+-- describe will show datatype 132 for b
+prepare s from insert into t00802 values (?, ?);
+describe s;
+
+-- alter will do QI and reload table definition
+alter table t00802 change b b bigint;
+
+select * from t00802;
+
+-- describe will show datatype 134 for b
+prepare s from insert into t00802 values (?, ?);
+describe s;
+
+invoke t00802;
+showddl t00802;
+
+-- create in hive default schema
+drop table if exists hive.`default`.t00804;
+create table hive.`default`.`t00804` (`a` int);
+showddl hive.hive.t00804;
+insert into hive.hive.t00804 values (11);
+
+create view if not exists hive.sch008.v00802 as select * from sch008.t00802;
+showddl hive.sch008.v00802;
+select * from v00802;
+alter view hive.sch008.v00802 as select * from sch008.t00802;
+showddl hive.sch008.v00802;
+
+-- view in a different schema than table
+create view hive.sch008.v00803 as select * from `default`.t00804;
+showddl hive.sch008.v00803;
+-- next one should not return an error but it currently does.
+-- Tables in schemas different than views schema is not being handled.
+-- Track it as a known diff.
+prepare s from select * from v00803;
+
+get objects in schema hive.sch008;
+
+drop view if exists hive.sch008.v00802;
+invoke hive.sch008.v00802;
+
+get objects in schema hive.sch008;
+
+-- delimited names  using hive ` as delimiter.
+create table hive.`sch008`.`t00804` (`a` int);
+showddl hive.sch008.t00804;
+create table hive.`sch008`.`t00804like` like `sch008`.`t00804`;
+create external table hive.`sch008`.`t00804like2` like `sch008`.`t00804`;
+showddl hive.sch008.t00804like;
+showddl hive.sch008.t00804like2;
+drop table if exists hive.sch008.`t00805like`;
+drop table if exists hive.sch008.`t00805like2`;
+
+-- delimited names  using traf " as delimiter.
+create table hive."sch008"."t00805" (`a` int);
+showddl hive.sch008.t00805;
+
+-- create external hive table like a traf table
+drop table if exists hive.sch008.columns;
+explain create external table hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
+create external table hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
+create external table if not exists hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
+showddl hive.sch008.columns;
+
+-- create managed hive table LIKE traf table
+drop table if exists hive.sch008.columns;
+create table hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
+showddl hive.sch008.columns;
+
+-- ctas stmt is passed to Hive layer. 
+drop table if exists hive.hive.tempsrc;
+drop table if exists hive.hive.temptgt;
+create table hive.hive.tempsrc(a int);
+cqd hive_ctas_in_native_mode 'ON';
+explain options 'f' create external table hive.hive.temptgt as select * from tempsrc;
+-- cannot create external table thru CTAS in Hive
+create external table hive.hive.temptgt as select * from tempsrc;
+
+-- hive execution of CTAS returns an error due to a security issue on some
+-- platforms. Do not execute it until the issue is fixed.
+prepare s from create table hive.hive.temptgt as select * from tempsrc;
+--execute s;
+invoke hive.hive.temptgt;
+cqd hive_ctas_in_native_mode reset;
+
+-- create and drop hive table and external table
+drop table if exists t00806;
+create table t00806 (a int, b string);
+showddl t00806;
+create external table t00806 for t00806;
+showddl t00806;
+drop table if exists t00806;
+showddl t00806;
+select object_uid from trafodion."_MD_".objects where object_name = 'T00806';
+
+-- cleanup hive table
+drop table if exists t00806;
+create table t00806 (a int, b string);
+showddl t00806;
+create external table t00806 for t00806;
+showddl t00806;
+cleanup table t00806;
+showddl t00806;
+select trim(schema_name) || '.' || trim(object_name) from trafodion."_MD_".objects where object_name = 'T00806';
+drop table if exists t00806;
+create table t00806 (a int, b string);
+create external table t00806 for t00806;
+process hive ddl 'drop table sch008.t00806';
+showddl t00806;
+select trim(schema_name) || '.' || trim(object_name) from trafodion."_MD_".objects where object_name = 'T00806';
+cleanup table t00806;
+showddl t00806;
+select trim(schema_name) || '.' || trim(object_name) from trafodion."_MD_".objects where object_name = 'T00806';
+
+-- TRUNCATE TABLE tests
+-- hive managed table
+create table if not exists t00807 (a int, b int);
+showddl t00807;
+insert into t00807 values (1,2), (3,4);
+select * from t00807;
+truncate table t00807;
+select * from t00807;
+drop table t00807;
+-- next truncate should return error
+truncate table t00807;
+truncate table if exists t00807;
+
+-- hive external table
+drop table t00807;
+create external table if not exists t00807 (a int, b int);
+showddl t00807;
+insert into t00807 values (1,2), (3,4);
+select * from t00807;
+truncate table t00807;
+select * from t00807;
+drop table t00807;
+
+-- hive partitioned external table.
+-- hive partitioned table insert/select not yet supported from traf interface.
+-- When supported, remove regrhive.ksh and do the insert/select from traf.
+-- Also enabled select from t00807.
+drop table t00807;
+create external table if not exists t00807 (a int) partitioned by (b int);
+
+-- TBD: insert into sch008.t00807 values (1,2);
+sh echo "insert into sch008.t00807 partition(b=2) values (1);" > TEST008_junk;
+sh regrhive.ksh -f TEST008_junk;
+
+-- TBD: select * from t00807;
+sh echo "select * from sch008.t00807;" > TEST008_junk;
+sh regrhive.ksh -f TEST008_junk | tee -a LOG008;
+
+truncate table t00807;
+
+-- TBD: select * from t00807;
+sh echo "select * from sch008.t00807;" > TEST008_junk;
+sh regrhive.ksh -f TEST008_junk | tee -a LOG008;
+
+explain options 'f' create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+
+drop table t008072;
+
+drop table if exists trafodion.sch.t00807;
+create table trafodion.sch.t00807 (a int);
+explain options 'f' create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+invoke hive.sch008.t008072;
+
+drop table t00807;
+drop table t008072;
+
+-- alter rename. Should unregister the source table.
+create table t00807 (a int);
+alter table t00807 rename to `default`.t00807ren;
+select * from trafodion."_MD_".objects where schema_name = 'HIVE' and object_name = 'T00807';
+-- should show
+showddl hive.t00807ren;
+-- should not show
+showddl t00807ren;
+drop table hive.t00807ren;
+
+-- alter rename to the hive schema set in session (hive.sch008)
+create table t00807 (a int);
+alter table t00807 rename to t00807ren;
+-- should show
+showddl t00807ren;
+-- should not show
+showddl hive.t00807ren;
+
+-- msck (meta store check) command support
+msck repair table t00807ren;
+alter table t00807ren recover partitions;
+
+-- explain on hive DDL
+explain options 'f' drop table hive.hive.tnone;
+explain options 'f' create table hive.hive.tnone (a bigint);
+
+-- cannot access hive objects if not DB__HIVEROLE. 
+-- should return error, SQL_USER4 not authorized.
+log;
+sh sqlci -i"TEST008(hive_ddl_as_user4)" -u"SQL_User4";
+log LOG008;
+
+-- grant/revoke to access hive objects
+showddl role DB__HIVEROLE;
+grant role DB__HIVEROLE to SQL_USER4;
+showddl role DB__HIVEROLE;
+
+-- should not return unauthorized error.
+log;
+sh sqlci -i"TEST008(hive_ddl_as_user4)" -u"SQL_User4";
+log LOG008;
+
+revoke role DB__HIVEROLE from SQL_USER4;
+showddl role DB__HIVEROLE;
+
+-- should return error
+log;
+sh sqlci -i"TEST008(hive_ddl_as_user4)" -u"SQL_User4";
+
+log LOG008;
+
+-- next alter should be passed on to hive. will return error from hive.
+alter schema hive.sch008 abc;
+alter database hive.sch008 abc;
+
+-- error cases
+set catalog hive;
+drop table if exists sch008.temptab;
+
+-- next drop should return error but hive doesn't return error 
+-- on a nonexistent table
+process hive ddl 'drop table sch008.temptab';
+
+drop table if exists sch008.temptab;
+
+create table sch008.temptab (a int);
+
+-- next create should return error that table exists
+create table sch008.temptab (a int);
+create table if not exists sch008.temptab (a int);
+
+set schema hive.sch008;
+
+-- create table error. largeint is not a valid type.
+create table temptab2(a largeint);
+
+-- return error: schema not empty
+drop schema sch008;
+
+-- use of backquote should return an error for non-hive ddl
+create table trafodion.sch.`temp` (a int);
+create external table trafodion.sch.`temp` (a int);
+create table hive.hive.`temp` for hive.hive.`temp`;
+create external table hive.hive.`temp` for hive.hive.`temp`;
+create table hive.hive.`temp` like hive.hive.`temp`;
+select * from `dual`;
+
+-- cannot use keyword database to create/drop traf schemas
+create database trafodion.temp;
+drop database trafodion.temp;
+alter database trafodion.temp;
+
+-- return error: unsupported operation from 'process hive ddl' stmt
+process hive ddl 'grnt abc';
+
+-- return error: table temp does not exist
+create table hive.hive.temptab2 as select * from trafodion.sch.temp;
+
+drop database hive.sch008 cascade;
+drop schema if exists hive.sch008 cascade;
+showddl schema hive.sch008;
+
+drop table hive.`default`.t00804;
+drop table hive.sch008.temptab;
+
+revoke role DB__HIVEROLE from SQL_USER4;
+
+log;
+exit;
+
+?section hive_ddl_as_user4
+log LOG008;
+process hive ddl 'drop table tnotexists';
+drop table hive.hive.tnotexists;
+

@@ -165,7 +165,7 @@ void runServer(Int32 argc, char **argv)
   struct tm *nowtm;
 
   long maxSegSize = STATS_MAX_SEG_SIZE;
-  char *envSegSize = getenv("MX_RTS_STATS_SEG_SIZE");
+  char *envSegSize = getenv("RMS_SHARED_SEG_SIZE_MB");
   if (envSegSize)
   {
     maxSegSize = (long) str_atoi(envSegSize, str_len(envSegSize));

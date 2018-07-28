@@ -320,15 +320,20 @@ public:
   {(v ? flags2_ |= RETURN_DETAILS : flags2_ &= ~RETURN_DETAILS); }
   NABoolean getReturnDetails() { return (flags2_ & RETURN_DETAILS) != 0;}
 
+  void setInitTraf(NABoolean v)
+  {(v ? flags2_ |= INIT_TRAF : flags2_ &= ~INIT_TRAF); }
+  NABoolean getInitTraf() { return (flags2_ & INIT_TRAF) != 0;}
+
 protected:
   enum Flags 
   { 
     GET_MD_VERSION          = 0x0001,
     GET_SW_VERSION          = 0x0002,
-    MD_UPGRADE                 = 0x0004,
-    MD_CLEANUP                 = 0x0008,
-    CHECK_ONLY                 = 0x0010,
-    RETURN_DETAILS           = 0x0020
+    MD_UPGRADE              = 0x0004,
+    MD_CLEANUP              = 0x0008,
+    CHECK_ONLY              = 0x0010,
+    RETURN_DETAILS          = 0x0020,
+    INIT_TRAF               = 0x0040
   };
  
   UInt16 flags2_;                       // 00-01

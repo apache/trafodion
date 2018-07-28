@@ -71,7 +71,7 @@ Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\ODBC Drivers; ValueType: string; 
 Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: dword; ValueName: UsageCount; ValueData: $00000001 ;Flags: uninsdeletekey
 Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: Driver; ValueData: {sys}\trfodbc1.dll ;Flags: uninsdeletekey
 Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: Setup; ValueData: {sys}\trfoadm1.dll ;Flags: uninsdeletekey
-Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: CertificateDir; ValueData: SYSTEM_DEFAULT ;Flags: uninsdeletekey
+Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: CertificateDir; ValueData: "{code:getCerDir}" ;Flags: uninsdeletekey
 Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: string; ValueName: CPTimeout; ValueData: 60 ;Flags: uninsdeletekey
 
 [UninstallDelete]
@@ -94,6 +94,17 @@ const
 
   VC_2013_REDIST_X64_MIN = '{A749D8E6-B613-3BE3-8F5F-045C84EBA29B}';
   VC_2013_REDIST_X64_ADD = '{929FBD26-9020-399B-9A7A-751D61F0B942}';
+
+var
+  CerDirEdit: TNewEdit;
+  CerDirButton: TButton;
+  CerDirLabel: TLabel;
+  CerDirDesLabel: TLabel;
+
+function getCerDir(Param: String): string;
+begin
+  Result := CerDirEdit.Text;
+end;
 
 function MsiQueryProductState(szProduct: string): INSTALLSTATE;
   external 'MsiQueryProductState{#AW}@msi.dll stdcall';
@@ -220,4 +231,53 @@ begin
       Result := False; //when older version present and not uninstalled
   end;
 
+end;
+
+procedure ChoseCerDirClick(Sender: TObject);
+var
+  choicedDIR:String;
+begin
+  if BrowseForFolder(ExpandConstant('choose a Certificate Directory'),choicedDIR,True) then
+    CerDirEdit.Text := choicedDIR;
+end;
+
+procedure CreateAddonPage;
+begin
+
+end;
+
+procedure InitializeWizard();
+begin
+  CerDirDesLabel := TLabel.Create(WizardForm);
+  CerDirDesLabel.Parent := WizardForm.SelectDirPage;
+  CerDirDesLabel.Left := ScaleX(0);
+  CerDirDesLabel.Top := ScaleY(100);
+  CerDirDesLabel.Width := ScaleX(75);
+  CerDirDesLabel.Height := ScaleY(21);
+  CerDirDesLabel.Caption := ExpandConstant('Certificate directory location');
+
+  CerDirEdit := TNewEdit.Create(WizardForm);
+  CerDirEdit.Parent := WizardForm.SelectDirPage;
+  CerDirEdit.Left := ScaleX(0);
+  CerDirEdit.Top := ScaleY(125);
+  CerDirEdit.Width := ScaleX(333);
+  CerDirEdit.Height := ScaleY(29);
+  CerDirEdit.Text := 'SYSTEM_DEFAULT';
+
+  CerDirButton := TButton.Create(WizardForm);
+  CerDirButton.Parent := WizardForm.SelectDirPage;
+  CerDirButton.Left := ScaleX(342);
+  CerDirButton.Top := ScaleY(125);
+  CerDirButton.Width := ScaleX(75);
+  CerDirButton.Height := ScaleY(21);
+  CerDirButton.Caption := ExpandConstant('Browse... ');
+  CerDirButton.OnClick := @ChoseCerDirClick;
+
+  CerDirLabel := TLabel.Create(WizardForm);
+  CerDirLabel.Parent := WizardForm.SelectDirPage;
+  CerDirLabel.Left := ScaleX(0);
+  CerDirLabel.Top := ScaleY(150);
+  CerDirLabel.Width := ScaleX(75);
+  CerDirLabel.Height := ScaleY(21);
+  CerDirLabel.Caption := ExpandConstant('SYSTEM_DEFAULT means current users document');
 end;

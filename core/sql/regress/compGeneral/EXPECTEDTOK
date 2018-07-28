@@ -1,4 +1,4 @@
-sqlparser.y: warning: 62 shift/reduce conflicts [-Wconflicts-sr]
+sqlparser.y: warning: 61 shift/reduce conflicts [-Wconflicts-sr]
 sqlparser.y: warning: 12 reduce/reduce conflicts [-Wconflicts-rr]
  
 nnnn conflicts: 1 shift/reduce nnnn olap_sequence_function: set_function_specification . TOK_OVER '(' opt_olap_part_clause opt_olap_order_clause ')'
@@ -7,10 +7,9 @@ nnnn conflicts: 8 shift/reduce nnnn primary: row_subquery .
 nnnn conflicts: 1 shift/reduce nnnn sql_statement: TOK_BEGIN . TOK_DECLARE TOK_SECTION
 nnnn conflicts: 9 shift/reduce nnnn row_subquery: '(' row_subquery . ')'
 nnnn conflicts: 1 reduce/reduce nnnn row_subquery: rel_subquery .
-nnnn conflicts: 1 reduce/reduce nnnn transaction_statement: TOK_BEGIN .
 nnnn conflicts: 1 shift/reduce nnnn show_statement: TOK_SHOWCONTROL showcontrol_type . optional_control_identifier optional_comma_match_clause
-nnnn conflicts: 1 shift/reduce nnnn extended_label_name: TOK_INDEX . label_name
 nnnn conflicts: 1 shift/reduce nnnn table_as_stream_any: table_as_stream .
+nnnn conflicts: 1 reduce/reduce nnnn transaction_statement: TOK_BEGIN .
 nnnn conflicts: 1 shift/reduce nnnn row_subquery: '(' row_subquery . ')'
 nnnn conflicts: 1 shift/reduce nnnn input_hostvar_expression: HOSTVAR .
 nnnn conflicts: 1 reduce/reduce nnnn primary: row_subquery .
@@ -32,13 +31,13 @@ nnnn conflicts: 2 shift/reduce, 1 reduce/reduce nnnn query_exp_for_cursor: query
 nnnn conflicts: 8 shift/reduce nnnn query_spec_body: query_select_list into_clause table_expression . access_type optional_lock_mode
 nnnn conflicts: 1 shift/reduce nnnn query_spec_body: query_select_list table_expression access_type . optional_lock_mode
 nnnn conflicts: 1 shift/reduce nnnn mv_definition: create_mv_keywords ddl_qualified_name optional_view_column_list refresh_type . create_mv_attribute_table_lists mv_initialization_clause optional_query_rewrite optional_create_mv_file_options optional_in_memory_clause as_token query_expression
+nnnn conflicts: 1 shift/reduce nnnn file_attribute_clause: file_attribute_keyword file_attribute_list .
 nnnn conflicts: 1 shift/reduce nnnn table_name_and_hint: table_name . optimizer_hint hbase_access_options
 nnnn conflicts: 1 shift/reduce nnnn table_reference: table_as_procedure .
 nnnn conflicts: 1 shift/reduce nnnn table_reference: table_as_stream_any .
 nnnn conflicts: 1 shift/reduce nnnn table_reference: table_as_tmudf_function .
 nnnn conflicts: 1 shift/reduce nnnn table_reference: rel_subquery .
 nnnn conflicts: 1 shift/reduce nnnn query_spec_body: query_select_list into_clause table_expression access_type . optional_lock_mode
-nnnn conflicts: 1 shift/reduce nnnn file_attribute_clause: file_attribute_keyword file_attribute_list .
 nnnn conflicts: 1 shift/reduce nnnn id_group: '(' identifier . ')' TOK_TO identifier
 nnnn conflicts: 1 reduce/reduce nnnn table_reference: '(' Front_Of_Insert . Rest_Of_insert_statement ')' as_clause
 nnnn conflicts: 1 shift/reduce nnnn transpose_list: transpose_set .

@@ -867,12 +867,18 @@ A            AMAX         B                   BMAX                C            C
 >>create table t002FUI(x int);
 
 --- SQL operation complete.
+>>create table t002sol(x int);
+
+--- SQL operation complete.
 >>insert into  t002FU  values(3),(4);
 
 --- 2 row(s) inserted.
 >>insert into  t002FUI values(13);
 
 --- 1 row(s) inserted.
+>>insert into t002sol values(2),(5),(4),(3),(7);
+
+--- 5 row(s) inserted.
 >>
 >>-- Tables t002ZZ and t002ZZI are empty (have zero rows), tables t002FU and t002FUI are full.
 >>--
@@ -1264,4 +1270,70 @@ RESULT_VALUE
 
 --- 1 row(s) selected.
 >>
+>>-- Should return 7
+>>select x from (select [first 1] x from t002sol order by x desc );
+
+X
+----------
+
+ 7
+
+--- 1 row(s) selected.
+>>
+>>-- Tests of limit n in subqueries
+>>
+>>-- Should return 1
+>>select
++>(select y aa from t002sub b where b.x = a.b limit 1) as result_value
++>from t002main a;
+
+RESULT_VALUE
+----------
+
+ 1
+
+--- 1 row(s) selected.
+>>
+>>-- Should get a cardinality violation (error 8401)
+>>select
++>(select y aa from t002sub b where b.y = a.b limit 2) as result_value
++>from t002main a;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- Should return 1
+>>select
++>(select y aa from t002sub b where b.y = a.b limit 1) as result_value
++>from t002main a;
+
+RESULT_VALUE
+----------
+
+ 1
+
+--- 1 row(s) selected.
+>>
+>>-- Should return 2
+>>select
++>(select count(*) from t002sub limit 20) as result_value
++>from t002main;
+
+RESULT_VALUE
+----------
+
+ 2
+
+--- 1 row(s) selected.
+>>
+>>-- Should return 7
+>>select x from (select x from t002sol order by x desc limit 1);
+
+X
+----------
+
+ 2
+
+--- 1 row(s) selected.
 >>log;

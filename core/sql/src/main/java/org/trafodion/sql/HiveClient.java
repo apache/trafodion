@@ -63,6 +63,9 @@ public class HiveClient {
     private static HiveConf hiveConf = null;
     private static HiveMetaStoreClient hmsClient  ;
     private static String ddlTimeConst = null;
+
+    private static Statement stmt = null;
+
     static {
          String confFile = System.getProperty("trafodion.log4j.configFile");
          System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
@@ -241,24 +244,33 @@ public class HiveClient {
         return fieldVal.toString();
   }
 
-  public static void executeHiveSQL(String ddl) throws ClassNotFoundException, SQLException
+    public static void executeHiveSQL(String ddl) 
+        throws ClassNotFoundException, SQLException
   {
-      Class.forName("org.apache.hive.jdbc.HiveDriver");
-      Connection con = null;
-      String isSecureHadoop = System.getenv("SECURE_HADOOP");
-      //If Kerberos is enabled, then we need to connect to remote hiveserver2 using hive principal
-      if(isSecureHadoop != null && isSecureHadoop.equalsIgnoreCase("Y")){
-         String hiveServer2Url = System.getenv("HIVESERVER2_URL");
-         if(hiveServer2Url == null || hiveServer2Url.isEmpty()){
-            hiveServer2Url = "localhost:10000";
-         }
-         String hivePrincipal = System.getenv("HIVE_PRINCIPAL");
-         con = DriverManager.getConnection("jdbc:hive2://" + hiveServer2Url+"/;principal=" + hivePrincipal, "hive", "");
-      }else{
-         con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+      if (stmt == null) {
+          Class.forName("org.apache.hive.jdbc.HiveDriver");
+          Connection con = null;
+          String isSecureHadoop = System.getenv("SECURE_HADOOP");
+          //If Kerberos is enabled, then we need to connect to remote hiveserver2 using hive principal
+          if(isSecureHadoop != null && isSecureHadoop.equalsIgnoreCase("Y")){
+              String hiveServer2Url = System.getenv("HIVESERVER2_URL");
+              if(hiveServer2Url == null || hiveServer2Url.isEmpty()){
+                  hiveServer2Url = "localhost:10000";
+              }
+              String hivePrincipal = System.getenv("HIVE_PRINCIPAL");
+              con = DriverManager.getConnection("jdbc:hive2://" + hiveServer2Url+"/;principal=" + hivePrincipal, "hive", "");
+          }else{
+              con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+          }
+          stmt = con.createStatement();
       }
-      Statement stmt = con.createStatement();
-      stmt.execute(ddl);
+
+      try {
+
+          stmt.execute(ddl);
+      } catch (SQLException s) {
+          throw s;            
+      }
   }
 
 }

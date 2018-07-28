@@ -358,7 +358,7 @@ Int32 CmpSeabaseDDLauth::getUniqueAuthID(
   Int32 len = snprintf(buf, 300,
                        "SELECT [FIRST 1] auth_id FROM (SELECT auth_id, "
                        "LEAD(auth_id) OVER (ORDER BY auth_id) L FROM %s.%s ) "
-                       "WHERE L - auth_id > 1 and auth_id >= %d ",
+                       "WHERE (L - auth_id > 1 or L is null) and auth_id >= %d ",
                        MDSchema_.data(),SEABASE_AUTHS, minValue);
   assert (len <= 300);
   
@@ -1207,20 +1207,22 @@ void CmpSeabaseDDLuser::unregisterUser(StmtDDLRegisterUser * pNode)
       return;
     }
     
-    // User does not own any roles, but may have been granted roles.
     NAString privMgrMDLoc;
-
     CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
-    
-    PrivMgrRoles role(std::string(MDSchema_.data()),
-                      std::string(privMgrMDLoc.data()),
-                      CmpCommon::diags());
-    
-    if (CmpCommon::context()->isAuthorizationEnabled() &&
-        role.isUserGrantedAnyRole(getAuthID()))
+
+    // User does not own any roles, but may have been granted roles.
+    if (CmpCommon::context()->isAuthorizationEnabled())
     {
-       *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_GRANTED_ROLES);
-       return;
+    
+      PrivMgrRoles role(std::string(MDSchema_.data()),
+                        std::string(privMgrMDLoc.data()),
+                        CmpCommon::diags());
+    
+      if (role.isUserGrantedAnyRole(getAuthID()))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_GRANTED_ROLES);
+         return;
+      }
     }
     
     // Does user own any objects?
@@ -1249,32 +1251,39 @@ void CmpSeabaseDDLuser::unregisterUser(StmtDDLRegisterUser * pNode)
        return;
     }
                 
-    PrivMgr privMgr(std::string(privMgrMDLoc),CmpCommon::diags());
-    std::vector<PrivClass> privClasses;
-    
-    privClasses.push_back(PrivClass::ALL);
-    
-    std::vector<int64_t> objectUIDs;
-    if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses, objectUIDs))
+    // Is user granted any privileges?
+    if (CmpCommon::context()->isAuthorizationEnabled())
     {
-       NAString objectName = getObjectName(objectUIDs);
-       if (objectName.length() > 0)
-       {
-          *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_HAS_PRIVS)
-                              << DgString0(dbUserName.data())
-                              << DgString1(objectName.data());
+      PrivMgr privMgr(std::string(privMgrMDLoc),CmpCommon::diags());
+      std::vector<PrivClass> privClasses;
+    
+      privClasses.push_back(PrivClass::ALL);
+    
+      std::vector<int64_t> objectUIDs;
+      if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses, objectUIDs))
+      {
+         NAString objectName = getObjectName(objectUIDs);
+         if (objectName.length() > 0)
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_HAS_PRIVS)
+                                << DgString0(dbUserName.data())
+                                << DgString1(objectName.data());
 
-          return;
-       }
+            return;
+         }
+      }
     }
     
     // remove any component privileges granted to this user
-    PrivMgrComponentPrivileges componentPrivileges(privMgrMDLoc.data(),CmpCommon::diags());
-    std::string componentUIDString = "1";
-    if (!componentPrivileges.dropAllForGrantee(getAuthID()))
+    if (CmpCommon::context()->isAuthorizationEnabled())
     {
-      UserException excp (NULL, 0);
-      throw excp;
+      PrivMgrComponentPrivileges componentPrivileges(privMgrMDLoc.data(),CmpCommon::diags());
+      std::string componentUIDString = "1";
+      if (!componentPrivileges.dropAllForGrantee(getAuthID()))
+      {
+        UserException excp (NULL, 0);
+        throw excp;
+      }
     }
 
     // delete the row

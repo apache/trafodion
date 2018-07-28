@@ -94,7 +94,7 @@ process hive statement 'drop view t009cust';
 -- The version of hive installed does not support special characters
 -- TDB - when hive is upgraded to a new version, add tests where
 --   the hive schema contains special characters
-sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql &> $REGRRUNDIR/LOG009_a.hive.log;
+sh sqlci -i"$REGRTSTDIR/TEST009_a.hive.sql" &> $REGRRUNDIR/LOG009_a.hive.log;
 sh regrhbase.ksh $REGRTSTDIR/TEST009_create_hbase_objects.hbase &> $REGRRUNDIR/LOG009_create_hbase_tables.log ;
 
 -- make sure external schemas exist in Trafodion
@@ -185,7 +185,7 @@ drop external table item for hive.hive.item;
 
 -- cleanup data from the old table, and create/load data with additional column
 sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/t009t1/*;
-sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_b.hive.sql &> $REGRRUNDIR/LOG009_b.hive.log;;
+sh sqlci -i"$REGRTSTDIR/TEST009_b.hive.sql" &> $REGRRUNDIR/LOG009_b.hive.log;
 
 -- should fail - column mismatch
 select count(*) from hive.sch_t009.t009t1;

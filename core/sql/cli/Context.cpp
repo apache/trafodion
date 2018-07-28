@@ -1274,7 +1274,7 @@ void ContextCli::closeAllCursors(enum CloseCursorType type,
             // scope.
             if (statement->getCliLevel() == getNumOfCliCalls())
             {
-              statement->close(diagsArea_, inRollback);
+              statement->close(diagsArea_, inRollback);            
             }
             // STATUSTRANSACTION slows down the response time
             // Browse access cursor that are started under a transaction
@@ -3163,6 +3163,92 @@ Lng32 ContextCli::setSecInvalidKeys(
 
 }
 
+Int32 ContextCli::checkLobLock(char *inLobLockId, NABoolean *found)
+{
+  Int32 retcode = 0;
+  *found = FALSE;
+  CliGlobals *cliGlobals = getCliGlobals();
+  StatsGlobals *statsGlobals = GetCliGlobals()->getStatsGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return diagsArea_.mainSQLCODE();
+  }
+  statsGlobals->checkLobLock(cliGlobals,inLobLockId);
+  if (inLobLockId != NULL)
+    *found = TRUE;
+  return retcode;
+}
+Lng32 ContextCli::setLobLock(
+     /* IN */    char *lobLockId // objID+column number
+                             )
+{
+  CliGlobals *cliGlobals = getCliGlobals();
+  NABoolean releasingLock = FALSE;
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return diagsArea_.mainSQLCODE();
+  }
+  ComDiagsArea *tempDiagsArea = &diagsArea_;
+  IpcServer *ssmpServer = NULL;
+  tempDiagsArea->clear();
+  if (lobLockId[0] == '-')
+    releasingLock = TRUE;
+  // Get an ssmp node to talk to. Picking one based off of lobLockId should
+  // make it unique and avoid clash with another node that may be attempting 
+  // to lock the same lob
+  if (!releasingLock)
+    {
+      Int32 nodeCount = 0;
+      Int32 rc = msg_mon_get_node_info(&nodeCount, 0, NULL);
+      Int32 targetNodeId = 0;
+      Int32 lockHash = 0;
+      char myNodeName[MAX_SEGMENT_NAME_LEN+1];
+      MS_Mon_Node_Info_Type nodeInfo;
+      for (int i = 0; i < LOB_LOCK_ID_SIZE; i++)
+        lockHash +=(unsigned char)lobLockId[i];
+      if (nodeCount)
+        targetNodeId = lockHash%nodeCount;
+      rc = msg_mon_get_node_info_detail(targetNodeId, &nodeInfo);
+      if (rc == 0)
+        strcpy(myNodeName, nodeInfo.node[0].node_name);
+      else
+        myNodeName[0] = '\0';
+
+      ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
+                                               //cliGlobals->myNodeName(), 
+                                               //cliGlobals->myCpu(), 
+                                               myNodeName,
+                                               targetNodeId,
+                                               tempDiagsArea);
+    }
+  else
+    ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
+                                             cliGlobals->myNodeName(), 
+                                             cliGlobals->myCpu(), 
+                                             tempDiagsArea);
+  if (ssmpServer == NULL)
+    return diagsArea_.mainSQLCODE();
+
+  SsmpClientMsgStream *ssmpMsgStream  = new (cliGlobals->getIpcHeap())
+        SsmpClientMsgStream((NAHeap *)cliGlobals->getIpcHeap(), 
+                            ssmpManager_, tempDiagsArea);
+  ssmpMsgStream->addRecipient(ssmpServer->getControlConnection());
+  LobLockRequest *llMsg = 
+    new (cliGlobals->getIpcHeap()) LobLockRequest(
+                                      cliGlobals->getIpcHeap(), 
+                                      lobLockId);
+  *ssmpMsgStream << *llMsg;
+  // Call send with no timeout.  
+  ssmpMsgStream->send(); 
+  // I/O is now complete.  
+  llMsg->decrRefCount();
+  cliGlobals->getEnvironment()->deleteCompletedMessages();
+  ssmpManager_->cleanupDeletedSsmpServers();
+  return diagsArea_.mainSQLCODE();
+
+}
 ExStatisticsArea *ContextCli::getMergedStats(
             /* IN */    short statsReqType,
             /* IN */    char *statsReqStr,

@@ -68,6 +68,7 @@ using std::ofstream;
 #include "ExpHbaseInterface.h"
 #include "ExHbaseAccess.h"
 #include "ExpErrorEnums.h"
+#include "ExpLOBaccess.h"
 #include "HdfsClient_JNI.h"
 
 ///////////////////////////////////////////////////////////////////
@@ -166,15 +167,16 @@ short ExExeUtilCreateTableAsTcb::work()
 		 ctaTdb().ctQuery_);
 	    if (cliRC < 0)
 	      {
-		if (((cliRC == -1055) || // SQ table err msg
-		     (cliRC == -1390)) && // Traf err msg
+		if (((cliRC == -1055) ||  // SQ table err msg
+		     (cliRC == -1390) ||  // Traf err msg
+		     (cliRC == -1387)) && // Hive err msg
 		    (ctaTdb().loadIfExists()))
 		  {
 		    SQL_EXEC_ClearDiagnostics(NULL);
 		    tableExists_ = TRUE;
 
 		    if (ctaTdb().deleteData())
-		      step_ = DELETE_DATA_;
+		      step_ = TRUNCATE_TABLE_;
 		    else
 		      step_ = ALTER_TO_NOAUDIT_;
 		    break;
@@ -200,14 +202,14 @@ short ExExeUtilCreateTableAsTcb::work()
 	  }
 	break;
 
-	case DELETE_DATA_:
-	case DELETE_DATA_AND_ERROR_:
+	case TRUNCATE_TABLE_:
+	case TRUNCATE_TABLE_AND_ERROR_:
 	  {
 	    char * ddQuery = 
-	      new(getMyHeap()) char[strlen("DELETE DATA FROM; ") + 
+	      new(getMyHeap()) char[strlen("TRUNCATE TABLE; ") + 
 				   strlen(ctaTdb().getTableName()) +
 				   100];
-	    strcpy(ddQuery, "DELETE DATA FROM ");
+	    strcpy(ddQuery, "TRUNCATE TABLE ");
 	    strcat(ddQuery, ctaTdb().getTableName());
 	    strcat(ddQuery, ";");
 	    cliRC = cliInterface()->executeImmediate(ddQuery, NULL,NULL,TRUE,NULL,TRUE);
@@ -217,7 +219,7 @@ short ExExeUtilCreateTableAsTcb::work()
 
 	    if (cliRC < 0)
 	      {
-		if (step_ == DELETE_DATA_)
+		if (step_ == TRUNCATE_TABLE_)
 		  {
 		    step_ = ERROR_;
 		    break;
@@ -230,7 +232,7 @@ short ExExeUtilCreateTableAsTcb::work()
 		break;
 	      }
 
-	    if (step_ == DELETE_DATA_AND_ERROR_)
+	    if (step_ == TRUNCATE_TABLE_AND_ERROR_)
 	      {
 
 		if (doSidetreeInsert_)
@@ -492,7 +494,7 @@ short ExExeUtilCreateTableAsTcb::work()
 	      {
 		// error case and 'load if exists' specified.
 		// Do not drop the table, only delete data from it.
-		step_ = DELETE_DATA_AND_ERROR_;
+		step_ = TRUNCATE_TABLE_AND_ERROR_;
 	      }
 	    else
 	      step_ = DROP_AND_ERROR_;
@@ -2544,14 +2546,7 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
 
   requestTag_ = -1;
   lobLoc_[0] = '\0';
-  exLobGlobals_ = NULL;
- 
-  ExpLOBinterfaceInit(exLobGlobals_,currContext->exHeap(),currContext,TRUE,
-                      lobTdb().getLobHdfsServer(),
-                      lobTdb().getLobHdfsPort());
-                                     
-    
-
+  exLobGlobals_ = ExpLOBoper::initLOBglobal((NAHeap *)glob->getDefaultHeap(), currContext, exe_util_tdb.useLibHdfs());
 }
 
 void ExExeUtilLobExtractTcb::freeResources()
@@ -2568,6 +2563,7 @@ void ExExeUtilLobExtractTcb::freeResources()
   if (lobHandle_ and lobName_)
     retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -2586,14 +2582,30 @@ void ExExeUtilLobExtractTcb::freeResources()
 	       lobDataLen_, lobData_, 
 	       3, // close
                0); // open type not applicable
-
-  ExpLOBinterfaceCleanup(exLobGlobals_);
+  ExpLOBoper::deleteLOBglobal(exLobGlobals_, (NAHeap *)(NAHeap *)getGlobals()->getDefaultHeap());
   exLobGlobals_ = NULL;
 }
 
 ExExeUtilLobExtractTcb::~ExExeUtilLobExtractTcb()
 {
   freeResources();
+}
+
+ExOperStats * ExExeUtilLobExtractTcb::doAllocateStatsEntry(CollHeap *heap,
+							    ComTdb *tdb)
+{
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 short ExExeUtilLobExtractTcb::work()
@@ -3029,6 +3041,7 @@ short ExExeUtilLobExtractTcb::work()
 		if(lobTdb().appendOrCreate())
 		  tgtFlags = Lob_Append_Or_Create;
 		retcode = ExpLOBInterfaceSelect(lobGlobs, 
+                                                (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 						lobName_,
 						lobLoc_,
 						lobType_,
@@ -3052,7 +3065,7 @@ short ExExeUtilLobExtractTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea_, 
 				    (ExeErrorCode)(8442), NULL, &intParam1, 
 				    &cliError, NULL, (char*)"ExpLOBInterfaceSelect",
-				    getLobErrStr(intParam1));
+		                    getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -3073,6 +3086,7 @@ short ExExeUtilLobExtractTcb::work()
 	  {
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3098,7 +3112,7 @@ short ExExeUtilLobExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3123,6 +3137,7 @@ short ExExeUtilLobExtractTcb::work()
                 
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3151,7 +3166,7 @@ short ExExeUtilLobExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3192,6 +3207,7 @@ short ExExeUtilLobExtractTcb::work()
 	  {
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3219,7 +3235,7 @@ short ExExeUtilLobExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      } 
@@ -3325,10 +3341,8 @@ ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
   lobHandleLen_ = 2050;
   lobHandle_[0] = '\0';
   exLobGlobals_=NULL;
-
-  ExpLOBinterfaceInit(exLobGlobals_,currContext->exHeap(),currContext,TRUE,
-                      lobTdb().getLobHdfsServer(),
-                      lobTdb().getLobHdfsPort());
+  memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
+  exLobGlobals_ = ExpLOBoper::initLOBglobal((NAHeap *)glob->getDefaultHeap(), currContext, exe_util_lobupdate_tdb.useLibHdfs());
                                      
 }
 ExExeUtilLobUpdateTcb::~ExExeUtilLobUpdateTcb()
@@ -3338,18 +3352,31 @@ ExExeUtilLobUpdateTcb::~ExExeUtilLobUpdateTcb()
 
 void ExExeUtilLobUpdateTcb::freeResources()
 {
- ContextCli *currContext =
-    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
-    getStatement()->getContext();
- ExpLOBinterfaceCleanup(exLobGlobals_);
+ ExpLOBoper::deleteLOBglobal(exLobGlobals_, (NAHeap *)getGlobals()->getDefaultHeap());
  exLobGlobals_ = NULL;
+}
+
+ExOperStats * ExExeUtilLobUpdateTcb::doAllocateStatsEntry(CollHeap *heap,
+							    ComTdb *tdb)
+{
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 short ExExeUtilLobUpdateTcb::work()
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
-
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -3459,7 +3486,27 @@ short ExExeUtilLobUpdateTcb::work()
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
+            if (lobTdb().lobLocking())
+              {
+                ExpLOBoper::genLobLockId(uid,lobNum,lobLockId_);
+                NABoolean found = FALSE;
+                retcode = SQL_EXEC_CheckLobLock(lobLockId_ , &found);
+                if (! retcode && !found) 
+                  {    
+                    retcode = SQL_EXEC_SetLobLock(lobLockId_);
+                  }
+                else if (found)
+                  {
+                    memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
+                    ExRaiseSqlError(getHeap(), &diagsArea_, 
+                                    (ExeErrorCode)(EXE_LOB_CONCURRENT_ACCESS_ERROR)); 
+                               
+                    step_=HANDLE_ERROR_;
+                    break;
+                  }
+              }
             retcode = ExpLOBInterfaceUpdate(lobGlobs,
+                                            (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                                             lobTdb().getLobHdfsServer(),
                                             lobTdb().getLobHdfsPort(),
                                             lobName_,
@@ -3489,7 +3536,7 @@ short ExExeUtilLobUpdateTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3521,10 +3568,29 @@ short ExExeUtilLobUpdateTcb::work()
 	    lobDataLen_ = lobTdb().totalBufSize_; 
             strcpy(lobLoc_, lobTdb().getLobLocation());
            
+            if (lobTdb().lobLocking())
+              {
+                ExpLOBoper::genLobLockId(uid,lobNum,lobLockId_);;
+                NABoolean found = FALSE;
+                retcode = SQL_EXEC_CheckLobLock(lobLockId_, &found);
+                if (! retcode && !found) 
+                  {    
+                    retcode = SQL_EXEC_SetLobLock(lobLockId_);
+                  }
+                else if (found)
+                  {
+                    memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
+                    ExRaiseSqlError(getHeap(), &diagsArea_, 
+                                    (ExeErrorCode)(EXE_LOB_CONCURRENT_ACCESS_ERROR));
+                    step_=HANDLE_ERROR_;
+                    break;
+                  }
+              }
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
             retcode = ExpLOBInterfaceUpdateAppend(lobGlobs,
+                                            (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                                             lobTdb().getLobHdfsServer(),
                                             lobTdb().getLobHdfsPort(),
                                             lobName_,
@@ -3554,7 +3620,7 @@ short ExExeUtilLobUpdateTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-			 	getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3586,13 +3652,31 @@ short ExExeUtilLobUpdateTcb::work()
 
 	    lobDataLen_ = lobTdb().totalBufSize_; 
             strcpy(lobLoc_, lobTdb().getLobLocation());
-           
-           
+
+            if (lobTdb().lobLocking())
+              {
+                ExpLOBoper::genLobLockId(uid,lobNum,lobLockId_);;
+                NABoolean found = FALSE;
+                retcode = SQL_EXEC_CheckLobLock(lobLockId_, &found);
+                if (! retcode && !found) 
+                  {    
+                    retcode = SQL_EXEC_SetLobLock(lobLockId_);
+                  }
+                else if (found || retcode )
+                  {
+                    memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
+                    ExRaiseSqlError(getHeap(), &diagsArea_, 
+                                    (ExeErrorCode)(EXE_LOB_CONCURRENT_ACCESS_ERROR));
+                    step_=HANDLE_ERROR_;
+                    break;
+                  }
+              }
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
           
             retcode = ExpLOBInterfaceUpdate(lobGlobs,
+                                            (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                                             lobTdb().getLobHdfsServer(),
                                             lobTdb().getLobHdfsPort(),
                                             lobName_,
@@ -3622,7 +3706,7 @@ short ExExeUtilLobUpdateTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3653,8 +3737,13 @@ short ExExeUtilLobUpdateTcb::work()
         case HANDLE_ERROR_:
           {
             retcode = handleError();
+
 	    if (retcode == 1)
-	      return WORK_OK;
+              {
+                if (lobLockId_[0] && lobTdb().lobLocking())
+                  retcode = SQL_EXEC_ReleaseLobLock(lobLockId_);
+                return WORK_OK;
+              }
 	    step_ = DONE_;
             
           }
@@ -3662,6 +3751,8 @@ short ExExeUtilLobUpdateTcb::work()
         case DONE_:
           {
             retcode = handleDone();
+            if(lobLockId_[0] && lobTdb().lobLocking())
+              retcode = SQL_EXEC_ReleaseLobLock(lobLockId_);
 	    if (retcode == 1)
 	      return WORK_OK;
 
@@ -3686,8 +3777,7 @@ NABoolean ExExeUtilFileExtractTcb::needStatsEntry()
     return FALSE;
 }
 
-ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
-							    CollHeap *heap,
+ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(CollHeap *heap,
 							    ComTdb *tdb)
 {
   ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
@@ -3696,7 +3786,6 @@ ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
      ss = espGlobals->getStmtStats();
   else
      ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
-  
   ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
 				   this,
 				   tdb);
@@ -3762,6 +3851,7 @@ short ExExeUtilFileExtractTcb::work()
 
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3788,7 +3878,7 @@ short ExExeUtilFileExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/open",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3808,6 +3898,7 @@ short ExExeUtilFileExtractTcb::work()
 
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3834,7 +3925,7 @@ short ExExeUtilFileExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/read",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3865,6 +3956,7 @@ short ExExeUtilFileExtractTcb::work()
 	  {
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3889,12 +3981,12 @@ short ExExeUtilFileExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/close",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
 
-	    step_ = COLLECT_STATS_;
+	    step_ = DONE_;
 	  }
 	  break;
 
@@ -3904,30 +3996,6 @@ short ExExeUtilFileExtractTcb::work()
 	    if (retcode == 1)
 	      return WORK_OK;
 
-	    step_ = DONE_;
-	  }
-	  break;
-
-	case COLLECT_STATS_:
-	  {
-	    if (! getStatsEntry())
-	      {
-		step_ = DONE_;
-		break;
-	      }
-
-	    ExHdfsScanStats * stats =
-	      getStatsEntry()->castToExHdfsScanStats();
-
-	    retcode = ExpLOBinterfaceStats
-	      (lobGlobs,
-	       stats->lobStats(),
-	       lobName_, 
-	       lobLoc_,
-	       lobType_,
-	       lobTdb().getLobHdfsServer(),
-	       lobTdb().getLobHdfsPort());
-	    
 	    step_ = DONE_;
 	  }
 	  break;
@@ -3955,6 +4023,23 @@ ExExeUtilFileLoadTcb::ExExeUtilFileLoadTcb
  ex_globals * glob)
   : ExExeUtilLobExtractTcb(exe_util_tdb, child_tcb, glob)
 {
+}
+
+ExOperStats * ExExeUtilFileLoadTcb::doAllocateStatsEntry(CollHeap *heap,
+							    ComTdb *tdb)
+{
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 short ExExeUtilFileLoadTcb::work()
@@ -4024,7 +4109,7 @@ short ExExeUtilFileLoadTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea_, 
 				    (ExeErrorCode)(8442), NULL, &intParam1, 
 				    &cliError, NULL, (char*)"ExpLOBInterfaceCreate",
-				    getLobErrStr(intParam1));
+		                    getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -4113,6 +4198,7 @@ short ExExeUtilFileLoadTcb::work()
 	    Int64 dummy;
 	    retcode = ExpLOBInterfaceInsert
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -4139,7 +4225,7 @@ short ExExeUtilFileLoadTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4155,6 +4241,7 @@ short ExExeUtilFileLoadTcb::work()
 	  {
 	    retcode = ExpLOBinterfaceCloseFile
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -4169,7 +4256,7 @@ short ExExeUtilFileLoadTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceCloseFile",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }

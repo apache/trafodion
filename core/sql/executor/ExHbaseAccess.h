@@ -47,7 +47,6 @@ class ExHbaseAccessTcb;
 // Classes referenced in this file
 // -----------------------------------------------------------------------
 class ex_tcb;
-class ExHbaseAccessStats;
 class ExpHbaseInterface;
 class ExHbaseAccessSelectTcb;
 class ExHbaseAccessUMDTcb;

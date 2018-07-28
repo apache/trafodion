@@ -182,7 +182,7 @@ void yyerror(const char *errtext)
 	*SqlParser_Diags << DgSqlCode(-SQLCI_SYNTAX_ERROR);
 	// Point to the end of offending token,
 	// knowing that the Lexer has looked ahead by 2 characters
- Int32 pos = SqlParser_CurrentParser->getLexer()->getInputPos();
+        Int32 pos = SqlParser_CurrentParser->getLexer()->getInputPos();
 	StoreSyntaxError(inputStr,pos,*SqlParser_Diags,0,
 			CharInfo::UTF8
 			);
@@ -1653,6 +1653,71 @@ QualifiedName * qualifiedNameFromStrings(ShortStringSequence *names)
   ComASSERT(result);
   result->setNamePosition(startPos, CharHereIsaDoubleQuote(startPos));
   return result;
+}
+
+SchemaName * schemaNameFromStrings(ShortStringSequence *names)
+{
+  assert(names);
+  UInt32 index = names->numParts();
+  assert(index>0);
+
+  NAString  schName;
+  NAString  catName;
+
+  getNamePart(schName,names,index);
+  getNamePart(catName,names,index);
+
+  if (index) {
+    // ~String0 is an invalid qualified name 
+    *SqlParser_Diags << DgSqlCode(-3011)
+      << DgWString0(badNameFromStrings(names));
+    return NULL;
+  }
+
+  StringPos startPos = names->getPosition();
+  delete names;
+  SchemaName *result = new (PARSERHEAP()) 
+    SchemaName(schName, catName, PARSERHEAP());
+  ComASSERT(result);
+  result->setNamePosition(startPos, CharHereIsaDoubleQuote(startPos));
+  return result;
+}
+
+// This method detects that a hive object is being processed and it
+// sets the field foundHiveDDL_ in passed in hiveDDLInfo object.
+// This field is later used to process hive DDL.
+short preprocessHiveDDL(const NAString &catalogName, 
+                        Parser::HiveDDLInfo *hiveDDLInfo)
+{
+  // In some cases, parser is called to process statements.
+  // For ex, binder calls parser during view expansion in dml queries.
+  // Or internal MD definitions are processed during process startup.
+  // In these internal cases, skip special hive ddl processing 
+  // Flag disableDDLcheck _ will be set  in these cases.
+  if ((NOT hiveDDLInfo->disableDDLcheck_) &&
+      (hiveDDLInfo->checkForDDL_) &&
+      (NOT hiveDDLInfo->foundDDL_))
+    {
+      hiveDDLInfo->checkForDDL_ = FALSE;
+      if (((NOT catalogName.isNull()) &&
+           (catalogName.compareTo
+            (HIVE_SYSTEM_CATALOG) == 0)) ||
+          ((catalogName.isNull()) &&
+           (CmpCommon::getDefaultString(CATALOG).compareTo
+            (HIVE_SYSTEM_CATALOG) == 0)))
+        {
+          hiveDDLInfo->foundDDL_ = TRUE;
+          hiveDDLInfo->userSpecifiedStmt_ = 
+            NAString(SqlParser_CurrentParser->inputStr(), 
+                     SqlParser_CurrentParser->inputStrLen());
+        }
+      else if (hiveDDLInfo->backquotedDelimFound_)
+        {
+          yyerror(""); // emit syntax error
+        }
+    }  
+
+  return 0;
 }
 
 // if the schemaName part inName contains volatile schema prefix, then

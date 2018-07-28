@@ -211,7 +211,8 @@ public:
     FUNC_AES_DECRYPT         = 130,
     FUNC_REVERSE_ID         = 131,
     FUNC_SLEEP_ID           = 132,
-    FUNC_UNIX_TIMESTAMP_ID = 133
+    FUNC_UNIX_TIMESTAMP_ID = 133,
+    FUNC_SPLIT_PART_ID     = 134
   };
 
   // max number of operands (including result) in a clause.
@@ -541,6 +542,11 @@ public:
     globals_ = glob;
   }
 
+  void setTcb(const ex_tcb *tcb)
+  {
+    tcb_ = (ex_tcb *)tcb;
+  }
+
   Int16 getInstrArrayIndex() { return instrArrayIndex_; }
   void setInstrArrayIndex(Int16 index) { instrArrayIndex_ = index; }
 
@@ -548,6 +554,11 @@ protected:
   ex_globals * getExeGlobals() 
   {
     return globals_;
+  }
+  
+  ex_tcb *getTcb()
+  {
+    return tcb_;
   }
 
 private:  
@@ -584,13 +595,14 @@ private:
   // Not valid for EID expressions.
   // Only used for SQ.
   ExGlobalsPtr globals_;                           // 40-47
-
+ 
+  ex_tcb *tcb_;                              // 48-55
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char                       fillers_[16];          // 52-63
+  char                       fillers_[8];          // 56-63
 };
 
 

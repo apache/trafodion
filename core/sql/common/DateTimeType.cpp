@@ -314,9 +314,13 @@ Int64 DatetimeType::julianTimestampValue(const char * value, const short valueLe
     {
       str_cpy_all((char *) &fraction, datetimeOpData, sizeof(fraction));
       if (fractionPrec > 0)
-        // Adjust the fractional seconds part to be the number of microseconds.
-        fraction *= (Lng32)pow(10, (DatetimeType::MAX_FRACTION_PRECISION
-                                        - fractionPrec));
+        {
+          if (fractionPrec > DatetimeType::MAX_FRACTION_PRECISION_USEC)
+            // Adjust the fractional seconds part to be the number of microseconds
+            fraction /= (Lng32)pow(10, (fractionPrec - DatetimeType::MAX_FRACTION_PRECISION_USEC));
+          else 
+            fraction *= (Lng32)pow(10, (DatetimeType::MAX_FRACTION_PRECISION_USEC - fractionPrec));
+        }
     }
   short timestamp[] = {
     year, month, day, hour, minute, second, (short)(fraction / 1000), (short)(fraction % 1000)
@@ -584,7 +588,7 @@ const NAType* DatetimeType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                  (datetime2->supportsSQLnull())) ? TRUE : FALSE);
 
         UInt32 fractionPrecision = MAXOF(datetime1->getFractionPrecision(),
-					   datetime2->getFractionPrecision());
+                                         datetime2->getFractionPrecision());
 
         if ((modeSpecial4) &&
             (fractionPrecision == 0) &&
@@ -597,8 +601,16 @@ const NAType* DatetimeType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
           }
         else
           {
-            return new(h) SQLInterval(h, allowNulls, datetime1->getEndField(),
-                                      12, datetime1->getEndField(),
+            Int32 leadingPrecision = IntervalType::computeLeadingPrecision
+              (datetime1->getEndField(), 
+               SQLInterval::MAX_LEADING_PRECISION, 
+               datetime1->getEndField(),
+               fractionPrecision);
+            
+            return new(h) SQLInterval(h, allowNulls, 
+                                      datetime1->getEndField(),
+                                      leadingPrecision, 
+                                      datetime1->getEndField(),
                                       fractionPrecision);
           }
       }
@@ -1383,7 +1395,7 @@ DatetimeValue::DatetimeValue
 
   ComDiagsArea *diags = NULL;
 
-  Lng32 trueFP = 6;
+  Lng32 trueFP = DatetimeType::MAX_FRACTION_PRECISION;
   ULng32 flags = 0;
   flags |= CONV_NO_HADOOP_DATE_FIX;
   short rc = 
@@ -1399,7 +1411,7 @@ DatetimeValue::DatetimeValue
   if (endField == REC_DATE_SECOND)
     {
       Lng32 fp = trueFP;
-      for (; fp < 6; fp++)
+      for (; fp < DatetimeType::MAX_FRACTION_PRECISION; fp++)
         {
           if (startField == REC_DATE_YEAR)
             *(Lng32*)&dstValue[7] /= 10;

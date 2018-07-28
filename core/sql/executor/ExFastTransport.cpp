@@ -422,7 +422,16 @@ ExOperStats * ExFastExtractTcb::doAllocateStatsEntry(
 
   if (statsType == ComTdb::OPERATOR_STATS)
   {
-    return ex_tcb::doAllocateStatsEntry(heap, tdb);;
+     ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+     StmtStats *ss; 
+     if (espGlobals != NULL)
+        ss = espGlobals->getStmtStats();
+     else
+        ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+     ExHdfsScanStats *hdfsScanStats = new (heap) ExHdfsScanStats(heap, this, tdb);
+     if (ss != NULL)
+        hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+     return hdfsScanStats;
   }
   else
   {
@@ -622,6 +631,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
   ExOperStats *stats = NULL;
   ExFastExtractStats *feStats = getFastExtractStats();
+  ExHdfsScanStats *hdfsStats = getHdfsScanStats();
 
   while (TRUE)
   {
@@ -790,7 +800,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           }
           else if (!isSequenceFile() && hdfsClient_ == NULL)
           {
-             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetCode);
+             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), (ExHdfsScanStats *)getHdfsScanStats(), hdfsClientRetCode);
              if (hdfsClientRetCode != HDFS_CLIENT_OK)
              {
                 createHdfsClientFileError(hdfsClientRetCode);
@@ -978,6 +988,10 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           {
             feStats->incProcessedRowsCount();
           }
+              if (hdfsStats != NULL) {
+                 hdfsStats->incUsedRows();
+                 hdfsStats->incAccessedRows();
+              }
           pstate.successRowCount_ ++;
         }
         else
@@ -986,6 +1000,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           {
             feStats->incErrorRowsCount();
           }
+              if (hdfsStats != NULL) 
+                 hdfsStats->incAccessedRows();
           pstate.errorRowCount_ ++;
         }
         if (currBuffer_->bytesLeft_ < (Int32) maxExtractRowLength_)
@@ -1242,7 +1258,6 @@ void ExHdfsFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status, ComDia
   {
     g->setRowsAffected(privateState.matchCount_);
   }
-
 
   //
   // Insert into up queue

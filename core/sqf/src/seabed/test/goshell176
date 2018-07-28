@@ -62,7 +62,11 @@ echo "ps" >> $TMP
 echo "! Start the client process" >> $TMP
 n=0
 while [[ $n -lt $maxcp ]]; do
+if [ $n -eq 0 ]; then
+echo "exec {$nid0 nowait,name \$cli$n} $xclient -client -maxcp $maxcp -maxsp $maxsp $*" >> $TMP
+else
 echo "exec {nowait,name \$cli$n} $xclient -client -maxcp $maxcp -maxsp $maxsp $*" >> $TMP
+fi
 n=`expr $n + 1`
 done
 echo "delay 3" >> $TMP

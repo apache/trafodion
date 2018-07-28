@@ -165,24 +165,27 @@ public:
 
   // construct a multi-attribute value given a string representation
   // of the multi-attribute value, and a description of the columns
+
+  // Note: This constructor is used to construct global objects, so
+  // it cannot report errors.
   EncodedValue (const NAWchar *theValue)
    : valueList_(NULL), heap_(HISTHEAP)
   {
     const NAColumnArray empty ((CollHeap*) 0 /* NULL CollHeap* */) ;
-    constructorFunction (theValue, empty) ;
+    constructorFunction (theValue, empty, FALSE) ;
   }
 
   EncodedValue (const wchar_t *theValue, const NAColumnArray &columns, 
                 ConstValue* cvPtrs[] = NULL)
     : valueList_(NULL), heap_(HISTHEAP)
-    { constructorFunction (theValue, columns, cvPtrs) ; }
+    { constructorFunction (theValue, columns, TRUE, cvPtrs) ; }
 
   EncodedValue (const NAWchar *theValue, const NAColumn * column)
     : valueList_(NULL), heap_(HISTHEAP)
     {
       NAColumnArray columns ;
       columns.insertAt (0,(NAColumn*)(column)) ;
-      constructorFunction (theValue, columns) ;
+      constructorFunction (theValue, columns, TRUE) ;
     }
 
   EncodedValue (const EncodedValue & other, NAMemory * h = 0);
@@ -192,7 +195,7 @@ private:
   // thing, I've created a non-ctor function that both of them
   // call.  Sooner or later we can stop using the ctor that takes
   // a NAColumnArray as its parameter ...
-  void constructorFunction (const wchar_t * theValue, const NAColumnArray & columns, ConstValue** cvPtr = NULL) ;
+  void constructorFunction (const wchar_t * theValue, const NAColumnArray & columns, NABoolean okToReportErrors, ConstValue** cvPtr = NULL) ;
 public:
 
   // construct a single-attribute value from a constant or list of constants

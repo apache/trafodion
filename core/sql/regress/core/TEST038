@@ -1139,6 +1139,28 @@ select a, RPAD (c, 20, '7') from T038sf;
 select RPAD (b, 12, '5'), LPAD (c, 13) from T038sf where RPAD( RPAD(b, 13, 'X'), 10, 'W') = b;
 -- 4 rows
 
+-- test SPLIT_PART function
+
+select split_part('sa:sbl:sc', ':', 1) from t038sf;
+select split_part('sa:sbl:sc', ':', 2) from t038sf;
+select split_part('sa:sbl:sc', ':', 3) from t038sf;
+
+-- **EMPTY RESULT** 
+select split_part('sa:sbl:sc', ':', 0) from t038sf;
+select split_part('sa:sbl:sc', ':', 4) from t038sf;
+select split_part('sa:sbl:sc', ':', -4) from t038sf;
+
+insert into T038sf values(110, 'a/b/c', 'sa/dsd/s');
+insert into T038sf values(111, 'sasd', 'dsa:/~sd');
+insert into T038sf values(112, '#$%$#@', 'dsasggggsad');
+insert into T038sf values(114, 'a', '这是^中文：测试');
+
+select split_part(c, '/', 2) from t038sf;
+select split_part(c, 'ggg', 2) from t038sf;
+select split_part(c, 'sd', 1) from t038sf;
+select split_part(c, '：', 1) from t038sf;
+
+
 -- Test for Genesis soln: 10-071004-7982
 -- Previously this would run out of memory in the Generator.
 -- Now it compiles successfully with Query Cache off.
@@ -1260,7 +1282,7 @@ drop table t038aqr;
 drop table T038a;
 drop table T038b;
 drop table T038c;
-drop table T038d;
+drop table T038d cascade;
 drop table T038e;
 drop table T038f;
 drop table T038g;

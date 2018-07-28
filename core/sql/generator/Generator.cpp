@@ -3291,8 +3291,11 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
 
 void Generator::setHBaseNumCacheRows(double estRowsAccessed,
                                      ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
-                                     Float32 samplePercent)
+                                     Int32 hbaseRowSize,
+                                     Float32 samplePercent
+                                     )
 {
+ 
   // compute the number of rows accessed per scan node instance and use it
   // to set HBase scan cache size (in units of number of rows). This cache
   // is in the HBase client, i.e. in the java side of 
@@ -3334,6 +3337,11 @@ void Generator::setHBaseNumCacheRows(double estRowsAccessed,
       }
   }
 
+  // Limit the scanner cache size to a fixed number if we are dealing with
+  // very wide rows eg rows with varchar(16MB)
+  Int32 maxRowSizeInCache = CmpCommon::getDefaultNumeric(TRAF_MAX_ROWSIZE_IN_CACHE)*1024*1024;
+  if (hbaseRowSize > maxRowSizeInCache)
+    cacheRows = 2;
   hbpa->setNumCacheRows(cacheRows);
 }
 

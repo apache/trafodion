@@ -421,6 +421,16 @@ message TrafEstimateRowCountResponse {
   optional bool hasException = 7;
 }
 
+message TrafSetStoragePolicyRequest {
+  required  string path = 1;
+  required  string policy = 2;
+}
+
+message TrafSetStoragePolicyResponse {
+  required bool status = 1;
+  required string exception = 2;
+}
+
 message TransactionalAggregateRequest {
   /** The request passed to the TransactionalAggregateService consists of three parts
    *  (1) the (canonical) classname of the ColumnInterpreter implementation
@@ -543,4 +553,7 @@ service TrxRegionService {
     returns (TransactionalAggregateResponse);
   rpc GetMedian (TransactionalAggregateRequest) 
     returns (TransactionalAggregateResponse);
+  rpc setStoragePolicy (TrafSetStoragePolicyRequest)
+    returns (TrafSetStoragePolicyResponse);
+
 }

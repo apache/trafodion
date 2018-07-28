@@ -4681,6 +4681,9 @@ public:
 
   // a virtual function for performing name binding within the query tree
   virtual ItemExpr * bindNode(BindWA *bindWA);
+  
+  // helper function used by bindNode; returns true if there is an error
+  bool enforceDateOrTimestampDatatype(BindWA *bindWA, CollIndex child, int operand);
 
   // the synthesizeType method is needed only when we process an item
   // expression at DDL time, for DML the function gets transformed into
@@ -5839,5 +5842,24 @@ public:
   NABoolean canBeUsedInGBorOB(NABoolean setErr);
 
 }; // class RowNumFunc
+
+class SplitPart : public CacheableBuiltinFunction
+{
+public: 
+  SplitPart(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr)
+    :CacheableBuiltinFunction(ITM_SPLIT_PART, 3, val1Ptr, val2Ptr, val3Ptr)
+    {
+      allowsSQLnullArg() = FALSE;
+    } 
+
+   virtual ~SplitPart();
+
+   // a virtual function for type propagating the node
+   virtual const NAType * synthesizeType();
+   
+   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+                      CollHeap *outheap = 0);
+   virtual ItemExpr * preCodeGen(Generator*);
+}; //class SplitPart
 
 #endif /* ITEMFUNC_H */

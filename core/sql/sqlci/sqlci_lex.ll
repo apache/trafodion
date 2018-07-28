@@ -206,6 +206,7 @@ B			[ \t\n]+
 [Mm][Ee][Tt][Aa][Dd][Aa][Tt][Aa]                   return_IDENT_or_TOKEN(METADATAtoken, 0);
 [Mm][Aa][Pp]                           return_IDENT_or_TOKEN(MAPtoken, 0);
 [Mm][Oo][Dd][Ii][Ff][Yy]               return_IDENT_or_TOKEN(MODIFY, 0);
+[Mm][Ss][Cc][Kk] 		       return_IDENT_or_TOKEN(MSCKtoken, 0);
 [Oo][Bb][Ee][Yy]  		       { 
                      BEGIN FNAME; 
                                          return_IDENT_or_TOKEN (OBEY, 0); 
@@ -271,8 +272,6 @@ B			[ \t\n]+
 [Ss][Hh][Oo][Ww]                       return_IDENT_or_TOKEN(SHOW, 0);
 [Ss][Hh][Oo][Ww][Cc][Oo][Nn][Tt][Rr][Oo][Ll]           return_IDENT_or_TOKEN(SHOWCONTROL, 0);
 [Ss][Hh][Oo][Ww][Dd][Dd][Ll]           return_IDENT_or_TOKEN(SHOWDDL, 0);
-[Ss][Hh][Oo][Ww][Ll][Aa][Bb][Ee][Ll]   return_IDENT_or_TOKEN(SHOWLABEL, 0);
-[Ss][Hh][Oo][Ww][Ll][Ee][Aa][Kk][Ss]   return_IDENT_or_TOKEN(SHOWLEAKS, 0);
 [Ss][Hh][Oo][Ww][Pp][Ll][Aa][Nn]       return_IDENT_or_TOKEN(SHOWPLAN, 0);
 [Ss][Hh][Oo][Ww][Ss][Hh][Aa][Pp][Ee]   return_IDENT_or_TOKEN(SHOWSHAPE, 0);
 [Ss][Hh][Oo][Ww][Ss][Ee][Tt]           return_IDENT_or_TOKEN(SHOWSET, 0);

@@ -65,7 +65,6 @@ public:
     CLEANUP_VOLATILE_SCHEMA_ = 5,
     GET_VOLATILE_INFO        = 6,
     CREATE_TABLE_AS_         = 7,
-    FAST_DELETE_             = 8,
     GET_MAINTAIN_INFO_       = 9,
     GET_STATISTICS_          = 10,
     USER_LOAD_               = 11,
@@ -1508,139 +1507,17 @@ private:
   char fillersComTdbExeUtilCreateTableAs_[92];       // 44-135
 };
 
-class ComTdbExeUtilFastDelete : public ComTdbExeUtil
-{
-public:
-  ComTdbExeUtilFastDelete()
-  : ComTdbExeUtil()
-  {}
-
-  ComTdbExeUtilFastDelete(char * tableName,
-			  ULng32 tableNameLen,
-			  char * primaryPartnLoc,
-			  Queue * indexList,
-			  char * stmt,
-			  ULng32 stmtLen,
-			  Lng32 numEsps,
-			  Int64 objectUID,
-			  Lng32 numLOBs,
-			  char * lobNumArray,
-			  ex_cri_desc * work_cri_desc,
-			  const unsigned short work_atp_index,
-			  ex_cri_desc * given_cri_desc,
-			  ex_cri_desc * returned_cri_desc,
-			  queue_index down,
-			  queue_index up,
-			  Lng32 num_buffers,
-			  ULng32 buffer_size
-			  );
-
-  Long pack(void *);
-  Lng32 unpack(void *, void * reallocator);
-
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilFastDelete);}
-
-  virtual const char *getNodeName() const
-  {
-    return "FAST_DELETE";
-  };
-
-  Queue* getIndexList()       { return indexList_; }
-
-  char * purgedataStmt()      { return purgedataStmt_; }
-
-  char * getPrimaryPartnLoc()  { return primaryPartnLoc_; }
-
-  Lng32 getNumEsps() { return numEsps_;}
-
-  char * getLOBnumArray() { return lobNumArray_; }
-
-  short getLOBnum(short i);
-
-  UInt16 numLOBs() { return numLOBs_; }
-
-  Int64 getObjectUID() { return objectUID_; }
-
-  // ---------------------------------------------------------------------
-  // Used by the internal SHOWPLAN command to get attributes of a TDB.
-  // ---------------------------------------------------------------------
-  void displayContents(Space *space, ULng32 flag);
-
-  void setDoPurgedataCat(NABoolean v)
-  {(v ? flags_ |= DO_PURGEDATA_CAT : flags_ &= ~DO_PURGEDATA_CAT); };
-  NABoolean doPurgedataCat() { return (flags_ & DO_PURGEDATA_CAT) != 0; };
-
-  void setReturnPurgedataWarn(NABoolean v)
-  {(v ? flags_ |= RETURN_PURGEDATA_WARN : flags_ &= ~RETURN_PURGEDATA_WARN); };
-  NABoolean returnPurgedataWarn() { return (flags_ & RETURN_PURGEDATA_WARN) != 0; };
-
-  void setIsMV(NABoolean v)
-  {(v ? flags_ |= IS_MV: flags_ &= ~IS_MV); };
-  NABoolean isMV() { return (flags_ & IS_MV) != 0; };
-
-  void setDoParallelDelete(NABoolean v)
-  {(v ? flags_ |= DO_PARALLEL_DELETE: flags_ &= ~DO_PARALLEL_DELETE); };
-  NABoolean doParallelDelete() { return (flags_ & DO_PARALLEL_DELETE) != 0; };
-
-  void setDoParallelDeleteIfXn(NABoolean v)
-  {(v ? flags_ |= DO_PARALLEL_DELETE_IF_XN: flags_ &= ~DO_PARALLEL_DELETE_IF_XN); };
-  NABoolean doParallelDeleteIfXn() { return (flags_ & DO_PARALLEL_DELETE_IF_XN) != 0; };
-
-  void setOfflineTable(NABoolean v)
-  {(v ? flags_ |= OFFLINE_TABLE : flags_ &= ~OFFLINE_TABLE); };
-  NABoolean offlineTable() { return (flags_ & OFFLINE_TABLE) != 0; };
-
-  void setDoLabelPurgedata(NABoolean v)
-  {(v ? flags_ |= DO_LABEL_PURGEDATA: flags_ &= ~DO_LABEL_PURGEDATA); };
-  NABoolean doLabelPurgedata() { return (flags_ & DO_LABEL_PURGEDATA) != 0; };
-
-private:
-  enum
-  {
-    DO_PURGEDATA_CAT         = 0x0001,
-    RETURN_PURGEDATA_WARN    = 0x0002,
-    IS_MV                    = 0x0004,
-    DO_PARALLEL_DELETE       = 0x0008,
-    DO_PARALLEL_DELETE_IF_XN = 0x0010,
-    OFFLINE_TABLE            = 0x0020,
-    DO_LABEL_PURGEDATA       = 0x0040
-   };
-
-  // list of indexes on the table.
-  QueuePtr indexList_;                               // 00-07
-
-  NABasicPtr purgedataStmt_;                         // 08-15
-
-  NABasicPtr primaryPartnLoc_;                       // 16-23
-
-  UInt32 purgedataStmtLen_;                          // 24-27
-
-  UInt32 flags_;                                     // 28-31
-
-  UInt32 numEsps_;                                   // 32-35
-
-  // next 3 fields are used if table contains LOBs
-  UInt16 numLOBs_;                                   // 36-37
-  char   filler1_[2];                                // 38-39
-  
-  // array of shorts. numLOBs entries. 
-  // Each entry is the lobNum.
-  NABasicPtr lobNumArray_;                           // 40-47
-
-  Int64 objectUID_;                                  // 48-55
-};
-
 class ComTdbExeUtilHiveTruncate : public ComTdbExeUtil
 {
 public:
   // flags
   enum
   {
-    TRUNC_DROP_TABLE_ON_DEALLOC = 0x0001
+    TRUNC_DROP_TABLE_ON_DEALLOC = 0x0001,
+    IS_LEGACY                   = 0x0002,
+    IS_EXTERNAL                 = 0x0004,
+    IF_EXISTS                   = 0x0008,
+    TABLE_NOT_EXISTS            = 0x0010
   };
 
   ComTdbExeUtilHiveTruncate()
@@ -1655,6 +1532,7 @@ public:
                             char * hostName,
                             Lng32 portNum,
                             Int64 modTS,
+                            char * hiveTruncQuery,
                             ex_cri_desc * given_cri_desc,
                             ex_cri_desc * returned_cri_desc,
                             queue_index down,
@@ -1706,9 +1584,30 @@ public:
     return hiveTableName_;
   }
 
+  char * getHiveTruncQuery() const
+  {
+    return hiveTruncQuery_;
+  }
+
   void setDropOnDealloc(NABoolean v)
   {(v ? flags_ |= TRUNC_DROP_TABLE_ON_DEALLOC : flags_ &= ~TRUNC_DROP_TABLE_ON_DEALLOC); }
   NABoolean getDropOnDealloc() { return (flags_ & TRUNC_DROP_TABLE_ON_DEALLOC) != 0; }
+
+  void setIsLegacy(NABoolean v)
+  {(v ? flags_ |= IS_LEGACY : flags_ &= ~IS_LEGACY); }
+  NABoolean getIsLegacy() { return (flags_ & IS_LEGACY) != 0; }
+
+  void setIsExternal(NABoolean v)
+  {(v ? flags_ |= IS_EXTERNAL : flags_ &= ~IS_EXTERNAL); }
+  NABoolean getIsExternal() { return (flags_ & IS_EXTERNAL) != 0; }
+
+  void setIfExists(NABoolean v)
+  {(v ? flags_ |= IF_EXISTS : flags_ &= ~IF_EXISTS); }
+  NABoolean getIfExists() { return (flags_ & IF_EXISTS) != 0; }
+
+  void setTableNotExists(NABoolean v)
+  {(v ? flags_ |= TABLE_NOT_EXISTS : flags_ &= ~TABLE_NOT_EXISTS); }
+  NABoolean getTableNotExists() { return (flags_ & TABLE_NOT_EXISTS) != 0; }
 
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
@@ -1723,6 +1622,7 @@ private:
   Int64 modTS_;                                  // 32-39
   Int32 hdfsPort_;                               // 40-43
   UInt32 flags_;                                 // 44-47
+  NABasicPtr hiveTruncQuery_;                    // 48-55
 };
 
 class ComTdbExeUtilHiveQuery : public ComTdbExeUtil
@@ -1731,7 +1631,6 @@ public:
   ComTdbExeUtilHiveQuery()
   : ComTdbExeUtil()
   {}
-
   ComTdbExeUtilHiveQuery(char * hiveQuery,
                          ULng32 hiveQueryLen,
                          ex_cri_desc * given_cri_desc,
@@ -1741,36 +1640,23 @@ public:
                          Lng32 num_buffers,
                          ULng32 buffer_size
                          );
-  
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
   virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHiveQuery);}
-
   virtual const char *getNodeName() const
   {
     return "HIVE_QUERY";
   };
-
   char * getHiveQuery() const
   {
     return hiveQuery_;
   }
-
-  // ---------------------------------------------------------------------
-  // Used by the internal SHOWPLAN command to get attributes of a TDB.
-  // ---------------------------------------------------------------------
   void displayContents(Space *space, ULng32 flag);
-
 private:
   NABasicPtr hiveQuery_;                     // 00-07
   UInt32 hiveQueryLen_;                      // 08-11
   UInt32 flags_;                             // 12-15
 };
-
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil
 {
   friend class ExExeUtilGetStatisticsTcb;
@@ -2523,6 +2409,7 @@ public:
     PRIVILEGES_ON_TABLE_,
     PRIVILEGES_ON_MV_,
     PRIVILEGES_ON_VIEW_,
+    PRIVILEGES_ON_SEQUENCE_,
     SYNONYMS_ON_TABLE_,
 
     OBJECTS_ON_TABLE_,
@@ -2560,6 +2447,9 @@ public:
     PROCEDURES_FOR_LIBRARY_,
     FUNCTIONS_FOR_LIBRARY_,
     TABLE_FUNCTIONS_FOR_LIBRARY_,
+    PRIVILEGES_ON_LIBRARY_,
+    PRIVILEGES_ON_PROCEDURE_,
+    PRIVILEGES_ON_ROUTINE_,
 
     COMPONENTS_,
     COMPONENT_OPERATIONS_,
@@ -2922,6 +2812,7 @@ private:
     APPEND_OR_CREATE = 0x0080,
     RETRIEVE_HDFSFILENAME= 0x0100,
     RETRIEVE_OFFSET=0x0200
+   
   
     
   };
@@ -3024,6 +2915,11 @@ public:
   void setReplace(NABoolean v)
   {(v ? flags_ |= REPLACE_ : flags_ &= ~REPLACE_); };
   NABoolean isReplace() { return (flags_ & REPLACE_) != 0; };
+
+  void setLobLocking(NABoolean v)
+  {(v ? flags_ |= LOB_LOCKING_ : flags_ &= ~LOB_LOCKING_); };
+  NABoolean lobLocking() { return (flags_ & LOB_LOCKING_) != 0; };
+
   void setUpdateSize(Int64 upd_size){ updateSize_ = upd_size;};
   Int64 updateSize() { return updateSize_;}
   void setTotalBufSize(Int64 bufSize) { totalBufSize_ = bufSize;};
@@ -3042,7 +2938,8 @@ private:
       ERROR_IF_EXISTS_ = 0x0001,
       TRUNCATE_ = 0x0002,
       APPEND_ = 0x0004,
-      REPLACE_=0x0008
+      REPLACE_=0x0008,
+      LOB_LOCKING_=0x0010
     };
   NABasicPtr handle_;
   Int32 handleLen_;

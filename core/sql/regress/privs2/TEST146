@@ -59,6 +59,7 @@ drop external table if exists t146t1;
 
 drop hbase table t146t1;
 drop hbase table t146t2;
+drop hbase table t146t3;
 
 drop role t146_role1;
 revoke role db__hbaserole from sql_user5;
@@ -87,6 +88,8 @@ create external table t146t1
  attribute default column family 'cf'
  map to hbase table t146t1;
 
+create hbase table t146t3 ( column family 'cf');
+
 -- These operations are not allowed on hbase tables
 update hbase."_CELL_".t146t1 set col_value = '4' where row_id = '2' and col_name = 'visitor_team';
 delete from hbase."_CELL_".t146t1 where row_id = '3';
@@ -102,6 +105,7 @@ grant role db__hbaserole to sql_user5;
 
 revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 get privileges on component sql_operations for "PUBLIC";
+get external hbase objects, match '%T146%';
 
 ?section test_grants
 -- =================================================================
@@ -168,6 +172,7 @@ create hbase table t146t2 ( column family 'cf');
 
 drop hbase table t146t2;
 drop hbase table t146t2;
+drop hbase table t146t3;
 
 ?section perform_ddl
 -- ============================================================================
@@ -246,3 +251,5 @@ execute s1;
 delete from hbase."_ROW_".t146t1 where row_id = '3';
 execute s1;
 
+get external hbase objects, match '%T146%';
+get hbase registered tables in catalog trafodion, match '%T146%';

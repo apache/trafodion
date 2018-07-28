@@ -23,8 +23,8 @@
 -- Our version of HIVE does not support special characters.  This test should 
 -- be changed to use delimited names once we upgrade HIVE.
 
-create schema if not exists sch_t009;
-use sch_t009;
+create schema if not exists hive.sch_t009;
+set schema hive.sch_t009;
 drop table t009t1;
 create external table t009t1
 (
@@ -39,7 +39,7 @@ location '/user/trafodion/hive/exttables/t009t1';
 -- load command from an existing table.
 insert into table t009t1
 select c_customer_sk, c_birth_day, c_birth_month
-from default.customer
+from hive.customer
 limit 10;
 
 select * from t009t1;
@@ -56,7 +56,7 @@ location '/user/trafodion/hive/exttables/t009t2';
 
 insert into table t009t2
 select c_customer_sk, c_birth_day, c_birth_month
-from default.customer
+from hive.customer
 limit 10;
 
 select * from t009t2;

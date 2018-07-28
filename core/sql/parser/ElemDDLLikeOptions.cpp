@@ -297,7 +297,6 @@ const NAString ElemDDLLikeOptWithoutLobColumns::getText() const
   return "ElemDDLLikeOptWithoutLobColumns";
 }
 
-
 //
 // End of File
 //

@@ -470,6 +470,9 @@ short DDLExpr::codeGen(Generator * generator)
             ddl_ws_tdb->setReturnDetails(TRUE);
 
         }
+      else if (initHbase())
+        ddl_ws_tdb->setInitTraf(TRUE);
+
       ddl_tdb = ddl_ws_tdb;
     }
   else
@@ -2682,9 +2685,10 @@ short RelRoot::codeGen(Generator * generator)
     }
 
   
-  if (generator->processLOB())
-    root_tdb->setProcessLOB(TRUE);
- 
+  if (generator->processLOB()) {
+     root_tdb->setProcessLOB(TRUE);
+     root_tdb->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
+  } 
 
   // Self-referencing updates
   if (avoidHalloween_)

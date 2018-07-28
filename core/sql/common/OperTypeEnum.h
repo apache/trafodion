@@ -519,6 +519,7 @@ enum OperatorTypeEnum {
                         ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
+                        ITM_SPLIT_PART = 2249,
                         ITM_TRUNC = 2250,
                         ITM_ASCII = 2251,
                         ITM_POSITION = 2252,
@@ -972,6 +973,9 @@ enum OperatorTypeEnum {
                         DDL_LAST_STMT_OP,
                         DDL_INITIALIZE_SECURITY,
                         DDL_COMMENT_ON,
+
+                        // ddl operations on hive objects
+                        DDL_ON_HIVE_OBJECTS,
 
                         //
                         // Elements in DDL statements

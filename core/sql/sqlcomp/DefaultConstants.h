@@ -1816,8 +1816,6 @@ enum DefaultConstants
   GEN_UDRRS_SIZE_DOWN  ,
   GEN_UDRRS_SIZE_UP    ,
 
-  FAST_DELETE,
-
   ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS,
 
   EXE_MEMORY_AVAILABLE_IN_MB, // Mem size (MB) in ESP available for BMOs
@@ -1961,7 +1959,6 @@ enum DefaultConstants
   TMUDF_LEAF_CARDINALITY,
 
   UDF_SUBQ_IN_AGGS_AND_GBYS,
-
   USTAT_FETCHCOUNT_ACTIVE,
 
   SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE,
@@ -2669,6 +2666,7 @@ enum DefaultConstants
   LOB_GC_LIMIT_SIZE,
 
   LOB_INPUT_LIMIT_FOR_BATCH,
+  LOB_LOCKING,
   // Should the DISK POOL be turned on when replicating the DDL using COPY DDL
   REPLICATE_DISK_POOL,
 
@@ -2873,8 +2871,7 @@ enum DefaultConstants
 
   HBASE_MIN_BYTES_PER_ESP_PARTITION,
   HBASE_MAX_ESPS,
-
-
+  
 
   // for testing setjmp/longjmp compiler logic
   MEMORY_LIMIT_CMPCTXT_UPPER_KB,
@@ -2921,6 +2918,7 @@ enum DefaultConstants
 
   HBASE_DATA_BLOCK_ENCODING_OPTION,
   HBASE_COMPRESSION_OPTION,
+  HBASE_MEMSTORE_FLUSH_SIZE_OPTION,
   HQC_LOG,
   HQC_LOG_FILE, // specify the HQC log file name
   HYBRID_QUERY_CACHE,
@@ -3013,9 +3011,15 @@ enum DefaultConstants
   // In special cases, previous default value could be overridden. 
   // Internal use only or use only under trafodion supervision.
   TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,
-
   // set when metadata definition is to be read from hardcoded structs
   // and not from metadata. 
+
+  // set to limit the number of rows in scanner cache when we have very
+  // wide rows. If the rows are too large we may run into an OOM error
+  // since weuse HBASE_NUM_CACHE_ROWS_MIN(MAX) CQDs to calculate
+  // the number of rows
+  TRAF_MAX_ROWSIZE_IN_CACHE,
+
   TRAF_BOOTSTRAP_MD_MODE,
 
   UDR_DEBUG_FLAGS,
@@ -3313,11 +3317,33 @@ enum DefaultConstants
 
   BMO_MEMORY_ESTIMATE_OUTLIER_FACTOR,
 
-  // Use the earlier implementation of HdfsScan via libhdfs
-  USE_LIBHDFS_SCAN,
-  
-  // This enum constant must be the LAST one in the list; it's a count,
-  // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
+  // Use the earlier implementation of Hdfs access including LOB via libhdfs
+  USE_LIBHDFS,
+
+  // if set, make primary key columns non-nullable. ANSI specification.
+  // Default is ON.
+  TRAF_MAKE_PKEY_COLUMNS_NOT_NULL,
+
+  // if ON and there are dependent objects on the table, then
+  // create unique constraint instead of clustered primary key.
+  //
+  // Otherwise return error. Users will need to drop dependent objects and
+  // then recreate them after adding the primary key.
+  // Default is OFF.
+  TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT,
+
+  // if set, do not drop or create hbase objects.
+  // Internal cqd. Used during pkey alter/add
+  TRAF_NO_HBASE_DROP_CREATE,
+
+  // if set, ddl from Traf interface on Hive objects is supported.
+  TRAF_DDL_ON_HIVE_OBJECTS,
+
+  // If set to TRUE, CTAS on Hive object(Create and Insert...select) is processed in Hive.
+  // If set to FALSE, Create is done in Hive, and Insert...select is done in Traf.
+  // Default is OFF.
+  HIVE_CTAS_IN_NATIVE_MODE,
+
   // Size of byte[] in java when direct byteBuffer can't be used
   // Used to read compressed hdfs text files and to write
   // both compressed and uncompressed hdfs files
@@ -3326,6 +3352,8 @@ enum DefaultConstants
   CONNECTBY_MAX_DEEP,
   CONNECTBY_MAX_SIZE, 
 
+  // This enum constant must be the LAST one in the list; it's a count,
+  // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
 };
 

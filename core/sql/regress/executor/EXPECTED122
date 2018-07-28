@@ -65,7 +65,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Tue Sep 20 08:28:14 2016
+-- Definition current  Mon Apr 30 07:10:10 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -118,7 +118,7 @@ A
 >>execute s3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Tue Sep 20 08:28:14 2016
+-- Definition current  Mon Apr 30 07:10:10 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -178,7 +178,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Tue Sep 20 08:28:43 2016
+-- Definition current  Mon Apr 30 07:10:45 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -225,7 +225,7 @@ iv
 
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Tue Sep 20 08:28:44 2016
+-- Definition current  Mon Apr 30 07:10:50 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -518,21 +518,19 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- 0 row(s) inserted.
 >>
->>-- see new pk in t122t4_pk 
 >>explain options 'f' 
 +>insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
 
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                            x                     7.00E+000
-3    4    5    nested_join                                           7.00E+000
-.    .    4    trafodion_insert                T122_PK               1.00E+000
-1    2    3    nested_join                                           7.00E+000
+3    .    4    root                            x                     7.00E+000
+1    2    3    tuple_flow                                            7.00E+000
 .    .    2    trafodion_insert                T122T4_PK             1.00E+000
 .    .    1    tuplelist                                             7.00E+000
 
 --- SQL operation complete.
+>>-- next insert should fail due to duplicate pkey values
 >>insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
 
 *** ERROR[8102] The operation is prevented by a unique constraint.
@@ -590,9 +588,14 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>alter table t122t3_unique drop constraint t122_uq;
 
 --- SQL operation complete.
+>>
+>>-- next alter should fail, cannot drop primary key
 >>alter table t122t4_pk drop constraint t122_pk;
 
---- SQL operation complete.
+*** ERROR[1255] Constraint TRAFODION.SCH.T122_PK is the clustering key constraint for table TRAFODION.SCH.T122T4_PK and cannot be dropped.
+
+--- SQL operation failed with errors.
+>>
 >>alter table t122t4_fk drop constraint t122_fk;
 
 --- SQL operation complete.
@@ -666,7 +669,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
 
---- 7 row(s) inserted.
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
 >>
 >>-- no ri contraint in t122t4_fk
 >>explain options 'f'

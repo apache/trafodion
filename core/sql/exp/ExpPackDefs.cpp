@@ -244,6 +244,11 @@ Long ex_function_upper::pack(void * space_)
   return packClause(space_, sizeof(ex_function_upper));
 }  
 
+Long ex_function_split_part::pack(void * space_)
+{
+  return packClause(space_, sizeof(ex_function_split_part));
+}  
+
 Long ex_function_translate::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_translate));

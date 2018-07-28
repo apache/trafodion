@@ -50,6 +50,10 @@
 
 --- SQL operation complete.
 >>
+>>create hbase table t146t3 ( column family 'cf');
+
+--- SQL operation complete.
+>>
 >>-- These operations are not allowed on hbase tables
 >>update hbase."_CELL_".t146t1 set col_value = '4' where row_id = '2' and col_name = 'visitor_team';
 
@@ -87,7 +91,7 @@ CREATE TABLE HBASE."_CELL_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 2009891765934276385 */
+/* ObjectUID = 7181713655023564985 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_CELL_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
 
@@ -110,7 +114,7 @@ CREATE TABLE HBASE."_ROW_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 2009891765934276410 */
+/* ObjectUID = 7181713655023565067 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_ROW_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
 
@@ -138,7 +142,12 @@ HBase Registered Tables in Catalog TRAFODION
 ============================================
 
 "_CELL_".T146T1
+"_CELL_".T146T3
 "_ROW_".T146T1
+"_ROW_".T146T3
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -161,6 +170,18 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get external hbase objects, match '%T146%';
+
+External HBase objects
+======================
+
+T146T1
+T146T3
 
 --- SQL operation complete.
 >>
@@ -291,7 +312,7 @@ CREATE TABLE HBASE."_CELL_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 2009891765934276385 */
+/* ObjectUID = 7181713655023564985 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_CELL_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
   GRANT SELECT ON HBASE."_CELL_".T146T1 TO SQL_USER3 GRANTED BY DB__HBASEROLE;
@@ -319,7 +340,7 @@ CREATE TABLE HBASE."_ROW_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 2009891765934276410 */
+/* ObjectUID = 7181713655023565067 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_ROW_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
   GRANT SELECT ON HBASE."_ROW_".T146T1 TO SQL_USER3 GRANTED BY DB__HBASEROLE;
@@ -492,6 +513,21 @@ ROW_ID  COL_VALUE
 
 --- 6 row(s) selected.
 >>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -630,6 +666,21 @@ ROW_ID  COL_VALUE
 
 --- 6 row(s) selected.
 >>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -773,6 +824,21 @@ ROW_ID  COL_VALUE
 
 --- 6 row(s) selected.
 >>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -877,6 +943,12 @@ SQL_USER4
 *** ERROR[15017] Statement S1 was not found.
 
 >>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -1018,6 +1090,29 @@ ROW_ID  COL_VALUE
 
 --- 6 row(s) selected.
 >>
+>>get external hbase objects, match '%T146%';
+
+External HBase objects
+======================
+
+T146T1
+T146T3
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_CELL_".T146T3
+"_ROW_".T146T1
+"_ROW_".T146T3
+
+=======================
+ 4 row(s) returned
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -1172,6 +1267,21 @@ ROW_ID  COL_VALUE
 
 --- 6 row(s) selected.
 >>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -1279,6 +1389,12 @@ SQL_USER1
 *** ERROR[15017] Statement S1 was not found.
 
 >>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -1419,6 +1535,20 @@ ROW_ID  COL_VALUE
 
 --- 6 row(s) selected.
 >>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>exit;
 
 End of MXCI Session
@@ -1473,10 +1603,15 @@ Privileges for Role DB__HBASEROLE
 
 SIDU-R-    HBASE._CELL_.T146T1
 SIDU-R-    HBASE._CELL_.T146T2
+SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
 SIDU-R-    HBASE._ROW_.T146T2
+SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
 SIDU-R-    TRAFODION._HB_MAP_.T146T2
+
+=======================
+ 8 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1489,8 +1624,13 @@ Privileges for Role DB__HBASEROLE
 =================================
 
 SIDU-R-    HBASE._CELL_.T146T1
+SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
+SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1605,10 +1745,15 @@ Privileges for Role DB__HBASEROLE
 
 SIDU-R-    HBASE._CELL_.T146T1
 SIDU-R-    HBASE._CELL_.T146T2
+SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
 SIDU-R-    HBASE._ROW_.T146T2
+SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
 SIDU-R-    TRAFODION._HB_MAP_.T146T2
+
+=======================
+ 8 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1621,8 +1766,13 @@ Privileges for Role DB__HBASEROLE
 =================================
 
 SIDU-R-    HBASE._CELL_.T146T1
+SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
+SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1650,6 +1800,9 @@ End of MXCI Session
 >>drop hbase table t146t2;
 
 *** WARNING[1004] Object T146T2 does not exist or object type is invalid for the current operation.
+
+--- SQL operation complete.
+>>drop hbase table t146t3;
 
 --- SQL operation complete.
 >>

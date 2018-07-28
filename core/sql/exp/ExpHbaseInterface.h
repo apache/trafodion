@@ -60,7 +60,6 @@
 
 class ex_globals;
 class CliGlobals;
-class ExHbaseAccessStats;
 
 Int64 getTransactionIDFromContext();
 

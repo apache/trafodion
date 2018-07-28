@@ -26,6 +26,8 @@
 #include "NAVersionedObject.h"
 #include "ComQueue.h"
 #include "ex_globals.h"
+#include "ExStats.h"
+
 class HdfsFileInfo
 {
  public:
@@ -116,12 +118,15 @@ Lng32 ExpLOBInterfacePurgedata(ExLobGlobals * lobGlob,
 			       char * lobLoc);
 
 Lng32 ExpLOBinterfaceCloseFile(ExLobGlobals * lobGlob, 
+                               ExHdfsScanStats *hdfsAccessStats,
 			       char * lobName,
 			       char * lobLoc,
 			       Lng32 lobType,
 			       char * lobHdfsServer ,
 			       Lng32 lobHdfsPort );
+
 Lng32 ExpLOBInterfaceInsertSelect(ExLobGlobals * exLobGlob, 
+                                  ExHdfsScanStats *hdfsAccessStats,
 				  char * lobHdfsServer ,
 				  Lng32 lobHdfsPort ,
 				  char * tgtLobName,
@@ -146,6 +151,7 @@ Lng32 ExpLOBInterfaceInsertSelect(ExLobGlobals * exLobGlob,
 
                                   );
 Lng32 ExpLOBInterfaceInsert(ExLobGlobals * lobGlob, 
+                            ExHdfsScanStats *hdfsAccessStats,
 			    char * tgtLobName,
 			    char * lobLocation,
 			    Lng32 lobType,
@@ -182,6 +188,7 @@ Lng32 ExpLOBInterfaceInsert(ExLobGlobals * lobGlob,
 			    );
 
 Lng32 ExpLOBInterfaceUpdate(ExLobGlobals * lobGlob, 
+                            ExHdfsScanStats *hdfsAccessStats,
 			    char * lobHdfsServer ,
 			    Lng32 lobHdfsPort,	 
 			    char * tgtLobName,
@@ -212,6 +219,7 @@ Lng32 ExpLOBInterfaceUpdate(ExLobGlobals * lobGlob,
                             Int64 lobGCLimit = 0);
 
 Lng32 ExpLOBInterfaceUpdateAppend(ExLobGlobals * lobGlob, 
+                                  ExHdfsScanStats *hdfsAccessStats,
 				  char * lobHdfsServer ,
 				  Lng32 lobHdfsPort ,
 				  char * tgtLobName,
@@ -243,6 +251,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(ExLobGlobals * lobGlob,
 				  );
 
 Lng32 ExpLOBInterfaceDelete(ExLobGlobals * lobGlob, 
+                            ExHdfsScanStats *hdfsAccessStats,
 			    char * lobHdfsServer ,
 			    Lng32 lobHdfsPort ,
 			    char * lobName,
@@ -256,6 +265,7 @@ Lng32 ExpLOBInterfaceDelete(ExLobGlobals * lobGlob,
 			    Lng32 waitedOp);
 
 Lng32 ExpLOBInterfaceSelect(ExLobGlobals * lobGlob, 
+                            ExHdfsScanStats *hdfsAccessStats,
 			    char * lobName, 
 			    char * lobLoc,
 			    Lng32  lobType,
@@ -276,6 +286,7 @@ Lng32 ExpLOBInterfaceSelect(ExLobGlobals * lobGlob,
 			    Int32 inputFlags=0);
 
 Lng32 ExpLOBInterfaceSelectCursor(ExLobGlobals * lobGlob, 
+                                  ExHdfsScanStats *hdfsAccessStats,
 				  char * lobName, 
 				  char * lobLoc,
 				  Lng32 lobType,
@@ -298,14 +309,6 @@ Lng32 ExpLOBInterfaceSelectCursor(ExLobGlobals * lobGlob,
                                   Lng32 openType, // 0: not applicable. 1: preOpen. 2: mustOpen. 
                                   Int32 *hdfsDetailError = NULL
 				  );
-
-Lng32 ExpLOBinterfaceStats(ExLobGlobals * lobGlob, 
-			   ExLobStats * lobStats,
-			   char * lobName,
-			   char * lobLoc,
-			   Lng32 lobType = (Lng32)Lob_HDFS_File,
-			   char * lobHdfsServer = (char *)"default",
-			   Lng32 lobHdfsPort = 0);
 
 char * getLobErrStr(Lng32 errEnum);
 

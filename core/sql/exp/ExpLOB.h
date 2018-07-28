@@ -136,7 +136,10 @@ public:
 			    char * lobLob,
 			    Int64 uid, Lng32 lobNum);
 
-  static Lng32 initLOBglobal(ExLobGlobals *& lobGlob, NAHeap *heap, ContextCli *currContext,char *server, Int32 port );
+  static Lng32 initLOBglobal(ExLobGlobals *& lobGlob, NAHeap *heap, ContextCli *currContext,char *server, Int32 port, NABoolean isHiveRead = FALSE);
+  static ExLobGlobals *initLOBglobal(NAHeap *parentHeap, ContextCli *currContext, NABoolean useLibHdfs, NABoolean isHiveRead = FALSE);
+  static void deleteLOBglobal(ExLobGlobals *lobGlob, NAHeap *parentHeap);
+  static void genLobLockId(Int64 objUid,Int32 lobNum, char *llid);
 
   // Extracts values from the LOB handle stored at ptr
   static Lng32 extractFromLOBhandle(Int16 *flags,
@@ -392,7 +395,16 @@ class ExpLOBiud : public ExpLOBoper {
   {
     (v) ? liudFlags_ |= FROM_EXTERNAL: liudFlags_ &= ~FROM_EXTERNAL;
   };
-  
+ 
+ NABoolean lobLocking()
+  {
+    return ((liudFlags_ & LOB_LOCKING) != 0);
+  };
+
+  inline void setLobLocking(NABoolean v)
+  {
+    (v) ? liudFlags_ |= LOB_LOCKING: liudFlags_ &= ~LOB_LOCKING;
+  };
 
  protected:
   Int64 objectUID_;
@@ -407,7 +419,8 @@ class ExpLOBiud : public ExpLOBoper {
     FROM_EXTERNAL      = 0x0020,
     FROM_BUFFER        = 0x0040,
     FROM_EMPTY         = 0x0080,
-    FROM_LOB_EXTERNAL  = 0x0100
+    FROM_LOB_EXTERNAL  = 0x0100,
+    LOB_LOCKING        = 0x0200
   };
 
   Lng32 liudFlags_;

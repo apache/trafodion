@@ -1,5 +1,5 @@
 /**********************************************************************
-// @@@ START COPYRIGHT @@@
+/ @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
@@ -69,13 +69,15 @@ class MemoryMonitor;
 #include "SQLCLIdev.h"
 #include "memorymonitor.h"
 
-#define MAX_PID_ARRAY_SIZE 65536
+#define PID_MAX_DEFAULT     65536
+#define PID_MAX_DEFAULT_MAX 131072
+#define PID_MAX_DEFAULT_MIN 32768
+#define PID_VIOLATION_MAX_COUNT 100
 
 typedef struct GlobalStatsArray
 {
   pid_t  processId_;
   SB_Verif_Type  phandleSeqNum_;
-  Int64  creationTime_;
   ProcessStats  *processStats_;
 } GlobalStatsArray;
 
@@ -200,6 +202,7 @@ public:
   RtsExplainFrag *getExplainInfo() { return explainInfo_; }
   void deleteExplainFrag();
   ULng32 getFlags() const { return flags_; }
+  NABoolean reportError(pid_t pid);
 private:
   enum Flags
   {
@@ -219,7 +222,6 @@ private:
   char *queryId_;
   Lng32 queryIdLen_;
   ExMasterStats *masterStats_;
-  HashQueue *EspProcHandle_;
   ExStatisticsArea *stats_;
   Int64 lastMergedTime_;
   ExStatisticsArea *mergedStats_;
@@ -435,6 +437,7 @@ public:
   inline pid_t getSemPid() { return semPid_; }
   inline pid_t getSsmpPid();
   inline Int64 getSsmpTimestamp();
+  inline pid_t getConfiguredPidMax() { return configuredPidMax_; }
   inline void setSsmpDumpTimestamp(Int64 dumpTime) 
           { ssmpDumpedTimestamp_ = dumpTime; }
   inline Int64 getSsmpDumpTimestamp() 
@@ -473,6 +476,7 @@ public:
                           SQL_QIKEY [],
                           Int32 maxNumSiKeys,
                           Int32 *returnedNumSiKeys);
+  Int32 checkLobLock(CliGlobals *cliGlobals,char *&lobLockId);
 
   void mergeNewSikeys(Int32 numSikeys, 
                     SQL_QIKEY sikeys[]);
@@ -489,10 +493,12 @@ public:
   SB_Phandle_Type *getSsmpProcHandle() { return &ssmpProcHandle_; }
   SB_Phandle_Type *getSscpProcHandle() { return &sscpProcHandle_; }
   SyncHashQueue *getRecentSikeys() { return recentSikeys_; }
+  SyncHashQueue *getLobLocks() { return lobLocks_;}
   void setSsmpProcSemId(Long semId) { ssmpProcSemId_ = semId; } 
   Long &getSsmpProcSemId() { return ssmpProcSemId_; } 
   void setSscpProcSemId(Long semId) { sscpProcSemId_ = semId; } 
   void setSeabedError(Int32 error) { seabedError_ = error; }
+  NABoolean getInitError(pid_t pid, NABoolean &reportError );
 private:
   void *statsSharedSegAddr_;
   Lng32 version_;             // A field used to prevent downrev compiler or other 
@@ -531,6 +537,9 @@ private:
   pid_t maxPid_;
   Int64 ssmpDumpedTimestamp_;
   MemoryMonitor *memMonitor_;
+  SyncHashQueue *lobLocks_;
+  pid_t configuredPidMax_;
+  Int64 pidViolationCount_;
 };
 StatsGlobals * shareStatsSegment(Int32 &shmid, NABoolean checkForSSMP = TRUE);
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu);

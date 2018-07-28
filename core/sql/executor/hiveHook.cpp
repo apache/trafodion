@@ -495,37 +495,44 @@ NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID,
   fieldTerminator  = '\001';  // this the Hive default ^A or ascii code 1
   recordTerminator = '\n';    // this is the Hive default
 
-  std::size_t foundB ;
   if (!findAToken(md, tblStr, pos, "serdeInfo:",
                   "populateSerDeParams::serdeInfo:###"))
     return FALSE;
 
-  std::size_t foundE = pos ;
+  std::size_t foundB = pos;
+  std::size_t foundE = pos;
+
   if (!findAToken(md, tblStr, foundE, "}),",
                   "populateSerDeParams::serDeInfo:)},###"))
     return FALSE;
   
+  NAText serdeStr = tblStr->substr(foundB, foundE-foundB);
+
   const char * nullStr = "serialization.null.format=";
-  const char * fieldStr = "field.delim" ;
-  const char * lineStr = "line.delim" ;
+  const char * fieldStr = "field.delim=" ;
+  const char * lineStr = "line.delim=" ;
 
   nullFormatSpec = FALSE;
-  foundB = tblStr->find(nullStr,pos);
-  if ((foundB != std::string::npos) && (foundB < foundE))
+  foundB = serdeStr.find(nullStr);
+  if (foundB != std::string::npos)
     {
       nullFormatSpec = TRUE;
       std::size_t foundNB = foundB + strlen(nullStr);
-      std::size_t foundNE = tblStr->find(", ", foundNB);
-      nullFormat = NAString(tblStr->substr(foundNB, (foundNE-foundNB)));
+      std::size_t foundNE = serdeStr.find(", ", foundNB);
+      if (foundNE == std::string::npos)
+        {
+          foundNE = serdeStr.length();
+        }
+      nullFormat = NAString(serdeStr.substr(foundNB, (foundNE-foundNB)));
     }
 
-  foundB = tblStr->find(fieldStr,pos);
-  if ((foundB != std::string::npos) && (foundB < foundE))
-    fieldTerminator = tblStr->at(foundB+strlen(fieldStr)+1);
-  
-  foundB = tblStr->find("line.delim=",pos);
-  if ((foundB != std::string::npos) && (foundB < foundE))
-    recordTerminator = tblStr->at(foundB+strlen(lineStr)+1);
+  std::size_t foundDelim = serdeStr.find(fieldStr);
+  if ((foundDelim != std::string::npos))
+    fieldTerminator = serdeStr.at(foundDelim+strlen(fieldStr));
+
+  foundDelim = serdeStr.find(lineStr);
+  if ((foundDelim != std::string::npos))
+    recordTerminator = serdeStr.at(foundDelim+strlen(lineStr));
   
   pos = foundE;
   

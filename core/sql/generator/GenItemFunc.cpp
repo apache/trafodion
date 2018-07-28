@@ -713,6 +713,13 @@ short BuiltinFunction::codeGen(Generator * generator)
                                                         CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
       break;
     }
+
+    case ITM_SPLIT_PART:
+    {
+      function_clause = 
+            new (generator->getSpace()) ex_function_split_part(getOperatorType(), attr, space);
+      break;
+    }
     default:
       break;
     }
@@ -2673,6 +2680,11 @@ short LOBinsert::codeGen(Generator * generator)
   else if(obj_ == LOBoper::EMPTY_LOB_)
     li->setFromEmpty(TRUE);
 
+  if (CmpCommon::getDefault(LOB_LOCKING) == DF_ON)
+    li->setLobLocking(TRUE);
+  else
+    li->setLobLocking(FALSE);
+
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
   li->setLobStorageLocation((char*)lobStorageLocation().data());
@@ -2748,7 +2760,10 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromBuffer(TRUE);
   else if(obj_ == LOBoper::EMPTY_LOB_)
     lu->setFromEmpty(TRUE);
-
+  if (CmpCommon::getDefault(LOB_LOCKING) == DF_ON)
+    lu->setLobLocking(TRUE);
+  else
+    lu->setLobLocking(FALSE);
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());

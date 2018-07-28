@@ -863,6 +863,17 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         copyData = TRUE;
         break;
       } // end of case (CmpMessageObj::DDL)
+      case (CmpMessageObj::DDL_WITH_STATUS) :
+      {
+        // request is from ExDDLTcb::work() to get statement explain
+        cmpStatement = new CTXTHEAP CmpStatement(this);
+        CmpMessageDDLwithStatus ddlStmt(data, data_len, CTXTHEAP);
+ 
+        Assign_SqlParser_Flags(parserFlags);
+        rs = cmpStatement->process(ddlStmt);
+        copyData = TRUE;
+        break;
+      } // end of case (CmpMessageObj::DDL)
       case (CmpMessageObj::DESCRIBE) :
       {
         // request is from ExDescribeTcb::work() to get statement explain

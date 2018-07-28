@@ -228,7 +228,7 @@ ex_expr::exp_return_type ex_expr::fixup(Lng32 /*base*/, unsigned short mode,
 	return retcode;
 
       clause->setExeGlobals(glob);
-
+      clause->setTcb(tcb); 
       clause = clause->getNextClause();
     }
 
@@ -536,9 +536,9 @@ const ArithInstruction ex_arith_clause::computeCaseIndex(OperatorTypeEnum op,
 {
   ArithInstruction instruction = ARITH_NOT_SUPPORTED;
 
-  short type_op1;
-  short type_op2;
-  short type_result;
+  short type_op1 = -1;
+  short type_op2 = -1;
+  short type_result = -1;
   getCaseDatatypes(attr1->getDatatype(), attr1->getLength(), type_op1,
                    result->getDatatype(), result->getLength(), type_result,
                    0 /* don't need to take scale difference into account here */);

@@ -1858,6 +1858,12 @@ ElemDDLNode::castToStmtDDLRoleGrant()
   return NULL;
 }
 
+StmtDDLonHiveObjects *
+ElemDDLNode::castToStmtDDLonHiveObjects()
+{
+  return NULL;
+}
+
 //
 // accessors
 //

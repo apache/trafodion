@@ -1653,7 +1653,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
   if ((table) && 
-      (table->isExternalTable() && 
+      (table->isTrafExternalTable() && 
        (NOT table->getTableName().isHbaseMappedName()) &&
        (! bindWA->allowExternalTables())))    
     {
@@ -1667,7 +1667,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // If the table is an external table and has an associated native table, 
   // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->isExternalTable() &&
+  if ((table) && table->isTrafExternalTable() &&
       (NOT table->getTableName().isHbaseMappedName()))
     {
       NAString adjustedName =ComConvertTrafNameToNativeName 
@@ -2119,6 +2119,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
     }
 
   Parser parser(bindWA->currentCmpContext());
+  parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
   ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                        naTable->getViewLen(),
                                        naTable->getViewTextCharSet());
@@ -7818,8 +7819,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
         stoi_->setDeleteAccess();
         if (((GenericUpdate*)re)->isMerge())
           stoi_->setInsertAccess();
-        if (((Delete*)re)->isFastDelete())
-          stoi_->setSelectAccess();
       }
       break;
     case REL_SCAN:
@@ -12096,7 +12095,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
   // Triggers --
   
-  if ((NOT isFastDelete()) && (NOT noIMneeded()))
+  if (NOT noIMneeded())
     boundExpr = handleInlining(bindWA, boundExpr);
   else if (hbaseOper() && (getGroupAttr()->isEmbeddedUpdateOrDelete()))
   {
@@ -12998,16 +12997,10 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
 
     // If this is not an INTERNAL REFRESH command, make sure the MV is
     // initialized and available.
-    // If this is FastDelete using parallel purgedata, do not enforce
-    // that MV is initialized.
     if (!bindWA->isBindingMvRefresh())
     {
-      if (NOT ((getOperatorType() == REL_UNARY_DELETE) &&
-               (((Delete*)this)->isFastDelete())))
-        {
-          if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
-            return NULL;
-        }
+      if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
+        return NULL;
     }
   }
 
@@ -14473,20 +14466,23 @@ RelExpr * ControlQueryDefault::bindNode(BindWA *bindWA)
          }
        }
     }
-  
+
+
   if (holdOrRestoreCQD_ == 0)
     {
-  attrEnum_ = affectYourself ? defs.validateAndInsert(token_, value_, reset_)
-                             : defs.validate         (token_, value_, reset_);
-  if (attrEnum_ < 0)
-    {
-      if (bindWA) bindWA->setErrStatus();
-      return NULL;
-    }
-
-  // remember this control in the control table
-  if (affectYourself)
-    ActiveControlDB()->setControlDefault(this);
+      if (affectYourself)
+        attrEnum_ =  defs.validateAndInsert(token_, value_, reset_);
+      else
+        attrEnum_ = defs.validate(token_, value_, reset_);
+      if (attrEnum_ < 0)
+        {
+          if (bindWA) bindWA->setErrStatus();
+          return NULL;
+        }
+      
+      // remember this control in the control table
+      if (affectYourself)
+        ActiveControlDB()->setControlDefault(this);
     }
   else if ((holdOrRestoreCQD_ > 0) && (affectYourself))
     {
@@ -14497,7 +14493,7 @@ RelExpr * ControlQueryDefault::bindNode(BindWA *bindWA)
           return NULL;
         }
     }
-
+  
   return ControlAbstractClass::bindNode(bindWA);
 } // ControlQueryDefault::bindNode()
 

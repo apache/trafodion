@@ -766,6 +766,13 @@ void CmpSeabaseDDL::createSeabaseView(
 
   if (retcode == 1) // already exists
     {
+      if (createViewNode->createIfNotExists())
+        {
+	  deallocEHI(ehi); 
+	  processReturn();
+	  return;          
+        }
+
       if (NOT ((createViewNode->isCreateOrReplaceViewCascade())|| 
 	       (createViewNode->isCreateOrReplaceView())))
 	{
@@ -1156,6 +1163,19 @@ void CmpSeabaseDDL::dropSeabaseView(
                         FALSE, FALSE,
                         &cliInterface,
                         COM_VIEW_OBJECT);
+
+  if (retcode == -2)
+    {
+      // table doesnt exist. return if 'if exists' clause is specified.
+      if (dropViewNode->dropIfExists())
+        {
+          // clear diags
+          CmpCommon::diags()->clear();
+          processReturn();
+          return;
+        }
+    }
+
   if (retcode < 0)
     {
       processReturn();
@@ -1591,7 +1611,6 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
 
   return 0;
 }
-
 
 // *****************************************************************************
 // *                                                                           *
