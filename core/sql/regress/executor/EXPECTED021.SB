@@ -1,0 +1,147 @@
+>>obey TEST021(testcases);
+>>
+>>-- TEST 1
+>>create table t021t1
++>(
++>  depid int, 
++>  depname varchar(64), 
++>  upperdepid int
++>);
+
+--- SQL operation complete.
+>>
+>>log log021;
+>>insert into t021t1 values ( 1, 'world', null);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 2, 'china', 1);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 3, 'US', 1);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 4, 'UK', 1);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 5, 'ShangHai', 2);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 6, 'NY', 3);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 7, 'London', 4);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 8, 'ChangNing', 5);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 9, 'JingAn', 5);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 10, 'D1', 7);
+
+--- 1 row(s) inserted.
+>>
+>>insert into t021t1 values ( 11, 'LoopRoot', 15);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 12, 'L1', 11);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 13, 'L2', 12);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 14, 'L3', 13);
+
+--- 1 row(s) inserted.
+>>insert into t021t1 values ( 15, 'L4', 12);
+
+--- 1 row(s) inserted.
+>>
+>>SELECT  *, "LEVEL" FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID;
+
+DEPID        DEPNAME                                                           UPPERDEPID   LEVEL
+-----------  ----------------------------------------------------------------  -----------  ----------
+
+          1  world                                                                       ?           0
+          2  china                                                                       1           1
+          3  US                                                                          1           1
+          4  UK                                                                          1           1
+          5  ShangHai                                                                    2           2
+          6  NY                                                                          3           2
+          7  London                                                                      4           2
+          8  ChangNing                                                                   5           3
+          9  JingAn                                                                      5           3
+         10  D1                                                                          7           3
+
+--- 10 row(s) selected.
+>>
+>>--loop test
+>>SELECT  * FROM t021t1 START WITH depid = 11 CONNECT BY PRIOR DEPID = UPPERDEPID;
+
+DEPID        DEPNAME                                                           UPPERDEPID
+-----------  ----------------------------------------------------------------  -----------
+
+         11  LoopRoot                                                                   15
+         12  L1                                                                         11
+         13  L2                                                                         12
+         15  L4                                                                         12
+         14  L3                                                                         13
+
+*** ERROR[8037] Loop detected in connect by execution.
+
+--- 5 row(s) selected.
+>>
+>>--nocycle test
+>>SELECT  * , "CONNECT_BY_ISCYCLE" FROM t021t1 START WITH depid = 11 CONNECT BY NOCYCLE PRIOR DEPID = UPPERDEPID;
+
+DEPID        DEPNAME                                                           UPPERDEPID   CONNECT_BY_ISCYCLE
+-----------  ----------------------------------------------------------------  -----------  ------------------
+
+         11  LoopRoot                                                                   15                   0
+         12  L1                                                                         11                   0
+         13  L2                                                                         12                   0
+         15  L4                                                                         12                   0
+         11  LoopRoot                                                                   15                   1
+         14  L3                                                                         13                   0
+
+--- 6 row(s) selected.
+>>
+>>SELECT  * , "LEVEL" FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID where depid = 7;
+
+DEPID        DEPNAME                                                           UPPERDEPID   LEVEL
+-----------  ----------------------------------------------------------------  -----------  ----------
+
+          7  London                                                                      4           2
+
+--- 1 row(s) selected.
+>>
+>>SELECT  * , "LEVEL" FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID where "LEVEL" > 2 ;
+
+DEPID        DEPNAME                                                           UPPERDEPID   LEVEL
+-----------  ----------------------------------------------------------------  -----------  ----------
+
+          8  ChangNing                                                                   5           3
+          9  JingAn                                                                      5           3
+         10  D1                                                                          7           3
+
+--- 3 row(s) selected.
+>>
+>>SELECT  * FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID order by 2;
+
+DEPID        DEPNAME                                                           UPPERDEPID
+-----------  ----------------------------------------------------------------  -----------
+
+          8  ChangNing                                                                   5
+         10  D1                                                                          7
+          9  JingAn                                                                      5
+          7  London                                                                      4
+          6  NY                                                                          3
+          5  ShangHai                                                                    2
+          4  UK                                                                          1
+          3  US                                                                          1
+          2  china                                                                       1
+          1  world                                                                       ?
+
+--- 10 row(s) selected.
+>>log;

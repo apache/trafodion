@@ -170,8 +170,6 @@ inline ex_cri_desc * atp_struct::getCriDesc() const
 inline tupp & atp_struct::getTupp(Lng32 i)
 {
 #ifdef _DEBUG
- if( i >= criDesc_->noTuples())
-printf("LMDBG it is %d\n", criDesc_->noTuples() );
   assert(i < criDesc_->noTuples());
 #endif
   return tuppArray_[i];

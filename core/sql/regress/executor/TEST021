@@ -1,0 +1,82 @@
+-- Test: TEST020 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Hierachy Query (Connect By) feature
+-- Expected files: EXPECTED021
+-- Table created: t021t1
+-- Limitations:
+-- Revision history:
+
+obey TEST021(clnup);
+log log021 clear;
+obey TEST021(testcases);
+obey TEST021(clnup);
+log;
+exit;
+
+?section clnup
+drop table t021t1 cascade;
+
+
+?section testcases
+
+-- TEST 1
+create table t021t1
+(
+  depid int, 
+  depname varchar(64), 
+  upperdepid int
+);
+
+log log021;
+insert into t021t1 values ( 1, 'world', null);
+insert into t021t1 values ( 2, 'china', 1);
+insert into t021t1 values ( 3, 'US', 1);
+insert into t021t1 values ( 4, 'UK', 1);
+insert into t021t1 values ( 5, 'ShangHai', 2);
+insert into t021t1 values ( 6, 'NY', 3);
+insert into t021t1 values ( 7, 'London', 4);
+insert into t021t1 values ( 8, 'ChangNing', 5);
+insert into t021t1 values ( 9, 'JingAn', 5);
+insert into t021t1 values ( 10, 'D1', 7);
+
+insert into t021t1 values ( 11, 'LoopRoot', 15);
+insert into t021t1 values ( 12, 'L1', 11);
+insert into t021t1 values ( 13, 'L2', 12);
+insert into t021t1 values ( 14, 'L3', 13);
+insert into t021t1 values ( 15, 'L4', 12);
+
+SELECT  *, "LEVEL" FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID;
+
+--loop test
+SELECT  * FROM t021t1 START WITH depid = 11 CONNECT BY PRIOR DEPID = UPPERDEPID;  
+
+--nocycle test
+SELECT  * , "CONNECT_BY_ISCYCLE" FROM t021t1 START WITH depid = 11 CONNECT BY NOCYCLE PRIOR DEPID = UPPERDEPID;  
+
+SELECT  * , "LEVEL" FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID where depid = 7;
+
+SELECT  * , "LEVEL" FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID where "LEVEL" > 2 ;
+
+SELECT  * FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID order by 2;
+log;
+

@@ -158,7 +158,6 @@ ExExeUtilTcb::ExExeUtilTcb(const ComTdbExeUtil & exe_util_tdb,
   
   if (exe_util_tdb.workCriDesc_)
     {
-printf("LMDBG1: it is at %p, no is %d, index at %d\n", (void *)exe_util_tdb.workCriDesc_, exe_util_tdb.workCriDesc_->noTuples(),((ComTdbExeUtil&)exe_util_tdb).workAtpIndex() );
       workAtp_ = allocateAtp(exe_util_tdb.workCriDesc_, glob->getSpace());
       pool_->get_free_tuple(workAtp_->getTupp(((ComTdbExeUtil&)exe_util_tdb).workAtpIndex()), 0);
     }
