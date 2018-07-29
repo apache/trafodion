@@ -34,74 +34,66 @@
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
+extern CMonitor *Monitor;
 
-CExtShutdownNsReq::CExtShutdownNsReq (reqQueueMsg_t msgType,
-                                      int nid, int pid, int sockFd,
-                                      struct message_def *msg )
-    : CExternalReq(msgType, nid, pid, sockFd, msg)
+CExtNodeDownNsReq::CExtNodeDownNsReq( reqQueueMsg_t msgType
+                                    , int pid
+                                    , int sockFd
+                                    , struct message_def *msg )
+    : CExternalReq(msgType, -1, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RqER", 4);
+    memcpy(&eyecatcher_, "RqEJ", 4);
 
-    priority_    = High;
+    priority_    =  High;
 }
 
-CExtShutdownNsReq::~CExtShutdownNsReq()
+CExtNodeDownNsReq::~CExtNodeDownNsReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rQer", 4);
+    memcpy(&eyecatcher_, "rQej", 4);
 }
 
-void CExtShutdownNsReq::populateRequestString( void )
+void CExtNodeDownNsReq::populateRequestString( void )
 {
     char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
-              "ExtReq(%s) req #=%ld requester(pid=%d)"
-              , CReqQueue::svcReqType[reqType_], getId(), pid_ );
+              "ExtReq(%s) req #=%ld requester(pid=%d) (nid=%d)"
+              , CReqQueue::svcReqType[reqType_], getId(), pid_
+              , msg_->u.request.u.down.nid );
     requestString_.assign( strBuf );
 }
 
-
-void CExtShutdownNsReq::performRequest()
+void CExtNodeDownNsReq::performRequest()
 {
-    const char method_name[] = "CExtShutdownNsReq::performRequest";
+    const char method_name[] = "CExtNodeDownNsReq::performRequest";
     TRACE_ENTRY;
+
+    CNode    *node = NULL;
 
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-       MonStats->req_type_shutdown_Incr(); // TODO
-
+       MonStats->req_type_nodedown_Incr();
+       
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf("%s@%d request #%ld: Shutdown, requester (%d, %d), "
-                     "shutdown level=%d\n", method_name, __LINE__, id_,
-                     msg_->u.request.u.shutdown.nid,
-                     msg_->u.request.u.shutdown.pid,
-                     msg_->u.request.u.shutdown.level);
+        trace_printf("%s@%d request #%ld: NodeDown, nid=%d\n",  method_name,
+                     __LINE__, id_, msg_->u.request.u.down.nid);
     }
 
-    if (( MyNode->GetState() != State_Down    ) &&
-        ( MyNode->GetState() != State_Stopped )   )
-    {
-        MyNode->SetShutdownNameServer( true );
-        MyNode->SetShutdownLevel( msg_->u.request.u.shutdown.level );
-        MyNode->SetState( State_Shutdown );
-    }
-
-    msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
-            
-    if (trace_settings & TRACE_REQUEST)
-        trace_printf("%s@%d" " - Shutdown Level="  "%d" "\n", method_name, __LINE__, msg_->u.request.u.shutdown.level);
+    node = Nodes->GetLNode( msg_->u.request.u.down.nid )->GetNode();
+    Monitor->HardNodeDownNs( node->GetPNid() );
 
     msg_->u.reply.type = ReplyType_Generic;
     msg_->u.reply.u.generic.nid = -1;
-    msg_->u.reply.u.generic.pid = -1;
+    msg_->u.reply.u.generic.pid = pid_;
     msg_->u.reply.u.generic.verifier = -1;
     msg_->u.reply.u.generic.process_name[0] = '\0';
+    msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
 
-    // Send reply to requester
+    // Send reply to monitor
     monreply(msg_, sockFd_);
 
     TRACE_EXIT;

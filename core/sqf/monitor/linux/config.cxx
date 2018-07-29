@@ -1193,7 +1193,7 @@ int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
         regClusterEntry->valueLength = strlen (regClusterConfig[i].value);
         if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
         {
-            trace_printf ("%s%d pack type %d, scope %s (%d), key %s (%d), value %s(%d)\n",method_name, __LINE__,
+            trace_printf ("%s@%d pack type %d, scope %s (%d), key %s (%d), value %s(%d)\n",method_name, __LINE__,
                            regClusterEntry->type, regClusterConfig[i].scope, 
                            regClusterEntry->scopeLength,regClusterConfig[i].key,regClusterEntry->keyLength,  
                            regClusterConfig[i].value, regClusterEntry->valueLength);
@@ -1226,7 +1226,7 @@ int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
     
     if (regClusterConfig)
     {
-         delete regClusterConfig; 
+         delete [] regClusterConfig; 
     }
     return numberOfEntries;
     
@@ -1258,7 +1258,7 @@ void CConfigContainer::UnpackRegistry( char *&buffer, int count )
 
         if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
         {
-            trace_printf ("%s%d scope length %d, key length %d, value length %d\n", method_name, __LINE__,
+            trace_printf ("%s@%d scope length %d, key length %d, value length %d\n", method_name, __LINE__,
                           clusterObj2->scopeLength, 
                           clusterObj2->keyLength, clusterObj2->valueLength);
         }
@@ -1317,7 +1317,7 @@ int CConfigContainer::PackUniqueStrings( char *&buffer )
                  stringObj->stringLength = strlen(unique_string);
                  if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
                  {
-                      trace_printf ("%s%d  packing nid %d, unique id %d, stringt %s (length %d)\n", method_name, __LINE__,
+                      trace_printf ("%s@%d  packing nid %d, unique id %d, stringt %s (length %d)\n", method_name, __LINE__,
                                      pnid, maxId, unique_string,stringObj->stringLength );
                  } 
                  stringObj->unique_id = maxId;

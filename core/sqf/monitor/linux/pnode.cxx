@@ -1065,11 +1065,11 @@ strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode, bool clone )
                 !MyNode->IsMyNode(targetLNode->GetNid()))
             {
                 // Forward the unique string to the target node
-                int rc = PtpClient->AddUniqStr( id.nid
-                                              , id.id
-                                              , candidate
-                                              , targetLNode->GetNid()
-                                              , targetLNode->GetNode()->GetName() );
+                int rc = PtpClient->ProcessAddUniqStr( id.nid
+                                                     , id.id
+                                                     , candidate
+                                                     , targetLNode->GetNid()
+                                                     , targetLNode->GetNode()->GetName() );
                 if (rc)
                 {
                     char la_buf[MON_STRING_BUF_SIZE];
@@ -1110,11 +1110,11 @@ strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode, bool clone )
                 !MyNode->IsMyNode(targetLNode->GetNid()))
             {
                 // Forward the unique string to the target node
-                int rc = PtpClient->AddUniqStr( id.nid
-                                              , id.id
-                                              , candidate
-                                              , targetLNode->GetNid()
-                                              , targetLNode->GetNode()->GetName());
+                int rc = PtpClient->ProcessAddUniqStr( id.nid
+                                                     , id.id
+                                                     , candidate
+                                                     , targetLNode->GetNid()
+                                                     , targetLNode->GetNode()->GetName());
                 if (rc)
                 {
                     char la_buf[MON_STRING_BUF_SIZE];
@@ -1240,6 +1240,16 @@ void CNode::StartNameServerProcess( void )
     const char method_name[] = "CNode::StartNameServerProcess";
     TRACE_ENTRY;
 
+    if ( !NameServer->IsNameServerConfigured( MyPNID ) )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d" " - NameServer is not configured in my node\n"
+                        , method_name, __LINE__);
+        }
+        return;
+    }
+
     char path[MAX_SEARCH_PATH];
     char *ldpath = NULL; // = getenv("LD_LIBRARY_PATH");
     char filename[MAX_PROCESS_PATH];
@@ -1250,7 +1260,9 @@ void CNode::StartNameServerProcess( void )
     snprintf( stdout, sizeof(stdout), "stdout_TNS%d", MyNode->GetZone() );
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-       trace_printf("%s@%d" " - Creating NameService Process\n", method_name, __LINE__);
+    {
+        trace_printf("%s@%d" " - Creating NameServer Process\n", method_name, __LINE__);
+    }
 
     strcpy(path,getenv("PATH"));
     strcat(path,":");
@@ -1281,12 +1293,14 @@ void CNode::StartNameServerProcess( void )
     if ( NameServerProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-           trace_printf("%s@%d" " - NameService Process created\n", method_name, __LINE__);
+        {
+            trace_printf("%s@%d" " - NameServer Process created\n", method_name, __LINE__);
+        }
     }
     else
     {
         char la_buf[MON_STRING_BUF_SIZE];
-        sprintf(la_buf, "[%s], NameService Process creation failed.\n", method_name);
+        sprintf(la_buf, "[%s], NameServer Process creation failed.\n", method_name);
         mon_log_write( MON_NODE_STARTNAMESERVER_1, SQ_LOG_ERR, la_buf );
     }
 
@@ -2556,11 +2570,27 @@ CProcess *CNodeContainer::CloneProcessNs( int nid
             }
             else
             {
-                char buf[MON_STRING_BUF_SIZE];
-                snprintf( buf, sizeof(buf),
-                          "[%s] ProcessInfo failed, rc=%d\n"
-                        , method_name, msg.u.reply.u.process_info_ns.return_code );
-                mon_log_write( MON_NODE_CLONEPROCESSNS_1, SQ_LOG_ERR, buf );
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                {
+                   trace_printf( "%s@%d - ProcessInfoNs(%d, %d:%d) -- can't find target process\n"
+                               , method_name, __LINE__
+                               , msg.u.reply.u.process_info_ns.nid
+                               , msg.u.reply.u.process_info_ns.pid
+                               , msg.u.reply.u.process_info_ns.verifier);
+                }
+
+                if ( msg.u.reply.u.process_info_ns.return_code != MPI_ERR_NAME )
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    snprintf( buf, sizeof(buf),
+                              "[%s] ProcessInfo(%d, %d:%d) failed, rc=%d\n"
+                            , method_name
+                            , msg.u.reply.u.process_info_ns.nid
+                            , msg.u.reply.u.process_info_ns.pid
+                            , msg.u.reply.u.process_info_ns.verifier
+                            , msg.u.reply.u.process_info_ns.return_code );
+                    mon_log_write( MON_NODE_CLONEPROCESSNS_1, SQ_LOG_ERR, buf );
+                }
             }
         }
         else
@@ -2625,11 +2655,25 @@ CProcess *CNodeContainer::CloneProcessNs( const char *name, Verifier_t verifier 
             }
             else
             {
-                char buf[MON_STRING_BUF_SIZE];
-                snprintf( buf, sizeof(buf),
-                          "[%s] ProcessInfo failed, rc=%d\n"
-                        , method_name, msg.u.reply.u.process_info_ns.return_code );
-                mon_log_write( MON_NODE_CLONEPROCESSNS_4, SQ_LOG_ERR, buf );
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                {
+                   trace_printf( "%s@%d - ProcessInfoNs(%s:%d) -- can't find target process\n"
+                               , method_name, __LINE__
+                               , msg.u.reply.u.process_info_ns.process_name
+                               , msg.u.reply.u.process_info_ns.verifier);
+                }
+
+                if ( msg.u.reply.u.process_info_ns.return_code != MPI_ERR_NAME )
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    snprintf( buf, sizeof(buf),
+                              "[%s] ProcessInfo(%s:%d) failed, rc=%d\n"
+                            , method_name
+                            , msg.u.reply.u.process_info_ns.process_name
+                            , msg.u.reply.u.process_info_ns.verifier
+                            , msg.u.reply.u.process_info_ns.return_code );
+                    mon_log_write( MON_NODE_CLONEPROCESSNS_4, SQ_LOG_ERR, buf );
+                }
             }
         }
         else

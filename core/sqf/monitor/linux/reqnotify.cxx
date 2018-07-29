@@ -180,9 +180,12 @@ void CExtNotifyReq::performRequest()
                                 , target_process_name.c_str()
                                 , target_verifier );
                 }
-                targetProcess = Nodes->GetProcess( target_process_name.c_str()
-                                                 , target_verifier
-                                                 , true, false, false );
+                if (msg_->u.request.u.notify.target_process_name[0] == '$' )
+                {
+                    targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                     , target_verifier
+                                                     , true, false, false );
+                }
             }     
             else
             { // find by nid (check node state, don't check process state, backup is Ok)
@@ -226,8 +229,11 @@ void CExtNotifyReq::performRequest()
                                         , target_process_name.c_str()
                                         , target_verifier );
                         }
-                        targetProcess = Nodes->CloneProcessNs( target_process_name.c_str()
-                                                             , target_verifier );
+                        if (msg_->u.request.u.notify.target_process_name[0] == '$' )
+                        {
+                            targetProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                                 , target_verifier );
+                        }
                     }     
                     else
                     { // Name Server find by nid,pid:verifier
@@ -319,7 +325,7 @@ void CExtNotifyReq::performRequest()
             {
                 if (trace_settings & TRACE_REQUEST)
                 {
-                    trace_printf("%s@%d" " - Can't find targerProcess" "\n", method_name, __LINE__);
+                    trace_printf("%s@%d" " - Can't find targetProcess" "\n", method_name, __LINE__);
                 }
             }
         }

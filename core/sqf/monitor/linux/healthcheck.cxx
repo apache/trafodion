@@ -54,7 +54,6 @@ using namespace std;
 #include "redirector.h"
 #include "replicate.h"
 
-
 extern CReqQueue ReqQueue;
 extern CMonitor *Monitor;
 extern CNode *MyNode;
@@ -64,6 +63,7 @@ extern CRedirector Redirector;
 extern CHealthCheck HealthCheck;
 extern CReplicate Replicator;
 extern int MyPNID;
+extern bool IsRealCluster;
 
 // constructor
 CHealthCheck::CHealthCheck()
@@ -229,7 +229,6 @@ void CHealthCheck::healthCheckThread()
     TRACE_ENTRY;
 
     HealthCheckStates state;
-
     struct timespec ts;
 
     if (trace_settings & TRACE_HEALTH)

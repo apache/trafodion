@@ -220,12 +220,18 @@ bool CCommAccept::sendNodeInfoSock( int sockFd )
                             , i, node->GetPNid(), node->GetName());
             }
 
-            nodeInfo[i].pnid = -1;
             nodeInfo[i].nodeName[0] = '\0';
             nodeInfo[i].commPort[0] = '\0';
             nodeInfo[i].syncPort[0] = '\0';
+            nodeInfo[i].pnid = -1;
             nodeInfo[i].creatorPNid = -1;
         }
+        nodeInfo[i].creatorShellPid = -1;
+        nodeInfo[i].creatorShellVerifier = -1;
+        nodeInfo[i].creator = false;
+        nodeInfo[i].ping = false;
+        nodeInfo[i].nsPid = -1;
+        nodeInfo[i].nsPNid = -1;
     }
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))

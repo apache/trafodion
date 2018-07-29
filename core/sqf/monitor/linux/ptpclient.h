@@ -40,58 +40,66 @@ public:
     CPtpClient( void );
     virtual ~CPtpClient( void );
 
-    int  AddUniqStr( int nid
-                   , int id
-                   , const char *stringValue
-                   , int targetNid
-                   , const char *targetNodeName );
-    int  InitializePtpClient( char * ptpPort );
-    int  ProcessClone( CProcess *process );
+    int  InitializePtpClient( int pnid, char* ptpPort );
+    int  ProcessAddUniqStr( int nid
+                          , int id
+                          , const char* stringValue
+                          , int targetNid
+                          , const char* targetNodeName );
+    int  ProcessClone( CProcess* process );
     int  ProcessExit( CProcess* process
                     , int parentNid
-                    , const char *targetNodeName );
-    int  ProcessInit( CProcess *process
-                    , void *tag
+                    , const char* targetNodeName );
+    int  ProcessInit( CProcess* process
+                    , void* tag
                     , int result
                     , int parentNid );
     int  ProcessKill( CProcess* process
                     , bool abort
                     , int targetNid
-                    , const char *targetNodeName );
+                    , const char* targetNodeName );
     int  ProcessNew( CProcess* process
                    , int targetNid
-                   , const char *targetNodeName );
+                   , const char* targetNodeName );
     int  ProcessNotify( int nid
                       , int pid
                       , Verifier_t verifier
                       , _TM_Txid_External transId
                       , bool canceled
-                      , CProcess *targetProcess
+                      , CProcess* targetProcess
                       , int targetNid
-                      , const char *targetNodeName );
-    int  StdInReq( int nid
-                 , int pid
-                 , StdinReqType type
-                 , int supplierNid
-                 , int supplierPid );
-    int  StdIoData( int nid
-                  , int pid
-                  , StdIoType type
-                  , ssize_t count
-                  , char *data );
+                      , const char* targetNodeName );
+    int  ProcessStdInReq( int nid
+                        , int pid
+                        , StdinReqType type
+                        , int supplierNid
+                        , int supplierPid );
+    int  ProcessStdIoData( int nid
+                         , int pid
+                         , StdIoType type
+                         , ssize_t count
+                         , char* data );
 
 private:
 
-    int  basePort_;
+    int  ptpCommPort_;
     char ptpHost_[MAX_PROCESSOR_NAME];
     char ptpPortBase_[MAX_PROCESSOR_NAME+100];
-    int  ptpSock_;
+    int *ptpClusterSocks_;
     int  seqNum_;
 
-    int  ReceiveSock(char *buf, int size, int sockFd);
-    int  SendSock(char *buf, int size, int sockFd);
-    int  SendToMon(const char *reqType, internal_msg_def *msg, int size, int receiveNode, const char *hostName);
+    bool IsTargetRemote( int targetNid );
+    int  SendToMon( const char* reqType
+                   , internal_msg_def* msg
+                   , ptpMsgInfo_t &myInfo
+                   , int receiveNode
+                   , const char* hostName);
     void SetLocalHost( void );
+    void SockClose( int pnid );
+    int  SockReceive(char* buf, int size, int sockFd);
+    int  SockSend( char* buf
+                 , int size
+                 , int sockFd);
 };
 
 #endif

@@ -456,6 +456,23 @@ private:
 };
 #endif
 
+#ifdef NAMESERVER_PROCESS
+class CExtNodeDownNsReq: public CExternalReq
+{
+public:
+    CExtNodeDownNsReq( reqQueueMsg_t msgType
+                     , int pid
+                     , int sockFd
+                     , struct message_def *msg );
+    virtual ~CExtNodeDownNsReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
 #ifndef NAMESERVER_PROCESS
 class CExtNameServerAddReq: public CExternalReq
 {
@@ -1801,6 +1818,7 @@ private:
       RQEI   CExtNewProcReq
       RqEB   CExtNewProcessNsReq
       RQEJ   CExtNodeDownReq
+      RqEJ   CExtNodeDownNsReq
       RQEK   CExtNodeInfoReq
       RQEK   CExtPNodeInfoReq
       RQEL   CExtNodeUpReq
@@ -1816,6 +1834,7 @@ private:
       RQEP   CExtProcInfoContReq
       RQEQ   CExtSetReq
       RQER   CExtShutdownReq
+      RqER   CExtShutdownNsReq
       RQES   CExtStartupReq
       RQET   CExtTmLeaderReq
       RQEV   CExtTmSyncReq
