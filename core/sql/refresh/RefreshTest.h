@@ -117,7 +117,7 @@ private:
 	CRUOptions options_;
 
 	//-- Output file , the journal can be initialized only after we 
-	// recieve the globals message that contains the output filename
+	// receive the globals message that contains the output filename
 	CRUJournal *pJournal_;
 	CUOFsTransManager transManager_;
 	
