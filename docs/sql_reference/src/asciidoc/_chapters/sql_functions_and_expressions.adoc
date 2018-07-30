@@ -4437,9 +4437,12 @@ interval value expression. It returns an exact numeric value.
 EXTRACT (datetime-field FROM extract-source)
 ```
 
-* `_datetime-field_` is:
+[[extract_function_syntax]]
+=== Syntax Descriptions of Extract Function
+
+* `_datetime-field_` and `_extract-source_` are:
 +
-.Details of `_datetime-field_`
+.Details of `_datetime-field_` and `_extract-source_`
 [cols="20%,40%,40%"]
 |===
 ^| `_datetime-filed_` 
@@ -4546,14 +4549,14 @@ a| * `_datetime-expression_` +
 
 | WEEK
 a| * `_datetime-expression_` +
-a| Week of year. +
+Week of year. +
 
-* The value 1 is returned for a datetime that occurs in the first 7 days of the year if the year begins on Sunday. +
+** The value 1 is returned for a datetime that occurs in the first 7 days of the year if the year begins on Sunday. +
 Otherwise, the value 1 is returned for a datetime that occurs in the partial week before the start of the first Sunday. 
 
-* The value *53* is returned for a datetime that occurs in the last full or partial week of the year. 
+** The value *53* is returned for a datetime that occurs in the last full or partial week of the year. 
 
-* The value *54* is returned for a datetime that occurs in the last full or partial week of the leap year if the leap year begins on Saturday.
+** The value *54* is returned for a datetime that occurs in the last full or partial week of the leap year if the leap year begins on Saturday.
 
 a| * `_datetime-expression_` 
 ** DATE
@@ -9707,7 +9710,9 @@ is an expression that gives a datetime value.
 
 * `_format-string_`
 +
-.Details of `_format-string_`
+is one of the following character string literals:
++
+.Details of `_format-string_` and `_character-expression_`
 [cols="3*.^"]
 |===
 ^| *Supported* `_character-expression_` 
