@@ -284,6 +284,11 @@ get libraries in schema t125sch2;
 get functions in schema t125sch2;
 get procedures in schema t125sch2;
 
+get procedures for user sql_user1;
+get procedures for user sql_user7;
+get functions for role t125_role1;
+get functions for role t125_adminrole;
+
 set schema t125sch3;
 get tables;
 get privileges on table games;
@@ -304,3 +309,7 @@ get procedures;
 get functions for library t125_l1;
 get procedures for library t125_l2;
 
+get procedures for user sql_user1;
+get procedures for user sql_user7;
+get functions for role t125_role1;
+get functions for role t125_adminrole;

@@ -85,7 +85,7 @@
 1083 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for constraint $0~ConstraintName failed; incompatible data exists in table.
 1084 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid default value was specified for column $0~ColumnName.
 1085 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
-1086 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+1086 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is not a $1~string1.
 1087 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1088 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1089 ZZZZZ 99999 BEGINNER MINOR DBADMIN The system generated column SYSKEY must be specified last or not specified at all in the index column list.

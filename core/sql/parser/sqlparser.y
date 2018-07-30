@@ -688,6 +688,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_FOR_REPEATABLE      /* FOR REPEATABLE */
 %token <tokval> TOK_FOR_SERIALIZABLE    /* FOR SERIALIZABLE */
 %token <tokval> TOK_FOR_STABLE          /* FOR STABLE */
+%token <tokval> TOK_FOR_USER          /* FOR GET .. FOR USER */
+%token <tokval> TOK_FOR_ROLE          /* FOR GET ... FOR ROLE */
+%token <tokval> TOK_FOR_LIBRARY          /* FOR GET ... FOR LIBRARY */
 %token <tokval> TOK_FOUND
 %token <tokval> TOK_FRACTION            /* Tandem extension non-reserved word */
 %token <tokval> TOK_FROM
@@ -1057,6 +1060,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SHOWDDL_COMPONENT
 %token <tokval> TOK_SHOWDDL_LIBRARY
 %token <tokval> TOK_SHOWDDL_SEQUENCE
+%token <tokval> TOK_SHOWDDL_USER
 %token <tokval> TOK_SHOWDDL             /* Tandem extension non-reserved word */
 %token <tokval> TOK_SYSDATE
 %token <tokval> TOK_SYSTIMESTAMP
@@ -2275,7 +2279,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>                optional_schema_clause
 %type <stringval>               optional_as_auth_clause
 %type <stringval> 		external_user_identifier
-%type <tokval>	 		user_or_role
+%type <tokval>	 		for_user_or_role
 %type <tokval>                  procedure_or_function
 %type <pStmtDDL>  		sql_schema_statement
 %type <pStmtDDL>  		sql_schema_definition_statement
@@ -15439,13 +15443,15 @@ exe_util_get_metadata_info :
 
             $$ = gmi;
           }
-        | TOK_GET get_info_aus_clause procedure_or_function TOK_FOR TOK_LIBRARY table_name
+        | TOK_GET get_info_aus_clause procedure_or_function TOK_FOR_LIBRARY table_name
+                  optional_no_header_and_match_pattern_clause
         {
            NAString aus("ALL");    
            NAString infoType;
            NAString iof("FOR");
            NAString objType("LIBRARY"); 
            CorrName cn("");
+
            // we want an empty get_info_aus_clause;  it is just there to make the
            // production symetric with other GET statements and please the parser
            if (*$2 != "NONE")
@@ -15457,24 +15463,34 @@ exe_util_get_metadata_info :
            else
              infoType = "TABLE_FUNCTIONS" ;
 
+           PtrPlaceHolder * pph = $6;
+           NAString * noHeader = (NAString *)pph->ptr1_;
+           NAString * pattern = (NAString *)pph->ptr2_;
+           NAString * fullyQualNames = (NAString *)pph->ptr3_;
+
            ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) 
                     ExeUtilGetMetadataInfo(
                              aus,            // NAString &
                              infoType,       // NAString & 
                              iof,            // NAString & 
                              objType,        // NAString & objectType
-                             *($6),          // CorrName &
+                             *($5),          // CorrName &
                              NULL,           // NAString * pattern
                              TRUE,           // return fully qualified names
                              FALSE,          // getVersion 
                              NULL,             // param1 -- the library name
                              PARSERHEAP ()); // ColHeap  * oHeap 
                      
-           //gmi->setNoHeader(TRUE);
+           if (noHeader)
+             gmi->setNoHeader(TRUE);
+           else if (NOT ((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
+                         (CmpCommon::getDefault(NVCI_PROCESS) == DF_ON)))
+             gmi->setNoHeader(TRUE);
+
            $$ = gmi;          
         } 
         | TOK_GET get_info_aus_clause obj_priv_identifier 
-          TOK_FOR user_or_role authorization_identifier  
+          for_user_or_role authorization_identifier  
           optional_no_header_and_match_pattern_clause
           {
             NAString aus(*$2);
@@ -15482,22 +15498,15 @@ exe_util_get_metadata_info :
             if (aus == "NONE")
               aus = "USER";
 
-            if ((*$3 != "SEQUENCES" ) && (*$3 != "INDEXES"   ) && 
-                (*$3 != "PRIVILEGES") && (*$3 != "PROCEDURES") && 
-                (*$3 != "FUNCTIONS" ) && (*$3 != "TABLE_MAPPING FUNCTIONS") && 
-                (*$3 != "SCHEMAS"   ) && (*$3 != "TABLES"  ) && 
-                (*$3 != "VIEWS"     ) && (*$3 != "USERS"     ) &&
-                (*$3 != "ROLES"     ) && (*$3 != "LIBRARIES"     )) YYERROR;
-
             NAString infoType(*$3);
 
             NAString iof("FOR");
 
             NAString objType("USER");
-            if ($5 == TOK_ROLE)
+            if ($4 == TOK_FOR_ROLE)
               objType = "ROLE";
-
-            PtrPlaceHolder * pph      = $7;
+  
+            PtrPlaceHolder * pph      = $6;
             NAString * noHeader       = (NAString *)pph->ptr1_;
             NAString * pattern        = (NAString *)pph->ptr2_;
             NABoolean  fullyQualNames = (pph->ptr3_) ? TRUE : FALSE; 
@@ -15508,7 +15517,7 @@ exe_util_get_metadata_info :
 
             ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) ExeUtilGetMetadataInfo
                     (aus, infoType, iof, objType, cnm, pattern, fullyQualNames, 
-                     getVersion, $6, PARSERHEAP ());
+                     getVersion, $5,  PARSERHEAP ());
 
             if (noHeader ||
                 (NOT ((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
@@ -15793,16 +15802,16 @@ exe_util_get_metadata_info :
            $$ = gmi;
          }
 
-user_or_role : TOK_USER | TOK_ROLE
+for_user_or_role : TOK_FOR_USER | TOK_FOR_ROLE
 
 optional_for_user_clause : empty { $$ = NULL; }
                          | TOK_FOR authorization_identifier
                          {
                            $$ = new(PARSERHEAP()) NAString(*$2);
                          }
-                         | TOK_FOR TOK_USER authorization_identifier
+                         | TOK_FOR_USER authorization_identifier
                          {
-                           $$ = new(PARSERHEAP()) NAString(*$3);
+                           $$ = new(PARSERHEAP()) NAString(*$2);
                          }
 
 optional_authid_clause : empty { $$ = NULL; }
@@ -22819,11 +22828,11 @@ show_statement:
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
 	     }
-          | TOK_SHOWDDL TOK_USER authorization_identifier 
+          | TOK_SHOWDDL_USER authorization_identifier 
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::SHOWDDL_),
+                  Describe(SQLTEXT(), COM_USER_CLASS, *$2, Describe::SHOWDDL_),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP()))); 
