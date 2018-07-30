@@ -2154,6 +2154,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>      		in_predicate
 %type <item>      		like_predicate
 %type <tokval>	  		not_like
+%type <item>	  		  overlaps_predicate 
 %type <item>      		quantified_predicate
 %type <item>      		search_condition
 %type <item>      		boolean_term
@@ -18964,6 +18965,7 @@ rel_subquery : '(' query_expression order_by_clause optional_limit_spec ')'
 /* type item */
 predicate : directed_comparison_predicate
         | key_comparison_predicate
+        | overlaps_predicate 
 	  | between_predicate predicate_selectivity_hint 
           {
               if ($2)
@@ -19429,6 +19431,24 @@ exists_predicate : TOK_EXISTS rel_subquery
 				{
 				  $$ = new (PARSERHEAP()) Exists($2);
 				}
+
+/* type item */
+overlaps_predicate : value_expression_list_paren TOK_OVERLAPS value_expression_list_paren
+        {
+          ItemExprList  exprList1($1, PARSERHEAP());
+          ItemExprList  exprList2($3, PARSERHEAP());
+          //Syntax Rules:
+          //  1) The degrees of <row value predicand 1> and <row value predicand 2> shall both be 2.
+          if ((exprList1.entries() != 2)
+              || (exprList1.entries() != exprList2.entries()))
+          {
+             *SqlParser_Diags << DgSqlCode(-4077)
+                              << DgString0("OVERLAPS");
+             YYERROR; //CHANGE TO YYABORT
+          }
+
+          $$ = new (PARSERHEAP()) Overlaps((*$1)[0], (*$1)[1], (*$3)[0], (*$3)[1]);
+        }
 
 /* type item */
 search_condition : boolean_term

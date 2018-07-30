@@ -109,6 +109,7 @@
 >>-- btsel26    key     SYSKEY                    yes      yes   large
 >>--                                                           numerics
 >>-- btsel27    key     SYSKEY                    yes       no
+>>-- btsel28    key     SYSKEY                    yes       no
 >>---------------------------------------------------------------------
 >>
 >>---------------------------------------------------------------------
@@ -857,4 +858,25 @@
 
 --- SQL operation complete.
 >>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel28
+>>---------------------------------------------------------------------
+>>
+>> CREATE TABLE btsel28 (
++> col_date date
++> , col_time time
++> , col_timestamp timestamp
++> , col_ytom interval year to month
++> , col_htos interval hour to second
++> )
++>
++>-- Defaults to SYSKEY
++> -- AUDIT
++> ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>
 >>LOG;

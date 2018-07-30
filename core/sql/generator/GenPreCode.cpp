@@ -7518,6 +7518,53 @@ ItemExpr * AggrMinMax::preCodeGen(Generator * generator)
   return this;
 } // AggrMinMax::preCodeGen()
 
+ItemExpr *Overlaps::preCodeGen(Generator *generator)
+{
+  if (nodeIsPreCodeGenned())
+    return getReplacementExpr();
+
+  for (Int32 i = 0; i < getArity(); ++i)
+  {
+    if (child(i)) 
+    {
+      const NAType &type = 
+        child(i)->getValueId().getType();
+      const DatetimeType *operand = (DatetimeType *)&type;
+
+      if (type.getTypeQualifier() == NA_DATETIME_TYPE
+            && (operand->getPrecision() == SQLDTCODE_DATE))
+      {
+        child(i) = new (generator->wHeap()) 
+          Cast(child(i), new (generator->wHeap()) 
+              SQLTimestamp(generator->wHeap(), TRUE));
+
+        child(i)->bindNode(generator->getBindWA());
+      }
+
+    }
+  }
+
+  ItemExpr *newExpr = 
+    generator->getExpGenerator()->createExprTree(
+        "(@A1<@A2 AND @A3<@A4 AND ((@A2>@A3 AND @A2<=@A4) OR (@A4>@A1 AND @A4<=@A2))) OR"
+        "(@A1<@A2 AND @A3>@A4 AND ((@A2>@A4 AND @A2<=@A3) OR (@A3>@A1 AND @A3<=@A2))) OR"
+        "(@A1<@A2 AND @A3=@A4 AND (@A3>=@A1 AND @A3<@A2)) OR"
+        "(@A1=@A2 AND @A3<@A4 AND (@A1>=@A3 AND @A1<@A4)) OR"
+        "(@A1=@A2 AND @A3>@A4 AND (@A1>=@A4 AND @A1<@A3)) OR"
+        "(@A1=@A2 AND @A3=@A4 AND  @A1=@A3) OR"
+        "(@A1>@A2 AND @A3>@A4 AND ((@A1>@A4 AND @A1<=@A3) OR (@A3>@A2 AND @A3<=@A1)))OR"
+        "(@A1>@A2 AND @A3=@A4 AND (@A3>=@A2 AND @A3<@A1)) OR"
+        "(@A1>@A2 AND @A3<@A4 AND ((@A1>@A3 AND @A1<=@A4) OR (@A4>@A2 AND @A4<=@A1)))"
+        , 0
+        , 4, child(0), child(1), child(2), child(3));
+
+  newExpr->bindNode(generator->getBindWA());
+  setReplacementExpr(newExpr->preCodeGen(generator));
+  markAsPreCodeGenned();
+  return getReplacementExpr();
+}
+
+
 ItemExpr * Between::preCodeGen(Generator * generator)
 {
   if (nodeIsPreCodeGenned())
