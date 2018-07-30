@@ -735,6 +735,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_INOUT
 %token <tokval> TOK_INSTR
 %token <tokval> TOK_NOT_IN
+%token <tokval> TOK_SYS_GUID
 %token <tokval> TOK_INCLUSIVE
 %token <tokval> TOK_INDICATOR
 %token <tokval> TOK_INITIALIZATION // MV 
@@ -8720,10 +8721,18 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                    ItemExpr * ie = new (PARSERHEAP()) UnixTimestamp($3);
                                    $$ = new (PARSERHEAP()) Cast(ie, type);
 				}
+    | TOK_SYS_GUID '(' ')'
+              {
+                  ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID_SYS_GUID, PARSERHEAP());
+                  ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLVarChar(PARSERHEAP() , 32, FALSE);
+                  $$ = new (PARSERHEAP()) Cast(conv,type);
+              }
     | TOK_UUID '(' ')'
               {
                   ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
-                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
                   NAType * type;
                   type = new (PARSERHEAP())
                        SQLVarChar(PARSERHEAP() , 36, FALSE);
@@ -8732,7 +8741,6 @@ datetime_value_function : TOK_CURDATE '(' ')'
     | TOK_UUID_SHORT '(' ')'
               {
                   ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_SHORT_ID, PARSERHEAP());
-                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
                   NAType * type;
                   type = new (PARSERHEAP())
                        SQLVarChar(PARSERHEAP() , 36, FALSE);
@@ -34541,6 +34549,7 @@ nonreserved_func_word:  TOK_ABS
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
                       | TOK_UUID
+                      | TOK_SYS_GUID
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK

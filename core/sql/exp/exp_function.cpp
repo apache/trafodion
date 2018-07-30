@@ -7195,6 +7195,12 @@ ex_expr::exp_return_type ExFunctionUniqueId::eval(char *op_data[],
     uuid_unparse(uu, str);
     str_cpy_all(result, str, 36);
   }
+  else if(getOperType() == ITM_UNIQUE_ID_SYS_GUID)
+  {
+    uuid_t uu;
+    uuid_generate( uu ); 
+    str_cpy_all(result, (char*)&uu,sizeof(uu));
+  }
   else //at present , it must be ITM_UUID_SHORT_ID
   { 
     Int64 uniqueUID;

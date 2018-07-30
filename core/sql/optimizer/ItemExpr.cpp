@@ -7627,6 +7627,8 @@ const NAString BuiltinFunction::getText() const
       return "unique_short_id";
     case ITM_UNIQUE_ID:
       return "unique_id";
+    case ITM_UNIQUE_ID_SYS_GUID:
+      return "sys_guid";
     case ITM_HBASE_COLUMN_LOOKUP:
       return "hbase_column_lookup";
     case ITM_HBASE_COLUMNS_DISPLAY:
