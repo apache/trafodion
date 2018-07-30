@@ -992,23 +992,24 @@ short ExSequenceTcb::work()
             break;
           }
           ex_assert(isUnboundedFollowing(),"");
- 
-	  if ( ! cluster_->flush(&rc_) ) {  // flush the buffers
+
+          ComDiagsArea *myDiags = NULL;
+          if (!cluster_->flush(myDiags, heap_)) {  // flush the buffers
             // if no errors this code path is not visited
-	    if ( rc_ ) 
+            if (myDiags) 
             { // some error
-              updateDiagsArea( rc_);
+              updateDiagsArea(myDiags);
               pstate->step_ = ExSeq_ERROR;
-	      break;
-	    }
-	    // not all the buffers are completely flushed. An I/O is pending
+              break;
+            }
+            // not all the buffers are completely flushed. An I/O is pending
             // maybe we cane remove in the future
-	    return WORK_OK; 
-	  }
+            return WORK_OK; 
+          }
 
-	  // At this point -- all the buffers were completely flushed
+          // At this point -- all the buffers were completely flushed
 
-	  OLAPBuffersFlushed_ = TRUE;
+          OLAPBuffersFlushed_ = TRUE;
 
           if (getPartitionEnd())
           {
@@ -1041,24 +1042,24 @@ short ExSequenceTcb::work()
         // 2. ExSeq_ERROR - If an error occurs
          case ExSeq_OVERFLOW_READ:
         {
+          assert(firstOLAPBufferFromOF_ &&
+                  isUnboundedFollowing() );
 
-            assert(firstOLAPBufferFromOF_ &&
-                    isUnboundedFollowing() );
-
-	    if ( ! cluster_->read(&rc_) ) {
-	      if ( rc_ ) { // some error
-                updateDiagsArea( rc_);
-		pstate->step_ = ExSeq_ERROR;
-		break;
-	      }
-	      // not all the buffers are completely read. An I/O is pending
-	      return WORK_OK;
-	    }
+          ComDiagsArea *myDiags = NULL;
+          if (!cluster_->read(myDiags, heap_)) {
+            if (myDiags) { // some error
+              updateDiagsArea(myDiags);
+              pstate->step_ = ExSeq_ERROR;
+              break;
+            }
+            // not all the buffers are completely read. An I/O is pending
+            return WORK_OK;
+          }
 
             numberOfRowsReturnedBeforeReadOF_ = 0;
             pstate->step_ = ExSeq_WORKING_RETURN;
-	}
-	break;
+        }
+        break;
 
         // ExSeq_DONE
         //
@@ -1477,6 +1478,23 @@ void ExSequenceTcb::updateDiagsArea(ex_queue_entry * centry)
       }
     }
 }
+
+void ExSequenceTcb::updateDiagsArea(ComDiagsArea *da)
+{
+    if (da) 
+    {
+      if (workAtp_->getDiagsArea())
+      {     
+        workAtp_->getDiagsArea()->mergeAfter(*da);
+      }
+      else
+      {
+        workAtp_->setDiagsArea(da);
+        da->incrRefCount();
+      }
+    }
+}
+
 void ExSequenceTcb::updateDiagsArea(  ExeErrorCode rc_)
 {                   
     ComDiagsArea *da = workAtp_->getDiagsArea();
@@ -1487,35 +1505,8 @@ void ExSequenceTcb::updateDiagsArea(  ExeErrorCode rc_)
     }
     if (!da->contains((Lng32) -rc_))
     {
-      char msg[512];
-      if(rc_ == EXE_SORT_ERROR)
-      {
-        char errorMsg[100];
-        Lng32 scratchError = 0;
-        Lng32 scratchSysError = 0;
-        Lng32 scratchSysErrorDetail = 0;
-
-        if(clusterDb_)
-        {
-          clusterDb_->getScratchErrorDetail(scratchError,
-                                 scratchSysError,
-                                 scratchSysErrorDetail,
-                                 errorMsg);
-
-          str_sprintf(msg, "Sequence Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
-              scratchError, scratchSysError, scratchSysErrorDetail, errorMsg);
-        }
-        else
-        {
-          str_sprintf(msg, "Sequence Scratch IO Error occurred." );
-        }
-      }
-      else
-      {
-        str_sprintf(msg, "Sequence Operator Error occurred."); 
-      }
-      
-      *da << DgString0(msg);
+      *da << DgSqlCode(-rc_);
+      *da << DgString0("Sequence Operator Error occurred.");
     }
 }
 //

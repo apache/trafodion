@@ -1611,6 +1611,49 @@ NABoolean Cluster::initScratch(ExeErrorCode * rc)
   return FALSE;
 }
 
+//Wrapper function on flush() to populate diags area.
+//Returns: FALSE - either error, or need to call again
+//         TRUE -- flush is done
+NABoolean Cluster::flush(ComDiagsArea *&da, CollHeap *heap) {
+  ExeErrorCode rc = EXE_OK;
+  
+  //Flush returning FALSE means either Error or IO_NOT_COMPLETE.
+  //if rc != EXE_OK then it is error. 
+  if(!flush(&rc)) {
+    if(rc != EXE_OK) {
+      da = ComDiagsArea::allocate(heap);
+      *da << DgSqlCode(-rc);
+      
+      char msg[512];
+      if(rc == EXE_SORT_ERROR) {
+        char errorMsg[100];
+        Lng32 scratchError = 0;
+        Lng32 scratchSysError = 0;
+        Lng32 scratchSysErrorDetail = 0;
+
+        if(clusterDb_) {
+          clusterDb_->getScratchErrorDetail(scratchError,
+                                 scratchSysError,
+                                 scratchSysErrorDetail,
+                                 errorMsg);
+
+          str_sprintf(msg, "Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
+              scratchError, scratchSysError, scratchSysErrorDetail, errorMsg);
+        }
+        else {
+          str_sprintf(msg, "Scratch IO Error occurred. clusterDb_ is NULL" );
+        }
+      } else {
+        str_sprintf(msg, "Cluster Flush Error occurred."); 
+      }
+      
+      *da << DgString0(msg);
+    }
+    return FALSE;
+  }
+  return TRUE;
+}
+
 // Flush the in-memory buffers of this cluster
 // Returns: FALSE - either error, or need to call again
 //          TRUE -- flush is done
@@ -2324,6 +2367,50 @@ NABoolean Cluster::read(ExeErrorCode * rc) {
     
   } // WHILE ( TRUE )    
 };
+
+//Wrapper function on read() to populate diags area.
+//Returns: FALSE - either error, or need to call again
+//       TRUE -- flush is done
+NABoolean Cluster::read(ComDiagsArea *&da, CollHeap *heap) {
+  ExeErrorCode rc = EXE_OK;
+
+  //read returning FALSE means either Error or IO_NOT_COMPLETE.
+  //if rc != EXE_OK then it is error. 
+  if(!read(&rc)) {
+    if(rc != EXE_OK) {
+       da = ComDiagsArea::allocate(heap);
+       *da << DgSqlCode(-rc);
+      
+      char msg[512];
+      if(rc == EXE_SORT_ERROR) {
+        char errorMsg[100];
+        Lng32 scratchError = 0;
+        Lng32 scratchSysError = 0;
+        Lng32 scratchSysErrorDetail = 0;
+  
+        if(clusterDb_) {
+          clusterDb_->getScratchErrorDetail(scratchError,
+                                 scratchSysError,
+                                 scratchSysErrorDetail,
+                                 errorMsg);
+  
+          str_sprintf(msg, "Cluster::read Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
+              scratchError, scratchSysError, scratchSysErrorDetail, errorMsg);
+        }
+        else {
+          str_sprintf(msg, "Cluster::read Scratch IO Error occurred. clusterDb_ is NULL" );
+        }
+      } else {
+        str_sprintf(msg, "Cluster::read Error occurred."); 
+      }
+      
+      *da << DgString0(msg);
+    }
+    return FALSE;
+  }
+  return TRUE;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
