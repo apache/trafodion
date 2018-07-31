@@ -682,7 +682,7 @@ export SQ_STARTUP=r
 #   AGENT  - monitor process runs in agent mode versus MPI collective
 #
 # Uncomment the next environment variable
-export SQ_MON_CREATOR=MPIRUN
+#export SQ_MON_CREATOR=MPIRUN
 if [[ "$SQ_MON_CREATOR" == "MPIRUN" ]]; then
   export SQ_MON_RUN_MODE=${SQ_MON_RUN_MODE:-AGENT}
   export MONITOR_COMM_PORT=${MONITOR_COMM_PORT:-23390}
