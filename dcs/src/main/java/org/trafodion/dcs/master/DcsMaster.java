@@ -54,6 +54,7 @@ import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.hadoop.util.StringUtils;
 
 import org.trafodion.dcs.Constants;
+import org.trafodion.dcs.util.Bytes;
 import org.trafodion.dcs.util.DcsConfiguration;
 import org.trafodion.dcs.util.DcsNetworkConfiguration;
 import org.trafodion.dcs.util.InfoServer;
@@ -85,6 +86,7 @@ public class DcsMaster implements Runnable {
     private JVMShutdownHook jvmShutdownHook;
     private static String trafodionHome;
     private CountDownLatch isLeader = new CountDownLatch(1);
+    private int epoch = 1;
 
     private MasterLeaderElection mle = null;
 
@@ -162,9 +164,11 @@ public class DcsMaster implements Runnable {
             stat = zkc.exists(parentZnode
                     + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER, false);
             if (stat == null) {
+                byte[] data = Bytes.toBytes(Long.toString(epoch));
+
                 zkc.create(parentZnode
                         + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER,
-                        new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                        data, ZooDefs.Ids.OPEN_ACL_UNSAFE,
                         CreateMode.PERSISTENT);
             }
             stat = zkc.exists(parentZnode
