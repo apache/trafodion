@@ -2128,6 +2128,7 @@ private:
     GET_PROCESS_STATS_ENTRY_,
     FORMAT_AND_RETURN_PROCESS_STATS_,
     GET_HBASE_STATS_ENTRY_,
+    GET_SE_STATS_ENTRY_ = GET_HBASE_STATS_ENTRY_,
     DISPLAY_HBASE_STATS_HEADING_,
     FORMAT_AND_RETURN_HBASE_STATS_,
     GET_HIVE_STATS_ENTRY_,
@@ -2355,6 +2356,13 @@ protected:
   Lng32 getUsedObjects(Queue * infoList,
                       NABoolean isShorthandView,
                       char* &viewName, Lng32 &len);
+  void setReturnRowCount( Lng32 n) { returnRowCount_ = n; }
+
+  Lng32 getReturnRowCount() {return returnRowCount_;}
+
+  void incReturnRowCount() {returnRowCount_++; }
+
+  Lng32 returnRowCount_;
 
 private:
 
@@ -2381,6 +2389,7 @@ private:
     const char *catName,
     const char *schName,
     const char *objName);
+
 
 };
 
@@ -2804,6 +2813,8 @@ public:
   virtual short work();
   virtual ~ExExeUtilLobExtractTcb();
   virtual void freeResources();
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+                                            ComTdb *tdb);
   
   ExExeUtilLobExtractTdb & lobTdb() const
   {
@@ -2913,6 +2924,8 @@ public:
   virtual short work();
   virtual ~ExExeUtilLobUpdateTcb();
   virtual void freeResources();
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+                                            ComTdb *tdb);
   ExExeUtilLobUpdateTdb & lobTdb() const
   {
     return (ExExeUtilLobUpdateTdb &) tdb;
@@ -2989,6 +3002,8 @@ public:
 		       const ex_tcb * child_tcb, 
 		       ex_globals * glob = 0);
   
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+                                            ComTdb *tdb);
   virtual short work();
 
  private:

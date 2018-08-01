@@ -1072,6 +1072,9 @@ Catalogs
 TRAFODION
 HIVE
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- external and hive table mismatch on hive 'string' datatype

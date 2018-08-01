@@ -229,8 +229,8 @@ bool CExtOpenReq::prepare()
         return false;
     }
 
-    CProcess * openerProcess;
-    CProcess * openedProcess;
+    CProcess * openerProcess = NULL;
+    CProcess * openedProcess = NULL;
 
     // Get process object for opener process
     if ( msg_->u.request.u.open.process_name[0] )
@@ -263,9 +263,12 @@ bool CExtOpenReq::prepare()
     // Get process object for process to open
     if ( msg_->u.request.u.open.target_process_name[0] ) 
     { // find by name (check node state, don't check process state, backup is NOT Ok)
-        openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_process_name
-                                         , msg_->u.request.u.open.target_verifier
-                                         , true, false, false );
+        if (msg_->u.request.u.open.target_process_name[0] == '$' )
+        {
+            openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_process_name
+                                             , msg_->u.request.u.open.target_verifier
+                                             , true, false, false );
+        }
     }
     else
     { // find by pid (check node state, don't check process state, backup is Ok)
@@ -291,8 +294,11 @@ bool CExtOpenReq::prepare()
                                 , method_name, __LINE__
                                 , target_process_name.c_str()
                                 , target_verifier );
-                openedProcess = Nodes->CloneProcessNs( target_process_name.c_str()
-                                                     , target_verifier );
+                if (msg_->u.request.u.open.target_process_name[0] == '$' )
+                {
+                    openedProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                         , target_verifier );
+                }
             }     
             else
             { // Name Server find by nid,pid:verifier

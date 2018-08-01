@@ -77,7 +77,7 @@ extern int ms_transid_reinstate(MS_Mon_Transid_Type, MS_Mon_Transseq_Type);
 // short LobServerFNum;
 SB_Phandle_Type serverPhandle;
 
-ExLob::ExLob(NAHeap * heap) :
+ExLob::ExLob(NAHeap * heap, ExHdfsScanStats *hdfsAccessStats) :
     lobDataFile_(heap),
     storage_(Lob_Invalid_Storage),
     lobStorageLocation_(string()),
@@ -85,6 +85,7 @@ ExLob::ExLob(NAHeap * heap) :
     fs_(NULL),
     fdData_(NULL),
     openFlags_(0),
+    stats_(hdfsAccessStats),
     lobTrace_(FALSE),
     useLibHdfs_(FALSE),
     hdfsClient_(NULL)    
@@ -149,8 +150,6 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
       storage_ = storage;
     }
 
-  stats_.init(); 
-
   hdfsServer_ = hdfsServer;
   hdfsPort_ = hdfsPort;
   // lobLocation_ = lobLocation;
@@ -165,7 +164,7 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
      hdfsClient_ = NULL;
   }
   else {
-     hdfsClient_ = HdfsClient::newInstance(lobGlobalHeap_, NULL, hdfsClientRetcode);
+     hdfsClient_ = HdfsClient::newInstance(lobGlobalHeap_, stats_, hdfsClientRetcode);
      fs_ = NULL;
      if (hdfsClient_ == NULL)
         return LOB_HDFS_CONNECT_ERROR;
@@ -181,7 +180,6 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
       nsecs += NUM_NSECS_IN_SEC;
     }
   totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-  stats_.hdfsConnectionTime += totalnsecs;
    
   if (! useLibHdfs_) {
      if (mode == EX_LOB_CREATE) {
@@ -2192,7 +2190,6 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
         nsecs += NUM_NSECS_IN_SEC;
       }
       Int64 totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-      stats_.CumulativeReadTime += totalnsecs;
       } // useLibHdfs
       if (bytesRead == -1) {
          return LOB_DATA_READ_ERROR;
@@ -2603,20 +2600,19 @@ Ex_Lob_Error ExLob::closeFile()
 
 Ex_Lob_Error ExLob::readStats(char *statsBuffer)
 {
-    memcpy(statsBuffer, (char *)&stats_, sizeof(stats_));
+    stats_ = (ExHdfsScanStats *)statsBuffer;
     return LOB_OPER_OK;
 }
 
 Ex_Lob_Error ExLob::initStats()
 {
-    stats_.init();
     return LOB_OPER_OK;
 }
 //Main driver of any LOB related operation 
 
 Ex_Lob_Error ExLobsOper (
 			 char        *lobName,          // lob name
-
+                         ExHdfsScanStats *hdfsAccessStats,
 			 char        *handleIn,         // input handle (for cli calls)
 			 Int32       handleInLen,       // input handle len
 
@@ -2709,7 +2705,7 @@ Ex_Lob_Error ExLobsOper (
 
       if (it == lobMap->end())
 	{
-	  lobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap());
+	  lobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap(), hdfsAccessStats);
 	  if (lobPtr == NULL) 
 	    return LOB_ALLOC_ERROR;
 
@@ -2802,7 +2798,7 @@ Ex_Lob_Error ExLobsOper (
 
         if (it2 == lobMap->end())
 	{
-	  srcLobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap());
+	  srcLobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap(), hdfsAccessStats);
 	  if (srcLobPtr == NULL) 
 	    return LOB_ALLOC_ERROR;
 
@@ -3019,11 +3015,6 @@ Ex_Lob_Error ExLobsOper (
         lobDebugInfo("purgeLob failed ",err,__LINE__,lobGlobals->lobTrace_);
       break;
 
-    case Lob_Stats:
-      err = lobPtr->readStats(source);
-      lobPtr->initStats(); // because file may remain open across cursors
-      break;
-
     case Lob_Empty_Directory:    
       err = lobPtr->emptyDirectory(lobStorageLocation, lobGlobals);
 
@@ -3090,7 +3081,6 @@ if (!lobGlobals->isHive() )
 
   */
   clock_gettime(CLOCK_MONOTONIC, &endTime);
-
   secs = endTime.tv_sec - startTime.tv_sec;
   nsecs = endTime.tv_nsec - startTime.tv_nsec;
   if (nsecs < 0) {
@@ -3098,9 +3088,10 @@ if (!lobGlobals->isHive() )
     nsecs += NUM_NSECS_IN_SEC;
   }
   totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
+/*
   if (lobPtr && lobPtr->getStats())
     lobPtr->getStats()->hdfsAccessLayerTime += totalnsecs; 
-       
+*/
   return err;
 }
 
@@ -3209,15 +3200,15 @@ Ex_Lob_Error ExLob::readDataCursorSimple(const char *file, char *tgt, Int64 tgtS
         buf->bytesUsed_ += bytesToCopy;
         buf->bytesRemaining_ -= bytesToCopy;
       }
-      stats_.bytesPrefetched += bytesToCopy;
+      //stats_.bytesPrefetched += bytesToCopy;
       operLen += bytesToCopy;
     } 
-
+/*
     // update stats
     stats_.bytesRead += operLen;
     stats_.bytesToRead += tgtSize;
     stats_.numReadReqs++;
-
+*/
     return LOB_OPER_OK;
 }
 
@@ -3262,7 +3253,7 @@ Ex_Lob_Error ExLob::closeDataCursorSimple(const char *fileName, ExLobGlobals *lo
       nsecs += NUM_NSECS_IN_SEC;
     }
     Int64 totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-    stats_.cursorElapsedTime += totalnsecs;
+    //stats_.cursorElapsedTime += totalnsecs;
 
     return LOB_OPER_OK;
 }
@@ -3317,7 +3308,7 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
           cursor->lock_.unlock();
           buf = new (getHeap()) ExLobCursorBuffer();
           buf->data_ = (char *) (getHeap())->allocateMemory( cursor->bufMaxSize_);
-          lobPtr->stats_.buffersUsed++;
+          //lobPtr->stats_.buffersUsed++;
         }
         size = min(cursor->bufMaxSize_, (cursor->maxBytes_ - cursor->bytesRead_));
         if (buf->data_) {
@@ -3418,7 +3409,7 @@ Ex_Lob_Error ExLob::readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cur
       // bytesRead = hdfsPread(fs_, fdData_, offset, tgt, bytesToCopy);
       bytesRead = hdfsRead(fs_, fdData_, tgt, bytesToCopy);
 
-      stats_.numHdfsReqs++;
+      //stats_.numHdfsReqs++;
 
       if (bytesRead == -1) {
          return LOB_DATA_READ_ERROR;
@@ -3441,10 +3432,11 @@ Ex_Lob_Error ExLob::readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cur
    }
 
    Int64 totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-   stats_.CumulativeReadTime += totalnsecs;
+   //stats_.CumulativeReadTime += totalnsecs;
 
    return LOB_OPER_OK;
 }
+
 void ExLobCursor::emptyPrefetchList(ExLobGlobals *lobGlobals)
 {
     ExLobCursor::bufferList_t::iterator c_it;

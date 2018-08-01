@@ -4437,35 +4437,670 @@ interval value expression. It returns an exact numeric value.
 EXTRACT (datetime-field FROM extract-source)
 ```
 
-* `_datetime-field_` is:
+[[extract_function_syntax]]
+=== Syntax Descriptions of Extract Function
+
+* `_datetime-field_` and `_extract-source_` are:
 +
-YEAR \| MONTH \| DAY \| HOUR \| MINUTE \| SECOND
+.Details of `_datetime-field_` and `_extract-source_`
+[cols="20%,40%,40%"]
+|===
+^| `_datetime-filed_` 
+^| *Description* 
+^| *Supported* `_extract-source_` 
+
+a| CENTURY 
+| Century.
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+
+| DAY
+a| * `_datetime-expression_` +
+Day.
+* `_interval-expression_` +
+Number of day(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_`
+** DATE 
+** TIMESTAMP 
+
+| DECADE
+a| * `_datetime-expression_` +
+Year field divided by 10.
+* `_interval-expression_` +
+Number of decade(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+* `_interval-expression_` 
+
+| DOW
+| Day of week (1-7), where 1 is Sunday, 6 is Saturday. +
+This is not configurable.
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+| DOY
+| Day of year (1-366).
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+
+| EPOCH
+a| * `_datetime-expression_` +
+Second(s) since 1970-01-01 00:00:00. + 
+The value is negative if `_datetime-expression_` precedes 1970-01-01 00:00:00.
+* `_interval-expression_` +
+Number of second(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP
+* `_interval-expression_`
+
+| HOUR
+a| * `_datetime-expression_` +
+Hour (0-23).
+* `_interval-expression_` +
+Number of hour(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_` +
+** TIME
+** TIMESTAMP
+* `_interval-expression_`
+
+| MINUTE
+a| * `_datetime-expression_` +
+Minute (0-59).
+* `_interval-expression_` +
+Number of minute(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_` 
+** TIME
+** TIMESTAMP
+* `_interval-expression_`
+
+| MONTH
+a| * `_datetime-expression_` +
+Month (1-12).
+* `_interval-expression_` +
+Number of month(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP
+* `_interval-expression_`
+
+| QUARTER
+a| * `_datetime-expression_` +
+Quarter of year (1-4).
+* `_interval-expression_` +
+Number of quarter(s) in the `_interval-expression_`. 
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP
+* `_interval-expression_`
+
+| SECOND
+a| * `_datetime-expression_` +
+Second (0-59).
+* `_interval-expression_` +
+Number of second(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_` +
+** TIME
+** TIMESTAMP
+* `_interval-expression_` +
+
+| WEEK
+a| * `_datetime-expression_` +
+Week of year. +
+
+** The value 1 is returned for a datetime that occurs in the first 7 days of the year if the year begins on Sunday. +
+Otherwise, the value 1 is returned for a datetime that occurs in the partial week before the start of the first Sunday. 
+
+** The value *53* is returned for a datetime that occurs in the last full or partial week of the year. 
+
+** The value *54* is returned for a datetime that occurs in the last full or partial week of the leap year if the leap year begins on Saturday.
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP
+
+| WOM
+a| * `_datetime-expression_` +
+Week of month.
+a| * `_datetime-expression_` +
+** DATE
+** TIMESTAMP 
+
+| YEAR
+a| * `_datetime-expression_` +
+Year (0001-9999).
+* `_interval-expression_` +
+Number of year(s) in the `_interval-expression_`. +
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP
+* `_interval-expression_`
+|===
 
 * `_extract-source_` is:
 +
-datetime-expression \| interval-expression
+  datetime-expression 
+| interval-expression
 
-See <<datetime_value_expressions,Datetime Value Expressions>> and
++
+For more information, see <<datetime_value_expressions,Datetime Value Expressions>> and 
 <<interval_value_expressions,Interval Value Expressions>>.
 
 [[examples_of_extract]]
 === Examples of EXTRACT
 
-* Extract the year from a DATE value:
-+
-```
-EXTRACT (YEAR FROM DATE '2007-09-28')
-```
-+
-The result is 2007.
+[[examples_of_extract_century]]
+==== Examples of EXTRACT (CENTURY)
 
-* Extract the year from an INTERVAL value:
+* This example extracts the century from `_DATE_`.
 +
 ```
-EXTRACT (YEAR FROM INTERVAL '01-09' YEAR TO MONTH)
+SQL>SELECT EXTRACT (CENTURY FROM DATE '0001-02-03') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected.
 ```
+
+* This example extracts the century from `_TIMESTAMP_`.
 +
-The result is 1.
+```
+SQL>SELECT EXTRACT (CENTURY FROM TIMESTAMP '9899-12-31 23:59:59') FROM DUAL;
+
+(EXPR)
+------
+    99
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_day]]
+==== Examples of EXTRACT (DAY)
+
+* This example extracts the day from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (DAY FROM DATE '2019-02-01') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the day from `_TIMESTAMP_`.
++
+```
+SELECT EXTRACT (DAY FROM TIMESTAMP '2019-12-31 11:43:00') FROM DUAL;
+
+(EXPR)
+------
+    31
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the number of days from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT (DAY FROM INTERVAL '1' DAY - INTERVAL '99' DAY) FROM DUAL;
+
+(EXPR)
+------
+   -98
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_decade]]
+==== Examples of EXTRACT (DECADE)
+
+* This example extracts the decade from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (DECADE FROM DATE '0010-02-03') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the decade from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (DECADE FROM TIMESTAMP '9999-12-31 23:59:59') FROM DUAL;
+
+(EXPR)
+------
+   999
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the number of decades from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT (DECADE FROM INTERVAL '1'YEAR - INTERVAL '99'YEAR) FROM DUAL;
+
+(EXPR)
+------
+    -9
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_dow]]
+==== Examples of EXTRACT (DOW)
+
+* This example extracts the DOW from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (DOW FROM DATE '2017-12-31') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the DOW from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (DOW FROM TIMESTAMP '2018-01-01 23:59:59') FROM DUAL;
+
+(EXPR)
+------
+     2
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_doy]]
+==== Examples of EXTRACT (DOY)
+
+* This example extracts the DOY from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (DOY FROM DATE '2019-01-01') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the DOY from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (DOY FROM TIMESTAMP '2020-12-31 11:36:28') FROM DUAL;
+
+(EXPR)
+------
+   366
+
+--- 1 row(s) selected. 
+```
+
+[[examples_of_extract_epoch]]
+==== Examples of EXTRACT (EPOCH)
+
+* This example extracts the seconds from `_DATE_` since 1970-01-01 00:00:00.
++
+```
+SQL>SELECT EXTRACT (EPOCH FROM DATE '1970-01-02') FROM DUAL;
+
+(EXPR)
+------------
+       86400
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the seconds from `_TIMESTAMP_` since 1970-01-01 00:00:00.
++
+```
+SQL>SELECT EXTRACT (EPOCH FROM TIMESTAMP '1969-12-31 23:59:59') FROM DUAL;
+
+(EXPR)
+------------
+          -1
+
+--- 1 row(s) selected. 
+```
+
+* This is the first example to extract the seconds from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT (EPOCH FROM INTERVAL '3' HOUR) FROM DUAL;
+
+(EXPR)
+------------
+       10800
+
+--- 1 row(s) selected.
+```
+
+* This is the second example to extract the seconds from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT (EPOCH FROM INTERVAL '1' MONTH - INTERVAL '2' YEAR) FROM DUAL;
+
+(EXPR)
+------------
+   -60069600
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_hour]]
+==== Examples of EXTRACT (HOUR)
+
+* This example extracts the hour from `_TIME_`.
++
+```
+SQL>SELECT EXTRACT (HOUR FROM TIME '00:01:02') FROM DUAL;
+
+(EXPR)
+------
+     0
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the hour from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (HOUR FROM TIMESTAMP '1990-11-02 23:16:26') FROM DUAL;
+
+(EXPR)
+------
+    23
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the number of hours from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT (HOUR FROM INTERVAL '1' HOUR - INTERVAL '99' HOUR) FROM DUAL;
+
+(EXPR)
+------
+   -98
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_minute]]
+==== Examples of EXTRACT (MINUTE)
+
+* This example extracts the minute from `_TIME_`.
++
+```
+SQL>SELECT EXTRACT (MINUTE FROM TIME '01:00:02') FROM DUAL;
+
+(EXPR)
+------
+     0
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the minute from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (MINUTE FROM TIMESTAMP '1990-11-02 23:59:16') FROM DUAL;
+
+(EXPR)
+------
+    59
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the number of minutes from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT(MINUTE FROM INTERVAL '1' MINUTE - INTERVAL '99' MINUTE) FROM DUAL;
+
+(EXPR)
+------
+   -98
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_month]]
+==== Examples of EXTRACT (MONTH)
+
+* This example extracts the month from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (MONTH FROM DATE '2019-01-02') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the month from `_TIME_`.
++
+```
+SQL>SELECT EXTRACT (MONTH FROM TIMESTAMP '2019-12-31 23:59:59') FROM DUAL;
+
+(EXPR)
+------
+    12
+
+--- 1 row(s) selected. 
+```
+
+* This example extracts the number of months from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT(MONTH FROM INTERVAL '1' MONTH - INTERVAL '99' MONTH) FROM DUAL;
+
+(EXPR)
+------
+   -98
+
+--- 1 row(s) selected. 
+```
+
+[[examples_of_extract_quarter]]
+==== Examples of EXTRACT (QUARTER)
+
+* This example extracts the quarter from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (QUARTER FROM DATE '2019-01-01') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the quarter from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (QUARTER FROM TIMESTAMP '1990-11-02 08:16:26') FROM DUAL;
+
+(EXPR)
+------
+     4
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the number of quarters from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT (QUARTER FROM INTERVAL '97' MONTH) FROM DUAL;
+
+(EXPR)
+------
+    33
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_second]]
+==== Examples of EXTRACT (SECOND)
+
+* This example extracts the second from `_TIME_`.
++
+```
+SQL>SELECT EXTRACT (SECOND FROM TIME '01:02:00') FROM DUAL;
+
+(EXPR)
+------
+     0
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the second from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (SECOND FROM TIMESTAMP '1990-11-02 23:16:59') FROM DUAL;
+
+(EXPR)
+------
+    59
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the number of seconds from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT(SECOND FROM INTERVAL '1' SECOND - INTERVAL '99' SECOND) FROM DUAL;
+
+(EXPR)
+-----------
+ -98.000000
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_week]]
+==== Examples of EXTRACT (WEEK)
+
+* This example extracts the week from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (WEEK FROM DATE '2019-01-01') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the week from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (WEEK FROM TIMESTAMP '2000-12-31 23:59:59') FROM DUAL;
+
+(EXPR)
+------
+    54
+
+--- 1 row(s) selected. 
+```
+
+[[examples_of_extract_wom]]
+==== Examples of EXTRACT (WOM)
+
+* This example extracts the WOM from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (WOM FROM DATE '2019-01-01') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the WOM from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (WOM FROM TIMESTAMP '2020-02-29 01:02:30') FROM DUAL;
+
+(EXPR)
+------
+     5
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_extract_year]]
+==== Examples of EXTRACT (YEAR)
+
+* This example extracts the year from `_DATE_`.
++
+```
+SQL>SELECT EXTRACT (YEAR FROM DATE '0001-02-03') FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the year from `_TIMESTAMP_`.
++
+```
+SQL>SELECT EXTRACT (YEAR FROM TIMESTAMP '9999-12-31 23:59:59') FROM DUAL;
+
+(EXPR)
+------
+  9999
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the year from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT (YEAR FROM INTERVAL '01-09' YEAR TO MONTH) FROM DUAL;
+
+(EXPR)
+------
+     1
+
+--- 1 row(s) selected.
+```
+
+* This example extracts the number of years from `_interval-expression_`.
++
+```
+SQL>SELECT EXTRACT(YEAR FROM INTERVAL '1' YEAR - INTERVAL '99' YEAR) FROM DUAL;
+
+(EXPR)
+------
+   -98
+
+--- 1 row(s) selected.
+```
 
 <<<
 [[filetolob_function]]
@@ -7069,7 +7704,7 @@ GROUP BY ROLLUP (delivery_year, region, product);
 image::grouping-by-three-rollup-columns.jpg[700,700]
 
 +
-** First-level: the rows marked in *blue* are the total revenue for each year (_2016_ and _2017_), each region (_A_ and _B_) and each product (_Dress_ and _Pullover_), they are caculated by GROUP BY instead of ROLLUP.
+** First-level: the rows marked in *blue* are the total revenue for each year (_2016_ and _2017_), each region (_A_ and _B_) and each product (_Dress_ and _Pullover_), they are calculated by GROUP BY instead of ROLLUP.
 
 +
 ** Second-level: the rows marked in *red* provide the total revenue for the given _delivery_year_ and _region_ by _product_.
@@ -8267,10 +8902,10 @@ STDDEV (PARTCOST * QTY_ORDERED)
 STDDEV is evaluated after eliminating all nulls from the set. If the
 result table is empty, STDDEV returns NULL.
 
-[[float54_and_double_precision_data]]
-==== FLOAT(54) and DOUBLE PRECISION Data
+[[float52_and_double_precision_data]]
+==== FLOAT(52) and DOUBLE PRECISION Data
 
-Avoid using large FLOAT(54) or DOUBLE PRECISION values as arguments to
+Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 STDDEV. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during the computation
 of STDDEV(x), a numeric overflow occurs.
 
@@ -9066,6 +9701,9 @@ second argument describes the format of the character value.
 TO_CHAR(character-expression [,format-string])
 ```
 
+[[to_char_syntax]]
+=== Syntax Description of TO_CHAR
+
 * `_character-expression_`
 +
 is an expression that gives a datetime value.
@@ -9073,6 +9711,212 @@ is an expression that gives a datetime value.
 * `_format-string_`
 +
 is one of the following character string literals:
++
+.Details of `_format-string_` and `_character-expression_`
+[cols="3*.^"]
+|===
+^| *Supported* `_character-expression_` 
+^| *`_format-string_`* 
+^| *Description* 
+
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+| 'CC'
+| Two-digit century.
+
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+| 'D'
+| Day of week (1-7), where 1 is Sunday, 6 is Saturday. +
+This is not configurable.
+
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+| 'DD'
+| Day of month (01-31).
+
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+| 'DDD'
+| Day of year (001-366).
+
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+| 'DY'
+a| Name of day, which is a three-letter abbreviation for the day in uppercase. +
+
+The following values are returned: +
+
+* MON +
+
+* TUE +
+
+* WED +
+
+* THU +
+
+* FRI +
+
+* SAT +
+
+* SUN
+
+a| * `_datetime-expression_` 
+** DATE 
+** TIMESTAMP 
+| 'DAY'
+a| Name of day, which is full uppercase day name padded with blanks to the length of 9 characters. +
+
+The following values are returned: +
+
+* MONDAY +
+
+* TUESDAY +
+
+* WEDSDAY +
+
+* THURSDAY +
+
+* FRIDAY +
+
+* SATURDAY +
+
+* SUNDAY
+
+a| * `_datetime-expression_` 
+** TIME
+** TIMESTAMP 
+| 'HH'
+| Hour of day in 24-hour format (00-23). +
+'HH' behaves the same as 'HH24'.
+
+a| * `_datetime-expression_` 
+** TIME
+** TIMESTAMP 
+| 'HH12'
+| Hour of day in 12-hour format (01-12).
+
+a| * `_datetime-expression_` 
+** TIME
+** TIMESTAMP 
+| 'HH24'
+| Hour of day in 24-hour format (00-23). +
+'HH24' behaves the same as 'HH'.
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'J'
+| Julian date (that is, number of days since January 1, 4713 BC).
+
+a| * `_datetime-expression_` 
+** TIME
+** TIMESTAMP 
+| 'MI'
+| Minute (00-59).
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'MM'
+| Month (01-12).
+
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'MON'
+a| Month, which is a three-letter abbreviation for the month in uppercase. +
+
+The following values are returned: +
+
+* JAN +
+
+* FEB +
+
+* MAR +
+
+* APR +
+
+* MAY +
+
+* JUN +
+
+* JUL +
+
+* AUG +
+
+* SEP +
+
+* OCT +
+
+* NOV +
+
+* DEC
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'Q'
+| Quarter (1-4).
+
+a| * `_datetime-expression_` 
+** TIME
+** TIMESTAMP 
+| 'SS'
+| Second (00-59).
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'W'
+| Week of month.
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'WW'
+a| Week of year. +
+
+* The value 1 is returned for a datetime that occurs in the first 7 days of the year if the year begins on Sunday. +
+Otherwise, the value 1 is returned for a datetime that occurs in the partial week before the start of the first Sunday. 
+
+* The value *53* is returned for a datetime that occurs in the last full or partial week of the year. 
+
+* The value *54* is returned for a datetime that occurs in the last full or partial week of the leap year where begins on Saturday.
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'Y'
+| Last digit of year (0-9).
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'YY'
+| Last two digits of year (00-99).
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'YYY'
+| Last three digits of year (000-999).
+
+a| * `_datetime-expression_` 
+** DATE
+** TIMESTAMP 
+| 'YYYY'
+| Four-digit year (0001-9999).
+|===
+
++
+Besides the `_format-string_` listed above, the following character string literals are also valid:
 
 ** 'YYYY-MM-DD'
 ** 'MM/DD/YYYY'
@@ -9098,29 +9942,605 @@ is one of the following character string literals:
 ** 'MM/DD/YYYY HH24:MI:SS'
 ** 'DD-MON-YYYY HH:MI:SS'
 ** 'MONTH DD, YYYY, HH:MI'
-** 'DD.MM.YYYY HH24.MI.SS'
+** 'DD.MM.YYYY HH24.MI.SS' 
 
-Here, YYYY refers to a 4-digit year. YY refers to a two-digit year. MM refers to a two-digit month. MON refers to
-a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
-'OCT', 'NOV' or 'DEC'). MONTH refers to the month spelled out. In the output value, the month abbreviation or month
++
+Here:
+
+*** YYYY refers to a four-digit year. 
+*** YY refers to a two-digit year. 
+*** MM refers to a two-digit month. 
+*** MON refers to a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
+'OCT', 'NOV' or 'DEC'). 
+*** MONTH refers to the month spelled out. In the output value, the month abbreviation or month
 will appear in upper case.
-
-HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
-
-If the _format-string_ argument is omitted, 'YYYY-MM-DD' is used as the
+*** HH and HH24 refer to a two-digit hour field. 
+*** MI refers to a two-digit minutes field. 
+*** SS refers to a two-digit seconds field.
+*** If the `_format-string_` argument is omitted, 'YYYY-MM-DD' is used as the
 default for date and timestamp values, and 'HH:MI:SS' is used for time values.
 
 [[considerations_for_to_char]]
 === Considerations for TO_CHAR
 
-If the _format-string_ contains only hour, minute or seconds fields, the input data type must be time or timestamp.
+If the `_format-string_` contains only hour, minute or seconds fields, the input data type must be time or timestamp.
 
-If the _format-string_ contains only year, month or day fields, the input data type must be date or timestamp.
+If the `_format-string_` contains only year, month or day fields, the input data type must be date or timestamp.
 
-If the _format-string_ contains all fields, and the input data type is date, the hour, minute and second fields in the result will be filled with zeroes.
+If the `_format-string_` contains all fields, and the input data type is date, the hour, minute and second fields in the result will be filled with zeroes.
 
 [[examples_of_to_char]]
 === Examples of TO_CHAR
+
+[[examples_of_to_char_cc]]
+==== Examples of TO_CHAR (CC)
+
+* This example converts the `_DATE_` value to the character value of century.
++
+```
+SQL>SELECT TO_CHAR (DATE '0001-11-02','CC') FROM DUAL;
+
+(EXPR)
+------
+01    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of century.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '9899-12-31 23:59:59','CC') FROM DUAL;
+
+(EXPR)
+------
+99    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_d]]
+==== Examples of TO_CHAR (D)
+
+* This example converts the `_DATE_` value to the character value of day of week.
++
+```
+SQL>SELECT TO_CHAR (DATE '2018-01-01','D') FROM DUAL;
+
+(EXPR)
+------
+2     
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of day of week.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2018-04-01 23:59:59','D') FROM DUAL;
+
+(EXPR)
+------
+1     
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_dd]]
+==== Examples of TO_CHAR (DD)
+
+* This example converts the `_DATE_` value to the character value of day of month.
++
+```
+SQL>SELECT TO_CHAR (DATE '2018-01-01','DD') FROM DUAL;
+
+(EXPR)
+------
+01    
+
+--- 1 row(s) selected. 
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of day of month.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2018-12-31 23:59:59','DD') FROM DUAL;
+
+(EXPR)
+------
+31    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_ddd]]
+==== Examples of TO_CHAR (DDD)
+
+* This example converts the `_DATE_` value to the character value of day of year.
++
+```
+SQL>SELECT TO_CHAR (DATE '2018-01-01','DDD') FROM DUAL;
+
+(EXPR)
+------
+001   
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of day of year.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2020-12-31 23:59:59','DDD') FROM DUAL;
+
+(EXPR)
+------
+366   
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_dy]]
+==== Examples of TO_CHAR (DY)
+
+* This example converts the `_DATE_` value to the character value of name of day (abbreviation).
++
+```
+SQL>SELECT TO_CHAR (DATE '2018-12-31','DY') FROM DUAL;
+
+(EXPR)
+------
+MON   
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of name of day (abbreviation).
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-02-14 23:59:59','DY') FROM DUAL;
+
+(EXPR)
+------
+THU   
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_day]]
+==== Examples of TO_CHAR (DAY)
+
+* This example converts the `_DATE_` value to the character value of name of day.
++
+```
+SQL>SELECT TO_CHAR (DATE '2019-05-12','DAY') FROM DUAL;
+
+(EXPR)
+---------
+SUNDAY   
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of name of day.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-12-24 23:59:59','DAY') FROM DUAL;   
+
+(EXPR)
+---------
+TUESDAY  
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_hh]]
+==== Examples of TO_CHAR (HH)
+
+* This example converts the `_TIME_` value to the character value of hour (24-hour format).
++
+```
+SQL>SELECT TO_CHAR (TIME '00:00:01','HH') FROM DUAL;
+
+(EXPR)
+------
+00    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of hour (24-hour format).
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-01-01 23:59:59','HH') FROM DUAL;
+
+(EXPR)
+------
+23    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_hh12]]
+==== Examples of TO_CHAR (HH12)
+
+* This example converts the `_TIME_` value to the character value of hour (12-hour format).
++
+```
+SQL>SELECT TO_CHAR (TIME '01:00:00','HH12') FROM DUAL;
+
+(EXPR)
+------
+01    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of hour (12-hour format).
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-01-01 12:59:59','HH12') FROM DUAL;
+
+(EXPR)
+------
+12    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_hh24]]
+==== Examples of TO_CHAR (HH24)
+
+* This example converts the `_TIME_` value to the character value of hour (24-hour format).
++
+```
+SQL>SELECT TO_CHAR (TIME '00:00:01','HH24') FROM DUAL;
+
+(EXPR)
+------
+00    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of hour (24-hour format).
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-01-01 23:59:59','HH24') FROM DUAL;
+
+(EXPR)
+------
+23    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_j]]
+==== Examples of TO_CHAR (J)
+
+* This example calculates the number of days since the beginning of the Julian epoch and converts the `_DATE_` value to the character value.
++
+```
+SQL>SELECT TO_CHAR (DATE '0001-01-01','J') FROM DUAL;
+
+(EXPR)
+-------
+1721426
+
+--- 1 row(s) selected.
+```
+
+* This example calculates the number of days since the beginning of the Julian epoch and converts the `_TIMESTAMP_` value to the character value.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2018-11-02 23:59:59','J') FROM DUAL;;
+
+(EXPR)
+-------
+2458425
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_mi]]
+==== Examples of TO_CHAR (MI)
+
+* This example converts the `_TIME_` value to the character value of minute.
++
+```
+SQL>SELECT TO_CHAR (TIME '01:00:02','MI') FROM DUAL;
+
+(EXPR)
+------
+00    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of minute.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-01-01 23:59:01','MI') FROM DUAL;
+
+(EXPR)
+------
+59    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_mm]]
+==== Examples of TO_CHAR (MM)
+
+* This example converts the `_DATE_` value to the character value of month.
++
+```
+SQL>SELECT TO_CHAR (DATE '0001-01-01','MM') FROM DUAL;
+
+(EXPR)
+------
+01    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of month.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-01-01 23:59:59','MM') FROM DUAL;
+
+(EXPR)
+------
+12 
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_mon]]
+==== Examples of TO_CHAR (MON)
+
+* This example converts the `_DATE_` value to the character value of month.
++
+```
+SQL>SELECT TO_CHAR (DATE '0001-01-01','MON') FROM DUAL;
+
+(EXPR)
+------
+JAN   
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of month.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2018-11-02 23:59:59','MON') FROM DUAL;
+
+(EXPR)
+------
+NOV   
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_quarter]]
+==== Examples of TO_CHAR (QUARTER)
+
+* This example converts the `_DATE_` value to the character value of quarter.
++
+```
+SQL>SELECT TO_CHAR (DATE '0001-01-01','Q') FROM DUAL;
+
+(EXPR)
+------
+1     
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of quarter.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2018-11-02 23:59:59','Q') FROM DUAL;
+
+(EXPR)
+------
+4     
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_ss]]
+==== Examples of TO_CHAR (SS)
+
+* This example converts the `_TIME_` value to the character value of second.
++
+```
+SQL>SELECT TO_CHAR (TIME '01:02:00','SS') FROM DUAL;
+
+(EXPR)
+------
+00    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of second.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2019-01-01 23:01:59','SS') FROM DUAL;
+
+(EXPR)
+------
+59    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_w]]
+==== Examples of TO_CHAR (W)
+
+* This example converts the `_DATE_` value to the character value of week of month.
++
+```
+SQL>SELECT TO_CHAR (DATE '2019-01-01','W') FROM DUAL;
+
+(EXPR)
+------
+1     
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of week of month.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2018-04-30 23:59:59','W') FROM DUAL;
+
+(EXPR)
+------
+5     
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_ww]]
+==== Examples of TO_CHAR (WW)
+
+* This example converts the `_DATE_` value to the character value of week of year.
++
+```
+SQL>SELECT TO_CHAR (DATE '2016-01-03','WW') FROM DUAL;
+
+(EXPR)
+------
+02    
+
+--- 1 row(s) selected. 
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of week of year.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '2000-12-31 23:59:59','WW') FROM DUAL;
+
+(EXPR)
+------
+54    
+
+--- 1 row(s) selected. 
+```
+
+[[examples_of_to_char_y]]
+==== Examples of TO_CHAR (Y)
+
+* This example converts the `_DATE_` value to the character value of week of year (last digit).
++
+```
+SQL>SELECT TO_CHAR (DATE '1000-01-01','Y') FROM DUAL;
+
+(EXPR)
+------
+0     
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of week of year (last digit).
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '9999-12-31 23:59:59','Y') FROM DUAL;
+
+(EXPR)
+------
+9     
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_yy]]
+==== Examples of TO_CHAR (YY)
+
+* This example converts the `_DATE_` value to the character value of week of year (last two digits).
++
+```
+SQL>SELECT TO_CHAR (DATE '1000-01-01','YY') FROM DUAL;
+
+(EXPR)
+------
+00    
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of week of year (last two digits).
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '9999-12-31 23:59:59','YY') FROM DUAL;
+
+(EXPR)
+------
+99    
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_yyy]]
+==== Examples of TO_CHAR (YYY)
+
+* This example converts the `_DATE_` value to the character value of week of year (last three digits).
++
+```
+SQL>SELECT TO_CHAR (DATE '1000-01-01','YYY') FROM DUAL;
+
+(EXPR)
+------
+000   
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of week of year (last three digits).
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '9999-12-31 23:59:59','YYY') FROM DUAL;
+
+(EXPR)
+------
+999   
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_yyyy]]
+==== Examples of TO_CHAR (YYYY)
+
+* This example converts the `_DATE_` value to the character value of week of year.
++
+```
+SQL>SELECT TO_CHAR (DATE '0001-01-01','YYYY') FROM DUAL;
+
+(EXPR)
+------
+0001  
+
+--- 1 row(s) selected.
+```
+
+* This example converts the `_TIMESTAMP_` value to the character value of week of year.
++
+```
+SQL>SELECT TO_CHAR (TIMESTAMP '9999-12-31 23:59:59','YYYY') FROM DUAL;
+
+(EXPR)
+------
+9999  
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_to_char_other]]
+==== Examples of TO_CHAR (Other)
 
 * This function returns the character value '01MAR2016':
 +
@@ -9926,10 +11346,10 @@ VARIANCE is evaluated after eliminating all nulls from the set. If the
 result table is empty, VARIANCE returns NULL.
 
 
-[[float54_and_double_precision_data]]
-==== FLOAT(54) and DOUBLE PRECISION Data
+[[float52_and_double_precision_data]]
+==== FLOAT(52) and DOUBLE PRECISION Data
 
-Avoid using large FLOAT(54) or DOUBLE PRECISION values as arguments to
+Avoid using large FLOAT(52) or DOUBLE PRECISION values as arguments to
 VARIANCE. If SUM(x * x) exceeds the value of 1.15792089237316192e77 during
 the computation of VARIANCE(x), then a numeric overflow occurs.
 

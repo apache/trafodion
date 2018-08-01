@@ -2356,6 +2356,233 @@ odbc_SQLDrvr_Execute_pst_(
 } // odbc_SQLDrvr_Execute_pst_()
 
 
+extern "C" CEE_status
+odbc_SQLDrvr_ExtractLOB_pst_(
+    /* In    */ CEE_tag_def tag_
+ , /* In    */ IDL_short extractType
+ , /* In    */ IDL_string  lobHandle
+ , /* In    */ IDL_long    lobHandleLen
+ , /* In    */ IDL_long  &extractLen
+ , /* Out   */ struct odbc_SQLsvc_ExtractLob_exc_ *exception_
+ , /* Out   */ BYTE *& extractData
+)
+{
+    bool sts;
+
+    CEE_status retcode;
+    IDL_long   wlength, rlength;
+    IDL_char   *wbuffer, *rbuffer;
+
+    IDL_long sqlWarningOrErrorLength = 0;
+    IDL_char   *curptr;
+    IDL_long   msg_total_len = 0;
+
+    IDL_long   lobHandleCharset = 1;
+
+    SRVR_CALL_CONTEXT *srvrCallContext = (SRVR_CALL_CONTEXT *)tag_;
+    CStmt * pStatement = (CStmt *)srvrCallContext->sqlHandle;
+    CConnect *pConnection = pStatement->getConnectHandle();
+
+    retcode = odbc_SQLDrvr_ExtractLob_param_pst_(
+        pConnection->m_srvrTCPIPSystem
+        , wbuffer
+        , wlength
+        , extractType
+        , lobHandle
+        , lobHandleLen
+        , lobHandleCharset
+        , extractLen
+        );
+
+    sts = OpenIO(pConnection->m_srvrTCPIPSystem, srvrCallContext->SQLSvc_ObjRef);
+    if (sts == false)
+        return MAP_SRVR_ERRORS(pConnection);
+
+    sts = DoIO(pConnection->m_srvrTCPIPSystem, wbuffer, wlength, rbuffer, rlength, pConnection, pStatement);
+    if (sts == false)
+        return MAP_SRVR_ERRORS(pConnection);
+
+    // process output parameters
+
+    char swap = pConnection->m_srvrTCPIPSystem->swap();
+    msg_total_len = 0;
+    curptr = rbuffer;
+
+    //
+    //   exception_
+    //
+
+    IDL_long ExceptionLength;
+
+    //
+    //   exception_ ->exception_nr
+    //
+    exception_->exception_nr = *(IDL_long*)(curptr + msg_total_len);
+    msg_total_len += sizeof(exception_->exception_nr);
+    LONG_swap(&exception_->exception_nr, swap);
+
+    //
+    //   exception_ ->exception_detail
+    //
+    exception_->exception_detail = *(IDL_long*)(curptr + msg_total_len);
+    msg_total_len += sizeof(exception_->exception_detail);
+    LONG_swap(&exception_->exception_detail, swap);
+
+    switch (exception_->exception_nr)
+    {
+    case odbc_SQLSvc_ExtractLob_ParamError_exn_:
+        ExceptionLength = *(IDL_long *)(curptr + msg_total_len);
+        msg_total_len += sizeof(ExceptionLength);
+        LONG_swap(&ExceptionLength);
+
+        if (ExceptionLength > 0)
+        {
+            exception_->u.ParamError.ParamDesc = (IDL_char *)(curptr + msg_total_len);
+            msg_total_len += ExceptionLength;
+        }
+        break;
+
+    case odbc_SQLSvc_ExtractLob_SQLError_exn_:
+        retcode = copy_ERROR_DESC_LIST(&exception_->u.SQLError.errorList, curptr, msg_total_len, swap);
+        if (retcode != CEE_SUCCESS)
+            return retcode;
+        break;
+
+    case odbc_SQLSvc_ExtractLob_InvalidConnection_exn_:
+    case odbc_SQLSvc_ExtractLob_SQLInvalidhandle_exn_:
+        break;
+    default:
+        break;
+    }
+    extractType = *(IDL_short *)(curptr + msg_total_len);
+    msg_total_len += sizeof(IDL_short);
+    SHORT_swap(&extractType, swap);
+
+    switch (extractType)
+    {
+    case 0:
+        extractLen = *(IDL_long_long *)(curptr + msg_total_len);
+        break;
+    case 1:
+        extractLen = *(IDL_long_long *)(curptr + msg_total_len);
+        msg_total_len += sizeof(IDL_long_long);
+        extractData = (BYTE *)(curptr + msg_total_len);
+    default:
+        break;
+    }
+
+    return CEE_SUCCESS;
+}
+
+
+extern "C" CEE_status
+odbc_SQLDrvr_UpdateLob_pst_(
+    /* In    */ CEE_tag_def tag_
+  , /* In    */ IDL_long  updataType
+  , /* In    */ IDL_string  lobHandle
+  , /* In    */ IDL_long    lobHandleLen
+  , /* In    */ IDL_long_long  totalLength
+  , /* In    */ IDL_long_long  offset
+  , /* In    */ IDL_long_long  pos
+  , /* In    */ IDL_long_long  length
+  , /* In    */ BYTE *        &data
+  , /* Out   */ struct odbc_SQLSvc_UpdateLob_exc_ *exception_
+)
+{
+    bool sts;
+
+    CEE_status retcode;
+    IDL_long   wlength, rlength;
+    IDL_char   *wbuffer, *rbuffer;
+
+    IDL_long sqlWarningOrErrorLength = 0;
+    IDL_char   *curptr;
+    IDL_long   msg_total_len = 0;
+
+    IDL_long   lobHandleCharset = 1;
+
+    SRVR_CALL_CONTEXT *srvrCallContext = (SRVR_CALL_CONTEXT *)tag_;
+    CStmt * pStatement = (CStmt *)srvrCallContext->sqlHandle;
+    CConnect *pConnection = pStatement->getConnectHandle();
+
+    pConnection->m_srvrTCPIPSystem->odbcAPI = SRVR_API_UPDATELOB;
+    pConnection->m_srvrTCPIPSystem->dialogueId = srvrCallContext->dialogueId;
+    pConnection->m_srvrTCPIPSystem->dwTimeout = srvrCallContext->statementTimeout;
+
+    retcode = odbc_SQLDrvr_UpdateLob_param_pst_(
+        pConnection->m_srvrTCPIPSystem
+        , wbuffer
+        , wlength
+        , updataType
+        , lobHandle
+        , lobHandleLen
+        , lobHandleCharset
+        , totalLength
+        , offset
+        , data
+        , pos
+        , length
+        );
+
+    sts = OpenIO(pConnection->m_srvrTCPIPSystem, srvrCallContext->SQLSvc_ObjRef);
+    if (sts == false)
+        return MAP_SRVR_ERRORS(pConnection);
+
+    sts = DoIO(pConnection->m_srvrTCPIPSystem, wbuffer, wlength, rbuffer, rlength, pConnection, pStatement);
+    if (sts == false)
+        return MAP_SRVR_ERRORS(pConnection);
+
+    char swap = pConnection->m_srvrTCPIPSystem->swap();
+    msg_total_len = 0;
+    curptr = rbuffer;
+
+    //
+    //   exception_
+    //
+
+    IDL_long ExceptionLength;
+
+    //
+    //   exception_ ->exception_nr
+    //
+    exception_->exception_nr = *(IDL_long*)(curptr + msg_total_len);
+    msg_total_len += sizeof(exception_->exception_nr);
+    LONG_swap(&exception_->exception_nr, swap);
+
+    //
+    //   exception_ ->exception_detail
+    //
+    exception_->exception_detail = *(IDL_long*)(curptr + msg_total_len);
+    msg_total_len += sizeof(exception_->exception_detail);
+    LONG_swap(&exception_->exception_detail, swap);
+
+    switch (exception_->exception_nr)
+    {
+    case odbc_SQLSvc_UpdateLob_ParamError_exn_:
+        ExceptionLength += *(IDL_long *)(curptr + msg_total_len);
+        msg_total_len += sizeof(ExceptionLength);
+        LONG_swap(&ExceptionLength);
+        if (ExceptionLength > 0)
+        {
+            exception_->u.ParamError.ParamDesc = (IDL_char *)(curptr + msg_total_len);
+            msg_total_len += ExceptionLength;
+        }
+        break;
+    case odbc_SQLSvc_UpdateLob_InvalidConnect_exn_:
+        retcode = copy_ERROR_DESC_LIST(&exception_->u.SQLError.errorList, curptr, msg_total_len, swap);
+        if (retcode != CEE_SUCCESS)
+            return retcode;
+    case odbc_SQLSvc_UpdateLob_SQLError_exn_:
+    case odbc_SQLSvc_UpdateLob_SQLInvalidhandle_exn_:
+        break;
+
+    default:
+        break;
+    }
+
+    return CEE_SUCCESS;
+}
+
 //-----------------------------------------------------------------
 
 CEE_status MAP_SRVR_ERRORS(CConnect *pConnection)

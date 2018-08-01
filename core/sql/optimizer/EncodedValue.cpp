@@ -648,8 +648,62 @@ EncodedValue::EncodedValue (ItemExpr *expr,
 void
 EncodedValue::constructorFunction (const NAWchar * theValue,
                                    const NAColumnArray &columns, 
+                                   NABoolean okToReportErrors,
                                    ConstValue* cvPtrs[])
 {
+  // Some notes about error reporting for this function:
+  //
+  // The error reporting for this function is a little strange
+  // and should be re-engineered when we can imagine a better
+  // design for it.
+  //
+  // This function is called from two very different contexts.
+  //
+  // One is from the constructors of global objects, to provide
+  // convenient encoded constants. Being global objects, this
+  // call is made as a result of global constructor calls before
+  // the C++ main for the process is invoked. As such, we cannot
+  // depend on other global objects being constructed. So, for
+  // example, we cannot depend on CmpCommon::diags() being
+  // initialized, as C++ makes no guarantees about the order in
+  // which global objects are created. Too, it does no good to
+  // throw a C++ exception as there would be nothing to catch it
+  // and process it. So, if an error happens in this code path,
+  // we'll simply assert.
+  //
+  // The other is in the course of histogram processing. Histograms
+  // have been read in, and now we want to encode the boundary
+  // values in the histogram. These might be stale or corrupted
+  // so that condition has to be detected. When detected, this
+  // routine raises a warning in CmpCommon::diags(), and then
+  // throws a C++ exception.
+  //
+  // This warning processing has to be done carefully. The way
+  // it works is that lower level routines report errors into 
+  // CmpCommon::diags(). This routine checks for such errors and
+  // if it sees any, it throws them away, replacing them with
+  // a warning in CmpCommon::diags(). It then throws a C++
+  // exception which is typically caught by HSHistogrmCursor::fetch 
+  // (ustat/hs_read.cpp). We use default histograms in that case.
+  //
+  // Why do we throw away the errors? We do this because of the
+  // way the Normalizer handles CmpCommon::diags(). During 
+  // synthesise logical properties processing, histograms may
+  // be read and processed. (Note: They can be read and processed
+  // from other phases as well, such as table analysis.) The
+  // Normalizer checks for errors in CmpCommon::diags(), and if
+  // found, retries compilation. On the retry, CmpCommon::diags()
+  // will be cleared, and the histograms code will simply use
+  // a default histogram. So, if there is any error in
+  // CmpCommon::diags(), we will lose the histogram warnings
+  // generated in this method.
+  //
+  // Note that if there is already an error in CmpCommon::diags()
+  // when this method is called, we'll lose the histogram warnings
+  // anyway. Sigh.
+
+  Lng32 mark = okToReportErrors ? CmpCommon::diags()->mark() : -1;
+
   // Find the first non-blank char.
   const NAWchar *item = theValue;
   while (*item == L' ')
@@ -657,10 +711,17 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
 
   if ( *item != L'(' ) // must be '('
     {
-      *CmpCommon::diags() << DgSqlCode(CATALOG_HISTOGRM_HISTINTS_TABLES_CONTAIN_BAD_VALUE)
+      if (okToReportErrors)
+        {
+          *CmpCommon::diags() << DgSqlCode(CATALOG_HISTOGRM_HISTINTS_TABLES_CONTAIN_BAD_VALUE)
              << DgWString0(theValue) 
              << DgString1(columns[0]->getFullColRefNameAsAnsiString());
-       CmpInternalException("Bad Interval Boundary", __FILE__ , __LINE__).throwException();
+          CmpInternalException("Bad Interval Boundary", __FILE__ , __LINE__).throwException();
+        }
+      else
+        {
+          CMPASSERT(FALSE); // developer needs to fix the bug
+        } 
     }
 
   item++;
@@ -745,12 +806,16 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
     // in the case of a string, next has been advanced to the closing quote while
     // item still points to the beginning of the string. Scanning for a comma
     // starting at item may find a comma that is part of the string.
+    // Note: In the case of INTERVAL literals, we might have a nasty SECOND(m,n)
+    // qualifier at the end. We don't want to mistake a possible comma within such
+    // a qualifier for our delimiter, so we have to use na_wcschrSkipOverParenText
+    // instead of na_wcschr to search for the comma.
     if ( i == entries-1 OR entries==0 ) // sometimes columns is an empty list
       next = na_wcsrchr(next, L')') ;
     else  // it's an MCH
       {
     	NAWchar* nextSave = next;
-        next = na_wcschr(next, L',');
+        next = na_wcschrSkipOverParenText(next, L',');
         if ( next == NULL )
           {
             // Number of components of boundary value is less than the number of
@@ -762,11 +827,19 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
 
     if ( next == NULL ) // should never happen!
       {
-        *CmpCommon::diags() 
+        if (okToReportErrors)
+          {
+            CmpCommon::diags()->rewind(mark,TRUE); // get rid of any diags we may have added
+            *CmpCommon::diags() 
              << DgSqlCode(CATALOG_HISTOGRM_HISTINTS_TABLES_CONTAIN_BAD_VALUE) 
              << DgWString0(theValue) 
              << DgString1(columns[i]->getFullColRefNameAsAnsiString());
-       CmpInternalException("Bad Interval Boundary", __FILE__ , __LINE__).throwException();
+            CmpInternalException("Bad Interval Boundary", __FILE__ , __LINE__).throwException();
+          }
+        else
+          {
+            CMPASSERT(FALSE);  // developer needs to fix the bug
+          }
       }
  
     Lng32 len = BOUNDARY_LEN; 
@@ -798,6 +871,10 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
 	  val.setNull();
 	  break;
 	}
+
+        // Parser assumes CmpCommon::diags() is initialized and available
+        // so okToReportErrors better be true in this code path.
+        CMPASSERT(okToReportErrors);
 
 	// invoke parser to parse the char string and generate a ConstValue
         Parser parser(CmpCommon::context());
@@ -859,9 +936,7 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
              (entries == 1 &&
               constVal->getType()->getTypeQualifier() != colType->getTypeQualifier()))
         {
-          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
-               CmpCommon::diags()->deleteError(0);
-
+          CmpCommon::diags()->rewind(mark,TRUE);  // get rid of any diags parser may have added
           *CmpCommon::diags() 
               << DgSqlCode(CATALOG_HISTOGRM_HISTINTS_TABLES_CONTAIN_BAD_VALUE) 
               << DgWString0(theValue) 

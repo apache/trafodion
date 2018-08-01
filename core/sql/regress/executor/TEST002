@@ -1218,6 +1218,7 @@ insert into t002timert select 1, sleep(5) , unix_timestamp() from t002tmp1;
 insert into t002timert select 2, sleep(5) , unix_timestamp() from t002tmp1;
 select 'sleeptimetest002', di from (select ( max(c2) - min(c2)) as di from t002timert ) where di between 5 and 9;
 select distinct(count(uuid())) from T002T1K;
+select distinct(count(sys_guid())) from T002T1K;
 drop table t002timert;
 drop table t002tmp1;
 ------------------------------------------------------------------------

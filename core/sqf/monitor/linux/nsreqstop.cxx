@@ -90,7 +90,7 @@ void CExtNameServerStopNsReq::performRequest()
         int nid = atoi( msg_->u.request.u.nameserver_stop.node_name );
         node = Nodes->GetLNode( nid )->GetNode();
     }
-    Monitor->HardNodeDown( node->GetPNid(), true );
+    Monitor->HardNodeDownNs( node->GetPNid() );
 
     char la_buf[MON_STRING_BUF_SIZE*2];
     snprintf( la_buf, sizeof(la_buf)

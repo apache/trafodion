@@ -87,6 +87,7 @@ public class HDFSClient
    private static ExecutorService executorService_ = null;
    private static FileSystem defaultFs_ = null;
    private static CompressionCodecFactory codecFactory_ = null;
+   private static boolean alluxioNotInstalled_ = false;
    private FileSystem fs_ = null;
    private int bufNo_;
    private int rangeNo_;
@@ -95,6 +96,7 @@ public class HDFSClient
    private OutputStream outStream_;
    private String filename_;
    private ByteBuffer buf_;
+   private ByteBuffer savedBuf_;
    private byte[] bufArray_;
    private int bufLen_;
    private int bufOffset_ = 0;
@@ -126,6 +128,16 @@ public class HDFSClient
       catch (IOException ioe) {
          throw new RuntimeException("Exception in HDFSClient static block", ioe);
       }
+      try {
+         boolean alluxioFs = defaultFs_ instanceof alluxio.hadoop.FileSystem;
+      }
+      catch (Throwable rte)
+      {
+         // Ignore the exception. It is not needed for alluxio to be installed
+         // for the methods of this class to work if 
+         // alluxio filesystem is NOT required
+         alluxioNotInstalled_ = true;
+      }
       codecFactory_ = new CompressionCodecFactory(config_); 
       System.loadLibrary("executor");
    }
@@ -142,21 +154,32 @@ public class HDFSClient
       HDFSRead() 
       {
       }
- 
+    
       public Object call() throws IOException 
       {
          int bytesRead;
          int totalBytesRead = 0;
          if (compressed_) {
             bufArray_ = new byte[ioByteArraySizeInKB_ * 1024];
-         } else 
-         if (! buf_.hasArray()) {
-            try {
-              fsdis_.seek(pos_);
-            } catch (EOFException e) {
-              isEOF_ = 1;
-              return new Integer(totalBytesRead);
-            } 
+         } 
+         else  {
+            // alluxio doesn't support direct ByteBuffer reads
+            // Hence, create a non-direct ByteBuffer, read into
+            // byteArray backing up this ByteBuffer and 
+            // then copy the data read to direct ByteBuffer for the 
+            // native layer to process the data
+            if ((! alluxioNotInstalled_) && fs_ instanceof alluxio.hadoop.FileSystem) {
+               savedBuf_ = buf_;
+               buf_ = ByteBuffer.allocate(savedBuf_.capacity());
+            }
+            if (! buf_.hasArray()) {
+               try {
+                  fsdis_.seek(pos_);
+               } catch (EOFException e) {
+                  isEOF_ = 1;
+                  return new Integer(totalBytesRead);
+               } 
+            }
          }
          do
          {
@@ -181,6 +204,12 @@ public class HDFSClient
             pos_ += bytesRead;
             lenRemain_ -= bytesRead;
          } while (lenRemain_ > 0); 
+         if ((! alluxioNotInstalled_) && fs_ instanceof alluxio.hadoop.FileSystem) {
+            if (totalBytesRead > 0) {
+               byte[] temp = buf_.array();
+               savedBuf_.put(temp, 0, totalBytesRead);
+            }
+         }
          return new Integer(totalBytesRead);
       }
     } 

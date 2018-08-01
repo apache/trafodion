@@ -7627,6 +7627,8 @@ const NAString BuiltinFunction::getText() const
       return "unique_short_id";
     case ITM_UNIQUE_ID:
       return "unique_id";
+    case ITM_UNIQUE_ID_SYS_GUID:
+      return "sys_guid";
     case ITM_HBASE_COLUMN_LOOKUP:
       return "hbase_column_lookup";
     case ITM_HBASE_COLUMNS_DISPLAY:
@@ -7764,6 +7766,9 @@ const NAString BuiltinFunction::getText() const
 
     case ITM_TO_TIMESTAMP:
       return "to_timestamp";
+
+    case ITM_SPLIT_PART:
+      return "split_part";
 
     default:
       return "unknown func";
@@ -15232,5 +15237,18 @@ NABoolean ItmLeadOlapFunction::hasEquivalentProperties(ItemExpr * other)
 ItemExpr *ItmLeadOlapFunction::transformOlapFunction(CollHeap *heap)
 {
    return this;
+}
+
+SplitPart::~SplitPart() {}
+
+ItemExpr * SplitPart::copyTopNode(ItemExpr *derivedNode, CollHeap *outHeap)
+{
+      ItemExpr *result = NULL;
+      if (derivedNode == NULL)
+        result = new (outHeap) SplitPart(child(0), child(1), child(2));
+      else
+        result = derivedNode;
+
+     return BuiltinFunction::copyTopNode(result, outHeap);
 }
 

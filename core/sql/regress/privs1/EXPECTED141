@@ -234,6 +234,9 @@ U1T2
 U1T3
 U1T4
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user2;
@@ -259,6 +262,9 @@ Tables in Schema TRAFODION.T141_USER2
 U2T1
 U2T2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user3;
@@ -276,6 +282,9 @@ Tables in Schema TRAFODION.T141_USER3
 =====================================
 
 U3T1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -343,6 +352,9 @@ Tables in Schema TRAFODION.T141_USER1
 
 U2T1
 U2T2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -538,6 +550,9 @@ U1T2
 U1T3
 U1T4
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user2;
@@ -563,6 +578,9 @@ Tables in Schema TRAFODION.T141_USER2
 U2T1
 U2T2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user3;
@@ -580,6 +598,9 @@ Tables in Schema TRAFODION.T141_USER3
 =====================================
 
 U3T1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -675,6 +696,9 @@ Tables in Schema TRAFODION.T141_USER1
 
 U2T1
 U2T2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1011,6 +1035,9 @@ Tables in Schema TRAFODION.T141_USER3
 
 U3T1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get views;
 
@@ -1021,6 +1048,9 @@ U3V1
 U3V2
 U3V3
 U3V4
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>

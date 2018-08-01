@@ -735,6 +735,9 @@ Tables in Schema TRAFODION.T116SCH1
 
 T116T1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>drop table t116t1;
 
@@ -747,6 +750,9 @@ Tables in Schema TRAFODION.T116SCH1
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>create table t116t2 (a int);
@@ -761,6 +767,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 T116T2
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>drop schema t116sch1 cascade;
@@ -790,6 +799,9 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 T116T1
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>

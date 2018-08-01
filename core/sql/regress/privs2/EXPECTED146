@@ -146,6 +146,9 @@ HBase Registered Tables in Catalog TRAFODION
 "_ROW_".T146T1
 "_ROW_".T146T3
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>
 >>create role t146_role1;
@@ -167,6 +170,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get external hbase objects, match '%T146%';
@@ -518,6 +524,9 @@ HBase Registered Tables in Catalog TRAFODION
 "_CELL_".T146T1
 "_ROW_".T146T1
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>exit;
 
@@ -667,6 +676,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 "_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>exit;
@@ -822,6 +834,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 "_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>exit;
@@ -1094,6 +1109,9 @@ HBase Registered Tables in Catalog TRAFODION
 "_ROW_".T146T1
 "_ROW_".T146T3
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>exit;
 
@@ -1259,6 +1277,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 "_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>exit;
@@ -1524,6 +1545,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>exit;
 
@@ -1586,6 +1610,9 @@ SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
 SIDU-R-    TRAFODION._HB_MAP_.T146T2
 
+=======================
+ 8 row(s) returned
+
 --- SQL operation complete.
 >>
 >>drop hbase table t146t2;
@@ -1601,6 +1628,9 @@ SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
 SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1722,6 +1752,9 @@ SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
 SIDU-R-    TRAFODION._HB_MAP_.T146T2
 
+=======================
+ 8 row(s) returned
+
 --- SQL operation complete.
 >>
 >>drop hbase table t146t2;
@@ -1737,6 +1770,9 @@ SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
 SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>

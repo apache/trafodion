@@ -138,4 +138,28 @@ odbc_SQLDrvr_EndTransaction_pst_(
   , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
   );
 
+extern "C" CEE_status
+odbc_SQLDrvr_ExtractLOB_pst_(
+    /* In    */ CEE_tag_def tag_
+  , /* In    */ IDL_short extractType
+  , /* In    */ IDL_string  lobHandle
+  , /* In    */ IDL_long    lobHandleLen
+  , /* In    */ IDL_long  &extractLen
+  , /* Out   */ struct odbc_SQLsvc_ExtractLob_exc_ *exception_
+  , /* Out   */ BYTE *&extractData
+);
+
+extern "C" CEE_status
+odbc_SQLDrvr_UpdateLob_pst_(
+    /* In    */ CEE_tag_def tag_
+  , /* In    */ IDL_long  updataType
+  , /* In    */ IDL_string  lobHandle
+  , /* In    */ IDL_long    lobHandleLen
+  , /* In    */ IDL_long_long  totalLength
+  , /* In    */ IDL_long_long  offset
+  , /* In    */ IDL_long_long  pos
+  , /* In    */ IDL_long_long  length
+  , /* In    */ BYTE *        &data
+  , /* Out   */ struct odbc_SQLSvc_UpdateLob_exc_ *exception_
+);
 #endif /* ODBCS_DRVR_H */

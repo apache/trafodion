@@ -519,6 +519,7 @@ enum OperatorTypeEnum {
                         ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
+                        ITM_SPLIT_PART = 2249,
                         ITM_TRUNC = 2250,
                         ITM_ASCII = 2251,
                         ITM_POSITION = 2252,
@@ -728,6 +729,7 @@ enum OperatorTypeEnum {
                         ITM_ANY_CAST = 2457,
 
                         ITM_UNIQUE_ID = 2458,
+                        ITM_UNIQUE_ID_SYS_GUID = 2459,
 
                        // Do not do any conversion. Just interpret source as the specified type.
                         ITM_CAST_TYPE,

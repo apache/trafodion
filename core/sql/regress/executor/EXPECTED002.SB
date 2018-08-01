@@ -6910,6 +6910,14 @@ good
   1000 
 
 --- 1 row(s) selected.
+>>select distinct(count(sys_guid())) from T002T1K;
+
+(EXPR)
+----------
+
+  1000 
+
+--- 1 row(s) selected.
 >>drop table t002timert;
 
 --- SQL operation complete.

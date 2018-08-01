@@ -69,6 +69,7 @@
 #include "ComDiags.h"
 #include "ComAnsiNamePart.h"
 #include "ComSqlId.h"
+#include "ComCextdecs.h"
 #include "ex_globals.h"
 
 #include "NAUserId.h"
@@ -191,6 +192,7 @@ ex_function_user::ex_function_user(){};
 ex_function_nullifzero::ex_function_nullifzero(){};
 ex_function_nvl::ex_function_nvl(){};
 ex_function_json_object_field_text::ex_function_json_object_field_text(){};
+ex_function_split_part::ex_function_split_part(){};
 
 ex_function_queryid_extract::ex_function_queryid_extract(){};
 ExFunctionUniqueId::ExFunctionUniqueId(){};
@@ -828,6 +830,13 @@ ExFunctionSoundex::ExFunctionSoundex(OperatorTypeEnum oper_type,
 
 };
 
+ex_function_split_part::ex_function_split_part(OperatorTypeEnum oper_type
+            , Attributes **attr
+                    , Space *space)
+      : ex_function_clause(oper_type, 4, attr, space)
+{
+
+}
 
 // Triggers
 ex_expr::exp_return_type ex_function_get_bit_value_at::eval(char *op_data[],
@@ -2745,6 +2754,57 @@ ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
+ex_expr::exp_return_type ex_function_split_part::eval(char *op_data[]
+                               , CollHeap* heap
+                               , ComDiagsArea** diagsArea)
+{
+  size_t sourceLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+  size_t patternLen = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
+  Lng32 indexOfTarget = *(Lng32 *)op_data[3];
+
+  if (indexOfTarget <= 0)
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_INVALID_FIELD_POSITION);
+       *(*diagsArea) << DgInt0(indexOfTarget);
+       return ex_expr::EXPR_ERROR;
+    }
+
+  NAString source(op_data[1], sourceLen);
+  NAString pattern(op_data[2], patternLen);
+
+  Lng32 patternCnt = 0;
+  StringPos currentTargetPos = 0;
+  StringPos pos = 0;
+
+  while (patternCnt != indexOfTarget)
+    {
+       currentTargetPos = pos;
+       pos = source.index(pattern, pos);
+       if (pos == NA_NPOS)
+        break;
+       pos = pos + patternLen;
+       patternCnt++;
+    }
+
+  size_t targetLen = 0;
+  if ((patternCnt == 0)
+        ||((patternCnt != indexOfTarget)
+             && (patternCnt != indexOfTarget - 1)))
+    op_data[0][0] = '\0';
+  else
+    {
+       if (patternCnt == indexOfTarget)
+         targetLen = pos - currentTargetPos - patternLen;
+       else  //if (patternLen == indexOfTarget-1)
+         targetLen = sourceLen - currentTargetPos;
+
+       str_cpy_all(op_data[0], op_data[1] + currentTargetPos, targetLen);
+    }
+  getOperand(0)->setVarLength(targetLen, op_data[-MAX_OPERANDS]);
+  return ex_expr::EXPR_OK;
+}
+
+
 ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,
 						   ComDiagsArea**)
@@ -3001,6 +3061,201 @@ ex_expr::exp_return_type ex_function_dayofweek::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
+static Int64 lcl_dayofweek(Int64 totaldays)
+{
+  return (unsigned short)((totaldays + 1) % 7) + 1;
+}
+
+static Int64 lcl_dayofyear(char year, char month, char day)
+{
+  return (Date2Julian(year,month,day)-Date2Julian(year,1,1)+1);
+}
+
+#define DAYS_PER_YEAR 365.25 /*consider leap year every four years*/
+#define MONTHS_PER_YEAR 12
+#define DAYS_PER_MONTH 30
+#define HOURS_PER_DAY 24
+#define SECONDS_PER_MINUTE 60
+#define SECONDS_PER_HOUR 3600
+#define SECONDS_PER_DAY 86400
+
+static Int64 lcl_interval(rec_datetime_field eField, Lng32 eCode, char *opdata, UInt32 nLength)
+{
+  if (!opdata)
+    return 0;
+  if ( REC_DATE_DECADE == eField && REC_INT_YEAR == eCode )
+    {
+      short nValue;
+      str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
+      return nValue / 10;
+    }
+  if ( REC_DATE_QUARTER == eField && REC_INT_MONTH == eCode )
+    {
+      short nValue;
+      str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
+      return (nValue-1)/3+1;
+    }
+  if ( REC_DATE_EPOCH == eField )
+    {
+      Int64 nVal = 0;
+      if ( SQL_SMALL_SIZE==nLength )
+        {
+          short value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_INT_SIZE==nLength )
+        {
+          Lng32 value;
+          str_cpy_all((char *) &value, opdata, sizeof(value));
+          nVal = value;
+        }
+      else if ( SQL_LARGE_SIZE==nLength )
+        {
+          str_cpy_all((char *) &nVal, opdata, sizeof(nVal));
+        }
+
+      if ( REC_INT_YEAR==eCode )
+        return nVal*DAYS_PER_YEAR*SECONDS_PER_DAY;
+      else if ( REC_INT_MONTH==eCode
+               || REC_INT_YEAR_MONTH==eCode)
+        {
+          double result = (double)(nVal/MONTHS_PER_YEAR) * DAYS_PER_YEAR * SECONDS_PER_DAY;
+          result += (double)(nVal%MONTHS_PER_YEAR) * DAYS_PER_MONTH * SECONDS_PER_DAY;
+          return Int64(result);
+        }
+      else if ( REC_INT_DAY==eCode )
+        return nVal*SECONDS_PER_DAY;
+      else if ( REC_INT_HOUR==eCode
+               || REC_INT_DAY_HOUR==eCode )
+        return nVal*SECONDS_PER_HOUR;
+      else if ( REC_INT_MINUTE==eCode
+               || REC_INT_HOUR_MINUTE==eCode
+               || REC_INT_DAY_MINUTE==eCode)
+        return nVal*SECONDS_PER_MINUTE;
+      else if ( REC_INT_SECOND==eCode
+               || REC_INT_MINUTE_SECOND==eCode
+               || REC_INT_HOUR_SECOND==eCode
+               || REC_INT_DAY_SECOND==eCode )
+         return nVal;
+    }
+  return 0;
+}
+
+Int64 ex_function_extract::getExtraTimeValue(rec_datetime_field eField, Lng32 eCode, char *dateTime)
+{
+  short year;
+  char month;
+  char day;
+  char hour = 0;
+  char minute = 0;
+  char second = 0;
+  char millisencond = 0;
+  if (eField < REC_DATE_CENTURY || eField > REC_DATE_WOM)
+    return 0;
+  if (eCode != REC_DTCODE_DATE && eCode != REC_DTCODE_TIMESTAMP)
+    return 0;
+
+  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
+  if (!datetimeOpType)
+    return 0;
+
+  rec_datetime_field eEndFiled = REC_DATE_DAY;
+  if ( REC_DTCODE_TIMESTAMP == eCode )
+    eEndFiled = REC_DATE_SECOND;
+  size_t n = strlen(dateTime);
+  for (Int32 field = REC_DATE_YEAR; field <= eEndFiled; field++)
+    {
+      switch (field)
+        {
+          case REC_DATE_YEAR:
+            {
+              str_cpy_all((char *) &year, dateTime, sizeof(year));
+              dateTime += sizeof(year);
+            }
+            break;
+          case REC_DATE_MONTH:
+            {
+              month = *dateTime++;
+            }
+            break;
+          case REC_DATE_DAY:
+            {
+              day = *dateTime;
+              if ( REC_DATE_SECOND == eEndFiled )
+                dateTime++;
+            }
+            break;
+          case REC_DATE_HOUR:
+            {
+              hour = *dateTime++;
+            }
+            break;
+          case REC_DATE_MINUTE:
+            {
+              minute = *dateTime++;
+            }
+            break;
+          case REC_DATE_SECOND:
+            {
+              second = *dateTime;
+              if (n>7)// 2018-06-20 20:30:15.12  length = 8
+                {
+                  dateTime++;
+                  millisencond = *dateTime;
+                }
+            }
+            break;
+        }
+    }
+  switch (eField)
+    {
+      case REC_DATE_DOW:
+        {//same with built-in function dayofweek  ex_function_dayofweek::eval
+          Int64 interval = datetimeOpType->getTotalDays(year, month, day);
+          return lcl_dayofweek(interval);
+        }
+      case REC_DATE_DOY:
+        {
+          return lcl_dayofyear(year,month,day);
+        }
+      case REC_DATE_WOM:
+        {
+          return ((day-1)/7+1);
+        }
+      case REC_DATE_CENTURY:
+        {
+          return (year+99)/100;
+        }
+      case REC_DATE_DECADE:
+        {
+          return year/10;
+        }
+      case REC_DATE_WEEK:
+        {//same with built-in function week  ITM_WEEK
+          Int64 interval = datetimeOpType->getTotalDays(year, 1, 1);
+          Int64 dayofweek = lcl_dayofweek(interval);
+          Int64 dayofyear = lcl_dayofyear(year,month,day);
+          return (dayofyear-1+dayofweek-1)/7+1;
+        }
+      case REC_DATE_QUARTER:
+        {
+          return (month-1)/3+1;
+        }
+      case REC_DATE_EPOCH:
+        {
+          Int64 ndays = datetimeOpType->getTotalDays(year, month, day);
+          Int64 nJuliandays = datetimeOpType->getTotalDays(1970, 1, 1);
+          ndays = ndays - nJuliandays;
+          Int64 ntimestamp = ndays*86400+hour*3600+minute*60+second;
+          if ( 0!=millisencond )
+            ntimestamp = ntimestamp*100+millisencond;
+          return ntimestamp;
+        }
+    }
+  return 0;
+}
+
 ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
 						   CollHeap *heap,
 						   ComDiagsArea** diagsArea)
@@ -3013,6 +3268,13 @@ ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
     rec_datetime_field opEndField;
     rec_datetime_field extractStartField = getExtractField();
     rec_datetime_field extractEndField = extractStartField;
+
+    if ( extractStartField >=REC_DATE_CENTURY && extractStartField<=REC_DATE_WOM )
+    {
+      result = getExtraTimeValue(extractStartField, datetimeOpType->getPrecision(), datetimeOpData);
+      copyInteger (op_data[0], getOperand(0)->getLength(), &result, sizeof(result));
+      return ex_expr::EXPR_OK;
+    }
 
     if (extractStartField > REC_DATE_MAX_SINGLE_FIELD) {
       extractStartField = REC_DATE_YEAR;
@@ -3103,6 +3365,15 @@ ex_expr::exp_return_type ex_function_extract::eval(char *op_data[],
       }
     }
   } else {
+    if (getExtractField() == REC_DATE_DECADE
+        || getExtractField() == REC_DATE_QUARTER
+        || getExtractField() == REC_DATE_EPOCH)
+      {
+        ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
+        result = lcl_interval(getExtractField(),getOperand(1)->getDatatype(),op_data[1],getOperand(1)->getLength());
+        copyInteger (op_data[0], getOperand(0)->getLength(), &result, sizeof(result));
+        return ex_expr::EXPR_OK;
+      }
     Int64 interval;
     switch (getOperand(1)->getLength()) {
     case SQL_SMALL_SIZE: {
@@ -6923,6 +7194,12 @@ ex_expr::exp_return_type ExFunctionUniqueId::eval(char *op_data[],
     uuid_generate( uu ); 
     uuid_unparse(uu, str);
     str_cpy_all(result, str, 36);
+  }
+  else if(getOperType() == ITM_UNIQUE_ID_SYS_GUID)
+  {
+    uuid_t uu;
+    uuid_generate( uu ); 
+    str_cpy_all(result, (char*)&uu,sizeof(uu));
   }
   else //at present , it must be ITM_UUID_SHORT_ID
   { 

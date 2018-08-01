@@ -390,25 +390,27 @@ alter-action is:
 
 column-definition is:
    column-name data-type
-      ([DEFAULT default]
-         [[constraint constraint-name] column-constraint])
+      [[DEFAULT default]
+         [[constraint constraint-name] column-constraint]]
 
 data-type is:
-     char[acter] [(length)[characters]]
-         [CHARACTER SET char-set-name]
-         [UPSHIFT] [[not] casespecific]
-   | char[acter] varying (length)
-         [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar (length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar2 (length) [character set char-set-name]
-         [upshift] [[not] casespecific]         
+     char[acter] [(length [characters])]
+                 [CHARACTER SET char-set-name]
+                 [UPSHIFT] [[NOT] CASESPECIFIC]
+   | char[acter] varying (length [characters])
+                         [CHARACTER SET char-set-name]
+                         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar (length [characters]) 
+             [CHARACTER SET char-set-name]
+             [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar2 (length [characters]) 
+              [CHARACTER SET char-set-name]
+              [UPSHIFT] [[NOT] CASESPECIFIC]         
+   | nchar [(length [characters])]
+           [UPSHIFT] [[NOT] CASESPECIFIC] 
+   | nchar varying (length [characters]) 
+                   [UPSHIFT] [[NOT] CASESPECIFIC]
    | numeric [(precision [,scale])] [signed|unsigned]
-   | nchar [(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | nchar varying(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
    | smallint [signed|unsigned]
    | int[eger] [signed|unsigned]
    | largeint
@@ -428,7 +430,7 @@ default is:
    | null
    | currentdate
    | currenttime
-   | currenttimestamp }
+   | currenttimestamp 
 
 column-constraint is:
      not null
@@ -754,6 +756,88 @@ ALTER TABLE persnl.project
 ```
 Alter TABLE PRODUCT 
 ALTER COLUMN vend_id RENAME TO cstm_id;
+```
+
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2, so it is not possible to alter the CHARACTER SET when using NCHAR, 
+as the following example shows.
+
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (*UCS2*) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *ALTER* and *CREATE* statement.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+ 
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 NCHAR CHARACTER SET ISO88591;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+alter table test1 alter column c1 nchar character set iso88591;
+                                              ^ (47 characters from start of SQL statement) [2018-07-13 10:24:12]
+```
+
+* This example shows how to alter the data type of NCHAR column _c1_.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  (
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 varchar(10) CHARACTER SET ISO88591;
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED /*altered_col*/
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 * The following table _orders_ has two non-unique indexes 
@@ -2910,9 +2994,9 @@ CREATE SEQUENCE   employee_seq
 START WITH        1
 INCREMENT BY      1
 MAXVALUE          10000   
-NOCYCLE
+NO CYCLE
 CACHE             20  
-UNSIGNED SMALLINT
+SMALLINT UNSIGNED 
 ```
 
 The first reference to `seqnum(empolyee_seq, next)` will return 10000, and the second reference will return 10001. Each subsequent reference will return a value 1 greater than the previous value.
@@ -2964,17 +3048,21 @@ column-definition is:
 ```
 data-type is:
     char[acter] [(length [characters])]
-          [character set char-set-name]
-          [upshift] [[not]casespecific]
+                [character set char-set-name]
+                [upshift] [[not]casespecific]
   | char[acter] varying (length [characters])
-          [character set char-set-name]
+                        [character set char-set-name]
+                        [upshift] [[not]casespecific]
+  | varchar (length [characters]) 
+            [character set char-set-name]
+            [upshift] [[not]casespecific]
+  | varchar2 (length [characters]) 
+             [character set char-set-name]
+             [upshift] [[not]casespecific]          
+  | nchar [(length [characters])]
           [upshift] [[not]casespecific]
-  | varchar (length) [character set char-set-name]
-          [upshift] [[not]casespecific]
-  | varchar2 (length) [character set char-set-name]
-          [upshift] [[not]casespecific]          
-  | nchar (length) [characters] [upshift] [[not]casespecific]
-  | nchar varying(length [characters]) [upshift] [[not] casespecific]
+  | nchar varying (length [characters]) 
+                  [upshift] [[not] casespecific]
   | numeric [(precision [,scale])] [signed|unsigned]
   | smallint [signed|unsigned]
   | int[eger] [signed|unsigned]
@@ -3712,6 +3800,23 @@ ATTRIBUTES ALIGNED FORMAT
 --- SQL operation complete.
 ```
 
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2. 
+So it is not possible to specify a CHARACTER SET clause when using NCHAR, 
+as the following example shows.
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (UCS2) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *CREATE* and *ALTER* statement.
++
+```
+SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET USC2);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table test1 (c1 nchar(10) character set usc2);
+                                       ^ (40 characters from start of SQL statement) [2018-07-13 04:02:39]
+```
+
 <<<
 [[create_table_examples_create_table_as]]
 ==== Examples of CREATE TABLE AS
@@ -4257,22 +4362,46 @@ For the searched DELETE form, if no WHERE clause exists, all rows are deleted fr
 ```
 Searched DELETE is:
 
-DELETE FROM table
-
-    [WHERE search-condition ]
-       [[for] access-option access]
+DELETE 
+[WITH NO ROLLBACK] ["["FIRST N"]"]
+FROM table-name
+[WHERE search-condition ]
+[[for] access-option access]
 
 access-option is:
-    read committed
+read committed
 ```
 
 [[delete_syntax]]
 === Syntax Description of DELETE
 
-* `_table_`
+* `_table-name_`
 +
 names the user table or view from which to delete rows. _table_ must be a base table or an updatable view. To refer to a
 table or view, use the ANSI logical name. See <<database_object_names,Database Object Names>>.
+
+* `WITH NO ROLLBACK`
++
+performs a non-transactional delete.
++
+A non-transactional delete is one that happens outside a transaction. It means that if the 
+statement is interrupted, any deletes that have been done are still permanent.
++
+NOTE: This option is only supported if there is no index on the table.
+
+* `FIRST _N_`
++
+specified that _N_ rows are to be deleted (assuming the table has at least _N_ rows and that
+the qualification criteria specified in the WHERE clause, if any, would select at least _N_ rows).
++
+You must enclose `First _N_` in square bracket ([ ]).
+The quotation marks (" ") around each square brackt in the syntax diagram indicate that 
+the bracket is a required character that you must type as shown (for example, `[FIRST 5]`).
+Do not include quotation marks in the FIRST clause.
++
+NOTE: When using this option without the `WITH NO ROLLBACK` option, and if you have a large 
+_N_ (tens of thousands), break up _N_ into smaller numbers and execute the DELETE statement 
+repeatedly for better performance.
 
 * `WHERE _search-condition_`
 +
@@ -4286,7 +4415,7 @@ If you do not specify a search condition, all rows in the table or view are dele
 specifies the access option required for data used to evaluate the search condition.
 See <<data_consistency_and_access_options,Data Consistency and Access Options>>.
 
-** `READ `COMMITTED
+** `READ COMMITTED`
 +
 specifies that any data used to evaluate the search condition must come from committed  rows.
 +
@@ -4360,6 +4489,45 @@ DELETE FROM invent.partsupp WHERE suppnum NOT IN
 delete from table1 where a in (select a from table1 where b > 200)
 ```
 
+* This example executes a non-transactional delete of first 1000 rows that satisfy the
+WHERE condition.
++
+```
+DELETE WITH NO ROLLBACK [FIRST 1000] 
+FROM test 
+WHERE id<30;
+```
+
+* This example shows that the option `WITH NO ROLLBACK` is only supported if there is no
+index on the table.
++
+```
+SQL>DELETE WITH NO ROLLBACK FROM test;
+
+*** ERROR[3232] INSERT, UPDATE, or DELETE of table TRAFODION.SEABASE.TEST with dependent Index : TRAFODION.SEABASE.INDEX_TEST is not allowed when NO ROLLBACK transaction setting is in effect. [2018-05-30 05:42:47]
+
+SQL>SHOWDDL test;
+
+CREATE TABLE TRAFODION.SEABASE.TEST
+  ( 
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               INT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_TEST ON TRAFODION.SEABASE.TEST
+  ( 
+    C1 ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
 <<<
 [[drop_function_statement]]
 == DROP FUNCTION Statement
@@ -4377,7 +4545,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `_[[catalog-name.]schema-name.]function-name`
+* `_[[catalog-name.]schema-name.]function-name_`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -4615,9 +4783,9 @@ DROP ROLE role-name
 +
 is an existing role name. The role cannot be dropped if any of the following are true:
 
-* Any privileges are granted to the role.
-* The role is granted to any users.
-* The role owns any schemas.
+** Any privileges are granted to the role.
+** The role is granted to any users.
+** The role owns any schemas.
 
 [[drop_role_considerations]]
 === Considerations for DROP ROLE

@@ -1295,6 +1295,9 @@ METRIC_QUERY_TABLE
 METRIC_SESSION_TABLE
 METRIC_TEXT_TABLE
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>invoke trafodion."_REPOS_".metric_query_table;
 

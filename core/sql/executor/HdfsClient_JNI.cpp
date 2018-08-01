@@ -288,6 +288,8 @@ HDFS_Scan_RetCode HdfsScan::trafHdfsRead(int retArray[], short arrayLen)
    short retArrayLen = jenv_->GetArrayLength(j_retArray);
    ex_assert(retArrayLen == arrayLen, "HdfsScan::trafHdfsRead() InternalError: retArrayLen != arrayLen");
    jenv_->GetIntArrayRegion(j_retArray, 0, 4, retArray);
+   if (hdfsStats_ != NULL)
+      hdfsStats_->incBytesRead(retArray[ExHdfsScanTcb::BYTES_COMPLETED]);
    return HDFS_SCAN_OK;
 }
 
@@ -666,6 +668,7 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
      if (hdfsStats_ != NULL) {
          hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
          hdfsStats_->incHdfsCalls();
+         hdfsStats_->incBytesRead(writeLen);
      }
      if (jenv_->ExceptionCheck())
      {
@@ -724,6 +727,7 @@ Int64 HdfsClient::hdfsWriteImmediate(const char* data, Int64 len, HDFS_Client_Re
      if (hdfsStats_ != NULL) {
          hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
          hdfsStats_->incHdfsCalls();
+         hdfsStats_->incBytesRead(writeLen);
      }
      if (jenv_->ExceptionCheck())
      {
@@ -765,6 +769,7 @@ Int32 HdfsClient::hdfsRead(Int64 pos, const char* data, Int64 len, HDFS_Client_R
   if (hdfsStats_ != NULL) {
       hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
       hdfsStats_->incHdfsCalls();
+      hdfsStats_->incBytesRead(bytesRead);
   }
   if (jenv_->ExceptionCheck())
   {

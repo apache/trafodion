@@ -2919,3 +2919,17 @@ Use of predefined UDF <name> is deprecated and this function will be removed in 
 
 *Recovery:* See message.
 
+[[SQL-4497]]
+== SQL 4497
+
+```
+The <number> operand of builtin-func <name> must be <data type>.
+
+```
+
+*Cause:* You attempted to use an invalid type for the given operand of the given function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+

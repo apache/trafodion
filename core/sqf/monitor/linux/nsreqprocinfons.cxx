@@ -222,18 +222,21 @@ void CExtProcInfoNsReq::performRequest()
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf( "%s@%d request #%ld: ProcessInfoNs, for (%d, %d:%d), "
+        trace_printf( "%s@%d request #%ld: ProcessInfoNs, for %s (%d, %d:%d), "
                       "process type=%s\n"
                     , method_name, __LINE__, id_
-                    , target_nid, target_pid, target_verifier
+                    , target_process_name.c_str(), target_nid, target_pid, target_verifier
                     , ProcessTypeString(target_type));
     }
 
     if (target_process_name.size())
     { // find by name (don't check node state, don't check process state, not backup)
-        process = Nodes->GetProcess( target_process_name.c_str()
-                                   , target_verifier
-                                   , false, false, false );
+        if (msg_->u.request.u.process_info.target_process_name[0] == '$' )
+        {
+            process = Nodes->GetProcess( target_process_name.c_str()
+                                       , target_verifier
+                                       , false, false, false );
+        }
     }
     else
     {

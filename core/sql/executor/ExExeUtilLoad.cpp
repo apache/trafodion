@@ -2563,6 +2563,7 @@ void ExExeUtilLobExtractTcb::freeResources()
   if (lobHandle_ and lobName_)
     retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -2588,6 +2589,23 @@ void ExExeUtilLobExtractTcb::freeResources()
 ExExeUtilLobExtractTcb::~ExExeUtilLobExtractTcb()
 {
   freeResources();
+}
+
+ExOperStats * ExExeUtilLobExtractTcb::doAllocateStatsEntry(CollHeap *heap,
+							    ComTdb *tdb)
+{
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 short ExExeUtilLobExtractTcb::work()
@@ -3023,6 +3041,7 @@ short ExExeUtilLobExtractTcb::work()
 		if(lobTdb().appendOrCreate())
 		  tgtFlags = Lob_Append_Or_Create;
 		retcode = ExpLOBInterfaceSelect(lobGlobs, 
+                                                (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 						lobName_,
 						lobLoc_,
 						lobType_,
@@ -3067,6 +3086,7 @@ short ExExeUtilLobExtractTcb::work()
 	  {
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3117,6 +3137,7 @@ short ExExeUtilLobExtractTcb::work()
                 
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3186,6 +3207,7 @@ short ExExeUtilLobExtractTcb::work()
 	  {
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3334,6 +3356,23 @@ void ExExeUtilLobUpdateTcb::freeResources()
  exLobGlobals_ = NULL;
 }
 
+ExOperStats * ExExeUtilLobUpdateTcb::doAllocateStatsEntry(CollHeap *heap,
+							    ComTdb *tdb)
+{
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
+}
+
 short ExExeUtilLobUpdateTcb::work()
 {
   Lng32 cliRC = 0;
@@ -3467,6 +3506,7 @@ short ExExeUtilLobUpdateTcb::work()
                   }
               }
             retcode = ExpLOBInterfaceUpdate(lobGlobs,
+                                            (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                                             lobTdb().getLobHdfsServer(),
                                             lobTdb().getLobHdfsPort(),
                                             lobName_,
@@ -3550,6 +3590,7 @@ short ExExeUtilLobUpdateTcb::work()
             Int32 outHandleLen;
             Int64 requestTag = 0;
             retcode = ExpLOBInterfaceUpdateAppend(lobGlobs,
+                                            (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                                             lobTdb().getLobHdfsServer(),
                                             lobTdb().getLobHdfsPort(),
                                             lobName_,
@@ -3635,6 +3676,7 @@ short ExExeUtilLobUpdateTcb::work()
             Int64 requestTag = 0;
           
             retcode = ExpLOBInterfaceUpdate(lobGlobs,
+                                            (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                                             lobTdb().getLobHdfsServer(),
                                             lobTdb().getLobHdfsPort(),
                                             lobName_,
@@ -3735,8 +3777,7 @@ NABoolean ExExeUtilFileExtractTcb::needStatsEntry()
     return FALSE;
 }
 
-ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
-							    CollHeap *heap,
+ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(CollHeap *heap,
 							    ComTdb *tdb)
 {
   ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
@@ -3745,7 +3786,6 @@ ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
      ss = espGlobals->getStmtStats();
   else
      ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
-  
   ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
 				   this,
 				   tdb);
@@ -3811,6 +3851,7 @@ short ExExeUtilFileExtractTcb::work()
 
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3857,6 +3898,7 @@ short ExExeUtilFileExtractTcb::work()
 
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3914,6 +3956,7 @@ short ExExeUtilFileExtractTcb::work()
 	  {
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -3943,7 +3986,7 @@ short ExExeUtilFileExtractTcb::work()
 		break;
 	      }
 
-	    step_ = COLLECT_STATS_;
+	    step_ = DONE_;
 	  }
 	  break;
 
@@ -3953,30 +3996,6 @@ short ExExeUtilFileExtractTcb::work()
 	    if (retcode == 1)
 	      return WORK_OK;
 
-	    step_ = DONE_;
-	  }
-	  break;
-
-	case COLLECT_STATS_:
-	  {
-	    if (! getStatsEntry())
-	      {
-		step_ = DONE_;
-		break;
-	      }
-
-	    ExHdfsScanStats * stats =
-	      getStatsEntry()->castToExHdfsScanStats();
-
-	    retcode = ExpLOBinterfaceStats
-	      (lobGlobs,
-	       stats->lobStats(),
-	       lobName_, 
-	       lobLoc_,
-	       lobType_,
-	       lobTdb().getLobHdfsServer(),
-	       lobTdb().getLobHdfsPort());
-	    
 	    step_ = DONE_;
 	  }
 	  break;
@@ -4004,6 +4023,23 @@ ExExeUtilFileLoadTcb::ExExeUtilFileLoadTcb
  ex_globals * glob)
   : ExExeUtilLobExtractTcb(exe_util_tdb, child_tcb, glob)
 {
+}
+
+ExOperStats * ExExeUtilFileLoadTcb::doAllocateStatsEntry(CollHeap *heap,
+							    ComTdb *tdb)
+{
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 short ExExeUtilFileLoadTcb::work()
@@ -4162,6 +4198,7 @@ short ExExeUtilFileLoadTcb::work()
 	    Int64 dummy;
 	    retcode = ExpLOBInterfaceInsert
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,
@@ -4204,6 +4241,7 @@ short ExExeUtilFileLoadTcb::work()
 	  {
 	    retcode = ExpLOBinterfaceCloseFile
 	      (lobGlobs,
+               (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
 	       lobName_, 
 	       lobLoc_,
 	       lobType_,

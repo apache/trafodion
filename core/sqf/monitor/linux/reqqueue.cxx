@@ -64,6 +64,7 @@ extern char *ErrorMsg (int error_code);
 extern CRedirector Redirector;
 extern bool NameServerEnabled;
 extern CPtpClient *PtpClient;
+extern CProcess *NameServerProcess;
 extern CNameServer *NameServer;
 extern CNameServerConfigContainer *NameServerConfig;
 #endif
@@ -1578,15 +1579,18 @@ void CIntNewProcReq::performRequest()
         {
             if (NameServerEnabled)
             {
-                if (trace_settings & TRACE_REQUEST)
-                    trace_printf( "%s@%d" " - Getting parent process from Name Server (%d,%d:%d)\n"
-                                , method_name, __LINE__
-                                , parentNid_
-                                , parentPid_
-                                , parentVerifier_ );
-                parentProcess = Nodes->CloneProcessNs( parentNid_
-                                                     , parentPid_
-                                                     , parentVerifier_ );
+                if (parentNid_ != -1 && parentPid_ != -1)
+                {
+                    if (trace_settings & TRACE_REQUEST)
+                        trace_printf( "%s@%d" " - Getting parent process from Name Server (%d,%d:%d)\n"
+                                    , method_name, __LINE__
+                                    , parentNid_
+                                    , parentPid_
+                                    , parentVerifier_ );
+                    parentProcess = Nodes->CloneProcessNs( parentNid_
+                                                         , parentPid_
+                                                         , parentVerifier_ );
+                }
             }
         }
     }
@@ -2598,7 +2602,7 @@ void CIntChildDeathReq::performRequest()
                          , process_->GetVerifier() );
         }
 #ifndef NAMESERVER_PROCESS
-        if ( NameServerEnabled )
+        if ( NameServerEnabled && process_ != NameServerProcess)
         {
             int rc = NameServer->ProcessDelete(process_); // in reqQueue thread (CIntChildDeathReq)
             if (rc)
@@ -2713,9 +2717,11 @@ void CIntShutdownReq::performRequest()
     else
     {
         // Stop all processes
-        Monitor->HardNodeDown( MyPNID );
 #ifndef NAMESERVER_PROCESS
+        Monitor->HardNodeDown( MyPNID );
         MyNode->EmptyQuiescingPids();
+#else
+        Monitor->HardNodeDownNs( MyPNID );
 #endif
         // now stop the Watchdog process
         HealthCheck.setState(MON_NODE_DOWN);
@@ -3261,7 +3267,11 @@ void CIntDownReq::performRequest()
     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
         trace_printf("%s@%d - Node down request, pnid=%d\n",
                      method_name, __LINE__, pnid_);
+#ifndef NAMESERVER_PROCESS
     Monitor->HardNodeDown( pnid_ );
+#else
+    Monitor->HardNodeDownNs( pnid_ );
+#endif
 
     TRACE_EXIT;
 }
@@ -4063,7 +4073,11 @@ void CPostQuiesceReq::performRequest()
     else
     {
         // Stop all processes
+#ifndef NAMESERVER_PROCESS
         Monitor->HardNodeDown( MyPNID );
+#else
+        Monitor->HardNodeDownNs( MyPNID );
+#endif
 #ifndef NAMESERVER_PROCESS
         MyNode->EmptyQuiescingPids();
 #endif
@@ -4238,6 +4252,11 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 
         case ReqType_NameServerStop:
             request = new CExtNameServerStopNsReq(msgType, nid, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NodeDown:
+            request = new CExtNodeDownNsReq(msgType, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -5376,7 +5395,7 @@ CRequest* CReqQueue::getRequest()
         }
     }
 
-    if (!request->isShutdown())
+    if (request && !request->isShutdown())
     {
         // Take request out of list
         reqQueue_.erase (it);

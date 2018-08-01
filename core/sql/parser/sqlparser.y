@@ -67,6 +67,7 @@
 // This solves the problem because bison does not have to reduce after reading TOK_DROP. Rather,
 // after reading TOK_DROP TOK_TABLE, it can lookahead at the next token to decide what to do.
 
+
 #include "Platform.h"				// must be the first #include
 //debug yacc
 #define YY_LOG_FILE "yylog"
@@ -500,6 +501,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CARDINALITY
 %token <tokval> TOK_CASE
 %token <tokval> TOK_CAST
+%token <tokval> TOK_CENTURY
 %token <tokval> TOK_TYPECAST
 %token <tokval> TOK_CATCHUP	  // MV
 %token <tokval> TOK_TRANSLATE
@@ -622,6 +624,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_DYNAMIC
 %token <tokval> TOK_DYNAMIC_FUNCTION    /* ANSI SQL non-reserved word */
 %token <tokval> TOK_D_RANK             /* Tandem extension non-reserved word */
+%token <tokval> TOK_DECADE
+%token <tokval> TOK_DOW
+%token <tokval> TOK_DOY
 %token <tokval> TOK_EACH                
 %token <tokval> TOK_EID
 %token <tokval> TOK_ELSEIF
@@ -656,6 +661,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_EXTRACT
 %token <tokval> TOK_EXTRACT_SOURCE
 %token <tokval> TOK_EXTRACT_TARGET
+%token <tokval> TOK_EPOCH
 %token <tokval> TOK_FALSE
 %token <tokval> TOK_FAMILY
 %token <tokval> TOK_FEATURE_VERSION_INFO   /* Versioning. Non-reserved */
@@ -729,6 +735,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_INOUT
 %token <tokval> TOK_INSTR
 %token <tokval> TOK_NOT_IN
+%token <tokval> TOK_SYS_GUID
 %token <tokval> TOK_INCLUSIVE
 %token <tokval> TOK_INDICATOR
 %token <tokval> TOK_INITIALIZATION // MV 
@@ -849,6 +856,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_MONTHNAME
 %token <tokval> TOK_MORE                /* ANSI SQL non-reserved word */
 %token <tokval> TOK_MRANK               /* Tandem extension non-reserved word */
+%token <tokval> TOK_MSCK
 %token <tokval> TOK_MSTDDEV             /* Tandem extension non-reserved word */
 %token <tokval> TOK_MSUM                /* Tandem extension non-reserved word */
 %token <tokval> TOK_MV                  
@@ -976,6 +984,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_REMOTE
 %token <tokval> TOK_TEMP_TABLE         
 %token <tokval> TOK_TEMPORARY
+%token <tokval> TOK_REPAIR
 %token <tokval> TOK_REPEAT
 %token <tokval> TOK_REPEATABLE          /* ANSI SQL non-reserved word */ 
 %token <tokval> TOK_REPEATABLE_ACCESS   /* Tandem extension */
@@ -1079,6 +1088,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_STATUS
 %token <tokval> TOK_STDDEV              /* Tandem extension */
 %token <tokval> TOK_STOP                /* Tandem extension */
+%token <tokval> TOK_SPLIT_PART          /* Trafodion extension*/ 
 %token <tokval> TOK_STORED
 %token <tokval> TOK_SQL
 %token <tokval> TOK_SQL_DOUBLE
@@ -1173,6 +1183,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_WAITEDIO
 %token <tokval> TOK_WCHAR
 %token <tokval> TOK_WEEK
+%token <tokval> TOK_WOM
 %token <tokval> TOK_WHEN
 %token <tokval> TOK_WHENEVER
 %token <tokval> TOK_WHERE
@@ -2041,6 +2052,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <intervalQualifier>	end_field
 %type <intervalQualifier>       fraction_only_interval
 %type <datetimeField>		non_second_datetime_field
+%type <datetimeField>		new_non_second_datetime_field
 %type <datetimeField>		datetime_field
 %type <datetimeQualifier>       datetime_qualifier           //For MP Datetime
 %type <datetimeQualifier>       datetime_start_field         //For MP Datetime
@@ -8709,10 +8721,18 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                    ItemExpr * ie = new (PARSERHEAP()) UnixTimestamp($3);
                                    $$ = new (PARSERHEAP()) Cast(ie, type);
 				}
+    | TOK_SYS_GUID '(' ')'
+              {
+                  ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID_SYS_GUID, PARSERHEAP());
+                  ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLVarChar(PARSERHEAP() , 32, FALSE);
+                  $$ = new (PARSERHEAP()) Cast(conv,type);
+              }
     | TOK_UUID '(' ')'
               {
                   ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
-                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
                   NAType * type;
                   type = new (PARSERHEAP())
                        SQLVarChar(PARSERHEAP() , 36, FALSE);
@@ -8721,7 +8741,6 @@ datetime_value_function : TOK_CURDATE '(' ')'
     | TOK_UUID_SHORT '(' ')'
               {
                   ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_SHORT_ID, PARSERHEAP());
-                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
                   NAType * type;
                   type = new (PARSERHEAP())
                        SQLVarChar(PARSERHEAP() , 36, FALSE);
@@ -9270,6 +9289,11 @@ string_function :
 	  $$ = new (PARSERHEAP()) 
 	    BuiltinFunction(ITM_REVERSE, CmpCommon::statementHeap(), 1, $3);
         } 
+     | TOK_SPLIT_PART '(' value_expression ',' value_expression ',' value_expression ')'
+        {                     
+               $$ = new (PARSERHEAP()) SplitPart($3, $5, $7);
+        }
+
 
 
 /* type item */
@@ -12480,9 +12504,46 @@ non_second_datetime_field : TOK_YEAR
                           {
                             $$ = REC_DATE_MINUTE;
                           }
+new_non_second_datetime_field:
+                          TOK_CENTURY
+                          {
+                            $$ = REC_DATE_CENTURY;
+                          }
+                          | TOK_DECADE
+                          {
+                            $$ = REC_DATE_DECADE;
+                          }
+                          | TOK_WEEK
+                          {
+                            $$ = REC_DATE_WEEK;
+                          }
+                          | TOK_QUARTER
+                          {
+                            $$ = REC_DATE_QUARTER;
+                          }
+                          | TOK_EPOCH
+                          {
+                            $$ = REC_DATE_EPOCH;
+                          }
+                          | TOK_DOW
+                          {
+                            $$ = REC_DATE_DOW;
+                          }
+                          | TOK_DOY
+                          {
+                            $$ = REC_DATE_DOY;
+                          }
+                          | TOK_WOM
+                          {
+                            $$ = REC_DATE_WOM;
+                          }
 
 /* type datetimeField */
 datetime_field : non_second_datetime_field
+               {
+                 $$ = $1;
+               }
+               | new_non_second_datetime_field
                {
                  $$ = $1;
                }
@@ -18861,7 +18922,7 @@ simple_table  : query_specification
 
 
 /* type relx */
-rel_subquery : '(' query_expression order_by_clause ')'
+rel_subquery : '(' query_expression order_by_clause optional_limit_spec ')'
 				{
                                   if (InIfCondition) {
                                      *SqlParser_Diags << DgSqlCode(-3176);
@@ -18889,6 +18950,24 @@ rel_subquery : '(' query_expression order_by_clause ')'
                                     }
 
                                   $$ = temp;
+                  if ($4)
+                    {
+                      RelExpr *query = $2;
+                      if (query->getFirstNRows() >= 0)
+                        {
+                          YYERROR;
+                        }
+                      else
+                        {
+                          NABoolean negate;
+                          if ($4->castToConstValue(negate))
+                            {
+                              ConstValue *limit = (ConstValue *)$4;
+                              Lng32 scale = 0;
+                              query->setFirstNRows(limit->getExactNumericValue(scale));
+                            }
+                        }
+                    }
 				}
 /* type item */
 predicate : directed_comparison_predicate
@@ -25346,7 +25425,7 @@ create_table_start_tokens :
                      $$ = tableTokens;
 
                      SqlParser_CurrentParser->hiveDDLInfo_->
-                       setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::TABLE_, $3);
+                       setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::TABLE_, $4);
 		   }
 
                    | TOK_CREATE TOK_IMPLICIT TOK_EXTERNAL TOK_TABLE optional_if_not_exists_clause
@@ -31801,6 +31880,41 @@ alter_table_statement :  alter_table_start_tokens
                                   delete $4 /*ddl_qualified_name*/;
                                 }
 
+                     | TOK_MSCK
+                       { 
+                         // this is a Hive only syntax
+                         SqlParser_CurrentParser->hiveDDLInfo_->
+                           setValues(TRUE, StmtDDLonHiveObjects::MSCK_, 
+                                     StmtDDLonHiveObjects::TABLE_);
+                       }
+                       TOK_REPAIR TOK_TABLE ddl_qualified_name
+                       {
+                         if (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_)
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Specified object must be a Hive object.");
+                           }
+
+                         $$ = NULL;
+                         YYERROR;
+                       }
+                     | alter_table_start_tokens ddl_qualified_name TOK_RECOVER TOK_PARTITIONS
+                       {
+                         // this is a Hive only syntax
+                         SqlParser_CurrentParser->hiveDDLInfo_->
+                           setValues(TRUE, StmtDDLonHiveObjects::MSCK_, 
+                                     StmtDDLonHiveObjects::TABLE_);
+
+                         if (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_)
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Specified object must be a Hive object.");
+                           }
+ 
+                         $$ = NULL;
+                         YYERROR;
+                       }
+
 ghost : TOK_GHOST
                  {
                    // GHOST is allowed only if the flag ALLOW_SPECIALTABLETYPE is set,
@@ -33708,6 +33822,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_CATALOGS
                       | TOK_CATALOG_NAME
 		      | TOK_CATCHUP // MV
+                      | TOK_CENTURY
                       | TOK_CHANGED
 		      | TOK_CHANGES // MV
                       | TOK_CHARS
@@ -33777,6 +33892,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DCOMPRESS
                       | TOK_DDL
 		      | TOK_DE			// MV OZ_REFRESH
+                      | TOK_DECADE
                       | TOK_DEFINER
                       | TOK_DEFINITION
                       | TOK_DEFAULTS
@@ -33793,6 +33909,8 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DIVISION
                       | TOK_DO
                       | TOK_DOUBLE_IEEE
+                      | TOK_DOW
+                      | TOK_DOY
                       | TOK_DROP_LIBRARY
                       | TOK_DROP_MV
                       | TOK_DROP_MV_GROUP
@@ -33815,6 +33933,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_ENTERPRISE
                       | TOK_ENTRY
                       | TOK_ENTRIES
+                      | TOK_EPOCH
                       | TOK_ET
                       | TOK_EUROPEAN
                       | TOK_EXCEPTIONS
@@ -33957,6 +34076,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MV  
                       | TOK_MULTI            /* Long Running */
 		      | TOK_MULTIDELTA // MV
+                      | TOK_MSCK
 		      | TOK_MVATTRIBUTE  // MV
 		      | TOK_MVATTRIBUTES // MV
                       | TOK_MV_TABLE  
@@ -34062,6 +34182,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RELOAD
                       | TOK_REMOTE
                       | TOK_RENAME
+                      | TOK_REPAIR
                       | TOK_REPOSITORY
                       | TOK_REQUEST // MV
                       | TOK_REQUIRED
@@ -34185,6 +34306,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_VSBB
                       | TOK_WAITED
                       | TOK_WAITEDIO
+                      | TOK_WOM
 
 		      	// New words added can be merged into sorted list above
                       | TOK_INVOKE
@@ -34427,6 +34549,7 @@ nonreserved_func_word:  TOK_ABS
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
                       | TOK_UUID
+                      | TOK_SYS_GUID
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK

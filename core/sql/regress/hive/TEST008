@@ -27,6 +27,8 @@ revoke role DB__HIVEROLE from SQL_USER4;
 log LOG008 clear;
 cqd traf_ddl_on_hive_objects 'ON';
 
+set schema hive.sch008;
+
 showddl schema hive.sch008;
 create database hive.sch008;
 create schema if not exists hive.sch008;
@@ -242,6 +244,27 @@ invoke hive.sch008.t008072;
 drop table t00807;
 drop table t008072;
 
+-- alter rename. Should unregister the source table.
+create table t00807 (a int);
+alter table t00807 rename to `default`.t00807ren;
+select * from trafodion."_MD_".objects where schema_name = 'HIVE' and object_name = 'T00807';
+-- should show
+showddl hive.t00807ren;
+-- should not show
+showddl t00807ren;
+drop table hive.t00807ren;
+
+-- alter rename to the hive schema set in session (hive.sch008)
+create table t00807 (a int);
+alter table t00807 rename to t00807ren;
+-- should show
+showddl t00807ren;
+-- should not show
+showddl hive.t00807ren;
+
+-- msck (meta store check) command support
+msck repair table t00807ren;
+alter table t00807ren recover partitions;
 
 -- explain on hive DDL
 explain options 'f' drop table hive.hive.tnone;
@@ -258,7 +281,7 @@ showddl role DB__HIVEROLE;
 grant role DB__HIVEROLE to SQL_USER4;
 showddl role DB__HIVEROLE;
 
--- should not return unquthorized error.
+-- should not return unauthorized error.
 log;
 sh sqlci -i"TEST008(hive_ddl_as_user4)" -u"SQL_User4";
 log LOG008;

@@ -665,6 +665,7 @@ short BuiltinFunction::codeGen(Generator * generator)
     break;
 
     case ITM_UNIQUE_ID:
+    case ITM_UNIQUE_ID_SYS_GUID:
     case ITM_UNIQUE_SHORT_ID:
       {
 	function_clause =
@@ -711,6 +712,13 @@ short BuiltinFunction::codeGen(Generator * generator)
                                                         space,
                                                         getArity(),
                                                         CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
+
+    case ITM_SPLIT_PART:
+    {
+      function_clause = 
+            new (generator->getSpace()) ex_function_split_part(getOperatorType(), attr, space);
       break;
     }
     default:

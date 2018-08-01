@@ -11362,7 +11362,8 @@ static void processPassthruHiveDDL(StmtDDLonHiveObjects * hddl)
            (hiveQuery.index("TRUNCATE ", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery.index("GRANT ", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery.index("REVOKE ", 0, NAString::ignoreCase) == 0) ||
-           (hiveQuery.index("RELOAD ", 0, NAString::ignoreCase) == 0)))
+           (hiveQuery.index("RELOAD ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("MSCK ", 0, NAString::ignoreCase) == 0)))
     {
       // error case
       *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Specified DDL operation cannot be executed directly by hive.");
@@ -11414,7 +11415,8 @@ void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
   if (NOT ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
            (hddl->getOper() == StmtDDLonHiveObjects::DROP_) ||
            (hddl->getOper() == StmtDDLonHiveObjects::ALTER_) ||
-           (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_)))
+           (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::MSCK_)))
     {
       // error case
       *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only CREATE, DROP, ALTER or TRUNCATE DDL commands can be specified on hive objects. Use \"PROCESS HIVE DDL '<ddl-stmt>' \" to directly execute other statements through hive.");
@@ -11671,6 +11673,45 @@ void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
+  // this ALTER may be a RENAME command. 
+  // If the table being renamed is registered in Traf MD, unregister it.
+  if (hddl->getOper() == StmtDDLonHiveObjects::ALTER_)
+    {
+      // set cqd so NATable is recreated instead of returning cached one.
+      NABoolean cqdChanged = FALSE;
+      if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
+        {
+          NAString value("ON");
+          ActiveSchemaDB()->getDefaults().validateAndInsert(
+               "traf_reload_natable_cache", value, FALSE);
+          cqdChanged = TRUE;
+        }
+
+      NATable *naTable = bindWA.getNATable(cnTgt);
+      
+      if (cqdChanged)
+        {
+          NAString value("OFF");
+          ActiveSchemaDB()->getDefaults().validateAndInsert(
+               "traf_reload_natable_cache", value, FALSE);
+        }
+
+      NABoolean objExists = FALSE;
+      if (naTable == NULL || bindWA.errStatus())
+        objExists = FALSE;
+      else
+        objExists = TRUE;
+      
+      if (NOT objExists)
+        {
+          CmpCommon::diags()->clear();
+          cliRC = unregisterNativeTable(
+               catName, schName, objName,
+               cliInterface, 
+               objType);
+        }
+    }
+
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cnTgt,
      ComQiScope::REMOVE_FROM_ALL_USERS,
@@ -11773,6 +11814,19 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
   
   CmpCommon::diags()->clear();
   
+  if (oper == StmtDDLonHiveObjects::MSCK_)
+    {
+      // this may be set through 'msck repair table <tablename>' or 
+      // 'alter table <tablename> repair partitions'.
+      // Underlying Hive may not support the 'alter repair' syntax on
+      // all platforms.
+      // Create 'msck' version which is supported.
+      NAString newHiveDDL("MSCK REPAIR TABLE ");
+      newHiveDDL += newHiveName;
+      hiveDDL.clear();
+      hiveDDL = newHiveDDL;
+    }
+
   DDLExpr * ddlExpr = NULL;
   RelExpr * ddlExprRoot = NULL;
   if (oper == StmtDDLonHiveObjects::TRUNCATE_)
@@ -11815,11 +11869,20 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
   else if (NOT ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
                 (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_)))
     {
+      // get the hive schema name if set in the session.
+      BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+      NAString hiveDB = ComConvertTrafHiveNameToNativeHiveName
+        (bindWA.getDefaultSchema().getCatalogName(),
+         bindWA.getDefaultSchema().getSchemaName(),
+         NAString(""));
+      hiveDB.toLower();
+      
       StmtDDLonHiveObjects * sdho = 
         new (PARSERHEAP()) StmtDDLonHiveObjects(oper, type, 
                                                 ifExistsOrNotExists,
                                                 con.getExternalName(),
-                                                hiveDDL, PARSERHEAP());
+                                                hiveDDL, hiveDB,
+                                                PARSERHEAP());
       
       DDLExpr * ddlExpr = new(CmpCommon::statementHeap()) 
         DDLExpr(sdho, inputStr, inputStrCharSet,

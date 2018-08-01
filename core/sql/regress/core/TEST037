@@ -80,7 +80,6 @@ create table table_name
 , CONSTRAINT_SCHEMA int not null 
 , CONTROL int not null 
 , CURSOR_NAME int not null 
-, CRC32 int not null
 , DATA int not null 
 --,DATETIME int not null 
 , DATETIME_CODE int not null 
@@ -127,7 +126,6 @@ create table system_name
 , LOW_VALUE int not null 
 , MAXSIZE int not null 
 , MBYTES int not null 
-, MD5 int not null
 , MESSAGE_LEN int not null 
 , MESSAGE_OCTET_LEN int not null 
 , MESSAGE_TEXT int not null 
@@ -160,9 +158,6 @@ create table system_name
 , SERIALIZABLE int not null 
 , SERIALWRITES int not null 
 , SERVER_NAME int not null 
-, SHA int not null
-, SHA1 int not null
-, SHA2 int not null
 , SHAPE int not null 
 , SHARE int not null 
 , SIDEINSERTS int not null 
@@ -176,6 +171,7 @@ create table system_name
 , STORE int not null 
 , SUBCLASS_ORIGIN int not null 
 , SUBSYSTEM_ID int not null 
+, SYS_GUID int not null 
 , system_name int not null 
 , TABLE_NAME int not null 
 , TYPE int not null 
@@ -1306,9 +1302,6 @@ prepare s1 from SELECT COSH COSH from (values(0)) COSH(COSH);
 prepare s1 from SELECT COST COST from (values(0)) COST(COST);
 
 -- Expect success
-prepare s1 from SELECT CRC32 CRC32 from (values(0)) CRC32(CRC32);
-
--- Expect success
 prepare s1 from SELECT CURDATE CURDATE from (values(0)) CURDATE(CURDATE);
 
 -- Expect success
@@ -1567,9 +1560,6 @@ prepare s1 from SELECT LTRIM LTRIM from (values(0)) LTRIM(LTRIM);
 prepare s1 from SELECT M M from (values(0)) M(M);
 
 -- Expect success
-prepare s1 from SELECT MD5 MD5 from (values(0)) MD5(MD5);
-
--- Expect success
 prepare s1 from SELECT MAXSIZE MAXSIZE from (values(0)) MAXSIZE(MAXSIZE);
 
 -- Expect success
@@ -1810,15 +1800,6 @@ prepare s1 from SELECT SERIALWRITES SERIALWRITES from (values(0)) SERIALWRITES(S
 prepare s1 from SELECT SERVER_NAME SERVER_NAME from (values(0)) SERVER_NAME(SERVER_NAME);
 
 -- Expect success
-prepare s1 from SELECT SHA SHA from (values(0)) SHA(SHA);
-
--- Expect success
-prepare s1 from SELECT SHA1 SHA1 from (values(0)) SHA1(SHA1);
-
--- Expect success
-prepare s1 from SELECT SHA2 SHA2 from (values(0)) SHA2(SHA2);
-
--- Expect success
 prepare s1 from SELECT SHAPE SHAPE from (values(0)) SHAPE(SHAPE);
 
 -- Expect success
@@ -1907,6 +1888,9 @@ prepare s1 from SELECT SUBCLASS_ORIGIN SUBCLASS_ORIGIN from (values(0)) SUBCLASS
 
 -- Expect success
 prepare s1 from SELECT SUBSYSTEM_ID SUBSYSTEM_ID from (values(0)) SUBSYSTEM_ID(SUBSYSTEM_ID);
+
+-- Expect success
+prepare s1 from SELECT SYS_GUID SYS_GUID from (values(0)) SYS_GUID (SYS_GUID);
 
 -- Expect success
 prepare s1 from SELECT T T from (values(0)) T(T);

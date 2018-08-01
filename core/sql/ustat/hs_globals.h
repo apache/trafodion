@@ -1472,6 +1472,9 @@ public:
     HSGlobalsClass(ComDiagsArea &diags);
     ~HSGlobalsClass();
 
+    // Intialize stats schema on demand
+    Lng32 InitializeStatsSchema();
+
     //Process USTAT options
     Lng32 Initialize();
 

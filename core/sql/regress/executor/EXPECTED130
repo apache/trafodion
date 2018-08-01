@@ -1595,6 +1595,9 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 TLOB130TS2
 
+=======================
+ 7 row(s) returned
+
 --- SQL operation complete.
 >>drop schema trafodion.lobsch cascade;
 

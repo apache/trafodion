@@ -815,6 +815,7 @@ SQLRETURN CConnect::Connect(SQLCHAR *ServerName,
 	// populate the inContext
 	inContext.location[0] = '\0';
 	inContext.userRole[0] = '\0';
+    inContext.sessionName[0] = '\0';
 
 	// we need to keep the following in UTF8 internally
 	// m_DSValue.m_DSSchema, m_DSValue.m_DSServerDSName, m_DSValue.m_DSName

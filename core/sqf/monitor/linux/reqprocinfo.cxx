@@ -417,9 +417,6 @@ void CExtProcInfoReq::performRequest()
             requester =
                Nodes->GetProcess( nid_ , pid_ , verifier_
                                 , false, false, true );
-//            CLNode *lnode = Nodes->GetLNode( nid_ );
-//            CNode *node = lnode->GetNode();
-//            requester = node->GetProcess( pid_, verifier_ );
 #else
             requester = MyNode->GetProcess( pid_
                                           , verifier_ );
@@ -483,12 +480,16 @@ void CExtProcInfoReq::performRequest()
                                                          , false, false
                                                          , target_verifier == -1 ? false : true );
 #else
+                    CProcess *process = NULL;
                     // find by name (check node state, don't check process state, 
                     //               if verifier is -1, backup is NOT Ok, else is Ok)
-                    CProcess *process = Nodes->GetProcess( target_process_name.c_str()
-                                                         , target_verifier
-                                                         , true, false
-                                                         , target_verifier == -1 ? false : true );
+                    if (msg_->u.request.u.process_info.target_process_name[0] == '$' )
+                    {
+                        process = Nodes->GetProcess( target_process_name.c_str()
+                                                   , target_verifier
+                                                   , true, false
+                                                   , target_verifier == -1 ? false : true );
+                    }
 #endif
                     if (process)
                     {

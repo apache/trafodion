@@ -21,6 +21,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- succeed: DB__ROOT can create a library
@@ -41,6 +44,9 @@ Libraries in Schema TRAFODION.T132SCH
 =====================================
 
 T132_L1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>drop library t132_l1;
@@ -102,6 +108,9 @@ Libraries in Schema TRAFODION.T132SCH
 =====================================
 
 T132_L1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>drop library t132_l1;
@@ -171,6 +180,9 @@ Libraries in Schema TRAFODION.T132SCH
 
 T132_L1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>drop library t132_l1;
 
@@ -198,6 +210,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -248,6 +263,9 @@ Tables in Schema TRAFODION.T132SCH
 
 T132T1
 T132T2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
@@ -649,6 +667,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 
@@ -659,6 +680,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1265,6 +1289,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>grant component privilege "SHOW" on sql_operations to "PUBLIC";
 
@@ -1276,6 +1303,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>changeuser sql_user1;
@@ -1494,6 +1524,9 @@ Tables in Schema TRAFODION.T132SCH
 T132T1
 T132T2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>select count(*) from t132t1;
 
@@ -1636,6 +1669,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 
@@ -1646,6 +1682,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1708,6 +1747,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER3
 ===============================================================
 
 MANAGE_STATISTICS
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>changeuser sql_user3;
@@ -1889,6 +1931,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER3
 
 MANAGE_STATISTICS
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>changeuser sql_user3;
 >>obey TEST132(update_stats1);
@@ -1927,6 +1972,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>

@@ -24,6 +24,7 @@
 #define ORC_FILE_READER_H
 
 #include "JavaObjectInterface.h"
+#include "ExStats.h"
 
 // ===========================================================================
 // ===== The OrcFileReader class implements access to th Java 

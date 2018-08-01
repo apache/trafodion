@@ -53,6 +53,9 @@ Libraries in Schema TRAFODION._LIBMGR_
 DB__LIBMGRNAME
 DB__LIBMGR_LIB_CPP
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get procedures;
 
@@ -70,6 +73,9 @@ PUT
 PUTFILE
 RM
 RMREX
+
+=======================
+ 11 row(s) returned
 
 --- SQL operation complete.
 >>showddl procedure rm;
@@ -127,6 +133,9 @@ DB__LIBMGRROLE
 DB__ROOTROLE
 PUBLIC
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>showddl procedure rm;
 
@@ -178,6 +187,9 @@ Roles
 
 PUBLIC
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- ****************************************************************************
@@ -210,6 +222,9 @@ DB__LIBMGRROLE
 DB__ROOTROLE
 PUBLIC
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- enable library management
@@ -236,6 +251,9 @@ Libraries in Schema TRAFODION._LIBMGR_
 DB__LIBMGRNAME
 DB__LIBMGR_LIB_CPP
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get procedures;
 
@@ -253,6 +271,9 @@ PUT
 PUTFILE
 RM
 RMREX
+
+=======================
+ 11 row(s) returned
 
 --- SQL operation complete.
 >>showddl procedure rm;
@@ -319,6 +340,9 @@ PUTFILE
 RM
 RMREX
 
+=======================
+ 9 row(s) returned
+
 --- SQL operation complete.
 >>call ls(?);
 
@@ -346,6 +370,9 @@ PUT
 PUTFILE
 RM
 RMREX
+
+=======================
+ 11 row(s) returned
 
 --- SQL operation complete.
 >>showddl procedure put;
@@ -418,6 +445,9 @@ PUT
 PUTFILE
 RM
 RMREX
+
+=======================
+ 11 row(s) returned
 
 --- SQL operation complete.
 >>

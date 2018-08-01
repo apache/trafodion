@@ -41,6 +41,7 @@ using namespace std;
 #include "lnode.h"
 #include "pnode.h"
 #include "mlio.h"
+#include "nameserver.h"
 
 extern bool IsRealCluster;
 extern CommType_t CommType;
@@ -50,6 +51,10 @@ extern CMonitor *Monitor;
 extern CMonStats *MonStats;
 extern bool usingCpuAffinity;
 extern bool usingTseCpuAffinity;
+#ifndef NAMESERVER_PROCESS
+extern CNameServer *NameServer;
+extern bool NameServerEnabled;
+#endif
 
 void CoreMaskString( char *str, cpu_set_t coreMask, int totalCores )
 {
@@ -396,7 +401,12 @@ void CLNode::Down( void )
                         , method_name, __LINE__, GetNid()
                         , GetNode()->GetName(), msg->u.request.u.down.takeover );
         }
-        
+#ifndef NAMESERVER_PROCESS
+        if ( NameServerEnabled )
+        {
+            NameServer->ProcessNodeDown( Nid, msg->u.request.u.down.node_name );
+        }
+#endif
         MyNode->Bcast( msg );
         delete msg;
     }

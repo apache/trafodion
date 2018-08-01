@@ -134,6 +134,8 @@ enum SRVR_API {
 	SRVR_API_SQLFASTEXECDIRECT,					//OK WMS
 	SRVR_API_SQLFASTFETCH_PERF,					//OK WMS
 	SRVR_API_GETSEGMENTS,						//OK WMS
+    SRVR_API_EXTRACTLOB,                        //OK LOB
+    SRVR_API_UPDATELOB,                         //OK LOB
 	SRVR_API_LASTAPI								//Add new APIs before this
 
 };

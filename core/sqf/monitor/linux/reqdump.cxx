@@ -129,8 +129,11 @@ void CExtDumpReq::performRequest()
     {
         if ( target_process_name.size() )
         { // find by name
-            targetProcess = Nodes->GetProcess( target_process_name.c_str()
-                                             , target_verifier );
+            if (msg_->u.request.u.dump.target_process_name[0] == '$' )
+            {
+                targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                 , target_verifier );
+            }
         }
         else
         { // find by nid, pid
@@ -152,9 +155,12 @@ void CExtDumpReq::performRequest()
                                     , target_process_name.c_str()
                                     , target_verifier );
                     }
-                    cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
-                                                        , target_verifier );
-                    targetProcess = cloneProcess;
+                    if (msg_->u.request.u.dump.target_process_name[0] == '$' )
+                    {
+                        cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                            , target_verifier );
+                        targetProcess = cloneProcess;
+                    }
                 }     
                 else
                 { // Name Server find by nid,pid:verifier
