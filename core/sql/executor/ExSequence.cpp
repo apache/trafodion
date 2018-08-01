@@ -996,7 +996,7 @@ short ExSequenceTcb::work()
           ComDiagsArea *myDiags = NULL;
           if (!cluster_->flush(myDiags, heap_)) {  // flush the buffers
             // if no errors this code path is not visited
-            if (myDiags) 
+            if (myDiags != NULL) 
             { // some error
               updateDiagsArea(myDiags);
               pstate->step_ = ExSeq_ERROR;
@@ -1047,7 +1047,7 @@ short ExSequenceTcb::work()
 
           ComDiagsArea *myDiags = NULL;
           if (!cluster_->read(myDiags, heap_)) {
-            if (myDiags) { // some error
+            if (myDiags != NULL) { // some error
               updateDiagsArea(myDiags);
               pstate->step_ = ExSeq_ERROR;
               break;
