@@ -40,6 +40,11 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.io.compress.CompressionInputStream;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.Writable;
+
 import java.io.EOFException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -113,6 +118,12 @@ public class HDFSClient
    private CompressionCodec codec_ = null;
    private short compressionType_;
    private int ioByteArraySizeInKB_;
+
+   private boolean sequenceFile_;
+   private byte recDelimiter_;
+   private Writable key_;
+   private Writable value_;
+   private SequenceFile.Reader reader_;
    static {
       String confFile = System.getProperty("trafodion.log4j.configFile");
       System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
@@ -159,7 +170,9 @@ public class HDFSClient
       {
          int bytesRead;
          int totalBytesRead = 0;
-         if (compressed_) {
+         if (sequenceFile_) {
+            reader_.sync(pos_);
+         } else if (compressed_) {
             bufArray_ = new byte[ioByteArraySizeInKB_ * 1024];
          } 
          else  {
@@ -185,7 +198,10 @@ public class HDFSClient
          {
             if (compressed_) {
                bytesRead = compressedFileRead(lenRemain_);
-            } else {
+            } else if (sequenceFile_) {
+               bytesRead = sequenceFileRead(lenRemain_);
+            }
+            else {
                if (buf_.hasArray())
                   bytesRead = fsdis_.read(pos_, buf_.array(), bufOffset_, lenRemain_);
                else 
@@ -240,7 +256,48 @@ public class HDFSClient
          return totalReadLen; 
     } 
 
-    native int copyToByteBuffer(ByteBuffer buf, int bufOffset, byte[] bufArray, int copyLen);
+    /* Trafodion adds record delimiter '\n' while copying it
+       to buffer backing up the ByteBuffer */
+
+    int sequenceFileRead(int readLenRemain) throws IOException 
+    {
+       boolean eof = false;
+       byte[] byteArray;
+       int readLen;
+       int totalReadLen = 0;
+       long tempPos;
+       int lenRemain = readLenRemain;
+
+       while (!eof && lenRemain > 0) {
+          tempPos = reader_.getPosition();
+          try {
+            eof = reader_.next(key_, value_);
+          }
+          catch (java.io.EOFException e)
+          {
+              eof = true;
+              break;
+          }
+          byteArray = ((Text)value_).getBytes();
+          readLen = ((Text)value_).getLength();
+          if (readLen <= lenRemain) {
+                            
+              buf_.put(byteArray, 0, readLen);
+              buf_.put(recDelimiter_);
+              lenRemain_ -= (readLen+1);
+              totalReadLen += (readLen+1);
+          } else {
+              // Reset the position because the row can't be copied to buffer
+              reader_.sync(tempPos); 
+              break;       
+          }   
+       }
+       if (totalReadLen == 0)
+          totalReadLen = -1;  
+       return totalReadLen;
+    } 
+
+   native int copyToByteBuffer(ByteBuffer buf, int bufOffset, byte[] bufArray, int copyLen);
        
    public HDFSClient() 
    {
@@ -253,7 +310,7 @@ public class HDFSClient
    // If the range has a length more than the buffer length, the range is chunked
    // in HdfsScan
    public HDFSClient(int bufNo, int ioByteArraySizeInKB, int rangeNo, String filename, ByteBuffer buffer, long position, 
-                int length, short compressionType, CompressionInputStream inStream) throws IOException
+                int length, short compressionType, boolean sequenceFile, byte recDelimiter, CompressionInputStream inStream) throws IOException
    {
       bufNo_ = bufNo; 
       rangeNo_ = rangeNo;
@@ -263,18 +320,24 @@ public class HDFSClient
       fs_ = FileSystem.get(filepath_.toUri(),config_);
       compressionType_ = compressionType;
       inStream_ = inStream;
-      codec_ = codecFactory_.getCodec(filepath_);
-      if (codec_ != null) {
-        compressed_ = true;
-        if (inStream_ == null)
-           inStream_ = codec_.createInputStream(fs_.open(filepath_));
-      }
+      sequenceFile_ = sequenceFile;
+      recDelimiter_ = recDelimiter;
+      if (sequenceFile_)
+         fsdis_ = fs_.open(filepath_);
       else {
-        if ((compressionType_ != UNCOMPRESSED) && (compressionType_ != UNKNOWN_COMPRESSION))
-           throw new IOException(COMPRESSION_TYPE[compressionType_] + " compression codec is not configured in Hadoop");
-        if (filename_.endsWith(".lzo"))
-           throw new IOException(COMPRESSION_TYPE[LZOP] + " compression codec is not configured in Hadoop");
-        fsdis_ = fs_.open(filepath_);
+         codec_ = codecFactory_.getCodec(filepath_);
+         if (codec_ != null) {
+            compressed_ = true;
+            if (inStream_ == null)
+               inStream_ = codec_.createInputStream(fs_.open(filepath_));
+         }
+         else {
+           if ((compressionType_ != UNCOMPRESSED) && (compressionType_ != UNKNOWN_COMPRESSION))
+              throw new IOException(COMPRESSION_TYPE[compressionType_] + " compression codec is not configured in Hadoop");
+           if (filename_.endsWith(".lzo"))
+              throw new IOException(COMPRESSION_TYPE[LZOP] + " compression codec is not configured in Hadoop");
+           fsdis_ = fs_.open(filepath_);
+         }
       }
       blockSize_ = (int)fs_.getDefaultBlockSize(filepath_);
       buf_  = buffer;
@@ -289,8 +352,31 @@ public class HDFSClient
       }
       lenRemain_ = (len_ > bufLen_) ? bufLen_ : len_;
       if (lenRemain_ != 0) {
+         if (sequenceFile_) 
+            initSequenceFileRead();
          future_ = executorService_.submit(new HDFSRead());
       }
+   }
+
+   /* Trafodion support Sequence file with keys written via ByteWritble or Text class
+      and value written via Text class. However, the key is completely ignored
+      while reading the rows. The columns in the value is delimited by column delimiter 001(octal).
+   */ 
+
+   public void initSequenceFileRead() throws IOException
+   {
+      SequenceFile.Reader.Option seqPos = SequenceFile.Reader.start(pos_);
+      SequenceFile.Reader.Option seqLen = SequenceFile.Reader.length(lenRemain_);
+      SequenceFile.Reader.Option seqInputStream = SequenceFile.Reader.stream(fsdis_);
+      reader_ = new SequenceFile.Reader(config_, seqPos, seqLen, seqInputStream);
+      String keyClass = reader_.getKeyClassName(); 
+      String valueClass = reader_.getValueClassName();
+      if (! valueClass.equals("org.apache.hadoop.io.Text")) 
+         throw new IOException("Sequence File with the value class of type " + valueClass +  " is not supported");
+      if (!(keyClass.equals("org.apache.hadoop.io.Text") || keyClass.equals("org.apache.hadoop.io.BytesWritable")))
+         throw new IOException("Sequence File with the key class of type " + keyClass + " is not supported");
+      key_ = (Writable) ReflectionUtils.newInstance(reader_.getKeyClass(), config_);
+      value_ = (Writable) ReflectionUtils.newInstance(reader_.getValueClass(), config_);
    }
 
   //  This method waits for the read to complete. Read can complete due to one of the following
