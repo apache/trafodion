@@ -2529,6 +2529,7 @@ COL_DATE
 ----------
 
 2018-02-03
+?
 1997-05-13
 1988-08-17
 2017-09-29
@@ -2536,7 +2537,7 @@ COL_DATE
 2010-07-27
 2018-02-03
 
---- 7 row(s) selected.
+--- 8 row(s) selected.
 >>
 >>--    <ufi-input>
 >>      select col_date
@@ -2749,9 +2750,10 @@ COL_TIME  COL_HTOS
 --------  ----------------
 
 02:23:00    1:02:03.000000
+03:53:00    ?
 04:26:10    1:02:03.000000
 
---- 2 row(s) selected.
+--- 3 row(s) selected.
 >>
 >>--    <comment> hybird test
 >>--    <ufi-input>

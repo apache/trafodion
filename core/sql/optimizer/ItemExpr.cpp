@@ -11982,7 +11982,7 @@ ItemExpr * Overlaps::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   else
     result - derivedNode;
 
-  return BuiltinFunction::copyTopNode(result, outHeap);
+  return CacheableBuiltinFunction::copyTopNode(result, outHeap);
 }
 
 void Overlaps::unparse(NAString &result

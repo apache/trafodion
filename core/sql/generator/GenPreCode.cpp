@@ -7524,39 +7524,84 @@ ItemExpr *Overlaps::preCodeGen(Generator *generator)
     return getReplacementExpr();
 
   for (Int32 i = 0; i < getArity(); ++i)
-  {
-    if (child(i)) 
     {
-      const NAType &type = 
-        child(i)->getValueId().getType();
-      const DatetimeType *operand = (DatetimeType *)&type;
+      if (child(i)) 
+        {
+          const NAType &type = 
+            child(i)->getValueId().getType();
+          const DatetimeType *operand = (DatetimeType *)&type;
 
-      if (type.getTypeQualifier() == NA_DATETIME_TYPE
-            && (operand->getPrecision() == SQLDTCODE_DATE))
-      {
-        child(i) = new (generator->wHeap()) 
-          Cast(child(i), new (generator->wHeap()) 
-              SQLTimestamp(generator->wHeap(), TRUE));
+          if (type.getTypeQualifier() == NA_DATETIME_TYPE
+                 && (operand->getPrecision() == SQLDTCODE_DATE))
+            {
+              child(i) = new (generator->wHeap()) 
+                Cast(child(i), new (generator->wHeap()) 
+                     SQLTimestamp(generator->wHeap(), TRUE));
 
-        child(i)->bindNode(generator->getBindWA());
-      }
-
+              child(i)->bindNode(generator->getBindWA());
+            }
+        }
     }
-  }
+
+  //General Rules:
+  //1) ... 2) ... 3) ... 
+  //4) if D1(child(0)) is the null value or if E1(child(1))<D1,
+  //   then let S1 = E1 and let T1 = D1.
+  //   Otherwise, let S1 = D1 and let T1 = E1.
+  //
+  ItemExpr *S1 = NULL;
+  ItemExpr *T1 = NULL;
+  S1 = generator->getExpGenerator()->createExprTree(
+      "CASE WHEN (@A2<@A1 OR @A1 IS NULL) THEN @A2 ELSE @A1 END"
+      , 0
+      , 2
+      , child(0), child(1)); 
+  T1 = generator->getExpGenerator()->createExprTree(
+      "CASE WHEN (@A2<@A1 OR @A1 IS NULL) THEN @A1 ELSE @A2 END"
+      , 0
+      , 2
+      , child(0), child(1));
+
+  child(0) = S1->bindNode(generator->getBindWA());
+  child(1) = T1->bindNode(generator->getBindWA());
+
+
+  //General Rules:
+  //1) ... 2) ... 3) ... 4) ... 5) ...
+  //6) if D2(child(2)) is the null value or if E2(child(3))<D2,
+  //   then let S2 = E2 and let T2 = D2.
+  //   Otherwise, let S2 = D2 and let T2 = E2.
+  //
+  ItemExpr *S2 = NULL;
+  ItemExpr *T2 = NULL;
+  S2 = generator->getExpGenerator()->createExprTree(
+      "CASE WHEN (@A2<@A1 OR @A1 IS NULL) THEN @A2 ELSE @A1 END"
+      , 0
+      , 2
+      , child(2), child(3)); 
+  T2 = generator->getExpGenerator()->createExprTree(
+      "CASE WHEN (@A2<@A1 OR @A1 IS NULL) THEN @A1 ELSE @A2 END"
+      , 0
+      , 2
+      , child(2), child(3));
+
+  child(2) = S2->bindNode(generator->getBindWA());
+  child(3) = T2->bindNode(generator->getBindWA());
 
   ItemExpr *newExpr = 
     generator->getExpGenerator()->createExprTree(
-        "(@A1<@A2 AND @A3<@A4 AND ((@A2>@A3 AND @A2<=@A4) OR (@A4>@A1 AND @A4<=@A2))) OR"
-        "(@A1<@A2 AND @A3>@A4 AND ((@A2>@A4 AND @A2<=@A3) OR (@A3>@A1 AND @A3<=@A2))) OR"
-        "(@A1<@A2 AND @A3=@A4 AND (@A3>=@A1 AND @A3<@A2)) OR"
-        "(@A1=@A2 AND @A3<@A4 AND (@A1>=@A3 AND @A1<@A4)) OR"
-        "(@A1=@A2 AND @A3>@A4 AND (@A1>=@A4 AND @A1<@A3)) OR"
-        "(@A1=@A2 AND @A3=@A4 AND  @A1=@A3) OR"
-        "(@A1>@A2 AND @A3>@A4 AND ((@A1>@A4 AND @A1<=@A3) OR (@A3>@A2 AND @A3<=@A1)))OR"
-        "(@A1>@A2 AND @A3=@A4 AND (@A3>=@A2 AND @A3<@A1)) OR"
-        "(@A1>@A2 AND @A3<@A4 AND ((@A1>@A3 AND @A1<=@A4) OR (@A4>@A2 AND @A4<=@A1)))"
+  //General Rules:
+  //1) ... 2) ... 3) ... 4) ... 5) ... 6) ...
+  //7) The result of the <overlaps predicate> is 
+  //   the result of the following expression:
+        "(@A1 > @A3 AND NOT (@A1 >= @A4 AND @A2 >= @A4))"
+        " OR "
+        "(@A3 > @A1 AND NOT (@A3 >= @A2 AND @A4 >= @A2))"
+        " OR "
+        "(@A1 = @A3 AND (@A2 <> @A4 OR @A2=@A4))"
         , 0
-        , 4, child(0), child(1), child(2), child(3));
+        , 4
+        , child(0), child(1), child(2), child(3));
 
   newExpr->bindNode(generator->getBindWA());
   setReplacementExpr(newExpr->preCodeGen(generator));
