@@ -1481,17 +1481,14 @@ void ExSequenceTcb::updateDiagsArea(ex_queue_entry * centry)
 
 void ExSequenceTcb::updateDiagsArea(ComDiagsArea *da)
 {
-    if (da) 
+    if (workAtp_->getDiagsArea())
+    {     
+      workAtp_->getDiagsArea()->mergeAfter(*da);
+    }
+    else
     {
-      if (workAtp_->getDiagsArea())
-      {     
-        workAtp_->getDiagsArea()->mergeAfter(*da);
-      }
-      else
-      {
-        workAtp_->setDiagsArea(da);
-        da->incrRefCount();
-      }
+      workAtp_->setDiagsArea(da);
+      da->incrRefCount();
     }
 }
 

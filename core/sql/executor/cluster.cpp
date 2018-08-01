@@ -1621,7 +1621,9 @@ NABoolean Cluster::flush(ComDiagsArea *&da, CollHeap *heap) {
   //if rc != EXE_OK then it is error. 
   if(!flush(&rc)) {
     if(rc != EXE_OK) {
-      da = ComDiagsArea::allocate(heap);
+      if(da == NULL) {
+        da = ComDiagsArea::allocate(heap);
+      }
       *da << DgSqlCode(-rc);
       
       char msg[512];
@@ -1631,20 +1633,20 @@ NABoolean Cluster::flush(ComDiagsArea *&da, CollHeap *heap) {
         Lng32 scratchSysError = 0;
         Lng32 scratchSysErrorDetail = 0;
 
-        if(clusterDb_) {
+        if(clusterDb_ != NULL) {
           clusterDb_->getScratchErrorDetail(scratchError,
                                  scratchSysError,
                                  scratchSysErrorDetail,
                                  errorMsg);
 
-          str_sprintf(msg, "Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
+          snprintf(msg, sizeof(msg), "Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
               scratchError, scratchSysError, scratchSysErrorDetail, errorMsg);
         }
         else {
-          str_sprintf(msg, "Scratch IO Error occurred. clusterDb_ is NULL" );
+          snprintf(msg, sizeof(msg), "Scratch IO Error occurred. clusterDb_ is NULL" );
         }
       } else {
-        str_sprintf(msg, "Cluster Flush Error occurred."); 
+        snprintf(msg, sizeof(msg), "Cluster Flush Error occurred."); 
       }
       
       *da << DgString0(msg);
@@ -2378,8 +2380,10 @@ NABoolean Cluster::read(ComDiagsArea *&da, CollHeap *heap) {
   //if rc != EXE_OK then it is error. 
   if(!read(&rc)) {
     if(rc != EXE_OK) {
+      if(da == NULL) {
        da = ComDiagsArea::allocate(heap);
-       *da << DgSqlCode(-rc);
+      }
+      *da << DgSqlCode(-rc);
       
       char msg[512];
       if(rc == EXE_SORT_ERROR) {
@@ -2388,20 +2392,20 @@ NABoolean Cluster::read(ComDiagsArea *&da, CollHeap *heap) {
         Lng32 scratchSysError = 0;
         Lng32 scratchSysErrorDetail = 0;
   
-        if(clusterDb_) {
+        if(clusterDb_ != NULL) {
           clusterDb_->getScratchErrorDetail(scratchError,
                                  scratchSysError,
                                  scratchSysErrorDetail,
                                  errorMsg);
   
-          str_sprintf(msg, "Cluster::read Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
+          snprintf(msg, sizeof(msg), "Cluster::read Scratch IO Error occurred. Scratch Error: %d, System Error: %d, System Error Detail: %d, Details: %s",
               scratchError, scratchSysError, scratchSysErrorDetail, errorMsg);
         }
         else {
-          str_sprintf(msg, "Cluster::read Scratch IO Error occurred. clusterDb_ is NULL" );
+          snprintf(msg, sizeof(msg), "Cluster::read Scratch IO Error occurred. clusterDb_ is NULL" );
         }
       } else {
-        str_sprintf(msg, "Cluster::read Error occurred."); 
+        snprintf(msg, sizeof(msg), "Cluster::read Error occurred."); 
       }
       
       *da << DgString0(msg);
