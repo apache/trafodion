@@ -279,5 +279,5 @@ begin
   CerDirLabel.Top := ScaleY(150);
   CerDirLabel.Width := ScaleX(75);
   CerDirLabel.Height := ScaleY(21);
-  CerDirLabel.Caption := ExpandConstant('SYSTEM_DEFAULT means current users document');
+  CerDirLabel.Caption := ExpandConstant('SYSTEM_DEFAULT is the user''s HOME folder');
 end;
