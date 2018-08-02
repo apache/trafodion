@@ -933,6 +933,10 @@ public:
   // flush the Cluster. If the flushing is not complete yet (I/Os pending)
   // flush() returns FALSE. Otherwise TRUE.
   NABoolean flush(ExeErrorCode * rc);
+  
+  // encapsulate error handling within flush. it is wrapper 
+  // around flush(ExeErrorCode * rc) call. Used by ExSequence.
+  NABoolean flush(ComDiagsArea *&da, CollHeap *heap);
 
   // spill a cluster. Spill is the same as flush. The only difference is,
   // that a spilled cluster still has a hash table (this is only used for
@@ -945,6 +949,10 @@ public:
   // Cluster read() reads as many buffers as possible. If it is an outer
   // Cluster, read() reads just one bufffer.
   NABoolean read(ExeErrorCode * rc);
+  
+  // encapsulate error handling within read. it is wrapper 
+  // around read(ExeErrorCode * rc) call. Used by ExSequence.
+  NABoolean read(ComDiagsArea *&da, CollHeap *heap);
  
   // create a hash table for this Cluster and chain all rows of the Cluster
   // into this hash table.
