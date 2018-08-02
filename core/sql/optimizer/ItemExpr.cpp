@@ -3029,7 +3029,7 @@ ItemExpr::removeInverseFromExprTree( NABoolean & invExists,
 ItemExpr *ZZZBinderFunction::copyTopNode(ItemExpr *derivedNode,
                                          CollHeap *outHeap)
 {
-  ItemExpr *result=0;
+  ZZZBinderFunction *result=0;
 
   if (derivedNode == NULL)
    {
@@ -3059,8 +3059,10 @@ ItemExpr *ZZZBinderFunction::copyTopNode(ItemExpr *derivedNode,
    }
   else
    {
-    result = derivedNode;
+     result = (ZZZBinderFunction*)derivedNode;
    }
+
+  result->flags_ = flags_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
@@ -7551,6 +7553,8 @@ const NAString BuiltinFunction::getText() const
       return "nullifzero";
     case ITM_NVL:
       return "nvl";
+    case ITM_OVERLAY:
+      return "overlay";
     case ITM_JSONOBJECTFIELDTEXT:
       return "json_object_field_text";
     case ITM_QUERYID_EXTRACT:
@@ -12507,21 +12511,23 @@ ItemExpr * RaiseError::copyTopNode (ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-  {
-	if (getArity() > 0) // Do we have string expressions?
-	  result = new (outHeap) RaiseError(getSQLCODE(),
-					    getConstraintName(),
-					    child(0)->copyTree(outHeap),
-					    outHeap);
-	else
-	  result = new (outHeap) RaiseError(getSQLCODE(),
-					    getConstraintName(),
-					    getTableName(),
-					    outHeap);
-  }
+    {
+      if (getArity() > 0) // Do we have string expressions?
+        result = new (outHeap) RaiseError(getSQLCODE(),
+                                          getConstraintName(),
+                                          child(0)->copyTree(outHeap),
+                                          outHeap);
+      else
+        result = new (outHeap) RaiseError(getSQLCODE(),
+                                          getConstraintName(),
+                                          getTableName(),
+                                          optionalStr_,
+                                          type_,
+                                          outHeap);
+    }
   else
     result = derivedNode;
-
+  
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
 

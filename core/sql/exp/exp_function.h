@@ -3017,12 +3017,13 @@ class  ExpRaiseErrorFunction : public ex_function_clause {
 
 public:
   ExpRaiseErrorFunction (Attributes ** attr,
-				    Space *space,
-				    Lng32 sqlCode,
-				    NABoolean raiseError = TRUE,
-				    const char *constraintName=NULL,
-				    const char *tableName=NULL,
-					const NABoolean hasStringExp=FALSE);  // -- Triggers
+                         Space *space,
+                         Lng32 sqlCode,
+                         NABoolean raiseError = TRUE,
+                         const char *constraintName=NULL,
+                         const char *tableName=NULL,
+                         const NABoolean hasStringExp=FALSE,  // -- Triggers
+                         const char *optionalStr = NULL);
   ExpRaiseErrorFunction();
  
  
@@ -3040,6 +3041,8 @@ public:
   const char *getTableName() {return tableName_;};
   void setTableName(const char * tableName) 
   { tableName_ = (char*)tableName;};
+
+  const char * getOptionalStr() {return optionalStr_; }
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
@@ -3074,17 +3077,23 @@ private:
     RAISE_ERROR	=0x00000001	// Raise Error if set, or it's warning
   };
 
+  enum {MAX_OPTIONAL_STR_LEN = 1023};
+
   NABasicPtr /*const char* */ constraintName_; // 00-07
   NABasicPtr /*const char* */ tableName_;      // 08-15
   Int32                       theSQLCODE_;     // 16-19
   Int32                       flags_;          // 20-23
   // TRUE, raise error. FALSE, raise warning.
+
+  // one byte for null terminator.
+  char  optionalStr_[MAX_OPTIONAL_STR_LEN+1];      // 24-1047
+
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char          fillers_[8];                   // 24-31
+  char          fillers_[8];                   // 1048-1055
 
 };
 

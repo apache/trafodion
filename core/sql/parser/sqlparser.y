@@ -1446,6 +1446,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ACTIVE           /* Tandem extension non-reserved word */
 %token <tokval> TOK_RMS         /* Tandem extension non-reserved word */
 %token <tokval> TOK_REVERSE
+%token <tokval> TOK_OVERLAY
+%token <tokval> TOK_STUFF      /* same as overlay */
+%token <tokval> TOK_PLACING
 
 %token <tokval> TOK_DATA_OFFSET        /* INTERNAL non-reserved word */
 %token <tokval> TOK_NULL_IND_OFFSET    /* INTERNAL non-reserved word */
@@ -9289,6 +9292,23 @@ string_function :
 	  $$ = new (PARSERHEAP()) 
 	    BuiltinFunction(ITM_REVERSE, CmpCommon::statementHeap(), 1, $3);
         } 
+
+     | TOK_OVERLAY '(' value_expression TOK_PLACING value_expression TOK_FROM value_expression TOK_FOR value_expression ')'
+                  {
+		    $$ = 
+		      new (PARSERHEAP()) ZZZBinderFunction(ITM_OVERLAY, $3, $5, $7, $9);
+                  }
+     | TOK_OVERLAY '(' value_expression TOK_PLACING value_expression TOK_FROM value_expression ')'
+                  {
+		    $$ = 
+		      new (PARSERHEAP()) ZZZBinderFunction(ITM_OVERLAY, $3, $5, $7);
+                  }
+     | TOK_STUFF '(' value_expression ',' value_expression ',' value_expression ',' value_expression ')'
+                  {
+		    $$ = 
+		      new (PARSERHEAP()) ZZZBinderFunction(ITM_OVERLAY, $3, $9, $5, $7);
+                    ((ZZZBinderFunction*)$$)->setOverlayFuncWasStuff(TRUE);
+                  }
      | TOK_SPLIT_PART '(' value_expression ',' value_expression ',' value_expression ')'
         {                     
                $$ = new (PARSERHEAP()) SplitPart($3, $5, $7);
@@ -29167,7 +29187,7 @@ triggered_after_action: empty   // Empty or any option not listed below
 		  if ($2 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 		    treeTopPtr->accessOptions().accessType() = $2;
 		}
-              | signal_statement 
+              | signal_statement
 		{
 		  $$ = finalize($1, FALSE);
 		}
@@ -34138,6 +34158,7 @@ nonreserved_word :      TOK_ABORT
 		      | TOK_PHASE // MV REFRESH
 		      | TOK_PID
 		      | TOK_PIPELINE // MV REFRESH
+                      | TOK_PLACING
                       | TOK_POOL
 		      | TOK_POPULATE
                       | TOK_POS
@@ -34649,6 +34670,8 @@ MP_nonreserved_func_word : TOK_CAST
                          | TOK_LOWER
                          | TOK_MIN
                          | TOK_OCTET_LENGTH
+                         | TOK_OVERLAY
+                         | TOK_STUFF
                          | TOK_POSITION
                          | TOK_REVERSE
                          | TOK_TRIM
