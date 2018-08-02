@@ -3285,7 +3285,7 @@ public class TransactionManager {
           String namespacestr="";
           String fullPath = hbaseRoot + "/data/" ;
           String fullPath2 = hbaseRoot + "/data/default/";
-          if(fs.exists(new Path(fullPath2)))
+          if(fs.exists(new Path(fullPath2)) && parts.length == 1)  // no namespace in the path
             fullPath = fullPath2;
 
           if(parts.length >1) //have namespace
