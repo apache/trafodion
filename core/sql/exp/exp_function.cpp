@@ -795,9 +795,13 @@ ExpRaiseErrorFunction::ExpRaiseErrorFunction (Attributes **attr,
 {
   setRaiseError(raiseError);
 
-
-  strncpy(optionalStr_, optionalStr, MAX_OPTIONAL_STR_LEN);
-  optionalStr_[MAX_OPTIONAL_STR_LEN] = 0;
+  if (optionalStr)
+    {
+      strncpy(optionalStr_, optionalStr, MAX_OPTIONAL_STR_LEN);
+      optionalStr_[MAX_OPTIONAL_STR_LEN] = 0;
+    }
+  else
+    optionalStr_[0] = 0;
 };
 
 ExFunctionRandomNum::ExFunctionRandomNum(OperatorTypeEnum opType,
