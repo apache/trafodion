@@ -108,6 +108,12 @@ enum ExeErrorCode
   EXE_CLEANUP_ESP                       = 8143,
   EXE_CORRUPT_PARTITION                 = 8144,
 
+  // ---------------------------------------------------------------------
+  // generic error for the specified statement/feature/option.
+  // Error detail included in string param.
+  // ---------------------------------------------------------------------
+  EXE_STMT_NOT_SUPPORTED                = 8145,
+
   //----------------------------------------------------------------------
   // Late-name resolution and late-binding/similarity check errors.
   //----------------------------------------------------------------------

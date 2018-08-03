@@ -933,30 +933,37 @@ short RaiseError::codeGen(Generator *generator) {
   
   if (generator->getExpGenerator()->genItemExpr(this, &attr, 1 + getArity(), -1) == 1)
     return 0;
-
+  
   const char * constraintName = NULL;
   const char * tableName  = NULL;
+  const char * optionalStr = NULL;
 
- if (!getConstraintName().isNull()) {
-      constraintName = generator->getSpace()->AllocateAndCopyToAlignedSpace(
-	  			getConstraintName(), 0);
-   }
-
- if (!getTableName().isNull()) {
-      tableName  = generator->getSpace()->AllocateAndCopyToAlignedSpace(
-	    			getTableName(), 0);
-   }
+  if (!getConstraintName().isNull()) {
+    constraintName = generator->getSpace()->AllocateAndCopyToAlignedSpace(
+         getConstraintName(), 0);
+  }
   
- // make raiseError a field in this class. TBD.
- NABoolean raiseError = ((getSQLCODE() > 0) ? TRUE : FALSE);
- ex_clause * function_clause =
+  if (!getTableName().isNull()) {
+    tableName  = generator->getSpace()->AllocateAndCopyToAlignedSpace(
+         getTableName(), 0);
+  }
+  
+  if (!optionalStr_.isNull()) {
+    optionalStr  = generator->getSpace()->allocateAndCopyToAlignedSpace(
+         optionalStr_.data(), optionalStr_.length(), 0);
+  }
+  
+  // make raiseError a field in this class. TBD.
+  NABoolean raiseError = ((getSQLCODE() > 0) ? TRUE : FALSE);
+  ex_clause * function_clause =
     new(generator->getSpace()) ExpRaiseErrorFunction (attr, 
 						      generator->getSpace(),
 						      (raiseError ? getSQLCODE() : - getSQLCODE()),
 						      raiseError,
 						      constraintName,
 						      tableName,
-							  (getArity()==1) ? TRUE : FALSE);  // -- Triggers
+                                                      (getArity()==1) ? TRUE : FALSE,  // -- Triggers
+                                                      optionalStr);
   
   generator->getExpGenerator()->linkClause(this, function_clause);
   

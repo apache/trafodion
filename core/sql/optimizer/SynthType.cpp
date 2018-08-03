@@ -2412,16 +2412,20 @@ const NAType *BoolVal::synthesizeType()
 //------------------------------------------------------------------
 const NAType *RaiseError::synthesizeType()
 {
-	// -- Triggers
+  // -- Triggers
   if (getArity() == 1)
-  {  // Verify the string expression is of character type.
-	if (child(0)->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
+    {  // Verify the string expression is of character type.
+      if (child(0)->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
 	{
-		//  parameter 3 must be of type string.
-		*CmpCommon::diags() << DgSqlCode(-3185);
-		return NULL;
+          //  parameter 3 must be of type string.
+          *CmpCommon::diags() << DgSqlCode(-3185);
+          return NULL;
 	}
-  }
+    }
+
+  if (type_)
+    return type_;
+
   return new HEAP SQLBooleanRelat(FALSE);	// can be overridden in IfThenElse
 }
 
