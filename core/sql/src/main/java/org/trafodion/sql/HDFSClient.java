@@ -280,7 +280,7 @@ public class HDFSClient
           }
           byteArray = ((Text)value_).getBytes();
           readLen = ((Text)value_).getLength();
-          if (readLen <= lenRemain) {
+          if ((readLen+1) <= lenRemain) {
                             
               buf_.put(byteArray, 0, readLen);
               buf_.put(recDelimiter_);
