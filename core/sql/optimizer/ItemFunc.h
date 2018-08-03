@@ -1198,6 +1198,30 @@ private:
 
 }; // class Between
 
+
+class Overlaps: public CacheableBuiltinFunction
+{
+public:
+  Overlaps(ItemExpr* d1, ItemExpr* e1, ItemExpr* d2, ItemExpr* e2)
+    : CacheableBuiltinFunction(ITM_OVERLAPS, 4, d1, e1, d2, e2)
+  {}
+
+  virtual ~Overlaps(){};
+
+  virtual ItemExpr *bindNode(BindWA * bindWA);
+  virtual const NAType *synthesizeType();
+  virtual ItemExpr *copyTopNode(ItemExpr *derivedNode = NULL
+                                , CollHeap *outHeap = 0);
+  virtual NABoolean isAPredicate() const {return true;}
+  virtual void unparse(NAString &result
+                       , PhaseEnum phase = DEFAULT_PHASE
+                       , UnparseFormatEnum form = USER_FORMAT
+                       , TableDesc *tabId = NULL) const;
+
+  virtual ItemExpr *preCodeGen(Generator*);
+
+};// class Overlaps
+
 class BoolResult : public BuiltinFunction
 {
   // Evaluates the final boolean result value for a predicate.

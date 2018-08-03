@@ -2823,6 +2823,57 @@ ItemExpr *Function::bindNode(BindWA *bindWA)
   return boundExpr;
 } // Function::bindNode()
 
+
+ItemExpr *Overlaps::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  bindChildren(bindWA);
+  if (bindWA->errStatus())
+    return this;
+  //Syntax Rules:
+  // 1) ... 2)...
+  // 3)...
+  //   Case: 
+  //   a) If the declared type is INTERVAL, then the precision of the declared type 
+  //      shall be such that the interval can be added to the datetime data type of 
+  //      the first column of the <row value predicand>.
+  //   b) If the declared type is a datetime data type, then it shall be comparable
+  //      with the datetime data type of the first column of the <row value predicand>.
+  const NAType &type1 =
+    child(1)->castToItemExpr()->getValueId().getType();
+
+  if (type1.getTypeQualifier() == NA_INTERVAL_TYPE)
+  {
+    ItemExpr * newChild = new (bindWA->wHeap())    
+      BiArith(ITM_PLUS, child(0), child(1));
+    child(1) = newChild->bindNode(bindWA);
+    if (bindWA->errStatus())
+      return this;
+  }
+
+  const NAType &type3 =
+    child(3)->castToItemExpr()->getValueId().getType();
+  if (type3.getTypeQualifier() == NA_INTERVAL_TYPE)
+  {
+    ItemExpr * newChild = new (bindWA->wHeap())    
+      BiArith(ITM_PLUS, child(2), child(3));
+    child(3) = newChild->bindNode(bindWA);
+    if (bindWA->errStatus())
+      return this;
+  }
+
+
+
+  BuiltinFunction::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return this;
+
+  return getValueId().getItemExpr();
+}
+
+
 ItemExpr *Between::bindNode(BindWA *bindWA)
 {
   //changes for HistIntRed

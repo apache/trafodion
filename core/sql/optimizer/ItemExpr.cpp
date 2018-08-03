@@ -11974,6 +11974,43 @@ Exists::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 
 // --------------------------------------------------------------
+// member functions for Overlaps operator
+// --------------------------------------------------------------
+ItemExpr * Overlaps::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+  if (derivedNode == NULL)
+    result = new (outHeap) Overlaps(child(0), child(1), child(2), child(3));
+  else
+    result - derivedNode;
+
+  return CacheableBuiltinFunction::copyTopNode(result, outHeap);
+}
+
+void Overlaps::unparse(NAString &result
+		                   , PhaseEnum phase
+                       , UnparseFormatEnum form
+		                   , TableDesc * tabId) const
+{
+  result += "(";
+  child(0)->unparse(result,phase,form,tabId);
+  result += ", ";
+  child(1)->unparse(result,phase,form,tabId);
+  result += ") ";
+
+  NAString kwd(getText(), CmpCommon::statementHeap());
+  if (form == USER_FORMAT_DELUXE) kwd.toUpper();
+  result += kwd;
+
+  result += " (";
+  child(2)->unparse(result,phase,form,tabId);
+  result += ", ";
+  child(3)->unparse(result,phase,form,tabId);
+  result += ")";
+}
+
+
+// --------------------------------------------------------------
 // member functions for Between operator
 // --------------------------------------------------------------
 ItemExpr * Between::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
