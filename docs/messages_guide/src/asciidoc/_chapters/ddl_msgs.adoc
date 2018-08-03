@@ -1075,6 +1075,26 @@ for <column-name>.
 *Recovery:* Specify a valid default value for the column and resubmit.
 
 <<<
+[[SQL-1086]]
+== SQL 1086
+
+```
+<auth-name> is not a <auth-type>.
+```
+
+Where <auth-name> is the name of a user or role.
+
+Where <auth-type is one of the following: user or role.
+
+*Cause:* A request was made to read metadata for an operation associated with an
+authorization name.  
+The authorization name was found but it was not the type expected. 
+
+*Effect:* The operation fails.
+
+*Recovery:* Enter the correct authorization name and resubmit the request.
+
+<<<
 [[SQL-1089]]
 == SQL 1089
 
