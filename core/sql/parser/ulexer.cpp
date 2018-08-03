@@ -2934,6 +2934,18 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                           // retract to end of kwd1.
                           retractToMark(end1);
                           return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
+                        case TOK_LIBRARY:
+                          *end1 = holdChar1;
+                           doBeforeAction();
+                           return aCompoundKeyword(TOK_FOR_LIBRARY, lvalp);
+                        case TOK_ROLE:
+                          *end1 = holdChar1;
+                           doBeforeAction();
+                           return aCompoundKeyword(TOK_FOR_ROLE, lvalp);
+                        case TOK_USER:
+                          *end1 = holdChar1;
+                           doBeforeAction();
+                           return aCompoundKeyword(TOK_FOR_USER, lvalp);
 			case TOK_MAXRUNTIME:
                         case TOK_REPEATABLE:
                         case TOK_SERIALIZABLE:
@@ -3106,6 +3118,12 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                         return eitherCompoundOrSimpleKeyword
                           ( keyWordEntry2->getTokenCode() == TOK_SEQUENCE,
                             TOK_SHOWDDL_SEQUENCE,
+                            keyWordEntry1->getTokenCode(),
+                            end1, holdChar1, lvalp);
+                      else if (keyWordEntry2->getTokenCode() == TOK_USER)
+                        return eitherCompoundOrSimpleKeyword
+                          ( keyWordEntry2->getTokenCode() == TOK_USER,
+                            TOK_SHOWDDL_USER,
                             keyWordEntry1->getTokenCode(),
                             end1, holdChar1, lvalp);
                       break;

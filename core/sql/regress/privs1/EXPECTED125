@@ -673,8 +673,8 @@ S------    SQL_USER2
 --- SQL operation complete.
 >>get privileges on library t125_l1;
 
-Privileges on Sequence T125SCH1.T125_L1
-=======================================
+Privileges on Library T125SCH1.T125_L1
+======================================
 
 ---UG--    DB__ROOT
 ----G--    T125_ROLE1
@@ -688,8 +688,8 @@ Privileges on Sequence T125SCH1.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for sql_user2;
 
-Privileges on Sequence T125SCH1.T125_L1
-=======================================
+Privileges on Library T125SCH1.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -699,8 +699,8 @@ Privileges on Sequence T125SCH1.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for sql_user7;
 
-Privileges on Sequence T125SCH1.T125_L1
-=======================================
+Privileges on Library T125SCH1.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -713,8 +713,8 @@ Privileges on Sequence T125SCH1.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for t125_role1;
 
-Privileges on Sequence T125SCH1.T125_L1
-=======================================
+Privileges on Library T125SCH1.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -855,8 +855,8 @@ S------    SQL_USER2
 --- SQL operation complete.
 >>get privileges on library t125_l1;
 
-Privileges on Sequence T125SCH2.T125_L1
-=======================================
+Privileges on Library T125SCH2.T125_L1
+======================================
 
 ---UG--    DB__ROOT
 ----G--    T125_ROLE1
@@ -870,8 +870,8 @@ Privileges on Sequence T125SCH2.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for sql_user2;
 
-Privileges on Sequence T125SCH2.T125_L1
-=======================================
+Privileges on Library T125SCH2.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -881,8 +881,8 @@ Privileges on Sequence T125SCH2.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for sql_user7;
 
-Privileges on Sequence T125SCH2.T125_L1
-=======================================
+Privileges on Library T125SCH2.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -895,8 +895,8 @@ Privileges on Sequence T125SCH2.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for t125_role1;
 
-Privileges on Sequence T125SCH2.T125_L1
-=======================================
+Privileges on Library T125SCH2.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -1078,8 +1078,8 @@ S----R-    T125_ADMINROLE
 --- SQL operation complete.
 >>get privileges on library t125_l1;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ---UG--    T125_ADMINROLE
 ----G--    T125_ROLE1
@@ -1093,8 +1093,8 @@ Privileges on Sequence T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for sql_user2;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -1104,8 +1104,8 @@ Privileges on Sequence T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for sql_user7;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -1115,8 +1115,8 @@ Privileges on Sequence T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for sql_user8;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ---UG--    T125_ADMINROLE
 
@@ -1126,8 +1126,8 @@ Privileges on Sequence T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for t125_role1;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -1137,8 +1137,8 @@ Privileges on Sequence T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for t125_adminrole;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ---UG--    T125_ADMINROLE
 
@@ -1472,6 +1472,43 @@ TESTHIVE
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+Procedures for User SQL_USER1
+=============================
+
+TESTHIVE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user7;
+
+--- SQL operation complete.
+>>get functions for role t125_role1;
+
+Functions for Role T125_ROLE1
+=============================
+
+TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get functions for role t125_adminrole;
+
+Functions for Role T125_ADMINROLE
+=================================
+
+TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
 >>set schema t125sch3;
 
 --- SQL operation complete.
@@ -1602,8 +1639,8 @@ T125_L2
 --- SQL operation complete.
 >>get privileges on library t125_l1;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ---UG--    T125_ADMINROLE
 ----G--    T125_ROLE1
@@ -1614,8 +1651,8 @@ Privileges on Sequence T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for user sql_user8;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ---UG--    T125_ADMINROLE
 
@@ -1669,6 +1706,42 @@ T125SCH3.TESTHIVE
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+Procedures for User SQL_USER1
+=============================
+
+TESTHIVE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user7;
+
+--- SQL operation complete.
+>>get functions for role t125_role1;
+
+Functions for Role T125_ROLE1
+=============================
+
+TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get functions for role t125_adminrole;
+
+Functions for Role T125_ADMINROLE
+=================================
+
+TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>
 >>
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
@@ -1780,6 +1853,27 @@ T125SCH3.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get procedures for user sql_user7;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
 >>set schema t125sch3;
 
 --- SQL operation complete.
@@ -1890,8 +1984,8 @@ T125_L2
 --- SQL operation complete.
 >>get privileges on library t125_l1;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ---UG--    T125_ADMINROLE
 
@@ -1901,8 +1995,8 @@ Privileges on Sequence T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for user sql_user8;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ---UG--    T125_ADMINROLE
 
@@ -1956,6 +2050,26 @@ T125SCH3.TESTHIVE
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get procedures for user sql_user7;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>exit;
 
@@ -2090,6 +2204,33 @@ TESTHIVE
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+Procedures for User SQL_USER1
+=============================
+
+TESTHIVE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user7;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
 >>set schema t125sch3;
 
 --- SQL operation complete.
@@ -2186,6 +2327,32 @@ T125SCH2.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+Procedures for User SQL_USER1
+=============================
+
+TESTHIVE
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user7;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>exit;
 
@@ -2349,6 +2516,27 @@ GAMES_BY_PLAYER
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get procedures for user sql_user7;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
 >>set schema t125sch3;
 
 --- SQL operation complete.
@@ -2430,8 +2618,8 @@ T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -2472,6 +2660,26 @@ T125SCH3.TRANSLATEBITMAP
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get procedures for user sql_user7;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>exit;
 
@@ -2585,6 +2793,25 @@ TEAMS
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get procedures for user sql_user7;
+
+--- SQL operation complete.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
 >>set schema t125sch3;
 
 --- SQL operation complete.
@@ -2639,8 +2866,8 @@ T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1;
 
-Privileges on Sequence T125SCH3.T125_L1
-=======================================
+Privileges on Library T125SCH3.T125_L1
+======================================
 
 ----G--    T125_ROLE1
 
@@ -2681,6 +2908,24 @@ T125SCH3.TRANSLATEBITMAP
 
 --- SQL operation complete.
 >>
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get procedures for user sql_user7;
+
+--- SQL operation complete.
+>>get functions for role t125_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get functions for role t125_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>exit;
 

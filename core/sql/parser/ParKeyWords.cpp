@@ -1214,7 +1214,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("USA",                TOK_USA,         NONRESTOKEN_),
   ParKeyWord("USAGE",              TOK_USAGE,       ANS_|RESWORD_),
   ParKeyWord("USE",                TOK_USE,         FLAGSNONE_),
-  ParKeyWord("USER",               TOK_USER,        ANS_|RESWORD_),
+  ParKeyWord("USER",               TOK_USER,        ANS_|RESWORD_|SECOND_),
   ParKeyWord("USERNAME_INT_TO_EXT",TOK_USERNAMEINTTOEXT,  NONRESTOKEN_),
   ParKeyWord("USERS",              TOK_USERS,       NONRESTOKEN_),
   ParKeyWord("USING",              TOK_USING,       ANS_|RESWORD_),

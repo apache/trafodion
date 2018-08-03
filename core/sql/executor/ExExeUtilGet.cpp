@@ -103,9 +103,9 @@ ex_tcb * ExExeUtilGetMetadataInfoTdb::build(ex_globals * glob)
       (queryType() == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_))
     exe_util_tcb =
       new(glob->getSpace()) ExExeUtilGetMetadataInfoComplexTcb(*this, glob);
-  else if (getVersion())
-    exe_util_tcb =
-      new(glob->getSpace()) ExExeUtilGetMetadataInfoVersionTcb(*this, glob);
+  //else if (getVersion())
+  //  exe_util_tcb =
+  //    new(glob->getSpace()) ExExeUtilGetMetadataInfoVersionTcb(*this, glob);
   else if (queryType() == ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_)
     exe_util_tcb =
       new(glob->getSpace()) ExExeUtilGetHbaseObjectsTcb(*this, glob);
@@ -390,6 +390,18 @@ static const QueryString getTrafLibrariesForUser[] =
   {"   %s.\"%s\".%s T, %s.\"%s\".%s R  "},
   {"  where T.catalog_name = '%s' and T.object_type = 'LB' and "},
   {"        T.object_uid = R.library_uid %s "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafRoutinesForAuthQuery[] =
+{
+  {" select distinct object_name  from "},
+  {"   %s.\"%s\".%s T, %s.\"%s\".%s R  "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.object_type = 'UR' and "},
+  {"        T.object_uid = R.udr_uid and "},
+  {"        R.udr_type = '%s' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -844,12 +856,12 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsedObjects(Queue * infoList,
 	      strcpy(objectStr, "views");
 	    else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_)
 	      strcpy(objectStr, "objects");
-	    else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_)
-	      strcpy(objectStr, "tables");
-	    else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_)
-	      strcpy(objectStr, "mvs");
-	    else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_)
-	      strcpy(objectStr, "objects");
+	    //else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_)
+	    //  strcpy(objectStr, "tables");
+	    //else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_)
+	    //  strcpy(objectStr, "mvs");
+	    //else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_)
+	    //  strcpy(objectStr, "objects");
 
 	    char inStr[10];
 	    if (isShorthandView)
@@ -1089,13 +1101,6 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_:
-      {
-	str_sprintf(headingBuf_, "MVs in Schema %s.%s",
-		    getMItdb().getCat(), getMItdb().getSch());
-      }
-    break;
-
     case ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_:
       {
 	str_sprintf(headingBuf_, "Procedures in Schema %s.%s",
@@ -1117,23 +1122,9 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_:
-      {
-	str_sprintf(headingBuf_, "Synonyms in Schema %s.%s",
-		    getMItdb().getCat(), getMItdb().getSch());
-      }
-    break;
-
     case ComTdbExeUtilGetMetadataInfo::INDEXES_ON_TABLE_:
       {
 	str_sprintf(headingBuf_, "Indexes on Table %s.%s",
-		    getMItdb().getSch(), getMItdb().getObj());
-      }
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_:
-      {
-	str_sprintf(headingBuf_, "Indexes on MV %s.%s",
 		    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
@@ -1148,13 +1139,6 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
     case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_:
       {
 	str_sprintf(headingBuf_, "Privileges on Table %s.%s",
-		    getMItdb().getSch(), getMItdb().getObj());
-      }
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_:
-      {
-	str_sprintf(headingBuf_, "Privileges on MV %s.%s",
 		    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
@@ -1175,7 +1159,7 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
 
     case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_LIBRARY_:
       {
-        str_sprintf(headingBuf_, "Privileges on Sequence %s.%s",
+        str_sprintf(headingBuf_, "Privileges on Library %s.%s",
                     getMItdb().getSch(), getMItdb().getObj());
       }
     break;
@@ -1184,13 +1168,6 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       {
         str_sprintf(headingBuf_, "Privileges on Routine %s.%s",
                     getMItdb().getSch(), getMItdb().getObj());
-      }
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_:
-      {
-	str_sprintf(headingBuf_, "Synonyms on Table %s.%s",
-		    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
 
@@ -1204,19 +1181,192 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_:
-    case ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_:
+    case ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_:
       {
-	str_sprintf(headingBuf_,
-		    (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_
-		     ? "MVs on Table %s.%s" : "MVs ON MV %s.%s"),
+	str_sprintf(headingBuf_, "Partitions for Table %s.%s",
 		    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_:
+    case ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_:
       {
-	str_sprintf(headingBuf_, "Partitions for Table %s.%s",
+	str_sprintf(headingBuf_, "Partitions for Index %s.%s",
+		    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_:
+      {
+	str_sprintf(headingBuf_, "Objects on Table %s.%s",
+		    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_:
+      {
+	str_sprintf(headingBuf_, "Sequences in schema %s.%s",
+		    getMItdb().getCat(), getMItdb().getSch());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Sequences in catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_:
+    case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_:
+    case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_:
+      {
+	str_sprintf(headingBuf_,
+		    (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_ ?
+		     "Tables in View %s.%s" :
+		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_ ?
+		      "Views in View %s.%s" :
+		      "Objects in View %s.%s")),
+		    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::ROLES_:
+        str_sprintf(headingBuf_,"Roles");
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::ROLES_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Roles granted Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Users granted Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::USERS_:
+      {
+        str_sprintf(headingBuf_,
+                    (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::USERS_
+                     ? "Users" : "Current User")
+        );
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_USER_:
+        str_sprintf(headingBuf_,"Functions for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Functions for Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_:
+        str_sprintf(headingBuf_,"Indexes for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Indexes for Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_:
+        str_sprintf(headingBuf_,"Libraries for User %s", getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Libraries for User %s", getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_:
+        str_sprintf(headingBuf_,"Procedures for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_:
+        str_sprintf(headingBuf_,"Functions for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_:
+        str_sprintf(headingBuf_,"Table_mapping Functions for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_:
+        str_sprintf(headingBuf_,"Privileges for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Privileges for Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_:
+        str_sprintf(headingBuf_,"Procedures for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Procedures for Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_:
+        str_sprintf(headingBuf_,"Roles for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_:
+        str_sprintf(headingBuf_,"Schemas for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_USER_:
+        str_sprintf(headingBuf_,"Table mapping functions for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Table mapping functions for Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_:
+        str_sprintf(headingBuf_,"Tables for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLES_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Tables for Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_:
+        str_sprintf(headingBuf_,"Views for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_ROLE_:
+        str_sprintf(headingBuf_,"Views for Role %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::COMPONENTS_:
+        str_sprintf(headingBuf_, "Components");
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
+       {	 
+      	 if (getMItdb().getParam1())
+            str_sprintf(headingBuf_, "Privilege information on Component %s for %s",
+                        getMItdb().getObj(),getMItdb().getParam1());
+         
+         else
+            str_sprintf(headingBuf_, "Operation information on Component %s",
+                        getMItdb().getObj());
+         break;
+       }
+
+// Not supported at this time
+#if 0
+    case ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_:
+        str_sprintf(headingBuf_,"Triggers for User %s",getMItdb().getParam1());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_:
+      {
+	str_sprintf(headingBuf_, "Indexes on MV %s.%s",
+		    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_:
+      {
+	str_sprintf(headingBuf_, "Privileges on MV %s.%s",
 		    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
@@ -1257,20 +1407,6 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
 		    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
-    case ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_:
-      {
-	str_sprintf(headingBuf_, "Partitions for Index %s.%s",
-		    getMItdb().getSch(), getMItdb().getObj());
-      }
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_:
-      {
-	str_sprintf(headingBuf_, "Objects on Table %s.%s",
-		    getMItdb().getSch(), getMItdb().getObj());
-      }
-    break;
-
     case ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLES_IN_SCHEMA_:
       {
 	str_sprintf(headingBuf_, "Iud log tables in schema %s.%s",
@@ -1291,34 +1427,40 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_:
+    case ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_:
       {
-	str_sprintf(headingBuf_, "Sequences in schema %s.%s",
+	str_sprintf(headingBuf_, "Synonyms in Schema %s.%s",
 		    getMItdb().getCat(), getMItdb().getSch());
       }
     break;
-
-    case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_:
-      {
-	str_sprintf(headingBuf_, "Sequences in catalog %s",
-		    getMItdb().getCat());
-      }
+    case ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_:
+        str_sprintf(headingBuf_,"Synonyms for User %s",getMItdb().getParam1());
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_:
-    case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_:
-    case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_:
+    case ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_:
       {
-	str_sprintf(headingBuf_,
-		    (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_ ?
-		     "Tables in View %s.%s" :
-		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_ ?
-		      "Views in View %s.%s" :
-		      "Objects in View %s.%s")),
+	str_sprintf(headingBuf_, "Synonyms on Table %s.%s",
 		    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
 
+
+    case ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_:
+      {
+	str_sprintf(headingBuf_, "MVs in Schema %s.%s",
+		    getMItdb().getCat(), getMItdb().getSch());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_:
+    case ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_:
+      {
+	str_sprintf(headingBuf_,
+		    (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_
+		     ? "MVs on Table %s.%s" : "MVs ON MV %s.%s"),
+		    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
     case ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_:
     case ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_:
     case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_:
@@ -1333,47 +1475,6 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::ROLES_:
-        str_sprintf(headingBuf_,"Roles");
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::ROLES_FOR_ROLE_:
-        str_sprintf(headingBuf_,"Roles granted Role %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_:
-        str_sprintf(headingBuf_,"Users granted Role %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::USERS_:
-      {
-        str_sprintf(headingBuf_,
-                    (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::USERS_
-                     ? "Users" : "Current User")
-        );
-      }
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_:
-        str_sprintf(headingBuf_,"Indexes for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_:
-        str_sprintf(headingBuf_,"Libraries for User %s", getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_:
-        str_sprintf(headingBuf_,"Procedures for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_:
-        str_sprintf(headingBuf_,"Functions for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_:
-        str_sprintf(headingBuf_,"Table_mapping Functions for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
-    break;
-
     case ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_:
         str_sprintf(headingBuf_,"Materialized Views for User %s",getMItdb().getParam1());
     break;
@@ -1382,57 +1483,7 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
         str_sprintf(headingBuf_,"Materialized View Groups for User %s",getMItdb().getParam1());
     break;
 
-    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_:
-        str_sprintf(headingBuf_,"Privileges for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_:
-        str_sprintf(headingBuf_,"Privileges for Role %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_:
-        str_sprintf(headingBuf_,"Procedures for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_:
-        str_sprintf(headingBuf_,"Roles for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_:
-        str_sprintf(headingBuf_,"Schemas for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_:
-        str_sprintf(headingBuf_,"Synonyms for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_:
-        str_sprintf(headingBuf_,"Tables for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_:
-        str_sprintf(headingBuf_,"Triggers for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_:
-        str_sprintf(headingBuf_,"Views for User %s",getMItdb().getParam1());
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::COMPONENTS_:
-        str_sprintf(headingBuf_, "Components");
-    break;
-
-    case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
-       {	 
-      	 if (getMItdb().getParam1())
-            str_sprintf(headingBuf_, "Privilege information on Component %s for %s",
-                        getMItdb().getObj(),getMItdb().getParam1());
-         
-         else
-            str_sprintf(headingBuf_, "Operation information on Component %s",
-                        getMItdb().getObj());
-         break;
-       }
+#endif
 
     default:
       str_sprintf(headingBuf_, "Add to ExExeUtilGetMetadataInfoTcb::displayHeading");
@@ -1978,8 +2029,22 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    if(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::COMPONENTS_
 	      ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::COMPONENT_OPERATIONS_
 	      ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_
-              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_ROLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_ROLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_ROLE_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_ROLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_ROLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_FOR_ROLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_ROLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_
@@ -2382,6 +2447,95 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   param_[8] = (char *) privWhereClause.data();
                 }
                 break ;
+
+              case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_:
+              case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_ROLE_:
+              case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_USER_:
+              case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_ROLE_:
+              case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_USER_:
+              case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_ROLE_:
+                {
+                  NABoolean isUser =
+                     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ ||
+                      getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_USER_ ||
+                      getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_USER_);
+
+                  // Get the authID associated with the specified user
+                  Int32 authID = *currContext->getDatabaseUserID();
+                  if (!(strcmp(getMItdb().getParam1(), currContext->getDatabaseUserName()) == 0))
+                    authID = getAuthID(getMItdb().getParam1(), cat, sch, auths);
+
+                  // Verify that the user is a user, or the role is a role
+                  if (isUser  && !CmpSeabaseDDLauth::isUserID(authID) ||
+                      !isUser && !CmpSeabaseDDLauth::isRoleID(authID))
+                    {
+                      NAString type = (isUser ? "user" : "role");
+                      ExRaiseSqlError(getHeap(), &diagsArea_, -CAT_IS_NOT_CORRECT_AUTHID,
+                          NULL, NULL, NULL,
+                          getMItdb().getParam1(),
+                          type.data());
+                      step_ = HANDLE_ERROR_;
+                      break;
+                    }
+
+                  qs = getTrafRoutinesForAuthQuery;
+                  sizeOfqs = sizeof(getTrafRoutinesForAuthQuery);
+
+                  NAString routineType;
+                  if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_) ||
+                      (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_ROLE_))
+                    routineType = COM_PROCEDURE_TYPE_LIT;
+                  else if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_USER_) ||
+                      (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_ROLE_))
+                    routineType = COM_SCALAR_UDF_TYPE_LIT;
+                  else 
+                    routineType = COM_TABLE_UDF_TYPE_LIT;
+
+                  // Getting objects for the current user
+                  if (strcmp(getMItdb().getParam1(), currContext->getDatabaseUserName()) == 0)
+                    privWhereClause = getGrantedPrivCmd(authList, cat, NAString ("T.object_uid"));
+
+                  // Getting objects for a user other than the current user
+                  else
+                    {
+                      if (doPrivCheck)
+                        {
+                          // User cannot view privileges for another user
+                          ExRaiseSqlError(getHeap(), &diagsArea_, -1017);
+                          step_ = HANDLE_ERROR_;
+                          break;
+                        }
+                      else
+                        {
+                          // get the list of roles for this other user.
+                          char *userRoleList = getRoleList(authID, cat, pmsch, role_usage);
+                          if (userRoleList)
+                            {
+                              privWhereClause = getGrantedPrivCmd(userRoleList, cat, NAString ("T.object_uid"));
+                              NADELETEBASIC(userRoleList, getHeap());
+                            }
+                          else
+                            {
+                              // Unable to read metadata
+                              ExRaiseSqlError(getHeap(), &diagsArea_, -8001);
+                              step_ = HANDLE_ERROR_;
+                              break;
+                            }
+                        }
+                    }
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+                  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = routine;
+		  param_[6] = getMItdb().cat_;
+                  param_[7] = (char *)routineType.data();
+                  param_[8] = (char *) privWhereClause.data();
+                }
+                break ;
+                
               case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_:
               case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_:
               case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_:
@@ -2682,6 +2836,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
               }
 
               case ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_:
+              case ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_ROLE_:
                 {
                   qs = getTrafIndexesForUser;
                   sizeOfqs = sizeof(getTrafIndexesForUser);
@@ -2736,18 +2891,46 @@ short ExExeUtilGetMetadataInfoTcb::work()
                 break;
 
               case ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_:
+              case ComTdbExeUtilGetMetadataInfo::TABLES_FOR_ROLE_:
               case ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_:
+              case ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_ROLE_:
                 {
+                  NABoolean isUser = 
+                     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ ||
+                      getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_);
+
+                  // Get the authID associated with the specified user
+                  Int32 authID = *currContext->getDatabaseUserID();
+                  if (!(strcmp(getMItdb().getParam1(), currContext->getDatabaseUserName()) == 0))
+                    authID = getAuthID(getMItdb().getParam1(), cat, sch, auths);
+
+                  // Verify that the user is a user, or the role is a role
+                  NABoolean validAuth = FALSE;
+                  if (isUser  && CmpSeabaseDDLauth::isUserID(authID))
+                    validAuth = TRUE;
+                  if (!isUser && CmpSeabaseDDLauth::isRoleID(authID))
+                    validAuth = TRUE;
+
+                  if (!validAuth)
+                    {
+                      NAString authName = (isUser) ? "user" : "role";
+                      ExRaiseSqlError(getHeap(), &diagsArea_, -CAT_IS_NOT_CORRECT_AUTHID,
+                          NULL, NULL, NULL,
+                          getMItdb().getParam1(),
+                          authName.data());
+                      step_ = HANDLE_ERROR_;
+                      break;
+                    }
+  
                   qs = getTrafObjectsForUser;
                   sizeOfqs = sizeof(getTrafObjectsForUser);
 
                   NAString objType;
-                  if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_)
+                  if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_) ||
+                      (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_FOR_ROLE_))
                     objType = COM_BASE_TABLE_OBJECT_LIT;
-                  else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_)
+                  else
                     objType = COM_VIEW_OBJECT_LIT;
-                  else 
-                    objType = COM_INDEX_OBJECT_LIT;
 
                   // Getting objects for the current user
                   if (strcmp(getMItdb().getParam1(), currContext->getDatabaseUserName()) == 0)
@@ -2765,9 +2948,6 @@ short ExExeUtilGetMetadataInfoTcb::work()
                         }
                       else
                         {
-                          // Get the authID associated with the requested user
-                          Int32 authID = getAuthID(getMItdb().getParam1(), cat, sch, auths);
-
                           // get the list of roles for this other user.
                           char *userRoleList = getRoleList(authID, cat, pmsch, role_usage);
                           if (userRoleList)
@@ -2795,7 +2975,34 @@ short ExExeUtilGetMetadataInfoTcb::work()
               break;
 
               case ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_:
+              case ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_ROLE_:
                 {
+                  NABoolean isUser =
+                     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_);
+
+                  // Get the authID associated with the specified user
+                  Int32 authID = *currContext->getDatabaseUserID();
+                  if (!(strcmp(getMItdb().getParam1(), currContext->getDatabaseUserName()) == 0))
+                    authID = getAuthID(getMItdb().getParam1(), cat, sch, auths);
+
+                  // Verify that the user is a user, or the role is a role
+                  NABoolean validAuth = FALSE;
+                  if (isUser  && CmpSeabaseDDLauth::isUserID(authID))
+                    validAuth = TRUE;
+                  if (!isUser && CmpSeabaseDDLauth::isRoleID(authID))
+                    validAuth = TRUE;
+
+                  if (!validAuth)
+                    {
+                      NAString authName = (isUser) ? "user" : "role";
+                      ExRaiseSqlError(getHeap(), &diagsArea_, -CAT_IS_NOT_CORRECT_AUTHID,
+                          NULL, NULL, NULL,
+                          getMItdb().getParam1(),
+                          authName.data());
+                      step_ = HANDLE_ERROR_;
+                      break;
+                    }
+
                   qs = getTrafLibrariesForUser;
                   sizeOfqs = sizeof(getTrafLibrariesForUser);
 
@@ -2815,9 +3022,6 @@ short ExExeUtilGetMetadataInfoTcb::work()
                         }
                       else
                         {
-                          // Get the authID associated with the requested user
-                          Int32 authID = getAuthID(getMItdb().getParam1(), cat, sch, auths);
-
                           // Get the list of roles for this other user.
                           char *userRoleList = getRoleList(authID, cat, pmsch, role_usage);
                           if (userRoleList)
@@ -2922,7 +3126,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
                        if (CmpSeabaseDDLauth::isUserID(authID) && getMItdb().cascade())
                        {
                           char buf[300 + MAX_AUTHNAME_LEN + 200];
-                          str_sprintf(buf, "or p.grantee_id = (select role_id from "
+                          str_sprintf(buf, "or p.grantee_id in (select role_id from "
                                            "%s.\"%s\".%s where grantee_name = '%s') "
                                            "or p.grantee_id = -1",
                                       cat, pmsch, role_usage, getMItdb().getParam1());
@@ -3087,6 +3291,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
               ptr = outputCharStr;
               len = outputStr.length();
             }
+
+// Not supported at this time
+#if 0
 	    if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_TABLE_ ) || 
 		(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_MV_ ))
 	      {
@@ -3114,16 +3321,19 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 			    
 	      }
-	    if (((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_) ||
-		 (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_)) &&
+#endif
+
+	    if (((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_)
+		 //|| (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_)
+                ) &&
 		(vi->get(1) && (strcmp(vi->get(1), "BT") != 0)))
 	      exprRetCode = ex_expr::EXPR_FALSE;
 	    else if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_) &&
 		(vi->get(1) && (strcmp(vi->get(1), "VI") != 0)))
 	      exprRetCode = ex_expr::EXPR_FALSE;
-	    else if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_) &&
-                     (vi->get(1) && (strcmp(vi->get(1), "MV") != 0)))
-	      exprRetCode = ex_expr::EXPR_FALSE;
+	    //else if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_) &&
+            //         (vi->get(1) && (strcmp(vi->get(1), "MV") != 0)))
+	    //  exprRetCode = ex_expr::EXPR_FALSE;
 
 	    if (exprRetCode == ex_expr::EXPR_TRUE)
 	      exprRetCode = evalScanExpr(ptr, len, TRUE);
@@ -3217,17 +3427,17 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	      }
 
 	    if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_) ||
-		(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_) ||
-		(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_) ||
-		(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_ON_VIEW_))
+		//(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_) ||
+		//(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_ON_VIEW_) ||
+		(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_)) 
 
 	      step_ = GET_USING_VIEWS_;
 	    else if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_) ||
 		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_) ||
-		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_) ||
-		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_) ||
-		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_) ||
-		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_))
+		     //(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_) ||
+		     //(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_) ||
+		     //(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_) ||
+		     (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_))
 	      step_ = GET_USED_OBJECTS_;
 	    else
 	      step_ = DONE_;
@@ -3462,22 +3672,6 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 		}
 	      break;
 
-	      case ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_:
-		{
-		  str_sprintf(queryBuf_, "select * from (get all mvs on table \"%s\".\"%s\".\"%s\", no header %s) xxx(aaa) group by aaa order by 1",
-			      getMItdb().getCat(), getMItdb().getSch(), getMItdb().getObj(),
-			      patternStr_);
-		}
-	      break;
-
-	      case ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_:
-		{
-		  str_sprintf(queryBuf_, "select * from (get all mvs on mv \"%s\".\"%s\".\"%s\", no header %s) xxx(aaa) group by aaa order by 1",
-			      getMItdb().getCat(), getMItdb().getSch(), getMItdb().getObj(),
-			      patternStr_);
-		}
-	      break;
-
 	      case ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_:
 		{
 		  str_sprintf(queryBuf_, "select * from (get all tables in view \"%s\".\"%s\".\"%s\", no header %s) xxx(aaa) group by aaa order by 1",
@@ -3497,6 +3691,36 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	      case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_:
 		{
 		  str_sprintf(queryBuf_, "select * from (get all objects in view \"%s\".\"%s\".\"%s\", no header %s) xxx(aaa) group by aaa order by 1",
+			      getMItdb().getCat(), getMItdb().getSch(), getMItdb().getObj(),
+			      patternStr_);
+		}
+	      break;
+
+	      case ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_:
+		{
+		  step_ = FETCH_ALL_ROWS_FOR_OBJECTS_;
+		}
+	      break;
+
+	      case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_:
+		{
+		  step_ = FETCH_ALL_ROWS_IN_SCHEMA_;
+		}
+	      break;
+
+// not supported at this time
+#if 0
+	      case ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_:
+		{
+		  str_sprintf(queryBuf_, "select * from (get all mvs on table \"%s\".\"%s\".\"%s\", no header %s) xxx(aaa) group by aaa order by 1",
+			      getMItdb().getCat(), getMItdb().getSch(), getMItdb().getObj(),
+			      patternStr_);
+		}
+	      break;
+
+	      case ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_:
+		{
+		  str_sprintf(queryBuf_, "select * from (get all mvs on mv \"%s\".\"%s\".\"%s\", no header %s) xxx(aaa) group by aaa order by 1",
 			      getMItdb().getCat(), getMItdb().getSch(), getMItdb().getObj(),
 			      patternStr_);
 		}
@@ -3526,18 +3750,7 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 		}
 	      break;
 
-	      case ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_:
-		{
-		  step_ = FETCH_ALL_ROWS_FOR_OBJECTS_;
-		}
-	      break;
-
-	      case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_:
-		{
-		  step_ = FETCH_ALL_ROWS_IN_SCHEMA_;
-		}
-	      break;
-
+#endif
 	      default:
 		{
                   ExRaiseSqlError(getHeap(), &diagsArea_, -4298, 
@@ -4190,385 +4403,6 @@ short ExExeUtilGetHbaseObjectsTcb::work()
     }
 
   return WORK_OK;
-}
-
-////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilGetMetadataInfoVersionTcb
-///////////////////////////////////////////////////////////////
-ExExeUtilGetMetadataInfoVersionTcb::ExExeUtilGetMetadataInfoVersionTcb(
-     const ComTdbExeUtilGetMetadataInfo & exe_util_tdb,
-     ex_globals * glob)
-     : ExExeUtilGetMetadataInfoTcb( exe_util_tdb, glob)
-{
-}
-
-static const QueryString getVersionForSchemasInCatalogQuery[] =
-{
-  {" select translate(trim(S.schema_name) using ucs2toutf8), "},
-  {" cast(S.schema_version as char(4)) "},
-  {"   from  "},
-  {"     HP_SYSTEM_CATALOG.system_schema.catsys C, "},
-  {"     HP_SYSTEM_CATALOG.system_schema.schemata S "},
-  {"   where "},
-  {"     C.cat_name = '%s' and "},
-  {"     C.cat_uid = S.cat_uid "},
-  {"     %s "},
-  {"   order by 1 "},
-  {" ; "}
-};
-
-static const QueryString getVersionForObjectsInSchemaQuery[] =
-{
-  {" select translate(trim(O.object_name) using ucs2toutf8), "},
-  {" cast(S.schema_version as char(4)), cast(O.object_feature_version as char(4)), "},
-  {" cast(O.rcb_version as char(4)) "},
-  {"   from  "},
-  {"     HP_SYSTEM_CATALOG.system_schema.catsys C, "},
-  {"     HP_SYSTEM_CATALOG.system_schema.schemata S, "},
-  {"     \"%s\".HP_DEFINITION_SCHEMA.objects O "},
-  {"   where "},
-  {"     C.cat_name = '%s' and "},
-  {"     S.schema_name = '%s' and "},
-  {"     C.cat_uid = S.cat_uid and "},
-  {"     S.schema_uid = O.schema_uid "},
-  {"     %s "},
-  {"     order by 1 "},
-  {" ; "}
-};
-
-//////////////////////////////////////////////////////
-// work() for ExExeUtilGetMetadataInfoVersionTcb
-//////////////////////////////////////////////////////
-short ExExeUtilGetMetadataInfoVersionTcb::work()
-{
-  short retcode = 0;
-  Lng32 cliRC = 0;
-  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
-
-  // if no parent request, return
-  if (qparent_.down->isEmpty())
-    return WORK_OK;
-
-  // if no room in up queue, won't be able to return data/status.
-  // Come back later.
-  if (qparent_.up->isFull())
-    return WORK_OK;
-
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-  ExExeUtilPrivateState & pstate =
-    *((ExExeUtilPrivateState*) pentry_down->pstate);
-
-  // Get the globals stucture of the master executor.
-  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
-  ContextCli * currContext = masterGlob->getStatement()->getContext();
-
-  while (1)
-    {
-      switch (step_)
-	{
-	case INITIAL_:
-	  {
-	    step_ = DISABLE_CQS_;
-	  }
-	break;
-
-	case DISABLE_CQS_:
-	  {
-	    if (disableCQS())
-	      {
-		step_ = HANDLE_ERROR_;
-		break;
-	      }
-
-	    step_ = SETUP_QUERY_;
-	  }
-	break;
-
-	case SETUP_QUERY_:
-	  {
-	    const QueryString * qs;
-	    Int32 sizeOfqs = 0;
-
-	    char predStr[2000];
-            predStr[0] = '\0';
-            patternStr_[0] = '\0';
-	    if (getMItdb().getPattern())
-	      {
-		str_sprintf(patternStr_, ", match '%s' ",
-			    getMItdb().getPattern());
-	      }
-
-	    if (getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_)
-	      {
-		qs = getVersionForSchemasInCatalogQuery;
-		sizeOfqs = sizeof(getVersionForSchemasInCatalogQuery);
-
-		param_[0] = getMItdb().cat_;
-		param_[1] = predStr;
-
-		if (getMItdb().userObjs())
-		  {
-		    str_sprintf(predStr, " and (S.schema_name <> 'HP_DEFINITION_SCHEMA' and S.schema_name <> 'MXCS_SCHEMA' and S.schema_name <> 'SYSTEM_DEFAULTS_SCHEMA' and S.schema_name <> 'SYSTEM_SCHEMA' and S.schema_name <> 'PUBLIC_ACCESS_SCHEMA' and S.schema_name <> 'HP_ROUTINES' and S.schema_name <> 'HP_SECURITY_SCHEMA' and S.schema_name <> 'MANAGEABILITY' and left(S.schema_name, 1) <> '@' and S.current_operation <> 'VS' ) ");
-		  }
-		else if (getMItdb().systemObjs())
-		  {
-		    str_sprintf(predStr, " and (S.schema_name = 'HP_DEFINITION_SCHEMA' or S.schema_name = 'MXCS_SCHEMA' or S.schema_name = 'SYSTEM_DEFAULTS_SCHEMA' or S.schema_name = 'SYSTEM_SCHEMA' or S.schema_name = 'PUBLIC_ACCESS_SCHEMA' or S.schema_name = 'HP_ROUTINES' or S.schema_name = 'HP_SECURITY_SCHEMA' or S.schema_name = 'MANAGEABILITY' or left(S.schema_name, 1) = '@' or S.current_operation = 'VS') ");
-		  }
-
-		numOutputEntries_ = 2;
-	      }
-	    else
-	      {
-		qs = getVersionForObjectsInSchemaQuery;
-		sizeOfqs = sizeof(getVersionForObjectsInSchemaQuery);
-
-		param_[0] = getMItdb().cat_;
-		param_[1] = getMItdb().cat_;
-		param_[2] = getMItdb().sch_;
-		param_[3] = predStr;
-
-		switch (getMItdb().queryType_)
-		  {
-		  case ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_:
-		    {
-		      strcat(predStr, " and O.object_name_space = 'TA' and O.object_type = 'BT' ");
-
-		      if (getMItdb().userObjs())
-			{
-			  strcat(predStr, " and O.object_security_class = 'UT' ");
-			}
-		      else if (getMItdb().systemObjs())
-			{
-			  strcat(predStr, " and O.object_security_class <> 'UT' ");
-			}
-
-		    }
-		  break;
-
-		  case ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_:
-		    {
-		      strcat(predStr, " and O.object_name_space = 'IX' and O.object_type = 'IX' ");
-		    }
-		  break;
-
-		  case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_:
-		    {
-		      strcat(predStr, " and O.object_name_space = 'TA' and O.object_type = 'VI' ");
-		    }
-		  break;
-
-		  case ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_:
-		    {
-		      strcat(predStr, " and O.object_name_space = 'LB' and O.object_type = 'LB' "); //ACH VErfiy this is stored correctly - SMDIO?
-		    }
-		  break;
-
-		  case ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_:
-		    {
-		      strcat(predStr, " and O.object_name_space = 'TA' and O.object_type = 'MV' ");
-		    }
-		  break;
-
-		  case ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_:
-		    {
-		      strcat(predStr, " and O.object_name_space = 'TA' and O.object_type = 'UR' ");
-		    }
-		  break;
-
-		  case ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_:
-		    {
-		      strcat(predStr, " and O.object_name_space = 'TA' and O.object_type = 'SY' ");
-		    }
-		  break;
-
-		  case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_:
-		    {
-		    }
-		  break;
-
-		  default:
-		    {
-                      ExRaiseSqlError(getHeap(), &diagsArea_, -4218, 
-                         NULL, NULL, NULL, "GET");
-		      step_ = HANDLE_ERROR_;
-		    }
-		  break;
-
-		  } // switch
-
-		numOutputEntries_ = 4;
-	      }
-
-	    Int32 qryArraySize = sizeOfqs / sizeof(QueryString);
-	    char * gluedQuery;
-	    Lng32 gluedQuerySize;
-	    glueQueryFragments(qryArraySize,  qs,
-			       gluedQuery, gluedQuerySize);
-
-	    str_sprintf(queryBuf_, gluedQuery,
-			param_[0], param_[1], param_[2], param_[3],
-			param_[4], param_[5], param_[6], param_[7],
-			param_[8], param_[9], param_[10], param_[11],
-			param_[12], param_[13], param_[14]);
-
-            NADELETEBASIC(gluedQuery, getMyHeap());
-	    step_ = FETCH_ALL_ROWS_;
-	  }
-	break;
-
-	case FETCH_ALL_ROWS_:
-	  {
-	    if (initializeInfoList(infoList_))
-	      {
-		step_ = HANDLE_ERROR_;
-		break;
-	      }
-
-	    if (fetchAllRows(infoList_, queryBuf_, numOutputEntries_,
-			     FALSE, retcode) < 0)
-	      {
-		step_ = HANDLE_ERROR_;
-
-		break;
-	      }
-
-	    infoList_->position();
-
-	    // find out the max length of the object name entry.
-	    // This will help in formatting of output.
-	    infoList_->position();
-	    maxObjLen_ = 0;
-	    while (NOT infoList_->atEnd())
-	      {
-		OutputInfo * oi = (OutputInfo*)infoList_->getCurr();
-		if (strlen(oi->get(0)) > maxObjLen_)
-		  maxObjLen_ = strlen(oi->get(0));
-
-		infoList_->advance();
-	      }
-
-	    infoList_->position();
-
-	    step_ = DISPLAY_HEADING_;
-	  }
-	break;
-
-	case DISPLAY_HEADING_:
-	  {
-	    if (infoList_->atEnd())
-	      {
-		step_ = DONE_;
-		break;
-	      }
-
-	    // make sure there is enough space to move header
-	    if (isUpQueueFull(5))
-	      {
-		return WORK_CALL_AGAIN; // come back later
-	      }
-
-	    if (numOutputEntries_ == 2)
-	      {
-		maxObjLen_ = MAXOF(strlen("Schema"), maxObjLen_);
-		str_sprintf(formatStr_, "%%%ds  %%4s", maxObjLen_);
-
-		str_sprintf(headingBuf_, formatStr_,
-			    "Schema", "OSV");
-	      }
-	    else
-	      {
-		maxObjLen_ = MAXOF(strlen("Object"), maxObjLen_);
-		str_sprintf(formatStr_, "%%%ds  %%4s  %%4s  %%4s", maxObjLen_);
-
-		str_sprintf(headingBuf_, formatStr_,
-			    "Object", "OSV", "OFV", "RCBV");
-	      }
-
-	    Lng32 len = strlen(headingBuf_);
-	    moveRowToUpQueue(headingBuf_);
-	    str_pad(headingBuf_, len, '=');
-	    headingBuf_[len] = 0;
-	    moveRowToUpQueue(headingBuf_);
-
-	    moveRowToUpQueue(" ");
-
-	    step_ = RETURN_ROW_;
-	  }
-	break;
-
-	case RETURN_ROW_:
-	  {
-	    if (infoList_->atEnd())
-	      {
-		step_ = ENABLE_CQS_;
-		break;
-	      }
-
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    OutputInfo * vi = (OutputInfo*)infoList_->getCurr();
-
-	    if (numOutputEntries_ == 2)
-	      {
-		str_sprintf(outputBuf_, formatStr_,
-			    vi->get(0), vi->get(1));
-	      }
-	    else
-	      {
-		str_sprintf(outputBuf_, formatStr_,
-			    vi->get(0), vi->get(1), vi->get(2),
-			    vi->get(3));
-	      }
-
-	    short rc = 0;
-	    moveRowToUpQueue(outputBuf_, 0, &rc);
-
-	    infoList_->advance();
-	  }
-	break;
-
-	case ENABLE_CQS_:
-	  {
-	    if (restoreCQS())
-	      {
-		step_ = HANDLE_ERROR_;
-		break;
-	      }
-
-	    step_ = DONE_;
-	  }
-	break;
-
-	case HANDLE_ERROR_:
-	  {
-	    restoreCQS();
-
-	    retcode = handleError();
-	    if (retcode == 1)
-	      return WORK_OK;
-
-	    step_ = DONE_;
-	  }
-	break;
-
-	case DONE_:
-	  {
-	    retcode = handleDone();
-	    if (retcode == 1)
-	      return WORK_OK;
-
-	    step_ = INITIAL_;
-
-	    return WORK_OK;
-	  }
-	break;
-
-	}
-    }
-
-  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////
