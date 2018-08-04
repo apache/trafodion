@@ -812,6 +812,8 @@ enum OperatorTypeEnum {
                         ITM_AES_ENCRYPT = 2641,
                         ITM_AES_DECRYPT = 2642,
 
+                        ITM_SYS_CONNECT_BY_PATH = 2643,
+
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,
                         ITM_CURRNT_USER = 2991,

@@ -3069,6 +3069,7 @@ ComTdbExeUtilConnectby::ComTdbExeUtilConnectby(char * query,
    connTableName_ = tableName;
    maxDeep_ = 200; //by default, max deep of a tree
    maxSize_ = 100000; //by default, the max number of rows to return for hierachy query
+   hasPath_ = FALSE;
 }
 
 Long ComTdbExeUtilConnectby::pack(void * space)

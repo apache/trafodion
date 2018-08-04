@@ -4173,6 +4173,29 @@ public:
 protected:
 };
 
+class connectByStackItem
+{
+public:
+  connectByStackItem() 
+  {
+    seedValue = NULL;
+    pathItem = NULL;
+    pathLen = 0;
+    len = 0;
+    level = 0;
+    type = 0;
+    parentId = 0;
+  }
+  ~connectByStackItem() {}
+  char * seedValue;
+  char * pathItem;
+  int len;
+  int level;
+  int type;
+  int pathLen;
+  int parentId;
+};
+
 ////////////////////////////////////////////////////////////////////////////
 class ExExeUtilLobInfoTablePrivateState : public ex_tcb_private_state
 {
@@ -4215,7 +4238,18 @@ public:
   ExExeUtilConnectbyTdb& exeUtilTdb() const
     {return (ExExeUtilConnectbyTdb&) tdb;};
 
- short emitRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle) ;
+ short emitRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle, connectByStackItem *it) ;
+
+ Queue *currArray[200];
+ Queue * getCurrentQueue(int level) { if(level <0 || level >200) abort(); return currArray[level];}
+ short checkDuplicate(connectByStackItem *it,int len, int level);
+ int currLevel_;
+ Int64 resultSize_;
+ Queue *currQueue_;
+ Queue *seedQueue_;
+ Queue *thisQueue_;
+ Int32 currRootId_;
+ Int32 connBatchSize_ ; 
 
 protected:
   ExExeUtilConnectbyTcb *tcb_;

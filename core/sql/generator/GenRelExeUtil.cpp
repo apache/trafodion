@@ -5258,6 +5258,7 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
   tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
 
   tblDesc_ = cmpSBD.getSeabaseTableDesc(cat,sch,tbl,COM_BASE_TABLE_OBJECT);
+  
   //rename
   TrafTableDesc * td = tblDesc_->tableDesc();
   td->tablename = (char*)getVirtualTableName();
@@ -5318,6 +5319,26 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
            tmpOffset,
            FALSE,
            SQLCHARSETCODE_UNKNOWN,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+
+  column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;  
+  i =0;
+  tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  col_desc = TrafMakeColumnDesc(
+           getVirtualTableName(),
+           "CONNECT_BY_PATH", //info->colName,
+           i,
+           REC_BYTE_V_ASCII,
+           3000,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UTF8,
            NULL);
   column_desc->next = col_desc;
   col_desc->columnsDesc()->colclass='S';
@@ -5406,8 +5427,11 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
   Lng32 colDescSize =  column_desc->columnsDesc()->length;
 
+  Scan * scanNode = (Scan*)scan_;
+  NAString tbl= (scanNode->getTableName()).getQualifiedNameAsString();
+
   char * stmtText = getStmtText();
-  char *tblnm = (char*)getTableName().getQualifiedNameObj().getObjectName().data();
+  char *tblnm = (char*)tbl.data();
 
   ex_expr * selectPred = NULL;
 
@@ -5421,12 +5445,9 @@ short ExeUtilConnectby::codeGen(Generator * generator)
                             ex_expr::exp_SCAN_PRED,
                             &selectPred);
 
-
      expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
 			       0, theAtpIndex);
-
     }
-
 
   ComTdbExeUtilConnectby  * exe_util_tdb = new(space)  
   ComTdbExeUtilConnectby (stmtText , (stmtText ? strlen(stmtText) : 0), getStmtTextCharSet(), tblnm , NULL, 
@@ -5451,6 +5472,21 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   exe_util_tdb->hasStartWith_ = hasStartWith_;
   exe_util_tdb->startWithExprString_ = startWithExprString_;
   exe_util_tdb->noCycle_ = noCycle_;
+
+  if(hasConnectByPath())
+  {
+     exe_util_tdb->hasPath_ = TRUE;
+     exe_util_tdb->pathColName_ = pathColName_;
+     exe_util_tdb->delimiter_ = delimiter_;
+  }
+  else
+  {
+     exe_util_tdb->hasPath_ = FALSE;
+     exe_util_tdb->pathColName_ = "0";
+     exe_util_tdb->delimiter_ = " ";
+  }
+
+
   generator->initTdbFields(exe_util_tdb);
 
   if (!generator->explainDisabled())

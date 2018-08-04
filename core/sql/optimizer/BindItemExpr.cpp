@@ -10845,7 +10845,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
                "CAST( HOUR( CAST(@A1 AS TIMESTAMP) ) AS INTERVAL HOUR);");
       }
       break;
-
+    case ITM_SYS_CONNECT_BY_PATH:
+        strcpy(buf,"CAST( CONNECT_BY_PATH  AS VARCHAR(3000));"); 
+      break;
     case ITM_DATE_TRUNC_MINUTE:
       {
         if (enforceDateOrTimestampDatatype(bindWA,0,2))
@@ -13449,3 +13451,10 @@ NABoolean RowNumFunc::canBeUsedInGBorOB(NABoolean setErr)
 
   return FALSE;
 }
+
+ItemExpr *ItmSysConnectByPathFunc::bindNode(BindWA *bindWA)
+{
+  return ZZZBinderFunction::bindNode(bindWA);
+}
+
+

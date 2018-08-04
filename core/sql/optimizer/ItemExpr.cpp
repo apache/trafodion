@@ -15250,3 +15250,14 @@ ItemExpr * SplitPart::copyTopNode(ItemExpr *derivedNode, CollHeap *outHeap)
      return BuiltinFunction::copyTopNode(result, outHeap);
 }
 
+ItemExpr * ItmSysConnectByPathFunc::copyTopNode(ItemExpr *derivedNode ,
+                                 CollHeap* outHeap)
+{
+      ItemExpr *result = NULL;
+      if (derivedNode == NULL)
+        result = new (outHeap) ItmSysConnectByPathFunc();
+      else
+         result = derivedNode;
+
+      return ZZZBinderFunction::copyTopNode(result, outHeap);
+}

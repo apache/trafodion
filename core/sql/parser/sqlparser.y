@@ -1060,6 +1060,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SHOWDDL_SEQUENCE
 %token <tokval> TOK_SHOWDDL             /* Tandem extension non-reserved word */
 %token <tokval> TOK_SYSDATE
+%token <tokval> TOK_SYSCONNECTBYPATH
 %token <tokval> TOK_SYSTIMESTAMP
 %token <tokval> TOK_TARGET
 %token <tokval> TOK_SYSTEM
@@ -9869,6 +9870,11 @@ misc_function :
                             CmpCommon::statementHeap(),
                             1, $3);
                 }
+     | TOK_SYSCONNECTBYPATH '(' value_expression  ','  QUOTED_STRING ')'
+                  {
+                    $$ = new (PARSERHEAP())
+                      ItmSysConnectByPathFunc($5->data(), $3);
+                  }
      | TOK_ISNULL '(' value_expression ',' value_expression ')'
                   {
                     $$ = new (PARSERHEAP())
@@ -9876,7 +9882,6 @@ misc_function :
                                  CmpCommon::statementHeap(),
                                  2, $3, $5);
                   }
-
      | TOK_NVL '(' value_expression ',' value_expression ')'
                                 {
 				  $$ = new (PARSERHEAP()) 
@@ -9884,17 +9889,15 @@ misc_function :
                                                     CmpCommon::statementHeap(),
 						    2, $3, $5);
 				}
-
     | TOK_JSONOBJECTFIELDTEXT '(' value_expression ',' value_expression ')'
-    {
-        $$ = new (PARSERHEAP()) 
-        BuiltinFunction(ITM_JSONOBJECTFIELDTEXT, CmpCommon::statementHeap(), 2, $3, $5);
-    }
+             {
+                $$ = new (PARSERHEAP()) 
+                    BuiltinFunction(ITM_JSONOBJECTFIELDTEXT, CmpCommon::statementHeap(), 2, $3, $5);
+             }
      | TOK_NULLIF '(' value_expression ',' value_expression ')'
               {
                 $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_NULLIF, $3, $5);
               }
-
      | TOK_QUERYID_EXTRACT '(' value_expression ',' value_expression ')'
                                 {
 				  $$ = new (PARSERHEAP()) 
@@ -13868,7 +13871,7 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 
   			    RelRoot *temp = new (PARSERHEAP())
 			      RelRoot(euc, REL_ROOT , $1);
-
+                            
                             if( ((Scan*)$2)->getBiConnectBy()->getStartWith() == NULL)
                             {
                               euc->hasStartWith_ = FALSE;
@@ -13878,6 +13881,15 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
                               euc->hasStartWith_ = TRUE;
                               euc->startWithExprString_ = ((Scan*)$2)->getBiConnectBy()->getStartWithString(); 
                             }
+                            ItemExpr * it = euc->containsPath($1);
+                            if( it != NULL) 
+                            {
+                              euc->setHasConnectByPath(TRUE);
+                              euc->pathColName_=((ItmSysConnectByPathFunc*)it)->getPathColumnName();
+                              euc->delimiter_ = ((ItmSysConnectByPathFunc*)it)->getDelimiter();
+                            }
+                            else
+                              euc->setHasConnectByPath(FALSE);
                             euc->noCycle_ = ((Scan*)$2)->getBiConnectBy()->getNoCycle();
                             euc->scan_ = $2;
                             euc->myselection_ = ((Scan*)$2)->getBiConnectBy()->where_clause ;

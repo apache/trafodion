@@ -4708,6 +4708,33 @@ public:
 
 };
 
+class ItmSysConnectByPathFunc : public ZZZBinderFunction
+{
+public:
+  ItmSysConnectByPathFunc(
+        const char *del ="", ItemExpr *val = NULL)
+   : ZZZBinderFunction(ITM_SYS_CONNECT_BY_PATH,
+             val, NULL,NULL,NULL,NULL)
+   {
+     delimiter_ = del;
+     val->unparse(pathColName_, PARSER_PHASE, USER_FORMAT);
+   }
+
+   virtual ItemExpr *bindNode(BindWA *bindWA);
+
+   virtual const NAType * synthesizeType();
+
+   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+                                 CollHeap* outHeap = 0);
+
+   NAString getDelimiter() { return delimiter_; }
+   NAString getPathColumnName() { return pathColName_; }
+
+private:
+  NAString delimiter_;
+  NAString pathColName_;
+};
+
 // --------------------------------------------------------------------------
 //
 // Sequence functions. These perform running and moving aggregates

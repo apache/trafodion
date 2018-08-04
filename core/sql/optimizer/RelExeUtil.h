@@ -1097,6 +1097,11 @@ private:
 
 class ExeUtilConnectby : public ExeUtilExpr
 {
+ enum Flags {
+   HAS_IS_LEAF = 0x00000001,
+   HAS_CONNECT_BY_PATH = 0x00000002,
+ };
+
 public:
   ExeUtilConnectby( const CorrName &TableName,
                    char * stmtText,
@@ -1109,6 +1114,7 @@ public:
    hasStartWith_ = TRUE;
    noCycle_ = FALSE;
    scan_ = scan;
+   flags_ = 0;
  }
   virtual const NAString getText() const;
 
@@ -1148,6 +1154,34 @@ public:
 					    ItemExpr *&castValue,
                                             NABoolean alignedFormat);
  
+  void setHasIsLeaf(NABoolean v) 
+  { v ? flags_ |= HAS_IS_LEAF: flags_ &= ~HAS_IS_LEAF; }
+
+  void setHasConnectByPath(NABoolean v) 
+  { v ? flags_ |= HAS_CONNECT_BY_PATH: flags_ &= ~HAS_CONNECT_BY_PATH; }
+
+  NABoolean hasIsLeaf() const 
+  { return (flags_ & HAS_IS_LEAF) != 0; }
+
+  NABoolean hasConnectByPath() const 
+  { return (flags_ & HAS_CONNECT_BY_PATH) != 0; }
+
+  ItemExpr *containsPath (ItemExpr * lst ) {
+    Int32 arity = lst->getArity();
+    if(lst->getOperatorType() == ITM_SYS_CONNECT_BY_PATH) 
+    {
+      return lst;
+    }
+
+    for(Int32 i = 0; i < arity; i++)
+      if(lst->getChild(i))
+      {
+        ItemExpr *ie = containsPath((ItemExpr*)lst->getChild(i));
+        if(ie != NULL)  return ie;
+      }
+    return NULL;
+  }
+
   TrafDesc * tblDesc_;
   ItemExpr * connectByTree_;
   NAString parentColName_;
@@ -1157,12 +1191,16 @@ public:
   NABoolean noCycle_;
   RelExpr * scan_;
   NAString myTableName_;
+  NAString pathColName_;
+  NAString delimiter_;
 
   ItemExpr * myselection_;
   ValueIdSet mypredicates_;  
 
+  Int32 batchSize_;
+
 private:
-  int fake_;
+  ULng32 flags_;
 }; 
 
 ///////////////////////////////////////////////////////////

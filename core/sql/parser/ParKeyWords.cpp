@@ -1117,6 +1117,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SUSPEND",            TOK_SUSPEND,     NONRESTOKEN_),
   ParKeyWord("SYNONYM",            TOK_SYNONYM,     POTANS_|RESWORD_),
   ParKeyWord("SYNONYMS",           TOK_SYNONYMS,    NONRESTOKEN_),
+  ParKeyWord("SYS_CONNECT_BY_PATH",  TOK_SYSCONNECTBYPATH,     NONRESTOKEN_),
   ParKeyWord("SYSDATE",            TOK_SYSDATE,     NONRESTOKEN_),
   ParKeyWord("SYSTEM",             TOK_SYSTEM,      NONRESTOKEN_),
   ParKeyWord("SYSTIMESTAMP",            TOK_SYSTIMESTAMP,     NONRESTOKEN_),

@@ -6290,6 +6290,8 @@ RelExpr * ExeUtilConnectby::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->childColName_ = childColName_;
   result->startWithExprString_ = startWithExprString_;
   result->noCycle_ = noCycle_;
+  result->flags_ = flags_;
+
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 

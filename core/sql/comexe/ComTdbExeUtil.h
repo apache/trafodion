@@ -4052,6 +4052,9 @@ public:
   NABoolean noCycle_;
   Int32 maxDeep_;
   Int32 maxSize_;
+  NABoolean hasPath_;
+  NAString pathColName_;
+  NAString delimiter_;
 private:
   ExCriDescPtr myWorkCriDesc_;  
   Int32 flags_;
