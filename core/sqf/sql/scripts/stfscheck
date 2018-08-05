@@ -26,12 +26,14 @@
 #parse the ms.env
 
 stfspath=`dtmci showenv STFS_HDD_LOCATION`
-IFS=: declare -a DIRS=($stfspath) 
-for ELEM in "${DIRS[@]}"
+IFS=: DIRS=($stfspath) 
+declare -p DIRS
+for ELEM in ${DIRS[@]}
 do
-  touch $ELEM/test1
+  touch $ELEM/teststfs 
   if [ $? -ne 0 ]; then
-    return 1
+    echo "Scratch File test ERROR for  $ELEM@$HOSTNAME"
+    exit 1
   fi
-  rm $ELEM/test1
+  rm -f $ELEM/teststfs
 done
