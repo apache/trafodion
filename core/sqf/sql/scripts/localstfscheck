@@ -23,16 +23,18 @@
 
 #this is to check the health of STFS
 
-if [ -e $SQ_PDSH ]; then
- output=`$SQ_PDSH $MY_NODES localstfscheck`
- echo $output | grep ERROR | grep Scratch
- ol=`echo $output | grep ERROR | grep Scratch | wc -l`
- if [ $ol -eq 0 ]; then
-  echo 'STFS is OK'
- fi
-else
- localstfscheck
- if [ $? -eq 0 ]; then
-  echo 'STFS is OK'
- fi
-fi
+#parse the ms.env
+
+stfspath=`dtmci showenv STFS_HDD_LOCATION`
+IFS=: DIRS=($stfspath)
+declare -p DIRS >/dev/null
+for ELEM in ${DIRS[@]}
+do
+  touch $ELEM/teststfs
+  if [ $? -ne 0 ]; then
+    echo "Scratch File test ERROR for  $ELEM@$HOSTNAME"
+    rm -f $ELEM/teststfs
+    exit 1
+  fi
+  rm -f $ELEM/teststfs
+done
