@@ -4053,6 +4053,7 @@ public:
   Int32 maxDeep_;
   Int32 maxSize_;
   NABoolean hasPath_;
+  NABoolean hasIsLeaf_;
   NAString pathColName_;
   NAString delimiter_;
 private:

@@ -94,9 +94,12 @@ ExExeUtilConnectbyTcb::ExExeUtilConnectbyTcb(
   resultSize_ = 0;
   currQueue_ = new(getHeap()) Queue(getHeap())  ;
   thisQueue_ = NULL;
-  connBatchSize_ = 50;
+  prevQueue_ = NULL;
+  tmpPrevQueue_ = NULL;
+  currRootId_ = 0;
+  connBatchSize_ = CONNECT_BY_DEFAULT_BATCH_SIZE;
   seedQueue_ = new(getHeap()) Queue(getHeap()) ;
-  for( int i = 0; i< 200; i++)
+  for( int i = 0; i< CONNECT_BY_MAX_LEVEL_SIZE; i++)
   {
     currArray[i] = NULL;
   }
@@ -220,12 +223,12 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
 
   if (evalRetCode == ex_expr::EXPR_TRUE)
 {
-#if 1
-  char pathBuf[3000];
-  memset(pathBuf, 0, 3000);
+
+  char pathBuf[CONNECT_BY_MAX_PATH_SIZE];
+  memset(pathBuf, 0, CONNECT_BY_MAX_PATH_SIZE);
   char tmpbuf1[256];
-  int pathlength = 0;
-  int dlen = strlen(exeUtilTdb().delimiter_.data());
+  Lng32 pathlength = 0;
+  Lng32 dlen = strlen(exeUtilTdb().delimiter_.data());
   Queue *pathq =  new(getHeap()) Queue(getHeap()) ;;
   if (exeUtilTdb().hasPath_ == TRUE) {
     pathq->insert(vi->pathItem);
@@ -251,6 +254,9 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
   }
 
   attr = tDesc->getAttr(tDesc->numAttrs() - 1);
+
+  if(pathlength > CONNECT_BY_MAX_PATH_SIZE) pathlength = CONNECT_BY_MAX_PATH_SIZE;
+
   if (
    ::convDoIt(pathBuf, pathlength, REC_BYTE_V_ASCII, 0, 0,
               &data_[attr->getOffset()], 
@@ -265,7 +271,184 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
   attr->setVarLength(vcActualLen,&data_[attr->getVCLenIndOffset()]);
   retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
 
-#endif
+}
+  return retcode;
+}
+
+
+short ExExeUtilConnectbyTcb::emitPrevRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle,  Queue * pq, int idx)
+{
+  short retcode = 0, rc =0;
+  connectByStackItem *vi = NULL;
+  char * ptr;
+  Lng32   len;
+  short nullInd = 0;
+  short *ind ;
+  ind = &nullInd;
+  UInt32 vcActualLen = 0;
+  //get the item
+  Queue * thatone;
+  int pos=0, doffset=0, lastpos = 0;
+  for(int i1 = 0; i1< pq->numEntries(); i1++)
+  {
+    lastpos = pos;
+    pos+= ((Queue *)pq->get(i1))->numEntries();
+    if(idx <= pos) 
+    {
+      thatone = (Queue *)pq->get(i1);
+      doffset = idx - lastpos;
+    }
+  }
+  if(level > 1)
+    vi = (connectByStackItem *)currArray[level - 1]->get(doffset);
+  OutputInfo * ti = (OutputInfo *)thatone->get(doffset);
+  for (UInt32 i = 2; i < tDesc->numAttrs() - 2 ; i++) 
+  {
+    ti->get(i+1, ptr, len);
+    char * src = ptr;
+    Attributes * attr = tDesc->getAttr(i-1);
+    short srcType = 0;
+    Lng32 srcLen;
+    short valIsNull = 0;
+    srcType = attr->getDatatype(); 
+    srcLen = len;
+    if (len == 0  )  valIsNull = -1;
+
+    if (attr->getNullFlag())
+      {
+	// target is nullable
+	if (attr->getNullIndicatorLength() == 2)
+	  {
+	    // set the 2 byte NULL indicator to -1
+	    *(short *) (&data_[attr->getNullIndOffset()]) =
+	      valIsNull;
+	  }
+	else
+	  {
+	    ex_assert(attr->getNullIndicatorLength() == 4,
+		      "NULL indicator must be 2 or 4 bytes");
+	    *(Lng32 *) (&data_[attr->getNullIndOffset()]) =
+	      valIsNull;
+	  }
+      }
+    else
+      ex_assert(!valIsNull,
+		"NULL source for NOT NULL stats column");
+    
+
+    if (!valIsNull)
+      { 
+        if (attr->getVCIndicatorLength() > 0)
+        {
+	  ::convDoIt(src, srcLen, srcType, 0, 0,
+		       &data_[attr->getOffset()], 
+		       attr->getLength(),
+		       attr->getDatatype(),0,0,
+		       (char*) &vcActualLen, sizeof(vcActualLen), NULL);
+          attr->setVarLength(vcActualLen,&data_[attr->getVCLenIndOffset()]);
+        }
+        else
+	  ::convDoIt(src, srcLen, srcType, 0, 0,
+		       &data_[attr->getOffset()], 
+		       attr->getLength(),
+		       attr->getDatatype(),0,0,
+		       NULL, 0, NULL);
+	
+      }  
+  }
+
+
+  short srcType = REC_BIN32_UNSIGNED;
+  Lng32 srcLen = 4;
+  int src = isleaf;
+  Attributes * attr = tDesc->getAttr(tDesc->numAttrs() - 2);
+  if (
+   ::convDoIt((char*)&src, srcLen, srcType, 0, 0,
+              &data_[attr->getOffset()], 
+              attr->getLength(),
+              attr->getDatatype(),0,0,
+              0, 0, NULL) != ex_expr::EXPR_OK)
+  {
+    ex_assert(
+        0,
+        "Error from ExStatsTcb::work::convDoIt.");
+  }
+
+  src = iscycle;
+  attr = tDesc->getAttr(tDesc->numAttrs() - 3);
+  if (
+   ::convDoIt((char*)&src, srcLen, srcType, 0, 0,
+              &data_[attr->getOffset()], 
+              attr->getLength(),
+              attr->getDatatype(),0,0,
+              0, 0, NULL) != ex_expr::EXPR_OK)
+  {
+    ex_assert(
+        0,
+        "Error from ExStatsTcb::work::convDoIt.");
+  }
+
+  //apply the expression
+  ex_expr::exp_return_type evalRetCode = ex_expr::EXPR_TRUE;
+  if(exeUtilTdb().scanExpr_ )
+  {
+    //evalRetCode = evalScanExpr((char*)data_,  exeUtilTdb().tupleLen_, FALSE);
+    workAtp_->getTupp(exeUtilTdb().workAtpIndex())
+	.setDataPointer((char*)data_);
+    evalRetCode =
+	exeUtilTdb().scanExpr_->eval(workAtp_, NULL);
+  }
+
+  if (evalRetCode == ex_expr::EXPR_TRUE)
+{
+
+  char pathBuf[CONNECT_BY_MAX_PATH_SIZE];
+  memset(pathBuf, 0, CONNECT_BY_MAX_PATH_SIZE);
+  char tmpbuf1[256];
+  Lng32 pathlength = 0;
+  Lng32 dlen = strlen(exeUtilTdb().delimiter_.data());
+  Queue *pathq =  new(getHeap()) Queue(getHeap()) ;;
+  if (exeUtilTdb().hasPath_ == TRUE) {
+    ti->get(2, ptr, len);
+    pathq->insert(ptr);
+    pathlength = len;
+    for(int ii = level - 1 ; ii > 0; ii--)
+    {
+      Queue *tq = getCurrentQueue(ii-1);
+      connectByStackItem * p = (connectByStackItem*)tq->get(vi->parentId - 1);
+      if(p == NULL) abort();
+      pathq->insert(p->pathItem);
+      pathlength += p->pathLen + dlen;
+      vi = p;
+    }
+    for(int pi = pathq->entries(); pi > 0; pi--)
+    {
+      if(pi-1 == 0)
+        sprintf(tmpbuf1,"%s",(char*)(pathq->get(pi-1)));
+      else
+        sprintf(tmpbuf1,"%s%s",(char*)(pathq->get(pi-1)) ,exeUtilTdb().delimiter_.data());
+      strcat(pathBuf,tmpbuf1);
+    }
+    NADELETE(pathq, Queue, getHeap());
+  }
+
+  attr = tDesc->getAttr(tDesc->numAttrs() - 1);
+
+  if(pathlength > CONNECT_BY_MAX_PATH_SIZE) pathlength = CONNECT_BY_MAX_PATH_SIZE;
+
+  if (
+   ::convDoIt(pathBuf, pathlength, REC_BYTE_V_ASCII, 0, 0,
+              &data_[attr->getOffset()], 
+              attr->getLength(),
+              attr->getDatatype(),0,0,
+              (char*) &vcActualLen, sizeof(vcActualLen), NULL) != ex_expr::EXPR_OK)
+  {
+    ex_assert(
+        0,
+        "Error from ExStatsTcb::work::convDoIt.");
+  }
+  attr->setVarLength(vcActualLen,&data_[attr->getVCLenIndOffset()]);
+  retcode = moveRowToUpQueue(data_, exeUtilTdb().tupleLen_, &rc, FALSE);
 
 }
   return retcode;
@@ -326,7 +509,7 @@ Queue * getCurrQueue(int id, Queue *q)
 short ExExeUtilConnectbyTcb::work()
 {
   short retcode = 0; 
-  char q1[2048]; //TODO: the max len of supported query len
+  char q1[CONNECT_BY_MAX_SQL_TEXT_SIZE]; //TODO: the max len of supported query len
   void* uppderid = NULL;
   char * ptr, *ptr1;
   Lng32   len, len1;
@@ -366,10 +549,13 @@ short ExExeUtilConnectbyTcb::work()
   Lng32 indOffset = 0;
   Lng32 varOffset = 0;
 
-  if (exeUtilTdb().hasPath_ == TRUE) 
+  if (exeUtilTdb().hasPath_ == TRUE || exeUtilTdb().hasIsLeaf_ == TRUE) 
   {
     connBatchSize_ = 1;
   }
+
+  if(exeUtilTdb().hasIsLeaf_ == TRUE && prevQueue_ == NULL)
+    prevQueue_ = new(getHeap()) Queue(getHeap()) ;
   
   while (1)
     {
@@ -385,53 +571,110 @@ short ExExeUtilConnectbyTcb::work()
           int rootId = 0;
 
          //get the stmt
-         retcode = cliInterface()->fetchRowsPrologue(nq11.data(), FALSE, FALSE);
-         while ((rc >= 0) && 
-	   (rc != 100))
+         
+         if( exeUtilTdb().hasIsLeaf_ == TRUE)
          {
-           rc = cliInterface()->fetch();
-           if (rc < 0)
-	   {
-	     cliInterface()->fetchRowsEpilogue(0, TRUE);
-             return rc;
+            Queue * rootRow = new(getHeap()) Queue(getHeap()) ;  //TODO DELETE
+            rc = cliInterface()->fetchAllRows(rootRow, nq11.data(), 0, FALSE, FALSE, TRUE);
+            if (rc < 0)
+            {
+              NADELETE(rootRow, Queue, getHeap());
+              return WORK_BAD_ERROR;
             }
+            //populate the seedQueue and currArray
+            rootRow->position();
 
-           if (rc == 100)
-	    continue;
- 
-           connectByStackItem *it = new connectByStackItem();
-           cliInterface()->getPtrAndLen(1, ptr, len);
-           cliInterface()->getAttributes(1, FALSE,
-			fsDatatype, length,
-			&indOffset, &varOffset);
-           Queue* cq = new(getHeap()) Queue(getHeap()) ;
-           rootItem * ri= new(getHeap()) rootItem();
-           ri->rootId = rootId;
-           rootId++;
-           ri->qptr = cq;
-           seedQueue_->insert(ri); //TO BE REMOVED
- 
-           char *tmp = new(getHeap()) char[len];
-           memcpy(tmp,ptr,len);
-           it->seedValue = tmp; 
-           it->level = currLevel_;
-           it->type = fsDatatype;
-           it->len = len;
-           it->parentId = -1;
-           if (exeUtilTdb().hasPath_ == TRUE) 
-           {
-             cliInterface()->getPtrAndLen(2, ptr1, len1);
-             char *tmp1 = new(getHeap()) char[len1];  
-             memcpy(tmp1,ptr1,len1);
-             it->pathLen = len1;
-             it->pathItem = tmp1;
-           }     
-           if(checkDuplicate( it, len, currLevel_) == 0) {
-             emitRow(tDesc, currLevel_, 0, 0, it); matchRowNum++;
-             currQueue_->insert(it);
-           }
+            for(int i1 = 0; i1 < rootRow->numEntries(); i1 ++)
+            {
+              OutputInfo *vi = (OutputInfo*)rootRow->getNext();
+              vi->get(0, ptr, len);
+              connectByStackItem *it = new connectByStackItem();
+              
+              char *tmp = new(getHeap()) char[len];
+              memcpy(tmp,ptr,len);
+              it->seedValue = tmp; 
+              it->level = currLevel_;
+              it->type = fsDatatype;
+              it->len = len;
+              it->parentId = -1;
+              if (exeUtilTdb().hasPath_ == TRUE) 
+              {
+                 vi->get(1, ptr1, len1);
+                 char *tmp1 = new(getHeap()) char[len1];  
+                 memcpy(tmp1,ptr1,len1);
+                 it->pathLen = len1;
+                 it->pathItem = tmp1;
+               }
+               if(checkDuplicate( it, len, currLevel_) == 0) {
+                 matchRowNum++;
+                 Queue* cq = new(getHeap()) Queue(getHeap()) ;
+                 cq->insert(it);
+                 rootItem * ri= new(getHeap()) rootItem();
+                 ri->rootId = rootId;
+                 rootId++;
+                 cq->insert(it);
+                 ri->qptr = cq;
+                 seedQueue_->insert(ri);   
+               }
+
+               //populate prevQueue
+               prevQueue_->insert(rootRow);
+            } //for(int i1 = 0; i1 < rootRow->numEntries(); i1 ++)
          }
-         cliInterface()->fetchRowsEpilogue(0, FALSE);
+         else
+         {
+            retcode = cliInterface()->fetchRowsPrologue(nq11.data(), FALSE, FALSE);
+		 while ((rc >= 0) && 
+		   (rc != 100))
+		 {
+		   rc = cliInterface()->fetch();
+		   if (rc < 0)
+		   {
+		     cliInterface()->fetchRowsEpilogue(0, TRUE);
+		     return rc;
+		    }
+
+		   if (rc == 100)
+		    continue;
+	 
+		   connectByStackItem *it = new connectByStackItem();
+		   cliInterface()->getPtrAndLen(1, ptr, len);
+		   cliInterface()->getAttributes(1, FALSE,
+				fsDatatype, length,
+				&indOffset, &varOffset);
+
+	 
+		   char *tmp = new(getHeap()) char[len];
+		   memcpy(tmp,ptr,len);
+		   it->seedValue = tmp; 
+		   it->level = currLevel_;
+		   it->type = fsDatatype;
+		   it->len = len;
+		   it->parentId = -1;
+		   if (exeUtilTdb().hasPath_ == TRUE) 
+		   {
+		     cliInterface()->getPtrAndLen(2, ptr1, len1);
+		     char *tmp1 = new(getHeap()) char[len1];  
+		     memcpy(tmp1,ptr1,len1);
+		     it->pathLen = len1;
+		     it->pathItem = tmp1;
+		   }     
+		   if(checkDuplicate( it, len, currLevel_) == 0) {
+		     emitRow(tDesc, currLevel_, 0, 0, it); 
+		     matchRowNum++;
+                     Queue* cq = new(getHeap()) Queue(getHeap()) ;
+                     rootItem * ri= new(getHeap()) rootItem();
+                     cq->insert(it);
+                     ri->rootId = rootId;
+                     rootId++;
+                     ri->qptr = cq;
+                     seedQueue_->insert(ri); //TO BE REMOVED
+		   }
+
+		 }
+           cliInterface()->fetchRowsEpilogue(0, FALSE);
+         }
+         currQueue_ = getCurrQueue(currRootId_, seedQueue_);
          currArray[0] = currQueue_;  
 
          if( matchRowNum > exeUtilTdb().maxSize_ )
@@ -454,8 +697,10 @@ short ExExeUtilConnectbyTcb::work()
        {
        currQueue_ = getCurrentQueue(currLevel_ - 1);
        thisQueue_ = getCurrentQueue(currLevel_);
-       int seedNum = currQueue_->numEntries();
-       int loopDetected = 0;
+       if(exeUtilTdb().hasIsLeaf_ == TRUE) 
+         tmpPrevQueue_ = new(getHeap()) Queue(getHeap()) ;
+       Lng32 seedNum = currQueue_->numEntries();
+       Int8 loopDetected = 0;
        
        currQueue_->position();
        resultSize_ = 0;
@@ -466,12 +711,12 @@ short ExExeUtilConnectbyTcb::work()
          nq21 = q1;
          nq21.append((exeUtilTdb().childColName_).data()); 
          nq21.append(" in ( ");
-         int sybnum = 0;
+         Lng32 sybnum = 0;
 
          for(int batchIdx = 0; batchIdx < connBatchSize_ && i < seedNum; )
          {
            connectByStackItem * vi = (connectByStackItem*)currQueue_->get(i);
-           int tmpLevel = vi->level; 
+           Lng32 tmpLevel = vi->level; 
            i++;
            if( tmpLevel == currLevel_ - 1) {
              sybnum++;
@@ -507,63 +752,145 @@ short ExExeUtilConnectbyTcb::work()
             break;
          }
 //printf("q2 is %s\n", nq21.data());
-         retcode = cliInterface()->fetchRowsPrologue(nq21.data(), FALSE, FALSE);
+             if(exeUtilTdb().hasIsLeaf_ == TRUE)
+             {
+		    Queue * allrows = new(getHeap()) Queue(getHeap()) ;  //TODO DELETE
+		    rc = cliInterface()->fetchAllRows(allrows, nq21.data(), 0, FALSE, FALSE, TRUE);
+		    if (rc < 0)
+		    {
+		      NADELETE(allrows, Queue, getHeap());
+		      return WORK_BAD_ERROR;
+		    }
 
-         rc = 0;
-         while ((rc >= 0) && 
-	    (rc != 100))
-         {
-           rc = cliInterface()->fetch();
-           if (rc < 0)
-	   {
-             cliInterface()->fetchRowsEpilogue(0, TRUE);
-             return rc;
-           }
-           if (rc == 100)
-	       continue;
-           resultSize_++;
-           cliInterface()->getPtrAndLen(1, ptr, len);
-           connectByStackItem *it = new connectByStackItem();
-           char *tmp = new(getHeap()) char[len];
-           memcpy(tmp,ptr,len);
-           it->seedValue = tmp; 
-           it->level = currLevel_ ;
-           it->type = fsDatatype;
-           it->len = len;
-           it->parentId = i;
-           if (exeUtilTdb().hasPath_ == TRUE) 
-           {
-             cliInterface()->getPtrAndLen(2, ptr1, len1);
-             char *tmp1 = new(getHeap()) char[len1];  
-             memcpy(tmp1,ptr1,len1);
-             it->pathLen = len1;
-             it->pathItem = tmp1;
-           }     
-           short rc1 = checkDuplicate(it, len, currLevel_) ; //loop detection
+                    allrows->position();
+                    if(allrows->numEntries() == 0) //no child
+                    {
+                      //emit parent
+                      printf("emit parent rows\n");
+                      emitPrevRow(tDesc, currLevel_, 1, 0,prevQueue_, i-1);
+                    }
+                    else
+                    {
+                      //emit parent
+                      printf("emit parent rows\n");
+                      emitPrevRow(tDesc, currLevel_, 0, 0,prevQueue_, i-1);
+                    }
+                    tmpPrevQueue_->insert(allrows); //TODO: delete it
 
-           if(rc1 == 0) {
-             thisQueue_->insert(it);
-             emitRow(tDesc, currLevel_, 0, 0,it); matchRowNum++;
-           }//if(rc1== 0)
-           else if(rc1 == 1) 
-           {
-              loopDetected = 1;
-              if(exeUtilTdb().noCycle_ == FALSE) {
-                ComDiagsArea * diags = getDiagsArea();
-                if(diags == NULL)
-                {
-                  setDiagsArea(ComDiagsArea::allocate(getHeap()));
-                  diags = getDiagsArea();              
-                }
-                *diags << DgSqlCode(-8037);
-                step_ = ERROR_;
-               }
-              else
-                 emitRow(tDesc, currLevel_, 0, 1, it); 
-           }
-          }// while ((rc >= 0) 
-          cliInterface()->fetchRowsEpilogue(0, FALSE);
+		    for(int i1 = 0; i1 < allrows->numEntries(); i1 ++)
+		    {
+                      resultSize_++;
+		      OutputInfo *vi = (OutputInfo*)allrows->getNext();
+                      vi->get(0, ptr, len);
+		      connectByStackItem *it = new connectByStackItem();
+		      char *tmp = new(getHeap()) char[len];
+	   	      memcpy(tmp,ptr,len);
+		      it->seedValue = tmp; 
+  		      it->level = currLevel_ ;
+		      it->type = fsDatatype;
+		      it->len = len;
+		      it->parentId = i;
+		      if (exeUtilTdb().hasPath_ == TRUE) 
+		      {
+		        vi->get(1, ptr1, len1);
+		        char *tmp1 = new(getHeap()) char[len1];  
+		        memcpy(tmp1,ptr1,len1);
+		        it->pathLen = len1;
+		        it->pathItem = tmp1;
+		      }     
+		      short rc1 = checkDuplicate(it, len, currLevel_) ; //loop detection
+
+		      if(rc1 == 0) {
+		        thisQueue_->insert(it);
+                        matchRowNum++;
+		      }//if(rc1== 0)
+		      else if(rc1 == 1) 
+		      {
+		        loopDetected = 1;
+		        if(exeUtilTdb().noCycle_ == FALSE) {
+		          ComDiagsArea * diags = getDiagsArea();
+		          if(diags == NULL)
+		          {
+		          setDiagsArea(ComDiagsArea::allocate(getHeap()));
+		          diags = getDiagsArea();              
+		          }
+		          *diags << DgSqlCode(-8037);
+		          step_ = ERROR_;
+		         }
+  		     }
+                    }
+             }
+             else
+             {
+		 retcode = cliInterface()->fetchRowsPrologue(nq21.data(), FALSE, FALSE);
+
+		 rc = 0;
+		 while ((rc >= 0) && 
+		    (rc != 100))
+		 {
+		   rc = cliInterface()->fetch();
+		   if (rc < 0)
+		   {
+		     cliInterface()->fetchRowsEpilogue(0, TRUE);
+		     return rc;
+		   }
+		   if (rc == 100)
+		       continue;
+		   resultSize_++;
+		   cliInterface()->getPtrAndLen(1, ptr, len);
+		   connectByStackItem *it = new connectByStackItem();
+		   char *tmp = new(getHeap()) char[len];
+		   memcpy(tmp,ptr,len);
+		   it->seedValue = tmp; 
+		   it->level = currLevel_ ;
+		   it->type = fsDatatype;
+		   it->len = len;
+		   it->parentId = i;
+		   if (exeUtilTdb().hasPath_ == TRUE) 
+		   {
+		     cliInterface()->getPtrAndLen(2, ptr1, len1);
+		     char *tmp1 = new(getHeap()) char[len1];  
+		     memcpy(tmp1,ptr1,len1);
+		     it->pathLen = len1;
+		     it->pathItem = tmp1;
+		   }     
+		   short rc1 = checkDuplicate(it, len, currLevel_) ; //loop detection
+
+		   if(rc1 == 0) {
+		     thisQueue_->insert(it);
+		     emitRow(tDesc, currLevel_, 0, 0,it); 
+		     matchRowNum++;
+		   }//if(rc1== 0)
+		   else if(rc1 == 1) 
+		   {
+		      loopDetected = 1;
+		      if(exeUtilTdb().noCycle_ == FALSE) {
+		        ComDiagsArea * diags = getDiagsArea();
+		        if(diags == NULL)
+		        {
+		          setDiagsArea(ComDiagsArea::allocate(getHeap()));
+		          diags = getDiagsArea();              
+		        }
+		        *diags << DgSqlCode(-8037);
+		        step_ = ERROR_;
+		       }
+		      else
+		      {
+		         emitRow(tDesc, currLevel_, 0, 1, it); 
+		      }
+		   }
+		  }// while ((rc >= 0) 
+		  cliInterface()->fetchRowsEpilogue(0, FALSE);
+          }
+
         }//for(int i=0; i< seedNum; i++)
+         //this level is done
+         if(exeUtilTdb().hasIsLeaf_ == TRUE)
+         {
+            //release prevQueue_
+            prevQueue_ = tmpPrevQueue_;
+            NADELETE(tmpPrevQueue_, Queue, getHeap());
+         }
 
          if( loopDetected == 1)
          {
@@ -609,7 +936,7 @@ short ExExeUtilConnectbyTcb::work()
             currLevel_ = 0;
             currQueue_ = getCurrQueue(currRootId_, seedQueue_);
             //clear currArray
-            for(int i =0; i< 200; i++)
+            for(int i =0; i< CONNECT_BY_MAX_LEVEL_SIZE; i++)
             {
                if(currArray[i] != NULL) //comehere
                  NADELETE(currArray[i], Queue, getHeap());
@@ -641,31 +968,9 @@ short ExExeUtilConnectbyTcb::work()
 	 if (retcode == 1)
 	      return WORK_OK;
 
-	 step_ = INITIAL_;
-#if 1
-         //release the currentQueue
-#if 0
-         for(int i = 0; i< currRootId ; i++)
-         {
-           currQueue = getCurrQueue( i, seedQueue);
-           releaseCurrentQueue(currQueue, getHeap());
-           NADELETE(currQueue, Queue, getHeap());
-         }
-
-
-         for(int i =1; i< 200; i++)
-         {
-            if(currArray[i] != NULL) //comehere
-            {
-              releaseCurrentQueue(currArray[i], getHeap());
-              NADELETE(currArray[i], Queue, getHeap());
-             }
-         }
-#endif
          NADELETE(seedQueue_, Queue, getHeap());
-#endif
+	 step_ = INITIAL_;
          return WORK_OK;
-
        break;
      }
     }

@@ -5346,42 +5346,6 @@ TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
   return tblDesc_;
 }
 
-int ExeUtilConnectby::createAsciiColAndCastExpr2(Generator * generator,
-					    ItemExpr * colNode,
-					    const NAType &givenType,
-					    ItemExpr *&asciiValue,
-					    ItemExpr *&castValue,
-                                            NABoolean alignedFormat)
-{
-  asciiValue = NULL;
-  castValue = NULL;
-  CollHeap * h = generator->wHeap();
-
-  // if this is an upshifted datatype, remove the upshift attr.
-  // We dont want to upshift data during retrievals or while building keys.
-  // Data is only upshifted during insert or updates.
-  const NAType * newGivenType = &givenType;
-  if (newGivenType->getTypeQualifier() == NA_CHARACTER_TYPE &&
-      ((CharType *)newGivenType)->isUpshifted())
-    {
-      newGivenType = newGivenType->newCopy(h);
-      ((CharType*)newGivenType)->setUpshifted(FALSE);
-    }
-
-  NABoolean encodingNeeded = FALSE;
-  asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
-  castValue = new(h) Cast(asciiValue, newGivenType); 
-
-  if ((!alignedFormat) && HbaseAccess::isEncodingNeededForSerialization(colNode))
-    {
-      castValue = new(generator->wHeap()) CompDecode(castValue, 
-						     newGivenType->newCopy(h),
-						     FALSE, TRUE);
-    }
-  
-  return 1;
-}
-
 short ExeUtilConnectby::codeGen(Generator * generator)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
@@ -5486,6 +5450,10 @@ short ExeUtilConnectby::codeGen(Generator * generator)
      exe_util_tdb->delimiter_ = " ";
   }
 
+  if(hasIsLeaf())
+  {
+    exe_util_tdb->hasIsLeaf_ = TRUE;
+  }
 
   generator->initTdbFields(exe_util_tdb);
 

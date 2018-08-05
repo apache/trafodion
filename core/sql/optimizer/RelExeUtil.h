@@ -1147,13 +1147,6 @@ public:
                              }
 #endif
 
-  int createAsciiColAndCastExpr2(Generator * generator,
-					    ItemExpr * colNode,
-					    const NAType &givenType,
-					    ItemExpr *&asciiValue,
-					    ItemExpr *&castValue,
-                                            NABoolean alignedFormat);
- 
   void setHasIsLeaf(NABoolean v) 
   { v ? flags_ |= HAS_IS_LEAF: flags_ &= ~HAS_IS_LEAF; }
 
@@ -1180,6 +1173,22 @@ public:
         if(ie != NULL)  return ie;
       }
     return NULL;
+  }
+
+  NABoolean containsIsLeaf( ItemExpr * lst) {
+    Int32 arity = lst->getArity();
+    if(lst->getOperatorType() == ITM_REFERENCE)
+    {
+      if((((ColReference*)lst)->getColRefNameObj()).getColName() == "CONNECT_BY_ISLEAF")
+         return TRUE;
+    }
+    for(Int32 i = 0; i < arity; i++)
+      if(lst->getChild(i))
+      {
+        NABoolean rc = containsIsLeaf((ItemExpr*)lst->getChild(i));
+        if(rc == TRUE)  return rc;
+      }
+    return FALSE;
   }
 
   TrafDesc * tblDesc_;

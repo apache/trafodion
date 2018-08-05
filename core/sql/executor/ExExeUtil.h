@@ -4195,6 +4195,25 @@ public:
   int pathLen;
   int parentId;
 };
+class connectByOneRow {
+
+public:
+  connectByOneRow()
+  {
+    data_ = NULL;
+    len = 0;
+    type = 0;
+  }
+  ~connectByOneRow() {}
+  char * data_;
+  int len;
+  int type;
+};
+
+#define CONNECT_BY_DEFAULT_BATCH_SIZE 100
+#define CONNECT_BY_MAX_LEVEL_SIZE 200
+#define CONNECT_BY_MAX_SQL_TEXT_SIZE 2048
+#define CONNECT_BY_MAX_PATH_SIZE 3000
 
 ////////////////////////////////////////////////////////////////////////////
 class ExExeUtilLobInfoTablePrivateState : public ex_tcb_private_state
@@ -4239,6 +4258,7 @@ public:
     {return (ExExeUtilConnectbyTdb&) tdb;};
 
  short emitRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle, connectByStackItem *it) ;
+ short emitPrevRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle, Queue* q, int index) ;
 
  Queue *currArray[200];
  Queue * getCurrentQueue(int level) { if(level <0 || level >200) abort(); return currArray[level];}
@@ -4248,6 +4268,8 @@ public:
  Queue *currQueue_;
  Queue *seedQueue_;
  Queue *thisQueue_;
+ Queue *prevQueue_;
+ Queue *tmpPrevQueue_;
  Int32 currRootId_;
  Int32 connBatchSize_ ; 
 

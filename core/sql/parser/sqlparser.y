@@ -13890,6 +13890,10 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
                             }
                             else
                               euc->setHasConnectByPath(FALSE);
+                            if( euc->containsIsLeaf($1))
+                            {
+                                euc->setHasIsLeaf(TRUE);                              
+                            }
                             euc->noCycle_ = ((Scan*)$2)->getBiConnectBy()->getNoCycle();
                             euc->scan_ = $2;
                             euc->myselection_ = ((Scan*)$2)->getBiConnectBy()->where_clause ;
