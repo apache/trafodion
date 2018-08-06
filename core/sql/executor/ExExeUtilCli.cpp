@@ -1322,7 +1322,6 @@ short ExeCliInterface::fetchAllRows(Queue * &infoList,
 	    if (nullTerminate)
 	      r[len] = 0;
 	  }
-//comehere add type
 	  oi->insert(j, r, len, type);
 	}
 	
