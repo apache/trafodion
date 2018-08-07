@@ -411,6 +411,7 @@ data-type is:
    | nchar varying (length [characters]) 
                    [UPSHIFT] [[NOT] CASESPECIFIC]
    | numeric [(precision [,scale])] [signed|unsigned]
+   | tinyint [signed|unsigned]
    | smallint [signed|unsigned]
    | int[eger] [signed|unsigned]
    | largeint
@@ -2093,7 +2094,7 @@ CREATE LIBRARY [[catalog-name.]schema-name.]library-name
 [[create_library_syntax]]
 === Syntax Description of CREATE LIBRARY
 
-* `\[[_catalog-name_.]_schema-name_.]_library-name_`
+* `_[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify a name that is unique and does not exist for
@@ -3064,6 +3065,7 @@ data-type is:
   | nchar varying (length [characters]) 
                   [upshift] [[not] casespecific]
   | numeric [(precision [,scale])] [signed|unsigned]
+  | tinyint [signed|unsigned]
   | smallint [signed|unsigned]
   | int[eger] [signed|unsigned]
   | largeint
@@ -6144,8 +6146,10 @@ GRANT {privilege-name [,privilege-name]... |ALL [PRIVILEGES]}
   TO grantee
   [WITH GRANT OPTION]
   [[GRANTED] BY grantor]
+```
 
-privilege is: 
+```
+privilege-name is:
     DELETE
   | EXECUTE
   | INSERT     [column-list]
@@ -6153,23 +6157,30 @@ privilege is:
   | SELECT     [column-list]
   | UPDATE     [column-list]
   | USAGE
+```
 
-object-type is: 
+```
+object-type is:
     FUNCTION
   | PROCEDURE
   | LIBRARY
   | SEQUENCE 
   | TABLE
+```
 
+```
 grantee is:
     auth-name
+```
 
+```
 grantor is:
     role-name
+```
 
+```
 column-list is:
     (column [,colummn] ...)
-
 ```
 
 <<<
