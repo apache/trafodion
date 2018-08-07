@@ -1810,7 +1810,7 @@ int main(int argc, char *argv[])
            {
               const char* v = ms_getenv_str((const char*)lp_nextcmd);
               if(v == NULL)
-                cout <<"*** Enviorement Var not exist" << endl;
+                cout <<"*** Environment Var not exist" << endl;
               else
                 cout << v << endl;
            }
