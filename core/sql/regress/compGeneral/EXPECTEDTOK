@@ -1,5 +1,5 @@
 sqlparser.y: warning: 61 shift/reduce conflicts [-Wconflicts-sr]
-sqlparser.y: warning: 12 reduce/reduce conflicts [-Wconflicts-rr]
+sqlparser.y: warning: 9 reduce/reduce conflicts [-Wconflicts-rr]
  
 nnnn conflicts: 1 shift/reduce nnnn olap_sequence_function: set_function_specification . TOK_OVER '(' opt_olap_part_clause opt_olap_order_clause ')'
 nnnn conflicts: 1 shift/reduce nnnn value_expression: value_expression_sans_collate . collation_option
@@ -17,10 +17,7 @@ nnnn conflicts: 2 shift/reduce nnnn value_expression_list_comma: value_expressio
 nnnn conflicts: 1 shift/reduce nnnn value_expression_list_comma: value_expression . ',' value_expression
 nnnn conflicts: 1 shift/reduce nnnn primary: row_subquery .
 nnnn conflicts: 1 shift/reduce nnnn control_statement: TOK_CONTROL TOK_QUERY TOK_SHAPE . query_shape_options query_shape_control
-nnnn conflicts: 1 reduce/reduce nnnn procedure_or_function: TOK_PROCEDURES .
-nnnn conflicts: 1 reduce/reduce nnnn procedure_or_function: TOK_FUNCTIONS .
 nnnn conflicts: 1 shift/reduce nnnn drop_catalog_statement: TOK_DROP TOK_CATALOG . catalog_name extension_drop_behavior
-nnnn conflicts: 1 reduce/reduce nnnn procedure_or_function: TOK_TABLE_MAPPING TOK_FUNCTIONS .
 nnnn conflicts: 8 shift/reduce nnnn query_spec_body: query_select_list table_expression . access_type optional_lock_mode
 nnnn conflicts: 1 reduce/reduce nnnn primary: row_subquery .
 nnnn conflicts: 1 reduce/reduce nnnn primary: row_subquery .

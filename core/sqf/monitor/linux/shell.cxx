@@ -80,7 +80,7 @@ char *MyName;
 char LDpath[MAX_SEARCH_PATH];
 char Path[MAX_SEARCH_PATH];
 char Wdir[MAX_SEARCH_PATH];
-char prompt[13];
+char prompt[MAX_PROCESS_NAME];
 int VirtualNodes = 0;
 int VirtualNid = -1;
 int NumNodes = 0;
@@ -394,50 +394,40 @@ bool check_environment( void )
 {
     bool  rs = true;
     bool  isNameServerEnabled = false;
+    bool  isAgentModeEnabled = false;
     char* env;
     char  msgString[MAX_BUFFER] = { 0 };
     int   val = 0;
 
-    env = getenv("MONITOR_COMM_PORT");
-    if ( env )
+    env = getenv("SQ_MON_RUN_MODE");
+    if ( env && (strcmp(env, "AGENT") == 0) )
     {
-        val = atoi(env);
-        if ( val <= 0)
+        isAgentModeEnabled = true;
+    }
+
+    if (isAgentModeEnabled)
+    {
+        env = getenv("MONITOR_COMM_PORT");
+        if ( env )
         {
-            if (VirtualNodes)
+            val = atoi(env);
+            if ( val <= 0)
             {
                 sprintf( msgString, "[%s] Warning: MONITOR_COMM_PORT value is invalid (%s)!", MyName, env );
                 write_startup_log( msgString );
                 printf("%s\n", msgString );
             }
-            else
-            {
-                sprintf( msgString, "[%s] Error: MONITOR_COMM_PORT value is invalid (%s)! Set MONITOR_COMM_PORT environment variable and try again.", MyName, env );
-                write_startup_log( msgString );
-                printf("%s\n", msgString );
-                rs = false;
-            }
         }
-    }
-
-    env = getenv("MONITOR_SYNC_PORT");
-    if ( env )
-    {
-        val = atoi(env);
-        if ( val <= 0)
+    
+        env = getenv("MONITOR_SYNC_PORT");
+        if ( env )
         {
-            if (VirtualNodes)
+            val = atoi(env);
+            if ( val <= 0)
             {
                 sprintf( msgString, "[%s] Warning: MONITOR_SYNC_PORT value is invalid (%s)!", MyName, env );
                 write_startup_log( msgString );
                 printf("%s\n", msgString );
-            }
-            else
-            {
-                sprintf( msgString, "[%s] Error: MONITOR_SYNC_PORT value is invalid (%s)! Set MONITOR_COMM_PORT environment variable and try again.", MyName, env );
-                write_startup_log( msgString );
-                printf("%s\n", msgString );
-                rs = false;
             }
         }
     }
@@ -446,10 +436,7 @@ bool check_environment( void )
     if ( env )
     {
         val = atoi(env);
-        if ( val > 0)
-        {
-            isNameServerEnabled = (val != 0);
-        }
+        isNameServerEnabled = (val != 0) ? true : false;
     }
     
     if (isNameServerEnabled)
@@ -2391,8 +2378,8 @@ void get_proc_info( int nid
             {
                 if (displayHeader)
                 {
-                    printf("[%s] NID,PID(os)  PRI TYPE STATES  NAME        PARENT      PROGRAM\n",MyName);
-                    printf("[%s] ------------ --- ---- ------- ----------- ----------- ---------------\n",MyName);
+                    printf("[%s] NID,PID(os)  PRI TYPE STATES  NAME         PARENT       PROGRAM\n",MyName);
+                    printf("[%s] ------------ --- ---- ------- ------------ ------------ ---------------\n",MyName);
                 }
 
                 show_proc_info();
@@ -5257,7 +5244,7 @@ void show_proc_info( void )
             msg->u.reply.u.process_info.process[i].type
                 = ProcessType_Undefined;
         }
-        printf("%3.3d %-4s %c%c%c%c%c%c%c %-11s %-11s %-15s\n",
+        printf("%3.3d %-4s %c%c%c%c%c%c%c %-12s %-12s %-15s\n",
                msg->u.reply.u.process_info.process[i].priority,
                processTypeStr[msg->u.reply.u.process_info.process[i].type],
                (msg->u.reply.u.process_info.process[i].event_messages?'E':'-'),
@@ -9572,14 +9559,8 @@ int main (int argc, char *argv[])
     env = getenv("SQ_NAMESERVER_ENABLED");
     if ( env && isdigit(*env) )
     {
-        if ( strcmp(env,"0") == 0 )
-        {
-            NameServerEnabled = false;
-        }
-        else
-        {
-            NameServerEnabled = true;
-        }
+        int val = atoi(env);
+        NameServerEnabled = (val != 0) ? true : false;
     }
 
     if ( !VirtualNodes )

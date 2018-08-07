@@ -32,12 +32,12 @@
 #Product version (Trafodion or derivative product)
 export TRAFODION_VER_PROD="Apache Trafodion"
 export TRAFODION_VER_MAJOR=2
-export TRAFODION_VER_MINOR=3
+export TRAFODION_VER_MINOR=4
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
 # Product copyright header
-export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
+export PRODUCT_COPYRIGHT_HEADER="2015-2018 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -681,11 +681,14 @@ export SQ_STARTUP=r
 #            (meaning that mpirun is the parent process of the monitor process)
 #   AGENT  - monitor process runs in agent mode versus MPI collective
 #
-# Uncomment the next four environment variables
+# Uncomment the next environment variable
 #export SQ_MON_CREATOR=MPIRUN
-#export SQ_MON_RUN_MODE=AGENT
-#export MONITOR_COMM_PORT=23390
-#export MONITOR_SYNC_PORT=23380
+if [[ "$SQ_MON_CREATOR" == "MPIRUN" ]]; then
+  export SQ_MON_RUN_MODE=${SQ_MON_RUN_MODE:-AGENT}
+  export MONITOR_COMM_PORT=${MONITOR_COMM_PORT:-23390}
+  export MONITOR_SYNC_PORT=${MONITOR_SYNC_PORT:-23380}
+  export TRAF_SCALING_FACTOR=${TRAF_SCALING_FACTOR:-0.75}
+fi
 
 #
 #   NAME-SERVER - to disable process replication and enable the name-server
@@ -742,6 +745,11 @@ fi
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
+
+# set to 0 to disable process name long format in clusters larger that 256 nodes
+#export SQ_MON_PROCESS_NAME_FORMAT_LONG=0
+#   short format: '$Zxxpppp'     xx   = nid, pppp   = pid
+#   long  format: '$Zxxxxpppppp' xxxx = nid, pppppp = pid (default)
 
 # set to 0 to disable or 1 to enable configuration of DTM as a persistent process
 # must re-execute 'sqgen' to effect change

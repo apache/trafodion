@@ -544,8 +544,6 @@ enum OperatorTypeEnum {
                         ITM_RIGHT = 2271,
                         ITM_CONVERTTOHEX = 2272,
                         ITM_CONVERTFROMHEX = 2273,
-                        ITM_TOKENSTR = 2292,
-                        ITM_REVERSE = 2294,
 
                         // UNICODE/DOUBLEBYTE charsets built-in functions
                         ITM_SUBSTR_DOUBLEBYTE = 2274,
@@ -569,10 +567,14 @@ enum OperatorTypeEnum {
                         ITM_ROWSETARRAY_ROWID = 2287,
                         ITM_ROWSETARRAY_INTO  = 2288,
 
+                        // more string functions
                         ITM_LEFT = 2289,
                         ITM_SPACE = 2290,
                         ITM_ODBC_LENGTH = 2291,
+                        ITM_TOKENSTR = 2292,
                         ITM_CODE_VALUE = 2293,
+                        ITM_REVERSE = 2294,
+                        ITM_OVERLAY = 2295,
 
                         // datetime functions
                         ITM_CONVERTTIMESTAMP = 2300,
@@ -731,6 +733,7 @@ enum OperatorTypeEnum {
                         ITM_ANY_CAST = 2457,
 
                         ITM_UNIQUE_ID = 2458,
+                        ITM_UNIQUE_ID_SYS_GUID = 2459,
 
                        // Do not do any conversion. Just interpret source as the specified type.
                         ITM_CAST_TYPE,

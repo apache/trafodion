@@ -1367,7 +1367,8 @@ int main (int argc, char *argv[])
     env = getenv("SQ_NAMESERVER_ENABLED");
     if ( env && isdigit(*env) )
     {
-        NameServerEnabled = atoi(env);
+        int val = atoi(env);
+        NameServerEnabled = (val != 0) ? true : false;
     }
 #endif
 
@@ -1605,6 +1606,7 @@ int main (int argc, char *argv[])
     }
     setlinebuf(stdout);
 
+#ifndef NAMESERVER_PROCESS
     // Send stderr output to same file as stdout.  (Note: the monitor does
     // not write to stderr but perhaps there could be components included in
     // the monitor build that do write to stderr.)
@@ -1612,6 +1614,10 @@ int main (int argc, char *argv[])
     {
         printf ( "dup2 failed for stderr: %s (%d)\n", strerror(errno), errno);
     }
+#else
+    // Name Server is a child process of the monitor, the process create logic
+    // will establish IO redirection between the monitor process and the child.
+#endif
 
     switch( CommType )
     {
@@ -2052,13 +2058,15 @@ int main (int argc, char *argv[])
 #ifdef NAMESERVER_PROCESS
         Monitor = new CMonitor ();
 #else
-        Monitor = new CMonitor (procTermSig);
-#endif
-#ifndef NAMESERVER_PROCESS
         if (NameServerEnabled)
         {
+            PtpClient  = new CPtpClient ();
+            Monitor    = new CMonitor (procTermSig);
             NameServer = new CNameServer ();
-            PtpClient = new CPtpClient ();
+        }
+        else
+        {
+            Monitor = new CMonitor (procTermSig);
         }
 #endif
 

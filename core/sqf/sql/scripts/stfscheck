@@ -1,4 +1,5 @@
-#! /bin/sh
+#!/bin/bash
+#
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,17 +21,18 @@
 #
 # @@@ END COPYRIGHT @@@
 
-# Like the pattern-masking of QACOMP, here we filter out such stuff as
-# timestamps and generated identifiers.  Called by the runregr script
-# before doing diff.
+#this is to check the health of STFS
 
-fil=$1
-if [ "$fil" = "" ]; then
-  echo "Usage: $0 filename"
-  exit 1
+if [ -e $SQ_PDSH ]; then
+ output=`$SQ_PDSH $MY_NODES localstfscheck`
+ echo $output | grep ERROR | grep Scratch
+ ol=`echo $output | grep ERROR | grep Scratch | wc -l`
+ if [ $ol -eq 0 ]; then
+  echo 'STFS is OK'
+ fi
+else
+ localstfscheck
+ if [ $? -eq 0 ]; then
+  echo 'STFS is OK'
+ fi
 fi
-sed "
-s/\.[ ]*\*\*\*/\. \*\*\*/g
-s/^sleeptimetest002.*$/good/
-s/^unixtimestamp.*$/unixtimestamp/
-" $fil

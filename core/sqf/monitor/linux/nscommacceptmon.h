@@ -46,6 +46,7 @@ public:
     void monReqExec( CExternalReq * request );
     void monReqNameServerStop( struct message_def* msg, int sockFd );
     void monReqNewProcess( struct message_def* msg, int sockFd );
+    void monReqNodeDown( struct message_def* msg, int sockFd );
     void monReqProcessInfo( struct message_def* msg, int sockFd );
     void monReqProcessInfoCont( struct message_def* msg, int sockFd );
     void monReqProcessInfoNs( struct message_def* msg, int sockFd );
@@ -68,9 +69,9 @@ private:
     bool accepting_;
     bool shutdown_;
 
-    // commAccept thread's id
+    // mon2nsAcceptMon thread's id
     pthread_t                      thread_id_;
-    // commAccept thread's id
+    // mon2nsProcess thread's id
     pthread_t                      process_thread_id_;
 
     enum { HEURISTIC_COUNT = 10 };

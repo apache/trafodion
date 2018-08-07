@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.io.EOFException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
@@ -75,7 +76,8 @@ public class HdfsScan
    private boolean scanCompleted_;
    private CompressionInputStream currInStream_;
    private int ioByteArraySizeInKB_;
- 
+   private boolean sequenceFile_; 
+   private byte recDelimiter_;
  
    // Structure to hold the Scan ranges for this HdfsScan instance
    //
@@ -109,7 +111,7 @@ public class HdfsScan
    }
 
    public void setScanRanges(ByteBuffer buf1, ByteBuffer buf2, int ioByteArraySizeInKB, String filename[], long pos[], 
-            long len[], int rangeNum[], short compressionType[]) throws IOException
+            long len[], int rangeNum[], short compressionType[], boolean sequenceFile, byte recDelimiter) throws IOException
    {
       // Two buffers to hold the data read
       buf_ = new ByteBuffer[2];
@@ -129,6 +131,9 @@ public class HdfsScan
       for (int i = 0; i < filename.length; i++) {
          hdfsScanRanges_[i] = new HdfsScanRange(filename[i], pos[i], len[i], rangeNum[i], compressionType[i]);
       }
+      sequenceFile_ = sequenceFile;
+      recDelimiter_ = recDelimiter;
+      scanCompleted_ = false;
       if (hdfsScanRanges_.length > 0) {
          currRange_ = 0;
          currRangePos_ = hdfsScanRanges_[currRange_].pos_;
@@ -136,7 +141,6 @@ public class HdfsScan
          currInStream_ = null;
          scheduleHdfsScanRange(0, 0);
       }
-      scanCompleted_ = false;
    }
 
    public void scheduleHdfsScanRange(int bufNo, int bytesCompleted) throws IOException
@@ -165,11 +169,17 @@ public class HdfsScan
       if (! scanCompleted_) {
          if (logger_.isDebugEnabled())
             logger_.debug(" CurrentRange " + hdfsScanRanges_[currRange_].tdbRangeNum_ + " LenRemain " + currRangeLenRemain_ + " BufNo " + bufNo); 
-         hdfsClient_[bufNo] = new HDFSClient(bufNo, ioByteArraySizeInKB_, hdfsScanRanges_[currRange_].tdbRangeNum_, 
+         try {
+             hdfsClient_[bufNo] = new HDFSClient(bufNo, ioByteArraySizeInKB_, hdfsScanRanges_[currRange_].tdbRangeNum_, 
 			hdfsScanRanges_[currRange_].filename_, 
                         buf_[bufNo], currRangePos_, readLength, 
-                        hdfsScanRanges_[currRange_].compressionType_, currInStream_);
-                        
+                        hdfsScanRanges_[currRange_].compressionType_, sequenceFile_, recDelimiter_, currInStream_);
+         } catch (EOFException e)
+         {
+            // Skip this range
+            currRange_++; 
+            scheduleHdfsScanRange(bufNo, 0); 
+         } 
       }
    } 
   
@@ -287,6 +297,7 @@ public class HdfsScan
       Table table = hiveMeta.getTable(tableName);
       StorageDescriptor sd = table.getSd();
       String location = sd.getLocation();
+      String inputFormat = sd.getInputFormat();
       URI uri = new URI(location);
       Path path = new Path(uri);
       FileSystem fs = FileSystem.get(config);       
@@ -305,7 +316,7 @@ public class HdfsScan
          fileName[i] = filePath.toString();
          System.out.println (" fileName " + fileName[i] + " Length " + fileLen); 
          long splitPos = 0;
-         for (int j = 0 ; j < split ; j++)
+         for (int j = 0 ; j < split; j++)
          { 
             fileName[i] = filePath.toString();
             pos[i] = splitPos + (splitLen * j);
@@ -315,12 +326,18 @@ public class HdfsScan
                len[i] = fileLen - (splitLen *(j));
             compress[i] = 1; // Uncompressed
             System.out.println ("Range " + i + " Pos " + pos[i] + " Length " + len[i]); 
-            i++;
+            if (j != (split-1))
+               i++;
          }
       }
       long time1 = System.currentTimeMillis();
+      System.out.println("Input format " + inputFormat); 
+      boolean sequenceFile = false;
+      if (inputFormat.indexOf(new String("SequenceFileInputFormat")) != -1) 
+          sequenceFile = true;
       HdfsScan hdfsScan = new HdfsScan();
-      hdfsScan.setScanRanges(buf1, buf2, (short)512, fileName, pos, len, range, compress);
+      byte b = '\n';
+      hdfsScan.setScanRanges(buf1, buf2, (short)512, fileName, pos, len, range, compress, sequenceFile, b);
       int[] retArray;
       int bytesCompleted;
       ByteBuffer buf;

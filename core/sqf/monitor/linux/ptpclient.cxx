@@ -57,9 +57,13 @@ extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern bool IsRealCluster;
 extern CMeas Meas;
+extern int MyPNID;
+
+#define MON2MON_IO_RETRIES 3
 
 CPtpClient::CPtpClient (void)
-          : ptpSock_(0)
+          : ptpCommPort_(0)
+          , ptpClusterSocks_(NULL)
           , seqNum_(0)
 {
     const char method_name[] = "CPtpClient::CPtpClient";
@@ -72,11 +76,10 @@ CPtpClient::CPtpClient (void)
         SetLocalHost();
     }
     
-
-    char * p = getenv( "MON2MON_COMM_PORT" );
-    if ( p ) 
+    char * env  = getenv( "MON2MON_COMM_PORT" );
+    if ( env  ) 
     {
-        basePort_ = atoi( p );
+        ptpCommPort_ = atoi( env  );
     }
     else
     {
@@ -88,6 +91,12 @@ CPtpClient::CPtpClient (void)
         abort();
     }
 
+    ptpClusterSocks_ = new int[MAX_NODES];
+    for (int i=0; i < MAX_NODES; ++i)
+    {
+        ptpClusterSocks_[i] = -1;
+    }
+
     TRACE_EXIT;
 }
 
@@ -96,17 +105,83 @@ CPtpClient::~CPtpClient (void)
     const char method_name[] = "CPtpClient::~CPtpClient";
     TRACE_ENTRY;
 
+    delete [] ptpClusterSocks_;
+
     TRACE_EXIT;
 }
 
-int  CPtpClient::AddUniqStr( int nid
-                           , int id
-                           , const char *stringValue
-                           , int targetNid
-                           , const char *targetNodeName )
+int CPtpClient::InitializePtpClient( int pnid, char * ptpPort )
 {
-    const char method_name[] = "CPtpClient::AddUniqStr";
+    const char method_name[] = "CPtpClient::InitializePtpClient";
     TRACE_ENTRY;
+    int err = 0;
+
+    if (ptpClusterSocks_[pnid] == -1)
+    {
+        int sock = Monitor->MkCltSock( ptpPort );                
+        if (sock < 0)
+        {
+            err = sock;
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf( "%s@%d - MkCltSock failed with error %d\n"
+                            , method_name, __LINE__, err );
+            }
+        }
+        else
+        {
+            ptpClusterSocks_[pnid] = sock;
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf( "%s@%d - connected to monitor node=%d(%s), sock=%d, "
+                              "ptpClusterSocks_[%d]=%d\n"
+                            , method_name, __LINE__
+                            , pnid
+                            , ptpPort
+                            , sock
+                            , pnid
+                            , ptpClusterSocks_[pnid] );
+            }
+        }
+    }
+
+    TRACE_EXIT;
+    return err;
+}
+
+bool CPtpClient::IsTargetRemote( int targetNid )
+{
+    const char method_name[] = "CPtpClient::IsTargetRemote";
+    TRACE_ENTRY;
+
+    CLNode *targetLNode = Nodes->GetLNode( targetNid );
+    CNode *targetNode = targetLNode->GetNode();
+    bool rs = (targetNode && targetNode->GetPNid() == MyPNID) ? false : true ;
+
+    TRACE_EXIT;
+    return(rs);
+}
+
+int  CPtpClient::ProcessAddUniqStr( int nid
+                                  , int id
+                                  , const char *stringValue
+                                  , int targetNid
+                                  , const char *targetNodeName )
+{
+    const char method_name[] = "CPtpClient::ProcessAddUniqStr";
+    TRACE_ENTRY;
+
+    if (!IsTargetRemote( targetNid ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_UniqStr request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , targetNid );
+        }
+        return(0);
+    }
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -129,57 +204,30 @@ int  CPtpClient::AddUniqStr( int nid
     // Copy the string
     memcpy( stringData, stringValue, stringDataLen );
 
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.uniqstr);
-    size += stringDataLen;
-    
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.uniqstr);
+    myInfo.size += stringDataLen;
+
     if (trace_settings & TRACE_PROCESS_DETAIL)
     {
         trace_printf( "%s@%d - size_=%d, forwarding unique string [%d, %d] (%s)\n"
                     , method_name, __LINE__
-                    , size
+                    , myInfo.size
                     , msg.u.uniqstr.nid
                     , msg.u.uniqstr.id
                     , &msg.u.uniqstr.valueData  );
     }
 
-    int error = SendToMon("add-unique-string", &msg, size, targetNid, targetNodeName);
+    int error = SendToMon( "process-add-unique-string"
+                         , &msg
+                         , myInfo
+                         , targetNid
+                         , targetNodeName);
     
     TRACE_EXIT;
     return error;
-}
-
-int CPtpClient::InitializePtpClient( char * ptpPort )
-{
-    const char method_name[] = "CPtpClient::InitializePtpClient";
-    TRACE_ENTRY;
-    int err = 0;
-      
-    int sock = Monitor->MkCltSock( ptpPort );                
-    if (sock < 0)
-    {
-        err = sock;
-        
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - MkCltSock failed with error %d\n"
-                        , method_name, __LINE__, err );
-        }
-    }
-    else
-    {
-        ptpSock_ = sock;
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - connected to monitor node=%s, sock=%d\n"
-                        , method_name, __LINE__
-                        , ptpPort
-                        , ptpSock_ );
-        }
-    }
-
-    TRACE_EXIT;
-    return err;
 }
 
 int CPtpClient::ProcessClone( CProcess *process )
@@ -205,6 +253,18 @@ int CPtpClient::ProcessClone( CProcess *process )
                         , process->GetNid()
                         , process->GetPid()
                         , process->GetVerifier() );
+        }
+        return(0);
+    }
+
+    if (!IsTargetRemote( process->GetParentNid() ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_Clone request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , process->GetParentNid() );
         }
         return(0);
     }
@@ -281,13 +341,15 @@ int CPtpClient::ProcessClone( CProcess *process )
     msg.u.clone.argvLen =  argvLen;
     memcpy( stringData, process->userArgv(), argvLen );
 
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.clone);
-    size += nameLen ;
-    size += portLen ;
-    size += infileLen ;
-    size += outfileLen ;
-    size += argvLen ;
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.clone);
+    myInfo.size += nameLen ;
+    myInfo.size += portLen ;
+    myInfo.size += infileLen ;
+    myInfo.size += outfileLen ;
+    myInfo.size += argvLen ;
     
     if (trace_settings & TRACE_PROCESS_DETAIL)
     {
@@ -299,7 +361,7 @@ int CPtpClient::ProcessClone( CProcess *process )
                       "outfile=%s, strlen(outfile)=%d, "
                       "argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
                     , method_name, __LINE__
-                    , size
+                    , myInfo.size
                     , msg.u.clone.programStrId.nid
                     , msg.u.clone.programStrId.id
                     , msg.u.clone.pathStrId.nid
@@ -322,7 +384,7 @@ int CPtpClient::ProcessClone( CProcess *process )
 
     int error = SendToMon( "process-clone"
                          , &msg
-                         , size
+                         , myInfo
                          , process->GetParentNid()
                          , parentLNode->GetNode()->GetName());
     
@@ -336,6 +398,18 @@ int CPtpClient::ProcessExit( CProcess *process
 {
     const char method_name[] = "CPtpClient::ProcessExit";
     TRACE_ENTRY;
+
+    if (!IsTargetRemote( targetNid ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_Exit request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , targetNid );
+        }
+        return(0);
+    }
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -359,15 +433,17 @@ int CPtpClient::ProcessExit( CProcess *process
     strcpy(msg.u.exit.name, process->GetName());
     msg.u.exit.abended = process->IsAbended();
 
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.exit);
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.exit);
     
     if (trace_settings & TRACE_PROCESS_DETAIL)
     {
         trace_printf( "%s@%d - size_=%d, process %s (%d,%d:%d) "
                       "abended=%d\n"
                     , method_name, __LINE__
-                    , size
+                    , myInfo.size
                     , msg.u.exit.name
                     , msg.u.exit.nid
                     , msg.u.exit.pid
@@ -375,7 +451,11 @@ int CPtpClient::ProcessExit( CProcess *process
                     , msg.u.exit.abended );
     }
 
-    int error = SendToMon("process-exit", &msg, size, targetNid, targetNodeName);
+    int error = SendToMon( "process-exit"
+                         , &msg
+                         , myInfo
+                         , targetNid
+                         , targetNodeName);
     
     TRACE_EXIT;
     return error;
@@ -411,6 +491,18 @@ int CPtpClient::ProcessInit( CProcess *process
         return(0);
     }
 
+    if (!IsTargetRemote( process->GetParentNid() ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_ProcessInit request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , process->GetParentNid() );
+        }
+        return(0);
+    }
+
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d" " - Sending InternalType_ProcessInit to parent node %s, parentNid=%d"
@@ -438,12 +530,14 @@ int CPtpClient::ProcessInit( CProcess *process
     msg.u.processInit.tag = tag;
     msg.u.processInit.origNid = process->GetParentNid();
     
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.processInit);
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.processInit);
     
     int error = SendToMon( "process-init"
                          , &msg
-                         , size
+                         , myInfo
                          , parentNid
                          , parentLNode->GetNode()->GetName() );
     
@@ -459,6 +553,18 @@ int CPtpClient::ProcessKill( CProcess *process
 {
     const char method_name[] = "CPtpClient::ProcessKill";
     TRACE_ENTRY;
+
+    if (!IsTargetRemote( targetNid ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_Kill request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , targetNid );
+        }
+        return(0);
+    }
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -480,22 +586,28 @@ int CPtpClient::ProcessKill( CProcess *process
     msg.u.kill.verifier = process->GetVerifier();
     msg.u.kill.persistent_abort = abort;
 
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.exit);
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.exit);
     
     if (trace_settings & TRACE_PROCESS_DETAIL)
     {
         trace_printf( "%s@%d - size_=%d, process (%d,%d:%d) "
                       "persistent_abort=%d\n"
                     , method_name, __LINE__
-                    , size
+                    , myInfo.size
                     , msg.u.kill.nid
                     , msg.u.kill.pid
                     , msg.u.kill.verifier
                     , msg.u.kill.persistent_abort );
     }
 
-    int error = SendToMon("process-kill", &msg, size, targetNid, targetNodeName);
+    int error = SendToMon( "process-kill"
+                         , &msg
+                         , myInfo
+                         , targetNid
+                         , targetNodeName);
     
     TRACE_EXIT;
     return error;
@@ -507,6 +619,18 @@ int CPtpClient::ProcessNew( CProcess *process
 {
     const char method_name[] = "CPtpClient::ProcessNew";
     TRACE_ENTRY;
+
+    if (!IsTargetRemote( targetNid ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_Process request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , targetNid );
+        }
+        return(0);
+    }
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -567,12 +691,14 @@ int CPtpClient::ProcessNew( CProcess *process
     msg.u.process.argvLen =  argvLen;
     memcpy( stringData, process->userArgv(), argvLen );
 
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.process);
-    size += nameLen ;
-    size += infileLen ;
-    size += outfileLen ;
-    size += argvLen ;
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.process);
+    myInfo.size += nameLen ;
+    myInfo.size += infileLen ;
+    myInfo.size += outfileLen ;
+    myInfo.size += argvLen ;
     
     if (trace_settings & TRACE_PROCESS_DETAIL)
     {
@@ -583,7 +709,7 @@ int CPtpClient::ProcessNew( CProcess *process
                       "outfile=%s, strlen(outfile)=%d, "
                       "argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
                     , method_name, __LINE__
-                    , size
+                    , myInfo.size
                     , msg.u.process.programStrId.nid
                     , msg.u.process.programStrId.id
                     , msg.u.process.pathStrId.nid
@@ -602,7 +728,11 @@ int CPtpClient::ProcessNew( CProcess *process
                     , &msg.u.process.stringData+nameLen+infileLen+outfileLen);
     }
 
-    int error = SendToMon("process-new", &msg, size, targetNid, targetNodeName);
+    int error = SendToMon( "process-new"
+                         , &msg
+                         , myInfo
+                         , targetNid
+                         , targetNodeName);
     
     TRACE_EXIT;
     return error;
@@ -619,6 +749,18 @@ int CPtpClient::ProcessNotify( int nid
 {
     const char method_name[] = "CPtpClient::ProcessNotify";
     TRACE_ENTRY;
+
+    if (!IsTargetRemote( targetNid ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_Notify request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , targetNid );
+        }
+        return(0);
+    }
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -682,18 +824,342 @@ int CPtpClient::ProcessNotify( int nid
         }
     }
 
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.notify);
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.notify);
 
-    int error = SendToMon("process-notify", &msg, size, targetNid, targetNodeName);
+    int error = SendToMon( "process-notify"
+                         , &msg
+                         , myInfo
+                         , targetNid
+                         , targetNodeName);
     
     TRACE_EXIT;
     return error;
 }
 
-int CPtpClient::ReceiveSock(char *buf, int size, int sockFd)
+int CPtpClient::ProcessStdInReq( int nid
+                               , int pid
+                               , StdinReqType type
+                               , int supplierNid
+                               , int supplierPid )
 {
-    const char method_name[] = "CPtpClient::ReceiveSock";
+    const char method_name[] = "CPtpClient::ProcessStdInReq";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - Sending InternalType_StdinReq request type =%d "
+                      "from (%d,%d), for supplier (%d,%d)\n"
+                    , method_name, __LINE__
+                    , type
+                    , nid
+                    , pid
+                    , supplierNid
+                    , supplierPid );
+    }
+
+    CLNode  *lnode = Nodes->GetLNode( supplierNid );
+    if (lnode == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find supplier node nid=%d "
+                  "for stdin data request.\n"
+                , method_name
+                , supplierNid );
+        mon_log_write(PTPCLIENT_STDINREQ_1, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    CProcess *process = lnode->GetProcessL( supplierPid );
+    if (process == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find process nid=%d, "
+                  "pid=%d for stdin data request.\n"
+                , method_name
+                , supplierNid
+                , supplierPid );
+        mon_log_write(PTPCLIENT_STDINREQ_2, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    struct internal_msg_def msg;
+    memset(&msg, 0, sizeof(msg)); 
+    msg.type = InternalType_StdinReq;
+    msg.u.stdin_req.nid = nid;
+    msg.u.stdin_req.pid = pid;
+    msg.u.stdin_req.reqType = type;
+    msg.u.stdin_req.supplier_nid = supplierNid;
+    msg.u.stdin_req.supplier_pid = supplierPid;
+
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.stdin_req);
+    
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS_DETAIL))
+    {
+        trace_printf( "%s@%d - size_=%d, type =%d "
+                      "from (%d,%d), for supplier (%d,%d)\n"
+                    , method_name, __LINE__
+                    , myInfo.size
+                    , msg.u.stdin_req.reqType
+                    , msg.u.stdin_req.nid
+                    , msg.u.stdin_req.pid
+                    , msg.u.stdin_req.supplier_nid
+                    , msg.u.stdin_req.supplier_pid );
+    }
+
+    int error = SendToMon( "process-stdin"
+                         , &msg
+                         , myInfo
+                         , process->GetNid()
+                         , lnode->GetNode()->GetName());
+    
+    TRACE_EXIT;
+    return error;
+}
+
+int CPtpClient::ProcessStdIoData( int nid
+                                , int pid
+                                , StdIoType type
+                                , ssize_t count
+                                , char *data )
+{
+    const char method_name[] = "CPtpClient::ProcessStdIoData";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - Sending InternalType_IoData request type =%d "
+                      "to (%d,%d), count=%ld\n"
+                    , method_name, __LINE__
+                    , type
+                    , nid
+                    , pid
+                    , count );
+    }
+
+    CLNode  *lnode = Nodes->GetLNode( nid );
+    if (lnode == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find supplier node nid=%d "
+                  "for stdin data request.\n"
+                , method_name
+                , nid );
+        mon_log_write(PTPCLIENT_STDIODATA_1, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    CProcess *process = lnode->GetProcessL( pid );
+    if (process == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find process nid=%d, "
+                  "pid=%d for stdin data request.\n"
+                , method_name
+                , nid
+                , pid );
+        mon_log_write(PTPCLIENT_STDIODATA_2, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    struct internal_msg_def msg;
+    memset(&msg, 0, sizeof(msg)); 
+    msg.type = InternalType_IoData;
+    msg.u.iodata.nid = nid ;
+    msg.u.iodata.pid = pid ;
+    msg.u.iodata.ioType = type ;
+    msg.u.iodata.length = count;
+    memcpy(&msg.u.iodata.data, data, count);
+
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.iodata);
+    
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS_DETAIL))
+    {
+        trace_printf( "%s@%d - size_=%d, type =%d "
+                      "to (%d,%d), count=%d\n(%s)"
+                    , method_name, __LINE__
+                    , myInfo.size
+                    , msg.u.iodata.ioType
+                    , msg.u.iodata.nid
+                    , msg.u.iodata.pid
+                    , msg.u.iodata.length
+                    , msg.u.iodata.length?msg.u.iodata.data:"\n" );
+    }
+
+    int error = SendToMon( "process-stdio-data"
+                         , &msg
+                         , myInfo
+                         , process->GetNid()
+                         , lnode->GetNode()->GetName());
+
+    TRACE_EXIT;
+    return error;
+}
+
+int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg
+                         , ptpMsgInfo_t &myInfo
+                         , int targetNid, const char *hostName)
+{
+    const char method_name[] = "CPtpClient::SendToMon";
+    TRACE_ENTRY;
+    
+    char ptpHost[MAX_PROCESSOR_NAME];
+    char ptpPort[MAX_PROCESSOR_NAME];
+    int error = 0;
+    int tempPort = ptpCommPort_;
+    int pnid = 0;
+    int sendSock = -1;
+    int retryCount = 0;
+    CNode *node = NULL;
+    CLNode *lnode = NULL;
+
+    ptpHost[0] = '\0';
+    lnode = Nodes->GetLNode( targetNid );
+    node = lnode->GetNode();
+    pnid = node->GetPNid();
+
+    // For virtual env
+    if (!IsRealCluster)
+    {
+        tempPort += targetNid;
+        strcat( ptpHost, ptpHost_ );
+    }
+    else
+    {
+        strcat( ptpHost, hostName );
+    }
+    
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - reqType=%s, hostName=%s, targetNid=%d, "
+                      "ptpHost=%s, tempPort=%d, ptpCommPort_=%d\n"
+                    , method_name, __LINE__
+                    , reqType
+                    , hostName
+                    , targetNid
+                    , ptpHost
+                    , tempPort 
+                    , ptpCommPort_ );
+    }
+
+    memset( &ptpPort, 0, MAX_PROCESSOR_NAME );
+    memset( &ptpPortBase_, 0, MAX_PROCESSOR_NAME+100 );
+    sprintf( ptpPortBase_,"%s:", ptpHost );
+    sprintf( ptpPort,"%s%d", ptpPortBase_, tempPort );
+
+retryIO:
+
+    if (ptpClusterSocks_[pnid] == -1)
+    {
+        error = InitializePtpClient( pnid, ptpPort );
+        if (error < 0)
+        {
+            ptpClusterSocks_[pnid] = -1;
+            TRACE_EXIT;
+            return error;
+        }
+    }
+
+    sendSock = ptpClusterSocks_[pnid];
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - sending %s REQ to Monitor=%s, sock=%d\n"
+                    , method_name, __LINE__
+                    , reqType
+                    , ptpPort
+                    , sendSock );
+    }
+
+    error = SockSend((char *) &myInfo, sizeof(ptpMsgInfo_t), sendSock);
+    if (error)
+    {
+        int err = error;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], unable to send %s request size %ld to "
+                  "node %s, error: %d(%s)\n"
+                , method_name, reqType, sizeof(ptpMsgInfo_t), ptpHost, err, strerror(err) );
+        mon_log_write(PTPCLIENT_SENDTOMON_1, SQ_LOG_ERR, buf);    
+    }
+    else
+    {
+        error = SockSend((char *) msg, myInfo.size, sendSock);
+        if (error)
+        {
+            int err = error;
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], unable to send %s request to "
+                      "node %s, error: %d(%s)\n"
+                    , method_name, reqType, ptpHost, err, strerror(err) );
+            mon_log_write(PTPCLIENT_SENDTOMON_2, SQ_LOG_ERR, buf);    
+        }
+    }
+    
+    if (error)
+    {
+        SockClose( pnid );
+        if ( retryCount < MON2MON_IO_RETRIES )
+        {
+            retryCount++;
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf( "%s@%d - retrying IO (%d) to node %s\n"
+                            , method_name, __LINE__
+                            , retryCount
+                            , ptpHost );
+            }
+            goto retryIO;
+        }
+    }
+
+    TRACE_EXIT;
+    return error;
+}
+
+void CPtpClient::SockClose( int pnid )
+{
+    const char method_name[] = "CPtpClient::SockClose";
+    TRACE_ENTRY;
+
+    if (ptpClusterSocks_[pnid] != -1)
+    {
+        close( ptpClusterSocks_[pnid] );
+        ptpClusterSocks_[pnid] = -1;
+    }
+
+    TRACE_EXIT;
+}
+
+void CPtpClient::SetLocalHost( void )
+{
+    gethostname( ptpHost_, MAX_PROCESSOR_NAME );
+}
+
+int CPtpClient::SockReceive(char *buf, int size, int sockFd)
+{
+    const char method_name[] = "CPtpClient::SockReceive";
     TRACE_ENTRY;
 
     bool    readAgain = false;
@@ -764,14 +1230,9 @@ int CPtpClient::ReceiveSock(char *buf, int size, int sockFd)
     return error;
 }
 
-void CPtpClient::SetLocalHost( void )
+int CPtpClient::SockSend(char *buf, int size, int sockFd)
 {
-    gethostname( ptpHost_, MAX_PROCESSOR_NAME );
-}
-
-int CPtpClient::SendSock(char *buf, int size, int sockFd)
-{
-    const char method_name[] = "CPtpClient::SendSock";
+    const char method_name[] = "CPtpClient::SockSend";
     TRACE_ENTRY;
     
     bool    sendAgain = false;
@@ -829,273 +1290,6 @@ int CPtpClient::SendSock(char *buf, int size, int sockFd)
                     , error, strerror(error) );
     }
 
-    TRACE_EXIT;
-    return error;
-}
-
-int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg, int size, 
-                           int receiveNode, const char *hostName)
-{
-    const char method_name[] = "CPtpClient::SendToMon";
-    TRACE_ENTRY;
-    
-    char monPortString[MAX_PROCESSOR_NAME];
-    char ptpHost[MAX_PROCESSOR_NAME];
-    char ptpPort[MAX_PROCESSOR_NAME];
-    int tempPort = basePort_;
-    
-    ptpHost[0] = '\0';
-
-    // For virtual env
-    if (!IsRealCluster)
-    {
-        tempPort += receiveNode;
-        strcat( ptpHost, ptpHost_ );
-    }
-    else
-    {
-        strcat( ptpHost, hostName );
-    }
-    
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-    {
-        trace_printf( "%s@%d - reqType=%s, hostName=%s, receiveNode=%d, "
-                      "ptpHost=%s, tempPort=%d, basePort_=%d\n"
-                    , method_name, __LINE__
-                    , reqType
-                    , hostName
-                    , receiveNode
-                    , ptpHost
-                    , tempPort 
-                    , basePort_ );
-    }
-
-    memset( &ptpPort, 0, MAX_PROCESSOR_NAME );
-    memset( &ptpPortBase_, 0, MAX_PROCESSOR_NAME+100 );
-
-    strcat( ptpPortBase_, ptpHost );
-    strcat( ptpPortBase_, ":" );
-    sprintf( monPortString,"%d", tempPort );
-    strcat( ptpPort, ptpPortBase_ );
-    strcat( ptpPort, monPortString ); 
-
-    int error = InitializePtpClient( ptpPort );
-    if (error < 0)
-    {
-        TRACE_EXIT;
-        return error;
-    }
-
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-    {
-        trace_printf( "%s@%d - sending %s REQ to Monitor=%s, sock=%d\n"
-                    , method_name, __LINE__
-                    , reqType
-                    , ptpPort
-                    , ptpSock_);
-    }
-
-    error = SendSock((char *) &size, sizeof(size), ptpSock_);
-    if (error)
-    {
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - error sending to Monitor=%s, sock=%d, error=%d\n"
-                        , method_name, __LINE__
-                        , ptpPort
-                        , ptpSock_
-                        , error );
-        }
-    }
-    
-    error = SendSock((char *) msg, size, ptpSock_);
-    if (error)
-    {
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
-                        , method_name, __LINE__
-                        , ptpPort
-                        , ptpSock_
-                        , error );
-        }
-    }
-    
-    close( ptpSock_ );
-
-    TRACE_EXIT;
-    return error;
-}
-
-int CPtpClient::StdInReq( int nid
-                        , int pid
-                        , StdinReqType type
-                        , int supplierNid
-                        , int supplierPid )
-{
-    const char method_name[] = "CPtpClient::StdInReq";
-    TRACE_ENTRY;
-
-    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
-    {
-        trace_printf( "%s@%d - Sending InternalType_StdinReq request type =%d "
-                      "from (%d,%d), for supplier (%d,%d)\n"
-                    , method_name, __LINE__
-                    , type
-                    , nid
-                    , pid
-                    , supplierNid
-                    , supplierPid );
-    }
-
-    CLNode  *lnode = Nodes->GetLNode( supplierNid );
-    if (lnode == NULL)
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], Can't find supplier node nid=%d "
-                  "for stdin data request.\n"
-                , method_name
-                , supplierNid );
-        mon_log_write(PTPCLIENT_STDINREQ_1, SQ_LOG_ERR, buf);
-
-        TRACE_EXIT;
-        return -1;
-    }
-
-    CProcess *process = lnode->GetProcessL( supplierPid );
-    if (process == NULL)
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], Can't find process nid=%d, "
-                  "pid=%d for stdin data request.\n"
-                , method_name
-                , supplierNid
-                , supplierPid );
-        mon_log_write(PTPCLIENT_STDINREQ_2, SQ_LOG_ERR, buf);
-
-        TRACE_EXIT;
-        return -1;
-    }
-
-    struct internal_msg_def msg;
-    memset(&msg, 0, sizeof(msg)); 
-    msg.type = InternalType_StdinReq;
-    msg.u.stdin_req.nid = nid;
-    msg.u.stdin_req.pid = pid;
-    msg.u.stdin_req.reqType = type;
-    msg.u.stdin_req.supplier_nid = supplierNid;
-    msg.u.stdin_req.supplier_pid = supplierPid;
-
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.stdin_req);
-    
-    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS_DETAIL))
-    {
-        trace_printf( "%s@%d - size_=%d, type =%d "
-                      "from (%d,%d), for supplier (%d,%d)\n"
-                    , method_name, __LINE__
-                    , size
-                    , msg.u.stdin_req.reqType
-                    , msg.u.stdin_req.nid
-                    , msg.u.stdin_req.pid
-                    , msg.u.stdin_req.supplier_nid
-                    , msg.u.stdin_req.supplier_pid );
-    }
-
-    int error = SendToMon("stdin"
-                         , &msg
-                         , size
-                         , process->GetNid()
-                         , lnode->GetNode()->GetName());
-    
-    TRACE_EXIT;
-    return error;
-}
-
-int CPtpClient::StdIoData( int nid
-                         , int pid
-                         , StdIoType type
-                         , ssize_t count
-                         , char *data )
-{
-    const char method_name[] = "CPtpClient::StdIoData";
-    TRACE_ENTRY;
-
-    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
-    {
-        trace_printf( "%s@%d - Sending InternalType_IoData request type =%d "
-                      "to (%d,%d), count=%ld\n"
-                    , method_name, __LINE__
-                    , type
-                    , nid
-                    , pid
-                    , count );
-    }
-
-    CLNode  *lnode = Nodes->GetLNode( nid );
-    if (lnode == NULL)
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], Can't find supplier node nid=%d "
-                  "for stdin data request.\n"
-                , method_name
-                , nid );
-        mon_log_write(PTPCLIENT_STDIODATA_1, SQ_LOG_ERR, buf);
-
-        TRACE_EXIT;
-        return -1;
-    }
-
-    CProcess *process = lnode->GetProcessL( pid );
-    if (process == NULL)
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], Can't find process nid=%d, "
-                  "pid=%d for stdin data request.\n"
-                , method_name
-                , nid
-                , pid );
-        mon_log_write(PTPCLIENT_STDIODATA_2, SQ_LOG_ERR, buf);
-
-        TRACE_EXIT;
-        return -1;
-    }
-
-    struct internal_msg_def msg;
-    memset(&msg, 0, sizeof(msg)); 
-    msg.type = InternalType_IoData;
-    msg.u.iodata.nid = nid ;
-    msg.u.iodata.pid = pid ;
-    msg.u.iodata.ioType = type ;
-    msg.u.iodata.length = count;
-    memcpy(&msg.u.iodata.data, data, count);
-
-    int size = offsetof(struct internal_msg_def, u);
-    size += sizeof(msg.u.iodata);
-    
-    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS_DETAIL))
-    {
-        trace_printf( "%s@%d - size_=%d, type =%d "
-                      "to (%d,%d), count=%d\n(%s)"
-                    , method_name, __LINE__
-                    , size
-                    , msg.u.iodata.ioType
-                    , msg.u.iodata.nid
-                    , msg.u.iodata.pid
-                    , msg.u.iodata.length
-                    , msg.u.iodata.length?msg.u.iodata.data:"\n" );
-    }
-
-    int error = SendToMon("stdio-data"
-                         , &msg
-                         , size
-                         , process->GetNid()
-                         , lnode->GetNode()->GetName());
-    
     TRACE_EXIT;
     return error;
 }

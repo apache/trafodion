@@ -689,6 +689,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_FOR_REPEATABLE      /* FOR REPEATABLE */
 %token <tokval> TOK_FOR_SERIALIZABLE    /* FOR SERIALIZABLE */
 %token <tokval> TOK_FOR_STABLE          /* FOR STABLE */
+%token <tokval> TOK_FOR_USER          /* FOR GET .. FOR USER */
+%token <tokval> TOK_FOR_ROLE          /* FOR GET ... FOR ROLE */
+%token <tokval> TOK_FOR_LIBRARY          /* FOR GET ... FOR LIBRARY */
 %token <tokval> TOK_FOUND
 %token <tokval> TOK_FRACTION            /* Tandem extension non-reserved word */
 %token <tokval> TOK_FROM
@@ -736,6 +739,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_INOUT
 %token <tokval> TOK_INSTR
 %token <tokval> TOK_NOT_IN
+%token <tokval> TOK_SYS_GUID
 %token <tokval> TOK_INCLUSIVE
 %token <tokval> TOK_INDICATOR
 %token <tokval> TOK_INITIALIZATION // MV 
@@ -1058,6 +1062,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SHOWDDL_COMPONENT
 %token <tokval> TOK_SHOWDDL_LIBRARY
 %token <tokval> TOK_SHOWDDL_SEQUENCE
+%token <tokval> TOK_SHOWDDL_USER
 %token <tokval> TOK_SHOWDDL             /* Tandem extension non-reserved word */
 %token <tokval> TOK_SYSDATE
 %token <tokval> TOK_SYSCONNECTBYPATH
@@ -1450,6 +1455,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ACTIVE           /* Tandem extension non-reserved word */
 %token <tokval> TOK_RMS         /* Tandem extension non-reserved word */
 %token <tokval> TOK_REVERSE
+%token <tokval> TOK_OVERLAY
+%token <tokval> TOK_STUFF      /* same as overlay */
+%token <tokval> TOK_PLACING
 
 %token <tokval> TOK_DATA_OFFSET        /* INTERNAL non-reserved word */
 %token <tokval> TOK_NULL_IND_OFFSET    /* INTERNAL non-reserved word */
@@ -2160,6 +2168,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>      		in_predicate
 %type <item>      		like_predicate
 %type <tokval>	  		not_like
+%type <item>	  		  overlaps_predicate 
 %type <item>      		quantified_predicate
 %type <item>      		search_condition
 %type <item>      		boolean_term
@@ -2280,7 +2289,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>                optional_schema_clause
 %type <stringval>               optional_as_auth_clause
 %type <stringval> 		external_user_identifier
-%type <tokval>	 		user_or_role
+%type <tokval>	 		for_user_or_role
 %type <tokval>                  procedure_or_function
 %type <pStmtDDL>  		sql_schema_statement
 %type <pStmtDDL>  		sql_schema_definition_statement
@@ -8726,10 +8735,18 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                    ItemExpr * ie = new (PARSERHEAP()) UnixTimestamp($3);
                                    $$ = new (PARSERHEAP()) Cast(ie, type);
 				}
+    | TOK_SYS_GUID '(' ')'
+              {
+                  ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID_SYS_GUID, PARSERHEAP());
+                  ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLVarChar(PARSERHEAP() , 32, FALSE);
+                  $$ = new (PARSERHEAP()) Cast(conv,type);
+              }
     | TOK_UUID '(' ')'
               {
                   ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
-                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
                   NAType * type;
                   type = new (PARSERHEAP())
                        SQLVarChar(PARSERHEAP() , 36, FALSE);
@@ -8738,7 +8755,6 @@ datetime_value_function : TOK_CURDATE '(' ')'
     | TOK_UUID_SHORT '(' ')'
               {
                   ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_SHORT_ID, PARSERHEAP());
-                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
                   NAType * type;
                   type = new (PARSERHEAP())
                        SQLVarChar(PARSERHEAP() , 36, FALSE);
@@ -9287,6 +9303,23 @@ string_function :
 	  $$ = new (PARSERHEAP()) 
 	    BuiltinFunction(ITM_REVERSE, CmpCommon::statementHeap(), 1, $3);
         } 
+
+     | TOK_OVERLAY '(' value_expression TOK_PLACING value_expression TOK_FROM value_expression TOK_FOR value_expression ')'
+                  {
+		    $$ = 
+		      new (PARSERHEAP()) ZZZBinderFunction(ITM_OVERLAY, $3, $5, $7, $9);
+                  }
+     | TOK_OVERLAY '(' value_expression TOK_PLACING value_expression TOK_FROM value_expression ')'
+                  {
+		    $$ = 
+		      new (PARSERHEAP()) ZZZBinderFunction(ITM_OVERLAY, $3, $5, $7);
+                  }
+     | TOK_STUFF '(' value_expression ',' value_expression ',' value_expression ',' value_expression ')'
+                  {
+		    $$ = 
+		      new (PARSERHEAP()) ZZZBinderFunction(ITM_OVERLAY, $3, $9, $5, $7);
+                    ((ZZZBinderFunction*)$$)->setOverlayFuncWasStuff(TRUE);
+                  }
      | TOK_SPLIT_PART '(' value_expression ',' value_expression ',' value_expression ')'
         {                     
                $$ = new (PARSERHEAP()) SplitPart($3, $5, $7);
@@ -15558,13 +15591,15 @@ exe_util_get_metadata_info :
 
             $$ = gmi;
           }
-        | TOK_GET get_info_aus_clause procedure_or_function TOK_FOR TOK_LIBRARY table_name
+        | TOK_GET get_info_aus_clause procedure_or_function TOK_FOR_LIBRARY table_name
+                  optional_no_header_and_match_pattern_clause
         {
            NAString aus("ALL");    
            NAString infoType;
            NAString iof("FOR");
            NAString objType("LIBRARY"); 
            CorrName cn("");
+
            // we want an empty get_info_aus_clause;  it is just there to make the
            // production symetric with other GET statements and please the parser
            if (*$2 != "NONE")
@@ -15576,24 +15611,34 @@ exe_util_get_metadata_info :
            else
              infoType = "TABLE_FUNCTIONS" ;
 
+           PtrPlaceHolder * pph = $6;
+           NAString * noHeader = (NAString *)pph->ptr1_;
+           NAString * pattern = (NAString *)pph->ptr2_;
+           NAString * fullyQualNames = (NAString *)pph->ptr3_;
+
            ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) 
                     ExeUtilGetMetadataInfo(
                              aus,            // NAString &
                              infoType,       // NAString & 
                              iof,            // NAString & 
                              objType,        // NAString & objectType
-                             *($6),          // CorrName &
+                             *($5),          // CorrName &
                              NULL,           // NAString * pattern
                              TRUE,           // return fully qualified names
                              FALSE,          // getVersion 
                              NULL,             // param1 -- the library name
                              PARSERHEAP ()); // ColHeap  * oHeap 
                      
-           //gmi->setNoHeader(TRUE);
+           if (noHeader)
+             gmi->setNoHeader(TRUE);
+           else if (NOT ((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
+                         (CmpCommon::getDefault(NVCI_PROCESS) == DF_ON)))
+             gmi->setNoHeader(TRUE);
+
            $$ = gmi;          
         } 
         | TOK_GET get_info_aus_clause obj_priv_identifier 
-          TOK_FOR user_or_role authorization_identifier  
+          for_user_or_role authorization_identifier  
           optional_no_header_and_match_pattern_clause
           {
             NAString aus(*$2);
@@ -15601,22 +15646,15 @@ exe_util_get_metadata_info :
             if (aus == "NONE")
               aus = "USER";
 
-            if ((*$3 != "SEQUENCES" ) && (*$3 != "INDEXES"   ) && 
-                (*$3 != "PRIVILEGES") && (*$3 != "PROCEDURES") && 
-                (*$3 != "FUNCTIONS" ) && (*$3 != "TABLE_MAPPING FUNCTIONS") && 
-                (*$3 != "SCHEMAS"   ) && (*$3 != "TABLES"  ) && 
-                (*$3 != "VIEWS"     ) && (*$3 != "USERS"     ) &&
-                (*$3 != "ROLES"     ) && (*$3 != "LIBRARIES"     )) YYERROR;
-
             NAString infoType(*$3);
 
             NAString iof("FOR");
 
             NAString objType("USER");
-            if ($5 == TOK_ROLE)
+            if ($4 == TOK_FOR_ROLE)
               objType = "ROLE";
-
-            PtrPlaceHolder * pph      = $7;
+  
+            PtrPlaceHolder * pph      = $6;
             NAString * noHeader       = (NAString *)pph->ptr1_;
             NAString * pattern        = (NAString *)pph->ptr2_;
             NABoolean  fullyQualNames = (pph->ptr3_) ? TRUE : FALSE; 
@@ -15627,7 +15665,7 @@ exe_util_get_metadata_info :
 
             ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) ExeUtilGetMetadataInfo
                     (aus, infoType, iof, objType, cnm, pattern, fullyQualNames, 
-                     getVersion, $6, PARSERHEAP ());
+                     getVersion, $5,  PARSERHEAP ());
 
             if (noHeader ||
                 (NOT ((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
@@ -15912,16 +15950,16 @@ exe_util_get_metadata_info :
            $$ = gmi;
          }
 
-user_or_role : TOK_USER | TOK_ROLE
+for_user_or_role : TOK_FOR_USER | TOK_FOR_ROLE
 
 optional_for_user_clause : empty { $$ = NULL; }
                          | TOK_FOR authorization_identifier
                          {
                            $$ = new(PARSERHEAP()) NAString(*$2);
                          }
-                         | TOK_FOR TOK_USER authorization_identifier
+                         | TOK_FOR_USER authorization_identifier
                          {
-                           $$ = new(PARSERHEAP()) NAString(*$3);
+                           $$ = new(PARSERHEAP()) NAString(*$2);
                          }
 
 optional_authid_clause : empty { $$ = NULL; }
@@ -19091,6 +19129,7 @@ rel_subquery : '(' query_expression order_by_clause optional_limit_spec ')'
 /* type item */
 predicate : directed_comparison_predicate
         | key_comparison_predicate
+        | overlaps_predicate 
 	  | between_predicate predicate_selectivity_hint 
           {
               if ($2)
@@ -19572,6 +19611,24 @@ exists_predicate : TOK_EXISTS rel_subquery
 				{
 				  $$ = new (PARSERHEAP()) Exists($2);
 				}
+
+/* type item */
+overlaps_predicate : value_expression_list_paren TOK_OVERLAPS value_expression_list_paren
+        {
+          ItemExprList  exprList1($1, PARSERHEAP());
+          ItemExprList  exprList2($3, PARSERHEAP());
+          //Syntax Rules:
+          //  1) The degrees of <row value predicand 1> and <row value predicand 2> shall both be 2.
+          if ((exprList1.entries() != 2)
+              || (exprList1.entries() != exprList2.entries()))
+          {
+             *SqlParser_Diags << DgSqlCode(-4077)
+                              << DgString0("OVERLAPS");
+             YYERROR; //CHANGE TO YYABORT
+          }
+
+          $$ = new (PARSERHEAP()) Overlaps((*$1)[0], (*$1)[1], (*$3)[0], (*$3)[1]);
+        }
 
 /* type item */
 search_condition : boolean_term
@@ -22954,11 +23011,11 @@ show_statement:
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
 	     }
-          | TOK_SHOWDDL TOK_USER authorization_identifier 
+          | TOK_SHOWDDL_USER authorization_identifier 
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::SHOWDDL_),
+                  Describe(SQLTEXT(), COM_USER_CLASS, *$2, Describe::SHOWDDL_),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP()))); 
@@ -29302,7 +29359,7 @@ triggered_after_action: empty   // Empty or any option not listed below
 		  if ($2 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 		    treeTopPtr->accessOptions().accessType() = $2;
 		}
-              | signal_statement 
+              | signal_statement
 		{
 		  $$ = finalize($1, FALSE);
 		}
@@ -34273,6 +34330,7 @@ nonreserved_word :      TOK_ABORT
 		      | TOK_PHASE // MV REFRESH
 		      | TOK_PID
 		      | TOK_PIPELINE // MV REFRESH
+                      | TOK_PLACING
                       | TOK_POOL
 		      | TOK_POPULATE
                       | TOK_POS
@@ -34684,6 +34742,7 @@ nonreserved_func_word:  TOK_ABS
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
                       | TOK_UUID
+                      | TOK_SYS_GUID
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK
@@ -34783,6 +34842,8 @@ MP_nonreserved_func_word : TOK_CAST
                          | TOK_LOWER
                          | TOK_MIN
                          | TOK_OCTET_LENGTH
+                         | TOK_OVERLAY
+                         | TOK_STUFF
                          | TOK_POSITION
                          | TOK_REVERSE
                          | TOK_TRIM

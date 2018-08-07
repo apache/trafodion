@@ -786,13 +786,22 @@ ExpRaiseErrorFunction::ExpRaiseErrorFunction (Attributes **attr,
 					      NABoolean raiseError,
 					      const char *constraintName,
 					      const char *tableName,
-						  const NABoolean hasStringExp)  // -- Triggers
+                                              const NABoolean hasStringExp,  // -- Triggers
+                                              const char * optionalStr)
 : ex_function_clause (ITM_RAISE_ERROR, (hasStringExp ? 2 : 1), attr, space),
-    theSQLCODE_(sqlCode),
-    constraintName_((char *)constraintName),
-    tableName_((char *)tableName)
+  theSQLCODE_(sqlCode),
+  constraintName_((char *)constraintName),
+  tableName_((char *)tableName)
 {
-    setRaiseError(raiseError);
+  setRaiseError(raiseError);
+
+  if (optionalStr)
+    {
+      strncpy(optionalStr_, optionalStr, MAX_OPTIONAL_STR_LEN);
+      optionalStr_[MAX_OPTIONAL_STR_LEN] = 0;
+    }
+  else
+    optionalStr_[0] = 0;
 };
 
 ExFunctionRandomNum::ExFunctionRandomNum(OperatorTypeEnum opType,
@@ -5778,9 +5787,13 @@ ex_expr::exp_return_type ExpRaiseErrorFunction::eval(char *op_data[],
   // Create a DiagsArea to return the SQLCODE and the ConstraintName
   // and TableName.
   if (raiseError())
-    ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)getSQLCODE());
+    ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)getSQLCODE(),
+                    NULL, NULL, NULL, NULL,
+                    getOptionalStr());
   else
-    ExRaiseSqlWarning(heap, diagsArea, (ExeErrorCode)getSQLCODE());
+    ExRaiseSqlWarning(heap, diagsArea, (ExeErrorCode)getSQLCODE(),
+                      NULL, NULL, NULL, NULL,
+                      getOptionalStr());
 
   // SQLCODE correspoding to Triggered Action Exception
   if (getSQLCODE() == ComDiags_TrigActionExceptionSQLCODE) 
@@ -7194,6 +7207,12 @@ ex_expr::exp_return_type ExFunctionUniqueId::eval(char *op_data[],
     uuid_generate( uu ); 
     uuid_unparse(uu, str);
     str_cpy_all(result, str, 36);
+  }
+  else if(getOperType() == ITM_UNIQUE_ID_SYS_GUID)
+  {
+    uuid_t uu;
+    uuid_generate( uu ); 
+    str_cpy_all(result, (char*)&uu,sizeof(uu));
   }
   else //at present , it must be ITM_UUID_SHORT_ID
   { 

@@ -41,11 +41,18 @@ public:
     bool isAccepting( void ) { CAutoLock lock(getLocker()); return( accepting_ ); }
     void monReqExec( void *req ); //stupid compiler and circular header files
 
+    void processMonReqs( int sockFd );
     void processNewSock( int sockFd );
     void startAccepting( void );
     void stopAccepting( void );
     void start( void );
     void shutdownWork( void );
+
+    typedef struct
+    {
+        CPtpCommAccept *this_;
+        int             pendingFd_;
+    } Context;
 
 private:
 
@@ -54,9 +61,10 @@ private:
     bool accepting_;
     bool shutdown_;
 
-    // commAccept thread's id
+    // ptpCommAccept thread's id
     pthread_t                      thread_id_;
-
+    // ptpProcess thread's id
+    pthread_t                      process_thread_id_;
 };
 
 #endif

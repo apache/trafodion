@@ -117,6 +117,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_CONSTRAINT_DATA_EXISTS                    = 1083
                   , CAT_ILLEGAL_DEFAULT_VALUE_FORMAT              = 1084
                   // unused                                       = 1085
+                  , CAT_IS_NOT_CORRECT_AUTHID                     = 1086
                   // unused                                       = 1086
                   // unused                                       = 1087
                   // unused                                       = 1088

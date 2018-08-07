@@ -163,7 +163,11 @@ public:
     int GetConfigPNodesMax() { return configPNodesMax_; }
     bool ImAlive( bool needed=false, struct sync_def *sync = NULL );
     int  MapRank( int current_rank );
+#ifndef NAMESERVER_PROCESS
     void HardNodeDown( int nid, bool communicate_state=false );
+#else
+    void HardNodeDownNs( int nid );
+#endif
     void SoftNodeDown( int pnid );
     int  SoftNodeUpPrepare( int pnid );
     bool CheckSpareSet( int pnid );
@@ -174,6 +178,9 @@ public:
     void ResetIntegratingPNid( void );
     void SetIntegratingPNid( int pnid );
     int HardNodeUp( int pnid, char *node_name );
+#ifdef NAMESERVER_PROCESS
+    int HardNodeUpNs( int pnid );
+#endif
     inline CNode *GetIntegratingNode() { return Node[integratingPNid_]; }
     inline CNode *GetNode( int pnid ) { return Node[pnid]; }
     static char *Timestamp( void );

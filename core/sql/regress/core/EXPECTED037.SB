@@ -205,6 +205,7 @@
 +>, STORE int not null 
 +>, SUBCLASS_ORIGIN int not null 
 +>, SUBSYSTEM_ID int not null 
++>, SYS_GUID int not null 
 +>, system_name int not null 
 +>, TABLE_NAME int not null 
 +>, TYPE int not null 
@@ -285,6 +286,7 @@
   , STORE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SUBCLASS_ORIGIN                  INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SUBSYSTEM_ID                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_GUID                         INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SYSTEM_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
   , TABLE_NAME                       INT NO DEFAULT NOT NULL NOT DROPPABLE
   , TYPE                             INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -4869,6 +4871,11 @@ SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
 >>
 >>-- Expect success
 >>prepare s1 from SELECT SUBSYSTEM_ID SUBSYSTEM_ID from (values(0)) SUBSYSTEM_ID(SUBSYSTEM_ID);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SYS_GUID SYS_GUID from (values(0)) SYS_GUID (SYS_GUID);
 
 --- SQL command prepared.
 >>

@@ -40,6 +40,7 @@ char *odbauth = "Trafodion Dev <trafodion-development@lists.launchpad.net>";
 #define MAX_ARGS    11          /* Max arguments for interactive mode */
 #define ARG_LENGTH  128         /* Max argument length in interactive mode */
 #define LINE_CHUNK  51200       /* size of memory chunks allocated to store lines */
+#define ERR_MSG_LEN 512         /* size of error message buffer */
 #define MAX_VNLEN   32          /* Max variable name length */
 #define MAX_PK_COLS 16          /* Max number of PK elements */
 #define MAXCOL_LEN  128         /* Max table column name length */
@@ -2864,7 +2865,7 @@ static void setan ( int eid, int tid, int nrag, char *rag[], char *ql )
  */
 static void Oerr(int eid, int tid, unsigned int line, SQLHANDLE Ohandle, SQLSMALLINT Otype)
 {
-    size_t bs=LINE_CHUNK;   /* Memory needed for the error message */
+    size_t bs=ERR_MSG_LEN;   /* Memory needed for the error message */
     SQLSMALLINT Oi=1, 
                 Oln=0;
     SQLINTEGER Onat=0;
@@ -9961,7 +9962,7 @@ oloadJson_exit:
  */
 static int Oloadbuff(int eid)
 {
-    size_t embs=LINE_CHUNK;     /* Error message buffer size */
+    size_t embs=ERR_MSG_LEN;     /* Error message buffer size */
     SQLRETURN Or=0;             /* ODBC return value */
     SQLCHAR Ostate[6];          /* ODBC state */
     SQLSMALLINT Oi=1;           /* ODBC error index */

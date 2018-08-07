@@ -2823,6 +2823,57 @@ ItemExpr *Function::bindNode(BindWA *bindWA)
   return boundExpr;
 } // Function::bindNode()
 
+
+ItemExpr *Overlaps::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  bindChildren(bindWA);
+  if (bindWA->errStatus())
+    return this;
+  //Syntax Rules:
+  // 1) ... 2)...
+  // 3)...
+  //   Case: 
+  //   a) If the declared type is INTERVAL, then the precision of the declared type 
+  //      shall be such that the interval can be added to the datetime data type of 
+  //      the first column of the <row value predicand>.
+  //   b) If the declared type is a datetime data type, then it shall be comparable
+  //      with the datetime data type of the first column of the <row value predicand>.
+  const NAType &type1 =
+    child(1)->castToItemExpr()->getValueId().getType();
+
+  if (type1.getTypeQualifier() == NA_INTERVAL_TYPE)
+  {
+    ItemExpr * newChild = new (bindWA->wHeap())    
+      BiArith(ITM_PLUS, child(0), child(1));
+    child(1) = newChild->bindNode(bindWA);
+    if (bindWA->errStatus())
+      return this;
+  }
+
+  const NAType &type3 =
+    child(3)->castToItemExpr()->getValueId().getType();
+  if (type3.getTypeQualifier() == NA_INTERVAL_TYPE)
+  {
+    ItemExpr * newChild = new (bindWA->wHeap())    
+      BiArith(ITM_PLUS, child(2), child(3));
+    child(3) = newChild->bindNode(bindWA);
+    if (bindWA->errStatus())
+      return this;
+  }
+
+
+
+  BuiltinFunction::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return this;
+
+  return getValueId().getItemExpr();
+}
+
+
 ItemExpr *Between::bindNode(BindWA *bindWA)
 {
   //changes for HistIntRed
@@ -12330,6 +12381,114 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
       }
       break;
 
+    ////////////////////////////////////////////////////////////////////////
+    // OVERLAY ( src_str PLACING replace_str FROM start_pos [ FOR length ]
+    // is equivalent to:
+    // If 'FOR length' is specified:
+    //   SUBSTRING(src_str FROM 1 FOR start_pos - 1 ) 
+    //   || replace_str 
+    //   || SUBSTRING(src_str FROM start_pos + length )
+    // Otherwise:
+    //   SUBSTRING(src_str FROM 1 FOR start_pos - 1 ) 
+    //   || replace_str 
+    //   || SUBSTRING(src_str FROM start_pos + CHAR_LENGTH(replace_str) )
+    //
+    //
+    // STUFF (srcStr, startPos, length, replaceStr)
+    /////////////////////////////////////////////////////////////////////////
+    case ITM_OVERLAY:
+      {
+	bindChildren(bindWA);
+	if (bindWA->errStatus()) 
+	  return this;
+
+        NAString funcName = (overlayFuncWasStuff() ? "STUFF" : getTextUpper());
+
+        NAString errReason;
+        if (child(0)->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+            errReason = "Source string specified in function " + funcName + " must be of character datatype.";
+	    *CmpCommon::diags() << DgSqlCode(-3242)
+                                << DgString0(errReason);
+	    bindWA->setErrStatus();
+	    return this;
+          }
+
+        if (child(1)->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+            errReason = "Replacement string specified in function " + funcName + " must be of character datatype.";
+	    *CmpCommon::diags() << DgSqlCode(-3242)
+                                << DgString0(errReason);
+	    bindWA->setErrStatus();
+	    return this;
+          }
+
+        if (child(2))
+          {
+            const NumericType &ntyp2 =
+              (NumericType &) child(2)->getValueId().getType();
+            if (NOT ((ntyp2.getTypeQualifier() == NA_NUMERIC_TYPE) &&
+                     (ntyp2.isExact()) && (ntyp2.getScale() == 0)))
+              {
+                errReason = "Start position of replacement string specified in function " + funcName + " must be of numeric datatype with scale of 0.";
+                *CmpCommon::diags() << DgSqlCode(-3242)
+                                    << DgString0(errReason);
+                bindWA->setErrStatus();
+                return this;
+              }
+
+            // this error will be caught at execution time based on actual
+            // values
+            errReason = "Start position of replacement string specified in function " + funcName + " cannot be less than or equal to zero.";
+            RaiseError *ire = 
+              new (bindWA->wHeap()) 
+              RaiseError((Lng32)EXE_STMT_NOT_SUPPORTED, "", "", errReason, 
+                         &child(2)->getValueId().getType());
+            ire->bindNode(bindWA);
+            if (bindWA->errStatus())
+              return this;
+            
+            setChild(4, ire);
+          }
+
+        if (child(3))
+          {
+            const NumericType &ntyp3 =
+              (NumericType &) child(3)->getValueId().getType();
+            if (NOT ((ntyp3.getTypeQualifier() == NA_NUMERIC_TYPE) &&
+                     (ntyp3.isExact()) && (ntyp3.getScale() == 0)))
+              {
+                errReason = "Number of characters to replace specified in function " + funcName + " must be of numeric datatype with scale of 0.";
+                *CmpCommon::diags() << DgSqlCode(-3242)
+                                    << DgString0(errReason);
+                bindWA->setErrStatus();
+                return this;
+              }
+
+            // this error will be caught at execution time based on actual
+            // values
+            errReason = "Number of characters to replace specified in function " + funcName + " cannot be less than zero.";
+            RaiseError *ire = 
+              new (bindWA->wHeap()) 
+              RaiseError((Lng32)EXE_STMT_NOT_SUPPORTED, "", "", errReason, 
+                         &child(3)->getValueId().getType());
+            ire->bindNode(bindWA);
+            if (bindWA->errStatus())
+              return this;
+            
+            setChild(5, ire);
+          }
+
+        if (child(3))
+          // @A5(child4) and @A6(child5) are RaiseError operators that will
+          // be evaluated at runtime if that error condition occurs.
+          strcpy(buf, "SUBSTRING(@A1 FROM 1 FOR case when @A3 <= 0 then @A5 else @A3 end - 1) || @A2 || SUBSTRING (@A1 FROM @A3 + case when @A4 < 0 THEN @A6 else @A4 end); "); 
+        else
+          strcpy(buf, "SUBSTRING(@A1 FROM 1 FOR case when @A3 <= 0 then @A5 else @A3 end - 1) || @A2 || SUBSTRING (@A1 FROM @A3 + char_length(@A2) ); "); 
+      }
+      break;
+      
+      
     default:
       {
 	bindWA->setErrStatus();
@@ -12344,7 +12503,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
   if (strlen(buf) > 0)
     {
-      parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 5, child(0), child(1), child(2), child(3), child(4));
+      parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 6, child(0), child(1), child(2), child(3), child(4), child(5));
     }
 
  if (parseTree) {

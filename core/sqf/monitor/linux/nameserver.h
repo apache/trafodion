@@ -40,12 +40,15 @@ public:
     CNameServer( void );
     virtual ~CNameServer( void );
 
+    bool IsNameServerConfigured( int pnid );
+    void NameServerExited( void );
     int  NameServerStop( struct message_def* msg );
     int  ProcessDelete(CProcess* process );
     int  ProcessInfo( struct message_def* msg );
     int  ProcessInfoCont( struct message_def* msg );
     int  ProcessInfoNs( struct message_def* msg );
     int  ProcessNew(CProcess* process );
+    int  ProcessNodeDown( int nid, char* nodeName );
     int  ProcessShutdown( void );
     void SetLocalHost( void );
 
@@ -53,21 +56,20 @@ private:
     char mon2nsHost_[MAX_PROCESSOR_NAME];
     char mon2nsPort_[10];
     int  mon2nsSock_;
-    int  nsConfigInx_;
     bool nsStartupComplete_;
     int  seqNum_;
     bool shutdown_;
 
-    void ChooseNextNs( void );
-    int  ConnectToNs( bool *retry );
-    void GetM2NPort( int PNid );
+    int  ChooseNextNs( void );
+    int  ClientSockCreate();
+    int  ConnectToNs( bool* retry );
+    int  GetM2NPort( int PNid );
     int  SendReceive( struct message_def* msg );
-    int  SendToNs( const char *reqType, struct message_def *msg, int size );
+    int  SendToNs( const char* reqType, struct message_def* msg, int size );
     void SetShutdown( bool shutdown );
     void SockClose( void );
-    int  SockCreate();
-    int  SockReceive( char *buf, int size );
-    int  SockSend( char *buf, int size );
+    int  SockReceive( char* buf, int size );
+    int  SockSend( char* buf, int size );
 };
 
 #endif

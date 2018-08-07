@@ -85,7 +85,7 @@
 1083 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for constraint $0~ConstraintName failed; incompatible data exists in table.
 1084 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid default value was specified for column $0~ColumnName.
 1085 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
-1086 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+1086 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is not a $1~string1.
 1087 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1088 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1089 ZZZZZ 99999 BEGINNER MINOR DBADMIN The system generated column SYSKEY must be specified last or not specified at all in the index column list.
@@ -1538,6 +1538,7 @@ $1~String1 --------------------------------
 8142 ZZZZZ 99999 ADVANCED INFRM LOGONLY An error was artificially injected, to test error handling. Testpoint $0~string0, Value $1~string1.
 8143 ZZZZZ 99999 ADVANCED INFRM LOGONLY The requested operation stopped $0~Int0 server processes.
 8144 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Corruption is detected in table $0~string0$1~string1.
+8145 ZZZZZ 99999 BEGINNER MAJOR DBADMIN This statement is not supported or incorrect options were specified. Reason: $0~string0
 8300 ZZZZZ 99999 BEGINNER MINOR LOGONLY Late name resolution failed for $0~String0 $1~String1.
 8301 ZZZZZ 99999 ADVANCED MAJOR DBADMIN File system error $0~NSKCode occurred on anchor file $1~String0.
 8302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN All partitions of $0~String0 $1~TableName are unavailable.

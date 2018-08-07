@@ -537,5 +537,10 @@ struct sync_buffer_def
     char msg[MAX_SYNC_SIZE];
 };
 
+typedef struct ptpMsgInfo
+{
+    int pnid;                           // Current offset into the msg buffer
+    int size;                           // Number if messages to replicate
+} ptpMsgInfo_t;
 
 #endif

@@ -564,7 +564,10 @@ CRedirectAncestorStdin::~CRedirectAncestorStdin()
     TRACE_ENTRY;
 
     // Delete pending buffer (if any)
-    delete buffer_;
+    if (buffer_)
+    {
+        delete [] buffer_;
+    }
 
     // Delete queued data (if any)
     while (!ioDataList_.empty())
@@ -572,7 +575,7 @@ CRedirectAncestorStdin::~CRedirectAncestorStdin()
         // Get first data buffer from list
         buffer_ = ioDataList_.front();
         ioDataList_.pop_front();
-        delete buffer_;
+        delete [] buffer_;
     }
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
@@ -646,7 +649,7 @@ int CRedirectAncestorStdin::handleInput()
             retVal = -1;
 
             bufferPos_ = 0;
-            delete buffer_;
+            delete [] buffer_;
             buffer_ = NULL;
 
             reqType = STDIN_FLOW_ON;
@@ -659,7 +662,7 @@ int CRedirectAncestorStdin::handleInput()
         else
         {   // Have written all data, will need to get more.
             bufferPos_ = 0;
-            delete buffer_;
+            delete [] buffer_;
             buffer_ = NULL;
 
             reqType = STDIN_FLOW_ON;
@@ -667,11 +670,11 @@ int CRedirectAncestorStdin::handleInput()
 
         if (NameServerEnabled)
         {
-            PtpClient->StdInReq( MyPNID
-                               , pid_
-                               , reqType
-                               , ancestorNid_
-                               , ancestorPid_  );
+            PtpClient->ProcessStdInReq( MyPNID
+                                      , pid_
+                                      , reqType
+                                      , ancestorNid_
+                                      , ancestorPid_  );
         }
         else
         {
@@ -792,7 +795,7 @@ CRedirectStdinRemote::CRedirectStdinRemote(const char *filename,
                 char buf[MON_STRING_BUF_SIZE];
                 sprintf(buf, "[%s], %s is an unsupported file type.\n",
                         method_name, filename);
-                mon_log_write(MON_REDIR_STDINREMOTE_2, SQ_LOG_ERR, buf);
+                mon_log_write(MON_REDIR_STDINREMOTE_2, SQ_LOG_INFO, buf);
 
                 close(fd_);
                 fd_ = -1;
@@ -874,11 +877,11 @@ void CRedirectStdinRemote::handleOutput(ssize_t count, char *buffer)
 
     if (NameServerEnabled)
     {
-        PtpClient->StdIoData( requesterNid_
-                            , pid_
-                            , STDIN_DATA
-                            , count
-                            , buffer );
+        PtpClient->ProcessStdIoData( requesterNid_
+                                   , pid_
+                                   , STDIN_DATA
+                                   , count
+                                   , buffer );
     }
     else
     {
@@ -1177,11 +1180,11 @@ void CRedirectAncestorStdout::handleOutput(ssize_t count, char *buffer)
 
     if (NameServerEnabled)
     {
-        PtpClient->StdIoData( ancestor_nid_
-                            , ancestor_pid_
-                            , STDOUT_DATA
-                            , count
-                            , buffer );
+        PtpClient->ProcessStdIoData( ancestor_nid_
+                                   , ancestor_pid_
+                                   , STDOUT_DATA
+                                   , count
+                                   , buffer );
     }
     else
     {
@@ -1654,11 +1657,11 @@ void CRedirector::stdinFd(int nid, int pid, int &pipeFd, char filename[],
 
         if (NameServerEnabled)
         {
-            PtpClient->StdInReq( nid
-                               , pid
-                               , STDIN_REQ_DATA
-                               , ancestor_nid
-                               , ancestor_pid );
+            PtpClient->ProcessStdInReq( nid
+                                      , pid
+                                      , STDIN_REQ_DATA
+                                      , ancestor_nid
+                                      , ancestor_pid );
         }
         else
         {

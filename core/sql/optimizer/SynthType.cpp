@@ -1347,6 +1347,11 @@ const NAType *BuiltinFunction::synthesizeType()
         //please check the ExFunctionUniqueId::eval if the size is changed
 	retType = new HEAP SQLChar(HEAP, 36, FALSE);
       }
+    case ITM_UNIQUE_ID_SYS_GUID:
+      {
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 16, FALSE);
+      }
       break;
     case ITM_UNIQUE_SHORT_ID:
       {
@@ -2088,6 +2093,80 @@ const NAType *Between::synthesizeType()
 }
 
 // -----------------------------------------------------------------------
+// member functions for class Overlaps 
+// -----------------------------------------------------------------------
+
+const NAType *Overlaps::synthesizeType()
+{
+  const NAType &type1 = child(0)->getValueId().getType();
+  const NAType &type2 = child(1)->getValueId().getType();
+  const NAType &type3 = child(2)->getValueId().getType();
+  const NAType &type4 = child(3)->getValueId().getType();
+
+  //Syntax Rules:
+  // ......
+  //2) The declared types of the first field of <row value predicand 1> 
+  //   and the first field of <row value predicand2> shall both be datetime
+  //   data types and these data types shall be comparable.
+  //3) The declared type of the second field of each <row value predicand> 
+  //   shall be a datetime data type or INTERVAL.
+  if (type1.getTypeQualifier() != NA_DATETIME_TYPE)
+  {
+    *CmpCommon::diags() << DgSqlCode(-4497) << DgString0("first")
+                                            << DgString1("overlaps part1")
+                                            << DgString2("datetime");
+    return NULL;
+  } 
+
+  if ((type2.getTypeQualifier() != NA_DATETIME_TYPE)
+      && (type2.getTypeQualifier() != NA_INTERVAL_TYPE))
+  {
+    *CmpCommon::diags() << DgSqlCode(-4497) << DgString0("second")
+                                            << DgString1("overlaps part1")
+                                            << DgString2("datetime or interval");
+    return NULL;
+  } 
+
+  if (type3.getTypeQualifier() != NA_DATETIME_TYPE)
+  {
+    *CmpCommon::diags() << DgSqlCode(-4497) << DgString0("first")
+                                            << DgString1("overlaps part2")
+                                            << DgString2("datetime");
+    return NULL;
+  } 
+
+  if ((type4.getTypeQualifier() != NA_DATETIME_TYPE)
+      && (type4.getTypeQualifier() != NA_INTERVAL_TYPE))
+  {
+    *CmpCommon::diags() << DgSqlCode(-4497) << DgString0("second")
+                                            << DgString1("overlaps part2")
+                                            << DgString2("datetime or interval");
+    return NULL;
+  } 
+
+  UInt32 allowIncompOper = NAType::ALLOW_INCOMP_OPER;
+  if (NOT type1.isCompatible(type2, &allowIncompOper))
+  {
+    emitDyadicTypeSQLnameMsg(-4041, type1, type2);
+    return NULL;
+  }
+  if (NOT type1.isCompatible(type3, &allowIncompOper))
+  {
+    emitDyadicTypeSQLnameMsg(-4041, type1, type3);
+    return NULL;
+  }
+
+  if (NOT type3.isCompatible(type4, &allowIncompOper))
+  {
+    emitDyadicTypeSQLnameMsg(-4041, type3, type4);
+    return NULL;
+  }
+
+  return new HEAP SQLBooleanRelat(HEAP, TRUE);
+}
+
+
+// -----------------------------------------------------------------------
 // member functions for class BiArith
 // -----------------------------------------------------------------------
 
@@ -2333,16 +2412,20 @@ const NAType *BoolVal::synthesizeType()
 //------------------------------------------------------------------
 const NAType *RaiseError::synthesizeType()
 {
-	// -- Triggers
+  // -- Triggers
   if (getArity() == 1)
-  {  // Verify the string expression is of character type.
-	if (child(0)->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
+    {  // Verify the string expression is of character type.
+      if (child(0)->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
 	{
-		//  parameter 3 must be of type string.
-		*CmpCommon::diags() << DgSqlCode(-3185);
-		return NULL;
+          //  parameter 3 must be of type string.
+          *CmpCommon::diags() << DgSqlCode(-3185);
+          return NULL;
 	}
-  }
+    }
+
+  if (type_)
+    return type_;
+
   return new HEAP SQLBooleanRelat(FALSE);	// can be overridden in IfThenElse
 }
 

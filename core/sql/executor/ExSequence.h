@@ -190,6 +190,7 @@ public:
 
   void updateDiagsArea(ex_queue_entry * centry);
   void updateDiagsArea( ExeErrorCode rc_);
+  void updateDiagsArea(ComDiagsArea *da);
 
   NABoolean getPartitionEnd() const
   {

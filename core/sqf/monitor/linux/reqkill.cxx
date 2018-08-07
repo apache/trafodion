@@ -211,14 +211,17 @@ void CExtKillReq::performRequest()
     {
         if ( target_process_name.size() )
         { // find by name (check node state, don't check process state, not backup)
-            targetProcess = Nodes->GetProcess( target_process_name.c_str()
-                                              , target_verifier
-                                              , true, false, false );
-            if ( targetProcess &&
-                (msg_->u.request.u.kill.target_nid == -1 ||
-                 msg_->u.request.u.kill.target_pid == -1))
+            if (msg_->u.request.u.kill.target_process_name[0] == '$' )
             {
-                backup = targetProcess->GetBackup ();
+                targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                  , target_verifier
+                                                  , true, false, false );
+                if ( targetProcess &&
+                    (msg_->u.request.u.kill.target_nid == -1 ||
+                     msg_->u.request.u.kill.target_pid == -1))
+                {
+                    backup = targetProcess->GetBackup ();
+                }
             }
         }
         else
@@ -256,9 +259,12 @@ void CExtKillReq::performRequest()
                                     , target_process_name.c_str()
                                     , target_verifier );
                     }
-                    cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
-                                                        , target_verifier );
-                    targetProcess = cloneProcess;
+                    if (msg_->u.request.u.kill.target_process_name[0] == '$' )
+                    {
+                        cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                            , target_verifier );
+                        targetProcess = cloneProcess;
+                    }
                 }     
                 else
                 { // Name Server find by nid,pid:verifier

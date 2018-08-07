@@ -1249,6 +1249,126 @@ E0A0A0C3BBC3BAC3B6636261
 
 --- 1 row(s) selected.
 >>
+>>-- tests for OVERLAY function
+>>select overlay('w1234567xyz' placing 'abcde' from 3)  from dual;
+
+(EXPR)                     
+---------------------------
+
+w1abcde7xyz                
+
+--- 1 row(s) selected.
+>>select overlay('w1234567xyz' placing 'abcde' from 3 for 4)  from dual;
+
+(EXPR)                     
+---------------------------
+
+w1abcde67xyz               
+
+--- 1 row(s) selected.
+>>select overlay('w1234567xyz' placing 'abcde' from 3 for 5)  from dual;
+
+(EXPR)                     
+---------------------------
+
+w1abcde7xyz                
+
+--- 1 row(s) selected.
+>>select overlay('w1234567xyz' placing 'abcde' from 3 for 6)  from dual;
+
+(EXPR)                     
+---------------------------
+
+w1abcdexyz                 
+
+--- 1 row(s) selected.
+>>select overlay('w1234567xyz' placing 'abcde' from 30 for 6)  from dual;
+
+(EXPR)                     
+---------------------------
+
+w1234567xyzabcde           
+
+--- 1 row(s) selected.
+>>select overlay(cast(NULL as char(10)) placing 'abcde' from 30 for 6)  from dual;
+
+(EXPR)                   
+-------------------------
+
+?                        
+
+--- 1 row(s) selected.
+>>select converttohex(overlay (uf8 placing uf8v from 4 for 2)) from cs315t4;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+E0A0A0E0A0A0E0A0A0E0A0A0E0A0A0E0A0A07A7AE0A0A0E0A0A0E0A0A0E0A0A0E0A0A0E0A0A0202020202020202020202020                                                                                            
+E0A0A02033E0A0A020333333E0A0A0E0A0A0E0A0A0E0A0A0E0A0A0E0A0A020202020202020202020202020202020                                                                                                    
+E0A0A02034E0A0A020343434E0A0A02020E0A0A020202020202020202020202020202020202020202020                                                                                                            
+2037372037373737373720373720202020202020202020202020202020202020202020202020                                                                                                                    
+F7BFBFBFF7BFBFBFF7BFBFBFF7BFBFBFF7BFBFBFF7BFBFBF3333F7BFBFBFF7BFBFBFF7BFBFBFF7BFBFBFF7BFBFBFF7BFBFBF202020202020                                                                                
+F7BFBFBF2020F7BFBFBF20203535F7BFBFBFF7BFBFBF20F7BFBFBFF7BFBFBF20202020202020202020202020202020                                                                                                  
+
+--- 6 row(s) selected.
+>>select converttohex(overlay(_utf8 x'C3B6C3BAC3BBE0A0A0' placing _UTF8 x'C3B6'  from  2 for 2)) from dual;
+
+(EXPR)                                  
+----------------------------------------
+
+C3B6C3B6E0A0A0                          
+
+--- 1 row(s) selected.
+>>select stuff ('abcdefg', 3, 4, 'xy') from dual;
+
+(EXPR)          
+----------------
+
+abxyg           
+
+--- 1 row(s) selected.
+>>
+>>-- OVERLAY error cases
+>>select overlay('w1234567xyz' placing 'abcde' from 1.2 for 4)  from dual;
+
+*** ERROR[3242] This statement is not supported. Reason: Start position of replacement string specified in function OVERLAY must be of numeric datatype with scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select overlay('w1234567xyz' placing 'abcde' from 1 for 4.1)  from dual;
+
+*** ERROR[3242] This statement is not supported. Reason: Number of characters to replace specified in function OVERLAY must be of numeric datatype with scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select overlay('w1234567xyz' placing 'abcde' from 'a' for 4)  from dual;
+
+*** ERROR[3242] This statement is not supported. Reason: Start position of replacement string specified in function OVERLAY must be of numeric datatype with scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select stuff ('abcdefg', -1, 4, 'xy') from dual;
+
+*** ERROR[8145] This statement is not supported or incorrect options were specified. Reason: Start position of replacement string specified in function STUFF cannot be less than or equal to zero.
+
+--- 0 row(s) selected.
+>>select overlay(1 placing 'abcde' from 1 for 4)  from dual;
+
+*** ERROR[3242] This statement is not supported. Reason: Source string specified in function OVERLAY must be of character datatype.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select overlay('xy' placing 'abcde' from -1 for 4)  from dual;
+
+*** ERROR[8145] This statement is not supported or incorrect options were specified. Reason: Start position of replacement string specified in function OVERLAY cannot be less than or equal to zero.
+
+--- 0 row(s) selected.
+>>select overlay('xy' placing 'abcde' from 0 for -4)  from dual;
+
+*** ERROR[8145] This statement is not supported or incorrect options were specified. Reason: Start position of replacement string specified in function OVERLAY cannot be less than or equal to zero.
+
+--- 0 row(s) selected.
+>>
 >>
 >>obey test315(clnup);
 >>

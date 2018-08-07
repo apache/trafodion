@@ -90,15 +90,24 @@ eof
       echo `date`" - Continuing with Startup ..."
       echo
    fi
+fi
+
+if (
+    [[ $TRAF_AGENT == "CM" ]] ||
+    [[ $SQ_MON_RUN_MODE == "AGENT" ]]
+   )
+then
+   export TRAF_SCALING_FACTOR=${TRAF_SCALING_FACTOR:-0.75}
 
    # Set the number of nodes configured
    let node_count=`trafconf -nid-count`
+   #echo  "***"
    #echo  "*** node_count = ${node_count}"
-   #echo  "*** TRAF_SCALING_FACTOR = $TRAF_SCALING_FACTOR"
+   #echo  "*** TRAF_SCALING_FACTOR = ${TRAF_SCALING_FACTOR}"
 
    # allow time for other nodes to integrate, scaled to cluster size
    # scaling factor may be non-integer, so use awk to evaluate
-   start_delay=$( echo "${node_count} $TRAF_SCALING_FACTOR" | awk '{print $1 * $2}')
+   start_delay=$( echo "${node_count} ${TRAF_SCALING_FACTOR}" | awk '{print $1 * $2}')
    echo  "***"
    echo  "***" %`date`" - Waiting ${start_delay} seconds for Monitor processes to integrate"
    echo  "***"

@@ -44,6 +44,7 @@ using namespace std;
 #include <limits.h>
 #include <unistd.h>
 
+#include "trafconf/trafconfig.h"
 #include "lnode.h"
 #include "pnode.h"
 #include "nameserver.h"
@@ -51,21 +52,24 @@ using namespace std;
 #include "montrace.h"
 #include "nameserverconfig.h"
 #include "meas.h"
+#include "reqqueue.h"
 
 extern CNode *MyNode;
 extern CProcess *NameServerProcess;
 extern CNodeContainer *Nodes;
+extern CReqQueue ReqQueue;
 extern bool IsRealCluster;
 extern int MyPNID;
 extern CNameServerConfigContainer *NameServerConfig;
 extern CMeas Meas;
 
+#define NAMESERVER_IO_RETRIES 3
+
 CNameServer::CNameServer( void )
-: mon2nsSock_(-1)
-, nsConfigInx_(-1)
-, nsStartupComplete_(false)
-, seqNum_(0)
-, shutdown_(false)
+           : mon2nsSock_(-1)
+           , nsStartupComplete_(false)
+           , seqNum_(0)
+           , shutdown_(false)
 {
     const char method_name[] = "CNameServer::CNameServer";
     TRACE_ENTRY;
@@ -84,7 +88,7 @@ CNameServer::~CNameServer( void )
     TRACE_EXIT;
 }
 
-void CNameServer::ChooseNextNs( void )
+int CNameServer::ChooseNextNs( void )
 {
     const char method_name[] = "CNameServer::ChooseNextNs";
     TRACE_ENTRY;
@@ -103,17 +107,58 @@ void CNameServer::ChooseNextNs( void )
     {
         config = config->GetNext();
     }
-    strcpy( mon2nsHost_, config->GetName() );
-    if ( trace_settings & TRACE_NS )
+    CNode *node = Nodes->GetNode( (char*) config->GetName() );
+    if (node && node->GetState() == State_Up)
     {
-        trace_printf( "%s@%d - nameserver=%s, rnd=%d, cnt=%d\n"
-                    , method_name, __LINE__
-                    , mon2nsHost_
-                    , rnd
-                    , cnt );
+        strcpy( mon2nsHost_, config->GetName() );
+        if ( trace_settings & TRACE_NS )
+        {
+            trace_printf( "%s@%d - nameserver=%s, rnd=%d, cnt=%d\n"
+                        , method_name, __LINE__
+                        , mon2nsHost_
+                        , rnd
+                        , cnt );
+        }
+    }
+    else
+    {
+        config = config->GetNext()?config->GetNext():NameServerConfig->GetFirstConfig();
+        while (config)
+        {
+            node = Nodes->GetNode( (char*) config->GetName() );
+            if (node && node->GetState() != State_Up)
+            {
+                config = config->GetNext();
+                continue;
+            }
+            
+            strcpy( mon2nsHost_, config->GetName() );
+            if ( trace_settings & TRACE_NS )
+            {
+                trace_printf( "%s@%d - selected alternate nameserver=%s\n"
+                            , method_name, __LINE__
+                            , mon2nsHost_ );
+            }
+            break;
+        }
+    }
+
+    if (strlen(mon2nsHost_) == 0)
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        sprintf( la_buf
+               , "[%s], No Name Server nodes available.\n"
+                 "Scheduling shutdown (abrupt)!\n"
+               , method_name );
+        mon_log_write(NAMESERVER_CHOOSENEXTNS_1, SQ_LOG_CRIT, la_buf ); 
+        ReqQueue.enqueueShutdownReq( ShutdownLevel_Abrupt );
+
+        TRACE_EXIT;
+        return( -2 );
     }
 
     TRACE_EXIT;
+    return( 0 );
 }
 
 int CNameServer::ConnectToNs( bool *retry )
@@ -123,21 +168,32 @@ int CNameServer::ConnectToNs( bool *retry )
 
     int err = 0;
 
+reconnect:
+
     if ( !mon2nsPort_[0] )
-        CNameServer::GetM2NPort( -1 );
-    if ( !mon2nsHost_[0] )
-        ChooseNextNs();
+    {
+        err = GetM2NPort( -1 );
+    }
+    if ( err == 0 && !mon2nsHost_[0] )
+    {
+        err = ChooseNextNs();
+    }
 
     int sock = 0;
 
     if ( shutdown_ )
+    {
         err = -1;
+    }
 
     if ( err == 0 )
     {
-        sock = SockCreate();
+        sock = ClientSockCreate();
         if ( sock < 0 )
+        {
             err = sock;
+            goto reconnect;
+        }
     }
     if ( err == 0 )
     {
@@ -191,7 +247,7 @@ int CNameServer::ConnectToNs( bool *retry )
                         , nodeId.ping );
         }
         err = SockSend( ( char *) &nodeId, sizeof(nodeId) );
-        if ( err == 0 )
+        if (err == 0)
         {
             if ( trace_settings & TRACE_NS )
             {
@@ -252,7 +308,7 @@ int CNameServer::ConnectToNs( bool *retry )
                     if ( IsRealCluster )
                     {
                         CNode *node = Nodes->GetNode( nodeId.nsPNid );
-                        if ( node )
+                        if (node && node->GetState() == State_Up)
                         {
                             strcpy( mon2nsHost_, node->GetName() );
                             GetM2NPort( nodeId.nsPNid );
@@ -273,50 +329,123 @@ int CNameServer::ConnectToNs( bool *retry )
     return err;
 }
 
-void CNameServer::GetM2NPort( int PNid )
+int CNameServer::GetM2NPort( int nsPNid )
 {
+    const char method_name[] = "CNameServer::GetM2NPort";
+    TRACE_ENTRY;
+
+    bool done = false;
     int port;
     char *p = getenv( "NS_M2N_COMM_PORT" );
     if ( p )
+    {
         port = atoi(p);
+    }
     else
+    {
         port = 0;
+    }
     if ( !IsRealCluster )
-        port += PNid < 0 ? MyPNID : PNid;
+    {
+        // choose initial port
+        int nsMax = NameServerConfig->GetCount();
+        int candidatePNid = nsPNid < 0 ? MyPNID : nsPNid;
+        int chosenPNid = 
+                candidatePNid < nsMax ? candidatePNid : candidatePNid%nsMax;
+        int lastChosenPNid = chosenPNid;
+        while (!done)
+        {
+            // check that corresponding node is UP
+            // node is up, chosen is good to go
+            // not up,
+            //   round-robin on other name server nodes and chose 1st up node
+            //   no name server nodes available
+            //      log event and down my node (MyPNID)
+            CNode *node = Nodes->GetNode( chosenPNid );
+            if (node && node->GetState() == State_Up)
+            {
+                port += chosenPNid;
+        
+                if ( trace_settings & TRACE_NS )
+                {
+                    trace_printf( "%s@%d - nsMax=%d, nsPNid=%d, MyPNID=%d, "
+                                  "candidatePNid=%d, chosenPNid=%d, port=%d\n"
+                                , method_name, __LINE__
+                                , nsMax
+                                , nsPNid
+                                , MyPNID
+                                , candidatePNid
+                                , chosenPNid
+                                , port );
+                }
+                done = true;
+            }
+            else
+            {
+                chosenPNid = (chosenPNid+1) < nsMax ? (chosenPNid+1) : 0;
+                if (chosenPNid == lastChosenPNid)
+                {
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    sprintf( la_buf
+                           , "[%s], No Name Server nodes available, "
+                             "chosenPNid=%d, lastChosenPNid=%d.\n"
+                             "Scheduling shutdown (abrupt)!\n"
+                           , method_name
+                           , chosenPNid, lastChosenPNid );
+                    mon_log_write(NAMESERVER_GETM2NPORT_1, SQ_LOG_CRIT, la_buf ); 
+                    ReqQueue.enqueueShutdownReq( ShutdownLevel_Abrupt );
+                    done = true;
+                }
+                port += chosenPNid;
+                TRACE_EXIT;
+                return( -2 );
+            }
+        }
+    }
     sprintf( mon2nsPort_, "%d", port );
-}
-
-void CNameServer::SetLocalHost( void )
-{
-    gethostname( mon2nsHost_, MAX_PROCESSOR_NAME );
-}
-
-void CNameServer::SetShutdown( bool shutdown )
-{
-    const char method_name[] = "CNameServer::SetShutdown";
-    TRACE_ENTRY;
-
-    if ( trace_settings & TRACE_NS )
-        trace_printf( "%s@%d - set shutdown_=%d\n"
-                    , method_name, __LINE__, shutdown );
-    shutdown_ = shutdown;
 
     TRACE_EXIT;
+    return( 0 );
 }
 
-void CNameServer::SockClose( void )
+bool CNameServer::IsNameServerConfigured( int pnid )
 {
-    const char method_name[] = "CNameServer::SockClose";
+    const char method_name[] = "CNameServer::IsNameServerConfigured";
     TRACE_ENTRY;
 
-    close( mon2nsSock_ );
-    mon2nsSock_ = -1;
+    bool rs = false;    
+
+    if ( IsRealCluster )
+    {
+        CNameServerConfig *config;
+        CNode *node = Nodes->GetNode( pnid );
+        if ( node )
+        {
+            config = NameServerConfig->GetConfig( node->GetName() );
+            if ( config )
+            {
+                rs = true;
+            }
+        }
+    }
+    else
+    {
+        rs = pnid < NameServerConfig->GetCount() ? true : false;
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - pnid=%d, configured=%s\n"
+                    , method_name, __LINE__, pnid, rs?"True":"False" );
+    }
+
     TRACE_EXIT;
+    return(rs);
 }
 
-int CNameServer::SockCreate( void )
+int CNameServer::ClientSockCreate( void )
 {
-    const char method_name[] = "CNameServer::SockCreate";
+    const char method_name[] = "CNameServer::ClientSockCreate";
     TRACE_ENTRY;
 
     int    sock;        // socket
@@ -363,7 +492,8 @@ int CNameServer::SockCreate( void )
             snprintf( la_buf, sizeof(la_buf) 
                     , "[%s], socket() failed! errno=%d (%s)\n"
                     , method_name, err, strerror(err) );
-            mon_log_write( MON_NAMESERVER_MKCLTSOCK_1, SQ_LOG_ERR, la_buf ); 
+            mon_log_write( NAMESERVER_CLIENTSOCKCREATE_1, SQ_LOG_ERR, la_buf ); 
+            TRACE_EXIT;
             return ( -1 );
         }
 
@@ -375,8 +505,9 @@ int CNameServer::SockCreate( void )
             snprintf( la_buf, sizeof(la_buf ), 
                       "[%s] gethostbyname(%s) failed! errno=%d (%s)\n"
                     , method_name, host, err, strerror(err) );
-            mon_log_write(MON_NAMESERVER_MKCLTSOCK_2, SQ_LOG_ERR, la_buf ); 
+            mon_log_write(NAMESERVER_CLIENTSOCKCREATE_2, SQ_LOG_ERR, la_buf ); 
             close( sock );
+            TRACE_EXIT;
             return ( -1 );
         }
 
@@ -418,7 +549,7 @@ int CNameServer::SockCreate( void )
                 int err = errno;
                 sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
                        , method_name, err, strerror(err) );
-                mon_log_write(MON_NAMESERVER_MKCLTSOCK_3, SQ_LOG_ERR, la_buf ); 
+                mon_log_write(NAMESERVER_CLIENTSOCKCREATE_3, SQ_LOG_ERR, la_buf ); 
                 struct timespec req, rem;
                 req.tv_sec = 0;
                 req.tv_nsec = 500000000L; // 500,000,000
@@ -439,8 +570,9 @@ int CNameServer::SockCreate( void )
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
                        , method_name, retries );
-                mon_log_write(MON_NAMESERVER_MKCLTSOCK_4, SQ_LOG_ERR, la_buf ); 
+                mon_log_write(NAMESERVER_CLIENTSOCKCREATE_4, SQ_LOG_ERR, la_buf ); 
                 close( sock );
+                TRACE_EXIT;
                 return ( -1 );
             }
             struct timespec req, rem;
@@ -449,6 +581,8 @@ int CNameServer::SockCreate( void )
             nanosleep( &req, &rem );
         }
         close( sock );
+        TRACE_EXIT;
+        return( -1 );
     }
 
     if ( trace_settings & TRACE_NS )
@@ -470,8 +604,9 @@ int CNameServer::SockCreate( void )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror(err) );
-        mon_log_write(MON_NAMESERVER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf );
+        mon_log_write(NAMESERVER_CLIENTSOCKCREATE_5, SQ_LOG_ERR, la_buf );
         close( sock );
+        TRACE_EXIT;
         return ( -2 );
     }
 
@@ -481,13 +616,27 @@ int CNameServer::SockCreate( void )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror(err) );
-        mon_log_write(MON_NAMESERVER_MKCLTSOCK_6, SQ_LOG_ERR, la_buf ); 
+        mon_log_write(NAMESERVER_CLIENTSOCKCREATE_6, SQ_LOG_ERR, la_buf ); 
         close( sock );
+        TRACE_EXIT;
         return ( -2 );
     }
 
     TRACE_EXIT;
     return ( sock );
+}
+
+void CNameServer::NameServerExited( void )
+{
+    const char method_name[] = "CNameServer::NameServerExited";
+    TRACE_ENTRY;
+
+    mon2nsHost_[0] = '\0';
+    mon2nsPort_[0] = '\0';
+    nsStartupComplete_ = false;
+    SockClose();
+
+    TRACE_EXIT;
 }
 
 int CNameServer::NameServerStop( struct message_def* msg )
@@ -599,9 +748,6 @@ int CNameServer::ProcessNew(CProcess* process )
     msgnew->unhooked = process->IsUnhooked();
     msgnew->event_messages = process->IsEventMessages();
     msgnew->system_messages = process->IsSystemMessages();
-//    msgnew->pathStrId = process->pathStrId();
-//    msgnew->ldpathStrId = process->ldPathStrId();
-//    msgnew->programStrId = process->programStrId();
     strcpy( msgnew->path, process->path() );
     strcpy( msgnew->ldpath, process->ldpath() );
     strcpy( msgnew->program, process->program() );
@@ -682,6 +828,45 @@ int CNameServer::ProcessNew(CProcess* process )
     return error;
 }
 
+int CNameServer::ProcessNodeDown( int nid, char *nodeName )
+{
+    const char method_name[] = "CNameServer::ProcessNodeDown";
+    TRACE_ENTRY;
+
+    int error = 0;
+    CProcess *process = MyNode->GetProcessByType( ProcessType_NameServer );
+    if (process)
+    {
+        struct message_def msg;
+        memset(&msg, 0, sizeof(msg) ); // TODO: remove!
+        msg.type = MsgType_Service;
+        msg.noreply = false;
+        msg.reply_tag = seqNum_++;
+        msg.u.request.type = ReqType_NodeDown;
+        struct NodeDown_def *msgdown = &msg.u.request.u.down;
+        msgdown->nid = nid;
+        strcpy( msgdown->node_name, nodeName );
+        msgdown->takeover = 0;
+        msgdown->reason[0] = 0;
+    
+        if ( trace_settings & TRACE_NS )
+        {
+            trace_printf( "%s@%d - sending node-down request to nameserver=%s:%s\n"
+                          "        msg.down.nid=%d\n"
+                          "        msg.down.node_name=%s\n"
+                        , method_name, __LINE__
+                        , mon2nsHost_, mon2nsPort_ 
+                        , msgdown->nid
+                        , msgdown->node_name );
+        }
+
+        error = SendReceive(&msg );
+    }
+
+    TRACE_EXIT;
+    return error;
+}
+
 int CNameServer::ProcessShutdown( void )
 {
     const char method_name[] = "CNameServer::ProcessShutdown";
@@ -696,7 +881,6 @@ int CNameServer::ProcessShutdown( void )
     struct ShutdownNs_def *msgshutdown = &msg.u.request.u.shutdown_ns;
     msgshutdown->nid = -1;
     msgshutdown->pid = -1;
-    //msgshutdown->level = msgIn->u.request.u.shutdown.level;
     msgshutdown->level = ShutdownLevel_Normal;
 
     int error = SendReceive(&msg );
@@ -711,16 +895,20 @@ int CNameServer::ProcessShutdown( void )
 int CNameServer::SendReceive( struct message_def* msg )
 {
     const char method_name[] = "CNameServer::SendReceive";
+    TRACE_ENTRY;
+
+    int retryCount = 0;
     char desc[256];
     char* descp;
-    struct DelProcessNs_def *msgdel;
-    struct NewProcessNs_def *msgnew;
-    struct ShutdownNs_def *msgshutdown;
-    struct NameServerStart_def *msgstart;
-    struct NameServerStop_def *msgstop;
-    struct ProcessInfo_def *msginfo;
-
-    TRACE_ENTRY;
+    struct DelProcessNs_def* msgdel;
+    struct NameServerStart_def* msgstart;
+    struct NameServerStop_def* msgstop;
+    struct NewProcessNs_def* msgnew;
+    struct NodeDown_def* msgdown;
+    struct ProcessInfo_def* msginfo;
+    struct ShutdownNs_def* msgshutdown;
+    struct message_def msg_reply;
+    struct message_def* pmsg_reply = &msg_reply;
 
     descp = desc;
     int size = offsetof(struct message_def, u.request.u);
@@ -750,6 +938,13 @@ int CNameServer::SendReceive( struct message_def* msg )
                 msgnew->nid, msgnew->pid, msgnew->verifier, msgnew->process_name );
         size += sizeof(msg->u.request.u.new_process_ns);
         break;
+    case ReqType_NodeDown:
+        msgdown = &msg->u.request.u.down;
+        sprintf( desc, "node-down (nid=%d, node-name=%s, takeover=%d, reason=%s)",
+                msgdown->nid, msgdown->node_name,
+                msgdown->takeover, msgdown->reason );
+        size += sizeof(msg->u.request.u.down);
+        break;
     case ReqType_ProcessInfo:
         msginfo = &msg->u.request.u.process_info;
         sprintf( desc, "process-info (nid=%d, pid=%d, verifier=%d, name=%s)\n"
@@ -774,7 +969,7 @@ int CNameServer::SendReceive( struct message_def* msg )
         break;
     case ReqType_ShutdownNs:
         msgshutdown = &msg->u.request.u.shutdown_ns;
-        sprintf( desc, "shutdown (nid=%d, pid=%d, level=%d)",
+        sprintf( desc, "shutdown-ns (nid=%d, pid=%d, level=%d)",
                 msgshutdown->nid, msgshutdown->pid, msgshutdown->level );
         size += sizeof(msg->u.request.u.shutdown_ns);
         break;
@@ -783,13 +978,16 @@ int CNameServer::SendReceive( struct message_def* msg )
         break;
     }
 
+retryIO:
+
     int error = SendToNs( descp, msg, size );
     if ( error == 0 )
         error = SockReceive( (char *) &size, sizeof(size ) );
     if ( error == 0 )
-        error = SockReceive( (char *) msg, size );
+        error = SockReceive( (char *) pmsg_reply, size );
     if ( error == 0 )
     {
+        memcpy( msg, pmsg_reply, size );
         if ( trace_settings & ( TRACE_NS | TRACE_PROCESS ) )
         {
             char desc[2048];
@@ -827,7 +1025,6 @@ int CNameServer::SendReceive( struct message_def* msg )
                          msg->u.reply.u.process_info.more_data );
                 break;
             case ReplyType_ProcessInfoNs:
-//                int argvLen = sizeof(msg->u.reply.u.process_info_ns.argv);
                 sprintf( desc, 
                          "process-info-ns reply:\n"
                          "        process_info_ns.nid=%d\n"
@@ -847,18 +1044,14 @@ int CNameServer::SendReceive( struct message_def* msg )
                          "        process_info_ns.path=%s\n"
                          "        process_info_ns.ldpath=%s\n"
                          "        process_info_ns.program=%s\n"
-//                         "        process_info_ns.pathStrId=%d:%d\n"
-//                         "        process_info_ns.ldpathStrId=%d:%d\n"
-//                         "        process_info_ns.programStrId=%d:%d\n"
                          "        process_info_ns.port_name=%s\n"
                          "        process_info_ns.argc=%d\n"
-//                         "        process_info_ns.argv=[%.*s]\n"
                          "        process_info_ns.infile=%s\n"
                          "        process_info_ns.outfile=%s\n"
-//#if 0
-//                         "        process_info_ns.creation_time=%ld(secs)\n",
-//                         "        process_info_ns.creation_time=%ld(secs):%ld(nsecs)\n",
-//#endif
+#if 0
+                         "        process_info_ns.creation_time=%ld(secs)\n",
+                         "        process_info_ns.creation_time=%ld(secs):%ld(nsecs)\n",
+#endif
                          "        process_info_ns.return_code=%d"
                          , msg->u.reply.u.process_info_ns.nid
                          , msg->u.reply.u.process_info_ns.pid
@@ -877,21 +1070,14 @@ int CNameServer::SendReceive( struct message_def* msg )
                          , msg->u.reply.u.process_info_ns.path
                          , msg->u.reply.u.process_info_ns.ldpath
                          , msg->u.reply.u.process_info_ns.program
-//                         , msg->u.reply.u.process_info_ns.pathStrId.nid
-//                         , msg->u.reply.u.process_info_ns.pathStrId.id
-//                         , msg->u.reply.u.process_info_ns.ldpathStrId.nid
-//                         , msg->u.reply.u.process_info_ns.ldpathStrId.id
-//                         , msg->u.reply.u.process_info_ns.programStrId.nid
-//                         , msg->u.reply.u.process_info_ns.programStrId.id
                          , msg->u.reply.u.process_info_ns.port_name
                          , msg->u.reply.u.process_info_ns.argc
-//                         , &msg->u.reply.u.process_info_ns.argv
                          , msg->u.reply.u.process_info_ns.infile
                          , msg->u.reply.u.process_info_ns.outfile
-//#if 0
-//                         , msg->u.reply.u.process_info_ns.creation_time.tv_sec
-//                         , msg->u.reply.u.process_info_ns.creation_time.tv_nsec
-//#endif
+#if 0
+                         , msg->u.reply.u.process_info_ns.creation_time.tv_sec
+                         , msg->u.reply.u.process_info_ns.creation_time.tv_nsec
+#endif
                          , msg->u.reply.u.process_info_ns.return_code );
                 break;
             default:
@@ -905,7 +1091,20 @@ int CNameServer::SendReceive( struct message_def* msg )
                         );
         }
     }
-    else
+    else if ( error != -2 && retryCount < NAMESERVER_IO_RETRIES )
+    {
+        retryCount++;
+        if ( trace_settings & TRACE_NS )
+        {
+            trace_printf( "%s@%d - retrying IO (%d) to nameserver=%s:%s\n"
+                        , method_name, __LINE__
+                        , retryCount
+                        , mon2nsHost_, mon2nsPort_ );
+        }
+        goto retryIO;
+    }
+
+    if ( error )
     {
         // create a synthetic reply
         msg->u.reply.u.generic.nid = -1;
@@ -943,9 +1142,10 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
 
     if ( trace_settings & TRACE_NS )
     {
-        trace_printf( "%s@%d - sending %s REQ to nameserver=%s:%s, sock=%d, shutdown=%d\n"
+        trace_printf( "%s@%d - sending %s\tREQ (size=%d) to nameserver=%s:%s, sock=%d, shutdown=%d\n"
                     , method_name, __LINE__
                     , reqType
+                    , size
                     , mon2nsHost_
                     , mon2nsPort_
                     , mon2nsSock_ 
@@ -967,13 +1167,70 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
             error = ConnectToNs( &retry );
         }
     }
+
     if ( error == 0 )
+    {
         error = SockSend( (char *) &size, sizeof(size) );
-    if ( error == 0 )
-        error = SockSend( (char *) msg, size );
+        if (error)
+        {
+            int err = error;
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], unable to send %s request size %d to "
+                      "nameserver=%s:%s, error: %d(%s)\n"
+                    , method_name, reqType, size, mon2nsHost_, mon2nsPort_, err, strerror(err) );
+            mon_log_write(NAMESERVER_SENDTONS_1, SQ_LOG_ERR, buf);    
+        }
+        else
+        {
+            error = SockSend( (char *) msg, size );
+            if (error)
+            {
+                int err = error;
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf)
+                        , "[%s], unable to send %s request to "
+                          "nameserver=%s:%s, error: %d(%s)\n"
+                        , method_name, reqType,  mon2nsHost_, mon2nsPort_, err, strerror(err) );
+                mon_log_write(NAMESERVER_SENDTONS_2, SQ_LOG_ERR, buf);    
+            }
+        }
+    }
 
     TRACE_EXIT;
     return error;
+}
+
+void CNameServer::SetLocalHost( void )
+{
+    gethostname( mon2nsHost_, MAX_PROCESSOR_NAME );
+}
+
+void CNameServer::SetShutdown( bool shutdown )
+{
+    const char method_name[] = "CNameServer::SetShutdown";
+    TRACE_ENTRY;
+
+    if ( trace_settings & TRACE_NS )
+        trace_printf( "%s@%d - set shutdown_=%d\n"
+                    , method_name, __LINE__, shutdown );
+    shutdown_ = shutdown;
+
+    TRACE_EXIT;
+}
+
+void CNameServer::SockClose( void )
+{
+    const char method_name[] = "CNameServer::SockClose";
+    TRACE_ENTRY;
+
+    if (mon2nsSock_ != -1)
+    {
+        close( mon2nsSock_ );
+        mon2nsSock_ = -1;
+    }
+
+    TRACE_EXIT;
 }
 
 int CNameServer::SockReceive( char *buf, int size )
@@ -1045,8 +1302,28 @@ int CNameServer::SockReceive( char *buf, int size )
                     , error, strerror(error) );
     }
 
-    if ( error )
+    if (error)
+    {
         SockClose();
+
+        int err = error;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], unable to receive request size %d to "
+                  "nameserver=%s:%s, error: %d(%s)\n"
+                , method_name, size, mon2nsHost_, mon2nsPort_, err, strerror(err) );
+        mon_log_write(NAMESERVER_SOCKRECEIVE_1, SQ_LOG_ERR, buf);    
+
+        // Choose another name server on IO retry
+        if (IsRealCluster)
+        {
+            mon2nsHost_[0] = 0;
+        }
+        else
+        {
+            mon2nsPort_[0] = 0;
+        }
+    }
 
     TRACE_EXIT;
     return error;
@@ -1112,8 +1389,27 @@ int CNameServer::SockSend( char *buf, int size )
                     , error, strerror(error) );
     }
 
-    if ( error )
+    if (error)
+    {
         SockClose();
+
+        int err = error;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], unable to send request size %d to "
+                  "nameserver=%s:%s, error: %d(%s)\n"
+                , method_name, size, mon2nsHost_, mon2nsPort_, err, strerror(err) );
+        mon_log_write(NAMESERVER_SOCKSEND_1, SQ_LOG_ERR, buf);    
+        // Choose another name server on IO retry
+        if (IsRealCluster)
+        {
+            mon2nsHost_[0] = 0;
+        }
+        else
+        {
+            mon2nsPort_[0] = 0;
+        }
+    }
 
     TRACE_EXIT;
     return error;
