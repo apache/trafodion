@@ -1801,6 +1801,20 @@ int main(int argc, char *argv[])
                     << "' for status command." << endl;
             }
         }
+        else if (!strcmp(lp_nextcmd, "showenv"))
+        {
+           get_cmd(lp_inputstr, lp_nextcmd);
+           if (lp_nextcmd[0] == '\0')
+             cout <<"TODO: show all env var\n" << endl;
+           else
+           {
+              const char* v = ms_getenv_str((const char*)lp_nextcmd);
+              if(v == NULL)
+                cout <<"*** Environment Var not exist" << endl;
+              else
+                cout << v << endl;
+           }
+        }
         else if (!strcmp(lp_nextcmd, "transid"))
         {
            get_cmd(lp_inputstr, lp_nextcmd);
