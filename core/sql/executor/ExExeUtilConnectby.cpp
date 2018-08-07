@@ -293,10 +293,11 @@ short ExExeUtilConnectbyTcb::emitPrevRow(ExpTupleDesc * tDesc, int level, int is
   {
     lastpos = pos;
     pos+= ((Queue *)pq->get(i1))->numEntries();
-    if(idx <= pos) 
+    if(idx < pos) 
     {
       thatone = (Queue *)pq->get(i1);
       doffset = idx - lastpos;
+      break;
     }
   }
   if(level > 1)
@@ -304,7 +305,7 @@ short ExExeUtilConnectbyTcb::emitPrevRow(ExpTupleDesc * tDesc, int level, int is
   OutputInfo * ti = (OutputInfo *)thatone->get(doffset);
   for (UInt32 i = 2; i < tDesc->numAttrs() - 2 ; i++) 
   {
-    ti->get(i+1, ptr, len);
+    ti->get(i, ptr, len);
     char * src = ptr;
     Attributes * attr = tDesc->getAttr(i-1);
     short srcType = 0;
@@ -587,7 +588,7 @@ short ExExeUtilConnectbyTcb::work()
             for(int i1 = 0; i1 < rootRow->numEntries(); i1 ++)
             {
               OutputInfo *vi = (OutputInfo*)rootRow->getNext();
-              vi->get(0, ptr, len);
+              vi->get(0, ptr, len, fsDatatype); //, NULL, NULL);
               connectByStackItem *it = new connectByStackItem();
               
               char *tmp = new(getHeap()) char[len];
@@ -608,7 +609,6 @@ short ExExeUtilConnectbyTcb::work()
                if(checkDuplicate( it, len, currLevel_) == 0) {
                  matchRowNum++;
                  Queue* cq = new(getHeap()) Queue(getHeap()) ;
-                 cq->insert(it);
                  rootItem * ri= new(getHeap()) rootItem();
                  ri->rootId = rootId;
                  rootId++;
@@ -766,13 +766,11 @@ short ExExeUtilConnectbyTcb::work()
                     if(allrows->numEntries() == 0) //no child
                     {
                       //emit parent
-                      printf("emit parent rows\n");
                       emitPrevRow(tDesc, currLevel_, 1, 0,prevQueue_, i-1);
                     }
                     else
                     {
                       //emit parent
-                      printf("emit parent rows\n");
                       emitPrevRow(tDesc, currLevel_, 0, 0,prevQueue_, i-1);
                     }
                     tmpPrevQueue_->insert(allrows); //TODO: delete it
@@ -888,8 +886,8 @@ short ExExeUtilConnectbyTcb::work()
          if(exeUtilTdb().hasIsLeaf_ == TRUE)
          {
             //release prevQueue_
+            NADELETE(prevQueue_, Queue, getHeap());
             prevQueue_ = tmpPrevQueue_;
-            NADELETE(tmpPrevQueue_, Queue, getHeap());
          }
 
          if( loopDetected == 1)
