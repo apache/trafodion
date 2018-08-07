@@ -1053,8 +1053,7 @@ expressions in each item must be the same as the number of value columns
 in the column list.
 +
 In the example TRANSPOSE A,B,C AS V, the items are A,B, and C, and the
-value column is V. This form can be thought of as a shorter way of writing TRANSPOSE
-(A),(B),(C) AS (V).
+value column is V. This form can be thought of as a shorter way of writing TRANSPOSE (A),(B),\(C) AS (V).
 
 * `_transpose-item-list_`
 +

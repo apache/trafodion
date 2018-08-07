@@ -29,22 +29,29 @@
 This section describes the syntax and semantics of specific functions
 and expressions that you can use in {project-name} SQL statements. The
 functions and expressions are categorized according to their
-functionality.
+functionality:
 
-[[standard_normalization]]
-== Standard Normalization
+[[categories]]
+== Categories
 
-For datetime functions, the definition of standard normalization is: If
-the ending day of the resulting date is invalid, the day will be rounded
-DOWN to the last day of the result month.
+Use these types of functions within an SQL value expression:
 
-== Aggregate (Set) Functions
+** Aggregate (Set) Functions
+** Character String Functions
+** Datetime Functions
+** Mathematical Functions
+** Sequence Functions
+** Other Functions and Expressions
+
+For more information about SQL value expressions, see <<expressions,Expressions>>. 
+
+=== Aggregate (Set) Functions
 
 An aggregate (or set) function operates on a group or groups of rows
 retrieved by the SELECT statement or the subquery in which the aggregate
 function appears.
 
-
+.Overview of Aggregate (Set) Functions
 [cols="25%,75%"]
 |===
 | <<avg_function,AVG Function>>                 | Computes the average of a group of numbers derived from the evaluation
@@ -66,10 +73,8 @@ derived from the evaluation of the expression argument of the function.
 The numbers can be weighted.
 | <<sum_function,SUM Function>>                 | Computes the sum of a group of numbers derived from the evaluation of
 the expression argument of the function.
-"VARIANCE Function"
-Computes the statistical variance of a group of numbers derived from the
-evaluation of the expression argument of the function. The numbers can
-be weighted.
+| <<variance_function,VARIANCE Function>>       | Computes the statistical variance of a group of numbers derived from the
+evaluation of the expression argument of the function. The numbers can be weighted.
 |===
 
 
@@ -89,7 +94,7 @@ list, all rows of the SELECT result table form the one and only group.
 See the individual entry for the function.
 
 [[character_string_functions]]
-== Character String Functions
+=== Character String Functions
 
 These functions manipulate character strings and use a character value
 expression as an argument or return a result of a character data type.
@@ -97,7 +102,7 @@ Character string functions treat each single-byte or multi-byte character
 in an input string as one character, regardless of the byte length of
 the character.
 
-
+.Overview of Character String Functions
 [cols="25%,75%"]
 |===
 | <<ascii_function,ASCII Function>>                       | Returns the ASCII code value of the first character of a character value
@@ -108,8 +113,8 @@ CHARACTER_LENGTH.
 | <<code_value_function,CODE_VALUE Function>>             | Returns an unsigned integer that is the code point of the first
 character in a character value expression that can be associated with
 one of the supported character sets.
-| <<concat_function,CONCAT Function>>                     | Returns the concatenation of two character value expressions as a string
-value. You can also use the concatenation operator (\|\|).
+| <<concat_function,CONCAT Function>>                     | Returns the concatenation of two character value expressions as a string value. 
+You can also use the concatenation operator.
 | <<insert_function,INSERT Function>>                     | Returns a character string where a specified number of characters within
 the character string have been deleted and then a second character
 string has been inserted at a specified start position.
@@ -147,12 +152,11 @@ character set.
 See the individual entry for the function.
 
 [[datetime_functions]]
-== Datetime Functions
+=== Datetime Functions
 
 These functions use either a datetime value expression as an argument or
 return a result of datetime data type:
 
-[caption="Table 7-3 "]
 .Overview of DATETIME Functions
 [cols="25%,50%,25%"]
 |===
@@ -258,10 +262,11 @@ corresponding week of the year.
 See the individual entry for the function.
 
 [[lob_functions]]
-== LOB Functions
+=== LOB Functions
 
 Trafodion provides following LOB functions to process LOB data.
 
+.Overview of LOB Functions
 [cols="25%,75%"]
 |===
 | <<emptyblob_function,EMPTY_BLOB() Function>>   | Creates a dummy LOB handle of type BLOB.
@@ -276,10 +281,11 @@ Trafodion provides following LOB functions to process LOB data.
 |===
 
 [[mathematical_functions]]
-== Mathematical Functions
+=== Mathematical Functions
 
 Use these mathematical functions within an SQL numeric value expression:
 
+.Overview of Mathematical Functions
 [cols="25%,75%"]
 |===
 | <<abs_function,ABS Function>>         | Returns the absolute value of a numeric value expression.
@@ -315,9 +321,10 @@ returns 0. If value is greater than zero, returns 1.
 See the individual entry for the function.
 
 [[encryption_functions]]
-== Encryption Functions
+=== Encryption Functions
 Use these functions within an SQL value expression to do data encryption or hashing:
 
+.Overview of Encryption Functions
 [cols="25%,75%"]
 |===
 | <<md5_function,MD5 Function>>         | Returns MD5 checksum
@@ -326,7 +333,7 @@ Use these functions within an SQL value expression to do data encryption or hash
 |===
 
 [[sequence_functions]]
-== Sequence Functions
+=== Sequence Functions
 
 Sequence functions operate on ordered rows of the intermediate result
 table of a SELECT statement that includes a SEQUENCE BY clause. Sequence
@@ -342,8 +349,9 @@ sorted result set must be available to compute the result of the
 sequence function.
 
 [[difference_sequence_functions]]
-=== Difference sequence functions
+==== Difference sequence functions
 
+.Overview of Difference Sequence Functions
 [cols="25%,75%"]
 |===
 | <<diff1_function,DIFF1 Function>> | Calculates differences between values of a column expression in the current row and previous rows.
@@ -351,8 +359,9 @@ sequence function.
 |===
 
 [[moving_sequence_functions]]
-=== Moving sequence functions
+==== Moving sequence functions
 
+.Overview of Moving Sequence Functions
 [cols="25%,75%"]
 |===
 | <<movingcount_function,MOVINGCOUNT Function>>       | Returns the number of non-null values of a column expression in the current window.
@@ -363,9 +372,10 @@ sequence function.
 | <<movingvariance_function,MOVINGVARIANCE Function>> | Returns the variance of non-null values of a column expression in the current window.
 |===
 
-Offset sequence function
-=== Offset sequence function
+[[offset_sequence_function]]
+==== Offset sequence function
 
+.Overview of Offset Sequence Functions
 [cols="25%,75%"]
 |===
 | <<offset_function,OFFSET Function>> | Retrieves columns from previous rows.
@@ -373,8 +383,9 @@ Offset sequence function
 
 <<<
 [[running_sequence_functions]]
-=== Running sequence functions
+==== Running sequence functions
 
+.Overview of Running Sequence Functions
 [cols="25%,75%"]
 |===
 | <<runningavg_function,RUNNINGAVG Function>>             | Returns the average of non-null values of a column expression up to and including the current row.
@@ -388,8 +399,9 @@ Offset sequence function
 |===
 
 [[other_sequence_functions]]
-=== Other sequence functions
+==== Other sequence functions
 
+.Overview of Other Sequence Functions
 [cols="25%,75%"]
 |===
 | <<lastnotnull_function,LASTNOTNULL Function>>               | Returns the last non-null value for the specified column expression. If only null values have been returned, returns null.
@@ -402,11 +414,11 @@ See <<sequence_by_clause,SEQUENCE BY Clause>> and the individual entry for each 
 
 <<<
 [[other_functions_and_expressions]]
-== Other Functions and Expressions
+=== Other Functions and Expressions
 
 Use these other functions and expressions in an SQL value expression:
 
-
+.Overview of Other Functions and Expressions
 [cols="25%,75%"]
 |===
 | <<authname_function,AUTHNAME Function>>                         | Returns the authorization name associated with the specified authorization ID number.
@@ -432,6 +444,13 @@ associated with the specified user ID number.
 |===
 
 See the individual entry for the function.
+
+[[standard_normalization]]
+=== Standard Normalization
+
+For datetime functions, the definition of standard normalization is: If
+the ending day of the resulting date is invalid, the day will be rounded
+DOWN to the last day of the result month.
 
 <<<
 [[abs_function]]
