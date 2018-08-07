@@ -29,7 +29,7 @@
 This section describes the syntax and semantics of specific functions
 and expressions that you can use in {project-name} SQL statements. The
 functions and expressions are categorized according to their
-functionality:
+functionality.
 
 [[categories]]
 == Categories
