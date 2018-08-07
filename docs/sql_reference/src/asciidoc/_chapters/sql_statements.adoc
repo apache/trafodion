@@ -2278,19 +2278,19 @@ pic[ture] x^1^ +
 nchar +
 nchar varying +
 national char[acter] +
-national char[acter] varying | java.lang.string
-| date | java.sql.date
-| time | java.sql.time
-| timestamp | java.sql.timestamp
+national char[acter] varying | java.lang.String
+| date | java.sql.Date
+| time | java.sql.Time
+| timestamp | java.sql.Timestamp
 | dec[imal]^2^ +
 pic[ture] s9^3^ +
-numeric (including numeric with a precision greater than eighteen)^2^ | java.math.bigdecimal
+numeric (including numeric with a precision greater than eighteen)^2^ | java.math.Bigdecimal
 | smallint^2^ | short
-| int[eger]^2^ | int or java.lang.integer^4^
-| largeint^2^ | long or java.lang.long^4^
-| float | double or java.lang.double^4^
-| real | float or java.lang.float^4^
-| double precision | double or java.lang.double^4^
+| int[eger]^2^ | int or java.lang.Integer^4^
+| largeint^2^ | long or java.lang.Long^4^
+| float | double or java.lang.Double^4^
+| real | float or java.lang.Float^4^
+| double precision | double or java.lang.Double^4^
 |===
 +
 1. the trafodion database stores pic x as a char data type.
@@ -2321,13 +2321,13 @@ specifies the signature of the SPJ method and consists of:
 +
 `([_java-datatype_[, _java-datatype_]&#8230;])`
 +
-The Java signature is necessary only if you want to specify a Java wrapper class (for example, `java.lang.integer`) instead of a java
+The Java signature is necessary only if you want to specify a Java wrapper class (for example, `java.lang.Integer`) instead of a java
 primitive data type (for example, `int`). An SQL data type maps to a Java primitive data type by default.
 +
-The Java signature is case-sensitive and must be placed within parentheses, such as `(java.lang.integer, java.lang.integer`).
+The Java signature is case-sensitive and must be placed within parentheses, such as `(java.lang.Integer, java.lang.Integer`).
 The signature must specify each of the parameter data types in the order they appear in the Java method definition within
 the class file. Each Java data type that corresponds to an out or inout parameter must be followed by empty square
-brackets (`[ ]`), such as `java.lang.integer[]`.
+brackets (`[ ]`), such as `java.lang.Integer[]`.
 +
 <<<
 *** `_java-datatype_`

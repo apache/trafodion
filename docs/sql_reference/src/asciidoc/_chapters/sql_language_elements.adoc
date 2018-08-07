@@ -386,7 +386,7 @@ depending on precision
 |Numeric (extended numeric precision)^7^ | NUMERIC (precision 19 to 128)  | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
 length of 8 bytes.
 .3+| Floating point number^7^ | FLOAT[(_precision_)] | Floating point number (64 bits); precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
-| REAL                  | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/ 3.40282347e+38; stored in 4 bytes
+| REAL                  | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/- 3.40282347e+38; stored in 4 bytes
 | DOUBLE PRECISION      | Floating-point numbers (64 bits) with 1 through 52 bits of precision (52 bits of binary precision and 1 bits of exponent) | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
 | Decimal number^6^        | DECIMAL (1,_scale_) to DECIMAL (18,_scale_)     | Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
 | 1 to 18 digits. Byte length equals the number of digits. Sign is stored as the first bit of the leftmost byte.
@@ -3217,10 +3217,10 @@ The IN predicate is true if and only if either of these is true:
 * The result of the `_row-value-constructor_` (a row or sequence of
 values) is equal to any row of column values specified by
 `_table-subquery_`.
-
++
 A table subquery is a query expression and can be specified as a form of
 a simple table; for example, as the VALUES keyword followed by a list of
-row values. See <<select_statement,SELECT Statement>>.
+row values. For more information, see <<select_statement,SELECT Statement>>.
 
 * The result of the `_row-value-constructor_` (a single value) is equal to
 any of the values specified by the list of expressions
