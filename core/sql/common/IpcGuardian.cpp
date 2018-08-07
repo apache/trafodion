@@ -4107,11 +4107,10 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
 				      CollHeap *diagsHeap)
 {
   SB_Phandle_Type procHandle;
-  NSK_PORT_HANDLE procHandleCopy;
   short usedlength;
   char processName[50];
   char *tmpProcessName;
-  short rc;
+  int rc;
 
   if (processName_ == NULL)
   {
@@ -4131,8 +4130,7 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
   short i = 0;
   while (i < 3)
   {
-    int gprc = 0;
-    gprc = get_phandle_with_retry(tmpProcessName, &procHandle);
+    rc = get_phandle_with_retry(tmpProcessName, &procHandle);
     if (rc != FEOK)
     {
       serverState_ = ERROR_STATE;
