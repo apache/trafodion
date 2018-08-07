@@ -64,6 +64,13 @@ void OutputInfo::insert(Lng32 index, char * data, Lng32 len)
   len_[index] = len;
 }
 
+void OutputInfo::insert(Lng32 index, char * data, Lng32 len, Lng32 type, Lng32 *indOffset , Lng32 *varOffset )
+{
+  data_[index] = data;
+  len_[index] = len;
+  type_[index] = type;
+}
+
 char * OutputInfo::get(Lng32 index)
 {
   if (index < numEntries_)
@@ -78,6 +85,19 @@ short OutputInfo::get(Lng32 index, char* &data, Lng32 &len)
     {
       data = data_[index];
       len = len_[index];
+      return 0;
+    }
+
+  return -1;
+}
+
+short OutputInfo::get(Lng32 index, char* &data, Lng32 &len, Lng32 &type, Lng32 *indOffset , Lng32 *varOffset )
+{
+  if (index < numEntries_)
+    {
+      data = data_[index];
+      len = len_[index];
+      type = type_[index];
       return 0;
     }
 
@@ -1278,8 +1298,9 @@ short ExeCliInterface::fetchAllRows(Queue * &infoList,
 	{
 	  char * ptr;
 	  Lng32   len;
+          Lng32   type;
+          getAttributes(j+1, FALSE, type, len, NULL, NULL);
 	  getPtrAndLen(j+1, ptr, len);
-
 	  NABoolean nullTerminate = 
 	    DFS2REC::is8bitCharacter(outputAttrs_[j].fsDatatype_);
 
@@ -1301,7 +1322,7 @@ short ExeCliInterface::fetchAllRows(Queue * &infoList,
 	    if (nullTerminate)
 	      r[len] = 0;
 	  }
-	  oi->insert(j, r, len);
+	  oi->insert(j, r, len, type);
 	}
 	
 	infoList->insert(oi);
