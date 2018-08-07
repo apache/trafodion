@@ -310,7 +310,8 @@ public class HDFSClient
    // If the range has a length more than the buffer length, the range is chunked
    // in HdfsScan
    public HDFSClient(int bufNo, int ioByteArraySizeInKB, int rangeNo, String filename, ByteBuffer buffer, long position, 
-                int length, short compressionType, boolean sequenceFile, byte recDelimiter, CompressionInputStream inStream) throws IOException
+                int length, short compressionType, boolean sequenceFile, byte recDelimiter, CompressionInputStream inStream) 
+                throws IOException, EOFException
    {
       bufNo_ = bufNo; 
       rangeNo_ = rangeNo;
@@ -363,7 +364,7 @@ public class HDFSClient
       while reading the rows. The columns in the value is delimited by column delimiter 001(octal).
    */ 
 
-   public void initSequenceFileRead() throws IOException
+   public void initSequenceFileRead() throws IOException, EOFException
    {
       SequenceFile.Reader.Option seqPos = SequenceFile.Reader.start(pos_);
       SequenceFile.Reader.Option seqLen = SequenceFile.Reader.length(lenRemain_);
