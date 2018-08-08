@@ -428,6 +428,7 @@ the expressions have NULL values, the function returns a NULL value.
 | <<nvl_function,NVL Function>>                                   | Returns the value of the first operand unless it is NULL, in which case it returns the value of the second operand.
 | <<user_function,USER Function>>                                 | Returns either the database user name of the current user who invoked the function or the database user name
 associated with the specified user ID number.
+| <<sys_guid_function,SYS_GUID Function>>                         | Returns a globally unique identifier.
 |===
 
 See the individual entry for the function.
@@ -10596,6 +10597,37 @@ SELECT USER (33333) FROM (values(1)) x(a);
 (EXPR)
 -------------------------
 DB ROOT
+
+--- 1 row(s) selected.
+```
+
+<<<
+[[sys_guid_function]]
+== SYS_GUID Function
+SYS_GUID returns a global unique identifier. The identifier is a 16-byte value
+tranformed into HEX format. 
+This function is for Oracle compatiblity.
+
+```
+SYS_GUID ()
+```
+
+[[data_type_of_the_result]]
+==== Data Type of the Result
+
+The data type of the result is always CHAR(32).
+
+[[examples_of_sys_guid]]
+=== Examples of SYS_GUID 
+
+* Returns a global unique identifier
++
+```
+SELECT SYS_GUID() AS ID FROM dual;
+
+ID
+-------------------------
+ 5D35B676r5F758E6E0E40F00F0835536
 
 --- 1 row(s) selected.
 ```
