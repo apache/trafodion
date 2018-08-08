@@ -89,7 +89,7 @@ NATIONAL CHAR[ACTER] VARYING | java.lang.String
 | TIMESTAMP | java.sql.Timestamp
 | DEC[IMAL]^2^ +
 PIC[TURE] S9^3^ +
-NUMERIC (including numeric with a precision greater than eighteen)^2^ | java.math.Bigdecimal
+NUMERIC (including numeric with a precision greater than eighteen)^2^ | java.math.BigDecimal
 | SMALLINT^2^ | short
 | INT[EGER]^2^ | int or java.lang.Integer^4^
 | LARGEINT^2^ | long or java.lang.Long^4^
