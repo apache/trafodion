@@ -2284,7 +2284,7 @@ national char[acter] varying | java.lang.String
 | timestamp | java.sql.Timestamp
 | dec[imal]^2^ +
 pic[ture] s9^3^ +
-numeric (including numeric with a precision greater than eighteen)^2^ | java.math.Bigdecimal
+numeric (including numeric with a precision greater than eighteen)^2^ | java.math.BigDecimal
 | smallint^2^ | short
 | int[eger]^2^ | int or java.lang.Integer^4^
 | largeint^2^ | long or java.lang.Long^4^

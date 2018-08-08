@@ -29,7 +29,7 @@
 This section describes the syntax and semantics of specific functions
 and expressions that you can use in {project-name} SQL statements. The
 functions and expressions are categorized according to their
-functionality.
+functionality:
 
 [[categories]]
 == Categories
@@ -39,7 +39,9 @@ Use these types of functions within an SQL value expression:
 ** Aggregate (Set) Functions
 ** Character String Functions
 ** Datetime Functions
+** LOB Functions
 ** Mathematical Functions
+** Encryption Functions
 ** Sequence Functions
 ** Other Functions and Expressions
 
