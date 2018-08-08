@@ -177,8 +177,12 @@ public class HdfsScan
          } catch (EOFException e)
          {
             // Skip this range
-            currRange_++; 
-            scheduleHdfsScanRange(bufNo, 0); 
+            if (currRange_ == (hdfsScanRanges_.length-1)) 
+                scanCompleted_ = true;
+            else {
+               currRange_++; 
+               scheduleHdfsScanRange(bufNo, 0); 
+            }
          } 
       }
    } 
