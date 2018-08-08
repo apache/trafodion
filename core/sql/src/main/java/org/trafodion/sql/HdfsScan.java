@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.io.EOFException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
@@ -168,11 +169,17 @@ public class HdfsScan
       if (! scanCompleted_) {
          if (logger_.isDebugEnabled())
             logger_.debug(" CurrentRange " + hdfsScanRanges_[currRange_].tdbRangeNum_ + " LenRemain " + currRangeLenRemain_ + " BufNo " + bufNo); 
-         hdfsClient_[bufNo] = new HDFSClient(bufNo, ioByteArraySizeInKB_, hdfsScanRanges_[currRange_].tdbRangeNum_, 
+         try {
+             hdfsClient_[bufNo] = new HDFSClient(bufNo, ioByteArraySizeInKB_, hdfsScanRanges_[currRange_].tdbRangeNum_, 
 			hdfsScanRanges_[currRange_].filename_, 
                         buf_[bufNo], currRangePos_, readLength, 
                         hdfsScanRanges_[currRange_].compressionType_, sequenceFile_, recDelimiter_, currInStream_);
-                        
+         } catch (EOFException e)
+         {
+            // Skip this range
+            currRange_++; 
+            scheduleHdfsScanRange(bufNo, 0); 
+         } 
       }
    } 
   

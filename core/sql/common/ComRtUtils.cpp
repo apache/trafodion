@@ -1075,11 +1075,10 @@ Int16 getBDRClusterName(char *bdrClusterName)
   return error;
 }
  
-SB_Phandle_Type *get_phandle_with_retry(char *pname, short *fserr)
+int get_phandle_with_retry(char *pname, SB_Phandle_Type *phandle)
 {
   Int32 retrys = 0;
   int lv_fserr = FEOK;
-  SB_Phandle_Type *phandle = NULL;
   const Int32 NumRetries = 10;
   timespec retryintervals[NumRetries] = {
                                {  0, 10*1000*1000 }  // 10 ms
@@ -1096,7 +1095,7 @@ SB_Phandle_Type *get_phandle_with_retry(char *pname, short *fserr)
 
   for (;;)
   {
-    phandle = msg_get_phandle (pname, &lv_fserr);
+    lv_fserr = XFILENAME_TO_PROCESSHANDLE_(pname, strlen(pname), phandle);
     if (retrys >= NumRetries)
       break;
     if ((lv_fserr == FEPATHDOWN) ||
@@ -1105,11 +1104,7 @@ SB_Phandle_Type *get_phandle_with_retry(char *pname, short *fserr)
     else
       break;
   }
-
-  if (fserr)
-    *fserr = (short) lv_fserr;
-
- return phandle;
+  return lv_fserr;
 }
 
 // A function to return the string "UNKNOWN (<val>)" which can be
