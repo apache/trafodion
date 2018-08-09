@@ -267,12 +267,6 @@ clause must be a numeric value or a string value.
 SELECT 'abcde' (FORMAT 'XXX') FROM (VALUES(1)) t;
 ```
 
-* The format string 'YYYY-MM_DD' in this example will yield a sample result of 2008-07-17.
-+
-```
-SELECT CAST('2008-07-17' AS DATE) (FORMAT 'YYYY-MM-DD') FROM (VALUES(1)) t;
-```
-
 * The format string 'MM/DD/YYYY' in this example will yield a sample result of 07/17/2008.
 +
 ```
@@ -301,24 +295,6 @@ SELECT '2008-07-17' (DATE, FORMAT 'YYYYMMDD') FROM (VALUES(1)) t;
 +
 ```
 SELECT '2008-07-17' (DATE, FORMAT 'DD.MM.YYYY') FROM (VALUES(1)) t;
-```
-
-* The format string 'DD-MMM-YYYY' in this example will yield a sample result of 17–JUL-2008.
-+
-```
-SELECT '2008-07-17' (DATE, FORMAT 'DD-MMM-YYYY') FROM (VALUES(1)) t;
-```
-
-* The format string '99:99:99:99' in this example will yield a sample result of 12:34:56:78.
-+
-```
-SELECT 12345678 (FORMAT '99:99:99:99') FROM (VALUES(1)) t;
-```
-
-* The format string '-99:99:99:99' in this example will yield a sample result of -12:34:56:78.
-+
-```
-SELECT (-12345678) (FORMAT '-99:99:99:99') FROM (VALUES(1)) t;
 ```
 
 <<<
