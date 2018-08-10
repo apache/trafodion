@@ -13972,32 +13972,6 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			  AssignmentHostVars->clear();
 			  $$ = temp;
 			}
-/*
-		|query_select_list from_clause startwith connect_by where_clause access_type optional_lock_mode
-			{
-                          CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-                          NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-                                                      , PARSERHEAP() // in  - NAMemory *
-                                                      );
-                          //remove ';' 
-                          UInt32 pos = 
-                            stmt->index(";", 0, NAString::ignoreCase);
-                          stmt->remove(pos);
-
-                          ExeUtilConnectby *euc = new (PARSERHEAP()) 
-                             ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()), (char*) stmt->data(), 
-                                        stmtCharSet, $2,PARSERHEAP());
- 
-                          $2->addConnectByExprTree($4);
-                          $2->addStartWithExprTree($3);
-  			  RelRoot *temp = new (PARSERHEAP())
-			    RelRoot(euc, REL_ROOT , $1);
-                          euc->connectByTree_ = $4;
-                          if($3 == NULL)
-                            euc->hasStartWith_ = FALSE;
-                          $$ = temp;
-}
-*/
 
 //++ MV OZ
 // type item 

@@ -2505,62 +2505,7 @@ RelExpr *RelExpr::bindSelf(BindWA *bindWA)
     if (bindWA->inViewWithCheckOption())
       bindWA->predsOfViewWithCheckOption() += selectionPred();
   }
-#if 0
-  ItemExpr *startWithTree = removeStartWithTree();
-  if (startWithTree) {
-    bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
-    startWithTree->convertToValueIdSet(getStartWith(), bindWA, ITM_AND);
-    bindWA->getCurrentScope()->context()->inWhereClause() = FALSE;
 
-    if (bindWA->errStatus()) return this;
-
-    // If this is an embedded insert, then subquery predicates are not
-    // allowed.  
-    // For example:  To handle this query and issue an error stating
-    //               subqueries are not allowed in embedded inserts
-    // 
-    //  select a from (insert into t901t01 values(22,22,222))t(a,b,c)
-    //  where t.a IN (select m from t901t03 where t901t03.m = 77);
-
-    if (getGroupAttr()->isEmbeddedInsert())
-    {
-       if (!getStartWith().isEmpty() && getStartWith().containsSubquery())
-       {
-         *CmpCommon::diags() << DgSqlCode(-4337);
-         bindWA->setErrStatus();
-         return this;
-       }
-    }  
-  }
-
-  ItemExpr *connectByTree = removeConnectByTree();
-  if (connectByTree) {
-
-    bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
-    connectByTree->convertToValueIdSet(getConnectBy(), bindWA, ITM_AND);
-    bindWA->getCurrentScope()->context()->inWhereClause() = FALSE;
-
-    if (bindWA->errStatus()) return this;
-
-    // If this is an embedded insert, then subquery predicates are not
-    // allowed.  
-    // For example:  To handle this query and issue an error stating
-    //               subqueries are not allowed in embedded inserts
-    // 
-    //  select a from (insert into t901t01 values(22,22,222))t(a,b,c)
-    //  where t.a IN (select m from t901t03 where t901t03.m = 77);
-
-    if (getGroupAttr()->isEmbeddedInsert())
-    {
-       if (!getConnectBy().isEmpty() && getConnectBy().containsSubquery())
-       {
-         *CmpCommon::diags() << DgSqlCode(-4337);
-         bindWA->setErrStatus();
-         return this;
-       }
-    }  
-   }
-#endif
   // ++MV
   // Bind the uniqueColumnsTree expression.
   //
@@ -4643,19 +4588,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 
   // make sure child of root is a groupby node or a sequence node 
   // whose child is a group by node
-  if(child(0))
-{
-  if (child(0)->getOperatorType() != REL_GROUPBY)
-  {
-    
-    if (child(0)->getOperatorType() != REL_SEQUENCE ) return this;
-    if (child(0)->child(0) )
-        if (child(0)->child(0) && child(0)->child(0)->getOperatorType()!=REL_GROUPBY)
+  if (child(0)->getOperatorType() != REL_GROUPBY && 
+        (child(0)->getOperatorType() != REL_SEQUENCE || 
+          (child(0)->child(0) && child(0)->child(0)->getOperatorType()!=REL_GROUPBY)))
     return this;
-  }
-}
-  else
-    return this;
+
   GroupByAgg * grby;
   RelSequence * seqNode=NULL;
 
