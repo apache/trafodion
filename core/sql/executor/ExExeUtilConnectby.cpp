@@ -222,7 +222,7 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
   }
 
   if (evalRetCode == ex_expr::EXPR_TRUE)
-{
+  {
 
   char pathBuf[CONNECT_BY_MAX_PATH_SIZE];
   memset(pathBuf, 0, CONNECT_BY_MAX_PATH_SIZE);
@@ -575,7 +575,7 @@ short ExExeUtilConnectbyTcb::work()
          
          if( exeUtilTdb().hasIsLeaf_ == TRUE)
          {
-            Queue * rootRow = new(getHeap()) Queue(getHeap()) ;  //TODO DELETE
+            Queue * rootRow = new(getHeap()) Queue(getHeap()) ;  
             rc = cliInterface()->fetchAllRows(rootRow, nq11.data(), 0, FALSE, FALSE, TRUE);
             if (rc < 0)
             {
@@ -588,7 +588,7 @@ short ExExeUtilConnectbyTcb::work()
             for(int i1 = 0; i1 < rootRow->numEntries(); i1 ++)
             {
               OutputInfo *vi = (OutputInfo*)rootRow->getNext();
-              vi->get(0, ptr, len, fsDatatype); //, NULL, NULL);
+              vi->get(0, ptr, len, fsDatatype, NULL, NULL);
               connectByStackItem *it = new connectByStackItem();
               
               char *tmp = new(getHeap()) char[len];
@@ -601,7 +601,8 @@ short ExExeUtilConnectbyTcb::work()
               if (exeUtilTdb().hasPath_ == TRUE) 
               {
                  vi->get(1, ptr1, len1);
-                 char *tmp1 = new(getHeap()) char[len1];  
+                 char *tmp1 = new(getHeap()) char[len1+1];  
+                 memset(tmp1,0, len1+1);
                  memcpy(tmp1,ptr1,len1);
                  it->pathLen = len1;
                  it->pathItem = tmp1;
@@ -654,7 +655,8 @@ short ExExeUtilConnectbyTcb::work()
 		   if (exeUtilTdb().hasPath_ == TRUE) 
 		   {
 		     cliInterface()->getPtrAndLen(2, ptr1, len1);
-		     char *tmp1 = new(getHeap()) char[len1];  
+		     char *tmp1 = new(getHeap()) char[len1+1];  
+                     memset(tmp1,0,len1+1);
 		     memcpy(tmp1,ptr1,len1);
 		     it->pathLen = len1;
 		     it->pathItem = tmp1;
@@ -707,7 +709,8 @@ short ExExeUtilConnectbyTcb::work()
 
        for(int i=0; i< seedNum; )  {
          
-         sprintf(q1,"SELECT %s ,cast (%s as VARCHAR(3000) ) , *, cast( %d as INT) FROM %s WHERE " ,(exeUtilTdb().parentColName_).data(), (exeUtilTdb().pathColName_).data(), currLevel_,(exeUtilTdb().connTableName_).data() );
+         sprintf(q1,"SELECT %s ,cast (%s as VARCHAR(3000) ) , *, cast( %d as INT) FROM %s WHERE " ,
+                    (exeUtilTdb().parentColName_).data(), (exeUtilTdb().pathColName_).data(), currLevel_,(exeUtilTdb().connTableName_).data() );
          nq21 = q1;
          nq21.append((exeUtilTdb().childColName_).data()); 
          nq21.append(" in ( ");
@@ -751,7 +754,6 @@ short ExExeUtilConnectbyTcb::work()
            step_ = NEXT_LEVEL_;
             break;
          }
-//printf("q2 is %s\n", nq21.data());
              if(exeUtilTdb().hasIsLeaf_ == TRUE)
              {
 		    Queue * allrows = new(getHeap()) Queue(getHeap()) ;  //TODO DELETE
@@ -791,7 +793,8 @@ short ExExeUtilConnectbyTcb::work()
 		      if (exeUtilTdb().hasPath_ == TRUE) 
 		      {
 		        vi->get(1, ptr1, len1);
-		        char *tmp1 = new(getHeap()) char[len1];  
+		        char *tmp1 = new(getHeap()) char[len1+1];  
+                        memset(tmp1,0,len1+1);
 		        memcpy(tmp1,ptr1,len1);
 		        it->pathLen = len1;
 		        it->pathItem = tmp1;
@@ -847,7 +850,8 @@ short ExExeUtilConnectbyTcb::work()
 		   if (exeUtilTdb().hasPath_ == TRUE) 
 		   {
 		     cliInterface()->getPtrAndLen(2, ptr1, len1);
-		     char *tmp1 = new(getHeap()) char[len1];  
+		     char *tmp1 = new(getHeap()) char[len1+1];  
+		     memset(tmp1,0,len1+1);
 		     memcpy(tmp1,ptr1,len1);
 		     it->pathLen = len1;
 		     it->pathItem = tmp1;
@@ -886,6 +890,8 @@ short ExExeUtilConnectbyTcb::work()
          if(exeUtilTdb().hasIsLeaf_ == TRUE)
          {
             //release prevQueue_
+            for(int i = 0 ; i < prevQueue_->numEntries(); i ++)
+              NADELETE((Queue*)prevQueue_->get(i), Queue, getHeap());
             NADELETE(prevQueue_, Queue, getHeap());
             prevQueue_ = tmpPrevQueue_;
          }
@@ -931,7 +937,7 @@ short ExExeUtilConnectbyTcb::work()
        case NEXT_ROOT_:
          {
             currRootId_++;
-            currLevel_ = 0;
+            currLevel_ = 1;
             currQueue_ = getCurrQueue(currRootId_, seedQueue_);
             //clear currArray
             for(int i =0; i< CONNECT_BY_MAX_LEVEL_SIZE; i++)
@@ -939,7 +945,8 @@ short ExExeUtilConnectbyTcb::work()
                if(currArray[i] != NULL) //comehere
                  NADELETE(currArray[i], Queue, getHeap());
             }
-            if(currQueue_ == NULL) step_ = DONE_;
+            if(currQueue_ == NULL) 
+              step_ = DONE_;
             else
               step_ = DO_CONNECT_BY_;
          }
@@ -951,9 +958,6 @@ short ExExeUtilConnectbyTcb::work()
 	      return WORK_OK;
             if (handleError())
               return WORK_OK;
-
-
-	    step_ = DONE_;
    
 	    step_ = DONE_;
 	  }

@@ -1176,7 +1176,10 @@ public:
   }
 
   NABoolean containsIsLeaf( ItemExpr * lst) {
+    if(lst == NULL) 
+      return FALSE;
     Int32 arity = lst->getArity();
+
     if(lst->getOperatorType() == ITM_REFERENCE)
     {
       if((((ColReference*)lst)->getColRefNameObj()).getColName() == "CONNECT_BY_ISLEAF")

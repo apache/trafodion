@@ -1416,6 +1416,11 @@ public:
   NABoolean expandShortRows()
   {  return ((flags_ & EXPAND_SHORT_ROWS) != 0); }
 
+  void setHasConnectByFlag(NABoolean val)
+  { (val ? (flags_ |= HAS_CONNECT_BY) : (flags_ &= ~HAS_CONNECT_BY)); }
+
+  NABoolean hasConnectByFlag()
+  {  return ((flags_ & HAS_CONNECT_BY) != 0); }
   // For compressed internal format.
   // At codegen some nodes will switch from compressed internal format to
   // the exploded format when they are directly beneath the root node.
@@ -1444,6 +1449,7 @@ private:
   enum Flags {
     EXPAND_SHORT_ROWS  = 0x00000001     // expand short rows when added columns
    ,PARENT_IS_ROOT     = 0x00000002     // compressed internal format
+   ,HAS_CONNECT_BY     = 0x00000004     // compressed internal format
   };
 
   // every relational expression node has the ability to perform

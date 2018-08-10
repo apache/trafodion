@@ -600,10 +600,6 @@ public:
   void setForceInverseOrder(NABoolean v=TRUE)
   { (v ? scanFlags_ |= FORCE_INVERSE_ORDER : scanFlags_ &= ~FORCE_INVERSE_ORDER); }
 
-  NABoolean hasConnectBy() const { return (scanFlags_ & HAS_CONNECT_BY) != 0; }
-  void setHasConnectBy(NABoolean v=TRUE)
-  { (v ? scanFlags_ |= HAS_CONNECT_BY: scanFlags_ &= ~HAS_CONNECT_BY); }
-
   void setExtraOutputColumns(ValueIdSet outputCols)
     { extraOutputColumns_ = outputCols; }
   const ValueIdSet& getExtraOutputColumns() const
@@ -691,8 +687,7 @@ private:
   // operation (ex., UPDATE becomes UPDATE(SCAN) in parser),
   // then no security check is needed.
   enum ScanFlags { NO_SECURITY_CHECK    = 0x0001,
-		   FORCE_INVERSE_ORDER  = 0x0002,
-		   HAS_CONNECT_BY       = 0x0004};
+		   FORCE_INVERSE_ORDER  = 0x0002};
 
   Cardinality      baseCardinality_;   // from table statistics
 

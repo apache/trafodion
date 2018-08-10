@@ -93,7 +93,7 @@ DEPID        DEPNAME                                                           U
 --- 5 row(s) selected.
 >>
 >>--nocycle test
->>SELECT  * , "CONNECT_BY_ISCYCLE" FROM t021t1 START WITH depid = 11 CONNECT BY NOCYCLE PRIOR DEPID = UPPERDEPID;
+>>SELECT  * , CONNECT_BY_ISCYCLE FROM t021t1 START WITH depid = 11 CONNECT BY NOCYCLE PRIOR DEPID = UPPERDEPID;
 
 DEPID        DEPNAME                                                           UPPERDEPID   CONNECT_BY_ISCYCLE
 -----------  ----------------------------------------------------------------  -----------  ------------------
@@ -144,4 +144,37 @@ DEPID        DEPNAME                                                           U
           1  world                                                                       ?
 
 --- 10 row(s) selected.
+>>
+>>--test isleaf: return only those leaf rows
+>>SELECT  *  FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID where CONNECT_BY_ISLEAF = 1;
+
+DEPID        DEPNAME                                                           UPPERDEPID
+-----------  ----------------------------------------------------------------  -----------
+
+          6  NY                                                                          3
+          8  ChangNing                                                                   5
+          9  JingAn                                                                      5
+         10  D1                                                                          7
+
+--- 4 row(s) selected.
+>>
+>>--test path
+>>SELECT  *, cast( SYS_CONNECT_BY_PATH(depname,'/') as char(30)) FROM t021t1 CONNECT BY PRIOR DEPID = UPPERDEPID ;
+
+DEPID        DEPNAME                                                           UPPERDEPID   (EXPR)
+-----------  ----------------------------------------------------------------  -----------  ------------------------------------------------------------------------------------------------------------------------
+
+          1  world                                                                       ?  world                                                                                                                   
+          2  china                                                                       1  world/china                                                                                                             
+          3  US                                                                          1  world/US                                                                                                                
+          4  UK                                                                          1  world/UK                                                                                                                
+          5  ShangHai                                                                    2  world/china/ShangHai                                                                                                    
+          6  NY                                                                          3  world/US/NY                                                                                                             
+          7  London                                                                      4  world/UK/London                                                                                                         
+          8  ChangNing                                                                   5  world/china/ShangHai/ChangNing                                                                                          
+          9  JingAn                                                                      5  world/china/ShangHai/JingAn                                                                                             
+         10  D1                                                                          7  world/UK/London/D1                                                                                                      
+
+--- 10 row(s) selected.
+>>
 >>log;

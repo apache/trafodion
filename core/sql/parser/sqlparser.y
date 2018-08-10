@@ -946,7 +946,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_PREFER_FOR_SCAN_KEY
 %token <tokval> TOK_PREPARE
 %token <tokval> TOK_PRESERVE            /* TD extension that HP wants to ignore */
-%token <tokval> TOK_PRIOR
+%token <stringval> PRIOR_IDENTIFIER 
 %token <tokval> TOK_PRIORITY
 %token <tokval> TOK_PRIORITY_DELTA
 %token <tokval> TOK_PROCEDURE
@@ -1257,7 +1257,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COMPONENTS
 %token <tokval> TOK_COMPRESSION
 %token <tokval> TOK_CONFIG              /* Tandem extension */
-%token <tokval> TOK_CONNECT              /* Tandem extension */
+%token <stringval> CONNECT_IDENTIFIER      /* Tandem extension */
 %token <tokval> TOK_CONSTRAINT
 %token <tokval> TOK_CONSTRAINTS
 %token <tokval> TOK_COPY
@@ -13303,7 +13303,7 @@ table_expression : from_clause where_clause sample_clause
                    SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
                    ((BiConnectBy*)$2)->where_clause = $3;
                    ((Scan*)$$)->setBiConnectBy( (BiConnectBy*)$2);
-                   ((Scan*)$$)->setHasConnectBy(TRUE);
+                   $$->setHasConnectByFlag(TRUE);
            }
 /* type relx */
 from_clause : TOK_FROM global_hint table_reference { $$ = $3; }
@@ -13312,24 +13312,24 @@ from_clause : TOK_FROM global_hint table_reference { $$ = $3; }
 				$$ = new (PARSERHEAP()) Join($1, $3, REL_JOIN);
 		      }
 
-startwith_clause :TOK_START_WITH predicate TOK_CONNECT TOK_BY predicate
+startwith_clause :TOK_START_WITH predicate CONNECT_IDENTIFIER TOK_BY predicate
                     {
                       $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$5);
                       //save the predicate text
                       $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
                     }
-                   |TOK_START_WITH predicate TOK_CONNECT TOK_BY TOK_NOCYCLE predicate
+                   |TOK_START_WITH predicate CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE predicate
                     {
                       $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$6);
                       //save the predicate text
                       $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
                       ((BiConnectBy*)$$)->setNoCycle(TRUE);
                     }
-                   |  TOK_CONNECT TOK_BY predicate
+                   |  CONNECT_IDENTIFIER TOK_BY predicate
                     {
                       $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
                     }
-                   |  TOK_CONNECT TOK_BY TOK_NOCYCLE predicate
+                   |  CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE predicate
                     {
                       $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$4);
                       ((BiConnectBy*)$$)->setNoCycle(TRUE);
@@ -13866,7 +13866,7 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
 /* type relx */
 query_spec_body : query_select_list table_expression access_type  optional_lock_mode
 			{
-                          if( ! ((Scan *)$2)->hasConnectBy()) {
+                          if( $2->hasConnectByFlag() == FALSE ) {
 
 			  // use a compute node to attach select list
 			  RelRoot *temp=  new (PARSERHEAP())
@@ -13923,6 +13923,7 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
                             }
                             else
                               euc->setHasConnectByPath(FALSE);
+                            if($1)
                             if( euc->containsIsLeaf($1) || euc->containsIsLeaf(((Scan*)$2)->getBiConnectBy()->where_clause) )
                             {
                                 euc->setHasIsLeaf(TRUE);                              
@@ -19296,7 +19297,7 @@ comparison_predicate :
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
      | row_subquery comparison_operator value_expression_list_paren
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
-     | TOK_PRIOR value_expression comparison_operator value_expression 
+     | PRIOR_IDENTIFIER value_expression comparison_operator value_expression 
 		      { $$ = new (PARSERHEAP()) BiConnectByRelat($3, $2, $4); 
                         NAString pn, cn;
                         $2->unparse(pn, PARSER_PHASE, USER_FORMAT);
@@ -19304,7 +19305,7 @@ comparison_predicate :
                         ( (BiConnectByRelat*)$$)->setParentColName((char*)pn.data());
                         ( (BiConnectByRelat*)$$)->setChildColName((char*)cn.data());  
                       }
-     | value_expression comparison_operator TOK_PRIOR value_expression 
+     | value_expression comparison_operator PRIOR_IDENTIFIER value_expression 
 		      { $$ = new (PARSERHEAP()) BiConnectByRelat($2, $1, $4); 
                         NAString pn, cn;
                         $4->unparse(pn, PARSER_PHASE, USER_FORMAT);
