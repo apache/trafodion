@@ -1304,10 +1304,19 @@ short ExeCliInterface::fetchAllRows(Queue * &infoList,
           Lng32   type;
           short nulind=0;
           short *indaddr=&nulind;
-          short **ind;
+          short **ind=&indaddr;
           getAttributes(j+1, FALSE, type, len, NULL, NULL);
 	  getPtrAndLen(j+1, ptr, len, ind);
-          if( ((char*)*ind)[0] == -1 ) // NULL value
+          NABoolean  nullableCol = TRUE, isNullVal = FALSE;
+          if(*ind == NULL) // It is not a nullable value
+            isNullVal = FALSE; 
+          else
+          {
+            if( ((char*)*ind)[0] == -1 ) // NULL value
+              isNullVal = TRUE;
+          }
+  
+          if(isNullVal) 
           {
             oi->insert(j, NULL, 0, type);
           }
