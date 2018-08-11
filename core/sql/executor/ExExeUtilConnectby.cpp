@@ -119,14 +119,15 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
   short retcode = 0, rc =0;
   char * ptr;
   Lng32   len;
-  short nullInd = 0;
-  short *ind ;
-  ind = &nullInd;
+  short nullind=0;
+  short *pn = &nullind;
+  short **ind = &pn;
   UInt32 vcActualLen = 0;
 
-  for (UInt32 i = 2; i < tDesc->numAttrs() - 2 ; i++) 
+  for (UInt32 i = 2; i < tDesc->numAttrs() - 2 ; i++)  //bypass first two columns and ignore the last three system columns
   {
-    cliInterface()->getPtrAndLen(i+1, ptr, len,&ind);
+    cliInterface()->getPtrAndLen(i+1, ptr, len,ind);
+    
     char * src = ptr;
     Attributes * attr = tDesc->getAttr(i-1);
     short srcType = 0;
@@ -134,7 +135,7 @@ short ExExeUtilConnectbyTcb::emitRow(ExpTupleDesc * tDesc, int level, int isleaf
     short valIsNull = 0;
     srcType = attr->getDatatype(); 
     srcLen = len;
-    if (len == 0  )  valIsNull = -1;
+    if (((char*)*ind)[0] == -1) valIsNull = -1;
 
     if (attr->getNullFlag())
       {
@@ -283,8 +284,8 @@ short ExExeUtilConnectbyTcb::emitPrevRow(ExpTupleDesc * tDesc, int level, int is
   char * ptr;
   Lng32   len;
   short nullInd = 0;
-  short *ind ;
-  ind = &nullInd;
+  short *ind = &nullInd ;
+  short **indadd = &ind;
   UInt32 vcActualLen = 0;
   //get the item
   Queue * thatone;
