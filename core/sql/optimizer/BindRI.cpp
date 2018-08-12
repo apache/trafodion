@@ -194,13 +194,16 @@ void AbstractRIConstraint::setKeyColumns(
   while (keyColDesc)
   {
     colDesc = keyColDesc->constrntKeyColsDesc();
-    column = new (heap) NAColumn(colDesc->colname, colDesc->position, NULL, heap);
+    if( colDesc->isSystemKey() )
+      column = new (heap) NAColumn(colDesc->colname, colDesc->position, NULL, heap, NULL, SYSTEM_COLUMN);
+    else
+      column = new (heap) NAColumn(colDesc->colname, colDesc->position, NULL, heap);
     keyColumns_.insertAt(i, column);
     i++;
     keyColDesc = keyColDesc->next; 
   }
 
-  CMPASSERT(desc->colcount == (signed)i);
+  CMPASSERT(desc->colcount == (signed)i); 
 }
 
 UniqueConstraint::~UniqueConstraint()
@@ -456,8 +459,8 @@ void RefConstraint::getPredicateText(NAString &text,
   text += "(";
   for (CollIndex i = 0; i < keyColumns.entries(); i++)
     {
-      if(isHiddenColumn(keyColumns[i]->getColName()) )
-        continue;
+      if(keyColumns[i]->isSystemColumn() )
+         continue;
       if (pos > 0)
       {
         text += ",";

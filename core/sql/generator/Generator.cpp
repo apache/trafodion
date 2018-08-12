@@ -1657,6 +1657,7 @@ TrafDesc * Generator::createKeyDescs(Int32 numKeys,
 
 TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
                                                ComTdbVirtTableKeyInfo * keyInfo,
+                                               ComTdbVirtTableColumnInfo * columnInfo,
                                                NAMemory * space)
 {
   TrafDesc * first_key_desc = NULL;
@@ -1687,6 +1688,9 @@ TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
 	tgt->colname = NULL;
       
       tgt->position   = src->tableColNum;
+      ComTdbVirtTableColumnInfo * info = columnInfo +  src->tableColNum;
+      if(info->columnClass == COM_SYSTEM_COLUMN )
+        tgt->setSystemKey(TRUE);
     }
 
   return first_key_desc;
@@ -2062,7 +2066,7 @@ TrafDesc * Generator::createVirtualTableDesc
 	  curr_constr_desc->constrntsDesc()->colcount = constrInfo[i].colCount;
 
 	  curr_constr_desc->constrntsDesc()->constr_key_cols_desc =
-	    Generator::createConstrKeyColsDescs(constrInfo[i].colCount, constrInfo[i].keyInfoArray, space);
+	    Generator::createConstrKeyColsDescs(constrInfo[i].colCount, constrInfo[i].keyInfoArray, columnInfo, space);
 
 	  if (constrInfo[i].ringConstrArray)
 	    {
