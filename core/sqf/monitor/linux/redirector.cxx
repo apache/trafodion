@@ -1550,7 +1550,7 @@ void CRedirector::stdinFd(int nid, int pid, int &pipeFd, char filename[],
             sprintf(buf, "[%s], unable to obtain file info for stdin file"
                     ", file=%s. Closing stdin pipe fd=%d\n",
                     method_name, filename, pipeFd );
-            mon_log_write(MON_REDIR_STDIN_FD_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_REDIR_STDIN_FD_1, SQ_LOG_DEBUG, buf);
 
             close ( pipeFd );
             pipeFd = -1;
