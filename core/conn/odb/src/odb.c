@@ -720,6 +720,7 @@ static void setan ( int eid, int tid, int nrag, char *rag[], char *ql );
 static int Omexec(int tid, int eid, int ten, int scn, SQLCHAR *Ocmd, char *label, char *dcat, char *dsch);
 static char *strup ( char *s );
 static char *strlo ( char *s );
+static char *strtrim(char *str);
 int mrinit ( void );
 void mrend ( void );
 char *mreadline ( char *prompt, unsigned int *length );
@@ -6979,6 +6980,8 @@ static void Oload(int eid)
                             fprintf(stderr, "odb [Oload(%d)] - DIV error for %s\n", __LINE__, (char *)etab[eid].td[j].Oname);
                             goto oload_exit;
                         }
+                    } else if (!strmicmp("trim", bp, 4)) {
+                        map[j].op = 17;
                     }
                     else {
                         map[j].op = 0;
@@ -7378,6 +7381,7 @@ static void Oload(int eid)
             }
             if ( fg & 0062 ) {                                  /* field/record ready or nofile */
                 oload_lastrow:
+                str[ifl] = '\0';
                 if ( rmap && rmap[k] >= 0 ) {
                     Odp = &etab[eid].Orowsetl[m*etab[eid].s + etab[eid].td[rmap[k]].start];
                     if ( fg & 0200 ) {                          /* embed file reading mode */
@@ -7541,6 +7545,10 @@ static void Oload(int eid)
                                 ifl = sprintf(str, tformat, dv);
                             }
                         }
+                            break;
+                        case 17: // trim
+                            str = strtrim(str);
+                            ifl = strlen(str);
                             break;
                         }
                         if ( ifl > (int)etab[eid].td[rmap[k]].Osize ) { /* prevent Orowsetl[] overflow */
@@ -10106,6 +10114,7 @@ static int Oloadbuff(int eid)
         clock_gettime(CLOCK_MONOTONIC, &tsp1);
 #endif
         Or = SQLExecute(thps[tid].Os) ;         /* Execute INSERT (load/copy) or tgt command */
+        SQLLEN tLastRow = -1;           /* this is special solution for China Union Pay, print only first error message for state 22003 */
 #ifdef ODB_PROFILE
         clock_gettime(CLOCK_MONOTONIC, &tsp2);
         ti += tspdiff ( &tsp1 , &tsp2 ) ;
@@ -10189,20 +10198,24 @@ static int Oloadbuff(int eid)
                         /* Ok, now we have an error message (Otxt), a five char SQLState (Ostate), 
                          * a native error code (Onative) and the rowset row number (Orown). Let's
                          * print everything to stderr. */
-                        fprintf(stderr, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
-                            tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
-                        if ( type == 'C' ) {        /* 'C' thread */
-                            if ( etab[eid].fdmp ) { /* dump ODBC buffer */
-                                MutexLock(&etab[gpar].pmutex);
-                                fprintf(etab[eid].fdmp, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
-                                    tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
-                                fprintf(etab[eid].fdmp, "[%d] Dumping row %lu in a block of %zu rows. ODBC row length = %zu\n",
-                                    tid, (unsigned long) Orown, etab[eid].ar, etab[par].s ) ;
-                                dumpbuff(etab[eid].fdmp, tid, (unsigned char *)(etab[eid].Orowsetl + (Orown - 1) * etab[par].s), etab[par].s, 0 );
-                                MutexUnlock(&etab[gpar].pmutex);
+                        if (tLastRow != Orown) {
+                            tLastRow = Orown;
+                            fprintf(stderr, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
+                                tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
+                            if (type == 'C') {        /* 'C' thread */
+                                if (etab[eid].fdmp) { /* dump ODBC buffer */
+                                    MutexLock(&etab[gpar].pmutex);
+                                    fprintf(etab[eid].fdmp, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
+                                        tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
+                                    fprintf(etab[eid].fdmp, "[%d] Dumping row %lu in a block of %zu rows. ODBC row length = %zu\n",
+                                        tid, (unsigned long)Orown, etab[eid].ar, etab[par].s);
+                                    dumpbuff(etab[eid].fdmp, tid, (unsigned char *)(etab[eid].Orowsetl + (Orown - 1) * etab[par].s), etab[par].s, 0);
+                                    MutexUnlock(&etab[gpar].pmutex);
+                                }
                             }
-                        } else {                /* either multi ('L') or single ('l') threaded loaders */
-                            prec('L', (unsigned char *)(etab[eid].Orowsetl + etab[par].s*(Orown-1)), eid);
+                            else {                /* either multi ('L') or single ('l') threaded loaders */
+                                prec('L', (unsigned char *)(etab[eid].Orowsetl + etab[par].s*(Orown - 1)), eid);
+                            }
                         }
                         break;
                     }
@@ -13297,6 +13310,21 @@ static char *strlo ( char *s )
         s++;
     }
     return(save);
+}
+
+static char *strtrim(char *str)
+{
+    // trim tailing space
+    size_t i = strlen(str) - 1;
+    while (str[i] == ' ') --i;
+    str[i + 1] = '\0';
+
+    // trim heading space
+    for (i = 0; str[i] == ' '; ++i);
+    if (i > 0)
+        strcpy(str, str + i);
+
+    return str;
 }
 
 /* expandtype:
