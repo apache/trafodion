@@ -183,7 +183,7 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
    
   if (! useLibHdfs_) {
      if (mode == EX_LOB_CREATE) {
-        hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), FALSE, FALSE); 
+        hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), FALSE, TRUE, FALSE); 
         if (hdfsClientRetcode != HDFS_CLIENT_OK)
             return LOB_DATA_FILE_CREATE_ERROR;
      }
@@ -1783,7 +1783,7 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     if (! useLibHdfs_) {
        if (size == 0) {
           // Delete and Create the Hdfs file by passing overwrite to TRUE
-          hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), TRUE, FALSE); 
+          hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), TRUE, FALSE, FALSE); 
           if (hdfsClientRetcode != HDFS_CLIENT_OK)
              return LOB_DATA_FILE_WRITE_ERROR;
           else {
@@ -1955,7 +1955,7 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
       return LOB_DATA_FILE_OPEN_ERROR;
     }
         
-  hdfsClientRetcode  = dstHdfsClient->hdfsCreate(tmpLobDataFile, TRUE, FALSE); 
+  hdfsClientRetcode  = dstHdfsClient->hdfsCreate(tmpLobDataFile, TRUE, FALSE, FALSE); 
   if (hdfsClientRetcode != HDFS_CLIENT_OK)
     {
       // extract substring small enough to fit in logBuf
@@ -2455,16 +2455,59 @@ Ex_Lob_Error ExLob::readDataToHdfsFile(char *tgtFileName,  Int64 offset, Int64 s
   Int64 srcLen = size;
   Int64 srcOffset = offset;
   Int64 tgtOffset = 0;
-  char *lobData = 0;
+  char *lobData = NULL;
   Int64 chunkSize = 0;	
   hdfsFile  fdTgtFile;
   char logBuf[4096];
+  writeOperLen = 0;
+  HdfsClient *tgtHdfsClient;
+  HDFS_Client_RetCode hdfsClientRetcode;
+  NABoolean overwrite = TRUE;
+  NABoolean append = FALSE;
+  Int64 remainLen = size;
+  Int64 pos = offset;
+  Int64 readLen;
   lobDebugInfo("In ExLob::readDataToHdfsFile",0,__LINE__,lobTrace_);
   // open and write to the target file
   int openFlags = O_WRONLY;
+  if (! useLibHdfs_) {
+     if (((LobTgtFileFlags)fileflags == Lob_Error_Or_Create) || 
+            ((LobTgtFileFlags)fileflags == Lob_Truncate_Or_Error))
+        overwrite = FALSE; 
+     if ((LobTgtFileFlags)fileflags == Lob_Append_Or_Error)
+        append = TRUE; 
+     tgtHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
+     ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
+     if (tgtHdfsClient->hdfsCreate(tgtFileName, overwrite, append, FALSE) !=  HDFS_CLIENT_OK)
+        return LOB_TARGET_FILE_OPEN_ERROR; 
+     Int32 bytesRead; 
+     Int32 bytesWritten;
+     while (remainLen > 0) 
+     {
+        if (remainLen > lobMaxChunkMemLen)
+           readLen = lobMaxChunkMemLen;
+        else
+           readLen = remainLen;
+        if (lobData == NULL)
+           lobData = new (lobGlobalHeap_) char[readLen];
+        bytesRead = hdfsClient_->hdfsRead(pos, lobData, readLen, hdfsClientRetcode);
+        if (hdfsClientRetcode == HDFS_CLIENT_OK) 
+            bytesWritten = tgtHdfsClient->hdfsWrite(lobData, bytesRead, hdfsClientRetcode, lobMaxChunkMemLen);
+        if (hdfsClientRetcode == HDFS_CLIENT_OK) {
+           pos += bytesRead;
+           remainLen -= bytesRead;
+           writeOperLen += bytesWritten;
+        } else {
+            NADELETEBASIC(lobData, lobGlobalHeap_);
+            HdfsClient::deleteInstance(tgtHdfsClient);
+            return LOB_DATA_READ_ERROR;
+        }   
+     }
+     HdfsClient::deleteInstance(tgtHdfsClient);
+     return LOB_OPER_OK; 
+  }
   if ((LobTgtFileFlags)fileflags == Lob_Append_Or_Error )
     openFlags |= O_APPEND;
-
   //hdfsFile fdTgtFile = hdfsOpenFile(fs_,tgtFileName, openFlags, 0,0,0);
   if (hdfsExists(fs_,tgtFileName) == 0)
     {

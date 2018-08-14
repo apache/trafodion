@@ -316,7 +316,6 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
      // instances have and we have exhausted all data content in the block.
      // We will keep reading if the current block does not contain 
      // any instance of the record separator.
-     // 
      hdfsFile file = 
                  hdfsOpenFile(fs, fileInfo->mName, 
                               O_RDONLY, 
@@ -324,7 +323,6 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
                               0, // replication, take the default size 
                               fileInfo->mBlockSize // blocksize 
                               ); 
-      
      if ( file != NULL ) {
         tOffset offset = 0;
         tSize bufLen = sampleBufferSize;
@@ -332,9 +330,9 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
 
         buffer[bufLen] = 0; // extra null at the end to protect strchr()
                             // to run over the buffer.
-   
+
         NABoolean sampleDone = FALSE;
-   
+
         Int32 totalSamples = 10;
         Int32 totalLen = 0;
         Int32 recordPrefixLen = 0;
@@ -342,13 +340,12 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
         while (!sampleDone) {
    
            tSize szRead = hdfsPread(fs, file, offset, buffer, bufLen);
-
            if ( szRead <= 0 )
               break;
 
            CMPASSERT(szRead <= bufLen);
-      
-           char* pos = NULL;
+
+            char* pos = NULL;
    
              //if (isSequenceFile && offset==0 && memcmp(buffer, "SEQ6", 4) == 0)
              //   isSequenceFile_ = TRUE;
@@ -358,47 +355,41 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
 
            for (Int32 i=0; i<totalSamples; i++ ) {
    
-                if ( (pos=strchr(start, recordTerminator)) ) {
+              if ( (pos=strchr(start, recordTerminator)) ) {
    
-                  totalLen += pos - start + 1 + recordPrefixLen;
-                  samples++;
+                 totalLen += pos - start + 1 + recordPrefixLen;
+                 samples++;
    
-                  start = pos+1;
+                 start = pos+1;
    
-                  if ( start > buffer + szRead ) {
-                     sampleDone = TRUE;
-                     break;
-                  }
+                 if ( start > buffer + szRead ) {
+                    sampleDone = TRUE;
+                    break;
+                 }
 
-                  recordPrefixLen = 0;
+                 recordPrefixLen = 0;
 
-                } else {
-                  recordPrefixLen += szRead - (start - buffer + 1);
-                  break;
-                }
-           }
-
-   
-           if ( samples > 0 )
+              } else {
+                 recordPrefixLen += szRead - (start - buffer + 1);
+                 break;
+              }
+          }
+          if ( samples > 0 )
              break;
-           else
+          else
              offset += szRead;
-       }
-   
-       NADELETEBASIC(buffer, heap_);
-   
-       if ( samples > 0 ) {
-         sampledBytes_ += totalLen;
-         sampledRows_  += samples;
-       }
-   
-       hdfsCloseFile(fs, file);
+        }
+        NADELETEBASIC(buffer, heap_);
+        if ( samples > 0 ) {
+           sampledBytes_ += totalLen;
+           sampledRows_  += samples;
+        }
+        hdfsCloseFile(fs, file);
      } else {
        diags.recordError(NAString("Unable to open HDFS file ") + fileInfo->mName,
                          "HHDFSFileStats::populate");
      }
   }
-
   if (blockSize_)
     {
       numBlocks_ = totalSize_ / blockSize_;
@@ -410,7 +401,6 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
       diags.recordError(NAString("Could not determine block size of HDFS file ") + fileInfo->mName,
                         "HHDFSFileStats::populate");
     }
-
   if ( totalSize_ > 0 && diags.isSuccess())
     {
 

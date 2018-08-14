@@ -142,6 +142,8 @@ typedef enum {
  ,HDFS_CLIENT_ERROR_HDFS_EXISTS_FILE_EXISTS
  ,HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_PARAM
  ,HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION
+ ,HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_PARAM
+ ,HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_EXCEPTION
  ,HDFS_CLIENT_ERROR_SET_HDFSFILEINFO
  ,HDFS_CLIENT_ERROR_HDFS_LIST_DIR_PARAM
  ,HDFS_CLIENT_ERROR_HDFS_LIST_DIR_EXCEPTION
@@ -184,7 +186,7 @@ public:
   void setHdfsStats(ExHdfsScanStats *hdfsStats)
   { hdfsStats_ = hdfsStats; } 
   HDFS_Client_RetCode    init();
-  HDFS_Client_RetCode    hdfsCreate(const char* path, NABoolean overwrite, NABoolean compress);
+  HDFS_Client_RetCode    hdfsCreate(const char* path, NABoolean overwrite, NABoolean append, NABoolean compress);
   HDFS_Client_RetCode    hdfsOpen(const char* path, NABoolean compress);
   Int64                  hdfsSize(HDFS_Client_RetCode &hdfsClientRetcode);
   Int32                  hdfsWrite(const char* data, Int64 size, HDFS_Client_RetCode &hdfsClientRetcode, int maxChunkSize = 0);
@@ -200,6 +202,7 @@ public:
   static HDFS_Client_RetCode    hdfsCleanUnloadPath(const NAString& uldPath );
   static HDFS_Client_RetCode    hdfsExists(const NAString& uldPath,  NABoolean & exists );
   static HDFS_Client_RetCode    hdfsDeletePath(const NAString& delPath);
+  static HDFS_Client_RetCode    hdfsDeleteFiles(const NAString& dirPath, const char *startingFileName);
   static HDFS_Client_RetCode    getHiveTableMaxModificationTs(Int64& maxModificationTs, const char * tableDirPaths,  int levelDeep);
    // Get the hdfs URL.
   // buffer is the buffer pre-allocated to hold the result
@@ -221,6 +224,7 @@ private:
     JM_HDFS_CLEAN_UNLOAD_PATH,
     JM_HDFS_EXISTS,
     JM_HDFS_DELETE_PATH,
+    JM_HDFS_DELETE_FILES,
     JM_HDFS_LIST_DIRECTORY,
     JM_HIVE_TBL_MAX_MODIFICATION_TS,
     JM_GET_FS_DEFAULT_NAME,
