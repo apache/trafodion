@@ -358,7 +358,7 @@ FRACTION in 4 bytes +
 | TIME                         | Time of day, 24 hour clock, no time precision. | Format as HH:MM:SS; actual database storage size is 3 bytes
 | TIME (with time precision)   | Time of day, 24 hour clock, with time precision | Format as HH:MM:SS.FFFFFF; actual database storage size is 7 bytes
 | TIMESTAMP                     | Point in time, no time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 11 bytes
-| TIMESTAMP (with time precision) | Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 1 byte
+| TIMESTAMP (with time precision) | Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 7 or 11 bytes
 | Interval Data Types |Interval | INTERVAL | Duration of time; value is in the YEAR/MONTH range or the DAY/HOUR/MINUTE/YEAR/SECOND/FRACTION range
 | YEAR no constraint^5^ +
 MONTH 0-11 +
@@ -776,14 +776,105 @@ of digits in the fractional seconds and is stored in four bytes. The
 default for _time-precision_ is 0, and the maximum is 6.
 
 * `TIMESTAMP [(_timestamp-precision_)]`
-+
-specifies a datetime column that, without the optional
-_timestamp-precision_, contains a timestamp in the external form
-yyyy-mm-dd hh:mm:ss and is stored in seven bytes. _timestamp-precision_
-is an unsigned integer that specifies the number of digits in the
-fractional seconds and is stored in four bytes. The default for
-_timestamp-precision_ is 6, and the maximum is 6.
 
++
+** specifies a datetime column that, without the optional
+`_timestamp-precision_`, contains a timestamp in the external form
+`yyyy-mm-dd hh:mm:ss` with the default precision of 6 even the 
+`_timestamp-precision_` is not specified, and it is stored in 11 bytes. 
+
++
+*Example*
+
++
+```
+SQL>SELECT CAST(CURRENT_TIMESTAMP AS TIMESTAMP) FROM DUAL;
+
+(EXPR)
+--------------------------
+2018-08-14 05:04:14.000591
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>CREATE TABLE test1(c1 TIMESTAMP);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+** specifies a datetime column that, with the `_timestamp-precision_`, 
+which is an unsigned integer that specifies the number of digits in the
+fractional seconds. The range of `_timestamp-precision_` is from 0 to 9,
+the storage size varies depending on the `_timestamp-precision_`.
+
++
+[cols="2*"]
+|===
+| `_time-precision_`       | Storage Size (bytes)
+| 0   | 7
+| 1~9 | 11
+|===
+
++
+*Example*
+
++
+```
+SQL>CREATE TABLE test2 (c1 TIMESTAMP, c2 TIMESTAMP(0), c3 TIMESTAMP(1), c4 TIMESTAMP(2), c5 TIMESTAMP(6), c6 TIMESTAMP(9));
+
+--- SQL operation complete.
+
+
+SQL>SELECT COLUMN_NAME, COLUMN_SIZE from "_MD_".columns_view WHERE TABLE_NAME = 'TEST2';
+
+COLUMN_NAME                   COLUMN_SIZE 
+-----------------------------------------
+C1                                     11                
+C2                                      7                
+C3                                     11                
+C4                                     11                
+C5                                     11                
+C6                                     11                
+SYSKEY                                  8                
+
+--- 7 row(s) selected.
+
+
+SQL>SHOWDDL test2;
+ 
+CREATE TABLE TRAFODION.SEABASE.TEST2
+  ( 
+    C1                               TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  , C2                               TIMESTAMP(0) DEFAULT NULL NOT SERIALIZED
+  , C3                               TIMESTAMP(1) DEFAULT NULL NOT SERIALIZED
+  , C4                               TIMESTAMP(2) DEFAULT NULL NOT SERIALIZED
+  , C5                               TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  , C6                               TIMESTAMP(9) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST2 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
 
 [[considerations_for_datetime_data_types]]
 ==== Considerations for Datetime Data Types
