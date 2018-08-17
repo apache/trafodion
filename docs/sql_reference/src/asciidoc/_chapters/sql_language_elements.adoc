@@ -775,13 +775,12 @@ bytes. _time-precision_ is an unsigned integer that specifies the number
 of digits in the fractional seconds and is stored in four bytes. The
 default for _time-precision_ is 0, and the maximum is 6.
 
-* `TIMESTAMP [(_timestamp-precision_)]`
+* `TIMESTAMP`
 
 +
-** specifies a datetime column that, without the optional
-`_timestamp-precision_`, contains a timestamp in the external form
-`yyyy-mm-dd hh:mm:ss` with the default precision of 6 even the 
-`_timestamp-precision_` is not specified, and it is stored in 11 bytes. 
+** specifies a datetime column. 
++
+The timestamp in the external form is `yyyy-mm-dd hh:mm:ss.ffffff` *with the default precision of 6*, the storage size is 11 bytes.
 
 +
 *Example*
@@ -818,18 +817,21 @@ CREATE TABLE TRAFODION.SEABASE.TEST1
 --- SQL operation complete.
 ```
 
-+
-** specifies a datetime column that, with the `_timestamp-precision_`, 
-which is an unsigned integer that specifies the number of digits in the
-fractional seconds. The range of `_timestamp-precision_` is from 0 to 9,
-the storage size varies depending on the `_timestamp-precision_`.
+* `TIMESTAMP (_timestamp-precision_)`
 
 +
-[cols="2*"]
+specifies a datetime column with the `_timestamp-precision_`.
++
+The `_timestamp-precision_` is an unsigned integer that specifies the number of digits in the
+fractional seconds, the range of `_timestamp-precision_` is from 0 to 9, the storage size varies depending 
+on the `_timestamp-precision_`.
+
++
+[cols="2*^"]
 |===
 | `_time-precision_`       | Storage Size (bytes)
-| 0   | 7
-| 1~9 | 11
+| 0     | 7
+| 1~9   | 11
 |===
 
 +
