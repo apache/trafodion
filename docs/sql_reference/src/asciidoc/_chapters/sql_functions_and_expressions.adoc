@@ -444,7 +444,8 @@ the expressions have NULL values, the function returns a NULL value.
 associated with the specified user ID number.
 | <<sys_guid_function,SYS_GUID Function>>                         | Returns a globally unique identifier. (Oracle extention)
 | <<uuid_function,UUID Function>>                                 | Returns a globally unique identifier.
-| <<uuid_short_function,UUID Function>>                           | Returns a “short” universal identifier as a 64-bit unsigned integer.
+| <<uuid_short_function,UUID_SHORT Function>>                     | Returns a “short” universal identifier as a 64-bit unsigned integer.
+| <<sleep_function,SLEEP Function>>                               | Sleep for a number of seconds
 |===
 
 See the individual entry for the function.
@@ -11330,19 +11331,20 @@ ID
 <<<
 [[uuid_short_function]]
 == UUID_SHORT Function
+Returns a “short” universal identifier as a 64-bit unsigned integer.
 
 NOTE: But UUID_SHORT() can only be used in SELECT list, or very simple expressions to get a UUID.
 Do not use it in WHERE clause, the behavior is non-deterministic.
 
 
 ```
-UUID ()
+UUID_SHORT ()
 ```
 
 [[data_type_of_the_result]]
 ==== Data Type of the Result
 
-The data type of the result is always LARGEINT.
+The data type of the result is always UNSIGNED LARGEINT.
 
 [[examples_of_uuid_short]]
 === Examples of UUID_SHORT
@@ -11354,7 +11356,33 @@ SELECT UUID_SHORT() AS ID FROM dual;
 
 ID
 -------------------------
-  92395783831158784
+  4716501302154732154 
+
+--- 1 row(s) selected.
+```
+
+<<<
+[[sleep_function]]
+== SLEEP Function
+Sleeps (pauses) for the number of seconds given by the duration argument, then returns 1. 
+
+```
+SLEEP( seconds )
+```
+
+[[examples_of_sleep]]
+=== Examples of SLEEP
+
+* Sleep (Pause) for a given number of seconds
++
+```
+SELECT SLEEP(5) AS ID FROM dual;
+
+(EXPR)
+-----------
+
+          1
+
 --- 1 row(s) selected.
 ```
 
