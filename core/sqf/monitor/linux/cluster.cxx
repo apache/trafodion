@@ -2740,7 +2740,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                                  recv_msg->u.stdin_req.supplier_nid,
                                  recv_msg->u.stdin_req.supplier_pid);
                         mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_8,
-                                      SQ_LOG_ERR, buf);
+                                      SQ_LOG_DEBUG, buf);
                     }
                 }
             }
@@ -2760,7 +2760,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                      "pid=%d for stdin data request.\n", method_name,
                      recv_msg->u.stdin_req.nid,
                      recv_msg->u.stdin_req.pid);
-            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_9, SQ_LOG_INFO, buf);
+            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_9, SQ_LOG_DEBUG, buf);
         }
         break;
 #endif
