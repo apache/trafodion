@@ -2548,8 +2548,8 @@ class  ExRegexpClauseChar : public ExRegexpClauseBase {
 public:
   // Construction
   //
-  ExRegexpClauseChar() {};
-  ~ExRegexpClauseChar() {  };
+  ExRegexpClauseChar() { rpattern_ = ""; };
+  ~ExRegexpClauseChar() { if(rpattern_ != "") regfree(&reg); };
   ExRegexpClauseChar(OperatorTypeEnum oper_type, 
 			    short num_operands,
 			    Attributes ** attr,
@@ -2590,7 +2590,7 @@ public:
 
   regex_t reg;
 
-  NAString rpattern_;
+  NAString rpattern_; //previous pattern
 
 private:
 

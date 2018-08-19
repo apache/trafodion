@@ -501,7 +501,7 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
   char * pattern;
   regmatch_t pm[1];
   const size_t nmatch = 1;
-  Lng32 cflags, z;
+  Lng32 cflags, z = 0;
   char *srcStr= new (exHeap) char[len1+1];
   char ebuf[128];
 
@@ -521,6 +521,7 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
 
   if (z != 0){
     //ERROR
+    memset(ebuf, 0, sizeof(ebuf));
     regerror(z, &reg,ebuf, sizeof(ebuf));
     ExRaiseSqlError(exHeap, diagsArea, (ExeErrorCode)8452);
     **diagsArea << DgString0(ebuf);
