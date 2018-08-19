@@ -444,6 +444,7 @@ the expressions have NULL values, the function returns a NULL value.
 associated with the specified user ID number.
 | <<sys_guid_function,SYS_GUID Function>>                         | Returns a globally unique identifier. (Oracle extention)
 | <<uuid_function,UUID Function>>                                 | Returns a globally unique identifier.
+| <<uuid_short_function,UUID Function>>                           | Returns a “short” universal identifier as a 64-bit unsigned integer.
 |===
 
 See the individual entry for the function.
@@ -11322,7 +11323,38 @@ SELECT UUID() AS ID FROM dual;
 
 ID
 -------------------------
-  6ccd780c-baba-1026-9564-5b8c656024db
+  5cdd380c-33ba-3216-1352-2c9d624042c3
+--- 1 row(s) selected.
+```
+
+<<<
+[[uuid_short_function]]
+== UUID_SHORT Function
+
+NOTE: But UUID_SHORT() can only be used in SELECT list, or very simple expressions to get a UUID.
+Do not use it in WHERE clause, the behavior is non-deterministic.
+
+
+```
+UUID ()
+```
+
+[[data_type_of_the_result]]
+==== Data Type of the Result
+
+The data type of the result is always LARGEINT.
+
+[[examples_of_uuid_short]]
+=== Examples of UUID_SHORT
+
+* Returns a global unique identifier
++
+```
+SELECT UUID_SHORT() AS ID FROM dual;
+
+ID
+-------------------------
+  92395783831158784
 --- 1 row(s) selected.
 ```
 
