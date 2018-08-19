@@ -257,6 +257,8 @@ _num_expr_ to _datetime_expr_.
 | <<week_function,WEEK Function>>                                           | Returns an integer in the range 1 through 54 that represents the
 corresponding week of the year.
 | INTEGER (from 1 to 54)
+| <<unix_timestamp_function,UNIX_TIMESTAMP Function>>                       | Returns a Unix timestamp 
+| INTEGER 
 | <<year_function,YEAR Function>>                                           | Returns an integer that represents the year.
 | INTEGER 
 |===
@@ -11349,7 +11351,7 @@ The data type of the result is always UNSIGNED LARGEINT.
 [[examples_of_uuid_short]]
 === Examples of UUID_SHORT
 
-* Returns a global unique identifier
+* Returns a global unique identifier as a 64-bit unsigned integer.
 +
 ```
 SELECT UUID_SHORT() AS ID FROM dual;
@@ -11604,6 +11606,39 @@ Start/Date Time/Shipped               (EXPR)
 2008-04-10 2008-04-21 08:15:00.000000   2008
 ```
 
+<<<
+[[unix_timestamp_function]]
+== UNIX_TIMESTAMP Function
+If called with no argument, returns a Unix timestamp (seconds since '1970-01-01 00:00:00' UTC) 
+as an unsigned integer. If UNIX_TIMESTAMP() is called with a date argument, it returns the value 
+of the argument as seconds since '1970-01-01 00:00:00' UTC.
+
+UNIX_TIMESTAMP is a MySQL SQL extension.
+
+```
+UNIX_TIMESTAMP (datetime-expression | emtpy)
+```
+
+* `_datetime-expression_`
++
+is an expression that evaluates to a datetime value of type DATE or
+TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
+
+[[examples_of_unix_timestamp]]
+=== Examples of UNIX_TIMESTAMP 
+
++
+```
+>>select unix_timestamp() from dual;
+
+(EXPR)
+--------------------
+
+          1534672251
+
+--- 1 row(s) selected.
+
+```
 
 <<<
 [[zeroifnull_function]]
