@@ -1,0 +1,114 @@
+30a31,143
+> 3,4c3,7
+> < P_PROMO_SK P_PROMO_ID P_START_DATE_SK P_END_DATE_SK P_ITEM_SK P_COST P_RESPONSE_TARGET P_PROMO_NAME P_CHANNEL_DMAIL P_CHANNEL_EMAIL P_CHANNEL_CATALOG P_CHANNEL_TV P_CHANNEL_RADIO P_CHANNEL_PRESS P_CHANNEL_EVENT P_CHANNEL_DEMO P_CHANNEL_DETAILS P_PURPOSE P_DISCOUNT_ACTIVE
+> < ----------
+> ---
+> > *** ERROR[8447] An error occurred during hdfs access. Error Detail: SETUP_HDFS_SCAN java.io.IOException: Spliting of compressed sequence file is not supported
+> > org.TRAFODION.sql.HDFSClient.initSequenceFileRead(HDFSClient.java:386)
+> > org.TRAFODION.sql.HDFSClient.<init>(HDFSClient.java:365)
+> > org.TRAFODION.sql.HdfsScan.scheduleHdfsScanRange(HdfsScan.java:173)
+> > org.TRAFODION.sql.HdfsScan.trafHdfsRead(HdfsScan.java:260)
+> 6,106c9
+> < 1 AAAAAAAABAAAAAAA 2450164 2450185 10022 1.0000000E+003 1 ought Y N N N N N N N Men will not say merely. Unknown N
+> < 2 AAAAAAAACAAAAAAA 2450118 2450150 2410 1.0000000E+003 1 able Y N N N N N N N So willing buildings coul Unknown N
+> < 3 AAAAAAAADAAAAAAA 2450675 2450712 10843 1.0000000E+003 1 pri Y N N N N N N N Companies shall not pr Unknown N
+> < 4 AAAAAAAAEAAAAAAA 2450633 2450646 9794 1.0000000E+003 1 ese N N N N N N N N High, good shoulders can Unknown N
+> < 5 AAAAAAAAFAAAAAAA 2450347 2450357 6655 1.0000000E+003 1 anti N N N N N N N N Huge, competent structure Unknown N
+> < 6 AAAAAAAAGAAAAAAA 2450516 2450561 9464 1.0000000E+003 1 cally N N N N N N N N Boards might not reverse Unknown N
+> < 7 AAAAAAAAHAAAAAAA 2450123 2450132 14527 1.0000000E+003 1 ation N N N N N N N N Effects used to prefer ho Unknown N
+> < 8 AAAAAAAAIAAAAAAA 2450350 2450409 304 1.0000000E+003 1 eing Y N N N N N N N Offences feel only on a f Unknown N
+> < 9 AAAAAAAAJAAAAAAA 2450192 2450248 3439 1.0000000E+003 1 n st Y N N N N N N N External forces shall com Unknown N
+> < 10 AAAAAAAAKAAAAAAA 2450324 2450365 3314 1.0000000E+003 1 bar N N N N N N N N Only local achievements u Unknown N
+> < 11 AAAAAAAALAAAAAAA ? ? ? 1.0000000E+003 ? ought N N N Teachers shall not make u Unknown N
+> < 12 AAAAAAAAMAAAAAAA 2450153 2450169 6688 1.0000000E+003 1 able N N N N N N N N Also only times would com Unknown N
+> < 13 AAAAAAAANAAAAAAA 2450316 2450365 11354 1.0000000E+003 1 pri N N N N N N N N Years shall not go later Unknown N
+> < 14 AAAAAAAAOAAAAAAA 2450236 2450282 14480 1.0000000E+003 1 ese N N N N N N N N Adults would not delay ra Unknown N
+> < 15 AAAAAAAAPAAAAAAA ? ? ? 1.0000000E+003 ? anti Y N N N N N Old elements would shake Unknown N
+> < 16 AAAAAAAAABAAAAAA 2450342 2450351 11899 1.0000000E+003 1 cally Y N N N N N N N Sudden, wooden theories w Unknown N
+> < 17 AAAAAAAABBAAAAAA 2450360 2450406 15529 1.0000000E+003 1 ation Y N N N N N N N Almost old churches ought Unknown N
+> < 18 AAAAAAAACBAAAAAA 2450581 2450592 8599 1.0000000E+003 1 eing Y N N N N N N N National communities use Unknown N
+> < 19 AAAAAAAADBAAAAAA 2450623 2450640 5185 1.0000000E+003 1 n st N N N N N N N N Young families act. Most Unknown N
+> < 20 AAAAAAAAEBAAAAAA 2450531 2450545 17860 1.0000000E+003 1 bar Y N N N N N N N Usually common courses fi Unknown N
+> < 21 AAAAAAAAFBAAAAAA 2450895 2450904 3632 1.0000000E+003 1 ought N N N N N N N N British tensions should n Unknown N
+> < 22 AAAAAAAAGBAAAAAA 2450596 2450629 8044 1.0000000E+003 1 able Y N N N N N N N Powers ought to allow to Unknown N
+> < 23 AAAAAAAAHBAAAAAA 2450478 2450493 4321 1.0000000E+003 1 pri N N N N N N N N As main privileges cannot Unknown N
+> < 24 AAAAAAAAIBAAAAAA 2450719 2450773 12004 1.0000000E+003 1 ese Y N N N N N N N Words appear technical, c Unknown N
+> < 25 AAAAAAAAJBAAAAAA 2450757 2450780 16328 1.0000000E+003 1 anti Y N N N N N N N Scenes might make high Unknown N
+> < 26 AAAAAAAAKBAAAAAA 2450528 2450545 8600 1.0000000E+003 1 cally N N N N N N N N Legal discussions must no Unknown N
+> < 27 AAAAAAAALBAAAAAA 2450849 2450879 15421 1.0000000E+003 1 ation Y N N N N N N N Mental men go british fri Unknown N
+> < 28 AAAAAAAAMBAAAAAA 2450816 2450856 1885 ? 1 N N N N N N N Successful opportunities Unknown
+> < 29 AAAAAAAANBAAAAAA 2450696 2450732 14660 1.0000000E+003 1 n st Y N N N N N N N Residential, necessary Unknown N
+> < 30 AAAAAAAAOBAAAAAA 2450718 2450762 10987 1.0000000E+003 1 bar N N N N N N N N Flowers used to stop ther Unknown N
+> < 31 AAAAAAAAPBAAAAAA 2450848 2450880 11990 1.0000000E+003 1 ought Y N N N N N N N Broad times might satisfy Unknown N
+> < 32 AAAAAAAAACAAAAAA 2450132 2450178 4184 1.0000000E+003 1 able Y N N N N N N N Bad matters offer und Unknown N
+> < 33 AAAAAAAABCAAAAAA 2450483 2450485 9607 1.0000000E+003 1 pri N N N N N N N N Post-war subjects add pos Unknown N
+> < 34 AAAAAAAACCAAAAAA 2450584 2450610 1652 1.0000000E+003 1 ese N N N N N N N N Strong cells could dis Unknown N
+> < 35 AAAAAAAADCAAAAAA 2450890 2450912 15751 1.0000000E+003 1 anti Y N N N N N N N Ideas register hence used Unknown N
+> < 36 AAAAAAAAECAAAAAA 2450577 2450605 1418 1.0000000E+003 1 cally N N N N N N N N Companies might stay Unknown N
+> < 37 AAAAAAAAFCAAAAAA 2450609 2450669 4202 1.0000000E+003 1 ation Y N N N N N N N Studies make little just Unknown N
+> < 38 AAAAAAAAGCAAAAAA 2450542 2450593 4222 1.0000000E+003 1 eing Y N N N N N N N Exercises would not conta Unknown N
+> < 39 AAAAAAAAHCAAAAAA 2450575 2450580 14990 1.0000000E+003 1 n st N N N N N N N N Further final words must Unknown N
+> < 40 AAAAAAAAICAAAAAA 2450125 2450158 17209 1.0000000E+003 1 bar N N N N N N N N Deaf, tall members create Unknown N
+> < 41 AAAAAAAAJCAAAAAA 2450694 2450719 17384 1.0000000E+003 1 ought Y N N N N N N N There main cards try resu Unknown N
+> < 42 AAAAAAAAKCAAAAAA 2450320 2450334 4166 1.0000000E+003 1 able Y N N N N N N N Good, very problems might Unknown N
+> < 43 AAAAAAAALCAAAAAA 2450704 2450738 10000 1.0000000E+003 1 pri N N N N N N N N Probably typical eyes mig Unknown N
+> < 44 AAAAAAAAMCAAAAAA 2450469 2450481 14440 1.0000000E+003 1 ese N N N N N N N N Roads would not grasp vit Unknown N
+> < 45 AAAAAAAANCAAAAAA 2450327 2450360 5660 1.0000000E+003 1 anti N N N N N N N N Wrong, popular issues oug Unknown N
+> < 46 AAAAAAAAOCAAAAAA 2450776 2450828 3271 1.0000000E+003 1 cally Y N N N N N N N Warm decisions could not Unknown N
+> < 47 AAAAAAAAPCAAAAAA 2450196 2450200 5689 1.0000000E+003 1 ation N N N N N N N N Large, general points des Unknown N
+> < 48 AAAAAAAAADAAAAAA 2450783 2450807 3955 1.0000000E+003 1 eing N N N N N N N N Losses must suspect fu Unknown N
+> < 49 AAAAAAAABDAAAAAA 2450254 2450289 16123 1.0000000E+003 1 n st N N N N N N N N Then particular farms att Unknown N
+> < 50 AAAAAAAACDAAAAAA 2450799 2450806 8722 1.0000000E+003 1 bar Y N N N N N N N Favorite, united sales ca Unknown N
+> < 51 AAAAAAAADDAAAAAA 2450401 2450438 11288 1.0000000E+003 1 ought Y N N N N N N N Now liberal characteristi Unknown N
+> < 52 AAAAAAAAEDAAAAAA 2450272 2450320 3280 1.0000000E+003 1 able Y N N N N N N N Authorities must pursue f Unknown N
+> < 53 AAAAAAAAFDAAAAAA 2450794 2450798 13370 1.0000000E+003 1 pri N N N N N N N N Free hospitals cannot giv Unknown N
+> < 54 AAAAAAAAGDAAAAAA 2450687 2450702 17707 1.0000000E+003 1 ese N N N N N N N N Claims would not avoid. A Unknown N
+> < 55 AAAAAAAAHDAAAAAA 2450622 2450677 12104 1.0000000E+003 1 anti N N N N N N N N Recent, southern lists go Unknown N
+> < 56 AAAAAAAAIDAAAAAA 2450838 2450888 17563 1.0000000E+003 1 cally Y N N N N N N N Procedures can call healt Unknown N
+> < 57 AAAAAAAAJDAAAAAA 2450834 2450842 12247 1.0000000E+003 1 ation Y N N N N N N N Hours discriminate tracks Unknown N
+> < 58 AAAAAAAAKDAAAAAA ? 2450797 12404 1.0000000E+003 ? eing Y N N N N
+> < 59 AAAAAAAALDAAAAAA 2450273 2450322 5102 1.0000000E+003 1 n st N N N N N N N N Strong samples participat Unknown N
+> < 60 AAAAAAAAMDAAAAAA 2450646 2450676 12076 1.0000000E+003 1 bar Y N N N N N N N Yards write too only shap Unknown N
+> < 61 AAAAAAAANDAAAAAA 2450619 2450667 14864 1.0000000E+003 1 ought Y N N N N N N N Necessary men shall make Unknown N
+> < 62 AAAAAAAAODAAAAAA 2450296 2450342 356 1.0000000E+003 1 able Y N N N N N N N Only prepared minutes see Unknown N
+> < 63 AAAAAAAAPDAAAAAA 2450248 2450295 3715 1.0000000E+003 1 pri Y N N N N N N N Likely, permanent rights Unknown N
+> < 64 AAAAAAAAAEAAAAAA 2450498 2450519 1867 1.0000000E+003 1 ese N N N N N N N N Costs would not operate; Unknown N
+> < 65 AAAAAAAABEAAAAAA 2450775 2450816 3740 1.0000000E+003 1 anti Y N N N N N N N Usually local days beg Unknown N
+> < 66 AAAAAAAACEAAAAAA 2450486 2450504 4886 1.0000000E+003 1 cally Y N N N N N N N Yet unaware methods used Unknown N
+> < 67 AAAAAAAADEAAAAAA 2450262 2450314 6724 1.0000000E+003 1 ation Y N N N N N N N Statutory states will not Unknown N
+> < 68 AAAAAAAAEEAAAAAA 2450851 2450893 1210 1.0000000E+003 1 eing Y N N N N N N N Reasonably additional sho Unknown N
+> < 69 AAAAAAAAFEAAAAAA 2450202 2450219 7471 1.0000000E+003 1 n st N N N N N N N N All right able intere Unknown N
+> < 70 AAAAAAAAGEAAAAAA 2450679 2450735 3571 1.0000000E+003 1 bar Y N N N N N N N Commercial, cool cells st Unknown N
+> < 71 AAAAAAAAHEAAAAAA 2450347 ? ? ? ? Y N N N N N Impossible programmes say
+> < 72 AAAAAAAAIEAAAAAA 2450347 2450373 6662 1.0000000E+003 1 able N N N N N N N N Beautiful, british trees Unknown N
+> < 73 AAAAAAAAJEAAAAAA 2450578 2450637 9032 1.0000000E+003 1 pri Y N N N N N N N Tremendous, social towns Unknown N
+> < 74 AAAAAAAAKEAAAAAA 2450425 2450456 13904 1.0000000E+003 1 ese N N N N N N N N Decent bodies grant overs Unknown N
+> < 75 AAAAAAAALEAAAAAA 2450241 2450257 7630 1.0000000E+003 1 anti Y N N N N N N N Sudden weeks dwell for in Unknown N
+> < 76 AAAAAAAAMEAAAAAA 2450363 2450381 295 1.0000000E+003 1 cally Y N N N N N N N Other, secondary interest Unknown N
+> < 77 AAAAAAAANEAAAAAA 2450711 2450736 3343 1.0000000E+003 1 ation Y N N N N N N N Characters translate hith Unknown N
+> < 78 AAAAAAAAOEAAAAAA 2450454 2450513 5356 1.0000000E+003 1 eing Y N N N N N N N Standard studies arise as Unknown N
+> < 79 AAAAAAAAPEAAAAAA 2450474 2450497 3736 1.0000000E+003 1 n st N N N N N N N N Devices might not produce Unknown N
+> < 80 AAAAAAAAAFAAAAAA 2450891 2450910 4148 1.0000000E+003 1 bar N N N N N N N N Roles might not seem ever Unknown N
+> < 81 AAAAAAAABFAAAAAA 2450235 2450283 4010 1.0000000E+003 1 ought N N N N N N N N Accused, dual women must Unknown N
+> < 82 AAAAAAAACFAAAAAA 2450685 2450718 12373 1.0000000E+003 1 able Y N N N N N N N Economic, subject matters Unknown N
+> < 83 AAAAAAAADFAAAAAA 2450175 2450235 10738 1.0000000E+003 1 pri N N N N N N N N Original, huge projects Unknown N
+> < 84 AAAAAAAAEFAAAAAA 2450900 2450954 16621 1.0000000E+003 1 ese Y N N N N N N N Houses watch machine Unknown N
+> < 85 AAAAAAAAFFAAAAAA 2450696 2450706 16894 1.0000000E+003 1 anti Y N N N N N N N Only red systems ring rig Unknown N
+> < 86 AAAAAAAAGFAAAAAA 2450745 2450787 11761 1.0000000E+003 1 cally Y N N N N N N N Incentives could not look Unknown N
+> < 87 AAAAAAAAHFAAAAAA 2450712 2450730 16600 1.0000000E+003 1 ation N N N N N N N N Numbers drive however. Ye Unknown N
+> < 88 AAAAAAAAIFAAAAAA 2450102 2450151 12728 1.0000000E+003 1 eing N N N N N N N N Chosen players try foreig Unknown N
+> < 89 AAAAAAAAJFAAAAAA 2450649 2450658 8566 1.0000000E+003 1 n st Y N N N N N N N Cultural, obvious constra Unknown N
+> < 90 AAAAAAAAKFAAAAAA 2450587 2450615 8527 1.0000000E+003 1 bar Y N N N N N N N Labour children replace t Unknown N
+> < 91 AAAAAAAALFAAAAAA 2450723 2450742 2326 1.0000000E+003 1 ought Y N N N N N N N Other, standard pupils go Unknown N
+> < 92 AAAAAAAAMFAAAAAA 2450737 2450748 13580 1.0000000E+003 1 able N N N N N N N N Jobs may not train equall Unknown N
+> < 93 AAAAAAAANFAAAAAA 2450125 2450154 4790 1.0000000E+003 1 pri Y N N N N N N N Monthly ambitions convey Unknown N
+> < 94 AAAAAAAAOFAAAAAA 2450567 2450598 28 1.0000000E+003 1 ese N N N N N N N N Small ladies shall wear s Unknown N
+> < 95 AAAAAAAAPFAAAAAA 2450370 2450397 199 1.0000000E+003 1 anti N N N N N N N N Long travellers ought to Unknown N
+> < 96 AAAAAAAAAGAAAAAA 2450710 2450752 16226 1.0000000E+003 1 cally Y N N N N N N N Little new boys wear only Unknown N
+> < 97 AAAAAAAABGAAAAAA 2450660 2450685 16952 1.0000000E+003 1 ation Y N N N N N N N New, severe employee Unknown N
+> < 98 AAAAAAAACGAAAAAA 2450384 2450387 10414 1.0000000E+003 1 eing Y N N N N N N N Periods shall not need as Unknown N
+> < 99 AAAAAAAADGAAAAAA 2450742 2450799 7544 1.0000000E+003 1 n st Y N N N N N N N White, easy shoulders mig Unknown N
+> <
+> < --- 99 row(s) selected.
+> ---
+> > --- 0 row(s) selected.
