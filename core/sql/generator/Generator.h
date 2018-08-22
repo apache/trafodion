@@ -1413,6 +1413,7 @@ public:
 
   static TrafDesc * createConstrKeyColsDescs(Int32 numKeys,
                                              ComTdbVirtTableKeyInfo * keyInfo,
+                                             ComTdbVirtTableColumnInfo * colInfo,
                                              NAMemory * space);
 
   static TrafDesc * createRefConstrDescStructs(

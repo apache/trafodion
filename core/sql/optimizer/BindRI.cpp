@@ -194,13 +194,16 @@ void AbstractRIConstraint::setKeyColumns(
   while (keyColDesc)
   {
     colDesc = keyColDesc->constrntKeyColsDesc();
-    column = new (heap) NAColumn(colDesc->colname, colDesc->position, NULL, heap);
+    if( colDesc->isSystemKey() )
+      column = new (heap) NAColumn(colDesc->colname, colDesc->position, NULL, heap, NULL, SYSTEM_COLUMN);
+    else
+      column = new (heap) NAColumn(colDesc->colname, colDesc->position, NULL, heap);
     keyColumns_.insertAt(i, column);
     i++;
     keyColDesc = keyColDesc->next; 
   }
 
-  CMPASSERT(desc->colcount == (signed)i);
+  CMPASSERT(desc->colcount == (signed)i); 
 }
 
 UniqueConstraint::~UniqueConstraint()
@@ -406,44 +409,6 @@ void RefConstraint::getMatchOptionPredicateText(NAString &text,
   text += ")";
 }
 
-//helper function to check if the given column name is reserved hidden coloum
-//NOTE:
-//  this function hardcode the special name string for SALT, DIVSION columns
-//  if the naming convension of SALT/DIVISION column is changed,
-//  this function MUST be changed as well
-static NABoolean isHiddenColumn(const char *colname)
-{
-  int len = strlen(colname);
-  if(strcmp(colname , "_SALT_") ==0) 
-    return TRUE;
-  //check for DIVISION column
-  //pattern _DIVISION_%d_
-  //must longer than 12
-  if(len >= 12) {
-    //must end with _
-    if(colname[len-1] == '_')
-    {
-      //if begin with _DIVISION_?
-      if(strncmp(colname,"_DIVISION_",10) == 0) 
-      {
-        //middle part are number
-        int allDigit = 1;
-        for(int i = 0; i< len-11; i++)
-        {
-          if(isdigit(colname[i+10]) == 0)
-          {
-            allDigit = 0;
-            break; //not digit
-          }
-        } 
-        if(allDigit == 1)
-          return TRUE; 
-      }
-    }
-  }
-  return FALSE;
-}
-
 // Writes a row-value-constructor consisting of fully qualified column names
 // in Ansi (external) format
 void RefConstraint::getPredicateText(NAString &text, 
@@ -456,8 +421,8 @@ void RefConstraint::getPredicateText(NAString &text,
   text += "(";
   for (CollIndex i = 0; i < keyColumns.entries(); i++)
     {
-      if(isHiddenColumn(keyColumns[i]->getColName()) )
-        continue;
+      if(keyColumns[i]->isSystemColumn() )
+         continue;
       if (pos > 0)
       {
         text += ",";

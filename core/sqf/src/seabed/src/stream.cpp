@@ -610,6 +610,7 @@ void SB_Trans::Trans_Stream::delete_streams(bool pv_ref_zero) {
                                            "Not deleting stream=%s, stream-ref=%d\n",
                                            lp_stream->get_name(),
                                            lv_stream_ref);
+                    lv_del_q.add(&lp_stream->iv_del_link);
                 }
             } else {
                 if (gv_ms_trace_ref)
@@ -633,6 +634,7 @@ void SB_Trans::Trans_Stream::delete_streams(bool pv_ref_zero) {
                                        "Not deleting stream=%s, stream-ref=%d\n",
                                        lp_stream->get_name(),
                                        lv_stream_ref);
+                lv_del_q.add(&lp_stream->iv_del_link);
             }
         }
     }

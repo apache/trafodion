@@ -431,6 +431,7 @@ SB_Trans::Sock_Stream::create(const char           *pp_name,
         pp_sock->set_nonblock();
         pp_sock->event_init(lp_stream->ip_sock_eh);
     }
+    SB_Trans::Trans_Stream::delete_streams(true);
     return lp_stream;
 }
 

@@ -46,6 +46,8 @@ OutputInfo::OutputInfo(Lng32 numEntries)
   : numEntries_(numEntries)
 {
   
+   ex_assert( numEntries <= MAX_OUTPUT_ENTRIES, "try to fetch more than max rows allowed");
+  
    for (Int32 i = 0; i < numEntries_; i++)
     {
       data_[i] = NULL;
@@ -108,7 +110,8 @@ void OutputInfo::dealloc(CollHeap * heap)
 {
   for (Int32 i = 0; i < numEntries_; i++)
     {
-      NADELETEBASIC(data_[i], heap);
+      if(data_[i] != NULL)
+        NADELETEBASIC(data_[i], heap);
     }
 }
 
@@ -1296,33 +1299,51 @@ short ExeCliInterface::fetchAllRows(Queue * &infoList,
 	
 	for (Int32 j = 0; j < numOutputEntries; j++)
 	{
-	  char * ptr;
+	  char * ptr, *r;
 	  Lng32   len;
           Lng32   type;
+          short nulind=0;
+          short *indaddr=&nulind;
+          short **ind=&indaddr;
           getAttributes(j+1, FALSE, type, len, NULL, NULL);
-	  getPtrAndLen(j+1, ptr, len);
-	  NABoolean nullTerminate = 
+	  getPtrAndLen(j+1, ptr, len, ind);
+          NABoolean  nullableCol = TRUE, isNullVal = FALSE;
+          if(*ind == NULL) // It is not a nullable value
+            isNullVal = FALSE; 
+          else
+          {
+            if( ((char*)*ind)[0] == -1 ) // NULL value
+              isNullVal = TRUE;
+          }
+  
+          if(isNullVal) 
+          {
+            oi->insert(j, NULL, 0, type);
+          }
+          else
+          {
+	    NABoolean nullTerminate = 
 	    DFS2REC::is8bitCharacter(outputAttrs_[j].fsDatatype_);
 
-	  char * r = new(getHeap()) char
-	    [(varcharFormat ? SQL_VARCHAR_HDR_SIZE : 0) 
-	     + len + (nullTerminate ? 1 : 0)];
-	  if (varcharFormat)
-	  {
-	    *(short*)r = (short)len;
-	    str_cpy_all(&r[SQL_VARCHAR_HDR_SIZE], ptr, len);
+	    r = new(getHeap()) char
+	      [(varcharFormat ? SQL_VARCHAR_HDR_SIZE : 0) 
+	       + len + (nullTerminate ? 1 : 0)];
+	    if (varcharFormat)
+	    {
+	      *(short*)r = (short)len;
+	      str_cpy_all(&r[SQL_VARCHAR_HDR_SIZE], ptr, len);
 
-	    if (nullTerminate)
-	      r[SQL_VARCHAR_HDR_SIZE + len] = 0;
-	  }
-	  else
-	  {
-	    str_cpy_all(r, ptr, len);
-	    
-	    if (nullTerminate)
-	      r[len] = 0;
-	  }
-	  oi->insert(j, r, len, type);
+	      if (nullTerminate)
+	        r[SQL_VARCHAR_HDR_SIZE + len] = 0;
+	    }
+	    else
+	    {
+	      str_cpy_all(r, ptr, len);
+	      if (nullTerminate)
+	        r[len] = 0;
+	    }
+	    oi->insert(j, r, len, type);
+           }
 	}
 	
 	infoList->insert(oi);

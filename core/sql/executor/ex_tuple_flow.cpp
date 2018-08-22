@@ -316,6 +316,10 @@ short ExTupleFlowTcb::work()
 
 			  ex_queue_entry * up_entry = 
 			    qParent_.up->getTailEntry();
+
+                          if (src_entry->getDiagsArea())
+                            src_entry->getDiagsArea()->incrRefCount();
+
 			  up_entry->setDiagsArea(src_entry->getDiagsArea());
 			}
 

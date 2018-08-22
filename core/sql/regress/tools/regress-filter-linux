@@ -38,7 +38,7 @@ SYSKEY=`grep '\<SYSKEY\>' $fil | egrep -v '(--|^>>|^\*\*)'`
 if [ "$SYSKEY" = "" ]; then
   SYSKEY='@syskey@'
 else
-  SYSKEY='[0-9]\{17,20\}\>'
+  SYSKEY='[0-9]\{16,20\}\>'
 fi
 #       123456789 123456789
 

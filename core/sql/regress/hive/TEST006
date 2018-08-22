@@ -42,10 +42,16 @@ log LOG006_seq_promotion.dat clear;
 select * from hive.promotion_seq where p_promo_sk < 100 order by P_PROMO_SK;
 log;
 
+-- Jenkins might be choosing a parallel plan for compressed sequence file
+-- Currently Trafodion doesn't support spliting a compressed sequence file 
+cqd attempt_esp_parallelism 'off' ;
+
 -- Select from the compressed version of the promotion table
 log LOG006_comp_promotion.dat clear;
 select * from hive.promotion_comp where p_promo_sk < 100 order by P_PROMO_SK;
 log;
+
+cqd attempt_esp_parallelism reset ;
 
 -- Select from the text version of the promotion table
 log LOG006_orig_promotion.dat clear;
