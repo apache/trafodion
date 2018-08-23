@@ -14,7 +14,7 @@
 >>invoke t001t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T1
--- Definition current  Mon Mar  7 19:30:10 2016
+-- Definition current  Mon Aug 27 15:59:38 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -32,7 +32,7 @@
 >>invoke $$TEST_SCHEMA$$.t001ut1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT1
--- Definition current  Mon Mar  7 19:30:10 2016
+-- Definition current  Mon Aug 27 15:59:39 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -432,6 +432,32 @@ A
 
 --- 2 row(s) selected.
 >>	-- ok
+>>
+>>-- clause way
+>>cqd pcode_opt_level 'off';
+
+--- SQL operation complete.
+>>select case when cast(null as int) > 0 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>cqd pcode_opt_level 'on';
+
+--- SQL operation complete.
+>>
+>>-- PCODE way
+>>select case when cast(null as int) > 0 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
 >>
 >>select a from t001t1 where null is null;
 

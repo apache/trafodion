@@ -116,9 +116,9 @@ ex_expr::exp_return_type ex_comp_clause::processNulls(char *op_data[],
        // then move boolean unknown value to result and return.
        if (getOperand(i)->getNullFlag() && (!op_data[i])) // missing value 
    	{
-   	  // move null value to result.
-   	  *(Lng32 *)op_data[2 * MAX_OPERANDS] = -1;
-   	  return ex_expr::EXPR_NULL;
+            // move null value to result.
+            *(Lng32 *)op_data[2 * MAX_OPERANDS] = 0;
+            return ex_expr::EXPR_NULL;
    	}
      }
    

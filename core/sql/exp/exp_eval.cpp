@@ -3980,11 +3980,11 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
                                     (Int16)attrs->op3NullBitIndex_,
                                     (ExpTupleDesc::TupleDataFormat)attrs->fmt_.op3Fmt_);
 
-        Int32 rslt = (op2Null || op3Null) ? -1 : 0;
+        Int32 rslt = (op2Null || op3Null) ? 0 : -1;
 
 	PTR_DEF_ASSIGN(Int32, result, 0 );
 	* result = rslt ;
-        if (rslt == 0)
+        if (rslt != 0)
           pCode += (Int64)pCode[10];
         else
           pCode += attrs->fmt_.size_;
