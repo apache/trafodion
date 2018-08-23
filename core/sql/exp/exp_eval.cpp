@@ -6600,7 +6600,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	PTR_DEF_ASSIGN(Int32, srcPtr, 2 + 2 * PCODEBINARIES_PER_PTR );
 	Int32 src = *srcPtr;
 
-        if (src == 0)
+        if (src == 0 || src == -1)    // null(i.e. -1) means false
           {
 	    DEF_ASSIGN_PTR(Int64, branchOffset, 0 );
 	    *tgtPtr = 0;

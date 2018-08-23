@@ -96,7 +96,7 @@ ex_expr::exp_return_type ex_branch_clause::eval(char *op_data[],
   switch (getOperType())
     {
     case ITM_AND:
-      if (*(Lng32 *)op_data[1] == 0)
+      if (*(Lng32 *)op_data[1] == 0 || *(Lng32 *)op_data[1] == -1)  // null treated as false
 	{
 	  *(Lng32 *)op_data[0] = 0;
 	  setNextClause(branch_clause);
