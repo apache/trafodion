@@ -3266,7 +3266,7 @@ void ExHbaseAccessTcb::handleException(NAHeap *heap,
   if (!loggingFileCreated_) {
      logFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetcode);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
-        hdfsClientRetcode = logFileHdfsClient_->hdfsCreate(loggingFileName_, TRUE, FALSE);
+        hdfsClientRetcode = logFileHdfsClient_->hdfsCreate(loggingFileName_, TRUE, FALSE, FALSE);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
         loggingFileCreated_ = TRUE;
      else 

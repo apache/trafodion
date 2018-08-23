@@ -349,6 +349,8 @@ static const char* const hdfsClientErrorEnumStr[] =
  ,"Java exception in HdfsClient::hdfsExists()."
  ,"JNI NewStringUTF() in HdfsClient::hdfsDeletePath()."
  ,"Java exception in HdfsClient::hdfsDeletePath()."
+ ,"JNI NewStringUTF() in HdfsClient::hdfsDeleteFiles()."
+ ,"Java exception in HdfsClient::hdfsDeleteFiles()."
  ,"Error in HdfsClient::setHdfsFileInfo()."
  ,"Error in HdfsClient::hdfsListDirectory()."
  ,"Java exception in HdfsClient::hdfsListDirectory()."
@@ -453,7 +455,7 @@ HDFS_Client_RetCode HdfsClient::init()
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR      ].jm_signature = "()V";
     JavaMethods_[JM_HDFS_CREATE     ].jm_name      = "hdfsCreate";
-    JavaMethods_[JM_HDFS_CREATE     ].jm_signature = "(Ljava/lang/String;ZZ)Z";
+    JavaMethods_[JM_HDFS_CREATE     ].jm_signature = "(Ljava/lang/String;ZZZ)Z";
     JavaMethods_[JM_HDFS_OPEN       ].jm_name      = "hdfsOpen";
     JavaMethods_[JM_HDFS_OPEN       ].jm_signature = "(Ljava/lang/String;Z)Z";
     JavaMethods_[JM_HDFS_WRITE      ].jm_name      = "hdfsWrite";
@@ -472,6 +474,8 @@ HDFS_Client_RetCode HdfsClient::init()
     JavaMethods_[JM_HDFS_EXISTS].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_name      = "hdfsDeletePath";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_HDFS_DELETE_FILES].jm_name      = "hdfsDeleteFiles";
+    JavaMethods_[JM_HDFS_DELETE_FILES].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_HDFS_LIST_DIRECTORY].jm_name      = "hdfsListDirectory";
     JavaMethods_[JM_HDFS_LIST_DIRECTORY].jm_signature = "(Ljava/lang/String;J)I";
     JavaMethods_[JM_HIVE_TBL_MAX_MODIFICATION_TS].jm_name      = "getHiveTableMaxModificationTs";
@@ -514,7 +518,7 @@ void HdfsClient::setPath(const char *path)
    strcpy(path_, path); 
 }
 
-HDFS_Client_RetCode HdfsClient::hdfsCreate(const char* path, NABoolean overwrite, NABoolean compress)
+HDFS_Client_RetCode HdfsClient::hdfsCreate(const char* path, NABoolean overwrite, NABoolean append, NABoolean compress)
 {
   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsCreate(%s) called.", path);
 
@@ -530,12 +534,13 @@ HDFS_Client_RetCode HdfsClient::hdfsCreate(const char* path, NABoolean overwrite
 
   jboolean j_compress = compress;
   jboolean j_overwrite = overwrite;
+  jboolean j_append = append;
 
   if (hdfsStats_ != NULL)
      hdfsStats_->getHdfsTimer().start();
 
   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CREATE].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE].methodID, js_path, j_overwrite, j_compress);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE].methodID, js_path, j_overwrite, j_append, j_compress);
   if (hdfsStats_ != NULL) {
       hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
       hdfsStats_->incHdfsCalls();
@@ -958,6 +963,51 @@ HDFS_Client_RetCode HdfsClient::hdfsDeletePath( const NAString& delPath)
     logError(CAT_SQL_HDFS, "HdfsClient::hdfsDeletePath()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION;
+  }
+
+  jenv_->PopLocalFrame(NULL);
+  return HDFS_CLIENT_OK;
+}
+
+HDFS_Client_RetCode HdfsClient::hdfsDeleteFiles(const NAString& dirPath, const char *startingFileName)
+{
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsDeleteFiles(%s, %s) called.",
+                  dirPath.data(), startingFileName);
+  if (initJNIEnv() != JOI_OK)
+     return HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_PARAM;
+  if (getInstance() == NULL)
+     return HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_PARAM;
+
+  jstring js_dirPath = jenv_->NewStringUTF(dirPath.data());
+  if (js_dirPath == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_PARAM;
+  }
+
+  jstring js_startingFileName = jenv_->NewStringUTF(startingFileName);
+  if (js_startingFileName == NULL) {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_PARAM));
+     jenv_->PopLocalFrame(NULL);
+     return HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_PARAM;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_DELETE_FILES].jm_full_name;
+  jboolean jresult = jenv_->CallStaticBooleanMethod(javaClass_, JavaMethods_[JM_HDFS_DELETE_FILES].methodID, 
+                     js_dirPath, js_startingFileName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsDeleteFiles()");
+    jenv_->PopLocalFrame(NULL);
+    return HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_EXCEPTION;
+  }
+
+  if (jresult == false)
+  {
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsDeleteFiles()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HDFS_CLIENT_ERROR_HDFS_DELETE_FILES_EXCEPTION;
   }
 
   jenv_->PopLocalFrame(NULL);

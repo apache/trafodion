@@ -425,8 +425,9 @@ public class HDFSClient
       return isEOF_;
    }
 
-   boolean hdfsCreate(String fname , boolean overwrite, boolean compress) throws IOException
+   boolean hdfsCreate(String fname , boolean overwrite, boolean append, boolean compress) throws IOException
    {
+      boolean fileExists = false;      
       filename_ = fname;
       if (logger_.isDebugEnabled()) 
         logger_.debug("HDFSClient.hdfsCreate() - started" );
@@ -442,12 +443,16 @@ public class HDFSClient
       {
          if (overwrite)
             fs_.delete(filepath_);
-         else
+         else if (!append)
             throw new IOException(filepath_ + " already exists");
+         else
+            fileExists = true;
       }
       FSDataOutputStream fsOut = null;
-      fsOut = fs_.create(filepath_);
-      fsOut.close();
+      if (!fileExists) {
+         fsOut = fs_.create(filepath_);
+         fsOut.close();
+      }
       return true;
    } 
 
@@ -708,6 +713,34 @@ public class HDFSClient
       Path delPath = new Path(pathStr );
       FileSystem fs = FileSystem.get(delPath.toUri(), config_);
       fs.delete(delPath, true);
+      return true;
+   }
+
+   public static boolean hdfsDeleteFiles(String dirPathStr, String startingFileName) throws IOException
+   {
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsDeleteFiles(" + dirPathStr + ", " + startingFileName +")");
+
+      Path dirPath = new Path(dirPathStr );
+      FileSystem fs = FileSystem.get(dirPath.toUri(), config_);
+      FileStatus[] fileStatus;
+      if (fs.isDirectory(dirPath))
+         fileStatus = fs.listStatus(dirPath);
+      else
+         throw new IOException("The path " + dirPath + " is not a directory");
+      FileStatus aFileStatus; 
+      if (fileStatus != null) {
+         for (int i = 0; i < fileStatus.length; i++)
+         {
+             aFileStatus = fileStatus[i];
+             if (! aFileStatus.isDirectory()) {
+                String pathName =  aFileStatus.getPath().toString();
+                String filenameParts[] = pathName.split(dirPathStr);
+                if (filenameParts.length == 2 && filenameParts[1].startsWith(startingFileName))
+                   fs.delete(aFileStatus.getPath());
+             }
+         }
+      }
       return true;
    }
 
