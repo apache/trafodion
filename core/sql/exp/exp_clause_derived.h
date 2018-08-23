@@ -41,9 +41,12 @@
 #ifndef EXP_CLAUSE_DERIVED_H
 #define EXP_CLAUSE_DERIVED_H
 
+#include <sys/types.h>
+#include <regex.h>
 #include "exp_clause.h"
 #include "exp_like.h"
 #include <byteswap.h>
+#include "NAStringDef.h"
 
 
 #define instrAndText(a) a, #a
@@ -2545,7 +2548,8 @@ class  ExRegexpClauseChar : public ExRegexpClauseBase {
 public:
   // Construction
   //
-  ExRegexpClauseChar() {};
+  ExRegexpClauseChar() { rpattern_ = ""; };
+  ~ExRegexpClauseChar() { if(rpattern_ != "") regfree(&reg); };
   ExRegexpClauseChar(OperatorTypeEnum oper_type, 
 			    short num_operands,
 			    Attributes ** attr,
@@ -2583,6 +2587,10 @@ public:
 
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
+
+  regex_t reg;
+
+  NAString rpattern_; //previous pattern
 
 private:
 
