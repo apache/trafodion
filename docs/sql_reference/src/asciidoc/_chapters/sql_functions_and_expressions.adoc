@@ -444,7 +444,7 @@ the expressions have NULL values, the function returns a NULL value.
 | <<nvl_function,NVL Function>>                                   | Returns the value of the first operand unless it is NULL, in which case it returns the value of the second operand.
 | <<user_function,USER Function>>                                 | Returns either the database user name of the current user who invoked the function or the database user name
 associated with the specified user ID number.
-| <<sys_guid_function,SYS_GUID Function>>                         | Returns a globally unique identifier. (Oracle extention)
+| <<sys_guid_function,SYS_GUID Function>>                         | Returns a globally unique identifier, similar to Oracle's SYS_GUID function.
 | <<uuid_function,UUID Function>>                                 | Returns a globally unique identifier.
 | <<uuid_short_function,UUID_SHORT Function>>                     | Returns a “short” universal identifier as a 64-bit unsigned integer.
 | <<sleep_function,SLEEP Function>>                               | Sleep for a number of seconds
@@ -11303,8 +11303,9 @@ A UUID is designed as a number that is globally unique in space and time.
 Two calls to UUID() are expected to generate two different values, even if 
 these calls are performed on two separate devices not connected to each other.
 
-NOTE: But UUID() can only be used in SELECT list, or very simple expressions to get a UUID.
-Do not use it in WHERE clause, the behavior is non-deterministic.
+NOTE: UUID() behavior is non-deterministic. Therefore it is best to use it 
+only in SELECT lists. Using it in a WHERE clause, for example, may result in i
+non-deterministic predicate evaluation.
 
 
 ```
@@ -11335,8 +11336,9 @@ ID
 == UUID_SHORT Function
 Returns a “short” universal identifier as a 64-bit unsigned integer.
 
-NOTE: But UUID_SHORT() can only be used in SELECT list, or very simple expressions to get a UUID.
-Do not use it in WHERE clause, the behavior is non-deterministic.
+NOTE: UUID_SHORT() behavior is non-deterministic. Therefore it is best to use it 
+only in SELECT lists. Using it in a WHERE clause, for example, may result in i
+non-deterministic predicate evaluation.
 
 
 ```
