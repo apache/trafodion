@@ -23,6 +23,7 @@
 #include "PrivMgrComponentPrivileges.h"
 
 #include "PrivMgrDefs.h"  
+#include "PrivMgrComponentDefs.h"
 #include "PrivMgrMD.h"
 #include "PrivMgrMDTable.h"
 #include "PrivMgrComponents.h"
@@ -142,12 +143,14 @@ public:
     
    inline void clear() { lastRowRead_.clear(); };
       
-   PrivStatus fetchDMLPrivInfo(
+   PrivStatus fetchCompPrivInfo(
       const int32_t                granteeID,
       const std::vector<int32_t> & roleIDs,
-      PrivObjectBitmap           & DMLBitmap,
-      bool                       & hasManagePrivileges);
-      
+      PrivObjectBitmap           & DMLPrivs,
+      bool                       & hasManagePrivPriv,
+      bool                       & hasSelectMetadata,
+      bool                       & hasAnyManagePriv);
+
    PrivStatus fetchOwner(
       const int64_t componentUID,
       const std::string & operationCode,
@@ -430,8 +433,8 @@ std::string whereClause("WHERE ");
 // *    is a string representation of the unique ID associated with the        *
 // *    component.                                                             *
 // *                                                                           *
-// *  <operationCode>                 const std::string &             In       *
-// *    is the two character code associated with the component operation.     *
+// *  <operationCodeList>             const std::string &             In       *
+// *    is a list of 2 character operation codes associateed with the component*
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -447,10 +450,8 @@ PrivStatus PrivMgrComponentPrivileges::dropAllForOperation(
    const std::string & operationCode) 
    
 {
-
-MyTable &myTable = static_cast<MyTable &>(myTable_);
-
-std::string whereClause("WHERE ");
+  MyTable &myTable = static_cast<MyTable &>(myTable_);
+  std::string whereClause("WHERE ");
 
    whereClause += "COMPONENT_UID = ";
    whereClause += componentUIDString.c_str();
@@ -458,11 +459,8 @@ std::string whereClause("WHERE ");
    whereClause += operationCode.c_str();
    whereClause += "'";
    
-   return myTable.deleteWhere(whereClause);
-
+  return myTable.deleteWhere(whereClause);
 }
-//*********** End of PrivMgrComponentPrivileges::dropAllForOperation ***********
-
 
 
 // *****************************************************************************
@@ -593,11 +591,15 @@ bool PrivMgrComponentPrivileges::dropAllForGrantee(
 // *    Returns the number of grants of component privileges.                  *
 // *                                                                           *
 // *****************************************************************************
-int64_t PrivMgrComponentPrivileges::getCount()
-   
+int64_t PrivMgrComponentPrivileges::getCount(int_32 componentUID)
 {
                                    
-std::string whereClause(" ");   
+std::string whereClause(" ");
+if (componentUID != INVALID_COMPONENT_UID)
+{
+  whereClause = "where component_uid = ";
+  whereClause += to_string((long long int)componentUID);
+}
 
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -619,10 +621,10 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
 // *****************************************************************************
 // *                                                                           *
-// * Function: PrivMgrComponentPrivileges::getSQLDMLPrivileges                 *
+// * Function: PrivMgrComponentPrivileges::getSQLCompPrivs                     *
 // *                                                                           *
-// *    Returns the SQL_OPERATION privileges associated with DML privileges    *
-// * for the specified authorization ID.                                       *
+// *    Returns the SQL_OPERATIONS privileges that may affect privileges       *
+// * for metadata tables.                                                      *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -637,25 +639,35 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 // *  <DMLBitmap>                     PrivObjectBitmap &              In       *
 // *    passes back the system-level DML privileges granted to the grantee.    *
 // *                                                                           *
-// *  <hasManagePrivileges>           bool &                          In       *
+// *  <hasManagePrivPriv>             bool &                          In       *
 // *    passes back if the user has MANAGE_PRIVILEGES authority.               *
 // *                                                                           *
+// *  <hasSelectMetadata>             bool &                          In       *
+// *    passes back if the user has DML_SELECT_PRIVILEGE                       *
+// *                                                                           *
+// *  <hasAnyManagePriv>              bool &                          In       *
+// *    passes back if the user has any MANAGE privilege                       *
+// *                                                                           *
 // *****************************************************************************
-void PrivMgrComponentPrivileges::getSQLDMLPrivileges(
+
+void PrivMgrComponentPrivileges::getSQLCompPrivs(
    const int32_t                granteeID,
    const std::vector<int32_t> & roleIDs,
-   PrivObjectBitmap           & DMLBitmap,
-   bool                       & hasManagePrivileges)
+   PrivObjectBitmap           & DMLPrivs,
+   bool                       & hasManagePrivPriv,
+   bool                       & hasSelectMetadata,
+   bool                       & hasAnyManagePriv)
 
 {
-                                   
+
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 // set pointer in diags area
 int32_t diagsMark = pDiags_->mark();
 
-PrivStatus privStatus = myTable.fetchDMLPrivInfo(granteeID,roleIDs,DMLBitmap,
-                                                 hasManagePrivileges);
+PrivStatus privStatus = myTable.fetchCompPrivInfo(granteeID,roleIDs,DMLPrivs,
+                                                  hasManagePrivPriv, hasSelectMetadata,
+                                                  hasAnyManagePriv);
 
    if (privStatus != STATUS_GOOD)
       pDiags_->rewind(diagsMark);
@@ -2033,7 +2045,7 @@ void MyTable::describeGrantTree(
 
 // *****************************************************************************
 // *                                                                           *
-// * Function: MyTable::fetchDMLPrivInfo                                       *
+// * Function: MyTable::fetchCompPrivInfo                                      *
 // *                                                                           *
 // *    Reads from the COMPONENT_PRIVILEGES table and returns the              * 
 // *    SQL_OPERATIONS privileges associated with DML privileges.              *
@@ -2051,7 +2063,7 @@ void MyTable::describeGrantTree(
 // *  <DMLBitmap>                     PrivObjectBitmap &              In       *
 // *    passes back the system-level DML privileges granted to the grantee.    *
 // *                                                                           *
-// *  <hasManagePrivileges>           bool &                          In       *
+// *  <hasManagePrivPriv>             bool &                          In       *
 // *    passes back if the user has MANAGE_PRIVILEGES authority.               *
 // *                                                                           *
 // *****************************************************************************
@@ -2062,38 +2074,31 @@ void MyTable::describeGrantTree(
 // *           *: Error encountered.                                           *
 // *                                                                           *
 // *****************************************************************************
-PrivStatus MyTable::fetchDMLPrivInfo(
+PrivStatus MyTable::fetchCompPrivInfo(
    const int32_t                granteeID,
    const std::vector<int32_t> & roleIDs,
-   PrivObjectBitmap           & DMLBitmap,
-   bool                       & hasManagePrivileges)
-   
+   PrivObjectBitmap           & DMLPrivs,
+   bool                       & hasManagePrivPriv,
+   bool                       & hasSelectMetadata,
+   bool                       & hasAnyManagePriv)
+
 {
-
-// Check the last grantee data read before reading metadata.
-
+   // Check the last grantee data read before reading metadata.
+#if 0
+   // If privileges change between calls, then cache is not refreshed
+   // comment out this check for now
    if (userDMLPrivs_.granteeID_ == granteeID && 
        userDMLPrivs_.roleIDs_ == roleIDs)
    {
-      DMLBitmap = userDMLPrivs_.DMLBitmap_;
-      hasManagePrivileges = userDMLPrivs_.managePrivileges_;
+      DMLPrivs = userDMLPrivs_.DMLPrivs_;
+      hasManagePrivPriv = userDMLPrivs_.managePrivileges_;
       return STATUS_GOOD;
    } 
-      
-// Not found in cache, look for the priv info in metadata.
-// ??? - is the component_uid for SQL_OPERATIONS always going to be 1?
-std::string whereClause("WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN ('");
+#endif
+   // Not found in cache, look for the priv info in metadata.
+   std::string whereClause("WHERE COMPONENT_UID = 1 ");
 
-   for (SQLOperation operation = SQLOperation::FIRST_DML_PRIV;
-        static_cast<int>(operation) <= static_cast<int>(SQLOperation::LAST_DML_PRIV); 
-        operation = static_cast<SQLOperation>(static_cast<int>(operation) + 1))
-   {
-      whereClause += PrivMgr::getSQLOperationCode(operation);
-      whereClause += "','";
-   }
-
-   whereClause += PrivMgr::getSQLOperationCode(SQLOperation::MANAGE_PRIVILEGES);
-   whereClause += "') AND GRANTEE_ID IN (";
+   whereClause += "AND GRANTEE_ID IN (";
    whereClause += PrivMgr::authIDToString(granteeID);
    whereClause += ",";
    for (size_t ri = 0; ri < roleIDs.size(); ri++)
@@ -2103,76 +2108,86 @@ std::string whereClause("WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN ('");
    }
    whereClause += PrivMgr::authIDToString(PUBLIC_USER);
    whereClause += ")";
-   
-std::string orderByClause;
-   
-std::vector<MyRow> rows;
 
-PrivStatus privStatus = selectAllWhere(whereClause,orderByClause,rows);
+   std::string orderByClause;
+
+   std::vector<MyRow> rows;
+
+   PrivStatus privStatus = selectAllWhere(whereClause,orderByClause,rows);
 
    if (privStatus != STATUS_GOOD && privStatus != STATUS_WARNING)
       return privStatus;
-   
-// Initialize cache.
+
+   // Initialize cache.
    userDMLPrivs_.granteeID_ = granteeID;
    userDMLPrivs_.roleIDs_ = roleIDs;
    userDMLPrivs_.managePrivileges_ = false;
-   userDMLPrivs_.DMLBitmap_.reset();  
-    
-   for (size_t r = 0; r < rows.size(); r++)
+   userDMLPrivs_.DMLBitmap_.reset();
+
+   hasAnyManagePriv = false;
+
+ for (size_t r = 0; r < rows.size(); r++)
    {
       MyRow &row = rows[r];
-      
+
+      if (PrivMgr::isSQLManageOperation(row.operationCode_.c_str()))
+        hasAnyManagePriv = true;
+
       if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::MANAGE_PRIVILEGES))
       {
          userDMLPrivs_.managePrivileges_ = true;
          continue;
-      }   
-      
+      }
+
       if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_DELETE))
       {
          userDMLPrivs_.DMLBitmap_.set(DELETE_PRIV);
          continue;
-      }   
-      
+      }
+
       if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_INSERT))
       {
          userDMLPrivs_.DMLBitmap_.set(INSERT_PRIV);
          continue;
-      }   
-      
+      }
       if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_REFERENCES))
       {
          userDMLPrivs_.DMLBitmap_.set(REFERENCES_PRIV);
          continue;
-      }   
-      
+      }
+
       if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_SELECT))
       {
          userDMLPrivs_.DMLBitmap_.set(SELECT_PRIV);
          continue;
-      }   
-      
+      }
+
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_EXECUTE))
+      {
+         userDMLPrivs_.DMLBitmap_.set(EXECUTE_PRIV);
+         continue;
+      }
+
       if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_UPDATE))
       {
          userDMLPrivs_.DMLBitmap_.set(UPDATE_PRIV);
          continue;
-      }   
-      
+      }
+
       if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_USAGE))
       {
          userDMLPrivs_.DMLBitmap_.set(USAGE_PRIV);
          continue;
-      }   
+      }
    }
-   
-   hasManagePrivileges = userDMLPrivs_.managePrivileges_;
-   DMLBitmap = userDMLPrivs_.DMLBitmap_;   
-   
-   return STATUS_GOOD;
 
-}   
-//******************* End of MyTable::fetchDMLPrivInfo *************************
+   hasManagePrivPriv = userDMLPrivs_.managePrivileges_;
+   DMLPrivs = userDMLPrivs_.DMLBitmap_;
+
+
+   return STATUS_GOOD;
+}
+//******************* End of MyTable::fetchCompPrivInfo*************************
 
 // *****************************************************************************
 // *                                                                           *

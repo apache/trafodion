@@ -302,6 +302,27 @@ bool PrivMgr::getAuthNameFromAuthID(
 }
 
 // *****************************************************************************
+// * Function:  PrivMgr::getSQLUnusedOpsCount()
+// *
+// *    Returns the number of unused operations from the hard coded table
+// *    in PrivMgrComponentDefs.h for the sql_operations component.
+// *
+// *****************************************************************************
+int32_t PrivMgr::getSQLUnusedOpsCount()
+{
+  int32_t numUnusedOps = 0;
+  size_t numOps = sizeof(sqlOpList)/sizeof(ComponentOpStruct);
+  for (int i = 0; i < numOps; i++)
+  {
+    const ComponentOpStruct &opDefinition = sqlOpList[i];
+    if (opDefinition.unusedOp)
+      numUnusedOps++;
+  }
+  return numUnusedOps;
+}
+
+
+// *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgr::getSQLOperationName                                    *
 // *                                                                           *
@@ -592,6 +613,7 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
 }
 //**************** End of PrivMgr::getSQLOperationDescription ******************
 
+
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgr::isAuthIDGrantedPrivs                                   *
@@ -854,6 +876,42 @@ bool PrivMgr::isSQLManageOperation(SQLOperation operation)
       
    return false;
 
+}
+//******************* End of PrivMgr::isSQLManageOperation *********************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgr::isSQLManageOperation                                   *
+// *                                                                           *
+// *    Determines if a SQL operation is within the list of manage operations. *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <operation>                     SQLOperation                    In       *
+// *    is the operation.                                                      *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: operation is a manage operation.                                    *
+// * false: operation is not a manage operation.                               *
+// *                                                                           *
+// *****************************************************************************
+bool PrivMgr::isSQLManageOperation(const char * operationCode)
+
+{
+  size_t numOps = sizeof(sqlOpList)/sizeof(ComponentOpStruct);
+  for (int i = 0; i < numOps; i++)
+  {
+    const ComponentOpStruct &opDefinition = sqlOpList[i];
+    if (std::string(opDefinition.operationCode) == std::string(operationCode))
+      return (PrivMgr::isSQLManageOperation((SQLOperation)opDefinition.operationID));
+   }
+   return false;
 }
 //******************* End of PrivMgr::isSQLManageOperation *********************
 

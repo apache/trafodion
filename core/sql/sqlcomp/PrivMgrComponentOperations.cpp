@@ -58,6 +58,7 @@ namespace ComponentOperations
 class MyRow : public PrivMgrMDRow
 {
 public:
+
 // -------------------------------------------------------------------
 // Constructors and destructors:
 // -------------------------------------------------------------------
@@ -71,7 +72,7 @@ public:
       componentUID_ = other.componentUID_;              
       operationCode_ = other.operationCode_;
       operationName_ = other.operationName_;
-      isSystem_ = other.isSystem_;
+      operationType_ = other.operationType_;
       operationDescription_ = other.operationDescription_;
    };
    virtual ~MyRow() {};
@@ -82,14 +83,14 @@ public:
       const int64_t componentUID,
       const std::string & operationCode,
       std::string & operationName,
-      bool & isSystem,
+      PrivMgrComponentOperations::OperationType & operationType,
       std::string & operationDescription); 
    
    bool lookupByName(
       const int64_t componentUID,
       const std::string & operationName,
       std::string & operationCode,
-      bool & isSystem,
+      PrivMgrComponentOperations::OperationType & operationType,
       std::string & operationDescription);
     
 // -------------------------------------------------------------------
@@ -100,7 +101,7 @@ public:
     int64_t            componentUID_;
     std::string        operationCode_;
     std::string        operationName_;
-    bool                isSystem_;
+    PrivMgrComponentOperations::OperationType      operationType_;
     std::string        operationDescription_;
     
 private: 
@@ -154,6 +155,10 @@ public:
    PrivStatus selectWhere(
       const std::string & whereClause,  
       std::vector<MyRow *> &rowList);
+
+   PrivStatus update(
+      const std::string &setClause,
+      const std::string &whereClause);
 
 private:   
    MyTable();
@@ -284,7 +289,7 @@ PrivStatus privStatus = myTable.fetchByCode(componentUID,operationCode,row);
 // *    is a 2 character code associated with the operation unique to the      *
 // *    component.                                                             *
 // *                                                                           *
-// *  <isSystemOperation>             bool                            In       *
+// *  <isSystem>                      bool                            In       *
 // *    is true if the operation is a system operation.                        *
 // *                                                                           *
 // *  <operationDescription>          const std::string &             In       *
@@ -305,14 +310,12 @@ PrivStatus PrivMgrComponentOperations::createOperation(
    const std::string & componentName,
    const std::string & operationName,
    const std::string & operationCode,
-   bool isSystemOperation,
+   bool isSystem,
    const std::string & operationDescription,
    const bool existsErrorOK) 
   
 {
 
-//TODO: Related, could check for setting isSystem, could be separate
-// privilege, or restricted to DB__ROOT.
 PrivMgrComponentPrivileges componentPrivileges(metadataLocation_, pDiags_);
 
    if (!ComUser::isRootUserID()&&
@@ -379,7 +382,7 @@ std::string tempStr;
 
 // An operation can only be a system operation if its component is a 
 // system component.   
-   if (isSystemOperation && !isSystemComponent)
+   if (isSystem && !isSystemComponent)
    {
       *pDiags_ << DgSqlCode(-CAT_COMPONENT_NOT_SYSTEM);
       return STATUS_ERROR;
@@ -391,7 +394,7 @@ MyRow row(fullTableName_);
    row.componentUID_ = componentUID;
    row.operationCode_ = operationCode;
    row.operationName_ = operationName;
-   row.isSystem_ = isSystemOperation;
+   row.operationType_ = (isSystem ? OP_TYPE_SYSTEM : OP_TYPE_USER);
    row.operationDescription_ = operationDescription;
    
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -434,8 +437,8 @@ PrivMgrComponentPrivileges componentPrivilege(metadataLocation_,pDiags_);
 // *    is a 2 character code associated with the operation unique to the      *
 // *    component.                                                             *
 // *                                                                           *
-// *  <isSystemOperation>             const bool                      In       *
-// *    is true if the operation is a system operation.                        *
+// *  <operationTypeUnused>           const bool                      In       *
+// *    type of component, user, system, or unused.                            *
 // *                                                                           *
 // *  <operationDescription>          const std::string &             In       *
 // *    is a descrption of the operation.                                      *
@@ -464,15 +467,13 @@ PrivStatus PrivMgrComponentOperations::createOperationInternal(
    const int64_t componentUID,
    const std::string & operationName,
    const std::string & operationCode,
-   const bool isSystemOperation,
+   const bool operationTypeUnused,
    const std::string & operationDescription,
    const int32_t granteeID,
    const std::string & granteeName,
    const int32_t grantDepth,
    const bool checkExistence)
-  
 {
-
    PrivStatus privStatus = STATUS_GOOD;
 
    // If operation already created, no need to create
@@ -484,7 +485,7 @@ PrivStatus PrivMgrComponentOperations::createOperationInternal(
    row.componentUID_ = componentUID;
    row.operationCode_ = operationCode;
    row.operationName_ = operationName;
-   row.isSystem_ = isSystemOperation;
+   row.operationType_ = (operationTypeUnused ? OP_TYPE_UNUSED : OP_TYPE_SYSTEM);
    row.operationDescription_ = operationDescription;
    
    MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -563,6 +564,7 @@ PrivStatus PrivMgrComponentOperations::describeComponentOperations(
   
   std::string whereClause("WHERE COMPONENT_UID = ");
   whereClause += componentUIDString;
+  whereClause += " and is_system <> 'U'";
   
   PrivStatus privStatus = myTable.selectWhere(whereClause, rowList);
 
@@ -571,13 +573,16 @@ PrivStatus PrivMgrComponentOperations::describeComponentOperations(
    for(int i = 0; i < rowList.size(); i++)
    {
       MyRow* myRow = rowList[i];
+      if (myRow->operationType_ == OP_TYPE_UNUSED)
+        continue;
+
       std::string componentText;
       componentText += "CREATE COMPONENT PRIVILEGE ";
       componentText += myRow->operationName_ + " AS "; 
       componentText += "'" + myRow->operationCode_ + "'";
       componentText += " ON " + componentName;
       
-      if(myRow->isSystem_)
+      if(myRow->operationType_ == OP_TYPE_SYSTEM)
         componentText += " SYSTEM";
 
       if(!myRow->operationDescription_.empty())
@@ -722,8 +727,6 @@ PrivStatus PrivMgrComponentOperations::dropOperation(
   
 {
 
-//TODO: Related, could check for setting isSystem, could be separate
-// privilege, or restricted to DB__ROOT.
 PrivMgrComponentPrivileges componentPrivileges(metadataLocation_, pDiags_);
 
    if (!ComUser::isRootUserID()&&
@@ -808,7 +811,6 @@ std::string whereClause("WHERE COMPONENT_UID = ");
 //************* End of PrivMgrComponentOperations::dropOperation ***************
 
 
-
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgrComponentOperations::fetchByName                         *
@@ -832,7 +834,6 @@ std::string whereClause("WHERE COMPONENT_UID = ");
 // *                                                                           *
 // *  <isSystem>                      bool &                          Out      *
 // *    passes back true if the component operation is a system level          *
-// *  component operation, otherwise false.                                    *
 // *                                                                           *
 // *  <operationDescription>          std::string &                   Out      *
 // *    passes back the description of the component operation.                *
@@ -864,7 +865,7 @@ PrivStatus privStatus = myTable.fetchByName(componentUIDString,operationName,row
       return STATUS_NOTFOUND;
 
    operationCode = row.operationCode_;
-   isSystem = row.isSystem_;
+   isSystem = (row.operationType_ == OP_TYPE_SYSTEM);
    operationDescription = row.operationDescription_;
    return STATUS_GOOD;
 
@@ -877,34 +878,76 @@ PrivStatus privStatus = myTable.fetchByName(componentUIDString,operationName,row
 // *                                                                           *
 // * Function: PrivMgrComponentOperations::getCount                            *
 // *                                                                           *
-// *    Returns the number of component operations.                            *
+// *    Returns:                                                               *
+// *       the total number of operations                                      *
+// *       the number of unused operations                                     *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
-// * Returns: int64_t                                                          *
+// * Returns: PrivStatus                                                       *
 // *                                                                           *
-// *    Returns the number of component operations.                            *
+// *    STATUS_GOOD     : found operations                                     *
+// *    STATUS_NOTFOUND : no operations were found                             *
+// *    STATUS_ERROR    : unexpected error reading metadata                    *
 // *                                                                           *
 // *****************************************************************************
-int64_t PrivMgrComponentOperations::getCount()
-   
+PrivStatus PrivMgrComponentOperations::getCount(
+  const int64_t &componentUID,
+  int32_t &numOps,
+  int32_t &numUnusedOps)
 {
-                                   
-std::string whereClause(" ");   
+  char buf[getMetadataLocation().size() + 300];
+  snprintf (buf, sizeof(buf), "select distinct is_system, count(is_system) over "
+            "(partition by is_system) from %s.%s where component_uid = %ld",
+            getMetadataLocation().c_str(),PRIVMGR_COMPONENT_OPERATIONS,
+            componentUID);
 
-int64_t rowCount = 0;   
-MyTable &myTable = static_cast<MyTable &>(myTable_);
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
 
-// set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
+  CmpCommon::context()->sqlSession()->getParentQid());
+  Queue * tableQueue = NULL;
+  int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, buf, 0, false, false, true);
 
-PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    return STATUS_ERROR;
+  }
+  if (cliRC == 100) // did not find the row
+  {
+    pDiags_->rewind(diagsMark);
+    return STATUS_NOTFOUND;
+  }
 
-   if (privStatus != STATUS_GOOD)
-      pDiags_->rewind(diagsMark);
-      
-   return rowCount;
+  numOps = 0;
+  numUnusedOps = 0;
 
+  char * ptr = NULL;
+  int32_t len = 0;
+  char value[3];
+
+  int32_t opTypeCount;
+
+  // column 0: operation type 
+  // column 1: count of rows for operation type
+  tableQueue->position();
+  for (int idx = 0; idx < tableQueue->numEntries(); idx++)
+  {
+    OutputInfo * pCliRow = (OutputInfo*)tableQueue->getNext();
+    pCliRow->get(0,ptr,len);
+    strncpy(value,ptr,len);
+    value[len] = 0;
+    pCliRow->get(1,ptr,len);
+    opTypeCount = *(reinterpret_cast<int32_t*>(ptr));
+
+    numOps += opTypeCount;
+    if (value[0] == 'U')
+      numUnusedOps += opTypeCount;
+  }
+
+  return STATUS_GOOD;
 }
 //***************** End of PrivMgrComponentOperations::getCount ****************
 
@@ -961,6 +1004,93 @@ PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
 
 
 // *****************************************************************************
+//  method:  updateOperationCodes
+// 
+// Goes through the ComponentOpStruct for the sql_operations component and
+//   creates two lists:
+//     list of unused operations
+//     list of system operations.
+//
+// Updates the component_operations table and 
+//   sets is_system to "U" for unused operations
+//   sets is_system to "Y" for system operations
+//
+// TBD - add support for all components, not just sql_operations
+// *****************************************************************************
+PrivStatus PrivMgrComponentOperations::updateOperationCodes(
+  const int64_t & componentUID  )
+{
+   if (componentUID != SQL_OPERATIONS_COMPONENT_UID)
+   {
+      PRIVMGR_INTERNAL_ERROR("Invalid component UID in PrivMgrComponentOperations::updateOperationCodes");
+      return STATUS_ERROR;
+   }
+
+   std::string unusedItems ("where component_uid = ");
+   unusedItems += UIDToString(componentUID);
+   unusedItems += " and operation_code in (";
+   std::string systemItems(unusedItems);
+
+   size_t numOps = sizeof(sqlOpList)/sizeof(ComponentOpStruct);
+   bool firstUnusedOp = true;
+   bool firstSystemOp = true;
+   for (int i = 0; i < numOps; i++)
+   {
+      const ComponentOpStruct &opDefinition = sqlOpList[i];
+      if (opDefinition.unusedOp)
+      {
+         if (firstUnusedOp)
+         {
+            unusedItems += "'";
+            firstUnusedOp = false;
+         }
+         else
+            unusedItems += ", '";
+
+         unusedItems += opDefinition.operationCode;
+         unusedItems += "'";
+      }
+
+
+     else
+      {
+         if (firstSystemOp)
+         {
+            systemItems += "'";
+            firstSystemOp = false;
+         }
+         else
+            systemItems += ", '";
+
+         systemItems += opDefinition.operationCode;
+         systemItems += "'";
+      }
+
+   }
+
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
+
+   // Change system components to unused components
+   if (!firstUnusedOp)
+   {
+      unusedItems += ")";
+      std::string setClause("set is_system = 'U' ");
+      if (myTable.update(setClause, unusedItems) == STATUS_ERROR)
+         return STATUS_ERROR;
+   }
+
+    // Change unused components to system components
+   if (!firstSystemOp)
+   {
+      systemItems += ")";
+      std::string setClause("set is_system = 'Y' ");
+      if (myTable.update(setClause, systemItems) == STATUS_ERROR)
+         return STATUS_ERROR;
+   }
+   return STATUS_GOOD;
+}
+
+// *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgrComponentOperations::nameExists                          *
 // *                                                                           *
@@ -1005,9 +1135,6 @@ PrivStatus privStatus = myTable.fetchByName(componentUID,operationName,row);
 //******************** End of PrivMgrComponents::nameExists ********************
 
 
-
-
-
 // *****************************************************************************
 //    MyTable methods
 // *****************************************************************************
@@ -1050,7 +1177,7 @@ PrivStatus MyTable::fetchByCode(
 
 // Check the last row read before reading metadata.
    if (lastRowRead_.lookupByCode(componentUID,operationCode,
-                                 row.operationName_,row.isSystem_,
+                                 row.operationName_,row.operationType_,
                                  row.operationDescription_))
    {
       row.componentUID_ = componentUID; 
@@ -1175,7 +1302,7 @@ PrivStatus MyTable::fetchByName(
 
 // Check the last row read before reading metadata.
    if (lastRowRead_.lookupByName(componentUID,operationName,
-                                 row.operationCode_,row.isSystem_,
+                                 row.operationCode_,row.operationType_,
                                  row.operationDescription_))
    {
       row.componentUID_ = componentUID; 
@@ -1242,23 +1369,16 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
 // *****************************************************************************
 PrivStatus MyTable::insert(const PrivMgrMDRow & rowIn)
 {
+   char insertStatement[1000];
+   const MyRow & row = static_cast<const MyRow &>(rowIn);
+   char operationType = PrivMgrComponentOperations::compTypeToLit(row.operationType_);
 
-char insertStatement[1000];
-
-const MyRow & row = static_cast<const MyRow &>(rowIn);
-char isSystem[3] = {0};
-
-   if (row.isSystem_)
-      isSystem[0] = 'Y';
-   else
-      isSystem[0] = 'N';
-
-   sprintf(insertStatement, "insert into %s values (%ld, '%s', '%s', '%s', '%s')",     
+   sprintf(insertStatement, "insert into %s values (%ld, '%s', '%s', '%c', '%s')",     
            tableName_.c_str(),
            row.componentUID_,
            row.operationCode_.c_str(),
            row.operationName_.c_str(),
-           isSystem,
+           operationType,
            row.operationDescription_.c_str());
            
    return CLIImmediate(insertStatement);
@@ -1340,10 +1460,7 @@ MyRow & row = static_cast<MyRow &>(rowOut);
    cliInterface.getPtrAndLen(4,ptr,len);
    strncpy(value,ptr,len);
    value[len] = 0;
-   if (value[0] == 'Y')
-      row.isSystem_ = true;
-   else
-      row.isSystem_ = false;
+   row.operationType_ = PrivMgrComponentOperations::compTypeToEnum(value[0]);
       
    // column 5: operation_description
    cliInterface.getPtrAndLen(5,ptr,len);
@@ -1358,6 +1475,25 @@ MyRow & row = static_cast<MyRow &>(rowOut);
 }
 //********************* End of MyTable::selectWhereUnique **********************
 
+
+// *****************************************************************************
+// method:  update
+//
+// Updates metadata based on the passed in set and where clauses.
+// *****************************************************************************
+PrivStatus MyTable::update(
+  const std::string & setClause,
+  const std::string & whereClause)
+{
+   char updateStatement[setClause.size() + whereClause.size() + tableName_.size() + 100];
+
+   sprintf(updateStatement, "update %s %s %s",
+           tableName_.c_str(),
+           setClause.c_str(),
+           whereClause.c_str());
+           
+   return CLIImmediate(updateStatement);
+}
 
 // *****************************************************************************
 //    MyRow methods
@@ -1384,9 +1520,8 @@ MyRow & row = static_cast<MyRow &>(rowOut);
 // *  <operationName>                 std::string &                   Out      *
 // *    passes back the name of the component operation.                       *
 // *                                                                           *
-// *  <isSystem>                      bool &                          Out      *
-// *    passes back true if the component operation is a system level          *
-// *  component operation, otherwise false.                                    *
+// *  <operationType>                 OperationType &                 Out      *
+// *    passes back the component type, system, user, or unused.               *
 // *                                                                           *
 // *  <operationDescription>          std::string &                   Out      *
 // *    passes back the description of the component operation.                *
@@ -1403,7 +1538,7 @@ bool MyRow::lookupByCode(
    const int64_t componentUID,
    const std::string & operationCode,
    std::string & operationName,
-   bool & isSystem,
+   PrivMgrComponentOperations::OperationType & operationType,
    std::string & operationDescription) 
    
 {
@@ -1415,7 +1550,7 @@ bool MyRow::lookupByCode(
        operationCode != operationCode)
       return false;
       
-   isSystem = isSystem_;
+   operationType = operationType_;
    operationName = operationName_;
    operationDescription = operationDescription_;
    return true;
@@ -1445,9 +1580,8 @@ bool MyRow::lookupByCode(
 // *  <operationCode>                 std::string &                   Out      *
 // *    passes back the code associated with the component operation.          *
 // *                                                                           *
-// *  <isSystem>                      bool &                          Out      *
-// *    passes back true if the component operation is a system level          *
-// *  component operation, otherwise false.                                    *
+// *  <OperationType>                 operationType &                 Out      *
+// *    passes back the component type, system, user, or unused.               *
 // *                                                                           *
 // *  <operationDescription>          std::string &                   Out      *
 // *    passes back the description of the component operation.                *
@@ -1464,7 +1598,7 @@ bool MyRow::lookupByName(
    const int64_t componentUID,
    const std::string & operationName,
    std::string & operationCode,
-   bool & isSystem,
+   PrivMgrComponentOperations::OperationType & operationType,
    std::string & operationDescription) 
    
 {
@@ -1476,7 +1610,7 @@ bool MyRow::lookupByName(
        operationName != operationName_)
       return false;
       
-   isSystem = isSystem_;
+   operationType = operationType_;
    operationCode = operationCode_;
    operationDescription = operationDescription_;
    return true;
@@ -1585,10 +1719,7 @@ void MyTable::setRow(OutputInfo *pCliRow, MyRow &row)
   pCliRow->get(3,ptr,len);
   strncpy(value,ptr,len);
   value[len] = 0;
-  if (value[0] == 'Y')
-     row.isSystem_ = true;
-  else
-     row.isSystem_ = false;
+  row.operationType_ = PrivMgrComponentOperations::compTypeToEnum(value[0]);
 
   // column 5: OPERATION_DESCRIPTION
   pCliRow->get(4,ptr,len);

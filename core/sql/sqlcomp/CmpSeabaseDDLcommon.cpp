@@ -7466,7 +7466,7 @@ short CmpSeabaseDDL::createPrivMgrRepos(ExeCliInterface *cliInterface,
   std::vector<std::string> tablesCreated;
   std::vector<std::string> tablesUpgraded;
 
-  if (initSeabaseAuthorization(cliInterface, ddlXns,
+  if (initSeabaseAuthorization(cliInterface, ddlXns, FALSE /*isUpgrade*/,
                                tablesCreated, tablesUpgraded) < 0)
     return -1;
 
@@ -7985,6 +7985,7 @@ NABoolean CmpSeabaseDDL::appendErrorObjName(char * errorObjs,
 short CmpSeabaseDDL::initSeabaseAuthorization(
   ExeCliInterface *cliInterface,
   NABoolean ddlXns,
+  NABoolean isUpgrade,
   std::vector<std::string> &tablesCreated,
   std::vector<std::string> &tablesUpgraded)
 { 
@@ -8069,28 +8070,34 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
 
   NABoolean warnings = FALSE;
 
-  // Adjust hive external table ownership - if someone creates external 
-  // tables before initializing authorization, the external schemas are 
-  // owned by DB__ROOT -> change to DB__HIVEROLE.  
-  // Also if you have initialized authorization and created external tables 
-  // before the fix for JIRA 1895, rerunning initialize authorization will 
-  // fix the metadata inconsistencies
-  if (adjustHiveExternalSchemas(cliInterface) != 0)
-    warnings = TRUE;
-
-  // If someone initializes trafodion with library management but does not 
-  // initialize authorization, then the role DB__LIBMGRROLE has not been 
-  // granted to LIBMGR procedures.  Do this now
-  cliRC = existsInSeabaseMDTable(cliInterface,
-                                 getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
-                                 SEABASE_LIBMGR_LIBRARY,
-                                 COM_LIBRARY_OBJECT, TRUE, FALSE);
-  if (cliRC == 1) // library exists
+  // Now that initialize trafodion creates authorization tables, only need
+  // to make adjustments for existing installations.
+  if (isUpgrade)
   {
-    cliRC = grantLibmgrPrivs(cliInterface);
-    if (cliRC == -1)
+    // Adjust hive external table ownership - if someone creates external 
+    // tables before initializing authorization, the external schemas are 
+    // owned by DB__ROOT -> change to DB__HIVEROLE.  
+    // Also if you have initialized authorization and created external tables 
+    // before the fix for JIRA 1895, rerunning initialize authorization will 
+    // fix the metadata inconsistencies
+    if (adjustHiveExternalSchemas(cliInterface) != 0)
       warnings = TRUE;
+
+    // If someone initializes trafodion with library management but does not 
+    // initialize authorization, then the role DB__LIBMGRROLE has not been 
+    // granted to LIBMGR procedures.  
+    cliRC = existsInSeabaseMDTable(cliInterface,
+                                   getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
+                                   SEABASE_LIBMGR_LIBRARY,
+                                   COM_LIBRARY_OBJECT, TRUE, FALSE);
+    if (cliRC == 1) // library exists
+    {
+      cliRC = grantLibmgrPrivs(cliInterface);
+      if (cliRC == -1)
+        warnings = TRUE;
+    }
   }
+
   if (NOT ddlXns)
     endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
   
@@ -8781,7 +8788,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       std::vector<std::string> tablesUpgraded;
 
       // Can ignore status returned, diags area contains any unexpected errors
-      initSeabaseAuthorization(&cliInterface, ddlExpr->ddlXns(),
+      initSeabaseAuthorization(&cliInterface, ddlExpr->ddlXns(), TRUE /*isUpgrade*/,
                                tablesCreated, tablesUpgraded);
 
 #ifdef _DEBUG

@@ -153,127 +153,171 @@ PrivMgrMDAdmin::~PrivMgrMDAdmin()
 // ----------------------------------------------------------------------------
 
 PrivStatus PrivMgrMDAdmin::initializeComponentPrivileges()
-
 {
    std::string traceMsg;
-   log(__FILE__, "initializing component privileges", -1);
+   log(__FILE__, "Initializing component privileges", -1);
    PrivStatus privStatus = STATUS_GOOD;
 
-  // First register the component.
-  PrivMgrComponents components(metadataLocation_,pDiags_);
-  bool componentExists = (components.exists(SQL_OPERATION_NAME));
-  if (!componentExists)
-  {
-    privStatus = components.registerComponentInternal(SQL_OPERATION_NAME,
-                                                      SQL_OPERATIONS_COMPONENT_UID,
-                                                      true,"Component for SQL operations");
-    if (privStatus != STATUS_GOOD)
-    {
-      log(__FILE__, "ERROR: unable to register SQL_OPERATIONS component", -1);
-      return STATUS_ERROR;
-    }
-  }
-      
-// Component is registered, now create all the operations associated with
-// the component.  A grant from the system to the grantee (DB__ROOT) will
-// be added for each operation.                                         
-                                
-PrivMgrComponentOperations componentOperations(metadataLocation_,pDiags_);
-std::vector<std::string> operationCodes;
-
-int32_t DB__ROOTID = ComUser::getRootUserID();
-std::string DB__ROOTName(ComUser::getRootUserName());
-
-   for (SQLOperation operation = SQLOperation::FIRST_OPERATION;
-        static_cast<int>(operation) <= static_cast<int>(SQLOperation::LAST_OPERATION); 
-        operation = static_cast<SQLOperation>(static_cast<int>(operation) + 1))
+   PrivMgrComponents components(metadataLocation_,pDiags_);
+   size_t numComps = sizeof(componentList)/sizeof(ComponentListStruct);
+   for (int c = 0; c < numComps; c++)
    {
-      const char *codePtr = PrivMgr::getSQLOperationCode(operation);
-      privStatus = componentOperations.createOperationInternal(SQL_OPERATIONS_COMPONENT_UID,
-                                                               PrivMgr::getSQLOperationName(operation),
-                                                               codePtr,true,
-                                                               PrivMgr::getSQLOperationDescription(operation),
-                                                               DB__ROOTID,DB__ROOTName,-1,
-                                                               componentExists);
-                                                       
-      if (privStatus == STATUS_GOOD)
-         operationCodes.push_back(codePtr); 
-      else
+      // Get description of component
+      const ComponentListStruct &compDefinition = componentList[c];
+      int64_t compUID(compDefinition.componentUID);
+      std::string compName(compDefinition.componentName);
+      std::string compDef("System component ");
+      compDef += compName;
+
+      log(__FILE__, compDef, -1);
+
+      bool componentExists = (components.exists(compName));
+      if (!componentExists)
       {
-         traceMsg = "WARNING unable to create component operation: ";
-         traceMsg += PrivMgr::getSQLOperationName(operation);
-         log(__FILE__, traceMsg, -1);
-      } 
-   }
+        // Register component
+        privStatus = components.registerComponentInternal(compName,compUID,true,compDef);
+        if (privStatus != STATUS_GOOD)
+        {
+           traceMsg = "ERROR: unable to register component ";
+           traceMsg += compName.c_str();
+           log(__FILE__, traceMsg.c_str(), -1);
+           return STATUS_ERROR;
+        }
+      }
 
-// In the unlikely event no operations were created, we are done.   
-   if (operationCodes.size() == 0)
-      return STATUS_GOOD;
+      // Component is registered, now create all the operations associated with
+      // the component.  A grant from the system to the owner (DB__ROOT) will
+      // be added for each operation. In addition, set up the list of grants
+      // for different users/roles.
+      //   allOpsList - list of operations (granted to owner)
+      //   rootRoleList - list of operations granted to DB__ROOTROLE
+      //   publicList - list of operations granted to PUBLIC
+      std::vector<std::string> allOpsList;
+      std::vector<std::string> rootRoleList;
+      std::vector<std::string> publicList;
+
+      PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
+      PrivMgrComponentOperations componentOperations(metadataLocation_,pDiags_);
+      int32_t DB__ROOTID = ComUser::getRootUserID();
+      std::string DB__ROOTName(ComUser::getRootUserName());
+
+      int32_t numOps = compDefinition.numOps;
+      int32_t numExistingOps = 0;
+      int32_t numExistingUnusedOps = 0;
+      if (componentOperations.getCount(compUID, numExistingOps, numExistingUnusedOps) == STATUS_ERROR)
+        return STATUS_ERROR;
+
+      // Add any new operations
+      if ( numExistingOps < numOps)
+      {
+         // The ComponentOpStruct describes the component operations required for
+         // each component. Each entry contains the operationCode,
+         // operationName, whether the privileges should be granted for 
+         // DB__ROOTROLE, and PUBLIC, etc. 
+         for (int i = 0; i < numOps; i++)
+         {
+            const ComponentOpStruct opDefinition = compDefinition.componentOps[i];
+
+            std::string description = "Allow grantee to perform ";
+            description += opDefinition.operationName;
+            description += " operation";
+
+            // create the operation
+            privStatus = componentOperations.createOperationInternal(compUID,
+                                                                     opDefinition.operationName,
+                                                                     opDefinition.operationCode,
+                                                                     opDefinition.unusedOp,
+                                                                     description,
+                                                                     DB__ROOTID,DB__ROOTName,-1,
+                                                                     componentExists);
+                                                       
+           if (privStatus == STATUS_GOOD)
+           {
+              // All operations are included in the allOpsList
+              allOpsList.push_back(opDefinition.operationName);
+              if (opDefinition.isRootRoleOp)
+                rootRoleList.push_back(opDefinition.operationCode);
+              if (opDefinition.isPublicOp)
+                publicList.push_back(opDefinition.operationCode);
+           }
+           else
+           {
+              traceMsg = "WARNING unable to create component operation: ";
+              traceMsg += opDefinition.operationName;
+              log(__FILE__, traceMsg, -1);
+              return privStatus;
+           }   
+        }
+
+        // In the unlikely event no operations were created, we are done.   
+        if (allOpsList.size() == 0)
+           return STATUS_GOOD;
       
-PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
-   
-// Grant all SQL_OPERATIONS to DB__ROOTROLE WITH GRANT OPTION                                      
-   privStatus = componentPrivileges.grantPrivilegeInternal(SQL_OPERATIONS_COMPONENT_UID,
-                                                           operationCodes,
-                                                           ComUser::getRootUserID(),
-                                                           ComUser::getRootUserName(),
-                                                           ROOT_ROLE_ID,
-                                                           DB__ROOTROLE,-1,
-                                                           componentExists);
+        // Grant all SQL_OPERATIONS to DB__ROOTROLE WITH GRANT OPTION                                      
+        privStatus = componentPrivileges.grantPrivilegeInternal(compUID,
+                                                                rootRoleList,
+                                                                DB__ROOTID,
+                                                                ComUser::getRootUserName(),
+                                                                ROOT_ROLE_ID,
+                                                                DB__ROOTROLE,-1,
+                                                                componentExists);
                                                            
-   if (privStatus != STATUS_GOOD)
-   {
-      traceMsg = "ERROR unable to grant DB__ROOTROLE to components";
-      log(__FILE__, traceMsg, -1);
-      return privStatus;
-   }
+        if (privStatus != STATUS_GOOD)
+        {
+           traceMsg = "ERROR unable to grant DB__ROOTROLE to components";
+           log(__FILE__, traceMsg, -1);
+           return privStatus;
+        }
                                       
-// Grant SQL_OPERATIONS CREATE_SCHEMA and SHOW to PUBLIC 
-std::vector<std::string> CSOperationCodes;
+        // Grant privileges to PUBLIC
+        privStatus = componentPrivileges.grantPrivilegeInternal(compUID,
+                                                                publicList,
+                                                                DB__ROOTID,
+                                                                ComUser::getRootUserName(),
+                                                                PUBLIC_USER,
+                                                                PUBLIC_AUTH_NAME,0,
+                                                                componentExists);
+        if (privStatus != STATUS_GOOD)
+        {
+           traceMsg = "ERROR unable to grant PUBLIC to components";
+           log(__FILE__, traceMsg, -1);
+           return privStatus;
+        }
+      }
 
-   CSOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::CREATE_SCHEMA));
-   CSOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::SHOW));
-                                     
-   privStatus = componentPrivileges.grantPrivilegeInternal(SQL_OPERATIONS_COMPONENT_UID,
-                                                           CSOperationCodes,
-                                                           ComUser::getRootUserID(),
-                                                           ComUser::getRootUserName(),
-                                                           PUBLIC_USER,
-                                                           PUBLIC_AUTH_NAME,0,
-                                                           componentExists);
-                                      
-   if (privStatus != STATUS_GOOD)
-   {
-      traceMsg = "ERROR unable to grant PUBLIC to components";
-      log(__FILE__, traceMsg, -1);
-      return privStatus;
+      // Update component_privileges and update operation codes appropriately
+      size_t numUnusedOps = PrivMgr::getSQLUnusedOpsCount();
+      if (numExistingOps > 0 /* doing upgrade */ &&
+          (numUnusedOps != numExistingUnusedOps))
+      {
+         privStatus = componentOperations.updateOperationCodes(compUID);
+         if (privStatus == STATUS_ERROR)
+            return privStatus;
+      }
+
+      // Verify counts from tables.
+
+      // Minimum number of privileges granted is:
+      //   one for each operation (owner)
+      //   one for each entry in rootRoleList and publicList
+      // This check was added because of issues with insert/upsert, is it still needed?
+      int64_t expectedPrivCount = numOps + rootRoleList.size() + publicList.size();
+
+      if (componentPrivileges.getCount(compUID) < expectedPrivCount)
+      {
+         std::string message ("Expecting ");
+         message += to_string((long long int)expectedPrivCount);
+         message += " component privileges, instead ";
+         message += PrivMgr::authIDToString(numExistingOps);
+         message += " were found.";
+         traceMsg = "ERROR: ";
+         traceMsg += message;
+         log(__FILE__, message, -1);
+         PRIVMGR_INTERNAL_ERROR(message.c_str());
+         return STATUS_ERROR;
+      }
    }
-      
-// Verify counts for tables.
-
-// Minimum number of privileges granted is 2 for each operation (one each
-// for DB__ROOT and DB__ROOTROLE) plus the two grants to PUBLIC.
-
-int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) * 2 + 2;
-
-   if (components.getCount() != 1 ||
-       componentOperations.getCount() != static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) ||
-       componentPrivileges.getCount() < expectedPrivCount)
-   {
-      std::string message ("Expecting ");
-      message += to_string((long long int)expectedPrivCount);
-      message += " component privileges, instead ";
-      message += to_string((long long int)componentPrivileges.getCount());
-      message += " were found.";
-      traceMsg = "ERROR: ";
-      traceMsg += message;
-      log(__FILE__, message, -1);
-      PRIVMGR_INTERNAL_ERROR(message.c_str());
-      return STATUS_ERROR;
-   }
-     
    return STATUS_GOOD; 
-
 }
 
 // ----------------------------------------------------------------------------

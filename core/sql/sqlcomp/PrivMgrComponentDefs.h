@@ -53,6 +53,7 @@
 //   isAdminOp     - grant DB__ADMIN/DB__ADMINROLE this operation
 //   isDMLOp       - this is a DML operation
 //   isPublicOp    - grant PUBLIC this operation
+//   unusedOp      - operation is not supported at this time but maybe later
 struct ComponentOpStruct
 {
   int32_t      operationID;
@@ -62,6 +63,7 @@ struct ComponentOpStruct
   const bool   isAdminOp;
   const bool   isDMLOp;
   const bool   isPublicOp;
+  const bool   unusedOp;
 };
 
 // The ComponentListStruct describes the relationship between a component UID,
@@ -83,14 +85,10 @@ struct ComponentListStruct
 // USER_COMPONENT_START_UID begins user defined components
 enum ComponentOp{ INVALID_COMPONENT_UID        = 0,
                   SQL_OPERATIONS_COMPONENT_UID = 1,
-                  DBMGR_COMPONENT_UID          = 2,
-                  WMS_COMPONENT_UID            = 3,
                   USER_COMPONENT_START_UID     = 1000};
 
 // List of components
 #define SQL_OPERATIONS_NAME "SQL_OPERATIONS"
-#define DBMGR_NAME          "DBMGR"
-#define WMS_NAME            "WMS"
 
 // Defines component operations for SQL_OPERATIONS:
 //  to add a new operation, add an entry to this list (in alphebetic order)
@@ -106,6 +104,7 @@ enum class SQLOperation {
    ALTER_TABLE,
    ALTER_TRIGGER,
    ALTER_VIEW,
+   COMMENT,
    CREATE,
    CREATE_CATALOG,
    CREATE_INDEX,
@@ -147,7 +146,6 @@ enum class SQLOperation {
    MANAGE_PRIVILEGES,
    MANAGE_ROLES,
    MANAGE_STATISTICS,
-   MANAGE_TENANTS,
    MANAGE_USERS,
    QUERY_ACTIVATE,
    QUERY_CANCEL,
@@ -171,114 +169,78 @@ enum class SQLOperation {
 //    recommend that PUBLIC granted only a small subset of privileges
 static const ComponentOpStruct sqlOpList[] =
 {
- {(int32_t)SQLOperation::ALTER,               "A0","ALTER",true,true,false,false},
- {(int32_t)SQLOperation::ALTER_LIBRARY,       "AL","ALTER_LIBRARY",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_ROUTINE,       "AR","ALTER_ROUTINE",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_ROUTINE_ACTION,"AA","ALTER_ROUTINE_ACTION",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_SCHEMA,        "AH","ALTER_SCHEMA",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_SEQUENCE,      "AQ","ALTER_SEQUENCE",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_SYNONYM,       "AY","ALTER_SYNONYM",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_TABLE,         "AT","ALTER_TABLE",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_TRIGGER,       "AG","ALTER_TRIGGER",true,false,false,false},
- {(int32_t)SQLOperation::ALTER_VIEW,          "AV","ALTER_VIEW",true,false,false,false},
+ {(int32_t)SQLOperation::ALTER,               "A0","ALTER",true,true,false,false,false},
+ {(int32_t)SQLOperation::ALTER_LIBRARY,       "AL","ALTER_LIBRARY",true,false,false,false,false},
+ {(int32_t)SQLOperation::ALTER_ROUTINE,       "AR","ALTER_ROUTINE",true,false,false,false,false},
+ {(int32_t)SQLOperation::ALTER_ROUTINE_ACTION,"AA","ALTER_ROUTINE_ACTION",true,false,false,false,true},
+ {(int32_t)SQLOperation::ALTER_SCHEMA,        "AH","ALTER_SCHEMA",true,false,false,false,false},
+ {(int32_t)SQLOperation::ALTER_SEQUENCE,      "AQ","ALTER_SEQUENCE",true,false,false,false,false},
+ {(int32_t)SQLOperation::ALTER_SYNONYM,       "AY","ALTER_SYNONYM",true,false,false,false,true},
+ {(int32_t)SQLOperation::ALTER_TABLE,         "AT","ALTER_TABLE",true,false,false,false,false},
+ {(int32_t)SQLOperation::ALTER_TRIGGER,       "AG","ALTER_TRIGGER",true,false,false,false,true},
+ {(int32_t)SQLOperation::ALTER_VIEW,          "AV","ALTER_VIEW",true,false,false,false,false},
 
- {(int32_t)SQLOperation::CREATE,              "C0","CREATE",true,true,false,false },
- {(int32_t)SQLOperation::CREATE_CATALOG,      "CC","CREATE_CATALOG",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_INDEX,        "CI","CREATE_INDEX",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_LIBRARY,      "CL","CREATE_LIBRARY",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_PROCEDURE,    "CP","CREATE_PROCEDURE",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_ROUTINE,      "CR","CREATE_ROUTINE",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_ROUTINE_ACTION,"CA","CREATE_ROUTINE_ACTION",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_SCHEMA,       "CH","CREATE_SCHEMA",true,false,false,true},
- {(int32_t)SQLOperation::CREATE_SEQUENCE,     "CQ","CREATE_SEQUENCE",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_SYNONYM,      "CY","CREATE_SYNONYM",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_TABLE,        "CT","CREATE_TABLE",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_TRIGGER,      "CG","CREATE_TRIGGER",true,false,false,false},
- {(int32_t)SQLOperation::CREATE_VIEW,         "CV","CREATE_VIEW",true,false,false,false},
+ {(int32_t)SQLOperation::COMMENT,             "CO","COMMENT",true,true,false,false,false},
 
- {(int32_t)SQLOperation::DML_DELETE,     "PD","DML_DELETE",false,false,true,false},
- {(int32_t)SQLOperation::DML_EXECUTE,    "PE","DML_EXECUTE",false,false,true,false},
- {(int32_t)SQLOperation::DML_INSERT,     "PI","DML_INSERT",false,false,true,false},
- {(int32_t)SQLOperation::DML_REFERENCES, "PR","DML_REFERENCES",false,false,true,false},
- {(int32_t)SQLOperation::DML_SELECT,     "PS","DML_SELECT",false,false,true,false},
- {(int32_t)SQLOperation::DML_SELECT_METADATA,"PM","DML_SELECT_METADATA",true,true,true,false},
- {(int32_t)SQLOperation::DML_UPDATE,     "PU","DML_UPDATE",false,false,true,false},
- {(int32_t)SQLOperation::DML_USAGE,      "PG","DML_USAGE",false,false,true,false},
+ {(int32_t)SQLOperation::CREATE,              "C0","CREATE",true,true,false,false,false },
+ {(int32_t)SQLOperation::CREATE_CATALOG,      "CC","CREATE_CATALOG",true,false,false,false,true},
+ {(int32_t)SQLOperation::CREATE_INDEX,        "CI","CREATE_INDEX",true,false,false,false,false},
+ {(int32_t)SQLOperation::CREATE_LIBRARY,      "CL","CREATE_LIBRARY",true,false,false,false,false},
+ {(int32_t)SQLOperation::CREATE_PROCEDURE,    "CP","CREATE_PROCEDURE",true,false,false,false,false},
+ {(int32_t)SQLOperation::CREATE_ROUTINE,      "CR","CREATE_ROUTINE",true,false,false,false,false},
+ {(int32_t)SQLOperation::CREATE_ROUTINE_ACTION,"CA","CREATE_ROUTINE_ACTION",true,false,false,false,true},
+ {(int32_t)SQLOperation::CREATE_SCHEMA,       "CH","CREATE_SCHEMA",true,false,false,true,false},
+ {(int32_t)SQLOperation::CREATE_SEQUENCE,     "CQ","CREATE_SEQUENCE",true,false,false,false,false},
+ {(int32_t)SQLOperation::CREATE_SYNONYM,      "CY","CREATE_SYNONYM",true,false,false,false,true},
+ {(int32_t)SQLOperation::CREATE_TABLE,        "CT","CREATE_TABLE",true,false,false,false,false},
+ {(int32_t)SQLOperation::CREATE_TRIGGER,      "CG","CREATE_TRIGGER",true,false,false,false,true},
+ {(int32_t)SQLOperation::CREATE_VIEW,         "CV","CREATE_VIEW",true,false,false,false,false},
 
- {(int32_t)SQLOperation::DROP,               "D0","DROP",true,true,false,false },
- {(int32_t)SQLOperation::DROP_CATALOG,       "DC","DROP_CATALOG",true,false,false,false},
- {(int32_t)SQLOperation::DROP_INDEX,         "DI","DROP_INDEX",true,false,false,false},
- {(int32_t)SQLOperation::DROP_LIBRARY,       "DL","DROP_LIBRARY",true,false,false,false},
- {(int32_t)SQLOperation::DROP_PROCEDURE,     "DP","DROP_PROCEDURE",true,false,false,false},
- {(int32_t)SQLOperation::DROP_ROUTINE,       "DR","DROP_ROUTINE",true,false,false,false},
- {(int32_t)SQLOperation::DROP_ROUTINE_ACTION,"DA","DROP_ROUTINE_ACTION",true,false,false,false},
- {(int32_t)SQLOperation::DROP_SCHEMA,        "DH","DROP_SCHEMA",true,false,false,false},
- {(int32_t)SQLOperation::DROP_SEQUENCE,      "DQ","DROP_SEQUENCE",true,false,false,false},
- {(int32_t)SQLOperation::DROP_SYNONYM,       "DY","DROP_SYNONYM",true,false,false,false},
- {(int32_t)SQLOperation::DROP_TABLE,         "DT","DROP_TABLE",true,false,false,false},
- {(int32_t)SQLOperation::DROP_TRIGGER,       "DG","DROP_TRIGGER",true,false,false,false},
- {(int32_t)SQLOperation::DROP_VIEW,          "DV","DROP_VIEW",true,false,false,false},
+ {(int32_t)SQLOperation::DML_DELETE,     "PD","DML_DELETE",false,false,true,false,true},
+ {(int32_t)SQLOperation::DML_EXECUTE,    "PE","DML_EXECUTE",false,false,true,false,true},
+ {(int32_t)SQLOperation::DML_INSERT,     "PI","DML_INSERT",false,false,true,false,true},
+ {(int32_t)SQLOperation::DML_REFERENCES, "PR","DML_REFERENCES",false,false,true,false,true},
+ {(int32_t)SQLOperation::DML_SELECT,     "PS","DML_SELECT",false,false,true,false,true},
+ {(int32_t)SQLOperation::DML_SELECT_METADATA,"PM","DML_SELECT_METADATA",true,true,true,false,false},
+ {(int32_t)SQLOperation::DML_UPDATE,     "PU","DML_UPDATE",false,false,true,false,true},
+ {(int32_t)SQLOperation::DML_USAGE,      "PG","DML_USAGE",false,false,true,false,true},
 
- {(int32_t)SQLOperation::MANAGE,            "M0","MANAGE",true,true,false,false},
- {(int32_t)SQLOperation::MANAGE_COMPONENTS, "MC","MANAGE_COMPONENTS",true,false,false,false},
- {(int32_t)SQLOperation::MANAGE_LIBRARY,    "ML","MANAGE_LIBRARY",true,false,false,false},
- {(int32_t)SQLOperation::MANAGE_LOAD,       "MT","MANAGE_LOAD",true,false,false,false},
- {(int32_t)SQLOperation::MANAGE_PRIVILEGES, "MP","MANAGE_PRIVILEGES",true,false,false,false},
- {(int32_t)SQLOperation::MANAGE_ROLES,      "MR","MANAGE_ROLES",true,false,false,false},
- {(int32_t)SQLOperation::MANAGE_STATISTICS, "MS","MANAGE_STATISTICS",true,false,false,false},
- {(int32_t)SQLOperation::MANAGE_TENANTS,    "MX","MANAGE_TENANTS",true,false,false,false},
- {(int32_t)SQLOperation::MANAGE_USERS,      "MU","MANAGE_USERS",true,false,false,false},
+ {(int32_t)SQLOperation::DROP,               "D0","DROP",true,true,false,false,false},
+ {(int32_t)SQLOperation::DROP_CATALOG,       "DC","DROP_CATALOG",true,false,false,false,true},
+ {(int32_t)SQLOperation::DROP_INDEX,         "DI","DROP_INDEX",true,false,false,false,false},
+ {(int32_t)SQLOperation::DROP_LIBRARY,       "DL","DROP_LIBRARY",true,false,false,false,false},
+ {(int32_t)SQLOperation::DROP_PROCEDURE,     "DP","DROP_PROCEDURE",true,false,false,false,false},
+ {(int32_t)SQLOperation::DROP_ROUTINE,       "DR","DROP_ROUTINE",true,false,false,false,false},
+ {(int32_t)SQLOperation::DROP_ROUTINE_ACTION,"DA","DROP_ROUTINE_ACTION",true,false,false,false,true},
+ {(int32_t)SQLOperation::DROP_SCHEMA,        "DH","DROP_SCHEMA",true,false,false,false,false},
+ {(int32_t)SQLOperation::DROP_SEQUENCE,      "DQ","DROP_SEQUENCE",true,false,false,false,false},
+ {(int32_t)SQLOperation::DROP_SYNONYM,       "DY","DROP_SYNONYM",true,false,false,false,true},
+ {(int32_t)SQLOperation::DROP_TABLE,         "DT","DROP_TABLE",true,false,false,false,false},
+ {(int32_t)SQLOperation::DROP_TRIGGER,       "DG","DROP_TRIGGER",true,false,false,false,true},
+ {(int32_t)SQLOperation::DROP_VIEW,          "DV","DROP_VIEW",true,false,false,false,false},
 
- {(int32_t)SQLOperation::QUERY_ACTIVATE, "QA","QUERY_ACTIVATE",true,true,false,false},
- {(int32_t)SQLOperation::QUERY_CANCEL,   "QC","QUERY_CANCEL",true,true,false,false},
- {(int32_t)SQLOperation::QUERY_SUSPEND,  "QS","QUERY_SUSPEND",true,true,false,false},
- {(int32_t)SQLOperation::REGISTER_HIVE_OBJECT,  "RH","REGISTER_HIVE_OBJECT",true,true,false,false},
+ {(int32_t)SQLOperation::MANAGE,            "M0","MANAGE",true,true,false,false,false},
+ {(int32_t)SQLOperation::MANAGE_COMPONENTS, "MC","MANAGE_COMPONENTS",true,false,false,false,false},
+ {(int32_t)SQLOperation::MANAGE_LIBRARY,    "ML","MANAGE_LIBRARY",true,false,false,false,false},
+ {(int32_t)SQLOperation::MANAGE_LOAD,       "MT","MANAGE_LOAD",true,false,false,false,false},
+ {(int32_t)SQLOperation::MANAGE_PRIVILEGES, "MP","MANAGE_PRIVILEGES",true,false,false,false,false},
+ {(int32_t)SQLOperation::MANAGE_ROLES,      "MR","MANAGE_ROLES",true,false,false,false,false},
+ {(int32_t)SQLOperation::MANAGE_STATISTICS, "MS","MANAGE_STATISTICS",true,false,false,false,false},
+ {(int32_t)SQLOperation::MANAGE_USERS,      "MU","MANAGE_USERS",true,false,false,false,false},
 
- {(int32_t)SQLOperation::REMAP_USER,           "RU","REMAP_USER",true,true,false,false},
- {(int32_t)SQLOperation::SHOW,                 "SW","SHOW",true,true,false,false},
- {(int32_t)SQLOperation::UNREGISTER_HIVE_OBJECT,  "UH","UNREGISTER_HIVE_OBJECT",true,true,false,false},
- {(int32_t)SQLOperation::USE_ALTERNATE_SCHEMA, "UA","USE_ALTERNATE_SCHEMA",true,true,false,false}
+ {(int32_t)SQLOperation::QUERY_ACTIVATE, "QA","QUERY_ACTIVATE",true,true,false,false,false},
+ {(int32_t)SQLOperation::QUERY_CANCEL,   "QC","QUERY_CANCEL",true,true,false,false,false},
+ {(int32_t)SQLOperation::QUERY_SUSPEND,  "QS","QUERY_SUSPEND",true,true,false,false,false},
+ {(int32_t)SQLOperation::REGISTER_HIVE_OBJECT,  "RH","REGISTER_HIVE_OBJECT",true,true,false,false,true},
+
+ {(int32_t)SQLOperation::REMAP_USER,           "RU","REMAP_USER",true,true,false,false,true},
+ {(int32_t)SQLOperation::SHOW,                 "SW","SHOW",true,true,false,true,false},
+ {(int32_t)SQLOperation::UNREGISTER_HIVE_OBJECT,  "UH","UNREGISTER_HIVE_OBJECT",true,true,false,false,true},
+ {(int32_t)SQLOperation::USE_ALTERNATE_SCHEMA, "UA","USE_ALTERNATE_SCHEMA",true,true,false,false,true}
 };
-
-// Defines the component operations for DBMGR:
-//   add an entry to this list for new DBMGR operations(in alphabetic order) 
-//   and to the corresponding dbmgrOpList
-enum class DBMGROperation {
-   MANAGE_ALERTS = 2,
-   MANAGE_SESSIONS,
-   SHOW_ACTIVE_QUERIES,
-   SHOW_EVENT_LOGS,
-   SHOW_REPOS_QUERIES
-};
-
-// Assign initial privileges for DBMGROperation (based on ComponentOpStruct):
-static const ComponentOpStruct dbmgrOpList[] =
-{
- {(int32_t)DBMGROperation::MANAGE_ALERTS,       "MA","MANAGE_ALERTS",true,true,false,false},
- {(int32_t)DBMGROperation::MANAGE_SESSIONS,     "MS","MANAGE_SESSIONS",true,true,false,false},
- {(int32_t)DBMGROperation::SHOW_ACTIVE_QUERIES, "AQ","SHOW_ACTIVE_QUERIES",true,true,false,false},
- {(int32_t)DBMGROperation::SHOW_EVENT_LOGS,     "EL","SHOW_EVENT_LOGS",true,true,false,false},
- {(int32_t)DBMGROperation::SHOW_REPOS_QUERIES,  "RQ","SHOW_REPOS_QUERIES",true,true,false,false}
-};
-
-// Defines the component operations for WMS:
-//   add an entry to this list for new WMS operations (in alphabetic order) 
-//   and to the corresponding wmsOpList
-enum class WMSOperation {
-   MANAGE_WMS = 2
-};
-
-// Assign initial privileges for DBMGROperation (based on ComponentOpStruct):
-static const ComponentOpStruct wmsOpList[] =
-{
- {(int32_t)WMSOperation::MANAGE_WMS,       "MW","MANAGE_WMS",true,true,false,false},
-};
-
 
 // List of components
 static const ComponentListStruct componentList[]
-{ { (int64_t)SQL_OPERATIONS_COMPONENT_UID, SQL_OPERATIONS_NAME, sizeof(sqlOpList)/sizeof(ComponentOpStruct), (ComponentOpStruct *)&sqlOpList },
-  { (int64_t)DBMGR_COMPONENT_UID, DBMGR_NAME, sizeof(dbmgrOpList)/sizeof(ComponentOpStruct), (ComponentOpStruct *)&dbmgrOpList },
-  { (int64_t)WMS_COMPONENT_UID, WMS_NAME, sizeof(wmsOpList)/sizeof(ComponentOpStruct), (ComponentOpStruct *)&wmsOpList } };
+{ { (int64_t)SQL_OPERATIONS_COMPONENT_UID, SQL_OPERATIONS_NAME, sizeof(sqlOpList)/sizeof(ComponentOpStruct), (ComponentOpStruct *)&sqlOpList } };
 
 #endif

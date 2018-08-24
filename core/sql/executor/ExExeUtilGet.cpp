@@ -298,6 +298,7 @@ static const QueryString getComponentPrivileges[] =
   {" where (c.component_uid=o.component_uid) "},
   {"   and (o.component_uid=p.component_uid) "},
   {"   and (o.operation_code=p.operation_code) "},
+  {"   and (o.is_system <> 'U') "},
   {"   and (c.component_name='%s') %s "},
   {" order by 1 "},
   {" ; "}
@@ -1716,34 +1717,6 @@ NABoolean ExExeUtilGetMetadataInfoTcb::checkUserPrivs(
       break;
     }
 
-   // if user has DML_SELECT, can perform object operations
-   case ComTdbExeUtilGetMetadataInfo::CATALOGS_:
-   case ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_:
-   case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_:
-   case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_:
-   case ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_:
-   case ComTdbExeUtilGetMetadataInfo::INDEXES_ON_TABLE_:
-   case ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_:
-   case ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_:
-   case ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_:
-   case ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_:
-   case ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_:
-   case ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_:
-   case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_:
-   case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_:
-    {
-      if (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),SQLOperation::DML_SELECT,true))
-        return FALSE;
-      break;
-    }
    default:
      break;
   }
