@@ -1898,7 +1898,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                 sort_spec_list
 %type <item>                 sort_spec
 %type <item>                 order_by_clause
-%type <item>                 order_siblings_by_clause 
 %type <item>                 order_by_clause_non_empty
 %type <stmt_ptr>             declare_static_cursor
 %type <relx>                 cursor_spec
@@ -13320,7 +13319,6 @@ table_expression : from_clause where_clause sample_clause
 
                    SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
                    ((BiConnectBy*)$2)->where_clause = $3;
-                   //((BiConnectBy*)$2)->order_siblings_by_clause = $4;
                    $$->setBiConnectBy( $2);
                    $$->setHasConnectByFlag(TRUE);
                   }
@@ -13376,6 +13374,23 @@ startwith_clause :TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY sear
                       $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
                       ((BiConnectBy*)$$)->setNoCycle(TRUE);
                     }
+/*
+                   | TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$5);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $5;
+                    }
+                   |TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$6);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $6;
+                    }
+*/
                    |  CONNECT_IDENTIFIER TOK_BY search_condition
                     {
                       $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
@@ -13385,6 +13400,19 @@ startwith_clause :TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY sear
                       $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$4);
                       ((BiConnectBy*)$$)->setNoCycle(TRUE);
                     }
+/*
+                   |  CONNECT_IDENTIFIER TOK_BY search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $4;
+                    }
+                   |  CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$4);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $5;
+                    }
+*/
 
 /* type item */
 join_specification : join_condition
@@ -23534,15 +23562,9 @@ order_by_clause : TOK_ORDER TOK_BY sort_spec_list
                              {
                                $$ = NULL;
                              }
+                          |TOK_ORDER TOK_SIBLINGS TOK_BY sort_spec_list
+                              { $$ = $4; $$->setIsOrderSyblingsBy(TRUE); }
 
-
-/* item */
-order_siblings_by_clause : TOK_ORDER TOK_SIBLINGS TOK_BY sort_spec_list
-                              { $$ = $4; }
-                          |  empty
-                             {
-                               $$ = NULL;
-                             }
 /* type relx */
 set_statement:  set_table_statement
 

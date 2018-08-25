@@ -6128,6 +6128,12 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   ItemExpr *orderByTree = removeOrderByTree();
   if (orderByTree) {
+    //If this is ORDER SIBLINGS BY
+    if(orderByTree->isOrderSyblingsBy())
+    {
+       orderByTree->unparse(bindWA->orderSiblingsByCol_,BINDER_PHASE,CONNECT_BY_FORMAT);
+    }
+    else {
     //
     // Tandem extension to ANSI (done only if source table is not grouped!):
     // Allow the ORDER BY clause to reference columns in the source table even
@@ -6353,6 +6359,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
     bindWA->getCurrentScope()->context()->inOrderBy() = FALSE;
+    }
   }
 
   // validate that select list doesn't contain any expressions that cannot be

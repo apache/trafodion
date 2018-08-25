@@ -4072,6 +4072,7 @@ public:
   NABoolean hasIsLeaf_;
   NAString pathColName_;
   NAString delimiter_;
+  NAString orderSiblingsByCol_;
 private:
   ExCriDescPtr myWorkCriDesc_;  
   Int32 flags_;

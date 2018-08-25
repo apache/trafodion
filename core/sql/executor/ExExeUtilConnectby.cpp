@@ -551,7 +551,8 @@ short ExExeUtilConnectbyTcb::work()
   Lng32 indOffset = 0;
   Lng32 varOffset = 0;
 
-  if (exeUtilTdb().hasPath_ == TRUE || exeUtilTdb().hasIsLeaf_ == TRUE) 
+  //if (exeUtilTdb().hasPath_ == TRUE || exeUtilTdb().hasIsLeaf_ == TRUE || exeUtilTdb().orderSiblingsByCol_ != "") 
+  if (exeUtilTdb().hasPath_ == TRUE || exeUtilTdb().hasIsLeaf_ == TRUE ) 
   {
     connBatchSize_ = 1;
   }
@@ -759,7 +760,16 @@ short ExExeUtilConnectbyTcb::work()
 
          }//for(int batchIdx = 0; batchIdx < 10 && i < seedNum; batchIdx ++)
 
-         nq21.append(" );");
+         if( exeUtilTdb().orderSiblingsByCol_ != "")
+         {
+           nq21.append(" ) ORDER BY ");
+           nq21.append((exeUtilTdb().childColName_).data());
+           nq21.append(" ,");
+           nq21.append(exeUtilTdb().orderSiblingsByCol_);
+           nq21.append(" asc;");
+         }
+         else
+           nq21.append(" );");
 
          if(sybnum == 0 ) //end
          {

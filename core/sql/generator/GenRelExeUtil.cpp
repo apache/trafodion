@@ -5473,6 +5473,8 @@ short ExeUtilConnectby::codeGen(Generator * generator)
   else
     exe_util_tdb->hasIsLeaf_ = FALSE;
 
+  exe_util_tdb->orderSiblingsByCol_ = generator->getBindWA()->orderSiblingsByCol_;
+
   generator->initTdbFields(exe_util_tdb);
 
   if (!generator->explainDisabled())
