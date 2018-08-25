@@ -286,7 +286,7 @@ public class HDFSClient
                             
               buf_.put(byteArray, 0, readLen);
               buf_.put(recDelimiter_);
-              lenRemain_ -= (readLen+1);
+              lenRemain -= (readLen+1);
               totalReadLen += (readLen+1);
           } else {
               // Reset the position because the row can't be copied to buffer
