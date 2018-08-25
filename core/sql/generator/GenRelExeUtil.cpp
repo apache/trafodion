@@ -5448,17 +5448,17 @@ short ExeUtilConnectby::codeGen(Generator * generator)
 			);
 
   exe_util_tdb->sourceDataTuppIndex_ = outputAtpIndex;
-  exe_util_tdb->parentColName_ =  parentColName_;
-  exe_util_tdb->childColName_ = childColName_;
+  exe_util_tdb->parentColName_ = parentColName_; // ((BiConnectBy*)getBiConnectBy())->getConnectBy()->getParentColName();
+  exe_util_tdb->childColName_ = childColName_; // ((BiConnectBy*)getBiConnectBy())->getConnectBy()->getChildColName();
   exe_util_tdb->hasStartWith_ = hasStartWith_;
   exe_util_tdb->startWithExprString_ = startWithExprString_;
   exe_util_tdb->noCycle_ = noCycle_;
 
-  if(hasConnectByPath())
+  if(generator->getBindWA()->connectByHasPath_)
   {
      exe_util_tdb->hasPath_ = TRUE;
-     exe_util_tdb->pathColName_ = pathColName_;
-     exe_util_tdb->delimiter_ = delimiter_;
+     exe_util_tdb->pathColName_ = generator->getBindWA()->connectByPathCol_;
+     exe_util_tdb->delimiter_ = generator->getBindWA()->connectByPathDel_;
   }
   else
   {
@@ -5466,11 +5466,12 @@ short ExeUtilConnectby::codeGen(Generator * generator)
      exe_util_tdb->pathColName_ = "0";
      exe_util_tdb->delimiter_ = " ";
   }
-
-  if(hasIsLeaf())
+  if(generator->getBindWA()->connectByHasIsLeaf_)
   {
     exe_util_tdb->hasIsLeaf_ = TRUE;
   }
+  else
+    exe_util_tdb->hasIsLeaf_ = FALSE;
 
   generator->initTdbFields(exe_util_tdb);
 

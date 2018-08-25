@@ -236,8 +236,7 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(oHeap),
          hbaseAccessOptions_(NULL),
-         commonSubExpr_(NULL),
-         biConnectBy_(NULL)
+         commonSubExpr_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -265,8 +264,7 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(CmpCommon::statementHeap()),
          hbaseAccessOptions_(NULL),
-         commonSubExpr_(NULL),
-         biConnectBy_(NULL)
+         commonSubExpr_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -297,8 +295,7 @@ public:
          isRewrittenMV_(FALSE),
          matchingMVs_(oHeap),
          hbaseAccessOptions_(NULL),
-         commonSubExpr_(NULL),
-         biConnectBy_(NULL)
+         commonSubExpr_(NULL)
      {} 
 
   Scan(OperatorTypeEnum otype,
@@ -327,8 +324,7 @@ public:
          isRewrittenMV_(FALSE),
          hbaseAccessOptions_(NULL),
          matchingMVs_(CmpCommon::statementHeap()),
-         commonSubExpr_(NULL),
-         biConnectBy_(NULL)
+         commonSubExpr_(NULL)
      {} 
 
   // virtual destructor
@@ -638,9 +634,6 @@ public:
   CommonSubExprRef *getCommonSubExpr() const        { return commonSubExpr_; }
   void setCommonSubExpr(CommonSubExprRef *cse)       { commonSubExpr_ = cse; }
 
-  void setBiConnectBy(BiConnectBy *b) { biConnectBy_ = b; }
-  BiConnectBy * getBiConnectBy() {return biConnectBy_; }
-
 protected:
 
   // Find the most promising index from the LIST, for index joins
@@ -789,8 +782,6 @@ private:
   // pointer to the common subexpression, if this is a scan of a
   // materialized common subexpr
   CommonSubExprRef *commonSubExpr_;
-
-  BiConnectBy * biConnectBy_;
 
 };
 

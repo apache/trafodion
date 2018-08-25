@@ -1112,6 +1112,7 @@ public:
                  stmtText, stmtTextCharSet, oHeap)
  {
    hasStartWith_ = TRUE;
+   myselection_ = NULL;
    noCycle_ = FALSE;
    scan_ = scan;
    flags_ = 0;
@@ -1159,7 +1160,7 @@ public:
   NABoolean hasConnectByPath() const 
   { return (flags_ & HAS_CONNECT_BY_PATH) != 0; }
 
-  ItemExpr *containsPath (ItemExpr * lst ) {
+  static ItemExpr *containsPath (ItemExpr * lst ) {
     Int32 arity = lst->getArity();
     if(lst->getOperatorType() == ITM_SYS_CONNECT_BY_PATH) 
     {
@@ -1175,7 +1176,7 @@ public:
     return NULL;
   }
 
-  NABoolean containsIsLeaf( ItemExpr * lst) {
+  static NABoolean containsIsLeaf( ItemExpr * lst) {
     if(lst == NULL) 
       return FALSE;
     Int32 arity = lst->getArity();
@@ -1203,6 +1204,9 @@ public:
   NABoolean noCycle_;
   RelExpr * scan_;
   NAString myTableName_;
+  NAString myQualCat_;
+  NAString myQualSch_;
+  NAString myQualTbl_;
   NAString pathColName_;
   NAString delimiter_;
 

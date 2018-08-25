@@ -282,7 +282,17 @@ public:
   static const CorrName invalid;
  virtual inline const CorrName& getTableName()const { return invalid;}
 
+  void setBiConnectBy(ItemExpr *b) { biConnectBy_ = b; }
+  ItemExpr* getBiConnectBy() {return biConnectBy_; }
+  ItemExpr* removeBiConnectBy() {ItemExpr * result = biConnectBy_; biConnectBy_ = NULL; return result; }
 
+  ValueIdSet & startWithPred() { CMPASSERT(NOT isCutOp()); return startWithPredicate_; }
+  ValueIdSet & connectByPred() { CMPASSERT(NOT isCutOp()); return connectByPredicate_; }
+
+  ItemExpr * biConnectBy_;
+
+  ValueIdSet   startWithPredicate_;   
+  ValueIdSet   connectByPredicate_;   
 
  protected:
   // append an ascii-version of RelExpr node into cachewa.qryText_

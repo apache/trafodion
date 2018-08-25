@@ -411,7 +411,7 @@ short ExExeUtilConnectbyTcb::emitPrevRow(ExpTupleDesc * tDesc, int level, int is
   Lng32 dlen = strlen(exeUtilTdb().delimiter_.data());
   Queue *pathq =  new(getHeap()) Queue(getHeap()) ;;
   if (exeUtilTdb().hasPath_ == TRUE) {
-    ti->get(2, ptr, len);
+    ti->get(1, ptr, len);
     pathq->insert(ptr);
     pathlength = len;
     for(int ii = level - 1 ; ii > 0; ii--)
@@ -585,6 +585,11 @@ short ExExeUtilConnectbyTcb::work()
             }
             //populate the seedQueue and currArray
             rootRow->position();
+            if(rootRow->numEntries() == 0 ) 
+            {
+               step_ = DONE_;
+               break;
+            }
 
             for(int i1 = 0; i1 < rootRow->numEntries(); i1 ++)
             {
@@ -677,6 +682,12 @@ short ExExeUtilConnectbyTcb::work()
 		 }
            cliInterface()->fetchRowsEpilogue(0, FALSE);
          }
+         
+         if(seedQueue_->numEntries() == 0 ) 
+            {
+               step_ = DONE_;
+               break;
+            }
          currQueue_ = getCurrQueue(currRootId_, seedQueue_);
          currArray[0] = currQueue_;  
 
@@ -808,6 +819,8 @@ short ExExeUtilConnectbyTcb::work()
 		      }//if(rc1== 0)
 		      else if(rc1 == 1) 
 		      {
+		        thisQueue_->insert(it);
+                        matchRowNum++;
 		        loopDetected = 1;
 		        if(exeUtilTdb().noCycle_ == FALSE) {
 		          ComDiagsArea * diags = getDiagsArea();

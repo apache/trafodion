@@ -737,21 +737,29 @@ public:
   BiConnectByRelat( OperatorTypeEnum otype,
           ItemExpr *child0 = NULL,
           ItemExpr *child1 = NULL)
-   :BiRelat(otype, NULL, NULL)
+   :BiRelat(otype, child0, child1)
   {
+    parentIe_ = NULL;
+    childIe_ = NULL;
   }
 
   virtual ~BiConnectByRelat() {}
 
   void setParentColName(char * v) { parentColName_ = v; }
+  void setParentColIE(ItemExpr* v) { parentIe_= v; }
   NAString getParentColName () { return parentColName_; }
+  ItemExpr* getParentColIE() { return parentIe_; }
 
   void setChildColName(char * v) { childColName_ = v; }
+  void setChildColIE(ItemExpr* v) { childIe_ = v; }
   NAString getChildColName() { return childColName_ ; }
+  ItemExpr* getChildColIE() { return childIe_; }
 
 private:
   NAString parentColName_;
   NAString childColName_;
+  ItemExpr * parentIe_;
+  ItemExpr *childIe_;
 };
 
 class KeyRangeCompare : public BiRelat

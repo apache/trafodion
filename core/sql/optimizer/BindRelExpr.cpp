@@ -2409,6 +2409,9 @@ void RelExpr::bindChildren(BindWA *bindWA)
   for (Int32 i = 0; i < arity; i++) {
     if (child(i)) {
 
+      //push the connect by down
+      if(getBiConnectBy() != NULL)
+         child(i)->setBiConnectBy(getBiConnectBy());
       // If doing a non-first child and the operator is
       // NOT one in which values/names can flow from one scope
       // the sibling scope, then we must clear the current RETDesc
@@ -2504,6 +2507,19 @@ RelExpr *RelExpr::bindSelf(BindWA *bindWA)
     // Genesis 10-990518-8420.
     if (bindWA->inViewWithCheckOption())
       bindWA->predsOfViewWithCheckOption() += selectionPred();
+  }
+
+  predTree = getBiConnectBy();
+  if (predTree) {
+    predTree = ((BiConnectBy *)predTree)->getConnectBy();
+    bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
+    predTree->convertToValueIdSet(connectByPred(), bindWA, ITM_AND);
+    bindWA->getCurrentScope()->context()->inWhereClause() = FALSE;
+    if (bindWA->errStatus())
+    {
+       connectByPred().clear();
+       bindWA->resetErrStatus();
+    }
   }
 
   // ++MV
@@ -5331,6 +5347,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     return this;
   }
 
+
   if (isTrueRoot()) 
     {
       // if this is simple scalar aggregate on a seabase table
@@ -6350,6 +6367,21 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
               return NULL;
             }
         }
+    }
+
+  for (Lng32 selIndex = 0; selIndex < compExpr().entries(); selIndex++)
+    {
+      ItemExpr * ie = compExpr()[selIndex].getItemExpr();
+      if(ie->getOperatorType() == ITM_REFERENCE )
+      {
+       if((((ColReference*)ie)->getColRefNameObj()).getColName() == "CONNECT_BY_ISLEAF")
+          bindWA->connectByHasIsLeaf_=TRUE;
+      }
+      if(ie->getOperatorType()  == ITM_BASECOLUMN)
+      {
+       if(((BaseColumn *)ie)->getColName() == "CONNECT_BY_ISLEAF")
+          bindWA->connectByHasIsLeaf_=TRUE;
+      }
     }
 
   if (hasPartitionBy())
@@ -8209,6 +8241,7 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   // Bind the base class.
   //
   RelExpr *boundExpr = bindSelf(bindWA);
+
   if (bindWA->errStatus()) return this;
 
   //
@@ -8365,6 +8398,101 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
               );
          }
      }
+  //CONNECT BY
+  //If this node has connectByPred this is the Scan
+  if(connectByPred().entries() >0 )
+  {
+   int match = 0;
+   for (ValueId exprId = connectByPred().init(); connectByPred().next(exprId); connectByPred().advance(exprId))
+   {
+     for(int j= 0; j< exprId.getItemExpr()->getArity(); j++)
+     {
+         ValueId vid =  exprId.getItemExpr()->child(j).getValueId();
+         for (CollIndex i = 0; i < getTableDesc()->getColumnList().entries(); i++) 
+         {
+           ValueId valId = getTableDesc()->getColumnList()[i];
+           if (valId == vid )
+           {
+              match = 1; break;
+           }
+         }
+         if(match == 1) break;
+     }
+     if(match == 1) break;
+   } 
+   if(match == 1)
+   {
+
+    ExeUtilConnectby* euc = new (bindWA->wHeap()) 
+                              ExeUtilConnectby(getTableName(),  NULL, 
+                                        CharInfo::DefaultCharSet , NULL , bindWA->wHeap());
+   ((ExeUtilConnectby*)euc)->scan_ = this;
+
+   ((ExeUtilConnectby*)euc)->myQualTbl_= getTableName().getQualifiedNameObj().getObjectName();
+   ((ExeUtilConnectby*)euc)->myQualCat_= getTableName().getQualifiedNameObj().getCatalogName();
+   ((ExeUtilConnectby*)euc)->myQualSch_= getTableName().getQualifiedNameObj().getSchemaName();
+   if(getTableName().getCorrNameAsString() != "")
+     ((ExeUtilConnectby*)euc)->myTableName_ = getTableName().getCorrNameAsString();
+   else
+     ((ExeUtilConnectby*)euc)->myTableName_ = getTableName().getQualifiedNameObj().getObjectName();
+
+   NAString pname;
+   ((BiConnectBy*)getBiConnectBy())->getConnectBy()->getParentColIE()->unparse(pname,OPTIMIZER_PHASE,CONNECT_BY_FORMAT);
+   
+   ((ExeUtilConnectby*)euc)->parentColName_= pname; 
+    NAString cname ;
+   ((BiConnectBy*)getBiConnectBy())->getConnectBy()->getChildColIE()->unparse(cname,BINDER_PHASE,CONNECT_BY_FORMAT);
+   ((ExeUtilConnectby*)euc)->childColName_ = cname; 
+   ((ExeUtilConnectby*)euc)->myselection_= ((BiConnectBy*)getBiConnectBy())->where_clause; 
+   ((ExeUtilConnectby*)euc)->noCycle_= ((BiConnectBy*)getBiConnectBy())->getNoCycle(); 
+
+    bindWA->getCurrentScope()->getXTNM()->remove(&getTableName());
+    boundExpr=euc->bindNode(bindWA);
+
+    for (ValueId exprId = euc->mypredicates_.init(); euc->mypredicates_.next(exprId); euc->mypredicates_.advance(exprId))
+    {
+      ItemExpr * ie = exprId.getItemExpr();
+      if(ie->getOperatorType() == ITM_REFERENCE )
+      {
+       if((((ColReference*)ie)->getColRefNameObj()).getColName() == "CONNECT_BY_ISLEAF")
+          bindWA->connectByHasIsLeaf_=TRUE;
+      }
+      if(ie->getOperatorType()  == ITM_BASECOLUMN)
+      {
+       if(((BaseColumn *)ie)->getColName() == "CONNECT_BY_ISLEAF")
+          bindWA->connectByHasIsLeaf_=TRUE;
+      }
+
+     for(int j= 0; j< exprId.getItemExpr()->getArity(); j++)
+     {
+         ValueId vid =  exprId.getItemExpr()->child(j).getValueId();
+         ItemExpr * ie = exprId.getItemExpr()->child(j);
+         if(ie->getOperatorType() == ITM_REFERENCE )
+         {
+           if((((ColReference*)ie)->getColRefNameObj()).getColName() == "CONNECT_BY_ISLEAF")
+             bindWA->connectByHasIsLeaf_=TRUE;
+         }
+         if(ie->getOperatorType()  == ITM_BASECOLUMN)
+         {
+            if(((BaseColumn *)ie)->getColName() == "CONNECT_BY_ISLEAF")
+              bindWA->connectByHasIsLeaf_=TRUE;
+         }
+     }
+   }
+    if(((BiConnectBy*)getBiConnectBy())->getStartWith() == NULL)
+    {
+      ((ExeUtilConnectby *)euc)->hasStartWith_ = FALSE;
+    }
+    else
+    {
+       ((ExeUtilConnectby*)euc)->hasStartWith_ = TRUE;
+       NAString startstr;
+       ((BiConnectBy*)getBiConnectBy())->getStartWith()->bindNode(bindWA);
+       ((BiConnectBy*)getBiConnectBy())->getStartWith()->unparse(startstr,OPTIMIZER_PHASE,CONNECT_BY_FORMAT);
+       ((ExeUtilConnectby*)euc)->startWithExprString_ = startstr;
+    }
+   }
+  }
   return boundExpr;
 } // Scan::bindNode()
 

@@ -4555,7 +4555,7 @@ void ValueIdSet::unparse(NAString &result,
 
   NAString connectorText;
 
-  if ((form == MVINFO_FORMAT) || (form == QUERY_FORMAT))
+  if ((form == MVINFO_FORMAT) || (form == QUERY_FORMAT) || (form == CONNECT_BY_FORMAT))
     connectorText = " AND ";
   else
     connectorText = " , ";
@@ -4573,6 +4573,7 @@ void ValueIdSet::unparse(NAString &result,
           x.getItemExpr()->unparse(result,phase,EXPLAIN_FORMAT,tabId);
         }
       else if ((form == MVINFO_FORMAT) ||
+	       (form == CONNECT_BY_FORMAT)  ||
 	       (form == QUERY_FORMAT)) 
         {
 	  // MVINFO_FORMAT or QUERY_FORMAT: don't print vid's

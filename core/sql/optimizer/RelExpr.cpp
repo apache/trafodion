@@ -288,6 +288,7 @@ RelExpr::RelExpr(OperatorTypeEnum otype,
   ,cachedResizeCIFRecord_(FALSE)
   ,dopReduced_(FALSE)
   ,originalExpr_(NULL)
+  ,biConnectBy_(NULL)
   ,operKey_(outHeap)
 {
 
@@ -857,6 +858,7 @@ RelExpr * RelExpr::copyTopNode(RelExpr *derivedNode,CollHeap* outHeap)
   result->sourceGroupId_ = sourceGroupId_;
   result->costLimit_ = costLimit_;
   result->originalExpr_ = this;
+  result->biConnectBy_ = biConnectBy_;
 
   return result;
 }

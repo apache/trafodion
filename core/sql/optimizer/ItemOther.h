@@ -1142,6 +1142,8 @@ public:
   {
     startWith_ = start;
     connectBy_ = (BiConnectByRelat*)conn;
+    where_clause = NULL;
+    order_siblings_by_clause = NULL;
   }
   virtual ~BiConnectBy() {}
 
@@ -1153,10 +1155,12 @@ public:
   NABoolean getNoCycle() {return noCycle_; }
   NAString startWithString_;
   ItemExpr * where_clause;
+  ItemExpr * order_siblings_by_clause;
 
 private:
   BiRelat * startWith_;
   BiConnectByRelat * connectBy_;
+  ItemExpr * startWithIe_;
   NABoolean noCycle_;
 };
 

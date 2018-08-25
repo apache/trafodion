@@ -2296,6 +2296,10 @@ void ItemExpr::computeKwdAndFlags( NAString &kwd,
       else
         kwd = getText();
     }
+    else if (form == CONNECT_BY_FORMAT)
+    {
+        kwd = ((BaseColumn *)this)->getTextForConnectBy();
+    }
     else if ((form == COMPUTED_COLUMN_FORMAT) ||
 	     (form == HIVE_MD_FORMAT))
       kwd = ToAnsiIdentifier(((BaseColumn *)this)->getColName());
@@ -2314,7 +2318,7 @@ void ItemExpr::computeKwdAndFlags( NAString &kwd,
     kwd = ToAnsiIdentifier(((NamedTypeToItem *)this)->getText());
   }
   else if (( operatorType == ITM_CACHE_PARAM) &&
-           (form == QUERY_FORMAT) )
+           (form == QUERY_FORMAT || form == CONNECT_BY_FORMAT) )
     ((ConstantParameter *)this)->getConstVal()->unparse(kwd, phase, QUERY_FORMAT, tabId);
   else
     kwd = getText();
@@ -2359,7 +2363,7 @@ void ItemExpr::computeKwdAndFlags( NAString &kwd,
     case ITM_MINUS:
       if (((BiArith *) this)->isDateMathFunction() &&
           (form == QUERY_FORMAT ||
-           form == COMPUTED_COLUMN_FORMAT))
+           form == COMPUTED_COLUMN_FORMAT || form == CONNECT_BY_FORMAT))
         {
           // this is not a regular addition or subtractions, it's
           // a datetime function with special handling of the last
@@ -2394,7 +2398,7 @@ void ItemExpr::computeKwdAndPostfix( NAString &kwd,
           {
           case ITM_CAST:
             {
-              if (form == QUERY_FORMAT || form == COMPUTED_COLUMN_FORMAT)
+              if (form == QUERY_FORMAT || form == CONNECT_BY_FORMAT|| form == COMPUTED_COLUMN_FORMAT)
                 {
                   kwd += "(";
                   postfix = " AS ";
@@ -2573,12 +2577,14 @@ void ItemExpr::unparse(NAString &result,
 
   computeKwdAndFlags( kwd, prefixFns, specialPrefixFns, phase, form, tabId );
 
+
   OperatorTypeEnum operatorType = getOperatorType();
 
   Int32 arity = getArity();
 
   if (operatorType != origOpType() &&
       form == QUERY_FORMAT ||
+      form == CONNECT_BY_FORMAT ||
       form == COMPUTED_COLUMN_FORMAT)
     {
       // handle some cases where the original function was rewritten
@@ -2632,6 +2638,7 @@ void ItemExpr::unparse(NAString &result,
       {
         if( ((form == MV_SHOWDDL_FORMAT) || 
              (form == QUERY_FORMAT) ||
+             (form == CONNECT_BY_FORMAT) ||
              (form == COMPUTED_COLUMN_FORMAT)) && 
              prefixFns )
         {
@@ -2658,6 +2665,7 @@ void ItemExpr::unparse(NAString &result,
         else  
           if ( (operatorType == ITM_TRIM)  && 
                ((form == QUERY_FORMAT) ||
+                (form == CONNECT_BY_FORMAT) ||
                 (form == COMPUTED_COLUMN_FORMAT)))
         {
           result += kwd;
@@ -2669,7 +2677,7 @@ void ItemExpr::unparse(NAString &result,
           if((operatorType == ITM_ITEM_LIST ||
           operatorType == ITM_AND) &&
           (form != MV_SHOWDDL_FORMAT) &&
-          (form != QUERY_FORMAT) )
+          (form != QUERY_FORMAT && form != CONNECT_BY_FORMAT) )
           {
             if (child(0))
               child(0)->unparse(result,phase,form, tabId);
@@ -4068,6 +4076,12 @@ const NAString BaseColumn::getText() const
   return name.getColRefAsAnsiString(FALSE, TRUE);
 }
 
+const NAString BaseColumn::getTextForConnectBy() const {
+  return
+    NAString(getTableDesc()->getNATable()->getNAColumnArray()[colNumber_]->
+      getColName());
+}
+
 const NAString BaseColumn::getTextForQuery() const {
   // return the table in the format "table.col" where
   // table is the physical table name and not the corr
@@ -5314,7 +5328,8 @@ void VEGPredicate::unparse(NAString &result,
 			   TableDesc * tabId) const
 {
   if ((form != MVINFO_FORMAT) &&
-      (form != QUERY_FORMAT))
+      (form != QUERY_FORMAT) &&
+      (form != CONNECT_BY_FORMAT) )
   {
     ItemExpr::unparse(result, phase, form, tabId);
     return;
@@ -5326,7 +5341,7 @@ void VEGPredicate::unparse(NAString &result,
   ValueIdList copyList;  
 
   CollIndex startIndex;
-  if (form == QUERY_FORMAT || form == MVINFO_FORMAT)
+  if (form == QUERY_FORMAT || form == MVINFO_FORMAT || form == CONNECT_BY_FORMAT)
     startIndex = 0;
   else 
     startIndex = 1;
@@ -5338,7 +5353,7 @@ void VEGPredicate::unparse(NAString &result,
     ItemExpr *nextExpr = nextMemberId.getItemExpr();
     if (nextExpr->getOperatorType() == ITM_INDEXCOLUMN)
       continue;
-    if ((form == QUERY_FORMAT) &&
+    if ((form == QUERY_FORMAT || form == CONNECT_BY_FORMAT) &&
         (nextExpr->getOperatorType() == ITM_BASECOLUMN))
     {
       BaseColumn * bs = (BaseColumn *)nextExpr;
@@ -5590,7 +5605,7 @@ void VEGReference::unparse(NAString &result,
 			   TableDesc * tabId) const
 {
   if ((form == EXPLAIN_FORMAT) || (form == MVINFO_FORMAT) ||
-       (form == QUERY_FORMAT))
+       (form == QUERY_FORMAT) || (form == CONNECT_BY_FORMAT) )
     {
       // End users won't know what a VegReference is, and
       // most items in EXPLAIN are already rewritten w/o VEGies.
@@ -5608,7 +5623,7 @@ void VEGReference::unparse(NAString &result,
 	   vegMembers.advance(someMemberId))
         {
 	  ItemExpr * someMemberExpr = someMemberId.getItemExpr();
-	  if (form == QUERY_FORMAT)
+	  if (form == QUERY_FORMAT || form == CONNECT_BY_FORMAT)
 	  {
 	    // for QUERY_FORMAT, unparse the VEG member that belongs to the
 	    // given tableDesc
@@ -10893,6 +10908,7 @@ const NAString ConstValue::getTextForQuery(UnparseFormatEnum form) const
   switch (form)
   {
   case QUERY_FORMAT:
+  case CONNECT_BY_FORMAT:
   case MV_SHOWDDL_FORMAT:
   case USER_FORMAT_DELUXE:
     {
@@ -11086,7 +11102,7 @@ void ConstValue::unparse(NAString &result,
 	}
       result += fullText;
     }
-  else if ((form == MVINFO_FORMAT) || (form == QUERY_FORMAT) ||
+  else if ((form == MVINFO_FORMAT) || (form == QUERY_FORMAT) || (form == CONNECT_BY_FORMAT) ||
            (form == MV_SHOWDDL_FORMAT) || (form == COMPUTED_COLUMN_FORMAT))
     {
     if (getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
@@ -11100,7 +11116,7 @@ void ConstValue::unparse(NAString &result,
             if (!textIsValidatedSQLLiteralInUTF8_)
               result += chType->getCharSetAsPrefix();
 
-            if ((form == MV_SHOWDDL_FORMAT) || (form == QUERY_FORMAT))
+            if ((form == MV_SHOWDDL_FORMAT) || (form == QUERY_FORMAT) || (form = CONNECT_BY_FORMAT))
               result += getTextForQuery(form);
             else
               result += getTextForQuery();
@@ -12209,6 +12225,7 @@ void Case::unparse(NAString &result,
   // Is this for MV use?
   if ((form != MV_SHOWDDL_FORMAT) &&
       (form != QUERY_FORMAT) &&
+      (form != CONNECT_BY_FORMAT) &&
       (form != COMPUTED_COLUMN_FORMAT) )
   {
     // No - sorry, use the default code.
@@ -12503,6 +12520,7 @@ void IfThenElse::unparse(NAString &result,
   // Is this for MV use?
   if ( (form != MV_SHOWDDL_FORMAT) &&
        (form != QUERY_FORMAT) &&
+       (form != CONNECT_BY_FORMAT) &&
        (form != COMPUTED_COLUMN_FORMAT))
   {
     // No - sorry, use the default code.
@@ -15007,7 +15025,7 @@ void RangeSpecRef::unparse(NAString &result,
                            TableDesc * tabId) const
 {
   // Don't include rangespec op if query format -- it won't parse.
-  if (form == QUERY_FORMAT || form == COMPUTED_COLUMN_FORMAT)
+  if (form == QUERY_FORMAT || form == CONNECT_BY_FORMAT || form == COMPUTED_COLUMN_FORMAT)
     child(1)->unparse(result, phase, form, tabId);
   else
     ItemExpr::unparse(result, phase, form, tabId);

@@ -1704,6 +1704,14 @@ public:
 
   const NAString & getISPExecLocation() const { return ISPExecLocation_ ;}
 
+  //ValueIdSet & connectByPred() { return connectByPredicate_; }
+
+  NAString connectByPathCol_;
+  NAString connectByPathDel_;
+
+  NABoolean connectByHasPath_;
+  NABoolean connectByHasIsLeaf_;
+
 private:
 
   // --------------------------------------------------------------------
@@ -2001,6 +2009,8 @@ private:
   NABoolean hasCallStmts_;
 
   NAString ISPExecLocation_;
+
+//  ValueIdSet   connectByPredicate_;
 
 }; // class BindWA
 

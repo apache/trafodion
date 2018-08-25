@@ -1043,6 +1043,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SHOWSHAPE",          TOK_SHOWSHAPE,   NONRESTOKEN_),
   ParKeyWord("SHOWSTATS",          TOK_SHOWSTATS,   NONRESTOKEN_),
   ParKeyWord("SHOWTRANSACTION",    TOK_SHOWTRANSACTION, NONRESTOKEN_),
+  ParKeyWord("SIBLINGS",           TOK_SIBLINGS,    NONRESTOKEN_),
   ParKeyWord("SIGN",               TOK_SIGN,        NONRESTOKEN_),
   ParKeyWord("SIGNAL",             TOK_SIGNAL,      COMPAQ_|RESWORD_|NONRESTOKEN_),
   ParKeyWord("SIGNED",             TOK_SIGNED,      NONRESTOKEN_),

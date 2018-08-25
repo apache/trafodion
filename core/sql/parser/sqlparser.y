@@ -383,6 +383,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LENGTH              /* ANSI SQL non-reserved word */
 %token <tokval> TOK_PRECISION
 %token <tokval> TOK_SCALE               /* ANSI SQL non-reserved word */
+%token <tokval> TOK_SIBLINGS		
 %token <tokval> TOK_LEADING_PRECISION   /* Tandem extenstion non-reserved word */
 %token <tokval> TOK_NULLABLE            /* ANSI SQL non-reserved word */
 
@@ -1897,6 +1898,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                 sort_spec_list
 %type <item>                 sort_spec
 %type <item>                 order_by_clause
+%type <item>                 order_siblings_by_clause 
 %type <item>                 order_by_clause_non_empty
 %type <stmt_ptr>             declare_static_cursor
 %type <relx>                 cursor_spec
@@ -13287,11 +13289,13 @@ table_expression : from_clause where_clause sample_clause
 		                                 SqlParser_CurrentParser->topHasOlapFunctions());
                      SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
 		   }
-            | from_clause startwith_clause where_clause
-           {
+            | from_clause startwith_clause where_clause 
+                   {
+                     if($1->getOperatorType() == REL_JOIN)
+                      {
 		     $$ = 
 		       getTableExpressionRelExpr($1, 
-		                                 NULL, 
+		                                 $3, 
 		                                 NULL, 
 		                                 NULL, 
 		                                 NULL, 
@@ -13300,9 +13304,56 @@ table_expression : from_clause where_clause sample_clause
 		                                 NULL,
 		                                 FALSE,
 		                                 SqlParser_CurrentParser->topHasOlapFunctions());
+                       }
+                     else
+                     $$ =
+                       getTableExpressionRelExpr($1,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 FALSE,
+                                                 SqlParser_CurrentParser->topHasOlapFunctions());
+
                    SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
                    ((BiConnectBy*)$2)->where_clause = $3;
-                   ((Scan*)$$)->setBiConnectBy( (BiConnectBy*)$2);
+                   //((BiConnectBy*)$2)->order_siblings_by_clause = $4;
+                   $$->setBiConnectBy( $2);
+                   $$->setHasConnectByFlag(TRUE);
+                  }
+            | from_clause where_clause startwith_clause 
+           {
+                     if($1->getOperatorType() == REL_JOIN)
+		     $$ = 
+		       getTableExpressionRelExpr($1, 
+		                                 $2, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL,
+		                                 NULL,
+		                                 FALSE,
+		                                 SqlParser_CurrentParser->topHasOlapFunctions());
+                     else
+                     $$ =
+                       getTableExpressionRelExpr($1,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 FALSE,
+                                                 SqlParser_CurrentParser->topHasOlapFunctions());
+                   SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
+                   ((BiConnectBy*)$3)->where_clause = $2;
+                   //((BiConnectBy*)$3)->order_siblings_by_clause = $4;
+                   $$->setBiConnectBy( $3);
                    $$->setHasConnectByFlag(TRUE);
            }
 /* type relx */
@@ -13312,24 +13363,24 @@ from_clause : TOK_FROM global_hint table_reference { $$ = $3; }
 				$$ = new (PARSERHEAP()) Join($1, $3, REL_JOIN);
 		      }
 
-startwith_clause :TOK_START_WITH predicate CONNECT_IDENTIFIER TOK_BY predicate
+startwith_clause :TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY search_condition
                     {
                       $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$5);
                       //save the predicate text
                       $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
                     }
-                   |TOK_START_WITH predicate CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE predicate
+                   |TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition 
                     {
                       $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$6);
                       //save the predicate text
                       $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
                       ((BiConnectBy*)$$)->setNoCycle(TRUE);
                     }
-                   |  CONNECT_IDENTIFIER TOK_BY predicate
+                   |  CONNECT_IDENTIFIER TOK_BY search_condition
                     {
                       $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
                     }
-                   |  CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE predicate
+                   |  CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition
                     {
                       $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$4);
                       ((BiConnectBy*)$$)->setNoCycle(TRUE);
@@ -13866,11 +13917,9 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
 /* type relx */
 query_spec_body : query_select_list table_expression access_type  optional_lock_mode
 			{
-                          if( $2->hasConnectByFlag() == FALSE ) {
-
-			  // use a compute node to attach select list
-			  RelRoot *temp=  new (PARSERHEAP())
-                            RelRoot($2, $3, $4, REL_ROOT, $1);
+			    // use a compute node to attach select list
+			    RelRoot *temp=  new (PARSERHEAP())
+                              RelRoot($2, $3, $4, REL_ROOT, $1);
 			    // set relroot olap here
 			    if (SqlParser_CurrentParser->topHasOlapFunctions()) {
 			      temp->setHasOlapFunctions(TRUE);
@@ -13884,61 +13933,14 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			    }
 			    //pop the last element which was pushed when we eneterd a new select  
 			    SqlParser_CurrentParser->popHasTDFunctions();			    
-			    
+			   #if 0 
+                            if( $2->hasConnectByFlag() == TRUE) { 
+                               //move it to Root
+                               temp->setBiConnectBy($2->getBiConnectBy()); 
+                               $2->setBiConnectBy(NULL);
+                            }
+                          #endif
 			    $$=temp;			    
-                          }
-                          else
-                          {
-                            CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-                            NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-                                                      , PARSERHEAP() // in  - NAMemory *
-                                                      );
-                            //remove ';' 
-                            UInt32 pos = 
-                              stmt->index(";", 0, NAString::ignoreCase);
-                            stmt->remove(pos);
-
-                            ExeUtilConnectby *euc = new (PARSERHEAP()) 
-                             ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()), (char*) stmt->data(), 
-                                        stmtCharSet, $2, PARSERHEAP());
-
-  			    RelRoot *temp = new (PARSERHEAP())
-			      RelRoot(euc, REL_ROOT , $1);
-                            
-                            if( ((Scan*)$2)->getBiConnectBy()->getStartWith() == NULL)
-                            {
-                              euc->hasStartWith_ = FALSE;
-                            }
-                            else
-                            {
-                              euc->hasStartWith_ = TRUE;
-                              euc->startWithExprString_ = ((Scan*)$2)->getBiConnectBy()->getStartWithString(); 
-                            }
-                            ItemExpr * it = euc->containsPath($1);
-                            if( it != NULL) 
-                            {
-                              euc->setHasConnectByPath(TRUE);
-                              euc->pathColName_=((ItmSysConnectByPathFunc*)it)->getPathColumnName();
-                              euc->delimiter_ = ((ItmSysConnectByPathFunc*)it)->getDelimiter();
-                            }
-                            else
-                              euc->setHasConnectByPath(FALSE);
-                            if($1)
-                            if( euc->containsIsLeaf($1) || euc->containsIsLeaf(((Scan*)$2)->getBiConnectBy()->where_clause) )
-                            {
-                                euc->setHasIsLeaf(TRUE);                              
-                            }
-                            euc->noCycle_ = ((Scan*)$2)->getBiConnectBy()->getNoCycle();
-                            euc->scan_ = $2;
-                            euc->myselection_ = ((Scan*)$2)->getBiConnectBy()->where_clause ;
-                            euc->myTableName_ = "_CONNECTBY_"+((Scan*)$2)->getTableName().getQualifiedNameAsString();
-                            euc->parentColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getParentColName();
-                            euc->childColName_ = ((Scan*)$2)->getBiConnectBy()->getConnectBy()->getChildColName();
-                            
-                            //euc->addSelPredTree( ((Scan*)$2)->getBiConnectBy()->where_clause );
-
-                            $$ = temp;                              
-                          }
 			}
 
 		| query_select_list into_clause table_expression access_type optional_lock_mode
@@ -19274,18 +19276,22 @@ comparison_predicate :
      | PRIOR_IDENTIFIER value_expression comparison_operator value_expression 
 		      { $$ = new (PARSERHEAP()) BiConnectByRelat($3, $2, $4); 
                         NAString pn, cn;
-                        $2->unparse(pn, PARSER_PHASE, USER_FORMAT);
-                        $4->unparse(cn, PARSER_PHASE, USER_FORMAT);
+                        $2->unparse(pn, PARSER_PHASE, QUERY_FORMAT);
+                        $4->unparse(cn, PARSER_PHASE, QUERY_FORMAT);
                         ( (BiConnectByRelat*)$$)->setParentColName((char*)pn.data());
                         ( (BiConnectByRelat*)$$)->setChildColName((char*)cn.data());  
+                        ( (BiConnectByRelat*)$$)->setParentColIE($2);
+                        ( (BiConnectByRelat*)$$)->setChildColIE($4);  
                       }
      | value_expression comparison_operator PRIOR_IDENTIFIER value_expression 
 		      { $$ = new (PARSERHEAP()) BiConnectByRelat($2, $1, $4); 
                         NAString pn, cn;
-                        $4->unparse(pn, PARSER_PHASE, USER_FORMAT);
-                        $1->unparse(cn, PARSER_PHASE, USER_FORMAT);
+                        $4->unparse(pn, PARSER_PHASE, QUERY_FORMAT);
+                        $1->unparse(cn, PARSER_PHASE, QUERY_FORMAT);
                         ( (BiConnectByRelat*)$$)->setParentColName((char*)pn.data());
+                        ( (BiConnectByRelat*)$$)->setParentColIE($4);
                         ( (BiConnectByRelat*)$$)->setChildColName((char*)cn.data());  
+                        ( (BiConnectByRelat*)$$)->setChildColIE($1);  
                       }
 
      // BEGIN rules added for UDF
@@ -23530,6 +23536,13 @@ order_by_clause : TOK_ORDER TOK_BY sort_spec_list
                              }
 
 
+/* item */
+order_siblings_by_clause : TOK_ORDER TOK_SIBLINGS TOK_BY sort_spec_list
+                              { $$ = $4; }
+                          |  empty
+                             {
+                               $$ = NULL;
+                             }
 /* type relx */
 set_statement:  set_table_statement
 

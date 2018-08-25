@@ -1791,7 +1791,7 @@ ItemExpr *ItemExpr::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) return this;
 
   ItemExpr* exp = this;
-
+ 
   // A quick way to determine whether we should worry about relaxation.
   // Only comparison and assign operators, SQL string functions are the
   // candidates.
@@ -13613,6 +13613,9 @@ NABoolean RowNumFunc::canBeUsedInGBorOB(NABoolean setErr)
 
 ItemExpr *ItmSysConnectByPathFunc::bindNode(BindWA *bindWA)
 {
+  bindWA->connectByHasPath_=TRUE;
+  bindWA->connectByPathCol_ = getPathColumnName();
+  bindWA->connectByPathDel_  = getDelimiter();
   return ZZZBinderFunction::bindNode(bindWA);
 }
 

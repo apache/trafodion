@@ -6302,17 +6302,15 @@ RelExpr * ExeUtilConnectby::bindNode(BindWA *bindWA)
     return this;
   }
   RelExpr * boundExpr = NULL;
-  bindChildren(bindWA);
+  //bindChildren(bindWA);
 
-  scan_->bindNode(bindWA);
+  //scan_->bindNode(bindWA);
   boundExpr = ExeUtilExpr::bindNode(bindWA);
- 
   if( myselection_ ) 
   {
     myselection_->bindNode(bindWA);
     myselection_->convertToValueIdSet(mypredicates_, bindWA, ITM_AND);
   }
-
   if (bindWA->errStatus()) 
     return NULL;
   return boundExpr;

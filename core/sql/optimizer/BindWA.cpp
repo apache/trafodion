@@ -188,6 +188,8 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , outerAggScope_(NULL)
      , hasCallStmts_(FALSE)
      , isTrafLoadPrep_(FALSE)
+     , connectByHasPath_(FALSE)
+     , connectByHasIsLeaf_(FALSE)
      , flags_(0)
      , udfList_(wHeap())
 {
