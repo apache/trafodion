@@ -2889,6 +2889,8 @@ short SequenceValue::codeGen(Generator * generator)
      *naTable_->getSGAttributes(),
      space);
 
+  sv->setRetryNum(CmpCommon::getDefaultLong(TRAF_SEQUENCE_RETRY_TIMES));
+
   if (cacheSize > 0)
     ((SequenceGeneratorAttributes*)naTable_->getSGAttributes())->setSGCache(origCacheSize);
 

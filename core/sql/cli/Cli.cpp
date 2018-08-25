@@ -10529,9 +10529,9 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
       cliRC = cqdCliInterface->holdAndSetCQD("traf_no_dtm_xn", "ON");
     }
 
-  Lng32 numTries = 0;
+  Lng32 numTries = 0, maxRetryNum = sga->getSGRetryNum();
   NABoolean isOk = FALSE;
-  while ((NOT isOk) && (numTries < 10))
+  while ((NOT isOk) && (numTries < maxRetryNum))
     {
       if (startLocalXn)
         {
@@ -10599,7 +10599,10 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
       
       numTries++;
       
-      DELAY(100 + numTries*25);
+      if( 100 + numTries*25 < 1000)   //MAX is 1 second
+          DELAY(100 + numTries*25);
+      else
+          DELAY(1000);
     }
 
     // could not update it after 10 tries. Return error.

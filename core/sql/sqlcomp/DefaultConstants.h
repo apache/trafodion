@@ -2946,6 +2946,12 @@ enum DefaultConstants
   // this is used to change cache size of sequence numbers for a session.
   // It overwrites the cache size that was specified during sequence creation.
   TRAF_SEQUENCE_CACHE_SIZE,
+ 
+  // this is used to set the retry time if two concurrent update of sequence
+  // conflict, and how many times will retry
+  // by default it is 250, when you saw error 1583, you can try to increase
+  // this settings
+  TRAF_SEQUENCE_RETRY_TIMES,
 
   TRAF_LOAD_MAX_HFILE_SIZE,
 

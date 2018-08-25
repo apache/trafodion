@@ -4055,6 +4055,10 @@ public:
 
   NABoolean isCurr() { return ((flags_ & IS_CURR) != 0); }
 
+  void setRetryNum(UInt32 n) { retryNum_ = n; }
+
+  UInt32 getRetryNum() { return retryNum_; }
+
  private:
 enum
   {
@@ -4064,7 +4068,8 @@ enum
   SequenceGeneratorAttributes sga_;
 
   UInt32 flags_;
-  char filler1_[4];
+
+  UInt32 retryNum_;
   // ---------------------------------------------------------------------
 };
 

@@ -2954,6 +2954,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/user/trafodion/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
 
+  DDint__(TRAF_SEQUENCE_RETRY_TIMES,        "250"),
+
   DDkwd__(TRAF_SIMILARITY_CHECK,			"ROOT"),
 
   DDkwd__(TRAF_STORE_OBJECT_DESC,                    "OFF"),   

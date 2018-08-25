@@ -55,6 +55,9 @@ class SeqGenEntry : public NABasicObject
 
   Int64 getSGObjectUID() { return sgUID_; }
 
+  void setRetryNum(UInt32 n) { retryNum_ = n; }
+  UInt32 getRetryNum() { return retryNum_ ; }
+
  private:
   short fetchNewRange(SequenceGeneratorAttributes &inSGA);
 
@@ -68,6 +71,8 @@ class SeqGenEntry : public NABasicObject
   Int64 cachedCurrValue_;
 
   void * cliInterfaceArr_;
+
+  UInt32 retryNum_;
 };
 
 class SequenceValueGenerator : public NABasicObject
@@ -80,11 +85,15 @@ class SequenceValueGenerator : public NABasicObject
 
   HashQueue * sgQueue() { return sgQueue_;}
   CollHeap * getHeap() { return heap_; }
+  void setRetryNum(UInt32 n) { retryNum_ = n; }
+  UInt32 getRetryNum() { return retryNum_; }
 
  private:
   CollHeap * heap_;
 
   HashQueue * sgQueue_;
+
+  UInt32 retryNum_;
 };
 
 

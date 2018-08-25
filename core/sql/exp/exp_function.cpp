@@ -736,6 +736,7 @@ ExFunctionSequenceValue::ExFunctionSequenceValue(OperatorTypeEnum oper_type,
 						 Space * space)
   : ex_function_clause(oper_type, 1, attr, space),
     sga_(sga),
+    retryNum_(),
     flags_(0)
 {
 };
@@ -7622,6 +7623,7 @@ ExFunctionSequenceValue::eval(char *op_data[], CollHeap *heap,
   char * result =  op_data[0];
 
   SequenceValueGenerator * seqValGen = getExeGlobals()->seqGen();
+  seqValGen->setRetryNum(getRetryNum());
   Int64 seqVal = 0;
   if (isCurr())
     rc = seqValGen->getCurrSeqVal(sga_, seqVal);
