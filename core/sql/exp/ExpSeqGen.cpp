@@ -50,7 +50,7 @@ SeqGenEntry::SeqGenEntry(Int64 sgUID, CollHeap * heap)
 {
   fetchNewRange_ = TRUE;
   cliInterfaceArr_ = NULL;
-  retryNum_ = 250; //default retry times
+  retryNum_ = 100; //default retry times
 }
 
 short SeqGenEntry::fetchNewRange(SequenceGeneratorAttributes &inSGA)
