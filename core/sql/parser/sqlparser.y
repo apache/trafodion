@@ -13322,12 +13322,12 @@ table_expression : from_clause where_clause sample_clause
                    $$->setBiConnectBy( $2);
                    $$->setHasConnectByFlag(TRUE);
                   }
-            | from_clause where_clause startwith_clause 
+            | from_clause TOK_WHERE search_condition startwith_clause
            {
                      if($1->getOperatorType() == REL_JOIN)
 		     $$ = 
 		       getTableExpressionRelExpr($1, 
-		                                 $2, 
+		                                 $3, 
 		                                 NULL, 
 		                                 NULL, 
 		                                 NULL, 
@@ -13349,9 +13349,9 @@ table_expression : from_clause where_clause sample_clause
                                                  FALSE,
                                                  SqlParser_CurrentParser->topHasOlapFunctions());
                    SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
-                   ((BiConnectBy*)$3)->where_clause = $2;
+                   ((BiConnectBy*)$4)->where_clause = $3;
                    //((BiConnectBy*)$3)->order_siblings_by_clause = $4;
-                   $$->setBiConnectBy( $3);
+                   $$->setBiConnectBy( $4);
                    $$->setHasConnectByFlag(TRUE);
            }
 /* type relx */
@@ -13360,7 +13360,6 @@ from_clause : TOK_FROM global_hint table_reference { $$ = $3; }
 			      {
 				$$ = new (PARSERHEAP()) Join($1, $3, REL_JOIN);
 		      }
-
 startwith_clause :TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY search_condition
                     {
                       $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$5);
