@@ -264,6 +264,7 @@ public class HDFSClient
     int sequenceFileRead(int readLenRemain) throws IOException 
     {
        boolean eof = false;
+       boolean nextValue;
        byte[] byteArray;
        int readLen;
        int totalReadLen = 0;
@@ -273,7 +274,11 @@ public class HDFSClient
        while (!eof && lenRemain > 0) {
           try {
             tempPos = reader_.getPosition();
-            eof = reader_.next(key_, value_);
+            nextValue = reader_.next(key_, value_);
+            if (!nextValue) {
+               eof = true;
+               break;
+            }
           }
           catch (java.io.EOFException e)
           {
