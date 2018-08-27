@@ -1367,14 +1367,22 @@ bool ReadCppEventsUDFInterface::validateEvent(const UDRInvocationInfo &info,
       constStr.clear();
       for(size_t j = 0; j < temp.size(); ++j)
         constStr += (std::toupper(temp[j]));
-      constStr.erase(constStr.find_last_not_of(" ")+1);
+      size_t trimPos = constStr.find_last_not_of(" ");
+      if (trimPos != std::string::npos)
+        constStr.erase(trimPos+1);
+      else
+        constStr = "";
 
       // convert event value
       temp = currField;
       std::string eventStr;
       for(size_t j = 0; j < temp.size(); ++j)
         eventStr += (std::toupper(temp[j]));
-      eventStr.erase(eventStr.find_last_not_of(" ")+1);
+      trimPos = eventStr.find_last_not_of(" ");
+      if (trimPos != std::string::npos)
+        eventStr.erase(trimPos+1);
+      else
+        eventStr = "";
 
       switch (info.getComparisonPredicate(i).getOperator())
       {
