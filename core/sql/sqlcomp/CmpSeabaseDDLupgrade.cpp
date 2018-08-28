@@ -2602,7 +2602,7 @@ short CmpSeabaseMDupgrade::upgradePrivMgr (
   std::vector<std::string> tablesUpgraded;
 
   // initSeabaseAuthorization will create or upgrade PrivMgr metadata tables
-  if (initSeabaseAuthorization(cliInterface, ddlXns,
+  if (initSeabaseAuthorization(cliInterface, ddlXns, TRUE /*isUpgrade*/,
                                tablesCreated, tablesUpgraded) < 0)
     return -1;
 

@@ -159,7 +159,7 @@ obey TEST132(populate_index);
 changeuser db__root;
 obey TEST132(popindex_check_reset);
 
--- if user belongs to DB__ROOTROLE, has DML privileges, so can populate indexes
+-- if user belongs to DB__ROOTROLE, DB__ROOTROLE does not have DML privileges
 grant role DB__ROOTROLE to sql_user2;
 changeuser sql_user2;
 obey TEST132(populate_index);
@@ -184,7 +184,7 @@ get tables, match 'T132%';
 ?section populate_index
 set schema t132sch;
 
-populate index t132t1_ndx1 on t132t1;;
+populate index t132t1_ndx1 on t132t1;
 populate index t132t2_ndx1 on t132t2;
 
 ?section popindex_check_reset
@@ -196,7 +196,7 @@ select count(*) from table (index_table t132t2_ndx1);
 
 cleanup index t132t1_ndx1;
 create index t132t1_ndx1 on t132t1 (c2) no populate;
-drop index t132t2_ndx1;
+cleanup index t132t2_ndx1;
 create index t132t2_ndx1 on t132t2 (c2) no populate;
 
 ?section test_show

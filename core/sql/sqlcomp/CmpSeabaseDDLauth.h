@@ -37,6 +37,7 @@
 
 #include "ComSmallDefs.h"
 #include "PrivMgrDefs.h"
+#include "PrivMgrComponentDefs.h"
 #include "NAUserId.h"
 #include <vector>
 

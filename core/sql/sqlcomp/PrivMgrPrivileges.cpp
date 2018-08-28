@@ -4375,7 +4375,7 @@ PrivStatus PrivMgrPrivileges::getUserPrivs(
 // *  <objectType> is the type of the subject object.
 // *  <granteeID> specifies the userID to accumulate
 // *  <roleIDs> is vector of roleIDs granted to the grantee
-// *  <hasManagePrivileges> returns whether the grantee has MANAGE_PRIVILEGES authority
+// *  <hasManagePrivPriv> returns whether the grantee has MANAGE_PRIVILEGES authority
 // *  <summarizedPrivs> contains the summarized privileges
 // *                                                                     
 // * Returns: PrivStatus                                               
@@ -4390,12 +4390,12 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
    const int32_t granteeID,
    const std::vector<int32_t> & roleIDs,
    PrivMgrDesc &summarizedPrivs,
-   bool & hasManagePrivileges,
+   bool & hasManagePrivPriv,
    std::vector <ComSecurityKey *>* secKeySet 
    )
 {
   PrivStatus retcode = STATUS_GOOD;
-  hasManagePrivileges = false;
+  hasManagePrivPriv = false;
   bool hasPublicGrantee = false;
   
   // Check to see if the granteeID is the system user
@@ -4406,7 +4406,7 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
     bitmap.set();
     PrivMgrCoreDesc coreTablePrivs(bitmap, bitmap);
     summarizedPrivs.setTablePrivs(coreTablePrivs);
-    hasManagePrivileges = true;
+    hasManagePrivPriv = true;
     return STATUS_GOOD;
   }
   
@@ -4414,10 +4414,13 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
   PrivObjectBitmap systemPrivs;
   PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
   
-  componentPrivileges.getSQLDMLPrivileges(granteeID,roleIDs,systemPrivs,
-                                          hasManagePrivileges);
+  bool hasSelectMetadata = false;
+  bool hasAnyManagePriv = false;
+  componentPrivileges.getSQLCompPrivs(granteeID,roleIDs,systemPrivs,
+                                      hasManagePrivPriv, hasSelectMetadata,
+                                      hasAnyManagePriv);
 
-  if (hasManagePrivileges && hasAllDMLPrivs(objectType,systemPrivs))
+  if (hasManagePrivPriv && hasAllDMLPrivs(objectType,systemPrivs))
   {
     PrivMgrCoreDesc coreTablePrivs(systemPrivs,systemPrivs);
     summarizedPrivs.setTablePrivs(coreTablePrivs);
@@ -4454,7 +4457,7 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
   
     PrivObjectBitmap grantableBitmap;
   
-    if (hasManagePrivileges)
+    if (hasManagePrivPriv)
        grantableBitmap = systemPrivs;
   
     PrivMgrCoreDesc temp2(systemPrivs,grantableBitmap);

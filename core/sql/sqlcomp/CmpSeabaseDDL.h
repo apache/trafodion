@@ -1456,6 +1456,7 @@ protected:
   short createPrivMgrRepos(ExeCliInterface *cliInterface, NABoolean ddlXns);
   short initSeabaseAuthorization(ExeCliInterface *cliInterface,
                                  NABoolean ddlXns,
+                                 NABoolean isUpgrade,
                                  std::vector<std::string> &tablesCreated,
                                  std::vector<std::string> &tablesUpgraded);
 

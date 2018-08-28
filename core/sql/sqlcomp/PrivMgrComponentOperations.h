@@ -40,6 +40,11 @@ class PrivMgrComponentOperations : public PrivMgr
 {
 public:
 
+   enum OperationType { OP_TYPE_UNKNOWN,
+                        OP_TYPE_SYSTEM,
+                        OP_TYPE_USER,
+                        OP_TYPE_UNUSED };
+
    // -------------------------------------------------------------------
    // Constructors and destructors:
    // -------------------------------------------------------------------
@@ -55,6 +60,27 @@ public:
     
    void clear();
 
+   static OperationType compTypeToEnum (const char operationType )
+   {
+      switch (operationType)
+      {
+         case 'Y': return OP_TYPE_SYSTEM; 
+         case 'N': return OP_TYPE_USER; 
+         case 'U': return OP_TYPE_UNUSED; 
+         default: return OP_TYPE_UNKNOWN; 
+      }
+   }
+   static char compTypeToLit (OperationType type)
+   {
+      switch(type)
+      {
+         case OP_TYPE_SYSTEM: return 'Y';
+         case OP_TYPE_USER: return 'N'; 
+         case OP_TYPE_UNUSED: return 'U';
+         default: return ' ';
+      }
+   }
+   
    PrivStatus createOperation(
       const std::string & componentName,
       const std::string & operationName,
@@ -67,7 +93,7 @@ public:
       const int64_t componentUID,
       const std::string & operationName,
       const std::string & operationCode,
-      const bool isSystemOperation,
+      const bool operationTypeUnused,
       const std::string & operationDescription,
       const int32_t granteeID,
       const std::string & granteeName,
@@ -103,10 +129,16 @@ public:
       bool isSystem,
       std::string & operationDescription);
 
-   int64_t getCount();
-   
+   PrivStatus getCount(
+     const int64_t &componentUID,
+     int32_t &numOps,
+     int32_t &numUnusedOps);
+
    bool isComponentUsed(const std::string & componentUIDString);      
       
+   PrivStatus updateOperationCodes(
+      const int64_t & componentUID);
+
    bool nameExists(
       const int64_t componentUID,
       const std::string & operationName);

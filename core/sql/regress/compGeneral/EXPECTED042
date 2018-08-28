@@ -1,9 +1,9 @@
 >>showstats for table t042_orderline on ol_o_id detail;
 
 Detailed Histogram data for Table TRAFODION.ORDERENTRY.T042_ORDERLINE
-Table ID: 8379103414832633643
+Table ID: 3587850068614533656
 
-Hist ID:    1428267625
+Hist ID:    1404295272
 Column(s):  OL_O_ID
 Total Rows: 10
 Total UEC:  4
@@ -1759,7 +1759,7 @@ HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 ,
 >>-- test compile time
 >>
 >>sh more /proc/loadavg  | cut -d' ' -f 1-3 | sed -e 's/^/System load: /' >> LOG042;
-System load: 1.39 2.74 2.71
+System load: 2.75 2.02 1.56
 >>sh grep "model name" /proc/cpuinfo | head -1 | cut -d '@' -f 2 | sed -e 's/^/CPU frequency: /' >> LOG042;
 CPU frequency: model name	: Intel Core Processor (Haswell)
 >>set statistics on;
@@ -1767,10 +1767,10 @@ CPU frequency: model name	: Intel Core Processor (Haswell)
 
 --- SQL command prepared.
 
-Start Time             2018/03/22 01:04:54.921227
-End Time               2018/03/22 01:04:54.924930
-Elapsed Time                      00:00:00.003703
-Compile Time                      00:00:00.003703
+Start Time             2018/08/27 16:40:52.450248
+End Time               2018/08/27 16:40:52.453421
+Elapsed Time                      00:00:00.003173
+Compile Time                      00:00:00.003173
 Execution Time                    00:00:00.000000
 
 
@@ -1801,10 +1801,10 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 --- SQL command prepared.
 
-Start Time             2018/03/22 01:04:55.115150
-End Time               2018/03/22 01:04:55.117539
-Elapsed Time                      00:00:00.002389
-Compile Time                      00:00:00.002389
+Start Time             2018/08/27 16:40:52.648361
+End Time               2018/08/27 16:40:52.651112
+Elapsed Time                      00:00:00.002751
+Compile Time                      00:00:00.002751
 Execution Time                    00:00:00.000000
 
 
@@ -1952,29 +1952,29 @@ NUM_HITS    NUM_PARAMS  (EXPR)      (EXPR)
 NUM_HITS    NUM_PARAMS  (EXPR)      (EXPR)
 ----------  ----------  ----------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-         0           1  ====QUERY:  select is_audited, num_salt_partns, row_format, flags from TRAFODION."_MD_".TABLES where table_uid = 8379103414832633643 for read committed access                                                      
+         0           1  ====QUERY:  select is_audited, num_salt_partns, row_format, flags from TRAFODION."_MD_".TABLES where table_uid = 3587850068614533656 for read committed access                                                      
          0           2  ====QUERY:  select column_name, column_number, column_class, fs_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, trim(is_upshifted), column_flags, nullable, trim(c
-         0           3  ====QUERY:  select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from TRAFODION."_MD_".KEYS where object_uid = 8379103414832633643 and nonkeycol = 0 for read committed access order
+         0           3  ====QUERY:  select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from TRAFODION."_MD_".KEYS where object_uid = 3587850068614533656 and nonkeycol = 0 for read committed access order
          0           4  ====QUERY:  select object_uid, object_owner, schema_owner, flags, create_time from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = 'ORDERENTRY' and object_name = 'DESCRIBE__'  and obje
          0           4  ====QUERY:  select object_uid, object_owner, schema_owner, flags, create_time from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = '_MD_' and object_name = 'OBJECTS'  and object_type =
          0           5  ====QUERY:  select object_uid, object_owner, schema_owner, flags, create_time from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = 'ORDERENTRY' and object_name = 'T042_ORDERLINE'  and 
-         1           1  ====QUERY:  select is_audited, num_salt_partns, row_format, flags from TRAFODION."_MD_".TABLES where table_uid = 8379103414832637810 for read committed access                                                      
+         1           1  ====QUERY:  select is_audited, num_salt_partns, row_format, flags from TRAFODION."_MD_".TABLES where table_uid = 3587850068614538557 for read committed access                                                      
          1           1  ====QUERY:  select trim(O.catalog_name || '.' || '"' || O.schema_name || '"' || '.' || '"' || O.object_name || '"' ) constr_name, trim(O2.catalog_name || '.' || '"' || O2.schema_name || '"' || '.' || '"' || O2.ob
          1           2  ====QUERY:  select column_name, column_number, column_class, fs_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, trim(is_upshifted), column_flags, nullable, trim(c
-         1           2  ====QUERY:  select column_name, column_number, keyseq_number, ordering , cast(0 as int not null) from TRAFODION."_MD_".KEYS where object_uid = 8379103414832633687 for read committed access order by keyseq_number 
-         1           3  ====QUERY:  select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from TRAFODION."_MD_".KEYS where object_uid = 8379103414832637810 and nonkeycol = 0 for read committed access order
+         1           2  ====QUERY:  select column_name, column_number, keyseq_number, ordering , cast(0 as int not null) from TRAFODION."_MD_".KEYS where object_uid = 3587850068614533750 for read committed access order by keyseq_number 
+         1           3  ====QUERY:  select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from TRAFODION."_MD_".KEYS where object_uid = 3587850068614538557 and nonkeycol = 0 for read committed access order
          1           5  ====QUERY:  select object_uid, object_owner, schema_owner, flags, create_time from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = 'ORDERENTRY' and object_name = 'T042_T1'  and object_
-         2           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN (
-         2           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN (
+         2           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND GRANTEE_ID IN (1000
+         2           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND GRANTEE_ID IN (3333
          2           1  ====QUERY:  SELECT HISTOGRAM_ID, COLUMN_NUMBER, COLCOUNT, INTERVAL_COUNT, ROWCOUNT, TOTAL_UEC, JULIANTIMESTAMP(STATS_TIME), LOW_VALUE, HIGH_VALUE, JULIANTIMESTAMP(READ_TIME), READ_COUNT, SAMPLE_SECS, COL_SECS, SA
          2           1  ====QUERY:  SELECT HISTOGRAM_ID, INTERVAL_NUMBER, INTERVAL_ROWCOUNT, INTERVAL_UEC, INTERVAL_BOUNDARY, CAST(STD_DEV_OF_FREQ AS DOUBLE PRECISION), V1, V2, V5 FROM TRAFODION.ORDERENTRY.SB_HISTOGRAM_INTERVALS WHERE T
          2           1  ====QUERY:  SELECT OBJECT_UID, OBJECT_NAME, OBJECT_TYPE, GRANTEE_ID, GRANTEE_NAME, GRANTEE_TYPE, GRANTOR_ID, GRANTOR_NAME, GRANTOR_TYPE, PRIVILEGES_BITMAP, GRANTABLE_BITMAP FROM TRAFODION."_PRIVMGR_MD_".OBJECT_PR
-         2           1  ====QUERY:  SELECT object_uid,object_name,grantee_id,grantee_name,grantor_id,grantor_name,column_number,privileges_bitmap,grantable_bitmap FROM TRAFODION."_PRIVMGR_MD_".COLUMN_PRIVILEGES where object_uid = 837910
-         2           1  ====QUERY:  select check_option, is_updatable, is_insertable from TRAFODION."_MD_".VIEWS where view_uid = 8379103414832633643 for read committed access                                                             
+         2           1  ====QUERY:  SELECT object_uid,object_name,grantee_id,grantee_name,grantor_id,grantor_name,column_number,privileges_bitmap,grantable_bitmap FROM TRAFODION."_PRIVMGR_MD_".COLUMN_PRIVILEGES where object_uid = 358785
+         2           1  ====QUERY:  select check_option, is_updatable, is_insertable from TRAFODION."_MD_".VIEWS where view_uid = 3587850068614533656 for read committed access                                                             
          2           2  ====QUERY:  select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.num_salt_partns, T.row_format, I.index_uid from TRAFODION."_MD_".INDEXES
          2           3  ====QUERY:  select O.object_name, C.constraint_type, C.col_count, C.constraint_uid, C.enforced, C.flags from TRAFODION."_MD_".OBJECTS O, TRAFODION."_MD_".TABLE_CONSTRAINTS C where O.catalog_name = 'TRAFODION' and
-         2           3  ====QUERY:  select octet_length(text), text from TRAFODION."_MD_".TEXT where text_uid = 8379103414832633643 and text_type = 2 and sub_id = 0 for read committed access order by seq_num                             
-         3           3  ====QUERY:  select octet_length(text), text from TRAFODION."_MD_".TEXT where text_uid = 8379103414832637810 and text_type = 2 and sub_id = 0 for read committed access order by seq_num                             
+         2           3  ====QUERY:  select octet_length(text), text from TRAFODION."_MD_".TEXT where text_uid = 3587850068614533656 and text_type = 2 and sub_id = 0 for read committed access order by seq_num                             
+         3           3  ====QUERY:  select octet_length(text), text from TRAFODION."_MD_".TEXT where text_uid = 3587850068614538557 and text_type = 2 and sub_id = 0 for read committed access order by seq_num                             
         12           4  ====QUERY:  select object_uid, object_owner, schema_owner, flags, create_time from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = '_MD_' and object_name = 'TABLES'  and object_type = 
 
 --- 24 row(s) selected.
@@ -2115,8 +2115,8 @@ NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
          2              1               0
          2              1               0
          2              1               1
-         2              1              10
-         2              1              10
+         2              1               2
+         2              1               2
          2              2               3
          2              3               0
          3              3               0

@@ -344,7 +344,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
@@ -404,7 +404,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
@@ -412,7 +412,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 --- SQL operation complete.
 >>
 >>
->>-- if user belongs to DB__ROOTROLE, has DML privileges, so can populate indexes
+>>-- if user belongs to DB__ROOTROLE, DB__ROOTROLE does not have DML privileges
 >>grant role DB__ROOTROLE to sql_user2;
 
 --- SQL operation complete.
@@ -424,10 +424,18 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>
 >>populate index t132t1_ndx1 on t132t1;
 
---- SQL operation complete.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T1.
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T132SCH.T132T1.
+
+--- SQL operation failed with errors.
 >>populate index t132t2_ndx1 on t132t2;
 
---- SQL operation complete.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T2.
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T132SCH.T132T2.
+
+--- SQL operation failed with errors.
 >>
 >>changeuser db__root;
 >>obey TEST132(popindex_check_reset);
@@ -443,7 +451,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 (EXPR)              
 --------------------
 
-                   8
+                   0
 
 --- 1 row(s) selected.
 >>select count(*) from table (index_table t132t2_ndx1);
@@ -451,7 +459,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 (EXPR)              
 --------------------
 
-                   8
+                   0
 
 --- 1 row(s) selected.
 >>
@@ -461,7 +469,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
@@ -527,7 +535,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
