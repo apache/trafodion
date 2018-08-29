@@ -267,7 +267,9 @@ public:
     if(pos == 0) return childTcb_;
     return NULL;
   }
-
+  virtual ex_tcb_private_state * allocatePstates(
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
 protected:
   
   // The child TCB of this Transpose node.
@@ -329,7 +331,7 @@ class ExTransposePrivateState : public ex_tcb_private_state
 
 public:
 
-  ExTransposePrivateState(const ExTransposeTcb * tcb); 
+  ExTransposePrivateState(); 
 
   ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
 

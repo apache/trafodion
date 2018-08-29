@@ -2165,19 +2165,21 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
     // are flowing to this update node.
     // This is also the case when updates are being driven 
     // by rowsets.
-    // The fix is to unconditionally block the ordered union
+    // Changing this code that  unconditionally blocked the ordered union
     // to handle all cases of IM updates.
-    // Note that this may cause performance issues. Improving
-    // the performance is an RFE at the moment. 
-    //if (this->getInliningInfo().isInActionOfRowTrigger() ||
-    //   bindWA->getHostArraysArea())
-    //{
-       ((Union *)indexOp)->setBlockedUnion();
-    //}
-    //else
-    //{
-    //   ((Union *)indexOp)->setOrderedUnion();
-    //}
+    //We can use the ordered union in the case where we have the sequence operator 
+    // in the tree on the left side to remove duplicates before it flows to the 
+    // IM tree. This is to improve performance.
+    // 
+    if (this->getInliningInfo().isInActionOfRowTrigger() ||
+        (bindWA->getHostArraysArea() && !isEffUpsert))
+    {
+      ((Union *)indexOp)->setBlockedUnion();
+    }
+    else
+    {
+      ((Union *)indexOp)->setOrderedUnion();
+    }
 
     // Add a root just to be consistent, so all returns from this method
     // are topped with a RelRoot.

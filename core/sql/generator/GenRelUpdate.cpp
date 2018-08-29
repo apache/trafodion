@@ -2926,6 +2926,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	  // operator. On seeing that, executor will flush the buffers.
 	  generator->setVSBBInsert(TRUE);
 	}
+      if (xformedEffUpsert())
+        generator->setEffTreeUpsert(TRUE);
 
       //setting parametes for hbase bulk load integration
       hbasescan_tdb->setIsTrafodionLoadPrep(this->getIsTrafLoadPrep());

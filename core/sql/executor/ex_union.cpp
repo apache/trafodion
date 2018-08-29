@@ -135,22 +135,10 @@ ex_union_tcb::ex_union_tcb(const ex_union_tdb &  union_tdb,  //
   ex_cri_desc * to_parent_cri;
   to_parent_cri = childQueues_[0].up->getCriDesc();
   
-  // Allocate the queue to communicate with parent
-  qparent.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
-				     union_tdb.queueSizeDown_,
-				     union_tdb.criDescDown_,
-				     space);
+  
+  allocateParentQueues(qparent,TRUE);
 
-  // Allocate the private state in each entry of the down queue
-  ex_union_private_state p(this);
-  qparent.down->allocatePstate(&p, this);
   processedInputs_ = qparent.down->getHeadIndex();
-
-  qparent.up = new(space) ex_queue(ex_queue::UP_QUEUE,
-				   union_tdb.queueSizeUp_,
-				   union_tdb.criDescUp_,
-				   space);
-
   // fixup left expression
   if (moveExpr(0))
     (void) moveExpr(0)->fixup(0, getExpressionMode(), this,
@@ -207,7 +195,6 @@ void ex_union_tcb::registerSubtasks()
   sched->registerInsertSubtask(sWorkDown, this, qparent.down,"DN");
   sched->registerUnblockSubtask(sWorkDown, this, childQueues_[0].down);
   sched->registerUnblockSubtask(sWorkDown, this, childQueues_[1].down);
-
   // cancellations are handled by the complaints department
   sched->registerCancelSubtask(sCancel, this, qparent.down,"CN");
 
@@ -215,6 +202,8 @@ void ex_union_tcb::registerSubtasks()
   sched->registerUnblockSubtask(sWorkUp, this, qparent.up,"UP");
   sched->registerInsertSubtask(sWorkUp, this, childQueues_[0].up);
   sched->registerInsertSubtask(sWorkUp, this, childQueues_[1].up);
+  // the parent queues will be resizable, so register a resize subtask.
+  registerResizeSubtasks();
 }
 
 ///////////////////////////////////////////////////////////
@@ -1120,7 +1109,8 @@ void ex_o_union_tcb::registerSubtasks()
   sched->registerUnblockSubtask(sWorkUp, this, qparent.up,"UP");
   sched->registerInsertSubtask(sWorkUp, this, childQueues_[0].up);
   sched->registerInsertSubtask(sWorkUp, this, childQueues_[1].up);
-
+  // the parent queues will be resizable, so register a resize subtask.
+  registerResizeSubtasks();
 } // ex_o_union_tcb::registerSubtasks
 
 //////////////////////////////////////////////////////////////
@@ -1233,7 +1223,8 @@ void ex_c_union_tcb::registerSubtasks()
     sched->registerInsertSubtask(sWorkUp, this, childQueues_[i].up);
 
   workUpEvent_ = sched->registerNonQueueSubtask(sWorkUp, this);
-
+  // the parent queues will be resizable, so register a resize subtask.
+  registerResizeSubtasks();
 } // ex_union_tcb::registerSubtasks()
 
 ExWorkProcRetcode ex_c_union_tcb::condWorkDown()
@@ -1581,7 +1572,7 @@ void ex_c_union_tcb::processEODErrorOrWarning(NABoolean isWarning)
 
 // Constructor and destructor for union_private_state
 //
-ex_union_private_state::ex_union_private_state(const ex_union_tcb *) 
+ex_union_private_state::ex_union_private_state() 
 {
   init();
 }
@@ -1601,6 +1592,18 @@ ex_union_private_state::~ex_union_private_state()
 
 ex_tcb_private_state * ex_union_private_state::allocate_new(const ex_tcb *tcb)
 {
-  return new(((ex_tcb *)tcb)->getSpace()) ex_union_private_state((ex_union_tcb *) tcb);
+  return new(((ex_tcb *)tcb)->getSpace()) ex_union_private_state();
 }
 
+////////////////////////////////////////////////////////////////////////
+// Redefine virtual method allocatePstates, to be used by dynamic queue
+// resizing, as well as the initial queue construction.
+////////////////////////////////////////////////////////////////////////
+ex_tcb_private_state * ex_union_tcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ex_union_private_state> pa;
+
+  return pa.allocatePstates(this, numElems, pstateLength);
+}

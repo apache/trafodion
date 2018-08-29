@@ -195,6 +195,9 @@ virtual const ex_tcb* getChild(Int32 pos) const
   virtual Int32 numChildren() const { return union_tdb().numChildren(); }
 //  virtual const ex_tcb* getChild(int pos) const;
   virtual Int32 hasNoOutputs() const {return FALSE;};
+  virtual ex_tcb_private_state * allocatePstates(
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
 protected:
 
   const ex_tcb       *tcbLeft_;      // left tcb
@@ -386,8 +389,8 @@ class ex_union_private_state : public ex_tcb_private_state
   void           init();        // initialize state
 
 public:
-
-  ex_union_private_state(const ex_union_tcb * tcb); //constructor
+  
+  ex_union_private_state(); //constructor
   ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
   ~ex_union_private_state();  // destructor
 

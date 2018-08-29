@@ -383,7 +383,7 @@ enum DefaultConstants
   DYN_QUEUE_RESIZE_INIT_DOWN,
   DYN_QUEUE_RESIZE_INIT_UP,
   DYN_QUEUE_RESIZE_LIMIT,
-
+  DYN_QUEUE_RESIZE_OVERRIDE,
   // -------------------------------------------------------------------------
   // Enable 'ON' or disable 'OFF' considering hash joins of any form
   // -------------------------------------------------------------------------
@@ -2114,7 +2114,6 @@ enum DefaultConstants
   GEN_ONLJ_RIGHT_SIDE_QUEUE_DOWN,
   GEN_ONLJ_SET_QUEUE_RIGHT,
   GEN_ONLJ_SET_QUEUE_LEFT,
-
 
   
   SORT_REC_THRESHOLD,
