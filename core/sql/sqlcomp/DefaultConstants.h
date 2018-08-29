@@ -2949,7 +2949,7 @@ enum DefaultConstants
  
   // this is used to set the retry time if two concurrent update of sequence
   // conflict, and how many times will retry
-  // by default it is 250, when you saw error 1583, you can try to increase
+  // by default it is 100, when you saw error 1583, you can try to increase
   // this settings
   TRAF_SEQUENCE_RETRY_TIMES,
 

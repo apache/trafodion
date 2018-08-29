@@ -81,7 +81,7 @@ public:
     sgNextValue_(psgNextValue),
     sgEndValue_(psgEndValue),
     sgRedefTime_(psgRedefTime),
-    sgRetryNum_(250)
+    sgRetryNum_(100)
   {}
 
       
@@ -100,7 +100,7 @@ public:
     sgNextValue_(0),
     sgEndValue_(0),
     sgRedefTime_(0),
-    sgRetryNum_(250)
+    sgRetryNum_(100)
       {}
   
   // copy ctor
@@ -120,7 +120,7 @@ public:
     sgNextValue_(sga.sgNextValue_),
     sgEndValue_(sga.sgEndValue_),
     sgRedefTime_(sga.sgRedefTime_),
-    sgRetryNum_(250)
+    sgRetryNum_(100)
       {}
   
   // ---------------------------------------------------------------------
