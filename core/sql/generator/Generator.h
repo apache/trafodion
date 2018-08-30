@@ -1300,16 +1300,7 @@ public:
   }
 
 
-  NABoolean isMinmaxOptWithRangeOfValues() {
-   
-     return (flags2_ & MINMAX_WITH_RANGE_OF_VALUES ) != 0;
-  }
-
-  void setMinmaxOptWithRangeOfValues(NABoolean v)
-  {
-    v ? flags2_ |= MINMAX_WITH_RANGE_OF_VALUES:
-      flags2_ &= ~MINMAX_WITH_RANGE_OF_VALUES;
-  }
+  
 NABoolean isEffTreeUpsert() {
    
      return (flags2_ & EFF_TREE_UPSERT ) != 0;
