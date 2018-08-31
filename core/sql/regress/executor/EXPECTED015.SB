@@ -2098,10 +2098,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 15   .    16   root                            x                     4.00E+000
 7    14   15   nested_join                                           4.00E+000
 10   13   14   merge_union                                           4.00E+000
-11   12   13   blocked_union                                         2.00E+000
+11   12   13   ordered_union                                         2.00E+000
 .    .    12   trafodion_insert                T015T16I2             1.00E+000
 .    .    11   trafodion_vsbb_delet            T015T16I2             1.00E+000
-8    9    10   blocked_union                                         2.00E+000
+8    9    10   ordered_union                                         2.00E+000
 .    .    9    trafodion_insert                T015T16I1             1.00E+000
 .    .    8    trafodion_vsbb_delet            T015T16I1             1.00E+000
 5    6    7    nested_join                                           1.00E+000
@@ -2269,14 +2269,14 @@ TENT  TEXT  TEST
 >>-- should fail, constraint violation
 >>merge into t015tc1 on a='FIVE' when matched then update set c= 'BALD';
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_454758687_3491 on table TRAFODION.SCH.T015TC1.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_971855625_5413 on table TRAFODION.SCH.T015TC1.
 
 --- 0 row(s) updated.
 >>
 >>-- should fail, constraint violation
 >>merge into t015tc1 on a = 'TENT' when matched then update set b = 'ACID';
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_318658687_3491 on table TRAFODION.SCH.T015TC1.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_216755625_5413 on table TRAFODION.SCH.T015TC1.
 
 --- 0 row(s) updated.
 >>
@@ -2300,7 +2300,7 @@ TENT  TEXT  TEST
 >>merge into t015tc1 on a = 'NOSH' when matched then update set b = 'GOOD'
 +>  when not matched then insert values ('GOOD','GOOD','BOMB');
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_454758687_3491 on table TRAFODION.SCH.T015TC1.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_971855625_5413 on table TRAFODION.SCH.T015TC1.
 
 --- 0 row(s) updated.
 >>
@@ -2325,21 +2325,21 @@ TENT  TEXT  TEST
 >>-- should fail because of constraint on C
 >>insert into t015tc1 values ('ACID','TEST','ACID');
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_454758687_3491 on table TRAFODION.SCH.T015TC1.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_971855625_5413 on table TRAFODION.SCH.T015TC1.
 
 --- 0 row(s) inserted.
 >>
 >>-- should fail because of constraint on B
 >>insert into t015tc1 values ('ACID','ACID','TEST');
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_318658687_3491 on table TRAFODION.SCH.T015TC1.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_216755625_5413 on table TRAFODION.SCH.T015TC1.
 
 --- 0 row(s) inserted.
 >>
 >>-- should fail because of constraint on B
 >>update t015tc1 set a = 'COOL', b = 'ACID' where a = 'TENT';
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_318658687_3491 on table TRAFODION.SCH.T015TC1.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC1_216755625_5413 on table TRAFODION.SCH.T015TC1.
 
 --- 0 row(s) updated.
 >>
@@ -2358,14 +2358,14 @@ TENT  TEXT  TEST
 >>-- should fail because of constraint on A
 >>insert into t015tc2 values ('NUMB','NUMB','NUMB');
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC2_289858687_3491 on table TRAFODION.SCH.T015TC2.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC2_724165625_5413 on table TRAFODION.SCH.T015TC2.
 
 --- 0 row(s) inserted.
 >>
 >>-- should fail because of constraint on A
 >>update t015tc2 set a = 'NUMB', b = 'OKAY' where a = 'TENT';
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC2_289858687_3491 on table TRAFODION.SCH.T015TC2.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T015TC2_724165625_5413 on table TRAFODION.SCH.T015TC2.
 
 --- 0 row(s) updated.
 >>
