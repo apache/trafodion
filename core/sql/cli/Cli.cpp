@@ -10598,11 +10598,11 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
         }
       
       numTries++;
-      
-      if( 100 + numTries*25 < 1000)   //MAX is 1 second
-          DELAY(100 + numTries*25);
+      Lng32 delayTime = 100 + numTries*25 + rand()%10; 
+      if( delayTime < 1000)   //MAX is 1 second
+          DELAY(delayTime);
       else
-          DELAY(1000);
+          DELAY( 900 + rand() % 100);
     }
 
     // could not update it after 10 tries. Return error.
