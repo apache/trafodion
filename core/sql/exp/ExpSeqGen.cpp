@@ -50,6 +50,7 @@ SeqGenEntry::SeqGenEntry(Int64 sgUID, CollHeap * heap)
 {
   fetchNewRange_ = TRUE;
   cliInterfaceArr_ = NULL;
+  retryNum_ = 100; //default retry times
 }
 
 short SeqGenEntry::fetchNewRange(SequenceGeneratorAttributes &inSGA)
@@ -61,6 +62,8 @@ short SeqGenEntry::fetchNewRange(SequenceGeneratorAttributes &inSGA)
   sga = inSGA;
   if (sga.getSGCache() == 0)
     sga.setSGCache(1); 
+
+  sga.setSGRetryNum(getRetryNum());
   cliRC = SQL_EXEC_SeqGenCliInterface(&cliInterfaceArr_, &sga);
   if (cliRC < 0)
     return (short)cliRC;
@@ -142,6 +145,8 @@ SeqGenEntry * SequenceValueGenerator::getEntry(SequenceGeneratorAttributes &sga)
       sge = new(getHeap()) SeqGenEntry(hashVal, getHeap());
       sgQueue()->insert((char*)&hashVal, sizeof(hashVal), sge);
     }
+
+  sge->setRetryNum(getRetryNum());
 
   return sge;
 }

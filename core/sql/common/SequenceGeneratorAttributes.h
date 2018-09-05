@@ -80,7 +80,8 @@ public:
     sgCache_(psgCache),
     sgNextValue_(psgNextValue),
     sgEndValue_(psgEndValue),
-    sgRedefTime_(psgRedefTime)
+    sgRedefTime_(psgRedefTime),
+    sgRetryNum_(100)
   {}
 
       
@@ -98,7 +99,8 @@ public:
     sgCache_(0),
     sgNextValue_(0),
     sgEndValue_(0),
-    sgRedefTime_(0)
+    sgRedefTime_(0),
+    sgRetryNum_(100)
       {}
   
   // copy ctor
@@ -117,7 +119,8 @@ public:
     sgCache_(sga.sgCache_),
     sgNextValue_(sga.sgNextValue_),
     sgEndValue_(sga.sgEndValue_),
-    sgRedefTime_(sga.sgRedefTime_)
+    sgRedefTime_(sga.sgRedefTime_),
+    sgRetryNum_(100)
       {}
   
   // ---------------------------------------------------------------------
@@ -138,6 +141,11 @@ public:
   const Int64                      &getSGNextValue()   const     { return sgNextValue_; }
   const Int64                      &getSGEndValue()   const     { return sgEndValue_; }
   const Int64                      &getSGRedefTime() const     { return sgRedefTime_; }
+  const UInt32			&getSGRetryNum() const     { return sgRetryNum_; }
+
+  void setSGRetryNum(const UInt32 v) 
+  { sgRetryNum_ = v; }
+
   void setSGStartValue(const Int64 psgStartValue)
   { sgStartValue_= psgStartValue; }
 
@@ -205,6 +213,7 @@ private:
   Int64                        sgNextValue_;
   Int64                        sgEndValue_;
   Int64                        sgRedefTime_;
+  UInt32			sgRetryNum_;
 }; // class SequenceGeneratorAttributes
 
 #endif  /* SEQUENCEGENERATORATTRIBUTES_H */
