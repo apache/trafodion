@@ -312,7 +312,22 @@ void Generator::initTdbFields(ComTdb *tdb)
       dynQueueSizeValuesAreValid_ = TRUE;
     }
 
-  if (getRightSideOfOnlj() && makeOnljRightQueuesBig_)
+  if  (ActiveSchemaDB()->getDefaults().getToken(DYN_QUEUE_RESIZE_OVERRIDE) == DF_ON)
+    {
+      tdb->setQueueResizeParams(tdb->getMaxQueueSizeDown(), tdb->getMaxQueueSizeUp(),
+                                queueResizeLimit_,queueResizeFactor_);
+    }
+  //Typically the sequence operaotr may have to deal with a large numer of rows when 
+  //it's part of the IM tree that performs elimination of dups. 
+  if ((tdb->getNodeType() == ComTdb::ex_SEQUENCE_FUNCTION) && isEffTreeUpsert())
+    {
+     tdb->setQueueResizeParams(tdb->getMaxQueueSizeDown(), tdb->getMaxQueueSizeUp(),
+                                queueResizeLimit_,queueResizeFactor_); 
+    }
+   // Make the size of the upQ of ONLJ the same as that of the upQ
+   // of the right child. 
+   if ((tdb->getNodeType() == ComTdb::ex_ONLJ || getRightSideOfOnlj()) 
+        && makeOnljRightQueuesBig_)
     {
       tdb->setQueueResizeParams(onljRightSideDownQueue_,
 			        onljRightSideUpQueue_,
@@ -343,7 +358,7 @@ void Generator::initTdbFields(ComTdb *tdb)
                               queueResizeLimit_,
                               queueResizeFactor_);
   }
-
+ 
   tdb->setTdbId(getAndIncTdbId());
 
   tdb->setPlanVersion(ComVersion_GetCurrentPlanVersion());

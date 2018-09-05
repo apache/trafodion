@@ -247,6 +247,8 @@ class Generator : public NABasicObject
     // If Hive tables are accessed at runtime
     , HIVE_ACCESS              = 0x00000400
     , CONTAINS_FAST_EXTRACT    = 0x00000800
+    , EFF_TREE_UPSERT          = 0x00001000
+
   };
  
   // Each operator node receives some tupps in its input atp and
@@ -1295,6 +1297,19 @@ public:
   {
     v ? flags2_ |= RI_INLINING_FOR_TRAF_IUD :
       flags2_ &= ~RI_INLINING_FOR_TRAF_IUD ;
+  }
+
+
+  
+NABoolean isEffTreeUpsert() {
+   
+     return (flags2_ & EFF_TREE_UPSERT ) != 0;
+  }
+
+  void setEffTreeUpsert(NABoolean v)
+  {
+    v ? flags2_ |= EFF_TREE_UPSERT:
+      flags2_ &= ~EFF_TREE_UPSERT;
   }
 
   inline Int64 getPlanId();

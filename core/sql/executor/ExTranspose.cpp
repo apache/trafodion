@@ -124,30 +124,13 @@ ExTransposeTcb::ExTransposeTcb(const ExTransposeTdb &transTdbLocal,
   childQueue_.down->allocateAtps(glob->getSpace());
   
   // Allocate the queue to communicate with parent
-  // (Child allocates queue to communicate with Child)
-  //
-  qParent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
-				      transTdb().queueSizeDown_,
-				      transTdb().criDescDown_,
-				      space);
-
-  // Allocate the private state in each entry of the down queue
-  //
-  ExTransposePrivateState privateState(this);
-  qParent_.down->allocatePstate(&privateState, this);
-
-
+ 
+  allocateParentQueues(qParent_,TRUE);
   // Initialize processedInputs_ to refer to the queue entry
   // which will be used next.
   //
   processedInputs_ = qParent_.down->getHeadIndex();
   
-  // Allocate a queue to communicate with the parent node.
-  //
-  qParent_.up = new(space) ex_queue(ex_queue::UP_QUEUE,
-				    transTdb().queueSizeUp_,
-				    transTdb().criDescUp_,
-				    space);
 
   // fixup all expressions expressions
   //
@@ -238,6 +221,8 @@ void ExTransposeTcb::registerSubtasks()
   // (had returned WORK_OK).
   //
   sched->registerInsertSubtask(sWorkUp, this, childQueue_.up);
+ // the parent queues will be resizable, so register a resize subtask.
+  registerResizeSubtasks();
 }
 
 // ExTransposeTcb::start() ------------------------------------------
@@ -628,7 +613,7 @@ ExTransposeTcb::processError()
 
 // Constructor and destructor for ExTransposePrivateState
 //
-ExTransposePrivateState::ExTransposePrivateState(const ExTransposeTcb *) 
+ExTransposePrivateState::ExTransposePrivateState() 
 {
   init();
 }
@@ -656,6 +641,18 @@ ex_tcb_private_state *
 ExTransposePrivateState::allocate_new(const ex_tcb *tcb)
 {
   return new(((ex_tcb *)tcb)->getSpace())
-    ExTransposePrivateState((ExTransposeTcb *)tcb);
+    ExTransposePrivateState();
 }
 
+////////////////////////////////////////////////////////////////////////
+// Redefine virtual method allocatePstates, to be used by dynamic queue
+// resizing, as well as the initial queue construction.
+////////////////////////////////////////////////////////////////////////
+ex_tcb_private_state * ExTransposeTcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ExTransposePrivateState> pa;
+
+  return pa.allocatePstates(this, numElems, pstateLength);
+}

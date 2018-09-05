@@ -289,22 +289,8 @@ ExSequenceTcb::ExSequenceTcb (const ExSequenceTdb &  myTdb,
   qchild_  = child_tcb.getParentQueue(); 
 
   // Allocate the queue to communicate with parent
-  qparent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
-    myTdb.initialQueueSizeDown_,
-    myTdb.criDescDown_,
-    space);
-
-  // Allocate the private state in each entry of the down queue
-  ExSequencePrivateState *p 
-    = new(space) ExSequencePrivateState(this);
-  qparent_.down->allocatePstate(p, this);
-  delete p;
-
-  qparent_.up = new(space) ex_queue(ex_queue::UP_QUEUE,
-    myTdb.initialQueueSizeUp_,
-    myTdb.criDescUp_,
-    space);
-
+ 
+ allocateParentQueues(qparent_,TRUE);
   // Intialized processedInputs_ to the next request to process
   processedInputs_ = qparent_.down->getTailIndex();
 
@@ -375,6 +361,8 @@ void ExSequenceTcb::registerSubtasks()
       ex_assert( clusterDb_ , "Unlimited following and no clusterDb_") ;
       clusterDb_->ioEventHandler_ = ioEventHandler_ ;
     }
+    // the parent queues will be resizable, so register a resize subtask.
+    registerResizeSubtasks();
 };
 
 // Free Resources
@@ -1510,7 +1498,7 @@ void ExSequenceTcb::updateDiagsArea(  ExeErrorCode rc_)
 // Constructor and destructor private state
 //
 ExSequencePrivateState::ExSequencePrivateState
-(const ExSequenceTcb *  tcb)
+()
 {
   matchCount_ = 0;
   step_ = ExSequenceTcb::ExSeq_EMPTY;
@@ -1524,5 +1512,19 @@ ex_tcb_private_state * ExSequencePrivateState::allocate_new
 (const ex_tcb *tcb)
 {
   return new(((ex_tcb*)tcb)->getSpace()) 
-    ExSequencePrivateState((ExSequenceTcb*) tcb);
+    ExSequencePrivateState();
 };
+
+
+////////////////////////////////////////////////////////////////////////
+// Redefine virtual method allocatePstates, to be used by dynamic queue
+// resizing, as well as the initial queue construction.
+////////////////////////////////////////////////////////////////////////
+ex_tcb_private_state * ExSequenceTcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ExSequencePrivateState> pa;
+
+  return pa.allocatePstates(this, numElems, pstateLength);
+}
