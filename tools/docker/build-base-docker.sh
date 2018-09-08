@@ -19,7 +19,7 @@ set -e -x -u
 
 BASE_SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-export DOCKER_ENV_VERSION="0.1"
+export DOCKER_ENV_VERSION="2.3"
 export BASE_IMAGE_NAME="trafodion/base:${DOCKER_ENV_VERSION}"
 
 pushd ${BASE_SCRIPT_DIR}

@@ -18,7 +18,7 @@ FROM centos:centos6.6
 MAINTAINER Trafodion Community <dev@trafodion.apache.org>
 
 LABEL Vendor="Apache Trafodion"
-LABEL version=unstable
+LABEL version=stable
 
 # download and install environment dependencies
 RUN	yum install -y epel-release alsa-lib-devel ant ant-nodeps boost-devel cmake \
