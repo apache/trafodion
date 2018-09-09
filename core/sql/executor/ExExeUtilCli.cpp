@@ -46,8 +46,6 @@ OutputInfo::OutputInfo(Lng32 numEntries)
   : numEntries_(numEntries)
 {
   
-   ex_assert( numEntries <= MAX_OUTPUT_ENTRIES, "try to fetch more than max rows allowed");
-  
    for (Int32 i = 0; i < numEntries_; i++)
     {
       data_[i] = NULL;
