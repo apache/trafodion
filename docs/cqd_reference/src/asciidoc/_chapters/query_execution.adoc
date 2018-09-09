@@ -288,3 +288,33 @@ More disk space can process larger data sets.
 | *Introduced In Release*     | Trafodion 2.1.
 | *Deprecated In Release*     | Not applicable.
 |===
+
+
+<<<
+[[sequence_retry_time]]
+== TRAF_SEQUENCE_RETRY_TIMES
+
+[cols="25%h,75%"]
+|===
+| *Description*               |	Set the max retry time when concurrent processes conflict to get next sequence range from system table.
+| *Values*                    |
+Numeric value. 
+The default value is *'100'*. 
+
+| *Usage*                     a|
+When multiple clients try to do next operation on a same sequence, if cache runs out, all of the clients try to get the next range and go into race. So one may get a range that another client already got. This is concurrency control, Trafodion is using a retry logic to do the control.
+After the SQL engine gets the next range from system metadata table, it will check the updated timestamp, if it is same as the timestampt set by itself, then it is successful. Otherwise, the range is obtained by some other concurrent clients. Then the engine wait and retry.
+
+When concurrency conflict is very high, for example a query with high DOP and processing billions of rows, it is possible to fail due to run out of retry time. In that case, user will get ERROR 1583.
+
+This CQD is to control the retry number. It is set to 100 by default. When specific query using sequence run into ERROR 1583, one can increase this CQD to allow SQL engine to retry for more times, and avoid the 1583 issue.
+
+| *Production Usage*          | Please contact {project-support}.
+| *Impact*                    |
+It will allow the user to avoid 1583 ERROR in high concurrent use cases.
+
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 2.1.
+| *Deprecated In Release*     | Not applicable.
