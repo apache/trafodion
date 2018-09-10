@@ -318,3 +318,4 @@ It will allow the user to avoid 1583 ERROR in high concurrent use cases.
 | *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 2.1.
 | *Deprecated In Release*     | Not applicable.
+|===
