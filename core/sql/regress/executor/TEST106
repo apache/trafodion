@@ -515,6 +515,9 @@ obey TEST106(synch_cancel);
 obey TEST106(append_cancel_log);
 
 ?section upsert_test1
+cqd DYN_QUEUE_RESIZE_OVERRIDE 'ON';
+cqd GEN_TRSP_SIZE_DOWN '16';
+cqd GEN_TRSP_SIZE_UP '16';
 
 prepare s1 from 
 upsert using load into t106c 
@@ -574,7 +577,9 @@ insert into T106_interleaved_log values
 obey TEST106(synch_cancel);
 
 obey TEST106(append_cancel_log);
-
+cqd DYN_QUEUE_RESIZE_OVERRIDE reset;
+cqd GEN_TRSP_SIZE_DOWN reset;
+cqd GEN_TRSP_SIZE_UP reset;
 ?section cpu_bound_esps
 
 -- Test cancel when esps are CPU-bound.
