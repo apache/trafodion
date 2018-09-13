@@ -615,6 +615,7 @@ if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_APACHE}-bin
 fi
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER_HDP}
     HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_HDP}-bin
 fi
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
@@ -622,7 +623,8 @@ HIVE_TAR=${HIVE_PREFIX}.tar.gz
 HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
 HBASE_TAR=hbase-${HBASE_DEP_VER_CDH}.tar.gz
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
-    HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
+    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/${HBASE_DEP_VER_HDP}
+    HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}-bin.tar.gz
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/${HBASE_DEP_VER_APACHE}
