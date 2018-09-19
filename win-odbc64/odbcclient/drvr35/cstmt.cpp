@@ -897,6 +897,7 @@ SQLRETURN CStmt::SendSQLCommand(BOOL SkipProcess, SQLCHAR *StatementText,
         setDiagRowCount(-1, -1);
 
         InitParamColumnList();
+        m_NumResultCols = 0;
 
         if (m_StmtState == STMT_EXECUTED)
         {
