@@ -123,6 +123,7 @@ public class ConsoleReader
           cr = new jline.console.ConsoleReader();
           cr.setPrompt(this.prompt);
           cr.setHandleUserInterrupt(true);
+          cr.setExpandEvents(false);
       }
    }
 
