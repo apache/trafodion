@@ -605,6 +605,41 @@ void RelSequence::rewriteNode(NormWA & normWARef)
 
 } // RelSequence::rewriteNode()
 
+RelExpr * RelSequence::normalizeNode(NormWA & normWARef)
+{
+  RelExpr *result = RelExpr::normalizeNode(normWARef);
+
+  // See RelRoot::normalizeNode(), which has a code segment for a case
+  // 10-010321-1842 (details of the case are now lost to history).
+  // Since the RelSequence has an order by expression similar to that
+  // of the RelRoot, we have to apply an equivalent fix here, so that
+  // an OVER(ORDER BY x) will work, even if the expression x refers
+  // to something like a parameter or to current_timestamp.
+  // For this case we need to
+  // enforce that Sort operator can sort on this expression by keeping
+  // parameter ?p in RelRoot child's group requiredInput.
+  // NOTE. This solution will force the Sort operator to be done
+  // directly below the RelSequence node.
+  if (requiredOrder_.entries() > 0)
+  {
+    ValueIdSet orderBySet(requiredOrder_), 
+               coveredOrderBySet,
+               inputsNeededForOrderBy;
+
+    GroupAttributes * childGAPtr = child(0).getPtr()->getGroupAttr();
+
+    childGAPtr->coverTest(orderBySet,
+                          getGroupAttr()->getCharacteristicInputs(),
+                          coveredOrderBySet,
+                          inputsNeededForOrderBy);
+
+    childGAPtr->addCharacteristicInputs(inputsNeededForOrderBy);
+  }
+
+  return result;
+}
+
+
 // RelSequence::pullUpPreds() --------------------------------------------
 // is redefined to disallow the pullup of most predicates from the
 // operator's child.  RelSequence can not pull up any predicates from

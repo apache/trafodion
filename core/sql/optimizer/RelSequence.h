@@ -122,8 +122,7 @@ public:
   // predicate pushdown and computing a "minimal" set of
   // characteristic input and characteristic output values.
   //
-  // The default implementation is adequate for RelSequence
-  // virtual RelExpr * normalizeNode(NormWA & normWARef);
+  virtual RelExpr * normalizeNode(NormWA & normWARef);
 
   // Method to push down predicates from a RelSequence node into the
   // children
