@@ -1661,7 +1661,7 @@ PrivMgrCoreDesc corePrivs;
 PrivObjectBitmap privsBitmap; 
 PrivObjectBitmap grantableBitmap; 
 
-   corePrivs.setAllObjectGrantPrivilege(objectType,true);
+   corePrivs.setAllObjectPrivileges(objectType,true/*priv*/,true/*wgo*/);
    privsBitmap = corePrivs.getPrivBitmap();
    grantableBitmap = corePrivs.getWgoBitmap();
    
@@ -1741,6 +1741,7 @@ PrivStatus PrivMgrPrivileges::initGrantRevoke(
   // Generate the list of privilege descriptors that were requested 
   PrivStatus retcode = convertPrivsToDesc(objectType,
                                isAllSpecified,
+                               isGrant,
                                (isGrant) ? isGOSpecified : true, // WGO
                                (isGrant) ? false : isGOSpecified, // GOF
                                privList,
@@ -2320,9 +2321,9 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
   // views have same privileges as tables
   bool setWGOtrue = true;
   PrivMgrDesc summarizedOriginalPrivs;
-  summarizedOriginalPrivs.setAllTableGrantPrivileges(setWGOtrue);
+  summarizedOriginalPrivs.setAllTableGrantPrivileges(true/*priv*/, setWGOtrue);
   PrivMgrDesc summarizedCurrentPrivs;
-  summarizedCurrentPrivs.setAllTableGrantPrivileges(setWGOtrue);
+  summarizedCurrentPrivs.setAllTableGrantPrivileges(true/*priv*/, setWGOtrue);
 
   // Get list of objects referenced by the view
   std::vector<ObjectReference *> objectList;
@@ -2417,8 +2418,8 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
   }
 
   // Turn on bits to prepare for intersecting with object privileges
-  originalPrivs.setAllTableGrantPrivileges(setWGOtrue);
-  currentPrivs.setAllTableGrantPrivileges(setWGOtrue);
+  originalPrivs.setAllTableGrantPrivileges(true/*priv*/, setWGOtrue);
+  currentPrivs.setAllTableGrantPrivileges(true/*priv*/, setWGOtrue);
 
   std::vector<ColumnReference *> summarizedColRefs;
 
@@ -4972,6 +4973,7 @@ bool PrivMgrPrivileges::isAuthIDGrantedPrivs(
 PrivStatus PrivMgrPrivileges::convertPrivsToDesc( 
   const ComObjectType objectType,
   const bool isAllSpecified,
+  const bool isGrant,
   const bool isWgoSpecified,
   const bool isGofSpecified,
   const std::vector<PrivType> privsList,
@@ -5012,14 +5014,7 @@ PrivStatus PrivMgrPrivileges::convertPrivsToDesc(
   // If all is specified, set bits appropriate for the object type and return
   if (isAllSpecified)
   {
-    if (isLibrary)
-      privsToProcess.setAllLibraryGrantPrivileges(isWgoSpecified);
-    else if (isUdr)
-      privsToProcess.setAllUdrGrantPrivileges(isWgoSpecified);
-    else if (isSequence)
-      privsToProcess.setAllSequenceGrantPrivileges(isWgoSpecified);
-    else
-      privsToProcess.setAllTableGrantPrivileges(isWgoSpecified);
+    privsToProcess.setAllObjectPrivileges(objectType, isGrant, isWgoSpecified);
     return STATUS_GOOD;
   }
 
@@ -6254,18 +6249,18 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   }
 
   // Create bitmaps for all supported object types;
-  PrivMgrDesc privDesc;
-  privDesc.setAllTableGrantPrivileges(true);
-  int64_t tableBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
+  PrivMgrCoreDesc privCoreDesc;
+  privCoreDesc.setAllTableGrantPrivileges(true, true);
+  int64_t tableBits = privCoreDesc.getPrivBitmap().to_ulong();
  
-  privDesc.setAllLibraryGrantPrivileges(true);
-  int64_t libraryBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
+  privCoreDesc.setAllLibraryGrantPrivileges(true, true);
+  int64_t libraryBits = privCoreDesc.getPrivBitmap().to_ulong();
 
-  privDesc.setAllUdrGrantPrivileges(true);
-  int64_t udrBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
+  privCoreDesc.setAllUdrGrantPrivileges(true, true);
+  int64_t udrBits = privCoreDesc.getPrivBitmap().to_ulong();
 
-  privDesc.setAllSequenceGrantPrivileges(true);
-  int64_t sequenceBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
+  privCoreDesc.setAllSequenceGrantPrivileges(true, true);
+  int64_t sequenceBits = privCoreDesc.getPrivBitmap().to_ulong();
 
   // for views, privilegesBitmap is set to 1 (SELECT), wgo to 0 (no)
   std::string systemGrantor(SYSTEM_AUTH_NAME);

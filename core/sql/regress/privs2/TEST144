@@ -23,6 +23,9 @@
 -- @@@ END COPYRIGHT @@@
 --
 --  Tests grant and revoke for functions
+--  Tests get commands:
+--    get [libraries, functions, table_mapping_functions, procedures] for user
+--    get [libraries, functions, table_mapping_functions, procedures] for role
 -- ============================================================================
 
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
@@ -40,6 +43,8 @@ exit;
 -- drop database
 drop schema if exists t144user1 cascade;
 
+revoke update, usage on library t144_l1 from sql_user2;
+revoke usage on library t144_l2 from t144role1;
 revoke execute on procedure "_LIBMGR_".help from t144role1;
 revoke role t144role1 from sql_user4;
 drop role t144role1;
@@ -49,6 +54,7 @@ revoke execute on procedure "_LIBMGR_".help from sql_user3 by sql_user2;
 revoke execute on procedure "_LIBMGR_".help from sql_user2;
 
 grant component privilege "SHOW" on sql_operations to "PUBLIC";
+
 ?section create_db
 create schema t144user1 authorization sql_user1;
 set schema t144user1;
@@ -115,18 +121,20 @@ grant select, insert on customers to "PUBLIC";
 showddl customers;
 create role t144role1;
 
+grant update, usage on library t144_l1 to sql_user2;
+grant usage on library t144_l2 to t144role1;
+
 revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 get privileges on component sql_operations for "PUBLIC";
 
 ?section set_up
-set schema "_PRIVMGR_MD_";
 prepare get_privs from
 select distinct
    trim(substring (o.object_name,1,15)) as object_name,
    grantor_id, grantee_id,
    t144user1.t144_translatePrivsBitmap(privileges_bitmap) as granted_privs,
    t144user1.t144_translatePrivsBitmap(grantable_bitmap) as grantable_privs
-from object_privileges p, "_MD_".objects o 
+from "_PRIVMGR_MD_".object_privileges p, "_MD_".objects o 
 where p.object_uid in 
   (select object_uid
    from "_MD_".objects
@@ -153,12 +161,22 @@ get privileges on table_mapping function "_LIBMGR_".event_log_reader;
 get privileges on function gen_phone for sql_user1;
 get privileges on procedure "_LIBMGR_".help for sql_user1;
 get privileges on table_mapping function "_LIBMGR_".event_log_reader for sql_user1;
-sh sqlci -i "TEST144(cmds)" -u sql_user1;
+
+get functions for user sql_user1;
+get table_mapping functions for user sql_user1;
+get procedures for user sql_user1;
+
+get libraries for user sql_user2;
+get libraries for user sql_user3;
+get libraries for user sql_user4;
+get libraries for role t144role1;
+
+sh sqlci -i "TEST144(cmds_user1)" -u sql_user1;
 
 -- no other user or role has privileges
-sh sqlci -i "TEST144(cmds)" -u sql_user2;
-sh sqlci -i "TEST144(cmds)" -u sql_user3;
-sh sqlci -i "TEST144(cmds)" -u sql_user4;
+sh sqlci -i "TEST144(cmds_user2)" -u sql_user2;
+sh sqlci -i "TEST144(cmds_user3)" -u sql_user3;
+sh sqlci -i "TEST144(cmds_user4)" -u sql_user4;
 
 -- grant user2 execute
 grant execute on function gen_phone to sql_user2 with grant option;
@@ -169,14 +187,16 @@ get privileges on function gen_phone for sql_user2;
 get privileges on function gen_random for sql_user2;
 get privileges on function gen_time for user sql_user2;
 get privileges on procedure "_LIBMGR_".help for user sql_user2;
+get functions for user sql_user2;
+get table_mapping functions for user sql_user2;
+get procedures for user sql_user2;
 execute get_privs;
 
-
 -- user2 can execute
-sh sqlci -i "TEST144(cmds)" -u sql_user2;
+sh sqlci -i "TEST144(cmds_user2)" -u sql_user2;
 
 -- user3 still cannot execute
-sh sqlci -i "TEST144(cmds)" -u sql_user3;
+sh sqlci -i "TEST144(cmds_user3)" -u sql_user3;
 
 -- grant user3 by user2
 grant execute on function gen_phone to sql_user3 with grant option by sql_user2;
@@ -189,10 +209,13 @@ get privileges on function gen_phone for user sql_user3;
 get privileges on function gen_random for user sql_user3;
 get privileges on function gen_time for user sql_user3;
 get privileges on procedure "_LIBMGR_".help for user sql_user3;
+get functions for user sql_user3;
+get table_mapping functions for user sql_user3;
+get procedures for user sql_user3;
 execute get_privs;
 
 -- user 3 can execute gen_phone, gen_random, and help but not gen_time
-sh sqlci -i "TEST144(cmds)" -u sql_user3;
+sh sqlci -i "TEST144(cmds_user3)" -u sql_user3;
 grant execute on function gen_phone to sql_user5 by sql_user3;
 grant execute on procedure "_LIBMGR_".help to sql_user5 by sql_user3;
  
@@ -200,16 +223,24 @@ grant execute on procedure "_LIBMGR_".help to sql_user5 by sql_user3;
 grant execute on function gen_random to t144role1;
 grant execute on function gen_time to t144role1;
 grant execute on procedure "_LIBMGR_".help to t144role1;
+get functions for role t144role1;
+get table_mapping functions for role t144role1;
+get procedures for role t144role1;
 grant role t144role1 to sql_user4;
+
 get privileges on function gen_phone for user sql_user4;
 get privileges on function gen_random for user sql_user4;
 get privileges on function gen_time for user sql_user4;
 get privileges on procedure "_LIBMGR_".help for user sql_user4;
 get privileges on function gen_random for t144role1;
+get functions for user sql_user4;
+get table_mapping functions for user sql_user4;
+get procedures for user sql_user4;
+get libraries for user sql_user4;
 execute get_privs;
 
 -- user4 can execute through role t144role1
-sh sqlci -i "TEST144(cmds)" -u sql_user4;
+sh sqlci -i "TEST144(cmds_user4)" -u sql_user4;
 
 get privileges on function gen_phone;
 get privileges on function gen_random;
@@ -221,6 +252,8 @@ get privileges on procedure "_LIBMGR_".help;
 -- ============================================================================
 set schema t144user1;
 execute get_privs;
+
+revoke usage on library t144_l2 from t144role1;
 
 revoke grant option for execute on function gen_phone from sql_user3 by sql_user2;
 revoke execute on function gen_phone from sql_user5 by sql_user3;
@@ -246,14 +279,74 @@ revoke execute on procedure "_LIBMGR_".help from sql_user2;
 obey TEST144(set_up);
 execute get_privs;
 
+revoke execute on function t144_translatePrivsBitmap from "PUBLIC";
+execute get_privs;
+sh sqlci -i "TEST144(cmds_user2)" -u sql_user2;
+
+?section cmds_user1
+-- ============================================================================
+-- verify user1 privs
+-- ============================================================================
+log LOG144;
+values (user);
+set schema t144user1;
+get functions for user sql_user1;
+get table_mapping functions for user sql_user1;
+get procedures for user sql_user1;
+get functions for user sql_user2;
+obey TEST144(cmds);
+
+?section cmds_user2
+-- ============================================================================
+-- verify user1 privs
+-- ============================================================================
+log LOG144;
+values (user);
+set schema t144user1;
+get functions for user sql_user2;
+get table_mapping functions for user sql_user2;
+get procedures for user sql_user2;
+get libraries for user sql_user2;
+
+-- no privs
+get table_mapping functions for user sql_user1;
+get libraries for user sql_user3;
+get libraries for role t144role1;
+
+obey TEST144(cmds);
+
+?section cmds_user3
+-- ============================================================================
+-- verify user1 privs
+-- ============================================================================
+log LOG144;
+values (user);
+set schema t144user1;
+get functions for user sql_user3;
+get table_mapping functions for user sql_user3;
+get procedures for user sql_user3;
+get procedures for user sql_user1;
+obey TEST144(cmds);
+
+?section cmds_user4
+-- ============================================================================
+-- verify user1 privs
+-- ============================================================================
+log LOG144;
+values (user);
+set schema t144user1;
+get functions for user sql_user4;
+get table_mapping functions for user sql_user4;
+get procedures for user sql_user4;
+get libraries for user sql_user4;
+get libraries for role t144role1;
+
+obey TEST144(cmds);
 
 ?section cmds
 -- ============================================================================
 -- execute functions
 -- ============================================================================
-log LOG144;
-values (user);
-set schema t144user1;
 -- should return privileges only for users that have execute privilege
 get privileges on function gen_time;
 -- should return no rows for users other than sql_user1
@@ -276,3 +369,4 @@ from customers;
 
 set param ?proc 'rm';
 call "_LIBMGR_".help (?proc);
+

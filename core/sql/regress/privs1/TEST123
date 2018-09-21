@@ -29,7 +29,15 @@
 --  get roles for user
 --  get privileges for role
 --  get privileges for user
---  get [tables | indexes | libraries | views] for user
+--  get [tables | indexes | views] for user
+--  get [tables | indexes | views] for role
+--
+--  see privs1/TEST141 for 
+--    get schemas for user
+--    get schemas for role
+--  see privs2/TEST144 for
+--    get [libraries, functions, table_mapping functions, procedures] for user 
+--    get [libraries, functions, table_mapping functions, procedures] for role 
 --
 -- Users and roles used
 --   t123_adminrole:   granted update and delete on games/teams
@@ -179,6 +187,7 @@ get users for role t123_adminrole;
 get users for role t123_plannerrole;
 get users for role t123_dummyrole;
 get users for role t123_ownerrole;
+get users for role "PUBLIC";
 
 get privileges for user sql_user1;
 get privileges for user sql_user2;
@@ -197,24 +206,24 @@ get tables for user sql_user2;
 get tables for user sql_user3;
 get tables for user sql_user4;
 get tables for user sql_user5;
+get tables for role t123_adminrole;
+get tables for role t123_ownerrole;
 
 get indexes for user sql_user1;
 get indexes for user sql_user2;
 get indexes for user sql_user3;
 get indexes for user sql_user4;
 get indexes for user sql_user5;
+get indexes for role t123_adminrole;
+get indexes for role t123_ownerrole;
 
 get views for user sql_user1;
 get views for user sql_user2;
 get views for user sql_user3;
 get views for user sql_user4;
 get views for user sql_user5;
-
-get libraries for user sql_user1;
-get libraries for user sql_user2;
-get libraries for user sql_user3;
-get libraries for user sql_user4;
-get libraries for user sql_user5;
+get views for role t123_adminrole;
+get views for role t123_ownerrole;
 
 ?section other
 get privileges for user "PUBLIC";
@@ -222,3 +231,4 @@ get privileges for user unknown_user;
 get privileges for role unknown_role;
 get roles for user unknown_user;
 get users for role unknown_role;
+
