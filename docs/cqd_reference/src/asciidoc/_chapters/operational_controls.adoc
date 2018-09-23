@@ -143,7 +143,7 @@ are considered to match if their selectivities match. +
 A query cache setting of *'16384'* means a maximum of 16,384 KB of compiler memory can be used for keeping previously compiled plans
 before evicting the oldest unused plan(s) to make room for the latest cacheable plan.
 | *Values*                    |
-*Up through 4294967295*: Kilobytes of memory allocated to query cache. +
+*Up through 200,000*: Kilobytes of memory allocated to query cache. +
 *'0'*: Turns off query plan caching. +
  +
 The default value is *'16384'* (16 MB).

@@ -40,11 +40,11 @@ The optimizer may also decide to run the query with no parallelism if the resour
 | *Values*                    |
 Unsigned Integer. +
  +
-The default value is *'16'*.
+The default value is *2*.
 | *Usage*                     | For systems running at higher levels of concurrency with workloads that include a large 
 number of small queries, reducing the default degree of parallelism may help achieve higher throughput. +
  +
-With the default of 16, for 32-node systems, adaptive segmentation can use two 16-node virtual segments to execute queries that 
+If the degree of parallelism is 16, for 32-node systems, adaptive segmentation can use two 16-node virtual segments to execute queries that 
 do not require a degree of parallelism of 32.  This default setting can, for example, be changed to 8 for a 16-node system, 
 to allow adaptive segmentation to leverage a lower degree of parallelism.
 
