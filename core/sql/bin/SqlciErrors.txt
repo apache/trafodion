@@ -334,7 +334,7 @@
 1336 ZZZZZ 99999 ADVANCED MAJOR DBADMIN INITIALIZE SQL must specify a $0~String0 statement for the $1~String1.  INITIALIZE SQL fails.
 1337 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 is a reserved authorization identifier.
 1338 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Role $0~string0 is not defined in the database.
-1339 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a grantable role.
+1339 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a role.
 1340 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a user.
 1341 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1342 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---

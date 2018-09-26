@@ -568,9 +568,7 @@ End of MXCI Session
 --- SQL operation failed with errors.
 >>revoke all on t135_t1 from sql_user3;
 
-*** ERROR[1025] Request failed.  Dependent object TRAFODION.T135SCH_USER3.T135_V1_USER3 exists.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
 >>drop table t135_t3 cascade;

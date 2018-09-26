@@ -1311,6 +1311,23 @@ TESTHIVE
  1 row(s) returned
 
 --- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+DB__HBASEROLE
+DB__HIVEROLE
+DB__LIBMGRROLE
+DB__ROOTROLE
+PUBLIC
+T125_ADMINROLE
+T125_ROLE1
+
+=======================
+ 7 row(s) returned
+
+--- SQL operation complete.
 >>
 >>get indexes on table players;
 
@@ -1477,7 +1494,7 @@ TESTHIVE
 Procedures for User SQL_USER1
 =============================
 
-TESTHIVE
+TRAFODION."T125SCH2".TESTHIVE
 
 =======================
  1 row(s) returned
@@ -1491,7 +1508,7 @@ TESTHIVE
 Functions for Role T125_ROLE1
 =============================
 
-TRANSLATEBITMAP
+TRAFODION."T125SCH3".TRANSLATEBITMAP
 
 =======================
  1 row(s) returned
@@ -1502,7 +1519,7 @@ TRANSLATEBITMAP
 Functions for Role T125_ADMINROLE
 =================================
 
-TRANSLATEBITMAP
+TRAFODION."T125SCH3".TRANSLATEBITMAP
 
 =======================
  1 row(s) returned
@@ -1683,6 +1700,21 @@ TESTHIVE
 
 --- SQL operation complete.
 >>
+>>get schemas for user sql_user1, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get schemas for role t125_adminrole, match 'T125SCH%';
+
+Schemas for Role T125_ADMINROLE
+===============================
+
+T125SCH3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
 >>get functions for library t125_l1;
 
 Functions for Library T125SCH3.T125_L1
@@ -1711,7 +1743,7 @@ T125SCH3.TESTHIVE
 Procedures for User SQL_USER1
 =============================
 
-TESTHIVE
+TRAFODION."T125SCH2".TESTHIVE
 
 =======================
  1 row(s) returned
@@ -1725,7 +1757,7 @@ TESTHIVE
 Functions for Role T125_ROLE1
 =============================
 
-TRANSLATEBITMAP
+TRAFODION."T125SCH3".TRANSLATEBITMAP
 
 =======================
  1 row(s) returned
@@ -1736,7 +1768,7 @@ TRANSLATEBITMAP
 Functions for Role T125_ADMINROLE
 =================================
 
-TRANSLATEBITMAP
+TRAFODION."T125SCH3".TRANSLATEBITMAP
 
 =======================
  1 row(s) returned
@@ -1807,6 +1839,18 @@ T125SCH3.PLAYERS_SEQUENCE
 >>get procedures;
 
 --- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+T125_ADMINROLE
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
 >>
 >>get indexes on table players;
 
@@ -1870,9 +1914,15 @@ T125SCH3.PLAYERS_SEQUENCE
 --- SQL operation failed with errors.
 >>get functions for role t125_adminrole;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+Functions for Role T125_ADMINROLE
+=================================
 
---- SQL operation failed with errors.
+TRAFODION."T125SCH3".TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>
 >>set schema t125sch3;
 
@@ -1906,7 +1956,9 @@ SIDU-R-    T125_ADMINROLE
 --- SQL operation complete.
 >>get privileges on table games for t125_role1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get views in catalog trafodion, match 'T125SCH%';
 
 Views in Catalog TRAFODION
@@ -1969,7 +2021,9 @@ Privileges on Sequence T125SCH3.PLAYERS_SEQUENCE
 --- SQL operation complete.
 >>get privileges on sequence players_sequence for t125_role1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get libraries, match 'T125%';
 
 Libraries in Schema TRAFODION.T125SCH3
@@ -2027,6 +2081,23 @@ TESTHIVE
 
 --- SQL operation complete.
 >>
+>>get schemas for user sql_user1, match 'T125SCH%';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get schemas for role t125_adminrole, match 'T125SCH%';
+
+Schemas for Role T125_ADMINROLE
+===============================
+
+T125SCH3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
 >>get functions for library t125_l1;
 
 Functions for Library T125SCH3.T125_L1
@@ -2067,9 +2138,15 @@ T125SCH3.TESTHIVE
 --- SQL operation failed with errors.
 >>get functions for role t125_adminrole;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+Functions for Role T125_ADMINROLE
+=================================
 
---- SQL operation failed with errors.
+TRAFODION."T125SCH3".TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>
 >>exit;
 
@@ -2132,6 +2209,17 @@ T125SCH2.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -2209,7 +2297,7 @@ TESTHIVE
 Procedures for User SQL_USER1
 =============================
 
-TESTHIVE
+TRAFODION."T125SCH2".TESTHIVE
 
 =======================
  1 row(s) returned
@@ -2258,7 +2346,9 @@ Privileges on Table T125SCH3.GAMES
 --- SQL operation complete.
 >>get privileges on table games for t125_role1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get views in catalog trafodion, match 'T125SCH%';
 
 Views in Catalog TRAFODION
@@ -2283,7 +2373,9 @@ S------    SQL_USER1
 --- SQL operation complete.
 >>get privileges on view games_by_player for user sql_user8;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get indexes in schema t125sch3;
 
 --- SQL operation complete.
@@ -2303,7 +2395,9 @@ T125SCH2.PLAYERS_SEQUENCE
 --- SQL operation complete.
 >>get privileges on sequence players_sequence for t125_role1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get libraries, match 'T125%';
 
 --- SQL operation complete.
@@ -2312,13 +2406,24 @@ T125SCH2.PLAYERS_SEQUENCE
 --- SQL operation complete.
 >>get privileges on library t125_l1 for user sql_user8;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get functions in schema t125sch3;
 
 --- SQL operation complete.
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get schemas for user sql_user1, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get schemas for role t125_adminrole, match 'T125SCH%';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get functions for library t125_l1;
 
@@ -2332,7 +2437,7 @@ T125SCH2.PLAYERS_SEQUENCE
 Procedures for User SQL_USER1
 =============================
 
-TESTHIVE
+TRAFODION."T125SCH2".TESTHIVE
 
 =======================
  1 row(s) returned
@@ -2424,6 +2529,18 @@ GAMES_BY_PLAYER
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+T125_ROLE1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -2528,9 +2645,15 @@ GAMES_BY_PLAYER
 --- SQL operation failed with errors.
 >>get functions for role t125_role1;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+Functions for Role T125_ROLE1
+=============================
 
---- SQL operation failed with errors.
+TRAFODION."T125SCH3".TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>get functions for role t125_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
@@ -2565,6 +2688,14 @@ SIDU-R-    SQL_USER2
 --- SQL operation complete.
 >>get privileges on table games for t125_role1;
 
+Privileges on Table T125SCH3.GAMES
+==================================
+
+SIDU-R-    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get views in catalog trafodion, match 'T125SCH%';
 
@@ -2592,7 +2723,9 @@ S------    SQL_USER2
 --- SQL operation complete.
 >>get privileges on view games_by_player for user sql_user8;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get indexes in schema t125sch3;
 
 --- SQL operation complete.
@@ -2629,7 +2762,9 @@ Privileges on Library T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for user sql_user8;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get functions in schema t125sch3;
 
 Functions in Schema TRAFODION.T125SCH3
@@ -2644,6 +2779,17 @@ TRANSLATEBITMAP
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get schemas for user sql_user1, match 'T125SCH%';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get schemas for role t125_adminrole, match 'T125SCH%';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get functions for library t125_l1;
 
@@ -2672,9 +2818,15 @@ T125SCH3.TRANSLATEBITMAP
 --- SQL operation failed with errors.
 >>get functions for role t125_role1;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+Functions for Role T125_ROLE1
+=============================
 
---- SQL operation failed with errors.
+TRAFODION."T125SCH3".TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>get functions for role t125_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
@@ -2736,6 +2888,18 @@ T125SCH3
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+T125_ROLE1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -2803,9 +2967,15 @@ TEAMS
 --- SQL operation complete.
 >>get functions for role t125_role1;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+Functions for Role T125_ROLE1
+=============================
 
---- SQL operation failed with errors.
+TRAFODION."T125SCH3".TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>get functions for role t125_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
@@ -2840,7 +3010,9 @@ PLAYERS
 --- SQL operation complete.
 >>get privileges on view games_by_player for user sql_user8;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get indexes in schema t125sch3;
 
 --- SQL operation complete.
@@ -2877,7 +3049,9 @@ Privileges on Library T125SCH3.T125_L1
 --- SQL operation complete.
 >>get privileges on library t125_l1 for user sql_user8;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get functions in schema t125sch3;
 
 Functions in Schema TRAFODION.T125SCH3
@@ -2892,6 +3066,17 @@ TRANSLATEBITMAP
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get schemas for user sql_user1, match 'T125SCH%';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get schemas for role t125_adminrole, match 'T125SCH%';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get functions for library t125_l1;
 
@@ -2918,9 +3103,15 @@ T125SCH3.TRANSLATEBITMAP
 --- SQL operation complete.
 >>get functions for role t125_role1;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+Functions for Role T125_ROLE1
+=============================
 
---- SQL operation failed with errors.
+TRAFODION."T125SCH3".TRANSLATEBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>get functions for role t125_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.

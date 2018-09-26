@@ -404,7 +404,7 @@ PrivStatus PrivMgrCommands::getPrivileges(
   // With all bits set, privilege checks will always succeed
   if (!authorizationEnabled())
   {
-    privsOfTheUser.setAllTableGrantPrivileges(true);
+    privsOfTheUser.setAllTableGrantPrivileges(true /*priv*/, true/*wgo*/);
     userPrivs.initUserPrivs(privsOfTheUser);
     return STATUS_GOOD;
   }
