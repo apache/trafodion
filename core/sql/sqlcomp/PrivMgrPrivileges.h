@@ -231,7 +231,6 @@ protected:
    PrivStatus convertPrivsToDesc( 
      const ComObjectType objectType,
      const bool isAllSpecified,
-     const bool isGrant,
      const bool isWGOSpecified,
      const bool isGOFSpecified,
      const std::vector<PrivType> privsList,

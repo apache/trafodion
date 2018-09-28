@@ -1741,7 +1741,6 @@ PrivStatus PrivMgrPrivileges::initGrantRevoke(
   // Generate the list of privilege descriptors that were requested 
   PrivStatus retcode = convertPrivsToDesc(objectType,
                                isAllSpecified,
-                               isGrant,
                                (isGrant) ? isGOSpecified : true, // WGO
                                (isGrant) ? false : isGOSpecified, // GOF
                                privList,
@@ -4973,7 +4972,6 @@ bool PrivMgrPrivileges::isAuthIDGrantedPrivs(
 PrivStatus PrivMgrPrivileges::convertPrivsToDesc( 
   const ComObjectType objectType,
   const bool isAllSpecified,
-  const bool isGrant,
   const bool isWgoSpecified,
   const bool isGofSpecified,
   const std::vector<PrivType> privsList,
@@ -5014,7 +5012,14 @@ PrivStatus PrivMgrPrivileges::convertPrivsToDesc(
   // If all is specified, set bits appropriate for the object type and return
   if (isAllSpecified)
   {
-    privsToProcess.setAllObjectPrivileges(objectType, isGrant, isWgoSpecified);
+    // For grant:
+    //    WGO is set if WITH GRANT OPTION specified in syntax
+    //    GOF is false, so always turn on the priv bits
+    // For revoke:
+    //    WGO is always true, so always remove the WGO bits
+    //    GOF is set if GRANT OPTION FOR specified in syntax, so don't set privs
+    //       bit if only removing the grant option (JIRA 3194)
+    privsToProcess.setAllObjectPrivileges(objectType, !isGofSpecified, isWgoSpecified);
     return STATUS_GOOD;
   }
 
@@ -6249,18 +6254,18 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   }
 
   // Create bitmaps for all supported object types;
-  PrivMgrCoreDesc privCoreDesc;
-  privCoreDesc.setAllTableGrantPrivileges(true, true);
-  int64_t tableBits = privCoreDesc.getPrivBitmap().to_ulong();
+  PrivMgrDesc privDesc;
+  privDesc.setAllTableGrantPrivileges(true, true);
+  int64_t tableBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
  
-  privCoreDesc.setAllLibraryGrantPrivileges(true, true);
-  int64_t libraryBits = privCoreDesc.getPrivBitmap().to_ulong();
+  privDesc.setAllLibraryGrantPrivileges(true, true);
+  int64_t libraryBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
 
-  privCoreDesc.setAllUdrGrantPrivileges(true, true);
-  int64_t udrBits = privCoreDesc.getPrivBitmap().to_ulong();
+  privDesc.setAllUdrGrantPrivileges(true, true);
+  int64_t udrBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
 
-  privCoreDesc.setAllSequenceGrantPrivileges(true, true);
-  int64_t sequenceBits = privCoreDesc.getPrivBitmap().to_ulong();
+  privDesc.setAllSequenceGrantPrivileges(true, true);
+  int64_t sequenceBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
 
   // for views, privilegesBitmap is set to 1 (SELECT), wgo to 0 (no)
   std::string systemGrantor(SYSTEM_AUTH_NAME);
