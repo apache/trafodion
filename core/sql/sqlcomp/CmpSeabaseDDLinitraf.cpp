@@ -49,6 +49,7 @@ enum InitTrafSteps {
   IT_CREATE_SCHEMA_OBJECTS,
   IT_CREATE_MD_VIEWS,
   IT_CREATE_REPOS,
+  IT_CREATE_LIBRARIES,
   IT_CREATE_PRIVMGR_REPOS,
   IT_CREATE_LIBMGR,
   IT_STEP_FAILED,
@@ -692,7 +693,42 @@ short CmpSeabaseDDL::initTrafMD(CmpDDLwithStatusInfo *dws)
               } // switch
           }
           break;
+        case IT_CREATE_LIBRARIES:
+          {
+            switch (dws->subStep())
+              {
+              case 0:
+                {
+                  setValuesInDWS(dws, IT_NO_CHANGE,
+                                 "Create Libraries Tables: Started", 1, FALSE,
+                                 TRUE, FALSE, FALSE);
 
+                  return 0;
+                }
+                break;
+
+              case 1:
+                {
+                  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
+                                               CmpCommon::context()->sqlSession()->getParentQid());
+
+                  if (createLibrariesObject(&cliInterface))
+                    {
+                      setValuesInDWS(dws, IT_STEP_FAILED,
+                                     "Create Libraries Tables: Failed", 0, TRUE,
+                                     FALSE, TRUE, TRUE);
+                      return 0;
+                    }
+
+                  setValuesInDWS(dws, IT_CREATE_PRIVMGR_REPOS,
+                                 "Create Libraries Tables: Completed", 0, TRUE,
+                                 FALSE, TRUE, TRUE);
+
+                  return 0;
+                } // case 1
+              } // switch
+          }
+          break;
         case IT_CREATE_PRIVMGR_REPOS:
           {
             switch (dws->subStep())

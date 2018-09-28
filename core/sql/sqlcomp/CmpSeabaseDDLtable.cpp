@@ -5475,7 +5475,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       if (pColDef->getDefaultClauseStatus() != ElemDDLColDef::DEFAULT_CLAUSE_SPEC)
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_DEFAULT_REQUIRED);
-
+          deallocEHI(ehi);
           processReturn();
 
           return;
@@ -5492,7 +5492,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
           if (pDefVal->isNull()) 
             {
               *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_BE_DEFAULT_NULL_AND_NOT_NULL);
-
+              deallocEHI(ehi);
               processReturn();
 
               return;
@@ -5504,7 +5504,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (pColDef->getDefaultClauseStatus() == ElemDDLColDef::NO_DEFAULT_CLAUSE_SPEC)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_DEFAULT_REQUIRED);
-
+      deallocEHI(ehi);
       processReturn();
 
       return;
@@ -5513,7 +5513,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (pColDef->getSGOptions())
     {
       *CmpCommon::diags() << DgSqlCode(-1514);
-
+      deallocEHI(ehi);
       processReturn();
 
       return;
@@ -5606,11 +5606,12 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
           *CmpCommon::diags() << DgSqlCode(-CAT_DUPLICATE_COLUMNS)
                               << DgColumnName(colName);
         }
-      
+      deallocEHI(ehi);
       processReturn();
 
       return;
     }
+  /*
   // If column is a LOB column , error
    if ((datatype == REC_BLOB) || (datatype == REC_CLOB))
      {
@@ -5619,8 +5620,80 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       processReturn();
       return;
      }
-  char * col_name = new(STMTHEAP) char[colName.length() + 1];
+  */
+  char *col_name = new(STMTHEAP) char[colName.length() + 1];
   strcpy(col_name, (char*)colName.data());
+ if ((datatype == REC_BLOB) ||
+          (datatype == REC_CLOB))
+   {
+ 
+     short *lobNumList = new (STMTHEAP) short;
+     short *lobTypList = new (STMTHEAP) short;
+     char  **lobLocList = new (STMTHEAP) char*[1];
+     char **lobColNameList = new (STMTHEAP) char*[1];
+    
+     Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
+    
+    
+
+     lobNumList[0] = nacolArr.entries();
+     lobTypList[0] = (short)(pColDef->getLobStorage());
+     char * loc = new (STMTHEAP) char[1024];
+	  
+     const char* f = ActiveSchemaDB()->getDefaults().
+       getValue(LOB_STORAGE_FILE_DIR);
+	  
+     strcpy(loc, f);
+	  
+     lobLocList[0] = loc;
+     lobColNameList[0] = col_name;
+     char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
+     memset(lobHdfsServer,0,256);
+     strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER),sizeof(lobHdfsServer)-1);
+     Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+      Int32 rc = sendAllControls(FALSE, FALSE, TRUE);
+      
+      Int64 objUID = getObjectUID(&cliInterface,
+                                  catalogNamePart.data(), schemaNamePart.data(), 
+                                  objectNamePart.data(),
+                                  COM_BASE_TABLE_OBJECT_LIT);
+      
+      ComString newSchName = "\"";
+      newSchName += catalogNamePart;
+      newSchName.append("\".\"");
+      newSchName.append(schemaNamePart);
+      newSchName += "\"";
+      NABoolean lobTrace=FALSE;
+      if (getenv("TRACE_LOB_ACTIONS"))
+        lobTrace=TRUE;
+      Int32 numLobs = 1;
+      
+      rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
+                                          newSchName.length(),
+                                          objUID,
+                                          numLobs,
+                                          LOB_CLI_CREATE,
+                                          lobNumList,
+                                          lobTypList,
+                                          lobLocList,
+                                          lobColNameList,
+                                          lobHdfsServer,
+                                          lobHdfsPort,
+                                          lobMaxSize,
+                                          lobTrace);
+      if (rc < 0)
+        {
+          // retrieve the cli diags here.
+          CmpCommon::diags()->mergeAfter(*(GetCliGlobals()->currContext()->getDiagsArea()));
+         
+          deallocEHI(ehi); 	   
+          processReturn();
+	   
+          return ;
+        }
+   }
+
+
 
   ULng32 maxColQual = nacolArr.getMaxTrafHbaseColQualifier();
 
@@ -13758,7 +13831,8 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDesc(const NAString &catName,
                                       const NAString &objName)
 {
    TrafDesc *result = NULL;
-
+   NABoolean useLibBlobStore = FALSE;
+   
    if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
      return NULL;
 
@@ -13771,12 +13845,13 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDesc(const NAString &catName,
 
 
 TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
-                                      const NAString &schName,
-                                      const NAString &objName)
+                                                       const NAString &schName,
+                                                       const NAString &objName
+                                                       )
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
-
+  
   TrafDesc *result;
   char query[4000];
   char buf[4000];
@@ -13803,20 +13878,23 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
       return NULL;
     }
 
+ 
+    
+    
   str_sprintf(buf, "select udr_type, language_type, deterministic_bool,"
-  " sql_access, call_on_null, isolate_bool, param_style,"
-  " transaction_attributes, max_results, state_area_size, external_name,"
-  " parallelism, user_version, external_security, execution_mode,"
-  " library_filename, version, signature,  catalog_name, schema_name,"
-  " object_name"
-  " from %s.\"%s\".%s r, %s.\"%s\".%s l, %s.\"%s\".%s o "
-  " where r.udr_uid = %ld and r.library_uid = l.library_uid "
-  " and l.library_uid = o.object_uid for read committed access",
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-       objectUID);
-
+                  " sql_access, call_on_null, isolate_bool, param_style,"
+                  " transaction_attributes, max_results, state_area_size, external_name,"
+                  " parallelism, user_version, external_security, execution_mode,"
+                  " library_filename, version, signature,  catalog_name, schema_name,"
+                  " object_name, redef_time,library_storage, l.library_uid"
+                  " from %s.\"%s\".%s r, %s.\"%s\".%s l, %s.\"%s\".%s o "
+                  " where r.udr_uid = %ld and r.library_uid = l.library_uid "
+                  " and l.library_uid = o.object_uid for read committed access",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  objectUID);
+    
 
   cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
   if (cliRC < 0)
@@ -13912,6 +13990,8 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
   cliInterface.getPtrAndLen(20, ptr, len);
   char *libSch = new (STMTHEAP) char[len+1];    
   str_cpy_and_null(libSch, ptr, len, '\0', ' ', TRUE);
+  routineInfo->lib_sch_name = new (STMTHEAP) char[len+1];
+  str_cpy_and_null(routineInfo->lib_sch_name, ptr, len, '\0', ' ', TRUE);
   cliInterface.getPtrAndLen(21, ptr, len);
   char *libObj = new (STMTHEAP) char[len+1];    
   str_cpy_and_null(libObj, ptr, len, '\0', ' ', TRUE);
@@ -13925,6 +14005,29 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
                    libSQLExtName.data(),
                    libSQLExtName.length(),
                    '\0', ' ', TRUE);
+  NAString naLibSch(libSch);
+ 
+  
+  
+  cliInterface.getPtrAndLen(22,ptr,len);
+  routineInfo->lib_redef_time = *(Int64 *)ptr;
+
+
+  cliInterface.getPtrAndLen(23, ptr, len);
+  routineInfo->lib_blob_handle = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(routineInfo->lib_blob_handle, ptr, len, '\0', ' ', TRUE);
+
+  cliInterface.getPtrAndLen(24,ptr,len);
+  routineInfo->lib_obj_uid= *(Int64 *)ptr;
+  
+  
+    
+  if ((routineInfo->lib_blob_handle[0] == '\0')|| (naLibSch  == NAString(SEABASE_MD_SCHEMA)))
+    {
+      routineInfo->lib_redef_time = -1;
+      routineInfo->lib_blob_handle=NULL;
+      routineInfo->lib_obj_uid = 0;
+    }  
   
   ComTdbVirtTableColumnInfo *paramsArray;
   Lng32 numParams;

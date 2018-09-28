@@ -41,6 +41,8 @@ touch revive.hook
 touch snmppa.hook
 touch spp.hook
 touch sqlci.hook
+touch tdm_arkcmp.hook
+touch tdm_arkesp.hook
 touch tdm_arkqvp.hook
 touch tm.hook
 touch TPA.hook

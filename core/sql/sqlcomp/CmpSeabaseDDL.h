@@ -412,7 +412,8 @@ class CmpSeabaseDDL
        Int64 & objectFlags,
        bool reportErrorNow = true,
        NABoolean checkForValidDef = FALSE,
-       Int64 * createTime = NULL);
+       Int64 * createTime = NULL,
+       Int64 * redefTime = NULL);
   
   short getObjectName(
        ExeCliInterface *cliInterface,
@@ -529,8 +530,9 @@ protected:
 		  NAString &colName);
 
   TrafDesc *getSeabaseRoutineDescInternal(const NAString &catName,
-                                             const NAString &schName,
-                                             const NAString &objName);
+                                          const NAString &schName,
+                                          const NAString &objName
+                                          );
 
   // note: this function expects hbaseCreateOptionsArray to have
   // HBASE_MAX_OPTIONS elements
@@ -1011,7 +1013,8 @@ protected:
      
   short createDefaultSystemSchema(ExeCliInterface * cliInterface);
   short createSchemaObjects(ExeCliInterface * cliInterface);
-  
+  short createLibrariesObject(ExeCliInterface * cliInterface);
+  short extractLibrary(ExeCliInterface *cliInterface,char *libHandle, char *cachedLibName);
   void  createSeabaseSchema(
      StmtDDLCreateSchema  * createSchemaNode,
      NAString             & currCatName);
@@ -1314,7 +1317,8 @@ protected:
 
   void createSeabaseLibrary(StmtDDLCreateLibrary  * createLibraryNode,
                             NAString &currCatName, NAString &currSchName);
-  
+  void createSeabaseLibrary2(StmtDDLCreateLibrary  * createLibraryNode,
+                            NAString &currCatName, NAString &currSchName);
   void registerSeabaseUser (
                             StmtDDLRegisterUser        * registerUserNode);
   void alterSeabaseUser (
@@ -1326,10 +1330,13 @@ protected:
 
   void dropSeabaseLibrary(StmtDDLDropLibrary  * dropLibraryNode,
                           NAString &currCatName, NAString &currSchName);
-
+  void dropSeabaseLibrary2(StmtDDLDropLibrary  * dropLibraryNode,
+                          NAString &currCatName, NAString &currSchName);
   void  alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
 			    NAString &currCatName, NAString &currSchName);
-
+  void  alterSeabaseLibrary2(StmtDDLAlterLibrary  *alterLibraryNode,
+			    NAString &currCatName, NAString &currSchName);
+  short isLibBlobStoreValid(ExeCliInterface * cliInterface);
   void createSeabaseRoutine(StmtDDLCreateRoutine  * createRoutineNode,
                             NAString &currCatName, NAString &currSchName);
   
@@ -1338,6 +1345,7 @@ protected:
 
   short createSeabaseLibmgr(ExeCliInterface * cliInterface);
   short upgradeSeabaseLibmgr(ExeCliInterface * inCliInterface);
+  short upgradeSeabaseLibmgr2(ExeCliInterface * inCliInterface);
   short dropSeabaseLibmgr(ExeCliInterface *inCliInterface);
   short createLibmgrProcs(ExeCliInterface * cliInterface);
   short grantLibmgrPrivs(ExeCliInterface *cliInterface);
@@ -1497,15 +1505,24 @@ protected:
                   NABoolean inRecovery = FALSE);
   short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
   short copyOldReposToNew(ExeCliInterface * cliInterface);
+
   short dropAndLogReposViews(ExeCliInterface * cliInterface,
                              NABoolean & someViewSaved /* out */);
+  short createLibraries(ExeCliInterface * cliInterface);
+  short dropLibraries(ExeCliInterface * cliInterface, 
+                  NABoolean oldLibraries = FALSE, 
+                  NABoolean inRecovery = FALSE);
+  short alterRenameLibraries(ExeCliInterface * cliInterface, NABoolean newToOld);
+  short copyOldLibrariesToNew(ExeCliInterface * cliInterface);
 
 public:
 
   short upgradeRepos(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   short upgradeReposComplete(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   short upgradeReposUndo(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
-
+  short upgradeLibraries(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+  short upgradeLibrariesComplete(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+  short upgradeLibrariesUndo(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   NAString genHBaseObjName(const NAString &catName, 
 			   const NAString &schName,
 			   const NAString &objName);

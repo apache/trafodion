@@ -3735,7 +3735,8 @@ Int64 CmpSeabaseDDL::getObjectInfo(
                                    Int64 & objectFlags,
                                    bool reportErrorNow,
                                    NABoolean checkForValidDef,
-                                   Int64 *createTime)
+                                   Int64 *createTime,
+                                   Int64 *redefTime)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -3754,7 +3755,7 @@ Int64 CmpSeabaseDDL::getObjectInfo(
     strcpy(cfvd, " and valid_def = 'Y' ");
 
   char buf[4000];
-  str_sprintf(buf, "select object_uid, object_owner, schema_owner, flags, create_time from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' %s ",
+  str_sprintf(buf, "select object_uid, object_owner, schema_owner, flags, create_time,redef_time from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' %s ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objectTypeLit, cfvd);
@@ -3804,6 +3805,11 @@ Int64 CmpSeabaseDDL::getObjectInfo(
   cliInterface->getPtrAndLen(5, ptr, len);
   if (createTime)
     *createTime = *(Int64*)ptr;
+  
+ // return create_time
+  cliInterface->getPtrAndLen(6, ptr, len);
+  if (redefTime)
+    *redefTime = *(Int64*)ptr;
   
   cliInterface->fetchRowsEpilogue(NULL, TRUE);
 
@@ -5167,10 +5173,12 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
     }
-
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', %d, 0)",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
-              libObjUID, libPath, routineInfo->library_version);
+  
+     
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', empty_blob(), %d, 0)",
+                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
+              libObjUID, libPath,routineInfo->library_version);
+     
   
   cliRC = cliInterface->executeImmediate(buf);
   if (cliRC < 0)
@@ -7231,7 +7239,9 @@ short CmpSeabaseDDL::updateSeabaseAuths(
 
  New method is called  initTrafMD.
 
+
 */
+
 
 void CmpSeabaseDDL::createSeabaseMDviews()
 {
@@ -7318,14 +7328,14 @@ void CmpSeabaseDDL::createSeabaseSchemaObjects()
 
 }
 
+
 short CmpSeabaseDDL::createDefaultSystemSchema(ExeCliInterface *cliInterface)
 {
   Lng32 cliRC = 0;
   char buf[4000];
   
   str_sprintf(buf,"create shared schema " TRAFODION_SYSCAT_LIT"." SEABASE_SYSTEM_SCHEMA" ");
-  
-  cliRC = cliInterface->executeImmediate(buf);
+   cliRC = cliInterface->executeImmediate(buf);
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
@@ -7333,6 +7343,25 @@ short CmpSeabaseDDL::createDefaultSystemSchema(ExeCliInterface *cliInterface)
     }
 
   return 0;
+}
+
+short CmpSeabaseDDL::createLibrariesObject(ExeCliInterface *cliInterface)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+  char buf[4000];
+ 
+  str_sprintf(buf,"create table %s.\"%s\".LIBRARIES (library_uid largeint not null not serialized,library_filename varchar(512) character set iso88591 not null not serialized,library_storage  blob, version int not null not serialized, flags largeint not null not serialized)  primary key (library_uid) attribute hbase format ; ", getSystemCatalog(),SEABASE_MD_SCHEMA );
+
+  cliRC = cliInterface->executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  return retcode;
+
 }
 
 short CmpSeabaseDDL::createSchemaObjects(ExeCliInterface *cliInterface)
@@ -8837,7 +8866,12 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     }
   else if (ddlExpr->upgradeLibmgr())
     {
-      upgradeSeabaseLibmgr(&cliInterface);
+      if( (CmpCommon::getDefault(USE_LIB_BLOB_STORE) == DF_OFF))
+        upgradeSeabaseLibmgr(&cliInterface);
+      else
+        {
+          upgradeSeabaseLibmgr2(&cliInterface);         
+        }
     }
   else if (ddlExpr->updateVersion())
     {
@@ -9246,26 +9280,49 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           // create seabase library
           StmtDDLCreateLibrary * createLibraryParseNode =
             ddlNode->castToStmtDDLNode()->castToStmtDDLCreateLibrary();
-          
-          createSeabaseLibrary(createLibraryParseNode, currCatName, 
+          if( (CmpCommon::getDefault(USE_LIB_BLOB_STORE) == DF_OFF))
+            createSeabaseLibrary(createLibraryParseNode, currCatName, 
                                currSchName);
+          else
+            {
+              if (isLibBlobStoreValid(&cliInterface)==0)
+                createSeabaseLibrary2(createLibraryParseNode, currCatName, 
+                                      currSchName);
+              else
+                *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_CREATE_OBJECT);
+      
+            }
         }
       else if (ddlNode->getOperatorType() == DDL_DROP_LIBRARY)
         {
           // drop seabase library
           StmtDDLDropLibrary * dropLibraryParseNode =
             ddlNode->castToStmtDDLNode()->castToStmtDDLDropLibrary();
-          
-          dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
+          if( (CmpCommon::getDefault(USE_LIB_BLOB_STORE) == DF_OFF))
+            dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
+          else
+            {
+              if (isLibBlobStoreValid(&cliInterface)==0)
+                dropSeabaseLibrary2(dropLibraryParseNode, currCatName, currSchName);
+              else
+                 *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT);
+            }
         }
        else if (ddlNode->getOperatorType() == DDL_ALTER_LIBRARY)
          {
            // create seabase library
            StmtDDLAlterLibrary * alterLibraryParseNode =
              ddlNode->castToStmtDDLNode()->castToStmtDDLAlterLibrary();
-           
-           alterSeabaseLibrary(alterLibraryParseNode, currCatName, 
-                               currSchName);
+           if( (CmpCommon::getDefault(USE_LIB_BLOB_STORE) == DF_OFF))
+             alterSeabaseLibrary(alterLibraryParseNode, currCatName, 
+                                 currSchName);
+           else
+             {
+               if (isLibBlobStoreValid(&cliInterface)==0)
+                alterSeabaseLibrary2(alterLibraryParseNode, currCatName, currSchName);
+              else
+                *CmpCommon::diags() << DgSqlCode(CAT_CANNOT_ALTER_WRONG_TYPE);
+             }
          }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROUTINE)
         {

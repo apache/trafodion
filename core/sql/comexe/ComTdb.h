@@ -44,6 +44,7 @@
 #include "sqlcli.h"
 #include "ComSmallDefs.h"
 #include "PrivMgrDesc.h"        // Privilege descriptors
+#include "ExpLOBenums.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -1013,11 +1014,12 @@ class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
                              Int16 d, const char * sa, Int16 con, Int16 i, const char * ps,
                              const char * ta, Int32 mr, Int32 sas, const char * en,
                              const char * p, const char * uv, const char * es, const char * em,
-                             const char * lf, Int32 lv, const char * s, const char *ls)
+                             const char * lf, Int32 lv, const char * s, const char *ls, Int64 luid
+                             )
     : ComTdbVirtTableBase(),
     routine_name(rn), deterministic(d), call_on_null(con), isolate(i), max_results(mr),
     state_area_size(sas), external_name(en), library_filename(lf), library_version(lv),
-      signature(s), library_sqlname(ls)
+      signature(s), library_sqlname(ls),lib_obj_uid(luid)
       {
         strcpy(UDR_type, ut);
         strcpy(language_type, lt);
@@ -1061,6 +1063,10 @@ class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
   Int64 object_uid;
   Int32 object_owner_id;
   Int32 schema_owner_id;
+  Int64 lib_redef_time;
+  char *lib_blob_handle;
+  char *lib_sch_name;
+  Int64 lib_obj_uid;
 };
 
 class ComTdbVirtTableSequenceInfo : public ComTdbVirtTableBase

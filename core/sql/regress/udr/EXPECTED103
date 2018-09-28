@@ -166,7 +166,7 @@
 
 --- SQL operation complete.
 >>showddl library functionsForTest103;
-CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE '/mnt2/ansharma/ansharma_trafr21/incubator-trafodion/core/sqf/rundir/udr/TEST103_functions.dll'
+CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE 'TEST103_functions.dll'
 ;
 
 -- GRANT UPDATE, USAGE ON LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 TO DB__ROOT WITH GRANT OPTION;
@@ -296,18 +296,18 @@ A       R1           R2              R3
 >>-- try to drop libraries - should fail
 >>drop library functionsForTest103;
 
-*** ERROR[1366] Request failed.  One or more dependent procedures exist.
+*** ERROR[1366] Request failed. One or more dependent procedures exist.
 
 --- SQL operation failed with errors.
 >>drop library procsForTest103;
 
-*** ERROR[1366] Request failed.  One or more dependent procedures exist.
+*** ERROR[1366] Request failed. One or more dependent procedures exist.
 
 --- SQL operation failed with errors.
 >>
 >>-- make sure query invalidation works when dropping routines and libraries
 >>showddl library functionsForTest103;
-CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE '/mnt2/ansharma/ansharma_trafr21/incubator-trafodion/core/sqf/rundir/udr/TEST103_functions.dll'
+CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE 'TEST103_functions.dll'
 ;
 
 -- GRANT UPDATE, USAGE ON LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 TO DB__ROOT WITH GRANT OPTION;
@@ -418,7 +418,7 @@ CREATE PROCEDURE TRAFODION.UDR103SCH.UPDATESUBSCRIPTIONS
 
 --- SQL operation complete.
 >>showddl library functionsForTest103;
-CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE '/mnt2/ansharma/ansharma_trafr21/incubator-trafodion/core/sqf/rundir/udr/TEST103_functions.dll'
+CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE 'TEST103_functions.dll'
 ;
 
 -- GRANT UPDATE, USAGE ON LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 TO DB__ROOT WITH GRANT OPTION;

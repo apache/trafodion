@@ -2352,6 +2352,14 @@ TrafDesc *Generator::createVirtualRoutineDesc(
    strcpy(routine_desc->routineDesc()->signature, routineInfo->signature);
    routine_desc->routineDesc()->librarySqlName = new GENHEAP(space) char[strlen(routineInfo->library_sqlname)+1];
    strcpy(routine_desc->routineDesc()->librarySqlName, routineInfo->library_sqlname);
+   routine_desc->routineDesc()->libRedefTime = routineInfo->lib_redef_time;
+   routine_desc->routineDesc()->libBlobHandle = routineInfo->lib_blob_handle;
+
+   routine_desc->routineDesc()->libVersion = routineInfo->library_version;
+   routine_desc->routineDesc()->libObjUID = routineInfo->lib_obj_uid;
+   //routine_desc->routineDesc()->libSchName = new GENHEAP(space) char[strlen(routineInfo->lib_sch_name)+1];
+   //strcpy(routine_desc->routineDesc()->libSchName ,routineInfo->lib_sch_name);
+   routine_desc->routineDesc()->libSchName = routineInfo->lib_sch_name;
    routine_desc->routineDesc()->language  = 
            CmGetComRoutineLanguageAsRoutineLanguage(routineInfo->language_type);
    routine_desc->routineDesc()->UDRType  = 

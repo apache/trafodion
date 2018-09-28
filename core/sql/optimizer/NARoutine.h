@@ -176,11 +176,20 @@ public:
   inline PrivMgrUserPrivs *              getPrivInfo()    const { return privInfo_; }
   inline Int32                           getObjectOwner() const { return objectOwner_; }
   inline Int32                           getSchemaOwner() const { return schemaOwner_; }
-
+  inline Int64  getLibRedefTime() const {return libRedefTime_;}
+  inline const NAString  &getLibBlobHandle() const {return libBlobHandle_;}
+  inline const NAString  &getLibSchName() const {return libSchName_;}
+  inline Int32 getLibVersion() const {return libVersion_;}
+  inline Int64 getLibObjUID() const {return libObjUID_;}
   inline void  setudfFanOut      (Int32 fanOut)       { udfFanOut_ = fanOut; }
   inline void  setExternalPath   (ComString path)     { externalPath_   = path; }
   inline void  setFile           (ComString file)     { externalFile_   = file; }  
   inline void  setExternalName   (ComString fname)    { externalName_   = fname; } 
+  inline void  setLibRedefTime (Int64 rtime) { libRedefTime_ = rtime;}
+  inline void  setLibBlobHandle(NAString lobHandle)  {libBlobHandle_ = lobHandle;}
+  inline void  setLibVersion(Int32 version) { libVersion_ = version;}
+  inline void  setLibObjUID(Int64 libobjuid) { libObjUID_ = libobjuid;}
+  inline void  setLibSchName(NAString schName)  {libSchName_ = schName;}
   inline void  setLibrarySqlName (ComObjectName lib)  { librarySqlName_   = lib; }
   inline void  setLanguage  (ComRoutineLanguage lang) { language_ = lang; }  
   inline void  setRoutineType    (ComRoutineType typ) { UDRType_ = typ; }  
@@ -247,6 +256,11 @@ private:
   ComString            externalPath_;   // URL
   ComString            externalFile_;
   ComString            externalName_;   // Java method name
+  Int64                libRedefTime_;
+  NAString             libBlobHandle_;
+  NAString             libSchName_;
+  Int32                libVersion_;
+  Int64                libObjUID_;
   ComString            signature_;
   ComObjectName        librarySqlName_;        // ANSI name of JAR/DLL
   ComRoutineParamStyle paramStyle_;

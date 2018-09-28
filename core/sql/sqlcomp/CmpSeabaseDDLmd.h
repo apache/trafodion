@@ -190,7 +190,8 @@ static const QString seabaseLibrariesDDL[] =
   {" primary key (library_uid) "},
   {" attribute hbase format "},
   {" ; "}
-};
+  };
+
 
 static const QString seabaseLibrariesUsageDDL[] =
 {
@@ -497,7 +498,7 @@ static const QString seabaseViewsUsageDDL[] =
 
 static const ComTdbVirtTableRoutineInfo seabaseMDValidateRoutineInfo =
   {
-    "VALIDATEROUTINE", COM_PROCEDURE_TYPE_LIT,  COM_LANGUAGE_JAVA_LIT, 1, COM_NO_SQL_LIT, 0, 0, COM_STYLE_JAVA_CALL_LIT, COM_NO_TRANSACTION_REQUIRED_LIT, 0, 0, "org.trafodion.sql.udr.LmUtility.validateMethod", COM_ROUTINE_NO_PARALLELISM_LIT, " ", COM_ROUTINE_EXTERNAL_SECURITY_INVOKER_LIT, COM_ROUTINE_SAFE_EXECUTION_LIT, " ", 1, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III[Ljava/lang/String;[I[Ljava/lang/String;)V", " "
+    "VALIDATEROUTINE", COM_PROCEDURE_TYPE_LIT,  COM_LANGUAGE_JAVA_LIT, 1, COM_NO_SQL_LIT, 0, 0, COM_STYLE_JAVA_CALL_LIT, COM_NO_TRANSACTION_REQUIRED_LIT, 0, 0, "org.trafodion.sql.udr.LmUtility.validateMethod", COM_ROUTINE_NO_PARALLELISM_LIT, " ", COM_ROUTINE_EXTERNAL_SECURITY_INVOKER_LIT, COM_ROUTINE_SAFE_EXECUTION_LIT, " ", 1, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III[Ljava/lang/String;[I[Ljava/lang/String;)V", " ",0
   };
 
 static const ComTdbVirtTableColumnInfo seabaseMDValidateRoutineColInfo[] =
@@ -633,9 +634,9 @@ static const MDTableInfo allMDtablesInfo[] = {
    seabaseKeysDDL, sizeof(seabaseKeysDDL),
    NULL, 0, FALSE},
 
-  {SEABASE_LIBRARIES, 
+  /* {SEABASE_LIBRARIES, 
    seabaseLibrariesDDL, sizeof(seabaseLibrariesDDL),
-   NULL, 0, FALSE},
+   NULL, 0, FALSE},*/
 
   {SEABASE_LIBRARIES_USAGE, 
    seabaseLibrariesUsageDDL, sizeof(seabaseLibrariesUsageDDL),
@@ -746,6 +747,7 @@ static const MDTableInfo allMDHistInfo[] = {
 #define SEABASE_SEQ_GEN_OLD_MD          SEABASE_SEQ_GEN"_OLD_MD"
 #define SEABASE_TABLES_OLD_MD              SEABASE_TABLES"_OLD_MD"
 #define SEABASE_TABLE_CONSTRAINTS_OLD_MD SEABASE_TABLE_CONSTRAINTS"_OLD_MD"
+#define SEABASE_TABLE_CONSTRAINTS_IDX_OLD_MD SEABASE_TABLE_CONSTRAINTS_IDX"_OLD_MD" 
 #define SEABASE_TEXT_OLD_MD                 SEABASE_TEXT"_OLD_MD"
 #define SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD SEABASE_UNIQUE_REF_CONSTR_USAGE"_OLD_MD"
 #define SEABASE_VIEWS_OLD_MD                SEABASE_VIEWS"_OLD_MD"
@@ -1117,7 +1119,7 @@ static const QString seabaseOldTrafMDv11ViewsUsageDDL[] =
 
 static const ComTdbVirtTableRoutineInfo seabaseOldTrafMDv11MDValidateRoutineInfo =
   {
-    "VALIDATEROUTINE", COM_PROCEDURE_TYPE_LIT,  COM_LANGUAGE_JAVA_LIT, 1, COM_NO_SQL_LIT, 0, 0, COM_STYLE_JAVA_CALL_LIT, COM_NO_TRANSACTION_REQUIRED_LIT, 0, 0, "org.trafodion.sql.udr.LmUtility.validateMethod", COM_ROUTINE_NO_PARALLELISM_LIT, " ", COM_ROUTINE_EXTERNAL_SECURITY_INVOKER_LIT, COM_ROUTINE_SAFE_EXECUTION_LIT, " ", 1, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III[Ljava/lang/String;[I[Ljava/lang/String;)V", " "
+    "VALIDATEROUTINE", COM_PROCEDURE_TYPE_LIT,  COM_LANGUAGE_JAVA_LIT, 1, COM_NO_SQL_LIT, 0, 0, COM_STYLE_JAVA_CALL_LIT, COM_NO_TRANSACTION_REQUIRED_LIT, 0, 0, "org.trafodion.sql.udr.LmUtility.validateMethod", COM_ROUTINE_NO_PARALLELISM_LIT, " ", COM_ROUTINE_EXTERNAL_SECURITY_INVOKER_LIT, COM_ROUTINE_SAFE_EXECUTION_LIT, " ", 1, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III[Ljava/lang/String;[I[Ljava/lang/String;)V", " ",0
   };
 
 static const ComTdbVirtTableColumnInfo seabaseOldTrafMDv11MDValidateRoutineColInfo[] =

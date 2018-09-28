@@ -590,7 +590,7 @@ Long TrafRoutineDesc::pack(void * space)
   librarySqlName = (librarySqlName ? (char*)(((Space*)space)->convertToOffset(librarySqlName)) : NULL);
   libraryFileName = (libraryFileName ? (char*)(((Space*)space)->convertToOffset(libraryFileName)) : NULL);
   signature = (signature ? (char*)(((Space*)space)->convertToOffset(signature)) : NULL);
-
+  libBlobHandle = (libBlobHandle ? (char*)(((Space*)space)->convertToOffset(libBlobHandle)) : NULL);
   params.pack(space);
 
   return TrafDesc::pack(space);
@@ -603,7 +603,7 @@ Lng32 TrafRoutineDesc::unpack(void * base, void * reallocator)
   librarySqlName = (librarySqlName ? (char*)((char*)base - (Long)librarySqlName) : NULL);
   libraryFileName = (libraryFileName ? (char*)((char*)base - (Long)libraryFileName) : NULL);
   signature = (signature ? (char*)((char*)base - (Long)signature) : NULL);
-
+  libBlobHandle = (libBlobHandle ? (char*)((char*)base - (Long)libBlobHandle) : NULL);
   if (params.unpack(base, reallocator)) return -1;
 
   return TrafDesc::unpack(base, reallocator);

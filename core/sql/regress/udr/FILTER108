@@ -21,6 +21,6 @@
 # @@@ END COPYRIGHT @@@
 
 sed "
-s#[^ ]*/TEST002.dll#dir/TEST002.dll#g
+s/^\/\([[:graph:]]*\/\)*/#udr_cached_lib_dir#\//g
 s/212[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/#JULIANTIMESTAMP#/g
 " "$1"

@@ -23,6 +23,7 @@
 #define _CMP_SEABASE_PROCEDURES_H_
 
 #include "CmpSeabaseDDL.h"
+#include "CmpSeabaseDDLupgrade.h"
 
 // To add a new procedure:
 //   update export/lib/lib_mgmt.jar to include code for the new procedure 
@@ -407,4 +408,80 @@ static const LibmgrRoutineInfo allLibmgrRoutineInfo[] = {
 
 };
 
+/////////////////////////////////////////////////////////////////////
+//
+// Information about changed old metadata tables from which upgrade
+// is being done to the current version.
+// These definitions have changed in the current version of code.
+// 
+// Old definitions have the form (for ex for METRIC_QUERY_TABLE table):
+//            createOldTrafv??MetricQueryTable[]
+// v?? is the old version.
+//
+// When definitions change, make new entries between
+// START_OLD_MD_v?? and END_OLD_MD_v??.
+// Do not remove older entries. We want to keep them around for
+// historical purpose.
+//
+// Change entries in allReposUpgradeInfo[] struct in this file
+// to reflect the 'old' repository tables.
+//
+//////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------
+//-- LIBRARIES
+//----------------------------------------------------------------
+static const QString createLibrariesTable[] =
+  {
+    {" create table %s.\"%s\"." SEABASE_LIBRARIES" "},
+    {" ( "},
+    {"  library_uid largeint not null not serialized, "},
+    {"  library_filename varchar(512) character set iso88591 not null not serialized, "},
+    {"  library_storage  blob,"},
+    {"  version int not null not serialized, "},
+    {"  flags largeint not null not serialized "},
+    {" ) "},
+    {" primary key (library_uid) "},
+    {" attribute hbase format "},
+    {" ; "}
+  };
+
+#define SEABASE_LIBRARIES_OLD SEABASE_LIBRARIES"_OLD"
+static const QString createOldTrafv210LibrariesTable[] =
+{
+{" create table %s.\"%s\"." SEABASE_LIBRARIES" "},
+    {" ( "},
+    {"  library_uid largeint not null not serialized, "},
+    {"  library_filename varchar(512) character set iso88591 not null not serialized, "},
+    {"  version int not null not serialized, "},
+    {"  flags largeint not null not serialized "},
+    {" ) "},
+    {" primary key (library_uid) "},
+    {" attribute hbase format "},
+    {" ; "}
+  };
+
+static const MDUpgradeInfo allLibrariesUpgradeInfo[] = {
+  // LIBRARIES
+  {
+    SEABASE_LIBRARIES,  SEABASE_LIBRARIES_OLD,
+    createLibrariesTable,  sizeof(createLibrariesTable),
+    createOldTrafv210LibrariesTable,  sizeof(createOldTrafv210LibrariesTable),
+    NULL, 0,
+    TRUE,
+    //new table columns
+    "library_uid,"
+    "library_filename,"
+    "library_storage,"
+    "version,"
+    "flags",
+    //old table columns
+    "library_uid,"
+    "library_filename,"
+    "version,"
+    "flags",
+    NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE}
+};
+
+
+  
 #endif

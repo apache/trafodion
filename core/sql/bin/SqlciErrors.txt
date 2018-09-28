@@ -37,7 +37,7 @@
 1035 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName already exists.
 1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization ID $0~String0 cannot grant to authorization ID $1~String1 because it could create a circular dependency.
 1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Revoke failed because of a dependent grant between authorization ID $0~string0 and authorization ID $1~string1.
-1038 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1038 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to upgrade library management
 1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No privileges were revoked. You lack the grant option for the specified privilege(s).
 1040 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The use of ALTER on metadata tables is not permitted.
 1041 ZZZZZ 99999 BEGINNER MINOR DBADMIN The primary key has already been defined.
@@ -1327,7 +1327,7 @@ $1~String1 --------------------------------
 4313 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Function rand() is not supported.
 4314 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error was detected while creating an audit row image for $0~TableName. AUDIT_IMAGE function is only supported on index tables.
 4315 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error was detected while creating an audit row image. The columns defined for the index $0~TableName do not match what was requested for the audit row image.
-4316 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error was detected while creating an audit row image. The data type defined for the index $0~TableName and $0~ColumnName do not match what was requested for the audit row image.
+4316 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error was detected while extracting a udr routine library to local cache : $0~string0 .
 4320 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Stream access is not allowed on multi-partitioned table or index, when flag ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Object in scope: $0~TableName.
 4321 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An embedded update/delete is not allowed on a partitioned table, when flag ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Object in scope: $0~TableName.
 4322 0A000 99999 BEGINNER MAJOR DBADMIN A column with BLOB datatype cannot be used in this clause or function.

@@ -183,6 +183,8 @@ else
   echo "MY_UDR_ROOT=\$TRAF_HOME/udr"
 fi
 
+echo "MY_UDR_CACHE_LIBDIR=cached_libs"
+
 echo ""
 echo "#creating sqllogs folder for capturing osim data"
 sqllogdir=$HOME/sqllogs

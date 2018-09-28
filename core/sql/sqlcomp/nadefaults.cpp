@@ -2874,13 +2874,13 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_AUTO_CREATE_SCHEMA,                 "OFF"),   
 
-  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "OFF"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_BOOLEAN_IO,                        "OFF"),
 
-  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
+  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),     
 
-  DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "OFF"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
@@ -3059,7 +3059,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // Use large queues on RHS of Flow/Nested Join when appropriate
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
+
  XDDkwd__(USE_LIBHDFS,                          "OFF"),
+
+  DDkwd__(USE_LIB_BLOB_STORE,                   "ON"),         
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
 
