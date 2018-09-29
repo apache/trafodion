@@ -381,7 +381,7 @@ ex_mj_tcb::createDiags(Int16 sqlCode)
     sysError = tspace_->getLastError();
   }
   *diags << DgSqlCode(-sqlCode) << DgInt0(sysError) << DgString0("Merge join");
-  downEntry->setDiagsArea(diags);
+  downEntry->setDiagsAreax(diags);
 
   // The Q_SQLERROR entry that will return the diagnostics information doesn't
   // match any rows, so reset matchCount_.
@@ -421,7 +421,7 @@ ex_mj_tcb::processError(atp_struct* entryAtp)
           diagsArea->incrRefCount();   // to offset the decrRefCount done on setDiagsArea call
         }
       diagsArea->mergeAfter(*prevDiagsArea);
-      upEntry->setDiagsArea(diagsArea);
+      upEntry->setDiagsAreax(diagsArea);
     }
 
   upEntry->upState.status = ex_queue::Q_SQLERROR;

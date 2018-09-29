@@ -502,9 +502,9 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
 
   if (addCondition)
     {
-      ComDiagsArea *diagsArea = 
+      ComDiagsArea *diagsArea =
         ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-      
+
       *diagsArea << DgSqlCode(-SQLCode);
 
       if (nodeName)
@@ -518,7 +518,7 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
       }
 
       diagsArea->mergeAfter(*da);
-      up_entry->setDiagsArea(diagsArea);
+      up_entry->setDiagsAreax(diagsArea);
       da->decrRefCount();
     }
   else

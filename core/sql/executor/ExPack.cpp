@@ -387,8 +387,7 @@ ExWorkProcRetcode ExPackRowsTcb::workUp()
       if(!cEntryUpAtp->getDiagsArea());
       else if(!pEntryDown->getDiagsArea())
 	{
-	  pEntryDown->setDiagsArea(cEntryUpAtp->getDiagsArea());
-	  pEntryDown->getDiagsArea()->incrRefCount();
+	  pEntryDown->shareDiagsArea(cEntryUpAtp->getDiagsArea());
 	}
       else
 	pEntryDown->getDiagsArea()->mergeAfter(*cEntryUpAtp->getDiagsArea());

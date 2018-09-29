@@ -1058,28 +1058,28 @@ InputOutputExpr::outputValues(atp_struct *atp,
   char * targetIndPtr = NULL;
   char * targetVCLen  = NULL;
   short  targetVCLenSize = 0;
-  
+
   // Size of an entry of the indicator array
   Lng32   indSize;
-  
+
   Long   tempTarget   = 0;
-  
+
   char * dataPtr = 0;
   short entry = 0;
-  
+
   NABoolean byPassCheck = output_desc->isDescTypeWide();
   if (!byPassCheck &&
     (getNumEntries() != output_desc->getUsedEntryCount()) &&
-      (!output_desc->thereIsACompoundStatement())) 
+      (!output_desc->thereIsACompoundStatement()))
     {
       ExRaiseSqlError(heap, &diagsArea, CLI_STMT_DESC_COUNT_MISMATCH);
       if (diagsArea != atp->getDiagsArea())
-	atp->setDiagsArea(diagsArea);
+	atp->setDiagsAreax(diagsArea);
       return ex_expr::EXPR_ERROR;
     }
-  
+
   // If bulk move has not been disabled before, then check to see if bulk
-  // move could be done. This is done by comparing attributes of the 
+  // move could be done. This is done by comparing attributes of the
   // executor items and the descriptor entries. See method
   // Descriptor::checkBulkMoveStatus() for details on when bulk move will
   // be disabled.
@@ -1243,7 +1243,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
             }
         }
       } // switch atpIndex
-      
+
       // For rowsets, here we extract the number of elements in it. This
       // only happens for the SELECT .. INTO clause
       if (source && sourceCompiledWithRowsets) {
@@ -1263,19 +1263,19 @@ InputOutputExpr::outputValues(atp_struct *atp,
                        &diagsArea) != ex_expr::EXPR_OK)
 	  {
 	    if (diagsArea != atp->getDiagsArea())
-	      atp->setDiagsArea(diagsArea);	    
-	    
+	      atp->setDiagsAreax(diagsArea);
+
 	    return ex_expr::EXPR_ERROR;
 	  }
-	
+
         // Increment the location for the next element.
         source += sizeof(Lng32);
-	
-	// The offsets for rowset SQLVarChar attributes are set as follows. 
-	// offset_ points to the start of the rowset info followed by four bytes 
+
+	// The offsets for rowset SQLVarChar attributes are set as follows.
+	// offset_ points to the start of the rowset info followed by four bytes
 	// of the rowset size. nullIndOffset_ (if nullIndicatorLength_ is not set
-	// to 0) points to (offset_+4). vcLenIndOffset_ (if vcIndicatorLength_ 
-	// is not set to 0) points to (offset_+nullIndicatorLength_). The first 
+	// to 0) points to (offset_+4). vcLenIndOffset_ (if vcIndicatorLength_
+	// is not set to 0) points to (offset_+nullIndicatorLength_). The first
 	// data value stars at (offset_+nullIndicatorLength_+vcIndicatorLength_)
 	// or (offset_+vcIndicatorLength_) depending on whether nullIndicatorLength_
 	// is valid.
@@ -1284,12 +1284,12 @@ InputOutputExpr::outputValues(atp_struct *atp,
         if (operand->getNullFlag()) {
 	  source += operand->getNullIndicatorLength();
         }
-	
-        if (operand->getVCIndicatorLength() > 0) { 
-	  source += operand->getVCIndicatorLength(); 
+
+        if (operand->getVCIndicatorLength() > 0) {
+	  source += operand->getVCIndicatorLength();
         }
 	//Now source points to the start of the first data value of the rowset.
-	
+
         if (tempSource < 0) {
           tempSource = 1;
 	}
@@ -1472,15 +1472,15 @@ InputOutputExpr::outputValues(atp_struct *atp,
 		ExRaiseSqlError(heap, &diagsArea,
 				EXE_MISSING_INDICATOR_VARIABLE);
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);
+		  atp->setDiagsAreax(diagsArea);
 		return ex_expr::EXPR_ERROR;
 	      }
 	  }
 	}
-	
+
 	if (! nullMoved) {
 	  targetVarPtr = (char *)tempTarget;
-	  
+
 	  if (targetVarPtr) {
 	    // bound column. Move value to user area.
 	    target     = targetVarPtr;
@@ -1491,9 +1491,9 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	    target = new (heap) char[targetLen + 10]; // 10 extra bytes should do
 	    realTarget = target;
 	  }
-	  
+
 	  Lng32  tempDataConversionErrorFlag = ex_conv_clause::CONV_RESULT_OK;
-	  
+
 	  if ((DFS2REC::isSQLVarChar(targetType)) ||
 	      (DFS2REC::isLOB(targetType))) {
 	    targetVCLen = target;
@@ -1530,12 +1530,12 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	  if (NOT areCompatible(sourceType, targetType))
 	    {
 	      if ((NOT skipTypeCheck()) ||
-		  ((restrictedSkipTypeCheck()) && 
+		  ((restrictedSkipTypeCheck()) &&
 		   (NOT implicitConversionSupported(sourceType,targetType))))
 		{
 		  ExRaiseSqlError(heap, &diagsArea,EXE_CONVERT_NOT_SUPPORTED);
 		  if (diagsArea != atp->getDiagsArea())
-		    atp->setDiagsArea(diagsArea);	    
+		    atp->setDiagsAreax(diagsArea);
 		  return ex_expr::EXPR_ERROR;
 		}
 
@@ -1543,22 +1543,22 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	   } else {
               if ( DFS2REC::isAnyCharacter(sourceType) &&
                    NOT CharInfo::isAssignmentCompatible(targetCharSet, sourceCharSet)
-                 ) 
+                 )
 
               {
 	        ExRaiseSqlError(heap, &diagsArea, CLI_ASSIGN_INCOMPATIBLE_CHARSET);
 
                 if (diagsArea != atp->getDiagsArea())
-	            atp->setDiagsArea(diagsArea);	    
+	            atp->setDiagsAreax(diagsArea);
 
-                *diagsArea 
-		<< DgString0(CharInfo::getCharSetName((CharInfo::CharSet)targetCharSet))
-		<< DgString1(CharInfo::getCharSetName((CharInfo::CharSet)sourceCharSet));
+                *diagsArea
+		  << DgString0(CharInfo::getCharSetName((CharInfo::CharSet)targetCharSet))
+		  << DgString1(CharInfo::getCharSetName((CharInfo::CharSet)sourceCharSet));
 
 	        return ex_expr::EXPR_ERROR;
               }
             }
-	
+
 	  // if the target is REC_DECIMAL_LS and the source is NOT
 	  // REC_DECIMAL_LSE, convert the source to REC_DECIMAL_LSE
 	  // first. This conversion already took place during compilation
@@ -1570,7 +1570,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	  if ((targetType == REC_DECIMAL_LS) &&
 	      (operand->getDatatype() != REC_DECIMAL_LSE) &&
   	      (targetRowsetSize == 0)) {
-	    
+
             if ( source ) {
 	      intermediate = new (heap) char[targetLen - 1];
 	      if (::convDoIt(source,
@@ -1588,21 +1588,21 @@ InputOutputExpr::outputValues(atp_struct *atp,
 			     heap,
 			     &diagsArea) !=  ex_expr::EXPR_OK) {
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);            
-		
+		  atp->setDiagsAreax(diagsArea);
+
 		NADELETEBASIC(intermediate, heap);
 		if (! targetVarPtr)
 		  NADELETEBASIC(realTarget, heap);
 		return ex_expr::EXPR_ERROR;
 	      };
-	      
+
 	      source = intermediate;
 	      sourceLen = targetLen - 1;
-	    } 
-	    
+	    }
+
 	    sourceType = REC_DECIMAL_LSE;
 	  }
-	  
+
 	  // 5/18/98: added to handle SJIS encoding charset case.
 	  // This is used in ODBC where the target character set is still
 	  // ASCII but the actual character set used is SJIS.
@@ -1612,7 +1612,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	       )
 	    {
 
-           if ( targetCharSet == CharInfo::SJIS ) 
+           if ( targetCharSet == CharInfo::SJIS)
 		{
 		  switch ( targetType ) {
 		  case REC_BYTE_F_ASCII:
@@ -1657,7 +1657,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 		intermediate = new (heap) char[57];
 	      else
 		intermediate = new (heap) char[8];
-              if ( source ) 
+              if ( source )
 		{
 		  // convert to largeint
 		  if (convDoIt(source,
@@ -1667,48 +1667,48 @@ InputOutputExpr::outputValues(atp_struct *atp,
 			       sourceScale,
 			       intermediate,
 			       (DFS2REC::isBigNum(sourceType) ? 57 : 8),
-			       (DFS2REC::isBigNum(sourceType) 
+			       (DFS2REC::isBigNum(sourceType)
 				? REC_NUM_BIG_SIGNED : REC_BIN64_SIGNED),
 			       targetPrecision,
 			       targetScale,
 			       NULL,
 			       0,
 			       heap,
-			       &diagsArea) !=  ex_expr::EXPR_OK) 
+			       &diagsArea) !=  ex_expr::EXPR_OK)
 		    {
 		      if (diagsArea != atp->getDiagsArea())
-			atp->setDiagsArea(diagsArea);            
-		      
+			atp->setDiagsAreax(diagsArea);
+
 		      NADELETEBASIC(intermediate, heap);
 		      return ex_expr::EXPR_ERROR;
 		    }
-		  
+
 		  // scale it
 		  if (scaleDoIt(
 		       intermediate,
 		       (DFS2REC::isBigNum(sourceType) ? 57 : 8),
-		       (DFS2REC::isBigNum(sourceType) 
+		       (DFS2REC::isBigNum(sourceType)
 			? REC_NUM_BIG_SIGNED : REC_BIN64_SIGNED),
 		       sourceScale,
 		       targetScale,
                        sourceType,
-		       heap) != ex_expr::EXPR_OK) 
+		       heap) != ex_expr::EXPR_OK)
 		    {
 		      ExRaiseSqlError(heap, &diagsArea, EXE_NUMERIC_OVERFLOW);
 		      if (diagsArea != atp->getDiagsArea())
-			atp->setDiagsArea(diagsArea);            
-		      
+			atp->setDiagsAreax(diagsArea);
+
 		      NADELETEBASIC(intermediate, heap);
 		      return ex_expr::EXPR_ERROR;
 		    }
 		}
-	      
-	      // if the target is REC_DECIMAL_LS, convert the source to 
+
+	      // if the target is REC_DECIMAL_LS, convert the source to
 	      // REC_DECIMAL_LSE first. Conversion to LS is currently
 	      // only supported if source is LSE.
 	      if (targetType == REC_DECIMAL_LS)
 		{
-                  if ( source ) 
+                  if ( source )
 		    {
 		      char * intermediate2 = new (heap) char[targetLen - 1];
 		      if (::convDoIt(intermediate,
@@ -1726,38 +1726,38 @@ InputOutputExpr::outputValues(atp_struct *atp,
 				     heap,
 				     &diagsArea) !=  ex_expr::EXPR_OK) {
 			if (diagsArea != atp->getDiagsArea())
-			  atp->setDiagsArea(diagsArea);            
-			
+			  atp->setDiagsAreax(diagsArea);
+
 			NADELETEBASIC(intermediate, heap);
 			NADELETEBASIC(intermediate2, heap);
 			return ex_expr::EXPR_ERROR;
 		      };
-		      
+
 		      NADELETEBASIC(intermediate, heap);
 		      intermediate = intermediate2;
 		      sourceLen = targetLen - 1;
 		    }
-		  
+
 		  sourceType = REC_DECIMAL_LSE;
 		} // targetType == REC_DECIMAL_LS
 	      else
 		{
 		  sourceLen = (DFS2REC::isBigNum(sourceType) ? 57 : 8);
-		  sourceType = (DFS2REC::isBigNum(sourceType) 
+		  sourceType = (DFS2REC::isBigNum(sourceType)
 				? REC_NUM_BIG_SIGNED : REC_BIN64_SIGNED);
 		}
-	      
+
               if ( source )
 		source = intermediate;
-	      
+
 	      // no more scaling is to be done.
 	      sourceScale = 0;
 	      targetScale = 0;
 	    } // exact numeric with scaling
-	  
+
 	  // if incompatible conversions are to be done,
-	  // and the target is  REC_BYTE_V_ANSI, 
-	  // and the source is not a string type, convert the source to 
+	  // and the target is  REC_BYTE_V_ANSI,
+	  // and the source is not a string type, convert the source to
 	  // REC_BYTE_V_ASCII first. Conversion to V_ANSI is currently
 	  // only supported if source is a string type.
 	  if (implicitConversion)
@@ -1766,7 +1766,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 		  ((sourceType < REC_MIN_CHARACTER) ||
 		   (sourceType > REC_MAX_CHARACTER)))
 		{
-		  if ( source ) 
+		  if ( source )
 		    {
 		      intermediate = new (heap) char[targetLen];
 		      short intermediateLen;
@@ -1785,12 +1785,12 @@ InputOutputExpr::outputValues(atp_struct *atp,
 				     heap,
 				     &diagsArea) !=  ex_expr::EXPR_OK) {
 			if (diagsArea != atp->getDiagsArea())
-			  atp->setDiagsArea(diagsArea);            
-			
+			  atp->setDiagsAreax(diagsArea);
+
 			NADELETEBASIC(intermediate, heap);
 			return ex_expr::EXPR_ERROR;
 		      };
-		      
+
 		      sourceType = REC_BYTE_F_ASCII;
 		      sourceLen = intermediateLen;
 		      sourceScale = 0;
@@ -1807,7 +1807,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 		  targetPrecision = 0;
 		}
 	    } // implicit conversion
-	  
+
 	  ConvInstruction case_index = CONV_UNKNOWN;
 	  ULng32 convFlags = 0;
 	  if ((source) &&
@@ -1825,18 +1825,17 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	      // If the two interval types are not the same, then first
 	      // convert source to target interval type, and then convert
 	      // to its string external representation.
-	      
 	      if (sourceType == REC_DATETIME)
 		{
 		  if ((sourcePrecision != targetPrecision) ||
 		      (sourceScale != targetScale))
 		    {
 		      // source and target must have the same datetime_code,
-		      // they must both be date, time or timestamp. 
+		      // they must both be date, time or timestamp.
 		      ExRaiseSqlError(heap, &diagsArea,
 				      EXE_CONVERT_NOT_SUPPORTED);
 		      if (diagsArea != atp->getDiagsArea())
-			atp->setDiagsArea(diagsArea);	    
+			atp->setDiagsAreax(diagsArea);
 		      return ex_expr::EXPR_ERROR;
 		    }
 		  else
@@ -1870,7 +1869,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
                   targetPrecision = 0; // TBD $$$$ add target max chars later
                   targetScale = SQLCHARSETCODE_ISO88591; // assume target charset is ASCII compatible
 		}
-	      else 
+	      else
 		{
 		  // interval type and source/target do not match.
 		  // Convert source to target interval type.
@@ -1889,11 +1888,11 @@ InputOutputExpr::outputValues(atp_struct *atp,
 				 NULL,
 				 sizeof(short),
 				 heap,
-				 &diagsArea) !=  ex_expr::EXPR_OK) 
+				 &diagsArea) !=  ex_expr::EXPR_OK)
 		    {
 		      if (diagsArea != atp->getDiagsArea())
-			atp->setDiagsArea(diagsArea);            
-		      
+			atp->setDiagsAreax(diagsArea);
+
 		      NADELETEBASIC(intermediate, heap);
 		      return ex_expr::EXPR_ERROR;
 		    };
@@ -1903,24 +1902,24 @@ InputOutputExpr::outputValues(atp_struct *atp,
 		  sourceScale = targetScale;
 		  sourcePrecision = targetPrecision;
 		  source = intermediate;
-		  
+
 		  targetType = REC_BYTE_F_ASCII;
 		  targetScale = 0;
 		  targetPrecision = 0;
 		}
-	      
+
 	      // datetime and interval values are left blank padded.
 	      convFlags |= CONV_LEFT_PAD;
 	    }
 
-          if ( source ) 
+          if ( source )
 	    {
               if ( treatAnsivByteAsWideChar == TRUE )
               {
                   // We substract one here so that the first byte in the
-                  // last wide char can be filled with single-byte 
-                  // null by convDoIt(). 
-                  // 
+                  // last wide char can be filled with single-byte
+                  // null by convDoIt().
+                  //
                   // Note the target length records the number of octets
                   // in target hostvar. The value is even because
                   // KANJI/KSC hostvars are wide characters.
@@ -1945,8 +1944,8 @@ InputOutputExpr::outputValues(atp_struct *atp,
 			        convFlags);
 	      if (rc == ex_expr::EXPR_ERROR) {
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);            
-		
+		  atp->setDiagsAreax(diagsArea);
+
 		NADELETEBASIC(intermediate, heap);
 		if (!targetVarPtr)
 		  NADELETEBASIC(realTarget, heap);
@@ -1956,13 +1955,12 @@ InputOutputExpr::outputValues(atp_struct *atp,
               if ( treatAnsivByteAsWideChar == TRUE )
               {
                   // Make the second byte in the last wide char
-                  // a null so that the last wide char contains a wide-char 
+                  // a null so that the last wide char contains a wide-char
                   // null.
                   target[strlen(target)+1] = 0;
               }
 
               if (diagsArea ) {
-  
    	         // Indicator var is also used to test for truncated output value.
    	         // The Indicator variable is set to the length of the string in the 
    	         // database if the character value is truncated..
@@ -1976,7 +1974,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
                  // not. If it is true, then we update the indicator.
    	         if ( DFS2REC::isAnyCharacter(targetType) &&
    		   DFS2REC::isAnyCharacter(operand->getDatatype()) &&
-                   diagsArea -> containsWarning( numOfWarningsFoundSoFar, 
+                   diagsArea -> containsWarning( numOfWarningsFoundSoFar,
                                                  EXE_STRING_OVERFLOW))
    		   {
 
@@ -1985,11 +1983,11 @@ InputOutputExpr::outputValues(atp_struct *atp,
    		         short * tempVCInd = (short *) targetIndPtr;
    			  if (DFS2REC::isANSIVarChar(sourceType)) {
 			    if ( CharInfo::maxBytesPerChar(sourceCharSet) == 2 ) {
-				*tempVCInd = (short) NAWstrlen((NAWchar *)source);  
+				*tempVCInd = (short) NAWstrlen((NAWchar *)source);
 				// we are guaranteed that source is
-				// null-terminated as the previous call to convdoit() 
+				// null-terminated as the previous call to convdoit()
 				//would have raised an error otherwise
-			    }  
+			    }
 			    else {
 				*tempVCInd = (short) strlen(source);
 			    }
@@ -2001,18 +1999,17 @@ InputOutputExpr::outputValues(atp_struct *atp,
 			    *tempVCInd /= SQL_DBCHAR_SIZE;
 			}
 		      }
-   		  
    		       if (diagsArea != atp->getDiagsArea())
-   			 atp->setDiagsArea(diagsArea);
+   			 atp->setDiagsAreax(diagsArea);
    		     } // character datatype
 
                  numOfWarningsFoundSoFar = diagsArea->getNumber(DgSqlCode::WARNING_);
                }
-	      
+
 	      NADELETEBASIC(intermediate, heap);
-	      
+
 	      // up- or down-scale target.
-	      if (targetType >= REC_MIN_NUMERIC && 
+	      if (targetType >= REC_MIN_NUMERIC &&
 		  targetType <= REC_MAX_NUMERIC &&
 		  sourceScale != targetScale &&
 		  ::scaleDoIt(
@@ -2022,17 +2019,17 @@ InputOutputExpr::outputValues(atp_struct *atp,
 		       sourceScale,
 		       targetScale,
                        sourceType,
-		       heap) != ex_expr::EXPR_OK) 
+		       heap) != ex_expr::EXPR_OK)
 		{
 		  ExRaiseSqlError(heap, &diagsArea, EXE_NUMERIC_OVERFLOW);
 		  if (diagsArea != atp->getDiagsArea())
-		    atp->setDiagsArea(diagsArea);            
-		  
+		    atp->setDiagsAreax(diagsArea);
+
 		  if (!targetVarPtr)
 		    NADELETEBASIC(realTarget, heap);
 		  return ex_expr::EXPR_ERROR;
 		}
-	      
+
 	      if (!targetVarPtr) {
 		// unbound column. Remember it in executor memory.
 		// This value will(probably) be retrieved later by
@@ -2785,40 +2782,39 @@ InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 	    // convert for the conversions that are externally supported.
 	    // See usage of default IMPLICIT_HOSTVAR_CONVERSION in generator
 	    // (GenExpGenerator.cpp) for restricted conversions.
-	    
 	    if (NOT areCompatible(sourceType, targetType))
 	      {
 		if ((NOT skipTypeCheck()) ||
-		    ((restrictedSkipTypeCheck()) && 
+		    ((restrictedSkipTypeCheck()) &&
 		     (NOT implicitConversionSupported(sourceType,
 						      operand->getDatatype()))))
 		  {
 		    errorCode = EXE_CONVERT_NOT_SUPPORTED;
 		    goto error_return;
 		  }
-		
+
 		implicitConversion = TRUE;
-	      } 
-	    else 
+	      }
+	    else
 	      {
 		// check charset for source and target if they are CHARACTER types.
 		if ( DFS2REC::isAnyCharacter(sourceType) &&
 		     NOT CharInfo::isAssignmentCompatible(sourceCharSet, targetCharSet)
-		     )                  
+		     )
 		  {
 		    ExRaiseSqlError(heap, &diagsArea, CLI_ASSIGN_INCOMPATIBLE_CHARSET);
-		    
+
 		    if (diagsArea != atp->getDiagsArea())
-		      atp->setDiagsArea(diagsArea);
-		    
+		      atp->setDiagsAreax(diagsArea);
+
 		    *diagsArea
 		      << DgString0(CharInfo::getCharSetName((CharInfo::CharSet)sourceCharSet))
 		      << DgString1(CharInfo::getCharSetName((CharInfo::CharSet)targetCharSet));
-		    
+
 		    return ex_expr::EXPR_ERROR;
 		  }
 	      }
-	    
+
 	    // Check length limit for KANJI/KSC5601/UCS2 ANSI VARCHAR (i.e., there 
 	    // should be a wchar_t typed NULL somewhere in the range [1, sourceLen/2]
 	    // in the source. We have to do this for KANJI/KSC because their FS type
@@ -2862,19 +2858,19 @@ InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 		      realSourceLen = sourceLen ;
 		  }
 		realSourceLen /= SQL_DBCHAR_SIZE;
-		
+
 		if ( CharInfo::checkCodePoint((wchar_t*)source, realSourceLen,
 					      CharInfo::UNICODE ) == FALSE )
 		  {
 		    // Error code 3400 falls in CLI error code area, but it is
 		    // a perfect fit to use here (as an exeutor error).
 		    ExRaiseSqlError(heap, &diagsArea, (ExeErrorCode)3400);
-		    
+
 		    if (diagsArea != atp->getDiagsArea())
-		      atp->setDiagsArea(diagsArea);
-		    
+		      atp->setDiagsAreax(diagsArea);
+
 		    *diagsArea << DgString0(SQLCHARSETSTRING_UNICODE);
-		    
+
 		    return ex_expr::EXPR_ERROR;
 		  }
 	      }
@@ -3056,19 +3052,19 @@ InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 	      }
 	  } // if (! nullMoved)
 	} // if clause == IN_OUT type
-      
+
     next_clause:
       clause = clause->getNextClause();
     }  // while(clause)
-  
+
   return ex_expr::EXPR_OK;
-  
+
 error_return:
   if (errorCode != EXE_OK)
     ExRaiseSqlError(heap, &diagsArea, errorCode);
   if (diagsArea != atp->getDiagsArea())
-    atp->setDiagsArea(diagsArea);	
-  
+    atp->setDiagsAreax(diagsArea);
+
   return ex_expr::EXPR_ERROR;
 }
 ex_expr::exp_return_type
@@ -3370,7 +3366,7 @@ InputOutputExpr::inputRowwiseRowsetValues(atp_struct *atp,
     } // use internal buffer
 
   return ex_expr::EXPR_OK;
-  
+
 error_return:
   if (errorCode != EXE_OK)
     ExRaiseSqlError(heap, &diagsArea, errorCode,
@@ -3379,7 +3375,7 @@ error_return:
 		    (intParam2 != 0 ? &intParam2 : NULL),
 		    (intParam3 != 0 ? &intParam3 : NULL));
   if (diagsArea != atp->getDiagsArea())
-    atp->setDiagsArea(diagsArea);	
+    atp->setDiagsAreax(diagsArea);
   return ex_expr::EXPR_ERROR;
 }
 
@@ -3432,13 +3428,13 @@ InputOutputExpr::inputValues(atp_struct *atp,
   // can put a flag in the root to describe whether it is CALL statement.
 
   NABoolean useParamIdx = FALSE;
-  
+
   if(!inputDesc) {
     if(getNumEntries() > 0)
     {
       ExRaiseSqlError(heap, &diagsArea, CLI_STMT_DESC_COUNT_MISMATCH);
       if (diagsArea != atp->getDiagsArea())
-	atp->setDiagsArea(diagsArea);
+	atp->setDiagsAreax(diagsArea);
       return ex_expr::EXPR_ERROR;
     }
     else
@@ -3452,16 +3448,16 @@ InputOutputExpr::inputValues(atp_struct *atp,
     {
       ExRaiseSqlError(heap, &diagsArea, CLI_STMT_DESC_COUNT_MISMATCH);
       if (diagsArea != atp->getDiagsArea())
-	atp->setDiagsArea(diagsArea);
+	atp->setDiagsAreax(diagsArea);
       return ex_expr::EXPR_ERROR;
     }
   }
-  
+
   if (inputDesc && inputDesc->rowwiseRowset())
     {
       ExRaiseSqlError(heap, &diagsArea, CLI_ROWWISE_ROWSETS_NOT_SUPPORTED);
       if (diagsArea != atp->getDiagsArea())
-	atp->setDiagsArea(diagsArea);
+	atp->setDiagsAreax(diagsArea);
       return ex_expr::EXPR_ERROR;
     }
 
@@ -3618,25 +3614,25 @@ InputOutputExpr::inputValues(atp_struct *atp,
       // in the descriptor. This check was added since the pre-processor
       // have had generated different information for the module defintion
       // file and the cpp file.
-      
+
       // Find rowset size, if any
       targetRowsetSize = operand->getRowsetSize();
-      
-      if (targetRowsetSize > 0) {	
+
+      if (targetRowsetSize > 0) {
 	// dynamicRowsetSize is specified with ROWSET FOR INPUT SIZE <var>
 	// or some other rowset syntax; <var> can change at run time
 	if (dynamicRowsetSize > targetRowsetSize) {
 	  ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_INDEX_OUTOF_RANGE);
 	  if (diagsArea != atp->getDiagsArea()) {
-	    atp->setDiagsArea(diagsArea);	    
+	    atp->setDiagsAreax(diagsArea);
 	    return ex_expr::EXPR_ERROR;
 	  }
 	}
-	
+
 	if (dynamicRowsetSize > 0) {
 	  targetRowsetSize = dynamicRowsetSize;
 	}
-	
+
         // do the conversion
         source = (char *)&targetRowsetSize;
         if (::convDoIt(source,
@@ -3654,21 +3650,21 @@ InputOutputExpr::inputValues(atp_struct *atp,
                        ) != ex_expr::EXPR_OK)
 	  {
 	    if (diagsArea != atp->getDiagsArea())
-	      atp->setDiagsArea(diagsArea);	    
-	    
+	      atp->setDiagsAreax(diagsArea);
+
 	    return ex_expr::EXPR_ERROR;
 	  }
-	
-        // Increment the location for the next element. 
-	target += sizeof(Lng32); 
-        if (operand->getNullFlag()) { 
+
+        // Increment the location for the next element.
+	target += sizeof(Lng32);
+        if (operand->getNullFlag()) {
 	  targetNullInd = target;
           target += operand->getNullIndicatorLength();
         }
-	
-        if (operand->getVCIndicatorLength() > 0) { 
+
+        if (operand->getVCIndicatorLength() > 0) {
 	  target += operand->getVCIndicatorLength();
-        } 
+        }
 	// save current source and target datatype attributes since
 	// they may get changed later in this method.
 	// Restore them for the next iteration of this for loop.
@@ -3680,29 +3676,29 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	savedSourceLen = sourceLen;
       } // if (targetRowsetSize > 0)
       else {
-	inputDesc->getDescItem(entry, SQLDESC_ROWSET_VAR_LAYOUT_SIZE, &rowsetVarLayoutSize, 
+	inputDesc->getDescItem(entry, SQLDESC_ROWSET_VAR_LAYOUT_SIZE, &rowsetVarLayoutSize,
 	                       0, 0, 0, 0);
 	if (rowsetVarLayoutSize > 0) {
 	  ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_SCALAR_ARRAY_MISMATCH);
 	  if (diagsArea != atp->getDiagsArea()) {
-	    atp->setDiagsArea(diagsArea);	    
+	    atp->setDiagsAreax(diagsArea);
 	    return ex_expr::EXPR_ERROR;
-	    // Raises an error when query was compiled with scalar param 
-	    // and array value is passed in at runtime. When query is compiled 
+	    // Raises an error when query was compiled with scalar param
+	    // and array value is passed in at runtime. When query is compiled
 	    // with array params and some (not all) values are scalars at runtime
 	    // we do not raise an error and we duplicate the scalar value.
 	  }
 	}
       } // else (targetRowsetSize > 0)
-      
+
       Lng32 numToProcess = ((targetRowsetSize > 0) ? targetRowsetSize : 1);
 
       // Define and clear case indexes potentially used for rowsets
       ConvInstruction index1 = CONV_UNKNOWN;
       ConvInstruction index2 = CONV_UNKNOWN;
       ConvInstruction index3 = CONV_UNKNOWN;
-      
-      for (Lng32 RowNum = 0; RowNum < numToProcess; RowNum++) 
+
+      for (Lng32 RowNum = 0; RowNum < numToProcess; RowNum++)
         {
 
 	  // Increment the location for the next element.
@@ -3720,20 +3716,20 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	      sourceLen = savedSourceLen;
           }
 
-	  
+
           if (targetRowsetSize > 0)
             inputDesc->setDescItem(0, SQLDESC_ROWSET_HANDLE, RowNum, 0);
           inputDesc->getDescItem(entry, SQLDESC_IND_DATA, &indData,
                                  0, 0, 0, 0);
           if (indData == 0) {
-            inputDesc->getDescItem(entry, SQLDESC_IND_PTR, &tempSource, 
+            inputDesc->getDescItem(entry, SQLDESC_IND_PTR, &tempSource,
                                    0, 0, 0, 0);
-	    inputDesc->getDescItem(entry, SQLDESC_ROWSET_IND_LAYOUT_SIZE, &rowsetIndLayoutSize, 
+	    inputDesc->getDescItem(entry, SQLDESC_ROWSET_IND_LAYOUT_SIZE, &rowsetIndLayoutSize,
 	                       0, 0, 0, 0);
 	    if ((!tempSource) && (rowsetIndLayoutSize > 0)) {
 	      ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_VARDATA_OR_INDDATA_ERROR);
 	      if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);	    	
+		  atp->setDiagsAreax(diagsArea);
 	      return ex_expr::EXPR_ERROR;
 	    }
 	  }
@@ -3741,12 +3737,12 @@ InputOutputExpr::inputValues(atp_struct *atp,
             tempSource = (char *)&indData;
 
           sourceIndPtr = tempSource;
-	  
+
           NABoolean nullMoved = FALSE;
           if (sourceIndPtr) {
 	    short temp = 0;
 	    str_cpy_all((char *)&temp, sourceIndPtr, operand->getNullIndicatorLength());
-	    if (inputDesc && inputDesc->thereIsACompoundStatement()  
+	    if (inputDesc && inputDesc->thereIsACompoundStatement()
 	        && (temp > 0)) {
 	      // We may be processing input data with invalid indicators if we
 	      // are in an IF statement
@@ -3759,31 +3755,31 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		// -ve (null value).
 		ExRaiseSqlError(heap, &diagsArea, EXE_CONVERT_STRING_ERROR);
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);	
-		
+		  atp->setDiagsAreax(diagsArea);
+
 		setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 		if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 		  continue;
 		else
 		  return ex_expr::EXPR_ERROR;
 	      }
-	    
+
             if (operand->getNullFlag()) {
               nullMoved = (temp < 0);   //if null indicator is a negative
 	      //number, the value is null
-	      
+
               str_cpy_all (targetNullInd, sourceIndPtr,
 			   operand->getNullIndicatorLength());
             }
             else {
               if (temp < 0) {
                 // input is a null value
-                // error. Trying to move a null input value to a 
+                // error. Trying to move a null input value to a
                 // non-nullable buffer.
 		ExRaiseSqlError(heap, &diagsArea, EXE_ASSIGNING_NULL_TO_NOT_NULL);
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);	
-		
+		  atp->setDiagsAreax(diagsArea);
+
 		setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
                 if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 		  continue;
@@ -3813,14 +3809,14 @@ InputOutputExpr::inputValues(atp_struct *atp,
 
 	  // 12/22/97: added for Unicode Vchar.
           if (! nullMoved) {
-	    
-	    ex_expr::exp_return_type retcode = ex_expr::EXPR_OK;  
+
+	    ex_expr::exp_return_type retcode = ex_expr::EXPR_OK;
 	    Lng32 warningMark;
 	    if (diagsArea)
 	      warningMark= diagsArea->getNumber(DgSqlCode::WARNING_);
 	    else
 	      warningMark = 0;
-	    
+
 	    NABoolean implicitConversion = FALSE;
 	    // if the source and target are not compatible, then do implicit
 	    // conversion if skipTypeCheck is set.
@@ -3832,14 +3828,14 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	    if (NOT areCompatible(sourceType, targetType))
 	      {
 		if ((NOT skipTypeCheck()) ||
-		    ((restrictedSkipTypeCheck()) && 
+		    ((restrictedSkipTypeCheck()) &&
 		     (NOT implicitConversionSupported(sourceType,
 						      operand->getDatatype()))))
                 {
 	           ExRaiseSqlError(heap, &diagsArea,EXE_CONVERT_NOT_SUPPORTED);
 	           if (diagsArea != atp->getDiagsArea())
-	             atp->setDiagsArea(diagsArea);
-		   
+	             atp->setDiagsAreax(diagsArea);
+
 		   setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 	           if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 		    continue;
@@ -3853,17 +3849,17 @@ InputOutputExpr::inputValues(atp_struct *atp,
                  // check charset for source and target if they are CHARACTER types.
                  if ( DFS2REC::isAnyCharacter(sourceType) &&
                       NOT CharInfo::isAssignmentCompatible(sourceCharSet, targetCharSet)
-                    )                  
+                    )
                  {
                       ExRaiseSqlError(heap, &diagsArea, CLI_ASSIGN_INCOMPATIBLE_CHARSET);
 
                       if (diagsArea != atp->getDiagsArea())
-                          atp->setDiagsArea(diagsArea);
+                          atp->setDiagsAreax(diagsArea);
 
                       *diagsArea
                         << DgString0(CharInfo::getCharSetName((CharInfo::CharSet)sourceCharSet))
                         << DgString1(CharInfo::getCharSetName((CharInfo::CharSet)targetCharSet));
-			
+
 			setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
                         if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 			  continue;
@@ -3872,7 +3868,6 @@ InputOutputExpr::inputValues(atp_struct *atp,
                  }
               }
 
-	    
 	    // In the case of VARCHARS, we zero out remaining elements
             if (targetRowsetSize > 0) {
 	      Int32 i;
@@ -3913,8 +3908,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
                  ExRaiseSqlError(heap, &diagsArea, EXE_MISSING_NULL_TERMINATOR);
 
 		 if (diagsArea != atp->getDiagsArea())
-		   atp->setDiagsArea(diagsArea);	    
-		
+		   atp->setDiagsAreax(diagsArea);
+
 		 setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
                  if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 		  continue;
@@ -3946,7 +3941,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
                  ExRaiseSqlError(heap, &diagsArea, (ExeErrorCode)3400);
 
                  if (diagsArea != atp->getDiagsArea())
-                   atp->setDiagsArea(diagsArea);
+                   atp->setDiagsAreax(diagsArea);
 
                  *diagsArea << DgString0(SQLCHARSETSTRING_UNICODE);
 
@@ -3957,10 +3952,10 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		  return ex_expr::EXPR_ERROR;
                }
             }
-	    
+
 	    // if incompatible conversions are to be done,
-	    // and the source is REC_BYTE_V_ANSI, 
-	    // and the target is not a string type, convert the source to 
+	    // and the source is REC_BYTE_V_ANSI,
+	    // and the target is not a string type, convert the source to
 	    // REC_BYTE_F_ASCII first. Conversion from V_ANSI is currently
 	    // only supported if target is a string type.
 	    if ((implicitConversion) &&
@@ -3996,8 +3991,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
 			       &diagsArea,
                                index1) !=  ex_expr::EXPR_OK) {
 		  if (diagsArea != atp->getDiagsArea())
-		    atp->setDiagsArea(diagsArea);            
-		  
+		    atp->setDiagsAreax(diagsArea);
+
 		  NADELETEBASIC(intermediate, heap);
 		  setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 		  if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
@@ -4005,11 +4000,11 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		  else
 		    return ex_expr::EXPR_ERROR;
 		};
-		
+
 		sourceType = REC_BYTE_F_ASCII;
 		source = intermediate;
 	      } // sourceType == REC_BYTE_V_ANSI
-	    
+
 	    if ((sourcePrecision > 0) &&
 		((sourceType >= REC_MIN_BINARY) &&
                  (sourceType <= REC_MAX_BINARY) &&
@@ -4046,12 +4041,12 @@ InputOutputExpr::inputValues(atp_struct *atp,
 			(sourceScale != operand->getScale()))
 		      {
 			// source and target must have the same datetime_code,
-			// they must both be date, time or timestamp. 
+			// they must both be date, time or timestamp.
 			ExRaiseSqlError(heap, &diagsArea,
 					EXE_CONVERT_NOT_SUPPORTED);
 			if (diagsArea != atp->getDiagsArea())
-			  atp->setDiagsArea(diagsArea);	  
-			
+			  atp->setDiagsAreax(diagsArea);
+
 			setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 			if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 			  continue;
@@ -4120,8 +4115,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
 				   convFlags) !=  ex_expr::EXPR_OK) 
 		      {
 			if (diagsArea != atp->getDiagsArea())
-			  atp->setDiagsArea(diagsArea);            
-			
+			  atp->setDiagsAreax(diagsArea);
+
 			NADELETEBASIC(intermediate, heap);
 			setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 			if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
@@ -4179,8 +4174,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	    if (retcode != ex_expr::EXPR_OK)
 	      {
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);	    
-		
+		  atp->setDiagsAreax(diagsArea);
+
 		setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 		if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 		  continue;
@@ -4191,12 +4186,12 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	      {
 		Int32 warningMark2 = diagsArea->getNumber(DgSqlCode::WARNING_);
 		Int32 counter = warningMark2 - warningMark;
-		
+
 		diagsArea->deleteWarning(warningMark2-counter);
 		ExRaiseSqlError(heap, &diagsArea, EXE_STRING_OVERFLOW);
-		
+
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);	
+		  atp->setDiagsAreax(diagsArea);
 
 		setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 		if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
@@ -4206,9 +4201,9 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	      }
 
 	    // If the query contains ROWSET FOR INPUT SIZE <var> or
-	    // ROWSET <var> ( <list> ) then we get the number of entries 
+	    // ROWSET <var> ( <list> ) then we get the number of entries
 	    // from <var>
-            if (operand->getHVRowsetForInputSize() || 
+            if (operand->getHVRowsetForInputSize() ||
 	        operand->getHVRowsetLocalSize()) {
               short targetType = operand->getDatatype();
               switch (targetType) {
@@ -4216,8 +4211,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
                 if (*((Int8 *) target) <= 0) {
                   //raise error
                   ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
-		  if (diagsArea != atp->getDiagsArea()) 
-		    atp->setDiagsArea(diagsArea);	    
+		  if (diagsArea != atp->getDiagsArea())
+		    atp->setDiagsAreax(diagsArea);
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
@@ -4228,21 +4223,21 @@ InputOutputExpr::inputValues(atp_struct *atp,
                 if (*((UInt8 *) target) == 0) {
                   //raise error
                   ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
-		  if (diagsArea != atp->getDiagsArea()) 
-		    atp->setDiagsArea(diagsArea);	    
+		  if (diagsArea != atp->getDiagsArea())
+		    atp->setDiagsAreax(diagsArea);
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
 		  dynamicRowsetSize = *((UInt8 *) target);
 		  break;
                 }
-		
+
               case REC_BIN16_SIGNED :
                 if (*((short *) target) <= 0) {
                   //raise error
                   ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
-		  if (diagsArea != atp->getDiagsArea()) 
-		    atp->setDiagsArea(diagsArea);	    
+		  if (diagsArea != atp->getDiagsArea())
+		    atp->setDiagsAreax(diagsArea);
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
@@ -4253,50 +4248,50 @@ InputOutputExpr::inputValues(atp_struct *atp,
                 if (*((unsigned short *) target) == 0) {
                   //raise error
                   ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
-		  if (diagsArea != atp->getDiagsArea()) 
-		    atp->setDiagsArea(diagsArea);	    
+		  if (diagsArea != atp->getDiagsArea())
+		    atp->setDiagsAreax(diagsArea);
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
 		  dynamicRowsetSize = *((unsigned short *) target);
 		  break;
                 }
-		
+
               case REC_BIN32_SIGNED :
                 if (*((Lng32 *) target) <= 0) {
                   //raise error
                   ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
-		  if (diagsArea != atp->getDiagsArea()) 
-		    atp->setDiagsArea(diagsArea);	    
+		  if (diagsArea != atp->getDiagsArea())
+		    atp->setDiagsAreax(diagsArea);
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
 		  dynamicRowsetSize = *((Lng32 *) target);         //long is the same as int
 		  break;
                 }
-		
+
               case REC_BIN32_UNSIGNED :
                 if (*((ULng32 *) target) == 0) {   // unsigned long is the same as unsigned int
                   //raise error
                   ExRaiseSqlError(heap, &diagsArea, EXE_ROWSET_NEGATIVE_SIZE);
-		  if (diagsArea != atp->getDiagsArea()) 
-		    atp->setDiagsArea(diagsArea);	    
+		  if (diagsArea != atp->getDiagsArea())
+		    atp->setDiagsAreax(diagsArea);
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
 		  dynamicRowsetSize = *((ULng32 *) target);
 		  break;
                 }
-                
+
               default:
                 //raise error
                 ExRaiseSqlError(heap, &diagsArea,EXE_ROWSET_WRONG_SIZETYPE);
-		if (diagsArea != atp->getDiagsArea()) 
-		  atp->setDiagsArea(diagsArea);	    
+		if (diagsArea != atp->getDiagsArea())
+		  atp->setDiagsAreax(diagsArea);
                 return ex_expr::EXPR_ERROR;
               }
 	    }
-	    
+
             // up- or down-scale target, if there is a difference
             // in scale, but be careful to ignore scale used as charset
             if ((operand->getDatatype() >= REC_MIN_NUMERIC) &&
@@ -4312,8 +4307,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	      {
 		ExRaiseSqlError(heap, &diagsArea, EXE_NUMERIC_OVERFLOW);
 		if (diagsArea != atp->getDiagsArea())
-		  atp->setDiagsArea(diagsArea);	    
-		
+		  atp->setDiagsAreax(diagsArea);
+
 		setRowNumberInCli(diagsArea, RowNum, targetRowsetSize) ;
 		if (tolerateNonFatalError && diagsArea->canAcceptMoreErrors())
 		  continue;

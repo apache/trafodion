@@ -542,12 +542,11 @@ short ExSequenceTcb::work()
             //
             if (workAtp_->getDiagsArea()) {
               ComDiagsArea * da = workAtp_->getDiagsArea();
-              pentry_up->setDiagsArea(da);
-              da->incrRefCount();
-              workAtp_->setDiagsArea(0);
+              pentry_up->setDiagsAreax(da);
+              workAtp_->setDiagsAreax(0);
             }
             pentry_up->upState.status = ex_queue::Q_SQLERROR;
-            pentry_up->upState.parentIndex 
+            pentry_up->upState.parentIndex
               = pentry_down->downState.parentIndex;
             pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
             pentry_up->upState.setMatchNo(pstate->matchCount_);
@@ -563,8 +562,8 @@ short ExSequenceTcb::work()
         //
         // Transition to this state from ...
         // 1. ExSeq_EMPTY - If a request is started.
-        // 2. ExSeq_WORKING_RETURN - 
-        // 3. ExSeq_OVERFLOW_WRITE - 
+        // 2. ExSeq_WORKING_RETURN -
+        // 3. ExSeq_OVERFLOW_WRITE -
         // Remain in this state until ...
         // 1. All child replies including EOD have been processed.
         // 2. A SQLERROR row is received.
@@ -1435,7 +1434,7 @@ void ExSequenceTcb::createCluster()
 
   cluster_ = new(heap_) Cluster(Cluster::IN_MEMORY,
 				       clusterDb_,
-				       NULL, // ... &buckets_[bucketIdx], 
+				       NULL, // ... &buckets_[bucketIdx],
 				       0, // ... bucketsPerCluster,
 				       myTdb().recLen_, // Row Length
                                        false,
@@ -1445,24 +1444,23 @@ void ExSequenceTcb::createCluster()
 				       FALSE, // ... no bit map
 				       NULL, // next cluster,
 				       &rc_);
-  
+
   ex_assert( cluster_ , "No memory available for OLAP Operator");
 }
 
 void ExSequenceTcb::updateDiagsArea(ex_queue_entry * centry)
 {
-    if (centry->getDiagsArea()) 
+    if (centry->getDiagsArea())
     {
       if (workAtp_->getDiagsArea())
-      {     
+      {
         workAtp_->getDiagsArea()->mergeAfter(*centry->getDiagsArea());
       }
       else
       {
         ComDiagsArea * da = centry->getDiagsArea();
-        workAtp_->setDiagsArea(da);
-        da->incrRefCount();
-        centry->setDiagsArea(0);
+        workAtp_->shareDiagsArea(da);
+        centry->setDiagsAreax(0);
       }
     }
 }
@@ -1470,23 +1468,22 @@ void ExSequenceTcb::updateDiagsArea(ex_queue_entry * centry)
 void ExSequenceTcb::updateDiagsArea(ComDiagsArea *da)
 {
     if (workAtp_->getDiagsArea())
-    {     
+    {
       workAtp_->getDiagsArea()->mergeAfter(*da);
     }
     else
     {
-      workAtp_->setDiagsArea(da);
-      da->incrRefCount();
+      workAtp_->shareDiagsArea(da);
     }
 }
 
 void ExSequenceTcb::updateDiagsArea(  ExeErrorCode rc_)
-{                   
+{
     ComDiagsArea *da = workAtp_->getDiagsArea();
-    if(!da) 
+    if(!da)
     {
       da = ComDiagsArea::allocate(heap_);
-      workAtp_->setDiagsArea(da);
+      workAtp_->setDiagsAreax(da);
     }
     if (!da->contains((Lng32) -rc_))
     {

@@ -570,33 +570,33 @@ short ex_tcb::handleError(ex_queue_pair *qparent, ComDiagsArea *inDiagsArea)
 {
   if (qparent->up->isFull())
     return 1;
-  
+
   // Return EOF.
   ex_queue_entry * up_entry = qparent->up->getTailEntry();
   ex_queue_entry * pentry_down = qparent->down->getHeadEntry();
-  
-  up_entry->upState.parentIndex = 
+
+  up_entry->upState.parentIndex =
     pentry_down->downState.parentIndex;
-  
+
   up_entry->upState.setMatchNo(0);
   up_entry->upState.status = ex_queue::Q_SQLERROR;
-  
+
   ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-  
+
   if (diagsArea == NULL)
-    diagsArea = 
+    diagsArea =
       ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
   else
     diagsArea->incrRefCount (); // the setDiagsArea below will decr the ref count
-  
+
   if (inDiagsArea)
     diagsArea->mergeAfter(*inDiagsArea);
-  
-  up_entry->setDiagsArea (diagsArea);
-  
+
+  up_entry->setDiagsAreax(diagsArea);
+
   // insert into parent
   qparent->up->insert();
-  
+
   return 0;
 }
 
@@ -604,39 +604,39 @@ short ex_tcb::handleDone(ex_queue_pair *qparent, ComDiagsArea *inDiagsArea)
 {
   if (qparent->up->isFull())
     return 1;
-  
+
   // Return EOF.
   ex_queue_entry * up_entry = qparent->up->getTailEntry();
   ex_queue_entry * pentry_down = qparent->down->getHeadEntry();
-  
+
   if (inDiagsArea && inDiagsArea->getNumber(DgSqlCode::WARNING_) > 0)
     {
       ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-      
+
       if (diagsArea == NULL)
-	diagsArea = 
+	diagsArea =
 	  ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
       else
 	diagsArea->incrRefCount (); // the setDiagsArea below will decr the ref count
-      
+
       if (inDiagsArea)
 	diagsArea->mergeAfter(*inDiagsArea);
-      
-      up_entry->setDiagsArea (diagsArea);
+
+      up_entry->setDiagsAreax(diagsArea);
     }
 
-  up_entry->upState.parentIndex = 
+  up_entry->upState.parentIndex =
     pentry_down->downState.parentIndex;
-  
+
   up_entry->upState.setMatchNo(0);
   up_entry->upState.status = ex_queue::Q_NO_DATA;
-  
+
   // insert into parent
   qparent->up->insert();
-  
+
   //	    pstate.matches_ = 0;
   qparent->down->removeHead();
-  
+
   return 0;
 }
 

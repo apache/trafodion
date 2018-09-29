@@ -258,8 +258,8 @@ Lng32 ExRangePartInputData::evalExpressions(Space * space,
   workAtp->getTupp(partRangeExprAtpIndex_) = &td;
 
   if (workAtp->getDiagsArea() != *diags)
-     workAtp->setDiagsArea(*diags);
-  
+     workAtp->setDiagsAreax(*diags);
+
   // loop over all expressions, fixing them up and evaluating them
   for (Lng32 i = 0; i <= getNumPartitions() AND result == 0; i++)
     {

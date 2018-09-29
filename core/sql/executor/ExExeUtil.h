@@ -272,7 +272,7 @@ class ExExeUtilTcb : public ex_tcb
 
   ComDiagsArea *&getDiagsArea() { return diagsArea_; }
 
-  void setDiagsArea(ComDiagsArea * d) { diagsArea_ = d; }
+  void setDiagsAreax(ComDiagsArea * d) { diagsArea_ = d; }
 
   short setSchemaVersion(char * param1);
 

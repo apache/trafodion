@@ -320,9 +320,9 @@ short ExExeUtilLongRunningTcb::work()
             {
                 getDiagsArea()->clear();
             }
-    
+
 	    qparent_.down->removeHead();
- 
+
 	    return WORK_OK;
 	  }
 	break;
@@ -334,27 +334,28 @@ short ExExeUtilLongRunningTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_SQLERROR;
 	    // get rows deleted so far.
 	    getDiagsArea()->setRowCount(getRowsDeleted());
 	    ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	    
+
 	    if (diagsArea == NULL)
-	      diagsArea = 
+	      diagsArea =
 		ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
             else
-              diagsArea->incrRefCount (); // setDiagsArea call below will decr ref count
-	    
+              diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+              // is this needed anymore?
+
 	    if (getDiagsArea())
 	      diagsArea->mergeAfter(*getDiagsArea());
-	    
-	    up_entry->setDiagsArea (diagsArea);
-	    
+
+	    up_entry->setDiagsAreax(diagsArea);
+
 	    // insert into parent
 	    qparent_.up->insert();
 
@@ -390,14 +391,14 @@ ComDiagsArea *ExExeUtilLongRunningTcb::getDiagAreaFromUpQueueTail()
   if (diagsArea == NULL)
      diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
   else
-    diagsArea->incrRefCount (); // setDiagsArea call below will decr ref count
+    diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
 
   // this is the side-effect of this function. Merge in this object's
   // diagsarea.
   if (getDiagsArea())
     diagsArea->mergeAfter(*getDiagsArea());
 
-  up_entry->setDiagsArea (diagsArea);
+  up_entry->setDiagsAreax(diagsArea);
 
   return diagsArea;
 }
@@ -929,12 +930,12 @@ short ExExeUtilPopulateInMemStatsTcb::work()
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
-  
+
   // if no room in up queue, won't be able to return data/status.
   // Come back later.
   if (qparent_.up->isFull())
     return WORK_OK;
-  
+
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ExExeUtilPrivateState & pstate =
     *((ExExeUtilPrivateState*) pentry_down->pstate);
@@ -955,8 +956,8 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 		getDiagsArea()->clear();
 		getDiagsArea()->deAllocate();
 	      }
-	    
-	    setDiagsArea(ComDiagsArea::allocate(getHeap()));
+
+	    setDiagsAreax(ComDiagsArea::allocate(getHeap()));
 
 	    step_ = PROLOGUE_;
 	  }
@@ -1177,27 +1178,27 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_SQLERROR;
 
 	    ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	    
+
 	    if (diagsArea == NULL)
-	      diagsArea = 
+	      diagsArea =
 		ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-	    
+
 	    if (getDiagsArea())
 	      diagsArea->mergeAfter(*getDiagsArea());
-	    
-	    up_entry->setDiagsArea (diagsArea);
-	    
+
+	    up_entry->setDiagsAreax(diagsArea);
+
 	    // insert into parent
 	    qparent_.up->insert();
-	    
+
 	    step_ = DONE_;
 	  }
 	  break;
@@ -1206,21 +1207,21 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
-	    
+
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_NO_DATA;
-	    
+
 	    // insert into parent
 	    qparent_.up->insert();
-	    
+
 	    qparent_.down->removeHead();
-	    
+
 	    step_ = INITIAL_;
 	    return WORK_OK;
 	  }

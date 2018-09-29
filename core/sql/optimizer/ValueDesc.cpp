@@ -4682,8 +4682,7 @@ ex_expr::exp_return_type ValueIdList::evalAtCompileTime
   workAtp->getTupp(keyAtpIndex).setDataPointer(resultBuffer);
 
   // set the diagsArea for the caller to get warnings
-  if (workAtp->getDiagsArea() != diagsArea)
-     workAtp->setDiagsArea(diagsArea);
+  workAtp->setDiagsAreax(diagsArea);
   // evaluate the expr(s) into resultBuffer
   ex_expr::exp_return_type rc =
     keyEncodeExpr->getExpr()->eval(workAtp, 0, STMTHEAP);

@@ -641,57 +641,56 @@ short ExStoredProcTcb::work()
 		}
 	      break;
 
-	      case ex_queue::Q_NO_DATA: 
+	      case ex_queue::Q_NO_DATA:
 		{
 		  if (diags)
 		    {
-		      ComDiagsArea * da = 
-			ComDiagsArea::allocate( 
+		      ComDiagsArea * da =
+			ComDiagsArea::allocate(
 					       getGlobals()->getDefaultHeap());
 		      da->unpackObj(diags->getType(),
 				    diags->getVersion(),
 				    TRUE,      // sameEndianness,
 				    0, // dummy for now...
 				    (IpcConstMessageBufferPtr) diags);
-		      up_entry->setDiagsArea(da);
+		      up_entry->setDiagsAreax(da);
 		    }
-		  
-		    
+
 		  // done with this input request.
 		  up_entry->upState.status  = ex_queue::Q_NO_DATA;
 		  up_entry->upState.parentIndex =
 		    pentry_down->downState.parentIndex;
 		  up_entry->upState.setMatchNo(pstate.matchCount_);
-	  
+
 		  // insert into parent
 		  qparent_.up->insert();
-		  
+
 		  pstate.matchCount_ = 0;
 		  pstate.errorHappened_ = FALSE;
-		  
+
 		  qparent_.down->removeHead();
 
 		  numInputRequests_--;
 		}
 		break;
-		
+
 	      case ex_queue::Q_SQLERROR:
 		{
-		  if (pstate.errorHappened_) 
+		  if (pstate.errorHappened_)
 		  {
 		    // just ignore this row -- we've already returned an error.
 		  }
 		  else
 		  {
-		    ComDiagsArea * da = 
-		      ComDiagsArea::allocate( 
+		    ComDiagsArea * da =
+		      ComDiagsArea::allocate(
 			   getGlobals()->getDefaultHeap());
 		    da->unpackObj(diags->getType(),
 				  diags->getVersion(),
 				  TRUE,      // sameEndianness,
 				  0, // dummy for now...
 				  (IpcConstMessageBufferPtr) diags);
-		    up_entry->setDiagsArea(da);
+		    up_entry->setDiagsAreax(da);
 
 		    // insert into parent
 		    qparent_.up->insert();
@@ -709,7 +708,7 @@ short ExStoredProcTcb::work()
 
 	} // switch step_
     } // while
-  
+
   return WORK_OK;
 }
 

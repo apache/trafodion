@@ -666,7 +666,7 @@ short ex_hash_grby_tcb::work() {
       else
         diags = ExRaiseSqlError(heap_, downParentEntry, (ExeErrorCode)-rc_); 
 
-      downParentEntry->setDiagsArea(diags);
+      downParentEntry->setDiagsAreax(diags);
       workHandleError(downParentEntry->getAtp());
     } break;
     };

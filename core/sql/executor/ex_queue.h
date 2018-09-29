@@ -542,31 +542,30 @@ class ex_queue_entry
   };
 
   ex_tcb_private_state * pstate;  // private (reader's) state
-  
-  
+
     inline ex_cri_desc *   criDesc() const;
-  
+
     inline unsigned short  numTuples() const;
-  
+
     inline tupp &          getTupp(Lng32 i) const;
-  
+
      void            passAtp(const ex_queue_entry *from);
-  
+
      void            passAtp(atp_struct *from);
-  
+
     inline void            copyAtp(const ex_queue_entry *from);
-  
+
     inline void            copyAtp(atp_struct *from);
-  
+
     inline atp_struct *    getAtp() const;
 
-  // 
+  //
   // Routines to get and set diagnostics area.
   //
-  
+
     inline ComDiagsArea    *getDiagsArea() const;
-  
-    inline void            setDiagsArea(ComDiagsArea* diagsArea);
+
+    inline void            setDiagsAreax(ComDiagsArea* diagsArea);
 
  private:
 
@@ -639,9 +638,9 @@ inline ComDiagsArea *ex_queue_entry::getDiagsArea() const
   return atp_->getDiagsArea();
 }
 
-inline void ex_queue_entry::setDiagsArea(ComDiagsArea* diagsArea)
+inline void ex_queue_entry::setDiagsAreax(ComDiagsArea* diagsArea)
 {
-  atp_->setDiagsArea(diagsArea);
+  atp_->setDiagsAreax(diagsArea);
 }
 
 /////////////////////////////////////////////////////////////////////////////

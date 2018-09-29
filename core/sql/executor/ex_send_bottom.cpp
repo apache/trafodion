@@ -538,12 +538,12 @@ short ex_send_bottom_tcb::checkRequest()
 			"no diags areas in message");
 	      // construct a copy of diags area from message object
 	      // and put it in the queue
-	      ComDiagsArea* diagsArea = 
+	      ComDiagsArea* diagsArea =
 		ComDiagsArea::allocate (getGlobals()->getDefaultHeap());
 
 	      *workMsgStream_ >> *diagsArea;
-        
-	      sentry->setDiagsArea(diagsArea);
+
+	      sentry->setDiagsAreax(diagsArea);
 	    }
 
 	  // See if the queue entry is on the cancelOnSight_ list, and if so,
@@ -555,11 +555,11 @@ short ex_send_bottom_tcb::checkRequest()
 	      sentry->downState.request = ex_queue::GET_NOMORE;
 	    }
 
-	  // if extract work is already done, do not honor any more 
+	  // if extract work is already done, do not honor any more
           // data requests from consumer.
-	  if (isExtractWorkDone_) 
+	  if (isExtractWorkDone_)
             {
-	      // construct reply message 
+	      // construct reply message
 	      if (currentReplyBuffer_ == NULL)
               {
                 getReplyBuffer();

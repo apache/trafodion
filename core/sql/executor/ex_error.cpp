@@ -114,7 +114,7 @@ void ExHandleArkcmpErrors(ex_queue_pair  &qparent,
       cond->setSQLCODE(err);
       diags_my->acceptNewCondition();
     }
-  up_entry->setDiagsArea(diags_my);
+  up_entry->setDiagsAreax(diags_my);
 
   // insert into parent
   qparent.up->insert();
@@ -159,7 +159,7 @@ void ExHandleErrors(ex_queue_pair  &qparent,
 	cond->setNskCode(*nskErr);
       if (stringParam2)
 	cond->setOptionalString(1, stringParam2);
-	  
+
       diags_my->acceptNewCondition();
     }
   }
@@ -176,11 +176,11 @@ void ExHandleErrors(ex_queue_pair  &qparent,
 	cond->setNskCode(*nskErr);
       if (stringParam2)
 	cond->setOptionalString(1, stringParam2);
-	  
+
       diags_my->acceptNewCondition();
-      
+
     }
-  up_entry->setDiagsArea(diags_my);
+  up_entry->setDiagsAreax(diags_my);
 
   // insert into parent
   qparent.up->insert();

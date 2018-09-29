@@ -541,14 +541,14 @@ ExUnPackRowsTcb::workUp()
           //
           pState.numRows_ = numRows_;
 
-          // If the number of entries in the rowset is negative, we 
+          // If the number of entries in the rowset is negative, we
           // signal an error
           if (numRows_ < 0) {
               ComDiagsArea * da = workAtp_->getDiagsArea();
-              if (!da) 
+              if (!da)
               {
                 da = ComDiagsArea::allocate(getHeap());
-                workAtp_->setDiagsArea(da);
+                workAtp_->setDiagsAreax(da);
               }
               *da << DgSqlCode(-EXE_ROWSET_INDEX_OUTOF_RANGE);
               processError(workAtp_,FALSE,0);
@@ -617,41 +617,40 @@ ExUnPackRowsTcb::workUp()
           // Apply the unPack expression to this row.  This will
           // generate the proper values for the generated columns.
           //
-          
 	  Lng32 markValue = 0;
 	  ComDiagsArea * da = workAtp_->getDiagsArea();
 	  if (da)
 	    markValue = da->mark();
 
-          retCode = (unPackColsExpr() ? 
+          retCode = (unPackColsExpr() ?
                      unPackColsExpr()->eval(workAtp_, childAtp) :
                      ex_expr::EXPR_TRUE);
-          
+
           switch(retCode) {
           case ex_expr::EXPR_TRUE:
             {
               // Get the entry on the parent up queue.
               //
               ex_queue_entry *pEntry = qParent_.up->getTailEntry();
-              
+
               pEntry->copyAtp(workAtp_);
 
 	      // for non-atomic rowsets do NOT flow digas area which we get from parent
-	      // this diags area contains errors from the CLI. We do not want to flow them up 
-	      // with OK_MMORE replies as this will lead to duplication. 
+	      // this diags area contains errors from the CLI. We do not want to flow them up
+	      // with OK_MMORE replies as this will lead to duplication.
 	      // We will flow them up with the Q_REC_SKIPPED replies.
 	      if (tolerateNonFatalError)
-		pEntry->setDiagsArea(NULL);
-              
+		pEntry->setDiagsAreax(NULL);
+
               // Release the reference to the tupp in the workAtp_
               //
               workAtp_->getTupp(unPackRowsTdb().unPackColsAtpIndex_).release();
-              
+
               // Set the flag to indicate that the tuple has been used and
               // a new tuple needs to be allocated.
               //
               needTuple = (unPackColsExpr() ? TRUE : FALSE);
-              
+
               // Finialize the queue entry, then insert it
               //
               pEntry->upState.status = cEntry->upState.status;
@@ -740,12 +739,12 @@ ExUnPackRowsTcb::processError(atp_struct *atp, NABoolean isNonFatalError, Lng32 
   ex_queue_entry * pEntryDown = qParent_.down->getHeadEntry();
   ex_queue_entry * pEntry = qParent_.up->getTailEntry();
   ExUnPackRowsPrivateState &pState =
-    *((ExUnPackRowsPrivateState*) pEntryDown->pstate);  
+    *((ExUnPackRowsPrivateState*) pEntryDown->pstate);
 
   pEntry->upState.status = ex_queue::Q_SQLERROR;
   pEntry->upState.parentIndex = pEntryDown->downState.parentIndex;
   pEntry->upState.downIndex = qParent_.down->getHeadIndex();
-  pEntry->upState.setMatchNo(pState.matchCount_);	  
+  pEntry->upState.setMatchNo(pState.matchCount_);
 
   if (!isNonFatalError) {
     pEntry->copyAtp(atp);
@@ -754,8 +753,8 @@ ExUnPackRowsTcb::processError(atp_struct *atp, NABoolean isNonFatalError, Lng32 
     qParent_.down->cancelRequest(qParent_.down->getHeadIndex());
     pState.childState_ = CANCELLED_;
 
-    while(!childQueue_.up->isEmpty() && 
-	  (childQueue_.up->getHeadEntry()->upState.status 
+    while(!childQueue_.up->isEmpty() &&
+	  (childQueue_.up->getHeadEntry()->upState.status
 	   != ex_queue::Q_NO_DATA))
       childQueue_.up->removeHead();
   }
@@ -764,8 +763,8 @@ ExUnPackRowsTcb::processError(atp_struct *atp, NABoolean isNonFatalError, Lng32 
       ex_assert(fromDa, "We have an expression error in UnPack but no diags area");
       ComDiagsArea* toDa = ComDiagsArea::allocate(getHeap());
       fromDa->rewindAndMergeIfDifferent(markValue, toDa);
-      pEntry->setDiagsArea(toDa);
-      toDa->setAllRowNumber(ComCondition::NONFATAL_ERROR) ;     
+      pEntry->setDiagsAreax(toDa);
+      toDa->setAllRowNumber(ComCondition::NONFATAL_ERROR);
   }
   qParent_.up->insert();
 }
@@ -776,7 +775,7 @@ ExUnPackRowsTcb::processSkippedRow(atp_struct *atp)
   ex_queue_entry * pEntryDown = qParent_.down->getHeadEntry();
   ex_queue_entry * pEntry = qParent_.up->getTailEntry();
   ExUnPackRowsPrivateState &pState =
-    *((ExUnPackRowsPrivateState*) pEntryDown->pstate);  
+    *((ExUnPackRowsPrivateState*) pEntryDown->pstate);
 
   pEntry->upState.status = ex_queue::Q_REC_SKIPPED;
   pEntry->upState.parentIndex = pEntryDown->downState.parentIndex;
@@ -1040,14 +1039,14 @@ ExUnPackRowwiseRowsTcb::work()
 	    up_entry->upState.setMatchNo(1);
 	    
 	    qParent_.up->insert();
-	    
+
 	    currentRowNum_++;
 	    if (currentRowNum_ == rwrsNumRows_)
 	      {
 		step_ = DONE_;
 		break;
 	      }
-	    
+
 	  }
 	break;
 
@@ -1058,24 +1057,24 @@ ExUnPackRowwiseRowsTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qParent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_SQLERROR;
 
 	    ComDiagsArea *diagsArea = pentry_down->getDiagsArea();
-	    
+
             if (diagsArea != up_entry->getDiagsArea())
               {
-	        up_entry->setDiagsArea (diagsArea);
+	        up_entry->setDiagsAreax(diagsArea);
                 if (diagsArea != NULL)
                   diagsArea->incrRefCount();
 	      }
 	    // insert into parent
 	    qParent_.up->insert();
-	    
+
 	    step_ = DONE_;
 	  }
 	break;
@@ -1087,16 +1086,16 @@ ExUnPackRowwiseRowsTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qParent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_NO_DATA;
-	    
+
 	    // insert into parent
 	    qParent_.up->insert();
-	    
+
 	    step_ = INITIAL_;
 	    qParent_.down->removeHead();
 	    

@@ -817,26 +817,26 @@ void ex_queue::injectErrorOrCancel()
               newQNODATA->upState.status  = Q_NO_DATA;
               newQNODATA->getAtp()->copyAtp(qe->getAtp());
               tail_++;
-              cerr << "Injecting a Q_SQLERROR before a Q_NO_DATA, from " 
+              cerr << "Injecting a Q_SQLERROR before a Q_NO_DATA, from "
                  << NodeTypeToString(unblockSubtask_->getTcb()->getNodeType())
-                 << "(" << unblockSubtask_->getTcb() << ")" 
+                 << "(" << unblockSubtask_->getTcb() << ")"
                  << " to "
                  << NodeTypeToString(insertSubtask_->getTcb()->getNodeType())
-                 << "(" << insertSubtask_->getTcb() << ")" 
+                 << "(" << insertSubtask_->getTcb() << ")"
                  << endl;
             }
           break;
         default:
             break;
-        } 
+        }
         if (needsError)
           {
             ComDiagsArea * da = qe->getDiagsArea();
-            if (!da) 
+            if (!da)
               da = ComDiagsArea::allocate(insertSubtask_->getTcb()->getHeap());
             else
               da = da->copy();
-            qe->setDiagsArea(da);
+            qe->setDiagsAreax(da);
 
             *da << DgSqlCode(-EXE_ERROR_INJECTED)
                 << DgString0(__FILE__)
@@ -852,18 +852,18 @@ void ex_queue::logHeader()
 {
   if (upDown_ == UP_QUEUE)
     {
-      cerr 
+      cerr
          << NodeTypeToString(unblockSubtask_->getTcb()->getNodeType())
-         << "(" << unblockSubtask_->getTcb() << ")" 
+         << "(" << unblockSubtask_->getTcb() << ")"
          << " up to "
          << NodeTypeToString(insertSubtask_->getTcb()->getNodeType())
-         << "(" << insertSubtask_->getTcb() << ")" 
+         << "(" << insertSubtask_->getTcb() << ")"
          ;
     }
   else
     {
       cerr << NodeTypeToString(unblockSubtask_->getTcb()->getNodeType())
-           << "(" << unblockSubtask_->getTcb() << ")" 
+           << "(" << unblockSubtask_->getTcb() << ")"
            << " down to "
            << NodeTypeToString(insertSubtask_->getTcb()->getNodeType())
            << "(" << insertSubtask_->getTcb() << ")" 

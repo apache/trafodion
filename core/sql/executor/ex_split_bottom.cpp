@@ -824,7 +824,7 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
                   ComDiagsArea *da = ComDiagsArea::allocate(
                                        getGlobals()->getDefaultHeap());
                   *da << DgSqlCode(-CLI_TCB_EXECUTE_ERROR);
-                  upEntry->setDiagsArea(da);
+                  upEntry->setDiagsAreax(da);
                   squeueUp->insert();
 
                   qChild_.down->cancelRequest();
@@ -903,14 +903,14 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
               localCpuTime = fragRootStats->getLocalCpuTime();
             else if ((measRootStats = rootStats->castToExMeasStats()) != NULL)
               localCpuTime = measRootStats->getLocalCpuTime();
-            else 
+            else
               ex_assert(0, "Cpu limit evaluated without runtime stats.");
 
             *da << DgInt2((Lng32) localCpuTime / 1000);
 
           }
 
-          upEntry->setDiagsArea(da);
+          upEntry->setDiagsAreax(da);
           squeueUp->insert();
 
           qChild_.down->cancelRequest();
@@ -1278,19 +1278,19 @@ ExWorkProcRetcode ex_split_bottom_tcb::workUp()
                   continue;
                 }
               }
-          
+
 	      // the down request may not have come from this queue, make
 	      // sure the up request looks like a reply to the down request
 	      // of the queue
 	      sentry->upState.downIndex = squeueDown->getHeadIndex();
 	      sentry->upState.parentIndex =
 		squeueDown->getHeadEntry()->downState.parentIndex;
-	      
+
 	      // we take the liberty not to set the match # here
 	      // since we know that the send top doesn't mind that
-	      
+
 	      sentry->copyAtp(centry);
-	      
+
 	      if (isEofEntry)
 		{
 		  if (centry->getAtp()->getDiagsArea())
@@ -1303,31 +1303,31 @@ ExWorkProcRetcode ex_split_bottom_tcb::workUp()
 		      // parallel extract query and broadcast the
 		      // diags area to all send bottoms.
                       if (!splitBottomTdb().getExtractProducerFlag())
-                        centry->getAtp()->setDiagsArea(NULL);
+                        centry->getAtp()->setDiagsAreax(NULL);
 		    }
 		}
 	      else if (statsEntry)
 		{
 		  statsEntry->incActualRowsReturned();
 		}
-	      
+
 	      squeueUp->insert();
-	      
+
 	    }     // if !GET_NOMORE
-	  
+
 	  // if this was EOF, remove the corresponding entry from
 	  // the down queue
 	  if (isEofEntry)
 	    {
 	      squeueDown->removeHead();
-	    } 
+	    }
 	} // for each send queue that we have to send the entry to
-      
+
       // we're done with all send bottoms, remove request from the
       // child queue and invalidate the calculated partition number
       qChild_.up->removeHead();
       calcPartNumIsValid_ = FALSE;
-      
+
       // We return to the idle state if this was the EOF entry.
       if (isEofEntry)
 	{

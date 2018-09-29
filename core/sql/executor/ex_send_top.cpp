@@ -634,10 +634,10 @@ short ex_send_top_tcb::checkReceive()
 	  // append the tupp that we got from the message
 	  pentry->copyAtp(rentry);
 	  pentry->getTupp(rentry->criDesc()->noTuples()) = nextTupp;
-          pentry->setDiagsArea(diagsArea);
+          pentry->setDiagsAreax(diagsArea);
 	  nextTupp.release();
 
-	  // if stats were returned, unpack and merge them to the 
+	  // if stats were returned, unpack and merge them to the
 	  // stat area.
 	  if (ci->getIsExtStatsAreaPresent())
 	    {
@@ -645,13 +645,13 @@ short ex_send_top_tcb::checkReceive()
               ex_assert_both_sides(msgStream_->getNextObjType(msgType)  AND
 			msgType == IPC_SQL_STATS_AREA,
 			"no stats area in message");
-	      
+
               CollHeap * defaultHeap = getGlobals()->getDefaultHeap();
 
 	      ExStatisticsArea* statArea = new(defaultHeap)
 		ExStatisticsArea(defaultHeap, 0,
 				 ((ComTdb*)getTdb())->getCollectStatsType());
-	      
+
 	      *msgStream_ >> *statArea;
 	      if ( getGlobals()->statsEnabled() )
 		mergeStats(statArea);
@@ -661,7 +661,7 @@ short ex_send_top_tcb::checkReceive()
               // we can get rid of the received area now
               NADELETE(statArea, ExStatisticsArea, defaultHeap);
 	    }
-	  
+
 	  // If statistics are being collected, update the number of
 	  // rows returned now.
 	  if(pentry->upState.status != ex_queue::Q_NO_DATA)

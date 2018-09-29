@@ -461,12 +461,12 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 			    }
 			  else
 			    defValNeeded = TRUE;
-		      
+
    			  if ((defValNeeded) && (mode == exp_READ))
 			    {
 			      ComDiagsArea *diagsArea = atp1->getDiagsArea();
 
-			      retcode = 
+			      retcode =
 				getDefaultValueForAddedColumn((*op)->getDefaultFieldNum(),
 							      tuppDesc,
 							      *op,
@@ -478,9 +478,8 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 
 			      if (retcode == ex_expr::EXPR_ERROR)
 				{
-				  if (diagsArea != atp1->getDiagsArea())
-				    atp1->setDiagsArea(diagsArea);
-			    
+                                  atp1->setDiagsAreax(diagsArea);
+
 				  return retcode;
 				}
 			    }
@@ -675,7 +674,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 				{
 				  ComDiagsArea *diagsArea = atp1->getDiagsArea();
 
-                                  // this sets the *nulldata, *opdata, *vardata as needed				
+                                  // this sets the *nulldata, *opdata, *vardata as needed
                                   retcode =
 				    getDefaultValueForAddedColumn
 				    ((*op)->getDefaultFieldNum(),
@@ -689,19 +688,18 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 
 				  if (retcode == ex_expr::EXPR_ERROR)
 				    {
-				      if (diagsArea != atp1->getDiagsArea())
-					atp1->setDiagsArea(diagsArea);
-			    
+                                      atp1->setDiagsAreax(diagsArea);
+
 				      return retcode;
 				    }
 
                                   // all pointers are set now
                                   break;
-				} 
-			      else 
+				}
+			      else
 				{ // not an added column needing special attn.
                                   // but there may be other added columns present
-                                  
+
                                   // if variable field, then read the offset from
                                   // the data record
                                   if ( varIndLen > 0 )
@@ -709,7 +707,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
                                     offset = ExpTupleDesc::getVoaOffset(dataPtr,
                                                                         voaOffset,
                                                                         tdf);
-				  
+
                                   }
                                   else
                                   {
@@ -765,13 +763,13 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 			        *vardata = dataPtr + offset;
 				offset  += varIndLen;
 			      }
-				  
+
 			      *opdata = dataPtr + offset;
                             } // else read mode
 			}
 		      else    // missing value (indicates a null value)
 			*nulldata = 0;
-			  
+
 		    }  // SQLMX_FORMAT, SQLMX_ALIGNED_FORMAT
 		  break;
 
@@ -779,8 +777,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 		    {
 		      ComDiagsArea *diagsArea = atp1->getDiagsArea();
 		      ExRaiseSqlError(getHeap(), &diagsArea, EXE_INTERNAL_ERROR);
-		      if(diagsArea != atp1->getDiagsArea())
-		        atp1->setDiagsArea(diagsArea);
+                      atp1->setDiagsAreax(diagsArea);
 		      return ex_expr::EXPR_ERROR;
 		    }
 
@@ -806,7 +803,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
           }
 
 	} // for
-	  
+
       // -----------------------------------------------------------------
       // Call the NULL processing method for this clause and, if still
       // necessary, evaluate the expression. Note that if the
@@ -849,9 +846,8 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
         if (currAttr->isSQLMXAlignedFormat())
           prevAttr = currAttr;
       }
-					     
-      if (diagsArea != atp1->getDiagsArea())
-	atp1->setDiagsArea(diagsArea);
+
+      atp1->setDiagsAreax(diagsArea);
 
       if (retcode == ex_expr::EXPR_ERROR)
 	return retcode;
@@ -1598,8 +1594,7 @@ ex_expr::exp_return_type reportErr(atp_struct* atp1, ex_expr* expr)
 
   diagsArea = atp1->getDiagsArea();
   ExRaiseSqlError(expr->getHeap(), &diagsArea, EXE_INTERNAL_ERROR);
-  if(diagsArea != atp1->getDiagsArea())
-    atp1->setDiagsArea(diagsArea);
+  atp1->setDiagsArea(diagsArea);
   return ex_expr::EXPR_ERROR;
 }
 
@@ -2500,7 +2495,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	retCode = alignAndEval(clause, opDataData, getHeap(), &diagsArea);
 
       if (diagsArea != atp1->getDiagsArea())
-	atp1->setDiagsArea(diagsArea);
+	atp1->setDiagsAreax(diagsArea);
 
       if(retCode == ex_expr::EXPR_ERROR) 
 	return retCode;
@@ -2983,36 +2978,36 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 
 	    ex_expr::exp_return_type er =
 	      convDoIt(ptrSrc, srcLen, REC_BYTE_F_ASCII, 0, 0,
-		       (char*)&srcNumericVal, sizeof(Int64), 
-		       (pCodeOpc == PCIT::CONVVCPTR_MBIN64S_MATTR5_IBIN32S 
-			? REC_BIN64_SIGNED : REC_BIN32_SIGNED), 
-			0, 0, 
+		       (char*)&srcNumericVal, sizeof(Int64),
+		       (pCodeOpc == PCIT::CONVVCPTR_MBIN64S_MATTR5_IBIN32S
+			? REC_BIN64_SIGNED : REC_BIN32_SIGNED),
+			0, 0,
 		       NULL, 0,
 		       heap_, &diagsArea,
 		       CONV_ASCII_BIN64S,
 		       NULL, 0);
 
-            if (diagsArea != atp1->getDiagsArea())
-                   atp1->setDiagsArea(diagsArea);
-	    if (er == ex_expr::EXPR_ERROR) 
+            atp1->setDiagsAreax(diagsArea);
+
+	    if (er == ex_expr::EXPR_ERROR)
 	      return ex_expr::EXPR_ERROR;
 	  }
 
 	if (pCodeOpc == PCIT::CONVVCPTR_MBIN64S_MATTR5_IBIN32S)
 	  {
 	    if (neg)
-	      *(Int64*)dst = -srcNumericVal; 
+	      *(Int64*)dst = -srcNumericVal;
 	    else
-	      *(Int64*)dst = srcNumericVal; 
+	      *(Int64*)dst = srcNumericVal;
 	  }
 	else
 	  {
 	    if (neg)
-	      *(Lng32*)dst = -(Int32)srcNumericVal; 
+	      *(Lng32*)dst = -(Int32)srcNumericVal;
 	    else
-	      *(Lng32*)dst = (Int32)srcNumericVal; 
+	      *(Lng32*)dst = (Int32)srcNumericVal;
 	  }
-	  
+
 	pCode += 8;
       }
       break;
@@ -3045,7 +3040,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	Int64 ptrVal = *(Int64*)(src + srcVCIndLen);
 	char * ptrSrc = (char*)ptrVal;
 
-	// convert source to target (Flt32). 
+	// convert source to target (Flt32).
 	// First try simple conversion. If that returns an error, try complex conversion.
 	NABoolean neg = FALSE;
 	if (ptrSrc[0] == '-')
@@ -3061,21 +3056,22 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	    diagsArea = atp1->getDiagsArea();
 	    ex_expr::exp_return_type er =
 	      convDoIt(ptrSrc, srcLen, REC_BYTE_F_ASCII, 0, 0,
-		       (char*)&srcNumericVal, sizeof(double), REC_FLOAT32, 0, 0, 
+		       (char*)&srcNumericVal, sizeof(double), REC_FLOAT32, 0, 0,
 		       NULL, 0,
 		       heap_, &diagsArea,
 		       CONV_ASCII_FLOAT64,
 		       NULL, 0);
-            if (diagsArea != atp1->getDiagsArea())
-                   atp1->setDiagsArea(diagsArea);
-	    if (er == ex_expr::EXPR_ERROR) 
+
+            atp1->setDiagsArea(diagsArea);
+
+            if (er == ex_expr::EXPR_ERROR)
 	      return ex_expr::EXPR_ERROR;
 	  }
 
 	if (neg)
-	  *(float*)dst = - (float)srcNumericVal; 
+	  *(float*)dst = - (float)srcNumericVal;
 	else
-	  *(float*)dst = (float)srcNumericVal; 
+	  *(float*)dst = (float)srcNumericVal;
 
 	pCode += 8;
       }
@@ -3090,7 +3086,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	BASE_PTR_DEF_ASSIGN(char,tgt, 0);
 
 	DEF_ASSIGN(Int32,comboLen1, 4);
-        char* comboPtr1 = (char*)&comboLen1;      
+        char* comboPtr1 = (char*)&comboLen1;
         Int16 tgtNullIndLen = (Int16)comboPtr1[0];
         Int16 tgtVCIndLen   = (Int16)comboPtr1[1];
 
@@ -3118,7 +3114,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 
 	DEF_ASSIGN(Int32,tgtOffset, 1);
 	DEF_ASSIGN(Int32,tgtVoaOffset, 2);
-        
+
         // VOA offsets should always be used in order.
         if(tgtVoaOffset > 0) {
           assert(tgtVoaOffset > lastVoaOffset);
@@ -3132,20 +3128,21 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
                                               varOffset,
                                               copyLen
                                             );
-          
+
 	if (copyLen < srcLen)
 	  {
 	    diagsArea = atp1->getDiagsArea();
 	    ex_expr::exp_return_type er =
 	      convDoIt(ptrSrc, srcLen, REC_BYTE_F_ASCII, 0, 0,
-		       (tgt+tgtVCIndLen), maxTgtLen, REC_BYTE_V_ASCII, 0, 0, 
+		       (tgt+tgtVCIndLen), maxTgtLen, REC_BYTE_V_ASCII, 0, 0,
 		       tgt, tgtVCIndLen,
 		       heap_, &diagsArea,
 		       CONV_ASCII_F_V,
 		       NULL, 0);
-            if (diagsArea != atp1->getDiagsArea())
-               atp1->setDiagsArea(diagsArea);
-	    if (er == ex_expr::EXPR_ERROR) 
+
+            atp1->setDiagsArea(diagsArea);
+
+            if (er == ex_expr::EXPR_ERROR)
 	      return ex_expr::EXPR_ERROR;
 	  }
 	else
@@ -3525,27 +3522,27 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 
       BASE_PTR_DEF_ASSIGN(char, src, 5);
       BASE_PTR_DEF_ASSIGN(char, tgt, 0);
-      
+
       if (srcVCIndLen > 0) // is varchar
       {
         src += ExpTupleDesc::getVarOffset(src,
-                                          srcOffset, 
+                                          srcOffset,
                                           srcVoaOffset,
-                                          srcVCIndLen,   
+                                          srcVCIndLen,
                                           srcNullIndLen);
 
         srcMaxLen = ExpTupleDesc::getVarLength(src, srcVCIndLen);
         src += srcVCIndLen;
-      } 
+      }
       else
       {
-        src += srcOffset; 
+        src += srcOffset;
       }
 
       PTR_DEF_ASSIGN(Int32, startPtr, 10);
       PTR_DEF_ASSIGN(Int32, lengthPtr,12);
-      Int64 start  = *startPtr; 
-      Int64 length = *lengthPtr; 
+      Int64 start  = *startPtr;
+      Int64 length = *lengthPtr;
 
       Int64 temp = ((numOperands > 0)
                     ? (start + length)
@@ -3556,8 +3553,8 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
        diagsArea = atp1->getDiagsArea();
        ExRaiseSqlError(heap_, &diagsArea, EXE_SUBSTRING_ERROR);
 
-       if(diagsArea != atp1->getDiagsArea())
-         atp1->setDiagsArea(diagsArea);
+       atp1->setDiagsAreax(diagsArea);
+
        return ex_expr::EXPR_ERROR;
      }
 
@@ -4159,8 +4156,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
         // Raise an "assigning a null value to a NOT NULL".
         diagsArea = atp1->getDiagsArea();
         ExRaiseSqlError(getHeap(), &diagsArea, EXE_ASSIGNING_NULL_TO_NOT_NULL);
-        if(diagsArea != atp1->getDiagsArea())
-          atp1->setDiagsArea(diagsArea);
+
+        atp1->setDiagsArea(diagsArea);
+
         return ex_expr::EXPR_ERROR;
       }
 
@@ -7634,7 +7632,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       {
 	PTR_DEF_ASSIGN(Int32, indexPtr, 2 * PCODEBINARIES_PER_PTR);
 	Int32 index = * indexPtr;
-  
+
         // Lookup the indexed row in the history buffer. Compute pointers
         // to the attribute data, null indicator, and varchar indicator.
         //
@@ -7653,12 +7651,13 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
             {
               diagsArea = atp1->getDiagsArea();
               ExRaiseSqlError(heap_, &diagsArea, EXE_HISTORY_BUFFER_TOO_SMALL);
-              if(diagsArea != atp1->getDiagsArea())
-                atp1->setDiagsArea(diagsArea);
+
+              atp1->setDiagsArea(diagsArea);
+
               return ex_expr::EXPR_ERROR;
             }
 
-          if(row) 
+          if(row)
             {
               srcData = (Int64 *)(row + pCode[5 + 2 * PCODEBINARIES_PER_PTR]);
             }
@@ -7675,7 +7674,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
     case PCIT::OFFSET_IPTR_IPTR_IBIN32S_MBIN64S_MBIN64S:
       {
 	DEF_ASSIGN(Int32, index, 2 * PCODEBINARIES_PER_PTR);
-  
+
         // Lookup the indexed row in the history buffer. Compute pointers
         // to the attribute data, null indicator, and varchar indicator.
         //
@@ -7698,7 +7697,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
               return ex_expr::EXPR_ERROR;
             }
 
-          if(row) 
+          if(row)
             {
               srcData = (Int64 *)(row + pCode[4 + 2 * PCODEBINARIES_PER_PTR]);
             }
@@ -8275,16 +8274,16 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
     {
       // Raise an "assigning a null value to a NOT NULL".
       diagsArea = atp1->getDiagsArea();
-      ExRaiseSqlError(getHeap(), &diagsArea, 
+      ExRaiseSqlError(getHeap(), &diagsArea,
         EXE_ASSIGNING_NULL_TO_NOT_NULL);
-      if(diagsArea != atp1->getDiagsArea())
-        atp1->setDiagsArea(diagsArea);
+
+      atp1->setDiagsArea(diagsArea);
 
       return ex_expr::EXPR_ERROR;
     }
     pCode += 2;
     // Do NOT break here...
-    // The first null has been processed above, so fall through to 
+    // The first null has been processed above, so fall through to
     // process the second null.
     // These two cases belong together...
   }
@@ -8295,10 +8294,11 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
     {
       // Raise an "assigning a null value to a NOT NULL".
       diagsArea = atp1->getDiagsArea();
-      ExRaiseSqlError(getHeap(), &diagsArea, 
+      ExRaiseSqlError(getHeap(), &diagsArea,
         EXE_ASSIGNING_NULL_TO_NOT_NULL);
-      if(diagsArea != atp1->getDiagsArea())
-        atp1->setDiagsArea(diagsArea);
+
+      atp1->setDiagsArea(diagsArea);
+
       return ex_expr::EXPR_ERROR;
     }
     pCode += 2;
@@ -8318,9 +8318,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
                                  :  val;
  
       NABoolean srcNull =
-        ExpTupleDesc::isNullValue((char*)(stack[pCode[2]]+pCode3), idx, 
+        ExpTupleDesc::isNullValue((char*)(stack[pCode[2]]+pCode3), idx,
 				  (ExpTupleDesc::TupleDataFormat)pCode[5]);
-      
+
       if ( srcNull && flag2 != 0 ) *ptr = 1;
       else if ( !srcNull && flag2 == 0 ) *ptr = 1;
       else *ptr = 0 ;
@@ -8339,15 +8339,16 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       goto Error2_;
     };
   };
-  
+
  Error1_:
   return reportOverflowError(atp1, pCodeOpcPtr, pCode, stack);
-					    
-					    Error2_:
+
+ Error2_:
   diagsArea = atp1->getDiagsArea();
   ExRaiseSqlError(heap_, &diagsArea, EXE_INTERNAL_ERROR);
-  if(diagsArea != atp1->getDiagsArea())
-    atp1->setDiagsArea(diagsArea);
+
+  atp1->setDiagsAreax(diagsArea);
+
   return ex_expr::EXPR_ERROR;
 }
 
@@ -8522,8 +8523,9 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
       ExRaiseDetailSqlError(getHeap(), &diagsArea, EXE_NUMERIC_OVERFLOW, op2,
                             pCode[4], REC_NUM_BIG_SIGNED, 0,
                             REC_BIN64_SIGNED, 0);
-      if(diagsArea != atp1->getDiagsArea())
-        atp1->setDiagsArea(diagsArea);
+
+      atp1->setDiagsArea(diagsArea);
+
       return ex_expr::EXPR_ERROR;
       break;
 
@@ -8532,15 +8534,17 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
       ExRaiseDetailSqlError(getHeap(), &diagsArea, EXE_NUMERIC_OVERFLOW, op2,
                             pCode[5], REC_NUM_BIG_SIGNED, 0,
                             REC_NUM_BIG_SIGNED,0);
-      if(diagsArea != atp1->getDiagsArea())
-        atp1->setDiagsArea(diagsArea);
+
+      atp1->setDiagsArea(diagsArea);
+
       return ex_expr::EXPR_ERROR;
       break;
 
     case PCIT::GENFUNC_MATTR5_MATTR5_MBIN32S_IBIN32S:
       ExRaiseFunctionSqlError(getHeap(), &diagsArea, EXE_STRING_OVERFLOW,FALSE);
-      if(diagsArea != atp1->getDiagsArea())
-        atp1->setDiagsArea(diagsArea);
+
+      atp1->setDiagsArea(diagsArea);
+
       return ex_expr::EXPR_ERROR;
       break;
 
@@ -8553,8 +8557,9 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
                       &diagsArea,
                       EXE_INTERNAL_ERROR);
 
-      if(diagsArea != atp1->getDiagsArea())
-        atp1->setDiagsArea(diagsArea);
+
+      atp1->setDiagsArea(diagsArea);
+
       return ex_expr::EXPR_ERROR;
   }
 
@@ -8565,8 +8570,8 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
                         op1,
                         op2);
 
-  if(diagsArea != atp1->getDiagsArea())
-    atp1->setDiagsArea(diagsArea);
+  atp1->setDiagsArea(diagsArea);
+
   return ex_expr::EXPR_ERROR;
 }
 

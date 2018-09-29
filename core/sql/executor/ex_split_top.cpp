@@ -1835,15 +1835,15 @@ ExWorkProcRetcode ex_split_top_tcb::workUp()
               // calculating input part # or handling non-current down
               // requests) then return those errors now
               ex_queue_entry *upentry = qParentUp->getTailEntry();
-              
+
               upentry->upState.status      = ex_queue::Q_SQLERROR;
               upentry->upState.downIndex   = pindex;
               upentry->upState.setMatchNo(pstate->matchCountForGetN_);
               upentry->upState.parentIndex = pentry->downState.parentIndex;
               // attach diagnostics area (refcount gets transferred to ATP)
-              upentry->setDiagsArea(pstate->detachDiagsArea());
+              upentry->setDiagsAreax(pstate->detachDiagsArea());
               qParentUp->insert();
-              
+
               if (qParentUp->isFull())
                 return WORK_OK;
             }
@@ -1852,7 +1852,7 @@ ExWorkProcRetcode ex_split_top_tcb::workUp()
           // send one end-of-data entry back to the parent
           // ---------------------------------------------------------
           ex_queue_entry *upentry = qParentUp->getTailEntry();
-          
+
 	  if (pstate->recSkipped() == TRUE)
 	    upentry->upState.status      = ex_queue::Q_REC_SKIPPED;
 	  else
@@ -1863,7 +1863,7 @@ ExWorkProcRetcode ex_split_top_tcb::workUp()
           upentry->upState.parentIndex = pentry->downState.parentIndex;
           // error diagnostics have been sent in a separate entry, send
           // diags area with warnings and # of rows affected here
-          upentry->setDiagsArea(pstate->detachDiagsArea());
+          upentry->setDiagsAreax(pstate->detachDiagsArea());
 
           // insert into parent up queue and delete request
           qParentUp->insert();

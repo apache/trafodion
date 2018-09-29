@@ -624,7 +624,7 @@ void ExSortTcb::createSortDiags()
 }
 ////////////////////////////////////////////////////////////////////////
 // processSortError()
-// 
+//
 NABoolean ExSortTcb::processSortError(ex_queue_entry *pentry_down,
 				      queue_index parentIndex,
 				      queue_index downIndex)
@@ -634,19 +634,19 @@ NABoolean ExSortTcb::processSortError(ex_queue_entry *pentry_down,
   up_entry->upState.parentIndex = downIndex; //qparent_.down->getHeadIndex()
   up_entry->upState.setMatchNo(0);
   up_entry->upState.status = ex_queue::Q_SQLERROR;
-  
+
   ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 
   if (diagsArea == NULL)
     diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
   else
     diagsArea->incrRefCount();
-      
+
   if (sortDiag_)
     diagsArea->mergeAfter(*sortDiag_);
-  
-  up_entry->setDiagsArea (diagsArea);
-  
+
+  up_entry->setDiagsAreax(diagsArea);
+
   // insert into parent
   qparent_.up->insert();
 
@@ -1581,7 +1581,7 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
       createSortDiags();
       if(sortPartiallyComplete_)
 	step = ExSortTcb::SORT_ERROR;
-      else                
+      else
 	step = ExSortTcb::SORT_ERROR_ON_RECEIVE;
       if(receiveTd)
 	{
@@ -1597,7 +1597,7 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 	  if (sortTdb().collectNFErrors())
 	    {
 	      // If there are any nf error entries in the array
-	      if (nfDiags_)  
+	      if (nfDiags_)
 		{
 		  ComDiagsArea *nfda = NULL;
 		  // Get the first NF error in the list
@@ -1605,18 +1605,18 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 		  // assign it to the tgtEntry diags
 		  if (ret && nfda)
 		    {
-		      tgtEntry->setDiagsArea(nfda);
+		      tgtEntry->setDiagsAreax(nfda);
 		      // remove this entry from the nf list
 		      nfDiags_->remove(nfda);
 		    }
 		}
 	    }
-          
+
 	  Int16 *rowLenPtr = NULL;
           if (resizeCifRecord() > 0 && (topNSortPool_ == NULL))
           {
             if (buf)
-            { 
+            {
               char *dataPointer = tgtEntry->getAtp()->getTupp(sortTdb().tuppIndex_).getDataPointer();
               buf->resize_tupp_desc(*((Int32 *)dataPointer), dataPointer);//
             }
@@ -1748,7 +1748,7 @@ short ExSortTcb::done(
      Int64 &matchCount)
 {
   ex_queue_entry * pentry = qparent_.up->getTailEntry();
-  
+
   // all sorted rows have been returned.
   if (sendQND)
     {
@@ -1756,7 +1756,7 @@ short ExSortTcb::done(
       pentry->upState.parentIndex = parentIndex;
       pentry->upState.downIndex = qparent_.down->getHeadIndex();
       pentry->upState.setMatchNo(matchCount);
-      
+
       // mainly used to propagate rows affected count to parent
       if (sortDiag_)
 	{
@@ -1765,9 +1765,9 @@ short ExSortTcb::done(
 	    pUPda = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
 	  else
 	    pUPda->incrRefCount();
-	  
+
 	  pUPda->mergeAfter(*sortDiag_);
-	  pentry->setDiagsArea (pUPda);
+	  pentry->setDiagsAreax(pUPda);
 	}
 
       // insert into parent up queue
@@ -1785,11 +1785,11 @@ short ExSortTcb::done(
       setCompareTd_ = NULL;
     }
   sortPartiallyComplete_ = FALSE;
-  
+
   if (nfDiags_)
     nfDiags_->deallocate();
   nfDiags_ = NULL;
-  
+
   return 0;
 }
 

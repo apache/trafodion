@@ -706,24 +706,24 @@ short ExHbaseAccessTcb::setupError(NAHeap *heap, ex_queue_pair &qparent, Lng32 r
   // Make sure retcode is positive.
   if (retcode < 0)
     retcode = -retcode;
-    
+
   if ((ABS(retcode) >= HBASE_MIN_ERROR_NUM) &&
       (ABS(retcode) <= HBASE_MAX_ERROR_NUM))
     {
       ex_queue_entry *pentry_down = qparent.down->getHeadEntry();
- 
+
       Lng32 cliError = 0;
-      
+
       Lng32 intParam1 = -retcode;
       ComDiagsArea * diagsArea = NULL;
-      ExRaiseSqlError(heap, &diagsArea, 
-		      (ExeErrorCode)(8448), NULL, &intParam1, 
-		      &cliError, NULL, 
+      ExRaiseSqlError(heap, &diagsArea,
+		      (ExeErrorCode)(8448), NULL, &intParam1,
+		      &cliError, NULL,
 		      (str ? (char*)str : (char*)" "),
 		      getHbaseErrStr(retcode),
-                      (str2 ? (char*)str2 : 
-                      (char *)GetCliGlobals()->getJniErrorStr())); 
-      pentry_down->setDiagsArea(diagsArea);
+                      (str2 ? (char*)str2 :
+                      (char *)GetCliGlobals()->getJniErrorStr()));
+      pentry_down->setDiagsAreax(diagsArea);
       return -1;
     }
 
@@ -736,47 +736,47 @@ short ExHbaseAccessTcb::setupError(Lng32 retcode, const char * str, const char *
   // Make sure retcode is positive.
   if (retcode < 0)
     retcode = -retcode;
-    
+
   if ((ABS(retcode) >= HBASE_MIN_ERROR_NUM) &&
       (ABS(retcode) <= HBASE_MAX_ERROR_NUM))
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
- 
+
       Lng32 cliError = 0;
-      
+
       Lng32 intParam1 = -retcode;
       ComDiagsArea * diagsArea = NULL;
-      ExRaiseSqlError(getHeap(), &diagsArea, 
-		      (ExeErrorCode)(8448), NULL, &intParam1, 
-		      &cliError, NULL, 
+      ExRaiseSqlError(getHeap(), &diagsArea,
+		      (ExeErrorCode)(8448), NULL, &intParam1,
+		      &cliError, NULL,
 		      (str ? (char*)str : (char*)" "),
 		      getHbaseErrStr(retcode),
-                      (str2 ? (char*)str2 : 
-                      (char *)GetCliGlobals()->getJniErrorStr())); 
-      pentry_down->setDiagsArea(diagsArea);
+                      (str2 ? (char*)str2 :
+                      (char *)GetCliGlobals()->getJniErrorStr()));
+      pentry_down->setDiagsAreax(diagsArea);
       return -1;
     }
 
   return 0;
 }
 
-short ExHbaseAccessTcb::raiseError(Lng32 errcode, 
+short ExHbaseAccessTcb::raiseError(Lng32 errcode,
                                    Lng32 * intParam1,
-                                   const char * str1, 
+                                   const char * str1,
                                    const char * str2)
 {
   // Make sure retcode is positive.
   if (errcode < 0)
     errcode = -errcode;
-    
+
   ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-  
+
   ComDiagsArea * diagsArea = NULL;
-  ExRaiseSqlError(getHeap(), &diagsArea, 
+  ExRaiseSqlError(getHeap(), &diagsArea,
                   (ExeErrorCode)(errcode), NULL,
                   intParam1, NULL, NULL,
                   str1, str2, NULL);
-  pentry_down->setDiagsArea(diagsArea);
+  pentry_down->setDiagsAreax(diagsArea);
 
   return 0;
 }
@@ -833,15 +833,15 @@ short ExHbaseAccessTcb::handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected)
           ComDiagsArea * diagsArea = up_entry->getDiagsArea();
           if (!diagsArea)
             {
-              diagsArea = 
+              diagsArea =
                 ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-              up_entry->setDiagsArea(diagsArea);
+              up_entry->setDiagsAreax(diagsArea);
             }
           diagsArea->addRowCount(rowsAffected);
         }
     }
   qparent_.up->insert();
-  
+
   qparent_.down->removeHead();
 
   return 0;
@@ -857,7 +857,7 @@ short ExHbaseAccessTcb::createColumnwiseRow()
   ExpTupleDesc * asciiSourceTD =
     hbaseAccessTdb().workCriDesc_->getTupleDescriptor
     (hbaseAccessTdb().asciiTuppIndex_);
-  
+
   for (Lng32 i = 0; i <  asciiSourceTD->numAttrs(); i++)
     {
       Attributes * attr = asciiSourceTD->getAttr(i);
@@ -1346,18 +1346,18 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
                         v = *(UInt16*)colName.data();
                       else if (colName.length() == sizeof(ULng32))
                         v = *(ULng32*)colName.data();
-                      
+
                       str_sprintf(buf, "%ld", v);
                     }
-                  
+
                   ComDiagsArea * diagsArea = NULL;
                   ExRaiseSqlError(
                        getHeap(), &diagsArea,
                        (ExeErrorCode) EXE_DEFAULT_VALUE_INCONSISTENT_ERROR,
-                       NULL, NULL, NULL, NULL, 
+                       NULL, NULL, NULL, NULL,
                        (hbaseAccessTdb().hbaseMapTable() ? colName.data() : buf),
                        hbaseAccessTdb().getTableName());
-                  pentry_down->setDiagsArea(diagsArea);
+                  pentry_down->setDiagsAreax(diagsArea);
                   return -1;
                 }
 
@@ -1367,10 +1367,9 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
                 {
                   nullVal = *(short*)defVal;
                   *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
-                  
                   defValPtr += 2;
                 }
-              
+
               Lng32 copyLen;
               if (! nullVal)
                 {

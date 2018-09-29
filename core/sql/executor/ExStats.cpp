@@ -7385,7 +7385,7 @@ short ExStatsTcb::work()
             ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
 	    pentry_up->copyAtp(pentry_down);
 	    pentry_up->upState.status = ex_queue::Q_NO_DATA;
-	    pentry_up->upState.parentIndex = 
+	    pentry_up->upState.parentIndex =
 	        pentry_down->downState.parentIndex;
 	    pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
 	    pentry_up->upState.setMatchNo(pstate->matchCount_);
@@ -7397,11 +7397,11 @@ short ExStatsTcb::work()
               else
                 da->incrRefCount();
               da->mergeAfter(*diagsArea_);
-              pentry_up->setDiagsArea(da);
+              pentry_up->setDiagsAreax(da);
               diagsArea_->clear();
               diagsArea_->deAllocate();
               diagsArea_ = NULL;
-            }     
+            }
             qparent_.up->insert();
 	    // remove the down entry
       	    qparent_.down->removeHead();
