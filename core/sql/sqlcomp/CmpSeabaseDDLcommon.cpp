@@ -9285,11 +9285,10 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
                                currSchName);
           else
             {
-              if (isLibBlobStoreValid(&cliInterface)==0)
+             
                 createSeabaseLibrary2(createLibraryParseNode, currCatName, 
                                       currSchName);
-              else
-                *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_CREATE_OBJECT);
+              
       
             }
         }
@@ -9301,11 +9300,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           if( (CmpCommon::getDefault(USE_LIB_BLOB_STORE) == DF_OFF))
             dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
           else
-            {
-              if (isLibBlobStoreValid(&cliInterface)==0)
-                dropSeabaseLibrary2(dropLibraryParseNode, currCatName, currSchName);
-              else
-                 *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT);
+            {          
+              dropSeabaseLibrary2(dropLibraryParseNode, currCatName, currSchName);
             }
         }
        else if (ddlNode->getOperatorType() == DDL_ALTER_LIBRARY)
@@ -9318,10 +9314,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
                                  currSchName);
            else
              {
-               if (isLibBlobStoreValid(&cliInterface)==0)
+               
                 alterSeabaseLibrary2(alterLibraryParseNode, currCatName, currSchName);
-              else
-                *CmpCommon::diags() << DgSqlCode(CAT_CANNOT_ALTER_WRONG_TYPE);
+             
              }
          }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROUTINE)

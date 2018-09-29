@@ -529,25 +529,7 @@ short CmpSeabaseDDL::initTrafMD(CmpDDLwithStatusInfo *dws)
                         }
                     } // for
                   
-                  // update SPJ info
-                  // Note that this is not an existing jar file, the class
-                  // loader will attempt to load the class from the CLASSPATH if
-                  // it can't find this jar
-                  NAString installJar(getenv("TRAF_HOME"));
-                  installJar += "/export/lib/trafodion-sql-currversion.jar";
-                  if (updateSeabaseMDSPJ(&cliInterface, sysCat, SEABASE_MD_SCHEMA, 
-                                         SEABASE_VALIDATE_LIBRARY,
-                                         installJar.data(),SUPER_USER,SUPER_USER,
-                                         &seabaseMDValidateRoutineInfo,
-                                         sizeof(seabaseMDValidateRoutineColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-                                         seabaseMDValidateRoutineColInfo))
-                    {
-                      setValuesInDWS(dws, IT_STEP_FAILED,
-                                     "Update Metadata Tables: Failed", 0, TRUE,
-                                     FALSE, TRUE, TRUE);                      
-
-                      return 0;
-                    }
+                  
                   
                   updateSeabaseVersions(&cliInterface, sysCat);
                   updateSeabaseAuths(&cliInterface, sysCat);
@@ -684,7 +666,7 @@ short CmpSeabaseDDL::initTrafMD(CmpDDLwithStatusInfo *dws)
                       return 0;
                     }
 
-                  setValuesInDWS(dws, IT_CREATE_PRIVMGR_REPOS,
+                  setValuesInDWS(dws, IT_CREATE_LIBRARIES,
                                  "Create Repository Tables: Completed", 0, TRUE,
                                  FALSE, TRUE, TRUE);
 
@@ -719,7 +701,27 @@ short CmpSeabaseDDL::initTrafMD(CmpDDLwithStatusInfo *dws)
                                      FALSE, TRUE, TRUE);
                       return 0;
                     }
+                  // update SPJ info
+                  // Note that this is not an existing jar file, the class
+                  // loader will attempt to load the class from the CLASSPATH if
+                  // it can't find this jar
+                  NAString installJar(getenv("TRAF_HOME"));
+                  installJar += "/export/lib/trafodion-sql-currversion.jar";
+                  const char* sysCat = 
+                    ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
+                  if (updateSeabaseMDSPJ(&cliInterface, sysCat, SEABASE_MD_SCHEMA, 
+                                         SEABASE_VALIDATE_LIBRARY,
+                                         installJar.data(),SUPER_USER,SUPER_USER,
+                                         &seabaseMDValidateRoutineInfo,
+                                         sizeof(seabaseMDValidateRoutineColInfo) / sizeof(ComTdbVirtTableColumnInfo),
+                                         seabaseMDValidateRoutineColInfo))
+                    {
+                      setValuesInDWS(dws, IT_STEP_FAILED,
+                                     "Update MDSPJ : Failed", 0, TRUE,
+                                     FALSE, TRUE, TRUE);                      
 
+                      return 0;
+                    }
                   setValuesInDWS(dws, IT_CREATE_PRIVMGR_REPOS,
                                  "Create Libraries Tables: Completed", 0, TRUE,
                                  FALSE, TRUE, TRUE);
