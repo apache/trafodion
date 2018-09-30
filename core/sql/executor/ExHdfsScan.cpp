@@ -1542,7 +1542,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     "HDFS",
                                     (char*)"ExpLOBInterfaceSelectCursor/close",
                                     getLobErrStr(intParam1));
-		    pentry_down->setDiagsArea(diagsArea);
+		    pentry_down->setDiagsAreax(diagsArea);
 		    step_ = HANDLE_ERROR;
 		    break;
 	          }

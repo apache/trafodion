@@ -97,7 +97,7 @@ class atp_struct
   //
     inline ComDiagsArea *getDiagsArea() const;
     inline void setDiagsAreax(ComDiagsArea* diagsArea);
-    inline void shareDiagsAreax(ComDiagsArea* diagsArea);
+    inline void shareDiagsArea(ComDiagsArea* diagsArea);
     inline void initDiagsArea(ComDiagsArea* diagsArea);
     Long pack(void * space);
     Lng32 unpack(Lng32 base);

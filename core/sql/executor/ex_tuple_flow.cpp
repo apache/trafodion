@@ -370,7 +370,7 @@ short ExTupleFlowTcb::work()
 			  }
                         else
 			  {
-			    pentry->shareDiagsAreax(da);
+			    pentry->shareDiagsArea(da);
 			    accumulatedDiagsArea = da ;
 			    if (tflowTdb().isNonFatalErrorTolerated())
 			      {
@@ -503,7 +503,7 @@ short ExTupleFlowTcb::work()
 			      }
 			    else
 			      {
-				pentry->shareDiagsAreax(da);
+				pentry->shareDiagsArea(da);
 				if (tflowTdb().isNonFatalErrorTolerated()) {
 				  ComDiagsArea *cliDiagsArea = pentry_down->getDiagsArea();
 				  da->setLengthLimit(cliDiagsArea->getLengthLimit());

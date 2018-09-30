@@ -522,7 +522,7 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
       da->decrRefCount();
     }
   else
-    up_entry->setDiagsArea(da);
+    up_entry->setDiagsAreax(da);
 
   up_entry->upState.status = ex_queue::Q_SQLERROR;
   up_entry->upState.downIndex = qparent_.down->getHeadIndex();

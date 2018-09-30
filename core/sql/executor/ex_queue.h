@@ -566,6 +566,7 @@ class ex_queue_entry
     inline ComDiagsArea    *getDiagsArea() const;
 
     inline void            setDiagsAreax(ComDiagsArea* diagsArea);
+    inline void            shareDiagsArea(ComDiagsArea* diagsArea);
 
  private:
 
@@ -641,6 +642,11 @@ inline ComDiagsArea *ex_queue_entry::getDiagsArea() const
 inline void ex_queue_entry::setDiagsAreax(ComDiagsArea* diagsArea)
 {
   atp_->setDiagsAreax(diagsArea);
+}
+
+inline void ex_queue_entry::shareDiagsArea(ComDiagsArea* diagsArea)
+{
+  atp_->shareDiagsArea(diagsArea);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -604,7 +604,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 		ComDiagsArea * diagsArea = NULL;
 		ExRaiseSqlError(getHeap(), &diagsArea,
 				(ExeErrorCode)(8102));
-		pentry_down->setDiagsArea(diagsArea);
+		pentry_down->setDiagsAreax(diagsArea);
 		step_ = HANDLE_ERROR;
 		break;
             }

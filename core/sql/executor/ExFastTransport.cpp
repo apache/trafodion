@@ -343,7 +343,7 @@ void ExFastExtractTcb::updateWorkATPDiagsArea(ComDiagsArea *da)
       else
       {
         ComDiagsArea * da1 = da;
-        workAtp_->shareDiagsAreax(da1);
+        workAtp_->shareDiagsArea(da1);
       }
     }
 }

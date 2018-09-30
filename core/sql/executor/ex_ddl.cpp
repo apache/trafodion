@@ -1198,7 +1198,7 @@ short ExDescribeTcb::work()
  	    if (diagsArea == NULL)
  	      diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
 
- 	    diagsArea->mergeAfter (*da);
+ 	    diagsArea->mergeAfter(*da);
  	    up_entry->shareDiagsArea(da);
 
  	    // insert into parent

@@ -1594,7 +1594,7 @@ ex_expr::exp_return_type reportErr(atp_struct* atp1, ex_expr* expr)
 
   diagsArea = atp1->getDiagsArea();
   ExRaiseSqlError(expr->getHeap(), &diagsArea, EXE_INTERNAL_ERROR);
-  atp1->setDiagsArea(diagsArea);
+  atp1->setDiagsAreax(diagsArea);
   return ex_expr::EXPR_ERROR;
 }
 
@@ -3062,7 +3062,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       CONV_ASCII_FLOAT64,
 		       NULL, 0);
 
-            atp1->setDiagsArea(diagsArea);
+            atp1->setDiagsAreax(diagsArea);
 
             if (er == ex_expr::EXPR_ERROR)
 	      return ex_expr::EXPR_ERROR;
@@ -3140,7 +3140,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       CONV_ASCII_F_V,
 		       NULL, 0);
 
-            atp1->setDiagsArea(diagsArea);
+            atp1->setDiagsAreax(diagsArea);
 
             if (er == ex_expr::EXPR_ERROR)
 	      return ex_expr::EXPR_ERROR;
@@ -4157,7 +4157,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
         diagsArea = atp1->getDiagsArea();
         ExRaiseSqlError(getHeap(), &diagsArea, EXE_ASSIGNING_NULL_TO_NOT_NULL);
 
-        atp1->setDiagsArea(diagsArea);
+        atp1->setDiagsAreax(diagsArea);
 
         return ex_expr::EXPR_ERROR;
       }
@@ -7652,7 +7652,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
               diagsArea = atp1->getDiagsArea();
               ExRaiseSqlError(heap_, &diagsArea, EXE_HISTORY_BUFFER_TOO_SMALL);
 
-              atp1->setDiagsArea(diagsArea);
+              atp1->setDiagsAreax(diagsArea);
 
               return ex_expr::EXPR_ERROR;
             }
@@ -7693,7 +7693,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
               diagsArea = atp1->getDiagsArea();
               ExRaiseSqlError(heap_, &diagsArea, EXE_HISTORY_BUFFER_TOO_SMALL);
               if(diagsArea != atp1->getDiagsArea())
-                atp1->setDiagsArea(diagsArea);
+                atp1->setDiagsAreax(diagsArea);
               return ex_expr::EXPR_ERROR;
             }
 
@@ -8277,7 +8277,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       ExRaiseSqlError(getHeap(), &diagsArea,
         EXE_ASSIGNING_NULL_TO_NOT_NULL);
 
-      atp1->setDiagsArea(diagsArea);
+      atp1->setDiagsAreax(diagsArea);
 
       return ex_expr::EXPR_ERROR;
     }
@@ -8297,7 +8297,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       ExRaiseSqlError(getHeap(), &diagsArea,
         EXE_ASSIGNING_NULL_TO_NOT_NULL);
 
-      atp1->setDiagsArea(diagsArea);
+      atp1->setDiagsAreax(diagsArea);
 
       return ex_expr::EXPR_ERROR;
     }
@@ -8524,7 +8524,7 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
                             pCode[4], REC_NUM_BIG_SIGNED, 0,
                             REC_BIN64_SIGNED, 0);
 
-      atp1->setDiagsArea(diagsArea);
+      atp1->setDiagsAreax(diagsArea);
 
       return ex_expr::EXPR_ERROR;
       break;
@@ -8535,7 +8535,7 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
                             pCode[5], REC_NUM_BIG_SIGNED, 0,
                             REC_NUM_BIG_SIGNED,0);
 
-      atp1->setDiagsArea(diagsArea);
+      atp1->setDiagsAreax(diagsArea);
 
       return ex_expr::EXPR_ERROR;
       break;
@@ -8543,7 +8543,7 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
     case PCIT::GENFUNC_MATTR5_MATTR5_MBIN32S_IBIN32S:
       ExRaiseFunctionSqlError(getHeap(), &diagsArea, EXE_STRING_OVERFLOW,FALSE);
 
-      atp1->setDiagsArea(diagsArea);
+      atp1->setDiagsAreax(diagsArea);
 
       return ex_expr::EXPR_ERROR;
       break;
@@ -8558,7 +8558,7 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
                       EXE_INTERNAL_ERROR);
 
 
-      atp1->setDiagsArea(diagsArea);
+      atp1->setDiagsAreax(diagsArea);
 
       return ex_expr::EXPR_ERROR;
   }
@@ -8570,7 +8570,7 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
                         op1,
                         op2);
 
-  atp1->setDiagsArea(diagsArea);
+  atp1->setDiagsAreax(diagsArea);
 
   return ex_expr::EXPR_ERROR;
 }
