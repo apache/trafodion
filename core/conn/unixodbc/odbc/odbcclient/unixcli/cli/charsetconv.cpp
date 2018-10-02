@@ -298,6 +298,10 @@ int ICUConverter::UTF8ToFromMultiByte( int direction,
 		}
 		memcpy(outputStr, inputStr, inputSize);
 		outputStr[inputSize]=0;
+        if (charCount)
+        {
+            *charCount = inputSize;
+        }
 		return inputSize;
 	}
 	
