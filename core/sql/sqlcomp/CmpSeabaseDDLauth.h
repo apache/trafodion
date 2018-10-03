@@ -78,7 +78,8 @@ class CmpSeabaseDDLauth
      virtual bool describe       (const NAString &authName, 
                                     NAString &authText);
      AuthStatus   getRoleIDs     (const Int32 authID,
-                                    std::vector<int32_t> &roleIDs);
+                                    std::vector<int32_t> &roleIDs,
+                                    std::vector<int32_t> &granteeIDs);
      NAString     getObjectName  (const std::vector <int64_t> objectUIDs);
 
      // accessors

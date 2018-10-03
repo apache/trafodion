@@ -150,8 +150,9 @@ public:
 
 
   // functions to get and set roles for the current user
-  RETCODE getRoleList(Int32  &numRoles,
-                      Int32  *&roleIDs);
+  RETCODE getRoleList(Int32  &numEntries,
+                      Int32 *& roleIDs,
+                      Int32 *& granteeIDs);
 
   RETCODE resetRoleList();
 
@@ -258,8 +259,9 @@ private:
   char *databaseUserName_;
 
   // List of active roles for the databaseUser
-  Int32  *roleIDs_;
   Int32   numRoles_;
+  Int32  *roleIDs_;
+  Int32  *granteeIDs_;
 
   NABoolean userNameChanged_;
 

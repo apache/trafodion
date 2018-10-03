@@ -679,8 +679,6 @@ public:
   NABoolean isToBeRemovedFromCacheBNC() const   /* BNC = Before Next Compilation attempt */
   {  return( (flags_ & REMOVE_FROM_CACHE_BNC) != 0 ); }
 
-  ComSecurityKeySet getSecKeySet() { return secKeySet_ ; }
-
   void setDroppableTable( NABoolean value )
   {  value ? flags_ |= DROPPABLE : flags_ &= ~DROPPABLE; }
 
@@ -917,7 +915,12 @@ public:
   NAMemory* getHeap() const { return heap_; }
   NATableHeapType getHeapType() { return heapType_; }
 
-  PrivMgrUserPrivs* getPrivInfo() const { return privInfo_; }
+  // Privilege related operations
+  PrivMgrDescList  *getPrivDescs() { return privDescs_; }
+  PrivMgrUserPrivs *getPrivInfo() const { return privInfo_; }
+  void setPrivInfo(PrivMgrUserPrivs *privInfo){ privInfo_ = privInfo; }
+  ComSecurityKeySet getSecKeySet() { return secKeySet_ ; }
+  void setSecKeySet(ComSecurityKeySet secKeySet) { secKeySet_ = secKeySet; }
 
   // Get the part of the row size that is computable with info we have available
   // without accessing HBase. The result is passed to estimateHBaseRowCount(),
@@ -1208,8 +1211,6 @@ private:
 
   char *snapshotName_;
 
-  ComSecurityKeySet secKeySet_ ;
-
   TrafDesc *partnsDesc_;
 
   TrafDesc *tableDesc_;
@@ -1242,8 +1243,14 @@ private:
   Int32 hiveDefaultStringLen_;  // in bytes
   Int32 hiveTableId_;
   
-  // Object containing info on all privileges the current user has for this table.
-  PrivMgrUserPrivs* privInfo_;
+  // Privilege information for the object
+  //   privDescs_ is the list of all grants on the object
+  //   privInfo_ are the privs for the current user
+  //   secKeySet_ are the security keys for the current user
+  PrivMgrDescList  *privDescs_;
+  PrivMgrUserPrivs *privInfo_;
+  ComSecurityKeySet secKeySet_ ;
+
   // While creating the index keys, the NAColumn from colArray_
   // is not used in all cases. Sometimes, a new NAColumn is 
   // constructured from the NAColumn. The variable below

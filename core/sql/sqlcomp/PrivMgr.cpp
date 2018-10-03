@@ -36,6 +36,7 @@
 #include "PrivMgrComponentOperations.h"
 #include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrPrivileges.h"
+#include "PrivMgrRoles.h"
 
 // Trafodion includes
 #include "ComDistribution.h"
@@ -152,6 +153,42 @@ PrivMgr::PrivMgr(const PrivMgr &other)
 PrivMgr::~PrivMgr() 
 {
   resetFlags();
+}
+
+// *****************************************************************************
+// * Method: getGranteeIDsForRoleIDs                              
+// *                                                       
+// *    Returns the grantees assigned to the passed in roles
+// *    role list
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <roleIDs>    list of roles to check
+// *  <granteeIDs> passed back the list (potentially empty) of users granted to 
+// *               the roleIDs
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: Role list returned
+// *           *: Unable to fetch granted roles, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgr::getGranteeIDsForRoleIDs(
+  const std::vector<int32_t>  & roleIDs,
+  std::vector<int32_t> & granteeIDs,
+  bool includeSysGrantor)
+{
+  std::vector<int32_t> granteeIDsForRoleIDs;
+  PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
+  if (roles.fetchGranteesForRoles(roleIDs, granteeIDsForRoleIDs, includeSysGrantor) == STATUS_ERROR)
+    return STATUS_ERROR;
+  for (size_t i = 0; i < granteeIDsForRoleIDs.size(); i++)
+  {
+     int32_t authID = granteeIDsForRoleIDs[i];
+     if (std::find(granteeIDs.begin(), granteeIDs.end(), authID) == granteeIDs.end())
+       granteeIDs.insert( std::upper_bound( granteeIDs.begin(), granteeIDs.end(), authID ), authID);
+  }
+  return STATUS_GOOD;
 }
 
 // ----------------------------------------------------------------------------

@@ -46,7 +46,9 @@
 NABoolean qiSubjectMatchesRole(uint32_t subjectKey)
 {
   NAList <Int32> roleIDs(NULL);
-  ComUser::getCurrentUserRoles(roleIDs);
+  if (ComUser::getCurrentUserRoles(roleIDs) != 0)
+    return TRUE;  // force recompilation if can't get current roles
+
   for (int i = 0; i < roleIDs.entries(); i++)
   {
     if (subjectKey = ComSecurityKey::generateHash(roleIDs[i]))
@@ -84,6 +86,7 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
     {
       // Indicates that the DDL of the object has changed. 
       case COM_QI_OBJECT_REDEF:
+
       // Indicates that the histogram statistics of the object has changed.
       case COM_QI_STATS_UPDATED:
       {
@@ -95,6 +98,10 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
       // Scan the passed-in object keys to find any that match the subject, 
       // object, and key type. That is, the subject has the privilege
       // (invalidation key type) on the object or a column of the object.
+      case COM_QI_COLUMN_SELECT:
+      case COM_QI_COLUMN_INSERT:
+      case COM_QI_COLUMN_UPDATE:
+      case COM_QI_COLUMN_REFERENCES:
       case COM_QI_OBJECT_SELECT:
       case COM_QI_OBJECT_INSERT:
       case COM_QI_OBJECT_DELETE:
@@ -117,6 +124,7 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
           }
         }
         break;
+
       case COM_QI_USER_GRANT_SPECIAL_ROLE:
       case COM_QI_USER_GRANT_ROLE:
       {
@@ -146,19 +154,36 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
 // Function that builds query invalidation keys for privileges. A separate
 // invalidation key is added for each granted DML privilege. 
 //
+// Parameters:
+//    roleGrantees - needed to create invalidation keys to represent:
+//                   all authorization ID that have been granted the role
+//    granteeID - the authID which has been granted one or more privileges
+//                could be a userID, a role the userID is granted or PUBLIC
+//    objectUID - the object (object) granted privilege
+//    privs - the list of DML privileges
+//    secKeySet - the list of invalidation keys generated
+//
+// secKeySet is a set so it automatically silently ignores duplicate entries
+//
 // Types of keys available for privs:
-//   OBJECT_IS_SCHEMA - not supported until we support schema level privs
+//   OBJECT_IS_SCHEMA - not supported
 //   OBJECT_IS_OBJECT - supported for granting privs to user
-//   OBJECT_IS_COLUMN - not supported at this time
+//     grant <priv-list> on <object> to <granteeID>
+//   OBJECT_IS_COLUMN - partially supported
+//     grant <priv-list> (col-list) on <object> to <granteeID>
 //   OBJECT_IS_SPECIAL_ROLE - key for PUBLIC authorization ID
+//     grant <priv-list> [(col-list)] on <object> to PUBLIC
 //   SUBJECT_IS_USER - support for granting roles to user
-//   SUBJECT_IS_ROLE - not supported until we grant roles to roles
+//     grant role <granteeID> to <grantRoleAuthID>
+//   SUBJECT_IS_ROLE - support for granting roles to role
+//     grant <priv-list> on <object> to <role>
 //
 // returns false is unable to build keys
 // ****************************************************************************
-bool buildSecurityKeys( const int32_t userID,
+bool buildSecurityKeys( const NAList<int32_t> &roleGrantees,
                         const int32_t granteeID,
                         const int64_t objectUID,
+                        const bool isColumn,
                         const PrivMgrCoreDesc &privs,
                         ComSecurityKeySet &secKeySet )
 {
@@ -166,7 +191,7 @@ bool buildSecurityKeys( const int32_t userID,
     return true;
 
   NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
-  std::string  msg ("Method: buildSecurityKeys: ");
+  std::string  msg ("Method: buildSecurityKeys ");
   if (doDebug)
   {
     printf("[DBUSER:%d] %s\n", (int) getpid(), msg.c_str());
@@ -191,33 +216,41 @@ bool buildSecurityKeys( const int32_t userID,
       return false;
   }
 
-  // If the grantee is a role, generate a special security key
-  // If the role is revoked from the user, this key takes affect
+  // If the grantee is a role, generate special security keys, one for
+  // the user and one for each of the user's roles. 
+  // If the role is revoked from the user these key takes affect
   if (PrivMgr::isRoleID(granteeID))
   {
-    ComSecurityKey key (userID, granteeID, ComSecurityKey::SUBJECT_IS_USER);
-    if (doDebug)
+    char buf [200];
+    for (CollIndex r = 0; r < roleGrantees.entries(); r++)
     {
-      NAString msg = key.print(userID, granteeID);
-      printf("[DBUSER:%d]   (role) %s\n",
-             (int) getpid(), msg.data());
-      fflush(stdout);
-    }
+      ComSecurityKey::QIType qiType = ComSecurityKey::SUBJECT_IS_USER;
+      ComSecurityKey key (roleGrantees[r], granteeID, qiType);
+      if (doDebug)
+      {
+        NAString msg = key.print(roleGrantees[r], granteeID);
+        printf("[DBUSER:%d]   (role) %s\n",
+               (int) getpid(), msg.data());
+        fflush(stdout);
+      }
 
-    if (key.isValid())
-     secKeySet.insert(key);
-    else
-      return false;
+      if (key.isValid())
+        secKeySet.insert(key);
+      else
+        return false;
+    }
   }
 
-  // Generate object invalidation keys
-  // Only need to generate keys for DML privileges
+  // Generate keys one per granted DML privilege
   for ( size_t i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
   {
     if ( privs.getPriv(PrivType(i)))
     {
-      ComSecurityKey key (granteeID, objectUID, PrivType(i), 
-                          ComSecurityKey::OBJECT_IS_OBJECT);
+      ComSecurityKey::QIType qiType = (isColumn) ?
+           ComSecurityKey::OBJECT_IS_COLUMN :
+           ComSecurityKey::OBJECT_IS_OBJECT;
+
+      ComSecurityKey key (granteeID, objectUID, PrivType(i), qiType);
       if (doDebug)
       {
         NAString msg = key.print(granteeID, objectUID);
@@ -270,7 +303,7 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
   if (doDebug)
   {
     sprintf(buf, ": num keys(%d)", numInvalidationKeys);
-    printf("[DBUSER:%d] Method: qiInvalidationType%s\n",
+    printf("[DBUSER:%d] Method: qiInvalidationType (what should be invalidated) %s\n",
            (int) getpid(), buf);
     fflush(stdout);
     sprintf(buf, "Not applicable");
@@ -491,14 +524,14 @@ ComQIActionType ComSecurityKey::convertBitmapToQIActionType (
     case SELECT_PRIV:
       if (inputType == OBJECT_IS_OBJECT)
         result = COM_QI_OBJECT_SELECT;
-      //else 
-      //  result = COM_QI_COLUMN_SELECT;
+      else 
+        result = COM_QI_COLUMN_SELECT;
       break;
     case INSERT_PRIV:
       if (inputType == OBJECT_IS_OBJECT)
         result = COM_QI_OBJECT_INSERT;
-      //else 
-      //  result = COM_QI_COLUMN_INSERT;
+      else 
+        result = COM_QI_COLUMN_INSERT;
       break;
     case DELETE_PRIV:
       if (inputType == OBJECT_IS_OBJECT)
@@ -507,8 +540,8 @@ ComQIActionType ComSecurityKey::convertBitmapToQIActionType (
     case UPDATE_PRIV:
       if (inputType == OBJECT_IS_OBJECT)
         result = COM_QI_OBJECT_UPDATE;
-      //else 
-      //  result = COM_QI_COLUMN_UPDATE;
+      else 
+        result = COM_QI_COLUMN_UPDATE;
       break;
     case USAGE_PRIV:
       if (inputType == OBJECT_IS_OBJECT)
@@ -517,12 +550,12 @@ ComQIActionType ComSecurityKey::convertBitmapToQIActionType (
     case REFERENCES_PRIV:
       if (inputType == OBJECT_IS_OBJECT)
         result = COM_QI_OBJECT_REFERENCES;
+      else
+        result = COM_QI_COLUMN_REFERENCES;
       break;
     case EXECUTE_PRIV:  
       if (inputType == OBJECT_IS_OBJECT)
         result = COM_QI_OBJECT_EXECUTE;
-      else if (inputType == OBJECT_IS_SCHEMA)
-        result = COM_QI_SCHEMA_EXECUTE;
       break;
     default:
       result = COM_QI_INVALID_ACTIONTYPE;
@@ -559,6 +592,18 @@ void ComSecurityKey::getSecurityKeyTypeAsLit (std::string &actionString) const
       break;
     case COM_QI_ROLE_GRANT_ROLE:
       actionString = COM_QI_ROLE_GRANT_ROLE_LIT;
+      break;
+    case COM_QI_COLUMN_SELECT:
+      actionString = COM_QI_COLUMN_SELECT_LIT;
+      break;
+    case COM_QI_COLUMN_INSERT:
+      actionString = COM_QI_COLUMN_INSERT_LIT;
+      break;
+    case COM_QI_COLUMN_UPDATE:
+      actionString = COM_QI_COLUMN_UPDATE_LIT;
+      break;
+    case COM_QI_COLUMN_REFERENCES:
+      actionString = COM_QI_COLUMN_REFERENCES_LIT;
       break;
     case COM_QI_OBJECT_SELECT:
       actionString = COM_QI_OBJECT_SELECT_LIT;
@@ -618,17 +663,17 @@ NAString ComSecurityKey::print(Int32 subjectID, Int64 objectID)
     case COM_QI_ROLE_GRANT_ROLE:
       typeString = "ROLE_GRANT_ROLE";
       break;
-    case COM_QI_SCHEMA_SELECT:
-      typeString = "SCHEMA_SELECT";
+    case COM_QI_COLUMN_SELECT:
+      typeString = "COLUMN_SELECT";
       break;
-    case COM_QI_SCHEMA_INSERT:
-      typeString = "SCHEMA_INSERT";
+    case COM_QI_COLUMN_INSERT:
+      typeString = "COLUMN_INSERT";
       break;
-    case COM_QI_SCHEMA_DELETE:
-      typeString = "SCHEMA_DELETE";
+    case COM_QI_COLUMN_UPDATE:
+      typeString = "COLUMN_UPDATE";
       break;
-    case COM_QI_SCHEMA_UPDATE:
-      typeString = "SCHEMA_UPDATE";
+    case COM_QI_COLUMN_REFERENCES:
+      typeString = "COLUMN_REFERENCES";
       break;
     case COM_QI_OBJECT_SELECT:
       typeString = "OBJECT_SELECT";

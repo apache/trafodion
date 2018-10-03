@@ -1111,7 +1111,7 @@ class ComTdbVirtTablePrivInfo : public ComTdbVirtTableBase
 
   virtual Int32 size() { return sizeof(ComTdbVirtTablePrivInfo);}
 
-  NAList<PrivMgrDesc>     *privmgr_desc_list;     
+  PrivMgrDescList         *privmgr_desc_list;     
 };
 
 class ComTdbVirtTableLibraryInfo : public ComTdbVirtTableBase

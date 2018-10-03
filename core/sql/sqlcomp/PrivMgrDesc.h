@@ -580,6 +580,36 @@ private:
 };
 
 
+/* *******************************************************************
+ * Class PrivMgrDescList -- A list of PrivMgrDesc pointers
+ * ****************************************************************** */
+
+class PrivMgrDescList : public LIST(PrivMgrDesc *)
+{
+  public:
+
+  // constructor
+  PrivMgrDescList(CollHeap *heap)
+   : LIST(PrivMgrDesc *)(heap),
+     heap_(heap)
+  {}
+
+  // virtual destructor
+  virtual ~PrivMgrDescList()
+  {
+    for (CollIndex i = 0; i < entries(); i++)
+      NADELETE(operator[](i), PrivMgrDesc, heap_);
+    clear();
+  }
+
+  CollHeap *getHeap() { return heap_; }
+
+  private:
+
+  CollHeap *heap_;
+
+}; // class PrivMgrDescList
+
 
 
 #endif // PRIVMGR_DESC_H

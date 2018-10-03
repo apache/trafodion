@@ -1309,6 +1309,10 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
                      , COM_QI_OBJECT_REDEF
                      , COM_QI_STATS_UPDATED
                      , COM_QI_GRANT_ROLE
+                     , COM_QI_COLUMN_SELECT
+                     , COM_QI_COLUMN_INSERT
+                     , COM_QI_COLUMN_UPDATE
+                     , COM_QI_COLUMN_REFERENCES
                      } ;
 
 #define COM_QI_INVALID_ACTIONTYPE_LIT  "  "
@@ -1332,6 +1336,11 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
 #define COM_QI_OBJECT_REDEF_LIT        "OR"
 #define COM_QI_STATS_UPDATED_LIT       "US"
 #define COM_QI_GRANT_ROLE_LIT          "GG"
+#define COM_QI_COLUMN_SELECT_LIT       "CS"
+#define COM_QI_COLUMN_INSERT_LIT       "CI"
+#define COM_QI_COLUMN_UPDATE_LIT       "CU"
+#define COM_QI_COLUMN_REFERENCES_LIT   "CF"
+
 
 
 

@@ -110,11 +110,6 @@ public:
   // -------------------------------------------------------------------
   // Public functions:
   // -------------------------------------------------------------------
-   PrivStatus buildSecurityKeys(
-      const int32_t granteeID, 
-      const PrivMgrCoreDesc &privs,
-      std::vector <ComSecurityKey *> & secKeySet);
-      
    PrivStatus getGrantorDetailsForObject(
       const bool isGrantedBySpecified,
       const std::string grantedByName,
@@ -135,8 +130,7 @@ public:
       const int64_t objectUID,
       ComObjectType objectType,
       const int32_t userID,
-      PrivMgrDesc &privsForTheUser,
-      std::vector <ComSecurityKey *>* secKeySet);
+      PrivMgrDesc &privsForTheUser);
 
    PrivStatus getPrivRowsForObject(
       const int64_t objectUID,
@@ -243,8 +237,7 @@ protected:
      const int32_t grantee,
      const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
-     bool & hasManagePrivileges,
-     std::vector <ComSecurityKey *>* secKeySet = NULL
+     bool & hasManagePrivileges
      );
           
    PrivStatus getUserPrivs(
@@ -252,8 +245,7 @@ protected:
      const int32_t grantee,
      const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
-     bool & hasManagePrivileges,
-     std::vector <ComSecurityKey *>* secKeySet = NULL
+     bool & hasManagePrivileges
      );
      
 private: 
@@ -359,16 +351,11 @@ private:
     const int32_t granteeID,
     const bool isObjectTable,
     const std::vector<int32_t> & roleIDs,
-    std::vector<PrivMgrMDRow *> &rowList,
-    std::vector <ComSecurityKey *>* secKeySet); 
+    std::vector<PrivMgrMDRow *> &rowList);
     
   void getTreeOfGrantors(
     const int32_t granteeID,
     std::set<int32_t> &listOfGrantors);
-
-  PrivStatus getUserIDsForRoleIDs(
-    const std::vector<int32_t> & roleIDs,
-    std::vector<int32_t> & userIDs);
 
   PrivStatus givePriv(
      const int32_t currentOwnerID,

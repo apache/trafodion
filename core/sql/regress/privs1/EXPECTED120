@@ -583,11 +583,13 @@ End of MXCI Session
 >>--   AR - role involved, check query plans that rely on roles during revoke
 >>log;
 Query_Invalidation_Keys explain output for select_games, select_teams, insert_teams, update_teams, select_players, select_standings: 
-Query_Invalidation_Keys{,,OS}{,,UR}
+Query_Invalidation_Keys{,,CS}{,,
+UR}{,,CS}{,
+,UR}
 Query_Invalidation_Keys{,,OS}
 Query_Invalidation_Keys{,,OI}{,,UR}
 Query_Invalidation_Keys{,,OS}{,,
-OU}{,,UR}
+CU}{,,UR}
 Query_Invalidation_Keys{,,OS}
 Query_Invalidation_Keys{,,OS}{,,
 OG}{,,UR}
@@ -799,8 +801,12 @@ SQL_USER3
 
 End of MXCI Session
 
->>-- still have privilege
+>>-- still have privilege but recompile because of revoke on t120_role2
 >>execute select_teams;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
 
 TEAM_NUMBER  TEAM_NAME           
 -----------  --------------------
@@ -1274,7 +1280,8 @@ End of MXCI Session
 --- SQL command prepared.
 >>log;
 Query_Invalidation_Keys explain output for select_stats: 
-Query_Invalidation_Keys{,,OS}{,,UZ}
+Query_Invalidation_Keys{,,CS}{,,
+UR}{,,UZ}
 >>shecho"Query_Invalidation_Keysexplainoutputforselect_stats:">>LOG;
 >>
 >>execute select_stats;

@@ -145,7 +145,7 @@ public:
   inline const ComString        &getSignature()            const { return signature_; }
   inline const ComObjectName    &getLibrarySqlName()       const { return librarySqlName_; }
   inline const QualifiedName    &getSqlName()              const { return name_; }  
-  inline       ComSecurityKeySet getSecKeySet()                  { return routineSecKeySet_ ; }
+  inline       ComSecurityKeySet getSecKeySet()                  { return secKeySet_ ; }
   inline const Int64             getRoutineID()            const { return objectUID_; }
   inline const Int32              getStateAreaSize()        const { return stateAreaSize_; }
   inline const NAString         &getDllName()              const { return dllName_; }
@@ -174,6 +174,7 @@ public:
   inline Int32                        getActionPosition() const { return actionPosition_; }
 
   inline PrivMgrUserPrivs *              getPrivInfo()    const { return privInfo_; }
+  inline PrivMgrDescList  *              getPrivDescs()   const { return privDescs_; }
   inline Int32                           getObjectOwner() const { return objectOwner_; }
   inline Int32                           getSchemaOwner() const { return schemaOwner_; }
 
@@ -205,7 +206,9 @@ public:
   inline NABoolean hasResultSets()        const { return (maxResults_ > 0); }
 
 
-  void getPrivileges(TrafDesc * priv_desc);
+  void setPrivInfo(PrivMgrUserPrivs *privInfo) { privInfo_ = privInfo; }
+  void setPrivDescs(PrivMgrDescList *privDescs) { privDescs_ = privDescs; }
+  void getPrivileges(TrafDesc * priv_desc, BindWA * bindWA);
 
   // -------------------------------------------------------------------
   // Standard operators
@@ -258,7 +261,6 @@ private:
   NABoolean            isExtraCall_;
   NABoolean            hasOutParams_;
 
-  ComSecurityKeySet    routineSecKeySet_ ;
 
   Int64                objectUID_;
   NABoolean            isUniversal_;
@@ -283,7 +285,10 @@ private:
   COM_VERSION          schemaVersionOfRoutine_;
   Int32                objectOwner_;
   Int32                schemaOwner_;
+
+  PrivMgrDescList     *privDescs_;
   PrivMgrUserPrivs    *privInfo_;
+  ComSecurityKeySet    secKeySet_ ;
 
 };
 

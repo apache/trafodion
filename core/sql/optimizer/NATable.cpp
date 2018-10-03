@@ -4981,6 +4981,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
      hiveTableId_(-1),
      tableDesc_(inTableDesc),
      privInfo_(NULL),
+     privDescs_(NULL),
      secKeySet_(heap),
      newColumns_(heap),
      snapshotName_(NULL),
@@ -5713,6 +5714,7 @@ NATable::NATable(BindWA *bindWA,
        tableDesc_(NULL),
        secKeySet_(heap),
        privInfo_(NULL),
+       privDescs_(NULL),
        newColumns_(heap),
        snapshotName_(NULL),
        allColFams_(heap)
@@ -6792,10 +6794,12 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
     return;
   }
 
+  Int32 currentUser (ComUser::getCurrentUser());
+
   // Generally, if the current user is the object owner, then the automatically
   // have all privs.  However, if this is a shared schema then views can be
   // owned by the current user but not have all privs
-  if (ComUser::getCurrentUser() == owner_ && objectType_ != COM_VIEW_OBJECT)
+  if (currentUser == owner_ && objectType_ != COM_VIEW_OBJECT)
   {
     privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
@@ -6805,46 +6809,94 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
   ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
   {
-    if (isHiveTable() || isHbaseCellTable() ||
-        isHbaseRowTable() || isHbaseMapTable())
+    if (!isSeabaseTable())
       readPrivileges();
     else
+    {
       privInfo_ = NULL;
-    return;
+      return;
+    }
   }
   else
   {
     // get roles granted to current user 
-    // SQL_EXEC_GetRoleList returns the list of roles from the CliContext
-    std::vector<int32_t> myRoles;
-    Int32 numRoles = 0;
-    Int32 *roleIDs = NULL;
-    if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1034);
+    NAList <Int32> roleIDs(heap_);
+    if (ComUser::getCurrentUserRoles(roleIDs) != 0)
       return;
-    }
+
+    Int32 numRoles = roleIDs.entries();
 
     // At this time we should have at least one entry in roleIDs (PUBLIC_USER)
-    CMPASSERT (roleIDs && numRoles > 0);
+    CMPASSERT (numRoles > 0);
 
-    for (Int32 i = 0; i < numRoles; i++)
-      myRoles.push_back(roleIDs[i]);
+    // (PrivMgrUserPrivs)  privInfo_ are privs for the current user
+    // (PrivMgrDescList)   privDescs_ are all privs for the object
+    // (TrafPrivDesc)      priv_desc are all object privs in TrafDesc form
+    //                     created by CmpSeabaseDDL::getSeabasePrivInfo
+    //                     before the NATable entry is constructed
+    // (ComSecurityKeySet) secKeySet_ are the qi keys for the current user
 
-    // Build privInfo_ based on the priv_desc
-    privInfo_ = new(heap_) PrivMgrUserPrivs;
-    privInfo_->initUserPrivs(myRoles, priv_desc, 
-                             ComUser::getCurrentUser(), 
-                             objectUID_.get_value(), secKeySet_);
-  }
-
-
-  if (privInfo_ == NULL)
+    // Convert priv_desc into a list of PrivMgrDesc (privDescs_)
+    privDescs_ = new (heap_) PrivMgrDescList(heap_); //initialize empty list
+    TrafDesc *priv_grantees_desc = priv_desc->privDesc()->privGrantees;
+    while (priv_grantees_desc)
     {
-      *CmpCommon::diags() << DgSqlCode(-1034);
-      return;
+      PrivMgrDesc *privs = new (heap_) PrivMgrDesc(priv_grantees_desc->privGranteeDesc()->grantee);
+      TrafDesc *objectPrivs = priv_grantees_desc->privGranteeDesc()->objectBitmap;
+      PrivMgrCoreDesc objectDesc(objectPrivs->privBitmapDesc()->privBitmap,
+                                 objectPrivs->privBitmapDesc()->privWGOBitmap);
+
+      TrafDesc *priv_grantee_desc = priv_grantees_desc->privGranteeDesc();
+      TrafDesc *columnPrivs = priv_grantee_desc->privGranteeDesc()->columnBitmaps;
+      NAList<PrivMgrCoreDesc> columnDescs(heap_);
+      while (columnPrivs)
+      {
+        PrivMgrCoreDesc columnDesc(columnPrivs->privBitmapDesc()->privBitmap,
+                                   columnPrivs->privBitmapDesc()->privWGOBitmap,
+                                   columnPrivs->privBitmapDesc()->columnOrdinal);
+        columnDescs.insert(columnDesc);
+        columnPrivs = columnPrivs->next;
+      }
+
+      privs->setTablePrivs(objectDesc);
+      privs->setColumnPrivs(columnDescs);
+
+      privs->setHasPublicPriv(ComUser::isPublicUserID(privs->getGrantee()));
+
+      privDescs_->insert(privs);
+      priv_grantees_desc = priv_grantees_desc->next;
     }
 
+    // Generate privInfo_ and secKeySet_ for current user from privDescs_
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
+    privInfo_->initUserPrivs(roleIDs,
+                             privDescs_,
+                             currentUser,
+                             objectUID_.get_value(),
+                             &secKeySet_);
+
+    if (privInfo_ == NULL)
+    {
+      if (!CmpCommon::diags()->containsError(-1034))
+        *CmpCommon::diags() << DgSqlCode(-1034);
+      return;
+    }
+  }
+
+  // log privileges enabled for table
+  Int32 len = 500;
+  char msg[len];
+  std::string privDetails = privInfo_->print();
+  snprintf(msg, len, "NATable::getPrivileges (list of all privileges on object), user: %s obj %s, %s",
+          ComUser::getCurrentUsername(),
+          qualifiedName_.getExtendedQualifiedNameAsString().data(),
+          privDetails.c_str());
+  QRLogger::log(CAT_SQL_EXE, LL_DEBUG, "%s", msg);
+  if (getenv("DBUSER_DEBUG"))
+  {
+    printf("[DBUSER:%d] %s\n", (int) getpid(), msg);
+    fflush(stdout);
+  }
 }
 
 // Call privilege manager to get privileges and security keys
@@ -6879,8 +6931,10 @@ void NATable::readPrivileges ()
   std::vector <ComSecurityKey *> secKeyVec;
 
   if (testError || (STATUS_GOOD !=
-                    privInterface.getPrivileges((NATable *)this,
-                                                ComUser::getCurrentUser(), *privInfo_, &secKeyVec)))
+    privInterface.getPrivileges((NATable *)this,
+                                 ComUser::getCurrentUser(),
+                                 *privInfo_, &secKeySet_)))
+
     {
       if (testError)
 #ifndef NDEBUG

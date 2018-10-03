@@ -32,7 +32,6 @@ sh sqlci -i "TEST129(step3)" -u sql_user3;
 sh sqlci -i "TEST129(step4)" -u sql_user3;
 sh sqlci -i "TEST129(step5)" -u sql_user4;
 sh sqlci -i "TEST129(step6)" -u sql_user4;
-sh sqlci -i "TEST129(step7)" -u sql_user4;
 sh sqlci -i "TEST129(invalidate)" -u sql_user1;
 
 obey TEST129(clean_up);
@@ -44,7 +43,6 @@ drop schema us4 cascade;
 
 ?section setup
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
-cqd CAT_TEST_BOOL 'ON';
 log LOG129 clear;
 log LOG129;
 create schema us4;
@@ -123,9 +121,9 @@ insert into t3 values (1,2,3,4), (5,6,7,8);
 insert into t4 values (11,22,33,44), (55,66,77,88);
 
 ?section step1
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- As user1, should fail
+get privileges for user sql_user1;
 select * from us4.t1 ;
 delete from us4.t1;
 insert into us4.t1 values (1,1,1);
@@ -140,17 +138,17 @@ insert into us4.t2 values (5,5,5);
 update us4.v1 set vc1 = vc1 ;
 insert into us4.v1(vc1) values (10) ;
 
-delete all from table(querycache()) ;
-delete all from table(natablecache());
-select * from table(querycacheentries());
-select * from table(natablecache()) ;
+delete all from table(querycache('user', 'local')) ;
+select count(*) from table(querycacheentries('user', 'local'));
+delete all from table (natablecache());
+--select context, num_entries from table(natablecache('all','local')) ;
 
 log;
 
 ?section step2
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- As user2, should fail
+get privileges for user sql_user2;
 delete from us4.t1 ;
 insert into us4.t1 values (1,1,1);
 select * from us4.v1 ;
@@ -164,9 +162,9 @@ insert into us4.t2(a,b) values (1,1);
 log;
 
 ?section step3
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- as user3
+get privileges for user sql_user3;
 insert into us4.t2(a,b) values (2,2) ;
 update us4.t1 set col2 = col1;
 
@@ -202,11 +200,11 @@ select * from us4.t1 ;
 log;
 
 ?section step4
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- Testing create view based on column-level SELECT
 -- as user3
 
+get privileges for user sql_user3; 
 set schema cat.us4;
 
 -- View on single table (positive):
@@ -253,12 +251,12 @@ create view v34bh as select b,h from t3,t4;
 log;
 
 ?section step5
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- Testing revoke for column-level SELECT
 -- as user4
 
 set schema us4;
+get privileges for user sql_user4;
 
 grant select (b,d) on t3 to sql_user3 with grant option;
 grant select (f,g) on t4 to sql_user3;
@@ -278,8 +276,8 @@ revoke grant option for select (b) on t3 from sql_user3 cascade;
 showddl t3;
 
 ?section step6
-cqd CAT_TEST_BOOL 'ON';
 set schema us4;
+get privileges for user sql_user4;
 
 -- Testing other variations of column level
 
@@ -306,9 +304,9 @@ revoke select (a) on t1 from sql_user5 cascade;
 showddl t1;
 
 ?section invalidate
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- as user1
+get privileges for user sql_user1;
 
 cqd query_cache '0' ;
 cqd metadata_cache_size '0' ;
@@ -325,12 +323,12 @@ prepare s1 from select * from us4.t129_a ;
 
 cqd metadata_cache_size reset ;
 
-select case when current_cache_size > 0 then 1 else 0 end from table(natablecache());
+select case when current_cache_size > 0 then 1 else 0 end from table(natablecache('all', 'local'));
 
 --should error but place t129_a in natable cache
 prepare s1 from select * from us4.t129_a where c1 > 10;
 
-select case when current_cache_size > 0 then 1 else 0 end from table(natablecache());
+select case when current_cache_size > 0 then 1 else 0 end from table(natablecache('all', 'local'));
 
 sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4; 
 
@@ -421,22 +419,18 @@ log ;
 exit ;
 
 ?section revoke1
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 revoke select on us4.t129_a from sql_user1 ;
 
 ?section grant1
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 grant select on us4.t129_a to sql_user1 ;
 
 ?section grant2
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 grant select on us4.t129_a to sql_user2 ;
 
 ?section grant3
-cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 grant select on us4.t129_a to sql_user3 ;
 

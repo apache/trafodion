@@ -536,9 +536,10 @@ Int32 SQLCLI_GetAuthState (
 
 Lng32 SQLCLI_GetRoleList(
    CliGlobals *cliGlobals,
-   Int32 &numRoles,
-   Int32 *&roleIDs);
-                         
+   Int32 &numEntries,
+   Int32 *& roleIDs,
+   Int32 *& granteeIDs);
+
 Lng32 SQLCLI_ResetRoleList (
     /*IN*/            CliGlobals *cliGlobals);
 

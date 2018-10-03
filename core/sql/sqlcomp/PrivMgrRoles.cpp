@@ -580,7 +580,7 @@ bool PrivMgrRoles::dependentObjectsExist(
 
 // *****************************************************************************
 // *                                                                           *
-// * Function: PrivMgrRoles::fetchRolesForUser                                 *
+// * Function: PrivMgrRoles::fetchRolesForAuth                                 *
 // *                                                                           *
 // *    Returns all unique roles granted to an authorization ID.  If a role is *
 // * granted more than once, it is only returned one time.  If one or more of  *
@@ -615,24 +615,22 @@ bool PrivMgrRoles::dependentObjectsExist(
 // *              error.  The error is put into the diags area.                *
 // *                                                                           *
 // *****************************************************************************
-PrivStatus PrivMgrRoles::fetchRolesForUser(
+PrivStatus PrivMgrRoles::fetchRolesForAuth(
    const int32_t authID,
    std::vector<std::string> & roleNames,
    std::vector<int32_t> & roleIDs,
-   std::vector<int32_t> & grantDepths)
-
+   std::vector<int32_t> & grantDepths,
+   std::vector<int32_t> & grantees)
 {
-
-std::string whereClause(" WHERE GRANTEE_ID = ");
-
+   std::string whereClause(" WHERE GRANTEE_ID = ");
    whereClause += authIDToString(authID);
-   
-std::vector<MyRow> rows;
-MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-std::string orderByClause(" ORDER BY ROLE_ID");
+   std::vector<MyRow> rows;
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
+   std::string orderByClause(" ORDER BY ROLE_ID");
+
+   PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
    
    if (privStatus != STATUS_GOOD && privStatus != STATUS_WARNING)
       return privStatus;
@@ -641,28 +639,24 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
    {
       MyRow &row = rows[r];
       
-      if (hasValue(roleIDs,row.roleID_))
+      if (hasValue(roleIDs,row.roleID_) &&
+          hasValue(grantees, row.granteeID_))
       {
          if (grantDepths.back() == 0)
             grantDepths.back() = row.grantDepth_;
          continue;
       }
-      roleNames.push_back(row.granteeName_);
+      roleNames.push_back(row.roleName_);
       roleIDs.push_back(row.roleID_);
+      grantees.push_back(row.granteeID_);
       grantDepths.push_back(row.grantDepth_);
    }
 
    return STATUS_GOOD;
-
 }
-//****************** End of PrivMgrRoles::fetchRolesForUser ********************
+//****************** End of PrivMgrRoles::fetchRolesForAuth ********************
 
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgrRoles::fetchUsersForRole                                 *
-// *                                                                           *
-// *    Returns all grantees of a role.                                        *
-// *                                                                           *
+
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
@@ -688,45 +682,42 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
 // *              A CLI error is put into the diags area.                      *
 // *                                                                           *
 // *****************************************************************************
-PrivStatus PrivMgrRoles::fetchUsersForRole(
+
+PrivStatus PrivMgrRoles::fetchGranteesForRole(
    const int32_t roleID,
    std::vector<std::string> & granteeNames,
    std::vector<int32_t> & grantorIDs,
    std::vector<int32_t> & grantDepths)
-
 {
-
-std::string whereClause(" WHERE ROLE_ID = ");
-
+  std::string whereClause(" WHERE ROLE_ID = ");
    whereClause += authIDToString(roleID);
-   
-std::vector<MyRow> rows;
-MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-std::string orderByClause(" ORDER BY GRANTEE_NAME");
+  std::vector<MyRow> rows;
+  MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
-   
+  std::string orderByClause(" ORDER BY GRANTEE_NAME");
+
+  PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
+
    if (privStatus != STATUS_GOOD && privStatus != STATUS_WARNING)
       return privStatus;
-   
+
    for (size_t r = 0; r < rows.size(); r++)
    {
       MyRow &row = rows[r];
-      
+
       granteeNames.push_back(row.granteeName_);
       grantorIDs.push_back(row.grantorID_);
       grantDepths.push_back(row.grantDepth_);
    }
 
    return STATUS_GOOD;
-
 }
-//****************** End of PrivMgrRoles::fetchUsersForRole ********************
+//**************** End of PrivMgrRoles::fetchGranteesForRole *******************
 
 // *****************************************************************************
 // *                                                                           *
-// * Function: PrivMgrRoles::fetchUsersForRoles                                *
+// * Function: PrivMgrRoles::fetchGranteesForRoles                             *
 // *                                                                           *
 // *    Returns all users granted the list of roles                            *
 // *                                                                           *
@@ -737,30 +728,34 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
 // *  <roleIDs>                       const std::vector<int32_t> &    In       *
 // *    is a list of roles.                                                    *
 // *                                                                           *
-// *  <userIDs>                       std::vector<std::int32_t> &     Out      *
-// *    passes back a list of user grantees for the roles.                     *
+// *  <granteeIDs>                    std::vector<std::int32_t> &     Out      *
+// *    passes back a list of user and group grantees for the roles.           *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
 // * Returns: PrivStatus                                                       *
 // *                                                                           *
-// *   STATUS_GOOD: Zero or more userIDs were returned                         *
+// *   STATUS_GOOD: Zero or more granteeIDs were returned                      *
 // *             *: Grants for roles were not returned due to SQL error.       *
 // *                A CLI error is put into the diags area.                    *
 // *                                                                           *
 // *****************************************************************************
-PrivStatus PrivMgrRoles::fetchUsersForRoles(
-   const std::vector<int32_t> & userIDs,
-   std::vector<std::int32_t> & granteeIDs)
+PrivStatus PrivMgrRoles::fetchGranteesForRoles(
+   const std::vector<int32_t> & roleIDs,
+   std::vector<std::int32_t> & granteeIDs,
+   bool includeSysGrantor)
 {
    std::string whereClause(" WHERE ROLE_ID IN( ");
-   for (size_t i = 0; i < userIDs.size(); i++)
+   for (size_t i = 0; i < roleIDs.size(); i++)
    {
       if (i > 0)
         whereClause += ", ";
-      whereClause += authIDToString(userIDs[i]);
+      whereClause += authIDToString(roleIDs[i]);
    }
    whereClause += ")";
+
+   if (!includeSysGrantor)
+     whereClause += " AND GRANTOR_ID <> -2 ";
    std::string orderByClause(" ORDER BY GRANTEE_ID");
 
    std::vector<MyRow> rows;
@@ -775,14 +770,13 @@ PrivStatus PrivMgrRoles::fetchUsersForRoles(
       MyRow &row = rows[r];
 
       if (CmpSeabaseDDLauth::isUserID(row.granteeID_))
-         granteeIDs.push_back(row.granteeID_);
+         if (row.grantorID_ != SYSTEM_USER)
+           granteeIDs.push_back(row.granteeID_);
    }
 
    return STATUS_GOOD;
 }
-//****************** End of PrivMgrRoles::fetchUsersForRole ********************
-
-
+//**************** End of PrivMgrRoles::fetchGranteesForRoles ******************
 
 // *****************************************************************************
 // *                                                                           *
