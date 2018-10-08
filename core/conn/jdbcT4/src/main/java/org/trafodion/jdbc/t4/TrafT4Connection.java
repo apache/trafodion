@@ -183,7 +183,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		validateConnection();
 
 		try {
-			return new TrafT4Statement(this);
+            if (props_.isAllowMultiQueries()) {
+                return new TrafT4MultiQueriesStatement(this);
+            } else {
+                return new TrafT4Statement(this);
+            }
 		} catch (SQLException se) {
 			performConnectionErrorChecks(se);
 			throw se;
@@ -774,9 +778,12 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 				}
 			}
 
-			stmt = new TrafT4PreparedStatement(this, sql);
-
-			stmt.prepare(stmt.sql_, stmt.queryTimeout_, stmt.resultSetHoldability_);
+            if (props_.isAllowMultiQueries()) {
+                stmt = new TrafT4MultiQueriesPreparedStatement(this, sql);
+            } else {
+                stmt = new TrafT4PreparedStatement(this, sql);
+                stmt.prepare(stmt.sql_, stmt.queryTimeout_, stmt.resultSetHoldability_);
+            }
 
 			if (isStatementCachingEnabled()) {
 				addPreparedStatement(this, sql, stmt, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,

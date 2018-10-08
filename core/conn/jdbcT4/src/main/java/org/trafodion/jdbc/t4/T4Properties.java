@@ -173,6 +173,8 @@ public class T4Properties {
 	//TCP Nagle's algorithm 
 	private boolean _tcpNoDelay = true;
 
+	private boolean allowMultiQueries = false;
+
 	// -----------------------------------------------------------
 	//
 	// The following static members and static block are ment to
@@ -435,9 +437,10 @@ public class T4Properties {
 
         setLobChunkSize(getProperty("lobChunkSize"));
         setUseLobHandle(getProperty("useLobHandle"));
+        setAllowMultiQueries(getProperty("allowMultiQueries"));
 	}
 
-	T4Properties getT4Properties() {
+    T4Properties getT4Properties() {
 		return this;
 	}
 
@@ -532,6 +535,7 @@ public class T4Properties {
         props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
         props.setProperty("useLobHandle", String.valueOf(useLobHandle_));
 
+        props.setProperty("allowMultiQueries", String.valueOf(allowMultiQueries));
 		return props;
 	}
 
@@ -1960,19 +1964,19 @@ public class T4Properties {
 
 	/**
 	 * Returns the rounding mode set for the driver as an Integer value with one
-	 * of the following values. static int ROUND_CEILING Rounding mode to round
-	 * towards positive infinity. static int ROUND_DOWN Rounding mode to round
-	 * towards zero. static int ROUND_FLOOR Rounding mode to round towards
-	 * negative infinity. static int ROUND_HALF_DOWN Rounding mode to round
-	 * towards "nearest neighbor" unless both neighbors are equidistant, in
-	 * which case round down. static int ROUND_HALF_EVEN Rounding mode to round
-	 * towards the "nearest neighbor" unless both neighbors are equidistant, in
-	 * which case, round towards the even neighbor. static int ROUND_HALF_UP
-	 * Rounding mode to round towards "nearest neighbor" unless both neighbors
-	 * are equidistant, in which case round up. static int ROUND_UNNECESSARY
-	 * Rounding mode to assert that the requested operation has an exact result,
-	 * hence no rounding is necessary. static int ROUND_UP Rounding mode to
-	 * round away from zero.
+	 * of the following values.
+	 * static int ROUND_CEILING Rounding mode to round towards positive infinity.
+	 * static int ROUND_DOWN Rounding mode to round towards zero.
+	 * static int ROUND_FLOOR Rounding mode to round towards negative infinity.
+	 * static int ROUND_HALF_DOWN Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, 
+	 *     in which case round down.
+	 * static int ROUND_HALF_EVEN Rounding mode to round towards the "nearest neighbor" unless both neighbors are equidistant,
+	 *     in which case, round towards the even neighbor.
+	 * static int ROUND_HALF_UP Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant,
+	 *     in which case round up.
+	 * static int ROUND_UNNECESSARY Rounding mode to assert that the requested operation has an exact result,
+	 *     hence no rounding is necessary.
+	 * static int ROUND_UP Rounding mode to round away from zero.
 	 */
 	int getRoundingMode() {
 		return roundMode_;
@@ -2589,6 +2593,20 @@ public class T4Properties {
     Properties getClientInfoProperties() {
         return this.clientInfoProp;
     }
-	
-	
+
+    public boolean isAllowMultiQueries() {
+        return allowMultiQueries;
+    }
+
+    public void setAllowMultiQueries(boolean allowMultiQueries) {
+        this.allowMultiQueries = allowMultiQueries;
+    }
+
+    private void setAllowMultiQueries(String property) {
+        if (property != null && property.length()>0){
+            setAllowMultiQueries(Boolean.valueOf(property));
+        }else{
+            setAllowMultiQueries(false);
+        }
+    }
 }

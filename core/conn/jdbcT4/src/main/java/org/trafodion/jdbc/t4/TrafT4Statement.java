@@ -349,9 +349,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 
 			validateExecDirectInvocation();
 			if ((batchCommands_ == null) || (batchCommands_.isEmpty())) {
-				return new int[]
-
-				{};
+                return new int[] {};
 			}
 
 			for (i = 0; i < batchCommands_.size(); i++) {
@@ -1299,7 +1297,9 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 	 * * For closing statements using label.
 	 */
 	TrafT4Statement(TrafT4Connection connection, String stmtLabel) throws SQLException {
-		if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+	    this(connection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT, stmtLabel);
+	    if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection.props_, connection, stmtLabel);
 			connection.props_.t4Logger_.logp(Level.FINE, "TrafT4Statement", "<init>", "", p);
 		}
@@ -1313,31 +1313,12 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			String temp = lf.format(lr);
 			connection.props_.getLogWriter().println(temp);
 		}
-		int hashcode;
-
-		connection_ = connection;
-		operationID_ = -1;
-
-		resultSetType_ = ResultSet.TYPE_FORWARD_ONLY;
-		resultSetConcurrency_ = ResultSet.CONCUR_READ_ONLY;
-		resultSetHoldability_ = TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT;
-		queryTimeout_ = connection_.getServerHandle().getQueryTimeout();
-
-		stmtLabel_ = stmtLabel;
-		fetchSize_ = TrafT4ResultSet.DEFAULT_FETCH_SIZE;
-		maxRows_ = 0;
-		fetchDirection_ = ResultSet.FETCH_FORWARD;
-		pRef_ = new WeakReference(this, connection_.refStmtQ_);
-		ist_ = new InterfaceStatement(this);
-		connection_.addElement(pRef_, stmtLabel_);
-
-		resultSet_ = new TrafT4ResultSet[1];
-		initResultSets();
 	}
 
 	TrafT4Statement(TrafT4Connection connection) throws SQLException {
-		this(connection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT);
-		if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+        this(connection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT, null);
+        if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection.props_, connection);
 			connection.props_.t4Logger_.logp(Level.FINE, "TrafT4Statement", "<init>",
 					"Note, this constructor was called before the previous constructor", p);
@@ -1352,13 +1333,10 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			String temp = lf.format(lr);
 			connection.props_.getLogWriter().println(temp);
 		}
-		resultSet_ = new TrafT4ResultSet[1];
-		roundingMode_ = connection_.props_.getRoundingMode();
-		initResultSets();
 	}
 
 	TrafT4Statement(TrafT4Connection connection, int resultSetType, int resultSetConcurrency) throws SQLException {
-		this(connection, resultSetType, resultSetConcurrency, TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		this(connection, resultSetType, resultSetConcurrency, TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT, null);
 		if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection.props_, connection, resultSetType,
 					resultSetConcurrency);
@@ -1376,9 +1354,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			String temp = lf.format(lr);
 			connection.props_.getLogWriter().println(temp);
 		}
-		resultSet_ = new TrafT4ResultSet[1];
-		roundingMode_ = connection_.props_.getRoundingMode();
-		initResultSets();
 	}
 	TrafT4Statement(TrafT4Connection connection, int resultSetType, int resultSetConcurrency, int resultSetHoldability,
 			String stmtLabel) throws SQLException {
@@ -1398,40 +1373,40 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			String temp = lf.format(lr);
 			connection.props_.getLogWriter().println(temp);
 		}
-		int hashcode;
-
-		connection_ = connection;
-		operationID_ = -1;
-
 		if (resultSetType != ResultSet.TYPE_FORWARD_ONLY && resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE
-				&& resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"invalid_resultset_type", null);
+		        && resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE) {
+		    throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+		            "invalid_resultset_type", null);
+		}
+		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY && resultSetConcurrency != ResultSet.CONCUR_UPDATABLE) {
+		    throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+		            "invalid_resultset_concurrency", null);
+		}
+		if ((resultSetHoldability != 0) && (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
+		        && (resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT)) {
+		    throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_holdability",
+		            null);
 		}
 
 		if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
-			resultSetType_ = ResultSet.TYPE_SCROLL_INSENSITIVE;
-			connection_.setSQLWarning(null, "scrollResultSetChanged", null);
-			//setSQLWarning(null, "scrollResultSetChanged", null);
+		    resultSetType_ = ResultSet.TYPE_SCROLL_INSENSITIVE;
+		    connection_.setSQLWarning(null, "scrollResultSetChanged", null);
+		    //setSQLWarning(null, "scrollResultSetChanged", null);
 		} else {
-			resultSetType_ = resultSetType;
+		    resultSetType_ = resultSetType;
 		}
-		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY && resultSetConcurrency != ResultSet.CONCUR_UPDATABLE) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"invalid_resultset_concurrency", null);
-		}
-
-		if ((resultSetHoldability != 0) && (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
-				&& (resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT)) {
-				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_holdability",
-					null);
-		}
+		connection_ = connection;
+		operationID_ = -1;
 
 		resultSetConcurrency_ = resultSetConcurrency;
 		resultSetHoldability_ = resultSetHoldability;
 		queryTimeout_ = connection_.getServerHandle().getQueryTimeout();
 
-		stmtLabel_ = stmtLabel;
+		if (stmtLabel == null || stmtLabel.length() == 0) {
+            stmtLabel_ = generateStmtLabel();
+        } else {
+            stmtLabel_ = stmtLabel;
+        }
 		fetchSize_ = TrafT4ResultSet.DEFAULT_FETCH_SIZE;
 		maxRows_ = 0;
 		fetchDirection_ = ResultSet.FETCH_FORWARD;
@@ -1443,11 +1418,15 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 		roundingMode_ = connection_.props_.getRoundingMode();
 
 		resultSet_ = new TrafT4ResultSet[1];
+		if (stmtLabel == null || stmtLabel.length() == 0) {
+            initResultSets();
+        }
 	}
 
 	TrafT4Statement(TrafT4Connection connection, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
 			throws SQLException {
-		if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+	    this(connection, resultSetType, resultSetConcurrency, resultSetHoldability, null);
+	    if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection.props_, connection, resultSetType,
 					resultSetConcurrency, resultSetHoldability);
 			connection.props_.t4Logger_.logp(Level.FINE, "TrafT4Statement", "<init>", "", p);
@@ -1463,52 +1442,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			String temp = lf.format(lr);
 			connection.props_.getLogWriter().println(temp);
 		}
-		int hashcode;
-
-		connection_ = connection;
-		operationID_ = -1;
-
-		if (resultSetType != ResultSet.TYPE_FORWARD_ONLY && resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE
-				&& resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"invalid_resultset_type", null);
-		}
-
-		if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
-			resultSetType_ = ResultSet.TYPE_SCROLL_INSENSITIVE;
-			connection_.setSQLWarning(null, "scrollResultSetChanged", null);
-			//setSQLWarning(null, "scrollResultSetChanged", null);
-		} else {
-			resultSetType_ = resultSetType;
-		}
-		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY && resultSetConcurrency != ResultSet.CONCUR_UPDATABLE) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"invalid_resultset_concurrency", null);
-		}
-
-		if ((resultSetHoldability != 0) && (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
-				&& (resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT)) {
-				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_holdability",
-					null);
-		}
-
-		resultSetConcurrency_ = resultSetConcurrency;
-		resultSetHoldability_ = resultSetHoldability;
-		queryTimeout_ = connection_.getServerHandle().getQueryTimeout();
-
-		stmtLabel_ = generateStmtLabel();
-		fetchSize_ = TrafT4ResultSet.DEFAULT_FETCH_SIZE;
-		maxRows_ = 0;
-		fetchDirection_ = ResultSet.FETCH_FORWARD;
-
-		connection_.gcStmts();
-		pRef_ = new WeakReference(this, connection_.refStmtQ_);
-		ist_ = new InterfaceStatement(this);
-		connection_.addElement(pRef_, stmtLabel_);
-
-		resultSet_ = new TrafT4ResultSet[1];
-		roundingMode_ = connection_.props_.getRoundingMode();
-		initResultSets();
 	}
 
 	//max length for a label is 32 characters.
