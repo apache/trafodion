@@ -37,6 +37,7 @@
  */
 
 
+#include <dlfcn.h>  
 #include "Platform.h"
 #include "ex_stdh.h"
 #include "ComTdb.h"
@@ -54,6 +55,7 @@
 
 #include "ExCextdecs.h"
 #include "ComRtUtils.h"
+#include "ComSqlcmpdbg.h"
 
 const char *TraceDesc = "SubTask state trace in Scheduler";
 
@@ -75,6 +77,8 @@ ExScheduler::ExScheduler(ex_globals *glob)
   suspended_          = false;
   subtaskLoopCnt_     = 32;
   maxSubtaskLoops_    = 32;
+  localRootTcb_       = NULL;
+  pExpFuncs_          = NULL;
   Int32 i;
   for (i = 0; i < NumLastCalled; i++)
   {
@@ -133,6 +137,9 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
   Space *space = glob_->getSpace();
   CollHeap *heap = glob_->getDefaultHeap();
   ExTimeStats *timer = NULL;
+#ifdef NA_DEBUG_GUI
+  ExSubtask *subtaskSetInGui = NULL;
+#endif
 
   if (suspended_)
     return WORK_OK;
@@ -206,27 +213,18 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
 #ifdef NA_DEBUG_GUI
 
 	  //------------------------------------------------------
-	  // GSH : If using tdm_sqlexedbg dll then use the 
+	  // If using the GUI dll then use the 
 	  // appropriate dll function to display the TCB tree.
 	  //------------------------------------------------------
 	  if (msGui_)
 	    {
-	      ExSubtask *savedSubtask = subtask;
+	      subtaskSetInGui = subtask;
 
-	      // to turn the GUI on in the debugger, set msGui_ above
-	      // and reset it to 0 again before entering startGui().
-	      startGui();
+	      pExpFuncs_->fpDisplayExecution(&subtaskSetInGui, this);
 
-	      pExpFuncs_->fpDisplayTCBTree(&subtask, this);
-
-	      if (subtask != savedSubtask)
-		{
-		  // GUI changed the subtask to be executed, set
-		  // an indicator that we have done work, otherwise
-		  // the scheduler might exit because it thinks that
-		  // it has finished an entire round through all subtasks
-		  listHadWork = 1;
-		}
+              if (subtaskSetInGui == subtask)
+                // GUI did not alter the subtask
+                subtaskSetInGui = NULL;
 	    }
 #endif
 
@@ -410,6 +408,22 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
       // subtasks)
 
       subtask = subtask->getNext();
+
+#ifdef NA_DEBUG_GUI
+      if (msGui_ && subtaskSetInGui && subtaskSetInGui->getNext() != subtask)
+        {
+          // if the user clicked on a task in the GUI, then
+          // schedule and execute that task next
+          subtask = subtaskSetInGui;
+          subtask->schedule();
+          subtaskSetInGui = NULL;
+          // the GUI changed the subtask to be executed, set
+          // an indicator that we have done work, otherwise
+          // the scheduler might exit because it thinks that
+          // it has finished an entire round through all subtasks
+          listHadWork = 1;
+        }
+#endif
       
       // -----------------------------------------------------------------
       // Each time we reach the end of the list, check whether any of the
@@ -557,6 +571,74 @@ Int32 ExScheduler::hasActiveEvents(ex_tcb *tcb)
 ///////////////////////////////////////////////////////////////////////////
 void ExScheduler::startGui()
 {
+  msGui_ = TRUE;
+
+  if (!pExpFuncs_ && getenv("DISPLAY"))
+    {
+      void* dlptr = dlopen("libSqlCompilerDebugger.so",RTLD_NOW);
+      if(dlptr != NULL)
+        {
+          fpGetSqlcmpdbgExpFuncs GetExportedFunctions;
+
+          GetExportedFunctions = (fpGetSqlcmpdbgExpFuncs) dlsym(
+               dlptr, "GetSqlcmpdbgExpFuncs");
+          if (GetExportedFunctions)
+            pExpFuncs_ = GetExportedFunctions();
+          if (pExpFuncs_ == NULL)
+            dlclose(dlptr);
+        }
+      else // dlopen() failed 
+        { 
+          char *msg = dlerror(); 
+        }
+      msGui_ = (pExpFuncs_ != NULL);
+    }
+}
+
+void ExScheduler::stopGui()
+{
+  msGui_ = FALSE;
+  if (pExpFuncs_)
+    pExpFuncs_->fpDisplayExecution(NULL, this);
+}
+
+void ExScheduler::getProcInfoForGui(int &frag,
+                                    int &inst,
+                                    int &numInst,
+                                    int &nid,
+                                    int &pid,
+                                    char *procNameBuf,
+                                    int procNameBufLen)
+{
+  ExExeStmtGlobals *glob = glob_->castToExExeStmtGlobals();
+  MyGuaProcessHandle myh;
+  Int32 myCpu, myPin, myNodeNum;
+  SB_Int64_Type mySeqNum;
+
+  frag = glob->getMyFragId();
+  inst = glob->getMyInstanceNumber();
+  numInst = glob->getNumOfInstances();
+  myh.decompose(myCpu, myPin, myNodeNum, mySeqNum);
+  nid = myCpu;
+  pid = myPin;
+  myh.toAscii(procNameBuf, procNameBufLen);
+}
+
+int ExScheduler::getFragInstIdForGui()
+{
+  ExExeStmtGlobals *stmtGlobals = glob_->castToExExeStmtGlobals();
+
+  ex_assert(stmtGlobals, "GUI not in master or ESP");
+
+  ExMasterStmtGlobals *masterGlobals = stmtGlobals->castToExMasterStmtGlobals();
+  ExEspStmtGlobals *espGlobals = stmtGlobals->castToExEspStmtGlobals();
+
+  if (masterGlobals)
+    // assume there is only one active fragment instance in the master
+    return 0;
+  ex_assert(espGlobals, "stmt globals in GUI inconsistent");
+
+  return espGlobals->getMyFragInstanceHandle();
 }
 
 ExSubtask * ExScheduler::addOrFindSubtask(

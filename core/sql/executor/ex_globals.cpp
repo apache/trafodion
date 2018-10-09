@@ -170,6 +170,11 @@ ExEidStmtGlobals * ex_globals::castToExEidStmtGlobals()
   return NULL;
 }
 
+ExEspStmtGlobals * ex_globals::castToExEspStmtGlobals()
+{
+  return NULL;
+}
+
 /*
 void * ex_globals::seqGen()
 {

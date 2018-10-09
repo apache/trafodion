@@ -25,7 +25,8 @@
 #include "TDBDlgMdamNet.h"
 #include "TDBDlgExprList.h"
 
-extern MainWindow *mainWindow_;
+// defined in MainWindow.cpp
+extern MainWindow *GlobGuiMainWindow;
 
 TDBTreeView::TDBTreeView(QWidget * parent):
 QWidget(parent), ui(new Ui::TDBTreeView)
@@ -175,7 +176,7 @@ void TDBTreeView::UpdateView()
   ExFragDir* fragDir;
   Lng32 baseAddr;
 
-  mainWindow_->m_querydata->GetTDBData((void**) &tdb, (void**) &fragDir, baseAddr);
+  GlobGuiMainWindow->m_querydata->GetTDBData((void**) &tdb, (void**) &fragDir, baseAddr);
   //------------------------------------------------------------------
   // GSH : Delete the existing Tree.
   //------------------------------------------------------------------

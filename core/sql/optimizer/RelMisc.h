@@ -337,9 +337,11 @@ public:
   // get a printable string that identifies the operator
   virtual const NAString getText() const;
 
- // set display on/off.
+  // set display on/off.
   void            setDisplayTree(NABoolean val) {displayTree_ = val;}
   NABoolean       getDisplayTree() const 	{return displayTree_;}
+  void            setExeDisplay(NABoolean val)  {exeDisplay_ = val;}
+  NABoolean       getExeDisplay() const 	{return exeDisplay_;}
 
   ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 					      ComTdb * tdb,
@@ -624,9 +626,9 @@ public:
   // at bind time from the child update/delete node.
   ItemExpr * currOfCursorName_;
 
-  // contains the
   NABoolean  displayTree_; // if set, this tree needs to be displayed.
                            // Set by parser on seeing a DISPLAY command.
+  NABoolean  exeDisplay_;  // if set, display query execution in the GUI
 
   // this flag is set to TRUE if this is an update, delete or insert
   // query. This information is needed at runtime to rollback/abort

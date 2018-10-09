@@ -321,8 +321,8 @@ void ex_send_top_tcb::registerSubtasks()
 
   // register events for parent queues
   ex_assert(qParent_.down && qParent_.up,"Parent queues must exist");
-  sched->registerInsertSubtask(ex_tcb::sWork, this, qParent_.down);
-  sched->registerCancelSubtask(sCancel, this, qParent_.down);
+  sched->registerInsertSubtask(ex_tcb::sWork, this, qParent_.down, "WK");
+  sched->registerCancelSubtask(sCancel, this, qParent_.down,"CN");
   sched->registerUnblockSubtask(ex_tcb::sWork,this, qParent_.up);
 
   // register a non-queue event for the IPC with the send top node

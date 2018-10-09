@@ -21,71 +21,75 @@
 #include <QtGui>
 #include "ExportFunctionSqlCmpDbg.h"
 #include "MainWindow.h"
-#include "QueryData.h" 
+#include "QueryData.h"
+#include "ExeSchedWindow.h"
 
 #define DISPLAY_WARNING 1032
- 
-extern MainWindow *mainWindow_;
-extern SqlcmpdbgExpFuncs exportFunctions_;
-extern QApplication* application_;
+
+// defined in MainWindow.cpp
+extern MainWindow *GlobGuiMainWindow;
+extern SqlcmpdbgExpFuncs GlobGuiExportFunctions;
+extern QApplication* GlobGuiApplication;
+
 static int argc = 1;
 static char **argv;	
 
-SqlcmpdbgExpFuncs * GetSqlcmpdbgExpFuncs(void) 
+SqlcmpdbgExpFuncs * GetSqlcmpdbgExpFuncs()
 {
-  if (application_ == NULL)
-     application_ = new QApplication(argc, argv);
-     
-  if(mainWindow_)
-    delete mainWindow_;
-  mainWindow_ = new MainWindow();
-  exportFunctions_.fpDisplayQueryTree = DisplayQueryTree;
-  exportFunctions_.fpSqldbgSetPointers = SqldbgSetPointers;
-  exportFunctions_.fpDoMemoStep = DoMemoStep;
-  exportFunctions_.fpHideQueryTree = HideQueryTree;
-  exportFunctions_.fpDisplayTDBTree = DisplayTDBTree;
-  exportFunctions_.fpDisplayExecution = DisplayExecution;
-  exportFunctions_.fpCleanUp = CleanUp;
-  return &exportFunctions_;
+  if (GlobGuiApplication == NULL)
+     GlobGuiApplication = new QApplication(argc, argv);
+
+  GlobGuiExportFunctions.fpDisplayQueryTree = DisplayQueryTree;
+  GlobGuiExportFunctions.fpSqldbgSetCmpPointers = SqldbgSetCmpPointers;
+  GlobGuiExportFunctions.fpDoMemoStep = DoMemoStep;
+  GlobGuiExportFunctions.fpHideQueryTree = HideQueryTree;
+  GlobGuiExportFunctions.fpDisplayTDBTree = DisplayTDBTree;
+  GlobGuiExportFunctions.fpExecutionDisplayIsEnabled = ExecutionDisplayIsEnabled;
+  GlobGuiExportFunctions.fpSqldbgSetExePointers = SqldbgSetExePointers;
+  GlobGuiExportFunctions.fpDisplayExecution = DisplayExecution;
+  GlobGuiExportFunctions.fpCleanUp = CleanUp;
+  return &GlobGuiExportFunctions;
 }
 
 void DisplayQueryTree(Sqlcmpdbg::CompilationPhase phase, 
                         void *tree, void *plan) 
 {
-  if (MainWindow::IsQuiting)
+  if (MainWindow::IsQuitting)
     return;
-  mainWindow_->SetDocumentTitle(phase);
-  mainWindow_->show();
-  if (!mainWindow_->NeedToDisplay(phase)) 
+
+  GlobGuiMainWindow->SetDocumentTitle(phase);
+  GlobGuiMainWindow->show();
+  if (!GlobGuiMainWindow->NeedToDisplay(phase)) 
   {
-      mainWindow_->hide();
+      GlobGuiMainWindow->hide();
       return;
   }
-  mainWindow_->m_querydata->SetPhase(phase);
-  mainWindow_->m_querydata->SetData(tree, plan);
-  mainWindow_->syncMemoWithDoc();
+  GlobGuiMainWindow->m_querydata->SetPhase(phase);
+  GlobGuiMainWindow->m_querydata->SetData(tree, plan);
+  GlobGuiMainWindow->syncMemoWithDoc();
   
-  mainWindow_->UpdateAllViews();
-  mainWindow_->Run();
-  mainWindow_->hide();
+  GlobGuiMainWindow->UpdateAllViews();
+  GlobGuiMainWindow->Run();
+  GlobGuiMainWindow->hide();
 }
 
-void SqldbgSetPointers(void *memoptr , void *tasklist ,
-                         void *analysis , void *currentContext ,
-                         void *ClusterInfo ) 
+void SqldbgSetCmpPointers(void *memoptr , void *tasklist ,
+                          void *analysis , void *currentContext ,
+                          void *ClusterInfo ) 
 {
-  if (MainWindow::IsQuiting)
+  if (MainWindow::IsQuitting)
     return;
-  mainWindow_->m_querydata->SetMemo(memoptr);
-  mainWindow_->m_querydata->SetAnalysis(analysis);
-  mainWindow_->m_querydata->SetTaskList(tasklist);
+
+  ExeSchedWindow::deleteAllInstances();
+
+  if (GlobGuiMainWindow == NULL)
+    GlobGuiMainWindow = new MainWindow();
+
+  GlobGuiMainWindow->m_querydata->SetMemo(memoptr);
+  GlobGuiMainWindow->m_querydata->SetAnalysis(analysis);
+  GlobGuiMainWindow->m_querydata->SetTaskList(tasklist);
   cmpCurrentContext = (CmpContext *) currentContext;
 
-  CURRSTMT_OPTGLOBALS->memo = (CascadesMemo *) memoptr;
-  
-  // Initialize the GUI pointer to the compiler's global cluster info:
-  gpClusterInfo = (NAClusterInfo *) ClusterInfo;
-  
   // --------------------------------------------------------------
   // initialize optimization defaults
   // This is needed to initialize re-calibration constants
@@ -96,29 +100,29 @@ void SqldbgSetPointers(void *memoptr , void *tasklist ,
 void DoMemoStep(Int32 passNo, Int32 groupNo, Int32 taskNo, void *task,
                   void *expr, void *plan) 
 {
-  if (MainWindow::IsQuiting)
+  if (MainWindow::IsQuitting)
     return;
-  if (mainWindow_->NeedToStop(passNo,groupNo,taskNo,(CascadesTask *)task, (ExprNode *)expr,(CascadesPlan *)plan))
+  if (GlobGuiMainWindow->NeedToStop(passNo,groupNo,taskNo,(CascadesTask *)task, (ExprNode *)expr,(CascadesPlan *)plan))
   {
-     mainWindow_->show();
-     mainWindow_->Run();
+     GlobGuiMainWindow->show();
+     GlobGuiMainWindow->Run();
   }
 }
 
 void HideQueryTree(BOOL flag) 
 {
-  if (MainWindow::IsQuiting)
+  if (MainWindow::IsQuitting)
     return;
-  mainWindow_->setVisible(flag);
+  GlobGuiMainWindow->setVisible(flag);
 }
 
 void DisplayTDBTree(Sqlcmpdbg::CompilationPhase phase, 
                       void *tdb, void *fragDir) 
 {
-  if (MainWindow::IsQuiting)
+  if (MainWindow::IsQuitting)
     return;
 
-  if (!mainWindow_->NeedToDisplay(phase)) 
+  if (!GlobGuiMainWindow->NeedToDisplay(phase)) 
     return;
   //-----------------------------------------------------------------------------
   // GSH : The document class of the SQL/debug MDI DLL holds all the data that 
@@ -129,25 +133,58 @@ void DisplayTDBTree(Sqlcmpdbg::CompilationPhase phase,
   // member function setDocumentData(ExprNode* tree = NULL, CascadesPlan* plan=NULL) 
   // function to set the private data members of the document object.
   //-----------------------------------------------------------------------------
-  mainWindow_->CreateTDBView();
-  mainWindow_->m_querydata->SetTDBData(tdb, fragDir);
-  mainWindow_->m_querydata->SetPhase(phase);
-  mainWindow_->show();
-  mainWindow_->UpdateAllViews();
-  mainWindow_->Run();
-  mainWindow_->hide();
+  GlobGuiMainWindow->CreateTDBView();
+  GlobGuiMainWindow->m_querydata->SetTDBData(tdb, fragDir);
+  GlobGuiMainWindow->m_querydata->SetPhase(phase);
+  GlobGuiMainWindow->show();
+  GlobGuiMainWindow->UpdateAllViews();
+  GlobGuiMainWindow->Run();
+  GlobGuiMainWindow->hide();
 }
 
-NABoolean DisplayExecution(void)
+int  ExecutionDisplayIsEnabled(void)
 {
-  *CmpCommon::diags() << DgSqlCode(DISPLAY_WARNING);
-  return FALSE;
+  return GlobGuiMainWindow->MainWindow::NeedToDisplay(
+       Sqlcmpdbg::DURING_EXECUTION);
+}
+
+void SqldbgSetExePointers(void *rootTcb,
+                          void *cliGlobals,
+                          void *dummy)
+{
+  // TODO: determine if this is needed, scheduler has all ptrs
+}
+
+void DisplayExecution(ExSubtask **subtask, ExScheduler *scheduler)
+{
+  ExeSchedWindow *myWindow = ExeSchedWindow::findInstance(scheduler);
+
+  if (GlobGuiMainWindow)
+    {
+      delete GlobGuiMainWindow;
+      GlobGuiMainWindow = NULL;
+    }
+
+  if (subtask == NULL)
+    {
+      // passing a NULL subtask is a sign that
+      // we are done, delete the window
+      if (scheduler)
+        ExeSchedWindow::deleteInstance(scheduler);
+      return;
+    }
+
+  if (!myWindow->needToStop(*subtask, scheduler))
+    // no need to stop at this task
+    return;
+
+  myWindow->run(subtask);
 }
 
 void CleanUp(void)
 {
-  if(mainWindow_)
-    delete mainWindow_;
-  mainWindow_ = NULL;
+  if(GlobGuiMainWindow)
+    delete GlobGuiMainWindow;
+  GlobGuiMainWindow = NULL;
 }
 

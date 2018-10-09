@@ -27,7 +27,7 @@
  * File:         CommonSqlCmpDbg.h
  * Description:  This file contains declarations common to arkcmp components
  *               and tdm_sqlcmpdbg, the GUI tool used to display query
- *		 compilation.
+ *		 compilation and execution.
  *****************************************************************************
  */
 
@@ -50,6 +50,10 @@
 #include "FragDir.h"
 #include "ComTdb.h"
 #include "ex_tcb.h"
+
+// executor GUI header files
+#include "ex_exe_stmt_globals.h"
+#include "ExScheduler.h"
 
 #ifdef _c
 #undef _c
@@ -78,43 +82,6 @@
 #define IDX_GENERIC 3
 
 #include "ComSqlcmpdbg.h"
-#if 0
-class Sqlcmpdbg
-{
-  // This class exists merely to give a nice naming scope for this enum
-public:
-  enum CompilationPhase
-  {
-    AFTER_PARSING,
-    AFTER_BINDING,
-    AFTER_TRANSFORMATION,
-    AFTER_NORMALIZATION,
-    AFTER_SEMANTIC_QUERY_OPTIMIZATION,
-    DURING_MVQR,
-    AFTER_ANALYZE,
-    AFTER_OPT1,
-    AFTER_OPT2,
-    AFTER_PRECODEGEN,
-    AFTER_CODEGEN,
-    AFTER_TDBGEN,
-    DURING_EXECUTION,
-    DURING_MEMOIZATION,
-    FROM_MSDEV
-  };
-};
-
-typedef struct tagSqlcmpdbgExpFuncs
-{
-  void (*fpDisplayQueryTree) (Sqlcmpdbg::CompilationPhase, void *, void *);
-  void (*fpSqldbgSetPointers) (void *, void *, void *, void *, void *);
-  void (*fpDoMemoStep) (Int32, Int32, Int32, void *, void *, void *);
-  void (*fpHideQueryTree) (BOOL);
-  void (*fpDisplayTDBTree) (Sqlcmpdbg::CompilationPhase, void *, void *);
-  NABoolean (*fpDisplayExecution) (void);
-  void (*fpCleanUp) (void);
-} SqlcmpdbgExpFuncs;
-typedef SqlcmpdbgExpFuncs *(*fpGetSqlcmpdbgExpFuncs) (void);
-#endif
 
 typedef struct tagSQLDebugBrkPts
 {
@@ -128,7 +95,8 @@ typedef struct tagSQLDebugBrkPts
     brkAfterOpt2 (FALSE),
     brkAfterPreCodegen (FALSE),
     brkAfterCodegen (FALSE),
-    brkAfterTDBgen (FALSE), brkDuringExecution (FALSE)
+    brkAfterTDBgen (FALSE),
+    brkDuringExecution (FALSE)
   {  }
   NABoolean brkAfterParsing;
   NABoolean brkAfterBinding;

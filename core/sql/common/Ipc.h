@@ -424,6 +424,7 @@ public:
   const GuaProcessHandle &getPhandle() const;
   IpcNodeName getNodeName() const;
   IpcCpuNum getCpuNum() const;
+  std::string toString() const;
   Int32 toAscii(char *outBuf, Int32 outBufLen) const;
   void addProcIdToDiagsArea(ComDiagsArea &diags, Int32 stringno = 0) const;
 

@@ -683,6 +683,7 @@ public:
   virtual void getMyNodeLocalInstanceNumber(
        Lng32 &myNodeLocalInstanceNumber,
        Lng32 &numOfLocalInstances) const;
+  ExFragInstanceHandle getMyFragInstanceHandle() const { return myHandle_; }
 
   // Virtual methods to retrieve SeaMonster settings
   // 

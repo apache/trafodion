@@ -1,18 +1,3 @@
-#ifndef COMSQLEXEDBG_H
-#define COMSQLEXEDBG_H
-/* -*-C++-*-
- *****************************************************************************
- *
- * File:         ComSqlcmpdbg.h
- * Description:  This file contains declarations common to arkcmp components 	
- *               and tdm_sqlcmpdbg the GUI tool used to display query 
- *               compilation.
- *               
- * Created:      06/25/97
- * Modified:     $Author:
- * Language:     C++
- *
- *
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -33,22 +18,43 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
- *
- *
- *****************************************************************************
- */
+#ifndef EXEQUEUEDISPLAY_H
+#define EXEQUEUEDISPLAY_H
 
-// forward reference
-class ExSubtask;
-class ExScheduler;
-class ex_tcb;
+#include <QtGui>
+#include <QDialog>
+#include "CommonSqlCmpDbg.h"
+#include "ex_globals.h"
+#include "ex_tcb.h"
 
-typedef struct tagSqlexedbgExpFuncs {
-  void (*fpDisplayTCBTree) (ExSubtask**, ExScheduler*);
-  void (*fpSetRootTCB) (ex_tcb*);
-} SqlexedbgExpFuncs;
+namespace Ui {
+  class ExeQueueDisplay;
+  }
 
-typedef SqlexedbgExpFuncs* (*fpGetSqlexedbgExpFuncs) (void); 
+class QTreeWidgetItem;
 
-#endif
-	
+class ExeQueueDisplay : public QDialog
+{
+  Q_OBJECT
+
+  public:
+  explicit ExeQueueDisplay(const ex_tcb *tcb,
+                           bool isUp,
+                           QWidget *parent);
+  ~ExeQueueDisplay();
+
+  void setLabel(QString & lbl);
+  void populate();
+
+  private slots:
+  void on_okButton_clicked();
+
+  void on_cancelButton_clicked();
+
+  private:
+  Ui::ExeQueueDisplay *ui;
+  const ex_tcb *tcb_;
+  bool isUp_;
+};
+
+#endif // EXEQUEUEDISPLAY_H

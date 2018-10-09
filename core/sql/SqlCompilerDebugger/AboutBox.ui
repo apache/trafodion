@@ -57,7 +57,7 @@
        <item>
         <widget class="QLabel" name="labelAboutCopyright">
          <property name="text">
-          <string>Copyright © 2013</string>
+          <string>Copyright © 2013-2018</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>

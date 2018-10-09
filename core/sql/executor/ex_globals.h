@@ -49,6 +49,7 @@ class ExScheduler;
 class ExExeStmtGlobals;
 class ExMasterStmtGlobals;
 class ExEidStmtGlobals;
+class ExEspStmtGlobals;
 class SqlSessionData;
 class ExStatisticsArea;
 class ex_tcb;
@@ -100,6 +101,7 @@ public:
 
   virtual ExExeStmtGlobals * castToExExeStmtGlobals();
   virtual ExEidStmtGlobals * castToExEidStmtGlobals();
+  virtual ExEspStmtGlobals * castToExEspStmtGlobals();
 
   inline void setStatsArea(ExStatisticsArea * statsArea)
     { statsArea_ = statsArea; }
