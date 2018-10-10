@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 final class T4Address extends Address {
 
@@ -140,7 +141,10 @@ final class T4Address extends Address {
 
 	// ----------------------------------------------------------
 	String getUrl() {
-		return urlPrefix + getIPorName() + ':' + getPort().toString() + "/:";
+          if (isIPv6ForPureUrl(getIPorName())){
+              return urlPrefix + '[' + getIPorName() + ']' + ':' + getPort().toString() + "/:";
+          }else
+              return urlPrefix + getIPorName() + ':' + getPort().toString() + "/:";
 	} // end getProps()
 
 	// ----------------------------------------------------------
@@ -167,7 +171,8 @@ final class T4Address extends Address {
 		int hostStartIndex = urlPrefix.length();
 		int hostEndIndex = -1;
 		if (isIPV6(url)) {
-			hostEndIndex = url.lastIndexOf(']', hostStartIndex); // IP6
+			hostStartIndex = hostStartIndex + 1;
+			hostEndIndex = url.lastIndexOf(']'); // IP6
 		} else {
 			hostEndIndex = url.indexOf(':', hostStartIndex); // IP4
 
@@ -201,12 +206,24 @@ final class T4Address extends Address {
 	 * @return port string
 	 */
 	private String extractPortFromUrl(String url) throws SQLException {
-		int portStartIndex = url.indexOf(':', urlPrefix.length()) + 1;
-		int portEndIndex = url.indexOf('/', portStartIndex);
-		if (portEndIndex < 0) {
-			portEndIndex = url.length();
+		int portStartIndex = 0;
+		int portEndIndex = 0;
+		if (isIPV6(url)){
+			portStartIndex = url.indexOf(':', url.indexOf(']')) + 1;
+			portEndIndex = url.indexOf('/', portStartIndex);
+			if (portEndIndex < 0) {
+				portEndIndex = url.length();
 
+			}
+		}else{
+			portStartIndex = url.indexOf(':', urlPrefix.length()) + 1;
+			portEndIndex = url.indexOf('/', portStartIndex);
+			if (portEndIndex < 0) {
+				portEndIndex = url.length();
+
+			}
 		}
+
 		String port = url.substring(portStartIndex, portEndIndex);
 		if (port.length() < 1) {
 			throw new SQLException("Incorrect port value in the URL.");
@@ -303,13 +320,40 @@ final class T4Address extends Address {
 	 * @return true if the address is a IP address
 	 */
 	private boolean isIPAddress(String IPorName) {
-		// Minimum length = 7; 1.1.1.1
-		if (IPorName.length() < 7)
-			return false;
-		//
-		// If first letter is a digit or ":" (i.e. IPv6), I'll assume it is an
-		// IP address
-		//
-		return (Character.isDigit(IPorName.charAt(0)) || (IPorName.charAt(1) == ':'));
+
+		return isIPv4(IPorName) || isIPv6ForPureUrl(IPorName);
 	}
+
+	public boolean isIPv4(String str) {
+		if (!Pattern.matches("[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+", str))
+			return false;
+		else {
+			String[] arrays = str.split("\\.");
+			if (Integer.parseInt(arrays[0]) < 256 && arrays[0].length() <= 3
+					&& Integer.parseInt(arrays[1]) < 256 && arrays[1].length() <= 3
+					&& Integer.parseInt(arrays[2]) < 256 && arrays[2].length() <= 3
+					&& Integer.parseInt(arrays[3]) < 256 && arrays[3].length() <= 3)
+				return true;
+			else return false;
+		}
+	}
+
+	public boolean isIPv6ForPureUrl(String str) {
+
+		return isIPV6Std(str) || isIPV6Compress(str);
+	}
+
+	public boolean isIPV6Std(String str) {
+		if (!Pattern.matches("^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$", str))
+			return false;
+		return true;
+	}
+
+	public boolean isIPV6Compress(String str) {
+		if (!Pattern.matches(                "^((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)$", str))
+			return false;
+		return true;
+	}
+
+
 } // end class Address

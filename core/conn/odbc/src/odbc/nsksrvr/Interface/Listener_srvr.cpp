@@ -36,7 +36,7 @@ CNSKListenerSrvr::CNSKListenerSrvr()
 	m_port = 0;
 	m_TraceCount = 0;
 	m_tcpip_operation = CURR_UNDEFINED;
-	m_bIPv4 = true;
+	m_bIPv4 = false;
 	m_TcpProcessName[0] = 0;
 	doingRequest = new SB_Thread::Errorcheck_Mutex(true);
 	pipefd[0] = 0; //read fd
