@@ -6406,31 +6406,37 @@ Lng32 CopyOneStmtAttr (/*IN*/   Statement &stmt,
   }
   else if (attrName == SQL_ATTR_QUERY_TYPE)
   {
-    //for display query e.g. display select ...
-    //just return SUCCESS to suppress error message
-    if(stmt.isDISPLAY())
-    {
-      return SQLCLI_ReturnCode(&context, DISPLAY_DONE_WARNING);
-    }
     if (!stmt.getRootTdb())
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
-      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
+      //for display query e.g. display select ...
+      //just return SUCCESS to suppress error message
+      if(stmt.isDISPLAY())
+        {
+          return SQLCLI_ReturnCode(&context, DISPLAY_DONE_WARNING);
+        }
+      else
+        {
+          diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
+        }
     }
     *numeric_value = stmt.getRootTdb()->getQueryType();
   }
   else if (attrName == SQL_ATTR_SUBQUERY_TYPE)
   {
-    //for display query e.g. display select ...
-    //just return SUCCESS to suppress error message
-    if(stmt.isDISPLAY())
-    {
-      return SQLCLI_ReturnCode(&context, DISPLAY_DONE_WARNING);
-    } 
     if (!stmt.getRootTdb())
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
-      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
+      //for display query e.g. display select ...
+      //just return SUCCESS to suppress error message
+      if(stmt.isDISPLAY())
+        {
+          return SQLCLI_ReturnCode(&context, DISPLAY_DONE_WARNING);
+        }
+      else
+        {
+          diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
+        }
     }
     *numeric_value = stmt.getRootTdb()->getSubqueryType();
   }

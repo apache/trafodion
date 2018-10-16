@@ -21,6 +21,10 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
+ifeq ($(FLAVOR),debug)
+   CXXFLAGS += -DNA_DEBUG_GUI
+endif
+
 CPPSRC := Allocator.cpp \
 	BufferList.cpp \
 	BufferReference.cpp \

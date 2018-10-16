@@ -41,7 +41,6 @@
 #include "ComTdb.h"
 #include "SqlTableOpenInfo.h" // for SqlTableOpenInfo
 #include "exp_expr.h" // for InputOutputExpr
-#include "ComSqlexedbg.h" // for SqlexeDbgExpFuncs
 #include "FragDir.h"
 #include "LateBindInfo.h"
 #include "ComTransInfo.h"

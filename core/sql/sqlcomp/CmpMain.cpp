@@ -454,6 +454,7 @@ void CmpMain::sqlcompCleanup(const char *input_str,
     int ret = dlclose(dlptr);
     dlptr = NULL;
     CmpMain::msGui_ = NULL;
+    CmpMain::pExpFuncs_ = NULL;
   }	
 
   CURRENTSTMT->clearDisplayGraph();
@@ -2566,7 +2567,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 
         if (((RelRoot *)queryExpr)->getDisplayTree() && CmpMain::msGui_ == CmpCommon::context() )
           {
-            if (CmpMain::pExpFuncs_->fpDisplayExecution())
+            if (CmpMain::pExpFuncs_->fpExecutionDisplayIsEnabled())
               {
                 //------------------------------------------------------------
                 // GSH: User has set a breakpoint for display in execution
@@ -2575,7 +2576,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
                 //------------------------------------------------------------
 		ComTdbRoot * originalRootTdb =
 		  (ComTdbRoot *) generator.getFragmentDir()->getTopObj(0);
-                originalRootTdb->setDisplayExecution(2);
+                originalRootTdb->setDisplayExecution(1);
               }
             else
               {
@@ -2586,6 +2587,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
                 NADELETEBASIC(cb, heap);
                 *gen_code = 0;
                 *gen_code_len = 0;
+                *CmpCommon::diags() << DgSqlCode(1032);
                 retval = DISPLAYDONE;
               }
         } // display TCB tree
@@ -2846,7 +2848,7 @@ void ExprNode::displayTree()
         {
            GetExportedFunctions = (fpGetSqlcmpdbgExpFuncs) dlsym(dlptr, "GetSqlcmpdbgExpFuncs");
            if (GetExportedFunctions)
-                CmpMain::pExpFuncs_ = GetExportedFunctions();
+             CmpMain::pExpFuncs_ = GetExportedFunctions();
            if ( CmpMain::pExpFuncs_ == NULL )
            {
               int ret = dlclose(dlptr);
@@ -2855,7 +2857,9 @@ void ExprNode::displayTree()
         }
         else // dlopen() failed 
         { 
-           char *msg = dlerror(); 
+           char *msg = dlerror();
+           *CmpCommon::diags() << DgSqlCode(-2245)
+                               << DgString0(msg);
         }
         if ( dlptr == NULL )
            CmpMain::msGui_ = NULL ;  //This Compiler Instance cannot use debugger
@@ -2894,6 +2898,8 @@ void CascadesPlan::displayTree()
         else // dlopen() failed 
         { 
            char *msg = dlerror(); 
+           *CmpCommon::diags() << DgSqlCode(-2245)
+                               << DgString0(msg);
         }
         if ( dlptr == NULL )
            CmpMain::msGui_ = NULL ;  //This Compiler Instance cannot use debugger
@@ -2917,12 +2923,11 @@ void initializeGUIData(SqlcmpdbgExpFuncs* expFuncs)
         }
 
       // Pass information about the plan to be displayed to the GUI:
-      expFuncs->fpSqldbgSetPointers(CURRSTMT_OPTGLOBALS->memo
-                                      ,CURRSTMT_OPTGLOBALS->task_list
-                                      ,QueryAnalysis::Instance()
-                                      ,cmpCurrentContext
-                                      ,gpClusterInfo
-                                      );
+      expFuncs->fpSqldbgSetCmpPointers(CURRSTMT_OPTGLOBALS->memo,
+                                       CURRSTMT_OPTGLOBALS->task_list,
+                                       QueryAnalysis::Instance(),
+                                       cmpCurrentContext,
+                                       gpClusterInfo);
 } // initializeGUIData(...)
 
 #endif

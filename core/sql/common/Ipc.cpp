@@ -368,6 +368,14 @@ IpcCpuNum IpcProcessId::getCpuNum() const
     }
 }
 
+std::string IpcProcessId::toString() const
+{
+  char outb[100];
+
+  toAscii(outb, sizeof(outb));
+  return outb;
+}
+
 Int32 IpcProcessId::toAscii(char *outBuf, Int32 outBufLen) const
 {
   // process names shouldn't be longer than 300 bytes

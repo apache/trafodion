@@ -670,6 +670,7 @@
 2242 ZZZZZ 99999 BEGINNER MINOR LOGONLY Compiler process unable to log its status and health information to the repository.
 2243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Using DISPLAY in trafci or DBMgr is not supported.
 2244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ULOG file path invalid : $0~string0.
+2245 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error loading libSqlCompilerDebugger.so DLL for the display GUI: $0~string0.
 2900 ZZZZZ 99999 BEGINNER MAJOR DBADMIN in file $0~string0 at line $1~int0:
 2980 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ? Option -g requires an argument.
 2981 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ? Unrecognized argument in option -g

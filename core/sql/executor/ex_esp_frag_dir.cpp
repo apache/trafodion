@@ -715,7 +715,7 @@ void ExEspFragInstanceDir::work(Int64 prevWaitTime)
 	      case ACTIVE:
 
 #ifdef NA_DEBUG_GUI
-		if (instances_[currInst]->displayInGui_ == 2)
+		if (instances_[currInst]->displayInGui_ == 1)
 		  instances_[currInst]->globals_->getScheduler()->startGui();
 #endif
 		// To help debugging (dumps): Put current SB TCB in cli globals
@@ -764,6 +764,11 @@ void ExEspFragInstanceDir::work(Int64 prevWaitTime)
                       loopAgain = TRUE;
                     }
                   }
+#ifdef NA_DEBUG_GUI
+		if (instances_[currInst]->fiState_ != ACTIVE &&
+                    instances_[currInst]->displayInGui_ == 1)
+		  instances_[currInst]->globals_->getScheduler()->stopGui();
+#endif
                 break;
 
               case WAIT_TO_RELEASE:

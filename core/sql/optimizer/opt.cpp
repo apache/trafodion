@@ -319,12 +319,12 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
 #ifdef NA_DEBUG_GUI
   CMPASSERT(gpClusterInfo != NULL);
   if (CmpMain::msGui_ && CURRENTSTMT->displayGraph() )
-    CmpMain::pExpFuncs_->fpSqldbgSetPointers(CURRSTMT_OPTGLOBALS->memo
-                                             ,CURRSTMT_OPTGLOBALS->task_list
-                                             ,QueryAnalysis::Instance()
-                                             ,cmpCurrentContext
-                                             ,gpClusterInfo
-                                             );
+    CmpMain::pExpFuncs_->fpSqldbgSetCmpPointers(CURRSTMT_OPTGLOBALS->memo
+                                                ,CURRSTMT_OPTGLOBALS->task_list
+                                                ,QueryAnalysis::Instance()
+                                                ,cmpCurrentContext
+                                                ,gpClusterInfo
+                                                );
 #endif
 
   // ---------------------------------------------------------------------
@@ -634,11 +634,12 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
           if (CmpMain::msGui_ && CURRENTSTMT->displayGraph())
             {
               CMPASSERT(gpClusterInfo != NULL);
-              CmpMain::pExpFuncs_->fpSqldbgSetPointers(CURRSTMT_OPTGLOBALS->memo, CURRSTMT_OPTGLOBALS->task_list,
-                                                       QueryAnalysis::Instance(),
-                                                       cmpCurrentContext,
-                                                       gpClusterInfo
-                                                       );
+              CmpMain::pExpFuncs_->fpSqldbgSetCmpPointers(
+                   CURRSTMT_OPTGLOBALS->memo,
+                   CURRSTMT_OPTGLOBALS->task_list,
+                   QueryAnalysis::Instance(),
+                   cmpCurrentContext,
+                   gpClusterInfo);
 
               CmpMain::pExpFuncs_->fpDisplayQueryTree(optPass, NULL,
                                                       (void*) context->getSolution());
@@ -7222,12 +7223,12 @@ void QueryOptimizerDriver::DEBUG_GUI_SET_POINTERS()
 #ifdef NA_DEBUG_GUI
   CMPASSERT(gpClusterInfo != NULL);
   if (CmpMain::msGui_ && CURRENTSTMT->displayGraph() )
-    CmpMain::pExpFuncs_->fpSqldbgSetPointers( CURRSTMT_OPTGLOBALS->memo
-					      ,CURRSTMT_OPTGLOBALS->task_list
-					      ,QueryAnalysis::Instance()
-					      ,cmpCurrentContext
-					      ,gpClusterInfo
-					      );
+    CmpMain::pExpFuncs_->fpSqldbgSetCmpPointers(
+         CURRSTMT_OPTGLOBALS->memo,
+         CURRSTMT_OPTGLOBALS->task_list,
+         QueryAnalysis::Instance(),
+         cmpCurrentContext,
+         gpClusterInfo);
 #endif
 }
 
@@ -7272,12 +7273,12 @@ DEBUG_GUI_DISPLAY_AFTER_OPTIMIZATION(Context *context)
   if (CmpMain::msGui_ && CURRENTSTMT->displayGraph())
     {
       CMPASSERT(gpClusterInfo != NULL);
-      CmpMain::pExpFuncs_->fpSqldbgSetPointers( CURRSTMT_OPTGLOBALS->memo,
-						CURRSTMT_OPTGLOBALS->task_list,
-						QueryAnalysis::Instance(),
-						cmpCurrentContext,
-						gpClusterInfo
-						);
+      CmpMain::pExpFuncs_->fpSqldbgSetCmpPointers(
+           CURRSTMT_OPTGLOBALS->memo,
+           CURRSTMT_OPTGLOBALS->task_list,
+           QueryAnalysis::Instance(),
+           cmpCurrentContext,
+           gpClusterInfo);
 
       CmpMain::pExpFuncs_->fpDisplayQueryTree( optPass, NULL,
 					       (void*) context->getSolution());

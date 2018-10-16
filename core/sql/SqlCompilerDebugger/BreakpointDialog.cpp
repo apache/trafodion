@@ -55,7 +55,7 @@ void BreakpointDialog::ShowBreakpoint()
   ui_->chkDisplayAfterPrecodegen->setChecked(m_breakpoint->brkAfterPreCodegen);
   ui_->chkDisplayAfterCodegen->setChecked(m_breakpoint->brkAfterCodegen);
   ui_->chkDisplayAfterTdbGeneration->setChecked(m_breakpoint->brkAfterTDBgen);
-  //ui_->chkDisplayExecution->setChecked(m_breakpoint->brkDuringExecution);
+  ui_->chkDisplayExecution->setChecked(m_breakpoint->brkDuringExecution);
   // Set center screen
   QDesktopWidget * desktop = QApplication::desktop();
   move((desktop->width() - this->width()) / 2, (desktop->height() - this->height()) / 2);
@@ -78,6 +78,7 @@ void BreakpointDialog::on_bkptOK_clicked()
   m_breakpoint->brkAfterPreCodegen = ui_->chkDisplayAfterPrecodegen->isChecked();
   m_breakpoint->brkAfterCodegen = ui_->chkDisplayAfterCodegen->isChecked();
   m_breakpoint->brkAfterTDBgen = ui_->chkDisplayAfterTdbGeneration->isChecked();
+  m_breakpoint->brkDuringExecution = ui_->chkDisplayExecution->isChecked();
   done(0);
 }
 
@@ -109,4 +110,5 @@ void BreakpointDialog::setall(bool checked)
   ui_->chkDisplayAfterPrecodegen->setChecked(checked);
   ui_->chkDisplayAfterCodegen->setChecked(checked);
   ui_->chkDisplayAfterTdbGeneration->setChecked(checked);
+  ui_->chkDisplayExecution->setChecked(checked);
 }

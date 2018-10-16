@@ -35,20 +35,20 @@
   The QApplication should be constructed before any UI control variables, e.g. the MainWindow.
   Otherwise, the UI cannot be launch due to errors.
 */
-QApplication* application_ = NULL;
+QApplication* GlobGuiApplication = NULL;
 
 /*
   The MainWindow must be constucted after the QApplication.
   Otherwise, the UI cannot be launch due to errors.
 
-  For every display query sesion,
-  MainWindow one object will be created when GetSqlcmpdbgExpFuncs is called,
-  and delete at end of DisplayTDBTree
+  For every display query session, the MainWindow global
+  object will be created when SqldbgSetCmpPointers is called
+  for the first time.
 */
 
-MainWindow *mainWindow_ = NULL;
-SqlcmpdbgExpFuncs exportFunctions_;
-NABoolean MainWindow::IsQuiting = false;
+MainWindow *GlobGuiMainWindow = NULL;
+SqlcmpdbgExpFuncs GlobGuiExportFunctions;
+NABoolean MainWindow::IsQuitting = false;
 
 
 MainWindow::MainWindow(QWidget * parent):QMainWindow(parent), ui(new Ui::MainWindow),
@@ -57,7 +57,7 @@ m_popMenu(NULL)
     ui->setupUi(this);
     //Initialize
     m_FinishAllOptimizePass = FALSE;
-    IsQuiting = FALSE;
+    IsQuitting = FALSE;
     // Set center screen
     QDesktopWidget *desktop = QApplication::desktop();
     move((desktop->width() - this->width()) / 2,
@@ -86,13 +86,14 @@ m_popMenu(NULL)
 NABoolean MainWindow::Run()
 {
     IsBackToSqlCompiler_ = FALSE;
-    IsQuiting = FALSE;
+    IsQuitting = FALSE;
     while (!IsBackToSqlCompiler_)
     {
-        if (!IsQuiting)
+        if (!IsQuitting)
         {
-            application_->processEvents(QEventLoop::WaitForMoreEvents |
-                                       QEventLoop::EventLoopExec);
+            GlobGuiApplication->processEvents(
+                 QEventLoop::WaitForMoreEvents |
+                 QEventLoop::EventLoopExec);
         }
         else
         {
@@ -185,7 +186,7 @@ NABoolean MainWindow::NeedToDisplay(Sqlcmpdbg::CompilationPhase phase)
         retval = m_breakpoint->brkAfterTDBgen;
         break;
     case Sqlcmpdbg::DURING_EXECUTION:
-        retval = FALSE;
+        retval = m_breakpoint->brkDuringExecution;
         break;
     case Sqlcmpdbg::DURING_MEMOIZATION:
         retval = TRUE;
@@ -718,7 +719,7 @@ void MainWindow::closeEvent(QCloseEvent * event)
     }
     else
     {
-      IsQuiting = TRUE;
+      IsQuitting = TRUE;
       event->accept();
     }
 }

@@ -359,7 +359,7 @@ void ex_split_top_tcb::registerSubtasks()
 
   // BertBert VVV
   // The GET_NEXT command causes the WorkDown function to be called.
-  sched->registerNextSubtask(sWorkDown,   this, qParent_.down, "GN");
+  sched->registerNextSubtask(sWorkDown,   this, qParent_.down, "DN");
   // BertBert ^^^
 
   // sometimes it is necessary to schedule the workDown/Up tasks explicitly

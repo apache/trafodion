@@ -56,7 +56,10 @@ SOURCES += MainWindow.cpp \
     QueryAnalysisView.cpp \
     TDBDlgExprList.cpp \
     TDBDlgMdamNet.cpp \
-    vers_compilerDebugger.cpp
+    vers_compilerDebugger.cpp \
+    ExeSchedWindow.cpp \
+    TCBTreeView.cpp \
+    ExeQueueDisplay.cpp
 
 HEADERS  += MainWindow.h \
     BreakpointDialog.h \
@@ -73,7 +76,10 @@ HEADERS  += MainWindow.h \
     RulesDialog.h \
     QueryAnalysisView.h \
     TDBDlgExprList.h \
-    TDBDlgMdamNet.h
+    TDBDlgMdamNet.h \
+    ExeSchedWindow.h \
+    TCBTreeView.h \
+    ExeQueueDisplay.h
  
 FORMS    += MainWindow.ui \
     BreakpointDialog.ui \
@@ -87,7 +93,10 @@ FORMS    += MainWindow.ui \
     RulesDialog.ui \
     QueryAnalysisView.ui \
     TDBDlgExprList.ui \
-    TDBDlgMdamNet.ui
+    TDBDlgMdamNet.ui \
+    ExeSchedWindow.ui \
+    TCBTreeView.ui \
+    ExeQueueDisplay.ui
 
 RESOURCES += \
     Resource.qrc
@@ -119,7 +128,9 @@ INCLUDEPATH += ../eh \
                ../../sqf/export/include \
                ../../sqf/commonLogger \
                $$(LOG4CXX_INC_DIR) \
-               $$(LOG4CXX_INC_DIR)/lib4cxx
+               $$(LOG4CXX_INC_DIR)/lib4cxx \
+               $$(JAVA_HOME)/include \
+               $$(JAVA_HOME)/include/linux
 
 
 INCLUDEPATH += ../../sqf/sql/inc \

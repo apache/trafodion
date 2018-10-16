@@ -23,7 +23,8 @@
 #include "MainWindow.h"
 #include "QueryData.h"
 
-extern MainWindow *mainWindow_;
+// defined in MainWindow.cpp
+extern MainWindow *GlobGuiMainWindow;
 
 QueryTreeView::QueryTreeView(QWidget * parent):
 QWidget(parent), ui(new Ui::QueryTreeView)
@@ -63,7 +64,7 @@ void QueryTreeView::UpdateView()
     //------------------------------------------------------------------
     void *tree;
     void *plan;
-    mainWindow_->m_querydata->GetData(&tree, &plan);
+    GlobGuiMainWindow->m_querydata->GetData(&tree, &plan);
     DisplayQueryTree(tree, plan, NULL);
     ui->m_tree->expandAll();
     for (int i = 0; i < ui->m_tree->columnCount(); i++)
@@ -410,8 +411,8 @@ on_m_tree_customContextMenuRequested(const QPoint & pos)
     DFTDETAILS *pDft = v.value < DFTDETAILS * >();
     if (NULL != pDft)
     {
-        mainWindow_->m_querydata->SetCurrExprAndPlan(pDft->currNode,
-                                                     pDft->currPlan);
-        mainWindow_->popUpContextMenu(QCursor::pos());
+        GlobGuiMainWindow->m_querydata->SetCurrExprAndPlan(pDft->currNode,
+                                                           pDft->currPlan);
+        GlobGuiMainWindow->popUpContextMenu(QCursor::pos());
     }
 }
