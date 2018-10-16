@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629
+MinimumVisualStudioVersion = 12.0.40629
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "drvr35_os", "drvr35\drvr35_os.vcxproj", "{4B7C62D7-1C63-4319-9818-98BFBB322CED}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B83DDF3C-8D5C-45AB-868B-4B70BB258647} = {B83DDF3C-8D5C-45AB-868B-4B70BB258647}
