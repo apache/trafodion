@@ -98,7 +98,7 @@ wait_until_done ()
 
 # get log directory
 if [ "$WMS_LOG_DIR" = "" ]; then
-  export WMS_LOG_DIR="$WMS_HOME/logs"
+  export WMS_LOG_DIR="$TRAF_LOG/wms"
 fi
 mkdir -p "$WMS_LOG_DIR"
 

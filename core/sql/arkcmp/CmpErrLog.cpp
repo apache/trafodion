@@ -133,19 +133,19 @@ void CmpErrLog::openLogFile()
   // On Linux determine the log location based off of TRAF_HOME environment
   // variable.
   char logFilePath[MAX_LOGFILE_NAME_LEN+1];
-  char *sqroot = getenv("TRAF_HOME");
+  char *sqlogs = getenv("TRAF_LOG");
 
   // Use a generated path for the logfile if 3 conditions are met:
-  //   1. TRAF_HOME is set in the environment.
+  //   1. TRAF_LOG is set in the environment.
   //   2. The first character of the logfile starts with a character or digit.
   //   3. The complete path can fit into the size of the "logFilePath" buffer.
-  if ((sqroot != NULL) && 
+  if ((sqlogs != NULL) &&
       (isalnum(logFileName[0])) &&
-      (strlen(sqroot) + strlen(logFileName) < sizeof(logFilePath) - 7))
+      (strlen(sqlogs) + strlen(logFileName) < sizeof(logFilePath) - 2))
   {
     // Create the full path to the log file in the logFilePath buffer.
-    snprintf(logFilePath, sizeof(logFilePath), "%s/logs/%s",
-             sqroot, logFileName);
+    snprintf(logFilePath, sizeof(logFilePath), "%s/%s",
+             sqlogs, logFileName);
 
     // Call renameBigLogFile() to check the size and rename the file
     // if it is too big.

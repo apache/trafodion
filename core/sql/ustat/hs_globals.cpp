@@ -3803,12 +3803,12 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
 // the fully-qualified table names.
 void HSGlobalsClass::initJITLogData()
 {
-  char* sqroot = getenv("TRAF_HOME");
-  if (!sqroot)
+  char* sqlogs = getenv("TRAF_LOG");
+  if (!sqlogs)
     return;
   
-  NAString filePath = sqroot;
-  filePath.append("/logs/jit_ulog_params");
+  NAString filePath = sqlogs;
+  filePath.append("/jit_ulog_params");
   FILE* jitParamFile = fopen(filePath.data(), "r");
   if (!jitParamFile)
     return;

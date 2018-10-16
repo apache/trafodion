@@ -1574,26 +1574,26 @@ int main (int argc, char *argv[])
     // We create a standard output file here.
     if ( IsRealCluster )
     {
-        snprintf(fname, sizeof(fname), "%s/logs/trafns.%s.log",
-                 getenv("TRAF_HOME"), Node_name);
+        snprintf(fname, sizeof(fname), "%s/trafns.%s.log",
+                 getenv("TRAF_LOG"), Node_name);
     }
     else
     {
-        snprintf(fname, sizeof(fname), "%s/logs/trafns.%d.%s.log",
-                 getenv("TRAF_HOME"), MyPNID, Node_name);
+        snprintf(fname, sizeof(fname), "%s/trafns.%d.%s.log",
+                 getenv("TRAF_LOG"), MyPNID, Node_name);
     }
 #else
     // Without mpi daemon the monitor has no default standard output.
     // We create a standard output file here.
     if ( IsRealCluster )
     {
-        snprintf(fname, sizeof(fname), "%s/logs/sqmon.%s.log",
-                 getenv("TRAF_HOME"), Node_name);
+        snprintf(fname, sizeof(fname), "%s/sqmon.%s.log",
+                 getenv("TRAF_LOG"), Node_name);
     }
     else
     {
-        snprintf(fname, sizeof(fname), "%s/logs/sqmon.%d.%s.log",
-                 getenv("TRAF_HOME"), MyPNID, Node_name);
+        snprintf(fname, sizeof(fname), "%s/sqmon.%d.%s.log",
+                 getenv("TRAF_LOG"), MyPNID, Node_name);
     }
 #endif
     remove(fname);

@@ -197,7 +197,7 @@ sub printInitialLines {
 #    printScript(1, "   echo\n");
 #    printScript(1, "else\n");
 #    printScript(1, "   echo \"Aborting startup.\"\n");
-#    printScript(1, "   more \$TRAF_HOME/logs/sqcheckmon.log\n");
+#    printScript(1, "   more \$TRAF_LOG/sqcheckmon.log\n");
 #    printScript(1, "   exit 1\n");
 #    printScript(1, "fi\n");
 

@@ -33,42 +33,41 @@ function usage() {
    echo ""
    echo "$prog { all | dcs | rest | core }"
    echo "    all  --- Remove files from core, dcs and rest logs folder"
-   echo "    dcs  --- Remove files from $DCS_INSTALL_DIR/logs folder"
-   echo "    rest --- Remove files from $REST_INSTALL_DIR/logs folder"
-   echo "    core --- Remove log files residing in $TRAF_HOME/logs folder"
+   echo "    dcs  --- Remove files from $TRAF_LOG/dcs folder"
+   echo "    rest --- Remove files from $TRAF_LOG/rest folder"
+   echo "    core --- Remove log files residing in $TRAF_LOG folder"
 }
 
 function core_logs() {
  if [[ ! -z $L_PDSH ]]; then
-   $L_PDSH "rm -f ${TRAF_HOME}/logs/*.err"
-   $L_PDSH "rm -f ${TRAF_HOME}/logs/*.log"
-   $L_PDSH "rm -f ${TRAF_HOME}/logs/*log.[0-9]*"
-   $L_PDSH "rm -f ${TRAF_HOME}/sql/scripts/stdout_*"
+   $L_PDSH "rm -f ${TRAF_LOG}/*.err"
+   $L_PDSH "rm -f ${TRAF_LOG}/*.log"
+   $L_PDSH "rm -f ${TRAF_LOG}/*log.[0-9]*"
+   $L_PDSH "rm -f ${TRAF_LOG}/stdout_*"
  else
-   rm -f ${TRAF_HOME}/logs/*
-   rm -f ${TRAF_HOME}/sql/scripts/stdout_*
+   rm -f ${TRAF_LOG}/*
  fi
 }
 
 function dcs_logs() {
  if [[ ! -z $L_PDSH ]]; then
-   $L_PDSH "rm -f ${DCS_INSTALL_DIR}/logs/*.log"
-   $L_PDSH "rm -f ${DCS_INSTALL_DIR}/logs/*.log.[0-9]*"
-   $L_PDSH "rm -f ${DCS_INSTALL_DIR}/logs/*.out"
-   $L_PDSH "rm -f ${DCS_INSTALL_DIR}/logs/*.out.[0-9]*"
+   $L_PDSH "rm -f ${TRAF_LOG}/dcs/*.log"
+   $L_PDSH "rm -f ${TRAF_LOG}/dcs/*.log.[0-9]*"
+   $L_PDSH "rm -f ${TRAF_LOG}/dcs/*.out"
+   $L_PDSH "rm -f ${TRAF_LOG}/dcs/*.out.[0-9]*"
  else
-   rm -f ${DCS_INSTALL_DIR}/logs/*
+   rm -f ${TRAF_LOG}/dcs/*
  fi
 }
 
 function rest_logs() {
  if [[ ! -z $L_PDSH ]]; then
-   $L_PDSH "rm -f ${REST_INSTALL_DIR}/logs/*.log"
-   $L_PDSH "rm -f ${REST_INSTALL_DIR}/logs/*.log.[0-9]*"
-   $L_PDSH "rm -f ${REST_INSTALL_DIR}/logs/*.out"
-   $L_PDSH "rm -f ${REST_INSTALL_DIR}/logs/*.out.[0-9]*"
+   $L_PDSH "rm -f ${TRAF_LOG}/rest/*.log"
+   $L_PDSH "rm -f ${TRAF_LOG}/rest/*.log.[0-9]*"
+   $L_PDSH "rm -f ${TRAF_LOG}/rest/*.out"
+   $L_PDSH "rm -f ${TRAF_LOG}/rest/*.out.[0-9]*"
  else
-   rm -f ${REST_INSTALL_DIR}/logs/*
+   rm -f ${TRAF_LOG}/rest/*
  fi
 }
 

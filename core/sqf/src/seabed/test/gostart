@@ -23,6 +23,6 @@
 date
 rm -f core.* > /dev/null 2>&1
 sqipcrm
-if [ ! -d $TRAF_HOME/logs ]; then
-	mkdir $TRAF_HOME/logs
+if [ ! -d $TRAF_LOG ]; then
+	mkdir $TRAF_LOG
 fi

@@ -530,36 +530,27 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
   {
     char* logrootdir = NULL;
     char* confrootdir = NULL;
+
+    logrootdir = getenv("TRAF_LOG");
+    if (strlen(logrootdir) > 1000)
+	throw UDRException(38001, "TRAF_HOME is longer than 1000 characters");
+    std::string logDirName(logrootdir);
+
     switch (logLocationIndex) 
     {
-    case 0: // sqroot, for all logs other than dcs
-      logrootdir = getenv("TRAF_HOME");
-      if (strlen(logrootdir) > 1000)
-	throw UDRException(38001, "TRAF_HOME is longer than 1000 characters");
+    case 0: // no sub-directory
       break ;
     case 1:
-      logrootdir = getenv("DCS_INSTALL_DIR");
-      if (!logrootdir)
-	throw UDRException(38001, "DCS_INSTALL_DIR not set");
-      else if (strlen(logrootdir) > 1000)
-	throw UDRException(38001, "DCS_INSTALL_DIR is longer than 1000 characters");
+      logDirName += "/dcs";
       break ;
     case 2:
-      logrootdir = getenv("REST_INSTALL_DIR");
-      if (!logrootdir)
-	throw UDRException(38001, "REST_INSTALL_DIR not set");
-      else if (strlen(logrootdir) > 1000)
-	throw UDRException(38001, "REST_INSTALL_DIR is longer than 1000 characters");
-      break ;
+      logDirName += "/rest";
     default:
       throw UDRException(38001, "Internal error in determining logroot directory");
     }
       
-    std::string logDirName(logrootdir);
     std::string logFileName;
     std::string eventLogFileName(logrootdir);
-    
-    logDirName += "/logs";
     
     if (doTrace)
     {

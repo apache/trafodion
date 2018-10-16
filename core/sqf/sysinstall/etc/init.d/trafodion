@@ -48,7 +48,7 @@ fi
 TRAF_USER=${TRAF_USER:-"trafodion"}
 TRAF_SUDO_CMD=${TRAF_SUDO_CMD:-"su ${TRAF_USER} --login "}
 TRAF_SHELL_CMD=${TRAF_SHELL_CMD:-sqshell}
-TRAF_OUT=${TRAF_VAR:-/var}/log/trafodion/${TRAF_SHELL_CMD}.log
+TRAF_OUT=${TRAF_LOG}/${TRAF_SHELL_CMD}.log
 TRAF_NODE_NAME=`uname -n`
 
 

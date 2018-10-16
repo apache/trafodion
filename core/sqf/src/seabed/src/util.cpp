@@ -1249,11 +1249,11 @@ void sb_util_write_log(char *pp_buf) {
 
     strncpy(gv_ms_save_log, pp_buf, sizeof(gv_ms_save_log) - 1);
     gv_ms_save_log[sizeof(gv_ms_save_log) - 1] = '\0';
-    lp_root = getenv("TRAF_HOME");
+    lp_root = getenv("TRAF_LOG");
     if (lp_root == NULL)
         lp_log_file_dir = NULL;
     else {
-        sprintf(la_log_file_dir, "%s/logs", lp_root);
+        sprintf(la_log_file_dir, "%s", lp_root);
         lp_log_file_dir = la_log_file_dir;
     }
     SBX_log_write(SBX_LOG_TYPE_LOGFILE |        // log_type

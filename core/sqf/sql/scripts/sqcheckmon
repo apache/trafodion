@@ -29,7 +29,7 @@ let lv_sleep_time=5
 let lv_first_time=1
 
 while [ $lv_sqmonitor_up '==' 0 ]; do
-    sqshell -a <<EOF >$TRAF_HOME/logs/sqcheckmon.log 2>&1
+    sqshell -a <<EOF >$TRAF_LOG/sqcheckmon.log 2>&1
 EOF
     let lv_sqshell_ret=$?
     if [ $lv_sqshell_ret '==' 0 ]; then

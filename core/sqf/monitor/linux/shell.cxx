@@ -4542,7 +4542,7 @@ int node_up( int nid, char *node_name, bool nowait )
 
         // remove shared segment on the node
         char cmd[256];
-        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $TRAF_HOME/logs/node_up_%s.log\"", node_name, node_name, node_name);
+        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $TRAF_LOG/node_up_%s.log\"", node_name, node_name, node_name);
         system(cmd);
 
         // Start a monitor process on the node
@@ -6140,10 +6140,10 @@ void write_startup_log( char *msg )
     char fname[PATH_MAX];
     char msgString[MAX_BUFFER] = { 0 };
 
-    char *tmpDir = getenv( "TRAF_HOME" );
+    char *tmpDir = getenv( "TRAF_LOG" );
     if ( tmpDir )
     {
-        snprintf( fname, sizeof(fname), "%s/sql/scripts/startup.log", tmpDir );
+        snprintf( fname, sizeof(fname), "%s/mon_startup.log", tmpDir );
     }
     else
     {

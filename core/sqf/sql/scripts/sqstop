@@ -35,7 +35,7 @@ function Usage {
 }
 
 function LogIt {
-    echo  "`date`: $1" >> $TRAF_HOME/logs/startup.log
+    echo  "`date`: $1" >> $TRAF_LOG/startup.log
 }
 
 function echoLog {
@@ -44,10 +44,10 @@ function echoLog {
 }
 
 script_name=`/bin/basename $0`
-SQLOG_DIR=$TRAF_HOME/logs
+SQLOG_DIR=$TRAF_LOG
 SQMON_LOG=$SQLOG_DIR/sqmon.log
 SQGOMON_FILE=$TRAF_HOME/sql/scripts/gomon.cold
-SQSTOP_EXIT_STATUS=$TRAF_HOME/sql/scripts/sqstop.exit_status
+SQSTOP_EXIT_STATUS=$TRAF_VAR/sqstop.exit_status
 
 if [ $# -eq 0 ]; then
     shutdowntype=normal
@@ -227,7 +227,7 @@ if (test -n "${CLUSTERNAME}"); then
 					unbindip=`echo "$match_ip_interface"|awk '{print $2}'`
 					unbindlb=`echo "$match_ip_interface"|awk '{print $NF}'`
 					echoLog "pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb"
-					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_HOME/logs/ndcsunbind.log
+					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_LOG/ndcsunbind.log
 				fi
 	       done
 	   done
@@ -242,7 +242,7 @@ if (test -n "${CLUSTERNAME}"); then
 					unbindip=`echo "$match_ip_interface"|awk '{print $2}'`
 					unbindlb=`echo "$match_ip_interface"|awk '{print $NF}'`
 					echoLog "pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb"
-					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_HOME/logs/ndcsunbind.log
+					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_LOG/ndcsunbind.log
 			   fi
 		   done
 	   done

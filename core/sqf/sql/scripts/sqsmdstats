@@ -279,7 +279,7 @@ function generateOutput
 # **************************************************************************
 # FUNCTION: adjustSavedFiles
 # removes old versions of saved files, only retain $archiveCount versions
-# copies final list of files to $TRAF_HOME/logs/sqsmdstats_logs directory
+# copies final list of files to $TRAF_LOG/sqsmdstats_logs directory
 #   on all nodes
 function adjustSavedFiles
 {
@@ -499,7 +499,7 @@ fi
  
 # set up script location, name of results file, etc.
 if [ "$scriptAndLogLoc" = "" ]; then
-   scriptAndLogLoc=$TRAF_HOME/logs/sqsmdstats_logs
+   scriptAndLogLoc=$TRAF_LOG/sqsmdstats_logs
 fi
 
 resultsFile=$scriptAndLogLoc/sqsmdstats_details_$scriptStartTime.log

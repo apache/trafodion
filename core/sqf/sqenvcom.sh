@@ -147,6 +147,7 @@ else
 fi
 export TRAF_HOME=$PWD
 export TRAF_VAR=${TRAF_VAR:-$TRAF_HOME/tmp}
+export TRAF_LOG=${TRAF_LOG:-$TRAF_HOME/logs}
 export TRAF_CONF=${TRAF_CONF:-$TRAF_HOME/conf}
 
 # normal installed location, can be overridden in .trafodion
