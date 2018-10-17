@@ -1275,15 +1275,15 @@ public class HBaseClient {
       final String HFILE_NAME_PATTERN  = "[0-9a-f]*";
 
       // To estimate incidence of nulls, read the first 500 rows worth
-      // of KeyValues.
-      final int ROWS_TO_SAMPLE = 500;
+      // of KeyValues. For aligned format (numCols == 1), the whole row 
+      // is in one cell so we don't need to look for missing cells.
+      final int ROWS_TO_SAMPLE = ((numCols > 1) ? 500 : 0);  // don't bother sampling for aligned format
       int putKVsSampled = 0;
       int nonPutKVsSampled = 0;
       int missingKVsCount = 0;
       int sampleRowCount = 0;
       long totalEntries = 0;   // KeyValues in all HFiles for table
       long totalSizeBytes = 0; // Size of all HFiles for table 
-      long estimatedTotalPuts = 0;
       boolean more = true;
 
       // Make sure the config doesn't specify HBase bucket cache. If it does,
@@ -1398,13 +1398,32 @@ public class HBaseClient {
       long estimatedEntries = (ROWS_TO_SAMPLE > 0
                                  ? 0               // get from sample data, below
                                  : totalEntries);  // no sampling, use stored value
-      if (putKVsSampled > 0) // avoid div by 0 if no Put KVs in sample
-        {
-          estimatedTotalPuts = (putKVsSampled * totalEntries) / 
-                               (putKVsSampled + nonPutKVsSampled);
-          estimatedEntries = ((putKVsSampled + missingKVsCount) * estimatedTotalPuts)
+      if ((putKVsSampled > 0) && // avoid div by 0 if no Put KVs in sample
+          (putKVsSampled >= ROWS_TO_SAMPLE/10)) { // avoid really small samples
+        // Formerly, we would multiply this by a factor of 
+        // putKVsSampled / (putKVsSampled + nonPutKVsSampled).
+        // If non-put records are evenly distributed among the cells, then
+        // that would give a better estimate. However, we find that often
+        // (e.g. time-ordered data that is being aged out), the non-put cells
+        // clump up in one place -- they might even take a whole HFile!
+        // There is no real way to compensate other than reading the entire
+        // table. So, we don't try to scale down the number of rows based 
+        // on the proportion of non-Put cells. That means the value below
+        // will sometimes over-estimate, but it is much better to over-
+        // estimate than to under-estimate when it comes to row counts.
+        estimatedEntries = ((putKVsSampled + missingKVsCount) * totalEntries)
                                    / putKVsSampled;
-        }
+      } else { // few or no Puts found
+        // The first file might have been full of deletes, which can happen
+        // when time-ordered data ages out. We don't want to infer that the
+        // table as a whole is all deletes (it almost certainly isn't in the
+        // time-ordered data age-out case). We could just keep reading HFiles
+        // until we find one with a decent sample of rows but that might take
+        // awhile. Instead, we'll just punt and use totalEntries for our
+        // estimate. This will over-estimate, but it is far better to do that
+        // than to under-estimate.
+        estimatedEntries = totalEntries;
+      }
 
       // Calculate estimate of rows in all HFiles of table.
       rc[0] = (estimatedEntries + (numCols/2)) / numCols; // round instead of truncate
@@ -1442,8 +1461,6 @@ public class HBaseClient {
       long memStoreRows = estimateMemStoreRows(tblName, rowSize);
 
       if (logger.isDebugEnabled()) logger.debug(tblName + " contains a total of " + totalEntries + " KeyValues in all HFiles.");
-      if (logger.isDebugEnabled()) logger.debug("Based on a sample, it is estimated that " + estimatedTotalPuts +
-                   " of these KeyValues are of type Put.");
       if (putKVsSampled + missingKVsCount > 0)
         if (logger.isDebugEnabled()) logger.debug("Sampling indicates a null incidence of " + 
                      (missingKVsCount * 100)/(putKVsSampled + missingKVsCount) +
@@ -1555,13 +1572,33 @@ public class HBaseClient {
       long estimatedEntries = ((ROWS_TO_SAMPLE > 0) && (numCols > 1)
                                  ? 0               // get from sample data, below
                                  : totalEntries);  // no sampling, use stored value
-      if (putKVsSampled > 0) // avoid div by 0 if no Put KVs in sample
-        {
-          long estimatedTotalPuts = (putKVsSampled * totalEntries) / 
-                               (putKVsSampled + nonPutKVsSampled);
-          estimatedEntries = ((putKVsSampled + missingKVsCount) * estimatedTotalPuts)
+
+      if ((putKVsSampled > 0) && // avoid div by 0 if no Put KVs in sample
+          (putKVsSampled >= ROWS_TO_SAMPLE/10)) { // avoid really small samples
+        // Formerly, we would multiply this by a factor of 
+        // putKVsSampled / (putKVsSampled + nonPutKVsSampled).
+        // If non-put records are evenly distributed among the cells, then
+        // that would give a better estimate. However, we find that often
+        // (e.g. time-ordered data that is being aged out), the non-put cells
+        // clump up in one place -- they might even take a whole HFile!
+        // There is no real way to compensate other than reading the entire
+        // table. So, we don't try to scale down the number of rows based 
+        // on the proportion of non-Put cells. That means the value below
+        // will sometimes over-estimate, but it is much better to over-
+        // estimate than to under-estimate when it comes to row counts.
+        estimatedEntries = ((putKVsSampled + missingKVsCount) * totalEntries)
                                    / putKVsSampled;
-        }
+      } else { // few or no Puts found
+        // The first file might have been full of deletes, which can happen
+        // when time-ordered data ages out. We don't want to infer that the
+        // table as a whole is all deletes (it almost certainly isn't in the
+        // time-ordered data age-out case). We could just keep reading HFiles
+        // until we find one with a decent sample of rows but that might take
+        // awhile. Instead, we'll just punt and use totalEntries for our
+        // estimate. This will over-estimate, but it is far better to do that
+        // than to under-estimate.
+        estimatedEntries = totalEntries;
+      }
 
       if (logger.isDebugEnabled()) { 
         logger.debug("estimatedEntries = " + estimatedEntries + ", numCols = " + numCols);
