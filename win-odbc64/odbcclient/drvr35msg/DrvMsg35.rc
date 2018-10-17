@@ -71,7 +71,7 @@ BEGIN
             VALUE "FileDescription", "TRAF ODBC Client Msg DLL"
             VALUE "FileVersion", "2.3.0.0"
             VALUE "InternalName", "TRAF ODBC Client Msg DLL"
-            VALUE "LegalCopyright", "?Copyright 2015-2017 Apache Software Foundation"
+            VALUE "LegalCopyright", "?Copyright 2015-2018 Apache Software Foundation"
             VALUE "OriginalFilename", "traf_odbcDrvMsg_intl0100.dll"
             VALUE "ProductName", "TRAF ODBC"
             VALUE "ProductVersion", "2.3.0.0"
