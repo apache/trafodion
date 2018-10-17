@@ -155,10 +155,10 @@ if %BUILD_STATUS%==0 (
 )
 
 ISCC.exe /Q %BUILDDIR%\win-odbc64\Install\win64_installer\installer.iss
-copy /Y %BUILDDIR%\win-odbc64\Install\win64_installer\Output\TFODBC64-2.2.0.exe %PACKDIR%
+copy /Y %BUILDDIR%\win-odbc64\Install\win64_installer\Output\TFODBC64-2.3.0.exe %PACKDIR%
 @echo on
 
-if exist %PACKDIR%\TFODBC64-2.2.0.exe (
+if exist %PACKDIR%\TFODBC64-2.3.0.exe (
 	set ALL_SUCCESS=1
 )
 cd %BUILDDIR%\win-odbc64\odbcclient

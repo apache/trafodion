@@ -57,10 +57,10 @@ if %BUILD_STATUS% == 0 (
 
 ISCC.exe /Q %BUILDDIR%\installer.iss
 
-copy /Y %BUILDDIR%\Output\TRAFODB-2.2.0.exe %PACKDIR%
+copy /Y %BUILDDIR%\Output\TRAFODB-2.3.0.exe %PACKDIR%
 @echo on
 
-if exist %PACKDIR%\TRAFODB-2.2.0.exe (
+if exist %PACKDIR%\TRAFODB-2.3.0.exe (
 	set ALL_SUCCESS=1
 )
 
