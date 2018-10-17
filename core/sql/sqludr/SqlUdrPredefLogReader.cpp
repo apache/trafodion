@@ -533,7 +533,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 
     logrootdir = getenv("TRAF_LOG");
     if (strlen(logrootdir) > 1000)
-	throw UDRException(38001, "TRAF_HOME is longer than 1000 characters");
+	throw UDRException(38001, "TRAF_LOG is longer than 1000 characters");
     std::string logDirName(logrootdir);
 
     switch (logLocationIndex) 
@@ -545,6 +545,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
       break ;
     case 2:
       logDirName += "/rest";
+      break ;
     default:
       throw UDRException(38001, "Internal error in determining logroot directory");
     }
