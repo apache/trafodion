@@ -808,6 +808,7 @@ Int32 ExUdrTcb::fixup()
             libOrJarName = myTdb().getPathName();
           else
             libOrJarName = myTdb().getContainerName();
+          Int32 err = 0;
           if(ComGenerateUdrCachedLibName(libOrJarName.data(),
                                          myTdb().getLibraryRedefTime(),
                                          myTdb().getLibrarySchName(),
@@ -815,9 +816,16 @@ Int32 ExUdrTcb::fixup()
                                          cachedLibName, cachedLibPath))
             {
               NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
-                  *getOrCreateStmtDiags() <<  DgSqlCode(-4316)
-                                << DgString0(( char *)cachedFullName.data());;
-                  return FIXUP_ERROR;
+               char errString[200];
+               NAString errNAString;
+               sprintf(errString , "Error %d creating directory :",err); 
+               errNAString = errString;
+               errNAString += cachedFullName;
+             
+              
+               *getOrCreateStmtDiags() <<  DgSqlCode(-4316)
+                                       << DgString0(( char *)errNAString.data());
+               return FIXUP_ERROR;
             }
            NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
           //If the local copy already exists, don't bother extracting.

@@ -403,6 +403,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
   NADELETEBASIC(query, STMTHEAP);
   if (cliRC < 0)
     {
+      deallocEHI(ehi); 
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       processReturn();
       return;
@@ -653,148 +654,7 @@ void CmpSeabaseDDL::createSeabaseLibrary2(
   return;
 }
 
-void CmpSeabaseDDL::dropSeabaseLibrary2(StmtDDLDropLibrary * dropLibraryNode,
-                                       NAString &currCatName, 
-                                       NAString &currSchName)
-{
-  Lng32 cliRC = 0;
-  Lng32 retcode = 0;
 
-  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-  NARoutineDB *pRoutineDBCache  = ActiveSchemaDB()->getNARoutineDB();
-  const NAString &objName = dropLibraryNode->getLibraryName();
-
-  ComObjectName libraryName(objName);
-  ComAnsiNamePart currCatAnsiName(currCatName);
-  ComAnsiNamePart currSchAnsiName(currSchName);
-  libraryName.applyDefaults(currCatAnsiName, currSchAnsiName);
-
-  const NAString catalogNamePart = libraryName.
-    getCatalogNamePartAsAnsiString();
-  const NAString schemaNamePart = libraryName.
-    getSchemaNamePartAsAnsiString(TRUE);
-  const NAString objectNamePart = libraryName.
-    getObjectNamePartAsAnsiString(TRUE);
-  const NAString extLibraryName = libraryName.getExternalName(TRUE);
-
-  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
-    CmpCommon::context()->sqlSession()->getParentQid());
-
-  ExpHbaseInterface * ehi = allocEHI();
-  if (ehi == NULL)
-    return;
-
-  retcode = existsInSeabaseMDTable(&cliInterface, 
-				   catalogNamePart, schemaNamePart, 
-                                   objectNamePart,
-				   COM_LIBRARY_OBJECT, TRUE, FALSE);
-  if (retcode < 0)
-    {
-      deallocEHI(ehi); 
-      processReturn();
-      return;
-    }
-
-  if (retcode == 0) // does not exist
-    {
-      *CmpCommon::diags() << DgSqlCode(-1389)
-			  << DgString0(extLibraryName);
-      deallocEHI(ehi); 
-      processReturn();
-      return;
-    }
-
-  Int32 objectOwnerID = 0;
-  Int32 schemaOwnerID = 0;
-  Int64 objectFlags = 0;
-  Int64 objUID = getObjectInfo(&cliInterface,
-			      catalogNamePart.data(), schemaNamePart.data(), 
-			      objectNamePart.data(), COM_LIBRARY_OBJECT,
-                              objectOwnerID,schemaOwnerID,objectFlags);
-  if (objUID < 0 || objectOwnerID == 0 || schemaOwnerID == 0)
-    {
-      deallocEHI(ehi); 
-      processReturn();
-      return;
-    }
-
-  if (!isDDLOperationAuthorized(SQLOperation::DROP_LIBRARY,
-                                objectOwnerID,
-                                schemaOwnerID))
-  {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     processReturn ();
-     return;
-  }
-  
-  Queue * usingRoutinesQueue = NULL;
-  cliRC = getUsingRoutines(&cliInterface, objUID, usingRoutinesQueue);
-  if (cliRC < 0)
-    {
-      deallocEHI(ehi); 
-      processReturn();
-      return;
-    }
-  // If RESTRICT and the library is being used, return an error
-  if (cliRC != 100 && dropLibraryNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR) 
-    {
-      *CmpCommon::diags() << DgSqlCode(-CAT_DEPENDENT_ROUTINES_EXIST);
-
-      deallocEHI(ehi); 
-      processReturn();
-      return;
-    }
-    
-  usingRoutinesQueue->position();
-  for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i++)
-  { 
-     OutputInfo * rou = (OutputInfo*)usingRoutinesQueue->getNext(); 
-     
-     char * routineName = rou->get(0);
-     ComObjectType objectType = PrivMgr::ObjectLitToEnum(rou->get(1));
-
-     if (dropSeabaseObject(ehi, routineName,
-                           currCatName, currSchName, objectType,
-                           dropLibraryNode->ddlXns(),
-                           TRUE, FALSE))
-     {
-       deallocEHI(ehi); 
-       processReturn();
-       return;
-     }
-
-     // Remove routine from DBRoutinCache
-     ComObjectName objectName(routineName);
-     QualifiedName qualRoutineName(objectName, STMTHEAP);
-     NARoutineDBKey key(qualRoutineName, STMTHEAP);
-     NARoutine *cachedNARoutine = pRoutineDBCache->get(&bindWA, &key);
-
-     if (cachedNARoutine)
-     {
-       Int64 routineUID = *(Int64*)rou->get(2);
-       pRoutineDBCache->removeNARoutine(qualRoutineName,
-                                        ComQiScope::REMOVE_FROM_ALL_USERS,
-                                        routineUID,
-                                        dropLibraryNode->ddlXns(), FALSE);
-     }
-
-   }
- 
-  // can get a slight perf. gain if we pass in objUID
-  if (dropSeabaseObject(ehi, objName,
-                        currCatName, currSchName, COM_LIBRARY_OBJECT,
-                        dropLibraryNode->ddlXns(),
-                        TRUE, FALSE))
-    {
-      deallocEHI(ehi); 
-      processReturn();
-      return;
-    }
-
-  deallocEHI(ehi);      
-  processReturn();
-  return;
-}
 void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
                                        NAString &currCatName, 
                                        NAString &currSchName)

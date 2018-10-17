@@ -113,7 +113,7 @@ NAString ComConvertTrafHiveNameToNativeHiveName(
 NABoolean ComTrafReservedColName(const NAString &colName);
 
 // Converts a library name like myfile.jar or myfile.so to this format
-// $TRAF_HOME/$MY_UDR_CACHE_LIBDIR/<user>|public/myfile_<redeftime>.jar|so 
+// $TRAF_HOME/$UDR_CACHE_LIBDIR/<user>|myfile_<redeftime>.jar|so 
 Int32 ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime,NAString schemaName, NAString user, NAString&cachedLibName, NAString &cachedPathName );
 
 

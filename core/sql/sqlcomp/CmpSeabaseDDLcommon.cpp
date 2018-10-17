@@ -9297,12 +9297,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           // drop seabase library
           StmtDDLDropLibrary * dropLibraryParseNode =
             ddlNode->castToStmtDDLNode()->castToStmtDDLDropLibrary();
-          if( (CmpCommon::getDefault(USE_LIB_BLOB_STORE) == DF_OFF))
             dropSeabaseLibrary(dropLibraryParseNode, currCatName, currSchName);
-          else
-            {          
-              dropSeabaseLibrary2(dropLibraryParseNode, currCatName, currSchName);
-            }
         }
        else if (ddlNode->getOperatorType() == DDL_ALTER_LIBRARY)
          {

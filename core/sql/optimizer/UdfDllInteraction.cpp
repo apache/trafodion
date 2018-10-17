@@ -151,15 +151,21 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
         libOrJarName = routine->getExternalPath();
       else
         libOrJarName = routine->getContainerName();
-      if(ComGenerateUdrCachedLibName(libOrJarName.data(),
+      Int32 err = 0;
+      if(err = ComGenerateUdrCachedLibName(libOrJarName.data(),
                                   routine->getLibRedefTime(),
                                   routine->getLibSchName(),
                                   dummyUser,
                                      cachedLibName, cachedLibPath))
         {
            NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
+           char errString[200];
+           NAString errNAString;
+           sprintf(errString , "Error %d creating directory :",err); 
+           errNAString = errString;
+           errNAString += cachedFullName;
            *CmpCommon::diags() <<  DgSqlCode(-4316)
-                                  << DgString0(( char *)cachedFullName.data());
+                                  << DgString0(( char *)errNAString.data());
            bindWA->setErrStatus();
            return FALSE;
         }

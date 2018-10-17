@@ -372,7 +372,8 @@ Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString sc
       libPrefix = libname(0,lastDot);
     }
  
-  //when isolated user support is added   
+  //when isolated user support is added we will pass an actual userid.
+  //By default we assume DB__ROOT.
   if (userid.length()!=0)       
     {
 
@@ -382,17 +383,7 @@ Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString sc
          {
            if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
              {
-               return -1;
-             }
-               
-         }
-      cachedLibPath += "/";
-      cachedLibPath += getenv("MY_UDR_CACHE_LIBDIR");
-      if ( stat(cachedLibPath, &statbuf) != 0)
-         {
-           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
-             {
-               return -1;
+               return errno;
              }
                
          }
@@ -402,16 +393,27 @@ Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString sc
           if (mkdir(cachedLibPath,S_IRUSR|S_IWUSR|S_IXUSR))//Only this user has 
             //permission to read/write/execute in this directory and below.
             {
-              return -1;
+              return errno;
             }
                
         }
+      cachedLibPath += "/";
+      cachedLibPath += getenv("UDR_CACHE_LIBDIR");
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+     
       cachedLibPath += "/" + schemaName;
       if ( stat(cachedLibPath, &statbuf) != 0)
          {
            if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
              {
-               return -1;
+               return errno;
              }
                
          }
@@ -426,37 +428,38 @@ Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString sc
          {
            if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
              {
-               return -1;
-             }
-               
-         }
-      cachedLibPath += "/";
-      cachedLibPath += getenv("MY_UDR_CACHE_LIBDIR");
-      if ( stat(cachedLibPath, &statbuf) != 0)
-         {
-           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
-             {
-               return -1;
+               return errno;
              }
                
          }
       cachedLibPath +=  "/"+ NAString("DB__ROOT") ;
       if (stat(cachedLibPath, &statbuf) != 0)
         {
-          if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO)) // these permissions
+          if (mkdir(cachedLibPath,S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) // these permissions
             //need to change when we have isolated user support so only DB_ROOT 
             //can access this directory. Right now we allow all to access this directory
             {
-              return -1;
+              return errno;
             }
                
         }
+      cachedLibPath += "/";
+      cachedLibPath += getenv("UDR_CACHE_LIBDIR");
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+    
       cachedLibPath += "/" + schemaName;
       if ( stat(cachedLibPath, &statbuf) != 0)
          {
            if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
              {
-               return -1;
+               return errno;
              }
                
          }

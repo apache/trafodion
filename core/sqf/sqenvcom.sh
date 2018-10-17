@@ -113,10 +113,10 @@ export MAKEFLAGS="-j$cpucnt"
 if [ -z "$TOOLSDIR" ]; then
   if [[ -n "$CLUSTERNAME" ]]; then
     export TOOLSDIR=${TOOLSDIR:-/home/tools}
-    export MY_UDR_ROOT=/home/udr
+    export UDR_ROOT=/home/udr
   else
     export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
-    export MY_UDR_ROOT=$PWD
+    export UDR_ROOT=$PWD
   fi
 fi
 
@@ -207,7 +207,7 @@ export DTM_COMMON_JAR=trafodion-dtm-cdh-${TRAFODION_VER}.jar
 export SQL_JAR=trafodion-sql-cdh-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
-export MY_UDR_CACHE_LIBDIR=cached_libs
+export UDR_CACHE_LIBDIR=cached_libs
 
 
 if [[ "$HBASE_DISTRO" == "HDP" ]]; then

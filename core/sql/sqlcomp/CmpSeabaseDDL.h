@@ -1330,8 +1330,7 @@ protected:
 
   void dropSeabaseLibrary(StmtDDLDropLibrary  * dropLibraryNode,
                           NAString &currCatName, NAString &currSchName);
-  void dropSeabaseLibrary2(StmtDDLDropLibrary  * dropLibraryNode,
-                          NAString &currCatName, NAString &currSchName);
+ 
   void  alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
 			    NAString &currCatName, NAString &currSchName);
   void  alterSeabaseLibrary2(StmtDDLAlterLibrary  *alterLibraryNode,

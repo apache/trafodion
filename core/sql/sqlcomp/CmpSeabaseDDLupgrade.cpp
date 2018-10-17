@@ -325,8 +325,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
   // interfaces for upgrading subsystems; OK to create on stack for
   // now as they are stateless
   CmpSeabaseUpgradeRepository upgradeRepository;
-  CmpSeabaseUpgradePrivMgr upgradePrivMgr;
   CmpSeabaseUpgradeLibraries upgradeLibraries;
+  CmpSeabaseUpgradePrivMgr upgradePrivMgr;
+  
   ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
   ExpHbaseInterface * ehi = NULL;
@@ -1673,7 +1674,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
               {
                 *CmpCommon::diags() << DgSqlCode(-20123);
                 
-                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_REPOS);
+                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_LIBRARIES);
                 mdui->setSubstep(0);
                 
                 break;

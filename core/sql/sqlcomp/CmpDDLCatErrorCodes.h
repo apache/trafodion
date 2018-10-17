@@ -1,5 +1,4 @@
 /**********************************************************************
-
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -69,7 +68,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_CATALOG_ALREADY_EXISTS                    = 1035
                   , CAT_CIRCULAR_PRIVS                            = 1036
                   , CAT_DEPENDENT_PRIV_EXISTS                     = 1037
-                  , CAT_UNABLE_TO_UPGRADE                         = 1037
+                  //unused                         = 1038
                   , CAT_PRIVILEGE_NOT_REVOKED                     = 1039
                   , CAT_SMD_CANNOT_BE_ALTERED                     = 1040
                   , CAT_PRIMARY_KEY_ALREADY_DEFINED               = 1041

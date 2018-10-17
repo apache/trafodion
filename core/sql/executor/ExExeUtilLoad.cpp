@@ -3291,7 +3291,7 @@ short ExExeUtilLobExtractTcb::work()
 
 short ExExeUtilLobExtractLibrary(ExeCliInterface *cliInterface,char *libHandle, char *cachedLibName,ComDiagsArea *toDiags)
 {
-  char buf[1000];
+  char buf[strlen(cachedLibName) + strlen(libHandle)+200];
   Int32 cliRC =0;
   str_sprintf(buf, "extract lobtofile(LOB '%s','%s');",libHandle,cachedLibName);
                
