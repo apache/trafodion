@@ -189,7 +189,7 @@ function copy_config
 # =============================================================================
 function enable_authorization
 {
-  logLoc=$TRAF_HOME/logs
+  logLoc=$TRAF_LOG
   rm $logLoc/authEnable.log > /dev/null 2>&1
   #gdb sqlci
   sqlci >> "$logLoc/authEnable.log" 2>&1 <<eof
@@ -216,7 +216,7 @@ eof
 # =============================================================================
 function disable_authorization
 {
-  logLoc=$TRAF_HOME/logs
+  logLoc=$TRAF_LOG
   rm $logLoc/authDisable.log > /dev/null 2>&1
   sqlci >> "$logLoc/authDisable.log" 2>&1 <<eof
    values (current_timestamp);
@@ -243,7 +243,7 @@ eof
 # =============================================================================
 function status_authorization
 {
-  logLoc=$TRAF_HOME/logs
+  logLoc=$TRAF_LOG
   rm $logLoc/authStatus.log > /dev/null 2>&1
   sqlci >> "$logLoc/authStatus.log" 2>&1 <<eof
    values (current_timestamp);

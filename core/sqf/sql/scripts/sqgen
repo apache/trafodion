@@ -178,7 +178,7 @@ while [ $# != 0 ]
   done
 
 export SQETC_DIR=$TRAF_HOME/etc
-export SQLOG_DIR=$TRAF_HOME/logs
+export SQLOG_DIR=$TRAF_LOG
 mkdir -p $SQETC_DIR
 mkdir -p $SQLOG_DIR
 mkdir -p $MPI_TMPDIR

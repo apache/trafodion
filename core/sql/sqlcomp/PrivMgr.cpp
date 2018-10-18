@@ -1068,7 +1068,7 @@ void PrivMgr::setFlags()
 //   QRLogger generates a message calls the log method in 
 //      sqf/commonLogger/CommonLogger (.h & .cpp) 
 //   CommonLogger interfaces with the log4cxx code which eventually puts
-//      a message into a log file called ../sqf/logs/master_exec_0_pid.log.  
+//      a message into a log file called $TRAF_LOG/master_exec_0_pid.log.  
 //      A new master log is created for each new SQL process started.
 //
 // Sometimes it is amazing that things actually work with all these levels

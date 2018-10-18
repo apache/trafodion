@@ -307,15 +307,14 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
 
   if (!isDefinedInOptions(options, "-XX:HeapDumpPath="))
     {
-      char *mySqRoot = getenv("TRAF_HOME");
+      char *mySqLogs = getenv("TRAF_LOG");
       int len;
-      if (mySqRoot != NULL)
+      if (mySqLogs != NULL)
         {
-          len = strlen(mySqRoot); 
+          len = strlen(mySqLogs); 
           oomDumpDir = new char[len+50];
           strcpy(oomDumpDir, "-XX:HeapDumpPath="); 
-          strcat(oomDumpDir, mySqRoot);
-          strcat(oomDumpDir, "/logs");
+          strcat(oomDumpDir, mySqLogs);
           jvm_options[numJVMOptions].optionString = (char *)oomDumpDir;
           jvm_options[numJVMOptions].extraInfo = NULL;
           numJVMOptions++;

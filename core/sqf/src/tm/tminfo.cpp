@@ -1507,7 +1507,7 @@ int32 TM_Info::restart_tm_process(int32 pv_nid)
 {
     char la_buf_tm_name[20];
     char la_prog[MS_MON_MAX_PROCESS_PATH];
-    char la_out_file[128];
+    char la_out_file[MS_MON_MAX_PROCESS_PATH];
     int lv_server_nid = pv_nid;
     int lv_server_pid;
     int32 lv_oid = 0;
@@ -1528,7 +1528,8 @@ int32 TM_Info::restart_tm_process(int32 pv_nid)
     }
 
     strcpy(la_prog, "tm");
-    sprintf(la_out_file, "stdout_dtm_%d", pv_nid);
+    const char *la_logpath = ms_getenv_str("TRAF_LOG");
+    sprintf(la_out_file, "%s/stdout_dtm_%d", la_logpath, pv_nid);
 
     sprintf (la_buf_tm_name, "$tm%d", pv_nid);
 

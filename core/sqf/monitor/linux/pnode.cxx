@@ -1256,8 +1256,9 @@ void CNode::StartNameServerProcess( void )
     char name[MAX_PROCESS_NAME];
     char stdout[MAX_PROCESS_PATH];
     
+    const char *logpath = getenv("TRAF_LOG");
     snprintf( name, sizeof(name), "$TNS%d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_TNS%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "%s/stdout_TNS%d", logpath, MyNode->GetZone() );
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
@@ -1319,8 +1320,9 @@ void CNode::StartWatchdogProcess( void )
     char stdout[MAX_PROCESS_PATH];
     CProcess * watchdogProcess;
     
+    const char *logpath = getenv("TRAF_LOG");
     snprintf( name, sizeof(name), "$WDG%d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_WDG%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "%s/stdout_WDG%d", logpath, MyNode->GetZone() );
 
     // The following variables are used to retrieve the proper startup and keepalive environment variable
     // values, and to use as arguments for the lower level ioctl calls that interface with the watchdog 
@@ -1402,8 +1404,9 @@ void CNode::StartPStartDProcess( void )
     char stdout[MAX_PROCESS_PATH];
     CProcess * pstartdProcess;
     
+    const char *logpath = getenv("TRAF_LOG");
     snprintf( name, sizeof(name), "$PSD%d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_PSD%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "%s/stdout_PSD%d", logpath, MyNode->GetZone() );
 
     strcpy(path,getenv("PATH"));
     strcat(path,":");
@@ -1579,8 +1582,9 @@ void CNode::StartSMServiceProcess( void )
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d" " - Creating SMService Process\n", method_name, __LINE__);
 
+    const char *logpath = getenv("TRAF_LOG");
     snprintf( name, sizeof(name), "$SMS%03d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_SMS%03d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "%s/stdout_SMS%03d", logpath, MyNode->GetZone() );
 
     strcpy(path,getenv("PATH"));
     strcat(path,":");

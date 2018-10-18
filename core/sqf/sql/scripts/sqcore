@@ -34,7 +34,7 @@ function Usage {
     echo "Usage: $0 [ -d <directory> | -q | -r | -h  ]"
     echo 
     echo "-d        Head node directory where the users cluster core files are to be moved"
-    echo "          The default location is \$TRAF_HOME/logs"
+    echo "          The default location is \$TRAF_LOG"
     echo "-q        Quiet mode (no prompts)"
     echo "-r        Remove all of a users cluster core files (excluding head node)"
     echo "-h        Help"
@@ -93,7 +93,7 @@ declare -i SQ_REMOVE=0
 declare -i ERR_FLAG=0
 head=`headnode`
 current=`uname -n`
-to_path=$TRAF_HOME/logs
+to_path=$TRAF_LOG
 
 GetOpts $@
 

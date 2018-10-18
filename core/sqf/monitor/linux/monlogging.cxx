@@ -209,18 +209,18 @@ void CMonLog::writeAltLog(int eventType, posix_sqlog_severity_t severity, char *
     char   logFileDir[PATH_MAX];
     char  *logFileDirPtr;
     char   logFilePrefix[MAX_FILE_NAME];
-    char  *rootDir;
+    char  *logDir;
 
     if ( useAltLog_ )
     {
-        rootDir = getenv("TRAF_HOME");
-        if (rootDir == NULL)
+        logDir = getenv("TRAF_LOG");
+        if (logDir == NULL)
         {
             logFileDirPtr = NULL;
         }
         else
         {
-            sprintf(logFileDir, "%s/logs", rootDir);
+            sprintf(logFileDir, "%s", logDir);
             logFileDirPtr = logFileDir;
         }
 

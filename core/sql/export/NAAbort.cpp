@@ -237,7 +237,7 @@ void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c)
   SQLMXLoggingArea::logSQLMXAssertionFailureEvent(f, l, m, c, tidPtr); // Any executor thread can log a failure
 
   // Log the message to stderr. On Linux stderr is mapped to a file
-  // under $TRAF_HOME/logs and our output will be prefixed with a
+  // under $TRAF_LOG and our output will be prefixed with a
   // timestamp and process ID.
   cerr << "Executor assertion failure in file " << f
        << " on line " << l << '\n';

@@ -69,7 +69,7 @@ else
 
    if [[ $monitor_ready -lt 1 ]]; then
       echo "Aborting startup!"
-      cat $TRAF_HOME/logs/sqcheckmon.log
+      cat $TRAF_LOG/sqcheckmon.log
       exit 1
    else
 

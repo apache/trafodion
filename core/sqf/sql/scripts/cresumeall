@@ -23,7 +23,7 @@
 #
 
 function LogIt {
-    echo  "`date`: $1" >> $TRAF_HOME/logs/startup.log
+    echo  "`date`: $1" >> $TRAF_LOG/startup.log
 }
 
 lv_prog_name="cresumeall"

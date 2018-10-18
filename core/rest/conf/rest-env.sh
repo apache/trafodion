@@ -79,8 +79,8 @@ export REST_OPTS="-XX:+UseConcMarkSweepGC"
 # Extra ssh options.  Empty by default.
 # export REST_SSH_OPTS="-o ConnectTimeout=1 -o SendEnv=REST_CONF_DIR"
 
-# Where log files are stored.  $REST_HOME/logs by default.
-# export REST_LOG_DIR=${REST_HOME}/logs
+# Where log files are stored.  $TRAF_LOG/rest by default.
+# export REST_LOG_DIR=$TRAF_LOG/rest
 
 # Enable remote JDWP debugging of major rest processes. Meant for Core Developers 
 # export REST_RESET_OPTS="$REST_RESET_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8072"

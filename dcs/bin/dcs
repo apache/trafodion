@@ -168,7 +168,7 @@ done
 
 # default log directory & file
 if [ "$DCS_LOG_DIR" = "" ]; then
-  DCS_LOG_DIR="$DCS_HOME/logs"
+  DCS_LOG_DIR="$TRAF_LOG/dcs"
 fi
 if [ "$DCS_LOGFILE" = "" ]; then
   DCS_LOGFILE='dcs.log'

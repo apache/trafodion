@@ -172,7 +172,7 @@ fi
 
 # default log directory & file
 if [ "$WMS_LOG_DIR" = "" ]; then
-  WMS_LOG_DIR="$WMS_HOME/logs"
+  WMS_LOG_DIR="$TRAF_LOG/wms"
 fi
 if [ "$WMS_LOGFILE" = "" ]; then
   WMS_LOGFILE='wms.log'

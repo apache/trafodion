@@ -34,8 +34,8 @@
 == Logs
 The key process logs are as follows...(replace <user> with the user that started the service, <instance> for the server instance and <hostname> for the machine name)
  
-* $REST_INSTALL_DIR/logs/rest-<user>-<instance>-rest-<hostname>.log
-* $REST_INSTALL_DIR/logs/rest-<user>-<instance>-rest-<hostname>.out
+* $TRAF_LOG/rest/rest-<user>-<instance>-rest-<hostname>.log
+* $TRAF_LOG/rest/rest-<user>-<instance>-rest-<hostname>.out
 
 The logs are your best resource when troubleshooting the REST server.
 
