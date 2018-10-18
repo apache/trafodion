@@ -35,10 +35,18 @@ if [ "$fil" = "" ]; then
   exit 1
 fi
 SYSKEY=`grep '\<SYSKEY\>' $fil | egrep -v '(--|^>>|^\*\*)'`
+# A SYSKEY can be as few as 15 decimal digits. The high order 15 bits
+# are an XOR of the low 15 bits of the node id and the linux thread ID,
+# while the low 49 bits are taken from JULIANTIMESTAMP. It is possible
+# for the high order bits to be zero (e.g. node id 0, linux TID 16384),
+# in which case all the decimal digits come from JULIANTIMESTAMP. At
+# present, JULIANTIMESTAMP yields 15 decimal digits and will until it
+# wraps many many years from now. See the code in function
+# generateUniqueValueFast in sqlshare/CatSQLShare.cpp.
 if [ "$SYSKEY" = "" ]; then
   SYSKEY='@syskey@'
 else
-  SYSKEY='[0-9]\{16,20\}\>'
+  SYSKEY='[0-9]\{15,20\}\>'
 fi
 #       123456789 123456789
 
