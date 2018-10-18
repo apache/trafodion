@@ -2762,7 +2762,7 @@ NABoolean NestedJoinRule::topMatch(RelExpr * relExpr,
 
 /*
   // ********************************************************************
-  // This part is disabled untill we have a better way of protecting
+  // This part is disabled until we have a better way of protecting
   // the normalizer output TSJs, and TSJs for write, and TSJs for
   // index joins. In other words, we should only do this heuristic
   // for "optional" TSJ's, i.e. those that were added by the
