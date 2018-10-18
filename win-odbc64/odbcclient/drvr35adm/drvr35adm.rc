@@ -62,8 +62,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,0
- PRODUCTVERSION 2,2,0,0
+ FILEVERSION 2,3,0,0
+ PRODUCTVERSION 2,3,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -80,12 +80,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Apache Trafodion"
             VALUE "FileDescription", "TRAF ODBC Client Adminstration DLL"
-            VALUE "FileVersion", "2.2.0.0"
+            VALUE "FileVersion", "2.3.0.0"
             VALUE "InternalName", "TRAF ODBC Client Adminstration DLL"
-            VALUE "LegalCopyright", "?Copyright 2015-2017 Apache Software Foundation"
+            VALUE "LegalCopyright", "?Copyright 2015-2018 Apache Software Foundation"
             VALUE "OriginalFilename", "trfoadm1.dll"
             VALUE "ProductName", "TRAF ODBC"
-            VALUE "ProductVersion", "2.2.0.0"
+            VALUE "ProductVersion", "2.3.0.0"
         END
     END
     BLOCK "VarFileInfo"
