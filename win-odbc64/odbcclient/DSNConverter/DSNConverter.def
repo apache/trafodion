@@ -23,7 +23,7 @@
 
 ; DSNConverter.def : Declares the module parameters for the DLL.
 
-DESCRIPTION "ODBC/MX DSN Converter DLL, (C) Copyright (c) 2015-2017 Apache Software Foundation"
+DESCRIPTION "ODBC/MX DSN Converter DLL, (C) Copyright (c) 2015-2018 Apache Software Foundation"
 LIBRARY DSNConverter
 EXPORTS
 	IsDriverInstalled @1

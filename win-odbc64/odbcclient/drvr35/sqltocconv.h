@@ -28,6 +28,7 @@
 #include <sqlExt.h>
 #include "DrvrGlobal.h"
 #include "charsetconv.h"
+#include "cconnect.h"
 
 #define ENDIAN_PRECISION_MAX	39
 
