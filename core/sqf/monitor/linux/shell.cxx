@@ -4950,6 +4950,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
     char programNameAndArgs[MAX_PROCESS_PATH+MAX_VALUE_SIZE_INT];
     char infile[MAX_PROCESS_PATH];
     char outfile[MAX_PROCESS_PATH];
+    char outpath[MAX_PROCESS_PATH];
     char persistRetries[MAX_PERSIST_VALUE_STR];
     char persistZones[MAX_VALUE_SIZE_INT];
     int nid;
@@ -5014,6 +5015,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
                 sprintf( programNameAndArgs, "%s"
                        , persistConfig->GetProgramName() );
             }
+            snprintf(outpath, MAX_FILE_NAME, "%s/%s", getenv("TRAF_LOG"), outfile);
             pid = start_process( &i
                                , process_type
                                , processName
@@ -5021,7 +5023,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                , priority
                                , nowait
                                , infile
-                               , outfile
+                               , outpath
                                , programNameAndArgs );
                                //, (char *)persistConfig->GetProgramName() );
             if (pid > 0)
@@ -5072,6 +5074,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
             sprintf( programNameAndArgs, "%s"
                    , persistConfig->GetProgramName() );
         }
+        snprintf(outpath, MAX_FILE_NAME, "%s/%s", getenv("TRAF_LOG"), outfile);
         pid = start_process( &nid
                            , process_type
                            , processName
@@ -5079,7 +5082,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
                            , priority
                            , nowait
                            , infile
-                           , outfile
+                           , outpath
                            , programNameAndArgs );
         if (pid > 0)
         {
@@ -5127,6 +5130,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
             sprintf( programNameAndArgs, "%s"
                    , persistConfig->GetProgramName() );
         }
+        snprintf(outpath, MAX_FILE_NAME, "%s/%s", getenv("TRAF_LOG"), outfile);
         pid = start_process( &nid
                            , process_type
                            , processName
@@ -5134,7 +5138,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
                            , priority
                            , nowait
                            , infile
-                           , outfile
+                           , outpath
                            , programNameAndArgs );
         if (pid > 0)
         {

@@ -61,8 +61,6 @@ using namespace std;
 #include "ptpclient.h"
 #endif
 
-#define MAX_FILE_NAME 256
-
 #ifndef NAMESERVER_PROCESS
 extern CNode *MyNode;
 extern sigset_t SigSet;
@@ -910,10 +908,7 @@ CRedirectStdout::CRedirectStdout(int nid, int pid, const char *filename, int sou
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "REDE", 4);
 
-    char   filepath[MAX_FILE_NAME];
-    snprintf(filepath, MAX_FILE_NAME, "%s/%s", getenv("TRAF_LOG"), filename);
-
-    fd_ = open(filepath, O_CREAT | O_APPEND | O_WRONLY | O_NONBLOCK,
+    fd_ = open(filename, O_CREAT | O_APPEND | O_WRONLY | O_NONBLOCK,
                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if( fd_ == -1 )
     {
