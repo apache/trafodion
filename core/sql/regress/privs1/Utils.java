@@ -54,7 +54,7 @@ public class Utils
      
      if (log) { 
        Logs = System.getenv("TRAF_LOG");
-       logLocation = sqLogs + "/";
+       logLocation = Logs + "/";
      }
    }
 
