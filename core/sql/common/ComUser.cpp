@@ -362,7 +362,8 @@ bool ComUser::currentUserHasRole(Int32 roleID)
 {
   Int32 numRoles = 0;
   Int32 *roleIDs = 0;
-  if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
+  Int32 *granteeIDs = NULL;
+  if (SQL_EXEC_GetRoleList(numRoles, roleIDs, granteeIDs) < 0)
     return false;
 
   for (Int32 i = 0; i < numRoles; i++)
@@ -374,15 +375,64 @@ bool ComUser::currentUserHasRole(Int32 roleID)
   return false;
 }
 
-void ComUser::getCurrentUserRoles(NAList <Int32> &roleList)
+// ----------------------------------------------------------------------------
+// method: getCurrentUserRoles
+//
+// Gets the active roles for the current user as a list of Int32's
+// There should be at least one role in this list (PUBLIC)
+//
+// Returns:
+//   -1 -- unexpected error getting roles
+//    0 -- successful
+// ----------------------------------------------------------------------------
+Int16 ComUser::getCurrentUserRoles(NAList <Int32> &roleIDs)
 {
   Int32 numRoles = 0;
-  Int32 *roleIDs = 0;
-  Int32 retcode = SQL_EXEC_GetRoleList(numRoles, roleIDs);
-  assert(retcode == 0);
+  Int32 *cachedRoleIDs = NULL;
+  Int32 *cachedGranteeIDs = NULL;
+  RETCODE retcode =
+    GetCliGlobals()->currContext()->getRoleList(numRoles, cachedRoleIDs, cachedGranteeIDs);
+
+  if (retcode != SUCCESS)
+    return -1;
 
   for (Int32 i = 0; i < numRoles; i++)
-    roleList.insert (roleIDs[i]);
+  {
+    // in case there are duplicates
+    if (!roleIDs.contains(cachedRoleIDs[i]))
+      roleIDs.insert (cachedRoleIDs[i]);
+  }
+  return 0;
+}
+
+// ----------------------------------------------------------------------------
+// method: getCurrentUserRoles
+//
+// Gets the active roles and grantees for the current user as a list of Int32's
+// There should be at least one role in this list (PUBLIC)
+//
+// Returns:
+//   -1 -- unexpected error getting roles
+//    0 -- successful
+// ----------------------------------------------------------------------------
+Int16 ComUser::getCurrentUserRoles(NAList<Int32> &roleIDs, NAList<Int32> &granteeIDs)
+{
+  Int32 numRoles = 0;
+  Int32 *cachedRoleIDs = NULL;
+  Int32 *cachedGranteeIDs = NULL;
+  RETCODE retcode =
+    GetCliGlobals()->currContext()->getRoleList(numRoles, cachedRoleIDs, cachedGranteeIDs);
+
+  if (retcode != SUCCESS)
+    return -1;
+
+  for (Int32 i = 0; i < numRoles; i++)
+  {
+    roleIDs.insert (cachedRoleIDs[i]);
+    granteeIDs.insert (cachedGranteeIDs[i]);
+  }
+
+  return 0;
 }
 
 

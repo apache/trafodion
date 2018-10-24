@@ -366,7 +366,8 @@ public:
   NABoolean checkPrivileges(BindWA* bindWA);
   void findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                    , const uint32_t userHashValue
-                                   , const PrivType which );
+                                   , const PrivType which
+                                   , BindWA* bindWA );
 
   //++ MVs
   NABoolean hasMvBindContext() const;

@@ -173,6 +173,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     arkcmpInitFailed_(&exHeap_),
     trustedRoutines_(&exHeap_),
     roleIDs_(NULL),
+    granteeIDs_(NULL),
     numRoles_(0),
     unusedBMOsMemoryQuota_(0)
 {
@@ -3974,7 +3975,9 @@ RETCODE ContextCli::authQuery(
    char localNameBuf[32];
    char isValidFromUsersTable[3];
 
-   if (queryType == USERS_QUERY_BY_USER_ID)
+   if (queryType == USERS_QUERY_BY_USER_ID ||
+       queryType == ROLE_QUERY_BY_ROLE_ID ||
+       queryType == ROLES_QUERY_BY_AUTH_ID) 
    {
       sprintf(localNameBuf, "%d", (int) authID);
       nameForDiags = localNameBuf;
@@ -4040,7 +4043,24 @@ RETCODE ContextCli::authQuery(
       case ROLES_QUERY_BY_AUTH_ID:
       {
          authInfoPtr = &authInfo;
-         authStatus = authInfo.getRoleIDs(authID, roleIDs);
+         std::vector<int32_t> roleIDs;
+         std::vector<int32_t> granteeIDs;
+         authStatus = authInfo.getRoleIDs(authID, roleIDs, granteeIDs);
+         ex_assert((roleIDs.size() == granteeIDs.size()), "mismatch between roleIDs and granteeIDs");
+         numRoles_ = roleIDs.size() + 1; // extra for public role
+         roleIDs_ = new (&exHeap_) Int32[numRoles_];
+         granteeIDs_ = new (&exHeap_) Int32[numRoles_];
+
+         for (size_t i = 0; i < roleIDs.size(); i++)
+         {
+           roleIDs_[i] = roleIDs[i];
+           granteeIDs_[i] = granteeIDs[i];
+         }
+
+         // Add the public user to the last entry
+         Int32 lastEntry = numRoles_ - 1;
+         roleIDs_[lastEntry] = PUBLIC_USER;
+         granteeIDs_[lastEntry] = databaseUserID_;
       }   
       break;
 
@@ -4199,19 +4219,35 @@ RETCODE ContextCli::setDatabaseUserByName(const char *userName)
 // *
 // * Function: ContextCli::getRoleList
 // *
-// * Return the role IDs granted to the current user 
+// * Return the role IDs and their grantees for the current user.  
 // *   If the list of roles is already stored, just return this list.
 // *   If the list of roles does not exist extract the roles granted to the
 // *     current user from the Metadata and store in roleIDs_.
 // *
 // ****************************************************************************
 RETCODE ContextCli::getRoleList(
-  Int32 &numRoles,
-  Int32 *&roleIDs)
+  Int32 &numEntries,
+  Int32 *& roleIDs,
+  Int32 *& granteeIDs)
 {
   // If role list has not been created, go read metadata
   if (roleIDs_ == NULL)
   {
+    // If authorization is not enabled, just setup the PUBLIC role
+    CmpContext *cmpCntxt = CmpCommon::context();
+    ex_assert(cmpCntxt, "No compiler context exists");
+    if (!cmpCntxt->isAuthorizationEnabled())
+    {
+      numRoles_ = 1;
+      roleIDs_ = new (&exHeap_) Int32[numRoles_];
+      roleIDs_[0] = PUBLIC_USER;
+      granteeIDs = new (&exHeap_) Int32[numRoles_];
+      granteeIDs[0] = databaseUserID_;
+      numEntries = numRoles_;
+      roleIDs = roleIDs_;
+      return SUCCESS;
+    }
+
     // Get roles for userID
     char usersNameFromUsersTable[MAX_USERNAME_LEN +1];
     Int32 userIDFromUsersTable;
@@ -4225,19 +4261,11 @@ RETCODE ContextCli::getRoleList(
                                 myRoles);  // OUT
     if (result != SUCCESS)
       return result;
-
-    // Include the public user
-    myRoles.push_back(PUBLIC_USER);
-
-    // Add role info to ContextCli
-    numRoles_ = myRoles.size();
-    roleIDs_ = new (&exHeap_) Int32[numRoles_];
-    for (size_t i = 0; i < numRoles_; i++)
-      roleIDs_[i] = myRoles[i];
   }
 
-  numRoles = numRoles_;
+  numEntries = numRoles_;
   roleIDs = roleIDs_;
+  granteeIDs = granteeIDs_;
 
   return SUCCESS;
 }
@@ -4256,6 +4284,11 @@ RETCODE ContextCli::resetRoleList()
   if (roleIDs_)
     NADELETEBASIC(roleIDs_, &exHeap_);
   roleIDs_ = NULL;
+
+  if (granteeIDs_)
+    NADELETEBASIC(granteeIDs_, &exHeap_);
+  granteeIDs_ = NULL;
+
   numRoles_ = 0;
 
   return SUCCESS;

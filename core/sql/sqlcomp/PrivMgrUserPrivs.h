@@ -28,6 +28,7 @@
 #include <vector>
 #include <bitset>
 #include "PrivMgrDefs.h"
+#include "PrivMgrDesc.h"
 
 class ComSecurityKey;
 class ComDiagsArea;
@@ -333,6 +334,11 @@ class PrivMgrUserPrivs
     return false;
   }
 
+  bool setPrivInfoAndKeys ( PrivMgrDescList &privDescs,
+                            const int32_t userID,
+                            const int64_t objectUID,
+                            NASet<ComSecurityKey> *secKeySet);
+
   PrivColList & getColPrivList() {return colPrivsList_;}
   void setColPrivList(PrivColList colPrivsList)
      {colPrivsList_ = colPrivsList;}
@@ -379,11 +385,14 @@ class PrivMgrUserPrivs
   bool getHasPublicPriv() { return hasPublicPriv_; }
   void setHasPublicPriv(bool hasPublicPriv) {hasPublicPriv_ = hasPublicPriv;}
   void initUserPrivs (PrivMgrDesc &privsOfTheGrantor);
-  bool initUserPrivs ( const std::vector<int32_t> &roleIDs,
-                       const TrafDesc *priv_desc,
+
+  bool initUserPrivs ( const NAList<Int32> &roleIDs,
+                       PrivMgrDescList *privDescs,
                        const int32_t userID,
                        const int64_t objectUID,
-                       NASet<ComSecurityKey> & secKeySet);
+                       NASet<ComSecurityKey> *secKeySet = NULL);
+
+  std::string print();
 
  private:
    PrivObjectBitmap objectBitmap_;

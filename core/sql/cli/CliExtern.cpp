@@ -4346,8 +4346,9 @@ Lng32 SQL_EXEC_SetSessionAttr_Internal(
 
 
 Lng32 SQL_EXEC_GetRoleList(
-   Int32 &numRoles,
-   Int32 *&roleIDs)
+   Int32 &numEntries,
+   Int32 *& roleIDs,
+   Int32 *& granteeIDs)
 
 {
 
@@ -4363,8 +4364,9 @@ Lng32 SQL_EXEC_GetRoleList(
       threadContext->incrNumOfCliCalls();
       retcode =
       SQLCLI_GetRoleList(GetCliGlobals(),
-                         numRoles,
-                         roleIDs);
+                         numEntries,
+                         roleIDs,
+                         granteeIDs);
    }
    catch(...)
    {

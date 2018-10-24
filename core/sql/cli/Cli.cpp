@@ -6240,8 +6240,9 @@ Int32 SQLCLI_GetAuthState (
 
 Lng32 SQLCLI_GetRoleList(
    CliGlobals * cliGlobals,
-   Int32 &numRoles,
-   Int32 *&roleIDs)
+   Int32 &numEntries,
+   Int32 *& roleIDs,
+   Int32 *& granteeIDs)
 
 {
    Lng32 retcode = 0;
@@ -6254,7 +6255,7 @@ Lng32 SQLCLI_GetRoleList(
    ContextCli &currContext = *(cliGlobals->currContext());
    ComDiagsArea &diags = currContext.diags();
 
-   retcode = currContext.getRoleList(numRoles,roleIDs);
+   retcode = currContext.getRoleList(numEntries,roleIDs,granteeIDs);
 
    return CliEpilogue(cliGlobals, NULL, retcode);
 

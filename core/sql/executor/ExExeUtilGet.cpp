@@ -1665,10 +1665,10 @@ NABoolean ExExeUtilGetMetadataInfoTcb::checkUserPrivs(
   if (ComUser::isRootUserID())
     return FALSE;
 
-  // any user granted the DB__ROOTROLE sees everything
   Int32 numRoles;
   Int32 *roleList;
-  if (currContext->getRoleList(numRoles, roleList) == SUCCESS)
+  Int32 *granteeList;
+  if (currContext->getRoleList(numRoles, roleList, granteeList) == SUCCESS)
   {
     char authIDAsChar[sizeof(Int32)+10];
     NAString auths;
@@ -2001,7 +2001,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
                // add list of roles stored in context
                Int32 numRoles;
                Int32 *roleList;
-               if (currContext->getRoleList(numRoles, roleList) != SUCCESS)
+               Int32 *granteeList;
+               if (currContext->getRoleList(numRoles, roleList, granteeList) != SUCCESS)
                  numRoles = 0;
                for (Int32 i = 0; i < numRoles; i++)
                {

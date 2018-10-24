@@ -168,6 +168,11 @@ class PrivMgr
     // -------------------------------------------------------------------
     // Accessors and destructors:
     // -------------------------------------------------------------------
+    PrivStatus getGranteeIDsForRoleIDs(
+      const std::vector<int32_t> & roleIDs,
+      std::vector<int32_t> & userIDs,
+      bool includeSysGrantor = true);
+
     inline std::string getMetadataLocation (void) {return metadataLocation_;}
     inline const std::string & getMetadataLocation (void) const {return metadataLocation_;}
     inline std::string getTrafMetadataLocation (void) {return trafMetadataLocation_;}

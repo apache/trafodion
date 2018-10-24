@@ -251,7 +251,7 @@ execute select_teams;
 
 -- revoke insert, delete privilege from t120role2
 sh sqlci -i "TEST120(revoke_t120role2p)" -u sql_user3;
--- still have privilege
+-- still have privilege but recompile because of revoke on t120_role2
 execute select_teams;
 -- no longer has privilege (4481) and query attempted recompilation
 execute insert_teams;

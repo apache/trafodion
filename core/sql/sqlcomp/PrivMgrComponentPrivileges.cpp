@@ -1299,11 +1299,13 @@ std::string whereClause(" WHERE COMPONENT_UID = 1 AND (OPERATION_CODE = '");
       std::vector<std::string> roleNames;
       std::vector<int32_t> roleIDs;
       std::vector<int32_t> grantDepths;
+      std::vector<int32_t> grantees;
       
       PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
       
-      PrivStatus privStatus = roles.fetchRolesForUser(authID,roleNames,
-                                                      roleIDs,grantDepths);
+      PrivStatus privStatus = roles.fetchRolesForAuth(authID,roleNames,
+                                                      roleIDs,grantDepths,
+                                                      grantees);
       
       for (size_t r = 0; r < roleIDs.size(); r++)
       {
@@ -1379,11 +1381,13 @@ bool PrivMgrComponentPrivileges::hasWGO(
    std::vector<std::string> roleNames;
    std::vector<int32_t> roleIDs;
    std::vector<int32_t> grantDepths;
+   std::vector<int32_t> grantees;
 
    PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
 
-   if (roles.fetchRolesForUser(authID,roleNames,
-                               roleIDs,grantDepths) == STATUS_ERROR)
+   if (roles.fetchRolesForAuth(authID,roleNames,
+                               roleIDs,grantDepths, 
+                               grantees) == STATUS_ERROR)
       return false;
 
    MyTable &myTable = static_cast<MyTable &>(myTable_);

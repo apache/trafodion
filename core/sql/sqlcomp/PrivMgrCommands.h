@@ -119,28 +119,23 @@ public:
       NATable *naTable,
       const int32_t granteeUID,
       PrivMgrUserPrivs &userPrivileges,
-      std::vector <ComSecurityKey *>* secKeySet = NULL);
+      NASet<ComSecurityKey> *secKeySet = NULL);
 
    PrivStatus getPrivileges(
       const int64_t objectUID,
       ComObjectType objectType,
-      std::vector<PrivMgrDesc> &userPrivileges);
-     
+      PrivMgrDescList &userPrivileges);
+
    PrivStatus getPrivileges(
       const int64_t objectUID,
       ComObjectType objectType,
       const int32_t granteeUID,
-      PrivMgrUserPrivs &userPrivileges,
-      std::vector <ComSecurityKey *>* secKeySet = NULL);
-     
+      PrivMgrUserPrivs &userPrivileges);
+
    PrivStatus getPrivRowsForObject(
       const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
       
-   PrivStatus getRoles(
-      const int32_t grantee,
-      std::vector<int32_t> &roleIDs);
-
    PrivStatus givePrivForObjects(
          const int32_t currentOwnerID,
          const int32_t newOwnerID,

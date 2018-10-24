@@ -54,22 +54,24 @@ public:
 // Public functions:
 // -------------------------------------------------------------------
    
-   PrivStatus fetchRolesForUser(
+   PrivStatus fetchRolesForAuth(
       const int32_t authID,
       std::vector<std::string> & roleNames,
       std::vector<int32_t> & roleIDs,
-      std::vector<int32_t> & grantDepths);
-   
-   PrivStatus fetchUsersForRole(
+      std::vector<int32_t> & grantDepths,
+      std::vector<int32_t> & grantees);
+
+   PrivStatus fetchGranteesForRole(
       const int32_t roleID,
       std::vector<std::string> & granteeNames,
       std::vector<int32_t> & grantorIDs,
       std::vector<int32_t> & grantDepths);
-   
-   PrivStatus fetchUsersForRoles(
+
+   PrivStatus fetchGranteesForRoles(
       const std::vector<int32_t> & roleIDs,
-      std::vector<int32_t> & userIDs);
-   
+      std::vector<int32_t> & granteeIDs,
+      bool includeSysGrantor = true);
+
    PrivStatus grantRole(
       const std::vector<int32_t> & roleIDs,
       const std::vector<std::string> & roleNames,

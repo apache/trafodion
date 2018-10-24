@@ -12540,22 +12540,19 @@ ComTdbVirtTablePrivInfo * CmpSeabaseDDL::getSeabasePrivInfo(
 
   // Summarize privileges for object
   PrivStatus privStatus = STATUS_GOOD;
-  std::vector<PrivMgrDesc> privDescs;
+  ComTdbVirtTablePrivInfo *privInfo = new (heap_) ComTdbVirtTablePrivInfo();
+  privInfo->privmgr_desc_list = new (STMTHEAP) PrivMgrDescList(STMTHEAP);
+
+  // Summarize privileges for object
   PrivMgrCommands command(std::string(MDLoc.data()),
                           std::string(privMgrMDLoc.data()),
                           CmpCommon::diags());
-  if (command.getPrivileges(objUID, objType, privDescs) != STATUS_GOOD)
+  if (command.getPrivileges(objUID, objType,
+                            *privInfo->privmgr_desc_list) != STATUS_GOOD)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
       return NULL;
     }
-
-  ComTdbVirtTablePrivInfo *privInfo = new (STMTHEAP) ComTdbVirtTablePrivInfo();
-
-  // PrivMgrDesc operator= is a deep copy
-  privInfo->privmgr_desc_list = new (STMTHEAP) NAList<PrivMgrDesc>(STMTHEAP);
-  for (size_t i = 0; i < privDescs.size(); i++)
-    privInfo->privmgr_desc_list->insert(privDescs[i]);
 
   return privInfo;
 }

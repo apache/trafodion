@@ -310,8 +310,9 @@ Lng32 SQL_EXEC_SetErrorCodeInRTS(
 	        /*IN*/ Lng32     sqlErrorCode);  
 
 Lng32 SQL_EXEC_GetRoleList(
-   Int32 &numRoles,
-   Int32 *&roleIDs);
+   Int32 &numEntries,
+   Int32 *& roleIDs,
+   Int32 *& granteeIDs);
 
 Lng32 SQL_EXEC_ResetRoleList_Internal ();
 
