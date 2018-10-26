@@ -235,7 +235,14 @@ explain select_standings;
 
 log;
 sh echo "Query_Invalidation_Keys explain output for select_games, select_teams, insert_teams, update_teams, select_players, select_standings: "   >> LOG120;
-sh sed '/Query_Invalidation_Keys/,/ObjectUIDs/!d;/ObjectUIDs/d' EXPLAIN120 | sed -e 's/[0-9 \t]*//g' >> LOG120;
+-- Explanation of next command:
+--  Extract rows between Query_Invalidation_Keys and ObjectUIDs from explain plan
+--    -> sed '/Query_Invalidation_Keys/,/ObjectUIDs/!d;/ObjectUIDs/d'
+--  Remove numeric invalidation key hashes
+--    -> sed -e 's/[0-9 \t]*//g'
+--  Join rows for each invalidation key set
+--    -> awk '/Query_Invalidation_Keys/{if (NR!=1)print ""}{printf $0}END{print "";}'
+sh sed '/Query_Invalidation_Keys/,/ObjectUIDs/!d;/ObjectUIDs/d' EXPLAIN120 | sed -e 's/[0-9 \t]*//g' | awk '/Query_Invalidation_Keys/{if (NR!=1)print ""}{printf $0}END{print "";}' >> LOG120;
 log;
 log LOG120;
 
@@ -297,7 +304,7 @@ log;
 log EXPLAIN120 clear;
 explain select_stats;
 sh echo "Query_Invalidation_Keys explain output for select_stats: "   >> LOG120;
-sh sed '/Query_Invalidation_Keys/,/ObjectUIDs/!d;/ObjectUIDs/d' EXPLAIN120 | sed -e 's/[0-9 \t]*//g' >> LOG120;
+sh sed '/Query_Invalidation_Keys/,/ObjectUIDs/!d;/ObjectUIDs/d' EXPLAIN120 | sed -e 's/[0-9 \t]*//g' | awk '/Query_Invalidation_Keys/{if (NR!=1)print ""}{printf $0}END{print "";}' >> LOG120;
 log;
 log LOG120;
 
