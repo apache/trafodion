@@ -131,6 +131,7 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
     }
     else
     {
+      bool reincarnated;
       cliGlobals_->setStatsGlobals(statsGlobals_);
       cliGlobals_->setSemId(semId_);
       error = statsGlobals_->getStatsSemaphore(semId_, pid_);
@@ -142,12 +143,14 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
       // We need to set up the cliGlobals, since addProcess will call getRTSSemaphore
       // and it uses these members
       cliGlobals_->setStatsHeap(statsHeap_);
-      statsGlobals_->addProcess(pid_, statsHeap_);
+      reincarnated = statsGlobals_->addProcess(pid_, statsHeap_);
       ExProcessStats *processStats = 
            statsGlobals_->getExProcessStats(pid_);
       processStats->setStartTime(cliGlobals_->myStartTime());
       cliGlobals_->setExProcessStats(processStats);
       statsGlobals_->releaseStatsSemaphore(semId_, pid_);
+      if (reincarnated)
+         statsGlobals_->logProcessDeath(cpu_, pid_, "Process reincarnated before RIP");
     }
   }
   cliGlobals_->setStatsHeap(statsHeap_);
@@ -191,6 +194,7 @@ ExEspFragInstanceDir::~ExEspFragInstanceDir()
     int error = statsGlobals_->getStatsSemaphore(semId_, pid_);
     statsGlobals_->removeProcess(pid_);
     statsGlobals_->releaseStatsSemaphore(semId_, pid_);
+    statsGlobals_->logProcessDeath(cpu_, pid_, "Normal process death");
     sem_close((sem_t *)semId_);
   }
 }

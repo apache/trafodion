@@ -329,7 +329,7 @@ class StatsGlobals
 public:
   StatsGlobals(void *baseAddr, short envType, Lng32 maxSegSize);
   static void* operator new (size_t size, void* loc = 0);
-  void addProcess(pid_t pid, NAHeap *heap);
+  bool addProcess(pid_t pid, NAHeap *heap);
   void removeProcess(pid_t pid, NABoolean calledDuringAdd = FALSE);
   ProcessStats *checkProcess(pid_t pid);
   void setStatsArea(pid_t pid, ExStatisticsArea *stats)
@@ -345,6 +345,8 @@ public:
     else
       return NULL;
   }
+
+  void logProcessDeath(short cpu, pid_t pid, const char *reason);
 
   StmtStats *addQuery(pid_t pid, char *queryId, Lng32 queryIdLen, void *backRef,
                      Lng32 fragId, char *sourceStr = NULL, Lng32 sourceStrLen = 0,

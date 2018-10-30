@@ -194,17 +194,15 @@ const char *StatsGlobals::rmsEnvType(RTSEnvType envType)
   }
 }
 
-void StatsGlobals::addProcess(pid_t pid, NAHeap *heap)
+bool StatsGlobals::addProcess(pid_t pid, NAHeap *heap)
 {
+  bool pidReincarnated = false;
   if (pid >= configuredPidMax_)
-     return;
+     return pidReincarnated;
   char msg[256];;
   if (statsArray_[pid].processStats_ != NULL)
   {
-    snprintf(msg, sizeof(msg),
-        "Pid %d,%d got recycled soon or SSMP didn't receive the death message ",
-           cpu_, pid);
-    SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
+    pidReincarnated = true;
     removeProcess(pid, TRUE);
   }   
   statsArray_[pid].processId_ = pid;
@@ -214,7 +212,7 @@ void StatsGlobals::addProcess(pid_t pid, NAHeap *heap)
   incProcessStatsHeaps();
   if (pid > maxPid_)
      maxPid_ = pid;
-  return;
+  return pidReincarnated;
 }
 
 void StatsGlobals::removeProcess(pid_t pid, NABoolean calledAtAdd)
@@ -304,6 +302,8 @@ void StatsGlobals::checkForDeadProcesses(pid_t myPid)
   error = getStatsSemaphore(ssmpProcSemId_, myPid);
 
   int pidRemainingToCheck = 20;
+  pid_t pidsRemoved[pidRemainingToCheck]; 
+  int numPidsRemoved = 0;
   pid_t firstPid = pidToCheck_;
   for (;maxPid_ > 0;)
   {
@@ -326,11 +326,16 @@ void StatsGlobals::checkForDeadProcesses(pid_t myPid)
       Int32 ln_error = msg_mon_get_process_name(
                        cpu_, statsArray_[pidToCheck_].processId_, 
                        processName);
-      if (ln_error == XZFIL_ERR_NOSUCHDEV) 
-        removeProcess(pidToCheck_);
+      if (ln_error == XZFIL_ERR_NOSUCHDEV)  {
+         pidsRemoved[numPidsRemoved++]; 
+         removeProcess(pidToCheck_);
+      }
     }
   }
   releaseStatsSemaphore(ssmpProcSemId_, myPid);
+  // death messages are logged outside of semaphore due to process hop
+  for (int i = 0 ; i < numPidsRemoved ; i++) 
+      logProcessDeath(cpu_, pidsRemoved[i], "Dead Process");
 }
 
 // We expect a death message to be delivered to MXSSMP by the monitor
@@ -340,48 +345,55 @@ void StatsGlobals::checkForDeadProcesses(pid_t myPid)
 // be unexpectedly holding the stats semaphore.  
 
 static Int32 SemHeldTooManySeconds = -1;
+static bool dumpRmsDeadLockProcess = true;
 
 void StatsGlobals::cleanupDanglingSemaphore(NABoolean checkForSemaphoreHolders)
 {
   CliGlobals *cliGlobals = GetCliGlobals();
   NABoolean cleanupSemaphore = FALSE;
+  char coreFile[512];
   if (semPid_ == -1)
-    return; // Nobody has the semaphore, nothing to do here.
+     return; // Nobody has the semaphore, nothing to do here.
     
   if (NOT (cliGlobals->myPin() == getSsmpPid()
           && cliGlobals->myStartTime() == getSsmpTimestamp()))
-    return; // Only ssmp is allowed to cleanup after another process.
+     return; // Only ssmp is allowed to cleanup after another process.
 
   // Coverage notes - it would be too difficult to automate a test
   // for this since usually a death message is used to clean up a
   // generic SQL process' exit.  But this code has been unit tested
   // using gdb sessions on the generic process and on this MXSSMP
   // process.
-    if (checkForSemaphoreHolders)
-    {
-       if (SemHeldTooManySeconds < 0)
-       {
-          // call getenv once per process
-          char *shtms = getenv("MXSSMP_SEM_RELEASE_SECONDS");
-          if (shtms)
-          {
-             SemHeldTooManySeconds = str_atoi(shtms, str_len(shtms));
-             if (SemHeldTooManySeconds < 1)
-                SemHeldTooManySeconds = 10;
-           }
-           else
+  Int32 lockedTimeInSecs = 0;
+  timespec ts;
+  if (SemHeldTooManySeconds < 0)
+  {
+     // call getenv once per process
+     char *shtms = getenv("MXSSMP_SEM_RELEASE_SECONDS");
+     if (shtms)
+     {
+        SemHeldTooManySeconds = str_atoi(shtms, str_len(shtms));
+        if (SemHeldTooManySeconds < 1)
            SemHeldTooManySeconds = 10;
-        }
-
-        timespec ts;
-        clock_gettime(CLOCK_REALTIME, &ts);
-        if ((ts.tv_sec - lockingTimestamp_.tv_sec) >= SemHeldTooManySeconds)
-           cleanupSemaphore  = TRUE;
-    }
-    else
-        cleanupSemaphore = TRUE;
-    if (cleanupSemaphore)
-    {
+     }
+     else
+        SemHeldTooManySeconds = 10;
+     char *dumpRmsDeadLockProcessEnv = getenv("RMS_DEADLOCK_PROCESS_DUMP");
+     if ((dumpRmsDeadLockProcessEnv != NULL) &&
+         (strcmp(dumpRmsDeadLockProcessEnv, "N") == 0))
+           dumpRmsDeadLockProcess = false;
+  }
+  clock_gettime(CLOCK_REALTIME, &ts);
+  lockedTimeInSecs = ts.tv_sec - lockingTimestamp_.tv_sec;
+  if (checkForSemaphoreHolders) 
+  { 
+     if (lockedTimeInSecs >= SemHeldTooManySeconds)
+        cleanupSemaphore  = TRUE;
+  }
+  else
+     cleanupSemaphore = TRUE;
+  if (cleanupSemaphore) 
+  {
       NAProcessHandle myPhandle;
       myPhandle.getmine();
       myPhandle.decompose();
@@ -398,6 +410,16 @@ void StatsGlobals::cleanupDanglingSemaphore(NABoolean checkForSemaphoreHolders)
       }
       else
       {
+         char msg[256];
+         if (semPid_ != -1 && lockedTimeInSecs >= SemHeldTooManySeconds) {
+            snprintf(msg, sizeof(msg), "Pid %d, %d held semaphore for more than %d seconds ",
+                      cpu_, semPid_, lockedTimeInSecs); 
+            SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
+            if (dumpRmsDeadLockProcess)
+                msg_mon_dump_process_id(NULL, cpu_, semPid_, coreFile);
+         }
+         
+/*
         // Is this the same incarnation of the process name?
         // Do not be fooled by pid recycle.
         MS_Mon_Process_Info_Type processInfo;
@@ -411,6 +433,7 @@ void StatsGlobals::cleanupDanglingSemaphore(NABoolean checkForSemaphoreHolders)
           seabedPidRecycle_ = true;
           semHoldingProcessExists = false;
         }
+*/
       }
       if (!semHoldingProcessExists)
       {
@@ -1483,16 +1506,22 @@ void StatsGlobals::cleanup_SQL(
 
   removeProcess(pidToCleanup);
   releaseStatsSemaphore(semId, myPid);
+  logProcessDeath(cpu_, pidToCleanup, "Clean dangling semaphore");
 }
 
 void StatsGlobals::verifyAndCleanup(pid_t pidThatDied, SB_Int64_Type seqNum)
 {
+  bool processRemoved = false;
   int error = getStatsSemaphore(ssmpProcSemId_, getSsmpPid());
   if (statsArray_ && 
       (statsArray_[pidThatDied].processId_ == pidThatDied) &&
-      (statsArray_[pidThatDied].phandleSeqNum_ == seqNum))
-    removeProcess(pidThatDied);
+      (statsArray_[pidThatDied].phandleSeqNum_ == seqNum)) {
+     removeProcess(pidThatDied);
+     processRemoved = true;
+  }
   releaseStatsSemaphore(ssmpProcSemId_, getSsmpPid());
+  if (processRemoved)
+     logProcessDeath(cpu_, pidThatDied, "Received death message");
 }
 
 void StatsGlobals::updateMemStats(pid_t pid, 
@@ -1629,6 +1658,16 @@ NABoolean StatsGlobals::getInitError(pid_t pid, NABoolean &reportError)
          reportError = TRUE;
    } 
    return retcode; 
+}
+
+void StatsGlobals::logProcessDeath(short cpu, pid_t pid, const char *reason)
+{
+   char msg[256];
+
+   snprintf(msg, sizeof(msg),
+        "Pid %d,%d de-registered from shared segment. Reason: %s ", cpu, pid, reason);
+   SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
+   return;
 }
 
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu)

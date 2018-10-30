@@ -28,6 +28,8 @@
 #include "NAString.h"
 #include "CommonLogger.h"
 
+class QRLogger;
+extern QRLogger *gv_QRLoggerInstance_;
 // -----  these categories are currently not used
 // qmscomon
 extern std::string CAT_SQL_COMP_QR_COMMON;
