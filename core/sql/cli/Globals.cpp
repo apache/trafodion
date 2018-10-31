@@ -206,6 +206,7 @@ void CliGlobals::init( NABoolean espProcess,
       }
       else
       {
+        bool reincarnated;
         error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
 
         statsHeap_ = (NAHeap *)statsGlobals_->
@@ -221,10 +222,12 @@ void CliGlobals::init( NABoolean espProcess,
 	  NAHeap("Process Stats Heap", statsGlobals_->getStatsHeap(),
 		 8192,
 		 0);
-	statsGlobals_->addProcess(myPin_, statsHeap_);
+	reincarnated = statsGlobals_->addProcess(myPin_, statsHeap_);
         processStats_ = statsGlobals_->getExProcessStats(myPin_);
         processStats_->setStartTime(myStartTime_);
 	statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
+        if (reincarnated)
+           statsGlobals_->logProcessDeath(myCpu_, myPin_, "Process reincarnated before RIP");
       }
     }
     // create a default context and make it the current context
@@ -298,6 +301,7 @@ CliGlobals::~CliGlobals()
     error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
     statsGlobals_->removeProcess(myPin_);
     statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
+    statsGlobals_->logProcessDeath(myCpu_, myPin_, "Normal process death");
     sem_close((sem_t *)semId_);
   }
 }

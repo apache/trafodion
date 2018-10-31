@@ -93,7 +93,9 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
        NAHeap("Process Stats Heap", statsGlobals_->getStatsHeap(),
                8192,
                0);
-  statsGlobals_->addProcess(myPin_, statsHeap);
+  bool reincarnated = statsGlobals_->addProcess(myPin_, statsHeap);
+  if (reincarnated)
+     statsGlobals_->logProcessDeath(myCpu, myPin_, "Process reincarnated before RIP");
 
   statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
   CliGlobals *cliGlobals = GetCliGlobals();

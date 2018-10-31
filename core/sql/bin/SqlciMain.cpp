@@ -216,6 +216,7 @@ _callable void removeProcess()
     {
       statsGlobals->removeProcess(cliGlobals->myPin());
       statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
+      statsGlobals->logProcessDeath(cliGlobals->myCpu(), cliGlobals->myPin(), "Normal process death");
     }
     else if (error == 4011)
     {
