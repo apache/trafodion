@@ -290,6 +290,7 @@ public:
     ex_HIVE_TRUNCATE = 153,
     ex_LOB_UPDATE_UTIL = 154,
     ex_HIVE_QUERY = 155,
+    ex_CONNECT_BY= 156,
     ex_LAST = 9999              // not used
   };
 

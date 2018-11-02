@@ -133,6 +133,8 @@ public:
 
   const NAString getTextForQuery() const;
 
+  const NAString getTextForConnectBy() const;
+
   // return set of keyColumns referenced in the Computed Column expression
   void getUnderlyingColumnsForCC(ValueIdSet &underlyingCols);
 

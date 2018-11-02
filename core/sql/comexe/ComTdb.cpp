@@ -374,7 +374,12 @@ char *ComTdb::findVTblPtrCom(short classID)
       GetVTblPtr(vtblptr,ComTdbCompoundStmt);
       break;
     }
-
+    case ex_CONNECT_BY:
+    {
+      GetVTblPtr(vtblptr,ComTdbExeUtilConnectby);
+      break;
+    }
+    
     case ex_TUPLE:
     {
       GetVTblPtr(vtblptr,ComTdbTuple);

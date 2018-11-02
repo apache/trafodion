@@ -1791,7 +1791,7 @@ ItemExpr *ItemExpr::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) return this;
 
   ItemExpr* exp = this;
-
+ 
   // A quick way to determine whether we should worry about relaxation.
   // Only comparison and assign operators, SQL string functions are the
   // candidates.
@@ -10896,7 +10896,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
                "CAST( HOUR( CAST(@A1 AS TIMESTAMP) ) AS INTERVAL HOUR);");
       }
       break;
-
+    case ITM_SYS_CONNECT_BY_PATH:
+        strcpy(buf,"CAST( CONNECT_BY_PATH  AS VARCHAR(3000));"); 
+      break;
     case ITM_DATE_TRUNC_MINUTE:
       {
         if (enforceDateOrTimestampDatatype(bindWA,0,2))
@@ -13608,3 +13610,13 @@ NABoolean RowNumFunc::canBeUsedInGBorOB(NABoolean setErr)
 
   return FALSE;
 }
+
+ItemExpr *ItmSysConnectByPathFunc::bindNode(BindWA *bindWA)
+{
+  bindWA->connectByHasPath_=TRUE;
+  bindWA->connectByPathCol_ = getPathColumnName();
+  bindWA->connectByPathDel_  = getDelimiter();
+  return ZZZBinderFunction::bindNode(bindWA);
+}
+
+

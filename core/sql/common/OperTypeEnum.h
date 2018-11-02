@@ -679,6 +679,8 @@ enum OperatorTypeEnum {
                         ITM_GREATEST = 2385,
                         ITM_LEAST = 2386,
 
+                        ITM_CONNECT_BY = 2387,
+
 			ITM_UNIQUE_EXECUTE_ID = 2391,
 			ITM_GET_TRIGGERS_STATUS = 2392,
 			ITM_GET_BIT_VALUE_AT = 2393,
@@ -812,6 +814,8 @@ enum OperatorTypeEnum {
 
                         ITM_AES_ENCRYPT = 2641,
                         ITM_AES_DECRYPT = 2642,
+
+                        ITM_SYS_CONNECT_BY_PATH = 2643,
 
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,

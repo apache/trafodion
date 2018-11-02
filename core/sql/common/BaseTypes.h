@@ -212,7 +212,7 @@ enum UnparseFormatEnum { USER_FORMAT, EXPLAIN_FORMAT, FILE_FORMAT,
 			 USER_FORMAT_DELUXE, ERROR_MSG_FORMAT,
 			 MVINFO_FORMAT, MV_SHOWDDL_FORMAT,
                          QUERY_FORMAT, COMPUTED_COLUMN_FORMAT,
-			 HIVE_MD_FORMAT };
+			 HIVE_MD_FORMAT, CONNECT_BY_FORMAT };
 
 // -----------------------------------------------------------------------
 // Used to display optimizer statistics, and other debugging statements

@@ -4138,6 +4138,7 @@ private:
     DONE_
   };
   Step step_;
+  char * data_;
 
 protected:
   Int64 getEmbeddedNumValue(char* &sep, char endChar, 
@@ -4172,6 +4173,48 @@ public:
 protected:
 };
 
+class connectByStackItem
+{
+public:
+  connectByStackItem() 
+  {
+    seedValue = NULL;
+    pathItem = NULL;
+    pathLen = 0;
+    len = 0;
+    level = 0;
+    type = 0;
+    parentId = 0;
+  }
+  ~connectByStackItem() {}
+  char * seedValue;
+  char * pathItem;
+  int len;
+  int level;
+  int type;
+  int pathLen;
+  int parentId;
+};
+class connectByOneRow {
+
+public:
+  connectByOneRow()
+  {
+    data_ = NULL;
+    len = 0;
+    type = 0;
+  }
+  ~connectByOneRow() {}
+  char * data_;
+  int len;
+  int type;
+};
+
+#define CONNECT_BY_DEFAULT_BATCH_SIZE 100
+#define CONNECT_BY_MAX_LEVEL_SIZE 200
+#define CONNECT_BY_MAX_SQL_TEXT_SIZE 2048
+#define CONNECT_BY_MAX_PATH_SIZE 3000
+
 ////////////////////////////////////////////////////////////////////////////
 class ExExeUtilLobInfoTablePrivateState : public ex_tcb_private_state
 {
@@ -4181,6 +4224,72 @@ public:
   ExExeUtilLobInfoTablePrivateState();
   ~ExExeUtilLobInfoTablePrivateState();	// destructor
 protected:
+};
+
+class ExExeUtilConnectbyTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilConnectbyTdb;
+
+public:
+  ExExeUtilConnectbyTcb(const ComTdbExeUtilConnectby &exe_util_tdb,
+                            ex_globals * glob = 0);
+
+  virtual ~ExExeUtilConnectbyTcb()
+   {}
+
+  virtual short work();
+  virtual ex_tcb_private_state * allocatePstates(
+                                   Lng32 &numElems,      // inout, desired/actual elements
+                                   Lng32 &pstateLength); // out, length of one element
+  enum Step
+  {
+    INITIAL_,
+    EVAL_INPUT_,
+    EVAL_START_WITH_,
+    DO_CONNECT_BY_,
+    EVAL_OUTPUT_EXPR_,
+    NEXT_LEVEL_,
+    NEXT_ROOT_,
+    ERROR_,
+    DONE_
+  };
+  Step step_;
+  ExExeUtilConnectbyTdb& exeUtilTdb() const
+    {return (ExExeUtilConnectbyTdb&) tdb;};
+
+ short emitRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle, connectByStackItem *it) ;
+ short emitPrevRow(ExpTupleDesc * tDesc, int level, int isleaf, int iscycle, Queue* q, int index) ;
+
+ Queue *currArray[200];
+ Queue * getCurrentQueue(int level) { if(level <0 || level >200) abort(); return currArray[level];}
+ short checkDuplicate(connectByStackItem *it,int len, int level);
+ int currLevel_;
+ Int64 resultSize_;
+ Queue *currQueue_;
+ Queue *seedQueue_;
+ Queue *thisQueue_;
+ Queue *prevQueue_;
+ Queue *tmpPrevQueue_;
+ Int32 currRootId_;
+ Int32 connBatchSize_ ; 
+
+protected:
+  ExExeUtilConnectbyTcb *tcb_;
+
+private:
+  tupp tuppData_;
+  char * data_; 
+};
+
+class ExExeUtilConnectbyTdbState : public ex_tcb_private_state
+{
+  friend class ExExeUtilConnectbyTcb;
+
+ public:
+  ExExeUtilConnectbyTdbState();
+  ~ExExeUtilConnectbyTdbState();
+protected:
+  ExExeUtilConnectbyTcb::Step step_;
 };
 
 #endif

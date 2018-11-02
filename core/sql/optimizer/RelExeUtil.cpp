@@ -6273,6 +6273,64 @@ RelExpr * ExeUtilMetadataUpgrade::copyTopNode(RelExpr *derivedNode, CollHeap* ou
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
+
+RelExpr * ExeUtilConnectby::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilConnectby* result;
+  if (derivedNode == NULL)
+    result = new (outHeap)
+      ExeUtilConnectby(getTableName(),
+                      NULL, CharInfo::UnknownCharSet, NULL,outHeap);
+  else
+    result = (ExeUtilConnectby*) derivedNode;
+  result->tblDesc_ = tblDesc_;
+  result->hasStartWith_ = hasStartWith_;
+  result->connectByTree_ = connectByTree_;
+  result->parentColName_ = parentColName_;
+  result->childColName_ = childColName_;
+  result->startWithExprString_ = startWithExprString_;
+  result->noCycle_ = noCycle_;
+  result->flags_ = flags_;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilConnectby::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+  RelExpr * boundExpr = NULL;
+  //bindChildren(bindWA);
+
+  //scan_->bindNode(bindWA);
+  boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if( myselection_ ) 
+  {
+    myselection_->bindNode(bindWA);
+    myselection_->convertToValueIdSet(mypredicates_, bindWA, ITM_AND);
+  }
+  if (bindWA->errStatus()) 
+    return NULL;
+  return boundExpr;
+
+}
+
+RelExpr * ExeUtilConnectby::normalizeNode(NormWA & normWARef)
+{
+  return RelExpr::normalizeNode(normWARef);
+}
+
+const NAString ExeUtilConnectby::getText() const
+{
+  NAString result(CmpCommon::statementHeap());
+
+  result = "CONNECT_BY_STATEMENT";
+
+  return result;
+}
+
 // -----------------------------------------------------------------------
 // Member functions for class ExeUtilHbaseLoad
 // -----------------------------------------------------------------------

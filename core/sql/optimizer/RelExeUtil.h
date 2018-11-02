@@ -521,6 +521,7 @@ public:
     HIVE_TRUNCATE_LEGACY_     = 39,
     LOB_UPDATE_UTIL_          = 40,
     HIVE_QUERY_               = 41,
+    CONNECT_BY_               = 42,
     HIVE_TRUNCATE_            = 45
   };
 
@@ -1093,6 +1094,130 @@ private:
   // Checks will be done when the corresponding insert node is processed.
   NABoolean noSecurityCheck_;
 };
+
+class ExeUtilConnectby : public ExeUtilExpr
+{
+ enum Flags {
+   HAS_IS_LEAF = 0x00000001,
+   HAS_CONNECT_BY_PATH = 0x00000002,
+ };
+
+public:
+  ExeUtilConnectby( const CorrName &TableName,
+                   char * stmtText,
+                   CharInfo::CharSet stmtTextCharSet,
+                   RelExpr * scan,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+    : ExeUtilExpr(CONNECT_BY_, TableName, NULL, scan,
+                 stmtText, stmtTextCharSet, oHeap)
+ {
+   hasStartWith_ = TRUE;
+   myselection_ = NULL;
+   noCycle_ = FALSE;
+   scan_ = scan;
+   flags_ = 0;
+ }
+  virtual const NAString getText() const;
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+                                CollHeap* outHeap = 0);
+
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+  virtual RelExpr * normalizeNode(NormWA & normWARef);
+  virtual Int32 getArity() const { return (child(0) ? 1 : 0); }
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  virtual short codeGen(Generator*);
+
+  virtual TrafDesc * createVirtualTableDesc();
+
+  virtual const char * getVirtualTableName();
+#if 1
+  virtual
+  void pushdownCoveredExpr(const ValueIdSet & outputExprOnOperator,
+                           const ValueIdSet & newExternalInputs,
+                           ValueIdSet& predOnOperator,
+			   const ValueIdSet * nonPredExprOnOperator = NULL,
+                           Lng32 childId = (-MAX_REL_ARITY) ) {
+                              ValueIdSet emptySet;
+                              RelExpr::pushdownCoveredExpr(outputExprOnOperator,
+				   newExternalInputs,
+				   emptySet,
+				   nonPredExprOnOperator,
+				   0);
+                             }
+#endif
+
+  void setHasIsLeaf(NABoolean v) 
+  { v ? flags_ |= HAS_IS_LEAF: flags_ &= ~HAS_IS_LEAF; }
+
+  void setHasConnectByPath(NABoolean v) 
+  { v ? flags_ |= HAS_CONNECT_BY_PATH: flags_ &= ~HAS_CONNECT_BY_PATH; }
+
+  NABoolean hasIsLeaf() const 
+  { return (flags_ & HAS_IS_LEAF) != 0; }
+
+  NABoolean hasConnectByPath() const 
+  { return (flags_ & HAS_CONNECT_BY_PATH) != 0; }
+
+  static ItemExpr *containsPath (ItemExpr * lst ) {
+    Int32 arity = lst->getArity();
+    if(lst->getOperatorType() == ITM_SYS_CONNECT_BY_PATH) 
+    {
+      return lst;
+    }
+
+    for(Int32 i = 0; i < arity; i++)
+      if(lst->getChild(i))
+      {
+        ItemExpr *ie = containsPath((ItemExpr*)lst->getChild(i));
+        if(ie != NULL)  return ie;
+      }
+    return NULL;
+  }
+
+  static NABoolean containsIsLeaf( ItemExpr * lst) {
+    if(lst == NULL) 
+      return FALSE;
+    Int32 arity = lst->getArity();
+
+    if(lst->getOperatorType() == ITM_REFERENCE)
+    {
+      if((((ColReference*)lst)->getColRefNameObj()).getColName() == "CONNECT_BY_ISLEAF")
+         return TRUE;
+    }
+    for(Int32 i = 0; i < arity; i++)
+      if(lst->getChild(i))
+      {
+        NABoolean rc = containsIsLeaf((ItemExpr*)lst->getChild(i));
+        if(rc == TRUE)  return rc;
+      }
+    return FALSE;
+  }
+
+  TrafDesc * tblDesc_;
+  ItemExpr * connectByTree_;
+  NAString parentColName_;
+  NAString childColName_;
+  NAString startWithExprString_;
+  NABoolean  hasStartWith_;
+  NABoolean noCycle_;
+  RelExpr * scan_;
+  NAString myTableName_;
+  NAString myQualCat_;
+  NAString myQualSch_;
+  NAString myQualTbl_;
+  NAString pathColName_;
+  NAString delimiter_;
+
+  ItemExpr * myselection_;
+  ValueIdSet mypredicates_;  
+
+  Int32 batchSize_;
+
+private:
+  ULng32 flags_;
+}; 
 
 ///////////////////////////////////////////////////////////
 // ExeUtilHiveTruncate

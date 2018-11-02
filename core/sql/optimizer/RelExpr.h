@@ -282,7 +282,17 @@ public:
   static const CorrName invalid;
  virtual inline const CorrName& getTableName()const { return invalid;}
 
+  void setBiConnectBy(ItemExpr *b) { biConnectBy_ = b; }
+  ItemExpr* getBiConnectBy() {return biConnectBy_; }
+  ItemExpr* removeBiConnectBy() {ItemExpr * result = biConnectBy_; biConnectBy_ = NULL; return result; }
 
+  ValueIdSet & startWithPred() { CMPASSERT(NOT isCutOp()); return startWithPredicate_; }
+  ValueIdSet & connectByPred() { CMPASSERT(NOT isCutOp()); return connectByPredicate_; }
+
+  ItemExpr * biConnectBy_;
+
+  ValueIdSet   startWithPredicate_;   
+  ValueIdSet   connectByPredicate_;   
 
  protected:
   // append an ascii-version of RelExpr node into cachewa.qryText_
@@ -385,8 +395,13 @@ public:
   // add a new selection predicate (new pred = child pred AND existing pred)
   void addSelPredTree(ItemExpr *selpred);
 
+  void addConnectByExprTree(ItemExpr *selpred);
+  void addStartWithExprTree(ItemExpr *selpred);
+
   // remove the selection predicate tree from this node and return its pointer
   ItemExpr * removeSelPredTree();
+  ItemExpr * removeConnectByTree();
+  ItemExpr * removeStartWithTree();
 
   // non-destructive read of the selection predicates
   ItemExpr * selPredTree() const                        { return selection_; }
@@ -525,7 +540,7 @@ public:
   // QSTUFF
 
   // --------------------------------------------------------------------
-  // normalizeNode() performs predicate pushdown and also ensures
+  // normalizeNode() performs predicate pushdown and also ensuresL
   // that the characteristic input as well as characteristic output
   // values are both "minimal".
   // --------------------------------------------------------------------
@@ -1411,6 +1426,11 @@ public:
   NABoolean expandShortRows()
   {  return ((flags_ & EXPAND_SHORT_ROWS) != 0); }
 
+  void setHasConnectByFlag(NABoolean val)
+  { (val ? (flags_ |= HAS_CONNECT_BY) : (flags_ &= ~HAS_CONNECT_BY)); }
+
+  NABoolean hasConnectByFlag()
+  {  return ((flags_ & HAS_CONNECT_BY) != 0); }
   // For compressed internal format.
   // At codegen some nodes will switch from compressed internal format to
   // the exploded format when they are directly beneath the root node.
@@ -1439,6 +1459,7 @@ private:
   enum Flags {
     EXPAND_SHORT_ROWS  = 0x00000001     // expand short rows when added columns
    ,PARENT_IS_ROOT     = 0x00000002     // compressed internal format
+   ,HAS_CONNECT_BY     = 0x00000004     // compressed internal format
   };
 
   // every relational expression node has the ability to perform

@@ -1204,6 +1204,10 @@ public:
   void setIsGroupByRollup(NABoolean v)
   { (v ? flags_ |= IS_GROUPBY_ROLLUP : flags_ &= ~IS_GROUPBY_ROLLUP); }
 
+  NABoolean isOrderSyblingsBy()   const { return (flags_ & IS_ORDER_SIBGINGS_BY) != 0; }
+  void setIsOrderSyblingsBy(NABoolean v)
+  { (v ? flags_ |= IS_ORDER_SIBGINGS_BY: flags_ &= ~IS_ORDER_SIBGINGS_BY); }
+
   virtual QR::ExprElement getQRExprElem() const;
 
   virtual ItemExpr* removeRangeSpecItems(NormWA* normWA = NULL);
@@ -1273,7 +1277,10 @@ private:
 
     // if set, the subtree rooted below was part of "groupby rollup" clause.
 	// Currently used during parsing phase. See parser/sqlparser.y.
-    IS_GROUPBY_ROLLUP  = 0x0080
+    IS_GROUPBY_ROLLUP  = 0x0080, 
+
+    // if set, the subtree was order siblings by clause
+    IS_ORDER_SIBGINGS_BY = 0x0100
   };
 
   // ---------------------------------------------------------------------

@@ -91,7 +91,8 @@ public:
     GET_QID_                 = 35,
     HIVE_TRUNCATE_           = 36,
     LOB_UPDATE_UTIL_         = 37,
-    HIVE_QUERY_              = 38
+    HIVE_QUERY_              = 38,
+    CONNECT_BY_              = 39
   };
 
   ComTdbExeUtil()
@@ -4016,7 +4017,78 @@ private:
   NABoolean tableFormat_;
   
 };
+
+
+class ComTdbExeUtilConnectby : public ComTdbExeUtil
+{
+  friend class ExExeUtilConnectbyTcb;
+
+public:
+  ComTdbExeUtilConnectby(char * query,
+			      ULng32 querylen,
+			      Int16 querycharset,
+			      char * tableName,
+			      char * stmtName,
+			      ex_expr * input_expr,
+			      ULng32 input_rowlen,
+			      ex_expr * output_expr,
+			      ULng32 output_rowlen,
+			      ex_expr * scan_expr,
+			      ex_cri_desc * work_cri_desc,
+			      const unsigned short work_atp_index,
+			      Lng32 colDescSize,
+			      Lng32 outputRowSize,
+			      ex_cri_desc * given_cri_desc,
+			      ex_cri_desc * returned_cri_desc,
+			      queue_index down,
+			      queue_index up,
+			      Lng32 num_buffers,
+			      ULng32 buffer_size,
+                              ExCriDescPtr workCriDesc 
+			      );
+
+  ComTdbExeUtilConnectby()
+    : ComTdbExeUtil() { hasStartWith_ = TRUE; noCycle_ = FALSE; }
+
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilConnectby);}
+
+  virtual const char *getNodeName() const
+  {
+    return "CONNECT_BY";
+  };
+  UInt16 sourceDataTuppIndex_;
+  NAString parentColName_;
+  NAString childColName_;
+  NAString connTableName_;
+  NAString startWithExprString_;
+  NABoolean hasStartWith_;
+  NABoolean noCycle_;
+  Int32 maxDeep_;
+  Int32 maxSize_;
+  NABoolean hasPath_;
+  NABoolean hasIsLeaf_;
+  NAString pathColName_;
+  NAString delimiter_;
+  NAString orderSiblingsByCol_;
+private:
+  ExCriDescPtr myWorkCriDesc_;  
+  Int32 flags_;
+  Int32 tupleLen_;    
+};
+
+class ExExeUtilConnectbyTdb : public ComTdbExeUtilConnectby
+{
+public:
+  ExExeUtilConnectbyTdb()
+    {}
+  virtual ~ExExeUtilConnectbyTdb()
+    {}
+
+  virtual ex_tcb *build(ex_globals *globals);
+
+};
+
 #endif
-
-
-

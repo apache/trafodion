@@ -383,6 +383,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LENGTH              /* ANSI SQL non-reserved word */
 %token <tokval> TOK_PRECISION
 %token <tokval> TOK_SCALE               /* ANSI SQL non-reserved word */
+%token <tokval> TOK_SIBLINGS		
 %token <tokval> TOK_LEADING_PRECISION   /* Tandem extenstion non-reserved word */
 %token <tokval> TOK_NULLABLE            /* ANSI SQL non-reserved word */
 
@@ -479,6 +480,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_END_HINT
 %token <tokval> TOK_BALANCE
 %token <tokval> TOK_NOT_BETWEEN
+%token <tokval> TOK_NOCYCLE
 %token <tokval> TOK_BETWEEN
 %token <tokval> TOK_BIT
 %token <tokval> TOK_BITAND
@@ -945,6 +947,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_PREFER_FOR_SCAN_KEY
 %token <tokval> TOK_PREPARE
 %token <tokval> TOK_PRESERVE            /* TD extension that HP wants to ignore */
+%token <stringval> PRIOR_IDENTIFIER 
 %token <tokval> TOK_PRIORITY
 %token <tokval> TOK_PRIORITY_DELTA
 %token <tokval> TOK_PROCEDURE
@@ -1063,6 +1066,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SHOWDDL_USER
 %token <tokval> TOK_SHOWDDL             /* Tandem extension non-reserved word */
 %token <tokval> TOK_SYSDATE
+%token <tokval> TOK_SYSCONNECTBYPATH
 %token <tokval> TOK_SYSTIMESTAMP
 %token <tokval> TOK_TARGET
 %token <tokval> TOK_SYSTEM
@@ -1192,6 +1196,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_WHENEVER
 %token <tokval> TOK_WHERE
 %token <tokval> TOK_WITH
+%token <tokval> TOK_WITH1
 %token <tokval> TOK_SLEEP
 %token <tokval> TOK_UUID_SHORT
 %token <tokval> TOK_UNIX_TIMESTAMP
@@ -1253,6 +1258,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COMPONENTS
 %token <tokval> TOK_COMPRESSION
 %token <tokval> TOK_CONFIG              /* Tandem extension */
+%token <stringval> CONNECT_IDENTIFIER      /* Tandem extension */
 %token <tokval> TOK_CONSTRAINT
 %token <tokval> TOK_CONSTRAINTS
 %token <tokval> TOK_COPY
@@ -1549,7 +1555,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SPECIFICTYPE
 %token <tokval> TOK_START
 %token <tokval> TOK_STATE
-
+%token <tokval> TOK_START_WITH
 %token <tokval> TOK_TERMINATE
 %token <tokval> TOK_THAN
 %token <tokval> TOK_TREAT
@@ -2100,6 +2106,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>	  		table_value_constructor
 %type <relx>      		table_expression
 %type <relx>      		from_clause
+%type <item>                    startwith_clause
 %type <item>      		join_specification
 %type <item>      		join_condition
 %type <item>      		where_clause
@@ -9441,18 +9448,18 @@ sequence_generator_option : start_with_option
                       | datatype_option
 
 /* type pElemDDL */
-start_with_option : TOK_START TOK_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
+start_with_option : TOK_START_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
     {
       // Validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
 
-      NABoolean result = validateSGOption(TRUE, FALSE,(char *)$4->data(), "START WITH", "SEQUENCE");
+      NABoolean result = validateSGOption(TRUE, FALSE,(char *)$3->data(), "START WITH", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
 
-      Int64 value = atoInt64($4->data()); 
-     if (NOT $3)
+      Int64 value = atoInt64($3->data()); 
+     if (NOT $2)
         value = -value;
        
       $$ = new (PARSERHEAP())
@@ -9897,6 +9904,11 @@ misc_function :
                             CmpCommon::statementHeap(),
                             1, $3);
                 }
+     | TOK_SYSCONNECTBYPATH '(' value_expression  ','  QUOTED_STRING ')'
+                  {
+                    $$ = new (PARSERHEAP())
+                      ItmSysConnectByPathFunc($5->data(), $3);
+                  }
      | TOK_ISNULL '(' value_expression ',' value_expression ')'
                   {
                     $$ = new (PARSERHEAP())
@@ -9904,7 +9916,6 @@ misc_function :
                                  CmpCommon::statementHeap(),
                                  2, $3, $5);
                   }
-
      | TOK_NVL '(' value_expression ',' value_expression ')'
                                 {
 				  $$ = new (PARSERHEAP()) 
@@ -9912,17 +9923,15 @@ misc_function :
                                                     CmpCommon::statementHeap(),
 						    2, $3, $5);
 				}
-
     | TOK_JSONOBJECTFIELDTEXT '(' value_expression ',' value_expression ')'
-    {
-        $$ = new (PARSERHEAP()) 
-        BuiltinFunction(ITM_JSONOBJECTFIELDTEXT, CmpCommon::statementHeap(), 2, $3, $5);
-    }
+             {
+                $$ = new (PARSERHEAP()) 
+                    BuiltinFunction(ITM_JSONOBJECTFIELDTEXT, CmpCommon::statementHeap(), 2, $3, $5);
+             }
      | TOK_NULLIF '(' value_expression ',' value_expression ')'
               {
                 $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_NULLIF, $3, $5);
               }
-
      | TOK_QUERYID_EXTRACT '(' value_expression ',' value_expression ')'
                                 {
 				  $$ = new (PARSERHEAP()) 
@@ -13179,7 +13188,6 @@ list_of_values : '(' insert_value_expression_list ')'
 				}
 
 // end of fix: left recursion for insert statement values.		  
-
 		  
 table_expression : from_clause where_clause sample_clause
                    cond_transpose_clause_list sequence_by_clause
@@ -13280,13 +13288,130 @@ table_expression : from_clause where_clause sample_clause
 		                                 SqlParser_CurrentParser->topHasOlapFunctions());
                      SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
 		   }
+            | from_clause startwith_clause where_clause 
+                   {
+                     if($1->getOperatorType() == REL_JOIN)
+                      {
+		     $$ = 
+		       getTableExpressionRelExpr($1, 
+		                                 $3, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL,
+		                                 NULL,
+		                                 FALSE,
+		                                 SqlParser_CurrentParser->topHasOlapFunctions());
+                       }
+                     else
+                     $$ =
+                       getTableExpressionRelExpr($1,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 FALSE,
+                                                 SqlParser_CurrentParser->topHasOlapFunctions());
 
+                   SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
+                   ((BiConnectBy*)$2)->where_clause = $3;
+                   $$->setBiConnectBy( $2);
+                   $$->setHasConnectByFlag(TRUE);
+                  }
+            | from_clause TOK_WHERE search_condition startwith_clause
+           {
+                     if($1->getOperatorType() == REL_JOIN)
+		     $$ = 
+		       getTableExpressionRelExpr($1, 
+		                                 $3, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL, 
+		                                 NULL,
+		                                 NULL,
+		                                 FALSE,
+		                                 SqlParser_CurrentParser->topHasOlapFunctions());
+                     else
+                     $$ =
+                       getTableExpressionRelExpr($1,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 FALSE,
+                                                 SqlParser_CurrentParser->topHasOlapFunctions());
+                   SqlParser_CurrentParser->setTopHasTDFunctions(FALSE);
+                   ((BiConnectBy*)$4)->where_clause = $3;
+                   //((BiConnectBy*)$3)->order_siblings_by_clause = $4;
+                   $$->setBiConnectBy( $4);
+                   $$->setHasConnectByFlag(TRUE);
+           }
 /* type relx */
 from_clause : TOK_FROM global_hint table_reference { $$ = $3; }
 	    | from_clause ',' table_reference
 			      {
 				$$ = new (PARSERHEAP()) Join($1, $3, REL_JOIN);
-			      }
+		      }
+startwith_clause :TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY search_condition
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$5);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                    }
+                   |TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition 
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$6);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
+                    }
+/*
+                   | TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$5);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $5;
+                    }
+                   |TOK_START_WITH search_condition CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy ((BiRelat*)$2, (BiRelat*)$6);
+                      //save the predicate text
+                      $2->unparse(((BiConnectBy*)$$)->startWithString_, PARSER_PHASE, USER_FORMAT);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $6;
+                    }
+*/
+                   |  CONNECT_IDENTIFIER TOK_BY search_condition
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
+                    }
+                   |  CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$4);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
+                    }
+/*
+                   |  CONNECT_IDENTIFIER TOK_BY search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$3);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $4;
+                    }
+                   |  CONNECT_IDENTIFIER TOK_BY TOK_NOCYCLE search_condition order_by_clause
+                    {
+                      $$ = new (PARSERHEAP())BiConnectBy (NULL, (BiRelat*)$4);
+                      ((BiConnectBy*)$$)->setNoCycle(TRUE);
+                      ((BiConnectBy*)$$)->order_siblings_by_clause = $5;
+                    }
+*/
 
 /* type item */
 join_specification : join_condition
@@ -13719,7 +13844,6 @@ query_specification :select_token set_quantifier query_spec_body
          ((RelRoot*)$$)->setAnalyzeOnly();
 
     }
-
 query_specification : exe_util_maintain_object 
                                 {
 				  RelRoot *root = new (PARSERHEAP())
@@ -13820,9 +13944,9 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
 /* type relx */
 query_spec_body : query_select_list table_expression access_type  optional_lock_mode
 			{
-			  // use a compute node to attach select list
-			  RelRoot *temp=  new (PARSERHEAP())
-                            RelRoot($2, $3, $4, REL_ROOT, $1);
+			    // use a compute node to attach select list
+			    RelRoot *temp=  new (PARSERHEAP())
+                              RelRoot($2, $3, $4, REL_ROOT, $1);
 			    // set relroot olap here
 			    if (SqlParser_CurrentParser->topHasOlapFunctions()) {
 			      temp->setHasOlapFunctions(TRUE);
@@ -13836,9 +13960,16 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			    }
 			    //pop the last element which was pushed when we eneterd a new select  
 			    SqlParser_CurrentParser->popHasTDFunctions();			    
-			    
+			   #if 0 
+                            if( $2->hasConnectByFlag() == TRUE) { 
+                               //move it to Root
+                               temp->setBiConnectBy($2->getBiConnectBy()); 
+                               $2->setBiConnectBy(NULL);
+                            }
+                          #endif
 			    $$=temp;			    
 			}
+
 		| query_select_list into_clause table_expression access_type optional_lock_mode
 			{
 			  // use a compute node to attach select list
@@ -19169,6 +19300,26 @@ comparison_predicate :
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
      | row_subquery comparison_operator value_expression_list_paren
 		      { $$ = new (PARSERHEAP()) BiRelat($2, $1, $3); }
+     | PRIOR_IDENTIFIER value_expression comparison_operator value_expression 
+		      { $$ = new (PARSERHEAP()) BiConnectByRelat($3, $2, $4); 
+                        NAString pn, cn;
+                        $2->unparse(pn, PARSER_PHASE, QUERY_FORMAT);
+                        $4->unparse(cn, PARSER_PHASE, QUERY_FORMAT);
+                        ( (BiConnectByRelat*)$$)->setParentColName((char*)pn.data());
+                        ( (BiConnectByRelat*)$$)->setChildColName((char*)cn.data());  
+                        ( (BiConnectByRelat*)$$)->setParentColIE($2);
+                        ( (BiConnectByRelat*)$$)->setChildColIE($4);  
+                      }
+     | value_expression comparison_operator PRIOR_IDENTIFIER value_expression 
+		      { $$ = new (PARSERHEAP()) BiConnectByRelat($2, $1, $4); 
+                        NAString pn, cn;
+                        $4->unparse(pn, PARSER_PHASE, QUERY_FORMAT);
+                        $1->unparse(cn, PARSER_PHASE, QUERY_FORMAT);
+                        ( (BiConnectByRelat*)$$)->setParentColName((char*)pn.data());
+                        ( (BiConnectByRelat*)$$)->setParentColIE($4);
+                        ( (BiConnectByRelat*)$$)->setChildColName((char*)cn.data());  
+                        ( (BiConnectByRelat*)$$)->setChildColIE($1);  
+                      }
 
      // BEGIN rules added for UDF
 /* COMMENTED OUT FOR R2.5. CAUSES GRAMMAR CONFLICTS.
@@ -23410,7 +23561,8 @@ order_by_clause : TOK_ORDER TOK_BY sort_spec_list
                              {
                                $$ = NULL;
                              }
-
+                          |TOK_ORDER TOK_SIBLINGS TOK_BY sort_spec_list
+                              { $$ = $4; $$->setIsOrderSyblingsBy(TRUE); }
 
 /* type relx */
 set_statement:  set_table_statement
@@ -24640,7 +24792,7 @@ param_name : IDENTIFIER
                            temp.toUpper();
                            $$ = new (PARSERHEAP())ElemDDLParamName(temp);	   
                          }
-                    | nonreserved_func_word
+                     | nonreserved_func_word
                          {  
                            NAString temp = *(unicodeToChar
                                             (ToTokvalPlusYYText(&$1)->yytext,

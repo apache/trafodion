@@ -50,6 +50,7 @@
 #include "SchemaDB.h"
 #include "HbaseSearchSpec.h"
 #include "OptHints.h"
+#include "ItemOther.h"
 #include "ExpHbaseDefs.h"
 #include <vector>
 
@@ -781,6 +782,7 @@ private:
   // pointer to the common subexpression, if this is a scan of a
   // materialized common subexpr
   CommonSubExprRef *commonSubExpr_;
+
 };
 
 // -----------------------------------------------------------------------

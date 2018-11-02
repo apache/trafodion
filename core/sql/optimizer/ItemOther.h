@@ -1131,6 +1131,40 @@ private:
 
 }; // class VEGReference
 
+
+class BiConnectBy :public ItemExpr {
+public:
+  BiConnectBy( BiRelat * start,
+          BiRelat * conn)
+   :
+    ItemExpr(ITM_CONNECT_BY),
+    noCycle_(FALSE)
+  {
+    startWith_ = start;
+    connectBy_ = (BiConnectByRelat*)conn;
+    where_clause = NULL;
+    order_siblings_by_clause = NULL;
+  }
+  virtual ~BiConnectBy() {}
+
+  BiRelat * getStartWith() {return startWith_; }
+  BiConnectByRelat * getConnectBy() {return connectBy_; }
+  NAString getStartWithString() {return startWithString_; }
+  void setStartWithString(char *v ) {startWithString_ = v; }
+  void setNoCycle(NABoolean v) { noCycle_ = v; }
+  NABoolean getNoCycle() {return noCycle_; }
+  NAString startWithString_;
+  ItemExpr * where_clause;
+  ItemExpr * order_siblings_by_clause;
+
+private:
+  BiRelat * startWith_;
+  BiConnectByRelat * connectBy_;
+  ItemExpr * startWithIe_;
+  NABoolean noCycle_;
+};
+
+
 //This RangeSpecRef class is an wrapper for RangeSpec object and also holds a <key> <op> <valueset> relationship
 // which needs to be used for traversal and selectivity estimation/generating MDAM Pred for different BiRelational as well.
 

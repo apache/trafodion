@@ -504,8 +504,6 @@ SELECT COMPLETION COMPLETION from (values(0)) COMPLETION(COMPLETION);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT CONNECT CONNECT from (values(0)) CONNECT(CONNECT);
 
-*** ERROR[3128] CONNECT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
-
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT CONNECT CONNECT from (values(0)) CONNECT(CONNECT);
                      ^ (22 characters from start of SQL statement)
@@ -872,8 +870,6 @@ SELECT PRESERVE PRESERVE from (values(0)) PRESERVE(PRESERVE);
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PRIOR PRIOR from (values(0)) PRIOR(PRIOR);
-
-*** ERROR[3128] PRIOR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
 
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT PRIOR PRIOR from (values(0)) PRIOR(PRIOR);

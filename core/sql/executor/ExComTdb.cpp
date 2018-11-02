@@ -566,6 +566,13 @@ case ex_LOB_INFO:
       break;
     }
 
+   case ex_CONNECT_BY:
+    {
+      GetVTblPtr(vtblptr,ExExeUtilConnectbyTdb);
+
+      break;
+    }
+
     default:
       ex_assert(0, "findVTblPtrExe(): Cannot find entry of this ClassId");
       break;

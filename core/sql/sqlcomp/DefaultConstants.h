@@ -165,7 +165,6 @@ enum DefaultConstants
   DP2_CACHE_4096_BLOCKS,
 
 
-
   // Constants needed to estimate the cost of communication
   // between DP2 and exeInDp2:
   CPUCOST_SCAN_KEY_LENGTH,  // key encoding/decoding
@@ -3354,6 +3353,9 @@ enum DefaultConstants
   // Used to read compressed hdfs text files and to write
   // both compressed and uncompressed hdfs files
   HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB,
+
+  CONNECTBY_MAX_DEEP,
+  CONNECTBY_MAX_SIZE, 
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

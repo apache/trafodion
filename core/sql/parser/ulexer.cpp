@@ -3179,6 +3179,13 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                         return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
                       }
                       break;
+                     case TOK_START:
+                       return eitherCompoundOrSimpleKeyword(
+			keyWordEntry2->getTokenCode() == TOK_WITH,
+			TOK_START_WITH,
+			keyWordEntry1->getTokenCode(),
+			end1, holdChar1, lvalp);
+                     break;
                     case TOK_UNION:
                       return eitherCompoundOrSimpleKeyword
                         (keyWordEntry2->getTokenCode() == TOK_JOIN,

@@ -7291,3 +7291,11 @@ const NAType * SplitPart::synthesizeType()
                              );
 
 }
+
+const NAType * ItmSysConnectByPathFunc::synthesizeType()
+{
+    NAType * type;
+    type = new HEAP
+      SQLVarChar(HEAP, 3000, FALSE);
+    return type;
+}

@@ -83,6 +83,7 @@
 #include "ComSqlId.h"
 #include "MVInfo.h"
 #include "StmtDDLCreateTable.h"
+#include "CmpSeabaseDDL.h"
 #include "CmpDDLCatErrorCodes.h"
 
 // need for authorization checks
@@ -5257,6 +5258,236 @@ short ExeUtilOrcFastAggr::codeGen(Generator * generator)
 }
 
 
+const char * ExeUtilConnectby::getVirtualTableName()
+{ 
+  return myTableName_.data();
+}
+
+TrafDesc *ExeUtilConnectby::createVirtualTableDesc()
+{
+  CmpSeabaseDDL cmpSBD((NAHeap *)CmpCommon::statementHeap());
+  NAString cat;
+  NAString sch;
+  NAString tbl;
+  Scan * scanNode = (Scan*)scan_;
+  cat= (scanNode->getTableName()).getQualifiedNameObj().getCatalogName();
+  sch= (scanNode->getTableName()).getQualifiedNameObj().getSchemaName();
+  tbl= (scanNode->getTableName()).getQualifiedNameObj().getObjectName();
+
+  tblDesc_ = cmpSBD.getSeabaseTableDesc(cat,sch,tbl,COM_BASE_TABLE_OBJECT);
+  
+  //rename
+  TrafTableDesc * td = tblDesc_->tableDesc();
+  td->tablename = (char*)getVirtualTableName();
+  //add LEVEL column
+  TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;
+  //go to the last entry
+  int i = 0;
+  int tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  TrafDesc * col_desc = TrafMakeColumnDesc(
+           getVirtualTableName(),
+           "LEVEL", //info->colName,
+           i,
+           REC_BIN32_UNSIGNED,
+           4,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UNKNOWN,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+
+  column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;  
+  i =0;
+  tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  col_desc = TrafMakeColumnDesc(
+           getVirtualTableName(),
+           "CONNECT_BY_ISCYCLE", //info->colName,
+           i,
+           REC_BIN32_UNSIGNED,
+           4,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UNKNOWN,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+
+  column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;  
+  i =0;
+  tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  col_desc = TrafMakeColumnDesc(
+           getVirtualTableName(),
+           "CONNECT_BY_ISLEAF", //info->colName,
+           i,
+           REC_BIN32_UNSIGNED,
+           4,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UNKNOWN,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+
+  column_desc = tblDesc_->tableDesc()->columns_desc;
+  tblDesc_->tableDesc()->colcount++;  
+  i =0;
+  tmpOffset = 0;
+  while(column_desc->next) { i++; column_desc = column_desc->next; }
+
+  tmpOffset = column_desc->columnsDesc()->offset + 4;
+  col_desc = TrafMakeColumnDesc(
+           getVirtualTableName(),
+           "CONNECT_BY_PATH", //info->colName,
+           i,
+           REC_BYTE_V_ASCII,
+           3000,
+           tmpOffset,
+           FALSE,
+           SQLCHARSETCODE_UTF8,
+           NULL);
+  column_desc->next = col_desc;
+  col_desc->columnsDesc()->colclass='S';
+
+  return tblDesc_;
+}
+
+short ExeUtilConnectby::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);  
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 0;
+  Int32 theAtpIndex = returnedDesc->noTuples()-1;
+  const Int32 outputAtpIndex =theAtpIndex;
+
+  Attributes ** attrs =
+    new(generator->wHeap())
+    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+
+  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+    {
+      ItemExpr * col_node
+	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
+	  getItemExpr();
+
+      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
+	getAttr();
+    }
+
+  ExpTupleDesc *tupleDesc = 0;
+  ULng32 tupleLength = 0;
+ 
+  ExpTupleDesc::TupleDataFormat tupleFormat = ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  
+  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
+			    attrs, tupleFormat,
+			    tupleLength,
+			    work_atp, outputAtpIndex,
+			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
+
+  // add this descriptor to the work cri descriptor.
+  workCriDesc->setTupleDescriptor(outputAtpIndex , tupleDesc);
+
+  TrafDesc * column_desc = tblDesc_->tableDesc()->columns_desc;
+  Lng32 colDescSize =  column_desc->columnsDesc()->length;
+
+  Scan * scanNode = (Scan*)scan_;
+  NAString tbl= (scanNode->getTableName()).getQualifiedNameAsString();
+
+  char * stmtText = getStmtText();
+  char *tblnm = (char*)tbl.data();
+
+  ex_expr * selectPred = NULL;
+
+  if (!mypredicates_.isEmpty())
+  //if(NOT selectionPred().isEmpty())
+    {
+      ItemExpr * selPredTree =
+        mypredicates_.rebuildExprTree(ITM_AND,TRUE,TRUE);
+        //selectionPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(selPredTree->getValueId(),
+                            ex_expr::exp_SCAN_PRED,
+                            &selectPred);
+
+     expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+			       0, theAtpIndex);
+    }
+
+  ComTdbExeUtilConnectby  * exe_util_tdb = new(space)  
+  ComTdbExeUtilConnectby (stmtText , (stmtText ? strlen(stmtText) : 0), getStmtTextCharSet(), tblnm , NULL, 
+			0 , 0,
+			0 , 0,
+                        selectPred,
+			workCriDesc , outputAtpIndex,
+			colDescSize,
+			tupleLength,
+			givenDesc,
+			returnedDesc,
+			(queue_index)8,
+			(queue_index)1024,
+			10,
+			32000,
+                        workCriDesc
+			);
+
+  exe_util_tdb->sourceDataTuppIndex_ = outputAtpIndex;
+  exe_util_tdb->parentColName_ = parentColName_; // ((BiConnectBy*)getBiConnectBy())->getConnectBy()->getParentColName();
+  exe_util_tdb->childColName_ = childColName_; // ((BiConnectBy*)getBiConnectBy())->getConnectBy()->getChildColName();
+  exe_util_tdb->hasStartWith_ = hasStartWith_;
+  exe_util_tdb->startWithExprString_ = startWithExprString_;
+  exe_util_tdb->noCycle_ = noCycle_;
+
+  if(generator->getBindWA()->connectByHasPath_)
+  {
+     exe_util_tdb->hasPath_ = TRUE;
+     exe_util_tdb->pathColName_ = generator->getBindWA()->connectByPathCol_;
+     exe_util_tdb->delimiter_ = generator->getBindWA()->connectByPathDel_;
+  }
+  else
+  {
+     exe_util_tdb->hasPath_ = FALSE;
+     exe_util_tdb->pathColName_ = "0";
+     exe_util_tdb->delimiter_ = " ";
+  }
+  if(generator->getBindWA()->connectByHasIsLeaf_)
+  {
+    exe_util_tdb->hasIsLeaf_ = TRUE;
+  }
+  else
+    exe_util_tdb->hasIsLeaf_ = FALSE;
+
+  exe_util_tdb->orderSiblingsByCol_ = generator->getBindWA()->orderSiblingsByCol_;
+
+  generator->initTdbFields(exe_util_tdb);
+
+  if (!generator->explainDisabled())
+  {
+    generator->setExplainTuple(addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  
+  generator->setGenObj(this, exe_util_tdb);
+
+  return 0;
+}
 
 /////////////////////////////////////////////////////////
 //

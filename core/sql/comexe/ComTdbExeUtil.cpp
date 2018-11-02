@@ -3028,3 +3028,59 @@ Lng32 ComTdbExeUtilLobInfo::unpack(void * base, void * reallocator)
     return -1;
   return ComTdbExeUtil::unpack(base, reallocator);
 }
+
+ComTdbExeUtilConnectby::ComTdbExeUtilConnectby(char * query,
+			      ULng32 querylen,
+			      Int16 querycharset,
+			      char * tableName,
+			      char * stmtName,
+			      ex_expr * input_expr,
+			      ULng32 input_rowlen,
+			      ex_expr * output_expr,
+			      ULng32 output_rowlen,
+			      ex_expr * scan_expr,
+			      ex_cri_desc * work_cri_desc,
+			      const unsigned short work_atp_index,
+			      Lng32 colDescSize,
+			      Lng32 outputRowSize,
+			      ex_cri_desc * given_cri_desc,
+			      ex_cri_desc * returned_cri_desc,
+			      queue_index down,
+			      queue_index up,
+			      Lng32 num_buffers,
+			      ULng32 buffer_size,
+				ExCriDescPtr workCriDesc 
+			      )
+    : ComTdbExeUtil(ComTdbExeUtil::CONNECT_BY_,
+		     query, querylen, querycharset,
+		     tableName, strlen(tableName),
+		     input_expr, input_rowlen,
+		     output_expr, output_rowlen,
+		     scan_expr,
+		     work_cri_desc, work_atp_index,
+		     given_cri_desc, returned_cri_desc,
+		     down, up, 
+		     num_buffers, buffer_size),
+       flags_(0),
+	myWorkCriDesc_(workCriDesc),
+       tupleLen_(outputRowSize)    
+{
+   setNodeType(ComTdb::ex_CONNECT_BY);
+   connTableName_ = tableName;
+   maxDeep_ = 200; //by default, max deep of a tree
+   maxSize_ = 100000; //by default, the max number of rows to return for hierachy query
+   hasPath_ = FALSE;
+   hasIsLeaf_ = FALSE;
+}
+
+Long ComTdbExeUtilConnectby::pack(void * space)
+{
+  myWorkCriDesc_.pack(space);
+  return ComTdbExeUtil::pack(space);
+}
+
+Lng32 ComTdbExeUtilConnectby::unpack(void * base, void * reallocator)
+{
+   if(myWorkCriDesc_.unpack(base, reallocator)) return -1;
+  return ComTdbExeUtil::unpack(base, reallocator);
+}

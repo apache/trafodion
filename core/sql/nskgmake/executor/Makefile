@@ -68,6 +68,7 @@ CPPSRC := Allocator.cpp \
 	ExComTdb.cpp \
 	ExDupSqlBuffer.cpp \
 	ExExeUtilAll.cpp \
+	ExExeUtilConnectby.cpp \
 	ExExplain.cpp \
 	ExFirstN.cpp \
 	ExHbaseAccess.cpp \
