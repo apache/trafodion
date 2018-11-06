@@ -85,7 +85,7 @@ public final class DcsServer implements Runnable {
     private ServerManager serverManager;
     private ExecutorService pool=null;
     private JVMShutdownHook jvmShutdownHook;
-	private static String trafodionHome;
+	private static String trafodionLog;
     
     private class JVMShutdownHook extends Thread {
     	public void run() {
@@ -127,7 +127,7 @@ public final class DcsServer implements Runnable {
 			System.exit(1);
 		}
 		
-		trafodionHome = System.getProperty(Constants.DCS_TRAFODION_HOME);
+		trafodionLog = System.getProperty(Constants.DCS_TRAFODION_LOG);
 
 		try {
 			zkc = new ZkClient();	   
@@ -236,8 +236,8 @@ public final class DcsServer implements Runnable {
 		return serverManager.getUserProgramHome();
 	}
 	
-	public String getTrafodionHome() {
-		return trafodionHome;
+	public String getTrafodionLog() {
+		return trafodionLog;
 	}
 	
 	public static void main(String [] args) {

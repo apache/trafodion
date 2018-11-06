@@ -54,7 +54,7 @@
   String zkQuorumServers = master.getZKQuorumServersString();
   String zkParentZnode = master.getZKParentZnode(); 
   String metrics = master.getMetrics();
-  String trafodionHome = master.getTrafodionHome();
+  String trafodionLog = master.getTrafodionLog();
   boolean trafodionLogs = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_LOGS, Constants.DEFAULT_DCS_MASTER_TRAFODION_LOGS);
   boolean trafodionQueryTools = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_QUERY_TOOLS, Constants.DEFAULT_DCS_MASTER_TRAFODION_QUERY_TOOLS);
   String type = request.getParameter("type");
@@ -100,7 +100,7 @@
 <h1 id="page_title">DcsMaster: <%= masterIP %>:<%= masterInfoPort %></h1>
 <p id="links_menu">
   <a href="http://<%= masterIP %>:<%= masterInfoPort %>?pagesize=<%= pageSize %>">Home</a>,
-  <a href="/logs/">Dcs local logs</a><% if(! trafodionHome.isEmpty()) { %><% if(trafodionLogs) { %>, <a href="/TrafodionLogs/">Trafodion local logs</a><% } %><% if(trafodionQueryTools) { %>, <a href="repository.jsp?type=<%= Constants.TRAFODION_REPOS_CATALOG_SCHEMA %>">Trafodion query tools</a><% } %><% } %>
+  <a href="/logs/">Dcs local logs</a><% if(! trafodionLog.isEmpty()) { %><% if(trafodionLogs) { %>, <a href="/TrafodionLogs/">Trafodion local logs</a><% } %><% if(trafodionQueryTools) { %>, <a href="repository.jsp?type=<%= Constants.TRAFODION_REPOS_CATALOG_SCHEMA %>">Trafodion query tools</a><% } %><% } %>
 </p>
 <hr id="head_rule" />
 <h2>Attributes</h2>
