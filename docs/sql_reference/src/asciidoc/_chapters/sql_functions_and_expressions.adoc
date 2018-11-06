@@ -5364,7 +5364,7 @@ This function returns 0 for the second input argument, since it is a valid IPV6 
 >>SELECT IS_IPV6('10.0.5.9'), IS_IPV6('::1') from dual;
 (EXPR)   (EXPR)
 -------- -------
-1         0
+0        1
 ```
 [[inet_aton_function]]
 == INET_ATON Function
@@ -5393,7 +5393,7 @@ See <<expressions,Expressions>>.
 
 (EXPR)
 -----------
-167773449
+151322634
 ```
 <<<
 [[inet_ntoa_function]]
@@ -5427,7 +5427,7 @@ representation of the IP address.
 
 (EXPR)
 -------------
-'10.0.5.9'
+9.5.0.10
 ```
 [[isnull_function]]
 == ISNULL Function
