@@ -68,7 +68,10 @@ public:
     char *containerName,
     char *externalPath,
     char *librarySqlName,
-
+    Int64 libraryRedefTime,
+    char *libraryBlobHandle,
+    char *librarySchName,
+    Int32 libraryVersion,
     char *javaOptions,
     char *javaOptionDelimiters,
 
@@ -322,8 +325,12 @@ protected:
 
   Int32 javaDebugPort_;                                   // 236-239
   Int32 javaDebugTimeout_;                                // 240-243
+  Int64 libraryRedefTime_;                                // 244-251
+  NABasicPtr libraryBlobHandle_;                          // 252-259
+  NABasicPtr librarySchName_;                             // 260-267
+  Int32 libraryVersion_;                                  // 268-271
   // Make sure class size is a multiple of 8
-  char fillerComTdbUdr2_[28];                             // 244-271
+  char fillerComTdbUdr2_[24];                             // 272-295
 };
 
 

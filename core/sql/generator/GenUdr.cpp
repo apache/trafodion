@@ -876,6 +876,11 @@ static short udr_codegen(Generator *generator,
   char *container = NULL;
   char *path = NULL;
   char *librarySqlName = NULL;
+  Int64 libraryRedefTime = NULL;
+  char * libraryBlobHandle;
+  char *librarySchName = NULL;
+  Int32 libraryVersion = 0;
+  Int64 libraryObjUID = 0;
   char *runtimeOptions = NULL;
   char *runtimeOptionDelimiters = NULL;
   ComRoutineType rtype = COM_UNKNOWN_ROUTINE_TYPE;
@@ -941,7 +946,11 @@ static short udr_codegen(Generator *generator,
 
     const ComObjectName &libName = metadata->getLibrarySqlName();
     librarySqlName = AllocStringInSpace(*space, libName.getExternalName());
-    
+    libraryRedefTime = metadata->getLibRedefTime();
+    libraryBlobHandle = AllocStringInSpace (*space,metadata->getLibBlobHandle());
+    librarySchName = AllocStringInSpace(*space,metadata->getLibSchName());
+    libraryVersion = metadata->getLibVersion();
+    libraryObjUID = metadata->getLibObjUID();
     rtype = metadata->getRoutineType();
     sqlmode = metadata->getSqlAccess();
 
@@ -1055,7 +1064,10 @@ static short udr_codegen(Generator *generator,
     container,
     path,
     librarySqlName,
-    
+    libraryRedefTime,
+    libraryBlobHandle,
+    librarySchName,
+    libraryVersion,
     runtimeOptions,
     runtimeOptionDelimiters,
     
@@ -1567,7 +1579,10 @@ IsolatedScalarUDF::codeGen(Generator *generator)
                            NULL);              // TMUDF only
   
   if (effectiveMetadata.getRoutineID() > 0)
-    generator->objectUids().insert(effectiveMetadata.getRoutineID());
+    {
+      generator->objectUids().insert(effectiveMetadata.getRoutineID());
+      generator->objectUids().insert(metadata.getLibObjUID());
+    }
 
   return result;
 }
@@ -1664,7 +1679,10 @@ short CallSP::codeGen(Generator *generator)
                        NULL);               // TMUDF only
 
   if (metadata.getRoutineID() > 0)
-    generator->objectUids().insert(metadata.getRoutineID());
+    {
+      generator->objectUids().insert(metadata.getRoutineID());
+      generator->objectUids().insert(metadata.getLibObjUID());
+    }
 
   return result;
 
@@ -1899,7 +1917,10 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
   }
 
   if (metadata.getRoutineID() > 0)
-    generator->objectUids().insert(metadata.getRoutineID());
+    {
+      generator->objectUids().insert(metadata.getRoutineID());
+      generator->objectUids().insert(metadata.getLibObjUID());
+    }
 
   return result;
 }

@@ -46,8 +46,9 @@
 #include "exp_attrs.h"
 #include "LmError.h"
 #include "ComUser.h"
+#include "sys/stat.h"
 
-
+short ExExeUtilLobExtractLibrary(ExeCliInterface *cliInterface,char *libHandle, char *cachedLibName,ComDiagsArea *toDiags);
 // -----------------------------------------------------------------------
 // methods for class TMUDFDllInteraction
 // -----------------------------------------------------------------------
@@ -136,6 +137,70 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
       bindWA->setErrStatus();
       return FALSE;
     }
+  NAString externalPath, container;
+  
+  // If the library is old style (no blob) and it's not a predfined udf with no entry in metadata
+  // i.e redeftime of library is not -1
+  if(  routine->getLibRedefTime() !=-1)
+    {
+      // Cache library locally. 
+      NAString dummyUser;
+      NAString libOrJarName;
+      NAString cachedLibName,cachedLibPath;  
+      if (routine->getLanguage() == COM_LANGUAGE_JAVA)
+        libOrJarName = routine->getExternalPath();
+      else
+        libOrJarName = routine->getContainerName();
+      Int32 err = 0;
+      if(err = ComGenerateUdrCachedLibName(libOrJarName.data(),
+                                  routine->getLibRedefTime(),
+                                  routine->getLibSchName(),
+                                  dummyUser,
+                                     cachedLibName, cachedLibPath))
+        {
+           NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
+           char errString[200];
+           NAString errNAString;
+           sprintf(errString , "Error %d creating directory :",err); 
+           errNAString = errString;
+           errNAString += cachedFullName;
+           *CmpCommon::diags() <<  DgSqlCode(-4316)
+                                  << DgString0(( char *)errNAString.data());
+           bindWA->setErrStatus();
+           return FALSE;
+        }
+      
+      NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
+      //If the local copy already exists, don't bother extracting.
+      struct stat statbuf;
+      if (stat(cachedFullName, &statbuf) != 0)
+        {
+          //ComDiagsArea *returnedDiags = ComDiagsArea::allocate(CmpCommon::statementHeap());
+          if (ExExeUtilLobExtractLibrary(&cliInterface_,(char *)routine->getLibBlobHandle().data(), 
+                                         ( char *)cachedFullName.data(),CmpCommon::diags()))
+            {
+              *CmpCommon::diags() <<  DgSqlCode(-4316)
+                                  << DgString0(( char *)cachedFullName.data());
+              bindWA->setErrStatus();
+              return FALSE;
+            }
+        }
+      if  (routine->getLanguage() == COM_LANGUAGE_JAVA)
+        {
+          externalPath = cachedFullName;
+          container = routine->getContainerName();
+        }
+      else
+        {
+          externalPath = cachedLibPath;
+          container = cachedLibName;
+        }
+    }
+  else
+    {
+      externalPath = routine->getExternalPath();
+      container = routine->getContainerName();
+    }
 
   Int32 cliRC = cliInterface_.getRoutine(
        serializedUDRInvocationInfo,
@@ -147,8 +212,8 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
        routine->getMethodName(),
        // for C/C++ the container that gets loaded is the library file
        // name, for Java it's the class name
-       routine->getContainerName(),
-       routine->getExternalPath(),
+       container,
+       externalPath,
        routine->getLibrarySqlName().getExternalName(),
        &routineHandle,
        CmpCommon::diags());

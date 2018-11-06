@@ -881,7 +881,11 @@ public:
   DescStructPtr priv_desc;
 
   Int64 routineDescFlags; // my flags
-
+  Int64 libRedefTime; 
+  char *libBlobHandle;
+  char *libSchName;
+  Int32 libVersion;
+  Int64 libObjUID;
   char filler[24];
 };
 

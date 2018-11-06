@@ -77,7 +77,8 @@ insert into clicks values
  ('super-services',cast(time'11:59:59.55 pm' as TIME(6)),'12.345.567.345');
 
 -- for now use VARCHARs for LOBs
---cqd TRAF_BLOB_AS_VARCHAR 'OFF'; 
+cqd TRAF_BLOB_AS_VARCHAR 'ON'; 
+cqd TRAF_CLOB_AS_VARCHAR 'ON';
 
 create table t001_Datatypes (
 c_char char(15),
@@ -203,7 +204,6 @@ create table_mapping function sessionize_java(user_colname char(10),
 external name 'TEST001_Sessionize'
 language java
 library TEST001_Java;
-
 -- negative test case, the entry point SESSIONIZE_ERR does not exist
 create table_mapping function sessionize_err(dummy char(10))
 returns (session_id largeint)

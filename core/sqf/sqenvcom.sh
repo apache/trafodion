@@ -61,6 +61,13 @@ fi
 export SQ_IC=${SQ_IC:-TCP}
 export MPI_IC_ORDER=$SQ_IC
 
+export ARCH=`arch`
+if [ "${ARCH:0:3}" == "ppc" ]; then
+    export JRE_LIB_DIR=${ARCH}
+else
+    export JRE_LIB_DIR="amd64"
+fi
+
 # use sock
 #export SQ_TRANS_SOCK=1
 
@@ -106,10 +113,10 @@ export MAKEFLAGS="-j$cpucnt"
 if [ -z "$TOOLSDIR" ]; then
   if [[ -n "$CLUSTERNAME" ]]; then
     export TOOLSDIR=${TOOLSDIR:-/home/tools}
-    export MY_UDR_ROOT=/home/udr
+    export UDR_ROOT=/home/udr
   else
     export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
-    export MY_UDR_ROOT=$PWD
+    export UDR_ROOT=$PWD
   fi
 fi
 
@@ -201,6 +208,7 @@ export DTM_COMMON_JAR=trafodion-dtm-cdh-${TRAFODION_VER}.jar
 export SQL_JAR=trafodion-sql-cdh-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
+export UDR_CACHE_LIBDIR=cached_libs
 
 
 if [[ "$HBASE_DISTRO" == "HDP" ]]; then

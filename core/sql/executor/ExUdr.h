@@ -122,6 +122,18 @@ public:
   {
     return externalPath_;
   }
+  inline const Int64 getLibraryRedefTime() const
+  {
+    return libraryRedefTime_;
+  }
+  inline const char *getLibraryBlobHandle() const
+  {
+    return libraryBlobHandle_;
+  }
+  inline const char *getLibrarySchName() const
+  {
+    return librarySchName_;
+  }
   inline const char *getLibrarySqlName() const
   {
     return librarySqlName_;
@@ -512,7 +524,7 @@ protected:
   // Helper function to send control messages
   //
   NABoolean sendControlMessage(UdrIpcObjectType t,
-                               NABoolean callbackRequired);
+                               NABoolean callbackRequired, char *cachedLibName=NULL, char *cachedLibPath = NULL);
 
   // ---------------------------------------------------------------------
   // Helper functions called by the work method. See comments in the

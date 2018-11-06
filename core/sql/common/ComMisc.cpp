@@ -41,6 +41,7 @@
 #include "ComMisc.h"
 #include "ComDistribution.h" // enumToLiteral, literalToEnum, literalAndEnumStruct
 #include "CmpSeabaseDDL.h"
+#include <sys/stat.h>
 
 // define the enum-to-literal function
 #define ComDefXLateE2L(E2L,eType,array) void E2L (const eType e, NAString &l) \
@@ -357,3 +358,122 @@ NABoolean ComTrafReservedColName(
 
   return FALSE;
 }
+
+
+Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString schemaName, NAString userid, NAString &cachedLibName, NAString &cachedLibPath)
+{
+  NAString libPrefix, libSuffix;
+  struct stat statbuf;
+  NAString redefTimeString = Int64ToNAString(redeftime);
+  size_t lastDot = libname.last('.');
+  if (lastDot != NA_NPOS)
+    {
+      libSuffix = libname(lastDot,libname.length()-lastDot);
+      libPrefix = libname(0,lastDot);
+    }
+ 
+  //when isolated user support is added we will pass an actual userid.
+  //By default we assume DB__ROOT.
+  if (userid.length()!=0)       
+    {
+
+      cachedLibPath = getenv("TRAF_HOME") ;
+      cachedLibPath += "/udr";
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+      cachedLibPath +=  "/"+ userid ;
+      if (stat(cachedLibPath, &statbuf) != 0)
+        {
+          if (mkdir(cachedLibPath,S_IRUSR|S_IWUSR|S_IXUSR))//Only this user has 
+            //permission to read/write/execute in this directory and below.
+            {
+              return errno;
+            }
+               
+        }
+      cachedLibPath += "/";
+      cachedLibPath += getenv("UDR_CACHE_LIBDIR");
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+     
+      cachedLibPath += "/" + schemaName;
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+     
+      
+    }
+  else
+    {
+      cachedLibPath = getenv("TRAF_HOME") ;
+      cachedLibPath += "/udr";
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+      cachedLibPath +=  "/"+ NAString("DB__ROOT") ;
+      if (stat(cachedLibPath, &statbuf) != 0)
+        {
+          if (mkdir(cachedLibPath,S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) // these permissions
+            //need to change when we have isolated user support so only DB_ROOT 
+            //can access this directory. Right now we allow all to access this directory
+            {
+              return errno;
+            }
+               
+        }
+      cachedLibPath += "/";
+      cachedLibPath += getenv("UDR_CACHE_LIBDIR");
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+    
+      cachedLibPath += "/" + schemaName;
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+     
+    }
+      
+  
+  
+  cachedLibName += libPrefix + "_" ;
+  cachedLibName += redefTimeString;
+  cachedLibName += libSuffix ;
+
+  return 0;
+  
+}
+
+

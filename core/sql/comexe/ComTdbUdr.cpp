@@ -45,7 +45,10 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
                      char *containerName,
                      char *externalPath,
                      char *librarySqlName,
-                     
+                     Int64 libraryRedefTime,
+                     char *libraryBlobHandle,
+                     char *librarySchName,
+                     Int32 libraryVersion,
                      char *runtimeOptions,
                      char *runtimeOptionDelimiters,
 
@@ -111,7 +114,10 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
   containerName_(containerName),
   externalPath_(externalPath),
   librarySqlName_(librarySqlName),
-
+  libraryRedefTime_(libraryRedefTime),
+  libraryBlobHandle_(libraryBlobHandle),
+  librarySchName_(librarySchName),
+  libraryVersion_(libraryVersion),
   runtimeOptions_(runtimeOptions),
   runtimeOptionDelimiters_(runtimeOptionDelimiters),
 
@@ -206,6 +212,8 @@ Long ComTdbUdr::pack(void *space)
   optionalData_.pack(space);
   udrSerInvocationInfo_.pack(space);
   udrSerPlanInfo_.pack(space);
+  libraryBlobHandle_.pack(space);
+  librarySchName_.pack(space);
   udrChildTableDescInfo_.pack(space,(Lng32)numChildTableInputs_);
   childInputExprs_.pack(space,(Lng32)numChildTableInputs_);
   childTdbs_.pack(space,(Lng32)numChildTableInputs_);
@@ -228,7 +236,7 @@ Lng32 ComTdbUdr::unpack(void *base, void *reallocator)
   if (outputExpr_.unpack(base, reallocator)) return -1;
   if (scanExpr_.unpack(base, reallocator)) return -1;
   if (projExpr_.unpack(base, reallocator)) return -1;
-  
+ 
   //
   // The NAVersionedObject array templates use long values to index
   // into the array, so we cast numParams_ to long here. This is assumed
@@ -251,7 +259,8 @@ Lng32 ComTdbUdr::unpack(void *base, void *reallocator)
     return -1;
   if (udrSerPlanInfo_.unpack(base))
     return -1;
-
+  if (libraryBlobHandle_.unpack(base)) return -1;
+  if (librarySchName_.unpack(base)) return -1;
   return ComTdb::unpack(base, reallocator);
 }
 
@@ -306,7 +315,24 @@ void ComTdbUdr::displayContents(Space *space, ULng32 flag)
       str_sprintf(buf, "librarySqlName = %s", s);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
     }
-
+    if (libraryBlobHandle_)
+      {
+        char *s = libraryBlobHandle_;
+        str_sprintf(buf, "libraryBlobHandle = %s", s);
+        space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
+      }
+     if (librarySchName_)
+      {
+        char *s = librarySchName_;
+        str_sprintf(buf, "librarySchName = %s", s);
+        space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
+      }
+    str_sprintf(buf, "\nlibrayRedefTimestamp = %ld",
+                libraryRedefTime_);
+    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
+    str_sprintf(buf, "\nlibrayVersion = %d",
+                libraryVersion_);
+    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
     // Some strings come from the user and there is no limit on the
     // maximum length. For these strings we will print two lines, the
     // first a header line and the second the actual string. For

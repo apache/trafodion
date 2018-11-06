@@ -43,7 +43,12 @@
 --- 4 row(s) inserted.
 >>
 >>-- for now use VARCHARs for LOBs
->>--cqd TRAF_BLOB_AS_VARCHAR 'OFF'; 
+>>cqd TRAF_BLOB_AS_VARCHAR 'ON';
+
+--- SQL operation complete.
+>>cqd TRAF_CLOB_AS_VARCHAR 'ON';
+
+--- SQL operation complete.
 >>
 >>create table t001_Datatypes (
 +>c_char char(15),
@@ -183,7 +188,6 @@
 +>library TEST001_Java;
 
 --- SQL operation complete.
->>
 >>-- negative test case, the entry point SESSIONIZE_ERR does not exist
 >>create table_mapping function sessionize_err(dummy char(10))
 +>returns (session_id largeint)
@@ -191,10 +195,10 @@
 +>language cpp
 +>library TEST001;
 
-*** ERROR[11246] An error occurred locating function or class 'SESSIONIZE_NON_EXISTENT' in library 'TEST001.dll'.
+*** ERROR[11246] An error occurred locating function or class 'SESSIONIZE_NON_EXISTENT' in library 'TEST001_212404320583911835.dll'.
 
 *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
-/mnt2/ansharma/ansharma_bool/incubator-trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
+/mnt3/sandhyasun/trafodion/core/sqf/udr/cached_libs/SCH/TEST001_212404320583911835.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
 
 --- SQL operation failed with errors.
 >>-- For now this will succeed, since we don't load the library during
@@ -358,10 +362,10 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_JAVA
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212365360799500000  12.345.567.345 
-                   2                     1  super-user                          212365367999500000  12.345.567.345 
-                   2                     2  super-services                      212365367999500000  12.345.567.345 
-                   2                     3  super-services                      212365367999550000  12.345.567.345 
+                   1                     1  super-user                          212404327199500000  12.345.567.345 
+                   2                     1  super-user                          212404334399500000  12.345.567.345 
+                   2                     2  super-services                      212404334399500000  12.345.567.345 
+                   2                     3  super-services                      212404334399550000  12.345.567.345 
 
 --- 4 row(s) selected.
 >>
@@ -427,7 +431,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212334861599500000  12.345.567.345 
+                   1                     1  super-user                          212404327199500000  12.345.567.345 
 
 --- 1 row(s) selected.
 >>
@@ -525,7 +529,7 @@ IPADDR           SESSION_ID            SEQUENCE_NO
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212373741599500000  12.345.567.345 
+                   1                     1  super-user                          212404327199500000  12.345.567.345 
 
 --- 1 row(s) selected.
 >>

@@ -4183,6 +4183,7 @@ public:
 protected:
 };
 
+short ExExeUtilLobExtractLibrary(ExeCliInterface *cliInterface,char *libHandle, char *cachedLibName,ComDiagsArea *toDiags);
 #endif
 
 

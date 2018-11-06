@@ -114,6 +114,11 @@ NARoutine::NARoutine (CollHeap *heap)
     , dataSource_             ("", heap)
     , fileSuffix_             ("", heap)
     , schemaVersionOfRoutine_ (COM_VERS_UNKNOWN)
+    , libRedefTime_(0)
+    , libBlobHandle_("",heap)
+    , libSchName_("",heap)
+    , libVersion_(1)
+    , libObjUID_(0)
     , objectOwner_            (0)
     , schemaOwner_            (0)
     , privInfo_               (NULL)
@@ -144,6 +149,11 @@ NARoutine::NARoutine (  const QualifiedName &name
     , externalPath_           ("", heap)
     , externalName_           ("", heap)
     , librarySqlName_         (NULL)
+    , libRedefTime_(-1)
+    , libBlobHandle_("",heap)
+    , libSchName_("",heap)
+    , libVersion_(1)
+    , libObjUID_(0)
     , signature_              ("", heap)
     , paramStyle_             (COM_STYLE_SQLROW)
     , paramStyleVersion_      (COM_ROUTINE_PARAM_STYLE_VERSION_1)
@@ -277,6 +287,11 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     , externalName_           (old.externalName_, h)
     , signature_              (old.signature_, h)
     , librarySqlName_         (old.librarySqlName_, h)
+    , libRedefTime_           (old.libRedefTime_)
+    , libBlobHandle_          (old.libBlobHandle_,h)
+    , libSchName_             (old.libSchName_,h)
+    , libVersion_             (old.libVersion_)
+    , libObjUID_              (old.libObjUID_)
     , paramStyle_             (old.paramStyle_)
     , paramStyleVersion_      (old.paramStyleVersion_)
     , isDeterministic_        (old.isDeterministic_)
@@ -360,6 +375,9 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , externalPath_           (routine_desc->routineDesc()->libraryFileName, heap)
     , externalName_           ("", heap)
     , librarySqlName_         (routine_desc->routineDesc()->librarySqlName, COM_UNKNOWN_NAME, FALSE, heap) //TODO
+    , libRedefTime_            (routine_desc->routineDesc()->libRedefTime)
+    , libVersion_             (routine_desc->routineDesc()->libVersion)
+    , libObjUID_              (routine_desc->routineDesc()->libObjUID)
     , signature_              (routine_desc->routineDesc()->signature, heap)
     , paramStyle_             (routine_desc->routineDesc()->paramStyle)
     , paramStyleVersion_      (COM_ROUTINE_PARAM_STYLE_VERSION_1)
@@ -397,6 +415,14 @@ NARoutine::NARoutine(const QualifiedName   &name,
   char parallelism[5];
   CmGetComRoutineParallelismAsLit(routine_desc->routineDesc()->parallelism, parallelism);
   comRoutineParallelism_ = ((char *)parallelism);
+  if (routine_desc->routineDesc()->libBlobHandle)
+    libBlobHandle_   =       NAString(routine_desc->routineDesc()->libBlobHandle,heap);
+  else
+    libBlobHandle_ = NAString();
+  if (routine_desc->routineDesc()->libSchName)
+    libSchName_ = NAString(routine_desc->routineDesc()->libSchName,heap);
+  else
+    libSchName_ = NAString();
 
   if (paramStyle_ == COM_STYLE_JAVA_CALL)
   {

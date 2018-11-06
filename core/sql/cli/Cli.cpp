@@ -2203,6 +2203,14 @@ Lng32 SQLCLI_ProcessRetryQuery(
                 } 
             }
         }
+
+      // if this is a udr/call statement and not a standalone statement, return an error
+      //The caller will need to reprepare the query so we have an updated tdb to execute.
+      // If it's a standalone statement, the statement will get reprepared and executed. 
+      if ((rootTdb->getUdrCount() > 0) && !stmt->isStandaloneQ())
+      {
+        return retcode;
+      }
     }
 
   AQRStatementInfo * aqrSI = NULL;
@@ -9548,7 +9556,7 @@ Lng32 SQLCLI_LOBddlInterface
         exLobGlob = ExpLOBoper::initLOBglobal(currContext.exHeap(), &currContext, useLibHdfs);
         if (exLobGlob == NULL) 
           {
-            cliRC = 0;
+            cliRC = -1;
             ComDiagsArea * da = &diags;
             ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
@@ -9567,7 +9575,7 @@ Lng32 SQLCLI_LOBddlInterface
 	    
 	    if (rc)
 	      {
-		cliRC = 0;
+		cliRC = -1;
 		ComDiagsArea * da = &diags;
 		ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
@@ -9663,7 +9671,7 @@ Lng32 SQLCLI_LOBddlInterface
         exLobGlob = ExpLOBoper::initLOBglobal(currContext.exHeap(), &currContext, useLibHdfs);
         if (exLobGlob == NULL) 
           {
-            cliRC = 0;
+            cliRC = -1;
             ComDiagsArea * da = &diags;
             ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
@@ -9712,7 +9720,7 @@ Lng32 SQLCLI_LOBddlInterface
         exLobGlob = ExpLOBoper::initLOBglobal(currContext.exHeap(), &currContext, useLibHdfs);
         if (exLobGlob == NULL) 
           {
-            cliRC = 0;
+            cliRC = -1;
             ComDiagsArea * da = &diags;
             ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 

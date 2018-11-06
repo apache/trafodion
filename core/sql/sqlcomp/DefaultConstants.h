@@ -3354,6 +3354,8 @@ enum DefaultConstants
   // Used to read compressed hdfs text files and to write
   // both compressed and uncompressed hdfs files
   HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB,
+  // Use BLOB column in LIBRARIES tables to store libraries.
+  USE_LIB_BLOB_STORE,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

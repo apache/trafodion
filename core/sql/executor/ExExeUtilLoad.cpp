@@ -3288,6 +3288,45 @@ short ExExeUtilLobExtractTcb::work()
   return 0;
 }
 
+
+short ExExeUtilLobExtractLibrary(ExeCliInterface *cliInterface,char *libHandle, char *cachedLibName,ComDiagsArea *toDiags)
+{
+  char buf[strlen(cachedLibName) + strlen(libHandle)+200];
+  Int32 cliRC =0;
+  str_sprintf(buf, "extract lobtofile(LOB '%s','%s');",libHandle,cachedLibName);
+               
+
+  cliRC = cliInterface->fetchRowsPrologue(buf, TRUE/*no exec*/);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(toDiags);
+      return cliRC;
+    }
+
+  cliRC = cliInterface->clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(toDiags);
+      //Ignore error if the target file exists. This could be because the cached
+      // file already got created by another process at the same time. So we can ignore
+      // the error and use the already cached file.
+      ComCondition *cond = NULL;
+      Int32 entryNumber;
+      cond = toDiags->findCondition(-EXE_ERROR_FROM_LOB_INTERFACE, &entryNumber);
+      if (cond)
+        {
+          if (cond->getOptionalInteger(0) == LOB_TARGET_FILE_EXISTS_ERROR)
+            {
+              toDiags->deleteError(entryNumber);
+              return 0;
+            }
+        }
+                      
+      return cliRC;
+    }
+  return cliRC;
+}
+
 ExExeUtilFileExtractTcb::ExExeUtilFileExtractTcb
 (
  const ComTdbExeUtilLobExtract & exe_util_tdb,
