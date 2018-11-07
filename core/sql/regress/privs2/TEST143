@@ -302,6 +302,37 @@ revoke insert (c1) on t143_user1.u1t2 from user3_role;
 revoke update on t143_user1.u1t3 from user3_role;
 revoke grant option for select (c2, c3) on t143_user1.u1t3 from user3_role; 
 execute get_obj_privs;
+prepare get_obj_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   object_type as type,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".object_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3
+;
+execute get_obj_privs;
+execute get_col_privs;
+prepare get_col_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   column_number,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".column_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3, 4;
 execute get_col_privs;
 
 -- ============================================================================
@@ -369,9 +400,42 @@ create view u5v2 (u5v1_c1) as
 -- u1v1 user1 grants: select user2_role WGO, select user5
 -- u2v1 user2-role grants: select user6 WGO
 execute get_obj_privs;
+prepare get_obj_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   object_type as type,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".object_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3
+;
+
+execute get_obj_privs;
 
 -- u1t1 user1 grants: c1-select, c2/c3-select WGO user5
 -- u2v1 user2_role grants: c1/c2-select user3, select-c2 user6
+execute get_col_privs;
+prepare get_col_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   column_number,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".column_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3, 4;
+
 execute get_col_privs;
 
 -- Run some different tests:
@@ -416,8 +480,39 @@ grant select on t143_user5.u5v2 to sql_user4;
 -- u1v1 user1 grants: + update user2_role
 -- u5v2 user5 grants: c1-select user4
 execute get_obj_privs;
-execute get_col_privs;
+prepare get_obj_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   object_type as type,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".object_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3;
 
+execute get_obj_privs;
+execute get_col_privs;
+prepare get_col_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   column_number,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".column_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3, 4;
+
+execute get_col_privs;
 -- ============================================================================
 ?section user2_views
 -- ============================================================================

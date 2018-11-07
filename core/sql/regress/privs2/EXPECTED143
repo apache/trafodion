@@ -917,6 +917,28 @@ T143_USER1.U1T3                                                           3  SQL
 --- SQL operation complete.
 >>execute get_obj_privs;
 
+*** ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) selected.
+>>prepare get_obj_privs from
++>select distinct
++>   substring (object_name,11,15) as object_name,
++>   object_type as type,
++>   substring(authname(grantor_id),1,10) as grantor,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
++>   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
++>from "_PRIVMGR_MD_".object_privileges
++>where object_uid in
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_name like 'U%' and schema_name like 'T143_USER%')
++>  order by 1, 2, 3
++>;
+
+--- SQL command prepared.
+>>execute get_obj_privs;
+
 OBJECT_NAME                                                   TYPE  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
 ------------------------------------------------------------  ----  ----------  ----------  --------------------  --------------------
 
@@ -932,6 +954,27 @@ T143_USER3.U3V3                                               VI    -2          
 T143_USER3.U3V4                                               VI    -2          SQL_USER3   S------               NONE                
 
 --- 10 row(s) selected.
+>>execute get_col_privs;
+
+*** ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) selected.
+>>prepare get_col_privs from
++>select distinct
++>   substring (object_name,11,15) as object_name,
++>   column_number,
++>   substring(authname(grantor_id),1,10) as grantor,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
++>   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
++>from "_PRIVMGR_MD_".column_privileges
++>where object_uid in
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_name like 'U%' and schema_name like 'T143_USER%')
++>  order by 1, 2, 3, 4;
+
+--- SQL command prepared.
 >>execute get_col_privs;
 
 OBJECT_NAME                                                   COLUMN_NUMBER  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
@@ -1095,9 +1138,73 @@ T143_USER5.U5V1                                               VI    -2          
 T143_USER5.U5V2                                               VI    -2          SQL_USER5   S----R-               S----R-             
 
 --- 9 row(s) selected.
+>>prepare get_obj_privs from
++>select distinct
++>   substring (object_name,11,15) as object_name,
++>   object_type as type,
++>   substring(authname(grantor_id),1,10) as grantor,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
++>   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
++>from "_PRIVMGR_MD_".object_privileges
++>where object_uid in
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_name like 'U%' and schema_name like 'T143_USER%')
++>  order by 1, 2, 3
++>;
+
+--- SQL command prepared.
+>>
+>>execute get_obj_privs;
+
+OBJECT_NAME                                                   TYPE  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
+------------------------------------------------------------  ----  ----------  ----------  --------------------  --------------------
+
+T143_USER1.U1T1                                               BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+T143_USER1.U1V1                                               VI    -2          SQL_USER1   S-DU-R-               S-DU-R-             
+T143_USER1.U1V1                                               VI    SQL_USER1   SQL_USER5   S------               NONE                
+T143_USER1.U1V1                                               VI    SQL_USER1   USER2_ROLE  S------               S------             
+T143_USER2.U2V1                                               VI    -2          USER2_ROLE  S------               S------             
+T143_USER2.U2V1                                               VI    USER2_ROLE  SQL_USER6   S------               S------             
+T143_USER3.U3V1                                               VI    -2          SQL_USER3   S------               NONE                
+T143_USER5.U5V1                                               VI    -2          SQL_USER5   S------               NONE                
+T143_USER5.U5V2                                               VI    -2          SQL_USER5   S----R-               S----R-             
+
+--- 9 row(s) selected.
 >>
 >>-- u1t1 user1 grants: c1-select, c2/c3-select WGO user5
 >>-- u2v1 user2_role grants: c1/c2-select user3, select-c2 user6
+>>execute get_col_privs;
+
+OBJECT_NAME                                                   COLUMN_NUMBER  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
+------------------------------------------------------------  -------------  ----------  ----------  --------------------  --------------------
+
+T143_USER1.U1T1                                                           0  SQL_USER1   SQL_USER5   S------               NONE                
+T143_USER1.U1T1                                                           1  SQL_USER1   SQL_USER5   S------               S------             
+T143_USER1.U1T1                                                           2  SQL_USER1   SQL_USER5   S------               S------             
+T143_USER2.U2V1                                                           0  USER2_ROLE  SQL_USER3   S------               NONE                
+T143_USER2.U2V1                                                           1  USER2_ROLE  SQL_USER3   S------               NONE                
+T143_USER2.U2V1                                                           1  USER2_ROLE  SQL_USER6   S------               NONE                
+
+--- 6 row(s) selected.
+>>prepare get_col_privs from
++>select distinct
++>   substring (object_name,11,15) as object_name,
++>   column_number,
++>   substring(authname(grantor_id),1,10) as grantor,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
++>   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
++>from "_PRIVMGR_MD_".column_privileges
++>where object_uid in
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_name like 'U%' and schema_name like 'T143_USER%')
++>  order by 1, 2, 3, 4;
+
+--- SQL command prepared.
+>>
 >>execute get_col_privs;
 
 OBJECT_NAME                                                   COLUMN_NUMBER  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
@@ -1231,6 +1338,41 @@ T143_USER5.U5V2                                               VI    -2          
 T143_USER5.U5V2                                               VI    SQL_USER5   SQL_USER4   S------               NONE                
 
 --- 11 row(s) selected.
+>>prepare get_obj_privs from
++>select distinct
++>   substring (object_name,11,15) as object_name,
++>   object_type as type,
++>   substring(authname(grantor_id),1,10) as grantor,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
++>   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
++>from "_PRIVMGR_MD_".object_privileges
++>where object_uid in
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_name like 'U%' and schema_name like 'T143_USER%')
++>  order by 1, 2, 3;
+
+--- SQL command prepared.
+>>
+>>execute get_obj_privs;
+
+OBJECT_NAME                                                   TYPE  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
+------------------------------------------------------------  ----  ----------  ----------  --------------------  --------------------
+
+T143_USER1.U1T1                                               BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+T143_USER1.U1T1                                               BT    SQL_USER1   USER2_ROLE  -I-----               -I-----             
+T143_USER1.U1V1                                               VI    -2          SQL_USER1   S-DU-R-               S-DU-R-             
+T143_USER1.U1V1                                               VI    SQL_USER1   SQL_USER5   S------               NONE                
+T143_USER1.U1V1                                               VI    SQL_USER1   USER2_ROLE  S--U---               S------             
+T143_USER2.U2V1                                               VI    -2          USER2_ROLE  S--U---               S------             
+T143_USER2.U2V1                                               VI    USER2_ROLE  SQL_USER6   S------               S------             
+T143_USER3.U3V1                                               VI    -2          SQL_USER3   S------               S------             
+T143_USER5.U5V1                                               VI    -2          SQL_USER5   S------               NONE                
+T143_USER5.U5V2                                               VI    -2          SQL_USER5   S----R-               S----R-             
+T143_USER5.U5V2                                               VI    SQL_USER5   SQL_USER4   S------               NONE                
+
+--- 11 row(s) selected.
 >>execute get_col_privs;
 
 OBJECT_NAME                                                   COLUMN_NUMBER  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
@@ -1246,6 +1388,37 @@ T143_USER3.U3V1                                                           0  SQL
 T143_USER3.U3V1                                                           1  SQL_USER3   SQL_USER4   S------               NONE                
 
 --- 8 row(s) selected.
+>>prepare get_col_privs from
++>select distinct
++>   substring (object_name,11,15) as object_name,
++>   column_number,
++>   substring(authname(grantor_id),1,10) as grantor,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
++>   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
++>from "_PRIVMGR_MD_".column_privileges
++>where object_uid in
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_name like 'U%' and schema_name like 'T143_USER%')
++>  order by 1, 2, 3, 4;
+
+--- SQL command prepared.
 >>
+>>execute get_col_privs;
+
+OBJECT_NAME                                                   COLUMN_NUMBER  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
+------------------------------------------------------------  -------------  ----------  ----------  --------------------  --------------------
+
+T143_USER1.U1T1                                                           0  SQL_USER1   SQL_USER5   S------               NONE                
+T143_USER1.U1T1                                                           1  SQL_USER1   SQL_USER5   S------               S------             
+T143_USER1.U1T1                                                           2  SQL_USER1   SQL_USER5   S------               S------             
+T143_USER2.U2V1                                                           0  USER2_ROLE  SQL_USER3   S------               S------             
+T143_USER2.U2V1                                                           1  USER2_ROLE  SQL_USER3   S------               S------             
+T143_USER2.U2V1                                                           1  USER2_ROLE  SQL_USER6   S------               NONE                
+T143_USER3.U3V1                                                           0  SQL_USER3   SQL_USER4   S------               NONE                
+T143_USER3.U3V1                                                           1  SQL_USER3   SQL_USER4   S------               NONE                
+
+--- 8 row(s) selected.
 >>-- ============================================================================
 >>log;

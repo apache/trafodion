@@ -573,12 +573,13 @@ void CmpSeabaseDDL::createSeabaseLibrary2(
     libNameNoPath = libFileName(lastSlash+1, libFileName.length()-lastSlash-1);
   else
     {
-      *CmpCommon::diags() << DgSqlCode(-1382)
+      /**CmpCommon::diags() << DgSqlCode(-1382)
                         << DgString0(libFileName);
       deallocEHI(ehi); 
       processReturn();
-      return;
-      
+      return;*/
+      libNameNoPath = libFileName;
+    
     }
   ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
   tableInfo->tableName = NULL,
