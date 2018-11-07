@@ -660,7 +660,7 @@ drops the specified column from _table_, including the column’s data. you cann
 +
 alters the data-type of a column in an existing Trafodion table. The following conditions have to be met, else SQL error 1404 will be returned.
 
-** the old (existing) column datatype and new column datatype must be VARCHAR (variable length string datatype).
+** the old (existing) column datatype and new column datatype must be compatible.
 ** new column length must be greater than or equal to old column length.
 ** old and new character sets must be the same.
 ** altered columns cannot be part of primary key or secondary index key.
@@ -10401,3 +10401,4 @@ VALUES (1+2, 3+4), (5, (select count (*) from t));
 
 --- 2 row(s) selected.
 ```
+datatype 
