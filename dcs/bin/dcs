@@ -277,7 +277,7 @@ if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
 fi
 DCS_OPTS="$DCS_OPTS -Ddcs.user.program.home=$DCS_USER_PROGRAM_HOME"
 DCS_OPTS="$DCS_OPTS -Ddcs.conf.dir=$DCS_CONF_DIR"
-DCS_OPTS="$DCS_OPTS -Ddcs.trafodion.home=$TRAF_HOME"
+DCS_OPTS="$DCS_OPTS -Ddcs.trafodion.log=$TRAF_LOG"
 
 # Exec unless DCS_NOEXEC is set.
 if [ "${DCS_NOEXEC}" != "" ]; then

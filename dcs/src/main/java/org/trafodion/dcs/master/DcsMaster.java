@@ -84,7 +84,7 @@ public class DcsMaster implements Runnable {
     private String parentZnode;
     private ExecutorService pool = null;
     private JVMShutdownHook jvmShutdownHook;
-    private static String trafodionHome;
+    private static String trafodionLog;
     private CountDownLatch isLeader = new CountDownLatch(1);
     private int epoch = 1;
 
@@ -110,7 +110,7 @@ public class DcsMaster implements Runnable {
                 Constants.DEFAULT_DCS_MASTER_PORT_RANGE);
         parentZnode = conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,
                 Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);
-        trafodionHome = System.getProperty(Constants.DCS_TRAFODION_HOME);
+        trafodionLog = System.getProperty(Constants.DCS_TRAFODION_LOG);
         jvmShutdownHook = new JVMShutdownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
         thrd = new Thread(this);
@@ -318,8 +318,8 @@ public class DcsMaster implements Runnable {
         return metrics.toString();
     }
 
-    public String getTrafodionHome() {
-        return trafodionHome;
+    public String getTrafodionLog() {
+        return trafodionLog;
     }
 
     public ZkClient getZkClient() {

@@ -236,10 +236,10 @@ public class HttpServer implements FilterContainer {
       setContextAttributes(logContext);
       defaultContexts.put(logContext, true);
     }
-    logDir = System.getProperty(Constants.DCS_TRAFODION_HOME);
+    logDir = System.getProperty(Constants.DCS_TRAFODION_LOG);
     if (logDir != null) {
       Context logContext = new Context(parent, "/TrafodionLogs");
-      logContext.setResourceBase(logDir + "/logs");
+      logContext.setResourceBase(logDir);
       logContext.addServlet(DefaultServlet.class, "/");
       logContext.getInitParams().put(
             "org.mortbay.jetty.servlet.Default.aliases", "true");
