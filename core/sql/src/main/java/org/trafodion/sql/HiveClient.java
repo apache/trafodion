@@ -25,7 +25,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.lang.reflect.Field;
+import java.util.Iterator;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
@@ -39,6 +42,12 @@ import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.UnknownDBException;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.SerDeInfo;
+import org.apache.hadoop.hive.metastore.api.Order;
+import org.apache.hadoop.hive.metastore.api.SerDeInfo;
+
 // These are needed for the DDL_TIME constant. This class is different in Hive 0.10.
 // We use Java reflection instead of importing the class statically. 
 // For Hive 0.9 or lower
@@ -55,8 +64,30 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.DriverManager;
 
-
 public class HiveClient {
+    public static final int Table_TABLE_NAME = 0;
+    public static final int Table_DB_NAME = 1;
+    public static final int Table_OWNER = 2;
+    public static final int Table_CREATE_TIME = 3;
+    public static final int Table_TABLE_TYPE = 4;
+    public static final int Table_VIEW_ORIGINAL_TEXT = 5;
+    public static final int Table_VIEW_EXPANDED_TEXT = 6;
+    public static final int Table_SD_COMPRESSED = 7;
+    public static final int Table_SD_LOCATION = 8;
+    public static final int Table_SD_INPUT_FORMAT = 9;
+    public static final int Table_SD_OUTPUT_FORMAT = 10;
+    public static final int Table_SD_NUM_BUCKETS = 11;
+    public static final int Table_NULL_FORMAT = 12;
+    public static final int Table_FIELD_DELIM = 13;
+    public static final int Table_LINE_DELIM = 14;
+    public static final int Table_FIELD_COUNT  = 15;
+    
+
+    public static final int Col_NAME = 0;
+    public static final int Col_TYPE = 1;
+    public static final int Col_FIELD_COUNT  = 2;
+
+
     private static Logger logger = Logger.getLogger(HiveClient.class.getName());
     private final String lockPath="/trafodion/traflock";
 
@@ -82,6 +113,11 @@ public class HiveClient {
          }
     }
 
+    public static boolean init() 
+    {
+       return true;
+    }
+
     public static boolean close() 
     {	
         hmsClient.close();	
@@ -96,41 +132,7 @@ public class HiveClient {
         return result;
     }
 
-    public static String getHiveTableString(String schName, String tblName)
-        throws MetaException, TException 
-    {
-        Table table;
 
-        if (logger.isDebugEnabled()) logger.debug("HiveClient.getHiveTableString(" + schName + " , " + 
-                     tblName + ") called.");
-        try {
-            table = hmsClient.getTable(schName, tblName);
-        }
-        catch (NoSuchObjectException x) {
-            if (logger.isDebugEnabled()) logger.debug("HiveTable not found");
-            return new String("");
-        }
-        if (logger.isDebugEnabled()) logger.debug("HiveTable is " + table.toString());
-        return table.toString();
-    }
-
-    public static String getHiveTableParameters(String schName, String tblName)
-        throws MetaException, TException 
-    {
-        Table table;
-        if (logger.isDebugEnabled()) logger.debug("HiveClient.getHiveTableParameters(" + schName + " , " + 
-                     tblName + ") called.");
-        try {
-            table = hmsClient.getTable(schName, tblName);
-        }
-        catch (NoSuchObjectException x) {
-            if (logger.isDebugEnabled()) logger.debug("HiveTable not found");
-            return new String("");
-        }
-        String tableParams = new String();
-        return tableParams.toString();
-    }
-    
     public static long getRedefTime(String schName, String tblName)
         throws MetaException, TException, ClassCastException, NullPointerException, NumberFormatException 
     {
@@ -244,7 +246,7 @@ public class HiveClient {
         return fieldVal.toString();
   }
 
-    public static void executeHiveSQL(String ddl) 
+  public static void executeHiveSQL(String ddl) 
         throws ClassNotFoundException, SQLException
   {
       if (stmt == null) {
@@ -273,4 +275,129 @@ public class HiveClient {
       }
   }
 
+
+  public boolean getHiveTableInfo(long jniObject, String schName, String tblName, boolean readPartn)
+       throws MetaException, TException
+  {
+     Table table;
+     try {
+        table = hmsClient.getTable(schName, tblName);
+     } catch (NoSuchObjectException x) {
+         return false; 
+     } 
+     String[] tableInfo = new String[Table_FIELD_COUNT];
+     tableInfo[Table_TABLE_NAME] = table.getTableName();
+     tableInfo[Table_DB_NAME]= table.getDbName();
+     tableInfo[Table_OWNER] = table.getOwner();
+     tableInfo[Table_CREATE_TIME] = Integer.toString(table.getCreateTime());
+     tableInfo[Table_TABLE_TYPE] = table.getTableType();
+     tableInfo[Table_VIEW_ORIGINAL_TEXT] = table.getViewOriginalText();
+     tableInfo[Table_VIEW_EXPANDED_TEXT] = table.getViewExpandedText();
+
+     StorageDescriptor sd = table.getSd();
+     tableInfo[Table_SD_COMPRESSED] = Boolean.toString(sd.isCompressed());
+     tableInfo[Table_SD_LOCATION] = sd.getLocation();
+     tableInfo[Table_SD_INPUT_FORMAT] = sd.getInputFormat();
+     tableInfo[Table_SD_OUTPUT_FORMAT] = sd.getOutputFormat();
+     tableInfo[Table_SD_NUM_BUCKETS] = Integer.toString(sd.getNumBuckets());
+
+     SerDeInfo serDe = sd.getSerdeInfo(); 
+     Map<String,String> serDeParams = serDe.getParameters();
+     tableInfo[Table_NULL_FORMAT] = serDeParams.get("serialization.null.format");
+     tableInfo[Table_FIELD_DELIM] = serDeParams.get("field.delim");
+     tableInfo[Table_LINE_DELIM] = serDeParams.get("line.delim");
+
+     // Columns in the table
+     int numCols = sd.getColsSize();
+     String[][] colInfo = new String[numCols][Col_FIELD_COUNT];
+     Iterator<FieldSchema> fieldIterator = sd.getColsIterator();
+     int i = 0;
+     FieldSchema field;
+     while (fieldIterator.hasNext()) {
+        field = fieldIterator.next();
+        colInfo[i][Col_NAME] = field.getName(); 
+        colInfo[i][Col_TYPE] = field.getType(); 
+        i++;
+     }
+     String[][] partKeyInfo = null;
+     String[][] partKeyValues = null;
+     String[] partNames = null;
+     String[] bucketCols = null;
+     String[] sortCols = null;
+     int[] sortColsOrder = null;
+     String[] paramsKey = null;
+     String[] paramsValue = null;
+     int numPartKeys = table.getPartitionKeysSize();
+     if (numPartKeys > 0) {
+        partKeyInfo = new String[numPartKeys][Col_FIELD_COUNT];
+        Iterator<FieldSchema> partKeyIterator = table.getPartitionKeysIterator();
+        i = 0;
+        FieldSchema partKey;
+        while (partKeyIterator.hasNext()) {
+           partKey = partKeyIterator.next();
+           partKeyInfo[i][Col_NAME] = partKey.getName(); 
+           partKeyInfo[i][Col_TYPE] = partKey.getType(); 
+           i++;
+        }
+        if (readPartn) {
+           List<String> partNamesList = hmsClient.listPartitionNames(schName, tblName, (short)-1);
+           if (partNamesList != null) {
+              partNames = new String[partNamesList.size()];
+              partNames = partNamesList.toArray(partNames); 
+              i = 0;
+              partKeyValues = new String[partNames.length][];
+              for (i = 0; i < partNames.length; i++) {
+                  partKeyValues[i] = new String[numPartKeys];
+                  partKeyValues[i] = (String[])hmsClient.partitionNameToVals(partNames[i]).toArray(partKeyValues[i]); 
+              }
+           }
+        } 
+     }
+     
+     // Bucket Columns
+     int numBucketCols = sd.getBucketColsSize();
+     if (numBucketCols > 0) {
+        bucketCols = new String[numBucketCols];
+        Iterator<String> bucketColsIterator = sd.getBucketColsIterator();
+        i = 0;
+        while (bucketColsIterator.hasNext()) {
+           bucketCols[i++] = bucketColsIterator.next();
+        }
+     }
+    
+     // Sort Columns
+     int numSortCols = sd.getSortColsSize();
+     if (numSortCols > 0) {
+        sortCols = new String[numSortCols];
+        sortColsOrder = new int[numSortCols];
+        Iterator<Order> sortColsIterator = sd.getSortColsIterator();
+        i = 0;
+        Order sortOrder;
+        while (sortColsIterator.hasNext()) {
+           sortOrder = sortColsIterator.next();
+           sortCols[i] = sortOrder.getCol();
+           sortColsOrder[i] = sortOrder.getOrder(); 
+           i++;
+        } 
+     }
+
+     // Table Params
+     Map<String, String> unsortedParams = table.getParameters();
+     Map<String, String> params = new TreeMap<String, String>(unsortedParams);
+     paramsKey = new String[params.size()];
+     paramsValue = new String[params.size()]; 
+     i = 0;
+     for (Map.Entry<String,String> entry : params.entrySet()) {
+          paramsKey[i] = entry.getKey();
+          paramsValue[i] = entry.getValue();
+          i++;
+     }
+     setTableInfo(jniObject, tableInfo, colInfo, partKeyInfo, bucketCols, sortCols, sortColsOrder, paramsKey, paramsValue, partNames, partKeyValues);     
+     return true;
+  }
+  
+  private native void setTableInfo(long jniObject, String[] tableInfo, String[][] colInfo, String[][] partKeyInfo,
+                         String[] bucketCols, String[] sortCols, int[] sortColsOrder, String[] paramsKey, String[] paramsValue,
+                         String[] partNames, String[][] partKeyValues);
+  
 }

@@ -35,20 +35,6 @@
 #include "HiveClient_JNI.h"
 #include "Globals.h"
 
-struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID, 
-                                Int32 tblID, NAText* tblStr, size_t& pos);
-struct hive_column_desc* populateColumns(HiveMetaData *md, Int32 cdID,  
-                                         NAText* tblStr, size_t& pos);
-struct hive_pkey_desc* populatePartitionKey(HiveMetaData *md, Int32 tblID,  
-                                            NAText* tblStr, size_t& pos);
-struct hive_skey_desc* populateSortCols(HiveMetaData *md, Int32 sdID,  
-                                        NAText* tblStr, size_t& pos);
-struct hive_bkey_desc* populateBucketingCols(HiveMetaData *md, Int32 sdID,  
-                                             NAText* tblStr, size_t& pos);
-NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID, 
-                              char& fieldSep, char& recordSep,  
-                              NABoolean &nullFormatSpec, NAString &nullFormat,
-                              NAText* tblStr, size_t& pos);
 
 NABoolean findAToken (HiveMetaData *md, NAText* tblStr, size_t& pos, 
                       const char* tok, const char* errStr,
@@ -60,7 +46,7 @@ NABoolean extractValueStr (HiveMetaData *md, NAText* tblStr, size_t& pos,
                            NABoolean raiseError = TRUE);
 
 
-HiveMetaData::HiveMetaData() : tbl_(NULL),
+HiveMetaData::HiveMetaData(NAHeap *heap) : heap_(heap), tbl_(NULL),
                                currDesc_(NULL),
                                errCode_(0) ,
                                errDetail_(NULL),
@@ -152,12 +138,10 @@ NABoolean HiveMetaData::atEnd()
 
 void HiveMetaData::clear()
 {
-  CollHeap *h = CmpCommon::contextHeap();
-
   hive_tbl_desc* ptr ;
   while (tbl_) {
     ptr = tbl_->next_;       
-    NADELETEBASIC(tbl_, h);
+    NADELETEBASIC(tbl_, heap_);
     tbl_ = ptr;
   }
 
@@ -195,101 +179,17 @@ void HiveMetaData::resetErrorInfo()
   errCodeStr_ = NULL;
 }
 
-struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID, 
-                                Int32 tblID,  NAText* tblStr, size_t& pos)
-{
-  struct hive_sd_desc* result = NULL;
-  struct hive_sd_desc* mainSD = NULL;
-  struct hive_sd_desc* last = NULL;
-  char fieldTerminator, recordTerminator;
-
-  size_t foundB;
-  
-  if (!findAToken(md, tblStr, pos, "sd:StorageDescriptor(", 
-                  "getTableDesc::sd:StorageDescriptor(###"))
-    return NULL;
-  struct hive_column_desc* newColumns = populateColumns(md, 0, 
-                                                        tblStr, pos);
-  if (!newColumns)
-    return NULL;
-
-  NAText locationStr;
-  if(!extractValueStr(md, tblStr, pos, "location:", ",", 
-                      locationStr, "populateSD::location:###"))
-    return NULL;
-    
-  NAText inputStr;
-  if(!extractValueStr(md, tblStr, pos, "inputFormat:", ",", 
-                      inputStr, "populateSD:inputFormat:###"))
-    return NULL;
-  
-  NAText outputStr;
-  if(!extractValueStr(md, tblStr, pos, "outputFormat:", ",", 
-                      outputStr, "populateSD:outputFormat:###"))
-    return NULL;
-  
-  NAText compressedStr;
-  NABoolean isCompressed = FALSE;
-  if(!extractValueStr(md, tblStr, pos, "compressed:", ",", 
-                      compressedStr, "populateSD:compressed:###"))
-    return NULL;
-  if (compressedStr == "true")
-    isCompressed = TRUE;
-  
-  NAText numBucketsStr;
-  if(!extractValueStr(md, tblStr, pos, "numBuckets:", ",", 
-                      numBucketsStr, "populateSD:numBuckets:###"))
-    return NULL;
-  Int32 numBuckets = atoi(numBucketsStr.c_str());
-  
-  NABoolean nullFormatSpec = FALSE;
-  NAString nullFormat;
-  NABoolean success = populateSerDeParams(md, 0, fieldTerminator, 
-                                          recordTerminator, 
-                                          nullFormatSpec, nullFormat,
-                                          tblStr, pos);
-  if (!success)
-    return NULL;
-
-  struct hive_bkey_desc* newBucketingCols = 
-    populateBucketingCols(md, 0, tblStr, pos);
-
-  struct hive_skey_desc* newSortCols = populateSortCols(md, 0, 
-                                                        tblStr, pos);
-
-  struct hive_sd_desc* newSD = new (CmpCommon::contextHeap()) 
-    struct hive_sd_desc(0, //SdID
-                        locationStr.c_str(),
-                        0, // creation time
-                        numBuckets,
-                        inputStr.c_str(),
-                        outputStr.c_str(),
-                        (nullFormatSpec ? nullFormat.data() : NULL),
-                        hive_sd_desc::TABLE_SD, 
-                        // TODO : no support for hive_sd_desc::PARTN_SD
-                        newColumns, 
-                        newSortCols, 
-                        newBucketingCols,
-                        fieldTerminator,
-                        recordTerminator,
-                        isCompressed
-                        );
-  
-  result = newSD;
-  
-  // TODO : loop over SDs
-  if (findAToken(md, tblStr, pos, "sd:StorageDescriptor(", 
-                 "getTableDesc::sd:StorageDescriptor(###)",FALSE))
-    return NULL;
-
-  return result;
-}
-
    
 NABoolean hive_sd_desc::isOrcFile() const
 {
   return strstr(inputFormat_, "Orc") && 
     strstr(outputFormat_, "Orc");
+}
+
+NABoolean hive_sd_desc::isParquetFile() const
+{
+  return strstr(inputFormat_, "Parquet") &&
+    strstr(outputFormat_, "Parquet");
 }
 
 NABoolean hive_sd_desc::isSequenceFile() const
@@ -304,289 +204,11 @@ NABoolean hive_sd_desc::isTextFile() const
     strstr(outputFormat_, "Text");
 }
 
-struct hive_column_desc* populateColumns(HiveMetaData *md, Int32 cdID,  
-                                         NAText* tblStr, size_t& pos)
-{
-  struct hive_column_desc* result = NULL;
-  struct hive_column_desc* last = result;
-
-  std::size_t foundB ;
-  if (!findAToken(md, tblStr, pos, "cols:", 
-                  "populateColumns::cols:###"))
-    return NULL;
-  
-  std::size_t foundE = pos;
-  if (!findAToken(md, tblStr, foundE, ")],", 
-                  "populateColumns::cols:],###"))
-    return NULL;
-  
-  Int32 colIdx = 0;
-  while (pos < foundE)
-    {
-      NAText nameStr;
-      if(!extractValueStr(md, tblStr, pos, "FieldSchema(name:", ",", 
-                          nameStr, "populateColumns::FieldSchema(name:###"))
-        return NULL;
-      
-      NAText typeStr;
-      if(!extractValueStr(md, tblStr, pos, "type:", ", comment", 
-                          typeStr, "populateColumns::type:###"))
-        return NULL;
-      
-      pos++;
-      if (!findAToken(md, tblStr, pos, ",", 
-                      "populateColumns::comment:,###"))
-        return NULL;
-      
-      struct hive_column_desc* newCol = new (CmpCommon::contextHeap())
-        struct hive_column_desc(0, 
-                                nameStr.c_str(),
-                                typeStr.c_str(),
-                                colIdx);
-      
-      if ( result == NULL ) {
-        last = result = newCol;
-      } else {
-        last->next_ = newCol;
-        last = newCol;
-      }
-      
-      colIdx++;
-    } // end of while
-  
-  return result;
-}
-
-struct hive_pkey_desc* populatePartitionKey(HiveMetaData *md, Int32 tblID,  
-                                            NAText* tblStr, size_t& pos)
-{
-  hive_pkey_desc* result = NULL;
-  hive_pkey_desc* last = NULL;
-
-  std::size_t foundB ;
-  if (!findAToken(md, tblStr, pos, "partitionKeys:",
-                  "populatePartitionKeys::partitionKeys:###"))
-    return NULL;
-  
-  std::size_t foundE = pos ;
-  if (!findAToken(md, tblStr, foundE, "],",
-                  "populatePartitionKeys::partitionKeys:],###"))
-    return NULL;
-  
-  Int32 colIdx = 0;
-  while (pos < foundE)
-    {
-      foundB = tblStr->find("FieldSchema(name:", pos);
-      if ((foundB == std::string::npos)||(foundB > foundE)) {
-        return NULL; // no part Key
-      }
-      
-      foundB = foundB + strlen("FieldSchema(name:");
-      pos = foundB ;
-      if (!findAToken(md, tblStr, pos, ",",
-                      "populatePartitionKeys::comment:,###"))
-        return NULL;
-      
-      NAText nameStr = tblStr->substr(foundB, pos-foundB);
-      
-      NAText typeStr;
-      if(!extractValueStr(md, tblStr, pos, "type:", ", comment", 
-                          typeStr, "populatePartitionKeys::type:###"))
-        return NULL;
-      
-      pos++;
-      if (!findAToken(md, tblStr, pos, ",",
-                      "populateColumns::comment:,###"))
-        return NULL;
-      
-      
-      hive_pkey_desc* newPkey = new (CmpCommon::contextHeap())
-        struct hive_pkey_desc(nameStr.c_str(),
-                              typeStr.c_str(),
-                              colIdx);
-      
-      if ( result == NULL ) {
-        last = result = newPkey;
-      } else {
-        last->next_ = newPkey;
-        last = newPkey;
-      }
-      
-      colIdx++;
-    } // end of while
-
-  return result;
-}
-
-struct hive_skey_desc* populateSortCols(HiveMetaData *md, Int32 sdID,  
-                                        NAText* tblStr, size_t& pos)
-{
-  hive_skey_desc* result = NULL;
-  hive_skey_desc* last = NULL;
-
-  std::size_t foundB ;
-  if (!findAToken(md, tblStr, pos, "sortCols:",
-                  "populateSortCols::sortCols:###"))
-    return NULL;
-  
-  std::size_t foundE = pos ;
-  if (!findAToken(md, tblStr, foundE, "],",
-                  "populateSortCols::sortCols:],###"))
-    return NULL;
-  
-  if ((foundE - pos)<=10) //this is important to avoid major performance impact when looking for non existent Order(col over and over, parsing to the end of string. hot spot flagged using gprof
-    return NULL;
-  Int32 colIdx = 0;
-  while (pos < foundE)
-    {
-      foundB = tblStr->find("Order(col:", pos);
-      if ((foundB == std::string::npos)||(foundB > foundE)) {
-        return NULL;
-      }
-      
-      foundB = foundB + strlen("Order(col:");
-      pos = foundB ;
-      if (!findAToken(md, tblStr, pos, ",",
-                      "populateSortCols::name:,###"))
-        return NULL;
-      NAText nameStr = tblStr->substr(foundB, pos-foundB);
-      
-      NAText orderStr;
-      if(!extractValueStr(md, tblStr, pos, "order:", ",", 
-                          orderStr, "populateSortCols::order:###"))
-        return NULL;
-      
-      pos++;
-      if (!findAToken(md, tblStr, pos, ",",
-                      "populateSortColumns::comment:,###"))
-        return NULL;
-      
-      hive_skey_desc* newSkey  = new (CmpCommon::contextHeap())
-        struct hive_skey_desc(nameStr.c_str(),
-                              colIdx,
-                              atoi(orderStr.c_str()));
-      
-      if ( result == NULL ) {
-        last = result = newSkey;
-      } else {
-        last->next_ = newSkey;
-        last = newSkey;
-      }
-      
-      colIdx++;
-    } // end of while
-
-  return result;
-}
-
 static int getAsciiDecimalValue(const char * valPtr)
 {
   if (str_len(valPtr) <= 0) return 0;
   if (str_len(valPtr) == 1) return valPtr[0];
   return atoi(valPtr);
-}
-
-NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID, 
-                              char& fieldTerminator, char& recordTerminator,
-                              NABoolean &nullFormatSpec, NAString &nullFormat,
-                              NAText* tblStr, size_t& pos)
-{
-
-  fieldTerminator  = '\001';  // this the Hive default ^A or ascii code 1
-  recordTerminator = '\n';    // this is the Hive default
-
-  if (!findAToken(md, tblStr, pos, "serdeInfo:",
-                  "populateSerDeParams::serdeInfo:###"))
-    return FALSE;
-
-  std::size_t foundB = pos;
-  std::size_t foundE = pos;
-
-  if (!findAToken(md, tblStr, foundE, "}),",
-                  "populateSerDeParams::serDeInfo:)},###"))
-    return FALSE;
-  
-  NAText serdeStr = tblStr->substr(foundB, foundE-foundB);
-
-  const char * nullStr = "serialization.null.format=";
-  const char * fieldStr = "field.delim=" ;
-  const char * lineStr = "line.delim=" ;
-
-  nullFormatSpec = FALSE;
-  foundB = serdeStr.find(nullStr);
-  if (foundB != std::string::npos)
-    {
-      nullFormatSpec = TRUE;
-      std::size_t foundNB = foundB + strlen(nullStr);
-      std::size_t foundNE = serdeStr.find(", ", foundNB);
-      if (foundNE == std::string::npos)
-        {
-          foundNE = serdeStr.length();
-        }
-      nullFormat = NAString(serdeStr.substr(foundNB, (foundNE-foundNB)));
-    }
-
-  std::size_t foundDelim = serdeStr.find(fieldStr);
-  if ((foundDelim != std::string::npos))
-    fieldTerminator = serdeStr.at(foundDelim+strlen(fieldStr));
-
-  foundDelim = serdeStr.find(lineStr);
-  if ((foundDelim != std::string::npos))
-    recordTerminator = serdeStr.at(foundDelim+strlen(lineStr));
-  
-  pos = foundE;
-  
-  return TRUE;
-}
-
-struct hive_bkey_desc* populateBucketingCols(HiveMetaData *md, Int32 sdID,  
-                                             NAText* tblStr, size_t& pos)
-{
-  hive_bkey_desc* result = NULL;
-  hive_bkey_desc* last = NULL;
-
-  std::size_t foundB ;
-  if (!findAToken(md, tblStr, pos, "bucketCols:",
-                  "populateBucketingCols::bucketCols:###"))
-    return NULL;
-
-  std::size_t foundE = pos ;
-  if (!findAToken(md, tblStr, foundE, "],",
-                  "populateBucketingCols::bucketCols:],###"))
-    return NULL;
-  
-  
-  pos = pos + strlen("bucketCols:[");
-  if (pos == foundE)
-    return NULL ; // empty bucket cols list. This line is code is for 
-  // clarity alone, the while condition alone is sufficient.
-  
-  Int32 colIdx = 0;
-  while (pos < foundE)
-    {
-      foundB = tblStr->find(",", pos);
-      if ((foundB == std::string::npos)||(foundB > foundE)) {
-        foundB = foundE; // we have only one bucketing col or
-        // this is the last bucket col
-      }
-      NAText nameStr = tblStr->substr(pos, foundB-pos);
-      pos = foundB + 1;
-      
-      hive_bkey_desc* newBkey  = new (CmpCommon::contextHeap())
-        struct hive_bkey_desc(nameStr.c_str(),
-                              colIdx);
-      
-      if ( result == NULL ) {
-        last = result = newBkey;
-      } else {
-        last->next_ = newBkey;
-        last = newBkey;
-      }
-      
-      colIdx++;
-    } // end of while
-
-  return result;
 }
 
 NABoolean findAToken (HiveMetaData *md, NAText* tblStr, size_t& pos, 
@@ -623,37 +245,64 @@ NABoolean extractValueStr (HiveMetaData *md, NAText* tblStr, size_t& pos,
   return TRUE;
 }
 
+hive_tblparams_desc::hive_tblparams_desc(NAHeap *heap, const char* tblParamsStr,
+                                         NABoolean obp, Int64 oss, Int32 oris,
+                                         const char * oc, const char* bfc,
+                                         double bff, NABoolean oci) :
+
+     heap_(heap),
+     tblParamsStr_(NULL),
+     orcBlockPadding_(obp),
+     orcStripeSize_(oss), orcRowIndexStride_(oris),
+     orcBloomFilterColumns_(NULL),
+     orcBloomFilterFPP_(bff),
+     orcCreateIndex_(oci)
+{
+  if (tblParamsStr)
+    tblParamsStr_ = strduph(tblParamsStr, heap_);
+  
+  orcCompression_[0] = 0;
+  if (oc)
+    strcpy(orcCompression_, oc);
+  if (bfc)
+    orcBloomFilterColumns_ = strduph(bfc, heap_);
+}
+
 struct hive_tbl_desc* HiveMetaData::getFakedTableDesc(const char* tblName)
 {
-  CollHeap *h = CmpCommon::contextHeap();
-  hive_column_desc* c1 = new (h) hive_column_desc(1, "C1", "int", 0);
-  hive_column_desc* c2 = new (h) hive_column_desc(2, "C2", "string", 1);
-  hive_column_desc* c3 = new (h) hive_column_desc(3, "C3", "float", 2);
+  NAHeap *h = heap_;
+  hive_column_desc* c1 = new (h) hive_column_desc(h, 1, "C1", "int", 0);
+  hive_column_desc* c2 = new (h) hive_column_desc(h, 2, "C2", "string", 1);
+  hive_column_desc* c3 = new (h) hive_column_desc(h, 3, "C3", "float", 2);
 
    c1->next_ = c2;
    c2->next_ = c3;
 
    // sort key c1
-   hive_skey_desc* sk1 = new (h) hive_skey_desc("C1", 1, 1);
+   hive_skey_desc* sk1 = new (h) hive_skey_desc(h, "C1", 1, 1);
 
    // bucket key c2
-   hive_bkey_desc* bk1 = new (h) hive_bkey_desc("C2", 1);
+   hive_bkey_desc* bk1 = new (h) hive_bkey_desc(h, "C2", 1);
 
 
-   hive_sd_desc* sd1 = new (h)hive_sd_desc(1, "loc", 0, 1, "ift", "oft", NULL,
+   hive_sd_desc* sd1 = new (h)hive_sd_desc(h, 1, "loc", 0, 1, "ift", "oft", NULL,
                                            hive_sd_desc::TABLE_SD, c1, 
                                            sk1, bk1, '\010', '\n',
-                                           FALSE);
+                                           FALSE, NULL);
 
-   hive_tbl_desc* tbl1 = new (h) hive_tbl_desc(1, "myHive", "default", "me",
+   hive_tbl_desc* tbl1 = new (h) hive_tbl_desc(h, 1, "myHive", "default", "me",
                                                "MANAGED",
-                                               0, NULL, NULL, sd1, 0);
+                                               0, NULL, NULL, sd1, NULL, NULL);
 
    return tbl1;
 }
 
-struct hive_tbl_desc* HiveMetaData::getTableDesc(const char* schemaName,
-                                                 const char* tblName)
+struct hive_tbl_desc* HiveMetaData::getTableDesc( const char* schemaName,
+                                                 const char* tblName,
+                                                 Int64 expirationTS,
+                                                 NABoolean validateOnly,
+                                                 NABoolean rereadFromMD,
+                                                 NABoolean readPartnInfo)
 {
     struct hive_tbl_desc *ptr = tbl_;
 
@@ -676,108 +325,46 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc(const char* schemaName,
               ptr2 = ptr2->next_;
             }
           }        
-          NADELETEBASIC(ptr, CmpCommon::contextHeap());
+          NADELETEBASIC(ptr, heap_);
           ptr = NULL;
           break;
         }
       }
 
       ptr = ptr->next_;
+   }
 
+   HVC_RetCode hvcRetcode;
+   HiveClient_JNI *hiveClient = HiveClient_JNI::newInstance(heap_, hvcRetcode);
+   if (hvcRetcode != HVC_OK) {
+      recordError((Int32)hvcRetcode, "HiveClient_JNI::newInstance()");
+      return NULL;
+   }
+ 
+   hvcRetcode = hiveClient->getHiveTableInfo(schemaName, tblName, readPartnInfo);
+   if (hvcRetcode != HVC_OK && hvcRetcode != HVC_DONE) {
+      recordError((Int32)hvcRetcode, "HiveClient_JNI::getHiveTableInfo()");
+      NADELETE(hiveClient, HiveClient_JNI, heap_);
+      return NULL;
+   }
+   if (hvcRetcode == HVC_DONE) {
+      NADELETE(hiveClient, HiveClient_JNI, heap_);
+      return NULL;
    }
 
    // table not found in cache, try to read it from metadata
-   hive_tbl_desc * result = NULL;
-   Int64 creationTS;
-
-   NAText* tblStr = new (CmpCommon::statementHeap()) string();
-   if (!tblStr)
-     return NULL;
-
-   HVC_RetCode retCode = HiveClient_JNI::getHiveTableStr(schemaName, 
-                                                  tblName, *tblStr);
-   if ((retCode != HVC_OK) && (retCode != HVC_DONE)) {
-     recordError((Int32)retCode, "HiveClient_JNI::getTableStr()");
-     return NULL;
-   }
-   if (retCode == HVC_DONE) // table not found.
-     return NULL;
-
-   NAText tblNameStr;
-   size_t pos = 0;
-   if(!extractValueStr(this, tblStr, pos, "tableName:", ",", 
-                       tblNameStr, "getTableDesc::tableName:###"))
-     return NULL;
-   
-   NAText schNameStr;
-   pos = 0;
-   if(!extractValueStr(this, tblStr, pos, "dbName:", ",", 
-                       schNameStr, "getTableDesc::dbName:###"))
-     return NULL;
-   
-   NAText ownerStr;
-   pos = 0;
-   if(!extractValueStr(this, tblStr, pos, "owner:", ",", 
-                       ownerStr, "getTableDesc:owner:###"))
-     return NULL;
-
-   NAText createTimeStr;
-   pos = 0;
-   if(!extractValueStr(this, tblStr, pos, "createTime:", ",", 
-                       createTimeStr, "getTableDesc::createTime:###"))
-     return NULL;
-
-   creationTS = atol(createTimeStr.c_str());
-
-   
-   // TODO: need to handle multiple SDs
-   struct hive_sd_desc* sd = populateSD(this, 0,0, tblStr, pos);
-   if (!sd)
-     return NULL;
-   struct hive_pkey_desc* pkey = populatePartitionKey(this, 0, 
-                                                      tblStr, pos);
-   
-   NAText tableTypeStr;
-   pos = 0;
-   if(!extractValueStr(this, tblStr, pos, "tableType:", ")", 
-                       tableTypeStr, "getTableDesc:tableType:###"))
-     return NULL;
-   
-   NAText viewOriginalStr;
-   NAText viewExpandedStr;
-   if ((NOT tableTypeStr.empty()) && (tableTypeStr == "VIRTUAL_VIEW"))
-     {
-       pos = 0;
-       if(!extractValueStr(this, tblStr, pos, " viewOriginalText:", ", viewExpandedText:", 
-                           viewOriginalStr, "getTableDesc:viewOriginalText:###"))
-         return NULL;
-
-       pos = 0;
-       if(!extractValueStr(this, tblStr, pos, "viewExpandedText:", ", tableType:", 
-                           viewExpandedStr, "getTableDesc:viewExpandedText:###"))
-         return NULL;
-     }
-
-   result = 
-     new (CmpCommon::contextHeap()) 
-     struct hive_tbl_desc(0, // no tblID with JNI 
-                          tblNameStr.c_str(), 
-                          schNameStr.c_str(),
-                          ownerStr.c_str(),
-                          tableTypeStr.c_str(),
-                          creationTS,
-                          viewOriginalStr.c_str(),
-                          viewExpandedStr.c_str(),
-                          sd, pkey);
-   
+   hive_tbl_desc * hiveTableDesc;
+   hvcRetcode = hiveClient->getHiveTableDesc(heap_, hiveTableDesc);
+   if (hvcRetcode != HVC_OK) {
+      recordError((Int32)hvcRetcode, "HiveClient_JNI::getHiveTableInfoDetails()");
+      NADELETE(hiveClient, HiveClient_JNI, heap_);
+      return NULL;
+   } 
    // add the new table to the cache
-   result->next_ = tbl_;
-   tbl_ = result;
-   
-   
-   //delete tblStr ;
-
-   return result;
+   hiveTableDesc->next_ = tbl_;
+   tbl_ = hiveTableDesc;
+   NADELETE(hiveClient, HiveClient_JNI, heap_);
+   return hiveTableDesc;
 }
 
 NABoolean HiveMetaData::validate(Int32 tableId, Int64 redefTS, 
@@ -801,40 +388,43 @@ NABoolean HiveMetaData::validate(Int32 tableId, Int64 redefTS,
   return result;
 }
 
-hive_tbl_desc::hive_tbl_desc(Int32 tblID, const char* name, const char* schName,
+hive_tbl_desc::hive_tbl_desc(NAHeap *heap, Int32 tblID, const char* name, const char* schName, 
                              const char * owner,
                              const char * tableType,
                              Int64 creationTS, 
                              const char * viewOriginalText,
                              const char * viewExpandedText,
                              struct hive_sd_desc* sd,
-                             struct hive_pkey_desc* pk)
-     : tblID_(tblID), 
+                             struct hive_pkey_desc* pk,
+                             struct hive_tblparams_desc* tp)
+     : heap_(heap), tblID_(tblID), 
        viewOriginalText_(NULL), viewExpandedText_(NULL),
-       sd_(sd), creationTS_(creationTS), pkey_(pk), next_(NULL)
+       sd_(sd), tblParams_(tp),
+       creationTS_(creationTS), pkey_(pk), next_(NULL)
 {  
-  tblName_ = strduph(name, CmpCommon::contextHeap());
-  schName_ = strduph(schName, CmpCommon::contextHeap()); 
+  tblName_ = strduph(name, heap_);
+  schName_ = strduph(schName, heap_);
+  validationTS_ = JULIANTIMESTAMP();
 
   if (owner)
-    owner_ = strduph(owner, CmpCommon::contextHeap());
+    owner_ = strduph(owner, heap_);
   else
     owner_ = NULL;
 
   if (tableType)
-    tableType_ = strduph(tableType, CmpCommon::contextHeap());
+    tableType_ = strduph(tableType, heap_);
   else
     tableType_ = NULL;
 
   if (isView())
     {
       if (viewOriginalText)
-        viewOriginalText_ = strduph(viewOriginalText, CmpCommon::contextHeap());
+        viewOriginalText_ = strduph(viewOriginalText, heap_);
       else
         viewOriginalText_ = NULL;
 
       if (viewExpandedText)
-        viewExpandedText_ = strduph(viewExpandedText, CmpCommon::contextHeap());
+        viewExpandedText_ = strduph(viewExpandedText, heap_);
       else
         viewExpandedText_ = NULL;
     }
@@ -998,55 +588,53 @@ Int64 hive_tbl_desc::redeftime()
 
 hive_tbl_desc::~hive_tbl_desc()
 {
-  CollHeap *h = CmpCommon::contextHeap();
   if (tblName_)
-    NADELETEBASIC(tblName_, h);
+    NADELETEBASIC(tblName_, heap_);
   if (schName_)
-    NADELETEBASIC(schName_, h);
+    NADELETEBASIC(schName_, heap_);
 
    hive_sd_desc* ptr ;
    while (sd_) {
     ptr = sd_->next_;       
-    NADELETEBASIC(sd_, h);
+    NADELETEBASIC(sd_, heap_);
     sd_ = ptr;
   }
  
    hive_pkey_desc* ptr1 ;
    while (pkey_) {
     ptr1 = pkey_->next_;       
-    NADELETEBASIC(pkey_, h);
+    NADELETEBASIC(pkey_, heap_);
     pkey_ = ptr1;
   }
 }
 
 hive_sd_desc::~hive_sd_desc()
 {
-  CollHeap *h = CmpCommon::contextHeap();
   if (location_)
-    NADELETEBASIC(location_, h);
+    NADELETEBASIC(location_, heap_);
   if (inputFormat_)
-    NADELETEBASIC(inputFormat_, h);
+    NADELETEBASIC(inputFormat_, heap_);
   if (outputFormat_)
-    NADELETEBASIC(outputFormat_, h);
+    NADELETEBASIC(outputFormat_, heap_);
 
   hive_column_desc* ptr ;
   while (column_) {
     ptr = column_->next_;       
-    NADELETEBASIC(column_, h);
+    NADELETEBASIC(column_, heap_);
     column_ = ptr;
   }
  
   hive_skey_desc* ptr1 ;
   while (skey_) {
     ptr1 = skey_->next_;       
-    NADELETEBASIC(skey_, h);
+    NADELETEBASIC(skey_, heap_);
     skey_ = ptr1;
   }
 
   hive_bkey_desc* ptr2 ;
   while (bkey_) {
     ptr2 = bkey_->next_;       
-    NADELETEBASIC(bkey_, h);
+    NADELETEBASIC(bkey_, heap_);
     bkey_ = ptr2;
   }
 }
@@ -1054,32 +642,28 @@ hive_sd_desc::~hive_sd_desc()
 
 hive_pkey_desc::~hive_pkey_desc()
 {
-  CollHeap *h = CmpCommon::contextHeap();
   if (name_)
-    NADELETEBASIC(name_, h);
+    NADELETEBASIC(name_, heap_);
   if (type_)
-    NADELETEBASIC(type_, h);
+    NADELETEBASIC(type_, heap_);
 }
 
 hive_skey_desc::~hive_skey_desc()
 {
-  CollHeap *h = CmpCommon::contextHeap();
   if (name_)
-    NADELETEBASIC(name_, h);
+    NADELETEBASIC(name_, heap_);
 }
 
 hive_bkey_desc::~hive_bkey_desc()
 {
-  CollHeap *h = CmpCommon::contextHeap();
   if (name_)
-    NADELETEBASIC(name_, h);
+    NADELETEBASIC(name_, heap_);
 }
 
 hive_column_desc::~hive_column_desc()
 {
-  CollHeap *h = CmpCommon::contextHeap();
   if (name_)
-    NADELETEBASIC(name_, h);
+    NADELETEBASIC(name_, heap_);
   if (type_)
-    NADELETEBASIC(type_, h);
+    NADELETEBASIC(type_, heap_);
 }

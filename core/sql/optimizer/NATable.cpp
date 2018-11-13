@@ -8409,7 +8409,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       if ( hiveMetaDB_ == NULL ) {
 	if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) != DF_ON)
 	  {
-	    hiveMetaDB_ = new (CmpCommon::contextHeap()) HiveMetaData();
+	    hiveMetaDB_ = new (CmpCommon::contextHeap()) HiveMetaData((NAHeap *)CmpCommon::contextHeap());
 	    
 	    if ( !hiveMetaDB_->init() ) {
 	      *CmpCommon::diags() << DgSqlCode(-1190)
@@ -8427,7 +8427,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	  }
 	else
 	  hiveMetaDB_ = new (CmpCommon::contextHeap()) 
-            HiveMetaData(); // fake metadata
+            HiveMetaData((NAHeap *)CmpCommon::contextHeap()); // fake metadata
       }
       
       // this default schema name is what the Hive default schema is called in SeaHive
@@ -8447,7 +8447,11 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
        if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) == DF_ON)
          htbl = hiveMetaDB_->getFakedTableDesc(tableNameInt);
        else
-         htbl = hiveMetaDB_->getTableDesc(schemaNameInt, tableNameInt);
+         htbl = hiveMetaDB_->getTableDesc(schemaNameInt, tableNameInt,
+                0, FALSE,
+                // reread Hive Table Desc from MD.
+                (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON),
+                TRUE);
 
        NAString extName = ComConvertNativeNameToTrafName(
             corrName.getQualifiedNameObj().getCatalogName(),
@@ -8595,7 +8599,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         // ------------------------------------------------------------------
         if ( hiveMetaDB_ == NULL ) 
           {
-            hiveMetaDB_ = new (CmpCommon::contextHeap()) HiveMetaData();
+            hiveMetaDB_ = new (CmpCommon::contextHeap()) HiveMetaData((NAHeap *)CmpCommon::contextHeap());
             
             if ( !hiveMetaDB_->init() ) 
               {
@@ -8645,11 +8649,11 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
           }
 
         htbl = new(naTableHeap) hive_tbl_desc
-          (0, 
+          ((NAHeap *)naTableHeap, 0, 
            corrName.getQualifiedNameObj().getObjectName(),
            corrName.getQualifiedNameObj().getSchemaName(),
            NULL, NULL,
-           0, NULL, NULL, NULL, NULL);
+           0, NULL, NULL, NULL, NULL, NULL);
         table = new (naTableHeap) NATable
           (bindWA, corrName, naTableHeap, htbl);
         

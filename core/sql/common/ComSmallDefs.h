@@ -1957,6 +1957,21 @@ enum ComAuthenticationType{
 #define COM_DBS_YES_LIT        "Y"
 #define COM_DBS_NO_LIT         "N"
 
+// values used during ORC file writes if not specified as part
+// of table creation.
+#define ORC_DEFAULT_STRIPE_SIZE         67108864
+#define ORC_DEFAULT_ROW_INDEX_STRIDE    10000
+#define ORC_DEFAULT_COMPRESSION         "ZLIB"
+#define ORC_DEFAULT_BLOOM_FILTER_FPP    0.05
+
+// values used during Parquet file writes if not specified as part
+// of table creation.
+#define PARQUET_DEFAULT_BLOCK_SIZE      134217728
+#define PARQUET_DEFAULT_PAGE_SIZE       1048576
+#define PARQUET_DEFAULT_COMPRESSION     "UNCOMPRESSED"
+#define PARQUET_DEFAULT_DICTIONARY_PAGE_SIZE 1048576
+
+
 // used with removeNATable for QI support
 enum ComQiScope 
   {

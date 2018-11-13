@@ -1635,6 +1635,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DD_____(HIVE_CATALOG,                                ""),
 
+  DDkwd__(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL, "OFF"),
   DDkwd__(HIVE_CTAS_IN_NATIVE_MODE,             "OFF"),
 
   DDkwd__(HIVE_DATA_MOD_CHECK,                  "ON"),

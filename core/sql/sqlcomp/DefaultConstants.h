@@ -3357,6 +3357,10 @@ enum DefaultConstants
   // Use BLOB column in LIBRARIES tables to store libraries.
   USE_LIB_BLOB_STORE,
 
+  // When creating a Trafodion table like a partitioned Hive table
+  // use NO NULL attribute for partitin columns
+  HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
