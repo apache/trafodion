@@ -10087,6 +10087,7 @@ static int Oloadbuff(int eid)
                 lcr += (unsigned long)etab[eid].Oresl;
             break;
         default:
+            Oi = 1; //the record number need to be initialize for next loop
             /* Loop through the ODBC error stack for this statement handle. */
             while ( ( Or = SQLGetDiagRec(SQL_HANDLE_STMT, thps[tid].Os, Oi, Ostate, &Onative, Otxt,
                 (SQLSMALLINT)embs, &Oln) ) != SQL_NO_DATA ) {
