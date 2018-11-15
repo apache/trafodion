@@ -10198,22 +10198,22 @@ static int Oloadbuff(int eid)
                         /* Ok, now we have an error message (Otxt), a five char SQLState (Ostate), 
                          * a native error code (Onative) and the rowset row number (Orown). Let's
                          * print everything to stderr. */
-                        if (tLastRow != Orown) {
-                            tLastRow = Orown;
-                            fprintf(stderr, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
-                                tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
-                            if (type == 'C') {        /* 'C' thread */
-                                if (etab[eid].fdmp) { /* dump ODBC buffer */
-                                    MutexLock(&etab[gpar].pmutex);
-                                    fprintf(etab[eid].fdmp, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
-                                        tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
-                                    fprintf(etab[eid].fdmp, "[%d] Dumping row %lu in a block of %zu rows. ODBC row length = %zu\n",
-                                        tid, (unsigned long)Orown, etab[eid].ar, etab[par].s);
-                                    dumpbuff(etab[eid].fdmp, tid, (unsigned char *)(etab[eid].Orowsetl + (Orown - 1) * etab[par].s), etab[par].s, 0);
-                                    MutexUnlock(&etab[gpar].pmutex);
-                                }
+                        fprintf(stderr, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
+                            tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
+                        if (type == 'C') {        /* 'C' thread */
+                            if (etab[eid].fdmp) { /* dump ODBC buffer */
+                                MutexLock(&etab[gpar].pmutex);
+                                fprintf(etab[eid].fdmp, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
+                                    tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
+                                fprintf(etab[eid].fdmp, "[%d] Dumping row %lu in a block of %zu rows. ODBC row length = %zu\n",
+                                    tid, (unsigned long)Orown, etab[eid].ar, etab[par].s);
+                                dumpbuff(etab[eid].fdmp, tid, (unsigned char *)(etab[eid].Orowsetl + (Orown - 1) * etab[par].s), etab[par].s, 0);
+                                MutexUnlock(&etab[gpar].pmutex);
                             }
-                            else {                /* either multi ('L') or single ('l') threaded loaders */
+                        }
+                        else {                /* either multi ('L') or single ('l') threaded loaders */
+                            if (tLastRow != Orown) { /* ensure no duplicated rows in bad file */
+                                tLastRow = Orown;
                                 prec('L', (unsigned char *)(etab[eid].Orowsetl + etab[par].s*(Orown - 1)), eid);
                             }
                         }
