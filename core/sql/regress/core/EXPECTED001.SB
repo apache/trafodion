@@ -14,7 +14,7 @@
 >>invoke t001t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T1
--- Definition current  Mon Aug 27 15:59:38 2018
+-- Definition current  Fri Nov 16 17:12:39 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -32,7 +32,7 @@
 >>invoke $$TEST_SCHEMA$$.t001ut1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT1
--- Definition current  Mon Aug 27 15:59:39 2018
+-- Definition current  Fri Nov 16 17:12:40 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -445,12 +445,74 @@ A
      .0
 
 --- 1 row(s) selected.
+>>
+>>select case when cast(null as int) > 0 and 2>1 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>select case when cast(null as int) > 0 or 2>1 then 1/0 else 0 end from dual;
+
+*** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+--- 0 row(s) selected.
+>>
+>>select case when cast(null as int) > 0 and 2>3 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>select case when cast(null as int) > 0 or 2>3 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>
+>>-- PCODE way
 >>cqd pcode_opt_level 'on';
 
 --- SQL operation complete.
->>
->>-- PCODE way
 >>select case when cast(null as int) > 0 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>
+>>select case when cast(null as int) > 0 and 2>1 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>select case when cast(null as int) > 0 or 2>1 then 1/0 else 0 end from dual;
+
+*** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+--- 0 row(s) selected.
+>>
+>>select case when cast(null as int) > 0 and 2>3 then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>select case when cast(null as int) > 0 or 2>3 then 1/0 else 0 end from dual;
 
 (EXPR) 
 -------
