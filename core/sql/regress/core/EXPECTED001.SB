@@ -14,7 +14,7 @@
 >>invoke t001t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T1
--- Definition current  Fri Nov 16 17:12:39 2018
+-- Definition current  Sat Nov 17 15:05:31 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -32,7 +32,7 @@
 >>invoke $$TEST_SCHEMA$$.t001ut1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT1
--- Definition current  Fri Nov 16 17:12:40 2018
+-- Definition current  Sat Nov 17 15:05:32 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -535,6 +535,22 @@ A
 
 --- 0 row(s) selected.
 >>			-- ok (0 rows)
+>>
+>>-- = NULL is not ANSI
+>>select case when 3 is null then 1/0 else 0 end from dual;
+
+(EXPR) 
+-------
+
+     .0
+
+--- 1 row(s) selected.
+>>select case when 3 = null then 1/0 else 0 end from dual;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (3 = NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>
 >>-- PARAM queries
