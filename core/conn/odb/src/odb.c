@@ -6249,7 +6249,7 @@ static void Oload(int eid)
         char op;                /* 1=substr, 2=dconv, 3=tconv, 4=tsconv, 5=replace,
                                    6=toupper, 7=tolower, 8=firstup, 9=csubstr, 10=translit,
                                    11=comp, 12=comp3, 13=zoned, 14=emptyasconst, 15=emptyasempty,
-                                   16=div */
+                                   16=div, 17 trim */
         char **el;              /* dataset element array pointer */
         unsigned int prec;      /* COMP3/ZONED Precision */
         unsigned int scale;     /* COMP3/ZONED Scale */
@@ -10114,7 +10114,7 @@ static int Oloadbuff(int eid)
         clock_gettime(CLOCK_MONOTONIC, &tsp1);
 #endif
         Or = SQLExecute(thps[tid].Os) ;         /* Execute INSERT (load/copy) or tgt command */
-        SQLLEN tLastRow = -1;           /* this is special solution for China Union Pay, print only first error message for state 22003 */
+        SQLLEN tLastRow = -1;           /* remember last bad row to ensure that a bad row will be printed only once. */
 #ifdef ODB_PROFILE
         clock_gettime(CLOCK_MONOTONIC, &tsp2);
         ti += tspdiff ( &tsp1 , &tsp2 ) ;
@@ -14755,41 +14755,45 @@ static int is_valid_numeric(const char* str, size_t n) {
     int s = 1;
     for (size_t i = 0; i < n; ++i) {
         switch (s) {
-        case 1:
+        case 1: // expect a sign or digit
             if (str[i] == '+' || str[i] == '-') s = 2;
             else if (isdigit(str[i])) s = 3;
             else return 0;
             break;
-        case 2:
+        case 2: // expect a digit
             if (!isdigit(str[i])) return 0;
             s = 3;
             break;
-        case 3:
+        case 3: // expect option digit or dot or 'e/E'
             if (str[i] == '.') s = 4;
-            else if (str[i] == 'e') s = 6;
+            else if (str[i] == 'e' || str[i] == 'E') s = 6;
             else if (!isdigit(str[i])) return 0;
             break;
-        case 4:
+        case 4: // expect digit after a dot
             if (!isdigit(str[i])) return 0;
             s = 5;
             break;
-        case 5:
-            if (str[i] == 'e') s = 6;
+        case 5: // now expect optional digit or 'e/E'
+            if (str[i] == 'e' || str[i] == 'E') s = 6;
             else if (!isdigit(str[i])) return 0;
             break;
-        case 6:
+        case 6: // expect a sign or digit after 'e/E'
             if (str[i] == '+' || str[i] == '-') s = 7;
-            else if (isdigit(str[i])) s = 7;
+            else if (isdigit(str[i])) s = 8;
             else return 0;
             break;
-        case 7:
+        case 7: // expect a digit after a sign after 'e/E'
+            if (!isdigit(str[i])) return 0;
+            s = 8;
+            break;
+        case 8: // expect optional digit
             if (!isdigit(str[i])) return 0;
             break;
         default:
             return 0;
         }
     }
-    if (s == 3 || s == 7 || s == 5) return 1;
+    if (s == 3 || s == 4 || s == 5 || s == 8) return 1;
     return 0;
 }
 
