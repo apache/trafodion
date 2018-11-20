@@ -720,6 +720,7 @@ static void setan ( int eid, int tid, int nrag, char *rag[], char *ql );
 static int Omexec(int tid, int eid, int ten, int scn, SQLCHAR *Ocmd, char *label, char *dcat, char *dsch);
 static char *strup ( char *s );
 static char *strlo ( char *s );
+static char *strtrim(char *str);
 int mrinit ( void );
 void mrend ( void );
 char *mreadline ( char *prompt, unsigned int *length );
@@ -746,6 +747,7 @@ unsigned long tspdiff ( struct timespec *start, struct timespec *end ) ;
 #endif
 static int ucs2toutf8 ( SQLCHAR *str, SQLLEN *len, SQLULEN bs, int bu2 ) ;
 static void addGlobalPointer(void *ptr);
+static int is_valid_numeric(const char* str, size_t n);
 
 int main(int ac, char *av[])
 {
@@ -6246,7 +6248,8 @@ static void Oload(int eid)
              trt[16];           /* translit to array */         
         char op;                /* 1=substr, 2=dconv, 3=tconv, 4=tsconv, 5=replace,
                                    6=toupper, 7=tolower, 8=firstup, 9=csubstr, 10=translit,
-                                   11=comp, 12=comp3, 13=zoned, 14=emptyasconst, 15=emptyasempty */
+                                   11=comp, 12=comp3, 13=zoned, 14=emptyasconst, 15=emptyasempty,
+                                   16=div, 17 trim */
         char **el;              /* dataset element array pointer */
         unsigned int prec;      /* COMP3/ZONED Precision */
         unsigned int scale;     /* COMP3/ZONED Scale */
@@ -6969,7 +6972,18 @@ static void Oload(int eid)
                         map[j].op = 14;
                     } else if ( !strmicmp ( "emptyasempty", bp, 11 ) ) {
                         map[j].op = 15;
-                    } else {
+                    } else if (!strmicmp("div", bp, 3)) {
+                        map[j].op = 16;
+                        while (*bp && *bp++ != ':');
+                        map[j].scale = strtol(bp, NULL, 10);
+                        if (map[j].scale == 0) {
+                            fprintf(stderr, "odb [Oload(%d)] - DIV error for %s\n", __LINE__, (char *)etab[eid].td[j].Oname);
+                            goto oload_exit;
+                        }
+                    } else if (!strmicmp("trim", bp, 4)) {
+                        map[j].op = 17;
+                    }
+                    else {
                         map[j].op = 0;
                     }
                 }
@@ -7367,6 +7381,7 @@ static void Oload(int eid)
             }
             if ( fg & 0062 ) {                                  /* field/record ready or nofile */
                 oload_lastrow:
+                str[ifl] = '\0';
                 if ( rmap && rmap[k] >= 0 ) {
                     Odp = &etab[eid].Orowsetl[m*etab[eid].s + etab[eid].td[rmap[k]].start];
                     if ( fg & 0200 ) {                          /* embed file reading mode */
@@ -7513,6 +7528,28 @@ static void Oload(int eid)
                             if ( ifl == 0 )
                                 ifl = EMPTY ;
                             break;
+                        case 16:
+                        {
+                            if (ifl > 0) {
+                                double dv = 0;
+                                char tformat[64];
+                                sprintf(tformat, "%%.%dlf", etab[eid].td[rmap[k]].Odec);
+
+                                str[ifl] = '\0';
+                                if (!(is_valid_numeric(str, strlen(str)) && sscanf(str, "%lf", &dv))) {
+                                    fprintf(stderr, "odb [Oload(%d)] - DIV field conversion error: row %d col %d. "
+                                        "%s is not valid numeric, This row won't be loaded\n", __LINE__, n + 1, k + 1, str);
+                                    mi = 0; /* SKIP THIS ROW */
+                                }
+                                dv = dv / map[rmap[k]].scale;
+                                ifl = sprintf(str, tformat, dv);
+                            }
+                        }
+                            break;
+                        case 17: // trim
+                            str = strtrim(str);
+                            ifl = strlen(str);
+                            break;
                         }
                         if ( ifl > (int)etab[eid].td[rmap[k]].Osize ) { /* prevent Orowsetl[] overflow */
                             str[ifl]='\0';
@@ -7534,7 +7571,8 @@ static void Oload(int eid)
                                 default:
                                     if ( !etab[eid].fldtr )
                                         fprintf ( stderr, "odb [Oload(%d)] - Error: row %d col %d field truncation. Input "
-                                            "string: >%s< of length %d. This row won't be loaded\n", __LINE__, n+1, k+1, str, ifl);
+                                            "string: >%s< of length %d exceeds %lu. This row won't be loaded\n", __LINE__,
+                                            n+1, k+1, str, ifl, (long unsigned)etab[eid].td[rmap[k]].Osize );
                                     mi = 0; /* SKIP THIS ROW */
                                     break;
                                 }
@@ -10076,6 +10114,7 @@ static int Oloadbuff(int eid)
         clock_gettime(CLOCK_MONOTONIC, &tsp1);
 #endif
         Or = SQLExecute(thps[tid].Os) ;         /* Execute INSERT (load/copy) or tgt command */
+        SQLLEN tLastRow = -1;           /* remember last bad row to ensure that a bad row will be printed only once. */
 #ifdef ODB_PROFILE
         clock_gettime(CLOCK_MONOTONIC, &tsp2);
         ti += tspdiff ( &tsp1 , &tsp2 ) ;
@@ -10161,18 +10200,22 @@ static int Oloadbuff(int eid)
                          * print everything to stderr. */
                         fprintf(stderr, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
                             tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
-                        if ( type == 'C' ) {        /* 'C' thread */
-                            if ( etab[eid].fdmp ) { /* dump ODBC buffer */
+                        if (type == 'C') {        /* 'C' thread */
+                            if (etab[eid].fdmp) { /* dump ODBC buffer */
                                 MutexLock(&etab[gpar].pmutex);
                                 fprintf(etab[eid].fdmp, "[%d] odb [Oloadbuff(%d)] - Error loading row %lu (State: %s, Native %ld)\n%s\n",
                                     tid, __LINE__, (unsigned long)Orown + etab[eid].nbs, (char *)Ostate, (long)Onative, (char *)Otxt);
                                 fprintf(etab[eid].fdmp, "[%d] Dumping row %lu in a block of %zu rows. ODBC row length = %zu\n",
-                                    tid, (unsigned long) Orown, etab[eid].ar, etab[par].s ) ;
-                                dumpbuff(etab[eid].fdmp, tid, (unsigned char *)(etab[eid].Orowsetl + (Orown - 1) * etab[par].s), etab[par].s, 0 );
+                                    tid, (unsigned long)Orown, etab[eid].ar, etab[par].s);
+                                dumpbuff(etab[eid].fdmp, tid, (unsigned char *)(etab[eid].Orowsetl + (Orown - 1) * etab[par].s), etab[par].s, 0);
                                 MutexUnlock(&etab[gpar].pmutex);
                             }
-                        } else {                /* either multi ('L') or single ('l') threaded loaders */
-                            prec('L', (unsigned char *)(etab[eid].Orowsetl + etab[par].s*(Orown-1)), eid);
+                        }
+                        else {                /* either multi ('L') or single ('l') threaded loaders */
+                            if (tLastRow != Orown) { /* ensure no duplicated rows in bad file */
+                                tLastRow = Orown;
+                                prec('L', (unsigned char *)(etab[eid].Orowsetl + etab[par].s*(Orown - 1)), eid);
+                            }
                         }
                         break;
                     }
@@ -13269,6 +13312,21 @@ static char *strlo ( char *s )
     return(save);
 }
 
+static char *strtrim(char *str)
+{
+    // trim tailing space
+    size_t i = strlen(str) - 1;
+    while (str[i] == ' ') --i;
+    str[i + 1] = '\0';
+
+    // trim heading space
+    for (i = 0; str[i] == ' '; ++i);
+    if (i > 0)
+        strcpy(str, str + i);
+
+    return str;
+}
+
 /* expandtype:
  *      return SQL type string associated with a given data type
  *
@@ -14683,6 +14741,60 @@ static void addGlobalPointer(void *ptr)
         }
     }
     globalPointers[nGlobalPointers++] = ptr;
+}
+
+/* is_valid_numeric:
+*      check if the string is valid numeric
+*
+*      Input: str: string to be validate.
+*      Input: n: length of str
+*
+*      return: if str is valid numeric return 1 else return 0
+*/
+static int is_valid_numeric(const char* str, size_t n) {
+    int s = 1;
+    for (size_t i = 0; i < n; ++i) {
+        switch (s) {
+        case 1: // expect a sign or digit
+            if (str[i] == '+' || str[i] == '-') s = 2;
+            else if (isdigit(str[i])) s = 3;
+            else return 0;
+            break;
+        case 2: // expect a digit
+            if (!isdigit(str[i])) return 0;
+            s = 3;
+            break;
+        case 3: // expect option digit or dot or 'e/E'
+            if (str[i] == '.') s = 4;
+            else if (str[i] == 'e' || str[i] == 'E') s = 6;
+            else if (!isdigit(str[i])) return 0;
+            break;
+        case 4: // expect digit after a dot
+            if (!isdigit(str[i])) return 0;
+            s = 5;
+            break;
+        case 5: // now expect optional digit or 'e/E'
+            if (str[i] == 'e' || str[i] == 'E') s = 6;
+            else if (!isdigit(str[i])) return 0;
+            break;
+        case 6: // expect a sign or digit after 'e/E'
+            if (str[i] == '+' || str[i] == '-') s = 7;
+            else if (isdigit(str[i])) s = 8;
+            else return 0;
+            break;
+        case 7: // expect a digit after a sign after 'e/E'
+            if (!isdigit(str[i])) return 0;
+            s = 8;
+            break;
+        case 8: // expect optional digit
+            if (!isdigit(str[i])) return 0;
+            break;
+        default:
+            return 0;
+        }
+    }
+    if (s == 3 || s == 4 || s == 5 || s == 8) return 1;
+    return 0;
 }
 
 /* usagexit:
