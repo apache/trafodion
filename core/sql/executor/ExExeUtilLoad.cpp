@@ -931,14 +931,14 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
             {
               ComDiagsArea * da = ComDiagsArea::allocate(
                                     getGlobals()->getDefaultHeap());
-              pentry_up->setDiagsArea(da);
+              pentry_up->setDiagsAreax(da);
             }
             pentry_up->getDiagsArea()->mergeAfter(*getDiagsArea());
             getDiagsArea()->clear();
             SQL_EXEC_ClearDiagnostics(NULL);
           }
           pentry_up->upState.status = ex_queue::Q_SQLERROR;
-          pentry_up->upState.parentIndex = 
+          pentry_up->upState.parentIndex =
                                    pentry_down->downState.parentIndex;
           pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
           qparent_.up->insert();
@@ -953,13 +953,13 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
 	      pentry_up->upState.parentIndex =  pentry_down->downState.parentIndex;
         pentry_up->upState.setMatchNo(0);
 	      pentry_up->upState.status = ex_queue::Q_NO_DATA;
-	        
+
 	      // insert into parent
 	      qparent_.up->insert();
-	        
+
 	      SETSTEP(INITIAL_);
 	      qparent_.down->removeHead();
-	        
+
     	  break;
 	    }
     } // switch    
@@ -1371,7 +1371,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             &diagsArea);
         if (parserFlagSet)
             masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
-        setDiagsArea(diagsArea);
+        setDiagsAreax(diagsArea);
         if (cliRC < 0)
         {
           rowsAffected_ = 0;
@@ -1854,8 +1854,9 @@ void ExExeUtilHBaseBulkUnLoadTcb::createHdfsFileError(Int32 hdfsClientRetCode)
   ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL,
                   NULL, NULL, NULL, errorMsg, (char *)GetCliGlobals()->getJniErrorStr());
   ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
-  pentry_up->setDiagsArea(diagsArea);
+  pentry_up->setDiagsAreax(diagsArea);
 }
+
 ////////////////////////////////////////////////////////////////
 // Constructor for class ExExeUtilHbaseLoadTcb
 ///////////////////////////////////////////////////////////////

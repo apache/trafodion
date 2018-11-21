@@ -730,25 +730,25 @@ void ExProbeCacheTcb::makeReplyToParentUp(ex_queue_entry *pentry_down,
   if (rowQualifies)
     {
       // Initialize the upState.
-      up_entry->upState.parentIndex = 
+      up_entry->upState.parentIndex =
         pentry_down->downState.parentIndex;
       up_entry->upState.downIndex = qparent_.down->getHeadIndex();
       up_entry->upState.setMatchNo(pstate.matchCount_);
       up_entry->upState.status = reply_status;
 
       // Give the reply any diagsArea.  Test pcEntry_ before using it
-      // because a request that went from CANCELED_NOT_STARTED to 
-      // DONE will never be hooked up with a pcEntry_.  
+      // because a request that went from CANCELED_NOT_STARTED to
+      // DONE will never be hooked up with a pcEntry_.
       if (pstate.pcEntry_ &&
-          pstate.pcEntry_->diagsArea_) 
-        {	
-          ComDiagsArea *accumulatedDiagsArea = 
+          pstate.pcEntry_->diagsArea_)
+        {
+          ComDiagsArea *accumulatedDiagsArea =
             up_entry->getDiagsArea();
           if (accumulatedDiagsArea)
             accumulatedDiagsArea->mergeAfter(*pstate.pcEntry_->diagsArea_);
           else
             {
-              up_entry->setDiagsArea(pstate.pcEntry_->diagsArea_);
+              up_entry->setDiagsAreax(pstate.pcEntry_->diagsArea_);
               pstate.pcEntry_->diagsArea_->incrRefCount();
             }
         }
@@ -763,8 +763,8 @@ void ExProbeCacheTcb::makeReplyToParentUp(ex_queue_entry *pentry_down,
 
 ///////////////////////////////////////////////////////////////////
 
-ExProbeCacheTcb::MoveStatus 
-ExProbeCacheTcb::moveReplyToCache(ex_queue_entry &reply, 
+ExProbeCacheTcb::MoveStatus
+ExProbeCacheTcb::moveReplyToCache(ex_queue_entry &reply,
                                              ExPCE &pcEntry)
 {
   if (moveInnerExpr())
@@ -775,7 +775,7 @@ ExProbeCacheTcb::moveReplyToCache(ex_queue_entry &reply,
       if (pool_->getFreeTuple(pcEntry.innerRowTupp_))
         return MOVE_BLOCKED;
 
-      workAtp_->getTupp(probeCacheTdb().innerRowDataIdx_) = 
+      workAtp_->getTupp(probeCacheTdb().innerRowDataIdx_) =
             pcEntry.innerRowTupp_;
 
       // Evaluate the move expression on the reply.

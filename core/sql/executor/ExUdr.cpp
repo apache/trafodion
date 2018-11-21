@@ -1157,7 +1157,7 @@ NABoolean ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
   ExUdrPrivateState &privateState =
     *((ExUdrPrivateState *) downEntry->pstate);
 
-  // Initialize the up queue entry. 
+  // Initialize the up queue entry.
   //
   // copyAtp() will copy all tuple pointers and the diags area from
   // the down queue entry to the up queue entry.
@@ -1168,29 +1168,27 @@ NABoolean ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
   //
   if (status == ex_queue::Q_NO_DATA && privateState.matchCount_ > 0)
   {
-    downEntry->setDiagsArea(NULL);
+    downEntry->setDiagsAreax(NULL);
     upEntry->copyAtp(downEntry);
   }
   else
   {
     upEntry->copyAtp(downEntry);
-    downEntry->setDiagsArea(NULL);
+    downEntry->setDiagsAreax(NULL);
   }
 
   upEntry->upState.status = status;
   upEntry->upState.parentIndex = downEntry->downState.parentIndex;
   upEntry->upState.downIndex = qParent_.down->getHeadIndex();
   upEntry->upState.setMatchNo(privateState.matchCount_);
-  
+
   // Move any diags to the up queue entry
   if (diags != NULL)
   {
     ComDiagsArea *atpDiags = upEntry->getDiagsArea();
     if (atpDiags == NULL)
     {
-      // setDiagsArea() does not increment the reference count
-      upEntry->setDiagsArea(diags);
-      diags->incrRefCount();
+      upEntry->shareDiagsArea(diags);
     }
     else if (atpDiags != diags)
     {
@@ -2907,7 +2905,7 @@ ExWorkProcRetcode ExUdrTcb::returnSingleRow()
                     UdrDebug1("  [WORK]   outputExpr.eval() returned %s",
                               GetExpStatusString(expStatus));
                   }
-                  
+
                   workAtp_->getTupp(myTdb().getReplyTuppIndex()).release();
                 }
 
@@ -2931,26 +2929,24 @@ ExWorkProcRetcode ExUdrTcb::returnSingleRow()
                     // entry because the entry is about to be
                     // abandoned.
                     predSatisfied = FALSE;
-                    upEntry->setDiagsArea(NULL);
+                    upEntry->setDiagsAreax(NULL);
                   }
                 }
-                
+
                 // 4. Move server diags to the up queue entry
                 if (predSatisfied && returnedDiags)
                 {
                   ComDiagsArea *atpDiags = upEntry->getDiagsArea();
                   if (atpDiags == NULL)
                   {
-                    // setDiagsArea() does not increment the reference count
-                    upEntry->setDiagsArea(returnedDiags);
-                    returnedDiags->incrRefCount();
+                    upEntry->shareDiagsArea(returnedDiags);
                   }
                   else
                   {
                     atpDiags->mergeAfter(*returnedDiags);
                   }
                 }
-                  
+
                 // 5. Return an up queue entry
                 if (predSatisfied)
                 {

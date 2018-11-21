@@ -427,8 +427,8 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
   ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
 
   // set sqlparserflags to allow change of audit attribute
-  masterGlob->getStatement()->getContext()->setSqlParserFlags(0x400); // ALLOW_AUDIT_CHANGE	
-  
+  masterGlob->getStatement()->getContext()->setSqlParserFlags(0x400); // ALLOW_AUDIT_CHANGE
+
   // make table unaudited
   char stmt[500];
   strcpy(stmt, "alter ");
@@ -447,10 +447,10 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
   strcat(stmt, ";");
   ComDiagsArea *diagsArea = getDiagsArea();
   retcode = cliInterface()->executeImmediate
-    (stmt, NULL, NULL, TRUE, NULL, 0, &diagsArea); 
-  setDiagsArea(diagsArea);
+    (stmt, NULL, NULL, TRUE, NULL, 0, &diagsArea);
+  setDiagsAreax(diagsArea);
   masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x400); // ALLOW_AUDIT_CHANGE
-  
+
   if (retcode < 0)
     return retcode;
 
@@ -465,7 +465,7 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
 }
 
 void ExExeUtilTcb::handleErrors(Lng32 rc)
-{ 
+{
   cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 }
 
@@ -474,7 +474,7 @@ short ExExeUtilTcb::initializeInfoList(Queue* &infoList)
   return cliInterface()->initializeInfoList(infoList, infoListIsOutputInfo_);
 }
 
-short ExExeUtilTcb::fetchAllRows(Queue * &infoList, 
+short ExExeUtilTcb::fetchAllRows(Queue * &infoList,
 				 char * query,
 				 Lng32 numOutputEntries,
 				 NABoolean varcharFormat,

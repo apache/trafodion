@@ -531,19 +531,19 @@ short ExExplainTcb::processExplainStmt()
     {
       explainFragLen_ = str_decoded_len(cliInterface.getExplainDataLen());
       explainFrag_ = new(getHeap()) char[explainFragLen_];
-      if (str_decode(explainFrag_, explainFragLen_, 
+      if (str_decode(explainFrag_, explainFragLen_,
                      cliInterface.getExplainDataPtr(), cliInterface.getExplainDataLen()) < 0)
         {
           diagsArea = pEntryDown->getAtp()->getDiagsArea();
           ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                           &diagsArea, EXE_NO_EXPLAIN_INFO);
           if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-            pEntryDown->getAtp()->setDiagsArea(diagsArea);
+            pEntryDown->getAtp()->setDiagsAreax(diagsArea);
           goto label_error2;
         }
 
       // skip ExplainReposInfo and point explainAddr to actual explain structures.
-      setExplainAddr((Int64)&explainFrag_[sizeof(ExplainReposInfo)]);  
+      setExplainAddr((Int64)&explainFrag_[sizeof(ExplainReposInfo)]);
     }
   else
     {
@@ -551,24 +551,24 @@ short ExExplainTcb::processExplainStmt()
       ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                       &diagsArea, EXE_NO_EXPLAIN_INFO);
       if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-        pEntryDown->getAtp()->setDiagsArea(diagsArea);
+        pEntryDown->getAtp()->setDiagsAreax(diagsArea);
       goto label_error2;
     }
 
 label_return:
   cliInterface.executeImmediate("control session reset 'EXPLAIN';");
   return 0;
-  
+
 label_error:
   diagsArea = pEntryDown->getAtp()->getDiagsArea();
 
   if (diagsArea == NULL)
     diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-  
+
   cliInterface.retrieveSQLDiagnostics(diagsArea);
-  
+
   if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-    pEntryDown->getAtp()->setDiagsArea(diagsArea);
+    pEntryDown->getAtp()->setDiagsAreax(diagsArea);
 
 label_error2:
   cliInterface.executeImmediate("control session reset 'EXPLAIN';");
@@ -849,7 +849,7 @@ short ExExplainTcb::work()
 	    default:
 	      return WORK_BAD_ERROR;
 	    }
-	  
+
           if (workState_ != EXPL_DONE)
             {
               if (qid_ != NULL)
@@ -871,7 +871,7 @@ short ExExplainTcb::work()
               ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                               &diagsArea, EXE_NO_EXPLAIN_INFO);
               if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-                pEntryDown->getAtp()->setDiagsArea(diagsArea);
+                pEntryDown->getAtp()->setDiagsAreax(diagsArea);
               workState_ = EXPL_ERROR;
               break;
             }
@@ -906,11 +906,11 @@ short ExExplainTcb::work()
             {
               // ERROR during unpacking.
               // Most likely case is verison-unsupported.
-              ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+              ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                               &diagsArea, EXE_NO_EXPLAIN_INFO);
               if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-                pEntryDown->getAtp()->setDiagsArea(diagsArea);
-              
+                pEntryDown->getAtp()->setDiagsAreax(diagsArea);
+
               workState_ = EXPL_ERROR;
               break;
             }
@@ -924,13 +924,13 @@ short ExExplainTcb::work()
           }
           break;
 	case EXPL_ERROR:
-	  
+
 	  // Must insert Q_SQLERROR in parent up queue.
 	  // If Parent can't take anymore, try again later.
-	  
+
 	  if (qParent_.up->isFull())
 	    return WORK_OK;
-	  
+
 	  pEntryUp = qParent_.up->getTailEntry();
 	  pEntryDown = qParent_.down->getHeadEntry();
 
@@ -987,15 +987,15 @@ ExExplainTcb::getNextExplainTree(Int64 explainFragAddr)
     {
       // Unpack the EXPLAIN Fragment
       char * explainFrag = (char*)explainFragAddr;
-      
+
       ExplainDesc *expDesc = (ExplainDesc*)explainFrag;
 
       // Set up space for reallocating objects during unpacking when
       // there is a difference in image sizes at version migration.
       //
-      
+
       ex_queue_entry *pEntryDown = qParent_.down->getHeadEntry();
-      ComDiagsArea *diagsArea = 
+      ComDiagsArea *diagsArea =
         pEntryDown->getAtp()->getDiagsArea();
       ExplainDesc dummyExpDesc;
       if ( (expDesc = (ExplainDesc *)
@@ -1003,11 +1003,11 @@ ExExplainTcb::getNextExplainTree(Int64 explainFragAddr)
         {
           // ERROR during unpacking.
           // Most likely case is verison-unsupported.
-           ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+           ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                           &diagsArea, EXE_NO_EXPLAIN_INFO);
           if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-            pEntryDown->getAtp()->setDiagsArea(diagsArea);
-          
+            pEntryDown->getAtp()->setDiagsAreax(diagsArea);
+
           workState_ = EXPL_ERROR;
           return 0;
         }
@@ -1017,13 +1017,13 @@ ExExplainTcb::getNextExplainTree(Int64 explainFragAddr)
           // due to a version upgrade. Return its new location.
           //
           explainFromAddrProcessed_ = TRUE;
-          
+
           return expDesc;
         }
     }
 
   explainFromAddrProcessed_ = FALSE;
- 
+
   workState_ = EXPL_DONE;
 
   return 0;
@@ -1053,9 +1053,9 @@ ExExplainTcb::getNextExplainTree()
     {
       // Define the pattern string
       // The Wild Card character is '\'
-      LikePatternString 
-	patternString(stmtPattern_, 
-		      (stmtPattern_ ? str_len(stmtPattern_) : 0), 
+      LikePatternString
+	patternString(stmtPattern_,
+		      (stmtPattern_ ? str_len(stmtPattern_) : 0),
 		      CharInfo::ISO88591,
 		      "\\", 1 );
 
@@ -1064,17 +1064,17 @@ ExExplainTcb::getNextExplainTree()
       if (pattern.error())
 	{
           ex_queue_entry *pEntryDown = qParent_.down->getHeadEntry();
-          ComDiagsArea *diagsArea = 
+          ComDiagsArea *diagsArea =
             pEntryDown->getAtp()->getDiagsArea();
-          ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+          ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                           &diagsArea,  EXE_INVALID_ESCAPE_SEQUENCE);
           if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-            pEntryDown->getAtp()->setDiagsArea(diagsArea);
-          
+            pEntryDown->getAtp()->setDiagsAreax(diagsArea);
+
 	  workState_ = EXPL_ERROR;
 	  return 0;
 	}
-      
+
       // A pointer to the statement being considered for a match
       Statement *stmt;
 
@@ -1091,7 +1091,7 @@ ExExplainTcb::getNextExplainTree()
 	  {
 	    if(stmt == currentStmt_) break;
 	  }
-      
+
       // Starting at the next statement, search the statement list for
       // a statement that matches the module name and statement pattern
       while(stmt = (Statement *)stmtList_->getNext())
@@ -1200,13 +1200,13 @@ ExExplainTcb::getNextExplainTree()
               // error case. Add an error entry.
 	      // Pointer to request entry in parent down queue
 	      ex_queue_entry *pEntryDown = qParent_.down->getHeadEntry();
-	      ComDiagsArea *diagsArea = 
+	      ComDiagsArea *diagsArea =
 		pEntryDown->getAtp()->getDiagsArea();
-	      ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+	      ExRaiseSqlError(getGlobals()->getDefaultHeap(),
 			      &diagsArea, EXE_NO_EXPLAIN_INFO);
 	      if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-		pEntryDown->getAtp()->setDiagsArea(diagsArea);
-  	    
+		pEntryDown->getAtp()->setDiagsAreax(diagsArea);
+
 	      workState_ = EXPL_ERROR;
 	      return 0;
             }
@@ -1694,7 +1694,7 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   OutputInfo * vi = NULL;
   char * ptr = NULL;
   Lng32 len = 0;
-  
+
   if (cliInterface.initializeInfoList(infoList, TRUE))
     {
       goto label_error;
@@ -1710,29 +1710,29 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
       (infoList->numEntries() > 1))
     {
       diagsArea = pEntryDown->getAtp()->getDiagsArea();
-      ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+      ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                       &diagsArea, EXE_NO_QID_EXPLAIN_INFO);
       if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-        pEntryDown->getAtp()->setDiagsArea(diagsArea);
+        pEntryDown->getAtp()->setDiagsAreax(diagsArea);
 
       goto label_error2;
     }
 
   infoList->position();
   vi = (OutputInfo*)infoList->getCurr();
-  
+
   if (vi->get(0, ptr, len))
     goto label_error2;
-  
+
   explainFragLen_ = str_decoded_len(len - 1); // remove trailing null terminator
   explainFrag_ = new(getHeap()) char[explainFragLen_];
   if (str_decode(explainFrag_, explainFragLen_, ptr, len - 1) < 0)
     {
       diagsArea = pEntryDown->getAtp()->getDiagsArea();
-      ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+      ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                       &diagsArea, EXE_NO_EXPLAIN_INFO);
       if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-        pEntryDown->getAtp()->setDiagsArea(diagsArea);
+        pEntryDown->getAtp()->setDiagsAreax(diagsArea);
 
       goto label_error2;
     }
@@ -1747,9 +1747,9 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
       // Return error.
       goto label_error;
     }
-    
+
   // skip ExplainReposInfo and point explainAddr to actual explain structures.
-  setExplainAddr((Int64)&explainFrag_[sizeof(ExplainReposInfo)]);  
+  setExplainAddr((Int64)&explainFrag_[sizeof(ExplainReposInfo)]);
   setReposQid(NULL, 0);
 
   NADELETEBASIC(queryBuf, getHeap());
@@ -1761,11 +1761,11 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
 
   if (diagsArea == NULL)
     diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-  
+
   cliInterface.retrieveSQLDiagnostics(diagsArea);
-  
+
   if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
-    pEntryDown->getAtp()->setDiagsArea(diagsArea);
+    pEntryDown->getAtp()->setDiagsAreax(diagsArea);
 
 label_error2:
 

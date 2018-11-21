@@ -773,7 +773,7 @@ short ex_hashj_tcb::insertResult(HashRow * hashRow) {
   upParentEntry->upState.status = ex_queue::Q_OK_MMORE;
   upParentEntry->upState.parentIndex = downParentEntry->downState.parentIndex;
   upParentEntry->upState.downIndex = parentQueue_.down->getHeadIndex();
-  
+
   // we got another result row
   pstate.matchCount_++;
   upParentEntry->upState.setMatchNo(pstate.matchCount_);
@@ -781,17 +781,14 @@ short ex_hashj_tcb::insertResult(HashRow * hashRow) {
   // move left and/or right warnings to parent
   if (pstate.accumDiags_)
     {
-      ComDiagsArea *accumulatedDiagsArea = 
+      ComDiagsArea *accumulatedDiagsArea =
 	upParentEntry->getDiagsArea();
 
       if (accumulatedDiagsArea)
 	accumulatedDiagsArea->mergeAfter(*pstate.accumDiags_);
       else
 	{
-	  upParentEntry->setDiagsArea(pstate.accumDiags_);
-	  
-	  // incr ref count after set so it doesn't get deallocated.
-	  pstate.accumDiags_->incrRefCount();
+	  upParentEntry->shareDiagsArea(pstate.accumDiags_);
 	}
 
       pstate.accumDiags_ = NULL;
@@ -799,11 +796,11 @@ short ex_hashj_tcb::insertResult(HashRow * hashRow) {
 
   // insert into parent up queue
   parentQueue_.up->insert();
-  
+
   // update operator stats
   if (bmoStats_)
     bmoStats_-> incActualRowsReturned();
-  
+
   // we can forget about the row in the workAtp
   releaseResultTupps();
 
@@ -1071,14 +1068,13 @@ ExWorkProcRetcode ex_hashj_tcb::workUp() {
 	                              (ExeErrorCode) -rc_,
                                       NULL,
                                       msg);
-              
             }
           else
             diags = ExRaiseSqlError(heap_, downParentEntry,
 	                           (ExeErrorCode) -rc_);
 
 
-          downParentEntry->setDiagsArea(diags);
+          downParentEntry->setDiagsAreax(diags);
         }
       processError(downParentEntry->getAtp());
     } break;
@@ -1099,7 +1095,7 @@ NABoolean ex_hashj_tcb::isSameInputAgain( ex_queue_entry * downParentEntry ) {
 
   // insert the previous input into the appropriate tupp in the workAtp
   workAtp_->getTupp(hashJoinTdb().prevInputTuppIndex_) = prevInputValues_;
-  
+
   NABoolean haveMark = FALSE;
   Lng32 oldDiagsAreaMark = 0;
   ComDiagsArea * da = downParentEntry->getAtp()->getDiagsArea();
@@ -1107,7 +1103,7 @@ NABoolean ex_hashj_tcb::isSameInputAgain( ex_queue_entry * downParentEntry ) {
     oldDiagsAreaMark = da->mark();
     haveMark = TRUE;
   }
-  
+
   // match the current input with the previous
   switch ( checkInputPred_->eval(downParentEntry->getAtp(), workAtp_ ) ) {
   case ex_expr::EXPR_TRUE :
@@ -3577,23 +3573,23 @@ ExWorkProcRetcode ExUniqueHashJoinTcb::workUp()
               return WORK_OK;
             }
 
-          ex_assert( rc_ , "Missing error code"); 
+          ex_assert( rc_ , "Missing error code");
 
           // we ran into a serious runtime error. Create Condition and
           // pass it to parent. rc_ has the error code.
           ComDiagsArea *da = downParentEntry->getDiagsArea();
           if(!da) {
             da = ComDiagsArea::allocate(heap_);
-            downParentEntry->setDiagsArea(da);
+            downParentEntry->setDiagsAreax(da);
           }
-            
+
           if (!da->contains((Lng32) -rc_))
             {
               *da << DgSqlCode(-rc_);
             }
 
           processError(downParentEntry->getAtp());
-          break;      
+          break;
         }
       }
   }

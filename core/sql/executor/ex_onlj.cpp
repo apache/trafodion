@@ -646,9 +646,9 @@ ExWorkProcRetcode ExOnljTcb::work_phase2()
 	  if (lda  && (lda->mainSQLCODE() < 0))
 	    {
 	      // This will be true if an insert into index raises a nonfatal error
-	      // In that case, don't want to pass this to the right tree 
-	      // which in this case will be a union of undos. This is 
-	      // because we don't want to see the same diags twice.     
+	      // In that case, don't want to pass this to the right tree
+	      // which in this case will be a union of undos. This is
+	      // because we don't want to see the same diags twice.
 	      // save the diags from the left in the pstate
 	      if (pstate.accumDiags_)
 		{
@@ -657,29 +657,26 @@ ExWorkProcRetcode ExOnljTcb::work_phase2()
 	      else
 		{
 		  pstate.accumDiags_ = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-		  pstate.accumDiags_->mergeAfter(*lda);  
-		    
-		} 
-	    
+		  pstate.accumDiags_->mergeAfter(*lda);
+		}
 
 	    }
-	  // Note: SET behavior (ignore dup rows for indexes is not enabled so 
+	  // Note: SET behavior (ignore dup rows for indexes is not enabled so
           // the case where (lda->mainSQLCODE == 0)  won't get executed.
           // If it is enabled in the future,  we would get an empty diags
 	  // with the OK_MMORE reply.  In that case, don't merge anything into
-	  // pstate diags but send the entry to the undo tree to be 
-	  // undone from base table and possibly other indices. 
+	  // pstate diags but send the entry to the undo tree to be
+	  // undone from base table and possibly other indices.
 	  if (lda && ((lda->mainSQLCODE() <0) || (lda->mainSQLCODE()) == 0))
 	    {
 	      // Don't pass diags area to right
-	      lentry->setDiagsArea(NULL);
+	      lentry->setDiagsAreax(NULL);
 	      // Adjust the rowcount in the statement globals
 	      // Subtract the rows that were "undone"
-              //if we have already subtracted rowcount once for  this 
+              //if we have already subtracted rowcount once for  this
 	      // parent entry don't do it again. We only have to do it once per parent entry row.
 	      if (!pstate.rowAlreadyRaisedNFError_)
 		{
-		  
 		  ExMasterStmtGlobals *g = getGlobals()->
 		    castToExExeStmtGlobals()->castToExMasterStmtGlobals();
 		  Int64 rowsAffected = g->getRowsAffected();
@@ -688,7 +685,6 @@ ExWorkProcRetcode ExOnljTcb::work_phase2()
 		      g->setRowsAffected(rowsAffected - 1);
 		      pstate.rowAlreadyRaisedNFError_ = TRUE;
 		    }
-		
 		  else
 		    ex_assert(g, "Rowset insert has a flow node that is not in the master executor");
 		}
@@ -948,31 +944,30 @@ ExWorkProcRetcode ExOnljTcb::work_phase2()
 	{
 	  ex_queue_entry * uentry = qparent_.up->getTailEntry();
 	  ComDiagsArea *da = uentry->getDiagsArea();
-	  if (da == NULL) 
+	  if (da == NULL)
 	  {
 	    da = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-	    uentry->setDiagsArea(da);
+	    uentry->setDiagsAreax(da);
 	  }
-	  da->insertIntoRowsetRowCountArray(((Lng32) pstate.srcRequestCount_), 
+	  da->insertIntoRowsetRowCountArray(((Lng32) pstate.srcRequestCount_),
 					      0,
 					      onljTdb().getRowsetRowCountArraySize(),
 					      getGlobals()->getDefaultHeap());
 	}
 
       }
-      if (onljTdb().isRowsetIterator() && 
+      if (onljTdb().isRowsetIterator() &&
 	  onljTdb().isNonFatalErrorTolerated())
 	{
 	  // These maybe nonfatal errors which need to be consumed
 	  // schedule work phase 3 for this
-	  exceptionEvent3_->schedule(); 
+	  exceptionEvent3_->schedule();
        	}
       break;
 
     case ex_queue::Q_INVALID:
       ex_assert(0,"ExOnljTcb::work_phase2() INVALID returned by left queue");
       break;
-      
     } // end of switch on status from right
   } // end of for
 
@@ -1072,30 +1067,29 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
           continue;
 
         if (request == ex_queue::GET_N &&
-          pentry->downState.requestValue <= (Lng32)pstate.matchCount_) 
+          pentry->downState.requestValue <= (Lng32)pstate.matchCount_)
         {
           cancelParentRequest(pentry);
           continue;
         }
 	rda = rentry->getDiagsArea();
 
-       	// The Insert operator returns a OK_MMORE with a DA that contains a 
-	//negative sqlcode only in case of non fatal errors.  
-	//Until then, this assumption is fine 
-	if (rda && onljTdb().isRowsetIterator() && 
-	    onljTdb().isNonFatalErrorTolerated() && 
+       	// The Insert operator returns a OK_MMORE with a DA that contains a
+	//negative sqlcode only in case of non fatal errors.
+	//Until then, this assumption is fine
+	if (rda && onljTdb().isRowsetIterator() &&
+	    onljTdb().isNonFatalErrorTolerated() &&
 	    rda->mainSQLCODE() < 0)
 	  {
 	    // Project this NF error to the parent as a Q_SQLERROR
-	    // set the row index to NONFATAL_ERROR and allow the parent node 
-	    // to set the actual row index 
-	    rda->setAllRowNumber(ComCondition::NONFATAL_ERROR) ;  
+	    // set the row index to NONFATAL_ERROR and allow the parent node
+	    // to set the actual row index
+	    rda->setAllRowNumber(ComCondition::NONFATAL_ERROR);
 	    if (!qparent_.up->isFull())
 	      {
 		// set the non fatal error tobe set flag
 		rda->setNonFatalErrorIndexToBeSet(TRUE);
-		uentry->setDiagsArea(rda);
-		rda->incrRefCount();
+		uentry->shareDiagsArea(rda);
 		uentry->upState.status = ex_queue::Q_SQLERROR;
 		uentry->upState.downIndex = phaseThree;
 		uentry->upState.parentIndex = pentry->downState.parentIndex;
@@ -1107,21 +1101,20 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	      return WORK_OK;
 	  }
 
-	
 	//in some cases when we are ignoring dup keys, we may get diags
 	// with no sqlcode - i.e an empty diags area.
-	// In that case, project the entry to the TSJ2 as a 
-	// Q_REC_SKIPPED. This way in phase2 of TSJ2 the counting will be 
+	// In that case, project the entry to the TSJ2 as a
+	// Q_REC_SKIPPED. This way in phase2 of TSJ2 the counting will be
 	// accurate for any other NF errors other than dup that unpack  or
 	// the PA have raised.
 	// In phase 3 of TSJ2 it will get consumed.
-        if (rda && onljTdb().isRowsetIterator() && 
-	    onljTdb().isNonFatalErrorTolerated() && 
+        if (rda && onljTdb().isRowsetIterator() &&
+	    onljTdb().isNonFatalErrorTolerated() &&
 	    (rda->mainSQLCODE() == 0))
-	  {	    
+	  {
 	      if (!qparent_.up->isFull())
 	      {
-		uentry->setDiagsArea(NULL);
+		uentry->setDiagsAreax(NULL);
 		uentry->upState.status = ex_queue::Q_REC_SKIPPED;
 		uentry->upState.downIndex = phaseThree;
 		uentry->upState.parentIndex = pentry->downState.parentIndex;
@@ -1132,8 +1125,7 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	    else
 	      return WORK_OK;
 	  }
-       
-	  
+
         // row returned from right. Give to parent
         ex_assert(!isSemiJoin() || rentry->upState.getMatchNo() == 1,
             "ex_queue::work3() Right returned > 1 row for Semi-join");
@@ -1272,10 +1264,10 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	if (onljTdb().getRowsetRowCountArraySize() > 0)
 	  {
 	    da = uentry->getDiagsArea();
-	    if (da == NULL) 
+	    if (da == NULL)
 	      {
 		da = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-		uentry->setDiagsArea(da);
+		uentry->setDiagsAreax(da);
 	      }
 	    Int64 rowsAffected = 0;
 	    if (rentry->getDiagsArea()) {
@@ -1283,7 +1275,7 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	      rentry->getDiagsArea()->setRowCount(0);
 	    }
 
-	    da->insertIntoRowsetRowCountArray(((Lng32) pstate.tgtRequestCount_+1), 
+	    da->insertIntoRowsetRowCountArray(((Lng32) pstate.tgtRequestCount_+1),
 					      rowsAffected,
 					      onljTdb().getRowsetRowCountArraySize(),
 					      getGlobals()->getDefaultHeap());
@@ -1420,7 +1412,7 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
         pstate.outerMatched_ = ExConstants::EX_FALSE;
 
         break;
-        
+
       case ex_queue::Q_SQLERROR:
 
         // if parent doesn't want any more rows then ignore this row
@@ -1443,8 +1435,7 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
         if (isLeftJoin())
         {
           uentry->copyAtp(qleft_.up->getHeadEntry());
-          uentry->setDiagsArea(rentry->getDiagsArea());
-          rentry->getDiagsArea()->incrRefCount();
+          uentry->shareDiagsArea(rentry->getDiagsArea());
         }
         else
         {
@@ -1462,10 +1453,10 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	    ex_assert(da, "To set RowNumber, an error condition must be present in the diags area");
 	    da->setAllRowNumber((Lng32)(pstate.tgtRequestCount_)+1);
 	  }
-	 	 	  
+
 	// insert into parent up queue
 	qparent_.up->insert();
-	   
+
         if (! onljTdb().isNonFatalErrorTolerated())
           cancelParentRequest(pentry);
 
@@ -1550,7 +1541,7 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	      {
 		if (qparent_.up->isFull())
 		  return WORK_OK;
-	 	   
+
 		uentry->copyAtp(lentry);
 		uentry->upState.status = lentry->upState.status;
 		uentry->upState.downIndex = phaseThree;
@@ -1567,23 +1558,21 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
         else if (lentry->upState.status == ex_queue::Q_NO_DATA)
           {
             // if a warning was returned from left with EOD, return that
-            // warning to parent. 
-	   
+            // warning to parent.
+
             ComDiagsArea *da = lentry->getDiagsArea();
-            if (da) 
-              {	
+            if (da)
+              {
 		ComDiagsArea *accumulatedDiagsArea = uentry->getDiagsArea();
 		if (accumulatedDiagsArea)
 		  accumulatedDiagsArea->mergeAfter(*da);
 		else
 		  {
-		    uentry->setDiagsArea(da);
-		    da->incrRefCount();
+		    uentry->shareDiagsArea(da);
 		  }
-		  
               }
           } // EOD from left
-	
+
         // BertBert VVV
         if (lentry->upState.status == ex_queue::Q_GET_DONE)
           {
@@ -1624,16 +1613,14 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
     if (qparent_.up->isFull())
       return WORK_OK;
 
-  
-  
     ComDiagsArea *parentDiagsArea = pentry->getDiagsArea();
     // pentry contains all the errors sent in the parent GET_ALL request
-    // If there are errors raised in the CLI they will be here. Merge these 
-    // into the upentry's diags area 
+    // If there are errors raised in the CLI they will be here. Merge these
+    // into the upentry's diags area
     if (onljTdb().isRowsetIterator() && onljTdb().isNonFatalErrorTolerated() )
       {
-	if (parentDiagsArea) // This may have been set by the right child 
-	  // TSJ1 in the daigs below if there were nonfatal errors 
+	if (parentDiagsArea) // This may have been set by the right child
+	  // TSJ1 in the daigs below if there were nonfatal errors
 	  {
 	    // remove the EXE_NONFATAL.. condition/s if any
 	    parentDiagsArea->removeLastNonFatalCondition();
@@ -1641,25 +1628,23 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	    if (upDiags)
 	      {
 		upDiags->mergeAfter(*parentDiagsArea);
-	      
 	      }
 	    else
 	      {
-		uentry->setDiagsArea(parentDiagsArea);
-		parentDiagsArea->incrRefCount();
+		uentry->shareDiagsArea(parentDiagsArea);
 	      }
 	  }
       }
 
 
-    // merge any diags from the upentry with any diags that may be in the 
+    // merge any diags from the upentry with any diags that may be in the
     // parent entry diags area.
     NABoolean anyRowsAffected = FALSE;
     ExMasterStmtGlobals *g = getGlobals()->
       castToExExeStmtGlobals()->castToExMasterStmtGlobals();
-   
-    // if a  split-top is returning a diags area, 
-    // set the accumulated diags in the parent entry. 
+
+    // if a  split-top is returning a diags area,
+    // set the accumulated diags in the parent entry.
     // It could also be that the IM and undo nodes raised a few nonfatal errors
     // and all these are being returned in the IM and undo tree's parent node
     //  TSJ3's  pstate.accumDiags_ with a Q_NO_DATA.
@@ -1672,30 +1657,30 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
     //                                               TSJ1       TSJ3
     //                                            /    \         /\
     //                                     Unpack       Insert  IM Undo
-    //                                                  base       
+    //                                                  base
 
-      if (pstate.accumDiags_ )  
-	{ 
-	  ComDiagsArea *upDiags = uentry->getDiagsArea();	 
+      if (pstate.accumDiags_ )
+	{
+	  ComDiagsArea *upDiags = uentry->getDiagsArea();
 	  if (upDiags)
-	    {	    
+	    {
 	      upDiags->mergeAfter(*pstate.accumDiags_);
 	      pstate.accumDiags_->decrRefCount();
 	    }
 	  else
 	    // move diags area to the ATP, reference count
 	    // in the diags area stays the same
-	    uentry->setDiagsArea(pstate.accumDiags_);	
+	    uentry->setDiagsAreax(pstate.accumDiags_);
 	}
       pstate.accumDiags_ = NULL;
       // Compute the rows affected and set the NF warning for any errors coming from the left or right.
       if (onljTdb().isRowsetIterator() && onljTdb().isNonFatalErrorTolerated() && onljTdb().isSetNFErrorJoin())
 	{
 	  if (g)
-	    {		 
-	      Int64 rowsAffected = g->getRowsAffected();	  
+	    {
+	      Int64 rowsAffected = g->getRowsAffected();
 	      if (g->getRowsAffected() > 0)
-		anyRowsAffected = TRUE;	  
+		anyRowsAffected = TRUE;
 	    }
 	  else
 	    ex_assert(g, "Rowset insert has a flow node that is not in the master executor");
@@ -1706,15 +1691,13 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
 	  if ((mergedDiags) && (mergedDiags->mainSQLCODE() < 0))
 	    {
 	      if (anyRowsAffected)
-		*mergedDiags << DgSqlCode(EXE_NONFATAL_ERROR_SEEN);	       
-	      else 		   
+		*mergedDiags << DgSqlCode(EXE_NONFATAL_ERROR_SEEN);
+	      else
 		*mergedDiags << DgSqlCode(EXE_NONFATAL_ERROR_ON_ALL_ROWS);
 	      mergedDiags->setNonFatalErrorSeen(TRUE);
-	      
 	    }
-	} //if (onljTdb().isRowsetIterator() && onljTdb().isNonFatalErrorTolerated()) 
-              
-    
+	} //if (onljTdb().isRowsetIterator() && onljTdb().isNonFatalErrorTolerated())
+
       uentry->upState.status = ex_queue::Q_NO_DATA;
       uentry->upState.downIndex = phaseThree;
       uentry->upState.setMatchNo(pstate.rowCount_);
@@ -1723,9 +1706,9 @@ ExWorkProcRetcode ExOnljTcb::work_phase3()
       // insert into parent up queue
       qparent_.up->insert();
       // done with this parent row.
-} // end of for while rows in the parent down queue
-  
-return WORK_OK;
+  } // end of for while rows in the parent down queue
+
+  return WORK_OK;
 
 }  // end of ExOnljTcb::work_phase3()
 
@@ -1770,56 +1753,52 @@ ExWorkProcRetcode ExOnljTcb::workCancel()
 NABoolean ExOnljTcb::processNonFatalErrorsInLeftUpQueue(NABoolean &project,
 							NABoolean &consumed)
 { 
-  
-  queue_index    phaseThree;  
+
+  queue_index    phaseThree;
   project = FALSE; consumed = FALSE;
   phaseThree = qparent_.down->getHeadIndex();
   ex_queue_entry * uentry = qparent_.up->getTailEntry();
   ex_queue_entry * pentry = qparent_.down->getHeadEntry();
   ExOnljPrivateState &pstate = *((ExOnljPrivateState*) pentry->pstate);
-  if ((onljTdb().isRowsetIterator() && 
+  if ((onljTdb().isRowsetIterator() &&
        onljTdb().isNonFatalErrorTolerated()))
     {
-     
-      while (!qleft_.up->isEmpty() && pstate.leftOnlyRows_ && 
+
+      while (!qleft_.up->isEmpty() && pstate.leftOnlyRows_ &&
 	     ((qleft_.up->getHeadEntry()->upState.status == ex_queue::Q_SQLERROR)
 	     ||
 	      (qleft_.up->getHeadEntry()->upState.status == ex_queue::Q_REC_SKIPPED)
 	      )
 	     )
         {
-          
-	
 	  ComDiagsArea *lentryDa = qleft_.up->getHeadEntry()->getDiagsArea();
 	  // If this error has not yet been projected to the top TSJ for setting
 	  // the correct row index, project it (This is done by the first level
 	  // TSJ
-	  if ( lentryDa && !lentryDa->getNonFatalErrorIndexToBeSet() )	   
-	    {	      
+	  if ( lentryDa && !lentryDa->getNonFatalErrorIndexToBeSet() )
+	    {
 	      if (!qparent_.up->isFull())
 		{
 		  if ( qleft_.up->getHeadEntry()->upState.status== ex_queue::Q_REC_SKIPPED)
-                    uentry->setDiagsArea(NULL);
+                    uentry->setDiagsAreax(NULL);
                   else
 		    {
 		      lentryDa->setNonFatalErrorIndexToBeSet(TRUE);
-		      uentry->setDiagsArea(lentryDa);
-		      lentryDa->incrRefCount();
+		      uentry->shareDiagsArea(lentryDa);
 		    }
 		  uentry->upState.status = qleft_.up->getHeadEntry()->upState.status;
 		  uentry->upState.downIndex = phaseThree;
 		  uentry->upState.parentIndex = pentry->downState.parentIndex;
 		  // insert into parent up queue
 		  qparent_.up->insert();
-		 
-                  // consume the left up entry - it's no longer needed  
+
+                  // consume the left up entry - it's no longer needed
 		  qleft_.up->removeHead();
 		  pstate.leftOnlyRows_--;
 		  project = TRUE;
 
                    // restore a good value for uentry
 		  uentry = qparent_.up->getTailEntry();
-		 
 		}
 	      else
 		return FALSE;

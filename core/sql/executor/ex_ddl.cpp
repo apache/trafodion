@@ -356,7 +356,7 @@ short ExDDLTcb::work()
       // restore mxcmp priority back to its original value
       if (cmp)
         {
-	  cmpStatus = 
+	  cmpStatus =
 	    cmp->changePriority(
 				currContext->getSessionDefaults()->getMxcmpPriorityDelta(), TRUE);
 	  if (cmpStatus != ExSqlComp::SUCCESS)
@@ -375,30 +375,29 @@ short ExDDLTcb::work()
           ComDiagsArea *diagsArea = up_entry->getDiagsArea();
           if (diagsArea == NULL)
             diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-	  
+
           diagsArea->mergeAfter (*cpDiagsArea);
-          up_entry->setDiagsArea(diagsArea);
+          up_entry->setDiagsAreax(diagsArea);
           cpDiagsArea->decrRefCount();
         }
 
-      up_entry->upState.parentIndex = 
+      up_entry->upState.parentIndex =
 	pentry_down->downState.parentIndex;
-      
+
       up_entry->upState.setMatchNo(pstate.matches_);
       up_entry->upState.status = ex_queue::Q_NO_DATA;
-      
+
       // insert into parent
       qparent_.up->insert();
-      
+
       pstate.init();
       qparent_.down->removeHead();
-      
+
       if (ddlTdb().workCriDesc_)
 	workAtp_->release();
 
       currContext->ddlStmtsExecuted() = TRUE;
-       
-    } // while 
+    } // while
   return WORK_OK;
 }
 
@@ -835,19 +834,19 @@ void ExDDLTcb::handleErrors(ex_queue_entry *pentry_down, ComDiagsArea *da, Int32
   if (error == ExSqlComp::ERROR)
     up_entry->upState.status = ex_queue::Q_SQLERROR;
   else
-   up_entry->upState.status = ex_queue::Q_OK_MMORE; 
+   up_entry->upState.status = ex_queue::Q_OK_MMORE;
 
   // Merge the diagsArea and do no pass what is got from the
   // compiler. If the diagsArea from the compiler is passed
-  // thro' the queue entry the diagsArea gets deleted when 
-  // its merged with the cli. So, when the next error occurs 
+  // thro' the queue entry the diagsArea gets deleted when
+  // its merged with the cli. So, when the next error occurs
   // ExSqlComp uses the same diagArea pointer to insert the
   // the new error_. Only now the memory does not exist because
   // it was deleted by the previous error processing.
   //  up_entry->setDiagsArea(diagsArea);
 
   ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-  
+
   if (diagsArea == NULL)
     // refCount is set to 1 in allocate(), no need to call incrRefCount().
     diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
@@ -855,8 +854,8 @@ void ExDDLTcb::handleErrors(ex_queue_entry *pentry_down, ComDiagsArea *da, Int32
     diagsArea->incrRefCount();
 
   diagsArea->mergeAfter (*da);
-  up_entry->setDiagsArea(diagsArea);
-  
+  up_entry->setDiagsAreax(diagsArea);
+
   // insert into parent
   qparent_.up->insert();
 }
@@ -1136,16 +1135,16 @@ short ExDescribeTcb::work()
 	      }
 
             char *dataPtr = up_entry->getTupp(describeTdb().tuppIndex_).getDataPointer();
-    	    
+
 	    // do the copy
             str_cpy_all(dataPtr, srcPtr, copyLen);
 
             // update the length if needed
-            if (copyLen != actualLen) 
+            if (copyLen != actualLen)
               *(short *)dataPtr = copyLen - sizeof(short);
 
 	    pstate.matches_++;
-	    
+
 	    up_entry->upState.downIndex   = qparent_.down->getHeadIndex();
 	    up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
 	    up_entry->upState.setMatchNo(pstate.matches_);
@@ -1158,8 +1157,7 @@ short ExDescribeTcb::work()
  	        if (diagsArea == NULL)
  	          diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
  	        diagsArea->mergeAfter (*da);
- 	        up_entry->setDiagsArea(da);
-	        up_entry->getAtp()->getDiagsArea()->incrRefCount();
+ 	        up_entry->shareDiagsArea(da);
                 // Reset the da for the next error/warning.
                 if (deleteTmpDa)
                    da->decrRefCount();
@@ -1188,25 +1186,24 @@ short ExDescribeTcb::work()
  	  {
             if (qparent_.up->isFull())
  	      return WORK_OK;
-	    
+
  	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
+
  	    up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
  	    up_entry->upState.setMatchNo(pstate.matches_);
  	    up_entry->upState.status = ex_queue::Q_SQLERROR;
-	    
+
  	    diagsArea = up_entry->getDiagsArea();
- 	    
+
  	    if (diagsArea == NULL)
  	      diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
- 	    
- 	    diagsArea->mergeAfter (*da);
- 	    up_entry->setDiagsArea(da);
-	    up_entry->getAtp()->getDiagsArea()->incrRefCount();
-   
+
+ 	    diagsArea->mergeAfter(*da);
+ 	    up_entry->shareDiagsArea(da);
+
  	    // insert into parent
 	    qparent_.up->insert();
-	    
+
             if (deleteTmpDa)
                da->decrRefCount();
  	    // reset the diagsArea for the next error to be set properly.
@@ -1228,8 +1225,8 @@ short ExDescribeTcb::work()
 
 	    // all ok. Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
 	    
 	    up_entry->upState.setMatchNo(pstate.matches_);

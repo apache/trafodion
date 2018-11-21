@@ -567,7 +567,7 @@ void ExCatpoundStmtTcb::processError(atp_struct *atp, ComDiagsArea *da)
 {
   ex_queue_entry *pdentry = qparent_.down->getHeadEntry();
   ex_queue_entry *puentry = qparent_.up->getTailEntry();
-  ExCatpoundStmtPrivateState &pstate = 
+  ExCatpoundStmtPrivateState &pstate =
     *((ExCatpoundStmtPrivateState*)pdentry->pstate);
 
   // set up error entry for parent up-queue
@@ -576,10 +576,10 @@ void ExCatpoundStmtTcb::processError(atp_struct *atp, ComDiagsArea *da)
   puentry->upState.parentIndex = pdentry->downState.parentIndex;
   puentry->upState.downIndex = qparent_.down->getHeadIndex();
   puentry->upState.setMatchNo(pstate.rightrows_);
-  if (da) puentry->setDiagsArea(da);
+  if (da) puentry->setDiagsAreax(da);
 
   // insert entry into parent's up queue
-  qparent_.up->insert();	  
+  qparent_.up->insert();
 
   // cancel this request and all its children
   qparent_.down->cancelRequest(qparent_.down->getHeadIndex());
@@ -593,17 +593,17 @@ void ExCatpoundStmtTcb::processCardinalityError(ex_queue_entry *centry)
   // create error for diags
   ComDiagsArea *da = ExRaiseSqlError
     (getGlobals()->getDefaultHeap(), centry,
-     (ExeErrorCode)-EXE_BLOCK_CARDINALITY_VIOLATION); 
+     (ExeErrorCode)-EXE_BLOCK_CARDINALITY_VIOLATION);
   processError(centry->getAtp(), da);
 } // ExCatpoundStmtTcb::processCardinalityError
 
 
 //This method is used to raise error -EXE_CS_EOD_ROLLBACK_ERROR or
-// warning +EXE_CS_EOD. Raising this error or warning causes further processing of the 
-// CS to be stopped and if any updates were seen previously in this CS then the 
-// whole transaction is rolled back. Note that the warning EXE_CS_EOD is actually 
-//raised as an error here and and attached to a Q_SQLERROR entry. It is converted into a 
-//warning in the root::fetch or root::oltExecute method. This is done since it 
+// warning +EXE_CS_EOD. Raising this error or warning causes further processing of the
+// CS to be stopped and if any updates were seen previously in this CS then the
+// whole transaction is rolled back. Note that the warning EXE_CS_EOD is actually
+//raised as an error here and and attached to a Q_SQLERROR entry. It is converted into a
+//warning in the root::fetch or root::oltExecute method. This is done since it
 //is crucial that this warning be posted and further processing on the offending CS be stopped.
 //There is a possibility that warnings are not propogated correctly and we continue processing
 //on the CS once the warning has been raised as an actual warning. 
@@ -622,15 +622,15 @@ void ExCatpoundStmtTcb::processEODErrorOrWarning(NABoolean isWarning)
      da = ExRaiseSqlError(getGlobals()->getDefaultHeap(), puentry,
                          (ExeErrorCode)-EXE_CS_EOD_ROLLBACK_ERROR);
 
-  puentry->setDiagsArea(da);
+  puentry->setDiagsAreax(da);
   puentry->upState.status = ex_queue::Q_SQLERROR;
   puentry->upState.parentIndex = pdentry->downState.parentIndex;
   puentry->upState.downIndex = qparent_.down->getHeadIndex();
   puentry->upState.setMatchNo((Lng32)0);
-  
+
   qparent_.up->insert();
 }
-  
+
 //////////////////////////////////////////////////////////////////////////////
 // CatpoundStmtPrivateState methods.
 //////////////////////////////////////////////////////////////////////////////

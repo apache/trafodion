@@ -613,8 +613,8 @@ ExWorkProcRetcode ExTupleNonLeafTcb::work()
                   }
                 else
                   {
-                    up_entry6->setDiagsArea(tempDA);//child did not have diags area
-                                                   //use the Diags Area generated 
+                    up_entry6->setDiagsAreax(tempDA);//child did not have diags area
+                                                   //use the Diags Area generated
                                                    //by the error in the expression
                   }
 	      }

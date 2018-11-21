@@ -402,14 +402,14 @@ short encodeKeyValues(TrafDesc   * column_descs,
   ExpDP2Expr * keyEncodeExpr = new(space) ExpDP2Expr(keExpr,
 						     workCriDesc,
 						     space);
-  
-  keyEncodeExpr->getExpr()->fixup(0,expGen.getPCodeMode(), 
+
+  keyEncodeExpr->getExpr()->fixup(0,expGen.getPCodeMode(),
                                   (ex_tcb *)space,space, h, FALSE, NULL);
 
   atp_struct * workAtp = keyEncodeExpr->getWorkAtp();
   workAtp->getTupp(keyAtpIndex).setDataPointer(encodedKeyBuffer);
-  workAtp->setDiagsArea(diagsArea);
-  
+  workAtp->setDiagsAreax(diagsArea);
+
   if (keyEncodeExpr->getExpr()->eval(workAtp, 0, space) == ex_expr::EXPR_ERROR)
     error = -1;
 

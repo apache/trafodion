@@ -425,8 +425,8 @@ ExEspStmtGlobals * ExExeStmtGlobals::castToExEspStmtGlobals()
 /*
 --
 --   Calls to this method should not be confused with calls
---   to method atp_struct::setDiagsArea. Callers of this 
---   method should make sure to decrement the reference 
+--   to method atp_struct::setDiagsArea. Callers of this
+--   method should make sure to decrement the reference
 --   counter of the Diags if the latter was just created
 --   prior to calling this method. The code fragment below
 --   presents an example:

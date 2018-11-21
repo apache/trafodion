@@ -291,16 +291,16 @@ short ExTupleFlowTcb::work()
 			    }
 			  else
 			    {
-			      tgt_entry->downState.request = 
+			      tgt_entry->downState.request =
 				ex_queue::GET_EOD;
 			    }
 
-			  tgt_entry->downState.requestValue = 
+			  tgt_entry->downState.requestValue =
 			    pentry_down->downState.requestValue;
-			  tgt_entry->downState.parentIndex = 
+			  tgt_entry->downState.parentIndex =
                             (Lng32) pstate.srcRequestCount_;
 			  tgt_entry->copyAtp(src_entry);
-			  
+
 			  qTgt_.down->insert();
                           pstate.tgtRequests_++;
 			}
@@ -314,40 +314,40 @@ short ExTupleFlowTcb::work()
 			  if (qParent_.up->isFull())
 			    return WORK_OK;
 
-			  ex_queue_entry * up_entry = 
+			  ex_queue_entry * up_entry =
 			    qParent_.up->getTailEntry();
 
                           if (src_entry->getDiagsArea())
                             src_entry->getDiagsArea()->incrRefCount();
 
-			  up_entry->setDiagsArea(src_entry->getDiagsArea());
+			  up_entry->setDiagsAreax(src_entry->getDiagsArea());
 			}
 
 		      qSrc_.up->removeHead();
-		      
+
 		      pstate.srcEOD_ = TRUE;
-                      
+
 		      if (tflowTdb().sendEODtoTgt())
 			pstate.step_ = MOVE_EOD_TO_TGT_;
 		    }
 		    break;
-		    
+
 		  case ex_queue::Q_SQLERROR:
                     {
 	              if (qParent_.up->isFull())
 	                return WORK_OK;
-	    
+
 	              ex_queue_entry * pentry = qParent_.up->getTailEntry();
 		      ComDiagsArea * da = src_entry->getDiagsArea();
 		      ex_assert(da, "We have a Q_SQLERROR in Tupleflow but no diags area");
-		      
+
 		      if (tflowTdb().isNonFatalErrorTolerated() &&
-			 (da->getNextRowNumber(ComCondition::NONFATAL_ERROR) == 
-			  ComCondition::NONFATAL_ERROR)) 
+			 (da->getNextRowNumber(ComCondition::NONFATAL_ERROR) ==
+			  ComCondition::NONFATAL_ERROR))
 			{
-			  pstate.nonFatalErrorSeen_ = TRUE;		
+			  pstate.nonFatalErrorSeen_ = TRUE;
 			}
-		      else 
+		      else
 			{
 			  pstate.step_ = HANDLE_ERROR_;
 			  pstate.nonFatalErrorSeen_ = FALSE;
@@ -355,37 +355,36 @@ short ExTupleFlowTcb::work()
 
 		      pstate.srcRequestCount_++;
 		      if(tflowTdb().isRowsetIterator())
-	                da->setAllRowNumber((Lng32) pstate.srcRequestCount_); 
+	                da->setAllRowNumber((Lng32) pstate.srcRequestCount_);
 
                       ComDiagsArea *accumulatedDiagsArea = pentry->getDiagsArea();
 			if (accumulatedDiagsArea)
 			  {
 			    accumulatedDiagsArea->mergeAfter(*da);
-			    if (!(accumulatedDiagsArea->canAcceptMoreErrors()) && 
-				tflowTdb().isNonFatalErrorTolerated()) 
+			    if (!(accumulatedDiagsArea->canAcceptMoreErrors()) &&
+				tflowTdb().isNonFatalErrorTolerated())
 			      {
 				pstate.nonFatalErrorSeen_ = FALSE;
-				pstate.step_ = HANDLE_ERROR_; 
+				pstate.step_ = HANDLE_ERROR_;
 			      }
 			  }
                         else
 			  {
-			    pentry->setDiagsArea(da);
-			    da->incrRefCount();
+			    pentry->shareDiagsArea(da);
 			    accumulatedDiagsArea = da ;
-			    if (tflowTdb().isNonFatalErrorTolerated()) 
+			    if (tflowTdb().isNonFatalErrorTolerated())
 			      {
 				ComDiagsArea *cliDiagsArea = pentry_down->getDiagsArea();
 				da->setLengthLimit(cliDiagsArea->getLengthLimit());
 			      }
 			  }
 
-			// For Non-Fatal errors we will remove this Q_SQLERROR reply from the 
+			// For Non-Fatal errors we will remove this Q_SQLERROR reply from the
 			// left child right below as we will continue to stay in this state (MOVE_SRC_TO_TGT_).
 			// For fatal errors this Q_SQLERROR reply is removed in HANDLE_ERROR step to which
 			// we will transition immediately.
 			if (pstate.nonFatalErrorSeen_ == TRUE)
-			  qSrc_.up->removeHead();	
+			  qSrc_.up->removeHead();
                     }
                     break;
 
@@ -394,7 +393,7 @@ short ExTupleFlowTcb::work()
 		      pstate.srcRequestCount_++;
 		      ComDiagsArea * da = src_entry->getDiagsArea();
 		      if (da)
-			pstate.nonFatalErrorSeen_ = TRUE;		  
+			pstate.nonFatalErrorSeen_ = TRUE;
 		      qSrc_.up->removeHead();
                     }
                     break;
@@ -484,29 +483,27 @@ short ExTupleFlowTcb::work()
 			    // Non-atomic Rowsets sends OK_MMORE with non-empty diags from child
 			    // empty diags (mainsqlcode == 0) implies OK_MMORE sent by ignoreDupKey code
 			    // when NAR is on, for -8102 error.  Just consume the OK_MMORE.
-			    
-			    if(tflowTdb().isRowsetIterator()) 
+			    if(tflowTdb().isRowsetIterator())
 			      {
 				da->setAllRowNumber(Lng32 (tgt_entry->upState.parentIndex));
 			      }
-			    
+
 			    pstate.nonFatalErrorSeen_ = TRUE;
 			    ex_queue_entry * pentry = qParent_.up->getTailEntry();
 			    ComDiagsArea *accumulatedDiagsArea = pentry->getDiagsArea();
 			    if (accumulatedDiagsArea)
 			      {
 				accumulatedDiagsArea->mergeAfter(*da);
-				if (!(accumulatedDiagsArea->canAcceptMoreErrors()) && 
-				    tflowTdb().isNonFatalErrorTolerated()) 
+				if (!(accumulatedDiagsArea->canAcceptMoreErrors()) &&
+				    tflowTdb().isNonFatalErrorTolerated())
 				  {
 				    pstate.nonFatalErrorSeen_ = FALSE;
-				    pstate.step_ = HANDLE_ERROR_; 
+				    pstate.step_ = HANDLE_ERROR_;
 				  }
 			      }
 			    else
 			      {
-				pentry->setDiagsArea(da);
-				da->incrRefCount();
+				pentry->shareDiagsArea(da);
 				if (tflowTdb().isNonFatalErrorTolerated()) {
 				  ComDiagsArea *cliDiagsArea = pentry_down->getDiagsArea();
 				  da->setLengthLimit(cliDiagsArea->getLengthLimit());
@@ -518,7 +515,7 @@ short ExTupleFlowTcb::work()
 		      qTgt_.up->removeHead();
 		    }
 		  break;
-		  
+
 		  case ex_queue::Q_NO_DATA:
 		    {
                       ComDiagsArea * da = tgt_entry->getDiagsArea();
@@ -526,12 +523,11 @@ short ExTupleFlowTcb::work()
                         {
 	                  ex_queue_entry * pentry = qParent_.up->getTailEntry();
                           ComDiagsArea *accumulatedDiagsArea = pentry->getDiagsArea();
-                          if (accumulatedDiagsArea) 
+                          if (accumulatedDiagsArea)
                             accumulatedDiagsArea->mergeAfter(*da);
                           else
                             {
-	                      pentry->setDiagsArea(da);
-                              da->incrRefCount();
+	                      pentry->shareDiagsArea(da);
 			      if (tflowTdb().isNonFatalErrorTolerated()) {
 				ComDiagsArea *cliDiagsArea = pentry_down->getDiagsArea();
 				da->setLengthLimit(cliDiagsArea->getLengthLimit());
@@ -544,37 +540,34 @@ short ExTupleFlowTcb::work()
 		      pstate.startRightIndex_++;
 		    }
 		    break;
-		    
+
 		  case ex_queue::Q_SQLERROR:
                     {
 		      if (qParent_.up->isFull())
 			return WORK_OK;
-	    
-		      ex_queue_entry * pentry = qParent_.up->getTailEntry();
-		      pentry->copyAtp(tgt_entry);  
-		      pstate.nonFatalErrorSeen_ = FALSE;
-		      pstate.step_ = HANDLE_ERROR_; 
 
-		      if(tflowTdb().isRowsetIterator()) 
+		      ex_queue_entry * pentry = qParent_.up->getTailEntry();
+		      pentry->copyAtp(tgt_entry);
+		      pstate.nonFatalErrorSeen_ = FALSE;
+		      pstate.step_ = HANDLE_ERROR_;
+
+		      if(tflowTdb().isRowsetIterator())
 		      {
 			ex_queue_entry * pentry = qParent_.up->getTailEntry();
 	                ComDiagsArea *da = pentry->getDiagsArea();
 			ex_assert(da, "To set RowNumber, an error condition must be present in the diags area");
-	                da->setAllRowNumber(Lng32 (tgt_entry->upState.parentIndex));		      
+	                da->setAllRowNumber(Lng32 (tgt_entry->upState.parentIndex));
 		      }
-	    
                     }
                     break;
-                             
+
 		  default:
 		    {
 		      ex_assert(0, "ExTupleFlowTcb::work() Error returned from tgt");
 		    }
 		    break;
-		    
 		  } // switch
-		
-	      } // while 
+	      } // while
 
             if (pstate.step_ == HANDLE_ERROR_)
               break;
@@ -695,18 +688,18 @@ short ExTupleFlowTcb::work()
             // insert Q_SQLERROR into the parent up queue
             if ((pstate.srcEOD_ == TRUE)  &&  !pstate.tgtRequests_)
               {
-	        pstate.step_ = DONE_; 
+	        pstate.step_ = DONE_;
               }
             else
               return WORK_OK;
           }
           break;
-	  
+
 	case DONE_:
 	  {
 	    if (qParent_.up->isFull())
 	      return WORK_OK;
-	    
+
 	    ex_queue_entry * pentry = qParent_.up->getTailEntry();
 
 	    if (pstate.nonFatalErrorSeen_) {
@@ -718,10 +711,9 @@ short ExTupleFlowTcb::work()
 		    da->mergeAfter(*cliDiagsArea);
 		  else
 		    {
-		      pentry->setDiagsArea(cliDiagsArea);
-		      cliDiagsArea->incrRefCount();
+		      pentry->shareDiagsArea(cliDiagsArea);
 		    }
-	      } 
+	      }
 
 	      if (cliDiagsArea->canAcceptMoreErrors()) {
 	      	  ComDiagsArea *mergedDiagsArea = pentry->getDiagsArea();
@@ -737,10 +729,10 @@ short ExTupleFlowTcb::work()
 		  ex_assert(g, "Rowset insert has a flow node that is not in the master executor");
 		  if (g->getRowsAffected() > 0)
 		    anyRowsAffected = TRUE;
-		  
+
 		  if (anyRowsAffected)
 		      *mergedDiagsArea << DgSqlCode(EXE_NONFATAL_ERROR_SEEN);
-		  else 
+		  else
 		      *mergedDiagsArea << DgSqlCode(EXE_NONFATAL_ERROR_ON_ALL_ROWS);
 
 	      } // we exceeded the Nonfatal error limit when merging with the CLI diags area
@@ -751,7 +743,7 @@ short ExTupleFlowTcb::work()
 		break ;
 	      }
 	    }
-	    
+
 	    pentry->upState.status = ex_queue::Q_NO_DATA;
 	    pentry->upState.downIndex = qParent_.down->getHeadIndex();
 	    pentry->upState.parentIndex = pentry_down->downState.parentIndex;
@@ -765,7 +757,7 @@ short ExTupleFlowTcb::work()
 	      if (da == NULL)
 		{
 		  da = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-		  pentry->setDiagsArea(da);
+		  pentry->setDiagsAreax(da);
 		}
 	      da->addRowCount(pstate.noOfUnPackedRows_);
               pstate.noOfUnPackedRows_ = 0;
@@ -780,12 +772,12 @@ short ExTupleFlowTcb::work()
 		// to parent.
 		getStatsEntry()->setActualRowsReturned(0);
 	      }
-	    
+
 	    // insert into parent up queue
 	    qParent_.up->insert();
-	    
+
 	    pstate.step_ = EMPTY_;
-	    qParent_.down->removeHead();	
+	    qParent_.down->removeHead();
 
 	    return WORK_CALL_AGAIN;  // check for more down requests
 

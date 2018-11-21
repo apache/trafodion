@@ -856,7 +856,7 @@ short ExSetSessionDefaultTcb::work()
                           defaultName);
                 goto all_ok;
               }
-               
+
 	      currContext->beginSession(&defaultValue[strlen("BEGIN")+1]);
             }
 	  else
@@ -867,12 +867,12 @@ short ExSetSessionDefaultTcb::work()
       else if (strcmp(defaultValue, "CONTINUE:CLEANUP_ESPS") == 0)
         {
           Lng32 numStoppedEsps = currContext->reduceEsps();
-          ComDiagsArea *da = 
+          ComDiagsArea *da =
             ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
           *da << DgSqlCode(EXE_CLEANUP_ESP)   // a warning.
               << DgInt0(numStoppedEsps);
           ex_queue_entry * up_entry = getParentQueue().up->getTailEntry();
-          up_entry->setDiagsArea(da);
+          up_entry->setDiagsAreax(da);
         }
       else if (strcmp(defaultValue, "END") == 0)
 	{
@@ -888,19 +888,19 @@ short ExSetSessionDefaultTcb::work()
 	} // END:CLEANUP_ESPS
       else if (strcmp(defaultValue, "END:CLEANUP_OPENS") == 0)
 	{
-	  currContext->endSession(FALSE /*do not cleanup ESPs*/, 
+	  currContext->endSession(FALSE /*do not cleanup ESPs*/,
 				  FALSE,/*not esps only*/
 				  TRUE /* cleanup opens*/);
 	} // END:CLEANUP_OPENS
       else if (strcmp(defaultValue, "END:CLEANUP_ESPS:CLEANUP_OPENS") == 0)
 	{
-	  currContext->endSession(TRUE /*cleanup ESPs*/,  
+	  currContext->endSession(TRUE /*cleanup ESPs*/,
 				  FALSE,/*not esps only*/
 				  TRUE/* cleanup opens*/);
 	} // END:CLEANUP_ESPS & OPENS
       else if (strcmp(defaultValue, "END:CLEANUP_ESPS_ONLY") == 0)
 	{
-	  currContext->endSession(TRUE /*cleanup ESPs*/, 
+	  currContext->endSession(TRUE /*cleanup ESPs*/,
 				  TRUE /*only esps*/, 
 				  FALSE);
 	} // END:CLEANUP_ESPS
@@ -1284,9 +1284,9 @@ short ExSetSessionDefaultTcb::work()
 
   if (changeEspPriority)
     {
-      IpcPriority p = 
-	(espIsDelta ? 
-	 currContext->getSessionDefaults()->getEspPriorityDelta() : 
+      IpcPriority p =
+	(espIsDelta ?
+	 currContext->getSessionDefaults()->getEspPriorityDelta() :
 	 currContext->getSessionDefaults()->getEspPriority());
 
       // adjust this, if altpri is to be done in esp.
@@ -1305,13 +1305,13 @@ short ExSetSessionDefaultTcb::work()
 	  str_itoa(ABS(rc), &errMsg[strlen(errMsg)]);
           up_entry = qparent_.up->getTailEntry();
 
-	  ComDiagsArea *  da = 
+	  ComDiagsArea *  da =
 	    ExRaiseSqlError(getGlobals()->getDefaultHeap(),
 			    up_entry,
 			    (ExeErrorCode)(15371),
 			    NULL,
 			    errMsg);
-	  up_entry->setDiagsArea(da);
+	  up_entry->setDiagsAreax(da);
 	}
     }
 
@@ -1319,17 +1319,17 @@ short ExSetSessionDefaultTcb::work()
 all_ok:
   // all ok. Return EOF.
   up_entry = qparent_.up->getTailEntry();
-  up_entry->upState.parentIndex = 
+  up_entry->upState.parentIndex =
     pentry_down->downState.parentIndex;
-  
+
   up_entry->upState.setMatchNo(0);
   up_entry->upState.status = ex_queue::Q_NO_DATA;
-  
+
   // insert into parent
   getParentQueue().up->insert();
-  
+
   getParentQueue().down->removeHead();
-  
+
   return WORK_OK;
 }
 

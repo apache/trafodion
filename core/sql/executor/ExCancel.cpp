@@ -502,9 +502,9 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
 
   if (addCondition)
     {
-      ComDiagsArea *diagsArea = 
+      ComDiagsArea *diagsArea =
         ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-      
+
       *diagsArea << DgSqlCode(-SQLCode);
 
       if (nodeName)
@@ -518,11 +518,11 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
       }
 
       diagsArea->mergeAfter(*da);
-      up_entry->setDiagsArea(diagsArea);
+      up_entry->setDiagsAreax(diagsArea);
       da->decrRefCount();
     }
   else
-    up_entry->setDiagsArea(da);
+    up_entry->setDiagsAreax(da);
 
   up_entry->upState.status = ex_queue::Q_SQLERROR;
   up_entry->upState.downIndex = qparent_.down->getHeadIndex();

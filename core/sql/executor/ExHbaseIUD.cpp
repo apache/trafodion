@@ -549,19 +549,19 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	    if (retcode == HBASE_DUP_ROW_ERROR) // row exists, return error
 	      {
 		ComDiagsArea * diagsArea = NULL;
-		ExRaiseSqlError(getHeap(), &diagsArea, 
+		ExRaiseSqlError(getHeap(), &diagsArea,
 				(ExeErrorCode)(8102));
-		pentry_down->setDiagsArea(diagsArea);
+		pentry_down->setDiagsAreax(diagsArea);
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-	      
+
 	    if (setupError(retcode, "ExpHbaseInterface::checkAndInsertRow"))
 	      {
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-	    
+
 	    if (getHbaseAccessStats())
 	      getHbaseAccessStats()->incUsedRows();
 
@@ -587,7 +587,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
             if (asyncCompleteRetryCount_ < 10)
                timeout = -1;
             else {
-               asyncOperationTimeout_ = asyncOperationTimeout_ * 2; 
+               asyncOperationTimeout_ = asyncOperationTimeout_ * 2;
                timeout = asyncOperationTimeout_;
             }
             retcode = ehi_->completeAsyncOperation(timeout, resultArray_, 1);
@@ -602,9 +602,9 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
             }
             if (resultArray_[0] == FALSE) {
 		ComDiagsArea * diagsArea = NULL;
-		ExRaiseSqlError(getHeap(), &diagsArea, 
+		ExRaiseSqlError(getHeap(), &diagsArea,
 				(ExeErrorCode)(8102));
-		pentry_down->setDiagsArea(diagsArea);
+		pentry_down->setDiagsAreax(diagsArea);
 		step_ = HANDLE_ERROR;
 		break;
             }
@@ -1050,7 +1050,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
                 ComDiagsArea * diagsArea = NULL;
                 ExRaiseSqlError(getHeap(), &diagsArea,
                                 (ExeErrorCode)(8102));
-                pentry_down->setDiagsArea(diagsArea);
+                pentry_down->setDiagsAreax(diagsArea);
                 step_ = HANDLE_ERROR;
                 break;
               }
@@ -1412,7 +1412,6 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
             srand(time(0));
 
             // Set up HDFS file for sample table.
-           
             ContextCli *currContext = getGlobals()->castToExExeStmtGlobals()->getCliGlobals()->currContext();
             Text samplePath = std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getSampleLocation()) +
                                           ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
@@ -1428,12 +1427,12 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
                     NADELETE(sampleFileHdfsClient_, HdfsClient, getHeap());
                     sampleFileHdfsClient_ = NULL;
                 }
-            } 
+            }
             if (hdfsClientRetcode != HDFS_CLIENT_OK) {
               ComDiagsArea * diagsArea = NULL;
               ExRaiseSqlError(getHeap(), &diagsArea,
                               (ExeErrorCode)(8110));
-              pentry_down->setDiagsArea(diagsArea);
+              pentry_down->setDiagsAreax(diagsArea);
               step_ = HANDLE_ERROR;
               break;
             }
@@ -1525,13 +1524,13 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           if (memcmp(prevRowId_, rowId_.val, rowId_.len) == 0)
           {
             if (((ExHbaseAccessTdb&) hbaseAccessTdb()).getNoDuplicates()  ||
-               ((NOT  ((ExHbaseAccessTdb&) hbaseAccessTdb()).getNoDuplicates()) && 
-                      hbaseAccessTdb().getContinueOnError())) { 
+               ((NOT  ((ExHbaseAccessTdb&) hbaseAccessTdb()).getNoDuplicates()) &&
+                      hbaseAccessTdb().getContinueOnError())) {
               //8110 Duplicate rows detected.
               ComDiagsArea * diagsArea = NULL;
               ExRaiseSqlError(getHeap(), &diagsArea,
                               (ExeErrorCode)(8110));
-              pentry_down->setDiagsArea(diagsArea);
+              pentry_down->setDiagsAreax(diagsArea);
               if (hbaseAccessTdb().getContinueOnError()) {
                   if (pentry_down->getDiagsArea()) {
                      Lng32 errorCount = pentry_down->getDiagsArea()->getNumber(DgSqlCode::ERROR_);
@@ -1633,7 +1632,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       case HANDLE_EXCEPTION:
       {
       exceptionCount = 0;
-      ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(), 
+      ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(),
                       hbaseAccessTdb().getErrCountRowId());
       if (hbaseAccessTdb().getMaxErrorRows() > 0)
       {
@@ -1650,7 +1649,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           //8113 max number of error rows exceeded.
           ExRaiseSqlError(getHeap(), &diagsArea,
               (ExeErrorCode)(EXE_MAX_ERROR_ROWS_EXCEEDED));
-          pentry_down->setDiagsArea(diagsArea);
+          pentry_down->setDiagsAreax(diagsArea);
           step_ = HANDLE_ERROR;
           break;
         }
@@ -1719,7 +1718,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 	{
 	  rc = 0;
 	  // moveRowToUpQueue also increments matches_
-	  if (moveRowToUpQueue(convertRow_, hbaseAccessTdb().convertRowLen(), 
+	  if (moveRowToUpQueue(convertRow_, hbaseAccessTdb().convertRowLen(),
 			       &rc, FALSE))
 	    return rc;
 	}
@@ -1735,26 +1734,26 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       {
         if (step_ == ALL_DONE && eodSeen) {
            exceptionCount = 0;
-           ExHbaseAccessTcb::getErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(), 
+           ExHbaseAccessTcb::getErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(),
                       hbaseAccessTdb().getErrCountRowId());
            errorRowCount = (Lng32) exceptionCount;
            if (errorRowCount != 0 || loggingErrorDiags_ != NULL) {
 	      ex_queue_entry * down_entry = qparent_.down->getHeadEntry();
               ComDiagsArea * diagsArea = down_entry->getDiagsArea();
               if (!diagsArea) {
-                 diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-                down_entry->setDiagsArea(diagsArea);
+                diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+                down_entry->setDiagsAreax(diagsArea);
               }
               if (loggingErrorDiags_ != NULL) {
                  diagsArea->mergeAfter(*loggingErrorDiags_);
                  loggingErrorDiags_->clear();
               }
-              if (errorRowCount > 0) 
+              if (errorRowCount > 0)
                  ExRaiseSqlWarning((NAMemory *)getHeap(), &diagsArea,
                    (ExeErrorCode)(EXE_ERROR_ROWS_FOUND), (ComCondition **)NULL, &errorRowCount);
            }
         }
- 
+
         if (handleDone(rc, (step_ == ALL_DONE ? matches_ : 0)))
           return rc;
         lastHandledStep_ = step_;
@@ -2273,14 +2272,14 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                                      tcb_->hbaseAccessTdb().useRegionXn(),
 						     -1, // colTS
                                                      tcb_->asyncOperation_,
-						     tcb_->hbaseAccessTdb().getColIndexOfPK1()); 
+						     tcb_->hbaseAccessTdb().getColIndexOfPK1());
 
 	    if (retcode == HBASE_DUP_ROW_ERROR)
 	      {
 		ComDiagsArea * diagsArea = NULL;
-		ExRaiseSqlError(tcb_->getHeap(), &diagsArea, 
+		ExRaiseSqlError(tcb_->getHeap(), &diagsArea,
 				(ExeErrorCode)(8102));
-		pentry_down->setDiagsArea(diagsArea);
+		pentry_down->setDiagsAreax(diagsArea);
 		step_ = HANDLE_ERROR;
 		break;
 	      }
@@ -2289,7 +2288,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-	    
+
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incUsedRows();
 
@@ -2304,7 +2303,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	case NEXT_ROW_AFTER_UPDATE:
 	  {
 	    tcb_->currRowidIdx_++;
-	    
+
 	    if (tcb_->hbaseAccessTdb().returnRow())
 	      {
 		step_ = EVAL_RETURN_ROW_EXPRS;
@@ -4370,7 +4369,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                     ComDiagsArea * diagsArea = NULL;
                     ExRaiseSqlError(getHeap(), &diagsArea,
                                 (ExeErrorCode)(8102));
-                    pentry_down->setDiagsArea(diagsArea);
+                    pentry_down->setDiagsAreax(diagsArea);
                     step_ = HANDLE_ERROR;
                     break;
                }

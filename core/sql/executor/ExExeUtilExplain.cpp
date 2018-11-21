@@ -4045,7 +4045,7 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 	      step_ = DONE_;
 	  }
 	break;
-	
+
 	case ERROR_:
 	  {
 	    if (qparent_.up->isFull())
@@ -4053,27 +4053,27 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_SQLERROR;
 
 	    ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	    
+
 	    if (diagsArea == NULL)
-	      diagsArea = 
+	      diagsArea =
 		ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-	    
+
 	    if (getDiagsArea())
 	      diagsArea->mergeAfter(*getDiagsArea());
-	    
-	    up_entry->setDiagsArea (diagsArea);
-	    
+
+	    up_entry->setDiagsAreax(diagsArea);
+
 	    // insert into parent
 	    qparent_.up->insert();
-	    
+
 	    pstate.matches_ = 0;
 
 	    step_ = DONE_;
@@ -4087,16 +4087,16 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_NO_DATA;
-	    
+
 	    // insert into parent
 	    qparent_.up->insert();
-	    
+
 	    pstate.matches_ = 0;
 	    step_ = EMPTY_;
 	    qparent_.down->removeHead();
@@ -4258,7 +4258,7 @@ short ExExeUtilDisplayExplainShowddlTcb::work()
 	    step_ = DONE_;
 	  }
 	break;
-	
+
 	case ERROR_:
 	  {
 	    if (qparent_.up->isFull())
@@ -4266,27 +4266,27 @@ short ExExeUtilDisplayExplainShowddlTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_SQLERROR;
 
 	    ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	    
+
 	    if (diagsArea == NULL)
-	      diagsArea = 
+	      diagsArea =
 		ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-	    
+
 	    if (getDiagsArea())
 	      diagsArea->mergeAfter(*getDiagsArea());
-	    
-	    up_entry->setDiagsArea (diagsArea);
-	    
+
+	    up_entry->setDiagsAreax(diagsArea);
+
 	    // insert into parent
 	    qparent_.up->insert();
-	    
+
 	    pstate.matches_ = 0;
 
 	    step_ = DONE_;
@@ -4300,16 +4300,16 @@ short ExExeUtilDisplayExplainShowddlTcb::work()
 
 	    // Return EOF.
 	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
+
+	    up_entry->upState.parentIndex =
 	      pentry_down->downState.parentIndex;
-	    
+
 	    up_entry->upState.setMatchNo(0);
 	    up_entry->upState.status = ex_queue::Q_NO_DATA;
-	    
+
 	    // insert into parent
 	    qparent_.up->insert();
-	    
+
 	    pstate.matches_ = 0;
 	    step_ = EMPTY_;
 	    qparent_.down->removeHead();

@@ -1140,25 +1140,25 @@ short ExTransTcb::work()
 	 (NOT transTdb().setAllowedInXn())))
     {
       cliGlobals->setUdrXactViolation(TRUE);
-      
+
       ex_queue_entry *up_entry = qparent_.up->getTailEntry();
 
       up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
       up_entry->upState.setMatchNo(0);
       up_entry->upState.status = ex_queue::Q_SQLERROR;
-      
+
       ComDiagsArea *diags_my = up_entry->getDiagsArea();
-      
+
       if (!diags_my){
         diags_my = ComDiagsArea::allocate(stmtGlob->getDefaultHeap());
-        up_entry->setDiagsArea(diags_my);
+        up_entry->setDiagsAreax(diags_my);
       }
       *diags_my << DgSqlCode(- CLI_NO_TRANS_STMT_VIOLATION);
-      
+
       // insert into parent
       qparent_.up->insert();
-      
-    }	
+
+    }
     else{
 
     short rc;
@@ -1166,11 +1166,11 @@ short ExTransTcb::work()
       case BEGIN_: {
         if (ta->userEndedExeXn())
         {
-          handleErrors(pentry_down, NULL, 
+          handleErrors(pentry_down, NULL,
              (ExeErrorCode)(-CLI_USER_ENDED_EXE_XN));
           break;
         }
-	
+
         rc = ta->beginTransaction();
         if (rc != 0)  {
           // beginTransaction returned an error.

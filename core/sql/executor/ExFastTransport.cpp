@@ -220,7 +220,7 @@ void ExFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status,
   ExFastExtractPrivateState &privateState =
     *((ExFastExtractPrivateState *) downEntry->pstate);
 
-  // Initialize the up queue entry. 
+  // Initialize the up queue entry.
   //
   // copyAtp() will copy all tuple pointers and the diags area from
   // the down queue entry to the up queue entry.
@@ -231,36 +231,35 @@ void ExFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status,
   //
   if (status == ex_queue::Q_NO_DATA && privateState.matchCount_ > 0)
   {
-    downEntry->setDiagsArea(NULL);
+    downEntry->setDiagsAreax(NULL);
     upEntry->copyAtp(downEntry);
   }
   else
   {
     upEntry->copyAtp(downEntry);
-    downEntry->setDiagsArea(NULL);
+    downEntry->setDiagsAreax(NULL);
   }
 
   upEntry->upState.status = status;
   upEntry->upState.parentIndex = downEntry->downState.parentIndex;
   upEntry->upState.downIndex = qParent_.down->getHeadIndex();
   upEntry->upState.setMatchNo(privateState.matchCount_);
-  
+
   // Move any diags to the up queue entry
   if (diags != NULL)
   {
     ComDiagsArea *atpDiags = upEntry->getDiagsArea();
     if (atpDiags == NULL)
     {
-      // setDiagsArea() does not increment the reference count
-      upEntry->setDiagsArea(diags);
-      diags->incrRefCount();
+      // setDiagsAreax() does not increment the reference count
+      upEntry->shareDiagsArea(diags);
     }
     else
     {
       atpDiags->mergeAfter(*diags);
     }
   }
-  
+
   // Insert into up queue
   qParent_.up->insert();
  
@@ -344,11 +343,11 @@ void ExFastExtractTcb::updateWorkATPDiagsArea(ComDiagsArea *da)
       else
       {
         ComDiagsArea * da1 = da;
-        workAtp_->setDiagsArea(da1);
-        da1->incrRefCount();
+        workAtp_->shareDiagsArea(da1);
       }
     }
 }
+
 void ExFastExtractTcb::updateWorkATPDiagsArea(ex_queue_entry * centry)
 {
     if (centry->getDiagsArea())
@@ -360,9 +359,8 @@ void ExFastExtractTcb::updateWorkATPDiagsArea(ex_queue_entry * centry)
       else
       {
         ComDiagsArea * da = centry->getDiagsArea();
-        workAtp_->setDiagsArea(da);
-        da->incrRefCount();
-        centry->setDiagsArea(0);
+        workAtp_->shareDiagsArea(da);
+        centry->setDiagsAreax(0);
       }
     }
 }
@@ -373,7 +371,7 @@ void ExFastExtractTcb::updateWorkATPDiagsArea(ExeErrorCode rc, const char *msg)
     if(!da)
     {
       da = ComDiagsArea::allocate(getHeap());
-      workAtp_->setDiagsArea(da);
+      workAtp_->setDiagsAreax(da);
     }
    if(msg != NULL)
    {
@@ -387,16 +385,16 @@ void ExFastExtractTcb::updateWorkATPDiagsArea(ExeErrorCode rc, const char *msg)
 
 }
 
-void ExFastExtractTcb::updateWorkATPDiagsArea(const char *file, 
+void ExFastExtractTcb::updateWorkATPDiagsArea(const char *file,
                                               int line, const char *msg)
 {
     ComDiagsArea *da = workAtp_->getDiagsArea();
     if(!da)
     {
       da = ComDiagsArea::allocate(getHeap());
-      workAtp_->setDiagsArea(da);
+      workAtp_->setDiagsAreax(da);
     }
-   
+
     *da << DgSqlCode(-1001)
         << DgString0(file)
         << DgInt0(line)
@@ -676,47 +674,47 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       Int64 failedModTS = -1;
       Lng32 failedLocBufLen = 1000;
       char failedLocBuf[failedLocBufLen];
-      retcode = 
+      retcode =
         lobInterfaceDataModCheck(failedModTS, failedLocBuf, failedLocBufLen);
       if (retcode < 0)
       {
         Lng32 cliError = 0;
-        
+
         Lng32 intParam1 = -retcode;
         ComDiagsArea * diagsArea = NULL;
-        ExRaiseSqlError(getHeap(), &diagsArea, 
+        ExRaiseSqlError(getHeap(), &diagsArea,
                         (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
-                        NULL, &intParam1, 
-                        &cliError, 
-                        NULL, 
+                        NULL, &intParam1,
+                        &cliError,
+                        NULL,
                         "HDFS",
                         (char*)"ExpLOBInterfaceDataModCheck",
                         getLobErrStr(intParam1));
-        pentry_down->setDiagsArea(diagsArea);
+        pentry_down->setDiagsAreax(diagsArea);
         pstate.step_ = EXTRACT_ERROR;
         break;
       }
-      
+
       if (retcode == 1) // check failed
       {
         char errStr[200];
-        str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
+        str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld",
                     myTdb().getModTSforDir(), failedModTS);
-        
+
         ComDiagsArea * diagsArea = NULL;
-        ExRaiseSqlError(getHeap(), &diagsArea, 
+        ExRaiseSqlError(getHeap(), &diagsArea,
                         (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
                         NULL, NULL, NULL,
                         errStr);
-        pentry_down->setDiagsArea(diagsArea);
+        pentry_down->setDiagsAreax(diagsArea);
         pstate.step_ = EXTRACT_ERROR;
         break;
       }
-      
+
       pstate.step_= EXTRACT_INITIALIZE;
     }
     break;
-    
+
     case EXTRACT_INITIALIZE:
     {
       pstate.processingStarted_ = FALSE;
@@ -1026,7 +1024,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           {
             ComDiagsArea *diagsArea = pentry_down->getDiagsArea();
             diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-            pentry_down->setDiagsArea(diagsArea);
+            pentry_down->setDiagsAreax(diagsArea);
             pentry_down->getDiagsArea()->mergeAfter(*centry->getDiagsArea());
           }
 
@@ -1127,10 +1125,10 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         if (diagsArea == NULL)
         {
           diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-          pentry_up->setDiagsArea(diagsArea);
+          pentry_up->setDiagsAreax(diagsArea);
         }
         pentry_up->getDiagsArea()->mergeAfter(*workAtp_->getDiagsArea());
-        workAtp_->setDiagsArea(NULL);
+        workAtp_->setDiagsAreax(NULL);
       }
       pentry_up->upState.status = ex_queue::Q_SQLERROR;
       pentry_up->upState.parentIndex
@@ -1154,7 +1152,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
       if (isSequenceFile())
       {
-         if (sequenceFileWriter_) 
+         if (sequenceFileWriter_)
          {
             sfwRetCode = sequenceFileWriter_->close();
             if (!errorOccurred_ && sfwRetCode != SFW_OK )
@@ -1228,13 +1226,13 @@ void ExHdfsFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status, ComDia
   //
   if (status == ex_queue::Q_NO_DATA && privateState.matchCount_ > 0)
   {
-    downEntry->setDiagsArea(NULL);
+    downEntry->setDiagsAreax(NULL);
     upEntry->copyAtp(downEntry);
   }
   else
   {
     upEntry->copyAtp(downEntry);
-    downEntry->setDiagsArea(NULL);
+    downEntry->setDiagsAreax(NULL);
   }
 
   upEntry->upState.status = status;
@@ -1250,7 +1248,7 @@ void ExHdfsFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status, ComDia
     if (da == NULL)
     {
       da = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-      upEntry->setDiagsArea(da);
+      upEntry->setDiagsAreax(da);
     }
     da->addRowCount(privateState.matchCount_);
   }
@@ -1293,8 +1291,6 @@ void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
                   NULL, NULL, NULL, NULL,
                   errorMsg,
                 (char *)GetCliGlobals()->getJniErrorStr());
-  //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
-  //pentry_down->setDiagsArea(diagsArea);
   updateWorkATPDiagsArea(diagsArea);
 }
 

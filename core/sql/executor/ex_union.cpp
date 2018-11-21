@@ -267,14 +267,14 @@ void ex_union_tcb::stop()
   // Remove the head entries of the parent down queue and the two
   // child up queues. All checks are done by the caller.
 
-  ex_queue_entry * pentry_down = qparent.down->getHeadEntry();  
+  ex_queue_entry * pentry_down = qparent.down->getHeadEntry();
   ex_union_private_state &  pstate =
-    *((ex_union_private_state*) pentry_down->pstate);  
+    *((ex_union_private_state*) pentry_down->pstate);
   ex_queue_entry * pentry = qparent.up->getTailEntry();
 
    ex_queue_entry * centry0 = childQueues_[0].up->getHeadEntry();
    ex_queue_entry * centry1 = childQueues_[1].up->getHeadEntry();
-  
+
   pentry->upState.status = ex_queue::Q_NO_DATA;
   pentry->upState.parentIndex = pentry_down->downState.parentIndex;
   pentry->upState.downIndex = qparent.down->getHeadIndex();
@@ -282,32 +282,32 @@ void ex_union_tcb::stop()
 			     centry1->upState.getMatchNo());
 
   ComDiagsArea *da = pentry->getDiagsArea();
-  
- 
+
+
   ComDiagsArea *c0da = centry0->getDiagsArea();
   ComDiagsArea *c1da = centry1->getDiagsArea();
-   if (c0da || c1da)   
-    if (da == NULL) 
+   if (c0da || c1da)
+    if (da == NULL)
      {
 	da = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-	pentry->setDiagsArea(da);
+	pentry->setDiagsAreax(da);
      }
-    
+
   if (c0da)
     da->mergeAfter(*c0da);
   if (c1da)
     da->mergeAfter(*c1da);
-  
+
   // insert into parent
   qparent.up->insert();
-  
+
   // consume the left and right child row
-  childQueues_[0].up->removeHead();	  
-  childQueues_[1].up->removeHead();	  
+  childQueues_[0].up->removeHead();
+  childQueues_[1].up->removeHead();
 
   pstate.init();
 
-  // this parent request has been processed. 
+  // this parent request has been processed.
   // Hasta La Vista!
   qparent.down->removeHead();
 }
@@ -495,9 +495,9 @@ ExWorkProcRetcode ex_union_tcb::workUp()
 		      // couldn't alloc., try again later.
 		      return WORK_POOL_BLOCKED;
 		    }
-		  
+
 		  // copy down entry ATP into up entry
-		  
+
 		  // copy child data to parent ATP
 		  if (moveExpr(side)->eval(centry->getAtp(),
 		                pentry->getAtp()) == ex_expr::EXPR_ERROR)
@@ -509,7 +509,7 @@ ExWorkProcRetcode ex_union_tcb::workUp()
 		  // Setting the diagnostics area for the up entry. This is
 		  // to flow the diagnostics information to the parent.
                   ComDiagsArea * da = centry->getAtp()->getDiagsArea();
-		  pentry->getAtp()->setDiagsArea(da);
+		  pentry->getAtp()->setDiagsAreax(da);
                   if (da)
                     da->incrRefCount();
 		}
@@ -519,12 +519,12 @@ ExWorkProcRetcode ex_union_tcb::workUp()
 		  // the output atp (to parent's up queue)
 		  pentry->copyAtp(centry);
 		}
-	      
+
 	      pentry->upState.setMatchNo(++pstate.matchCount_);
 
               // insert into parent up queue
-	      qparent.up->insert();	  
-	      
+	      qparent.up->insert();
+
 	    } // child state is not cancelled
 	  else if ((pstate.childStates_[side] != CANCELLED_) &&
                    (centry->upState.status == ex_queue::Q_SQLERROR))
@@ -1042,7 +1042,7 @@ void ex_o_union_tcb::startRightchild()
 
  // For NAR, we do not want to send down the diags area.
  if (union_tdb().inNotAtomicStmt())
-   rentry->setDiagsArea(0);
+   rentry->setDiagsAreax(0);
 
  childQueues_[1].down->insert();
 
@@ -1238,21 +1238,21 @@ ExWorkProcRetcode ex_c_union_tcb::condWorkDown()
     //
     // Get handles.
     //
-    ex_queue_entry *pentry_down = 
+    ex_queue_entry *pentry_down =
       qparent.down->getQueueEntry(processedInputs_);
 
-    ex_union_private_state &pstate = 
-      *((ex_union_private_state*) pentry_down->pstate);  
+    ex_union_private_state &pstate =
+      *((ex_union_private_state*) pentry_down->pstate);
 
     //
     // Evaluate the conditional expression. If it evaluates to TRUE,
     // the left child is started. If it evaluates to FALSE, and there is
     // a right child, it is started. Othewise, stop servicing the request.
     //
-    ex_expr::exp_return_type retCode = 
+    ex_expr::exp_return_type retCode =
       condExpr()->eval(pentry_down->getAtp(), 0);
 
-    if (retCode == ex_expr::EXPR_TRUE) 
+    if (retCode == ex_expr::EXPR_TRUE)
     {
       if (!(union_tdb().inNotAtomicStmt()))
 	pstate.whichChild_ = 0;
@@ -1261,10 +1261,10 @@ ExWorkProcRetcode ex_c_union_tcb::condWorkDown()
 	pstate.whichChild_ = -1;
 	pstate.setErrorCode(1);
 	processedInputs_++;
-	ComDiagsArea *  da = ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+	ComDiagsArea *  da = ExRaiseSqlError(getGlobals()->getDefaultHeap(),
 					     pentry_down,
 					     (ExeErrorCode)-EXE_NOTATOMIC_ENABLED_AFTER_TRIGGER);
-	pentry_down->setDiagsArea(da);
+	pentry_down->setDiagsAreax(da);
 	workUpEvent_->schedule();
 	continue;
       }
@@ -1554,12 +1554,12 @@ void ex_c_union_tcb::processEODErrorOrWarning(NABoolean isWarning)
      da = ExRaiseSqlError(getGlobals()->getDefaultHeap(), puentry,
                          (ExeErrorCode)-EXE_CS_EOD_ROLLBACK_ERROR);
 
-  puentry->setDiagsArea(da);
+  puentry->setDiagsAreax(da);
   puentry->upState.status = ex_queue::Q_SQLERROR;
   puentry->upState.parentIndex = pdentry->downState.parentIndex;
   puentry->upState.downIndex = qparent.down->getHeadIndex();
   puentry->upState.setMatchNo(0);
-  
+
   qparent.up->insert();
 } //ex_c_union_tcb::processEODErrorOrWarning
 

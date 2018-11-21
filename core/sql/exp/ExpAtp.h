@@ -96,7 +96,8 @@ class atp_struct
   // Methods for manipulating diagnostics area.
   //
     inline ComDiagsArea *getDiagsArea() const;
-    inline void setDiagsArea(ComDiagsArea* diagsArea);
+    inline void setDiagsAreax(ComDiagsArea* diagsArea);
+    inline void shareDiagsArea(ComDiagsArea* diagsArea);
     inline void initDiagsArea(ComDiagsArea* diagsArea);
     Long pack(void * space);
     Lng32 unpack(Lng32 base);
@@ -198,8 +199,27 @@ inline ComDiagsArea *atp_struct::getDiagsArea() const
   return diagsArea_;
 }
 
-inline void atp_struct::setDiagsArea(ComDiagsArea* diagsArea)
+// this takes effect like std::move() in C++11
+inline void atp_struct::setDiagsAreax(ComDiagsArea* diagsArea)
 {
+  if (diagsArea == diagsArea_)
+    return;
+
+  if (diagsArea_)
+    diagsArea_->decrRefCount();
+
+  diagsArea_ = diagsArea;
+}
+
+// this increases the refCount
+inline void atp_struct::shareDiagsArea(ComDiagsArea* diagsArea)
+{
+  if (diagsArea == diagsArea_)
+    return;
+
+  if (diagsArea)
+    diagsArea->incrRefCount();
+
   if (diagsArea_)
     diagsArea_->decrRefCount();
 
@@ -250,10 +270,7 @@ inline void atp_struct::copyAtp(atp_struct *from)
 
   set_tag(from->get_tag());
 
-  if (from->getDiagsArea())
-    from->getDiagsArea()->incrRefCount();
-
-  setDiagsArea(from->getDiagsArea());
+  shareDiagsArea(from->getDiagsArea());
 }
 
 // copies tupps first_tupp thru last_tupp from 'from'(source)
@@ -278,7 +295,7 @@ inline void atp_struct::copyPartialAtp(atp_struct * from,
 				       short last_tupp)
 {
   short j = my_first_tupp;
-  
+
   for (short i = from_first_tupp; i <= last_tupp; i++, j++)
   {
     this->getTupp(j) = from->getTupp(i); //copy tupp
@@ -305,7 +322,7 @@ inline void atp_struct::release()
 
   // null-out diags area pointer; setDiagsArea releases existing
   // reference to diags area if it is non-null
-  setDiagsArea(0);
+  setDiagsAreax(0);
 }
 
 inline void atp_struct::releasePartialAtp(short from_first_tupp,
@@ -317,10 +334,10 @@ inline void atp_struct::releasePartialAtp(short from_first_tupp,
   {
     tuppArray_[i].release();
   }
-  
+
   // null-out diags area pointer; setDiagsArea releases existing
   // reference to diags area if it is non-null
-  setDiagsArea(0);
+  setDiagsAreax(0);
 }
 
 #endif

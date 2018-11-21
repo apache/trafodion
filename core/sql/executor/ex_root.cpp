@@ -715,17 +715,17 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
   if (input_desc) {
     input_desc->setCompoundStmtsInfo(((ComTdbRoot *) &tdb)->getCompoundStmtsInfo());
   }
-  // 
+  //
   //  This entry may not have a diags area yet.
-  //  If diags area is not available, allocate 
+  //  If diags area is not available, allocate
   //  one for the entry.
   //
-  if (root_tdb().isNonFatalErrorTolerated()) 
+  if (root_tdb().isNonFatalErrorTolerated())
   {
-    if (!(entry->getDiagsArea())) 
+    if (!(entry->getDiagsArea()))
     {
       ComDiagsArea * da = ComDiagsArea::allocate(getHeap());
-      entry->setDiagsArea(da);
+      entry->setDiagsAreax(da);
     }
     entry->getDiagsArea()->setLengthLimit(root_tdb().getNotAtomicFailureLimit());
   }
@@ -733,7 +733,7 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
   // after automatic recompilation. The original input tupp will
   // be used at this time.
   if ((! reExecute) && (inputExpr()))
-    {        
+    {
       UInt32 flags = 0;
       inputExpr()->setIsODBC(flags, root_tdb().odbcQuery());
       inputExpr()->setIsRWRS(flags, root_tdb().rowwiseRowsetInput());
@@ -745,7 +745,7 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
 	(flags,
 	 master_glob->getStatement()->getContext()->getSessionDefaults()->
 	 getDbtrProcess());
-					     
+
       // move the values from user area to internal area
       ex_expr::exp_return_type rc;
       if ((input_desc) &&
@@ -2375,7 +2375,7 @@ short ex_root_tcb::work()
       // a certain exit status from the work procedure to the root.
       if (!cancelStarted_)
 	return 1;
-      
+
       // For async cancel.
       // Remove all entries except Q_NO_DATA for the cancel request.
       while (qchild.up->getLength() > 1)
@@ -2392,13 +2392,13 @@ short ex_root_tcb::work()
           // Attach -EXE_CANCELED error to Q_NO_DATA entry.
           // Return 1 to exit the scheduler loop.
 	  ex_queue_entry *centry = qchild.up->getHeadEntry();
-	 
-	  ComDiagsArea *diagsArea = 
+
+	  ComDiagsArea *diagsArea =
 	    ex_root_tcb::moveDiagsAreaFromEntry(centry);
 	  if (diagsArea == NULL)
 	    {
 	      diagsArea = ComDiagsArea::allocate(getHeap());
-	      centry->setDiagsArea(diagsArea);
+	      centry->setDiagsAreax(diagsArea);
 	    }
           if (cpuLimitExceeded_)
             {
@@ -2420,9 +2420,9 @@ short ex_root_tcb::work()
                   localCpuTime = fragRootStats->getLocalCpuTime();
                 else if ((measRootStats = rootStats->castToExMeasStats()) != NULL)
                   localCpuTime = measRootStats->getLocalCpuTime();
-                else 
+                else
                   ex_assert(0, "Cpu limit evaluated without runtime stats.");
-  
+
                 *diagsArea << DgInt2((Lng32) localCpuTime / 1000);
               }
             }
