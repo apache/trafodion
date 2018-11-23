@@ -2789,7 +2789,7 @@ void tm_process_msg(BMS_SRE *pp_sre)
 {
     short                  lv_ret;
     char                   la_send_buffer[4096];
-    char                   la_recv_buffer[sizeof(Tm_Req_Msg_Type)];
+    char                   la_recv_buffer[pp_sre->sre_reqDataSize];
     char                  *la_recv_buffer_ddl = NULL;
     Tm_Broadcast_Req_Type *lp_br_req;
     Tm_Broadcast_Rsp_Type *lp_br_rsp; 
