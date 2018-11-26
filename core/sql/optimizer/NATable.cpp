@@ -7592,10 +7592,12 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
               if (objName.getUnqualifiedSchemaNameAsAnsiString() == defSchema)
                 sName = hiveMetaDB_->getDefaultSchemaName();
 
-              // validate Hive table timestamps
-              if (!hiveMetaDB_->validate(cachedNATable->getHiveTableId(),
-                                         cachedNATable->getRedefTime(),
-                                         sName.data(), tName.data()))
+              // validate Hive table timestamps to check if there is change
+              // in directory timestamp
+              if (hiveMetaDB_->getTableDesc(sName,
+                                            tName,
+                                            TRUE /*validate only*/,
+                                            (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON), TRUE) == NULL)
                 removeEntry = TRUE;
 
               // validate HDFS stats and update them in-place, if needed
@@ -8448,7 +8450,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
          htbl = hiveMetaDB_->getFakedTableDesc(tableNameInt);
        else
          htbl = hiveMetaDB_->getTableDesc(schemaNameInt, tableNameInt,
-                0, FALSE,
+                FALSE,
                 // reread Hive Table Desc from MD.
                 (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON),
                 TRUE);

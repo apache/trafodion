@@ -949,7 +949,7 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
     hiveTblDesc_ = hiveMetaDB->getFakedTableDesc(obj.data());
   else
     hiveTblDesc_ = hiveMetaDB->getTableDesc(sch.data(), obj.data(),
-                0, FALSE,
+                FALSE,
                 // reread Hive Table Desc from MD.
                 (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON),
                 TRUE);

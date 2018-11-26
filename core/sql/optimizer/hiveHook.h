@@ -242,9 +242,8 @@ struct hive_tbl_desc
   char* owner_;
   char* tableType_;
   Int64 creationTS_;
-  // last time we validated the redefinition time
-  Int64 validationTS_;
-
+  // redefineTS_ = hdfs modification time of the hive files too
+  Int64 redefineTS_;
   // next 2 fields are used if hive object is a view.
   // Contents are populated during HiveMetaData::getTableDesc.
   // original text is what was used at view creation time.
@@ -312,6 +311,7 @@ struct hive_tbl_desc
   Int32 getSortColNum(const char* name);
 
   Int64 redeftime();
+  void setRedeftime(Int64 redeftime) { redefineTS_ = redeftime; }
 };
 
 class HiveMetaData
@@ -325,7 +325,6 @@ public:
   
   struct hive_tbl_desc* getTableDesc(const char* schemaName,
                                      const char* tblName,
-                                     Int64 expirationTS,
                                      NABoolean validateOnly,
                                      // force to reread from Hive MD
                                      NABoolean rereadFromMD,
@@ -333,8 +332,7 @@ public:
   struct hive_tbl_desc* getFakedTableDesc(const char* tblName);
   
   // validate a cached hive table descriptor
-  NABoolean validate(Int32 tableId, Int64 redefTS, 
-                     const char* schName, const char* tblName);
+  NABoolean validate(hive_tbl_desc *hDesc);
   
   // iterator over all tables in a Hive schema (default)
   // or iterate over all schemas in the Hive metadata

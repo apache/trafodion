@@ -2374,7 +2374,7 @@ short CmpDescribeHiveTable (
    // identifiers at a later point, or wait until Hive supports delimited identifiers
   schemaNameInt.toLower();
   tableNameInt.toLower();
-  hive_tbl_desc* htd = md->getTableDesc(schemaNameInt, tableNameInt, 0, FALSE,
+  hive_tbl_desc* htd = md->getTableDesc(schemaNameInt, tableNameInt, FALSE,
                 // reread Hive Table Desc from MD.
                 (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON),
                 TRUE);

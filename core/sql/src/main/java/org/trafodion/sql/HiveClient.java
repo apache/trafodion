@@ -22,6 +22,7 @@
 package org.trafodion.sql;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,7 +93,8 @@ public class HiveClient {
     private final String lockPath="/trafodion/traflock";
 
     private static HiveConf hiveConf = null;
-    private static HiveMetaStoreClient hmsClient  ;
+    private static ThreadLocal<HiveMetaStoreClient> hiveMetaClient  ;
+    private static HiveMetaStoreClient hmsClient;
     private static String ddlTimeConst = null;
 
     private static Statement stmt = null;
@@ -104,19 +106,31 @@ public class HiveClient {
          confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
          PropertyConfigurator.configure(confFile);
          hiveConf = new HiveConf();
+         hiveMetaClient = new ThreadLocal<HiveMetaStoreClient>();
          try {
-             hmsClient = new HiveMetaStoreClient(hiveConf, null);
+             hmsClient = getHiveMetaClient();
              ddlTimeConst = getDDLTimeConstant();
          } catch (MetaException me)
          {
              throw new RuntimeException("Checked MetaException from HiveClient static block");
          }
     }
-
+ 
     public static boolean init() 
-    {
-       return true;
+    { 
+        return true;
     }
+
+   private static HiveMetaStoreClient getHiveMetaClient() throws org.apache.hadoop.hive.metastore.api.MetaException 
+   {
+       HiveMetaStoreClient ts_hmsClient;
+       ts_hmsClient = hiveMetaClient.get(); 
+       if (ts_hmsClient == null) {
+          ts_hmsClient = new HiveMetaStoreClient(hiveConf, null);
+          hiveMetaClient.set(ts_hmsClient);
+       }
+       return ts_hmsClient;
+   }  
 
     public static boolean close() 
     {	
@@ -128,19 +142,20 @@ public class HiveClient {
         throws MetaException, TException, UnknownDBException 
     {
         if (logger.isDebugEnabled()) logger.debug("HiveClient.exists(" + schName + " , " + tblName + ") called.");
-        boolean result = hmsClient.tableExists(schName, tblName);
+        boolean result = getHiveMetaClient().tableExists(schName, tblName);
         return result;
     }
 
 
     public static long getRedefTime(String schName, String tblName)
-        throws MetaException, TException, ClassCastException, NullPointerException, NumberFormatException 
+        throws MetaException, TException, IOException
     {
         Table table;
+        long modificationTime;
         if (logger.isDebugEnabled()) logger.debug("HiveClient.getRedefTime(" + schName + " , " + 
                      tblName + ") called.");
         try {
-            table = hmsClient.getTable(schName, tblName);
+            table = getHiveMetaClient().getTable(schName, tblName);
             if (logger.isDebugEnabled()) logger.debug("getTable returns null for " + schName + "." + tblName + ".");
             if (table == null)
                 return 0;
@@ -149,7 +164,6 @@ public class HiveClient {
             if (logger.isDebugEnabled()) logger.debug("Hive table no longer exists.");
             return 0;
         }
-
         long redefTime = table.getCreateTime();
         if (table.getParameters() != null){
             // those would be used without reflection
@@ -160,13 +174,28 @@ public class HiveClient {
             if (rfTime != null)
                 redefTime = Long.parseLong(rfTime);
         }
+        // Get the lastest partition/file timestamp 
+        int numPartKeys = table.getPartitionKeysSize();
+        String rootDir = table.getSd().getLocation();
+        long dirTime = 0;
+        if (rootDir != null) {
+           try {
+              dirTime = HDFSClient.getHiveTableMaxModificationTs(rootDir, numPartKeys);
+           } catch (FileNotFoundException e) {
+           // ignore this exception
+           }
+        }
+        if (dirTime > redefTime)
+           modificationTime = dirTime;
+        else
+           modificationTime = redefTime;
         if (logger.isDebugEnabled()) logger.debug("RedefTime is " + redefTime);
-        return redefTime ;
+        return modificationTime;
     }
 
     public static Object[] getAllSchemas() throws MetaException 
     {
-        List<String> schemaList = (hmsClient.getAllDatabases());
+        List<String> schemaList = (getHiveMetaClient().getAllDatabases());
         if (schemaList != null)
            return schemaList.toArray();
         else
@@ -177,11 +206,11 @@ public class HiveClient {
         throws MetaException, TException 
     {
         try {
-        Database db = hmsClient.getDatabase(schName);
+        Database db = getHiveMetaClient().getDatabase(schName);
         if (db == null)
             return null;
 
-        List<String> tableList = hmsClient.getAllTables(schName);
+        List<String> tableList = getHiveMetaClient().getAllTables(schName);
         if (tableList != null)
            return tableList.toArray();
         else
@@ -281,7 +310,7 @@ public class HiveClient {
   {
      Table table;
      try {
-        table = hmsClient.getTable(schName, tblName);
+        table = getHiveMetaClient().getTable(schName, tblName);
      } catch (NoSuchObjectException x) {
          return false; 
      } 
@@ -340,7 +369,7 @@ public class HiveClient {
            i++;
         }
         if (readPartn) {
-           List<String> partNamesList = hmsClient.listPartitionNames(schName, tblName, (short)-1);
+           List<String> partNamesList = getHiveMetaClient().listPartitionNames(schName, tblName, (short)-1);
            if (partNamesList != null) {
               partNames = new String[partNamesList.size()];
               partNames = partNamesList.toArray(partNames); 
@@ -348,7 +377,7 @@ public class HiveClient {
               partKeyValues = new String[partNames.length][];
               for (i = 0; i < partNames.length; i++) {
                   partKeyValues[i] = new String[numPartKeys];
-                  partKeyValues[i] = (String[])hmsClient.partitionNameToVals(partNames[i]).toArray(partKeyValues[i]); 
+                  partKeyValues[i] = (String[])getHiveMetaClient().partitionNameToVals(partNames[i]).toArray(partKeyValues[i]); 
               }
            }
         } 

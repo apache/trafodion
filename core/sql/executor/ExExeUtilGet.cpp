@@ -6217,7 +6217,7 @@ short ExExeUtilHiveMDaccessTcb::work()
             while (i < tblNames_.entries())
               {
                 hiveMD_->getTableDesc(schForHive_, tblNames_[i]->c_str(), 
-                      0, FALSE, FALSE, FALSE /*dont read partn info*/);
+                      FALSE, FALSE, FALSE /*dont read partn info*/);
                 i++;
               }
 

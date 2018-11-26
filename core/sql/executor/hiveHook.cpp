@@ -299,7 +299,6 @@ struct hive_tbl_desc* HiveMetaData::getFakedTableDesc(const char* tblName)
 
 struct hive_tbl_desc* HiveMetaData::getTableDesc( const char* schemaName,
                                                  const char* tblName,
-                                                 Int64 expirationTS,
                                                  NABoolean validateOnly,
                                                  NABoolean rereadFromMD,
                                                  NABoolean readPartnInfo)
@@ -310,8 +309,8 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc( const char* schemaName,
 
       if ( !(strcmp(ptr->tblName_, tblName)
              ||strcmp(ptr->schName_, schemaName))) {
-        if (validate(ptr->tblID_, ptr->redeftime(), schemaName, tblName))
-          return ptr;
+        if ((NOT rereadFromMD) && (validate(ptr)))
+           return ptr;
         else {
           // table changed, delete it and re-read below
           if (tbl_ == ptr)
@@ -367,25 +366,21 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc( const char* schemaName,
    return hiveTableDesc;
 }
 
-NABoolean HiveMetaData::validate(Int32 tableId, Int64 redefTS, 
-                                 const char* schName, const char* tblName)
+NABoolean HiveMetaData::validate(hive_tbl_desc *hDesc)
 {
-   NABoolean result = FALSE;
-
-   // validate creation timestamp
-
    Int64 currentRedefTime = 0;
-   HVC_RetCode retCode = HiveClient_JNI::getRedefTime(schName, tblName, 
+   HVC_RetCode retCode = HiveClient_JNI::getRedefTime(hDesc->schName_, hDesc->tblName_,
                                                  currentRedefTime);
    if ((retCode != HVC_OK) && (retCode != HVC_DONE)) {
      return recordError((Int32)retCode, "HiveClient_JNI::getRedefTime()");
    }
-   if ((retCode == HVC_DONE) || (currentRedefTime != redefTS))
-     return result;
-   else
-     return TRUE;
-
-  return result;
+   if ((retCode == HVC_DONE) || (currentRedefTime != hDesc->redeftime())) 
+     return FALSE;
+  
+   // object has been validated a short time ago
+   hDesc->setRedeftime(currentRedefTime);
+   
+   return TRUE;
 }
 
 hive_tbl_desc::hive_tbl_desc(NAHeap *heap, Int32 tblID, const char* name, const char* schName, 
@@ -400,11 +395,11 @@ hive_tbl_desc::hive_tbl_desc(NAHeap *heap, Int32 tblID, const char* name, const 
      : heap_(heap), tblID_(tblID), 
        viewOriginalText_(NULL), viewExpandedText_(NULL),
        sd_(sd), tblParams_(tp),
-       creationTS_(creationTS), pkey_(pk), next_(NULL)
+       creationTS_(creationTS), 
+       redefineTS_(-1), pkey_(pk), next_(NULL)
 {  
   tblName_ = strduph(name, heap_);
   schName_ = strduph(schName, heap_);
-  validationTS_ = JULIANTIMESTAMP();
 
   if (owner)
     owner_ = strduph(owner, heap_);
@@ -575,14 +570,8 @@ Int32 hive_tbl_desc::getSortColNum(const char* name)
 Int64 hive_tbl_desc::redeftime()
 {
   Int64 result = creationTS_;
-
-  struct hive_sd_desc* sd = sd_;
-
-  while (sd) {
-    if (sd->creationTS_ > result)
-      result = sd->creationTS_;
-    sd = sd->next_;
-  }
+  if (redefineTS_ !=  -1)
+      result = redefineTS_;
   return result;
 }
 
