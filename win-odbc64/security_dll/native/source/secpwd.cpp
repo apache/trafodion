@@ -175,6 +175,10 @@ SecPwd::SecPwd(const char *dir, const char* fileName,
 {
     char* dir_from_env = NULL;
     char  certDir[MAX_SQL_IDENTIFIER_LEN + 1];
+    char* serverNameGBKToUtf8 = NULL;
+    LCID lcid = GetSystemDefaultLCID();
+    int  translen = 0;
+    char transError[128] = { 0 };
 
     if (serverName == NULL)
         throw SecurityException (INPUT_PARAMETER_IS_NULL, " - serverName.");
@@ -217,8 +221,25 @@ SecPwd::SecPwd(const char *dir, const char* fileName,
     if(stat(certDir,&st) != 0)
         throw SecurityException(DIR_NOTFOUND, (char *)certDir);
 
-    certFile = buildName(certDir, fileName, serverName, CER);
-    activeCertFile = buildName(certDir, activeFileName, serverName, ACTIVE_CER);
+    if (lcid == 0x804) // if local charset is not utf8
+    {
+        serverNameGBKToUtf8 = (char *)malloc(MAX_SQL_IDENTIFIER_LEN + 1);
+        if (TranslateUTF8(TRUE, serverName, MAX_SQL_IDENTIFIER_LEN,
+            serverNameGBKToUtf8, MAX_SQL_IDENTIFIER_LEN, &translen, transError) != SQL_SUCCESS)
+        {
+            delete serverNameGBKToUtf8;
+            throw SecurityException(INPUT_PARAMETER_IS_NULL, " - serverName.");
+        }
+        certFile = buildName(certDir, fileName, serverNameGBKToUtf8, CER);
+        activeCertFile = buildName(certDir, activeFileName, serverNameGBKToUtf8, ACTIVE_CER);
+
+        delete serverNameGBKToUtf8;
+    }
+    else
+    {
+        certFile = buildName(certDir, fileName, serverName, CER);
+        activeCertFile = buildName(certDir, activeFileName, serverName, ACTIVE_CER);
+    }
 
     // If activeCertFile does not exist and certFile exist, create activeCertFile
     // by from copying certFile to activeCertFile
