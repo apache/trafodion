@@ -40,6 +40,7 @@ pthread_mutex_t HiveClient_JNI::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZE
 static const char* const hvcErrorEnumStr[] = 
 {
   "Preparing parameters for HiveClient."
+ ,"Java exception in init()."
  ,"Java exception in close()."
  ,"Preparing parameters for exists()."
  ,"Java exception in exists()."
@@ -53,6 +54,7 @@ static const char* const hvcErrorEnumStr[] =
  ,"Preparing parameters for getHiveTableInfo()."
  ,"Java exception in getHiveTableInfo()."
  ,"Error in getHiveTableInfoDetails()."
+ ,"Error during populdate SDs."
 };
 
 
@@ -130,7 +132,7 @@ void HiveClient_JNI::deleteInstance()
 HiveClient_JNI::~HiveClient_JNI()
 {
    cleanupTableInfo();
-   if (isInitialized())	
+   if (isConnected_)	
       close(); // error handling
 }
 
@@ -189,7 +191,7 @@ HVC_RetCode HiveClient_JNI::init()
 //////////////////////////////////////////////////////////////////////////////
 HVC_RetCode HiveClient_JNI::initConnection()
 { 
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::initConnection(%s) called.");
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HiveClient_JNI::initConnection(%s) called.");
 
 
   if (initJNIEnv() != JOI_OK)
@@ -209,7 +211,7 @@ HVC_RetCode HiveClient_JNI::initConnection()
 
   if (jresult == false) 
   {
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::initConnection()", getLastError());
+    logError(CAT_SQL_HDFS, "HiveClient_JNI::initConnection()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_INIT_EXCEPTION;
   }
@@ -225,7 +227,7 @@ HVC_RetCode HiveClient_JNI::initConnection()
 //////////////////////////////////////////////////////////////////////////////
 HVC_RetCode HiveClient_JNI::exists(const char* schName, const char* tabName)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::exists(%s, %s) called.", schName, tabName);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HiveClient_JNI::exists(%s, %s) called.", schName, tabName);
   if (initJNIEnv() != JOI_OK)
      return HVC_ERROR_INIT_PARAM;
   if (getInstance() == NULL)
@@ -272,7 +274,7 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
                                          const char* tabName, 
                                          Int64& redefTime)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getRedefTime(%s, %s, %lld).", schName, tabName, redefTime);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Enter HiveClient_JNI::getRedefTime(%s, %s, %lld).", schName, tabName, redefTime);
   if (initJNIEnv() != JOI_OK)
      return HVC_ERROR_INIT_PARAM;
   if (getInstance() == NULL)
@@ -306,7 +308,7 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
     return HVC_ERROR_GET_REDEFTIME_EXCEPTION;
   }
 
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Exit HiveClient_JNI::getRedefTime(%s, %s, %lld).", schName, tabName, redefTime);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Exit HiveClient_JNI::getRedefTime(%s, %s, %lld).", schName, tabName, redefTime);
 
   if (jresult < 0) {
     jenv_->PopLocalFrame(NULL);
@@ -324,7 +326,7 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
 ////////////////////////////////////////////////////////////////////////////// 
 HVC_RetCode HiveClient_JNI::getAllSchemas(NAHeap *heap, LIST(Text *)& schNames)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Enter HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
   if (initJNIEnv() != JOI_OK)
      return HVC_ERROR_INIT_PARAM;
   if (getInstance() == NULL)
@@ -347,7 +349,7 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(NAHeap *heap, LIST(Text *)& schNames)
      jenv_->PopLocalFrame(NULL);
      return HVC_DONE;
   }
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, 
        "Exit HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
   jenv_->PopLocalFrame(NULL);
   return HVC_OK;
@@ -358,7 +360,7 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(NAHeap *heap, LIST(Text *)& schNames)
 ////////////////////////////////////////////////////////////////////////////// 
 HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::executeHiveSQL(%s) called.", hiveSQL);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Enter HiveClient_JNI::executeHiveSQL(%s) called.", hiveSQL);
   if (initJNIEnv() != JOI_OK)
      return HVC_ERROR_INIT_PARAM;
   if (getInstance() == NULL)
@@ -383,7 +385,7 @@ HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
     return HVC_ERROR_EXECUTE_HIVE_SQL_EXCEPTION;
   }
 
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, 
        "Exit HiveClient_JNI::executeHiveSQL(%s) called.", hiveSQL);
   jenv_->PopLocalFrame(NULL);
   return HVC_OK;
@@ -395,7 +397,7 @@ HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
 HVC_RetCode HiveClient_JNI::getAllTables(NAHeap *heap, const char* schName, 
                                          LIST(Text *)& tblNames)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getAllTables(%s, %p) called.", schName, (void *) &tblNames);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Enter HiveClient_JNI::getAllTables(%s, %p) called.", schName, (void *) &tblNames);
   if (initJNIEnv() != JOI_OK)
      return HVC_ERROR_INIT_PARAM;
   if (getInstance() == NULL)
@@ -443,7 +445,7 @@ HVC_RetCode HiveClient_JNI::getAllTables(NAHeap *heap, const char* schName,
 //////////////////////////////////////////////////////////////////////////////	
 HVC_RetCode HiveClient_JNI::close()	
 {	
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");	
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HiveClient_JNI::close() called.");	
 	
   if (initJNIEnv() != JOI_OK)	
      return HVC_ERROR_INIT_PARAM;	
@@ -460,7 +462,7 @@ HVC_RetCode HiveClient_JNI::close()
   	
   if (jresult == false) 	
   {	
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::close()", getLastError());	
+    logError(CAT_SQL_HDFS, "HiveClient_JNI::close()", getLastError());	
     jenv_->PopLocalFrame(NULL);	
     return HVC_ERROR_CLOSE_EXCEPTION;	
   }	
@@ -478,7 +480,7 @@ HVC_RetCode HiveClient_JNI::getHiveTableInfo(const char* schName,
                                             const char* tabName,
                                             NABoolean readPartnInfo)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getHiveTableInfo(%s, %s)", schName, tabName);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Enter HiveClient_JNI::getHiveTableInfo(%s, %s)", schName, tabName);
   if (initJNIEnv() != JOI_OK)
      return HVC_ERROR_INIT_PARAM;
   jstring js_schName = jenv_->NewStringUTF(schName);
@@ -508,7 +510,7 @@ HVC_RetCode HiveClient_JNI::getHiveTableInfo(const char* schName,
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_GET_HVT_INFO_EXCEPTION;
   }
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Exit HiveClient_JNI::getHiveTableInfo(%s, %s).", schName, tabName);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Exit HiveClient_JNI::getHiveTableInfo(%s, %s).", schName, tabName);
   jenv_->PopLocalFrame(NULL);
   if (jresult)
      return HVC_OK;
@@ -1171,5 +1173,5 @@ HVC_RetCode HiveClient_JNI::populateTableParams(NAHeap *heap, hive_sd_desc *sd, 
 ////////////////////////////////////////////////////////////////////////////  
 void HiveClient_JNI::logIt(const char* str)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, str);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, str);
 }

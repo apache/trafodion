@@ -2359,12 +2359,11 @@ short CmpDescribeHiveTable (
 
   outputShortLine(space, "  )");
 
-  // show hive table partitions and buckets defination.
-  // this default schema name is what the Hive default schema is called in SeaHive
+  // show hive table partitions and buckets definition.
+  // this default database of hive which is mapped as schema HIVE in Trafodion
   HiveMetaData* md = bindWA.getSchemaDB()->getNATableDB()->getHiveMetaDB();
   NAString defSchema = ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
   defSchema.toUpper();
-  struct hive_tbl_desc* htbl;
   NAString tableNameInt = dtName.getQualifiedNameObj().getObjectName();
   NAString schemaNameInt = dtName.getQualifiedNameObj().getSchemaName();
   if (dtName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString() == defSchema)

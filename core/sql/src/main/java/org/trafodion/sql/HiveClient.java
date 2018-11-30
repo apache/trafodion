@@ -134,7 +134,6 @@ public class HiveClient {
 
     public static boolean close() 
     {	
-        hmsClient.close();	
         return true;	
     }
  
