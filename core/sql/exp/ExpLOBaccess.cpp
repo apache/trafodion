@@ -1779,77 +1779,23 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     lobDebugInfo("In ExLob::allocateDesc",0,__LINE__,lobTrace_);
     Int32 openFlags = O_RDONLY ;   
     HDFS_Client_RetCode hdfsClientRetcode;
+    hdfsFileInfo *fInfo = NULL;
 
     if (! useLibHdfs_) {
-       if (size == 0) {
-          // Delete and Create the Hdfs file by passing overwrite to TRUE
-          hdfsClientRetcode = hdfsClient_->hdfsCreate(lobDataFile_.data(), TRUE, FALSE, FALSE); 
-          if (hdfsClientRetcode != HDFS_CLIENT_OK)
-             return LOB_DATA_FILE_WRITE_ERROR;
-          else {
-             dataOffset = 0;
-             return LOB_OPER_OK; 
-          }
-       }
-       else {
+     
          dataOffset = hdfsClient_->hdfsSize(hdfsClientRetcode); 
          if (hdfsClientRetcode != HDFS_CLIENT_OK)
             return LOB_DATA_FILE_WRITE_ERROR;
          ex_assert(dataOffset >= 0, "Offset is -1 possibly due to path being directory");
          return  LOB_OPER_OK;
-       }
+       
     }
-    if (size == 0) //we are trying to empty this lob.
+    else
       {
-        //rename lob datafile
-        char saveLobDataFile[lobDataFile_.length() + sizeof("_save")]; // sizeof includes room for null terminator
-        strcpy(saveLobDataFile,lobDataFile_.data());
-        strcpy(saveLobDataFile+lobDataFile_.length(),"_save");
-        Int32 rc2 = hdfsRename(fs_,lobDataFile_.data(),saveLobDataFile);
-        if (rc2 == -1)
-          {
-            lobDebugInfo("Problem renaming datafile to save data file",0,__LINE__,lobTrace_);
-            return LOB_DATA_FILE_WRITE_ERROR;
-          }
-        //create a new file of the same name.
-        hdfsFile fdNew = hdfsOpenFile(fs_, lobDataFile_.data(),O_WRONLY|O_CREAT,0,0,0);
-        if (!fdNew) 
-          {
-            // extract a substring small enough to fit into logBuf
-            size_t len = MINOF(lobDataFile_.length(),sizeof(logBuf)-40); 
-            char lobDataFileSubstr[len+1];  // +1 for trailing null
-            strncpy(lobDataFileSubstr,lobDataFile_.data(),len);
-            lobDataFileSubstr[len] = '\0';
-
-            str_sprintf(logBuf,"Could not create/open file:%s",lobDataFileSubstr);
-            lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-            
-            //restore previous version
-            Int32 rc2 = hdfsRename(fs_,saveLobDataFile,lobDataFile_.data());
-              if (rc2 == -1)
-                {
-                  lobDebugInfo("Problem restoring datafile . Will need to retry the update",0,__LINE__,lobTrace_);
-                  return LOB_DATA_FILE_WRITE_ERROR;
-                }
-               return LOB_DATA_FILE_OPEN_ERROR;
-            
-          }
-        else
-          {
-            //A new empty data file has been created.
-            // delete the saved data file
-            Int32 rc2 = hdfsDelete(fs_,saveLobDataFile,FALSE);//ok to ignore error.nt32            
-            if (rc2 == -1)
-              {
-                lobDebugInfo("Problem deleting saved datafile . Will need to manually cleanup saved datafile",0,__LINE__,lobTrace_);
-              }
-            hdfsCloseFile(fs_,fdNew);
-            fdNew = NULL;    
-          }
+        fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
+        if (fInfo)
+          dataOffset = fInfo->mSize;
       }
-    hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
-    if (fInfo)
-      dataOffset = fInfo->mSize;
     // if -1, don't do GC or if reached the limit do GC
     if ((lobGCLimit != -1) && (dataOffset > lobGCLimit)) 
       {
@@ -1874,13 +1820,24 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
       }
       if (GCDone) // recalculate the new offset  
         {  
-          hdfsFreeFileInfo(fInfo, 1);
-          fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
+           if (! useLibHdfs_) 
+             {
+                dataOffset = hdfsClient_->hdfsSize(hdfsClientRetcode); 
+                if (hdfsClientRetcode != HDFS_CLIENT_OK)
+                  return LOB_DATA_FILE_WRITE_ERROR;
+                ex_assert(dataOffset >= 0, "Offset is -1 possibly due to path being directory");
+             }
+           else
+             {
+               hdfsFreeFileInfo(fInfo, 1);
+               fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
+               if (fInfo)
+                 dataOffset = fInfo->mSize;
+
+             }
         }
         
-      if (fInfo)
-        dataOffset = fInfo->mSize;
-
+     
       // extract a substring small enough to fit into logBuf
       size_t len = MINOF(lobDataFile_.length(),sizeof(logBuf)-70); 
       char lobDataFileSubstr[len+1];  // +1 for trailing null
@@ -1894,8 +1851,6 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
         str_sprintf(logBuf,"Allocating new Offset %ld in %s ",
                     dataOffset,lobDataFileSubstr);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-      //Find the last offset in the file
-      // dataOffset = hdfsTell(fs_,fdData_);  //commenting out.hdfsTell always returns 0 !!
      
       return LOB_OPER_OK;    
 }
