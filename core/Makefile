@@ -95,7 +95,7 @@ cleantests:
 	cd ../dcs/src/test/jdbc_test && $(RM) -r jdbcprop pom.xml  target
 	cd ../tests/phx && $(RM) -r jdbcprop *.log pom.xml target
 
-clean: sqroot
+clean: 
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
 	cd dbsecurity &&		$(MAKE) clean
@@ -112,7 +112,7 @@ clean: sqroot
 	cd ../install &&                $(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
-cleanall: sqroot eclipseclean cleantests
+cleanall: eclipseclean cleantests
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd dbsecurity &&		$(MAKE) cleanall
 	cd sqf &&			$(MAKE) cleanall

@@ -32,10 +32,12 @@ GENVERS			    =./genvers
 all: build_all
 
 build_all: build_chk
-	echo "$(MAVEN) site package -DskipTests"
-	echo "### For full Maven output, see file build_rest.log"
-	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_rest.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
-	$(RM) $(VFILE)
+	@if [ ! -f target/*.jar ] ; then \
+		echo "$(MAVEN) site package -DskipTests" ; \
+		echo "### For full Maven output, see file build_rest.log" ; \
+		set -o pipefail && $(MAVEN) site package -DskipTests | tee build_rest.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile' ; \
+		$(RM) $(VFILE) ; \
+	fi
 
 build_chk:
 	$(GENVERS) > $(VFILE)
@@ -43,7 +45,9 @@ build_chk:
 	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
 
 clean:
-	-$(MAVEN) clean |grep ERROR
+	-@if [ -d target ] ; then \
+		$(MAVEN) clean |grep ERROR ; \
+	fi
 	$(RM) build_rest.log
 	$(RM) $(VFILE)
 	$(RM) ../../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_REST_TARNAME)
