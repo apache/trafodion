@@ -26,17 +26,20 @@ include ../../macros.gmk #top level
 all: build_all
 
 build_all: LICENSE NOTICE 
-	echo "$(MAVEN) package -DskipTests"
-	set -o pipefail && $(MAVEN) package -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
-	cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib
-	mkdir -p ../clients
-	mv target/jdbcT4-${TRAFODION_VER}.zip ../clients
-	#ln -sf ${TRAF_HOME}/export/lib/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib/jdbcT4.jar
-	`cd ${TRAF_HOME}/export/lib;ln -sf jdbcT4-${TRAFODION_VER}.jar jdbcT4.jar`
+	@if [ ! -f target/*.jar ]; then \
+		echo "$(MAVEN) package -DskipTests"; \
+		set -o pipefail && $(MAVEN) package -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; \
+		cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib; \
+		mkdir -p ../clients; \
+		mv target/jdbcT4-${TRAFODION_VER}.zip ../clients; \
+		cd ${TRAF_HOME}/export/lib;ln -sf jdbcT4-${TRAFODION_VER}.jar jdbcT4.jar; \
+	fi
 
 clean:
-	-$(MAVEN) clean | grep ERROR
-	$(RM) build_jdbct4.log ${TRAF_HOME}/export/lib/jdbcT4*.jar
+	@if [ -f target/*.jar ]; then \
+		$(MAVEN) clean | grep ERROR; \
+		$(RM) build_jdbct4.log ${TRAF_HOME}/export/lib/jdbcT4*.jar; \
+	fi
 
 LICENSE: ../../../licenses/LICENSE-clients
 	cp -f $? $@

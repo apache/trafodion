@@ -127,11 +127,11 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.5.1</version>
-        <inherited>true</inherited>
-        <configuration>
-            <source>1.7</source>
-            <target>1.7</target>
-        </configuration>
+	<inherited>true</inherited>
+	<configuration>
+	  <source>${source.version}</source>
+	  <target>${target.version}</target>
+	</configuration>
     </plugin>
     <plugin>
       <groupId>org.codehaus.mojo</groupId>
@@ -527,6 +527,8 @@
     <surefire.skipSecondPart>true</surefire.skipSecondPart>
 	<surefire.firstPartGroups>org.trafodion.dcs.SmallTests</surefire.firstPartGroups>
 	<surefire.secondPartGroups>org.trafodion.dcs.MediumTests, org.trafodion.dcs.LargeTests</surefire.secondPartGroups>
+	<source.version>1.7</source.version>
+	<target.version>1.7</target.version>
   	
   </properties>
     
@@ -655,6 +657,17 @@
     <!-- JDBC drivers needed for compile, but not site docs 
 	 This allows turning off dependency on command line (-P '!jdbc') -->
     <profile>
+        <id>disable-javadoc-doclint</id>
+        <activation>
+            <jdk>[1.8,)</jdk>
+        </activation>
+        <properties>
+            <javadoc.opts>-Xdoclint:none</javadoc.opts>
+	    <source.version>1.8</source.version>
+	    <target.version>1.8</target.version>
+        </properties>
+    </profile>
+    <profile>
       <id>jdbc</id>
       <activation>
         <activeByDefault>true</activeByDefault>
@@ -741,7 +754,8 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven.javadoc.plugin.version}</version>
         <configuration>
-          <docfilessubdirs>true</docfilessubdirs>
+		<docfilessubdirs>true</docfilessubdirs>
+		<additionalparam>${javadoc.opts}</additionalparam>
         </configuration>
         <reportSets>
           <reportSet>
