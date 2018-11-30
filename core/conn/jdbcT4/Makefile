@@ -27,7 +27,7 @@ all: build_all
 
 build_all: LICENSE NOTICE 
 	echo "$(MAVEN) package -DskipTests"
-	set -o pipefail && $(MAVEN) package -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2 -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	set -o pipefail && $(MAVEN) install -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2 -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib
 	mkdir -p ../clients
 	mv target/jdbcT4-${TRAFODION_VER}.zip ../clients
