@@ -221,19 +221,21 @@ SecPwd::SecPwd(const char *dir, const char* fileName,
     if(stat(certDir,&st) != 0)
         throw SecurityException(DIR_NOTFOUND, (char *)certDir);
 
-    if (lcid == 0x804) // if local charset is not utf8
+    if (lcid == 0x804) // if local charset is gbk
     {
         serverNameGBKToUtf8 = (char *)malloc(MAX_SQL_IDENTIFIER_LEN + 1);
         if (TranslateUTF8(TRUE, serverName, MAX_SQL_IDENTIFIER_LEN,
             serverNameGBKToUtf8, MAX_SQL_IDENTIFIER_LEN, &translen, transError) != SQL_SUCCESS)
         {
-            delete serverNameGBKToUtf8;
+            free(serverNameGBKToUtf8);
+            serverNameGBKToUtf8 = NULL;
             throw SecurityException(INPUT_PARAMETER_IS_NULL, " - serverName.");
         }
         certFile = buildName(certDir, fileName, serverNameGBKToUtf8, CER);
         activeCertFile = buildName(certDir, activeFileName, serverNameGBKToUtf8, ACTIVE_CER);
 
-        delete serverNameGBKToUtf8;
+        free(serverNameGBKToUtf8);
+        serverNameGBKToUtf8 = NULL;
     }
     else
     {
