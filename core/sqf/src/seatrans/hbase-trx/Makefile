@@ -21,148 +21,48 @@
 
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
-BLD_HBASE_APACHE10_TRX_JARNAME     =hbase-trx-apache1_0-$(TRAFODION_VER).jar
-BLD_HBASE_APACHE11_TRX_JARNAME     =hbase-trx-apache1_1-$(TRAFODION_VER).jar
-BLD_HBASE_APACHE12_TRX_JARNAME     =hbase-trx-apache1_2-$(TRAFODION_VER).jar
-BLD_HBASE_CDH54_TRX_JARNAME        =hbase-trx-cdh5_4-$(TRAFODION_VER).jar
-BLD_HBASE_CDH55_TRX_JARNAME        =hbase-trx-cdh5_5-$-$(TRAFODION_VER).jar
-BLD_HBASE_CDH57_TRX_JARNAME        =hbase-trx-cdh5_7-$-$(TRAFODION_VER).jar
-BLD_HBASE_MAPR_TRX_JARNAME         =hbase-trx-mapr4_0-$(TRAFODION_VER).jar
-BLD_HBASE_HDP_TRX_JARNAME          =hbase-trx-hdp2_3-$(TRAFODION_VER).jar
-BLD_HBASE_SSCC_TRX_JARNAME         =hbase-trx-sscc-$(TRAFODION_VER).jar
-
 VFILE			    =hbase-trx.jar.versions
 GENVERS			    =./genvers
 UNCOMMENT_STRING	    =./uncomment_string
 REINSTATE_ORIG   	    =./reinstate_orig
+#When add one more hadoop version, please addthe names in below 4 lines in order
+VERSION_NAMES		=0       1       2       3        4          5          6
+JAR_NAMES		=cdh5_4  cdh5_5  cdh5_7  hdp2_3   apache1_0  apache1_1  apache1_2 
+POM_NAMES		=cdh54   cdh55   cdh57   hdp      apache10   apache11   apache12 
+UNCOMMENT_NAMES		=CDH5.4  CDH5.5  CDH5.7  HDP      APACHE1.0  APACHE1.1  APACHE1.2
 
 .NOTPARALLEL: all
 
-all: build_all
-
-jdk_1_7_cdh54: build_chk_cdh54
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) CDH5.4
-	echo "$(MAVEN) package -DskipTests"
-	echo "### For full Maven output, see file build_trx.log"
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh54 package install -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_CDH54_TRX_JARNAME) $(TRAF_HOME)/export/lib
+all: 
+	@pom_nms=($(shell echo $(POM_NAMES))); \
+	uncomment_nms=($(shell echo $(UNCOMMENT_NAMES))); \
+	jar_nms=($(shell echo $(JAR_NAMES))); \
+	version_nms=($(shell echo $(VERSION_NAMES))); \
+	length=$${#version_nms[@]}; \
+	let 'length=length-1'; \
+	$(GENVERS) > $(VFILE); \
+	for i in `echo $${version_nms[@]}` ; do \
+		jar_nm=target/hbase-trx-$${jar_nms[$${i}]}-$(TRAFODION_VER).jar ; \
+		if [ ! -f $${jar_nm} ]; then \
+			if [ $(GENVERS) -nt $${jar_nm} ]; then echo "update manifest"; $(RM) -f $${jar_nm}; fi ; \
+			if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt $${jar_nm} ]; then echo "update manifest"; $(RM) -f $${jar_nm}; fi ; \
+			echo $${uncomment_nms[$${i}]}; \
+			$(REINSTATE_ORIG); \
+			$(UNCOMMENT_STRING) $${uncomment_nms[$${i}]}; \
+			echo "$${i}/$${length}: $(MAVEN) -f pom.xml.$${pom_nms[$${i}]} package -DskipTests"; \
+			echo "### For full Maven output, see file build_trx.log"; \
+			set -o pipefail && $(MAVEN) -f pom.xml.$${pom_nms[$${i}]} package install -DskipTests | tee -a build_trx.log; \
+		fi ; \
+		mkdir -p $(TRAF_HOME)/export/lib; \
+		cp -pf $${jar_nm}  $(TRAF_HOME)/export/lib; \
+	done ;  \
 	$(RM) $(VFILE)
-
-jdk_1_7_cdh55: build_chk_cdh55
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) CDH5.5
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh55 package install -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_CDH55_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-jdk_1_7_cdh57: build_chk_cdh57
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) CDH5.7
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh57 package install -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_CDH57_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-jdk_1_7_mapr: build_chk_mapr
-	set -o pipefail && $(MAVEN) -f pom.xml.mapr package -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_MAPR_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-jdk_1_7_hdp: build_chk_hdp
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) HDP2.3 
-	set -o pipefail && $(MAVEN) -f pom.xml.hdp package -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_HDP_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-jdk_1_7_apache10: build_chk_apache10
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) APACHE1.0
-	set -o pipefail && $(MAVEN) -f pom.xml.apache10 package -DskipTests | tee build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_APACHE10_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-jdk_1_7_apache11: build_chk_apache11
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) APACHE1.1
-	set -o pipefail && $(MAVEN) -f pom.xml.apache11 package -DskipTests | tee build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_APACHE11_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-jdk_1_7_apache12: build_chk_apache12
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) APACHE1.2
-	set -o pipefail && $(MAVEN) -f pom.xml.apache12 package -DskipTests | tee build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_APACHE12_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-build_all: jdk_1_7_cdh54 jdk_1_7_cdh55 jdk_1_7_cdh57 jdk_1_7_hdp jdk_1_7_apache10 jdk_1_7_apache11 jdk_1_7_apache12
-
-build_chk_apache10:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_APACHE10_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE10_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_APACHE10_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE10_TRX_JARNAME); fi
-
-build_chk_apache11:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_APACHE11_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE11_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_APACHE11_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE11_TRX_JARNAME); fi
-
-build_chk_apache12:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_APACHE12_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE12_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_APACHE12_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE12_TRX_JARNAME); fi
-
-build_chk_cdh54:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_CDH54_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH54_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_CDH54_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH54_TRX_JARNAME); fi
-
-build_chk_cdh55:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_CDH55_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH55_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_CDH55_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH55_TRX_JARNAME); fi
-
-build_chk_cdh57:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_CDH57_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH57_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_CDH57_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH57_TRX_JARNAME); fi
-
-build_chk_mapr:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_MAPR_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_MAPR_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_MAPR_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_MAPR_TRX_JARNAME); fi
-
-build_chk_hdp:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_HDP_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_HDP_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP_TRX_JARNAME); fi
 
 clean:
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE10_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE11_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE12_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH54_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH55_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH57_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_MAPR_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_HDP_TRX_JARNAME)
+	$(RM) $(TRAF_HOME)/export/lib/hbase-trx-*-$(TRAFODION_VER).jar
 	$(REINSTATE_ORIG)
-	-$(MAVEN) -f pom.xml.apache10 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.apache11 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.apache12 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh54 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh55 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh57 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.mapr clean | grep ERROR
-	-$(MAVEN) -f pom.xml.hdp clean | grep ERROR
+	-@if [ -d target ]; then \
+		$(MAVEN) -f pom.xml.apache10 clean | grep ERROR 2>/dev/null ; \
+	fi
 	$(RM) build_trx.log
 	$(RM) $(VFILE)

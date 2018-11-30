@@ -27,20 +27,21 @@ include ../macros.gmk #top level
 
 all: build_all
 
-build_all:	 
-	$(MAKE) mavenbuild
-	echo "$(MAVEN) site package -DskipTests"
-	echo "### For full Maven output, see file build_utility.log"
+build_all: mavenbuild
 
 mavenbuild:
-        # create a jar manifest file with the correct version information
-	mkdir -p src/main/resources
-	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 > src/main/resources/trafodion-utility.jar.mf
-        # run maven
-	set -o pipefail && $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf target/trafodion-utility-*.jar $(TRAF_HOME)/export/lib
+	@if [ ! -f target/trafodion-utility-${TRAFODION_VER}.jar ]; then \
+		echo "$(MAVEN) site package -DskipTests" ; \
+		echo "### For full Maven output, see file build_utility.log" ; \
+		mkdir -p src/main/resources ; \
+		$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 > src/main/resources/trafodion-utility.jar.mf ; \
+		set -o pipefail && $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
+		cp -pf target/trafodion-utility-*.jar $(TRAF_HOME)/export/lib ; \
+	fi
 
 clean:
-	$(MAVEN) clean
+	-@if [ -d target ] ; then \
+		$(MAVEN) clean ; \
+	fi
 	$(RM) build_utility.log
 	$(RM) -rf $(TRAF_HOME)/export/lib/trafodion-utility-*.jar
