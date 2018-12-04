@@ -29,7 +29,7 @@ if [ -z $JAVA_HOME ]; then
     exit 1;
 fi
 
-mkdir $TRAF_LOG
+mkdir -p $TRAF_LOG
 lv_stderr_file="$TRAF_LOG/hbcheck.log"
 echo "Stderr being written to the file: ${lv_stderr_file}"
 for interval in 5 10 15 30
