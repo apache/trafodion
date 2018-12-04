@@ -307,8 +307,8 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc( const char* schemaName,
 
     while (ptr) {
 
-      if ( !(strcmp(ptr->tblName_, tblName)
-             ||strcmp(ptr->schName_, schemaName))) {
+      if ( !(stricmp(ptr->tblName_, tblName)
+             ||stricmp(ptr->schName_, schemaName))) {
         if ((NOT rereadFromMD) && (validate(ptr)))
            return ptr;
         else {
@@ -332,6 +332,9 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc( const char* schemaName,
 
       ptr = ptr->next_;
    }
+   
+   if (validateOnly)
+     return NULL;
 
    HVC_RetCode hvcRetcode;
    HiveClient_JNI *hiveClient = HiveClient_JNI::newInstance(heap_, hvcRetcode);
@@ -569,7 +572,8 @@ Int32 hive_tbl_desc::getSortColNum(const char* name)
 
 Int64 hive_tbl_desc::redeftime()
 {
-  Int64 result = creationTS_;
+  // creationTS_ is in seconds 
+  Int64 result = creationTS_ * 1000;
   if (redefineTS_ !=  -1)
       result = redefineTS_;
   return result;

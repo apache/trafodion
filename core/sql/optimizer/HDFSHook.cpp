@@ -854,50 +854,40 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   Int32 hdfsPort = -1;
   NAString tableDir;
 
-  if (hsd)
-    {
-      if (hsd->isTextFile())
+  if (hsd) {
+     if (hsd->isTextFile())
         type_ = TEXT_;
-      else if (hsd->isSequenceFile())
+     else if (hsd->isSequenceFile())
         type_ = SEQUENCE_;
-      else if (hsd->isOrcFile())
+     else if (hsd->isOrcFile())
         type_ = ORC_;
-      else
+     else
         type_ = UNKNOWN_;
-    }
-
-  while (hsd && diags_.isSuccess())
-    {
-      // split table URL into host, port and filename
-      if (! splitLocation(hsd->location_,
-                          hdfsHost,
-                          hdfsPort,
-                          tableDir,
-                          diags_,
-                          hdfsPortOverride_)) {
-        return FALSE;
-      }
-
-      if (! connectHDFS(hdfsHost, hdfsPort)) {
-        return FALSE; // diags_ is set
-      }
-
-      // put back fully qualified URI
-      tableDir = hsd->location_;
-
-      // get the fine-resolution timestamp before visiting
-      // the tree, to avoid losing any updates while this
-      // method is executing
-      computeModificationTSmsec();
-
-      if (diags_.isSuccess())
+  }
+  // split table URL into host, port and filename
+  if (! splitLocation(hsd->location_,
+                hdfsHost,
+                hdfsPort,
+                tableDir,
+                diags_,
+                hdfsPortOverride_)) 
+      return FALSE;
+  if (! connectHDFS(hdfsHost, hdfsPort)) 
+     return FALSE; // diags_ is set
+  // put back fully qualified URI
+  tableDir = hsd->location_;
+  computeModificationTSmsec();
+  if (diags_.isSuccess()) {
+     htd->setRedeftime(modificationTSInMillisec_);
+     while (hsd && diags_.isSuccess()) {
         // visit the directory
-      processDirectory(tableDir, hsd->buckets_, 
+        processDirectory(hsd->location_, hsd->buckets_, 
                        hsd->isTrulyText(), 
                        hsd->getRecordTerminator());
 
-      hsd = hsd->next_;
-    }
+        hsd = hsd->next_;
+     }
+  }
 
   disconnectHDFS();
   validationJTimestamp_ = JULIANTIMESTAMP();
@@ -1147,8 +1137,6 @@ void HHDFSTableStats::disconnectHDFS()
 
 void HHDFSTableStats::computeModificationTSmsec()
 {
-  if (modificationTSInMillisec_ <= 0)
-    {
       HDFS_Client_RetCode rc;
 
       // get a millisecond-resolution timestamp via JNI
@@ -1167,9 +1155,6 @@ void HHDFSTableStats::computeModificationTSmsec()
           diags_.recordError(errMsg, "HHDFSTableStats::computeModificationTSmsec");
           modificationTSInMillisec_ = -1;
         }
-    }
-
-  return;
 }
 
 OsimHHDFSStatsBase* HHDFSTableStats::osimSnapShot(NAMemory * heap)
