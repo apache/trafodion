@@ -31,7 +31,7 @@ SQLRETURN UTF8ToWChar(char *st, int stlen, wchar_t *wst,  int wstlen, int *trans
 
 // If the first argument is TRUE, the function converts the given string from UTF-8 to Locale.
 // If the first argument is FALSE, the function converts the given string from Locale to UTF-8
-SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int outlen, int *translen, char *errorMsg);
+SQLRETURN TranslateUTF8(bool forward, const char *inst, int inlen, char *outst, int outlen, int *translen, char *errorMsg);
 
 SQLRETURN WCharToLocale(wchar_t *wst, int wstlen, char *st, int stlen, int *translen, char* error = NULL, char *replacementChar = NULL);
 SQLRETURN LocaleToWChar(char *st, int stlen, wchar_t *wst, int wstlen,  int *translen, char* error = NULL);
