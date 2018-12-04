@@ -903,10 +903,11 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
 
   diags_.reset();
 
-  // check only once within a specified time interval
-  if (expirationJTimestamp == -1 ||
+  // check if the stats needs to be fetched within a specified time interval
+  // when not requested to refresh
+  if (! refresh && (expirationJTimestamp == -1 ||
       (expirationJTimestamp > 0 &&
-       validationJTimestamp_ < expirationJTimestamp))
+       validationJTimestamp_ < expirationJTimestamp)))
     return result; // consider the stats still valid
 
   // if partitions get added or deleted, that gets
