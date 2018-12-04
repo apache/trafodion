@@ -143,9 +143,11 @@ values((select * from t130lob1));
 
 --test empty_blob(), empty_clob()
 delete from t130lob2;
+insert into t130lob2 values(0,stringtolob('inserted row10'));
 insert into t130lob2 values (1, empty_blob());
 select lobtostring(c2,10) from t130lob2;
 delete from t130lob2;
+insert into t130lob2 values(0,stringtolob('inserted row10'));
 insert into t130lob2 values (1, empty_clob());
 select lobtostring(c2,10) from t130lob2;
 update t130lob2 set c2=stringtolob('inserted row11');
