@@ -173,6 +173,9 @@ public class HiveClient {
             if (rfTime != null)
                 redefTime = Long.parseLong(rfTime);
         }
+        // createTime is in seconds
+        // Assuming DDL_TIME is also in seconds
+        redefTime *= 1000;
         // Get the lastest partition/file timestamp 
         int numPartKeys = table.getPartitionKeysSize();
         String rootDir = table.getSd().getLocation();

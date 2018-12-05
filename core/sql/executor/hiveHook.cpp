@@ -380,9 +380,6 @@ NABoolean HiveMetaData::validate(hive_tbl_desc *hDesc)
    if ((retCode == HVC_DONE) || (currentRedefTime != hDesc->redeftime())) 
      return FALSE;
   
-   // object has been validated a short time ago
-   hDesc->setRedeftime(currentRedefTime);
-   
    return TRUE;
 }
 
