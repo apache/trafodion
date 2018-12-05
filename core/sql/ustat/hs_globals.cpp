@@ -1497,11 +1497,11 @@ HSColGroupStruct::HSColGroupStruct()
 
 HSColGroupStruct::~HSColGroupStruct()
   {
+    freeISMemory();  // do this first, as it dereferences colNames for logging
     delete clistr;
     delete colNames;
     delete groupHist;
     delete next;
-    freeISMemory();
   }
 
 /**
