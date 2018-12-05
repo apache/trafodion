@@ -647,76 +647,9 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
     {
     case EXTRACT_NOT_STARTED:
     {
-      pstate.step_= EXTRACT_CHECK_MOD_TS;
+      pstate.step_ = EXTRACT_INITIALIZE;
     }
     break;
-
-    case EXTRACT_CHECK_MOD_TS:
-    {
-      // if no tgt file or input timestamp is -1, skip data mod check.
-      // Also, if this insert is being done with overwrite, then data mod
-      // check has already been done during directory cleanup. Skip it here.
-      if ((! myTdb().getTargetFile()) ||
-          (myTdb().getModTSforDir() == -1) ||
-          (myTdb().getOverwriteHiveTable()))
-        {
-          pstate.step_ = EXTRACT_INITIALIZE;
-          break;
-        }
-
-      numBuffers_ = 0;
-
-      memset (hdfsHost_, '\0', sizeof(hdfsHost_));
-      strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
-      hdfsPort_ = myTdb().getHdfsPortNum();
-      memset (fileName_, '\0', sizeof(fileName_));
-      memset (targetLocation_, '\0', sizeof(targetLocation_));
-      snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
-
-      Int64 failedModTS = -1;
-      Lng32 failedLocBufLen = 1000;
-      char failedLocBuf[failedLocBufLen];
-      retcode = 
-        lobInterfaceDataModCheck(failedModTS, failedLocBuf, failedLocBufLen);
-      if (retcode < 0)
-      {
-        Lng32 cliError = 0;
-        
-        Lng32 intParam1 = -retcode;
-        ComDiagsArea * diagsArea = NULL;
-        ExRaiseSqlError(getHeap(), &diagsArea, 
-                        (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
-                        NULL, &intParam1, 
-                        &cliError, 
-                        NULL, 
-                        "HDFS",
-                        (char*)"ExpLOBInterfaceDataModCheck",
-                        getLobErrStr(intParam1));
-        pentry_down->setDiagsArea(diagsArea);
-        pstate.step_ = EXTRACT_ERROR;
-        break;
-      }
-      
-      if (retcode == 1) // check failed
-      {
-        char errStr[200];
-        str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
-                    myTdb().getModTSforDir(), failedModTS);
-        
-        ComDiagsArea * diagsArea = NULL;
-        ExRaiseSqlError(getHeap(), &diagsArea, 
-                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
-                        NULL, NULL, NULL,
-                        errStr);
-        pentry_down->setDiagsArea(diagsArea);
-        pstate.step_ = EXTRACT_ERROR;
-        break;
-      }
-      
-      pstate.step_= EXTRACT_INITIALIZE;
-    }
-    break;
-    
     case EXTRACT_INITIALIZE:
     {
       pstate.processingStarted_ = FALSE;

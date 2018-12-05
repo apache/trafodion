@@ -2355,9 +2355,132 @@ short CmpDescribeHiveTable (
       NAString colString(buf);
       Int32 j = i;
       outputColumnLine(space, colString, j);
-    }
+  }
 
   outputShortLine(space, "  )");
+
+  // show hive table partitions and buckets definition.
+  // this default database of hive which is mapped as schema HIVE in Trafodion
+  HiveMetaData* md = bindWA.getSchemaDB()->getNATableDB()->getHiveMetaDB();
+  NAString defSchema = ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
+  defSchema.toUpper();
+  NAString tableNameInt = dtName.getQualifiedNameObj().getObjectName();
+  NAString schemaNameInt = dtName.getQualifiedNameObj().getSchemaName();
+  if (dtName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString() == defSchema)
+     schemaNameInt = md->getDefaultSchemaName();
+   // Hive stores names in lower case
+   // Right now, just downshift, could check for mixed case delimited
+   // identifiers at a later point, or wait until Hive supports delimited identifiers
+  schemaNameInt.toLower();
+  tableNameInt.toLower();
+  hive_tbl_desc* htd = md->getTableDesc(schemaNameInt, tableNameInt, FALSE,
+                // reread Hive Table Desc from MD.
+                (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON),
+                TRUE);
+  if( htd && htd->getPartKey() && type == 2)
+  {
+       NAString partStr = "  PARTITIONED BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           partStr += colNameUpper;
+           partStr += ' ';
+           partStr += hpd->type_;
+           partStr += ",";
+       }
+       partStr[partStr.length()-1] = ')';
+       outputShortLine(space, partStr);
+  }
+  if(htd && htd->getBucketingKeys() && type == 2)
+  {
+       NAString bktStr = "  CLUSTERED BY (";
+       for(hive_bkey_desc* hbd = htd->getBucketingKeys(); hbd; hbd = hbd->next_)
+       {
+           bktStr += hbd->name_;
+           bktStr += ",";
+       }
+       bktStr[bktStr.length()-1] = ')';
+       outputShortLine(space, bktStr);
+
+       hive_skey_desc* sortkeyHeader = htd->getSortKeys();
+       if(sortkeyHeader)
+       {
+           NAString skStr = "  SORTED BY (";
+           for(hive_skey_desc* hsd = sortkeyHeader; hsd; hsd = hsd->next_)
+           {
+               skStr += hsd->name_;
+               if (hsd->orderInt_ == 0)
+                 skStr += " DESC";
+               skStr += ",";
+           }
+           skStr[skStr.length()-1] = ')';
+           outputShortLine(space, skStr);
+       }
+
+       bktStr = "  INTO ";
+       bktStr += std::to_string((long long)(htd->sd_->buckets_)).c_str();
+       bktStr += " BUCKETS ";
+       outputShortLine(space, bktStr);
+  }
+  if( htd && htd->getPartKey() && type == 3 && 
+      (CmpCommon::getDefault(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL) 
+       == DF_ON))
+  {
+       NAString storeStr = "  STORE BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           storeStr += colNameUpper;
+           storeStr += ",";
+       }
+       storeStr[storeStr.length()-1] = ')';
+       outputShortLine(space, storeStr);
+       if (gpClusterInfo->numOfSMPs() > 1)
+       {
+	 NAString saltStr = "  SALT USING ";
+	 char numNodes[20];
+	 str_itoa(gpClusterInfo->numOfSMPs(), numNodes);
+	 saltStr += numNodes;
+	 saltStr += " PARTITIONS ";
+	 outputShortLine(space, saltStr);
+       }
+  }
+  if( htd && htd->getPartKey() && type == 3 && 
+      (CmpCommon::getDefault(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL)
+       == DF_ON))
+  {
+       NAString storeStr = "  STORE BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           storeStr += colNameUpper;
+           storeStr += ",";
+       }
+       storeStr[storeStr.length()-1] = ')';
+       outputShortLine(space, storeStr);
+  }
+  if( htd && htd->getPartKey() && type == 3 && 
+      (CmpCommon::getDefault(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL)
+       == DF_ON))
+  {
+       NAString storeStr = "  STORE BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           storeStr += colNameUpper;
+           storeStr += ",";
+       }
+       storeStr[storeStr.length()-1] = ')';
+       outputShortLine(space, storeStr);
+  }
 
   const HHDFSTableStats* hTabStats = NULL;
   if (naTable->getClusteringIndex())

@@ -446,11 +446,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 step_ = ASSIGN_RANGES_AT_RUNTIME;
                 break;
               }
-	    else if (getHdfsFileInfoListAsArray().isEmpty())
-	      {
-                step_ = CHECK_FOR_DATA_MOD_AND_DONE;
-		break;
-	      }
+	    else {
+               if (useLibhdfsScan_)
+                   step_ = INIT_HDFS_CURSOR;
+               else
+                   step_ = SETUP_HDFS_SCAN; 
+	    }
 
 	    beginRangeNum_ =  
 	      *(Lng32*)hdfsScanTdb().getHdfsFileRangeBeginList()->get(myInstNum_);
@@ -459,11 +460,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      *(Lng32*)hdfsScanTdb().getHdfsFileRangeNumList()->get(myInstNum_);
 
 	    currRangeNum_ = beginRangeNum_;
-
-	    if (numRanges_ > 0)
-              step_ = CHECK_FOR_DATA_MOD;
-            else
-              step_ = CHECK_FOR_DATA_MOD_AND_DONE;
+            if (numRanges_ <= 0)
+               step_ = DONE;
 	  }          
 	  break;
 
@@ -478,85 +476,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           }
           else
             step_ = DONE;
-          break;
-
-        case CHECK_FOR_DATA_MOD:
-        case CHECK_FOR_DATA_MOD_AND_DONE:
-          {
-            char * dirPath = hdfsScanTdb().hdfsRootDir_;
-            Int64 modTS = hdfsScanTdb().modTSforDir_;
-            if ((dirPath == NULL) || (modTS == -1))
-              dataModCheckDone_ = TRUE;
-
-            if (NOT dataModCheckDone_)
-              {
-                dataModCheckDone_ = TRUE;
-
-                Lng32 numOfPartLevels = hdfsScanTdb().numOfPartCols_;
-
-                if (hdfsScanTdb().hdfsDirsToCheck())
-                  {
-                    // TBD
-                  }
-             
-                Int64 failedModTS = -1;
-                Lng32 failedLocBufLen = 1000;
-                char failedLocBuf[failedLocBufLen];
-                retcode = ExpLOBinterfaceDataModCheck
-                  (lobGlob_,
-                   dirPath,
-                   hdfsScanTdb().hostName_,
-                   hdfsScanTdb().port_,
-                   modTS,
-                   numOfPartLevels,
-                   failedModTS,
-                   failedLocBuf, failedLocBufLen);
-              
-                if (retcode < 0)
-                  {
-                    Lng32 cliError = 0;
-		    
-                    Lng32 intParam1 = -retcode;
-                    ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
-                                    NULL, &intParam1, 
-                                    &cliError, 
-                                    NULL, 
-                                    "HDFS",
-                                    (char*)"ExpLOBInterfaceDataModCheck",
-                                    getLobErrStr(intParam1));
-                    pentry_down->setDiagsArea(diagsArea);
-                    step_ = HANDLE_ERROR_AND_DONE;
-                    break;
-                  }  
-
-                if (retcode == 1) // check failed
-                  {
-                    char errStr[200];
-                    str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
-                                modTS, failedModTS);
-
-                    ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
-                                    NULL, NULL, NULL,
-                                    errStr);
-                    pentry_down->setDiagsArea(diagsArea);
-                    step_ = HANDLE_ERROR_AND_DONE;
-                    break;
-                  }
-              }
-
-            if (step_ == CHECK_FOR_DATA_MOD_AND_DONE)
-              step_ = DONE;
-            else {
-              if (useLibhdfsScan_)
-                 step_ = INIT_HDFS_CURSOR;
-              else
-                 step_ = SETUP_HDFS_SCAN;
-            }
-          }        
           break;
         case SETUP_HDFS_SCAN:
           {   
@@ -810,7 +729,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                       }
                     else
                       ExRaiseSqlError(getHeap(), &diagsArea, 
-                                      (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                                      (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE));
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;

@@ -907,7 +907,7 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
   HiveMetaData* hiveMetaDB;
   if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) != DF_ON)
     {
-      hiveMetaDB = new(STMTHEAP) HiveMetaData();
+      hiveMetaDB = new(STMTHEAP) HiveMetaData(STMTHEAP);
 
       if (!hiveMetaDB->init())
         {
@@ -922,7 +922,7 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
         }
     }
   else
-    hiveMetaDB = new(STMTHEAP) HiveMetaData(); // fake metadata
+    hiveMetaDB = new(STMTHEAP) HiveMetaData(STMTHEAP); // fake metadata
 
   if (!HSGlobalsClass::isHiveCat(*catalog_))
     {
@@ -948,7 +948,11 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
   if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) == DF_ON)
     hiveTblDesc_ = hiveMetaDB->getFakedTableDesc(obj.data());
   else
-    hiveTblDesc_ = hiveMetaDB->getTableDesc(sch.data(), obj.data());
+    hiveTblDesc_ = hiveMetaDB->getTableDesc(sch.data(), obj.data(),
+                FALSE,
+                // reread Hive Table Desc from MD.
+                (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON),
+                TRUE);
 
   if (!hiveTblDesc_)
   {

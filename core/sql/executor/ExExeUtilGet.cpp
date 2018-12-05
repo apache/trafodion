@@ -6097,7 +6097,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if (hiveMD_)
 	      NADELETEBASIC(hiveMD_, getHeap());
 
-            hiveMD_ = new (getHeap()) HiveMetaData();
+            hiveMD_ = new (getHeap()) HiveMetaData((NAHeap *)getHeap());
 
             if (hiveMDtdb().getCatalog())
               strcpy(hiveCat_, hiveMDtdb().getCatalog());
@@ -6216,7 +6216,8 @@ short ExExeUtilHiveMDaccessTcb::work()
             int i = 0;
             while (i < tblNames_.entries())
               {
-                hiveMD_->getTableDesc(schForHive_, tblNames_[i]->c_str());
+                hiveMD_->getTableDesc(schForHive_, tblNames_[i]->c_str(), 
+                      FALSE, FALSE, FALSE /*dont read partn info*/);
                 i++;
               }
 
@@ -6341,8 +6342,8 @@ short ExExeUtilHiveMDaccessTcb::work()
             memset(s->nullFormat, ' ', 8);
             if (htd->getSDs()->nullFormat_)
               str_cpy(s->nullFormat, htd->getSDs()->nullFormat_, 8, ' ');
-
-            str_cpy(s->location, htd->getSDs()->location_, 1024, ' ');
+            if (htd->getSDs()->location_ != NULL)
+               str_cpy(s->location, htd->getSDs()->location_, 1024, ' ');
 
             str_cpy(s->hiveTableType, htd->tableType_, 128, ' ');
 

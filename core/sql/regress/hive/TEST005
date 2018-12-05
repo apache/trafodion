@@ -122,8 +122,6 @@ prepare s2part from
   --order by 1
   ;
 execute s1;
--- because we don't invalidate in the executor,
--- this should still return 0 rows
 
 execute s2;
 -- should get an NATable cache
@@ -173,11 +171,9 @@ prepare s3part from
   --order by 1
   ;
 execute s1;
--- s1 should still return 0 rows - for now
 execute s2;
 execute s3;
 execute s1part;
--- s1 should still return 0 rows - for now
 execute s2part;
 execute s3part;
 
