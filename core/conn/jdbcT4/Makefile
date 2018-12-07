@@ -26,7 +26,7 @@ include ../../macros.gmk #top level
 all: build_all
 
 build_all: LICENSE NOTICE 
-	@if [ ! -f target/*.jar ]; then \
+	@if [ ! -f target/jdbcT4-${TRAFODION_VER}.jar ]; then \
 		echo "$(MAVEN) install -DskipTests"; \
 		set -o pipefail && $(MAVEN) install -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; \
 		cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib; \
@@ -36,7 +36,7 @@ build_all: LICENSE NOTICE
 	fi
 
 clean:
-	@if [ -f target/*.jar ]; then \
+	@if [ -d target ]; then \
 		$(MAVEN) clean | grep ERROR; \
 		$(RM) build_jdbct4.log ${TRAF_HOME}/export/lib/jdbcT4*.jar; \
 	fi
