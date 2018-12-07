@@ -30,7 +30,7 @@ all: build_all
 build_all: mavenbuild
 
 mavenbuild:
-	@if [ ! -f target/*.jar ]; then \
+	@if [ ! -f target/trafodion-utility-${TRAFODION_VER}.jar ]; then \
 		echo "$(MAVEN) site package -DskipTests" ; \
 		echo "### For full Maven output, see file build_utility.log" ; \
 		mkdir -p src/main/resources ; \

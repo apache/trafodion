@@ -85,7 +85,7 @@ CP := /bin/cp -f
 all: LICENSE NOTICE $(LIBEXPDIR)/libjdbcT2.so  
 
 $(EXPROOT)/lib/jdbcT2.jar:
-	@if [ ! -f target/*.jar ] ; then \
+	@if [ ! -f target/trafjdbcT2-${TRAFODION_VER}.jar ] ; then \
 		./getBuildInfo ; \
 		$(MAVEN) install -DskipTests ; \
 		$(CP) target/trafjdbcT2-${TRAFODION_VER}.jar $(EXPROOT)/lib ; \

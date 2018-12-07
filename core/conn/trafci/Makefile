@@ -27,11 +27,11 @@ all:Trafci_deploy
 Trafci_deploy:Trafci_installer
 Trafci_installer:Trafci_jar
 Trafci_jar:
-	@if [ ! -f target/*.jar ] ; then \
+	@if [ ! -f target/trafciInstaller.jar ] ; then \
 		mvn install -DskipTests ; \
 	fi
 Trafci_installer:
-	@if [ ! -f target/*.tar ] ; then \
+	@if [ ! -f target/trafciInstaller.tar ] ; then \
 		./getBuildInfo ; \
 		export buildId=`head -n 1 buildId` ; \
 		mvn -f installer_pom.xml -DbldId=${buildId} clean package -DskipTests ; \

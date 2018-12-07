@@ -22,10 +22,14 @@
 INSTALL_LIBDIR := ${TRAF_HOME}/export/lib
 CP :=/bin/cp -f
 all:
-	@$(MAVEN) package -DskipTests
-	mkdir -p ${INSTALL_LIBDIR}
-	${CP} target/lib_mgmt-${TRAFODION_VER}.jar ${INSTALL_LIBDIR}/lib_mgmt.jar
+	@if [ ! -f target/lib_mgmt-${TRAFODION_VER}.jar ] ; then \
+		$(MAVEN) package -DskipTests ; \
+		mkdir -p ${INSTALL_LIBDIR} ; \
+		${CP} target/lib_mgmt-${TRAFODION_VER}.jar ${INSTALL_LIBDIR}/lib_mgmt.jar ; \
+	fi
 clean:
 	@rm -f ${INSTALL_LIBDIR}/lib_mgmt.jar
-	@$(MAVEN) clean
+	-@if [ -d target ] ; then \
+		$(MAVEN) clean ; \
+	fi
 cleanall: clean

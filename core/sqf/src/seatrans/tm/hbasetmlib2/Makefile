@@ -64,11 +64,15 @@ endif
 all:  $(PROGS) mavenbuild
 
 mavenbuild:
-	@if [ ! -f target/*.jar ]; then \
-		mkdir -p src/main/resources ; \
-		$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf ; \
+	@mkdir -p src/main/resources ; \
+	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf ; \
+	if [ ! -f target/trafodion-dtm-cdh-${TRAFODION_VER}.jar ]; then \
 		set -o pipefail; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
+	fi ; \
+	if [ ! -f target/trafodion-dtm-apache-${TRAFODION_VER}.jar ]; then \
 		set -o pipefail; $(MAVEN) -f pom.xml.apache package -DskipTests | tee maven_build_apache.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
+	fi ; \
+	if [ ! -f target/trafodion-dtm-hdp-${TRAFODION_VER}.jar ]; then \
 		set -o pipefail; $(MAVEN) -f pom.xml.hdp package -DskipTests | tee maven_build_hdp.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
 		cp -pf target/trafodion-dtm-*.jar $(TRAF_HOME)/export/lib ; \
 	fi
