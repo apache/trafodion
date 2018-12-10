@@ -14,6 +14,10 @@
 >>cqd auto_query_retry_warnings 'ON';
 
 --- SQL operation complete.
+>>update statistics for table hive.hive.store_sales on every column
++>sample random 10 percent;
+
+--- SQL operation complete.
 >>
 >>prepare s from insert into hive.ins_customer select * from hive.customer;
 
