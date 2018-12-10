@@ -1241,6 +1241,25 @@ from T038fcl
 
 showddl T038fc2;
 
+-- test for the bug fixed by JIRA TRAFODION-3237
+
+create table t038traf3237 (
+c9 interval day(7) to second default NULL,
+c10 interval day(13) to second(0) default NULL
+);
+
+insert into t038traf3237 values (
+interval '0 00:00:00' day(7) to second,
+interval '0 00:00:00' day(13) to second(0));
+
+insert into t038traf3237 
+select 
+c9 + interval '1' day,
+c10 + interval '1' day -- gives incorrect result without TRAFODION-3237 fix 
+from t038traf3237;
+
+select * from t038traf3237;
+
 log;
 
 ?section aqr
@@ -1304,5 +1323,7 @@ drop table T038sf;
 drop table T038nvl;
 drop table T038fcl;
 drop table T038fc2;
+
+drop table T038traf3237;
 
 
