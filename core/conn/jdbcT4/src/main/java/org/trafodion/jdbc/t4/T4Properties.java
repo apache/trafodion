@@ -182,6 +182,9 @@ public class T4Properties {
 	static String t4GlobalLogFile = null;
 	static Logger t4GlobalLogger = null;
 	static FileHandler t4GlobalLogFileHandler = null;
+
+	private String clientCharset;
+
 	void initializeLogging() {
 		if (t4GlobalLogger != null) {
 			return;
@@ -435,6 +438,8 @@ public class T4Properties {
 
         setLobChunkSize(getProperty("lobChunkSize"));
         setUseLobHandle(getProperty("useLobHandle"));
+
+        setClientCharset(getProperty("clientCharset"));
 	}
 
 	T4Properties getT4Properties() {
@@ -505,10 +510,19 @@ public class T4Properties {
 		props.setProperty("SPJEnv", String.valueOf(SPJEnv_));
 		props.setProperty("keepRawFetchBuffer", String.valueOf(keepRawFetchBuffer_));
 		props.setProperty("cpuToUse", String.valueOf(cpuToUse_));
-		props.setProperty("sessionName", String.valueOf(sessionName));
-		props.setProperty("replacementString", String.valueOf(replacementString_));
-		props.setProperty("ISO88591", String.valueOf(ISO88591_));
 
+        // NOTE
+        // String.valueOf(null) will give a "null" string, this may raise bug.
+        // So do not use String.valueOf() for a String variable
+        if (sessionName != null) {
+            props.setProperty("sessionName", sessionName);
+        }
+        if (replacementString_ != null) {
+            props.setProperty("replacementString", replacementString_);
+        }
+        if (ISO88591_ != null) {
+            props.setProperty("ISO88591", ISO88591_);
+        }
 		if (_roleName != null)
 			props.setProperty("roleName", _roleName);
 		if (_applicationName != null)
@@ -531,7 +545,8 @@ public class T4Properties {
         props.setProperty("clipVarchar", String.valueOf(clipVarchar_));
         props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
         props.setProperty("useLobHandle", String.valueOf(useLobHandle_));
-
+        if (clientCharset != null)
+            props.setProperty("clientCharset", clientCharset);
 		return props;
 	}
 
@@ -2589,6 +2604,12 @@ public class T4Properties {
     Properties getClientInfoProperties() {
         return this.clientInfoProp;
     }
-	
-	
+
+    public String getClientCharset() {
+        return clientCharset;
+    }
+
+    public void setClientCharset(String clientCharset) {
+        this.clientCharset = clientCharset;
+    }
 }

@@ -175,6 +175,11 @@ class InterfaceConnection {
 			t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "", temp, p);
 		}
 		sqlwarning_ = null;
+
+        this.termCharset_ =
+                t4props.getClientCharset() == null ? InterfaceUtilities.SQLCHARSETCODE_UTF8
+                        : InterfaceUtilities.getCharsetValue(t4props.getClientCharset());
+
 		connect();
 	}
 	
@@ -899,11 +904,8 @@ class InterfaceConnection {
 		setISOMapping(cr.isoMapping);
 
 		if (cr.isoMapping == InterfaceUtilities.getCharsetValue("ISO8859_1")) {
-			setTerminalCharset(InterfaceUtilities.getCharsetValue("ISO8859_1"));
 			this.inContext.ctxDataLang = 0;
 			this.inContext.ctxErrorLang = 0;
-		} else {
-			setTerminalCharset(InterfaceUtilities.getCharsetValue("UTF-8"));
 		}
 		
 		if(cr.securityEnabled) {
