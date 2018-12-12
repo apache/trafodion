@@ -72,6 +72,8 @@ set schema hive.hive;
 cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 cqd mode_seahive 'ON';
 cqd auto_query_retry_warnings 'ON';
+update statistics for table hive.hive.store_sales on every column
+sample random 10 percent;
 
 prepare s from insert into hive.ins_customer select * from hive.customer;
 execute s;
