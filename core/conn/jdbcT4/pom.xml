@@ -57,6 +57,10 @@
     <tag>HEAD</tag>
   </scm>
 
+  <properties>
+    <slf4j.version>1.7.21</slf4j.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -64,12 +68,22 @@
       <version>4.11</version>
       <scope>test</scope>
     </dependency>
-	<dependency>
-            <groupId>org.slf4j</groupId>
-	    <artifactId>slf4j-simple</artifactId>
-	    <version>1.7.21</version>
-	    <scope>test</scope>
-	</dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-jdk14</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -176,16 +190,28 @@
     <plugin>
       <artifactId>maven-assembly-plugin</artifactId>
       <version>2.5.3</version>
-      <configuration>
-          <descriptor>src/assembly/all.xml</descriptor>
-          <appendAssemblyId>false</appendAssemblyId>
-      </configuration>
+
       <executions>
         <execution>
           <id>create-archive</id>
           <phase>package</phase>
+          <configuration>
+            <descriptor>src/assembly/all.xml</descriptor>
+            <appendAssemblyId>false</appendAssemblyId>
+          </configuration>
           <goals>
-              <goal>single</goal>
+            <goal>single</goal>
+          </goals>
+        </execution>
+
+        <execution>
+          <id>slf4j-archive</id>
+          <phase>package</phase>
+          <configuration>
+            <descriptor>src/assembly/slf4j.xml</descriptor>
+          </configuration>
+          <goals>
+            <goal>single</goal>
           </goals>
         </execution>
       </executions>
