@@ -312,7 +312,7 @@ ALTER LIBRARY myudfs FILE $TMUDFLIB;
 [[alter_sequence_statement]]
 == ALTER SEQUENCE Statement
 
-The ALTER SEQUENCE Statement changes the future behavior of exiting sequence, including INCREMENT, MAXVALUE, CACHE and CYCLE. 
+The ALTER SEQUENCE Statement changes the future behavior of exiting sequence, including `INCREMENT`, `MAXVALUE`, `CACHE` and `CYCLE`. 
 
 Multiple options can be concurrently specified and separated by a space. Any options not altered will
 retain their previous settings.
@@ -322,7 +322,7 @@ ALTER SEQUENCE is a Trafodion SQL extension.
 For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<drop_sequence_statement,DROP SEQUENCE Statement>>.
 
 ```
-ALTER SEQUENCE [[catalog-name.]schema-name.]sequence
+ALTER SEQUENCE [[catalog-name.]schema-name.]sequence-name
 [INCREMENT BY integer]
 [MAXVALUE integer | NO MAXVALUE]
 [CACHE integer]
@@ -336,11 +336,62 @@ The options above serve the same purposes as they serve when you create a sequen
 
 NOTE:
 
-* START WITH, MINVALUE, NO CACHE and DATA TYPE cannot be changed. Instead, drop and recreate the sequence specifying the desired options.
+* `START WITH`, `MINVALUE`, `NO CACHE` and `DATA TYPE` cannot be changed. Instead, drop and recreate the sequence with desired options.
 
 * The unused preallocated values will be lost if a sequence is altered.
 
-* Some sequence values will be skipped if you change the INCREMENT BY before the first reference to `seqnum(SEQUENCE, next)`.
+* Some sequence values will be skipped if you change the `INCREMENT BY` before the first reference to `SEQNUM(_sequence-name_, NEXT)`.
+
++
+For example,
+
++
+** Create _sequence1_.
++
+```
+SQL>CREATE SEQUENCE sequence1
+START WITH        1
+INCREMENT BY      1;
+
+--- SQL operation complete.
+```
+
++
+** Change `INCREMENT BY` to 6.
++
+```
+SQL>ALTER SEQUENCE sequence1 
+INCREMENT BY 6;
+
+--- SQL operation complete.
+```
+
++
+** It always returns the initial value of the sequence by calling `SEQNUM(_sequence-name_, CURRENT)` or `SEQNUM(_sequence-name_, NEXT)` for the first time, so the fisrt reference to `SEQNUM(_sequence1_, NEXT)` is 1.
+
++
+```
+SQL>SELECT SEQNUM(sequence1, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   1
+
+--- 1 row(s) selected.
+```
+
++
+** It returns a new incremented value of the sequence with each subsequent reference to `SEQNUM(_sequence-name_, NEXT)`. 2, 3, 4, 5 and 6 are skipped because `INCREMENT BY` is changed to 6 before the first reference to `SEQNUM(_sequence1_, NEXT)`.
++
+```
+SQL>SELECT SEQNUM(sequence1, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   7
+
+--- 1 row(s) selected.
+```
 
 <<<
 [[alter_sequence_considerations]]
@@ -355,7 +406,7 @@ To issue an ALTER SEQUENCE statement, one of the following must be true:
 [[alter_sequence_examples]]
 === Examples of ALTER SEQUENCE
 
-The following statement changes the MAXVALUE and CACHE for the sequence named `employee_seq`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
+The following statement changes the `MAXVALUE` and `CACHE` for the sequence `_employee_seq_`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
 
 ```
 ALTER SEQUENCE employee_seq 
@@ -2802,53 +2853,53 @@ CREATE PRIVATE SCHEMA AUTHORIZATION JSmith;
 [[create_sequence_statement]]
 == CREATE SEQUENCE Statement
 
-The CREATE SEQUENCE Statement produces an automatic ascending sequence of numeric values, which can be used by multiple users as primary key values. For example, to generate only odd numbers in a sequence, you can create a sequence defined with START WITH=1, INCREMENT BY=2.
+The CREATE SEQUENCE Statement produces an automatic ascending sequence of numeric values, which can be used by multiple users as primary key values. For example, to generate only odd numbers in a sequence, you can create a sequence defined with `START WITH=1, INCREMENT BY=2`.
 
 Multiple options can be concurrently specified and separated by a space. 
 
 There are two expressions can be used with sequence:
 
-* `seqnum(SEQUENCE, current)`: get the current value which is returned from the sequence on the current session rather than the current value of the sequence. 
+* `SEQNUM(_sequence-name_, CURRENT)`: get the current value which is returned from the sequence on the current session rather than the current value of the sequence. 
 
 +
-For example, a sequence object called `employee_seq` which starts with 1 and caches up to 25 with only three users.
+For example, a sequence object called _employee_seq_ which starts with 1 and caches up to 25 with only three users.
 
 +
-If User A calls `seqnum(SEQUENCE, current)`, it will return 1 and reserve from 1 to 25, and User B immediately calls `seqnum(SEQUENCE, current)` and it will return 26 and reserve from 26 to 51, then User C immediately calls `seqnum(SEQUENCE, current)` and it will return 51 and reserve from 51 to 75. 
+If User A calls `SEQNUM(_employee_seq_, CURRENT)`, it will return 1 and reserve from 1 to 25, and User B immediately calls `SEQNUM(_sequence-name_, CURRENT)` and it will return 26 and reserve from 26 to 51, then User C immediately calls `SEQNUM(_sequence-name_, CURRENT)` and it will return 51 and reserve from 51 to 75. 
 
 +
-Now, if User A immediately calls `seqnum(SEQUENCE, next)`, it will return 2 rather than 76. 76 will be returned if User A immediately calls `seqnum(SEQUENCE, next)` after achieving 25 where the cache for User A is exhausted.
+Now, if User A immediately calls `SEQNUM(_employee_seq_, NEXT)`, it will return 2 rather than 76. 76 will be returned if User A immediately calls `SEQNUM(_employee_seq_, NEXT)` after achieving 25 where the cache for User A is exhausted.
 
-* `seqnum(SEQUENCE, next)`: advance the sequence and retrieve the next value. For an ascending sequence, this value is increasing.
+* `SEQNUM(_employee_seq_, NEXT)`: advance the sequence and retrieve the next value. For an ascending sequence, this value is increasing.
 
 +
 NOTE: 
 
-** It always returns the initial value of the sequence by calling `seqnum(SEQUENCE, current)` or `seqnum(SEQUENCE, next)` for the first time.
+** It always returns the initial value of the sequence by calling `SEQNUM(_sequence-name_, CURRENT)` or `SEQNUM(_sequence-name_, NEXT)` for the first time.
 
-** It returns a new incremented value of the sequence with each subsequent reference to `seqnum(SEQUENCE, next)`.
+** It returns a new incremented value of the sequence with each subsequent reference to `SEQNUM(_sequence-name_, NEXT)`.
 
 CREATE SEQUENCE is a Trafodion SQL extension.
 
 For more inforamation, see <<drop_sequence_statement,DROP SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
 
 ```
-CREATE SEQUENCE [[catalog-name.]schema-name.]sequence
+CREATE SEQUENCE [[catalog-name.]schema-name.]sequence-name
 [START WITH integer]
 [INCREMENT BY integer]
-[MAXVALUE integer | NOMAXVALUE]
+[MAXVALUE integer | NO MAXVALUE]
 [MINVALUE integer]
 [CACHE integer | NO CACHE]
 [CYCLE | NO CYCLE]
 [DATA TYPE]
 ```
-By default, it is an ascending sequence that starts with 1, increments by 1, has cache value of 25 and the
-maximum value of 2^63^-2, does not cycle and belongs to LARGEINT data type.
+By default, it is an ascending sequence that *starts with 1, increments by 1, has cache value of 25 and the
+maximum value of 2^63^-2, does not cycle and belongs to LARGEINT data type*.
 
 [[create_sequence_syntax]]
 === Syntax Description of CREATE SEQUENCE
 
-* `[[catalog-name.]schema-name.]sequence`
+* `_[[catalog-name.]schema-name.]sequence-name_`
 
 +
 Specifies the name of the sequence to be created, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters.
@@ -2862,65 +2913,65 @@ If you do not fully qualify the session name, Trafodion qualifies it according t
 * `START WITH`
 
 +
-Specifies the initial value. This value can only be positive, and must be greater than or equal to MINVALUE (if NO CACHE is specified) and less than MAXVALUE.  
+Specifies the initial value. This value can only be positive, and must be greater than or equal to `MINVALUE` (if `NO CACHE` is specified) and less than `MAXVALUE`.  
 
 +
-NOTE: If the initial value is beyond the range specified by MINVALUE or MAXVALUE, an error will be raised.
+NOTE: If the initial value is beyond the range specified by `MINVALUE` or `MAXVALUE`, an error will be raised.
 
 +
-If not specified, the START WITH defaults to 1. For an ascending sequence, this value is MINVALUE.
+If not specified, the `START WITH` defaults to 1. For an ascending sequence, this value is `MINVALUE`.
 
 * `INCREMENT BY`
 +
 Specifies the increment value between consecutive sequence values. 
 
 +
-NOTE: This value can only be positive, so that Trafodion only supports ascending sequence. The value must be smaller than or equal to the difference between MAXVALUE and MINVALUE. 
+NOTE: This value can only be positive, so that Trafodion only supports ascending sequence. The value must be smaller than or equal to the difference between `MAXVALUE` and `MINVALUE`. 
 
 +
-If not specified, the INCREMENT BY defaults to 1.
+If not specified, the `INCREMENT BY` defaults to 1.
 
 * `MAXVALUE`
 +
-Specifies the maximum value where an ascending sequence stops generating values or cycles. The default is 2^^63^-2.
+Specifies the maximum value where an ascending sequence stops generating values or cycles. The default is 2^63^-2.
 
 +
-The MAXVALUE of a sequence depends on the maximum value supported by the data type, and you can also specify a MAXVALUE within the range.
+The `MAXVALUE` of a sequence depends on the maximum value supported by the data type, and you can also specify a `MAXVALUE` within the range.
 
 +
 NOTE:
 
-** An error is returned if MAXVALUE is beyond supported range, or if subsequent value is generated for an ascending sequence when the MAXVALUE is exceeded with NO CYCLE specified.
+** An error is returned if `MAXVALUE` is beyond supported range, or if subsequent value is generated for an ascending sequence when the `MAXVALUE` is exceeded with `NO CYCLE` specified.
 
-** MAXVALUE might not be same as the actual maximum value that the sequence generated if the INCREAMENT BY is a value other than 1. For example, when a sequence is specified with START WITH 3, INCREMENT 4 and MAXVALUE 12 will return a maximum value of 11.
+** `MAXVALUE` might not be same as the actual maximum value that the sequence generated if the `INCREAMENT BY` is a value other than 1. For example, when a sequence is specified with `START WITH 3, INCREMENT 4` and `MAXVALUE 12` will return a maximum value of 11.
 
-* `NONMAXVALUE`
+* `NO MAXVALUE`
 +
-If NOMAXVALUE is specified, for an ascending sequence, the MAXVALUE is the value you specified or the maximum value supported by the data type.
+If `NO MAXVALUE` is specified, for an ascending sequence, the `MAXVALUE` is the value you specified or the maximum value supported by the data type.
 
 * `MINVALUE`
 +
 Specifies the minimum value where an ascending sequence cycles after hitting the maximum limit. The default is 1.
 
 +
-The MINVALUE of a sequence depends on the minimum value supported by the data type, and you can also specify a MINVALUE within the range.
+The `MINVALUE` of a sequence depends on the minimum value supported by the data type, and you can also specify a `MINVALUE` within the range.
 
 +
-If MINVALUE and START WITH are not specified, for an ascending sequence, the MINVALUE defaults to 1.
+If `MINVALUE` and `START WITH` are not specified, for an ascending sequence, the `MINVALUE` defaults to 1.
 
 * `CYCLE`
 +
-Specifies that the sequence exhausts its range and wraps around after reaching its MAXVALUE.
+Specifies that the sequence exhausts its range and wraps around after reaching its `MAXVALUE`.
 
 +
-If specified, for an ascending sequence, it restarts from MINVALUE after reaching MAXVALUE. 
+If specified, for an ascending sequence, it restarts from `MINVALUE` after reaching `MAXVALUE`. 
 
-* `NOCYCLE`
+* `NO CYCLE`
 +
-Specifies that the sequence cannot cycle once the MAXVALUE is reached, and throws an exception when generating subsequent value if the limit is exceeded. 
+Specifies that the sequence cannot cycle once the `MAXVALUE` is reached, and throws an exception when generating subsequent value if the limit is exceeded. 
 
 +
-NOCYCLE is the default. 
+`NO CYCLE` is the default. 
 
 * `CACHE`
 +
@@ -2942,14 +2993,14 @@ The CACHE value must be less than or equal to the value determined by following 
 The sequence cache will be repopulated when the cache is exhausted.
 
 +
-NOTE: The unused preallocated values will be lost and leave unintended gaps if unexpected shutdown occurs or the sequence object is manually restarted, Trafodion will continue to cache new values from where it left off, so that the same value will never appear twice unless CYCLE is specified.
+NOTE: The unused preallocated values will be lost and leave unintended gaps if unexpected shutdown occurs or the sequence object is manually restarted, Trafodion will continue to cache new values from where it left off, so that the same value will never appear twice unless `CYCLE` is specified.
 
-* `NOCACHE`
+* `NO CACHE`
 +
 Specifies the values of the sequence are not preallocated, which lowers the risk of losing values even if it might cause performance degradation. In this case, every request for a new value will be synchronously updated in the system table.
 
 +
-If both CACHE and NOCACHE are not specified, it will cache 25 values by default.
+If both `CACHE` and `NO CACHE` are not specified, it will cache 25 values by default.
 
 * `DATA TYPE`
 +
@@ -2959,13 +3010,13 @@ A sequence can be specified as following data types:
 [cols="1,1,1,options="header"]
 |===
 | Type   | Minimum value | Maximum value 
-| UNSIGNED SMALLINT   | 1                | 2^16^-1
-| UNSIGHED INTEGER    | 1                | 2^32^-1
+| SMALLINT UNSIGNED    | 1                | 2^16^-1
+| INTEGER UNSIGHED     | 1                | 2^32^-1
 | LARGEINT            | 1                | 2^63^-2
 |===
                 
 +
-If not specified, the default data type is LARGEINT.
+If not specified, the default data type is *LARGEINT*.
 
 <<<
 [[create_sequence_considerations]]
@@ -2988,19 +3039,40 @@ NOTE: In this case, if you create a sequence in a private schema, it will be own
 [[create_sequence_examples]]
 === Examples of CREATE SEQUENCE
 
-The following statement creates a sequence named `employee_seq`, that starts with 1, increments by 1, has maximum value of 10000, does not cycle, caches 20 at a time and belongs to UNSIGNED SAMLLINT.
+The following statement creates the sequence _employee_seq_, that starts with 1, increments by 2, has maximum value of 10000, does not cycle, caches 20 at a time and belongs to SMALLINT UNSIGNED.
 
 ```
 CREATE SEQUENCE   employee_seq
 START WITH        1
-INCREMENT BY      1
+INCREMENT BY      2
 MAXVALUE          10000   
 NO CYCLE
 CACHE             20  
 SMALLINT UNSIGNED 
 ```
 
-The first reference to `seqnum(empolyee_seq, next)` will return 10000, and the second reference will return 10001. Each subsequent reference will return a value 1 greater than the previous value.
+The first reference to `SEQNUM(_empolyee_seq_, NEXT)` returns 1.
+
+```
+SQL>SELECT SEQNUM(employee_seq, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   1
+
+--- 1 row(s) selected.
+```
+
+The second reference to `SEQNUM(_empolyee_seq_, NEXT)` returns 2. Each subsequent reference returns a value 2 greater than the previous value.
+```
+SQL>SELECT SEQNUM(employee_seq, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   3
+
+--- 1 row(s) selected.
+```
 
 <<<
 [[create_table_statement]]
@@ -4928,21 +5000,21 @@ The DROP SEQUENCE Statement removes a sequence from the Trafodion database.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run DDL statements inside a user-defined transaction (BEGIN WORK…COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements, AUTOCOMMIT must be turned ON (the default) for the session.
 
-If you want to change the initial value of a sequence, you can drop and then recreate a sequence with the same name and different START WITH value.
+If you want to change the initial value of a sequence, you can drop and then recreate a sequence with the same name and a different `START WITH` value.
 
 DROP SEQUENCE is a Trafodion SQL extension.
 
 For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
 
 ```
-DROP SEQUENCE [[catalog-name.]schema-name.]sequence 
+DROP SEQUENCE [[catalog-name.]schema-name.]sequence-name 
 ```
 
 <<<
 [[drop_sequence_syntax]]
 === Syntax Description of DROP SEQUENCE
 
-* `[[catalog-name.]schema-name.]sequence`
+* `_[[catalog-name.]schema-name.]sequence-name_`
 
 +
 Specifies the name of the sequence to be dropped, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters. 
