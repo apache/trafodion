@@ -1,50 +1,8 @@
-539,542d538
-< *** WARNING[6008] Statistics for column (SS_SOLD_DATE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
-< 
-< *** WARNING[6008] Statistics for column (SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
-< 
-551,556c547,553
-< 6 . 7 root 2.92E+006
-< 5 . 6 esp_exchange 1:2(hash2) 2.92E+006
-< 3 . 5 hive_insert INS_STORE_SALES_SUMM 2.92E+006
-< 2 . 3 hash_groupby 2.92E+006
-< 1 . 2 esp_exchange 2(hash2):2(hash2) 2.92E+006
-< . . 1 hive_scan STORE_SALES 2.92E+006
+557c557
+< . . 1 hive_scan STORE_SALES 2.74E+006
 ---
-> 7 . 8 root 1.09E+004
-> 6 . 7 esp_exchange 1:2(hash2) 1.09E+004
-> 4 . 6 hive_insert INS_STORE_SALES_SUMM 1.09E+004
-> 3 . 4 hash_partial_groupby 1.09E+004
-> 2 . 3 esp_exchange 2(hash2):2(hash2) 1.09E+004
-> 1 . 2 hash_partial_groupby 1.09E+004
 > . . 1 hive_scan STORE_SALES 2.75E+006
-593,597c590
-< 3,10c3,4
-< < *** WARNING[6008] Statistics for column (SS_SOLD_DATE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
-< <
-< < *** WARNING[6008] Statistics for column (SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
-< <
+623c623
+< . . 2 hive_scan STORE_SALES 2.74E+006
 ---
-> 3,6c3,4
-611,614d603
-< *** WARNING[6008] Statistics for column (SS_SOLD_DATE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
-< 
-< *** WARNING[6008] Statistics for column (SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
-< 
-623,629c612,619
-< 8 . 9 root 2.92E+006
-< 1 7 8 blocked_union 2.92E+006
-< 6 . 7 esp_exchange 1:2(hash2) 2.92E+006
-< 4 . 6 hive_insert INS_STORE_SALES_SUMM 2.92E+006
-< 3 . 4 hash_groupby 2.92E+006
-< 2 . 3 esp_exchange 2(hash2):2(hash2) 2.92E+006
-< . . 2 hive_scan STORE_SALES 2.92E+006
----
-> 9 . 10 root 1.09E+004
-> 1 8 9 blocked_union 1.09E+004
-> 7 . 8 esp_exchange 1:2(hash2) 1.09E+004
-> 5 . 7 hive_insert INS_STORE_SALES_SUMM 1.09E+004
-> 4 . 5 hash_partial_groupby 1.09E+004
-> 3 . 4 esp_exchange 2(hash2):2(hash2) 1.09E+004
-> 2 . 3 hash_partial_groupby 1.09E+004
 > . . 2 hive_scan STORE_SALES 2.75E+006
