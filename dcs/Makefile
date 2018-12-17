@@ -32,9 +32,9 @@ GENVERS			    =./genvers
 all: build_all
 
 build_all: build_chk
-	echo "$(MAVEN) site package -DskipTests"
+	echo "$(MAVEN) -Pproduction site package -DskipTests"
 	echo "### For full Maven output, see file build_dcs.log"
-	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_dcs.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	set -o pipefail && $(MAVEN) -Pproduction site package -DskipTests | tee build_dcs.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	$(RM) $(VFILE)
 
 build_chk:
@@ -43,7 +43,7 @@ build_chk:
 	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
 
 clean:
-	-$(MAVEN) clean | grep ERROR
+	-$(MAVEN) -Pproduction clean | grep ERROR
 	$(RM) build_dcs.log
 	$(RM) $(VFILE)
 	$(RM) ../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_DCS_TARNAME)

@@ -30,19 +30,19 @@
     <groupId>org.trafodion</groupId>
     <artifactId>trafci</artifactId>
     <packaging>jar</packaging>
-    <version>${TRAFODION_VER}</version>
+    <version>${INTERNAL_VERSION}</version>
     <name>Trafodion Trafci</name>
     <properties>
         <jettyVersion>9.2.6.v20141205</jettyVersion>
-        <traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
-        <trafci-version>${TRAFODION_VER}</trafci-version>
+        <traf-jdbc-version>${project.version}</traf-jdbc-version>
+        <trafci-version>${project.version}</trafci-version>
         <jline-version>2.12</jline-version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.trafodion.jdbc.t4</groupId>
             <artifactId>jdbcT4</artifactId>
-            <version>${TRAFODION_VER}</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -137,4 +137,21 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <INTERNAL_VERSION>0.1</INTERNAL_VERSION>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>production</id>
+            <properties>
+                <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+            </properties>
+        </profile>
+    </profiles>
 </project>

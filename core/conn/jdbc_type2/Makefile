@@ -86,7 +86,7 @@ all: LICENSE NOTICE $(LIBEXPDIR)/libjdbcT2.so
 
 $(EXPROOT)/lib/jdbcT2.jar:
 	./getBuildInfo
-	$(MAVEN) install -DskipTests
+	$(MAVEN) -Pproduction install -DskipTests|tee build_jdbct2.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]};exit $${PIPESTATUS}
 	$(CP) target/trafjdbcT2-${TRAFODION_VER}.jar $(EXPROOT)/lib
 	`cd ${TRAF_HOME}/export/lib;$(LN) trafjdbcT2-${TRAFODION_VER}.jar jdbcT2.jar` 
 	$(JAVAH) -cp $(EXPROOT)/lib/jdbcT2.jar -d native $(CSES)
@@ -99,11 +99,12 @@ $(OBJS): $(EXPROOT)/lib/jdbcT2.jar
 $(OUTDIR)/type2version.o: $(TRAF_HOME)/export/include/SCMBuildStr.h
 
 clean:
-	$(MAVEN) clean
+	$(MAVEN) -Pproduction clean
 	$(RM) $(LIBEXPDIR)/libjdbcT2.so
 	$(RM) -f $(EXPROOT)/lib/jdbcT2*.jar
 	$(RM) -rf $(OUTDIR)
 	$(RM) -rf $(BUILD_PLAT)
+	$(RM) -rf src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java 
 	echo '$(CSES)'|sed -e 's/\./_/g' -e 's/[[:space:]]/\n/g' |xargs -i rm -f 'native/{}.h'
 
 cleanall: clean
