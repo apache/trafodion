@@ -211,7 +211,7 @@ else
 
             echo -e "Active DCSMaster VM status:"
             echo -e "EC\tEU\tOC\tOU\tPERCENT_EU\tPERCENT_OU\t"
-            echo -e "$EC\t$EU\t$OC\t$OU\t$PERCENT_EU\t\t$PERCENT_OU\t"
+            echo -e "$EC\t|$EU\t|$OC\t|$OU\t|$PERCENT_EU\t\t|$PERCENT_OU\t"
             #$STAT_CMD $activeDcsPid
             ;;
 
@@ -229,7 +229,12 @@ else
             #| awk '/java.lang.Thread.State/{print $2}' `
             ;;
         -s)
-               "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/target/classes org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
+            if [ -e $SQ_PDSH ]; then
+                "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/"dcs-"$TRAFODION_VER".jar" org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
+            else
+                echo "develop environment"
+                "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/target/classes org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
+            fi
             ;;
     *)
         ;;
