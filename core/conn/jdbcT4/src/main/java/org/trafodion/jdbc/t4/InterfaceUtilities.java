@@ -22,34 +22,37 @@ package org.trafodion.jdbc.t4;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.Hashtable;
 
 public class InterfaceUtilities {
-	static private Hashtable valueToCharset;
+	static private Hashtable<Integer, String> valueToCharset;
 	static {
-		valueToCharset = new Hashtable(11);
-		valueToCharset.put(new Integer(1), "ISO8859_1"); // ISO
-		valueToCharset.put(new Integer(10), "MS932"); // SJIS
-		valueToCharset.put(new Integer(11), "UTF-16BE"); // UCS2
-		valueToCharset.put(new Integer(12), "EUCJP"); // EUCJP
-		valueToCharset.put(new Integer(13), "MS950"); // BIG5
+		valueToCharset = new Hashtable<Integer, String>(11);
+		valueToCharset.put(new Integer(1), "ISO-8859-1"); // ISO
+		valueToCharset.put(new Integer(10), "Shift_JIS"); // SJIS
+		valueToCharset.put(new Integer(11), "UTF-16"); // UNICODE
+		valueToCharset.put(new Integer(12), "EUC-JP"); // EUCJP
+		valueToCharset.put(new Integer(13), "Big5"); // BIG5
 		valueToCharset.put(new Integer(14), "GB18030"); // GB18030
 		valueToCharset.put(new Integer(15), "UTF-8"); // UTF8
-		valueToCharset.put(new Integer(16), "MS949"); // MB_KSC5601
+		valueToCharset.put(new Integer(16), "KSC5601"); // MB_KSC5601
 		valueToCharset.put(new Integer(17), "GB2312"); // GB2312
+		valueToCharset.put(new Integer(18), "GBK"); // GBK
 	}
-	static private Hashtable charsetToValue;
+	static private Hashtable<String, Integer> charsetToValue;
 	static {
-		charsetToValue = new Hashtable(11);
-		charsetToValue.put("ISO8859_1", new Integer(1)); // ISO
-		charsetToValue.put("MS932", new Integer(10)); // SJIS
-		charsetToValue.put("UTF-16BE", new Integer(11)); // UCS2
-		charsetToValue.put("EUCJP", new Integer(12)); // EUCJP
-		charsetToValue.put("MS950", new Integer(13)); // BIG5
+		charsetToValue = new Hashtable<String, Integer>(11);
+		charsetToValue.put("ISO-8859-1", new Integer(1)); // ISO
+		charsetToValue.put("Shift_JIS", new Integer(10)); // SJIS
+		charsetToValue.put("UTF-16", new Integer(11)); // UNICODE
+		charsetToValue.put("EUC-JP", new Integer(12)); // EUCJP
+		charsetToValue.put("Big5", new Integer(13)); // BIG5
 		charsetToValue.put("GB18030", new Integer(14)); // GB18030
 		charsetToValue.put("UTF-8", new Integer(15)); // UTF8
-		charsetToValue.put("MS949", new Integer(16)); // MB_KSC5601
+		charsetToValue.put("KSC5601", new Integer(16)); // MB_KSC5601
 		charsetToValue.put("GB2312", new Integer(17)); // GB2312
+		charsetToValue.put("GBK", new Integer(18)); // GBK
 	}
 
 	static final int SQLCHARSETCODE_UNKNOWN = 0;
@@ -57,34 +60,40 @@ public class InterfaceUtilities {
 
 	// these are the only real column types
 	static final int SQLCHARSETCODE_ISO88591 = 1;
-	static final String SQLCHARSET_ISO88591 = "ISO88591";
+	static final String SQLCHARSET_ISO88591 = "ISO-8859-1";
 	static final int SQLCHARSETCODE_UNICODE = 11;
-	static final String SQLCHARSET_UNICODE = "UCS2";
+	static final String SQLCHARSET_UNICODE = "UTF-16";
 
 	// ISO_MAPPING values
 	static final int SQLCHARSETCODE_SJIS = 10;
 	static final int SQLCHARSETCODE_UTF8 = 15;
 
-	static String getCharsetName(int charset) {
-		String ret = (String) valueToCharset.get(new Integer(charset));
+    static String getCharsetName(int charset) {
+        String ret = valueToCharset.get(charset);
 
-		if (ret == null)
-			ret = SQLCHARSET_UNKNOWN;
+        if (ret == null)
+            return SQLCHARSET_UNKNOWN;
 
-		return ret;
-	}
+        return ret;
+    }
 
-	static int getCharsetValue(String charset) {
-		Integer i = (Integer) charsetToValue.get(charset);
-		int ret;
+    static int getCharsetValue(String charset) {
+        Integer i = charsetToValue.get(charset);
+        if (i == null) {
+            i = charsetToValue.get(convertToCanonicalCharsetName(charset));
+            if (i == null) {
+                return SQLCHARSETCODE_UNKNOWN;
+            } else {
+                return i.intValue();
+            }
+        } else {
+            return i.intValue();
+        }
+    }
 
-		if (i == null)
-			ret = SQLCHARSETCODE_UNKNOWN;
-		else
-			ret = i.intValue();
-
-		return ret;
-	}
+    private static String convertToCanonicalCharsetName (String aliasName) {
+        return Charset.forName(aliasName).name();
+    }
 
 	static private final int[] powersOfTen = { 10, 100, 1000, 10000 };
 
