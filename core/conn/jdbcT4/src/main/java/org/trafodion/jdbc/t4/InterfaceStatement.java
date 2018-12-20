@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class InterfaceStatement {
 	InterfaceConnection ic_;
@@ -1403,8 +1405,9 @@ class InterfaceStatement {
 	    else if (er.returnCode == TRANSPORT.SQL_SUCCESS || er.returnCode == TRANSPORT.SQL_SUCCESS_WITH_INFO
 				|| er.returnCode == TRANSPORT.NO_DATA_FOUND) {
 			Arrays.fill(stmt.batchRowCount_, -2); // fill with success
-			if (er.errorList != null) // if we had errors with valid rowIds,
-			// update the array
+
+			// if we had errors with valid rowIds, update the array
+			if (er.errorList != null)
 			{
 				for (int i = 0; i < er.errorList.length; i++) {
 					int row = er.errorList[i].rowId - 1;
@@ -1414,7 +1417,15 @@ class InterfaceStatement {
 					}
 				}
 			}
-			
+
+            // Sometimes users may set schema through stmt.exec("set schema xx") instead of
+            // conn.setSchema("xx"), so there need to update local schema when it success
+            if (this.sqlQueryType_ == TRANSPORT.SQL_SET_SCHEMA) {
+                String schema = extractSchema(sqlString);
+                System.out.println("extract schema : "+schema);
+                ic_.setSchemaDirect(schema);
+            }
+
 			//set the statement mode as the command succeeded
 			if (sqlStmtType_ == TRANSPORT.TYPE_QS_OPEN) {
 				this.ic_.setMode(InterfaceConnection.MODE_WMS);
@@ -1492,7 +1503,17 @@ class InterfaceStatement {
 	    }
 	}
 
-	protected void setTransactionStatus(TrafT4Connection conn, String sql) {
+    private String extractSchema(String sqlString) {
+        String schemaRegex = "(SET)\\s+(SCHEMA)\\s+([a-zA-Z0-9]+\\s*\\.)\\s*([a-zA-Z0-9]+)\\s*";
+        Pattern pattern = Pattern.compile(schemaRegex);
+        Matcher m = pattern.matcher(sqlString.toUpperCase());
+        while (m.find()) {
+            return m.group(m.groupCount());
+        }
+        return "";
+    }
+
+    protected void setTransactionStatus(TrafT4Connection conn, String sql) {
 		short tranStatus = getTransactionStatus(sql);
 		if(tranStatus == TRANSPORT.TYPE_BEGIN_TRANSACTION){
 			conn.setBeginTransaction(true);

@@ -38,7 +38,7 @@ class OUT_CONNECTION_CONTEXT_def {
 
 	String computerName;
 	String catalog;
-	String schema;
+    private String schema;
 
 	int optionFlags1;
 	int optionFlags2;
@@ -94,4 +94,12 @@ class OUT_CONNECTION_CONTEXT_def {
 			}
 		}
 	}
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
 }
