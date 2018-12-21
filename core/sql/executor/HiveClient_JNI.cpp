@@ -310,7 +310,7 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
 
   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "Exit HiveClient_JNI::getRedefTime(%s, %s, %lld).", schName, tabName, redefTime);
 
-  if (jresult < 0) {
+  if (jresult <= 0) {
     jenv_->PopLocalFrame(NULL);
     return HVC_DONE; // Table does not exist
   }
@@ -318,7 +318,6 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
   redefTime = jresult ;
   jenv_->PopLocalFrame(NULL);
   return HVC_OK;  // Table exists.
-  
 }
 
 //////////////////////////////////////////////////////////////////////////////

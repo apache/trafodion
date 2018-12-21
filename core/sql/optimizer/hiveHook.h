@@ -311,7 +311,7 @@ struct hive_tbl_desc
   Int32 getSortColNum(const char* name);
 
   Int64 redeftime();
-  void setRedeftime(Int64 redeftime) { redefineTS_ = redeftime; }
+  Int64 setRedeftime(Int64 redeftime); 
 };
 
 class HiveMetaData

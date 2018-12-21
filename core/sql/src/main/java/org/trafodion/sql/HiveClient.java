@@ -155,9 +155,6 @@ public class HiveClient {
                      tblName + ") called.");
         try {
             table = getHiveMetaClient().getTable(schName, tblName);
-            if (logger.isDebugEnabled()) logger.debug("getTable returns null for " + schName + "." + tblName + ".");
-            if (table == null)
-                return 0;
         }
         catch (NoSuchObjectException x) {
             if (logger.isDebugEnabled()) logger.debug("Hive table no longer exists.");
@@ -423,6 +420,10 @@ public class HiveClient {
           paramsValue[i] = entry.getValue();
           i++;
      }
+     // Replace creation time with redefineTime 
+     String rfTime = params.get(ddlTimeConst);
+     if (rfTime != null)
+        tableInfo[Table_CREATE_TIME] = rfTime;
      setTableInfo(jniObject, tableInfo, colInfo, partKeyInfo, bucketCols, sortCols, sortColsOrder, paramsKey, paramsValue, partNames, partKeyValues);     
      return true;
   }

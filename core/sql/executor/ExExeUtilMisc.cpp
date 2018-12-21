@@ -1356,66 +1356,9 @@ short ExExeUtilHiveTruncateLegacyTcb::work()
     {
       case INITIAL_:
       {
-
-        if (htTdb().getModTS() > 0)
-          step_ = DATA_MOD_CHECK_;
-        else
-          step_ = EMPTY_DIRECTORY_;
+         step_ = EMPTY_DIRECTORY_;
       }
       break;
-
-      case DATA_MOD_CHECK_:
-      {
-        Int64 failedModTS = -1;
-        Lng32 failedLocBufLen = 1000;
-        char failedLocBuf[failedLocBufLen];
-        cliRC = ExpLOBinterfaceDataModCheck
-          (lobGlob_,
-           (htTdb().getPartnLocation() ? 
-            htTdb().getPartnLocation() : 
-            htTdb().getTableLocation()),
-           htTdb().getHdfsHost(),
-           htTdb().getHdfsPort(),
-           htTdb().getModTS(),
-           0,
-           failedModTS,
-           failedLocBuf, failedLocBufLen);
-
-        if (cliRC < 0)
-        {
-          Lng32 cliError = 0;
-          
-          Lng32 intParam1 = -cliRC;
-          ExRaiseSqlError(getHeap(), &diagsArea_, 
-                          (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
-                          NULL, &intParam1, 
-                          &cliError, 
-                          NULL, 
-                          "HDFS",
-                          (char*)"ExpLOBInterfaceEmptyDirectory",
-                          getLobErrStr(intParam1));
-          step_ = ERROR_;
-          break;
-        }
-
-        if (cliRC == 1) // data mod check failed
-        {
-          char errStr[200];
-          str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
-                      htTdb().getModTS(), failedModTS);
-          
-          ExRaiseSqlError(getHeap(), &diagsArea_, 
-                          (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
-                          NULL, NULL, NULL,
-                          errStr);
-          step_ = ERROR_;
-          break;
-        }
-   
-        step_ = EMPTY_DIRECTORY_;
-      }
-      break;
-
       case EMPTY_DIRECTORY_:
       {
         cliRC = ExpLOBinterfaceEmptyDirectory(

@@ -571,9 +571,17 @@ Int64 hive_tbl_desc::redeftime()
 {
   // creationTS_ is in seconds 
   Int64 result = creationTS_ * 1000;
-  if (redefineTS_ !=  -1)
-      result = redefineTS_;
+  if (redefineTS_ !=  -1 && redefineTS_ > result)
+        result = redefineTS_;
   return result;
+}
+
+Int64 hive_tbl_desc::setRedeftime(Int64 redefineTS) 
+{
+   redefineTS_ = redefineTS; 
+   // It is possible that timestamp of the hive files is less than the
+   // creation time
+   return redeftime();
 }
 
 hive_tbl_desc::~hive_tbl_desc()

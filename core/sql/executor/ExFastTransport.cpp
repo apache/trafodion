@@ -442,20 +442,6 @@ ExOperStats * ExFastExtractTcb::doAllocateStatsEntry(
   }
 }
 
-Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck
-(Int64 &failedModTS,
- char * failedLocBuf,
- Int32 &failedLocBufLen)
-{
-  return ExpLOBinterfaceDataModCheck(lobGlob_,
-                                     targetLocation_,
-                                     hdfsHost_,
-                                     hdfsPort_,
-                                     myTdb().getModTSforDir(),
-                                     0,
-                                     failedModTS,
-                                     failedLocBuf, failedLocBufLen);
-}
 
 
 ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
@@ -475,10 +461,6 @@ ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
 ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 {
 
-  if (lobGlob_) {
-    ExpLOBinterfaceCleanup(lobGlob_);
-    lobGlob_ = NULL;
-  }
 
   if (sequenceFileWriter_ != NULL) {
      NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
@@ -495,14 +477,10 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
 Int32 ExHdfsFastExtractTcb::fixup()
 {
-  lobGlob_ = NULL;
-
   ex_tcb::fixup();
 
   strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
   hdfsPort_ = myTdb().getHdfsPortNum();
-  ExpLOBinterfaceInit
-    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
   
   modTS_ = myTdb().getModTSforDir();
 
