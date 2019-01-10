@@ -878,7 +878,7 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   tableDir = hsd->location_;
   computeModificationTSmsec();
   if (diags_.isSuccess()) {
-     htd->setRedeftime(modificationTSInMillisec_);
+     modificationTSInMillisec_ = htd->setRedeftime(modificationTSInMillisec_);
      while (hsd && diags_.isSuccess()) {
         // visit the directory
         processDirectory(hsd->location_, hsd->buckets_, 

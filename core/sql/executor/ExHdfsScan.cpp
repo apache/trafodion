@@ -117,7 +117,6 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , numBytesProcessedInRange_(0)
   , exception_(FALSE)
   , checkRangeDelimiter_(FALSE)
-  , dataModCheckDone_(FALSE)
   , loggingErrorDiags_(NULL)
   , loggingFileName_(NULL)
   , logFileHdfsClient_(NULL)
@@ -437,7 +436,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             checkRangeDelimiter_ = FALSE;
             if (getStatsEntry())
                hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
-            dataModCheckDone_ = FALSE;
 	    myInstNum_ = getGlobals()->getMyInstanceNumber();
 	    hdfsScanBufMaxSize_ = hdfsScanTdb().hdfsBufSize_;
 

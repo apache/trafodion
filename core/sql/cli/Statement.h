@@ -73,7 +73,6 @@ class AQRStatementInfo;
 class StrTarget;
 
 class Statement;
-class ExLobGlobals;
 
 ////////////////////////////////////////////////////////////////////////
 // this class stores statement information that is needed on each cli
@@ -527,7 +526,6 @@ public:
                          const char *prefix, const char *suffix);
  
   RETCODE doHiveTableSimCheck(TrafSimilarityTableInfo *si,
-                              ExLobGlobals* lobGlob,
                               NABoolean &simCheckFailed,
                               ComDiagsArea &diagsArea);
 
