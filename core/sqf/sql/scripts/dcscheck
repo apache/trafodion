@@ -219,12 +219,7 @@ case $OPT_VALUE in
         #| awk '/java.lang.Thread.State/{print $2}' `
         ;;
     -s)
-        if [ -e $SQ_PDSH ]; then
-            "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/"dcs-"$TRAFODION_VER".jar" org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
-        else
-            echo "develop environment"
-            "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/target/classes org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
-        fi
+        "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/"dcs-"$TRAFODION_VER".jar" org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
         ;;
     *)
         echo -e "Process\t\tConfigured\tActual\t\tDown"
