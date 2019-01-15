@@ -22,10 +22,13 @@
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
 include ../../macros.gmk #top level
+java_files:=$(shell find src/main/java -name *.java*|grep -v Vproc.java)
 
-all: build_all
+all: build_all 
 
-build_all: LICENSE NOTICE 
+build_all: LICENSE NOTICE target/jdbcT4-${TRAFODION_VER}.jar 
+
+target/jdbcT4-${TRAFODION_VER}.jar: $(java_files)
 	echo "$(MAVEN) package -DskipTests"
 	set -o pipefail && $(MAVEN) install -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2 -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib
@@ -34,8 +37,10 @@ build_all: LICENSE NOTICE
 	#ln -sf ${TRAF_HOME}/export/lib/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib/jdbcT4.jar
 	`cd ${TRAF_HOME}/export/lib;ln -sf jdbcT4-${TRAFODION_VER}.jar jdbcT4.jar`
 
-clean:
+mvn_clean: 
 	-$(MAVEN) clean | grep ERROR
+
+clean: mvn_clean 
 	$(RM) build_jdbct4.log ${TRAF_HOME}/export/lib/jdbcT4*.jar
 
 LICENSE: ../../../licenses/LICENSE-clients
