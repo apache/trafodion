@@ -22,8 +22,18 @@
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
 include ../../macros.gmk #top level
+jar_file:=$(shell ls target/jdbcT4-${TRAFODION_VER}.jar 2>/dev/null)
+ifndef jar_file
+all_pres:=build_all
+else
+all_pres:=nothing
+clean_pres:=mvn_clean
+endif
 
-all: build_all
+nothing:
+	@echo "JAR file[$(jar_file)] exists."
+
+all: $(all_pres)
 
 build_all: LICENSE NOTICE 
 	echo "$(MAVEN) package -DskipTests"
@@ -33,9 +43,10 @@ build_all: LICENSE NOTICE
 	mv target/jdbcT4-${TRAFODION_VER}.zip ../clients
 	#ln -sf ${TRAF_HOME}/export/lib/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib/jdbcT4.jar
 	`cd ${TRAF_HOME}/export/lib;ln -sf jdbcT4-${TRAFODION_VER}.jar jdbcT4.jar`
-
-clean:
+mvn_clean:
 	-$(MAVEN) clean | grep ERROR
+
+clean: $(clean_pres)
 	$(RM) build_jdbct4.log ${TRAF_HOME}/export/lib/jdbcT4*.jar
 
 LICENSE: ../../../licenses/LICENSE-clients
