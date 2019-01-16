@@ -40,7 +40,7 @@ target/jdbcT4-${TRAFODION_VER}.jar: $(java_files) LICENSE NOTICE
 mvn_clean: 
 	-$(MAVEN) clean | grep ERROR
 
-clean: mvn_clean 
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi) 
 	$(RM) build_jdbct4.log ${TRAF_HOME}/export/lib/jdbcT4*.jar
 
 LICENSE: ../../../licenses/LICENSE-clients
