@@ -573,7 +573,7 @@ a.b.c might be assigned a name such as a.b.c_123&#8230;_01&#8230;.
 is a table constraint that specifies that the column or set of columns cannot contain more 
 than one occurrence of the same value or set of values.
 +
-**** `_column-list_` cannot include more than one occurrence of the same column. in addition, the set of columns that you specify on a unique
+**** `_column-list_` cannot include more than one occurrence of the same column. In addition, the set of columns that you specify on a unique
 constraint cannot match the set of columns on any other unique constraint for the table or on the primary key constraint for the table.
 all columns defined as unique must be specified as not null.
 +
@@ -585,9 +585,9 @@ unique index does not exist, the system creates a unique index.
 is a constraint that specifies a condition that must be satisfied for each row in the table.
 see <<search_condition,search condition>>. You cannot refer to the current_date, current_time, or current_timestamp function in a check constraint, and you cannot use subqueries in a check constraint.
 
-*** `FOREIGN KEY (_column-list_) references _ref-spec_ not enforced`
+*** `FOREIGN KEY (_column-list_) references _ref-spec_ NOT ENFORCED`
 +
-is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key) in _table_ can contain only values that match those in a column or set of columns in the table specified in the references clause. However, because not enforced is specified, this relationship is not checked.
+is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key) in _table_ can contain only values that match those in a column or set of columns in the table specified in the references clause. However if `NOT ENFORCED` is specified, this relationship is not checked.
 +
 the two columns or sets of columns must have the same characteristics (data type, length, scale, precision). Without the foreign key clause,
 the foreign key in _table_ is the column being defined; with the foreign key clause, the foreign key is the column or set of columns specified in
