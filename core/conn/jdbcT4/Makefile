@@ -26,9 +26,9 @@ java_files:=$(shell find src/main/java -name *.java*|grep -v Vproc.java)
 
 all: build_all 
 
-build_all: LICENSE NOTICE target/jdbcT4-${TRAFODION_VER}.jar 
+build_all: target/jdbcT4-${TRAFODION_VER}.jar 
 
-target/jdbcT4-${TRAFODION_VER}.jar: $(java_files)
+target/jdbcT4-${TRAFODION_VER}.jar: $(java_files) LICENSE NOTICE
 	echo "$(MAVEN) package -DskipTests"
 	set -o pipefail && $(MAVEN) install -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2 -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib
