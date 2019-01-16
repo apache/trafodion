@@ -2073,7 +2073,9 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
       char errBuf[strlen(si->tableName()) + 100 + strlen(si->hdfsRootDir())];
       snprintf(errBuf,sizeof(errBuf), "%s (fileLoc: %s)", si->tableName(), si->hdfsRootDir());
       diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
-                << DgString0(errBuf);              
+                << DgString0(errBuf); 
+      NADELETEBASIC(tmpBuf, &heap_);
+      return ERROR;             
   } else {
      diagsArea << DgSqlCode(-1192)
           << DgString0("HiveClient_JNI::getRedefTime")
