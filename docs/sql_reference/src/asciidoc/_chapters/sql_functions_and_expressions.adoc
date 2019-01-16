@@ -8852,7 +8852,7 @@ NOTE: The `_source-string_` must be character and cannot be NULL.
 +
 is a delimiter used to split a `_source-string_`.
 +
-The delimiter can contain multiple characters, not just a single character. Multiple characters are considered as a whole, not individually. For example, if the delimiter is "coder", then the source-string is split around "coder" rather than "c", "o", "d", "e" and "r".
+The `_delimiter_` can contain multiple characters, not just a single character. Multiple characters are considered as a whole, not individually. For example, if the `_delimiter_` is "coder", then the `_source-string_` is split around "coder" rather than "c", "o", "d", "e" and "r".
 +
 NOTE: The `_delimiter_` cannot be NULL. 
 +
