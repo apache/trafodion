@@ -4472,7 +4472,7 @@ EXTRACT (datetime-field FROM extract-source)
 .Details of `_datetime-field_` and `_extract-source_`
 [cols="20%,40%,40%"]
 |===
-^| `_datetime-filed_` 
+^| `_datetime-field_` 
 ^| *Description* 
 ^| *Supported* `_extract-source_` 
 
@@ -8827,6 +8827,217 @@ with the character set specified by _char-set-name_.
 +
 ```
 SPACE(3)
+```
+
+<<<
+[[split_part_function]]
+== SPLIT_PART Function
+
+The SPLIT_PART function returns the n^th^ substring that is split on the defined `_delimiter_` and `_field-position_`.
+
+SPLIT_PART is a Trafodion SQL extension.
+
+`SPLIT_PART (_source-string, delimiter, field-position_)`
+
+[[syntax_description_of_split_part]]
+=== Syntax Description of SPLIT_PART
+
+* `_source-string_`
++
+is a string to be split.  
++
+NOTE: The `_source-string_` must be character and cannot be NULL.
+
+* `_delimiter_`
++
+is a delimiter used to split a `_source-string_`.
++
+The `_delimiter_` can contain multiple characters, not just a single character. Multiple characters are considered as a whole, not individually. For example, if the `_delimiter_` is "coder", then the `_source-string_` is split around "coder" rather than "c", "o", "d", "e" and "r".
++
+NOTE: The `_delimiter_` cannot be NULL. 
++
+NOTE: The function counts from the first `_delimiter_` if the `_delimiter_` appears more than once in the `_source-string_`.
++
+Example
++
+```
+SQL>SELECT SPLIT_PART ('technical writer','t',2) FROM DUAL;
+
+(EXPR)
+------------------------
+echnical wri            
+
+--- 1 row(s) selected. 
+```
++
+NOTE: The function returns an empty string if the `_delimiter_` does not exist in the `_source-string_`.
++
+Example
++
+```
+SQL>SELECT SPLIT_PART ('technical_writer','@_@',1) FROM DUAL;
+
+(EXPR)
+----------------------
+                      
+
+--- 1 row(s) selected.
+```
++
+NOTE: Empty space before of after the `_delimiter_` is returned as a valid part if the `_source-string_` starts or ends with the `_delimiter_`.
++
+Example
++
+```
+SQL>SELECT SPLIT_PART ('|t|e|c|h|n|i|c|a|l', '|', 1), SPLIT_PART ('|w|r|i|t|e|r|', '|', 8) FROM DUAL;
+
+(EXPR)             (EXPR)       
+------------------ -------------
+                                
+
+--- 1 row(s) selected.
+```
+
+* `_field-position_`
++
+is the n^th^ part of the `_source-string_` to return.
++
+NOTE: The `_field-position_` must be an integer greater than 0.
++
+NOTE: The `_field-position_` cannot be NULL.
++
+NOTE: The function returns an empty string if the `_field-position_` exceeds the number of `_source-string_` parts after splitting.
++
+Example 
++
+```
+SQL>SELECT SPLIT_PART ('technical writer',' ',3) FROM DUAL;
+
+(EXPR)
+----------------
+                
+
+--- 1 row(s) selected.
+```
+
+[[example_of_split_part]]
+=== Example of SPLIT_PART
+
+* This example returns the desired part of the source string.
++
+```
+SQL>SELECT SPLIT_PART ('a*^ˍ^*technical writer', '*^ˍ^*', 2), SPLIT_PART ('is|a professional', '$', 1), SPLIT_PART ('&-information&-communicator', '&-', 4) FROM DUAL;
+
+(EXPR)                                       (EXPR)            (EXPR)                     
+-------------------------------------------- ----------------- ---------------------------
+technical writer                                                          
+
+--- 1 row(s) selected.
+```
+
+* This example splits the column _deliv_date_ into year, month and day.
++
+```
+SQL>SELECT orders.deliv_date,
+SPLIT_PART (orders.deliv_date, '-', 1) AS delivery_year,
+SPLIT_PART (orders.deliv_date, '-', 2) AS delivery_month,
+SPLIT_PART (orders.deliv_date, '-', 3) AS delivery_day
+FROM orders LIMIT 3;
+
+DELIV_DATE        DELIVERY_YEAR        DELIVERY_MONTH        DELIVERY_DAY 
+--------------------------------------------------------------------------------
+                                                               
+2019-11-02        2019                 11                    02                                                             
+2019-12-24        2019                 12                    24                                                             2019-12-31        2019                 12                    31                                                                                     
+
+--- 3 row(s) selected.
+```
+
+* The SPLIT_PART function can work with other functions.
+
+** Works with CHAR_LENGTH and TRIM function.
++
+```
+SQL>SELECT CHAR_LENGTH(TRIM(LEADING '"' FROM (SPLIT_PART(' "Good technical writing is concise, focused, easy to understand," ,free of errors, and is audience-based',',',4)))) FROM DUAL;
+
+(EXPR)
+----------
+         1
+
+--- 1 row(s) selected.
+```
++
+```
+SQL>SELECT CHAR_LENGTH(trim(LEADING '"' FROM trim (split_part(' "Good technical writing is concise, focused, easy to understand," ,free of errors, and is audience-based',',',4)))) FROM DUAL;
+
+(EXPR)
+----------
+         0
+
+--- 1 row(s) selected.
+```
+
+** Works with ROW_NUMBER() function
++
+Suppose that we have following two tables:
++
+_t1_:
++
+```
+SQL>SELECT * FROM t1;  
+
+C1  C2  C3                                                                                                  
+--- --- ----------------------------------------------------------------
+1   a   technical~*~achievement                                                                             
+2   a   ~*~writers~*~work across genres                                                                     
+3   a   diagram~*~does not~*~convey~*~entity container information                                          
+4   a   ~*~minimally~*~serve as~*~technical~*~advisors                                                      
+5   b   concepts~*~of encoding                                                                              
+6   b   can be~*~accurately~*~aggregated                                                                    
+7   b   ~*~database~*~and~*~cloud                                                                           
+8   b   supporting~*~learners~*~to search~*~comprehensively~*~across databases                              
+
+--- 8 row(s) selected.
+```
++
+_t2_:
++
+```
+SQL>SELECT * FROM t2;
+
+C1
+-----------
+          1
+          2
+
+--- 2 row(s) selected.
+```
++
+The SPLIT_PART function works with ROW_NUMBER function.
++
+```
+SQL>SELECT * FROM (SELECT SPLIT_PART (t1.c3, '~*~', ROW_NUMBER() OVER (PARTITION BY t1.c2 ORDER BY t1.c1)) FROM t1) AS t3 CROSS JOIN t2;
+
+(EXPR)                    C1         
+------------------------- -----------
+technical                 1
+technical                 2
+writers                   1
+writers                   2
+convey                    1
+convey                    2
+technical                 1
+technical                 2
+concepts                  1
+concepts                  2
+accurately                1
+accurately                2
+and                       1
+and                       2
+comprehensively           1
+comprehensively           2
+
+--- 16 row(s) selected. 
 ```
 
 <<<
