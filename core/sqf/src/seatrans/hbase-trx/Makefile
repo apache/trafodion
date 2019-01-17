@@ -25,44 +25,54 @@ VFILE			    =hbase-trx.jar.versions
 GENVERS			    =./genvers
 UNCOMMENT_STRING	    =./uncomment_string
 REINSTATE_ORIG   	    =./reinstate_orig
+java_files:=$(shell find src/main/java -name *.java* >original.diff.log;find src/main/java -name "*.java.tmpl" | sed -e "s/\.tmpl$$//" >generated.diff.log;  grep -F -v -f generated.diff.log original.diff.log)
 #When add one more hadoop version, please addthe names in below 4 lines in order
-VERSION_NAMES		=0       1       2       3        4          5          6
-JAR_NAMES		=cdh5_4  cdh5_5  cdh5_7  hdp2_3   apache1_0  apache1_1  apache1_2 
-POM_NAMES		=cdh54   cdh55   cdh57   hdp      apache10   apache11   apache12 
-UNCOMMENT_NAMES		=CDH5.4  CDH5.5  CDH5.7  HDP      APACHE1.0  APACHE1.1  APACHE1.2
 
 .NOTPARALLEL: all
 
-all: 
-	@pom_nms=($(shell echo $(POM_NAMES))); \
-	uncomment_nms=($(shell echo $(UNCOMMENT_NAMES))); \
-	jar_nms=($(shell echo $(JAR_NAMES))); \
-	version_nms=($(shell echo $(VERSION_NAMES))); \
-	length=$${#version_nms[@]}; \
-	let 'length=length-1'; \
-	$(GENVERS) > $(VFILE); \
-	for i in `echo $${version_nms[@]}` ; do \
-		jar_nm=target/hbase-trx-$${jar_nms[$${i}]}-$(TRAFODION_VER).jar ; \
-		if [ ! -f $${jar_nm} ]; then \
-			if [ $(GENVERS) -nt $${jar_nm} ]; then echo "update manifest"; $(RM) -f $${jar_nm}; fi ; \
-			if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt $${jar_nm} ]; then echo "update manifest"; $(RM) -f $${jar_nm}; fi ; \
-			echo $${uncomment_nms[$${i}]}; \
-			$(REINSTATE_ORIG); \
-			$(UNCOMMENT_STRING) $${uncomment_nms[$${i}]}; \
-			echo "$${i}/$${length}: $(MAVEN) -f pom.xml.$${pom_nms[$${i}]} package -DskipTests"; \
-			echo "### For full Maven output, see file build_trx.log"; \
-			set -o pipefail && $(MAVEN) -f pom.xml.$${pom_nms[$${i}]} package install -DskipTests | tee -a build_trx.log; \
-		fi ; \
-		mkdir -p $(TRAF_HOME)/export/lib; \
-		cp -pf $${jar_nm}  $(TRAF_HOME)/export/lib; \
-	done ;  \
+define trx
+	$(GENVERS) > $(VFILE)
+	jar_nm=target/hbase-trx-$(1)-$(TRAFODION_VER).jar
+	if [ $(GENVERS) -nt target/hbase-trx-$(1)-$(TRAFODION_VER).jar ]; then echo "update manifest"; $(RM) -f target/hbase-trx-$(1)-$(TRAFODION_VER).jar; fi
+	if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/hbase-trx-$(1)-$(TRAFODION_VER).jar ]; then echo "update manifest"; $(RM) -f target/hbase-trx-$(1)-$(TRAFODION_VER).jar; fi
+	echo $(3)
+	$(REINSTATE_ORIG)
+	$(UNCOMMENT_STRING) $(3)
+	echo "$(MAVEN) -f pom.xml.$(2) package -DskipTests"
+	echo "### For full Maven output, see file build_trx_$(1).log"
+	set -o pipefail && $(MAVEN) -f pom.xml.$(2) package install -DskipTests | tee -a build_trx_$(1).log| grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	mkdir -p $(TRAF_HOME)/export/lib
+	cp -pf target/hbase-trx-$(1)-$(TRAFODION_VER).jar $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
+endef
+target/hbase-trx-apache1_2-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,apache1_2,apache12,APACHE1.2)
 
-clean:
+target/hbase-trx-apache1_1-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,apache1_1,apache11,APACHE1.1)
+
+target/hbase-trx-apache1_0-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,apache1_0,apache10,APACHE1.0)
+
+target/hbase-trx-hdp2_3-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,hdp2_3,hdp,HDP)
+
+target/hbase-trx-cdh5_7-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,cdh5_7,cdh57,CDH5.7)
+
+target/hbase-trx-cdh5_5-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,cdh5_5,cdh55,CDH5.5)
+
+target/hbase-trx-cdh5_4-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,cdh5_4,cdh54,CDH5.4)
+
+all: target/hbase-trx-apache1_2-$(TRAFODION_VER).jar target/hbase-trx-apache1_1-$(TRAFODION_VER).jar target/hbase-trx-apache1_0-$(TRAFODION_VER).jar target/hbase-trx-hdp2_3-$(TRAFODION_VER).jar target/hbase-trx-cdh5_7-$(TRAFODION_VER).jar target/hbase-trx-cdh5_5-$(TRAFODION_VER).jar target/hbase-trx-cdh5_4-$(TRAFODION_VER).jar 
+
+mvn_clean:
+	-$(MAVEN) -f pom.xml.apache10 clean| grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' 
+
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi) 
 	$(RM) $(TRAF_HOME)/export/lib/hbase-trx-*-$(TRAFODION_VER).jar
 	$(REINSTATE_ORIG)
-	-@if [ -d target ]; then \
-		$(MAVEN) -f pom.xml.apache10 clean | grep ERROR 2>/dev/null ; \
-	fi
-	$(RM) build_trx.log
+	$(RM) *.log
 	$(RM) $(VFILE)
