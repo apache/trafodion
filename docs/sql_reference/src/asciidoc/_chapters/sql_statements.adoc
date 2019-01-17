@@ -442,7 +442,7 @@ alter-action is:
 column-definition is:
    column-name data-type
       [[DEFAULT default]
-         [[constraint constraint-name] column-constraint]]
+         [[CONSTRAINT constraint-name] column-constraint]]
 
 data-type is:
      char[acter] [(length [characters])]
@@ -485,15 +485,16 @@ default is:
    | currenttimestamp 
 
 column-constraint is:
-     not null
-   | unique
-   | check (condition)
-   | references ref-spec
+     NOT NULL
+   | UNIQUE
+   | PRIMARY KEY [ASC[ENDING] | DESC[ENDING]]
+   | CHECK (condition)
+   | REFERENCES ref-spec
 
 table-constraint is:
-     unique (column-list)
-   | check (condition)
-   | foreign key (column-list) references ref-spec
+     UNIQUE (column-list)
+   | CHECK (condition)
+   | FOREIGN KEY (column-list) REFERENCES ref-spec
 
 ref-spec is:
    referenced-table [(column-list)]
@@ -506,15 +507,15 @@ column-list is:
 [[alter_table_syntax]]
 === Syntax Description of ALTER TABLE
 
-* `_name_`
+* `_table-name_`
 +
 specifies the current name of the object. See <<database_object_names,Database Object Names>>.
 
-* `ADD [COLUMN] _column-definition_`
+* `ADD [IF NOT EXISTS][COLUMN] _column-definition_`
 +
 adds a column to _table_.
 +
-The clauses for the _column-definition_ are:
+The clauses for the `_column-definition_` are:
 
 ** `_column-name_`
 +
@@ -541,98 +542,107 @@ For any row that you add after the column is added, if no value is specified for
 receives a default value based on the current timestamp at the time the row is added.
 
 <<<
-** `[[constraint _constraint-name_] _column-constraint_]`
+** `[[CONSTRAINT _constraint-name_] _column-constraint_]`
 +
 specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be
-unique among constraint names in its schema. if you omit the schema portions of the name you specify in _constraint-name_,
-trafodion sql expands the constraint name by using the schema for _table_. see <<database_object_names,database object names>>.
+unique among constraint names in its schema. If you omit the schema portions of the name you specify in _constraint-name_,
+trafodion sql expands the constraint name by using the schema for _table_. See <<database_object_names,database object names>>.
 +
 if you do not specify a constraint name, trafodion sql constructs an sql identifier as the name for the constraint in the schema
-for _table._ the identifier consists of the fully qualified table name concatenated with a system-generated unique identifier.
+for _table._ The identifier consists of the fully qualified table name concatenated with a system-generated unique identifier.
 for example, a constraint on table a.b.c might be assigned a name such as a.b.c_123&#8230;_01&#8230;.
 
 *** `_column-constraint_` options:
 
-**** `not null` 
+**** `NOT NULL` 
 +
-is a column constraint that specifies that the column cannot contain nulls. if you omit not null, nulls are allowed in the column.
-if you specify both not null and no default, then each row inserted in the table must include a value for the column. see <<null,null>>.
+is a column constraint that specifies that the column cannot contain nulls. If you omit not null, nulls are allowed in the column.
+If you specify both not null and no default, then each row inserted in the table must include a value for the column. See <<null,null>>.
 
-**** `unique`
+**** `UNIQUE`
 +
-is a column constraint that specifies that the column cannot contain more than one occurrence of the same value. if you omit unique,
-duplicate values are allowed unless the column is part of the primary key. columns that you define as unique must be specified as not null.
+is a column constraint that specifies that the column cannot contain more than one occurrence of the same value. If you omit unique,
+duplicate values are allowed unless the column is part of the primary key. Columns that you define as unique must be specified as not null.
 
-**** `check (_condition_)`
+**** `PRIMARY KEY [ASC[ENDING] | DESC[ENDING]]`
++
+is a column constraint that specifies a column as the primary key for the table.
++
+ASCENDING and DESCENDING specify the direction for entries in one column within the key. The default is ASCENDING.
++
+The PRIMARY KEY value in each row of the table must be unique within the table. You can specify PRIMARY KEY only once on any CREATE TABLE statement.
++
+Trafodion SQL uses the primary key as the clustering key of the table to avoid creating a separate, unique index to implement
+the primary key constraint.
+
+**** `CHECK (_condition_)`
 +
 is a constraint that specifies a condition that must be satisfied for each row in the table. see <<search_condition,search condition>>.
 you cannot refer to the current_date, current_time, or current_timestamp function in a check constraint, and you cannot use
 subqueries in a check constraint.
 
 <<<
-**** `references _ref-spec_`
+**** `REFERENCES _ref-spec_`
 +
-specifies a references column constraint. the maximum combined length of the columns for a references constraint is 2048 bytes. +
+specifies a references column constraint. The maximum combined length of the columns for a references constraint is 2048 bytes. +
 
 ***** `_ref-spec_` is:
 +
 `_referenced-table_ [(_column-list_)]`
 +
-`_referenced-table_` is the table referenced by the foreign key in a referential constraint. _referenced-table_ cannot be a view.
+****** `_referenced-table_` is the table referenced by the foreign key in a referential constraint. _referenced-table_ cannot be a view.
 _referenced-table_ cannot be the same as _table_. _referenced-table_ corresponds to the foreign key in the _table_.
  +
-`_column-list_` specifies the column or set of columns in the _referenced-table_ that corresponds to the foreign key in _table_. the
+****** `_column-list_` specifies the column or set of columns in the _referenced-table_ that corresponds to the foreign key in _table_. the
 columns in the column list associated with references must be in the same order as the columns in the column list associated with foreign
 key. if _column-list_ is omitted, the referenced table's primary key columns are the referenced columns.
 +
 a table can have an unlimited number of referential constraints, and you can specify the same foreign key in more than one referential
 constraint, but you must define each referential constraint separately. you cannot create self-referencing foreign key constraints.
 
-* `add [constraint _constraint-name_] _table-constraint_`
+
+* `ADD [constraint _constraint-name_] _table-constraint_`
 +
 adds a constraint to the table and optionally specifies _constraint-name_ as the name for the constraint. the new constraint
 must be consistent with any data already present in the table. 
 
 <<<
-** `constraint _constraint-name_`
+** `CONSTRAINT _constraint-name_`
 +
 specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be unique among constraint
-names in its schema. if you omit the schema portions of the name you specify in _constraint-name_, trafodion sql expands the constraint
-name by using the schema for table. see <<database_object_names,database object names>>. 
+names in its schema. If you omit the schema portions of the name you specify in _constraint-name_, trafodion sql expands the constraint
+name by using the schema for table. See <<database_object_names,database object names>>. 
 +
-if you do not specify a constraint name, trafodion sql constructs an sql identifier as the name for the constraint in the schema for table. the
-identifier consists of the fully qualified table name concatenated with a system-generated unique identifier. for example, a constraint on table
+if you do not specify a constraint name, trafodion sql constructs an sql identifier as the name for the constraint in the schema for table. The
+identifier consists of the fully qualified table name concatenated with a system-generated unique identifier. For example, a constraint on table
 a.b.c might be assigned a name such as a.b.c_123&#8230;_01&#8230;.
 +
 ** `_table-constraint_` options:
 
-*** `unique (_column-list_)`
+*** `UNIQUE (_column-list_)`
 +
 is a table constraint that specifies that the column or set of columns cannot contain more 
 than one occurrence of the same value or set of values.
 +
-`_column-list_` cannot include more than one occurrence of the same column. in addition, the set of columns that you specify on a unique
+**** `_column-list_` cannot include more than one occurrence of the same column. In addition, the set of columns that you specify on a unique
 constraint cannot match the set of columns on any other unique constraint for the table or on the primary key constraint for the table.
 all columns defined as unique must be specified as not null.
 +
-a unique constraint is enforced with a unique index. if there is already a unique index on _column-list_, trafodion sql uses that index. if a
+a unique constraint is enforced with a unique index. If there is already a unique index on _column-list_, trafodion sql uses that index. if a
 unique index does not exist, the system creates a unique index.
 
-*** `check (_condition_)`
+*** `CHECK (_condition_)`
 +
 is a constraint that specifies a condition that must be satisfied for each row in the table.
-see <<search_condition,search condition>>. you cannot refer to the current_date, current_time, or current_timestamp function in a check
-constraint, and you cannot use subqueries in a check constraint.
+see <<search_condition,search condition>>. You cannot refer to the current_date, current_time, or current_timestamp function in a check constraint, and you cannot use subqueries in a check constraint.
 
-*** `foreign key (_column-list_) references _ref-spec_ not enforced`
+*** `FOREIGN KEY (_column-list_) references _ref-spec_ NOT ENFORCED`
 +
-is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key)
-in _table_ can contain only values that match those in a column or set of columns in the table specified in the references
-clause. however, because not enforced is specified, this relationship is not checked.
+is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key) in _table_ can contain only values that match those in a column or set of columns in the table specified in the references clause. However if `NOT ENFORCED` is specified, this relationship is not checked.
 +
-the two columns or sets of columns must have the same characteristics (data type, length, scale, precision). without the foreign key clause,
+the two columns or sets of columns must have the same characteristics (data type, length, scale, precision). Without the foreign key clause,
 the foreign key in _table_ is the column being defined; with the foreign key clause, the foreign key is the column or set of columns specified in
-the foreign key clause. for information about _ref-spec_, see references _ref-spec_ not enforced.
+the foreign key clause. For information about _ref-spec_, see references _ref-spec_ not enforced.
 
 <<<
 * ENABLE ALL [UNIQUE] INDEXES
@@ -808,6 +818,33 @@ ALTER TABLE persnl.project
 ```
 Alter TABLE PRODUCT 
 ALTER COLUMN vend_id RENAME TO cstm_id;
+```
+
+* This example adds the column _c2_ to the table _t1_, sets _c2_ as the primary key and specifies _pk_t1_ for the primary key. The direction for entries are descending.
++
+```
+SQL>ALTER TABLE t1 ADD c2 int CONSTRAINT pk_t1 PRIMARY KEY DESC;
+
+--- SQL operation complete.
+```
++
+```
+SQL>SHOWDDL t1;
+
+ 
+CREATE TABLE TRAFODION.SEABASE.T1
+  ( 
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               INT DEFAULT NULL NOT NULL NOT DROPPABLE
+      NOT SERIALIZED
+ , CONSTRAINT TRAFODION.SEABASE.PK_T1 PRIMARY KEY (C2 DESC)
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 * NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2, so it is not possible to alter the CHARACTER SET when using NCHAR, 
@@ -3158,9 +3195,9 @@ default is:
   | currenttimestamp
 
 column-constraint is:
-    not null
-  | unique
-  | primary key [asc[ending] | desc[ending]]
+    NOT NULL
+  | UNIQUE
+  | PRIMARY KEY [ASC[ENDING] | DESC[ENDING]]
   | CHECK (condition)
   | REFERENCES ref-spec
 
@@ -3358,6 +3395,7 @@ specifies a name for the column or table constraint. _constraint-name_ must have
 unique among constraint names in its schema. If you omit the schema portions of the name you specify in _constraint-name_,
 {project-name} SQL expands the constraint name by using the schema for _table_. See <<constraint_names,Constraint Names>> and
 <<database_object_names,Database Object Names>>.
+
 
 * `NOT NULL`
 +
