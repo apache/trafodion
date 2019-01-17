@@ -26,6 +26,8 @@ include ../../../../macros.gmk
 include ../../../macros.gmk
 include ../macros.gmk
 
+java_files:=$(shell find src/main/java -name *.java*)
+
 LIBJVM        = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -L$(JAVA_HOME)/jre/lib/amd64/server -ljvm
 LIBSTESTRUN   = -L$(LIBEXPDIR) -lsbms -lshbasetmlib $(DEBUG)
 
@@ -63,19 +65,22 @@ endif
 
 all:  $(PROGS) mavenbuild
 
-mavenbuild:
-	@mkdir -p src/main/resources ; \
-	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf ; \
-	if [ ! -f target/trafodion-dtm-cdh-${TRAFODION_VER}.jar ]; then \
-		set -o pipefail; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
-	fi ; \
-	if [ ! -f target/trafodion-dtm-apache-${TRAFODION_VER}.jar ]; then \
-		set -o pipefail; $(MAVEN) -f pom.xml.apache package -DskipTests | tee maven_build_apache.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
-	fi ; \
-	if [ ! -f target/trafodion-dtm-hdp-${TRAFODION_VER}.jar ]; then \
-		set -o pipefail; $(MAVEN) -f pom.xml.hdp package -DskipTests | tee maven_build_hdp.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
-		cp -pf target/trafodion-dtm-*.jar $(TRAF_HOME)/export/lib ; \
-	fi
+define dtm
+	@mkdir -p src/main/resources
+	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf
+	set -o pipefail; $(MAVEN) -f $(1) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+endef
+
+target/trafodion-dtm-cdh-${TRAFODION_VER}.jar: $(java_files)
+	$(call dtm, pom.xml)
+
+target/trafodion-dtm-apache-${TRAFODION_VER}.jar: $(java_files)
+	$(call dtm, pom.xml.apache)
+
+target/trafodion-dtm-hdp-${TRAFODION_VER}.jar: $(java_files)
+	$(call dtm, pom.xml.hdp)
+
+mavenbuild: target/trafodion-dtm-cdh-${TRAFODION_VER}.jar target/trafodion-dtm-apache-${TRAFODION_VER}.jar target/trafodion-dtm-hdp-${TRAFODION_VER}.jar
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
@@ -99,14 +104,14 @@ setup:
 	@echo "CDEP_DIR = " $(CDEP_DIR)
 	@# do nothing
 
-clean:
+mvn_clean:
+	-$(MAVEN) -f pom.xml clean | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+	
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi) 
 	$(RM) $(PROGS)
 	$(RM) *.gcda *.gcno *.gcov
 	$(RM) -f  $(OUTDIR)/*.o
 	$(RM) -rf $(TRAF_HOME)/export/lib/trafodion-dtm-*.jar
-	-@if [ -d target ]; then \
-		$(MAVEN) -f pom.xml clean ; \
-	fi
 
 cleanall: clean
 	$(RM) -rf $(BUILD_PLAT)
