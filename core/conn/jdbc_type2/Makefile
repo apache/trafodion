@@ -77,6 +77,7 @@ DEFINES =  $(COMMON_DEFINES)
 CODEGEN = -fPIC
 
 .PHONY: all
+java_files:=$(shell find src/main/java -name *.java*|grep -v DriverInfo.java)
 
 LN :=/bin/ln -sf
 JAVAH :=$(JAVA_HOME)/bin/javah
@@ -84,14 +85,12 @@ EXPROOT :=  ${TRAF_HOME}/export
 CP := /bin/cp -f
 all: LICENSE NOTICE $(LIBEXPDIR)/libjdbcT2.so  
 
-$(EXPROOT)/lib/jdbcT2.jar:
-	@if [ ! -f target/trafjdbcT2-${TRAFODION_VER}.jar ] ; then \
-		./getBuildInfo ; \
-		$(MAVEN) install -DskipTests ; \
-		$(CP) target/trafjdbcT2-${TRAFODION_VER}.jar $(EXPROOT)/lib ; \
-		`cd ${TRAF_HOME}/export/lib;$(LN) trafjdbcT2-${TRAFODION_VER}.jar jdbcT2.jar` ; \
-		$(JAVAH) -cp $(EXPROOT)/lib/jdbcT2.jar -d native $(CSES) ; \
-	fi
+$(EXPROOT)/lib/jdbcT2.jar: $(java_files)
+	./getBuildInfo 
+	$(MAVEN) install -DskipTests 
+	$(CP) target/trafjdbcT2-${TRAFODION_VER}.jar $(EXPROOT)/lib 
+	`cd ${TRAF_HOME}/export/lib;$(LN) trafjdbcT2-${TRAFODION_VER}.jar jdbcT2.jar` 
+	$(JAVAH) -cp $(EXPROOT)/lib/jdbcT2.jar -d native $(CSES) 
 
 $(LIBEXPDIR)/libjdbcT2.so: $(OBJS)
 	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli  -larkcmp_dll -larkcmplib -lcommon -lsort -lexecutor -lcomexe -lcli $(OBJS)
@@ -100,10 +99,10 @@ $(OBJS): $(EXPROOT)/lib/jdbcT2.jar
 
 $(OUTDIR)/type2version.o: $(TRAF_HOME)/export/include/SCMBuildStr.h
 
-clean:
-	-@if [ -d target ] ; then \
-	$(MAVEN) clean ; \
-	fi
+mvn_clean:
+	$(MAVEN) clean
+
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi)
 	$(RM) $(LIBEXPDIR)/libjdbcT2.so
 	$(RM) -f $(EXPROOT)/lib/jdbcT2*.jar
 	$(RM) -rf $(OUTDIR)
