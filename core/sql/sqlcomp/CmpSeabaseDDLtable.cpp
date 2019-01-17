@@ -53,67 +53,14 @@
 #include "PrivMgrRoles.h"
 #include "PrivMgrComponentPrivileges.h"
 
+#include "StmtDDLonHiveObjects.h"
+
 #include "RelExeUtil.h"
 
 #include "TrafDDLdesc.h"
 
-
-// defined in CmpDescribe.cpp
-extern short CmpDescribeSeabaseTable ( 
-     const CorrName  &dtName,
-     short type, // 1, invoke. 2, showddl. 3, createLike
-     char* &outbuf,
-     ULng32 &outbuflen,
-     CollHeap *heap,
-     const char * pkeyStr = NULL,
-     NABoolean withPartns = FALSE,
-     NABoolean withoutSalt = FALSE,
-     NABoolean withoutDivisioning = FALSE,
-     NABoolean withoutRowFormat = FALSE,
-     NABoolean withoutLobColumns = FALSE,
-     UInt32 columnLengthLimit = UINT_MAX,
-     NABoolean noTrailingSemi = FALSE,
-     
-     // used to add,rem,alter column definition from col list.
-     // valid for 'createLike' mode. 
-     // Used for 'alter add/drop/alter col'.
-     char * colName = NULL,
-     short ada = 0, // 0,add. 1,drop. 2,alter
-     const NAColumn * nacol = NULL,
-     const NAType * natype = NULL,
-     Space *inSpace = NULL);
-
-short CmpDescribeHiveTable ( 
-                             const CorrName  &dtName,
-                             short type, // 1, invoke. 2, showddl. 3, createLike
-                             char* &outbuf,
-                             ULng32 &outbuflen,
-                             CollHeap *heap,
-                             UInt32 columnLengthLimit = UINT_MAX);
-
-// type:  1, invoke. 2, showddl. 3, create_like
-extern short cmpDisplayColumn(const NAColumn *nac,
-                              char * inColName,
-                              const NAType *inNAT,
-                              short displayType,
-                              Space *inSpace,
-                              char * buf,
-                              Lng32 &ii,
-                              NABoolean namesOnly,
-                              NABoolean &identityCol,
-                              NABoolean isExternalTable,
-                              NABoolean isAlignedRowFormat,
-                              UInt32 columnLengthLimit,
-                              NAList<const NAColumn *> * truncatedColumnList);
-
-extern short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
-                                  Lng32 numKeys,
-                                  NABoolean displaySystemCols,
-                                  Space &space, char * buf, 
-                                  NABoolean displayCompact,
-                                  NABoolean displayAscDesc,
-                                  NABoolean displayParens);
-                             
+#include "CmpDescribe.h"
+                  
 static bool checkSpecifiedPrivs(
    ElemDDLPrivActArray & privActsArray,  
    const char * externalObjectName,
@@ -375,15 +322,22 @@ void CmpSeabaseDDL::createSeabaseTableLike(ExeCliInterface * cliInterface,
     }
 
   ParDDLLikeOptsCreateTable &likeOptions = createTableNode->getLikeOptions();
-  
+
+  if (NOT likeOptions.getLikeOptHiveOptions().isNull())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242)
+                          << DgString0("Hive options cannot be specified for this table.");
+      return;
+    }
+
   char * buf = NULL;
   ULng32 buflen = 0;
-  if (srcCatNamePart == HIVE_SYSTEM_CATALOG)
+  if (srcCatNamePart.index(HIVE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0)
     retcode = CmpDescribeHiveTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
                                    likeOptions.getIsLikeOptColumnLengthLimit());
   else
     retcode = CmpDescribeSeabaseTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
-                                      NULL,
+                                      NULL, NULL,
                                       likeOptions.getIsWithHorizontalPartitions(),
                                       likeOptions.getIsWithoutSalt(),
                                       likeOptions.getIsWithoutDivision(),
@@ -1259,7 +1213,7 @@ short CmpSeabaseDDL::genUniqueName(StmtDDLAddConstraint *addUniqueNode,
       specifiedConstraint.append(".");
       specifiedConstraint.append( tableName.getSchemaNamePartAsAnsiString() );
       specifiedConstraint.append(".");
-
+      
       ComString oName = tableName.getObjectNamePartAsAnsiString() ; 
       Lng32 status = ToInternalIdentifier ( oName // in/out - from external- to internal-format
                                             , TRUE  // in - NABoolean upCaseInternalNameIfRegularIdent
@@ -1564,6 +1518,7 @@ short CmpSeabaseDDL::updateIndexInfo(
   return 0;
 }
 
+//RETURN: -1 in case of error.  -2, if specified object doesnt exist in MD.
 short CmpSeabaseDDL::setupAndErrorChecks
 (NAString &tabName, QualifiedName &origTableName, 
  NAString &currCatName, NAString &currSchName,
@@ -1637,7 +1592,7 @@ short CmpSeabaseDDL::setupAndErrorChecks
 
       processReturn();
       
-      return -1;
+      return -2;
     }
 
   Int32 objectOwnerID = 0;
@@ -2290,9 +2245,12 @@ short CmpSeabaseDDL::createSeabaseTable2(
   // VOLATILE_TABLE_FIND_SUITABLE_KEY is ON, then allow it.
   // If ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT is set, then allow it.
   NABoolean allowNullableUniqueConstr = FALSE;
-  if (((CmpCommon::getDefault(VOLATILE_TABLE_FIND_SUITABLE_KEY) != DF_OFF) &&
-       (createTableNode->isVolatile())) ||
-      (CmpCommon::getDefault(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT) == DF_ON))
+  if ((CmpCommon::getDefault(VOLATILE_TABLE_FIND_SUITABLE_KEY) != DF_OFF) &&
+      (createTableNode->isVolatile()))
+    allowNullableUniqueConstr = TRUE;
+  
+  if ((createTableNode->getIsConstraintPKSpecified()) &&
+      (createTableNode->getAddConstraintPK()->getAlterTableAction()->castToElemDDLConstraintPK()->isNullableSpecified()))
     allowNullableUniqueConstr = TRUE;
 
   int numIterationsToCompleteColumnList = 1;
@@ -2834,7 +2792,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
     }
   
   NABoolean ddlXns = createTableNode->ddlXns();
-  if (NOT extNameForHbase.isNull())
+  if ((NOT extNameForHbase.isNull()) &&
+      (CmpCommon::getDefault(TRAF_NO_HBASE_DROP_CREATE) == DF_OFF))
     {
       HbaseStr hbaseTable;
       hbaseTable.val = (char*)extNameForHbase.data();
@@ -3086,10 +3045,8 @@ void CmpSeabaseDDL::addConstraints(
 
   if (pkConstr)
     {
-      StmtDDLAddConstraintUnique *uniqConstr = pkConstr;
-      
       NAString uniqueName;
-      genUniqueName(uniqConstr, uniqueName);
+      genUniqueName(pkConstr, uniqueName);
       
       ComObjectName constrName(uniqueName);
       constrName.applyDefaults(currCatAnsiName, currSchAnsiName);
@@ -3097,8 +3054,8 @@ void CmpSeabaseDDL::addConstraints(
       const NAString constrSchemaNamePart = constrName.getSchemaNamePartAsAnsiString(TRUE);
       const NAString constrObjectNamePart = constrName.getObjectNamePartAsAnsiString(TRUE);
       
-      ElemDDLConstraintUnique *constraintNode = 
-        ( uniqConstr->getConstraint() )->castToElemDDLConstraintUnique();
+      ElemDDLConstraintPK *constraintNode = 
+        ( pkConstr->getConstraint() )->castToElemDDLConstraintPK();
       ElemDDLColRefArray &keyColumnArray = constraintNode->getKeyColumnArray();
       
       NAString keyColNameStr;
@@ -3117,9 +3074,10 @@ void CmpSeabaseDDL::addConstraints(
             keyColNameStr += ", ";
         }
       
-      str_sprintf(buf, "alter table \"%s\".\"%s\".\"%s\" add constraint \"%s\".\"%s\".\"%s\" unique (%s)",
+      str_sprintf(buf, "alter table \"%s\".\"%s\".\"%s\" add constraint \"%s\".\"%s\".\"%s\" primary key %s (%s)",
                   catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
                   constrCatalogNamePart.data(), constrSchemaNamePart.data(), constrObjectNamePart.data(),
+                  (constraintNode->isNullableSpecified() ? " nullable " : ""),
                   keyColNameStr.data());
       
       cliRC = cliInterface.executeImmediate(buf);
@@ -3817,7 +3775,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       cliRC = getUsingObject(cliInterface, objUID, usingObjName);
       if (cliRC < 0)
         {
-         deallocEHI(ehi); 
+          deallocEHI(ehi); 
           processReturn();
           
           return -1;
@@ -4434,8 +4392,9 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   NABoolean dropFromMD = TRUE;
   NABoolean dropFromHbase = (NOT tableName.isExternalHbase());
 
-  if (dropTableNode->getDropBehavior() == COM_NO_CHECK_DROP_BEHAVIOR)
+  if (CmpCommon::getDefault(TRAF_NO_HBASE_DROP_CREATE) == DF_ON)
     dropFromHbase = FALSE;
+
   if (dropSeabaseObject(ehi, tabName,
                         currCatName, currSchName, COM_BASE_TABLE_OBJECT,
                         dropTableNode->ddlXns(),
@@ -5175,7 +5134,7 @@ short CmpSeabaseDDL::createSeabaseTableLike2(
   char * buf = NULL;
   ULng32 buflen = 0;
   retcode = CmpDescribeSeabaseTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
-                                    NULL,
+                                    NULL, NULL,
                                     withPartns, withoutSalt, withoutDivision,
                                     withoutRowFormat,
                                     FALSE, // include LOB columns (if any)
@@ -5226,6 +5185,8 @@ short CmpSeabaseDDL::cloneHbaseTable(
      const NAString &srcTable, const NAString &clonedTable,
      ExpHbaseInterface * inEHI)
 {
+  Lng32 retcode = 0;
+
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)srcTable.data();
   hbaseTable.len = srcTable.length();
@@ -5242,8 +5203,15 @@ short CmpSeabaseDDL::cloneHbaseTable(
   }
 
   // copy hbaseTable as clonedHbaseTable
-  if (ehi->copy(hbaseTable, clonedHbaseTable, TRUE))
+  if (retcode = ehi->copy(hbaseTable, clonedHbaseTable, TRUE))
     {
+      *CmpCommon::diags()
+        << DgSqlCode(-8448)
+        << DgString0((char*)"ExpHbaseInterface::copy()")
+        << DgString1(getHbaseErrStr(-retcode))
+        << DgInt0(-retcode)
+        << DgString2((char*)GetCliGlobals()->getJniErrorStr());
+      
       if (! inEHI)
         deallocEHI(ehi); 
       
@@ -5321,7 +5289,7 @@ short CmpSeabaseDDL::cloneSeabaseTable(
       if (truncateHbaseTable(clonedCatNamePart, 
                              clonedSchNamePart, 
                              clonedObjNamePart,
-                             (NATable*)naTable, inEHI))
+                             naTable->hasSaltedColumn(), inEHI))
         {
           return -1;
         }
@@ -5353,6 +5321,100 @@ short CmpSeabaseDDL::cloneSeabaseTable(
     }
 
   return 0;
+}
+
+short CmpSeabaseDDL::cloneAndTruncateTable(
+     const NATable * naTable, // IN: source table
+     NAString &tempTable, // OUT: temp table
+     ExpHbaseInterface * ehi,
+     ExeCliInterface * cliInterface)
+{
+  Lng32 cliRC = 0;
+  Lng32 cliRC2 = 0;
+  NABoolean identityGenAlways = FALSE;
+  char buf[4000];
+
+  const NAString &catalogNamePart = naTable->getTableName().getCatalogName();
+  const NAString &schemaNamePart = naTable->getTableName().getSchemaName();
+  const NAString &objectNamePart = naTable->getTableName().getObjectName();
+
+  ComUID comUID;
+  comUID.make_UID();
+  Int64 objUID = comUID.get_value();
+
+  char objUIDbuf[100];
+
+  tempTable = naTable->getTableName().getQualifiedNameAsAnsiString();
+  tempTable += "_";
+  tempTable += str_ltoa(objUID, objUIDbuf);
+
+  // identity 'generated always' columns do not permit inserting user specified
+  // values. Override it since we want to move original values to tgt.
+  const NAColumnArray &naColArr = naTable->getNAColumnArray();
+  for (Int32 c = 0; c < naColArr.entries(); c++)
+    {
+      const NAColumn * nac = naColArr[c];
+      if (nac->isIdentityColumnAlways())
+        {
+          identityGenAlways = TRUE;
+          break;
+        }
+    } // for
+
+  if (identityGenAlways)
+    {
+      cliRC = cliInterface->holdAndSetCQD("override_generated_identity_values", "ON");
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_restore;
+        }
+    }
+
+  // clone source naTable to target tempTable
+  if (cloneSeabaseTable(naTable->getTableName().getQualifiedNameAsAnsiString(),
+                        naTable->objectUid().castToInt64(),
+                        tempTable, 
+                        naTable,
+                        ehi, cliInterface, TRUE))
+    {
+      cliRC = -1;
+      goto label_drop;
+    }
+  
+  // truncate source naTable
+  if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
+                         naTable->hasSaltedColumn(), ehi))
+    {
+      cliRC = -1;
+      goto label_restore;
+    }
+
+  cliRC = 0;
+  goto label_return;
+
+label_restore:
+  if (cloneSeabaseTable(tempTable, -1,
+                        naTable->getTableName().getQualifiedNameAsAnsiString(),
+                        naTable,
+                        ehi, cliInterface, FALSE))
+    {
+      cliRC = -1;
+      goto label_drop;
+    }
+ 
+label_drop:  
+  str_sprintf(buf, "drop table %s", tempTable.data());
+  cliRC2 = cliInterface->executeImmediate(buf);
+
+label_return:  
+  if (identityGenAlways)
+    cliInterface->restoreCQD("override_generated_identity_values");
+
+  if (cliRC < 0)
+    tempTable.clear();
+
+  return (cliRC < 0 ? -1 : 0); 
 }
 
 void CmpSeabaseDDL::alterSeabaseTableAddColumn(
@@ -5413,7 +5475,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       if (pColDef->getDefaultClauseStatus() != ElemDDLColDef::DEFAULT_CLAUSE_SPEC)
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_DEFAULT_REQUIRED);
-
+          deallocEHI(ehi);
           processReturn();
 
           return;
@@ -5430,7 +5492,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
           if (pDefVal->isNull()) 
             {
               *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_BE_DEFAULT_NULL_AND_NOT_NULL);
-
+              deallocEHI(ehi);
               processReturn();
 
               return;
@@ -5442,7 +5504,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (pColDef->getDefaultClauseStatus() == ElemDDLColDef::NO_DEFAULT_CLAUSE_SPEC)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_DEFAULT_REQUIRED);
-
+      deallocEHI(ehi);
       processReturn();
 
       return;
@@ -5451,7 +5513,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (pColDef->getSGOptions())
     {
       *CmpCommon::diags() << DgSqlCode(-1514);
-
+      deallocEHI(ehi);
       processReturn();
 
       return;
@@ -5544,11 +5606,12 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
           *CmpCommon::diags() << DgSqlCode(-CAT_DUPLICATE_COLUMNS)
                               << DgColumnName(colName);
         }
-      
+      deallocEHI(ehi);
       processReturn();
 
       return;
     }
+  /*
   // If column is a LOB column , error
    if ((datatype == REC_BLOB) || (datatype == REC_CLOB))
      {
@@ -5557,8 +5620,80 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       processReturn();
       return;
      }
-  char * col_name = new(STMTHEAP) char[colName.length() + 1];
+  */
+  char *col_name = new(STMTHEAP) char[colName.length() + 1];
   strcpy(col_name, (char*)colName.data());
+ if ((datatype == REC_BLOB) ||
+          (datatype == REC_CLOB))
+   {
+ 
+     short *lobNumList = new (STMTHEAP) short;
+     short *lobTypList = new (STMTHEAP) short;
+     char  **lobLocList = new (STMTHEAP) char*[1];
+     char **lobColNameList = new (STMTHEAP) char*[1];
+    
+     Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
+    
+    
+
+     lobNumList[0] = nacolArr.entries();
+     lobTypList[0] = (short)(pColDef->getLobStorage());
+     char * loc = new (STMTHEAP) char[1024];
+	  
+     const char* f = ActiveSchemaDB()->getDefaults().
+       getValue(LOB_STORAGE_FILE_DIR);
+	  
+     strcpy(loc, f);
+	  
+     lobLocList[0] = loc;
+     lobColNameList[0] = col_name;
+     char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
+     memset(lobHdfsServer,0,256);
+     strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER),sizeof(lobHdfsServer)-1);
+     Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+      Int32 rc = sendAllControls(FALSE, FALSE, TRUE);
+      
+      Int64 objUID = getObjectUID(&cliInterface,
+                                  catalogNamePart.data(), schemaNamePart.data(), 
+                                  objectNamePart.data(),
+                                  COM_BASE_TABLE_OBJECT_LIT);
+      
+      ComString newSchName = "\"";
+      newSchName += catalogNamePart;
+      newSchName.append("\".\"");
+      newSchName.append(schemaNamePart);
+      newSchName += "\"";
+      NABoolean lobTrace=FALSE;
+      if (getenv("TRACE_LOB_ACTIONS"))
+        lobTrace=TRUE;
+      Int32 numLobs = 1;
+      
+      rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
+                                          newSchName.length(),
+                                          objUID,
+                                          numLobs,
+                                          LOB_CLI_CREATE,
+                                          lobNumList,
+                                          lobTypList,
+                                          lobLocList,
+                                          lobColNameList,
+                                          lobHdfsServer,
+                                          lobHdfsPort,
+                                          lobMaxSize,
+                                          lobTrace);
+      if (rc < 0)
+        {
+          // retrieve the cli diags here.
+          CmpCommon::diags()->mergeAfter(*(GetCliGlobals()->currContext()->getDiagsArea()));
+         
+          deallocEHI(ehi); 	   
+          processReturn();
+	   
+          return ;
+        }
+   }
+
+
 
   ULng32 maxColQual = nacolArr.getMaxTrafHbaseColQualifier();
 
@@ -5964,20 +6099,11 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
  NAList<NAString> &viewDefnList)
 {
   Lng32 cliRC = 0;
+  Lng32 cliRC2 = 0;
 
   const NAFileSet * naf = naTable->getClusteringIndex();
   
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-
-  ComUID comUID;
-  comUID.make_UID();
-  Int64 objUID = comUID.get_value();
-  
-  char objUIDbuf[100];
-
-  NAString tempTable(naTable->getTableName().getQualifiedNameAsAnsiString());
-  tempTable += "_";
-  tempTable += str_ltoa(objUID, objUIDbuf);
 
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL) 
@@ -5987,7 +6113,6 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
     (STMTHEAP, 0, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
 
-  Int64 tableUID = naTable->objectUid().castToInt64();
   const NAColumnArray &naColArr = naTable->getNAColumnArray();
   const NAColumn * altNaCol = naColArr.getColumn(altColName);
   Lng32 altColNum = altNaCol->getPosition();
@@ -5997,47 +6122,14 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 
   NABoolean xnWasStartedHere = FALSE;
 
-  NABoolean identityGenAlways = FALSE;
-
   char buf[4000];
 
-  // identity 'generated always' columns do not permit inserting user specified
-  // values. Override it since we want to move original values to tgt.
-  for (Int32 c = 0; c < naColArr.entries(); c++)
+  // save data by cloning as a temp table and truncate source table
+  NAString clonedTable;
+  cliRC = cloneAndTruncateTable(naTable, clonedTable, ehi, &cliInterface);
+  if (cliRC < 0)
     {
-      const NAColumn * nac = naColArr[c];
-      if (nac->isIdentityColumnAlways())
-        {
-          identityGenAlways = TRUE;
-          break;
-        }
-    } // for
-
-  if (identityGenAlways)
-    {
-      cliRC = cliInterface.holdAndSetCQD("override_generated_identity_values", "ON");
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          goto label_restore;
-        }
-    }
-
-  if (cloneSeabaseTable(naTable->getTableName().getQualifiedNameAsAnsiString(), //cn, 
-                        naTable->objectUid().castToInt64(),
-                        tempTable, 
-                        naTable,
-                        ehi, &cliInterface, TRUE))
-    {
-      cliRC = -1;
-      goto label_drop;
-    }
-  
-  if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
-                         (NATable*)naTable, ehi))
-    {
-      cliRC = -1;
-      goto label_restore;
+      goto label_drop; // diags already populated by called method
     }
 
   if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
@@ -6080,6 +6172,7 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
       *CmpCommon::diags() << DgSqlCode(-1424)
                           << DgColumnName(altColName);
 
+      cliRC = -1;
       goto label_restore;
     }
 
@@ -6093,23 +6186,24 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
         }
     }
 
-  str_sprintf(buf, "upsert using load into %s(%s) select %s from %s",
-              naTable->getTableName().getQualifiedNameAsAnsiString().data(),
-              tgtCols.data(),
-              tgtCols.data(),
-              tempTable.data());
-  cliRC = cliInterface.executeImmediate(buf);
+  cliRC = cliInterface.holdAndSetCQD("override_generated_identity_values", "ON");
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       goto label_restore;
     }
 
-  if (identityGenAlways)
-    cliInterface.restoreCQD("override_generated_identity_values");
-
-  if (naTable->hasSecondaryIndexes()) // user indexes
-    cliInterface.restoreCQD("hide_indexes");
+  str_sprintf(buf, "upsert using load into %s(%s) select %s from %s",
+              naTable->getTableName().getQualifiedNameAsAnsiString().data(),
+              tgtCols.data(),
+              tgtCols.data(),
+              clonedTable.data());
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_restore;
+    }
 
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   ddlXns)) < 0)
@@ -6123,46 +6217,43 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
-  str_sprintf(buf, "drop table %s", tempTable.data());
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      goto label_restore;
-    }
+  goto label_drop;
 
-  
-  deallocEHI(ehi); 
-  
-  return 0;
-
- label_restore:
+label_restore:
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
-
-  if (identityGenAlways)
-    cliInterface.restoreCQD("override_generated_identity_values");
-
-  if (naTable->hasSecondaryIndexes()) // user indexes
-    cliInterface.restoreCQD("hide_indexes");
 
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
      ComQiScope::REMOVE_FROM_ALL_USERS, 
      COM_BASE_TABLE_OBJECT, FALSE, FALSE);
-
-  if (cloneSeabaseTable(tempTable, -1,
-                        naTable->getTableName().getQualifiedNameAsAnsiString(),
-                        naTable,
-                        ehi, &cliInterface, FALSE))
+  
+  if ((cliRC < 0) &&
+      (NOT clonedTable.isNull()) &&
+      (cloneSeabaseTable(clonedTable, -1,
+                         naTable->getTableName().getQualifiedNameAsAnsiString(),
+                         naTable,
+                         ehi, &cliInterface, FALSE)))
     {
       cliRC = -1;
       goto label_drop;
     }
  
- label_drop:  
-  str_sprintf(buf, "drop table %s", tempTable.data());
-  Lng32 cliRC2 = cliInterface.executeImmediate(buf);
+label_drop:  
+  if (NOT clonedTable.isNull())
+    {
+      str_sprintf(buf, "drop table %s", clonedTable.data());
+      cliRC2 = cliInterface.executeImmediate(buf);
+    }
+
+  cliInterface.restoreCQD("override_generated_identity_values");
   
+  cliInterface.restoreCQD("hide_indexes");
+
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, 
+     COM_BASE_TABLE_OBJECT, ddlXns, FALSE);
+
   deallocEHI(ehi); 
   
   return (cliRC < 0 ? -1 : 0);  
@@ -6846,34 +6937,24 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
  NAList<NAString> &viewDefnList)
 {
   Lng32 cliRC = 0;
+  Lng32 cliRC2 = 0;
 
   const NAFileSet * naf = naTable->getClusteringIndex();
   
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
 
-  ComUID comUID;
-  comUID.make_UID();
-  Int64 objUID = comUID.get_value();
-  
-  char objUIDbuf[100];
-
-  NAString tempTable(naTable->getTableName().getQualifiedNameAsAnsiString());
-  tempTable += "_";
-  tempTable += str_ltoa(objUID, objUIDbuf);
-
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
      return -1;
+
   ExeCliInterface cliInterface
     (STMTHEAP, 0, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
 
-  Int64 tableUID = naTable->objectUid().castToInt64();
   const NAColumnArray &naColArr = naTable->getNAColumnArray();
   const NAColumn * altNaCol = naColArr.getColumn(altColName);
   Lng32 altColNum = altNaCol->getPosition();
 
-  char buf[4000];
   NAString colFamily;
   NAString colName;
   Lng32 datatype, length, precision, scale, dt_start, dt_end, 
@@ -6889,25 +6970,21 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
 
   NABoolean xnWasStartedHere = FALSE;
 
-  if (cloneSeabaseTable(naTable->getTableName().getQualifiedNameAsAnsiString(),
-                        naTable->objectUid().castToInt64(),
-                        tempTable, 
-                        naTable,
-                        ehi, &cliInterface, TRUE))
+  char buf[4000];
+
+  // save data by cloning as a temp table and truncate source table
+  NAString clonedTable;
+  cliRC = cloneAndTruncateTable(naTable, clonedTable, ehi, &cliInterface);
+  if (cliRC < 0)
     {
-      cliRC = -1;
-      goto label_drop;
+      goto label_drop; // diags already populated by called method
     }
-  
-  if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
-                         (NATable*)naTable, ehi))
+
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
     {
       cliRC = -1;
       goto label_restore;
     }
-
-  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
-    goto label_restore;
 
   if (getColInfo(pColDef,
                  FALSE, // not a metadata, histogram or repository column
@@ -6945,7 +7022,7 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
               (char*)charset.data(),
               (Lng32)defaultClass,
               (quotedDefVal.isNull() ? "" : quotedDefVal.data()),
-              tableUID,
+              naTable->objectUid().castToInt64(),
               altColNum);
   
   cliRC = cliInterface.executeImmediate(buf);
@@ -6962,7 +7039,7 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
   
   str_sprintf(buf, "upsert using load into %s select * from %s",
               naTable->getTableName().getQualifiedNameAsAnsiString().data(),
-              tempTable.data());
+              clonedTable.data());
   cliRC = cliInterface.executeImmediate(buf);
   if (cliRC < 0)
     {
@@ -6991,43 +7068,45 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
   
-  str_sprintf(buf, "drop table %s", tempTable.data());
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      goto label_restore;
-    }
+  goto label_drop;
 
-  deallocEHI(ehi); 
-  
-  return 0;
-
- label_restore:
+label_restore:
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
 
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
      ComQiScope::REMOVE_FROM_ALL_USERS, 
      COM_BASE_TABLE_OBJECT, FALSE, FALSE);
-
-  if (cloneSeabaseTable(tempTable, -1,
-                        naTable->getTableName().getQualifiedNameAsAnsiString(),
-                        naTable,
-                        ehi, &cliInterface, FALSE))
+  
+  if ((cliRC < 0) &&
+      (NOT clonedTable.isNull()) &&
+      (cloneSeabaseTable(clonedTable, -1,
+                         naTable->getTableName().getQualifiedNameAsAnsiString(),
+                         naTable,
+                         ehi, &cliInterface, FALSE)))
     {
       cliRC = -1;
       goto label_drop;
     }
+ 
+label_drop:  
+  if (NOT clonedTable.isNull())
+    {
+      str_sprintf(buf, "drop table %s", clonedTable.data());
+      cliRC2 = cliInterface.executeImmediate(buf);
+    }
 
- label_drop:  
-  str_sprintf(buf, "drop table %s", tempTable.data());
-  Lng32 cliRC2 = cliInterface.executeImmediate(buf);
+  cliInterface.restoreCQD("override_generated_identity_values");
   
+  cliInterface.restoreCQD("hide_indexes");
+
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, 
+     COM_BASE_TABLE_OBJECT, ddlXns, FALSE);
+
   deallocEHI(ehi); 
   
-  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
-
   return (cliRC < 0 ? -1 : 0);
 }
 
@@ -7880,6 +7959,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
                                                        NAString &currCatName, NAString &currSchName)
 {
   Lng32 cliRC = 0;
+  Lng32 cliRC2 = 0;
   Lng32 retcode = 0;
 
   ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
@@ -7912,32 +7992,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
 
-  ElemDDLColRefArray &keyColumnArray = alterAddConstraint->getConstraint()->castToElemDDLConstraintPK()->getKeyColumnArray();
-
-  NAList<NAString> keyColList(HEAP, keyColumnArray.entries());
-  NAString pkeyStr("(");
-  for (Int32 j = 0; j < keyColumnArray.entries(); j++)
-    {
-      const NAString &colName = keyColumnArray[j]->getColumnName();
-      keyColList.insert(colName);
-
-      pkeyStr += colName;
-      if (j < (keyColumnArray.entries() - 1))
-        pkeyStr += ", ";
-      
-    }
-  pkeyStr += ")";
-
-  if (constraintErrorChecks(&cliInterface,
-                            alterAddConstraint->castToStmtDDLAddConstraintUnique(),
-                            naTable,
-                            COM_UNIQUE_CONSTRAINT, //TRUE, 
-                            keyColList))
-    {
-      return;
-    }
-
-  // if table already has a primary key, return error.
+  // if table already has a clustering or primary key, return error.
   if ((naTable->getClusteringIndex()) && 
       (NOT naTable->getClusteringIndex()->hasOnlySyskey()))
     {
@@ -7950,76 +8005,84 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
 
- // update unique key constraint info
+  ElemDDLColRefArray &keyColumnArray = alterAddConstraint->getConstraint()->castToElemDDLConstraintPK()->getKeyColumnArray();
+
+  NAList<NAString> keyColList(HEAP, keyColumnArray.entries());
+  NAString pkeyColsStr;
+  if (alterAddConstraint->getConstraint()->castToElemDDLConstraintPK()->isNullableSpecified())
+    pkeyColsStr += " NULLABLE ";
+  pkeyColsStr += "(";
+  for (Int32 j = 0; j < keyColumnArray.entries(); j++)
+    {
+      const NAString &colName = keyColumnArray[j]->getColumnName();
+      keyColList.insert(colName);
+
+      pkeyColsStr += colName;
+      if (keyColumnArray[j]->getColumnOrdering() == COM_DESCENDING_ORDER)
+        pkeyColsStr += " DESC";
+      else
+        pkeyColsStr += " ASC";
+
+      if (j < (keyColumnArray.entries() - 1))
+        pkeyColsStr += ", ";
+      
+    }
+  pkeyColsStr += ")";
+
+  if (constraintErrorChecks(&cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintPK(),
+                            naTable,
+                            COM_UNIQUE_CONSTRAINT, //TRUE, 
+                            keyColList))
+    {
+      return;
+    }
+
+  // update unique key constraint info
   NAString uniqueStr;
   if (genUniqueName(alterAddConstraint, uniqueStr))
     {
       return;
     }
 
-  // if table doesnt have a user defined primary key, is empty and doesn't have any 
-  // dependent objects (index, views, triggers, RI, etc), then drop it and recreate it with 
-  // this new primary key.
-  // Do this optimization in mode_special_4 only.
-  Lng32 len = 0;
-  Lng32 rowCount = 0;
-  NABoolean ms4 = FALSE;
-  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
+  // find out if this table has dependent objects (views, user indexes,
+  // unique constraints, referential constraints)
+  NABoolean dependentObjects = FALSE;
+  Queue * usingViewsQueue = NULL;
+  cliRC = getUsingViews(&cliInterface, naTable->objectUid().castToInt64(), 
+                        usingViewsQueue);
+  if (cliRC < 0)
     {
-      ms4 = TRUE;
-
-      char query[2000];
-      str_sprintf(query, "select [any 1] cast(1 as int not null) from \"%s\".\"%s\".\"%s\" for read committed access",
-                  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
-      cliRC = cliInterface.executeImmediate(query, (char*)&rowCount, &len, FALSE);
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          return;
-        }
+      processReturn();
+      
+      return;
     }
-
-  // if the table is not empty, or there are dependent objects/constraints,
-  //  or the table already has  a pkey/store by, then create a unique constraint.
-  NABoolean isStoreBy = FALSE;
-  Int32 nonSystemKeyCols = 0;
-  if (naTable->getClusteringIndex())
-    {
-      NAFileSet * naf = naTable->getClusteringIndex();
-      for (Lng32 i = 0; i < naf->getIndexKeyColumns().entries(); i++)
-        {
-          NAColumn * nac = naf->getIndexKeyColumns()[i];
-   
-          if (NOT nac->isSystemColumn())
-            nonSystemKeyCols++;
-          else if (nac->isSyskeyColumn())
-            isStoreBy = TRUE;
-        } // for
-
-      if (nonSystemKeyCols == 0)
-        isStoreBy = FALSE;
-    } // if
   
-  if ((rowCount > 0) || // not empty
-      (NOT ms4) || // not mode_special_4
-      (naTable->hasSecondaryIndexes()) || // user indexes
-      (NOT naTable->getClusteringIndex()->hasSyskey()) || // user defined pkey
-      (isStoreBy) ||     // user defined store by
+  if ((naTable->hasSecondaryIndexes()) || // user indexes
       (naTable->getUniqueConstraints().entries() > 0) || // unique constraints
       (naTable->getRefConstraints().entries() > 0) || // ref constraints
-      (naTable->getCheckConstraints().entries() > 0))
+      (usingViewsQueue->entries() > 0))
     {
+      dependentObjects = TRUE;
+    }
+
+  // If cqd is set to create pkey as a unique constraint, then do that.
+  // otherwise if table has dependent objects, return error.
+  // Users need to drop them before adding primary key
+  if (CmpCommon::getDefault(TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT) == DF_ON)
+    {
+      // either dependent objects or cqd set to create unique constraint.
       // cannot create clustered primary key constraint.
       // create a unique constraint instead.
       NAString cliQuery;
       cliQuery = "alter table " + extTableName + " add constraint " + uniqueStr
-        + " unique " + pkeyStr + ";";
+        + " unique " + pkeyColsStr + ";";
       cliRC = cliInterface.executeImmediate((char*)cliQuery.data());
       if (cliRC < 0)
         {
           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
         }
-
+      
       if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
         {
           // remove NATable for this table
@@ -8032,22 +8095,90 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       
       return;
     }
+  else if (dependentObjects)
+    {
+      // error
+      *CmpCommon::diags() << DgSqlCode(-3242) 
+                          << DgString0("Cannot alter/add primary key constraint on a table with dependencies. Drop all dependent objects (views, indexes, unique and referential constraints) on the specified table and recreate them after adding the primary key.");
+      return;
+    }
+  
+  // create a true primary key by drop/create/populate of table.
+  NABoolean isEmpty = FALSE;
+
+  HbaseStr hbaseTable;
+  hbaseTable.val = (char*)extNameForHbase.data();
+  hbaseTable.len = extNameForHbase.length();
+  
+  retcode = ehi->isEmpty(hbaseTable);
+  if (retcode < 0)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-8448)
+        << DgString0((char*)"ExpHbaseInterface::isEmpty()")
+        << DgString1(getHbaseErrStr(-retcode))
+        << DgInt0(-retcode)
+        << DgString2((char*)GetCliGlobals()->getJniErrorStr());
+      
+      deallocEHI(ehi);
+      
+      processReturn();
+      
+      return;
+    }
+
+  isEmpty = (retcode == 1);
 
   Int64 tableUID = 
     getObjectUID(&cliInterface,
                  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
                  COM_BASE_TABLE_OBJECT_LIT);
-   
-  // empty table. Drop and recreate it with the new primary key.
+
+  NAString clonedTable;
+  if (NOT isEmpty) // non-empty table
+    {
+      // clone as a temp table and truncate source table
+      cliRC = cloneAndTruncateTable(naTable, clonedTable, ehi, &cliInterface);
+      if (cliRC < 0)
+        {
+          return; // diags already populated by called method
+        }
+    }
+
+  // Drop and recreate it with the new primary key.
+  NAString pkeyName;
+  if (NOT alterAddConstraint->getConstraintName().isNull())
+    {
+      pkeyName = alterAddConstraint->getConstraintName();
+    }
+
   char * buf = NULL;
   ULng32 buflen = 0;
   retcode = CmpDescribeSeabaseTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
-                                    pkeyStr.data(), TRUE);
+                                    pkeyName.data(), pkeyColsStr.data(), TRUE);
   if (retcode)
     return;
+
+  NABoolean done = FALSE;
+  Lng32 curPos = 0;
   
   NAString cliQuery;
-  // drop this table.
+
+  char cqdbuf[200];
+  NABoolean xnWasStartedHere = FALSE;
+  
+  str_sprintf(cqdbuf, "cqd traf_no_hbase_drop_create 'ON';");
+  cliRC = cliInterface.executeImmediate(cqdbuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_return;
+    }
+
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    goto label_return;
+
+  // drop this table from metadata.
   cliQuery = "drop table ";
   cliQuery += extTableName;
   cliQuery += " no check;";
@@ -8055,17 +8186,18 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
+
+      goto label_return;
     }
 
-  char cqdbuf[200];
   str_sprintf(cqdbuf, "cqd traf_create_table_with_uid '%ld';",
               tableUID);
   cliRC = cliInterface.executeImmediate(cqdbuf);
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
+      
+      goto label_return;
     }
 
   // and recreate it with the new primary key.
@@ -8073,8 +8205,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   cliQuery += extTableName;
   cliQuery += " ";
 
-  NABoolean done = FALSE;
-  Lng32 curPos = 0;
   while (NOT done)
     {
       short len = *(short*)&buf[curPos];
@@ -8092,14 +8222,36 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+      goto label_return;
     }
 
   str_sprintf(cqdbuf, "cqd traf_create_table_with_uid '' ;");
   cliInterface.executeImmediate(cqdbuf);
 
-  if (cliRC < 0)
+  str_sprintf(cqdbuf, "cqd traf_no_hbase_drop_create 'OFF';");
+  cliInterface.executeImmediate(cqdbuf);
+
+  if (NOT isEmpty) // non-empty table
     {
-      return;
+      // remove NATable so current definition could be loaded
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cn,
+         ComQiScope::REMOVE_FROM_ALL_USERS, 
+         COM_BASE_TABLE_OBJECT, 
+         alterAddConstraint->ddlXns(), FALSE);
+      
+      // copy tempTable data into newly created table
+      str_sprintf(buf, "insert with no rollback into %s select * from %s",
+                  naTable->getTableName().getQualifiedNameAsAnsiString().data(),
+                  clonedTable.data());
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+          goto label_restore;
+        }
     }
 
   if (updateObjectRedefTime(&cliInterface,
@@ -8108,8 +8260,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
     {
       processReturn();
 
-      return;
+      goto label_return;
     }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
   if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
     {
@@ -8120,6 +8274,60 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
          COM_BASE_TABLE_OBJECT,
          alterAddConstraint->ddlXns(), FALSE);
     }
+
+  if (NOT clonedTable.isNull())
+    {
+      str_sprintf(buf, "drop table %s", clonedTable.data());
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_restore;
+        }
+    }
+
+  cliRC = 0;
+  // normal return
+
+label_restore:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+  
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, 
+     COM_BASE_TABLE_OBJECT, FALSE, FALSE);
+  
+  if ((cliRC < 0) && 
+      (NOT clonedTable.isNull()) &&
+      (cloneSeabaseTable(clonedTable, -1,
+                         naTable->getTableName().getQualifiedNameAsAnsiString(),
+                         naTable,
+                         ehi, &cliInterface, FALSE)))
+    {
+      cliRC = -1;
+      goto label_drop;
+    }
+  
+label_drop: 
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+ 
+  if ((cliRC < 0) && 
+      (NOT clonedTable.isNull()))
+    {
+      str_sprintf(buf, "drop table %s", clonedTable.data());
+      cliRC2 = cliInterface.executeImmediate(buf);
+    }
+
+  deallocEHI(ehi); 
+
+label_return:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
+  str_sprintf(cqdbuf, "cqd traf_create_table_with_uid '' ;");
+  cliInterface.executeImmediate(cqdbuf);
+  
+  str_sprintf(cqdbuf, "cqd traf_no_hbase_drop_create 'OFF';");
+  cliInterface.executeImmediate(cqdbuf);
 
   return;
 }
@@ -10634,9 +10842,11 @@ short CmpSeabaseDDL::registerHiveView
       bindWA.setDefaultSchema(s);
 
       Parser parser(bindWA.currentCmpContext());
+      parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
       ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                            naTable->getViewLen(),
                                            naTable->getViewTextCharSet());
+
       if (! viewTree)
         {
           return -1;
@@ -10723,7 +10933,6 @@ short CmpSeabaseDDL::unregisterHiveView
   
   // drop from metadata
   retcode =
-    //    deleteFromSeabaseMDObjectsTable
     deleteFromSeabaseMDTable
     (&cliInterface,
      catalogNamePart.data(),
@@ -10750,9 +10959,11 @@ short CmpSeabaseDDL::unregisterHiveView
       bindWA.setDefaultSchema(s);
 
       Parser parser(bindWA.currentCmpContext());
+      parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
       ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                            naTable->getViewLen(),
                                            naTable->getViewTextCharSet());
+
       if (! viewTree)
         {
           return -1;
@@ -10810,7 +11021,16 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
           (NOT naTable->isHiveTable()) ||
           (NOT naTable->isRegistered()))
         {
-          SEABASEDDL_INTERNAL_ERROR("NATable pointer in unregisterHiveViewUsage");
+          NAString reason;
+          if (naTable == NULL)
+            reason = NAString("naTable for ") + extUsedObjName + " is NULL.";
+          else if (NOT naTable->isHiveTable())
+            reason = extUsedObjName + " is not a Hive table.";
+          else 
+            reason = extUsedObjName + " is not registered.";
+          *CmpCommon::diags() << DgSqlCode(-3242) << 
+            DgString0(reason);
+
           return -1; 
         }
       
@@ -10853,6 +11073,75 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
   return 0;
 } 
 
+short CmpSeabaseDDL::unregisterHiveSchema
+(
+     const NAString &catalogNamePart,
+     const NAString &schemaNamePart,
+     ExeCliInterface &cliInterface,
+     NABoolean cascade
+ )
+{
+  Lng32 cliRC = 0;
+  short retcode = 0;
+
+  if (cascade)
+    {
+      //  unregister all objects in this schema
+      Queue * objectsInfo = NULL;
+      char query[2000];
+      str_sprintf(query, "select object_type, object_name "
+                  "from %s.\"%s\".%s "
+                  "where catalog_name = '%s' and schema_name = '%s'"
+                  "order by 1 for read committed access",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  catalogNamePart.data(), schemaNamePart.data());
+      cliRC = cliInterface.fetchAllRows(objectsInfo, query, 0, FALSE, FALSE, TRUE);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+      
+      objectsInfo->position();
+      for (Lng32 i = 0; i < objectsInfo->numEntries(); i++)
+        {
+          OutputInfo * oi = (OutputInfo*)objectsInfo->getNext(); 
+          
+          char * objType = (char*)oi->get(0);
+
+          char * objName = (char*)oi->get(1);
+          
+          if (strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0)
+            {
+              retcode = unregisterNativeTable(
+                   catalogNamePart, schemaNamePart, objName,
+                   cliInterface,
+                   COM_BASE_TABLE_OBJECT);
+            }
+          else if (strcmp(objType, COM_VIEW_OBJECT_LIT) == 0)
+            {
+              retcode = unregisterHiveView(
+                   catalogNamePart, schemaNamePart, objName,
+                   NULL,
+                   cliInterface,
+                   FALSE); // dont cascade
+            }
+          
+          if (retcode < 0)
+            {
+              return -1;
+            }
+        } // for
+    }
+
+  retcode = unregisterNativeTable(
+       catalogNamePart, schemaNamePart, SEABASE_SCHEMA_OBJECTNAME,
+       cliInterface,
+       COM_SHARED_SCHEMA_OBJECT);
+
+  return retcode;
+}
+
 void CmpSeabaseDDL::regOrUnregNativeObject(
      StmtDDLRegOrUnregObject * regOrUnregObject,
      NAString &currCatName, NAString &currSchName)
@@ -10873,8 +11162,9 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   NAString tabName;
   NAString extTableName;
 
-  NABoolean isHive  = (catalogNamePart == HIVE_SYSTEM_CATALOG);
-  NABoolean isHBase = (catalogNamePart == HBASE_SYSTEM_CATALOG);
+  NABoolean isHive  = (catalogNamePart.index(HIVE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0);
+
+  NABoolean isHBase = (catalogNamePart.index(HBASE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0);
 
   if (NOT (isHive || isHBase))
     {
@@ -10883,6 +11173,13 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
       
       processReturn();
       return;
+    }
+
+  if (isHive)
+    {
+      if (NOT (schemaNamePart == HIVE_SYSTEM_SCHEMA))
+        schemaNamePart.toUpper();
+      objectNamePart.toUpper();
     }
 
   // make sure that underlying hive/hbase object exists
@@ -10922,7 +11219,7 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
       if (regOrUnregObject->isRegister() && 
           (naTable->isRegistered())) // already registered
         {
-          if (NOT regOrUnregObject->existsOption())
+          if (NOT regOrUnregObject->registeredOption())
             {
               str_sprintf(errReason, " Reason: %s has already been registered.",
                           (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
@@ -10941,7 +11238,7 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
       else if ((NOT regOrUnregObject->isRegister()) && // unregister
                (NOT naTable->isRegistered())) // not registered
         {
-          if (NOT regOrUnregObject->existsOption())
+          if (NOT regOrUnregObject->registeredOption())
             {
               str_sprintf(errReason, " Reason: %s has not been registered.",
                           (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
@@ -10986,7 +11283,7 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
         (&cliInterface,
          catalogNamePart.data(),
          schemaNamePart.data(),
-         "__SCHEMA__",
+         SEABASE_SCHEMA_OBJECTNAME,
          regOrUnregObject->objType(),
          NULL,
          objOwnerId, schemaOwnerId,
@@ -11077,6 +11374,14 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
                    catalogNamePart, HBASE_ROW_SCHEMA, objectNamePart,
                    cliInterface);
             }
+          else if ((regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT) &&
+                   (catalogNamePart.index(HIVE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0))
+            {
+              retcode = unregisterHiveSchema(
+                   catalogNamePart, schemaNamePart,
+                   cliInterface,
+                   regOrUnregObject->cascade());
+            }
           else
             {
               retcode = unregisterNativeTable(
@@ -11118,7 +11423,599 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   
   return;
 }
- 
+
+static void processPassthruHiveDDL(StmtDDLonHiveObjects * hddl)
+{
+  NAString hiveQuery(hddl->getHiveDDL());
+  
+  hiveQuery = hiveQuery.strip(NAString::leading, ' ');
+  if (NOT ((hiveQuery.index("CREATE ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("DROP ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("ALTER ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("TRUNCATE ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("GRANT ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("REVOKE ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("RELOAD ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("MSCK ", 0, NAString::ignoreCase) == 0)))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Specified DDL operation cannot be executed directly by hive.");
+      
+      return;
+    }
+  
+  if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1214)
+                          << DgString0(getSqlJniErrorStr())
+                          << DgString1(hddl->getHiveDDL());
+      
+      return;
+    }
+  
+  return;
+} // passthru
+
+void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
+                                            NAString &currCatName, 
+                                            NAString &currSchName)
+{
+  Lng32 cliRC = 0;
+
+  // For hive ddl operations, grantor must be DB__ROOT or belong
+  // to one of the admin roles:  DB__ROOTROLE or DB__HIVEROLE.
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) &&
+      !ComUser::isRootUserID() &&
+      !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+      !ComUser::currentUserHasRole(HIVE_ROLE_ID))
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+      processReturn();
+      return;
+    }
+
+  // if passthru ddl specified via "process hive ddl" or "create hive table like"
+  // stmt, execute the specified string.
+  if (hddl->getOper() == StmtDDLonHiveObjects::PASSTHRU_DDL_)
+    {
+      // error diagnostics is set in CmpCommon::diags
+      processPassthruHiveDDL(hddl);
+
+      return;
+    }
+  
+  // Start error checks
+  if (NOT ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::DROP_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::ALTER_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::MSCK_)))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only CREATE, DROP, ALTER or TRUNCATE DDL commands can be specified on hive objects. Use \"PROCESS HIVE DDL '<ddl-stmt>' \" to directly execute other statements through hive.");
+      
+      return;
+    }
+  
+  if ((hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) &&
+      (hddl->getType() != StmtDDLonHiveObjects::TABLE_))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only table can be truncated.");
+      
+      return;
+    }
+  
+  if (NOT ((hddl->getType() == StmtDDLonHiveObjects::TABLE_) ||
+           (hddl->getType() == StmtDDLonHiveObjects::SCHEMA_) ||
+           (hddl->getType() == StmtDDLonHiveObjects::VIEW_)))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only TABLE, VIEW or SCHEMA object can be specified. Use \"PROCESS HIVE DDL '<ddl-stmt>' \" to directly execute other statements through hive.");
+      
+      return;
+    }
+  // End error checks
+  
+   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                                CmpCommon::context()->sqlSession()->getParentQid());
+
+   char buf[4000];
+   buf[0] = 0;
+
+   ComObjectName con(hddl->getName());
+   con.applyDefaults(currCatName, currSchName);
+
+   const NAString &catName = con.getCatalogNamePartAsAnsiString(TRUE);
+
+   NAString schName =
+     ((con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) ?
+      HIVE_SYSTEM_SCHEMA : con.getSchemaNamePartAsAnsiString(TRUE));
+
+   NAString objName = con.getObjectNamePartAsAnsiString(TRUE);
+
+   NAString extObjectName;
+
+   if (con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0)
+     extObjectName = HIVE_DEFAULT_SCHEMA_EXE;
+   else if (schName != HIVE_SYSTEM_SCHEMA)
+     extObjectName = schName;
+
+   if (NOT (hddl->getType() == StmtDDLonHiveObjects::SCHEMA_))
+     {
+       if (NOT extObjectName.isNull())
+         extObjectName += NAString(".");
+       extObjectName += objName;
+     }
+   extObjectName.toLower();
+
+   if (NOT (schName.compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0))
+     schName.toUpper();
+
+   if (NOT (objName == SEABASE_SCHEMA_OBJECTNAME))
+     objName.toUpper();
+
+   CorrName cnTgt(objName, STMTHEAP, schName, catName);
+
+   ComObjectType objType;
+   NAString objStr;
+   if (hddl->getType() == StmtDDLonHiveObjects::TABLE_)
+     {
+       objType = COM_BASE_TABLE_OBJECT;
+       objStr = "Table";
+     }
+   else if (hddl->getType() == StmtDDLonHiveObjects::SCHEMA_)
+     {
+       objType = COM_SHARED_SCHEMA_OBJECT;
+       cnTgt.setSpecialType(ExtendedQualName::SCHEMA_TABLE);
+       objStr = "Schema";
+     }
+   else
+     {
+       objType = COM_VIEW_OBJECT;
+       objStr = "View";
+     }
+
+   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+   NATable *naTable = bindWA.getNATable(cnTgt);
+
+   NABoolean objExists = FALSE;
+   if (naTable == NULL || bindWA.errStatus())
+     objExists = FALSE;
+   else
+     objExists = TRUE;
+
+   NABoolean isRegistered = FALSE;
+   if (naTable && naTable->isRegistered())
+     isRegistered = TRUE;
+
+   NABoolean hasExternalTable = FALSE;
+   if (naTable && naTable->hasExternalTable())
+     hasExternalTable = TRUE;
+
+   NABoolean tableWasAltered = FALSE;
+   NAString alterStmt;
+
+   CmpCommon::diags()->clear();
+
+   if ((hddl->getOper() == StmtDDLonHiveObjects::DROP_) ||
+       (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_))
+     {
+       if (NOT objExists)
+         {
+           // return error if 'if exists' option is not specified.
+           // otherwise just return.
+           if (NOT hddl->getIfExistsOrNotExists())
+             {
+               *CmpCommon::diags() << DgSqlCode(-1388)
+                                   << DgString0(objStr)
+                                   << DgString1(extObjectName);
+             }
+           
+           return;
+         }
+     }
+
+   if (hddl->getOper() == StmtDDLonHiveObjects::CREATE_)
+     {
+       if (objExists)
+         {
+           // return error if 'if  not exists' option is not specified.
+           // Otherwise just return.
+           if (NOT hddl->getIfExistsOrNotExists())
+             {
+               *CmpCommon::diags() << DgSqlCode(-1387)
+                                   << DgString0(objStr)
+                                   << DgString1(extObjectName);
+             }
+
+           return;
+         }
+     }
+
+   NABoolean xnWasStartedHere = FALSE;
+   if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+     return;
+
+   if ((objExists) && 
+       (hddl->getOper() == StmtDDLonHiveObjects::DROP_))
+    {
+      cliRC = 0;
+
+      // drop any external table, if exists
+      if ((objType == COM_BASE_TABLE_OBJECT) &&
+          (hasExternalTable))
+        {
+          str_sprintf(buf, "drop external table if exists %s.\"%s\".\"%s\" ",
+                      catName.data(), schName.data(), objName.data());
+          cliRC = cliInterface.executeImmediate(buf);
+          if (cliRC < 0)
+            {
+              cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+              goto label_error;
+            }
+        }
+
+      if (isRegistered)
+        {
+          if (objType == COM_BASE_TABLE_OBJECT)
+            {
+              cliRC = unregisterNativeTable(
+                   catName, schName, objName,
+                   cliInterface, 
+                   objType);
+            }
+          else if (objType == COM_SHARED_SCHEMA_OBJECT)
+            {
+              cliRC = unregisterHiveSchema(
+                   catName, schName,
+                   cliInterface, 
+                   TRUE /*cascade*/);
+            }
+          else if (objType == COM_VIEW_OBJECT)
+            {
+              cliRC = unregisterHiveView(
+                   catName, schName, objName,
+                   NULL,
+                   cliInterface, 
+                   FALSE); // dont cascade
+            }
+        } // isRegistered
+
+      if (cliRC < 0)
+        {
+          goto label_error;
+        }
+    } // drop
+   
+   if ((CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF) &&
+       ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
+        (hddl->getOper() == StmtDDLonHiveObjects::ALTER_)) &&
+       (NOT isRegistered))
+     {
+       cliRC = 0;
+       if (objType == COM_SHARED_SCHEMA_OBJECT)
+         {
+           Int64 objUID = -1;
+           Int64 flags = 0;
+           cliRC =
+             updateSeabaseMDObjectsTable
+             (&cliInterface,
+              catName, schName,
+              SEABASE_SCHEMA_OBJECTNAME,
+              objType,
+              NULL,
+              HIVE_ROLE_ID, HIVE_ROLE_ID,
+              flags, objUID);
+         }
+       else if (objType == COM_BASE_TABLE_OBJECT)
+         {
+           cliRC = registerNativeTable(
+                catName, schName, objName,
+                HIVE_ROLE_ID, HIVE_ROLE_ID,
+                cliInterface, 
+                TRUE, // register
+                TRUE ); // internal
+         }
+       else if (objType == COM_VIEW_OBJECT)
+         {
+           cliRC = registerHiveView(
+                catName, schName, objName,
+                HIVE_ROLE_ID, HIVE_ROLE_ID,
+                NULL,
+                cliInterface, 
+                TRUE, // register
+                FALSE); // no cascade
+         }
+       
+       if (cliRC < 0)
+         {
+           goto label_error;
+         }
+     } // register this object
+
+   // execute the hive DDL statement.
+   if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
+     {
+       *CmpCommon::diags() << DgSqlCode(-1214)
+                           << DgString0(getSqlJniErrorStr())
+                           << DgString1(hddl->getHiveDDL());
+       
+       goto label_error;
+     }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+
+  // this ALTER may be a RENAME command. 
+  // If the table being renamed is registered in Traf MD, unregister it.
+  if (hddl->getOper() == StmtDDLonHiveObjects::ALTER_)
+    {
+      // set cqd so NATable is recreated instead of returning cached one.
+      NABoolean cqdChanged = FALSE;
+      if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
+        {
+          NAString value("ON");
+          ActiveSchemaDB()->getDefaults().validateAndInsert(
+               "traf_reload_natable_cache", value, FALSE);
+          cqdChanged = TRUE;
+        }
+
+      NATable *naTable = bindWA.getNATable(cnTgt);
+      
+      if (cqdChanged)
+        {
+          NAString value("OFF");
+          ActiveSchemaDB()->getDefaults().validateAndInsert(
+               "traf_reload_natable_cache", value, FALSE);
+        }
+
+      NABoolean objExists = FALSE;
+      if (naTable == NULL || bindWA.errStatus())
+        objExists = FALSE;
+      else
+        objExists = TRUE;
+      
+      if (NOT objExists)
+        {
+          CmpCommon::diags()->clear();
+          cliRC = unregisterNativeTable(
+               catName, schName, objName,
+               cliInterface, 
+               objType);
+        }
+    }
+
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cnTgt,
+     ComQiScope::REMOVE_FROM_ALL_USERS,
+     COM_BASE_TABLE_OBJECT,
+     FALSE, FALSE);
+
+  return;
+
+label_error:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+  return;
+}
+
+// ------------------------------------------------------------------------
+// setupQueryTreeForHiveDDL
+//
+// This method is called if a hive ddl statement is seen during parsing.
+// When that is detected, information is set in HiveDDLInfo 
+// and parsing phase errors out.
+// This is needed to avoid enhancing the parser with hive ddl syntax.
+// 
+// For example:
+//  create table hive.hive.t (a int) stored as sequencefile;
+// Traf parser does not undertand 'stored as sequencefile' syntax.
+// As soon as 'hive.hive.t' is detected, all relevant information is 
+// stored in HiveDDLInfo class and parsing phase is terminated.
+// This method then creates the needed structures so the create stmt could
+// be passed on to hive api layer.
+// 
+// Return:  'node' contains the generated tree.
+//          TRUE, if all ok.
+//          FALSE, if error.
+// -------------------------------------------------------------------------
+NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
+     Parser::HiveDDLInfo * hiveDDLInfo,
+     char * inputStr, 
+     CharInfo::CharSet inputStrCharSet,
+     NAString currCatName,
+     NAString currSchName,
+     ExprNode** node)
+{
+  // extract hive ddl info from global SqlParser_CurrentParser. These fields
+  // are set during parsing.
+
+  // ddl operation and type of object.
+  StmtDDLonHiveObjects::Operation oper = 
+    (StmtDDLonHiveObjects::Operation)hiveDDLInfo->ddlOperation_;
+  StmtDDLonHiveObjects::ObjectType type = 
+    (StmtDDLonHiveObjects::ObjectType)hiveDDLInfo->ddlObjectType_;
+
+  // position and length of the object name specified in the query.
+  Lng32 hiveNamePos = hiveDDLInfo->ddlNamePos_;
+  Lng32 hiveNameLen =  hiveDDLInfo->ddlNameLen_;
+
+  NABoolean ifExistsOrNotExists = hiveDDLInfo->ifExistsOrNotExists_;
+
+  NAString &origHiveDDL = hiveDDLInfo->userSpecifiedStmt_;
+  NAString hiveDDL = origHiveDDL;
+  
+  NAString hiveNameStr;
+  if (hiveNameLen > 0)
+    hiveNameStr = NAString(&origHiveDDL.data()[hiveNamePos], hiveNameLen);
+  
+  ComObjectName con;
+  
+  if (hiveNameStr.isNull())
+    con = NAString("");
+  else
+    {
+      con = hiveNameStr + 
+        ((type == StmtDDLonHiveObjects::SCHEMA_) ? 
+         (NAString(".") + "\"" + SEABASE_SCHEMA_OBJECTNAME + "\"") : "");
+      con.applyDefaults(ComAnsiNamePart(CmpCommon::getDefaultString(CATALOG)),
+                        ComAnsiNamePart(CmpCommon::getDefaultString(SCHEMA)));
+    }
+
+  NAString newHiveName;
+  newHiveName = ComConvertTrafHiveNameToNativeHiveName
+    (con.getCatalogNamePartAsAnsiString(TRUE),
+     con.getSchemaNamePartAsAnsiString(TRUE),
+     (type != StmtDDLonHiveObjects::SCHEMA_ ?
+      con.getObjectNamePartAsAnsiString(TRUE) : NAString("")));
+  if (newHiveName.isNull())
+    {
+      PARSERASSERT(1);
+    }
+
+  // remove original name at hiveNamePos/hiveNameLen and replace with the
+  // newly constructed name.
+  if ((hiveDDL.length() > 0) && (hiveNameLen > 0))
+    {
+      hiveDDL.remove(hiveNamePos, hiveNameLen);
+      hiveDDL.insert(hiveNamePos, newHiveName);
+    }
+
+  // remove trailing semicolon
+  if ((hiveDDL.length() > 0) &&
+      (hiveDDL[hiveDDL.length()-1] == ';'))
+    hiveDDL.remove(hiveDDL.length()-1);
+  
+  CmpCommon::diags()->clear();
+  
+  if (oper == StmtDDLonHiveObjects::MSCK_)
+    {
+      // this may be set through 'msck repair table <tablename>' or 
+      // 'alter table <tablename> repair partitions'.
+      // Underlying Hive may not support the 'alter repair' syntax on
+      // all platforms.
+      // Create 'msck' version which is supported.
+      NAString newHiveDDL("MSCK REPAIR TABLE ");
+      newHiveDDL += newHiveName;
+      hiveDDL.clear();
+      hiveDDL = newHiveDDL;
+    }
+
+  DDLExpr * ddlExpr = NULL;
+  RelExpr * ddlExprRoot = NULL;
+  if (oper == StmtDDLonHiveObjects::TRUNCATE_)
+    {
+      NAString newHiveDDL("TRUNCATE TABLE ");
+      newHiveDDL += hiveDDL(hiveNamePos, hiveDDL.length() - hiveNamePos);
+      hiveDDL.clear();
+      hiveDDL = newHiveDDL;
+
+      CorrName cn(con.getObjectNamePartAsAnsiString(), 
+                  PARSERHEAP(),
+                  con.getSchemaNamePartAsAnsiString(),
+                  con.getCatalogNamePartAsAnsiString());
+      ExeUtilHiveTruncate * ht = 
+        new (PARSERHEAP()) ExeUtilHiveTruncate
+        (cn, newHiveName, hiveDDL, PARSERHEAP());
+
+      if (ifExistsOrNotExists)
+        ht->setIfExists(TRUE);
+
+      ddlExprRoot = new(CmpCommon::statementHeap()) RelRoot(ht);
+    }
+
+  // Construct DDL expr tree for regular query or query
+  // explain/showplan/showshape/display.
+  //
+  // Regular DDL query:
+  //   StmtQuery => RelRoot => DDLExpr => StmtDDLonHiveObjects
+  //
+  // explain query:
+  //  StmtQuery => RelRoot => ExeUtilDisplayExplain => RelRoot
+  //                  => DDLExpr => StmtDDLonHiveObjects
+  //
+  // showplan/showshape:
+  //  StmtQuery => RelRoot => Describe
+  //
+  // display:
+  //   same as regular query with displayTree flag set in RelRoot
+  //
+  else if (NOT ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
+                (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_)))
+    {
+      // get the hive schema name if set in the session.
+      BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+      NAString hiveDB = ComConvertTrafHiveNameToNativeHiveName
+        (bindWA.getDefaultSchema().getCatalogName(),
+         bindWA.getDefaultSchema().getSchemaName(),
+         NAString(""));
+      hiveDB.toLower();
+      
+      StmtDDLonHiveObjects * sdho = 
+        new (PARSERHEAP()) StmtDDLonHiveObjects(oper, type, 
+                                                ifExistsOrNotExists,
+                                                con.getExternalName(),
+                                                hiveDDL, hiveDB,
+                                                PARSERHEAP());
+      
+      DDLExpr * ddlExpr = new(CmpCommon::statementHeap()) 
+        DDLExpr(sdho, inputStr, inputStrCharSet,
+                CmpCommon::statementHeap());
+      
+      ddlExprRoot = new(CmpCommon::statementHeap()) RelRoot(ddlExpr);
+    }
+
+  RelExpr *root = ddlExprRoot;
+  if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::EXPLAIN_)
+    {
+      ExeUtilDisplayExplain * eue = 
+        new (PARSERHEAP ()) ExeUtilDisplayExplain
+        (ExeUtilExpr::DISPLAY_EXPLAIN_,
+         &inputStr[hiveDDLInfo->essdQueryStartPos_],
+         inputStrCharSet,
+         NULL, NULL,
+         (hiveDDLInfo->essdOptions_.isNull() ? NULL :
+          (char*)hiveDDLInfo->essdOptions_.data()),
+         ddlExprRoot,
+         PARSERHEAP());
+      
+      root = new(CmpCommon::statementHeap()) RelRoot(eue);
+    }
+  else if ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
+           (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_))
+    {
+      CorrName c;
+      Describe * des = NULL;
+      if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_)
+        {
+          des = new (PARSERHEAP ()) Describe
+            (inputStr, c, Describe::PLAN_, COM_TABLE_NAME, 0);
+        }
+      else
+        {
+          des = new (PARSERHEAP ()) Describe
+            (inputStr, c, Describe::SHAPE_);
+        }
+
+      root = new(CmpCommon::statementHeap()) 
+        RelRoot(des, REL_ROOT,
+                new (PARSERHEAP())
+                ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
+    }
+
+  // indicate that this is the root for the entire query
+  if (root)
+    {
+      ((RelRoot *) root)->setRootFlag(TRUE);
+      if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::DISPLAY_)
+        ((RelRoot*)root)->setDisplayTree(TRUE);
+    }
+
+  StmtQuery* query = new(PARSERHEAP()) StmtQuery(root);
+  *node = query;  
+  
+  return TRUE;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // This method generates and returns tableInfo struct for internal special
 // tables (like metadata, histograms). These tables have hardcoded definitions
@@ -11315,6 +12212,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
   ComTdbVirtTableIndexInfo * indexInfo;
 
   Parser parser(CmpCommon::context());
+  parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
 
   ComTdbVirtTableConstraintInfo * constrInfo =
     new(STMTHEAP) ComTdbVirtTableConstraintInfo[1];
@@ -11715,22 +12613,19 @@ ComTdbVirtTablePrivInfo * CmpSeabaseDDL::getSeabasePrivInfo(
 
   // Summarize privileges for object
   PrivStatus privStatus = STATUS_GOOD;
-  std::vector<PrivMgrDesc> privDescs;
+  ComTdbVirtTablePrivInfo *privInfo = new (heap_) ComTdbVirtTablePrivInfo();
+  privInfo->privmgr_desc_list = new (STMTHEAP) PrivMgrDescList(STMTHEAP);
+
+  // Summarize privileges for object
   PrivMgrCommands command(std::string(MDLoc.data()),
                           std::string(privMgrMDLoc.data()),
                           CmpCommon::diags());
-  if (command.getPrivileges(objUID, objType, privDescs) != STATUS_GOOD)
+  if (command.getPrivileges(objUID, objType,
+                            *privInfo->privmgr_desc_list) != STATUS_GOOD)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
       return NULL;
     }
-
-  ComTdbVirtTablePrivInfo *privInfo = new (STMTHEAP) ComTdbVirtTablePrivInfo();
-
-  // PrivMgrDesc operator= is a deep copy
-  privInfo->privmgr_desc_list = new (STMTHEAP) NAList<PrivMgrDesc>(STMTHEAP);
-  for (size_t i = 0; i < privDescs.size(); i++)
-    privInfo->privmgr_desc_list->insert(privDescs[i]);
 
   return privInfo;
 }
@@ -12833,7 +13728,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
      {
-      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -TRAF_HBASE_ACCESS_ERROR)
         *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
                             << DgInt0(CmpCommon::context()->hbaseErrNum())
                             << DgString0(CmpCommon::context()->hbaseErrStr());
@@ -12881,7 +13776,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
       if ((CmpCommon::context()->isUninitializedSeabase()) &&
           (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
         {
-          if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+          if (CmpCommon::context()->uninitializedSeabaseErrNum() == -TRAF_HBASE_ACCESS_ERROR)
             *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
                                 << DgInt0(CmpCommon::context()->hbaseErrNum())
                                 << DgString0(CmpCommon::context()->hbaseErrStr());
@@ -12933,7 +13828,8 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDesc(const NAString &catName,
                                       const NAString &objName)
 {
    TrafDesc *result = NULL;
-
+   NABoolean useLibBlobStore = FALSE;
+   
    if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
      return NULL;
 
@@ -12946,12 +13842,13 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDesc(const NAString &catName,
 
 
 TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
-                                      const NAString &schName,
-                                      const NAString &objName)
+                                                       const NAString &schName,
+                                                       const NAString &objName
+                                                       )
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
-
+  
   TrafDesc *result;
   char query[4000];
   char buf[4000];
@@ -12978,20 +13875,23 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
       return NULL;
     }
 
+ 
+    
+    
   str_sprintf(buf, "select udr_type, language_type, deterministic_bool,"
-  " sql_access, call_on_null, isolate_bool, param_style,"
-  " transaction_attributes, max_results, state_area_size, external_name,"
-  " parallelism, user_version, external_security, execution_mode,"
-  " library_filename, version, signature,  catalog_name, schema_name,"
-  " object_name"
-  " from %s.\"%s\".%s r, %s.\"%s\".%s l, %s.\"%s\".%s o "
-  " where r.udr_uid = %ld and r.library_uid = l.library_uid "
-  " and l.library_uid = o.object_uid for read committed access",
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-       objectUID);
-
+                  " sql_access, call_on_null, isolate_bool, param_style,"
+                  " transaction_attributes, max_results, state_area_size, external_name,"
+                  " parallelism, user_version, external_security, execution_mode,"
+                  " library_filename, version, signature,  catalog_name, schema_name,"
+                  " object_name, redef_time,library_storage, l.library_uid"
+                  " from %s.\"%s\".%s r, %s.\"%s\".%s l, %s.\"%s\".%s o "
+                  " where r.udr_uid = %ld and r.library_uid = l.library_uid "
+                  " and l.library_uid = o.object_uid for read committed access",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  objectUID);
+    
 
   cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
   if (cliRC < 0)
@@ -13087,6 +13987,8 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
   cliInterface.getPtrAndLen(20, ptr, len);
   char *libSch = new (STMTHEAP) char[len+1];    
   str_cpy_and_null(libSch, ptr, len, '\0', ' ', TRUE);
+  routineInfo->lib_sch_name = new (STMTHEAP) char[len+1];
+  str_cpy_and_null(routineInfo->lib_sch_name, ptr, len, '\0', ' ', TRUE);
   cliInterface.getPtrAndLen(21, ptr, len);
   char *libObj = new (STMTHEAP) char[len+1];    
   str_cpy_and_null(libObj, ptr, len, '\0', ' ', TRUE);
@@ -13100,6 +14002,29 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
                    libSQLExtName.data(),
                    libSQLExtName.length(),
                    '\0', ' ', TRUE);
+  NAString naLibSch(libSch);
+ 
+  
+  
+  cliInterface.getPtrAndLen(22,ptr,len);
+  routineInfo->lib_redef_time = *(Int64 *)ptr;
+
+
+  cliInterface.getPtrAndLen(23, ptr, len);
+  routineInfo->lib_blob_handle = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(routineInfo->lib_blob_handle, ptr, len, '\0', ' ', TRUE);
+
+  cliInterface.getPtrAndLen(24,ptr,len);
+  routineInfo->lib_obj_uid= *(Int64 *)ptr;
+  
+  
+    
+  if ((routineInfo->lib_blob_handle[0] == '\0')|| (naLibSch  == NAString(SEABASE_MD_SCHEMA)))
+    {
+      routineInfo->lib_redef_time = -1;
+      routineInfo->lib_blob_handle=NULL;
+      routineInfo->lib_obj_uid = 0;
+    }  
   
   ComTdbVirtTableColumnInfo *paramsArray;
   Lng32 numParams;

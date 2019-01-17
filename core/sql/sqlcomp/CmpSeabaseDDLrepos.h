@@ -30,7 +30,7 @@
 
 #ifndef _CMP_SEABASE_REPOS_H_
 #define _CMP_SEABASE_REPOS_H_
-
+#include "CmpSeabaseDDLupgrade.h"
 #define TRAF_METRIC_QUERY_VIEW "METRIC_QUERY_VIEW"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -894,8 +894,33 @@ static const QString createOldv23ReposMetricQueryAggrTable[] =
  {" primary key ( aggregation_start_utc_ts, session_id ) salt using 8 partitions "},
  {" ; "}
 };
-
 static const MDUpgradeInfo allReposUpgradeInfo[] = {
+ { REPOS_METRIC_QUERY_TABLE,  TRAF_METRIC_QUERY_TABLE_OLD_REPOS,
+   createMetricQueryTable,  sizeof(createMetricQueryTable),
+   NULL,0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+ // REPOS_METRIC_SESSION_TABLE
+  { REPOS_METRIC_SESSION_TABLE,  TRAF_METRIC_SESSION_TABLE_OLD_REPOS,
+    createMetricSessionTable,  sizeof(createMetricSessionTable),
+    NULL,0,
+    NULL, 0,
+    FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+  // REPOS_METRIC_QUERY_AGGR_TABLE
+  { REPOS_METRIC_QUERY_AGGR_TABLE,  TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS,
+    createMetricQueryAggrTable,  sizeof(createMetricQueryAggrTable),
+    NULL,0,
+    NULL, 0,
+    FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+  // REPOS_METRIC_TEXT_TABLE  
+  { REPOS_METRIC_TEXT_TABLE,  NULL,
+    createMetricTextTable,  sizeof(createMetricTextTable),
+    NULL, 0,
+    NULL, 0,
+    FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE}
+  
+};
+static const MDUpgradeInfo allReposv110Tov210UpgradeInfo[] = {
 
   // TRAF_METRIC_QUERY_TABLE
   { REPOS_METRIC_QUERY_TABLE,  TRAF_METRIC_QUERY_TABLE_OLD_REPOS,

@@ -222,6 +222,25 @@ CREATE TABLE TRAFODION.US4.T4
 End of MXCI Session
 
 >>-- As user1, should fail
+>>get privileges for user sql_user1;
+
+Privileges for User SQL_USER1
+=============================
+
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+---U---    TRAFODION.US4.T1
+S------    TRAFODION.US4.T1 <Column> COL3
+S------    TRAFODION.US4.T129_A
+S------    TRAFODION.US4.T129_STARTER
+SI-----    TRAFODION.US4.T2
+S------    TRAFODION.US4.V1
+-I-U---    TRAFODION.US4.V1 <Column> VC1
+
+=======================
+ 9 row(s) returned
+
+--- SQL operation complete.
 >>select * from us4.t1 ;
 
 *** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL1, COL2).
@@ -284,36 +303,43 @@ VC1          VC2          VC3
 
 --- 1 row(s) inserted.
 >>
->>delete all from table(querycache()) ;
-
-*** ERROR[15001] A syntax error occurred at or before: 
-delete all from table(querycache()) ;
-                                 ^ (34 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
->>delete all from table(natablecache());
+>>delete all from table(querycache('user', 'local')) ;
 
 --- 0 row(s) deleted.
->>select * from table(querycacheentries());
+>>select count(*) from table(querycacheentries('user', 'local'));
 
-*** ERROR[15001] A syntax error occurred at or before: 
-select * from table(querycacheentries());
-                                      ^ (39 characters from start of SQL statement)
+(EXPR)              
+--------------------
 
-*** ERROR[8822] The statement was not prepared.
+                   0
 
->>select * from table(natablecache()) ;
+--- 1 row(s) selected.
+>>delete all from table (natablecache());
 
-*** ERROR[15001] A syntax error occurred at or before: 
-select * from table(natablecache()) ;
-                                 ^ (34 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) deleted.
+>>--select context, num_entries from table(natablecache('all','local')) ;
 >>
 >>log;
 >>-- As user1, should fail
+>>get privileges for user sql_user1;
+
+Privileges for User SQL_USER1
+=============================
+
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+---U---    TRAFODION.US4.T1
+S------    TRAFODION.US4.T1 <Column> COL3
+S------    TRAFODION.US4.T129_A
+S------    TRAFODION.US4.T129_STARTER
+SI-----    TRAFODION.US4.T2
+S------    TRAFODION.US4.V1
+-I-U---    TRAFODION.US4.V1 <Column> VC1
+
+=======================
+ 9 row(s) returned
+
+--- SQL operation complete.
 >>select * from us4.t1 ;
 
 *** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL1, COL2).
@@ -381,36 +407,41 @@ VC1          VC2          VC3
 
 --- 0 row(s) inserted.
 >>
->>delete all from table(querycache()) ;
-
-*** ERROR[15001] A syntax error occurred at or before: 
-delete all from table(querycache()) ;
-                                 ^ (34 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
->>delete all from table(natablecache());
+>>delete all from table(querycache('user', 'local')) ;
 
 --- 0 row(s) deleted.
->>select * from table(querycacheentries());
+>>select count(*) from table(querycacheentries('user', 'local'));
 
-*** ERROR[15001] A syntax error occurred at or before: 
-select * from table(querycacheentries());
-                                      ^ (39 characters from start of SQL statement)
+(EXPR)              
+--------------------
 
-*** ERROR[8822] The statement was not prepared.
+                   0
 
->>select * from table(natablecache()) ;
+--- 1 row(s) selected.
+>>delete all from table (natablecache());
 
-*** ERROR[15001] A syntax error occurred at or before: 
-select * from table(natablecache()) ;
-                                 ^ (34 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) deleted.
+>>--select context, num_entries from table(natablecache('all','local')) ;
 >>
 >>log;
 >>-- As user2, should fail
+>>get privileges for user sql_user2;
+
+Privileges for User SQL_USER2
+=============================
+
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+S------    TRAFODION.US4.T1
+---U---    TRAFODION.US4.T1 <Column> COL2
+---U---    TRAFODION.US4.T1 <Column> COL3
+SI-----    TRAFODION.US4.T2 <Column> A
+SI-----    TRAFODION.US4.T2 <Column> B
+
+=======================
+ 7 row(s) returned
+
+--- SQL operation complete.
 >>delete from us4.t1 ;
 
 *** ERROR[4481] The user does not have DELETE privilege on table or view TRAFODION.US4.T1.
@@ -460,6 +491,24 @@ COL1         COL2         COL3
 --- 1 row(s) inserted.
 >>log;
 >>-- as user3
+>>get privileges for user sql_user3;
+
+Privileges for User SQL_USER3
+=============================
+
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+S--U---    TRAFODION.US4.T1 <Column> COL1
+SI-----    TRAFODION.US4.T2 <Column> A
+S------    TRAFODION.US4.T3 <Column> B
+S------    TRAFODION.US4.T3 <Column> D
+S------    TRAFODION.US4.T4 <Column> F
+S------    TRAFODION.US4.T4 <Column> G
+
+=======================
+ 8 row(s) returned
+
+--- SQL operation complete.
 >>insert into us4.t2(a,b) values (2,2) ;
 
 *** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2(columns: B).
@@ -600,6 +649,24 @@ X
 >>-- Testing create view based on column-level SELECT
 >>-- as user3
 >>
+>>get privileges for user sql_user3;
+
+Privileges for User SQL_USER3
+=============================
+
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+S--U---    TRAFODION.US4.T1 <Column> COL1
+SI-----    TRAFODION.US4.T2 <Column> A
+S------    TRAFODION.US4.T3 <Column> B
+S------    TRAFODION.US4.T3 <Column> D
+S------    TRAFODION.US4.T4 <Column> F
+S------    TRAFODION.US4.T4 <Column> G
+
+=======================
+ 8 row(s) returned
+
+--- SQL operation complete.
 >>set schema cat.us4;
 
 --- SQL operation complete.
@@ -608,7 +675,7 @@ X
 >>
 >>create view v3bd as select b,d from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -620,7 +687,7 @@ X
 
 >>create view v3b as select b from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -632,7 +699,7 @@ X
 
 >>create view v3d as select d from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -644,7 +711,7 @@ X
 
 >>create view v3bbbbbb (c1,c2,c3,c4,c5,c6) as select b,b,b,b,b,b from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -659,45 +726,45 @@ X
 >>
 >>create view v3ac as select a,c from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3a as select a from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3c as select c from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>
 >>create view v3 as select * from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>
 >>create view v3ab as select a,b from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3abcd as select a,b,c,d from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3bc as select b,c from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -706,7 +773,7 @@ X
 >>
 >>create view v34bf as select b,f from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -718,7 +785,7 @@ X
 
 >>create view v34bdfg as select b,d,f,g from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -730,7 +797,7 @@ X
 
 >>create view v34bdfg2 (c1,c2,c3,c4) as select b,d,f,g from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -742,7 +809,7 @@ X
 
 >>create view v34gb as select g,b from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -757,19 +824,19 @@ X
 >>
 >>create view v34 as select * from t3,t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v34af as select a,f from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v34bh as select b,h from t3,t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -780,6 +847,28 @@ X
 >>-- as user4
 >>
 >>set schema us4;
+
+--- SQL operation complete.
+>>get privileges for user sql_user4;
+
+Privileges for User SQL_USER4
+=============================
+
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+SIDU-R-    TRAFODION.US4.SB_HISTOGRAMS
+SIDU-R-    TRAFODION.US4.SB_HISTOGRAM_INTERVALS
+SIDU-R-    TRAFODION.US4.SB_PERSISTENT_SAMPLES
+SIDU-R-    TRAFODION.US4.T1
+SIDU-R-    TRAFODION.US4.T129_A
+SIDU-R-    TRAFODION.US4.T129_STARTER
+SIDU-R-    TRAFODION.US4.T2
+SIDU-R-    TRAFODION.US4.T3
+SIDU-R-    TRAFODION.US4.T4
+SIDU-R-    TRAFODION.US4.V1
+
+=======================
+ 12 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -868,6 +957,25 @@ CREATE TABLE TRAFODION.US4.T3
 End of MXCI Session
 
 >>-- as user1
+>>get privileges for user sql_user1;
+
+Privileges for User SQL_USER1
+=============================
+
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
+---U---    TRAFODION.US4.T1
+S------    TRAFODION.US4.T1 <Column> COL3
+S------    TRAFODION.US4.T129_A
+S------    TRAFODION.US4.T129_STARTER
+SI-----    TRAFODION.US4.T2
+S------    TRAFODION.US4.V1
+-I-U---    TRAFODION.US4.V1 <Column> VC1
+
+=======================
+ 9 row(s) returned
+
+--- SQL operation complete.
 >>
 >>cqd query_cache '0' ;
 
@@ -910,15 +1018,16 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>
->>select case when current_cache_size > 0 then 1 else 0 end from table(natablecache());
+>>select case when current_cache_size > 0 then 1 else 0 end from table(natablecache('all', 'local'));
 
-*** ERROR[15001] A syntax error occurred at or before: 
-select case when current_cache_size > 0 then 1 else 0 end from table(natablecac
-he());
-   ^ (83 characters from start of SQL statement)
+(EXPR)
+------
 
-*** ERROR[8822] The statement was not prepared.
+     0
+     1
+     1
 
+--- 3 row(s) selected.
 >>
 >>--should error but place t129_a in natable cache
 >>prepare s1 from select * from us4.t129_a where c1 > 10;
@@ -928,15 +1037,16 @@ he());
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>select case when current_cache_size > 0 then 1 else 0 end from table(natablecache());
+>>select case when current_cache_size > 0 then 1 else 0 end from table(natablecache('all', 'local'));
 
-*** ERROR[15001] A syntax error occurred at or before: 
-select case when current_cache_size > 0 then 1 else 0 end from table(natablecac
-he());
-   ^ (83 characters from start of SQL statement)
+(EXPR)
+------
 
-*** ERROR[8822] The statement was not prepared.
+     1
+     1
+     1
 
+--- 3 row(s) selected.
 >>
 >>sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4;
 >>grant select on us4.t129_a to sql_user1 ;

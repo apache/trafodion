@@ -252,11 +252,17 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
 
               default:
                 // All day-time interval values are expressed in terms of microseconds.
+
+                // If fractional precision is greater than
+                // microsecs, disable rangespec transformation.
+                if (type->getScale() > SQLInterval::MAX_FRACTION_PRECISION_USEC)
+                  return FALSE;
+
                 return (SQLInterval::MAX_LEADING_PRECISION >=
                         IntervalType::getPrecision(intvType->getStartField(),
                                                    intvType->getLeadingPrecision(),
                                                    REC_DATE_SECOND,
-                                                   SQLInterval::MAX_FRACTION_PRECISION));
+                                                   SQLInterval::MAX_FRACTION_PRECISION_USEC));
             }
         }
 
@@ -267,6 +273,13 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
       //case NA_USER_SUPPLIED_TYPE:
       //case NA_RECORD_TYPE:
       //case NA_ROWSET_TYPE:
+
+        // datetime values are currently converted to Int64 microseconds value
+        // for rangespec constants. If fractional precision is greater than
+        // microsecs, disable rangespec transformation.
+        if (type->getScale() > DatetimeType::MAX_FRACTION_PRECISION_USEC)
+          return FALSE;
+
         return TRUE;
 
       default:

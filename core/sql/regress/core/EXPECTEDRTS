@@ -3546,6 +3546,7 @@ SSCP Reply Message Count      353
 SSCP Reply Message Bytes      139,848
 RMS Stats Reset Timestamp     2017/11/23 16:54:16.511971
 No. Query Invalidation Keys   121
+Configured Pid Max            32768
 
 
 --- SQL operation complete.

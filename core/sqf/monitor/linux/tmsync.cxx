@@ -42,7 +42,9 @@ using namespace std;
 #include "tmsync.h"
 #include "mlio.h"
 #include "reqqueue.h"
+#include "nameserver.h"
 
+extern bool NameServerEnabled;
 extern int trace_level;
 extern int MyPNID;
 extern sigset_t SigSet;
@@ -926,6 +928,16 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 // Get the TM that initiated the sync request
                 tm = LNode[req->Nid]->GetProcessLByType( ProcessType_DTM );
             }
+            if (!tm && NameServerEnabled)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Getting process from Name Server, nid=%d, type=ProcessType_DTM\n"
+                                , method_name, __LINE__, req->Nid );
+                }
+            
+                tm = Nodes->GetProcessLByTypeNs( req->Nid, ProcessType_DTM );
+            }
             if ( tm )
             {
                 // send all TmSync requests data to the local TM processes
@@ -997,6 +1009,25 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 {
                     delete msg;
                     msg = NULL;
+                }
+                if (NameServerEnabled)
+                {
+                    if (!MyNode->IsMyNode( tm->GetNid() )
+                      && (req->GetNext() && req->GetNext()->Nid != tm->GetNid() ) )
+                    {
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                        {
+                            trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                        , method_name, __LINE__
+                                        , tm->GetName()
+                                        , tm->GetNid()
+                                        , tm->GetPid()
+                                        , tm->GetVerifier() );
+                        }
+                        Nodes->DeleteCloneProcess( tm );
+                        tm = NULL;
+                    }
+                
                 }
             }
             else

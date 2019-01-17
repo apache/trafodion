@@ -142,6 +142,9 @@
 >>grant component privilege "CREATE" on sql_operations to t141_role2;
 
 --- SQL operation complete.
+>>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+
+--- SQL operation complete.
 >>
 >>-- ============================================================================
 >>--obey TEST141(test_private_user);
@@ -234,6 +237,9 @@ U1T2
 U1T3
 U1T4
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user2;
@@ -259,6 +265,9 @@ Tables in Schema TRAFODION.T141_USER2
 U2T1
 U2T2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user3;
@@ -276,6 +285,9 @@ Tables in Schema TRAFODION.T141_USER3
 =====================================
 
 U3T1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -310,6 +322,39 @@ T141_USER3.U3T1                      BT    -2          T141_ROLE3  SIDU-R-      
 >>execute get_col_privs;
 
 --- 0 row(s) selected.
+>>get schemas for role t141_role1;
+
+Schemas for Role T141_ROLE1
+===========================
+
+T141_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get schemas for role t141_role2;
+
+Schemas for Role T141_ROLE2
+===========================
+
+T141_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get schemas for role t141_role3;
+
+Schemas for Role T141_ROLE3
+===========================
+
+T141_USER3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>
 >>-- t141_role2 has create privilege on all schemas.
 >>-- have sql_user2 who belongs to  t141_role2 create some tables in 
@@ -343,6 +388,9 @@ Tables in Schema TRAFODION.T141_USER1
 
 U2T1
 U2T2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -404,6 +452,45 @@ CREATE VIEW TRAFODION.T141_USER1.U2V2 (C1, C2) AS
 
 --- SQL operation failed with errors.
 >>
+>>-- test get schemas for user and role
+>>-- schema owner sql_user2:  
+>>--   first test returns t144_user2 
+>>--   second test returns no rows
+>>-- schema owner t141_role:  both tests return t144_user2
+>>get schemas for user sql_user2;
+
+Schemas for User SQL_USER2
+==========================
+
+T141_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get schemas for role t141_role2;
+
+Schemas for Role T141_ROLE2
+===========================
+
+T141_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>-- these should fail with no priv
+>>get schemas for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get schemas for role t141_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>-- ============================================================================
 >>exit;
@@ -538,6 +625,9 @@ U1T2
 U1T3
 U1T4
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user2;
@@ -563,6 +653,9 @@ Tables in Schema TRAFODION.T141_USER2
 U2T1
 U2T2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>set schema t141_user3;
@@ -580,6 +673,9 @@ Tables in Schema TRAFODION.T141_USER3
 =====================================
 
 U3T1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -643,6 +739,39 @@ T141_USER1.U1T4                   0  DB__ROOT    SQL_USER3   S------        ----
 T141_USER1.U1T4                   2  DB__ROOT    SQL_USER3   S------        -------        
 
 --- 4 row(s) selected.
+>>get schemas for user sql_user1;
+
+Schemas for User SQL_USER1
+==========================
+
+T141_USER1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get schemas for user sql_user2;
+
+Schemas for User SQL_USER2
+==========================
+
+T141_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get schemas for user sql_user3;
+
+Schemas for User SQL_USER3
+==========================
+
+T141_USER3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>
 >>-- have sql_user2 create some tables in sql_user1's schema
 >>-- have sql_user2 create some views, views that reference user1's objects fail
@@ -675,6 +804,9 @@ Tables in Schema TRAFODION.T141_USER1
 
 U2T1
 U2T2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -733,6 +865,37 @@ CREATE VIEW TRAFODION.T141_USER1.U2V1 AS
 
 --- SQL operation failed with errors.
 >>
+>>-- test get schemas for user and role
+>>-- schema owner sql_user2:  
+>>--   first test returns t144_user2 
+>>--   second test returns no rows
+>>-- schema owner t141_role:  both tests return t144_user2
+>>get schemas for user sql_user2;
+
+Schemas for User SQL_USER2
+==========================
+
+T141_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get schemas for role t141_role2;
+
+--- SQL operation complete.
+>>
+>>-- these should fail with no priv
+>>get schemas for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get schemas for role t141_role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>-- ============================================================================
 >>exit;
@@ -1004,12 +1167,15 @@ CREATE VIEW TRAFODION.T141_USER3.U3V3 AS
 *** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T141_USER1.U1T3.
 
 --- SQL operation failed with errors.
->>get tables, match 'U3T%';
+>>get tables in schema t141_user1, match 'U3T%';
 
-Tables in Schema TRAFODION.T141_USER3
+Tables in Schema TRAFODION.T141_USER1
 =====================================
 
 U3T1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get views;
@@ -1021,6 +1187,9 @@ U3V1
 U3V2
 U3V3
 U3V4
+
+=======================
+ 4 row(s) returned
 
 --- SQL operation complete.
 >>

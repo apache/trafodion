@@ -615,6 +615,7 @@ if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_APACHE}-bin
 fi
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER_HDP}
     HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_HDP}-bin
 fi
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
@@ -622,7 +623,8 @@ HIVE_TAR=${HIVE_PREFIX}.tar.gz
 HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
 HBASE_TAR=hbase-${HBASE_DEP_VER_CDH}.tar.gz
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
-    HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
+    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/${HBASE_DEP_VER_HDP}
+    HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}-bin.tar.gz
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/${HBASE_DEP_VER_APACHE}
@@ -726,21 +728,27 @@ else
   if [ $? -ne 0 ]; then
     (${JAVA_EXE} -version 2>&1) | grep '1.7' >/dev/null
     if [ $? -ne 0 ]; then
-      echo '**** ERROR:'
-      cat <<EOF
-      Please make sure you are using the Java 1.6 or 1.7 SDK.
-      Otherwise, download it into ${MY_SW_ROOT}, extract it and
-      make a symbolic link ${MY_SW_ROOT}/java that points  to it and
-      export JAVA_HOME=${MY_SW_ROOT}/java
+      (${JAVA_EXE} -version 2>&1) | grep '1.8' >/dev/null
+      if [ $? -ne 0 ]; then
+        echo '**** ERROR:'
+        cat <<EOF
+        Please make sure you are using the Java 1.6, 1.7 or 1.8 SDK.
+        Otherwise, download it into ${MY_SW_ROOT}, extract it and
+        make a symbolic link ${MY_SW_ROOT}/java that points  to it and
+        export JAVA_HOME=${MY_SW_ROOT}/java
 EOF
-      echo exiting...
-      exit 1
+        echo exiting...
+        exit 1
+      else
+       echo "Java version 1.8 is ok"
+      fi
     else
       echo "Java version 1.7 is ok"
     fi
   else
     echo "Java version 1.6 is ok"
   fi
+
   # end of check Java version
 
   echo
@@ -1366,6 +1374,11 @@ echo "$MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
 
 fi
 # end of MySQL JDBC setup
+
+#udr cached lib setup
+echo "Creating udr cached lib : ${MY_UDR_CACHE_LIBDIR}"
+mkdir -p $MY_PUBLIC_UDR_CACHE_LIBDIR
+#end of udr cached lib setup
 
 cd $MY_SW_ROOT
 

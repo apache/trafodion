@@ -54,7 +54,7 @@ fi
 
 lv_starttime=`date`
 
-lv_stderr_file="$TRAF_HOME/logs/hbase_hbck_repair.log"
+lv_stderr_file="$TRAF_LOG/hbase_hbck_repair.log"
 echo "Stderr being written to the file: ${lv_stderr_file}"
 ${HBASE_HOME}/bin/hbase hbck -repair > ${lv_stderr_file} 2>${lv_stderr_file}
 

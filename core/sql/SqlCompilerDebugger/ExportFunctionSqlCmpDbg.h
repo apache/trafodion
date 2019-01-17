@@ -25,14 +25,14 @@
 using namespace std;
 
 #include "CommonSqlCmpDbg.h"
-extern "C" Q_DECL_EXPORT SqlcmpdbgExpFuncs * GetSqlcmpdbgExpFuncs (void);
+extern "C" Q_DECL_EXPORT SqlcmpdbgExpFuncs * GetSqlcmpdbgExpFuncs ();
 extern "C" Q_DECL_EXPORT void DisplayQueryTree (Sqlcmpdbg::CompilationPhase
 						phase, void *tree =
 						NULL, void *plan = NULL);
-extern "C" Q_DECL_EXPORT void SqldbgSetPointers (void *memo, void *tasklist,
-						 void *analysis,
-						 void *currentContext,
-						 void *ClusterInfo);
+extern "C" Q_DECL_EXPORT void SqldbgSetCmpPointers (void *memo, void *tasklist,
+                                                    void *analysis,
+                                                    void *currentContext,
+                                                    void *ClusterInfo);
 extern "C" Q_DECL_EXPORT void DoMemoStep (Int32 passNo = -1, Int32 groupNo =
 					  -1, Int32 taskNo = -1, void *task =
 					  NULL, void *expr =
@@ -41,7 +41,11 @@ extern "C" Q_DECL_EXPORT void HideQueryTree (BOOL flag = TRUE);
 extern "C" Q_DECL_EXPORT void DisplayTDBTree (Sqlcmpdbg::CompilationPhase
 					      phase, void *tdb,
 					      void *fragDir);
-extern "C" Q_DECL_EXPORT NABoolean DisplayExecution (void);
+extern "C" Q_DECL_EXPORT int  ExecutionDisplayIsEnabled (void);
+extern "C" Q_DECL_EXPORT void SqldbgSetExePointers (void *rootTcb,
+                                                    void *cliGlobals,
+                                                    void *dummy);
+extern "C" Q_DECL_EXPORT void DisplayExecution (ExSubtask**, ExScheduler *);
 
 extern "C" Q_DECL_EXPORT void CleanUp(void);
 #endif // EXPORTFUNCTIONSQLCMPDBG_H

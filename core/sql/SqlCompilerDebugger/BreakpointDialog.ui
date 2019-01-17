@@ -162,6 +162,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="chkDisplayExecution">
+        <property name="text">
+         <string>Display execution</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>

@@ -4598,12 +4598,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 			if (obj != null) {
 				if (obj instanceof byte[]) {
 					try {
-						if (this.irs_.ic_.getISOMapping() == InterfaceUtilities.SQLCHARSETCODE_ISO88591
-								&& !this.irs_.ic_.getEnforceISO()
-								&& sqlCharset == InterfaceUtilities.SQLCHARSETCODE_ISO88591)
-							data = new String((byte[]) obj, irs_.ic_.t4props_.getISO88591());
-						else
-							data = this.irs_.ic_.decodeBytes((byte[]) obj, sqlCharset);
+						data = this.irs_.ic_.decodeBytes((byte[]) obj, this.irs_.ic_.getTerminalCharset());
 
 						wasNull_ = false;
 					} catch (CharacterCodingException e) {
@@ -4615,11 +4610,6 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 					} catch (UnsupportedCharsetException e) {
 						SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_,
 								this.connection_.getLocale(), "unsupported_encoding", e.getCharsetName());
-						se.initCause(e);
-						throw se;
-					} catch (UnsupportedEncodingException e) {
-						SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_,
-								this.connection_.getLocale(), "unsupported_encoding", e.getMessage());
 						se.initCause(e);
 						throw se;
 					}

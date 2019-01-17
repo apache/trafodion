@@ -50,7 +50,6 @@ class HdfsClient;
 // Classes referenced in this file
 // -----------------------------------------------------------------------
 class ex_tcb;
-class ExHdfsScanStats;
 class SequenceFileReader;
 class ExpORCinterface;
 
@@ -354,7 +353,6 @@ protected:
   ComCondition * lastErrorCnd_;
   NABoolean checkRangeDelimiter_;
 
-  NABoolean dataModCheckDone_;
   ComDiagsArea * loggingErrorDiags_;
 
   // this array is populated from the info list stored as Queue.

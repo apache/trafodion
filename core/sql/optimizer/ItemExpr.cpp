@@ -3029,7 +3029,7 @@ ItemExpr::removeInverseFromExprTree( NABoolean & invExists,
 ItemExpr *ZZZBinderFunction::copyTopNode(ItemExpr *derivedNode,
                                          CollHeap *outHeap)
 {
-  ItemExpr *result=0;
+  ZZZBinderFunction *result=0;
 
   if (derivedNode == NULL)
    {
@@ -3059,8 +3059,10 @@ ItemExpr *ZZZBinderFunction::copyTopNode(ItemExpr *derivedNode,
    }
   else
    {
-    result = derivedNode;
+     result = (ZZZBinderFunction*)derivedNode;
    }
+
+  result->flags_ = flags_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
@@ -7551,6 +7553,8 @@ const NAString BuiltinFunction::getText() const
       return "nullifzero";
     case ITM_NVL:
       return "nvl";
+    case ITM_OVERLAY:
+      return "overlay";
     case ITM_JSONOBJECTFIELDTEXT:
       return "json_object_field_text";
     case ITM_QUERYID_EXTRACT:
@@ -7627,6 +7631,8 @@ const NAString BuiltinFunction::getText() const
       return "unique_short_id";
     case ITM_UNIQUE_ID:
       return "unique_id";
+    case ITM_UNIQUE_ID_SYS_GUID:
+      return "sys_guid";
     case ITM_HBASE_COLUMN_LOOKUP:
       return "hbase_column_lookup";
     case ITM_HBASE_COLUMNS_DISPLAY:
@@ -7764,6 +7770,9 @@ const NAString BuiltinFunction::getText() const
 
     case ITM_TO_TIMESTAMP:
       return "to_timestamp";
+
+    case ITM_SPLIT_PART:
+      return "split_part";
 
     default:
       return "unknown func";
@@ -11969,6 +11978,43 @@ Exists::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 
 // --------------------------------------------------------------
+// member functions for Overlaps operator
+// --------------------------------------------------------------
+ItemExpr * Overlaps::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+  if (derivedNode == NULL)
+    result = new (outHeap) Overlaps(child(0), child(1), child(2), child(3));
+  else
+    result - derivedNode;
+
+  return CacheableBuiltinFunction::copyTopNode(result, outHeap);
+}
+
+void Overlaps::unparse(NAString &result
+		                   , PhaseEnum phase
+                       , UnparseFormatEnum form
+		                   , TableDesc * tabId) const
+{
+  result += "(";
+  child(0)->unparse(result,phase,form,tabId);
+  result += ", ";
+  child(1)->unparse(result,phase,form,tabId);
+  result += ") ";
+
+  NAString kwd(getText(), CmpCommon::statementHeap());
+  if (form == USER_FORMAT_DELUXE) kwd.toUpper();
+  result += kwd;
+
+  result += " (";
+  child(2)->unparse(result,phase,form,tabId);
+  result += ", ";
+  child(3)->unparse(result,phase,form,tabId);
+  result += ")";
+}
+
+
+// --------------------------------------------------------------
 // member functions for Between operator
 // --------------------------------------------------------------
 ItemExpr * Between::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
@@ -12502,21 +12548,23 @@ ItemExpr * RaiseError::copyTopNode (ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-  {
-	if (getArity() > 0) // Do we have string expressions?
-	  result = new (outHeap) RaiseError(getSQLCODE(),
-					    getConstraintName(),
-					    child(0)->copyTree(outHeap),
-					    outHeap);
-	else
-	  result = new (outHeap) RaiseError(getSQLCODE(),
-					    getConstraintName(),
-					    getTableName(),
-					    outHeap);
-  }
+    {
+      if (getArity() > 0) // Do we have string expressions?
+        result = new (outHeap) RaiseError(getSQLCODE(),
+                                          getConstraintName(),
+                                          child(0)->copyTree(outHeap),
+                                          outHeap);
+      else
+        result = new (outHeap) RaiseError(getSQLCODE(),
+                                          getConstraintName(),
+                                          getTableName(),
+                                          optionalStr_,
+                                          type_,
+                                          outHeap);
+    }
   else
     result = derivedNode;
-
+  
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
 
@@ -15232,5 +15280,18 @@ NABoolean ItmLeadOlapFunction::hasEquivalentProperties(ItemExpr * other)
 ItemExpr *ItmLeadOlapFunction::transformOlapFunction(CollHeap *heap)
 {
    return this;
+}
+
+SplitPart::~SplitPart() {}
+
+ItemExpr * SplitPart::copyTopNode(ItemExpr *derivedNode, CollHeap *outHeap)
+{
+      ItemExpr *result = NULL;
+      if (derivedNode == NULL)
+        result = new (outHeap) SplitPart(child(0), child(1), child(2));
+      else
+        result = derivedNode;
+
+     return BuiltinFunction::copyTopNode(result, outHeap);
 }
 

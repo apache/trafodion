@@ -27,8 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <alsa/iatomic.h>
-
+#include "seabed/atomic.h"
 #include "seabed/fserr.h"
 #include "seabed/ms.h"
 #include "seabed/pctl.h"
@@ -57,7 +56,7 @@ int           count;
 int           loop = 1000;
 int           maxmsg;
 int           maxout = 1;
-atomic_t      msg_count;
+SB_Atomic_Int msg_count;
 char          my_name[100];
 char          recv_buffer[MAX_OUT][100];
 unsigned int  seed;
@@ -96,7 +95,7 @@ void *server_thr(void *arg) {
                                 0,              // listenopts
                                 0);             // listenertag
             if ((lerr == XSRETYPE_NOWORK) &&
-                (atomic_read(&msg_count) >= maxmsg))
+                (msg_count.read_val() >= maxmsg))
                 return NULL;
         } while (lerr == XSRETYPE_NOWORK);
         if (lerr == XSRETYPE_ABANDON)
@@ -115,10 +114,10 @@ void *server_thr(void *arg) {
                     printf("server(%s): closes=%d\n", my_name, closes);
             }
         } else {
-            atomic_inc(&msg_count);
+            msg_count.add_val(1);
             if (verbose)
                 printf("server(%s): msg-count=%d\n",
-                       my_name, atomic_read(&msg_count));
+                       my_name, msg_count.read_val());
         }
         recv_len = rnd(BUFSIZ);
         BMSG_REPLY_(sre.sre_msgId,       // msgid
@@ -174,7 +173,7 @@ int main(int argc, char *argv[]) {
         ferr = XCONTROLMESSAGESYSTEM(XCTLMSGSYS_SETSENDLIMIT,
                                      XMAX_SETTABLE_SENDLIMIT);
         assert(ferr == XZFIL_ERR_OK);
-        atomic_set(&msg_count, 0);
+        msg_count.set_val(0);
         for (inxl = 0; inxl < loop; inxl++) {
             ferr = msg_mon_open_process((char *) serv,       // name
                                         TPT_REF(phandle),
@@ -197,7 +196,7 @@ int main(int argc, char *argv[]) {
                                   0,                       // xmitclass
                                   0);                      // linkopts
                 util_check("XMSG_LINK_", ferr);
-                atomic_inc(&msg_count);
+                msg_count.add_val(1);
             }
             ferr = XMSG_ABANDON_(msgid[0]);
             util_check("XMSG_ABANDON_", ferr);
@@ -216,7 +215,7 @@ int main(int argc, char *argv[]) {
                               0,                       // xmitclass
                               0);                      // linkopts
             util_check("XMSG_LINK_", ferr);
-            atomic_inc(&msg_count);
+            msg_count.add_val(1);
             ferr = BMSG_BREAK_(msgid[inxo],
                                results.u.s,
                                TPT_REF(phandle));
@@ -241,10 +240,10 @@ int main(int argc, char *argv[]) {
                                   0,                       // xmitclass
                                   0);                      // linkopts
                 util_check("XMSG_LINK_", ferr);
-                atomic_inc(&msg_count);
+                msg_count.add_val(1);
                 if (verbose)
                     printf("client(%s): msg-count=%d\n",
-                           my_name, atomic_read(&msg_count));
+                           my_name, msg_count.read_val());
                 count++;
                 ferr = BMSG_BREAK_(msgid[inxo],
                                    results.u.s,
@@ -264,7 +263,7 @@ int main(int argc, char *argv[]) {
         assert(ferr == XZFIL_ERR_OK);
         closes = 0;
         maxmsg = loop * maxout;
-        atomic_set(&msg_count, 0);
+        msg_count.set_val(0);
         msg_mon_enable_mon_messages(true);
         for (inxs = 0; inxs < maxs; inxs++) {
             char lname[10];

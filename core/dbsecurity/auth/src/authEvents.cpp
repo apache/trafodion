@@ -56,7 +56,7 @@ void insertAuthEvent(
 // ****************************************************************************
 // function authInitEventLog()
 //
-// This function create a new log in $TRAF_HOME/logs directory with the 
+// This function create a new log in $TRAF_LOG directory with the 
 // following name dbsecurity_<host>_<pid>.log
 //
 // It is called for standalone executables (e.g. ldapcheck) to log issues

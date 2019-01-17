@@ -51,6 +51,7 @@ extern CMonStats *MonStats;
 extern CMonTrace *MonTrace;
 extern CMonLog *MonLog;
 extern CReplicate Replicator;
+extern CMonitor *Monitor;
 
 extern char *ErrorMsg (int error_code);
 
@@ -246,7 +247,7 @@ void CConfigGroup::NormalizeName (string &name)
 
 void CConfigGroup::SendChangeNotification (CConfigKey *key)
 {
-    CProcess *process;
+    CProcess *targetProcess;
     struct message_def *msg;
 
     const char method_name[] = "CConfigGroup::SendChangeNotification";
@@ -338,37 +339,47 @@ void CConfigGroup::SendChangeNotification (CConfigKey *key)
     case ConfigType_Cluster:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
            trace_printf("%s@%d - Sending Configuration Change message to cluster\n", method_name, __LINE__);
+#ifndef NAMESERVER_PROCESS
         // Each monitor will send this notice to their nodes processes
         if ( MyNode ) MyNode->Bcast(msg);
+#endif
         delete msg;
         break;
 
     case ConfigType_Node:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
            trace_printf("%s@%d - Sending Configuration Change message to nodes in pnid=%d\n", method_name, __LINE__, MyPNID);
+#ifndef NAMESERVER_PROCESS
         // Only this node's processes will receive the notice    
         if ( MyNode ) MyNode->Bcast(msg);
+#endif
         delete msg;
         break;
         
     case ConfigType_Process:
         // check if we need to associate a process
-        Nodes->GetLNode ((char *)name_.c_str(), &process);
-        if ( process )
+        Nodes->GetLNode ((char *)name_.c_str(), &targetProcess);
+        if ( targetProcess )
         {
-            if ( process->IsSystemMessages() && !process->IsClone() )
+            if ( targetProcess->IsSystemMessages() && !targetProcess->IsClone() )
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
-                    trace_printf("%s@%d - Sending Configuration Change message to %s\n", method_name, __LINE__, process->GetName());
-                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
-                                                       , process->GetVerifier()
+                    trace_printf("%s@%d - Sending Configuration Change message to %s\n", method_name, __LINE__, targetProcess->GetName());
+#ifndef NAMESERVER_PROCESS
+                SQ_theLocalIOToClient->putOnNoticeQueue( targetProcess->GetPid()
+                                                       , targetProcess->GetVerifier()
                                                        , msg
                                                        , NULL);
+#endif
             }
             else
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
-                    trace_printf("%s@%d - Not sending Configuration Change message to %s, system_messages=%d, isClone=%d\n", method_name, __LINE__, process->GetName(), process->IsSystemMessages(), process->IsClone());
+                    trace_printf("%s@%d - Not sending Configuration Change message to %s, system_messages=%d, isClone=%d\n"
+                                , method_name, __LINE__
+                                , targetProcess->GetName()
+                                , targetProcess->IsSystemMessages()
+                                , targetProcess->IsClone());
 
                 delete msg;
             }
@@ -987,3 +998,392 @@ void CConfigContainer::strIdToString( strId_t stringId,  string & value )
 
     TRACE_EXIT;
 }
+
+int CConfigContainer::getRegistrySize()
+{
+    const char method_name[] = "CConfigContainer::getRegistrySize";
+    TRACE_ENTRY;
+    
+    int regClusterCount = 0;
+    int regProcessCount = 0;
+    int regClusterMax = 0;
+    int regCount = 0;
+    int regSize = 0;
+    
+    int rc = tc_get_registry_cluster_set( &regClusterCount
+                                    , regClusterMax
+                                    , NULL );
+    if ( rc )
+    {
+          char la_buf[MON_STRING_BUF_SIZE];
+          snprintf( la_buf, sizeof(la_buf)
+            , "[%s] Cluster scope configuration registry access failed!\n"
+            , method_name );
+          mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
+          TRACE_EXIT;
+          return 0;
+     }
+     
+     regCount = regClusterCount;
+     
+     regClusterMax = 0;
+     
+     rc = tc_get_registry_process_set( &regClusterCount
+                                    , regClusterMax
+                                    , NULL );
+     if ( rc )
+     {
+          char la_buf[MON_STRING_BUF_SIZE];
+          snprintf( la_buf, sizeof(la_buf)
+            , "[%s] Cluster scope configuration registry access failed!\n"
+            , method_name );
+          mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
+          TRACE_EXIT;
+          return 0;
+      }
+      
+      regCount += regProcessCount;
+      regCount += 10; // just to be safe
+      
+      // cluster_set -> regCount of these
+      // int
+      // int`
+      // int 
+      // int
+      // variable length : [Scope, Key, Value] 
+      
+      regSize = regCount * sizeof (cluster_set); // accounts fore verything but the variable data;
+      regSize = regSize + (regCount*(TC_REGISTRY_KEY_MAX + TC_REGISTRY_KEY_MAX + TC_REGISTRY_VALUE_MAX));
+         
+      TRACE_EXIT;  
+      return regSize;
+}
+
+int CConfigContainer::getUniqueStringsSize() 
+{
+    const char method_name[] = "CConfigContainer::getUniqueStringsSize";
+    TRACE_ENTRY;
+    int maxUniqueId = 0;
+    int totalUniqueIds = 0;
+    int uniqueIdSize = 0;
+    
+    for (int pnid = 0; pnid < Monitor->GetConfigPNodesMax(); pnid++)
+    {
+        tc_get_unique_string_id_max (pnid, &maxUniqueId);
+        totalUniqueIds += maxUniqueId;
+    }
+    
+    totalUniqueIds += 5; // just to be safe
+    uniqueIdSize = totalUniqueIds * sizeof(unique_string_set);
+    uniqueIdSize = uniqueIdSize + (totalUniqueIds*TC_UNIQUE_STRING_VALUE_MAX);
+    
+    TRACE_EXIT;  
+    return uniqueIdSize;
+}
+    
+int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
+{
+    const char method_name[] = "CConfigContainer::PackRegistry";
+    TRACE_ENTRY;
+    int rc;
+    int regClusterCount = 0;
+    int regClusterMax = 0;
+    TcRegistryConfiguration_t *regClusterConfig = NULL;
+    char *bufPtr = buffer;    
+    
+    struct cluster_set *clusterObj = (struct cluster_set *)bufPtr;
+    char *stringData = &clusterObj->stringData;
+
+    int stringDataLen = 0;
+    int numberOfEntries = 0;
+    
+    switch (type)
+    {
+      case ConfigType_Cluster:
+      {
+          // Get cluster scope configuration registry entries count
+          rc = tc_get_registry_cluster_set( &regClusterCount
+                                    , regClusterMax
+                                    , NULL );
+          if ( rc )
+          {
+              char la_buf[MON_STRING_BUF_SIZE];
+              snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Cluster scope configuration registry access failed!\n"
+                , method_name );
+              mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
+              TRACE_EXIT;
+              return 0;
+          }
+    
+          regClusterMax = regClusterCount;
+          regClusterConfig = new TcRegistryConfiguration_t[regClusterMax];
+          rc = tc_get_registry_cluster_set( &regClusterCount
+                                              , regClusterMax
+                                              , regClusterConfig );
+          if ( rc )
+          {
+              char la_buf[MON_STRING_BUF_SIZE];
+              snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Cluster scope configuration registry access failed!\n"
+                    , method_name );
+              mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
+              TRACE_EXIT;
+              return 0;
+          } 
+          break;
+      }
+      
+      case ConfigType_Process:
+      {
+          // Get cluster scope configuration registry entries count
+          rc = tc_get_registry_process_set( &regClusterCount
+                                    , regClusterMax
+                                    , NULL );
+          if ( rc )
+          {
+              char la_buf[MON_STRING_BUF_SIZE];
+              snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Cluster scope configuration registry access failed!\n"
+                , method_name );
+              mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
+              TRACE_EXIT;
+              return 0;
+          }
+    
+          regClusterMax = regClusterCount;
+          regClusterConfig = new TcRegistryConfiguration_t[regClusterMax];
+          rc = tc_get_registry_process_set( &regClusterCount
+                                        , regClusterMax
+                                        , regClusterConfig );
+          if ( rc )
+          {
+              char la_buf[MON_STRING_BUF_SIZE];
+              snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Cluster scope configuration registry access failed!\n"
+                    , method_name );
+              mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
+              TRACE_EXIT;
+              return 0;
+          }
+          break;
+       }
+      default:
+      {
+           // programming error
+          char la_buf[MON_STRING_BUF_SIZE];
+          snprintf( la_buf, sizeof(la_buf)
+                    , "[%s]Rregistry access failed!\n"
+                    , method_name );
+          mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
+          TRACE_EXIT;
+          return 0;
+          break;
+      }
+    }
+    
+    // Process cluster scope configuration registry entries
+    cluster_set *regClusterEntry = clusterObj;
+    for (int i = 0; i < regClusterCount; i++ )
+    {
+        regClusterEntry->type = type;
+
+        regClusterEntry->scopeLength = strlen (regClusterConfig[i].scope);
+        regClusterEntry->keyLength = strlen (regClusterConfig[i].key);
+        regClusterEntry->valueLength = strlen (regClusterConfig[i].value);
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf ("%s@%d pack type %d, scope %s (%d), key %s (%d), value %s(%d)\n",method_name, __LINE__,
+                           regClusterEntry->type, regClusterConfig[i].scope, 
+                           regClusterEntry->scopeLength,regClusterConfig[i].key,regClusterEntry->keyLength,  
+                           regClusterConfig[i].value, regClusterEntry->valueLength);
+        }
+     
+        memcpy(stringData, regClusterConfig[i].scope,  regClusterEntry->scopeLength);
+        stringData += regClusterEntry->scopeLength;
+        stringDataLen += regClusterEntry->scopeLength;
+
+        memcpy(stringData, regClusterConfig[i].key,  regClusterEntry->keyLength);
+        stringData += regClusterEntry->keyLength;
+        stringDataLen += regClusterEntry->keyLength;
+
+        memcpy(stringData, regClusterConfig[i].value,  regClusterEntry->valueLength);
+        stringData += regClusterEntry->valueLength;
+        stringDataLen += regClusterEntry->valueLength;
+        ++numberOfEntries;
+
+        if ((i+1) < regClusterCount)
+        {
+            regClusterEntry = (cluster_set *)stringData;
+            stringData = &regClusterEntry->stringData;
+        }
+    }    
+
+    if (numberOfEntries > 0)
+    {
+        buffer = stringData;
+    }
+    
+    if (regClusterConfig)
+    {
+         delete [] regClusterConfig; 
+    }
+    return numberOfEntries;
+    
+    TRACE_EXIT;
+}
+
+void CConfigContainer::UnpackRegistry( char *&buffer, int count )
+{
+     const char method_name[] = "CConfigContainer::UnpackRegistry";
+     TRACE_ENTRY;
+
+     ConfigType type;
+     char myScope[TC_REGISTRY_KEY_MAX];
+     char myValue [TC_REGISTRY_VALUE_MAX];
+     char myKey[TC_REGISTRY_KEY_MAX];
+
+     if (count <= 0)
+     {
+         TRACE_EXIT;
+         return;
+     }
+     struct cluster_set *clusterObj2 =  (cluster_set *)buffer;
+     char *stringData2 = &clusterObj2->stringData;
+     for (int i = 0; i < count; i++ )
+     {     
+        memset (myScope, '\0', sizeof (myScope));
+        memset (myValue, '\0', sizeof (myValue));
+        memset (myKey, '\0', sizeof (myKey));
+
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf ("%s@%d scope length %d, key length %d, value length %d\n", method_name, __LINE__,
+                          clusterObj2->scopeLength, 
+                          clusterObj2->keyLength, clusterObj2->valueLength);
+        }
+        type = clusterObj2->type;
+
+        memcpy(myScope, stringData2,  clusterObj2->scopeLength);
+        stringData2 += clusterObj2->scopeLength;
+
+        memcpy(myKey, stringData2,  clusterObj2->keyLength);
+        stringData2 += clusterObj2->keyLength;
+
+        memcpy(myValue, stringData2,  clusterObj2->valueLength);
+        stringData2 += clusterObj2->valueLength;
+
+        if ((i+1) < count)
+        {
+            clusterObj2 = (cluster_set *)stringData2;
+            stringData2 = &clusterObj2->stringData;
+        }
+    } 
+    
+    Set( myScope
+       , type
+       , myValue
+       , myKey
+       , false );
+    
+    buffer = stringData2;
+    TRACE_EXIT; 
+}
+
+int CConfigContainer::PackUniqueStrings( char *&buffer )
+{
+    const char method_name[] = "CConfigContainer::PackUniqueStrings";
+    TRACE_ENTRY;
+    int maxUniqueId = 0;
+    char unique_string[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
+    int  stringDataLen;
+    char *bufPtr = buffer;
+
+    struct unique_string_set *stringObj = (struct unique_string_set *)bufPtr;
+    char *stringData = &stringObj->stringData;
+    int numberOfEntries = 0;
+
+    for (int pnid = 0; pnid < Monitor->GetConfigPNodesMax(); pnid++)
+    {
+        tc_get_unique_string_id_max (pnid, &maxUniqueId);
+
+        for (int maxId = 0; maxId <= maxUniqueId; maxId++)
+        {
+             memset (unique_string, 0, TC_UNIQUE_STRING_VALUE_MAX);
+             int error = tc_get_unique_string( pnid, maxId, unique_string );
+
+             if (!error)
+             {
+                 stringObj->stringLength = strlen(unique_string);
+                 if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+                 {
+                      trace_printf ("%s@%d  packing nid %d, unique id %d, stringt %s (length %d)\n", method_name, __LINE__,
+                                     pnid, maxId, unique_string,stringObj->stringLength );
+                 } 
+                 stringObj->unique_id = maxId;
+                 stringObj->nid = pnid;
+                 memcpy (stringData, unique_string, stringObj->stringLength);
+                 stringDataLen+= stringObj->stringLength;
+                 stringData+=stringObj->stringLength;
+                 ++numberOfEntries;
+                 if ((pnid + 1) < Monitor->GetConfigPNodesMax())
+                 {
+                      stringObj = ( unique_string_set *)stringData;
+                      stringData = &stringObj->stringData;
+                 }
+             }
+             // don't advance if we didn't write anything
+        }
+
+    }
+    
+    if (numberOfEntries > 0)
+    {
+        buffer = stringData;    
+    }
+
+    TRACE_EXIT;  
+    return numberOfEntries;
+}
+
+void CConfigContainer::UnpackUniqueStrings( char *&buffer, int entries )
+{
+    const char method_name[] = "CConfigContainer::UnpackUniqueStrings";
+    TRACE_ENTRY;
+    
+    if (entries <= 0)
+    { 
+         TRACE_EXIT;
+         return;
+    }
+     
+    struct unique_string_set *stringObj =  (unique_string_set *)buffer;
+    char *stringData = &stringObj->stringData;
+    char unique_string[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
+    
+    for (int i = 0; i < entries; i++)
+    {
+        if (stringObj)
+        {
+            int maxUniqueId;
+            tc_get_unique_string_id_max (stringObj->nid, &maxUniqueId);
+            memset(unique_string, 0, TC_UNIQUE_STRING_VALUE_MAX);
+            memcpy (unique_string, stringData,stringObj->stringLength);
+            if (stringObj->unique_id > maxUniqueId)
+            {
+                tc_put_unique_string( stringObj->nid, stringObj->unique_id, unique_string );
+            }
+
+            stringData += stringObj->stringLength;
+        }
+        if ((i + 1) < entries)
+        {
+             stringObj = (unique_string_set *)stringData;
+             stringData = &stringObj->stringData;
+        }
+    }
+
+    buffer = stringData;
+    TRACE_EXIT;  
+}
+   

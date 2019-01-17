@@ -41,6 +41,7 @@
 #include "ComMisc.h"
 #include "ComDistribution.h" // enumToLiteral, literalToEnum, literalAndEnumStruct
 #include "CmpSeabaseDDL.h"
+#include <sys/stat.h>
 
 // define the enum-to-literal function
 #define ComDefXLateE2L(E2L,eType,array) void E2L (const eType e, NAString &l) \
@@ -296,6 +297,53 @@ NAString ComConvertTrafNameToNativeName(
   return convertedName;
 }
 
+// Hive names specified in the query may have any of the following
+// forms after they are fully qualified:
+//  hive.hive.t, hive.`default`.t, hive.hivesch.t, hive.hivesch
+// These names are valid in traf environment only and are used to determine
+// if hive ddl is being processed.
+//
+// Return equivalent native hive names of the format:
+//   `default`.t, `default`.t, hivesch.t, hivesch
+// Return NULL string in case of an error.
+NAString ComConvertTrafHiveNameToNativeHiveName(
+     const NAString &catalogName,
+     const NAString &schemaName,
+     const NAString &objectName)
+{
+  NAString newHiveName;
+  if (catalogName.compareTo(HIVE_SYSTEM_CATALOG, NAString::ignoreCase) != 0)
+    {
+      // Invalid hive name in traf environment.
+      return newHiveName;
+    }
+
+  if (schemaName.compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) // matches  'default'
+    {
+      newHiveName += NAString("`") + schemaName + "`";
+      if (NOT objectName.isNull())
+        newHiveName += ".";
+    }
+  else if (schemaName.compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0) // matches  'hive'
+    {
+      // set fully qualified hive default schema name `default`
+      newHiveName += NAString("`default`");
+      if (NOT objectName.isNull())
+        newHiveName += ".";
+    }
+  else // user schema name
+    {
+      newHiveName += schemaName;
+      if (NOT objectName.isNull())
+        newHiveName += ".";
+    }
+
+  if (NOT objectName.isNull())
+    newHiveName += objectName;
+
+  return newHiveName;
+}
+
 NABoolean ComTrafReservedColName(
      const NAString &colName)
 {
@@ -310,3 +358,122 @@ NABoolean ComTrafReservedColName(
 
   return FALSE;
 }
+
+
+Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString schemaName, NAString userid, NAString &cachedLibName, NAString &cachedLibPath)
+{
+  NAString libPrefix, libSuffix;
+  struct stat statbuf;
+  NAString redefTimeString = Int64ToNAString(redeftime);
+  size_t lastDot = libname.last('.');
+  if (lastDot != NA_NPOS)
+    {
+      libSuffix = libname(lastDot,libname.length()-lastDot);
+      libPrefix = libname(0,lastDot);
+    }
+ 
+  //when isolated user support is added we will pass an actual userid.
+  //By default we assume DB__ROOT.
+  if (userid.length()!=0)       
+    {
+
+      cachedLibPath = getenv("TRAF_HOME") ;
+      cachedLibPath += "/udr";
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+      cachedLibPath +=  "/"+ userid ;
+      if (stat(cachedLibPath, &statbuf) != 0)
+        {
+          if (mkdir(cachedLibPath,S_IRUSR|S_IWUSR|S_IXUSR))//Only this user has 
+            //permission to read/write/execute in this directory and below.
+            {
+              return errno;
+            }
+               
+        }
+      cachedLibPath += "/";
+      cachedLibPath += getenv("UDR_CACHE_LIBDIR");
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+     
+      cachedLibPath += "/" + schemaName;
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+     
+      
+    }
+  else
+    {
+      cachedLibPath = getenv("TRAF_HOME") ;
+      cachedLibPath += "/udr";
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+      cachedLibPath +=  "/"+ NAString("DB__ROOT") ;
+      if (stat(cachedLibPath, &statbuf) != 0)
+        {
+          if (mkdir(cachedLibPath,S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) // these permissions
+            //need to change when we have isolated user support so only DB_ROOT 
+            //can access this directory. Right now we allow all to access this directory
+            {
+              return errno;
+            }
+               
+        }
+      cachedLibPath += "/";
+      cachedLibPath += getenv("UDR_CACHE_LIBDIR");
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+    
+      cachedLibPath += "/" + schemaName;
+      if ( stat(cachedLibPath, &statbuf) != 0)
+         {
+           if (mkdir(cachedLibPath,S_IRWXU|S_IRWXG|S_IRWXO))
+             {
+               return errno;
+             }
+               
+         }
+     
+    }
+      
+  
+  
+  cachedLibName += libPrefix + "_" ;
+  cachedLibName += redefTimeString;
+  cachedLibName += libSuffix ;
+
+  return 0;
+  
+}
+
+

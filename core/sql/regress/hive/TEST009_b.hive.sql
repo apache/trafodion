@@ -20,29 +20,17 @@
 -- specified by the configuration property hive.metastore.warehouse.dir.
 -- ============================================================================
 
--- Our version of HIVE does not support special characters.  This test should 
--- be changed to use delimited names once we upgrade HIVE.
+process hive ddl 'create schema if not exists sch_t009';
+process hive ddl 'drop table sch_t009.t009t1';
+process hive ddl 'create external table sch_t009.t009t1 (a int, b int, c int, d int) row format delimited fields terminated by ''|'' location ''/user/trafodion/hive/exttables/t009t1'' ';
 
-create schema if not exists sch_t009;
-use sch_t009;
-drop table t009t1;
-create external table t009t1
-(
-    a int,
-    b int, 
-    c int,
-    d int
-)
-row format delimited fields terminated by '|'
-location '/user/trafodion/hive/exttables/t009t1';
+-- process hive statement with insert runs into an error on HDP platform.
+-- Use regrhive until that issue is fixed.
+--process hive statement 'insert into table sch_t009.t009t1 select c_customer_sk, c_birth_day, c_birth_month, c_birth_year from customer limit 10 ';
+sh echo "insert into table sch_t009.t009t1 select c_customer_sk, c_birth_day, c_birth_month, c_birth_year from customer limit 10;" > TEST009_junk;
+sh regrhive.ksh -f TEST009_junk;
 
--- Our version of HIVE does not support insert ... VALUES clause, so use the
--- load command from an existing table.
-insert into table t009t1
-select c_customer_sk, c_birth_day, c_birth_month, c_birth_year
-from default.customer
-limit 10;
+--select * from hive.sch_t009.t009t1;
 
-select * from t009t1;
 
 

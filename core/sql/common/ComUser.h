@@ -91,7 +91,10 @@ class ComUser
                                          Int32 & authID);
 
      static bool currentUserHasRole(Int32 roleID);
-     static void getCurrentUserRoles(NAList <Int32> &roleList);
+     static Int16 getCurrentUserRoles(NAList <Int32> &roleIDs);
+     static Int16 getCurrentUserRoles(NAList <Int32> &roleIDs,
+                                     NAList <Int32> &granteeIDs);
+
 
      static Int32 getRoleList (char *roleList,
                                Int32 &actualLen,

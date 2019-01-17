@@ -37,9 +37,10 @@ class ComSecurityKey;
 
 typedef NASet<ComSecurityKey>  ComSecurityKeySet;
 
-bool buildSecurityKeys( const int32_t userID,
-                        const int32_t granteeID,
+bool buildSecurityKeys( const NAList <Int32> &roleGrantees,
+                        const int32_t roleID,
                         const int64_t objectUID,
+                        const bool isColumn,
                         const PrivMgrCoreDesc &privs,
                         ComSecurityKeySet &secKeySet);
 
@@ -101,12 +102,21 @@ public:
   ComSecurityKey(
    const int32_t subjectUserID, 
    const int64_t objectUserID, 
-   const QIType typeOfSubject = SUBJECT_IS_USER);
+   const QIType typeOfSubject);
 
   // Constructor for a special role grant to an authID.
   ComSecurityKey(
     const int32_t subjectUserID, 
     const QIType typeOfObject);
+
+  // Constructor for generating revoke role from subject
+  ComSecurityKey(
+    const uint32_t subjectHashValue,
+    const uint32_t objectHashValue)
+  : subjectHash_(subjectHashValue),
+    objectHash_ (objectHashValue),
+    actionType_(COM_QI_USER_GRANT_ROLE)
+  {};
 
   ComSecurityKey();  // do not use
   bool operator == (const ComSecurityKey &other) const;

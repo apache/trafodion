@@ -81,6 +81,7 @@ s/SSCP Request Message Bytes[ ]*[0-9,]*/SSCP Request Message Bytes @sscpRequestM
 s/SSCP Reply Message Count[ ]*[0-9,]*/SSCP Reply Message Count @sscpReplytMessageCount@/
 s/SSCP Reply Message Bytes[ ]*[0-9,]*/SSCP Reply Message Bytes @sscpReplyMessageBytes@/
 s/Query Invalidation Keys[ ]*[0-9]*/Query Invalidation Keys/
+s/Configured Pid Max[ ]*[0-9]*/Configured Pid Max @configuredPidMax@/
 s/IPC Memory Allocated[ 0-9]*/IPC Memory Allocated @exeMemory@/
 s/EXE Memory Allocated[ 0-9]*/EXE Memory Allocated @ipcMemory@/
 s/IPC Memory Used High WM[ 0-9]*/IPC Memory Used High WM @exeMemory@/
@@ -112,4 +113,5 @@ s/STORE\n[0-9 ,]*/STORE @pertableStats@/
 /pertableStats/{N
 s/pertableStats\n[0-9 ,]*/@pertableStats@/
 }
+s/pertableStats[0-9 ,()|a-z]*/@pertableStats@/
 " $fil

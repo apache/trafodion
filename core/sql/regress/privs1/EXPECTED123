@@ -17,6 +17,9 @@ SQL_USER7
 SQL_USER8
 SQL_USER9
 
+=======================
+ 11 row(s) returned
+
 --- SQL operation complete.
 >>get roles;
 
@@ -29,6 +32,9 @@ DB__LIBMGRROLE
 DB__ROOTROLE
 PUBLIC
 
+=======================
+ 5 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get privileges on component sql_operations for "PUBLIC";
@@ -38,6 +44,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -195,6 +204,9 @@ SQL_USER7
 SQL_USER8
 SQL_USER9
 
+=======================
+ 11 row(s) returned
+
 --- SQL operation complete.
 >>get roles;
 
@@ -211,6 +223,9 @@ T123_DUMMYROLE
 T123_OWNERROLE
 T123_PLANNERROLE
 
+=======================
+ 9 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user1;
 
@@ -221,6 +236,9 @@ PUBLIC
 T123_ADMINROLE
 T123_PLANNERROLE
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user2;
 
@@ -230,6 +248,9 @@ Roles for User SQL_USER2
 PUBLIC
 T123_PLANNERROLE
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user3;
 
@@ -238,6 +259,9 @@ Roles for User SQL_USER3
 
 PUBLIC
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user4;
 
@@ -245,6 +269,9 @@ Roles for User SQL_USER4
 ========================
 
 PUBLIC
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get roles for user sql_user5;
@@ -255,6 +282,9 @@ Roles for User SQL_USER5
 PUBLIC
 T123_OWNERROLE
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get users for role t123_adminrole;
@@ -264,6 +294,9 @@ Users granted Role T123_ADMINROLE
 
 SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get users for role t123_plannerrole;
 
@@ -272,6 +305,9 @@ Users granted Role T123_PLANNERROLE
 
 SQL_USER1
 SQL_USER2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>get users for role t123_dummyrole;
@@ -283,6 +319,12 @@ Users granted Role T123_OWNERROLE
 =================================
 
 SQL_USER5
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get users for role "PUBLIC";
 
 --- SQL operation complete.
 >>
@@ -305,6 +347,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 13 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for user sql_user2;
 
@@ -322,6 +367,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 10 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for user sql_user3;
 
@@ -335,6 +383,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+=======================
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for user sql_user4;
@@ -351,6 +402,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+=======================
+ 9 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for user sql_user5;
@@ -376,6 +430,9 @@ SIDU-R-    TRAFODION.T123SCH.TEAMS
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 17 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get privileges for role t123_adminrole;
@@ -386,6 +443,9 @@ Privileges for Role T123_ADMINROLE
 --DU---    TRAFODION.T123SCH.GAMES
 --DU---    TRAFODION.T123SCH.TEAMS
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for role t123_plannerrole;
 
@@ -395,6 +455,9 @@ Privileges for Role T123_PLANNERROLE
 -I-----    TRAFODION.T123SCH.GAMES
 ----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
 -I-----    TRAFODION.T123SCH.TEAMS
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for role t123_dummyrole;
@@ -416,6 +479,9 @@ SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
 SIDU-R-    TRAFODION.T123SCH.SB_PERSISTENT_SAMPLES
 SIDU-R-    TRAFODION.T123SCH.TEAMS
 
+=======================
+ 10 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for role "PUBLIC";
 
@@ -430,6 +496,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 7 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get tables for user sql_user1;
@@ -441,6 +510,9 @@ TRAFODION."T123SCH".GAMES
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get tables for user sql_user2;
 
@@ -451,6 +523,9 @@ TRAFODION."T123SCH".GAMES
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get tables for user sql_user3;
 
@@ -459,6 +534,9 @@ Tables for User SQL_USER3
 
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>get tables for user sql_user4;
@@ -469,6 +547,9 @@ Tables for User SQL_USER4
 TRAFODION."T123SCH".GAMES
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>get tables for user sql_user5;
@@ -483,6 +564,37 @@ TRAFODION."T123SCH".SB_HISTOGRAM_INTERVALS
 TRAFODION."T123SCH".SB_PERSISTENT_SAMPLES
 TRAFODION."T123SCH".TEAMS
 
+=======================
+ 6 row(s) returned
+
+--- SQL operation complete.
+>>get tables for role t123_adminrole;
+
+Tables for Role T123_ADMINROLE
+==============================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".TEAMS
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get tables for role t123_ownerrole;
+
+Tables for Role T123_OWNERROLE
+==============================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".SB_HISTOGRAMS
+TRAFODION."T123SCH".SB_HISTOGRAM_INTERVALS
+TRAFODION."T123SCH".SB_PERSISTENT_SAMPLES
+TRAFODION."T123SCH".TEAMS
+
+=======================
+ 6 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get indexes for user sql_user1;
@@ -492,6 +604,9 @@ Indexes for User SQL_USER1
 
 TRAFODION."T123SCH".GAMES_VISITOR
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get indexes for user sql_user2;
 
@@ -499,6 +614,9 @@ Indexes for User SQL_USER2
 ==========================
 
 TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get indexes for user sql_user3;
@@ -511,6 +629,9 @@ Indexes for User SQL_USER4
 
 TRAFODION."T123SCH".GAMES_VISITOR
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get indexes for user sql_user5;
 
@@ -518,6 +639,31 @@ Indexes for User SQL_USER5
 ==========================
 
 TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get indexes for role t123_adminrole;
+
+Indexes for Role T123_ADMINROLE
+===============================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get indexes for role t123_ownerrole;
+
+Indexes for Role T123_OWNERROLE
+===============================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -542,51 +688,24 @@ TRAFODION."T123SCH".GAMES_BY_PLAYER
 TRAFODION."T123SCH".HOME_TEAMS_GAMES
 TRAFODION."T123SCH".PLAYERS_ON_TEAM
 
---- SQL operation complete.
->>
->>get libraries for user sql_user1;
-
-Libraries for User SQL_USER1
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
->>get libraries for user sql_user2;
-
-Libraries for User SQL_USER2
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
+>>get views for role t123_adminrole;
 
 --- SQL operation complete.
->>get libraries for user sql_user3;
+>>get views for role t123_ownerrole;
 
-Libraries for User SQL_USER3
-============================
+Views for Role T123_OWNERROLE
+=============================
 
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
+TRAFODION."T123SCH".GAMES_BY_PLAYER
+TRAFODION."T123SCH".HOME_TEAMS_GAMES
+TRAFODION."T123SCH".PLAYERS_ON_TEAM
 
---- SQL operation complete.
->>get libraries for user sql_user4;
-
-Libraries for User SQL_USER4
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
-
---- SQL operation complete.
->>get libraries for user sql_user5;
-
-Libraries for User SQL_USER5
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -611,6 +730,9 @@ Users
 
 SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles;
 
@@ -620,6 +742,9 @@ Roles
 PUBLIC
 T123_ADMINROLE
 T123_PLANNERROLE
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>get roles for user sql_user1;
@@ -631,39 +756,30 @@ PUBLIC
 T123_ADMINROLE
 T123_PLANNERROLE
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user2;
 
-Roles for User SQL_USER2
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user3;
 
-Roles for User SQL_USER3
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user4;
 
-Roles for User SQL_USER4
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user5;
 
-Roles for User SQL_USER5
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>
 >>get users for role t123_adminrole;
 
@@ -671,6 +787,9 @@ Users granted Role T123_ADMINROLE
 =================================
 
 SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get users for role t123_plannerrole;
@@ -680,11 +799,21 @@ Users granted Role T123_PLANNERROLE
 
 SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get users for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_ownerrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get users for role "PUBLIC";
 
 --- SQL operation complete.
 >>
@@ -707,19 +836,30 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 13 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for user sql_user2;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user3;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user4;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user5;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get privileges for role t123_adminrole;
 
@@ -728,6 +868,9 @@ Privileges for Role T123_ADMINROLE
 
 --DU---    TRAFODION.T123SCH.GAMES
 --DU---    TRAFODION.T123SCH.TEAMS
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>get privileges for role t123_plannerrole;
@@ -739,13 +882,20 @@ Privileges for Role T123_PLANNERROLE
 ----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
 -I-----    TRAFODION.T123SCH.TEAMS
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_ownerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role "PUBLIC";
 
 Privileges for Role PUBLIC
@@ -759,6 +909,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 7 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get tables for user sql_user1;
@@ -769,6 +922,9 @@ Tables for User SQL_USER1
 TRAFODION."T123SCH".GAMES
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>get tables for user sql_user2;
@@ -791,6 +947,23 @@ TRAFODION."T123SCH".TEAMS
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
+>>get tables for role t123_adminrole;
+
+Tables for Role T123_ADMINROLE
+==============================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".TEAMS
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get tables for role t123_ownerrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get indexes for user sql_user1;
 
@@ -798,6 +971,9 @@ Indexes for User SQL_USER1
 ==========================
 
 TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get indexes for user sql_user2;
@@ -816,6 +992,22 @@ TRAFODION."T123SCH".GAMES_VISITOR
 
 --- SQL operation failed with errors.
 >>get indexes for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for role t123_adminrole;
+
+Indexes for Role T123_ADMINROLE
+===============================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get indexes for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -844,32 +1036,10 @@ TRAFODION."T123SCH".GAMES_VISITOR
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>
->>get libraries for user sql_user1;
-
-Libraries for User SQL_USER1
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
+>>get views for role t123_adminrole;
 
 --- SQL operation complete.
->>get libraries for user sql_user2;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user3;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user4;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user5;
+>>get views for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -900,6 +1070,9 @@ Users
 
 SQL_USER2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles;
 
@@ -909,15 +1082,15 @@ Roles
 PUBLIC
 T123_PLANNERROLE
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user1;
 
-Roles for User SQL_USER1
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user2;
 
 Roles for User SQL_USER2
@@ -926,35 +1099,31 @@ Roles for User SQL_USER2
 PUBLIC
 T123_PLANNERROLE
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user3;
 
-Roles for User SQL_USER3
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user4;
 
-Roles for User SQL_USER4
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user5;
 
-Roles for User SQL_USER5
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>
 >>get users for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_plannerrole;
 
 Users granted Role T123_PLANNERROLE
@@ -962,17 +1131,29 @@ Users granted Role T123_PLANNERROLE
 
 SQL_USER2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get users for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_ownerrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get users for role "PUBLIC";
 
 --- SQL operation complete.
 >>
 >>get privileges for user sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user2;
 
 Privileges for User SQL_USER2
@@ -989,20 +1170,31 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 10 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for user sql_user3;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user4;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user5;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get privileges for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_plannerrole;
 
 Privileges for Role T123_PLANNERROLE
@@ -1012,13 +1204,20 @@ Privileges for Role T123_PLANNERROLE
 ----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
 -I-----    TRAFODION.T123SCH.TEAMS
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_ownerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role "PUBLIC";
 
 Privileges for Role PUBLIC
@@ -1031,6 +1230,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+=======================
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1048,6 +1250,9 @@ TRAFODION."T123SCH".GAMES
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get tables for user sql_user3;
 
@@ -1060,6 +1265,16 @@ TRAFODION."T123SCH".TEAMS
 
 --- SQL operation failed with errors.
 >>get tables for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1077,6 +1292,9 @@ Indexes for User SQL_USER2
 
 TRAFODION."T123SCH".GAMES_VISITOR
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get indexes for user sql_user3;
 
@@ -1089,6 +1307,16 @@ TRAFODION."T123SCH".GAMES_VISITOR
 
 --- SQL operation failed with errors.
 >>get indexes for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1117,32 +1345,12 @@ TRAFODION."T123SCH".GAMES_VISITOR
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>
->>get libraries for user sql_user1;
+>>get views for role t123_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>get libraries for user sql_user2;
-
-Libraries for User SQL_USER2
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
-
---- SQL operation complete.
->>get libraries for user sql_user3;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user4;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user5;
+>>get views for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1173,6 +1381,9 @@ Users
 
 SQL_USER3
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles;
 
@@ -1181,23 +1392,20 @@ Roles
 
 PUBLIC
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user1;
 
-Roles for User SQL_USER1
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user2;
 
-Roles for User SQL_USER2
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user3;
 
 Roles for User SQL_USER3
@@ -1205,43 +1413,55 @@ Roles for User SQL_USER3
 
 PUBLIC
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user4;
 
-Roles for User SQL_USER4
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user5;
 
-Roles for User SQL_USER5
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>
 >>get users for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_plannerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_ownerrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get users for role "PUBLIC";
 
 --- SQL operation complete.
 >>
 >>get privileges for user sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user2;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user3;
 
 Privileges for User SQL_USER3
@@ -1255,26 +1475,41 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 7 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for user sql_user4;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user5;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get privileges for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_plannerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_ownerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role "PUBLIC";
 
 Privileges for Role PUBLIC
@@ -1287,6 +1522,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+=======================
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1308,6 +1546,9 @@ Tables for User SQL_USER3
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get tables for user sql_user4;
 
@@ -1315,6 +1556,16 @@ TRAFODION."T123SCH".TEAMS
 
 --- SQL operation failed with errors.
 >>get tables for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1343,6 +1594,16 @@ TRAFODION."T123SCH".TEAMS
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
+>>get indexes for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for role t123_ownerrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get views for user sql_user1;
 
@@ -1367,32 +1628,12 @@ TRAFODION."T123SCH".TEAMS
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>
->>get libraries for user sql_user1;
+>>get views for role t123_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>get libraries for user sql_user2;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user3;
-
-Libraries for User SQL_USER3
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
-
---- SQL operation complete.
->>get libraries for user sql_user4;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user5;
+>>get views for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1423,6 +1664,9 @@ Users
 
 SQL_USER4
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles;
 
@@ -1431,31 +1675,25 @@ Roles
 
 PUBLIC
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user1;
 
-Roles for User SQL_USER1
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user2;
 
-Roles for User SQL_USER2
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user3;
 
-Roles for User SQL_USER3
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user4;
 
 Roles for User SQL_USER4
@@ -1463,38 +1701,55 @@ Roles for User SQL_USER4
 
 PUBLIC
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user5;
 
-Roles for User SQL_USER5
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>
 >>get users for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_plannerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_ownerrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get users for role "PUBLIC";
 
 --- SQL operation complete.
 >>
 >>get privileges for user sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user2;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user3;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user4;
 
 Privileges for User SQL_USER4
@@ -1510,23 +1765,36 @@ S------    TRAFODION.T123SCH.TEAMS
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 9 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for user sql_user5;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>get privileges for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_plannerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_ownerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role "PUBLIC";
 
 Privileges for Role PUBLIC
@@ -1539,6 +1807,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+=======================
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1566,8 +1837,21 @@ TRAFODION."T123SCH".GAMES
 TRAFODION."T123SCH".PLAYERS
 TRAFODION."T123SCH".TEAMS
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
 >>get tables for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1595,8 +1879,21 @@ Indexes for User SQL_USER4
 
 TRAFODION."T123SCH".GAMES_VISITOR
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get indexes for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1625,32 +1922,12 @@ TRAFODION."T123SCH".GAMES_VISITOR
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>
->>get libraries for user sql_user1;
+>>get views for role t123_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>get libraries for user sql_user2;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user3;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user4;
-
-Libraries for User SQL_USER4
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
-
---- SQL operation complete.
->>get libraries for user sql_user5;
+>>get views for role t123_ownerrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
@@ -1681,6 +1958,9 @@ Users
 
 SQL_USER5
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get roles;
 
@@ -1690,39 +1970,30 @@ Roles
 PUBLIC
 T123_OWNERROLE
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get roles for user sql_user1;
 
-Roles for User SQL_USER1
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user2;
 
-Roles for User SQL_USER2
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user3;
 
-Roles for User SQL_USER3
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user4;
 
-Roles for User SQL_USER4
-========================
+*** ERROR[1017] You are not authorized to perform this operation.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get roles for user sql_user5;
 
 Roles for User SQL_USER5
@@ -1731,17 +2002,26 @@ Roles for User SQL_USER5
 PUBLIC
 T123_OWNERROLE
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get users for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_plannerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get users for role t123_ownerrole;
 
 Users granted Role T123_OWNERROLE
@@ -1749,20 +2029,34 @@ Users granted Role T123_OWNERROLE
 
 SQL_USER5
 
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get users for role "PUBLIC";
+
 --- SQL operation complete.
 >>
 >>get privileges for user sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user2;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user3;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user4;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for user sql_user5;
 
 Privileges for User SQL_USER5
@@ -1786,17 +2080,26 @@ SIDU-R-    TRAFODION.T123SCH.TEAMS
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
+=======================
+ 17 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get privileges for role t123_adminrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_plannerrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_dummyrole;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get privileges for role t123_ownerrole;
 
 Privileges for Role T123_OWNERROLE
@@ -1813,6 +2116,9 @@ SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
 SIDU-R-    TRAFODION.T123SCH.SB_PERSISTENT_SAMPLES
 SIDU-R-    TRAFODION.T123SCH.TEAMS
 
+=======================
+ 10 row(s) returned
+
 --- SQL operation complete.
 >>get privileges for role "PUBLIC";
 
@@ -1826,6 +2132,9 @@ S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+=======================
+ 7 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1861,6 +2170,30 @@ TRAFODION."T123SCH".SB_HISTOGRAM_INTERVALS
 TRAFODION."T123SCH".SB_PERSISTENT_SAMPLES
 TRAFODION."T123SCH".TEAMS
 
+=======================
+ 6 row(s) returned
+
+--- SQL operation complete.
+>>get tables for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for role t123_ownerrole;
+
+Tables for Role T123_OWNERROLE
+==============================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".SB_HISTOGRAMS
+TRAFODION."T123SCH".SB_HISTOGRAM_INTERVALS
+TRAFODION."T123SCH".SB_PERSISTENT_SAMPLES
+TRAFODION."T123SCH".TEAMS
+
+=======================
+ 6 row(s) returned
+
 --- SQL operation complete.
 >>
 >>get indexes for user sql_user1;
@@ -1889,6 +2222,25 @@ Indexes for User SQL_USER5
 ==========================
 
 TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get indexes for role t123_adminrole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for role t123_ownerrole;
+
+Indexes for Role T123_OWNERROLE
+===============================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1921,35 +2273,26 @@ TRAFODION."T123SCH".GAMES_BY_PLAYER
 TRAFODION."T123SCH".HOME_TEAMS_GAMES
 TRAFODION."T123SCH".PLAYERS_ON_TEAM
 
+=======================
+ 3 row(s) returned
+
 --- SQL operation complete.
->>
->>get libraries for user sql_user1;
+>>get views for role t123_adminrole;
 
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>get libraries for user sql_user2;
+>>get views for role t123_ownerrole;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+Views for Role T123_OWNERROLE
+=============================
 
---- SQL operation failed with errors.
->>get libraries for user sql_user3;
+TRAFODION."T123SCH".GAMES_BY_PLAYER
+TRAFODION."T123SCH".HOME_TEAMS_GAMES
+TRAFODION."T123SCH".PLAYERS_ON_TEAM
 
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user4;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
->>get libraries for user sql_user5;
-
-Libraries for User SQL_USER5
-============================
-
-DB__LIBMGRNAME
-DB__LIBMGR_LIB_CPP
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1967,25 +2310,23 @@ End of MXCI Session
 --- SQL operation failed with errors.
 >>get privileges for user unknown_user;
 
-*** ERROR[8732] UNKNOWN_USER is not a registered database user or role.
+*** ERROR[1340] UNKNOWN_USER is not a user.
 
 --- SQL operation failed with errors.
 >>get privileges for role unknown_role;
 
-*** ERROR[8732] UNKNOWN_ROLE is not a registered database user or role.
+*** ERROR[1339] UNKNOWN_ROLE is not a role.
 
 --- SQL operation failed with errors.
 >>get roles for user unknown_user;
 
-Roles for User UNKNOWN_USER
-===========================
+*** ERROR[1340] UNKNOWN_USER is not a user.
 
-PUBLIC
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get users for role unknown_role;
 
 --- SQL operation complete.
+>>
 >>grant component privilege "SHOW" on sql_operations to "PUBLIC";
 
 --- SQL operation complete.

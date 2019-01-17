@@ -399,7 +399,8 @@ void ex_send_bottom_tcb::registerSubtasks()
   // top node.
   getGlobals()->getScheduler()->registerUnblockSubtask(sWork,
 						       this,
-						       qSplit_.down);
+						       qSplit_.down,
+                                                       "WK");
   getGlobals()->getScheduler()->registerInsertSubtask(sWork,
 						      this,
 						      qSplit_.up);

@@ -100,9 +100,11 @@ bool keepaliveStatus = false;
 int keepaliveIdletime;
 int keepaliveIntervaltime;
 int keepaliveRetrycount;
+long epoch = -1;
 void watcher(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx);
 bool verifyPortAvailable(const char * idForPort, int portNumber);
 BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, char* strName, char* strValue);
+long  getEpoch(zhandle_t *zh);
 
 //only support positive number
 BOOL getNumberTemp( char* strValue, int& nValue )
@@ -651,6 +653,10 @@ catch(SB_Fatal_Excep sbfe)
 		exit(1);
 	}
 
+        // get the current epoch from zookeeper and also put a watch on it
+        // (to be even safer, take epoch as a command line arg)
+        epoch = getEpoch(zh);
+
 //LCOV_EXCL_START
 // when a server dies, the MXOAS sends message to CFG. CFG creates the MXOSRVR process
 // and passess only one command line atribute: -SQL CLEANUP OBSOLETE VOLATILE TABLES
@@ -987,6 +993,18 @@ void watcher(zhandle_t *zzh, int type, int state, const char *path, void *watche
             shutdownThisThing=1;
             zh=0;
         }
+    }
+
+    if (type == ZOO_CHANGED_EVENT) {
+      string masterNode(zkRootNode);
+
+      masterNode.append("/dcs/master");
+
+      if (masterNode.compare(path) == 0) {
+        if (getEpoch(zzh) != epoch) {
+          shutdownThisThing=1;
+        }
+      }
     }
 }
 
@@ -1536,4 +1554,24 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 
 }
 
+// The "epoch" is a time period between configuration changes in the
+// system. When such a configuration change happens (e.g. the
+// executable of the mxosrvr is replaced, or a system default is being
+// changed), we want to stop all existing mxosrvrs once they become
+// idle and replace them with new ones. Therefore, keep a watch on
+// this value and exit when it changes and when our state is or
+// becomes idle.
+long  getEpoch(zhandle_t *zh) {
+  char path[2000];
+  char zkData[1000];
+  int zkDataLen = sizeof(zkData);
+  int result = -1;
 
+  snprintf(path, sizeof(path), "%s/dcs/master", zkRootNode);
+  int rc = zoo_get(zh, path, 1, zkData, &zkDataLen, NULL);
+
+  if (rc == ZOK && zkDataLen > 0)
+    result = atol(zkData);
+
+  return result;
+}

@@ -62,6 +62,7 @@
 
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLCreateIndex.h"
+#include "StmtDDLonHiveObjects.h"
 #include "ComDistribution.h"
 #include "TrafDDLdesc.h"
 
@@ -957,60 +958,60 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     description += "small_scanner: " ;
     description += "ON " ;
   }
-  size_t BUFFER_SIZE=512;
-  char buf[BUFFER_SIZE];
+  size_t TMP_BUFFER_SIZE=512;
+  char buf[TMP_BUFFER_SIZE];
 
   if ((((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner())>0.0) {
      description += "parallel_scanner: " ;
-     snprintf(buf, BUFFER_SIZE, "%g ", ((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner());
+     snprintf(buf, TMP_BUFFER_SIZE, "%g ", ((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner());
      description += buf;
   }
 
   if ( getProbes().getValue() > 0.0 ) {
     description += "probes: "; // total number of probes
-    snprintf(buf, BUFFER_SIZE, "%g ", getProbes().getValue());
+    snprintf(buf, TMP_BUFFER_SIZE, "%g ", getProbes().getValue());
     description += buf;
   }
 
   if ( getSuccessfulProbes().getValue() > 0.0 ) {
     description += "successful_probes: "; // # of probes returning data
-    snprintf(buf, BUFFER_SIZE, "%g ", getSuccessfulProbes().getValue());
+    snprintf(buf, TMP_BUFFER_SIZE, "%g ", getSuccessfulProbes().getValue());
     description += buf;
   }
 
   if ( getUniqueProbes().getValue() > 0.0 ) {
      description += "unique_probes: "; // # of probes returning 1 row
-     snprintf(buf, BUFFER_SIZE, "%g ", getUniqueProbes().getValue());
+     snprintf(buf, TMP_BUFFER_SIZE, "%g ", getUniqueProbes().getValue());
      description += buf;
   }
 
   if ( getDuplicatedSuccProbes().getValue() > 0.0 ) {
      description += "duplicated_succ_probes: "; // # of succ probes returning
-     snprintf(buf, BUFFER_SIZE, "%g ", getDuplicatedSuccProbes().getValue());  // more than 1 row
+     snprintf(buf, TMP_BUFFER_SIZE, "%g ", getDuplicatedSuccProbes().getValue());  // more than 1 row
      description += buf;
   }
 
   if ( getEstRowsAccessed().getValue() ) {
      description += "rows_accessed: "; // #  rows accessed
-     snprintf(buf, BUFFER_SIZE, "%g ", getEstRowsAccessed().getValue());
+     snprintf(buf, TMP_BUFFER_SIZE, "%g ", getEstRowsAccessed().getValue());
      description += buf;
   }
   if (((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getUseSnapshotScan())
   {
     description += "use_snapshot_scan: ";
-    snprintf(buf, BUFFER_SIZE, "%s ", "TRUE" );
+    snprintf(buf, TMP_BUFFER_SIZE, "%s ", "TRUE" );
     description += buf;
 
     description += "full_table_name: ";
-    snprintf(buf, BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getTableName());
+    snprintf(buf, TMP_BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getTableName());
     description += buf;
 
     description += "snapshot_name: ";
-    snprintf(buf, BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapshotName());
+    snprintf(buf, TMP_BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapshotName());
     description += buf;
 
     description += "snapshot_temp_location: ";
-    snprintf(buf, BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation());
+    snprintf(buf, TMP_BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation());
     description += buf;
 
   }
@@ -1035,7 +1036,7 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   // now get columns_retrieved
   description += "columns_retrieved: ";
   //sprintf(buf, "%d ", retrievedCols().entries());
-  snprintf(buf, BUFFER_SIZE, "%d ", getIndexDesc()->getIndexColumns().entries());
+  snprintf(buf, TMP_BUFFER_SIZE, "%d ", getIndexDesc()->getIndexColumns().entries());
   description += buf;
   */
 
@@ -1123,13 +1124,62 @@ DDLExpr::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   char buf[200];
   NAString buffer;
 
-  buffer = "explain_information: not available.";
+  ExprNode *ddlNode = getDDLNode();
+  if (ddlNode)
+    {
+      if (ddlNode->getOperatorType() == DDL_ON_HIVE_OBJECTS)
+        {
+          StmtDDLonHiveObjects * hddl =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLonHiveObjects();
+          buffer = "explain_information: DDL on Hive object ";
+          buffer += NAString("ddl_operation: ") + hddl->getOperStr() + " ";
+          if (NOT hddl->getName().isNull())
+            buffer += NAString("object_name: ") + hddl->getName() + " ";
+          else
+            buffer += "object_name: unknown ";
+          buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
+          if (NOT hddl->getHiveDDL().isNull())
+            {
+              if (NOT hddl->getHiveDefaultDB().isNull())
+                buffer += NAString("hive_default_db: ") + hddl->getHiveDefaultDB() + " ";
+              buffer += NAString("hive_ddl: ") + hddl->getHiveDDL() + " ";
+            }
+          else
+            buffer += "hive_ddl: unknown ";
+        }
+    } // ddlNode
+
+  if (buffer.isNull())
+    buffer = "explain_information: not available.";
 
   explainTuple->setDescription(buffer);
   
   return(explainTuple);
 }
 
+ExplainTuple *
+ExeUtilHiveTruncate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
+                                            ComTdb * tdb, 
+                                            Generator *generator)
+{
+  char buf[200];
+  NAString buffer;
+
+  ComTdbExeUtilHiveTruncate *ctdb = (ComTdbExeUtilHiveTruncate*)tdb;
+  if (ctdb->getTableName() != NULL)
+    buffer += NAString("table_name: ") + ctdb->getTableName() + " ";
+  else
+    buffer += "table_name: unknown ";
+  //  buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
+  if (NOT getHiveTruncQuery().isNull())
+    buffer += NAString("hive_trunc_query: ") + getHiveTruncQuery() + " ";
+  else
+    buffer += "hive_trunc_query: unknown ";
+
+  explainTuple->setDescription(buffer);
+  
+  return(explainTuple);
+}
 
 ExplainTuple*
 GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
@@ -2096,6 +2146,41 @@ ExplainTuple * ExeUtilWnrInsert::addSpecificExplainInfo(
   explainTuple->setDescription(buf);
 
   sprintf(buf, "target_table_name: %s ", myTdb->getTableName());
+  explainTuple->setDescription(buf);
+
+  return(explainTuple);
+}
+
+ExplainTuple * ExeUtilCreateTableAs::addSpecificExplainInfo( 
+     ExplainTupleMaster *explainTuple, 
+     ComTdb *tdb, 
+     Generator *generator)
+{
+
+  Lng32 maxBufLen = 2000;
+  maxBufLen = MAXOF(maxBufLen, ctQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, siQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, viQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, usQuery_.length());
+
+  maxBufLen = MINOF(maxBufLen, 4000);
+  maxBufLen++;
+
+  char buf[maxBufLen];
+  snprintf(buf, maxBufLen, "CreateQuery: %s ", 
+           (ctQuery_.length() > 0 ? ctQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "InsertQuery: %s ", 
+           (viQuery_.length() > 0 ? viQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+          
+  snprintf(buf, maxBufLen, "UpsertLoadQuery: %s ", 
+           (siQuery_.length() > 0 ? siQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "UpdStatsQuery: %s ", 
+           (usQuery_.length() > 0 ? usQuery_.data() : "NULL"));
   explainTuple->setDescription(buf);
 
   return(explainTuple);

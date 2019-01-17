@@ -286,6 +286,8 @@ void dumpTrafStack(LIST(TrafAddrStack *) *la, const char *header, bool toFile = 
 
 Int16 getBDRClusterName(char *bdrClusterName);
 
-SB_Phandle_Type *get_phandle_with_retry(char *pname, short *fserr = NULL);
+int get_phandle_with_retry(char *pname, SB_Phandle_Type *phandle);
+
+pid_t ComRtGetConfiguredPidMax();
 
 #endif // COMRTUTILS_H

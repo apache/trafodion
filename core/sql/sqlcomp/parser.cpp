@@ -71,6 +71,9 @@
 #include "str.h"
 #include "CompException.h"    // for CmpInternalException
 #include "ComCextdecs.h"
+#include "CmpSeabaseDDL.h"
+
+#include "StmtDDLonHiveObjects.h"
 
 #include "logmxevent.h"
 
@@ -162,6 +165,7 @@ Parser::Parser(const CmpContext* cmpContext)
   Lng32 initsize = 10;
   with_clauses_ =  new (wHeap_) NAHashDictionary<NAString,RelExpr>(&cmmHashFunc_NAString, initsize , TRUE, wHeap_) ;
 
+  hiveDDLInfo_ = new (wHeap_) HiveDDLInfo();
 }
 
 Parser::~Parser()
@@ -614,6 +618,41 @@ static NABoolean stringScanWillTerminateInParser(const NAWchar *str,
   return TRUE;
 }
 
+// ------------------------------------------------------------------------
+// processHiveDDL
+//
+// This method is called if a hive ddl statement is seen during parsing.
+// When that is detected, information is set in HiveDDLInfo 
+// and parsing phase errors out.
+// This is needed to avoid enhancing the parser with hive ddl syntax.
+// 
+// For example:
+//  create table hive.hive.t (a int) stored as sequencefile;
+// Traf parser does not undertand 'stored as sequencefile' syntax.
+// As soon as 'hive.hive.t' is detected, all relevant information is 
+// stored in HiveDDLInfo class and parsing phase is terminated.
+// This method then creates the needed structures so the create stmt could
+// be passed on to hive api layer.
+// 
+// Return:  'node' contains the generated tree.
+//          TRUE, if all ok.
+//          FALSE, if error.
+// -------------------------------------------------------------------------
+NABoolean Parser::processHiveDDL(Parser::HiveDDLInfo * hiveDDLInfo,
+                                 ExprNode** node)
+{
+  NABoolean rc = CmpSeabaseDDL::setupQueryTreeForHiveDDL
+    (hiveDDLInfo,
+     inputStr(),
+     (CharInfo::CharSet)inputStrCharSet(),
+     CmpCommon::getDefaultString(CATALOG),
+     CmpCommon::getDefaultString(SCHEMA),
+     node);
+
+  TheHostVarRoles->clear();
+  return rc;
+}
+
 // Parser::parseSQL is a private helper function that encapsulates most of
 // the work that used to be done in Parser::parseDML. It avoids duplicating
 // code shared by parseDML and parse_w_DML.
@@ -692,6 +731,7 @@ Int32 Parser::parseSQL
   {
     if (processSpecialDDL(inputStr(),
                           inputStrLen(),
+                          NULL,
                           (CharInfo::CharSet)inputStrCharSet(),
                           node))
       {
@@ -851,9 +891,35 @@ Int32 Parser::parseSQL
 	  *node = TheParseTree;
 	}
     }
+  else if (SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_)
+    {
+      // if a hive ddl object was found during parsing, generate ddl expr tree.
+      // foundDDL_ could be set during successful parsing as well as for
+      // a query which gave a syntax error.
+      if (TheParseTree)
+        delete TheParseTree; 
+      TheParseTree = NULL;
+      *node = NULL;
+      
+      if ((processHiveDDL(SqlParser_CurrentParser->hiveDDLInfo_, node)) &&
+          (*node != NULL))
+        parseError = 0; // hive DDL found and node has been generated
+      else
+        parseError = 1; // error
+    }
+  else if (SqlParser_CurrentParser->hiveDDLInfo_->backquotedDelimFound_)
+    {
+      // backquote delim identifier only valid for hive objects.
+      if (TheParseTree)
+        delete TheParseTree; 
+      TheParseTree = NULL;
+      parseError = 1;
+    }
   else
-    *node = TheParseTree;
-  
+    {
+      *node = TheParseTree;
+    }
+
   return parseError;
 }
 
@@ -1397,13 +1463,16 @@ NABoolean Parser::parseUtilISPCommand(const char* command, size_t cmdLen, CharIn
 //
 // Special DDL requests consist of:
 //   UPDATE STATISTICS
-//   CREATE TANDEM_CAT_REQUEST
+//   HIVE DDL request
 //
 // return TRUE: if a special DDL request or error.
 //            : if error, node returned is NULL.
 // return FALSE: if need to call SQL/MX parser after return from here.
 // -------------------------------------------------------------------------
-NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, CharInfo::CharSet inputStrCS, ExprNode** node)
+NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen,
+                                    ExprNode * childNode,
+                                    CharInfo::CharSet inputStrCS, 
+                                    ExprNode** node)
 {    
   if (cmpContext() && cmpContext()->internalCompile())
     return FALSE;
@@ -1442,33 +1511,9 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
       ns = ns.strip(NAString::leading, ' ');
     }
 
-  // if first token is PROCEDURE, skip it.  Remember that is was a procedure.
-  // remember the procedure name.
-  NABoolean procFound = FALSE;
-  NAString  procName;
-  position = ns.index("PROCEDURE", 0, NAString::ignoreCase);
-  if (position == 0)
-    {
-      // a static stmt. Skip to the SQL query.
-      // A static stmt is of the form:
-      //    PROCEDURE PROC_NAME (...) sql_query
-      procFound = TRUE;
-      // get rid of the leading PROCEDURE
-      ns = ns(9/*strlen("PROCEDURE")*/,ns.length()-9);
-      // get rid of white space
-      size_t endProcName = ns.index("(", 0);
-      procName = ns(0, endProcName);
-      TrimNAStringSpace(procName);
-
-      // SQL statement is first non-white space after the closing parenthesis
-      size_t sqlStmtPos = ns.index(")", 0);
-      ns = ns(sqlStmtPos+1, ns.length()-sqlStmtPos-1);
-      TrimNAStringSpace(ns,TRUE,FALSE);
-    }
-
   // Now go and see if request is a special DDL request
   NABoolean specialDDL = FALSE;
-  NABoolean xnNeeded = TRUE;
+  NABoolean xnNeeded = FALSE;
 
   // Check for UPDATE STATISTICS
   if (ns.index("UPDATE", 0, NAString::ignoreCase) == 0)
@@ -1485,13 +1530,19 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
 	  xnNeeded = FALSE;
 	}
     }
+  else if (childNode)
+    {
+      ustat = FALSE;
+      specialDDL = TRUE;
+      xnNeeded = FALSE;
+    }
 
   // If a special DDL is found, go ahead and create a DDLExpr node
   if (specialDDL)
     {
       *node = NULL;
       DDLExpr * ddlExpr = new(CmpCommon::statementHeap()) 
-	DDLExpr(NULL, (char *)ns.data(), inputStrCharSet, 
+	DDLExpr(childNode, (char *)ns.data(), inputStrCharSet, 
                 CmpCommon::statementHeap());
       RelExpr *queryExpr = new(CmpCommon::statementHeap())
 	RelRoot(ddlExpr);
@@ -1511,15 +1562,7 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
       
       StmtQuery* query = new(wHeap())StmtQuery(queryExpr);
 
-      if (procFound)
-	{
-	  NAString * procedureName = new(wHeap()) NAString(procName.data());
-	  StmtProcedure * proc = 
-	    new(wHeap()) StmtProcedure(procedureName, query);
-	  *node = proc;
-	}
-      else
-	*node = query;
+      *node = query;
 
       return TRUE;
     }

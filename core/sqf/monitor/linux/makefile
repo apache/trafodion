@@ -45,7 +45,7 @@ FLAGS+= -UNDEBUG
 # Uncomment the following line to see which compiler option controls
 #   a particular diagnostic (GNU compiler).
 # FLAGS+= -fdiagnostics-show-option
-FLAGS+= -Wall -Wextra
+FLAGS+= -Wall -Wextra -Werror
 
 # Flags for use in compiling Seabed trace modules
 SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
@@ -112,6 +112,7 @@ MONITORSRC += pnode.cxx
 MONITORSRC += intprocess.cxx
 MONITORSRC += healthcheck.cxx
 MONITORSRC += commaccept.cxx
+MONITORSRC += ptpcommaccept.cxx
 ifeq ($(USE_DMALLOC),1)
     MONITORSRC += $(OUTDIR)/dm.cxx
 endif
@@ -133,6 +134,10 @@ MONITORSRC += reqnodeinfo.cxx
 MONITORSRC += reqnodename.cxx
 MONITORSRC += reqnodeup.cxx
 MONITORSRC += reqnotify.cxx
+MONITORSRC += reqnsadd.cxx
+MONITORSRC += reqnsdelete.cxx
+MONITORSRC += reqnsstart.cxx
+MONITORSRC += reqnsstop.cxx
 MONITORSRC += reqopen.cxx
 MONITORSRC += reqprocinfo.cxx
 MONITORSRC += reqset.cxx
@@ -149,6 +154,7 @@ MONITORSRC += monrobsem.cxx
 MONITOROBJS = $(OUTDIR)/versmon.o
 MONITOROBJS += $(OUTDIR)/monitor.o
 MONITOROBJS += $(OUTDIR)/cluster.o
+MONITOROBJS += $(OUTDIR)/nameserver.o
 MONITOROBJS += $(OUTDIR)/open.o
 MONITOROBJS += $(OUTDIR)/process.o
 MONITOROBJS += $(OUTDIR)/notice.o
@@ -170,11 +176,13 @@ MONITOROBJS += $(OUTDIR)/clusterconf.o
 MONITOROBJS += $(OUTDIR)/lnodeconfig.o
 MONITOROBJS += $(OUTDIR)/pnodeconfig.o
 MONITOROBJS += $(OUTDIR)/persistconfig.o
+MONITOROBJS += $(OUTDIR)/nameserverconfig.o
 MONITOROBJS += $(OUTDIR)/lnode.o
 MONITOROBJS += $(OUTDIR)/pnode.o
 MONITOROBJS += $(OUTDIR)/intprocess.o
 MONITOROBJS += $(OUTDIR)/healthcheck.o
 MONITOROBJS += $(OUTDIR)/commaccept.o
+MONITOROBJS += $(OUTDIR)/ptpcommaccept.o
 ifeq ($(USE_DMALLOC),1)
     MONITOROBJS += $(OUTDIR)/dm.o
 endif
@@ -197,6 +205,10 @@ MONITOROBJS += $(OUTDIR)/reqnodename.o
 MONITOROBJS += $(OUTDIR)/reqpnodeinfo.o
 MONITOROBJS += $(OUTDIR)/reqnodeup.o
 MONITOROBJS += $(OUTDIR)/reqnotify.o
+MONITOROBJS += $(OUTDIR)/reqnsadd.o
+MONITOROBJS += $(OUTDIR)/reqnsdelete.o
+MONITOROBJS += $(OUTDIR)/reqnsstart.o
+MONITOROBJS += $(OUTDIR)/reqnsstop.o
 MONITOROBJS += $(OUTDIR)/reqopen.o
 MONITOROBJS += $(OUTDIR)/reqprocinfo.o
 MONITOROBJS += $(OUTDIR)/reqset.o
@@ -215,6 +227,60 @@ MONITOROBJS += $(OUTDIR)/monrobsem.o
 MONITOROBJS += $(OUTDIR)/CommonLogger.o
 MONITOROBJS += $(OUTDIR)/zclient.o
 MONITOROBJS += $(OUTDIR)/type2str.o
+MONITOROBJS += $(OUTDIR)/ptpclient.o
+MONITOROBJS += $(OUTDIR)/meas.o
+
+NSOBJS = $(OUTDIR)/versns.o
+NSOBJS += $(OUTDIR)/nsmonitor.o
+NSOBJS += $(OUTDIR)/nscluster.o
+NSOBJS += $(OUTDIR)/open.o
+NSOBJS += $(OUTDIR)/nsprocess.o
+NSOBJS += $(OUTDIR)/props.o
+NSOBJS += $(OUTDIR)/nsconfig.o
+NSOBJS += $(OUTDIR)/monlogging.o
+NSOBJS += $(OUTDIR)/monprof.o
+NSOBJS += $(OUTDIR)/nsmontrace.o
+NSOBJS += $(OUTDIR)/monsonar.o
+NSOBJS += $(OUTDIR)/threadtls.o
+NSOBJS += $(OUTDIR)/trace.o
+NSOBJS += $(OUTDIR)/otrace.o
+NSOBJS += $(OUTDIR)/nsredirector.o
+NSOBJS += $(OUTDIR)/lock.o
+NSOBJS += $(OUTDIR)/clusterconf.o
+NSOBJS += $(OUTDIR)/lnodeconfig.o
+NSOBJS += $(OUTDIR)/pnodeconfig.o
+NSOBJS += $(OUTDIR)/persistconfig.o
+NSOBJS += $(OUTDIR)/nameserverconfig.o
+NSOBJS += $(OUTDIR)/nslnode.o
+NSOBJS += $(OUTDIR)/nspnode.o
+NSOBJS += $(OUTDIR)/intprocess.o
+NSOBJS += $(OUTDIR)/nshealthcheck.o
+NSOBJS += $(OUTDIR)/nscommaccept.o
+NSOBJS += $(OUTDIR)/nscommacceptmon.o
+ifeq ($(USE_DMALLOC),1)
+    NSOBJS += $(OUTDIR)/dm.o
+endif
+NSOBJS += $(OUTDIR)/nsreqworker.o
+NSOBJS += $(OUTDIR)/nsreqqueue.o
+NSOBJS += $(OUTDIR)/nsreqdelproc.o
+NSOBJS += $(OUTDIR)/nsreqstop.o
+NSOBJS += $(OUTDIR)/nsreqnewproc.o
+NSOBJS += $(OUTDIR)/nsreqnodedown.o
+NSOBJS += $(OUTDIR)/nsreqprocinfo.o
+NSOBJS += $(OUTDIR)/nsreqprocinfons.o
+NSOBJS += $(OUTDIR)/nsreqstart.o
+NSOBJS += $(OUTDIR)/nsreqshutdown.o
+ifeq ($(USE_FORK_SUSPEND_RESUME),1)
+    NSOBJS += $(OUTDIR)/rs.o
+endif
+NSOBJS += $(OUTDIR)/nsreplicate.o
+NSOBJS += $(OUTDIR)/gentrap.o
+NSOBJS += $(OUTDIR)/monrobsem.o
+NSOBJS += $(OUTDIR)/CommonLogger.o
+NSOBJS += $(OUTDIR)/zclient.o
+NSOBJS += $(OUTDIR)/type2str.o
+NSOBJS += $(OUTDIR)/meas.o
+
 
 SHELLOBJS = $(OUTDIR)/shell.o
 SHELLOBJS += $(OUTDIR)/monclio.o
@@ -224,6 +290,7 @@ SHELLOBJS += $(OUTDIR)/clusterconf.o
 SHELLOBJS += $(OUTDIR)/lnodeconfig.o
 SHELLOBJS += $(OUTDIR)/pnodeconfig.o
 SHELLOBJS += $(OUTDIR)/persistconfig.o
+SHELLOBJS += $(OUTDIR)/nameserverconfig.o
 SHELLOBJS += $(OUTDIR)/cmsh.o
 SHELLOBJS += $(OUTDIR)/phnode.o
 SHELLOBJS += $(OUTDIR)/system.o
@@ -290,11 +357,13 @@ CONFOBJS += $(OUTDIR)/clusterconf.o
 CONFOBJS += $(OUTDIR)/lnodeconfig.o
 CONFOBJS += $(OUTDIR)/pnodeconfig.o
 CONFOBJS += $(OUTDIR)/persistconfig.o
+CONFOBJS += $(OUTDIR)/nameserverconfig.o
 
 TYPE2STR_SRC = type2str.cxx
 TYPE2STR_OBJS = $(OUTDIR)/type2str.o
 
 ALLOBJS = $(MONITOROBJS)
+ALLOBJS += $(NSOBJS)
 ALLOBJS += $(SHELLOBJS)
 ALLOBJS += $(CLIENTOBJS)
 ALLOBJS += $(WATCHDOGOBJS)
@@ -316,6 +385,7 @@ PGMS +=  $(BINEXPDIR)/shell
 PGMS +=  $(BINEXPDIR)/sqwatchdog
 PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
+PGMS +=  $(BINEXPDIR)/trafns
 
 TEST_PGMS = $(OUTDIR)/client
 TEST_PGMS += $(OUTDIR)/client2
@@ -483,6 +553,14 @@ $(BINEXPDIR)/monitor: $(MONITOROBJS)
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
 	@$(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+$(BINEXPDIR)/trafns: $(NSOBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: Linker'
+	@echo $(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto
+	@$(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto
 	@echo 'Finished building target: $@'
 	@echo ' '
 

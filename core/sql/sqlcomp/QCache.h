@@ -1354,7 +1354,6 @@ class LRUList : public NABasicObject {
       iterator tmp = (iterator)(pos.node_->next_);
       pos.node_->prev_->next_ = pos.node_->next_;
       pos.node_->next_->prev_ = pos.node_->prev_;
-      pos.node_->data_.~KeyDataPair(); // destroy data_
       putNode(pos.node_);
       --length_;
       return tmp;

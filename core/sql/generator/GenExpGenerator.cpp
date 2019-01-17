@@ -4289,6 +4289,7 @@ short ExpGenerator::generateSequenceExpression(const ValueIdSet &sequenceItems,
   if (sequenceItems.isEmpty()) return 0;
 
   initExprGen();
+  setInSequenceFuncExpr(TRUE);
   startExprGen(&expr, ex_expr::exp_ARITH_EXPR);
 
   // Loop over the sequence items calling the protective short-circuit
@@ -4309,6 +4310,7 @@ short ExpGenerator::generateSequenceExpression(const ValueIdSet &sequenceItems,
       itmExpr->codeGen(generator);
     }
 
+  setInSequenceFuncExpr(FALSE);
   // Finalize the expression generation machinery.
   //
   endExprGen(&expr, 1);

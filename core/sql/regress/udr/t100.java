@@ -95,6 +95,10 @@ class t100
     {
         OUT2[0] = IN1;
     }
+    public static void T100_io_mmm(Timestamp IN1, Timestamp[] OUT2)
+    {
+        OUT2[0] = IN1;
+    }
 
     //
     // IN, INOUT

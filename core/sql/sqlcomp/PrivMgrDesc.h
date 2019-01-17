@@ -289,47 +289,50 @@ class PrivMgrCoreDesc
                 const bool value);
     void  setAllPrivAndWgo(const bool val);
 
-    void setAllDMLGrantPrivileges(const bool wgo,
-                                  const bool updatable=true,
-                                  const bool insertable=true,
-                                  const bool deletable=true);
-    void setAllDDLGrantPrivileges(const bool wgo);
-    void setAllObjectGrantPrivilege(const ComObjectType objectType,const bool wgo);
-    void setAllRevokePrivileges(const bool grantOptionFor);
-    void setAllDMLRevokePrivileges(const bool grantOptionFor);
-    void setAllDDLRevokePrivileges(const bool grantOption);
+    void setAllObjectPrivileges(
+      const ComObjectType objectType,
+      const bool priv,
+      const bool wgo);
    
-    inline void setAllLibraryGrantPrivileges(const bool wgo)
+    inline void setAllLibraryGrantPrivileges(
+      const bool priv,
+      const bool wgo)
     {
-      setPriv(UPDATE_PRIV, TRUE);
+      setPriv(UPDATE_PRIV, priv);
       setWgo(UPDATE_PRIV, wgo);
-      setPriv(USAGE_PRIV, TRUE);
+      setPriv(USAGE_PRIV, priv);
       setWgo(USAGE_PRIV, wgo);
     }
     
-    inline void setAllTableGrantPrivileges(const bool wgo)
+    inline void setAllTableGrantPrivileges(
+      const bool priv,
+      const bool wgo)
     {
-      setPriv(SELECT_PRIV, TRUE);
+      setPriv(SELECT_PRIV, priv);
       setWgo(SELECT_PRIV, wgo);
-      setPriv(INSERT_PRIV, TRUE);
+      setPriv(INSERT_PRIV, priv);
       setWgo(INSERT_PRIV, wgo);
-      setPriv(DELETE_PRIV, TRUE);
+      setPriv(DELETE_PRIV, priv);
       setWgo(DELETE_PRIV, wgo);
-      setPriv(UPDATE_PRIV, TRUE);
+      setPriv(UPDATE_PRIV, priv);
       setWgo(UPDATE_PRIV, wgo);
-      setPriv(REFERENCES_PRIV, TRUE);
+      setPriv(REFERENCES_PRIV, priv);
       setWgo(REFERENCES_PRIV, wgo);
     }
 
-    inline void setAllSequenceGrantPrivileges(const bool wgo)
+    inline void setAllSequenceGrantPrivileges(
+      const bool priv,
+      const bool wgo)
     {
-      setPriv(USAGE_PRIV, TRUE);
+      setPriv(USAGE_PRIV, priv);
       setWgo(USAGE_PRIV, wgo);
     }
 
-    inline void setAllUdrGrantPrivileges(const bool wgo)
+    inline void setAllUdrGrantPrivileges(
+      const bool priv,
+      const bool wgo)
     {
-      setPriv(EXECUTE_PRIV, TRUE);
+      setPriv(EXECUTE_PRIV, priv);
       setWgo(EXECUTE_PRIV, wgo);
     }
 
@@ -510,14 +513,6 @@ public:
    bool       getOneTablePriv(const PrivType which) const;
    bool       getOneTableWgo(const PrivType which) const;
 
-   //bool       getOneColPriv(const PrivType which,
-   //                               const int32_t ordinal
-   //                              ) const;
-   //bool       getOneColWgo(const PrivType which,
-   //                              const int32_t ordinal
-   //                              ) const;
-   //PrivMgrCoreDesc&        getOneColOrdPriv(const int32_t ordinal) const;
-
    // Mutators
 
    void setGrantee(const int32_t&grantee) { grantee_ = grantee; }
@@ -525,58 +520,52 @@ public:
    void resetTablePrivs() { tableLevel_.setAllPrivAndWgo(0); }
    void setColumnPrivs(const NAList<PrivMgrCoreDesc> &privs) { columnLevel_ = privs; }
 
-   // This will replace setAllDMLGrantPrivileges for the table level.  This function
-   // is also used to set a view's privileges as well.
-   void setAllTableGrantPrivileges(const bool wgo)
+   void setAllObjectPrivileges(
+     const ComObjectType objectType,
+     const bool priv,
+     const bool wgo)
+   {
+     PrivMgrCoreDesc objectCorePrivs;
+     objectCorePrivs.setAllObjectPrivileges(objectType, priv, wgo);
+     setTablePrivs(objectCorePrivs);
+   }
+
+   void setAllTableGrantPrivileges(const bool priv, const bool wgo)
    {
      PrivMgrCoreDesc tableCorePrivs;
-     
-     tableCorePrivs.setAllTableGrantPrivileges(wgo);
-
+     tableCorePrivs.setAllTableGrantPrivileges(priv, wgo);
      setTablePrivs(tableCorePrivs);
    }
 
-   void setAllLibraryGrantPrivileges(const bool wgo)
+   void setAllLibraryGrantPrivileges(const bool priv, const bool wgo)
    {
      PrivMgrCoreDesc tableCorePrivs;
-     
-     tableCorePrivs.setAllLibraryGrantPrivileges(wgo);
-     
+     tableCorePrivs.setAllLibraryGrantPrivileges(priv, wgo);
      setTablePrivs(tableCorePrivs);
    }
 
-   void setAllUdrGrantPrivileges(const bool wgo)
+   void setAllUdrGrantPrivileges(const bool priv, const bool wgo)
    {
      PrivMgrCoreDesc tableCorePrivs;
-     
-     tableCorePrivs.setAllUdrGrantPrivileges(wgo);
-     
+     tableCorePrivs.setAllUdrGrantPrivileges(priv, wgo);
      setTablePrivs(tableCorePrivs);
    }
 
-   void setAllSequenceGrantPrivileges(const bool wgo)
+   void setAllSequenceGrantPrivileges(const bool priv, const bool wgo)
    {
      PrivMgrCoreDesc corePrivs;
-     
-     corePrivs.setAllSequenceGrantPrivileges(wgo);
-     
+     corePrivs.setAllSequenceGrantPrivileges(priv, wgo);
      setTablePrivs(corePrivs);
    }
-   void setAllTableRevokePrivileges(const bool grantOption);
-   void setAllLibraryRevokePrivileges(const bool grantOption);
-   void setAllUdrRevokePrivileges(const bool grantOption);
-   void setAllSequenceRevokePrivileges(const bool grantOption);
 
    bool getHasPublicPriv() { return hasPublicPriv_; }
    void setHasPublicPriv(bool hasPublicPriv) { hasPublicPriv_ = hasPublicPriv; }
 
    PrivMgrCoreDesc::PrivResult grantTablePrivs(PrivMgrCoreDesc& priv)
    { return tableLevel_.grantPrivs(priv); }
-   //PrivMgrCoreDesc::PrivResult grantColumnPrivs(PrivMgrCoreDesc& priv, const int32_t ordinal);
 
    PrivMgrCoreDesc::PrivResult revokeTablePrivs(PrivMgrCoreDesc& priv)
    { return tableLevel_.revokePrivs(priv); }
-   //PrivMgrCoreDesc::PrivResult revokeColumnPrivs(PrivMgrCoreDesc& priv, const int32_t ordinal);
 
 
    void pTrace() const;   // Debug trace
@@ -590,6 +579,36 @@ private:
    bool                            hasPublicPriv_;
 };
 
+
+/* *******************************************************************
+ * Class PrivMgrDescList -- A list of PrivMgrDesc pointers
+ * ****************************************************************** */
+
+class PrivMgrDescList : public LIST(PrivMgrDesc *)
+{
+  public:
+
+  // constructor
+  PrivMgrDescList(CollHeap *heap)
+   : LIST(PrivMgrDesc *)(heap),
+     heap_(heap)
+  {}
+
+  // virtual destructor
+  virtual ~PrivMgrDescList()
+  {
+    for (CollIndex i = 0; i < entries(); i++)
+      NADELETE(operator[](i), PrivMgrDesc, heap_);
+    clear();
+  }
+
+  CollHeap *getHeap() { return heap_; }
+
+  private:
+
+  CollHeap *heap_;
+
+}; // class PrivMgrDescList
 
 
 

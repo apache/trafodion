@@ -146,6 +146,7 @@ public:
   //virtual ExprNode * getChild(long index);
 
   ExprNode * getExprNode(){return exprNode_;};
+  const ExprNode * getExprNode() const {return exprNode_;};
 
   //virtual void addLocalExpr(LIST(ExprNode *) &xlist,
   //		    LIST(NAString) &llist) const;
@@ -256,11 +257,13 @@ public:
 				       ComTdb * tdb, 
 				       Generator *generator);
 
+  void setReturnStatus(NABoolean v) { returnStatus_ = v; }
   virtual NABoolean producesOutput() { return returnStatus_;}
   virtual const char 	*getVirtualTableName();
   virtual TrafDesc 	*createVirtualTableDesc();
 
   ExprNode * getDDLNode(){return getExprNode();};
+  const ExprNode * getDDLNode() const {return getExprNode();};
 
   char * getDDLStmtText()
   {
@@ -369,6 +372,10 @@ public:
   {(v ? flags_ |= PURGEDATA : flags_ &= ~PURGEDATA); }
   NABoolean purgedata() { return (flags_ & PURGEDATA) != 0;}
 
+  void setPurgedataIfExists(NABoolean v)
+  {(v ? flags_ |= PURGEDATA_IF_EXISTS : flags_ &= ~PURGEDATA_IF_EXISTS); }
+  NABoolean purgedataIfExists() { return (flags_ & PURGEDATA_IF_EXISTS) != 0;}
+
   // this ddlexpr is created for 'showddl <obj>, explain' to
   // explain the object explObjName.
   void setShowddlExplain(NABoolean v)
@@ -409,6 +416,7 @@ public:
     SHOWDDL_EXPLAIN         = 0x040000,
     SHOWDDL_EXPLAIN_INT     = 0x080000,
     NO_LABEL_STATS          = 0x100000,
+    PURGEDATA_IF_EXISTS     = 0x200000,
   };
 
   // see method processSpecialDDL in sqlcomp/parser.cpp
@@ -484,7 +492,6 @@ public:
     CLEANUP_VOLATILE_TABLES_  = 5,
     GET_VOLATILE_INFO_        = 6,
     CREATE_TABLE_AS_          = 7,
-    FAST_DELETE_              = 8,
     GET_STATISTICS_           = 9,
     LONG_RUNNING_             = 11,
     GET_METADATA_INFO_        = 12,
@@ -511,9 +518,10 @@ public:
     HBASE_UNLOAD_TASK_        = 36,
     ORC_FAST_AGGR_            = 37,
     GET_QID_                  = 38,
-    HIVE_TRUNCATE_            = 39,
+    HIVE_TRUNCATE_LEGACY_     = 39,
     LOB_UPDATE_UTIL_          = 40,
-    HIVE_QUERY_               = 41
+    HIVE_QUERY_               = 41,
+    HIVE_TRUNCATE_            = 45
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -981,6 +989,10 @@ public:
   // method to do code generation
   virtual short codeGen(Generator*);
 
+  ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
+				       ComTdb * tdb, 
+				       Generator *generator);
+
   virtual NABoolean explainSupported() { return TRUE; }
 
   virtual NABoolean producesOutput() { 
@@ -1011,90 +1023,23 @@ private:
   NABoolean deleteData_;
 };
 
-class ExeUtilFastDelete : public ExeUtilExpr
+class ExeUtilHiveTruncateLegacy : public ExeUtilExpr
 {
 public:
-  ExeUtilFastDelete(const CorrName &name,
-		    ExprNode * exprNode,
-		    char * stmtText,
-		    CharInfo::CharSet stmtTextCharSet,
-		    NABoolean doPurgedataCat = FALSE,
-		    NABoolean noLog = FALSE,
-		    NABoolean ignoreTrigger = FALSE,
-		    NABoolean isPurgedata = FALSE,
-		    CollHeap *oHeap = CmpCommon::statementHeap())
-       : ExeUtilExpr(FAST_DELETE_, name, exprNode, NULL, stmtText, stmtTextCharSet, oHeap),
-         doPurgedataCat_(doPurgedataCat),
-         noLog_(noLog), ignoreTrigger_(ignoreTrigger),
-         isPurgedata_(isPurgedata),
-         doParallelDelete_(FALSE),
-         doParallelDeleteIfXn_(FALSE),
-         offlineTable_(FALSE),
-         doLabelPurgedata_(FALSE),
-         numLOBs_(0),
-         lobNumArray_(oHeap)
-  {
-  };
-
-  virtual NABoolean isExeUtilQueryType() { return TRUE; }
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  virtual RelExpr * preCodeGen(Generator * generator,
-			       const ValueIdSet & externalInputs,
-			       ValueIdSet &pulledNewInputs);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-  
-  virtual NABoolean aqrSupported() { return TRUE; }
-
-private:
-  NABoolean doPurgedataCat_;
-
-  NABoolean noLog_;
-  NABoolean ignoreTrigger_;
-
-  NABoolean isPurgedata_;
-
-  // do regular parallel delete at runtime. Start a Xn, if oen doesn't
-  // exist.
-  NABoolean doParallelDelete_;
-
-  // do regular parallel delete if doParallelDelete is not chosen and
-  // there is a transaction running at runtime.
-  // If this is FALSE, then regular purgedata is invoked. 
-  NABoolean doParallelDeleteIfXn_;
-
-  NABoolean offlineTable_;
-
-  // use the new parallel label purgedata operation.
-  NABoolean doLabelPurgedata_;
-  
-  // if there are LOB columns.
-  Lng32 numLOBs_; // number of LOB columns
-  NAList<short> lobNumArray_; // array of shorts. Each short is the lob num
-};
-
-class ExeUtilHiveTruncate : public ExeUtilExpr
-{
-public:
-  ExeUtilHiveTruncate(const CorrName &name,
-                      ConstStringList * pl,
-                      CollHeap *oHeap = CmpCommon::statementHeap())
-       : ExeUtilExpr(HIVE_TRUNCATE_, name, NULL, NULL, NULL, 
+  ExeUtilHiveTruncateLegacy(const CorrName &name,
+                            ConstStringList * pl,
+                            CollHeap *oHeap = CmpCommon::statementHeap())
+       : ExeUtilExpr(HIVE_TRUNCATE_LEGACY_, name, NULL, NULL, NULL, 
                      CharInfo::UnknownCharSet, oHeap),
-         pl_(pl), suppressModCheck_(FALSE), dropTableOnDealloc_(FALSE)
+         pl_(pl), suppressModCheck_(FALSE), dropTableOnDealloc_(FALSE),
+         noSecurityCheck_(FALSE)
   { }
-
+  
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
-
+  
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
-
+  
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
   virtual RelExpr * preCodeGen(Generator * generator,
@@ -1123,12 +1068,13 @@ public:
 
   ConstStringList* &partnList() { return pl_; }
 
-  NABoolean getSuppressModCheck() const           { return suppressModCheck_; }
+  NABoolean getSuppressModCheck() const         { return suppressModCheck_; }
   NABoolean getDropTableOnDealloc() const       { return dropTableOnDealloc_; }
+  NABoolean getNoSecurityCheck() const          { return noSecurityCheck_; }
 
-  void setSuppressModCheck(NABoolean v=TRUE)         { suppressModCheck_ = v; }
-  void setDropTableOnDealloc(NABoolean v=TRUE)     { dropTableOnDealloc_ = v; }
-
+  void setSuppressModCheck(NABoolean v=TRUE)    { suppressModCheck_ = v; }
+  void setDropTableOnDealloc(NABoolean v=TRUE)  { dropTableOnDealloc_ = v; }
+  void setNoSecurityCheck(NABoolean v)          { noSecurityCheck_ = v; }  
 private:
   NAString  hiveTableLocation_;
   NAString hiveHostName_;
@@ -1141,26 +1087,32 @@ private:
   ConstStringList * pl_;
   NABoolean suppressModCheck_;
   NABoolean dropTableOnDealloc_;
+
+  // if this truncate node is added internally to process 'insert overwrite'
+  // statement, then skip security/privilege checks.
+  // Checks will be done when the corresponding insert node is processed.
+  NABoolean noSecurityCheck_;
 };
 
-class ExeUtilHiveQuery : public ExeUtilExpr
+///////////////////////////////////////////////////////////
+// ExeUtilHiveTruncate
+///////////////////////////////////////////////////////////
+class ExeUtilHiveTruncate : public ExeUtilExpr
 {
 public:
-  enum HiveSourceType
-    {
-      FROM_STRING,
-      FROM_FILE
-    };
-
-  ExeUtilHiveQuery(const NAString &hive_query,
-                   HiveSourceType type,
-                   CollHeap *oHeap = CmpCommon::statementHeap())
-       : ExeUtilExpr(HIVE_QUERY_, CorrName("dummyName"), 
-                     NULL, NULL, 
-                     NULL,
+  ExeUtilHiveTruncate(CorrName &name,
+                      NAString &hiveTableName,
+                      NAString &hiveTruncQuery,
+                      CollHeap *oHeap = CmpCommon::statementHeap())
+       : ExeUtilExpr(HIVE_TRUNCATE_, name, NULL, NULL, NULL, 
                      CharInfo::UnknownCharSet, oHeap),
-         type_(type),
-         hiveQuery_(hive_query)
+         hiveTableName_(hiveTableName),
+         hiveTruncQuery_(hiveTruncQuery),
+         dropTableOnDealloc_(FALSE),
+         noSecurityCheck_(FALSE),
+         hiveExternalTable_(FALSE),
+         ifExists_(FALSE),
+         tableNotExists_(FALSE)
   { }
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
@@ -1173,15 +1125,78 @@ public:
   // method to do code generation
   virtual short codeGen(Generator*);
   
+  ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
+				       ComTdb * tdb, 
+				       Generator *generator);
+  
+  virtual NABoolean aqrSupported() { return TRUE; }
+
+  const NAString &getHiveTableName() const { return hiveTableName_; }
+  const NAString &getHiveTruncQuery() const { return hiveTruncQuery_; }
+
+  NABoolean getDropTableOnDealloc() const       { return dropTableOnDealloc_; }
+  NABoolean getNoSecurityCheck() const          { return noSecurityCheck_; }
+  NABoolean getHiveExternalTable() const        { return hiveExternalTable_; }
+  NABoolean getIfExists() const                 { return ifExists_; }
+  NABoolean getTableNotExists()   const         { return tableNotExists_; }
+
+  void setDropTableOnDealloc(NABoolean v=TRUE)  { dropTableOnDealloc_ = v; }
+  void setNoSecurityCheck(NABoolean v)          { noSecurityCheck_ = v; }  
+  void setHiveExternalTable(NABoolean v)        { hiveExternalTable_ = v; }
+  void setIfExists(NABoolean v)                 { ifExists_ = v; }
+  void setTableNotExists(NABoolean v)           { tableNotExists_ = v; }
+
+private:
+
+  NAString hiveTableName_;
+  NAString hiveTruncQuery_;
+  NABoolean dropTableOnDealloc_;
+
+  // if this truncate node is added internally to process 'insert overwrite'
+  // statement, then skip security/privilege checks.
+  // Checks will be done when the corresponding insert node is processed.
+  NABoolean noSecurityCheck_;
+
+  // TRUE: Hive External table. FALSE: Hive Managed table.
+  NABoolean hiveExternalTable_;
+
+  // if 'if exist' clause is specified
+  NABoolean ifExists_;
+
+  // if table does not exist
+  NABoolean tableNotExists_;
+};
+
+class ExeUtilHiveQuery : public ExeUtilExpr
+{
+public:
+  enum HiveSourceType
+    {
+      FROM_STRING,
+      FROM_FILE
+    };
+  ExeUtilHiveQuery(const NAString &hive_query,
+                   HiveSourceType type,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+       : ExeUtilExpr(HIVE_QUERY_, CorrName("dummyName"), 
+                     NULL, NULL, 
+                     NULL,
+                     CharInfo::UnknownCharSet, oHeap),
+         type_(type),
+         hiveQuery_(hive_query)
+  { }
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+  virtual short codeGen(Generator*);
   NAString &hiveQuery() { return hiveQuery_; }
   const NAString &hiveQuery() const { return hiveQuery_; }
-
   HiveSourceType sourceType() { return type_;}
 private:
   HiveSourceType type_;
   NAString hiveQuery_;
 };
-
 class ExeUtilMaintainObject : public ExeUtilExpr
 {
 public:

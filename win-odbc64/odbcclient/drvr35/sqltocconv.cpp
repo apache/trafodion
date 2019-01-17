@@ -32,6 +32,7 @@
 #include "nskieee.h"
 #include "DiagFunctions.h"
 #include "csconvert.h" 
+#include "lob.h"
 #include <errno.h>
 
 #define MAXCHARLEN 32768 //32K
@@ -153,7 +154,9 @@ unsigned long ODBC::BigNum_To_Ascii_Helper(char * source,
 // totalReturnedLength is a Input/Output parameter
 // *totalReturnedLength = Offset in Input
 // srcLength includes NULL for SQL_CHAR Type, hence srcLength is srcLength-1 for SQL_CHAR fields
-unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
+unsigned long ODBC::ConvertSQLToC(CConnect *m_ConnectHandle,
+                            SQLHANDLE   InputHandle,
+                            SQLINTEGER	ODBCAppVersion,
 							DWORD		DataLangId,
 							SQLSMALLINT	SQLDataType,
 							SQLSMALLINT	ODBCDataType,
@@ -373,6 +376,29 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	if (srcDataPtr == NULL)
 		return IDS_HY_000;
 
+    if (SQLDataType == SQLTYPECODE_BLOB || SQLDataType == SQLTYPECODE_CLOB)
+    {
+        if (srcPrecision >= 0xFFFFFFF)
+        {
+            DataLen = *(int *)srcDataPtr;
+            DataPtr = (char *)srcDataPtr + 4;
+        }
+        else
+        {
+            DataLen = *(USHORT *)srcDataPtr;
+            DataPtr = (char *)srcDataPtr + 2;
+        }
+
+        IDL_long dataRead = targetLength;
+        if (getLobData(m_ConnectHandle, InputHandle, (IDL_string)DataPtr, DataLen, targetDataPtr, dataRead) != true)
+            return SQL_ERROR;
+
+        if (targetStrLenPtr != NULL)
+            *targetStrLenPtr = dataRead;
+
+        if (dataRead <= 0) return SQL_NO_DATA;
+        return SQL_SUCCESS;
+    }
 	
 //	if(charsetSupport)
 		LangId = LANG_NEUTRAL;

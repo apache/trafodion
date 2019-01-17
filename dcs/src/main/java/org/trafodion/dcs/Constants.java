@@ -427,7 +427,7 @@ public final class Constants {
     public static final String DEFAULT_DCS_CLOUD_COMMAND = "nova list | grep -v '^+' | grep -w `hostname` | sed 's/.*=\\([0-9.]*\\), \\([0-9.]*\\).*$/\\1,\\2/'";
 
     /** User program feature is enabled */
-    public static final String DCS_TRAFODION_HOME = "dcs.trafodion.home";
+    public static final String DCS_TRAFODION_LOG = "dcs.trafodion.log";
 
     /** The sys_shell script name */
     public static final String SYS_SHELL_SCRIPT_NAME = "sys_shell.py";

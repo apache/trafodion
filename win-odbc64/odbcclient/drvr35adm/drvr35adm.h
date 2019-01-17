@@ -93,7 +93,7 @@ const char INI_REPLACEMENT_CHAR[]	= "ReplacementCharacter";
 const char INI_COMPRESSION[]		= "Compression";
 
 const char TRACE_PATH[] = "Software\\ODBC\\ODBC.INI\\ODBC";
-const char DRIVER_NAME[] = "TRAF ODBC 2.2";
+const char DRIVER_NAME[] = "TRAF ODBC 2.3";
 const char CREATE_NEW_DSN[] = "Create a New Trafodion ODBC Data Source to Trafodion Database";
 const char CONFIGURE_DSN1[] = "Trafodion ODBC Data Source '";
 const char DRVR_MSG_DLL[] = "traf_odbcDrvMsg_intl0100.dll";

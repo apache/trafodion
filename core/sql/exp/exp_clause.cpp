@@ -224,6 +224,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_POSITION_DOUBLEBYTE:
 	  setClassID(FUNC_POSITION_DOUBLEBYTE_ID);
 	  break;
+	case ITM_SPLIT_PART:
+	  setClassID(FUNC_SPLIT_PART_ID);
+	  break;
 	case ITM_CONCAT:
 	  setClassID(FUNC_CONCAT_ID);
 	  break;
@@ -506,6 +509,7 @@ ex_clause::ex_clause(clause_type type,
 	  setClassID(FUNC_QUERYID_EXTRACT);
 	  break;
 	case ITM_UNIQUE_ID:
+	case ITM_UNIQUE_ID_SYS_GUID:
 	case ITM_UNIQUE_SHORT_ID:
 	  setClassID(FUNC_UNIQUE_ID);
 	  break;
@@ -722,6 +726,9 @@ char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_POSITION_DOUBLEBYTE_ID:
       GetVTblPtr(vtblPtr, ex_function_position_doublebyte);
+      break;
+    case ex_clause::FUNC_SPLIT_PART_ID:
+      GetVTblPtr(vtblPtr, ex_function_split_part);
       break;
     case ex_clause::FUNC_CONCAT_ID:
       GetVTblPtr(vtblPtr, ex_function_concat);
@@ -1508,6 +1515,7 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_LAST_ITEM_OP: return "ITM_LAST_ITEM_OP";
     case ITM_UNIQUE_ID: return "ITM_UNIQUE_ID";
+    case ITM_UNIQUE_ID_SYS_GUID: return "ITM_UNIQUE_ID_SYS_GUID";
     case ITM_UNIQUE_SHORT_ID: return "ITM_UNIQUE_SHORT_ID";
     case ITM_ROWNUM: return "ITM_ROWNUM";
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";
@@ -1632,7 +1640,9 @@ ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
                   (oper_type == ITM_NEGATE ? 2 : 3), attr, space),
        flags_(0)
 {
+  setAugmentedAssignOperation(TRUE);
   arithRoundingMode_ = (char)arithRoundingMode;
+
 
   if (divToDownscale)
     setDivToDownscale(TRUE);
@@ -1659,6 +1669,7 @@ ex_arith_clause::ex_arith_clause(clause_type type,
 				   flags_(0)
  
 {
+  setAugmentedAssignOperation(TRUE);
   setInstruction(); 
 }
 

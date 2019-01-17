@@ -1113,6 +1113,7 @@ void CPStartD::startProcs ( bool requiresDTM )
                 break;
             case ProcessType_DTM:
             case ProcessType_PSD:
+            case ProcessType_NameServer:
             case ProcessType_Watchdog:
             default:
                 // Skip these, they are managed by DTM Lead and monitor processes

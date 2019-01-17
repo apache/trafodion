@@ -91,7 +91,7 @@ CREATE TABLE HBASE."_CELL_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 7181713655023564985 */
+/* ObjectUID = 6699276640720809174 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_CELL_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
 
@@ -114,7 +114,7 @@ CREATE TABLE HBASE."_ROW_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 7181713655023565067 */
+/* ObjectUID = 6699276640720809244 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_ROW_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
 
@@ -146,6 +146,9 @@ HBase Registered Tables in Catalog TRAFODION
 "_ROW_".T146T1
 "_ROW_".T146T3
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>
 >>create role t146_role1;
@@ -167,6 +170,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get external hbase objects, match '%T146%';
@@ -306,7 +312,7 @@ CREATE TABLE HBASE."_CELL_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 7181713655023564985 */
+/* ObjectUID = 6699276640720809174 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_CELL_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
   GRANT SELECT ON HBASE."_CELL_".T146T1 TO SQL_USER3 GRANTED BY DB__HBASEROLE;
@@ -334,7 +340,7 @@ CREATE TABLE HBASE."_ROW_".T146T1
 CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
 
 REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
-/* ObjectUID = 7181713655023565067 */
+/* ObjectUID = 6699276640720809244 */
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_ROW_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
   GRANT SELECT ON HBASE."_ROW_".T146T1 TO SQL_USER3 GRANTED BY DB__HBASEROLE;
@@ -518,6 +524,9 @@ HBase Registered Tables in Catalog TRAFODION
 "_CELL_".T146T1
 "_ROW_".T146T1
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>exit;
 
@@ -667,6 +676,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 "_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>exit;
@@ -822,6 +834,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 "_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>exit;
@@ -1094,6 +1109,9 @@ HBase Registered Tables in Catalog TRAFODION
 "_ROW_".T146T1
 "_ROW_".T146T3
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>exit;
 
@@ -1259,6 +1277,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 "_ROW_".T146T1
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>exit;
@@ -1524,6 +1545,9 @@ HBase Registered Tables in Catalog TRAFODION
 
 "_CELL_".T146T1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>exit;
 
@@ -1586,6 +1610,9 @@ SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
 SIDU-R-    TRAFODION._HB_MAP_.T146T2
 
+=======================
+ 8 row(s) returned
+
 --- SQL operation complete.
 >>
 >>drop hbase table t146t2;
@@ -1601,6 +1628,9 @@ SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
 SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1657,7 +1687,9 @@ SQL_USER3
 --- SQL operation failed with errors.
 >>get privileges for role db__hbaserole, match '%146%';
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>drop hbase table t146t2;
 
@@ -1666,7 +1698,9 @@ SQL_USER3
 --- SQL operation failed with errors.
 >>get privileges for role db__hbaserole, match '%146%';
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>exit;
 
@@ -1722,6 +1756,9 @@ SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
 SIDU-R-    TRAFODION._HB_MAP_.T146T2
 
+=======================
+ 8 row(s) returned
+
 --- SQL operation complete.
 >>
 >>drop hbase table t146t2;
@@ -1737,6 +1774,9 @@ SIDU-R-    HBASE._CELL_.T146T3
 SIDU-R-    HBASE._ROW_.T146T1
 SIDU-R-    HBASE._ROW_.T146T3
 SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>

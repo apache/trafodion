@@ -21,6 +21,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>
 >>-- succeed: DB__ROOT can create a library
@@ -41,6 +44,9 @@ Libraries in Schema TRAFODION.T132SCH
 =====================================
 
 T132_L1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>drop library t132_l1;
@@ -102,6 +108,9 @@ Libraries in Schema TRAFODION.T132SCH
 =====================================
 
 T132_L1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>drop library t132_l1;
@@ -171,6 +180,9 @@ Libraries in Schema TRAFODION.T132SCH
 
 T132_L1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>drop library t132_l1;
 
@@ -198,6 +210,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -248,6 +263,9 @@ Tables in Schema TRAFODION.T132SCH
 
 T132T1
 T132T2
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
@@ -326,7 +344,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
@@ -386,7 +404,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
@@ -394,7 +412,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 --- SQL operation complete.
 >>
 >>
->>-- if user belongs to DB__ROOTROLE, has DML privileges, so can populate indexes
+>>-- if user belongs to DB__ROOTROLE, DB__ROOTROLE does not have DML privileges
 >>grant role DB__ROOTROLE to sql_user2;
 
 --- SQL operation complete.
@@ -406,10 +424,18 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>
 >>populate index t132t1_ndx1 on t132t1;
 
---- SQL operation complete.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T1.
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T132SCH.T132T1.
+
+--- SQL operation failed with errors.
 >>populate index t132t2_ndx1 on t132t2;
 
---- SQL operation complete.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T132SCH.T132T2.
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T132SCH.T132T2.
+
+--- SQL operation failed with errors.
 >>
 >>changeuser db__root;
 >>obey TEST132(popindex_check_reset);
@@ -425,7 +451,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 (EXPR)              
 --------------------
 
-                   8
+                   0
 
 --- 1 row(s) selected.
 >>select count(*) from table (index_table t132t2_ndx1);
@@ -433,7 +459,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 (EXPR)              
 --------------------
 
-                   8
+                   0
 
 --- 1 row(s) selected.
 >>
@@ -443,7 +469,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
@@ -509,7 +535,7 @@ CREATE TABLE TRAFODION.T132SCH.T132T2
 >>create index t132t1_ndx1 on t132t1 (c2) no populate;
 
 --- SQL operation complete.
->>drop index t132t2_ndx1;
+>>cleanup index t132t2_ndx1;
 
 --- SQL operation complete.
 >>create index t132t2_ndx1 on t132t2 (c2) no populate;
@@ -649,6 +675,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 
@@ -659,6 +688,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1265,6 +1297,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>grant component privilege "SHOW" on sql_operations to "PUBLIC";
 
@@ -1276,6 +1311,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>changeuser sql_user1;
@@ -1494,6 +1532,9 @@ Tables in Schema TRAFODION.T132SCH
 T132T1
 T132T2
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>select count(*) from t132t1;
 
@@ -1636,6 +1677,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 CREATE_SCHEMA
 SHOW
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 
@@ -1646,6 +1690,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE_SCHEMA
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -1708,6 +1755,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER3
 ===============================================================
 
 MANAGE_STATISTICS
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>changeuser sql_user3;
@@ -1889,6 +1939,9 @@ Privilege information on Component SQL_OPERATIONS for SQL_USER3
 
 MANAGE_STATISTICS
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>changeuser sql_user3;
 >>obey TEST132(update_stats1);
@@ -1927,6 +1980,9 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 SHOW
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>

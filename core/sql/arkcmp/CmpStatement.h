@@ -160,9 +160,6 @@ public:
   //is this statement a DDL statement
   inline NABoolean isDDL(){return isDDL_;}
 
-  inline NABoolean isParallelLabelOp() { return isParallelLabelOp_; }
-  inline void setParallelLabelOp(NABoolean flag) { isParallelLabelOp_ = flag; }
-
   QueryAnalysis* getQueryAnalysis() { return queryAnalysis_; };
   QueryAnalysis* initQueryAnalysis();
 
@@ -291,8 +288,6 @@ private:
   NABoolean isSMDRecompile_;
   //flag, indicates if this is a DDL statment
   NABoolean isDDL_;
-
-  NABoolean isParallelLabelOp_;
 
   // CompilationStats object that is recording the compilation stats for this statement
   CompilationStats* compStats_;

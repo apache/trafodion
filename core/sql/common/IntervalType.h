@@ -325,7 +325,8 @@ public:
   enum { DEFAULT_LEADING_PRECISION  =  2,	// ANSI 10.1 SR 5: two
 	 MAX_LEADING_PRECISION	    = MAX_NUMERIC_PRECISION, // 10.1 SR 3: >=2
 	 DEFAULT_FRACTION_PRECISION =  6,	// ANSI 10.1 SR 6: six
-	 MAX_FRACTION_PRECISION	    =  6	// ANSI 10.1 SR 4: >=6
+	 MAX_FRACTION_PRECISION_USEC=  6,	// ANSI 10.1 SR 4: >=6
+	 MAX_FRACTION_PRECISION	    =  9	// ANSI 10.1 SR 4: >=6
        };
 
   // ---------------------------------------------------------------------

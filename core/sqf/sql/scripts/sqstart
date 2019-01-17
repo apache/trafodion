@@ -22,10 +22,10 @@
 # @@@ END COPYRIGHT @@@
 #
 
-#SQ Startup Driver Script. Use sqgen prior to this to generate various files required for startup.
+#Trafodion startup Script. 
 
 function LogIt {
-    echo  "`date`: $1" >> $TRAF_HOME/logs/startup.log
+    echo  "`date`: $1" >> $TRAF_LOG/startup.log
 }
 
 function Usage {
@@ -70,14 +70,6 @@ function GetOpts {
              ;;
        esac
     done
-}
-
-function chkReturnCode {
-    if [[ $2 != 0 ]]; then
-       LogIt "End $script_name $sq_start, exit code: $2"
-       echo "$1 returned error $2, Exiting..."
-       exit $2;
-    fi
 }
 
 function echoLog {
@@ -138,35 +130,40 @@ function getJobInfo {
 
 }
 
-function SQStartProcesses {
+function TrafodionStartProcesses {
 
-    echoLog "Starting the SQ Environment (Executing $SQSCRIPT_FILE)"
+    echoLog "Starting the Trafodion Environment (Executing $SQSCRIPT_FILE)"
     echoLog
     $SQSCRIPT_FILE > $SQMON_LOG 2>&1
 
     sqstart_stat=$?
     echo
     if [[ $sqstart_stat == 0 ]]; then
-        echoLog "SQ Startup script ($SQSCRIPT_FILE) ran successfully. Performing further checks..."
+        echoLog "Trafodion Startup script ($SQSCRIPT_FILE) ran successfully. Performing further checks..."
         echo "0" > $SQSTART_EXIT_STATUS
     else
         echoLog "Error while executing the startup script!!!"
-        sqcheck -f
-        sq_stat=$?
-        if [[ $sq_stat == 0 ]]; then
-            echoLog "Even though all the SQ processes started up, the startup did not succeed!"
+        # Bypass if in agent mode
+        if [[ -z ${TRAF_AGENT} ]]; then
+            sqcheck -f
+            sq_stat=$?
+            if [[ $sq_stat == 0 ]]; then
+                echoLog "Even though all the Trafodion processes started up, the startup did not succeed!"
+            fi
         fi
         echoLog
-        echoLog "Please check the SQ shell log file : $SQMON_LOG"
+        echoLog "Please check the Trafodion shell log file : $SQMON_LOG"
         echoLog
-        echoLog "SQ Startup (from $PWD) Failed"
+        echoLog "For additional information, please check the monitor mon.*.log file in $TRAF_LOG"
+        echoLog
+        echoLog "Trafodion Startup (from $PWD) Failed"
         echoLog
         echo "1" > $SQSTART_EXIT_STATUS
     fi
 
 }
 
-function SQCheckOrphanProcesses {
+function TrafodionCheckOrphanProcesses {
 
     let lv_orphans_exist=0
     let lv_orphan_process_count=0
@@ -177,7 +174,11 @@ function SQCheckOrphanProcesses {
     echo -n "Checking orphan processes"
     while [ $lv_sqcop_done '==' 0 ]; do
     echo -n "."
-    lv_orphan_process_count=`cstat -h | wc -l`
+    if [[ -z ${TRAF_AGENT} ]]; then
+        lv_orphan_process_count=`cstat -h | wc -l`
+    else     
+        lv_orphan_process_count=`pstat -h | wc -l`
+    fi
     let lv_orphans_exist=(lv_orphan_process_count '>' 2)
 
     if [ $lv_orphans_exist '==' 1 ]; then
@@ -195,11 +196,15 @@ function SQCheckOrphanProcesses {
 
     echo
     if [ $lv_orphans_exist '==' 1 ]; then
-        lv_msg1="There are orphan processes from a previous SQ instance."
+        lv_msg1="There are orphan processes from a previous Trafodion instance."
         echo "$lv_msg1"
-        cstat
+        if [[ -z ${TRAF_AGENT} ]]; then
+            cstat
+        else
+            pstat
+        fi
         echo
-        lv_msg2="SQ startup has not been initiated. Exiting..."
+        lv_msg2="Trafodion startup has not been initiated. Exiting..."
         echo "$lv_msg"
         LogIt "End $script_name, exit code: 1, $lv_msg1 $lv_msg2"
         exit 1
@@ -233,16 +238,6 @@ function checkKerberos {
 }
 
 function checkUlimit {
-  
- #check max_pid 
- userProc=`cat /proc/sys/kernel/pid_max`
- if [[ $userProc -gt 65535 ]] ; then
-    echoLog ""
-    echoLog "ERROR: issue detected during startup. Please make sure your kernel parameter (sysctl) is set up correctly."
-    echoLog "ERROR: max_pid should not be greater than 65535"
-    echoLog ""
-    return
- fi
 
  #check ulimit -l
  maxLockMem=`ulimit -l`
@@ -282,7 +277,7 @@ STARTtime=$(date +%s)
 
 GetOpts $BASH_ARGV
 
-if [ ! -z $TRAF_HOME ]; then
+if [[ ! -z $TRAF_HOME ]]; then
     cd $TRAF_HOME/sql/scripts
 else
     echoLog
@@ -294,22 +289,15 @@ fi
 
 checkUlimit
 
-# Check SeaMonster kernel module if SeaMonster is enabled
-if [[ $SQ_SEAMONSTER == "1" ]]; then
-    echoLog
-    echoLog "SeaMonster is enabled, checking SeaMonster Kernel Module installed version..."
-    echoLog
-    sminfo_out=`$TRAF_HOME/export/bin${SQ_MBTYPE}/sminfo 2>&1`
-    if [ $? -gt 0 ]; then
-       echoLog "$sminfo_out"
-       lv_msg="Correct SeaMonster Kernel Module in not installed; please resolve this issue and re-run $script_name!"
-       echo "$lv_msg"
-       LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
-       exit 1
-    fi
-    echoLog "$sminfo_out"
-    LogIt "$sminfo_out"
-    echoLog
+let nameserver_configured=`trafconf -ns | grep nodes | wc -l`
+if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
+   if [ $nameserver_configured '<' 1 ]; then
+     echoLog
+     echoLog "SQ_NAMESERVER_ENABLED is enabled and the Name Server is not configured."
+     echoLog "Please ensure the name-server section is in the 'sqconfig' file, and re-run 'sqgen'."
+     echoLog
+     exit 1;
+   fi
 fi
 
 if [[ ! -e $TRAF_HOME/sql/scripts/sw_env.sh ]]; then
@@ -335,22 +323,30 @@ if [ $lv_len_mysqroot '>' $lv_max_mysqroot_len ]; then
     exit 1;
 fi
 
-LogIt "Begin $script_name $sq_start"
-sqcheck -i 1 -d 1 > /dev/null 2>&1
-sq_stat=$?
-if [[ $sq_stat == 0 ]]; then
-    lv_msg="SQ environment is already up."
-    echoLog "$lv_msg"
-    LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
-    exit 1
-elif [[ $sq_stat == 1 ]]; then
-    lv_msg="SQ environment is partially up."
-    echoLog "$lv_msg"
-    LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
-    exit 1
-fi
+# Bypass if in agent mode
+if [[ -z ${TRAF_AGENT} ]]; then
+    LogIt "Begin $script_name $sq_start"
+    sqcheck -i 1 -d 1 > /dev/null 2>&1
+    sq_stat=$?
+    if [[ $sq_stat == 0 ]]; then
+        lv_msg="Trafodion environment is already up."
+        echoLog "$lv_msg"
+        LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+        exit 1
+    elif [[ $sq_stat == 1 ]]; then
+        lv_msg="Trafodion environment is partially up."
+        echoLog "$lv_msg"
+        LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+        exit 1
+    fi
 
-SQCheckOrphanProcesses
+    if ( [[ ! -z CHECK_ORPHANS ]] &&
+         [[ ${CHECK_ORPHANS} == 0 ]] ); then
+        echo "Not checking for orphans." 
+    else
+        TrafodionCheckOrphanProcesses
+    fi
+fi
 
 if [[ $run_chk_dbperms == 1 ]]; then
     chk_dbperms=$TRAF_HOME/sql/scripts/chk_dbperms
@@ -373,9 +369,9 @@ fi
 
 
 
-SQLOG_DIR=$TRAF_HOME/logs
+SQLOG_DIR=$TRAF_LOG
 SQMON_LOG=$SQLOG_DIR/sqmon.log
-SQSTART_EXIT_STATUS=./sqstart.exit_status
+SQSTART_EXIT_STATUS=$TRAF_VAR/sqstart.exit_status
 
 if [[ -z $SQSCRIPTS_DIR ]]; then
     SQSCRIPTS_DIR=$TRAF_HOME/sql/scripts
@@ -411,25 +407,32 @@ fi
 echoLog "Removing old mpijob* files from $MPI_TMPDIR"
 echoLog  ""
 rm -f $MPI_TMPDIR/mpijob*
-echoLog "Removing old monitor.port* files from $MPI_TMPDIR"
-echoLog  ""
-rm -f $MPI_TMPDIR/monitor.port.*
+
+# Bypass if in agent mode
+if [[ -z ${TRAF_AGENT} ]]; then
+    # This code assumes that gomon.cold executes 'shell startup' to create the 
+    # monitor processes. 
+    # This pre-startup cleanup must be done in the CSD script monitor.sh.
+    echoLog "Removing old monitor.port* files from $MPI_TMPDIR"
+    echoLog  ""
+    rm -f $MPI_TMPDIR/monitor.port.*
 
 
-setup_sqpdsh
+    setup_sqpdsh
 
-# Clean HBase classpath cache file
-echo "Clean up HBase classpath cache file: $TRAF_VAR/hbase_classpath"
-$SQPDSHA "rm -rf $TRAF_VAR/hbase_classpath"
+    # Clean HBase classpath cache file
+    echo "Clean up HBase classpath cache file: $TRAF_VAR/hbase_classpath"
+    $SQPDSHA "rm -rf $TRAF_VAR/hbase_classpath"
 
-# Clear unique strings
-$SQPDSHA "cd $TRAF_HOME/sql/scripts; utilConfigDb -u"
+    # Clear unique strings
+    $SQPDSHA "cd $TRAF_HOME/sql/scripts; utilConfigDb -u"
 
-echoLog "Executing sqipcrm (output to sqipcrm.out)"
-sqipcrm > sqipcrm.out
+    echoLog "Executing sqipcrm (output to sqipcrm.out)"
+    sqipcrm > $TRAF_LOG/sqipcrm.out 2>&1
+fi
 
 echoLog "Executing cleanZKNodes (output to cleanZKNodes.out)"
-cleanZKNodes > cleanZKNodes.out 2>&1
+cleanZKNodes > $TRAF_LOG/cleanZKNodes.out 2>&1
 
 echoLog "Checking whether HBase is up"
 hbcheck 4 30
@@ -441,14 +444,14 @@ if [ $? != 0 ]; then
 fi
 
 rm -f $SQSTART_EXIT_STATUS
-SQStartProcesses &
-getJobInfo SQStartProcesses
+TrafodionStartProcesses &
+getJobInfo TrafodionStartProcesses
 
 if [ ! -z "$gv_job_pid" ]; then
     lv_sqstartup_job_pid=$gv_job_pid
-    echoLog "Background SQ Startup job (pid: $lv_sqstartup_job_pid)"
+    echoLog "Background Trafodion Startup job (pid: $lv_sqstartup_job_pid)"
 else
-    lv_msg="Some problem with the initiation of the job to startup SQ processes"
+    lv_msg="Some problem with the initiation of the job to startup Trafodion processes"
     echoLog "$lv_msg"
     LogIt "End $script_name $sqstart, exit code: 3, $lv_msg"
     exit 3
@@ -499,7 +502,11 @@ do
       let lv_done=1
   else
 
-      lv_process_count_curr=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | wc -l`
+      if [[ -z ${TRAF_AGENT} ]]; then
+         lv_process_count_curr=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | wc -l`
+      else
+         lv_process_count_curr=`pstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | wc -l`
+      fi
       let lv_cnt_check=(lv_process_count_curr '>' lv_process_count_last)
 
       if [ $lv_cnt_check '==' 1 ]; then
@@ -507,39 +514,17 @@ do
       fi
       lv_process_count_last=lv_process_count_curr
 
-#      lv_TM0_started=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | grep TM | wc -l`
+      if [ $lv_num_checks '==' 0 ]; then
+         echo -ne "\r# of Trafodion processes: $lv_process_count_last "
+      else
+         echo -n "."
+      fi
 
-#      if [ $lv_TM0_started '!=' 0 ]; then
-#         let lv_num_checks=0
-#         lv_recovery_tx_cnt=`sqshell -c show | grep -v 'Configuration Change Notice' | grep DTM_RECOVERING_TX_COUNT | cut -d= -f2 | sed -e 's/^[[:space:]]*//'`
-#         if [ "$lv_recovery_tx_cnt" -gt "0" ]; then
-#            echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
-#         else
-#            if [ "$lv_tm_svc_ready" -eq 0 ]; then
-#               echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
-#               sqregck -r SQ_TXNSVC_READY -d 5 -i 5
-#               lv_tm_svc_ready=$?
-#            else
-#               if [ $tx_srvc_ready_printed -eq 0 ]; then
-#                 echo -ne "\rTransaction Services Ready          "
-#                 tx_srvc_ready_printed=1
-#               fi
-#               let lv_tm_svc_ready=1
-#            fi
-#         fi
-#      else
-         if [ $lv_num_checks '==' 0 ]; then
-            echo -ne "\r# of SQ processes: $lv_process_count_last "
-         else
-            echo -n "."
-         fi
-#      fi
-
-      getJobInfo SQStartProcesses
+      getJobInfo TrafodionStartProcesses
       if [ -z "$gv_job_pid" ]; then
           if [ ! -e $SQSTART_EXIT_STATUS ]; then
-              echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that was starting up the SQ processes exitted abnormally."
-              echoLog "There are still $lv_process_count_curr SQ processes that exist in the environment."
+              echoLog "The background Trafodion job (pid: $lv_sqstartup_job_pid) that was starting up the Trafodion processes exited abnormally."
+              echoLog "There are still $lv_process_count_curr Trafodion processes that exist in the environment."
               echoLog "Exiting."
               let lv_done=1
               lv_startup_status=3
@@ -555,8 +540,8 @@ do
       if [ $lv_done '==' 1 ]; then
           lv_startup_status=2
           echoLog ""
-          echoLog "SQ Startup is taking longer than usual and seems to be stalled at $lv_process_count_curr processes. "
-          echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that is starting up the SQ processes is still running."
+          echoLog "Trafodion Startup is taking longer than usual and seems to be stalled at $lv_process_count_curr processes. "
+          echoLog "The background Trafodion job (pid: $lv_sqstartup_job_pid) that is starting up the Trafodion processes is still running."
           echoLog "Exiting."
       fi
       sleep 10
@@ -583,7 +568,7 @@ if [ $lv_startup_status '==' 0 ]; then
             let lv_done=1
         else
             if [ $lv_num_iterations '==' 0 ]; then
-                echo "The SQ environment is partially up! Continuing checks."
+                echo "The Trafodion environment is partially up! Continuing checks."
                 echo -n "Checking"
             fi
             echo -n "."

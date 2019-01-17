@@ -41,9 +41,12 @@
 #ifndef EXP_CLAUSE_DERIVED_H
 #define EXP_CLAUSE_DERIVED_H
 
+#include <sys/types.h>
+#include <regex.h>
 #include "exp_clause.h"
 #include "exp_like.h"
 #include <byteswap.h>
+#include "NAStringDef.h"
 
 
 #define instrAndText(a) a, #a
@@ -487,7 +490,9 @@ public:
 
   // Construction
   //
-  ex_arith_clause(){};
+  ex_arith_clause() 
+      { setAugmentedAssignOperation(TRUE); }
+
   ex_arith_clause(OperatorTypeEnum oper_type,
 			     Attributes ** attr,
 			     Space * space,
@@ -587,7 +592,8 @@ public:
 private:
   enum
   {
-    DIV_TO_DOWNSCALE = 0x01
+    DIV_TO_DOWNSCALE = 0x01,
+    ALLOW_AUGMENTED_ASSIGN_OPERATION = 0x02
   };
 
   char filler[4];             // 00-03
@@ -616,6 +622,12 @@ private:
   { return (flags_ & DIV_TO_DOWNSCALE) != 0;}
   void setDivToDownscale(NABoolean v)      
   { (v ? flags_ |= DIV_TO_DOWNSCALE : flags_ &= ~DIV_TO_DOWNSCALE); }
+public:
+  NABoolean isAugmentedAssignOperation()
+  { return (flags_ & ALLOW_AUGMENTED_ASSIGN_OPERATION) != 0;}
+
+  void setAugmentedAssignOperation(NABoolean v) 
+  { (v ? flags_ |= ALLOW_AUGMENTED_ASSIGN_OPERATION : flags_ &= ~ALLOW_AUGMENTED_ASSIGN_OPERATION); }
   
 };
 
@@ -656,6 +668,7 @@ public:
   }
 
   virtual short getClassSize() { return (short)sizeof(*this); }
+
   // ---------------------------------------------------------------------
   
 private:   
@@ -2535,7 +2548,8 @@ class  ExRegexpClauseChar : public ExRegexpClauseBase {
 public:
   // Construction
   //
-  ExRegexpClauseChar() {};
+  ExRegexpClauseChar() { rpattern_ = ""; };
+  ~ExRegexpClauseChar() { if(rpattern_ != "") regfree(&reg); };
   ExRegexpClauseChar(OperatorTypeEnum oper_type, 
 			    short num_operands,
 			    Attributes ** attr,
@@ -2573,6 +2587,10 @@ public:
 
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
+
+  regex_t reg;
+
+  NAString rpattern_; //previous pattern
 
 private:
 

@@ -62,8 +62,6 @@ enum ExeErrorCode
   EXE_EXPLAIN_BAD_DATA			= 8019,
 
   EXE_INITIALIZE_MAINTAIN               = 8020,
-  EXE_PURGEDATA_CAT                     = 8021,
-  EXE_PARALLEL_PURGEDATA_FAILED         = 8022,
 
   EXE_QUERY_LIMITS_CPU                  = 8023,
   EXE_QUERY_LIMITS_CPU_DEBUG            = 8024,
@@ -109,6 +107,12 @@ enum ExeErrorCode
   // ---------------------------------------------------------------------
   EXE_CLEANUP_ESP                       = 8143,
   EXE_CORRUPT_PARTITION                 = 8144,
+
+  // ---------------------------------------------------------------------
+  // generic error for the specified statement/feature/option.
+  // Error detail included in string param.
+  // ---------------------------------------------------------------------
+  EXE_STMT_NOT_SUPPORTED                = 8145,
 
   //----------------------------------------------------------------------
   // Late-name resolution and late-binding/similarity check errors.
@@ -164,6 +168,7 @@ enum ExeErrorCode
   EXE_ERROR_FROM_LOB_INTERFACE          = 8442,
   EXE_INVALID_LOB_HANDLE                = 8443,
   EXE_ERROR_HDFS_SCAN                   = 8447,
+  EXE_INVALID_INTERVAL_RESULT           = 8453,
   EXE_LAST_EXPRESSIONS_ERROR		= 8499,
 
   // ---------------------------------------------------------------------
@@ -175,6 +180,7 @@ enum ExeErrorCode
   EXE_ERROR_STREAM_OVERFLOW             = 8553,
   EXE_EID_INTERNAL_ERROR                = 8555,
   EXE_HBASE_ACCESS_ERROR                = 8556,
+  EXE_LOB_CONCURRENT_ACCESS_ERROR       = 8558,
   EXE_LAST_ERROR_FROM_FS_DP2		= 8569,
 
   // ---------------------------------------------------------------------
@@ -263,6 +269,11 @@ enum ExeErrorCode
   //-------------------------------------------------------------
   EXE_INVALID_CHAR_IN_TRANSLATE_FUNC    = 8690,
 
+  //-------------------------------------------------------------
+  // Errors codes split_part function.
+  //-------------------------------------------------------------
+  EXE_INVALID_FIELD_POSITION            = 8691,
+  
   // ---------------------------------------------------------------------
   // Parallel execution
   // ---------------------------------------------------------------------

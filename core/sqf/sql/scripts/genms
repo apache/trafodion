@@ -168,20 +168,22 @@ echo "SQ_PROPS_TDM_ARKESP=tdm_arkesp.env"
 echo ""
 echo "STFS_HDD_LOCATION=\$TRAF_VAR"
 echo ""
-echo "#setting MY_UDR_ROOT"
+echo "#setting UDR_ROOT"
 if [ -d "/home/udr" ]; then
   w=`whoami`
   dircreate=/home/udr/$w
   if [ ! -d $dircreate ]; then
     mkdir --mode=775 $dircreate 2>/dev/null
   fi
-  echo "MY_UDR_ROOT=$dircreate"
+  echo "UDR_ROOT=$dircreate"
 else
   if [ ! -d "$TRAF_HOME/udr" ]; then
     mkdir $TRAF_HOME/udr 2>/dev/null
   fi
-  echo "MY_UDR_ROOT=\$TRAF_HOME/udr"
+  echo "UDR_ROOT=\$TRAF_HOME/udr"
 fi
+
+echo "UDR_CACHE_LIBDIR=cached_libs"
 
 echo ""
 echo "#creating sqllogs folder for capturing osim data"
@@ -206,7 +208,16 @@ restinstalldir=$REST_INSTALL_DIR
 echo "REST_INSTALL_DIR=$restinstalldir"
 
 echo "TRAF_VAR=$TRAF_VAR"
+echo "TRAF_LOG=$TRAF_LOG"
 echo "TRAF_CONF=$TRAF_CONF"
+
+if [[ ! -z "$PID_MAX" ]]; then
+   echo "PID_MAX=$PID_MAX"
+fi
+
+if [[ ! -z "$RMS_SHARED_SEG_SIZE_MB" ]]; then
+   echo "RMS_SHARED_SEG_SIZE_MB=$RMS_SHARED_SEG_SIZE_MB"
+fi
 
 echo ""
 echo ""

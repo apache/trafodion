@@ -51,11 +51,7 @@ Linux-x86_64/
 /logs/
 /sqcert/
 /sql/scripts/sqconfig.db
-/sql/scripts/*.log
-/sql/scripts/*.out
 /sql/scripts/sqshell.env
-/sql/scripts/sq*.exit_status
-/sql/scripts/stdout_*
 /tmp/
 
 # sql regressions

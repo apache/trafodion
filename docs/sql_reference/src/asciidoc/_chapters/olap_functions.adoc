@@ -847,7 +847,7 @@ FROM persnl.employee;
 
 <<<
 [[row_number_window_function]]
-=== ROW_NUMBER Window Function
+== ROW_NUMBER Window Function
 
 ROW_NUMBER is a window function that returns the row number of each row
 of the current window specified by the inline-window-specification.
@@ -900,7 +900,7 @@ FROM persnl.employee;
 
 <<<
 [[stddev_window_function]]
-=== STDDEV Window Function
+== STDDEV Window Function
 
 STDDEV is a window function that returns the standard deviation of non
 null values of the given expression for the current window specified by

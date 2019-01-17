@@ -32,6 +32,7 @@
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
+extern bool NameServerEnabled;
 
 CExtEventReq::CExtEventReq (reqQueueMsg_t msgType, int pid,
                             struct message_def *msg )
@@ -85,7 +86,8 @@ void CExtEventReq::performRequest()
     int pid;
     int num_procs;
     PROCESSTYPE type;
-    CProcess *process = NULL;
+    CProcess *cloneProcess = NULL;
+    CProcess *targetProcess = NULL;
     CProcess *requester;
 
     // Record statistics (sonar counters)
@@ -134,7 +136,7 @@ void CExtEventReq::performRequest()
 
         // Only monitor can send events to SQWatchdog process
         if ( type != ProcessType_Watchdog )
-        { // Only monitor can send events to SQWatchdog process
+        {
             if (msg_->u.request.u.event.target_nid == -1)
             {
                 if (trace_settings & TRACE_REQUEST)
@@ -161,50 +163,90 @@ void CExtEventReq::performRequest()
 
                 if ( target_process_name.size() )
                 { // find by name
-                    process = Nodes->GetProcess( target_process_name.c_str()
-                                               , target_verifier );
-                    if ( process && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    if (msg_->u.request.u.event.target_process_name[0] == '$' )
+                    {
+                        targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                         , target_verifier );
+                    }
+                    if ( !targetProcess )
+                    {
+                        if (NameServerEnabled)
+                        { // Name Server find by name:verifier
+                            if (trace_settings & TRACE_REQUEST)
+                            {
+                                trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                            , method_name, __LINE__
+                                            , target_process_name.c_str()
+                                            , target_verifier );
+                            }
+                            if (msg_->u.request.u.event.target_process_name[0] == '$' )
+                            {
+                                cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                                    , target_verifier );
+                                targetProcess = cloneProcess;
+                            }
+                        }     
+                    }
+                    if ( targetProcess && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                     {
                         trace_printf( "%s@%d - Found target by name %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
-                                    , process->GetName()
-                                    , process->GetNid()
-                                    , process->GetPid()
-                                    , process->GetVerifier());
+                                    , targetProcess->GetName()
+                                    , targetProcess->GetNid()
+                                    , targetProcess->GetPid()
+                                    , targetProcess->GetVerifier());
                     }
-                    pid = process ? process->GetPid() : -1;
+                    pid = targetProcess ? targetProcess->GetPid() : -1;
                 }
                 else if (pid == -1)
                 { // get info for all processes in node
-                    process = Nodes->GetLNode(nid)->GetFirstProcess();
-                    if ( process && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    targetProcess = Nodes->GetLNode(nid)->GetFirstProcess();
+                    if ( targetProcess && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                     {
                         trace_printf( "%s@%d - Found target first process %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
-                                    , process->GetName()
-                                    , process->GetNid()
-                                    , process->GetPid()
-                                    , process->GetVerifier());
+                                    , targetProcess->GetName()
+                                    , targetProcess->GetNid()
+                                    , targetProcess->GetPid()
+                                    , targetProcess->GetVerifier());
                     }
                 }
                 else
                 { // get info for single process in node by pid
-                    process = Nodes->GetProcess( target_nid
-                                               , pid
-                                               , target_verifier );
-                    if ( process && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    targetProcess = Nodes->GetProcess( target_nid
+                                                     , pid
+                                                     , target_verifier );
+                    if ( !targetProcess )
+                    {
+                        if (NameServerEnabled)
+                        { // Name Server find by nid,pid:verifier
+                            if (trace_settings & TRACE_REQUEST)
+                            {
+                                trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                            , method_name, __LINE__
+                                            , target_nid
+                                            , pid
+                                            , target_verifier );
+                            }
+                            cloneProcess = Nodes->CloneProcessNs( target_nid
+                                                                , pid
+                                                                , target_verifier );
+                            targetProcess = cloneProcess;
+                        }
+                    }
+                    if ( targetProcess && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                     {
                         trace_printf( "%s@%d - Found target by nid,pid %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
-                                    , process->GetName()
-                                    , process->GetNid()
-                                    , process->GetPid()
-                                    , process->GetVerifier());
+                                    , targetProcess->GetName()
+                                    , targetProcess->GetNid()
+                                    , targetProcess->GetPid()
+                                    , targetProcess->GetVerifier());
                     }
                 }
             }
             
-            if ( !process && target_nid != -1 && 
+            if ( !targetProcess && target_nid != -1 && 
                  (trace_settings & (TRACE_REQUEST | TRACE_PROCESS)))
                 trace_printf("%s@%d" " - Target process not found! %s (%d, %d:%d)\n"
                             , method_name, __LINE__
@@ -220,36 +262,49 @@ void CExtEventReq::performRequest()
             {
                 if (target_nid == -1)
                 {
-                    process = lnode->GetFirstProcess();
+                    targetProcess = lnode->GetFirstProcess();
                 }
-                while (process && num_procs < MAX_PROC_LIST)
+                while (targetProcess && num_procs < MAX_PROC_LIST)
                 {
-                    if (pid == -1 || process->GetPid() == pid)
+                    if (pid == -1 || targetProcess->GetPid() == pid)
                     {
-                        if ( process->GetType() != ProcessType_Watchdog )
+                        if ( targetProcess->GetType() != ProcessType_Watchdog )
                         {
-                            if (type == ProcessType_Undefined || type == process->GetType())
+                            if (type == ProcessType_Undefined || type == targetProcess->GetType())
                             {
-                                process->GenerateEvent( msg_->u.request.u.event.event_id,
+                                targetProcess->GenerateEvent( msg_->u.request.u.event.event_id,
                                                         msg_->u.request.u.event.length,
                                                         msg_->u.request.u.event.data );
                                 if (trace_settings & TRACE_REQUEST)
                                     trace_printf( "%s@%d - Event %d sent to %s (%d, %d:%d)\n"
                                                 , method_name, __LINE__
                                                 , msg_->u.request.u.event.event_id
-                                                , process->GetName()
-                                                , process->GetNid()
-                                                , process->GetPid()
-                                                , process->GetVerifier());
+                                                , targetProcess->GetName()
+                                                , targetProcess->GetNid()
+                                                , targetProcess->GetPid()
+                                                , targetProcess->GetVerifier());
                                 rc = MPI_SUCCESS;
                             }
                         }
                     }
                     else
                     {
+                        if (NameServerEnabled && cloneProcess)
+                        {
+                            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                            {
+                                trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                            , method_name, __LINE__
+                                            , cloneProcess->GetName()
+                                            , cloneProcess->GetNid()
+                                            , cloneProcess->GetPid()
+                                            , cloneProcess->GetVerifier() );
+                            }
+                            Nodes->DeleteCloneProcess( cloneProcess );
+                        }
                         break;
                     }
-                    process = process->GetNextL();
+                    targetProcess = targetProcess->GetNextL();
                 }
             }
 

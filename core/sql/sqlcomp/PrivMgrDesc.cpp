@@ -120,109 +120,6 @@ void PrivMgrCoreDesc::setWgo(const PrivType which,
   }
 }
 
-// Set all privilege indicators for Grant to Table
-// (Sel/Ins/Upd/Del/Ref only) (Sets these "priv" to True,
-//  with wgo indicators set as specified).
-//   If updatable=False, suppress Insert,Delete,Update.
-//   If insertable=False, suppress Insert.
-void PrivMgrCoreDesc::setAllDMLGrantPrivileges(const bool wgo,
-                                        const bool updatable,
-                                        const bool insertable,
-                                        const bool deletable)
-{
-  this->setPriv(SELECT_PRIV, true);
-  this->setWgo(SELECT_PRIV, wgo);
-
-  if (updatable)
-   {
-      this->setPriv(UPDATE_PRIV, true);
-      this->setWgo(UPDATE_PRIV, wgo);
-      this->setPriv(REFERENCES_PRIV, true);
-      this->setWgo(REFERENCES_PRIV, wgo);
-
-      if ( insertable)
-      {
-         this->setPriv(INSERT_PRIV, true);
-         this->setWgo(INSERT_PRIV, wgo);
-      }
-      if ( deletable )
-      {
-         this->setPriv(DELETE_PRIV, true);
-         this->setWgo(DELETE_PRIV, wgo);
-      }
-   }
-}
-
-void PrivMgrCoreDesc::setAllDDLGrantPrivileges(const bool wgo)
-
-{
-  this->setPriv(ALL_DDL, true);
-  this->setWgo (ALL_DDL, wgo);
-
-}
-
-/*
- * The following setAllRevoke.. functions are used to set a mask in revoking privileges.
- *
- * When grantOptionFor is specified, we set the wgo bits because we want to use the mask
- * in revoking the with grant option for those privileges.
- *
- * Otherwise, we set the priv bits because we want to use the mask to revoke those 
- * privileges.  
- *
-*/
-
-void PrivMgrCoreDesc::setAllDMLRevokePrivileges(const bool grantOption)
-{
-  if (grantOption)
-  {
-    //set all dml privs in wgo to true
-    //set all dml privs in priv to false
-    this->setPriv(ALL_DML, false);
-    this->setWgo(ALL_DML, true);
-  }
-  else
-  {
-    //set all dml privs in wgo to false
-    //set all dml privs in priv to true
-    this->setPriv(ALL_DML, true);
-    this->setWgo(ALL_DML, false);
-  }
- }
-
-void PrivMgrCoreDesc::setAllDDLRevokePrivileges(const bool grantOption)
-{
-  if (grantOption) 
-  {
-    //set all ddl privs in wgo to true
-    //set all ddl privs in priv to false
-    this->setPriv(ALL_DDL, false);
-    this->setWgo(ALL_DDL, true);
-  }
-  else 
-  {
-    //set all ddl privs in wgo to false
-    //set all ddl privs in priv to true
-    this->setPriv(ALL_DDL, true);
-    this->setWgo(ALL_DDL, false);
-  }
-}
-
-// Set all privilege indicators for Revoke.
-void PrivMgrCoreDesc::setAllRevokePrivileges(const bool grantOption)
-{
-  if (grantOption)
-  {
-     priv_.reset();   // For "Revoke Grant Option for.."
-     wgo_.set();     //   get priv=F, wgo=T.
-  }
-  else
-  {
-     priv_.set();    // For "Revoke ..."
-     wgo_.reset();    //   get priv=T, wgo=F.
-  }
-}
-
 // ----------------------------------------------------------------------------
 // method: setAllObjectGrantPrivilege
 //
@@ -233,33 +130,36 @@ void PrivMgrCoreDesc::setAllRevokePrivileges(const bool grantOption)
 // Params:
 //     objectType - The type of object.  Based on the object type (e.g. table,
 //                  routine, sequence, etc.) all the relevant privs are set
+//     priv - privilege setting. If true, the corresponding priv bits are set.             
 //     wgo - WITH GRANT OPTION.  If true, the corresponding WGO bits are set.
 //
 // ---------------------------------------------------------------------------- 
-void PrivMgrCoreDesc::setAllObjectGrantPrivilege(
+void PrivMgrCoreDesc::setAllObjectPrivileges(
    const ComObjectType objectType,
+   const bool priv,
    const bool wgo)
 
 {
-
    switch (objectType)
    {
       case COM_BASE_TABLE_OBJECT:
-         setAllTableGrantPrivileges(wgo);
+         setAllTableGrantPrivileges(priv, wgo);
          break;
       case COM_LIBRARY_OBJECT:
-         setAllLibraryGrantPrivileges(wgo);
+         setAllLibraryGrantPrivileges(priv, wgo);
          break;
       case COM_SEQUENCE_GENERATOR_OBJECT:
-         setAllSequenceGrantPrivileges(wgo);
+         setAllSequenceGrantPrivileges(priv, wgo);
          break;
+      // all spjs, functions, and table_mapping functions 
+      // are USER_DEFINED_ROUTINE_OBJECT
       case COM_USER_DEFINED_ROUTINE_OBJECT:
-      case COM_STORED_PROCEDURE_OBJECT:
-         setAllUdrGrantPrivileges(wgo);
+      case COM_STORED_PROCEDURE_OBJECT: /*TBD: remove?*/
+         setAllUdrGrantPrivileges(priv, wgo);
          break;
       case COM_VIEW_OBJECT:
         // will reach here for native hive views
-         setAllTableGrantPrivileges(wgo);
+         setAllTableGrantPrivileges(priv, wgo);
          break;
       default:
          ; //TODO: internal error?
@@ -582,4 +482,5 @@ bool PrivMgrDesc::limitToGrantable( const PrivMgrDesc& other )
   }
   return result;
 }
+
 

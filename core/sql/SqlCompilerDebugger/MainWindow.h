@@ -54,9 +54,10 @@ public:
   void CreateTDBView();
   void RestoreGeometry();
   void SaveGeometry();
+  NABoolean IsDisplayExecutionEnabled();
 
   NABoolean IsBackToSqlCompiler_;
-  static NABoolean IsQuiting;
+  static NABoolean IsQuitting;
   QueryData *m_querydata;
 
 protected:

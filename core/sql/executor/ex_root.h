@@ -44,7 +44,6 @@
 
 #include "ex_exe_stmt_globals.h"
 #include "exp_expr.h"
-#include "ComSqlexedbg.h"
 #include "SqlTableOpenInfo.h"
 #include "Ipc.h"
 #include "rts_msg.h"

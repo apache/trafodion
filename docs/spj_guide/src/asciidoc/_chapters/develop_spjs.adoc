@@ -83,19 +83,19 @@ PIC[TURE] X^1^ +
 NCHAR +
 NCHAR VARYING +
 NATIONAL CHAR[ACTER] +
-NATIONAL CHAR[ACTER] VARYING | java.lang.string
-| DATE | java.sql.date
-| TIME | java.sql.time
-| TIMESTAMP | java.sql.timestamp
+NATIONAL CHAR[ACTER] VARYING | java.lang.String
+| DATE | java.sql.Date
+| TIME | java.sql.Time
+| TIMESTAMP | java.sql.Timestamp
 | DEC[IMAL]^2^ +
 PIC[TURE] S9^3^ +
-NUMERIC (including numeric with a precision greater than eighteen)^2^ | java.math.bigdecimal
+NUMERIC (including numeric with a precision greater than eighteen)^2^ | java.math.BigDecimal
 | SMALLINT^2^ | short
-| INT[EGER]^2^ | int or java.lang.integer^4^
-| LARGEINT^2^ | long or java.lang.long^4^
-| FLOAT | double or java.lang.double^4^
-| REAL | float or java.lang.float^4^
-| DOUBLE PRECISION | double or java.lang.double^4^
+| INT[EGER]^2^ | int or java.lang.Integer^4^
+| LARGEINT^2^ | long or java.lang.Long^4^
+| FLOAT | double or java.lang.Double^4^
+| REAL | float or java.lang.Float^4^
+| DOUBLE PRECISION | double or java.lang.Double^4^
 |===
 
 1. {project-name} stores PIC X as a CHAR data type.

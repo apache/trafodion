@@ -320,6 +320,8 @@ if [ "$REGREXCLUSIVE" -ne 0 ]; then
   fi
 fi
 
+export REGR_POSTOP="$scriptsdir/tools/rgrCleanup"
+echo $REGR_POSTOP
 $REGR_POSTOP		# you can set this envvar to any command you like
 			# e.g.  export REGR_POSTOP="$HOME/bin/rgrCleanup"
 echo "***** Done running regressions *****"

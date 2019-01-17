@@ -327,6 +327,14 @@ public:
         return NULL;
     }
 
+  ExHdfsScanStats * getHdfsScanStats()
+    {
+      if (getStatsEntry())
+        return getStatsEntry()->castToExHdfsScanStats();
+      else
+        return NULL;
+    }
+
 
 
 protected:
@@ -359,6 +367,7 @@ protected:
   NABoolean          endOfData_;
   CollHeap           *heap_;
   ExFastExtractStats *feStats_;
+  ExHdfsScanStats    *hdfsStats_;
 
   time_t              tstart_;
 
@@ -397,11 +406,6 @@ public:
 
 protected:
 
-
-  Lng32 lobInterfaceDataModCheck(Int64 &failedModTS,
-                                 char * failedLocBuf,
-                                 Int32 &failedLocBufLen);
-
   virtual void insertUpQueueEntry(ex_queue::up_status status,
                           ComDiagsArea *diags,
                           NABoolean popDownQueue);
@@ -417,7 +421,6 @@ protected:
     return strlen(myTdb().getNullString()) == 0;
   }
 
-  ExLobGlobals * lobGlob_;
 
   char hdfsHost_[500];
   int  hdfsPort_;

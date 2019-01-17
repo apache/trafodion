@@ -1653,7 +1653,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
   if ((table) && 
-      (table->isExternalTable() && 
+      (table->isTrafExternalTable() && 
        (NOT table->getTableName().isHbaseMappedName()) &&
        (! bindWA->allowExternalTables())))    
     {
@@ -1667,7 +1667,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // If the table is an external table and has an associated native table, 
   // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->isExternalTable() &&
+  if ((table) && table->isTrafExternalTable() &&
       (NOT table->getTableName().isHbaseMappedName()))
     {
       NAString adjustedName =ComConvertTrafNameToNativeName 
@@ -2119,6 +2119,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
     }
 
   Parser parser(bindWA->currentCmpContext());
+  parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
   ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                        naTable->getViewLen(),
                                        naTable->getViewTextCharSet());
@@ -7004,6 +7005,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     optStoi = (bindWA->getStoiList())[i];
     stoi = optStoi->getStoi();
     NATable* tab = optStoi->getTable();
+    ComSecurityKeySet secKeySet = tab->getSecKeySet();
 
     // System metadata tables do not, by default, have privileges stored in the
     // NATable structure.  Go ahead and retrieve them now. 
@@ -7011,6 +7013,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     PrivMgrUserPrivs privInfo;
     if (!pPrivInfo)
     {
+      secKeySet.clear();
       CmpSeabaseDDL cmpSBD(STMTHEAP);
       if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
       {
@@ -7018,7 +7021,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo, &secKeySet);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -7033,7 +7036,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 
     // Check each primary DML privilege to see if the query requires it. If 
     // so, verify that the user has the privilege
-    bool insertQIKeys = (QI_enabled && tab->getSecKeySet().entries() > 0);
+    bool insertQIKeys = (QI_enabled && secKeySet.entries() > 0);
     for (int_32 i = FIRST_DML_PRIV; i <= LAST_PRIMARY_DML_PRIV; i++)
     {
       if (stoi->getPrivAccess((PrivType)i))
@@ -7042,7 +7045,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           RemoveNATableEntryFromCache = TRUE;
         else
           if (insertQIKeys)    
-            findKeyAndInsertInOutputList(tab->getSecKeySet(),userHashValue,(PrivType)(i));
+            findKeyAndInsertInOutputList(secKeySet,userHashValue,(PrivType)(i), bindWA);
       }
     }
 
@@ -7084,7 +7087,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
         {
           // do this only if QI is enabled and object has security keys defined
           if ( insertQIKeys )
-            findKeyAndInsertInOutputList(rtn->getSecKeySet(), userHashValue, EXECUTE_PRIV);
+            findKeyAndInsertInOutputList(rtn->getSecKeySet(), userHashValue, EXECUTE_PRIV, bindWA);
         }
 
         // plan requires privilege but user has none, report an error
@@ -7120,6 +7123,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     NATable* tab = bindWA->getSchemaDB()->getNATableDB()->
                                    get(coProcAggr->getCorrName(), bindWA, NULL);
 
+    ComSecurityKeySet secKeySet = tab->getSecKeySet();
     Int32 numSecKeys = 0;
 
     // Privilege info for the user/table combination is stored in the NATable
@@ -7131,6 +7135,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     // NATable structure.  Go ahead and retrieve them now. 
     if (!pPrivInfo)
     {
+      secKeySet.clear();
       CmpSeabaseDDL cmpSBD(STMTHEAP);
       if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
       {
@@ -7138,7 +7143,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo, &secKeySet);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -7154,13 +7159,13 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     // Verify that the user has select priv
     // Select priv is needed for EXPLAIN requests, so no special check is done
     NABoolean insertQIKeys = FALSE; 
-    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
+    if (QI_enabled && (secKeySet.entries()) > 0)
       insertQIKeys = TRUE;
     if (pPrivInfo->hasPriv(SELECT_PRIV))
     {
       // do this only if QI is enabled and object has security keys defined
       if ( insertQIKeys )
-        findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, SELECT_PRIV );
+        findKeyAndInsertInOutputList(secKeySet, userHashValue, SELECT_PRIV, bindWA );
     }
 
     // plan requires privilege but user has none, report an error
@@ -7182,12 +7187,14 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     SequenceValue *seqVal = (bindWA->getSeqValList())[i];
     NATable* tab = const_cast<NATable*>(seqVal->getNATable());
     CMPASSERT(tab);
+    ComSecurityKeySet secKeySet = tab->getSecKeySet();
 
     // get privilege information from the NATable structure
     PrivMgrUserPrivs *pPrivInfo = tab->getPrivInfo();
     PrivMgrUserPrivs privInfo;
     if (!pPrivInfo)
     {
+      secKeySet.clear();
       CmpSeabaseDDL cmpSBD(STMTHEAP);
       if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
       {
@@ -7195,7 +7202,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges(tab, thisUserID, privInfo);
+      retcode = privInterface.getPrivileges(tab, thisUserID, privInfo, &secKeySet);
       cmpSBD.switchBackCompiler();
       if (retcode != STATUS_GOOD)
       {
@@ -7209,13 +7216,13 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 
     // Verify that the user has usage priv
     NABoolean insertQIKeys = FALSE; 
-    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
+    if (QI_enabled && (secKeySet.entries()) > 0)
       insertQIKeys = TRUE;
     if (pPrivInfo->hasPriv(USAGE_PRIV))
     {
       // do this only if QI is enabled and object has security keys defined
       if ( insertQIKeys )
-        findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, USAGE_PRIV );
+        findKeyAndInsertInOutputList(secKeySet, userHashValue, USAGE_PRIV, bindWA );
     }
 
     // plan requires privilege but user has none, report an error
@@ -7247,43 +7254,67 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 //   COM_QI_USER_GRANT_SPECIAL_ROLE: privileges granted to PUBLIC
 //
 // Keys are added as follows:
-//   if a privilege has been granted via a role, add a RoleUserKey
-//      if this role is revoked from the user, then invalidation is forced
-//   if a privilege has been granted to public, add a UserObjectPublicKey
-//      if a privilege is revoked from public, then invalidation is forced
-//   if a privilege has been granted directly to an object, add UserObjectKey
-//      if the privilege is revoked from the user, then invalidation is forced
-//   If a privilege has not been granted to an object, but is has been granted
-//      to a role, add a RoleObjectKey
+//   if a privilege has been granted to public, 
+//     add UserObjectPublicKey
+//       invalidation is enforced when priv is revoked from public
+//   if a privilege has been granted on a column of an object to a user:
+//     add UserColumnKey
+//       invalidation is enforced when and column priv is revoked from the user
+//   if a privilege has been granted on a column of an object to a role:
+//      add to ColumnRoleKeys
+//        invalidation is enforced when any priv is revoked from one of these roles
+//        or when one of these roles is revoked from the user.   
+//   if a privilege has been granted directly on an object to a user: 
+//     add UserObjectKey 
+//       invalidation is enforced when priv is revoked from the user
+//   if a privilege has been granted directly on an object to a role:
+//     add an entry to ObjectRoleKeys 
+//       invalidation is enforced when priv is revoked from one of these roles,
+//       or when one of these roles is revoked from user
 //
-//   So if the same privilege has been granted directly to the user and via
-//   a role granted to the user, we only add a UserObjectKey
 // ****************************************************************************
 void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                           , const uint32_t userHashValue
                                           , const PrivType which
+                                          , BindWA* bindWA
                                           )
 {
    // If no keys associated with object, just return
    if (KeysForTab.entries() == 0)
      return;
 
+   ComSecurityKey * UserColumnKey = NULL;
+   ComSecurityKey * RoleColumnKey = NULL;
    ComSecurityKey * UserObjectKey = NULL;
    ComSecurityKey * RoleObjectKey = NULL;
    ComSecurityKey * UserObjectPublicKey = NULL;
-   ComSecurityKey * RoleUserKey = NULL;
    
    // These may be implemented at a later time
    ComSecurityKey * UserSchemaKey = NULL; //privs granted at schema level to user
-   ComSecurityKey * RoleSchemaKey = NULL; //privs granted at schema level to role
 
    // Get action type for UserObjectKey based on the privilege (which)
    // so if (which) is SELECT, then the objectActionType is COM_QI_OBJECT_SELECT
    ComSecurityKey  dummyKey;
+   ComQIActionType columnActionType = 
+                   dummyKey.convertBitmapToQIActionType ( which, ComSecurityKey::OBJECT_IS_COLUMN );
    ComQIActionType objectActionType =
                    dummyKey.convertBitmapToQIActionType ( which, ComSecurityKey::OBJECT_IS_OBJECT );
 
    ComSecurityKey * thisKey = NULL;
+
+   // With column level privileges, the user may get privileges from various
+   // roles.  Today, we add all roles that may hold the requested privilege.
+   // If we ever fully support invalidation keys at the column level, then only 
+   // roles that are required to run the query should be added. 
+   // For example, 
+   //  user gets select on table1: col1, col2 from role1
+   //  user gets select on table1: col3, col4 from role2
+   //  If the query performs a select for col1, then only changes to role1 are relevant
+   //  Today, we include both role1 and role2 
+   //  Therefore, if role2 is revoked from the user, invalidation is unnecessarily enforced
+   ComSecurityKeySet ColumnRoleKeys(bindWA->wHeap());
+   ComSecurityKeySet ObjectRoleKeys(bindWA->wHeap());
+   ComSecurityKeySet SchemaRoleKeys(bindWA->wHeap());
 
    // NOTE: hashValueOfPublic will be the same for all keys, so we generate it only once.
    uint32_t hashValueOfPublic = ComSecurityKey::SPECIAL_OBJECT_HASH;
@@ -7293,8 +7324,24 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    {
       thisKey = &(KeysForTab[ii]);
   
+      // See if the key is column related
+      if ( thisKey->getSecurityKeyType() == columnActionType )
+      {
+         if ( thisKey->getSubjectHashValue() == userHashValue )
+         {
+            // Found a security key for the objectActionType
+            if ( ! UserColumnKey )
+               UserColumnKey = thisKey;
+         }
+         // Found a security key for a role associated with the user
+         else if (qiSubjectMatchesRole(thisKey->getSubjectHashValue()))
+         {
+            ColumnRoleKeys.insert(*thisKey);
+         }
+      }
+
       // See if the key is object related
-      if ( thisKey->getSecurityKeyType() == objectActionType )
+      else if ( thisKey->getSecurityKeyType() == objectActionType )
       {
          if ( thisKey->getSubjectHashValue() == userHashValue )
          {
@@ -7303,23 +7350,12 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                UserObjectKey = thisKey;
          }
          // Found a security key for a role associated with the user
-         else
+         else if (qiSubjectMatchesRole(thisKey->getSubjectHashValue()))
          {
-            if ( ! RoleObjectKey )
-               RoleObjectKey = thisKey;
+            ObjectRoleKeys.insert(*thisKey);
          }
       }
      
-      // See if the security key is role related
-      else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE) 
-      {
-         if ( thisKey->getSubjectHashValue() == userHashValue )
-         {
-            if (! RoleUserKey ) 
-               RoleUserKey = thisKey;
-         }
-      }
-
       else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_SPECIAL_ROLE)
       {
          if (thisKey->getObjectHashValue() == hashValueOfPublic )
@@ -7332,16 +7368,39 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
       else {;} // Not right action type, just continue traversing.
    }
 
-   // Determine best key, UserObjectKeys are better than RoleObjectKeys
-   ComSecurityKey * BestKey = (UserObjectKey) ? UserObjectKey : RoleObjectKey;
+   // Determine best key (fewest invalidations required)
 
-   if ( BestKey != NULL)
-      securityKeySet_.insert(*BestKey);
+   // For now, always add column invalidation keys.  Once full integration of
+   // column privileges is implemented, then this code changes
+   if (UserColumnKey)
+     securityKeySet_.insert(*UserColumnKey);
+   else if (ColumnRoleKeys.entries() > 0)
+   {
+      for (int j = 0; j < ColumnRoleKeys.entries(); j++)
+      {
+        securityKeySet_.insert(ColumnRoleKeys[j]);
 
-   // Add RoleUserKey if priv comes from role - handles revoke role from user
-   if (BestKey == RoleObjectKey)
-      if ( RoleUserKey )
-         securityKeySet_.insert(*RoleUserKey );
+        // add a key in case the role is revoked from the user
+        ComSecurityKey roleKey(userHashValue, ColumnRoleKeys[j].getSubjectHashValue());
+        securityKeySet_.insert(roleKey);
+      }
+   }
+
+   //   UserObjectKeys are better than ObjectRoleKeys
+   if (UserObjectKey)
+      securityKeySet_.insert(*UserObjectKey);
+
+   else if (ObjectRoleKeys.entries() > 0)
+   {
+      for (int j = 0; j < ObjectRoleKeys.entries(); j++)
+      {
+        securityKeySet_.insert(ObjectRoleKeys[j]);
+
+        // add a key in case the role is revoked from the user
+        ComSecurityKey roleKey(userHashValue, ObjectRoleKeys[j].getSubjectHashValue());
+        securityKeySet_.insert(roleKey);
+      }
+   }
 
    // Add public if it exists - handles revoke public from user
    if ( UserObjectPublicKey != NULL )
@@ -7755,8 +7814,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
         stoi_->setDeleteAccess();
         if (((GenericUpdate*)re)->isMerge())
           stoi_->setInsertAccess();
-        if (((Delete*)re)->isFastDelete())
-          stoi_->setSelectAccess();
       }
       break;
     case REL_SCAN:
@@ -12033,7 +12090,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
   // Triggers --
   
-  if ((NOT isFastDelete()) && (NOT noIMneeded()))
+  if (NOT noIMneeded())
     boundExpr = handleInlining(bindWA, boundExpr);
   else if (hbaseOper() && (getGroupAttr()->isEmbeddedUpdateOrDelete()))
   {
@@ -12935,16 +12992,10 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
 
     // If this is not an INTERNAL REFRESH command, make sure the MV is
     // initialized and available.
-    // If this is FastDelete using parallel purgedata, do not enforce
-    // that MV is initialized.
     if (!bindWA->isBindingMvRefresh())
     {
-      if (NOT ((getOperatorType() == REL_UNARY_DELETE) &&
-               (((Delete*)this)->isFastDelete())))
-        {
-          if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
-            return NULL;
-        }
+      if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
+        return NULL;
     }
   }
 
@@ -14410,20 +14461,23 @@ RelExpr * ControlQueryDefault::bindNode(BindWA *bindWA)
          }
        }
     }
-  
+
+
   if (holdOrRestoreCQD_ == 0)
     {
-  attrEnum_ = affectYourself ? defs.validateAndInsert(token_, value_, reset_)
-                             : defs.validate         (token_, value_, reset_);
-  if (attrEnum_ < 0)
-    {
-      if (bindWA) bindWA->setErrStatus();
-      return NULL;
-    }
-
-  // remember this control in the control table
-  if (affectYourself)
-    ActiveControlDB()->setControlDefault(this);
+      if (affectYourself)
+        attrEnum_ =  defs.validateAndInsert(token_, value_, reset_);
+      else
+        attrEnum_ = defs.validate(token_, value_, reset_);
+      if (attrEnum_ < 0)
+        {
+          if (bindWA) bindWA->setErrStatus();
+          return NULL;
+        }
+      
+      // remember this control in the control table
+      if (affectYourself)
+        ActiveControlDB()->setControlDefault(this);
     }
   else if ((holdOrRestoreCQD_ > 0) && (affectYourself))
     {
@@ -14434,7 +14488,7 @@ RelExpr * ControlQueryDefault::bindNode(BindWA *bindWA)
           return NULL;
         }
     }
-
+  
   return ControlAbstractClass::bindNode(bindWA);
 } // ControlQueryDefault::bindNode()
 

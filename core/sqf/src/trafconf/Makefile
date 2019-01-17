@@ -44,11 +44,14 @@ LIBS		= $(LIBTRAFCONFIG)
 LIBSX	+= -lrt
 
 # need -lsqlite3 for SQLite
-LIBSX	+=  -lsqlite3
+LIBSX	+=  -lsqlite3 -lpthread
+
+# need -lpthread starting on CentOS7
+LIBSX	+=  -lpthread  
 
 PROGS		= $(TRAFCONF)
 
-OBJTRAFCONFIG		= $(OUTDIR)/trafconfig.o \
+OBJTRAFCONFIG	= $(OUTDIR)/trafconfig.o \
 		  $(OUTDIR)/tcdb.o \
 		  $(OUTDIR)/tcdbstore.o \
 		  $(OUTDIR)/tclog.o \
@@ -57,11 +60,12 @@ OBJTRAFCONFIG		= $(OUTDIR)/trafconfig.o \
 
 #		  $(OUTDIR)/tcdbmysql.o
 
-OBJTRAFCONF		= $(OUTDIR)/trafconf.o \
+OBJTRAFCONF	= $(OUTDIR)/trafconf.o \
 		  $(OUTDIR)/clusterconf.o \
 		  $(OUTDIR)/lnodeconfig.o \
 		  $(OUTDIR)/pnodeconfig.o \
 		  $(OUTDIR)/persistconfig.o \
+		  $(OUTDIR)/nameserverconfig.o \
 		  $(OUTDIR)/trace.o \
 		  $(OUTDIR)/otrace.o \
 		  $(OUTDIR)/threadtls.o

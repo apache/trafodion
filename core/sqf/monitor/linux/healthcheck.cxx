@@ -54,14 +54,16 @@ using namespace std;
 #include "redirector.h"
 #include "replicate.h"
 
-
 extern CReqQueue ReqQueue;
 extern CMonitor *Monitor;
 extern CNode *MyNode;
+#ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
+#endif
 extern CHealthCheck HealthCheck;
 extern CReplicate Replicator;
 extern int MyPNID;
+extern bool IsRealCluster;
 
 // constructor
 CHealthCheck::CHealthCheck()
@@ -113,6 +115,18 @@ CHealthCheck::CHealthCheck()
         quiesceTimeoutSec_     = atoi(quiesceTimeoutC);
     }
 
+#ifdef NAMESERVER_PROCESS
+    cpuSchedulingDataEnabled_ = false;
+#else
+    cpuSchedulingDataEnabled_ = true;
+    char *env;
+    env = getenv("SQ_CPUSCHEDULINGDATA_ENABLED");
+    if ( env && isdigit(*env) )
+    {
+        cpuSchedulingDataEnabled_ = atoi(env);
+    }
+#endif
+
     if (trace_settings & TRACE_HEALTH)
         trace_printf("%s@%d quiesceTimeoutSec_ = %d, syncTimeoutSec_ = %d, workerTimeoutSec_ = %d\n", method_name, __LINE__, quiesceTimeoutSec_, CMonitor::SYNC_MAX_RESPONSIVE, CReqQueue::REQ_MAX_RESPONSIVE);
 
@@ -137,6 +151,74 @@ CHealthCheck::~CHealthCheck()
 {
 }
 
+const char *CHealthCheck::getStateStr(HealthCheckStates state)
+{
+    const char *ret;
+    switch (state)
+    {
+    case HC_AVAILABLE:
+        ret = "HC_AVAILABLE";
+        break;
+    case HC_UPDATE_SMSERVICE:
+        ret = "HC_UPDATE_SMSERVICE";
+        break;
+    case HC_UPDATE_WATCHDOG:
+        ret = "HC_UPDATE_WATCHDOG";
+        break;
+    case MON_READY:
+        ret = "MON_READY";
+        break;
+    case MON_SHUT_DOWN:
+        ret = "MON_SHUT_DOWN";
+        break;
+    case MON_NODE_QUIESCE:
+        ret = "MON_NODE_QUIESCE";
+        break;
+    case MON_SCHED_NODE_DOWN:
+        ret = "MON_SCHED_NODE_DOWN";
+        break;
+    case MON_NODE_DOWN:
+        ret = "MON_NODE_DOWN";
+        break;
+    case MON_STOP_WATCHDOG:
+        ret = "MON_STOP_WATCHDOG";
+        break;
+    case MON_START_WATCHDOG:
+        ret = "MON_START_WATCHDOG";
+        break;
+    case MON_EXIT_PRIMITIVES:
+        ret = "MON_EXIT_PRIMITIVES";
+        break;
+    case HC_EXIT:
+        ret = "HC_EXIT";
+        break;
+    default:
+        ret = "?";
+        break;
+    }
+    return ret;
+}
+
+#ifdef NAMESERVER_PROCESS
+void CHealthCheck::stopNameServer()
+{
+    const char method_name[] = "CHealthCheck::stopNameServer";
+    TRACE_ENTRY;
+
+    if (trace_settings & TRACE_HEALTH)
+        trace_printf("%s@%d stopping.\n", method_name, __LINE__);
+    char buf[MON_STRING_BUF_SIZE];
+    sprintf(buf, "[%s], stopping.\n", method_name);
+    mon_log_write(MON_HEALTHCHECK_STOP_NS_1, SQ_LOG_CRIT, buf);
+    // Don't generate a core file, abort is intentional
+    struct rlimit limit;
+    limit.rlim_cur = 0;
+    limit.rlim_max = 0;
+    setrlimit(RLIMIT_CORE, &limit);
+    abort();
+}
+#endif
+
 // Main body:
 // The health check thread waits on two conditions. A signal that is set by other monitor
 // threads after updating the state, and a timer event that pops when the timer expires. 
@@ -147,7 +229,6 @@ void CHealthCheck::healthCheckThread()
     TRACE_ENTRY;
 
     HealthCheckStates state;
-
     struct timespec ts;
 
     if (trace_settings & TRACE_HEALTH)
@@ -172,17 +253,24 @@ void CHealthCheck::healthCheckThread()
             mem_log_write(MON_HEALTHCHECK_WAKEUP_2, (int)(currTime_.tv_sec - wakeupTimeSaved_));
         }
 
-        // Replicate the clone to other nodes
-        CReplSchedData *repl = new CReplSchedData();
-        Replicator.addItem(repl);
+#ifndef NAMESERVER_PROCESS
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
+        if (cpuSchedulingDataEnabled_)
+        {
+            // Replicate this host's CPU scheduling data to other nodes
+            CReplSchedData *repl = new CReplSchedData();
+            Replicator.addItem(repl);
+        }
+#endif
+#endif
 
         state = state_;
 
+        if ( trace_settings & TRACE_HEALTH )
+            trace_printf("%s@%d State: %d(%s)\n", method_name, __LINE__, state, getStateStr(state));
+
         switch(state)
         {
-            if ( trace_settings & TRACE_HEALTH )
-                trace_printf("%s@%d State: %d\n", method_name, __LINE__, state);
-
             case MON_START_WATCHDOG:
                 // Start the watchdog timer. After this, WDT refresh becomes mandatory.
                 sendEventToWatchDog(Watchdog_Start);
@@ -215,6 +303,9 @@ void CHealthCheck::healthCheckThread()
                 break; 
 
             case MON_NODE_DOWN:
+#ifdef NAMESERVER_PROCESS
+                stopNameServer();
+#endif
                 if( getenv("SQ_VIRTUAL_NODES") )
                 {
                     // In a virtual cluster the monitor continues to run
@@ -233,6 +324,9 @@ void CHealthCheck::healthCheckThread()
                 break;
 
             case MON_SHUT_DOWN:
+#ifdef NAMESERVER_PROCESS
+                stopNameServer();
+#endif
                 if( getenv("SQ_VIRTUAL_NODES") )
                 {
                     // In a virtual cluster the monitor continues to run
@@ -440,7 +534,9 @@ void CHealthCheck::sendEventToSMService(SMServiceEvent_t event)
             trace_printf( "%s@%d - Sending event=%d\n"
                         , method_name, __LINE__, event );
         }
+#ifndef NAMESERVER_PROCESS
         smserviceProcess_->GenerateEvent( event, 0, NULL );
+#endif
     }
 
     TRACE_EXIT;
@@ -459,7 +555,9 @@ void CHealthCheck::sendEventToWatchDog(WatchdogEvent_t event)
             trace_printf( "%s@%d - Sending event=%d\n"
                         , method_name, __LINE__, event );
         }
+#ifndef NAMESERVER_PROCESS
         watchdogProcess_->GenerateEvent( event, 0, NULL );
+#endif
     }
 
     TRACE_EXIT;
@@ -545,11 +643,13 @@ void CHealthCheck::processTimerEvent()
         scheduleNodeDown(); // bring the node down
     }
 
+#ifndef NAMESERVER_PROCESS
     // refresh WDT 
     if ( SQ_theLocalIOToClient )
     {
         SQ_theLocalIOToClient->refreshWDT(++refreshCounter_);
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -604,6 +704,7 @@ void CHealthCheck::startQuiesce()
 
     ReqQueue.enqueueQuiesceReq();
 
+#ifndef NAMESERVER_PROCESS
     if (MyNode->getNumQuiesceExitPids() > 0) // count down quiesce only if there are pids on exit list.
     {
         clock_gettime(CLOCK_REALTIME, &quiesceStartTime_);
@@ -621,6 +722,7 @@ void CHealthCheck::startQuiesce()
     sprintf(buf, "[%s], Quiesce req queued. Send pids = %d, Exit pids = %d\n", 
             method_name, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
     mon_log_write(MON_HEALTHCHECK_QUIESCE_1, SQ_LOG_WARNING, buf);
+#endif
 
     TRACE_EXIT;
 }
@@ -637,19 +739,23 @@ void CHealthCheck::scheduleNodeDown()
     {
         if (quiesceCountingDown_)
         {
+#ifndef NAMESERVER_PROCESS
             if (trace_settings & TRACE_HEALTH)
                 trace_printf("%s@%d After wait, QuiesceSendPids = %d, QuiesceExitPids = %d\n", method_name,
                              __LINE__, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
+#endif
             quiesceCountingDown_ = false;
         }
         
         ReqQueue.enqueuePostQuiesceReq();
         nodeDownScheduled_ = true;
 
+#ifndef NAMESERVER_PROCESS
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Final node down req scheduled. QuiesceSendPids = %d, QuiesceExitPids = %d\n", 
                 method_name, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
         mon_log_write(MON_HEALTHCHECK_SCH_1, SQ_LOG_WARNING, buf);
+#endif
     }
 
     TRACE_EXIT; 

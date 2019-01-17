@@ -242,11 +242,13 @@ class Generator : public NABasicObject
     , AQR_WNR_INSERT_EMPTY    = 0x00000100
 
     // if trafodion/hbase IUD operation is using RI inlining
-    , RI_INLINING_FOR_TRAF_IUD = 0x00000200
+    , RI_INLINING_FOR_TRAF_IUD     = 0x00000200
 
     // If Hive tables are accessed at runtime
     , HIVE_ACCESS              = 0x00000400
     , CONTAINS_FAST_EXTRACT    = 0x00000800
+    , EFF_TREE_UPSERT          = 0x00001000
+
   };
  
   // Each operator node receives some tupps in its input atp and
@@ -1297,6 +1299,19 @@ public:
       flags2_ &= ~RI_INLINING_FOR_TRAF_IUD ;
   }
 
+
+  
+NABoolean isEffTreeUpsert() {
+   
+     return (flags2_ & EFF_TREE_UPSERT ) != 0;
+  }
+
+  void setEffTreeUpsert(NABoolean v)
+  {
+    v ? flags2_ |= EFF_TREE_UPSERT:
+      flags2_ &= ~EFF_TREE_UPSERT;
+  }
+
   inline Int64 getPlanId();
   inline Lng32 getExplainNodeId() const;
   inline Lng32 getNextExplainNodeId();
@@ -1413,6 +1428,7 @@ public:
 
   static TrafDesc * createConstrKeyColsDescs(Int32 numKeys,
                                              ComTdbVirtTableKeyInfo * keyInfo,
+                                             ComTdbVirtTableColumnInfo * colInfo,
                                              NAMemory * space);
 
   static TrafDesc * createRefConstrDescStructs(
@@ -1647,6 +1663,7 @@ public:
 
   void setHBaseNumCacheRows(double rowsAccessed, 
                             ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
+                            Int32 hbaseRowSize,
                             Float32 samplePercent = 0.0);
   void setHBaseCacheBlocks(Int32 hbaseRowSize, double rowsAccessed, 
                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa);

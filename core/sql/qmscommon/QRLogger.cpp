@@ -41,6 +41,7 @@
 #include "seabed/fserr.h"
 
 BOOL gv_QRLoggerInitialized_ = FALSE;
+QRLogger *gv_QRLoggerInstance_ = NULL;
 
 using namespace log4cxx;
 using namespace log4cxx::helpers;
@@ -99,8 +100,9 @@ QRLogger::QRLogger()
 // **************************************************************************
 QRLogger& QRLogger::instance()
 {
-  static QRLogger onlyInstance_;
-  return onlyInstance_;
+  if (gv_QRLoggerInstance_ == NULL)
+     gv_QRLoggerInstance_ = new QRLogger();
+  return *gv_QRLoggerInstance_;
 }
 
 

@@ -87,6 +87,7 @@
 #include "Context.h"
 #include <unistd.h>
 #include "QRLogger.h"
+#include "ExpLOBenums.h"
 
 extern char ** environ;
 
@@ -4345,8 +4346,9 @@ Lng32 SQL_EXEC_SetSessionAttr_Internal(
 
 
 Lng32 SQL_EXEC_GetRoleList(
-   Int32 &numRoles,
-   Int32 *&roleIDs)
+   Int32 &numEntries,
+   Int32 *& roleIDs,
+   Int32 *& granteeIDs)
 
 {
 
@@ -4362,8 +4364,9 @@ Lng32 SQL_EXEC_GetRoleList(
       threadContext->incrNumOfCliCalls();
       retcode =
       SQLCLI_GetRoleList(GetCliGlobals(),
-                         numRoles,
-                         roleIDs);
+                         numEntries,
+                         roleIDs,
+                         granteeIDs);
    }
    catch(...)
    {
@@ -6122,6 +6125,7 @@ Lng32 SQL_EXEC_SetSecInvalidKeys(
    return retcode;
 }
 
+
 Lng32 SQL_EXEC_GetSecInvalidKeys(
             /* IN */      Int64 prevTimestamp,
             /* IN/OUT */  SQL_QIKEY siKeys[],
@@ -6165,6 +6169,126 @@ Lng32 SQL_EXEC_GetSecInvalidKeys(
    return retcode;
 }
 
+Lng32 SQL_EXEC_SetLobLock(/* IN */   char *llid)           
+{
+  
+   Lng32 retcode = 0;
+   if (!llid || strlen(llid) == 0 )
+     return retcode;
+   CLISemaphore *tmpSemaphore = NULL;
+   ContextCli   *threadContext;
+   CLI_NONPRIV_PROLOGUE(retcode);
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      char llidAdd[LOB_LOCK_ID_SIZE+1];
+      // Prepend a '+' to indicate we are setting a new lock in the 
+      // shared segement
+      llidAdd[0] = '+';
+      memcpy(&llidAdd[1],llid,LOB_LOCK_ID_SIZE);
+      retcode = SQLCLI_SetLobLock(GetCliGlobals(),
+                                  (char *)llidAdd);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }  
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+
+
+   RecordError(NULL, retcode);
+   return retcode;
+}
+
+Lng32 SQL_EXEC_ReleaseLobLock(/* IN */   char *llid)           
+{
+   Lng32 retcode = 0;
+   if (!llid || strlen(llid) ==0 )
+     return retcode;
+   CLISemaphore *tmpSemaphore = NULL;
+   ContextCli   *threadContext;
+   CLI_NONPRIV_PROLOGUE(retcode);
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      char llidDel[LOB_LOCK_ID_SIZE+1];
+      // Prepend a '-' to indicate we are removing this lock from  the 
+      // shared segement
+      llidDel[0] = '-';
+      memcpy(&llidDel[1],llid,LOB_LOCK_ID_SIZE);
+      retcode = SQLCLI_SetLobLock(GetCliGlobals(),
+                                  (char *)llidDel);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }  
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+
+
+   RecordError(NULL, retcode);
+   return retcode;
+}
+Lng32 SQL_EXEC_CheckLobLock(/* IN */   char * llid, /* IN */ NABoolean *found)           
+{
+   Lng32 retcode=0;
+   if (!llid || (strlen(llid)==0))
+     {
+       *found = FALSE;
+       return retcode;
+     }
+   CLISemaphore *tmpSemaphore = NULL;
+   ContextCli   *threadContext;
+   CLI_NONPRIV_PROLOGUE(retcode);
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_CheckLobLock(GetCliGlobals(),
+                                  llid, found);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }  
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+
+
+   RecordError(NULL, retcode);
+   return retcode;
+}
 Lng32 SQL_EXEC_GetStatistics2(
              /* IN */  	short statsReqType,
 	    /* IN */  	char *statsReqStr,

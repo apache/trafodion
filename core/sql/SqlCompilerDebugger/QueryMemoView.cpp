@@ -23,7 +23,8 @@
 #include "QueryData.h"
 #include "MainWindow.h"
 
-extern MainWindow *mainWindow_;
+// defined in MainWindow.cpp
+extern MainWindow *GlobGuiMainWindow;
 
 
 DirtyGrid::DirtyGrid(Int32 row, Int32 col,const QIcon & pict) :
@@ -164,10 +165,10 @@ void QueryMemoView::SetMemoData(void *memoData)
 void QueryMemoView::syncToDocument() 
 {
   // make Grp No and Exp No consistent with the plan in the document.
-  m_memo =  (CascadesMemo*)(mainWindow_->m_querydata->GetMemo());
+  m_memo =  (CascadesMemo*)(GlobGuiMainWindow->m_querydata->GetMemo());
   void *plan = NULL;
   void *query = NULL;
-  mainWindow_->m_querydata->GetData(&query, &plan);
+  GlobGuiMainWindow->m_querydata->GetData(&query, &plan);
   if(plan)
     syncGrpNoExpNoToPlan((CascadesPlan *)plan);
 }
@@ -220,13 +221,13 @@ NABoolean QueryMemoView::NeedToStop(Int32 passNo, Int32 groupNo, Int32 currentTa
   {
        logprint("m_stopTask:%p => task:%p\n", m_stopTask, task);
        m_hold = TRUE;
-       m_memo =  (CascadesMemo*)(mainWindow_->m_querydata->GetMemo());
-       m_cascadesTask = (CascadesTaskList*)(mainWindow_->m_querydata->GetTaskList());
+       m_memo =  (CascadesMemo*)(GlobGuiMainWindow->m_querydata->GetMemo());
+       m_cascadesTask = (CascadesTaskList*)(GlobGuiMainWindow->m_querydata->GetTaskList());
        //------------------------------------------------------------------
        // GSH : First we need to update the memo view with the latest memo
        // and task list.
        //------------------------------------------------------------------
-       m_analysis = (QueryAnalysis*)(mainWindow_->m_querydata->GetAnalysis());
+       m_analysis = (QueryAnalysis*)(GlobGuiMainWindow->m_querydata->GetAnalysis());
 
        UpdateGroupList();
 
@@ -474,7 +475,7 @@ void QueryMemoView::UpdateTaskList()
   // display the text describing each task in the m_task List control of
   // the Memo View.
   //---------------------------------------------------------------------
-  m_cascadesTask = (CascadesTaskList*)(mainWindow_->m_querydata->GetTaskList());
+  m_cascadesTask = (CascadesTaskList*)(GlobGuiMainWindow->m_querydata->GetTaskList());
   //---------------------------------------------------------------------
   // GSH : Don't do anything if we aren't optimizing
   //---------------------------------------------------------------------
@@ -605,14 +606,14 @@ CascadesPlan * QueryMemoView::calcCurrPlan()
 void QueryMemoView::setDisplayExpr(RelExpr* expr, CascadesPlan* plan)
 {
   // need to update m_currGrpNo & m_currExpNo
-  mainWindow_->m_querydata->SetData(expr, plan);
-  //mainWindow_->UpdateAllViews();
-  mainWindow_->UpdateQueryTreeView();
+  GlobGuiMainWindow->m_querydata->SetData(expr, plan);
+  //GlobGuiMainWindow->UpdateAllViews();
+  GlobGuiMainWindow->UpdateQueryTreeView();
 }
 
 void QueryMemoView::DrawMemo(void)
 { 	
-  m_memo = (CascadesMemo*)(mainWindow_->m_querydata->GetMemo());
+  m_memo = (CascadesMemo*)(GlobGuiMainWindow->m_querydata->GetMemo());
   if(!m_memo){
     m_currGrpNo = 0;
     m_currExpNo = 0;
@@ -918,7 +919,7 @@ void QueryMemoView::OnMemoStepOneTask()
 {
   ResetMemoStops();
   StopAtNextTask(TRUE);
-  mainWindow_->IsBackToSqlCompiler_ = true;
+  GlobGuiMainWindow->IsBackToSqlCompiler_ = true;
   turnOffMemoTrack();
 }
 
@@ -932,7 +933,7 @@ void QueryMemoView::OnMemoSteptasknum()
     }
     ResetMemoStops();
     StopAtTaskNo(ui->task_spin->value(), TRUE);		
-    mainWindow_->IsBackToSqlCompiler_ = true;
+    GlobGuiMainWindow->IsBackToSqlCompiler_ = true;
 }
 
 void QueryMemoView::OnMemoStepTask()
@@ -946,7 +947,7 @@ void QueryMemoView::OnMemoStepTask()
          return;
        ResetMemoStops();
        StopAtTask(task, TRUE);
-       mainWindow_->IsBackToSqlCompiler_ = true;
+       GlobGuiMainWindow->IsBackToSqlCompiler_ = true;
     }
 }
 
@@ -954,27 +955,27 @@ void QueryMemoView::OnMemoStepgrp()
 {
   ResetMemoStops();
   StopAtExpr(ui->group_spin->value(), -1, TRUE);	
-  mainWindow_->IsBackToSqlCompiler_ = true;
+  GlobGuiMainWindow->IsBackToSqlCompiler_ = true;
 }
 
 void QueryMemoView::OnMemoStepexpr() 
 {
   ResetMemoStops();
   StopAtExpr(ui->group_spin->value(), ui->expr_spin->value(), TRUE);		
-  mainWindow_->IsBackToSqlCompiler_ = true;
+  GlobGuiMainWindow->IsBackToSqlCompiler_ = true;
 }
 
 void QueryMemoView::OnMemoFinish() 
 {
   ResetMemoStops();
-  mainWindow_->IsBackToSqlCompiler_ = true;
+  GlobGuiMainWindow->IsBackToSqlCompiler_ = true;
   turnOffMemoTrack();
 }
 
 void QueryMemoView::OnMemoFinishpass() 
 {
   ResetMemoStops();
-  mainWindow_->IsBackToSqlCompiler_ = true;
+  GlobGuiMainWindow->IsBackToSqlCompiler_ = true;
   turnOffMemoTrack();
 }
 
@@ -1064,7 +1065,7 @@ void QueryMemoView::displayCurrExpr()
 	}
     }
     //set tree root of query viewer
-    mainWindow_->m_querydata->SetData(e, p);
-    mainWindow_->UpdateQueryTreeView();
+    GlobGuiMainWindow->m_querydata->SetData(e, p);
+    GlobGuiMainWindow->UpdateQueryTreeView();
   }
 }

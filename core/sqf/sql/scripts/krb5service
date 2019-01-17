@@ -47,7 +47,7 @@
 #   stop    - stops the ticket renewal service
 #
 # Location attributes (see krb5functions to change these values):
-#  [LOG_FILE]  : $TRAF_HOME/logs/krb5check - log where all events are stored
+#  [LOG_FILE]  : $TRAF_LOG/krb5check - log where all events are stored
 #    (the log file is recreated each time the krb5service is started)
 #  [LOCK_FILE] : $TRAF_VAR/krb5check - file to keep track of krb5check process
 #    (acts as a semiphore to prevent multiple occurrances from running)
@@ -228,7 +228,7 @@ if [ $doStart -eq 1 ]; then
   fi
 
   # remove log, may want to handle log garbage collection differently 
-  rm $TRAF_HOME/logs/krb5check 
+  rm $TRAF_LOG/krb5check 
 
   # kick off a process that wakes up once in a while and check for 
   # ticket expirations

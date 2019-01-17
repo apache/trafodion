@@ -28,10 +28,15 @@
 #include "montrace.h"
 #include "monsonar.h"
 #include "monlogging.h"
+#include "ptpclient.h"
 
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
+extern bool NameServerEnabled;
+extern CPtpClient *PtpClient;
+
+extern _TM_Txid_External invalid_trans( void );
 
 CExtNotifyReq::CExtNotifyReq (reqQueueMsg_t msgType, int pid,
                               struct message_def *msg )
@@ -125,35 +130,31 @@ void CExtNotifyReq::performRequest()
 
     if ( requester )
     {
-        CProcess *sourceProcess = NULL;
-
-        if ( processName_.size() )
-        { // find by name (check node state, don't check process state, not backup)
-            if (trace_settings & TRACE_REQUEST)
-                trace_printf("%s@%d" " - Finding sourceProcess (name,verifier)" "\n", method_name, __LINE__);
-            sourceProcess = Nodes->GetProcess( processName_.c_str()
-                                             , verifier_
-                                             , true, false, false );
-        }     
-        else
-        { // find by nid (check node state, don't check process state, backup is Ok)
-            if (trace_settings & TRACE_REQUEST)
-                trace_printf("%s@%d" " - Finding sourceProcess (nid,pid,verifier)" "\n", method_name, __LINE__);
-            sourceProcess = Nodes->GetProcess( nid_
-                                             , pid
-                                             , verifier_
-                                             , true, false, true );
-        }
-        
+        CProcess *sourceProcess = requester;
         if ( sourceProcess )
         {
             if (trace_settings & TRACE_REQUEST)
-                trace_printf("%s@%d - Found sourceProcess" "\n", method_name, __LINE__);
+            {
+                trace_printf( "%s@%d - Found sourceProcess %s (%d,%d:%d), clone=%d\n"
+                            , method_name, __LINE__
+                            , sourceProcess->GetName()
+                            , sourceProcess->GetNid()
+                            , sourceProcess->GetPid()
+                            , sourceProcess->GetVerifier()
+                            , sourceProcess->IsClone() );
+            }
         }
         else
         {
             if (trace_settings & TRACE_REQUEST)
-                trace_printf("%s@%d - Can't find sourceProcess\n", method_name, __LINE__);
+            {
+                trace_printf( "%s@%d - Can't find sourceProcess %s (%d,%d:%d)\n"
+                            , method_name, __LINE__
+                            , processName_.c_str()
+                            , nid_
+                            , pid
+                            , verifier_ );
+            }
         }
 
         if ( msg_->u.request.u.notify.cancel )
@@ -170,26 +171,32 @@ void CExtNotifyReq::performRequest()
         {
             CProcess *targetProcess = NULL;
 
-
             if ( target_process_name.size() )
             { // find by name (check node state, don't check process state, not backup)
                 if (trace_settings & TRACE_REQUEST)
+                {
                     trace_printf( "%s@%d" " - Finding targetProcess (%s:%d)" "\n"
                                 , method_name, __LINE__
                                 , target_process_name.c_str()
                                 , target_verifier );
-                targetProcess = Nodes->GetProcess( target_process_name.c_str()
-                                                 , target_verifier
-                                                 , true, false, false );
+                }
+                if (msg_->u.request.u.notify.target_process_name[0] == '$' )
+                {
+                    targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                     , target_verifier
+                                                     , true, false, false );
+                }
             }     
             else
             { // find by nid (check node state, don't check process state, backup is Ok)
                 if (trace_settings & TRACE_REQUEST)
+                {
                     trace_printf( "%s@%d" " - Finding targetProcess (%d,%d:%d)\n"
                                 , method_name, __LINE__
                                 , target_nid
                                 , target_pid
                                 , target_verifier );
+                }
                 targetProcess = Nodes->GetProcess( target_nid
                                                  , target_pid
                                                  , target_verifier
@@ -199,12 +206,61 @@ void CExtNotifyReq::performRequest()
             if ( targetProcess )
             {
                 if (trace_settings & TRACE_REQUEST)
-                    trace_printf("%s@%d" " - Found targetProcess" "\n", method_name, __LINE__);
+                {
+                    trace_printf( "%s@%d - Found targetProcess %s (%d,%d:%d), clone=%d\n"
+                                , method_name, __LINE__
+                                , targetProcess->GetName()
+                                , targetProcess->GetNid()
+                                , targetProcess->GetPid()
+                                , targetProcess->GetVerifier()
+                                , targetProcess->IsClone() );
+                }
             }
             else
             {
-                if (trace_settings & TRACE_REQUEST)
-                    trace_printf("%s@%d - Can't find targetProcess\n", method_name, __LINE__);
+                if (NameServerEnabled)
+                {
+                    if ( target_process_name.size() )
+                    { // Name Server find by name:verifier
+                        if (trace_settings & TRACE_REQUEST)
+                        {
+                            trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                        , method_name, __LINE__
+                                        , target_process_name.c_str()
+                                        , target_verifier );
+                        }
+                        if (msg_->u.request.u.notify.target_process_name[0] == '$' )
+                        {
+                            targetProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                                 , target_verifier );
+                        }
+                    }     
+                    else
+                    { // Name Server find by nid,pid:verifier
+                        if (trace_settings & TRACE_REQUEST)
+                        {
+                            trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                        , method_name, __LINE__
+                                        , target_nid
+                                        , target_pid
+                                        , target_verifier );
+                        }
+                        targetProcess = Nodes->CloneProcessNs( target_nid
+                                                             , target_pid
+                                                             , target_verifier );
+                    }
+                    if (targetProcess)
+                    {
+                        if (trace_settings & TRACE_REQUEST)
+                            trace_printf( "%s@%d - Found targetProcess %s (%d,%d:%d), clone=%d\n"
+                                        , method_name, __LINE__
+                                        , targetProcess->GetName()
+                                        , targetProcess->GetNid()
+                                        , targetProcess->GetPid()
+                                        , targetProcess->GetVerifier()
+                                        , targetProcess->IsClone() );
+                    }
+                }
             }
             
             if ( targetProcess )
@@ -221,17 +277,44 @@ void CExtNotifyReq::performRequest()
                                     target_verifier,
                                     targetProcess->GetVerifier());
                     }            
-                } else
+                } 
+                else
                 {
-                    if ( msg_->u.request.u.notify.cancel )
-                    {   // Unregister interest in death of target process 
-                        status = targetProcess->CancelDeathNotification( nid_
-                                                                       , pid
-                                                                       , verifier_
-                                                                       , msg_->u.request.u.notify.trans_id);
-                    }
-                    else if ( sourceProcess)
+                    if (sourceProcess)
                     {   // Register interest in death of target process 
+                        if (NameServerEnabled && targetProcess->IsClone())
+                        {
+                            CLNode *targetLNode = Nodes->GetLNode( targetProcess->GetNid() );
+                        
+                            _TM_Txid_External transId = msg_->u.request.u.notify.trans_id;
+                            int rc = -1;
+
+                            // Forward the process cancel death notification to the target node
+                            rc = PtpClient->ProcessNotify( sourceProcess->GetNid()
+                                                         , sourceProcess->GetPid()
+                                                         , sourceProcess->GetVerifier()
+                                                         , transId
+                                                         , false
+                                                         , targetProcess
+                                                         , targetLNode->GetNid()
+                                                         , targetLNode->GetNode()->GetName() );
+                            if (rc)
+                            {
+                                char la_buf[MON_STRING_BUF_SIZE];
+                                snprintf( la_buf, sizeof(la_buf)
+                                        , "[%s] - Can't send process notify request "
+                                          "for process %s (%d, %d) "
+                                          "to target node %s, nid=%d\n"
+                                        , method_name
+                                        , sourceProcess->GetName()
+                                        , sourceProcess->GetNid()
+                                        , sourceProcess->GetPid()
+                                        , targetLNode->GetNode()->GetName()
+                                        , targetLNode->GetNid() );
+                                mon_log_write(MON_REQ_NOTIFY_1, SQ_LOG_ERR, la_buf);
+                            }
+                        }
+                        
                         sourceProcess->procExitReg( targetProcess,
                                                     msg_->u.request.u.notify.trans_id);
                         status = SUCCESS;
@@ -241,7 +324,9 @@ void CExtNotifyReq::performRequest()
             else
             {
                 if (trace_settings & TRACE_REQUEST)
-                    trace_printf("%s@%d" " - Can't find targerProcess" "\n", method_name, __LINE__);
+                {
+                    trace_printf("%s@%d" " - Can't find targetProcess" "\n", method_name, __LINE__);
+                }
             }
         }
 
@@ -254,13 +339,17 @@ void CExtNotifyReq::performRequest()
         {
             msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
             if (trace_settings & TRACE_REQUEST)
+            {
                 trace_printf("%s@%d" " - Successful" "\n", method_name, __LINE__);
+            }
         }
         else
         {
             msg_->u.reply.u.generic.return_code = MPI_ERR_NAME;
             if (trace_settings & TRACE_REQUEST)
+            {
                 trace_printf("%s@%d" " - Unsuccessful" "\n", method_name, __LINE__);
+            }
         }
 
         // Send reply to requester
@@ -270,7 +359,9 @@ void CExtNotifyReq::performRequest()
     {   // Reply to requester so it can release the buffer.  
         // We don't know about this process.
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
             trace_printf("%s@%d - Can't find requester, rc=%d\n", method_name, __LINE__, MPI_ERR_NAME);
+        }
         errorReply( MPI_ERR_EXITED );
     }
 

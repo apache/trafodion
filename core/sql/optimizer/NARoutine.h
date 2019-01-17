@@ -145,7 +145,7 @@ public:
   inline const ComString        &getSignature()            const { return signature_; }
   inline const ComObjectName    &getLibrarySqlName()       const { return librarySqlName_; }
   inline const QualifiedName    &getSqlName()              const { return name_; }  
-  inline       ComSecurityKeySet getSecKeySet()                  { return routineSecKeySet_ ; }
+  inline       ComSecurityKeySet getSecKeySet()                  { return secKeySet_ ; }
   inline const Int64             getRoutineID()            const { return objectUID_; }
   inline const Int32              getStateAreaSize()        const { return stateAreaSize_; }
   inline const NAString         &getDllName()              const { return dllName_; }
@@ -174,13 +174,23 @@ public:
   inline Int32                        getActionPosition() const { return actionPosition_; }
 
   inline PrivMgrUserPrivs *              getPrivInfo()    const { return privInfo_; }
+  inline PrivMgrDescList  *              getPrivDescs()   const { return privDescs_; }
   inline Int32                           getObjectOwner() const { return objectOwner_; }
   inline Int32                           getSchemaOwner() const { return schemaOwner_; }
-
+  inline Int64  getLibRedefTime() const {return libRedefTime_;}
+  inline const NAString  &getLibBlobHandle() const {return libBlobHandle_;}
+  inline const NAString  &getLibSchName() const {return libSchName_;}
+  inline Int32 getLibVersion() const {return libVersion_;}
+  inline Int64 getLibObjUID() const {return libObjUID_;}
   inline void  setudfFanOut      (Int32 fanOut)       { udfFanOut_ = fanOut; }
   inline void  setExternalPath   (ComString path)     { externalPath_   = path; }
   inline void  setFile           (ComString file)     { externalFile_   = file; }  
   inline void  setExternalName   (ComString fname)    { externalName_   = fname; } 
+  inline void  setLibRedefTime (Int64 rtime) { libRedefTime_ = rtime;}
+  inline void  setLibBlobHandle(NAString lobHandle)  {libBlobHandle_ = lobHandle;}
+  inline void  setLibVersion(Int32 version) { libVersion_ = version;}
+  inline void  setLibObjUID(Int64 libobjuid) { libObjUID_ = libobjuid;}
+  inline void  setLibSchName(NAString schName)  {libSchName_ = schName;}
   inline void  setLibrarySqlName (ComObjectName lib)  { librarySqlName_   = lib; }
   inline void  setLanguage  (ComRoutineLanguage lang) { language_ = lang; }  
   inline void  setRoutineType    (ComRoutineType typ) { UDRType_ = typ; }  
@@ -205,7 +215,9 @@ public:
   inline NABoolean hasResultSets()        const { return (maxResults_ > 0); }
 
 
-  void getPrivileges(TrafDesc * priv_desc);
+  void setPrivInfo(PrivMgrUserPrivs *privInfo) { privInfo_ = privInfo; }
+  void setPrivDescs(PrivMgrDescList *privDescs) { privDescs_ = privDescs; }
+  void getPrivileges(TrafDesc * priv_desc, BindWA * bindWA);
 
   // -------------------------------------------------------------------
   // Standard operators
@@ -247,6 +259,11 @@ private:
   ComString            externalPath_;   // URL
   ComString            externalFile_;
   ComString            externalName_;   // Java method name
+  Int64                libRedefTime_;
+  NAString             libBlobHandle_;
+  NAString             libSchName_;
+  Int32                libVersion_;
+  Int64                libObjUID_;
   ComString            signature_;
   ComObjectName        librarySqlName_;        // ANSI name of JAR/DLL
   ComRoutineParamStyle paramStyle_;
@@ -258,7 +275,6 @@ private:
   NABoolean            isExtraCall_;
   NABoolean            hasOutParams_;
 
-  ComSecurityKeySet    routineSecKeySet_ ;
 
   Int64                objectUID_;
   NABoolean            isUniversal_;
@@ -283,7 +299,10 @@ private:
   COM_VERSION          schemaVersionOfRoutine_;
   Int32                objectOwner_;
   Int32                schemaOwner_;
+
+  PrivMgrDescList     *privDescs_;
   PrivMgrUserPrivs    *privInfo_;
+  ComSecurityKeySet    secKeySet_ ;
 
 };
 

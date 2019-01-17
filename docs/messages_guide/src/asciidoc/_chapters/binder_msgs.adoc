@@ -2404,6 +2404,23 @@ statement.
 
 *Recovery:* Modify the statement and resubmit.
 
+[[SQL-4182]]
+== SQL 4182
+
+```
+Function <function-name> operand <operand-position> must be of type <data-type>.
+```
+
+*Cause:* The expression given for the indicated operand of the indicated function
+has the wrong data type. 
+
+*Effect:* {project-name} is unable to compile the statement.
+
+*Recovery:* Modify the statement and resubmit. If the expression in question
+is a dynamic parameter and the required
+data type is DATE, TIME, TIMESTAMP or INTERVAL, you must use a CAST expression to force
+the dynamic parameter to the required data type.
+
 [[SQL-4183]]
 == SQL 4183
 
@@ -2901,4 +2918,18 @@ Use of predefined UDF <name> is deprecated and this function will be removed in 
 *Effect:* The operation succeeds - this is only a warning.
 
 *Recovery:* See message.
+
+[[SQL-4497]]
+== SQL 4497
+
+```
+The <number> operand of builtin-func <name> must be <data type>.
+
+```
+
+*Cause:* You attempted to use an invalid type for the given operand of the given function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
 

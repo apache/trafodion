@@ -29,6 +29,12 @@
 #include "monsonar.h"
 #include "monlogging.h"
 
+#ifndef NAMESERVER_PROCESS
+#include "ptpclient.h"
+extern bool NameServerEnabled;
+extern CPtpClient *PtpClient;
+#endif
+
 extern CMonStats *MonStats;
 extern CNodeContainer *Nodes;
 
@@ -72,7 +78,6 @@ void CExtOpenReq::performRequest()
     const char method_name[] = "CExtOpenReq::performRequest";
     TRACE_ENTRY;
 
-
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_open_Incr();
@@ -93,7 +98,7 @@ void CExtOpenReq::performRequest()
                     , msg_->u.request.u.open.target_verifier
                     , msg_->u.request.u.open.death_notification ? "true" : "false");
     }
-
+    
     bool status;
     CProcess *opener = ((CReqResourceProc *) resources_[0])->getProcess();
     CProcess *opened = ((CReqResourceProc *) resources_[1])->getProcess();
@@ -103,7 +108,7 @@ void CExtOpenReq::performRequest()
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-          trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
+              trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
                        method_name, __LINE__, id_);
         }
         errorReply( MPI_ERR_NAME );
@@ -147,7 +152,16 @@ void CExtOpenReq::performRequest()
         msg_->u.reply.u.open.type = opened->GetType();
         msg_->u.reply.u.open.return_code = MPI_SUCCESS;
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            trace_printf("%s@%d - Successful\n", method_name, __LINE__);
+        {
+            trace_printf( "%s@%d - Open successful, opened %s (%d, %d:%d), "
+                          "port=%s\n"
+                        , method_name, __LINE__
+                        , opened->GetName()
+                        , msg_->u.reply.u.open.nid
+                        , msg_->u.reply.u.open.pid
+                        , msg_->u.reply.u.open.verifier
+                        , msg_->u.reply.u.open.port );
+        }
 
         // Send reply to requester
         lioreply(msg_, pid_);
@@ -190,6 +204,9 @@ bool CExtOpenReq::prepare()
     TRACE_ENTRY;
 
     int target_nid = -1;
+    int target_pid = -1;
+    Verifier_t target_verifier = -1;
+    string target_process_name;
     CLNode *target_lnode = NULL;
 
     if ( prepared_ == true )
@@ -212,8 +229,8 @@ bool CExtOpenReq::prepare()
         return false;
     }
 
-    CProcess * openerProcess;
-    CProcess * openedProcess;
+    CProcess * openerProcess = NULL;
+    CProcess * openedProcess = NULL;
 
     // Get process object for opener process
     if ( msg_->u.request.u.open.process_name[0] )
@@ -223,7 +240,7 @@ bool CExtOpenReq::prepare()
                                          , true, false, false );
     }
     else
-    { // find by nid (check node state, don't check process state, backup is Ok)
+    { // find by pid (check node state, don't check process state, backup is Ok)
         openerProcess = Nodes->GetProcess( msg_->u.request.u.open.nid
                                          , msg_->u.request.u.open.pid
                                          , msg_->u.request.u.open.verifier
@@ -246,16 +263,57 @@ bool CExtOpenReq::prepare()
     // Get process object for process to open
     if ( msg_->u.request.u.open.target_process_name[0] ) 
     { // find by name (check node state, don't check process state, backup is NOT Ok)
-        openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_process_name
-                                         , msg_->u.request.u.open.target_verifier
-                                         , true, false, false );
+        if (msg_->u.request.u.open.target_process_name[0] == '$' )
+        {
+            openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_process_name
+                                             , msg_->u.request.u.open.target_verifier
+                                             , true, false, false );
+        }
     }
     else
-    { // find by nid (check node state, don't check process state, backup is Ok)
+    { // find by pid (check node state, don't check process state, backup is Ok)
         openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_nid
                                          , msg_->u.request.u.open.target_pid
                                          , msg_->u.request.u.open.target_verifier
                                          , true, false, true );
+    }
+
+    if ( openedProcess == NULL )
+    {
+        if (NameServerEnabled)
+        {
+            target_nid = msg_->u.request.u.open.target_nid;
+            target_pid = msg_->u.request.u.open.target_pid;
+            target_verifier  = msg_->u.request.u.open.target_verifier;
+            target_process_name = (const char *) msg_->u.request.u.open.target_process_name;
+
+            if ( target_process_name.size() )
+            { // Name Server find by name:verifier
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                , method_name, __LINE__
+                                , target_process_name.c_str()
+                                , target_verifier );
+                if (msg_->u.request.u.open.target_process_name[0] == '$' )
+                {
+                    openedProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                         , target_verifier );
+                }
+            }     
+            else
+            { // Name Server find by nid,pid:verifier
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , target_nid
+                                , target_pid
+                                , target_verifier );
+                openedProcess = Nodes->CloneProcessNs( target_nid
+                                                     , target_pid
+                                                     , target_verifier );
+            }
+        }
+        
     }
 
     if ( openedProcess )

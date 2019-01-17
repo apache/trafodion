@@ -2804,7 +2804,9 @@ public:
   ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
 
   ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
-					   ComDiagsArea** = 0);  
+					   ComDiagsArea** = 0);
+
+  Int64 getExtraTimeValue(rec_datetime_field eField, Lng32 eCode, char *dateTime);
   Long pack(void *);
 
   // ---------------------------------------------------------------------
@@ -3015,12 +3017,13 @@ class  ExpRaiseErrorFunction : public ex_function_clause {
 
 public:
   ExpRaiseErrorFunction (Attributes ** attr,
-				    Space *space,
-				    Lng32 sqlCode,
-				    NABoolean raiseError = TRUE,
-				    const char *constraintName=NULL,
-				    const char *tableName=NULL,
-					const NABoolean hasStringExp=FALSE);  // -- Triggers
+                         Space *space,
+                         Lng32 sqlCode,
+                         NABoolean raiseError = TRUE,
+                         const char *constraintName=NULL,
+                         const char *tableName=NULL,
+                         const NABoolean hasStringExp=FALSE,  // -- Triggers
+                         const char *optionalStr = NULL);
   ExpRaiseErrorFunction();
  
  
@@ -3038,6 +3041,8 @@ public:
   const char *getTableName() {return tableName_;};
   void setTableName(const char * tableName) 
   { tableName_ = (char*)tableName;};
+
+  const char * getOptionalStr() {return optionalStr_; }
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
@@ -3072,17 +3077,23 @@ private:
     RAISE_ERROR	=0x00000001	// Raise Error if set, or it's warning
   };
 
+  enum {MAX_OPTIONAL_STR_LEN = 1023};
+
   NABasicPtr /*const char* */ constraintName_; // 00-07
   NABasicPtr /*const char* */ tableName_;      // 08-15
   Int32                       theSQLCODE_;     // 16-19
   Int32                       flags_;          // 20-23
   // TRUE, raise error. FALSE, raise warning.
+
+  // one byte for null terminator.
+  char  optionalStr_[MAX_OPTIONAL_STR_LEN+1];      // 24-1047
+
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char          fillers_[8];                   // 24-31
+  char          fillers_[8];                   // 1048-1055
 
 };
 
@@ -4044,6 +4055,10 @@ public:
 
   NABoolean isCurr() { return ((flags_ & IS_CURR) != 0); }
 
+  void setRetryNum(UInt32 n) { retryNum_ = n; }
+
+  UInt32 getRetryNum() { return retryNum_; }
+
  private:
 enum
   {
@@ -4053,7 +4068,8 @@ enum
   SequenceGeneratorAttributes sga_;
 
   UInt32 flags_;
-  char filler1_[4];
+
+  UInt32 retryNum_;
   // ---------------------------------------------------------------------
 };
 
@@ -4186,7 +4202,26 @@ private:
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
   char          fillers_[8];            // 08-15
+};
 
+class ex_function_split_part: public ex_function_clause {
+
+public:
+    ex_function_split_part(OperatorTypeEnum oper_type
+                                      , Attributes **attr
+                                      , Space *space);
+    ex_function_split_part();
+
+    ex_expr::exp_return_type eval(char *op_data[], CollHeap*, ComDiagsArea** = 0);
+    Long pack(void *);
+    virtual unsigned char getClassVersionID(){return 1;}
+    virtual void populateImageVersionIDArray()
+      {
+         setImageVersionID(2, getClassVersionID());
+         ex_function_clause::populateImageVersionIDArray();
+      }
+
+    virtual short getClassSize(){return (short)sizeof(*this);} 
 };
 
 

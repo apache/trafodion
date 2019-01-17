@@ -226,7 +226,7 @@ sub parseStatement {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
-                if ($s =~ /(DTM|PERSIST|PSD|SSMP|TMID|WDG)/) {
+                if ($s =~ /(DTM|PERSIST|PSD|SSMP|TMID|WDG|TNS)/) {
                     $g_processType = $1;
                     $s =~ s:$1::;
                     $g_opts |= 0x2;
@@ -234,7 +234,7 @@ sub parseStatement {
                     parseEnd($s);
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting { DTM | PERSIST |PSD | SSMP | TMID | WDG}, but saw $s\n"; #T
+                    print "   Error: Expecting { DTM | PERSIST |PSD | SSMP | TMID | WDG | TNS }, but saw $s\n"; #T
                 }
             }
         }

@@ -324,15 +324,15 @@ The following table summarizes the {project-name} SQL data types:
 
 [cols="14%,14%,24%,24%,24%",options="header"]
 |===
-| Category | Type | SQL Designation | Description | Size or Range^1^
-.8+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 200000 characters^2^ ^8^
-| NCHAR                | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
-| NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
-.5+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
-| VARCHAR2                     | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
-| CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
-| NCHAR VARYING                | Variable-length ASCII character string | 1 to 200000 bytes^4^ ^7^ ^9^
-| NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 200000 characters^4^ ^7^ ^8^
+^| *Category* ^| *Type* ^| *SQL Designation* ^| *Description* ^| *Size or Range*^1^
+.8+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 16,777,216 bytes ^2^
+| NCHAR                | Fixed-length character data in predefined national character set | 1 to 16,777,216 bytes^2^ ^3^ 
+| NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 16,777,216 bytes^2^ ^3^
+.5+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^4^
+| VARCHAR2                     | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^4^
+| CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^4^
+| NCHAR VARYING                | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^3^ ^4^
+| NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 16,777,216 bytes^2^ ^3^ ^4^
 .6+| Datetime Data Types .6+| Date-Time | | Point in time, using the Gregorian calendar and a 24 hour clock system. The five supported designations are listed below.
 | YEAR 0001-9999 +
 MONTH 1-12 +
@@ -358,7 +358,7 @@ FRACTION in 4 bytes +
 | TIME                         | Time of day, 24 hour clock, no time precision. | Format as HH:MM:SS; actual database storage size is 3 bytes
 | TIME (with time precision)   | Time of day, 24 hour clock, with time precision | Format as HH:MM:SS.FFFFFF; actual database storage size is 7 bytes
 | TIMESTAMP                     | Point in time, no time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 11 bytes
-| TIMESTAMP (with time precision) | Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 1 byte
+| TIMESTAMP (with time precision) | Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 7 or 11 bytes
 | Interval Data Types |Interval | INTERVAL | Duration of time; value is in the YEAR/MONTH range or the DAY/HOUR/MINUTE/YEAR/SECOND/FRACTION range
 | YEAR no constraint^5^ +
 MONTH 0-11 +
@@ -372,7 +372,7 @@ stored in 2, 4, or 8 bytes depending on number of digits^2^
 .2+| LOB Data Types .2+| LOB | BLOB | Binary Large Object .2+| 10G – no limit + 
 Currently the limit defaults to 10G. This limit can be configured as needed using the CQD `LOB_MAX_SIZE`.
 | CLOB | Character Large Object 
-.10+| Numeric Data Types .5+| Numeric | NUMERIC (1,_scale_) to + NUMERIC (128,_scale_) | Binary number with optional scale; signed or unsigned for 1 to 9 digits
+.10+| Numeric Data Types .5+| Numeric^6^ ^7^ | NUMERIC (1,_scale_) to + NUMERIC (128,_scale_) | Binary number with optional scale; signed or unsigned for 1 to 9 digits
 | 1 to 128 digits; +
 stored: +
 1 to 4 digits in 2 bytes +
@@ -383,34 +383,33 @@ depending on precision
 | SMALLINT                      | Binary integer; signed or unsigned    | 0 to 65535 unsigned, -32768 to +32767 signed; stored in 2 bytes
 | INTEGER                       | Binary integer; signed or unsigned    | 0 to 4294967295 unsigned, -2147483648 to +2147483647 signed; stored in 4 bytes
 | LARGEINT                      | Binary integer; signed only           | -2^63^ to +(2^63^)-1; stored in 8 bytes
-|Numeric (extended numeric precision) | NUMERIC (precision 19 to 128)  | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
+|Numeric (extended numeric precision)^7^ | NUMERIC (precision 19 to 128)  | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
 length of 8 bytes.
-.3+| Floating point number | FLOAT[(_precision_)] | Floating point number; precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
-| REAL                  | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/ 3.40282347e+38; stored in 4 bytes
+.3+| Floating point number^7^ | FLOAT[(_precision_)] | Floating point number (64 bits); precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
+| REAL                  | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/- 3.40282347e+38; stored in 4 bytes
 | DOUBLE PRECISION      | Floating-point numbers (64 bits) with 1 through 52 bits of precision (52 bits of binary precision and 1 bits of exponent) | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
-| Decimal number        | DECIMAL (1,_scale_) to DECIMAL (18,_scale_)     | Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
+| Decimal number^6^        | DECIMAL (1,_scale_) to DECIMAL (18,_scale_)     | Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
 | 1 to 18 digits. Byte length equals the number of digits. Sign is stored as the first bit of the leftmost byte.
 |===
 
-* _scale_ is the number of digits to the right of the decimal.
-* _precision_ specifies the allowed number of decimal digits.
+TIP:
 
-
-1.  The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
-2.  The maximum row size is 32708 bytes, but the actual row size is less than that because of bytes used by
-null indicators, varchar column length indicators, and actual data encoding.
-3.  Storage size is the same as that required by CHAR data type but store only half as many characters depending
-on character set selection.
-4.  Storage size is reduced by 4 bytes for storage of the varying character length.
-5.  The maximum number of digits in an INTERVAL value is 18, including the digits in all INTERVAL fields of the value.
+1. The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
+2. The maximum number of characters depends on the character set. 
++
+[cols="2*",options="header"]
+|===
+^| *Character Set* ^|	*Maximum Number of Characters* 
+| For 8-bit character sets such as *ISO88591*	    | Equal to the maximum storage size in bytes, that is 16,777,216, which is divided 16,777,216 by 1
+| For 16-bit character sets such as *UCS2*	      | Half the maximum storage size in bytes, that is 8,388,608, which is divided 16,777,216 by 2
+| For 32-bit character sets such as *UTF8*        | One fourth the maximum storage size in bytes, that is 4,194,304, which is divided 16,777,216 by 4
+|===
+3. NCHAR or NATIONAL CHAR implicitly assumes that the character set is UCS2, whether the character set was specified at installation time to be ISO88591 or UTF8, and the character set (UCS2) cannot be specified or altered. This is true for both CREATE and ALTER statement.
+4. Storage size is reduced by 4 bytes for storage of the varying character length field.
+5. The maximum number of digits in an INTERVAL value is 18, including the digits in all INTERVAL fields of the value.
 Any INTERVAL field that is a starting field can have up to 18 digits minus the number of other digits in the INTERVAL value.
-6.  The maximum is 32707 if the national character set was specified at installation time to be ISO88591.
-The maximum is 16353 if the national character set was specified at installation time as UTF8.
-7.  The maximum is 32703 if the national character set was specified at installation time to be ISO88591.
-The maximum is 16351 if the national character set was specified at installation time as UTF8.
-8.  It defaults to 200000 characters and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
-9.  It defaults to 200000 bytes and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
-
+6. _scale_ is the number of digits to the right of the decimal.
+7. _precision_ specifies the allowed number of decimal digits.
 
 <<<
 [[comparable_and_compatible_data_types]]
@@ -776,15 +775,108 @@ bytes. _time-precision_ is an unsigned integer that specifies the number
 of digits in the fractional seconds and is stored in four bytes. The
 default for _time-precision_ is 0, and the maximum is 6.
 
-* `TIMESTAMP [(_timestamp-precision_)]`
-+
-specifies a datetime column that, without the optional
-_timestamp-precision_, contains a timestamp in the external form
-yyyy-mm-dd hh:mm:ss and is stored in seven bytes. _timestamp-precision_
-is an unsigned integer that specifies the number of digits in the
-fractional seconds and is stored in four bytes. The default for
-_timestamp-precision_ is 6, and the maximum is 6.
+* `TIMESTAMP`
 
++
+** specifies a datetime column. 
++
+The timestamp in the external form is `yyyy-mm-dd hh:mm:ss.ffffff` *with the default precision of 6*, the storage size is 11 bytes.
+
++
+*Example*
+
++
+```
+SQL>SELECT CAST(CURRENT_TIMESTAMP AS TIMESTAMP) FROM DUAL;
+
+(EXPR)
+--------------------------
+2018-08-14 05:04:14.000591
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>CREATE TABLE test1(c1 TIMESTAMP);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
+* `TIMESTAMP (_timestamp-precision_)`
+
++
+specifies a datetime column with the `_timestamp-precision_`.
++
+The `_timestamp-precision_` is an unsigned integer that specifies the number of digits in the
+fractional seconds, the range of `_timestamp-precision_` is from 0 to 9, the storage size varies depending 
+on the `_timestamp-precision_`.
+
++
+[cols="2*^"]
+|===
+| `_time-precision_`       | Storage Size (bytes)
+| 0     | 7
+| 1~9   | 11
+|===
+
++
+*Example*
+
++
+```
+SQL>CREATE TABLE test2 (c1 TIMESTAMP, c2 TIMESTAMP(0), c3 TIMESTAMP(1), c4 TIMESTAMP(2), c5 TIMESTAMP(6), c6 TIMESTAMP(9));
+
+--- SQL operation complete.
+
+
+SQL>SELECT COLUMN_NAME, COLUMN_SIZE from "_MD_".columns_view WHERE TABLE_NAME = 'TEST2';
+
+COLUMN_NAME                   COLUMN_SIZE 
+-----------------------------------------
+C1                                     11                
+C2                                      7                
+C3                                     11                
+C4                                     11                
+C5                                     11                
+C6                                     11                
+SYSKEY                                  8                
+
+--- 7 row(s) selected.
+
+
+SQL>SHOWDDL test2;
+ 
+CREATE TABLE TRAFODION.SEABASE.TEST2
+  ( 
+    C1                               TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  , C2                               TIMESTAMP(0) DEFAULT NULL NOT SERIALIZED
+  , C3                               TIMESTAMP(1) DEFAULT NULL NOT SERIALIZED
+  , C4                               TIMESTAMP(2) DEFAULT NULL NOT SERIALIZED
+  , C5                               TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  , C6                               TIMESTAMP(9) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST2 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
 
 [[considerations_for_datetime_data_types]]
 ==== Considerations for Datetime Data Types
@@ -1053,12 +1145,13 @@ The default is DECIMAL (9,0) SIGNED.
 +
 specifies an approximate numeric column. The column stores
 floating-point numbers and
-designates from 1 through 54 bits of _precision_.
+designates from 1 through 52 bits of _precision_.
 The range is from +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308 stored in 8 bytes.
 +
-An IEEE FLOAT _precision_ data type is stored as an IEEE DOUBLE, that is, in 8 bytes, with the specified precision.
+An IEEE FLOAT _precision_ data type is stored as an IEEE DOUBLE, that is, in 8 bytes, with the specified precision. Trafodion always gives maximum precision no matter what the user specifies.
+
 +
-The default _precision_ is 54.
+The default _precision_ is 52.
 
 * `REAL`
 +
@@ -1676,20 +1769,26 @@ ways with arithmetic operators. In this syntax diagram, the data type of
 a term, factor, or numeric primary is numeric.
 
 ```
-numeric-expression` is:
+numeric-expression is:
   numeric-term
 | numeric-expression + numeric-term
 | numeric-expression - numeric-term
+```
 
+```
 numeric-term is:
   numeric-factor
 | numeric-term * numeric-factor
 | numeric-term / numeric-factor
+```
 
+```
 numeric-factor is:
   [+|-] numeric-primary
 | [+|-] numeric-primary ** numeric-factor
+```
 
+```
 numeric-primary is:
   unsigned-numeric-literal
 | column-reference
@@ -1934,7 +2033,7 @@ The options above serve the same purposes as they serve when you create a sequen
 [[examples_of_identity_column]]
 === Examples of Identity Column
 
-* Example of `ALWAYS`
+* Example of `ALWAYS`.
 +
 ```
 CREATE TABLE identity_employee (
@@ -1955,7 +2054,7 @@ SQL>INSERT INTO identity_employee (id, description) VALUES(999, 'ID=999 and DESC
 *** ERROR[3428] IDENTITY column ID defined as GENERATED ALWAYS cannot accept values specified by the user.
 
 ```
-* Example of `BY DEFAULT`
+* Example of `BY DEFAULT`.
 +
 ```
 CREATE TABLE identity_employee (
@@ -2102,12 +2201,12 @@ code values representing the characters in the string.
 | [_character-set_ | N] X'_hex-code-value_. . . '
 | [_character-set_ | N]
 X'[_space_. . .]_hex-code-value_[[_space_. . .]_hex-code-value_. . .][_space_. . .]'
-_ character-set_`
+_character-set_`
 +
-specifies the character set ISO88591 or UTF8. The _character-set_
+specifies the character set ISO88591 or UTF8. The `_character-set_`
 specification of the string literal should correspond with the character
 set of the column definition, which is either ISO88591 or UTF8. If you
-omit the _character-set specification, {project-name} SQL initially assumes
+omit the `_character-set_` specification, {project-name} SQL initially assumes
 the ISO88591 character set if the string literal consists entirely of
 7-bit ASCII characters and UTF8 otherwise. (However, the initial
 assumption will later be changed if the string literal is used in a
@@ -2709,7 +2808,7 @@ qty_on_hand * price
   BETWEEN 1000.00 AND 10000.00
 ```
 
-* This predicate is true if the part cost is less than $5 or more than $800:
+* This predicate is true if the _partcost_ is less than $5 or more than $800:
 +
 ```
 partcost NOT BETWEEN 5.00 AND 800.00
@@ -3139,52 +3238,55 @@ row-value-constructor is:
 | row-subquery
 ```
 
-* `_in-value-list_` is:
-+
 ```
+in-value-list is:
 (expression [,expression_]...)
 ```
+
+[[syntax_description_of_in]]
+==== Syntax Description of IN 
 
 * `_row-value-constructor_`
 +
 specifies the first operand of the IN predicate. The first operand can
 be either of:
 +
-```
-(expression [,expression ]...)
-```
+** `_(expression [,expression ]...)_`
 +
 is a sequence of SQL value expressions, separated by commas and enclosed
 in parentheses.
 +
-_expression_ cannot include an aggregate function unless expression is
-in a HAVING clause. _expression_ can be a scalar subquery (a subquery
-that returns a single row consisting of a single column). See
-<<expressions,Expressions>>.
+`_expression_` cannot include an aggregate function unless expression is
+in a HAVING clause. `_expression_` can be a scalar subquery (a subquery
+that returns a single row consisting of a single column). 
++
+For more information, see <<expressions,Expressions>>.
 
-* `_row-subquery_`
+** `_row-subquery_`
 +
 is a subquery that returns a single row (consisting of a sequence of
-values). See <<subquery,Subquery>> .
+values). 
++
+For more information, see <<subquery,Subquery>> .
 
 * `_table-subquery_`
 +
 is a subquery that returns a table (consisting of rows of columns). The
 table specifies rows of values to be compared with the row of values
-specified by the _row-value-constructor_. The number of values of the
-_row-value-constructor_ must be equal to the number of columns in the
-result table of the _table-subquery_, and the data types of the values
+specified by the `_row-value-constructor_`. The number of values of the
+`_row-value-constructor_` must be equal to the number of columns in the
+result table of the `_table-subquery_`, and the data types of the values
 must be comparable.
 
 * `_in-value-list_`
 +
 is a sequence of SQL value expressions, separated by commas and enclosed
-in parentheses. _expression_ cannot include an aggregate function
-defined on a column. _expression_ can be a scalar subquery (a subquery
+in parentheses. `_expression_` cannot include an aggregate function
+defined on a column. `_expression_` can be a scalar subquery (a subquery
 that returns a single row consisting of a single column). In this case,
-the result of the _row-value-constructor_ is a single value. The data
+the result of the `_row-value-constructor_` is a single value. The data
 types of the values must be comparable. The number of expressions in the
-_in-value-list_ can have at least 5000 expressions.
+`_in-value-list_` can have at least 5000 expressions.
 
 
 <<<
@@ -3194,7 +3296,7 @@ _in-value-list_ can have at least 5000 expressions.
 [[logical_equivalent_using_any_or_some]]
 ===== Logical Equivalent Using ANY (or SOME)
 
-The predicate _expr_ IN (_expr1_, _expr2_, &#8230; ) is true if and only
+The predicate `_expr_` IN (`_expr1_ , _expr2_, ...` ) is true if and only
 if the following predicate is true:
 
 ```
@@ -3206,17 +3308,17 @@ expr = ANY (expr1, expr2, ... )
 
 The IN predicate is true if and only if either of these is true:
 
-* The result of the _row-value-constructor_ (a row or sequence of
+* The result of the `_row-value-constructor_` (a row or sequence of
 values) is equal to any row of column values specified by
-_table-subquery_.
-
+`_table-subquery_`.
++
 A table subquery is a query expression and can be specified as a form of
 a simple table; for example, as the VALUES keyword followed by a list of
-row values. See <<select_statement,SELECT Statement>>.
+row values. For more information, see <<select_statement,SELECT Statement>>.
 
-* The result of the _row-value-constructor_ (a single value) is equal to
+* The result of the `_row-value-constructor_` (a single value) is equal to
 any of the values specified by the list of expressions
-_in-value-list_.
+`_in-value-list_`.
 +
 In this case, it is helpful to think of the list of expressions as a
 one-column table—a special case of a table subquery. The degree of the
@@ -3313,8 +3415,8 @@ IN (VALUES ('CLARK', 500), ('GREEN', 200));
 
 The LIKE predicate searches for character strings that match a pattern.
 
-[[like_syntax]]
-==== Syntax
+[[syntax_description_of_like]]
+==== Syntax Description of LIKE
 
 ```
 match-value [NOT] LIKE pattern [ESCAPE esc-char-expression]
@@ -3323,7 +3425,7 @@ match-value [NOT] LIKE pattern [ESCAPE esc-char-expression]
 * `_match-value_`
 +
 is a character value expression that specifies a set of strings to
-search for that match the _pattern_.
+search for that match the `_pattern_`.
 
 * `_pattern_`
 +
@@ -3334,13 +3436,13 @@ the search.
 +
 is a character value expression that must evaluate to a single
 character. The escape character value is used to turn off the special
-meaning of percent (%) and underscore (_). See <<wild_card_characters,Wild-Card Characters>>.
-<<escape_characters>>.
+meaning of percent (%) and underscore (_). 
++
+For more information, see <<wild_card_characters,Wild-Card Characters>>.
+<<escape_characters>> and <<character_value_expressions,Character Value Expressions>>.
 
-See <<character_value_expressions,Character Value Expressions>>.
-
-[[like_considerations]]
-==== Considerations
+[[considerations_for_like]]
+==== Considerations for Like
 
 [[comparing_the_value_to_the_pattern]]
 ===== Comparing the Value to the Pattern
@@ -3459,13 +3561,13 @@ part of the string to search for, not a wild-card character.
 [[regexp_predicate]]
 === REGEXP Predicate
 
-Performs a pattern match of a string expression against a pattern .
+Performs a pattern match of a string expression against a pattern.
 The pattern can be an extended regular expression.
 Returns 1 if expression matches pattern; otherwise it returns 0.
 If either expression or pattern is NULL, the result is NULL.
 
-[[regexp_syntax]]
-==== Syntax
+[[syntax_description_of_regexp]]
+==== Syntax Description of REGEXP
 ```
 match-value [NOT] REGEXP regular-expression
 ```
@@ -3473,36 +3575,34 @@ match-value [NOT] REGEXP regular-expression
 * `_match-value_`
 +
 is a character value expression that specifies a set of strings to
-search for that match the _regular-expression_.
+search for that match the `_regular-expression_`.
+
+* `NOT`
++
+If you specify `NOT`, the predicate is true if the `_regular-expression_` does not
+match any string in the `_match-value_`.
 
 * `_regular-expression_`
 +
 is a character value expression that specifies a regular expression.
 Trafodion regular expressions follow POSIX regular expression rules.
 
-
-[[using_not]]
-===== Using NOT
-
-If you specify NOT, the predicate is true if the _regular-expression_ does not
-match any string in the _match-value_.
-
 [[regexp_examples]]
 ==== Examples
 
-* Find valid numbers
+* Find valid numbers.
 +
 ```
 col REGEXP '^[0-9]*\s*$'
 ```
 
-* Find valid words, no numbers
+* Find valid words, no numbers.
 +
 ```
 col REGEXP '^.[A-Za-z]+\s*$'
 ```
 
-* Find valid email address
+* Find valid email address.
 +
 ```
 col REGEXP '\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*\s*'
@@ -3527,10 +3627,8 @@ row-value-constructor is:
 +
 specifies the operand of the NULL predicate. The operand can be either
 of these:
-+
-```
-(expression [,expression ]...)
-```
+
+** `(expression [,expression ]...)`
 +
 is a sequence of SQL value expressions, separated by commas and enclosed
 in parentheses.
@@ -3540,7 +3638,7 @@ in a HAVING clause. _expression_ can be a scalar subquery (a subquery
 that returns a single row consisting of a single column). See
 <<expressions,Expressions>>.
 
-* `_row-subquery_`
+** `_row-subquery_`
 +
 is a subquery that returns a single row (consisting of a sequence of
 values). See <<subquery,Subquery>> .
@@ -3951,7 +4049,7 @@ surrounding predicates or search conditions are true.
 * `NOT`
 +
 reverses the truth value of its operand—the following predicate or
-search condition. predicate is a BETWEEN, comparison, EXISTS, IN, LIKE, NULL, or quantified
+search condition. Predicate is a BETWEEN, comparison, EXISTS, IN, LIKE, NULL, or quantified
 comparison predicate. A predicate specifies conditions that must be satisfied for a row to be
 chosen. See <<predicates,Predicates>>  and individual entries.
 
@@ -4067,7 +4165,7 @@ a subquery.
 
 When a subquery is used to provide comparison values, the SELECT
 statement that contains the subquery is called an outer query. The
-subquery within the SELECT is called an _inner query_.
+subquery within the SELECT is called an *inner query*.
 
 In this case, the differences between the SELECT statement and the
 SELECT form of a subquery are:

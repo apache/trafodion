@@ -11493,6 +11493,12 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
       //move null to target
       if(tgt->getNullFlag())
       {
+        // clear diags area since this error is not being returned
+        if (diagsArea && *diagsArea && ((*diagsArea)->getNumber(DgSqlCode::ERROR_) > 0))
+          {
+            (*diagsArea)->clear();
+          }
+
         ExpTupleDesc::setNullValue( op_data[-2*MAX_OPERANDS],
                                     tgt->getNullBitIndex(),
                                     tgt->getTupleFormat() );

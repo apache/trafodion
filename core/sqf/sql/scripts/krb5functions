@@ -114,7 +114,7 @@ function getStatus
 
 function getLogFile
 {
-  LOG_FILE=$TRAF_HOME/logs/krb5check
+  LOG_FILE=$TRAF_LOG/krb5check
 }
 
 function getLockFile

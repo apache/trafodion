@@ -1309,6 +1309,10 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
                      , COM_QI_OBJECT_REDEF
                      , COM_QI_STATS_UPDATED
                      , COM_QI_GRANT_ROLE
+                     , COM_QI_COLUMN_SELECT
+                     , COM_QI_COLUMN_INSERT
+                     , COM_QI_COLUMN_UPDATE
+                     , COM_QI_COLUMN_REFERENCES
                      } ;
 
 #define COM_QI_INVALID_ACTIONTYPE_LIT  "  "
@@ -1332,6 +1336,11 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
 #define COM_QI_OBJECT_REDEF_LIT        "OR"
 #define COM_QI_STATS_UPDATED_LIT       "US"
 #define COM_QI_GRANT_ROLE_LIT          "GG"
+#define COM_QI_COLUMN_SELECT_LIT       "CS"
+#define COM_QI_COLUMN_INSERT_LIT       "CI"
+#define COM_QI_COLUMN_UPDATE_LIT       "CU"
+#define COM_QI_COLUMN_REFERENCES_LIT   "CF"
+
 
 
 
@@ -1947,6 +1956,21 @@ enum ComAuthenticationType{
 #define COM_DBS_FAIL_LIT       "F"
 #define COM_DBS_YES_LIT        "Y"
 #define COM_DBS_NO_LIT         "N"
+
+// values used during ORC file writes if not specified as part
+// of table creation.
+#define ORC_DEFAULT_STRIPE_SIZE         67108864
+#define ORC_DEFAULT_ROW_INDEX_STRIDE    10000
+#define ORC_DEFAULT_COMPRESSION         "ZLIB"
+#define ORC_DEFAULT_BLOOM_FILTER_FPP    0.05
+
+// values used during Parquet file writes if not specified as part
+// of table creation.
+#define PARQUET_DEFAULT_BLOCK_SIZE      134217728
+#define PARQUET_DEFAULT_PAGE_SIZE       1048576
+#define PARQUET_DEFAULT_COMPRESSION     "UNCOMPRESSED"
+#define PARQUET_DEFAULT_DICTIONARY_PAGE_SIZE 1048576
+
 
 // used with removeNATable for QI support
 enum ComQiScope 

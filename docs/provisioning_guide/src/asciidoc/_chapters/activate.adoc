@@ -145,4 +145,4 @@ If processes are not running as expected, then:
  
 If problems persist please review logs:
 
-* `$TRAF_HOME/logs`: {project-name} logs.
+* `$TRAF_LOG`: {project-name} logs.

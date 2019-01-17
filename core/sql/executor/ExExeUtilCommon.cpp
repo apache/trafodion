@@ -337,7 +337,8 @@ short ExExeUtilTcb::moveRowToUpQueue(const char * row, Lng32 len,
   return  retcode;
 }
 
-char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf)
+char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf,
+                                     NABoolean noUsec)
 {
   ULng32 sec = (ULng32) (elapsedTime / 1000000);
   ULng32 usec = (ULng32) (elapsedTime % 1000000);
@@ -346,9 +347,13 @@ char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf)
   ULng32 hour = min/60;
   min = min % 60;
   
-  str_sprintf (timeBuf,  "%02u:%02u:%02u.%03u",
-	       hour, min, sec, TO_FMT3u(usec));
-
+  if (noUsec)
+    str_sprintf (timeBuf,  "%02u:%02u:%02u",
+                 hour, min, sec);
+  else
+    str_sprintf (timeBuf,  "%02u:%02u:%02u.%03u",
+                 hour, min, sec, TO_FMT3u(usec));
+   
   return timeBuf;
 }
 

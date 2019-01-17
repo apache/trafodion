@@ -149,6 +149,12 @@ public:
     return isLikeOptWithoutLobColumns_;
   }
 
+  const NAString &
+  getLikeOptHiveOptions() const
+  {
+    return likeOptHiveOptions_;
+  }
+
   // mutators
 
   void setLikeOption(ElemDDLLikeOpt * pLikeOptParseNode);
@@ -213,6 +219,12 @@ public:
     isLikeOptWithoutLobColumns_ = setting;
   }
 
+  void
+  setLikeHiveOptions(const NAString &opts)
+  {
+    likeOptHiveOptions_ = opts;
+  }
+
 private:
 
   // ---------------------------------------------------------------------
@@ -254,6 +266,7 @@ private:
   UInt32 isLikeOptColumnLengthLimit_;  // in bytes; max UInt32 if no limit specified
   NABoolean isLikeOptWithoutRowFormat_;
   NABoolean isLikeOptWithoutLobColumns_;
+  NAString  likeOptHiveOptions_;
 
 }; // class ParDDLLikeOptsCreateTable
 

@@ -1,5 +1,4 @@
 /**********************************************************************
-
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -69,7 +68,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_CATALOG_ALREADY_EXISTS                    = 1035
                   , CAT_CIRCULAR_PRIVS                            = 1036
                   , CAT_DEPENDENT_PRIV_EXISTS                     = 1037
-                  // unused                                       = 1038
+                  //unused                         = 1038
                   , CAT_PRIVILEGE_NOT_REVOKED                     = 1039
                   , CAT_SMD_CANNOT_BE_ALTERED                     = 1040
                   , CAT_PRIMARY_KEY_ALREADY_DEFINED               = 1041
@@ -117,6 +116,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_CONSTRAINT_DATA_EXISTS                    = 1083
                   , CAT_ILLEGAL_DEFAULT_VALUE_FORMAT              = 1084
                   // unused                                       = 1085
+                  , CAT_IS_NOT_CORRECT_AUTHID                     = 1086
                   // unused                                       = 1086
                   // unused                                       = 1087
                   // unused                                       = 1088
@@ -373,6 +373,10 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   // unused                                       = 1385
                   , CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION        = 1389
                   , CAT_TRAFODION_OBJECT_EXISTS                   = 1390
+
+                  , TRAF_ALREADY_INITIALIZED                      = 1392
+                  , TRAF_NOT_INITIALIZED                          = 1393
+                  , TRAF_HBASE_ACCESS_ERROR                       = 1398
 
                   // unused                                       = 1400
                   , CAT_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE_TO_CHARSET = 1401

@@ -163,7 +163,7 @@ done
 
 # default log directory & file
 if [ "$REST_LOG_DIR" = "" ]; then
-  REST_LOG_DIR="$REST_HOME/logs"
+  REST_LOG_DIR="$TRAF_LOG/rest"
 fi
 if [ "$REST_LOGFILE" = "" ]; then
   REST_LOGFILE='rest.log'

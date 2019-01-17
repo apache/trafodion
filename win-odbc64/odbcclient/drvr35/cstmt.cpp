@@ -897,6 +897,7 @@ SQLRETURN CStmt::SendSQLCommand(BOOL SkipProcess, SQLCHAR *StatementText,
         setDiagRowCount(-1, -1);
 
         InitParamColumnList();
+        m_NumResultCols = 0;
 
         if (m_StmtState == STMT_EXECUTED)
         {
@@ -1062,6 +1063,15 @@ SQLRETURN CStmt::SendSQLCommand(BOOL SkipProcess, SQLCHAR *StatementText,
                 m_StmtType = TYPE_CALL;
             else
                 m_StmtType = TYPE_UNKNOWN;
+        }
+        else if (_strnicmp(token, "LOBUPDATE", 9) == 0)
+        {
+            if (m_SrvrCallContext.u.extractLobParams.lobHandle == NULL)
+            {
+                return SQL_ERROR;
+            }
+            m_CurrentOdbcAPI = SRVR_API_UPDATELOB;
+            return SQL_NEED_DATA;
         }
 
         else
@@ -3039,6 +3049,28 @@ SQLRETURN CStmt::ParamData(SQLPOINTER *ValuePtrPtr)
     BOOL		SkipProcess = FALSE;
     SQLRETURN	rc;
 
+    //insert >16m lob
+    if (m_CurrentOdbcAPI == SRVR_API_UPDATELOB)
+    {
+        if (m_ConnectHandle->lobHandleLenSave == 0)
+            return SQL_ERROR;
+
+        if (m_StmtState == STMT_PARAM_DATA_NOT_CALLED)
+        {
+            m_CurrentParamStatus = SQL_WAITING_FOR_DATA;
+            return SQL_NEED_DATA;
+        }
+        else
+        {
+            rc = UpdateLob(0, m_ConnectHandle->lobHandleSave, m_ConnectHandle->lobHandleLenSave, 0, 0, 0, m_DataAtExecData.dataValue._length, (BYTE *)m_DataAtExecData.dataValue._buffer);
+            m_ConnectHandle->lobHandleLenSave == 0;
+            free(m_ConnectHandle->lobHandleSave);
+            m_ConnectHandle->lobHandleSave = NULL;
+            return rc;
+        }
+
+    }
+
     m_CurrentOdbcAPI = SQL_API_SQLPARAMDATA;
     if (m_AsyncEnable == SQL_ASYNC_ENABLE_ON)
     {
@@ -3122,6 +3154,47 @@ SQLRETURN CStmt::PutData(SQLPOINTER DataPtr,
     SQLLEN			*StrLenPtr;
     SQLINTEGER		StrLen;
     SQLSMALLINT		ParameterType;
+
+    if (m_CurrentOdbcAPI == SRVR_API_UPDATELOB)
+    {
+        if (m_CurrentParamStatus == SQL_WAITING_FOR_DATA)
+        {
+            if (m_DataAtExecData.dataValue._buffer != NULL)
+            {
+                delete m_DataAtExecData.dataValue._buffer;
+                m_DataAtExecData.dataValue._buffer = NULL;
+                m_DataAtExecData.dataValue._length = 0;
+            }
+            m_CurrentParamStatus = SQL_RECEIVING_DATA;
+        }
+        else
+        {
+            OctetLength = m_DataAtExecData.dataValue._length;
+        }
+
+        if (StrLen_or_Ind == SQL_NTS)
+            StrLen = strlen((const char *)DataPtr);
+        else
+            StrLen = StrLen_or_Ind;
+
+        OctetLength += StrLen;
+        AllocDataPtr = new BYTE[OctetLength];
+
+        if (m_DataAtExecData.dataValue._buffer != NULL)
+        {
+            memcpy((unsigned char *)AllocDataPtr, (unsigned char*)m_DataAtExecData.dataValue._buffer, m_DataAtExecData.dataValue._length);
+            delete m_DataAtExecData.dataValue._buffer;
+            m_DataAtExecData.dataValue._buffer = NULL;
+        }
+
+        m_DataAtExecData.dataValue._buffer = (unsigned char *)AllocDataPtr;
+        memcpy(m_DataAtExecData.dataValue._buffer + m_DataAtExecData.dataValue._length, DataPtr, StrLen);
+
+        m_DataAtExecData.dataValue._length = OctetLength;
+        m_StmtState = STMT_PUT_DATA_CALLED;
+
+        return rc;
+    }
 
     m_CurrentOdbcAPI = SQL_API_SQLPUTDATA;
     clearError();
@@ -3504,6 +3577,12 @@ BOOL CStmt::setFetchOutputPerf(SQL_DataValue_def*& outputDataValue, long rowsFet
                     VarOffSet = memOffSet;
                     memOffSet += SQLMaxLength + 2;
                 }
+                break;
+            case SQLTYPECODE_BLOB:
+            case SQLTYPECODE_CLOB:
+                memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+                VarOffSet = memOffSet;
+                memOffSet += SQLMaxLength + 2;
                 break;
             case SQLTYPECODE_INTERVAL:
                 VarOffSet = memOffSet;
@@ -4878,4 +4957,235 @@ long CStmt::getColumnOffset(short columnNumber)
     long columnOffset = sizeof(long) * (columnNumber - 1);
     totalLength = ((totalLength + 4 - 1) >> 2) << 2;
     return *(long*)(&m_outputDataValue._buffer[totalLength + columnOffset]);
+}
+
+SQLRETURN CStmt::SendExtractLob(IDL_short extractType,
+    IDL_string lobHandle,
+    IDL_long   lobHandleLen,
+    IDL_long &extractLen,
+    BYTE * &extractData)
+{
+    SQLRETURN         rc = SQL_SUCCESS;
+
+    m_SrvrCallContext.odbcAPI = SRVR_API_EXTRACTLOB;
+    m_SrvrCallContext.sqlHandle = this;
+    m_SrvrCallContext.SQLSvc_ObjRef = m_ConnectHandle->getSrvrObjRef();
+    m_SrvrCallContext.ASSvc_ObjRef = NULL;
+    m_SrvrCallContext.eventHandle = m_StmtEvent;
+    m_SrvrCallContext.dialogueId = m_ConnectHandle->getDialogueId();
+    m_SrvrCallContext.connectionTimeout = m_ConnectHandle->getConnectionTimeout();
+    m_SrvrCallContext.u.fetchParams.queryTimeout = m_QueryTimeout;
+    m_SrvrCallContext.u.extractLobParams.extractType = extractType;
+    m_SrvrCallContext.u.extractLobParams.lobHandle = lobHandle;
+    m_SrvrCallContext.u.extractLobParams.lobHandleLen = lobHandleLen;
+    m_SrvrCallContext.u.extractLobParams.extractLen = extractLen;
+    m_SrvrCallContext.u.extractLobParams.extractData = extractData;
+
+    if (m_AsyncEnable == SQL_ASYNC_ENABLE_ON)
+    {
+        if ((m_AsyncThread = (HANDLE)_beginthreadex(NULL, 0, ThreadControlProc,
+            &m_SrvrCallContext, CREATE_SUSPENDED, &m_ThreadAddr)) == 0)
+        {
+            setNTError(m_ConnectHandle->getErrorMsgLang(), "SendExtractLob - _beginthreadex()");
+            rc = SQL_ERROR;
+        }
+        ResumeThread(m_AsyncThread);
+        rc = SQL_STILL_EXECUTING;
+        Sleep(0);
+    }
+    else
+    {
+        if ((m_SyncThread = (HANDLE)_beginthreadex(NULL, 0, ThreadControlProc,
+            &m_SrvrCallContext, CREATE_SUSPENDED, &m_ThreadAddr)) == 0)
+        {
+            setNTError(m_ConnectHandle->getErrorMsgLang(), "SendExtractLob - _beginthreadex()");
+            rc = SQL_ERROR;
+        }
+        else
+        {
+            ResumeThread(m_SyncThread);
+            WaitForSingleObject(m_SyncThread, INFINITE);
+            GetExitCodeThread(m_SyncThread, &m_ThreadStatus);
+            rc = m_ThreadStatus;
+            CloseHandle(m_SyncThread);
+            m_SyncThread = NULL;
+        }
+    }
+
+    if (rc == SQL_SUCCESS)
+    {
+        extractLen = m_SrvrCallContext.u.extractLobParams.extractLen;
+        extractData = m_SrvrCallContext.u.extractLobParams.extractData;
+
+        if (m_ConnectHandle->lobHandleSave != NULL)
+            free(m_ConnectHandle->lobHandleSave);
+
+        m_ConnectHandle->lobHandleSave = (IDL_string)malloc(lobHandleLen);
+        memcpy(m_ConnectHandle->lobHandleSave, lobHandle, lobHandleLen);
+        m_ConnectHandle->lobHandleLenSave = lobHandleLen;
+    }
+
+    return rc;
+}
+
+SQLRETURN CStmt::ExtractLob(IDL_short extractType,
+    IDL_string lobHandle,
+    IDL_long   lobHandleLen,
+    IDL_long   &extractLen,
+    BYTE * &extractData)
+{
+    SQLRETURN   rc = SQL_SUCCESS;
+    BOOL		SkipProcess = FALSE;
+
+    m_CurrentOdbcAPI = SRVR_API_EXTRACTLOB;
+    if (m_AsyncEnable == SQL_ASYNC_ENABLE_ON)
+    {
+        if (m_AsyncThread != NULL)
+        {
+            if (GetExitCodeThread(m_AsyncThread, &m_ThreadStatus))
+            {
+                if (m_ThreadStatus == STILL_ACTIVE)
+                    rc = SQL_STILL_EXECUTING;
+                else
+                {
+                    CloseHandle(m_AsyncThread);
+                    m_AsyncThread = NULL;
+                    if (m_AsyncCanceled == TRUE)
+                        rc = SQL_ERROR;
+                    else
+                        rc = m_ThreadStatus;
+                }
+            }
+            else
+            {
+                CloseHandle(m_AsyncThread);
+                m_AsyncThread = NULL;
+                setNTError(m_ConnectHandle->getErrorMsgLang(), "Fetch - GetExitCodeThread()");
+                rc = SQL_ERROR;
+            }
+        }
+        else
+        {
+            if (m_ThreadStatus == SQL_STILL_EXECUTING)
+                SkipProcess = TRUE;
+            rc = SendExtractLob(extractType, lobHandle, lobHandleLen, extractLen, extractData);
+        }
+    }
+    else
+        rc = SendExtractLob(extractType, lobHandle, lobHandleLen, extractLen, extractData);
+
+    return rc;
+}
+
+SQLRETURN CStmt::SendUpdateLob(IDL_long updateType,
+    IDL_string lobHandle,
+    IDL_long   lobHandleLen,
+    IDL_long_long totalLength,
+    IDL_long_long offset,
+    IDL_long_long pos,
+    IDL_long_long length,
+    BYTE *        data)
+{
+    SQLRETURN         rc = SQL_SUCCESS;
+
+    m_SrvrCallContext.odbcAPI = SRVR_API_UPDATELOB;
+    m_SrvrCallContext.sqlHandle = this;
+    m_SrvrCallContext.SQLSvc_ObjRef = m_ConnectHandle->getSrvrObjRef();
+    m_SrvrCallContext.ASSvc_ObjRef = NULL;
+    m_SrvrCallContext.eventHandle = m_StmtEvent;
+    m_SrvrCallContext.dialogueId = m_ConnectHandle->getDialogueId();
+    m_SrvrCallContext.connectionTimeout = m_ConnectHandle->getConnectionTimeout();
+    m_SrvrCallContext.u.fetchParams.queryTimeout = m_QueryTimeout;
+    m_SrvrCallContext.u.updateLobParams.updateType = updateType;
+    m_SrvrCallContext.u.updateLobParams.lobHandle = lobHandle;
+    m_SrvrCallContext.u.updateLobParams.lobHandleLen = lobHandleLen;
+    m_SrvrCallContext.u.updateLobParams.totalLength = totalLength;
+    m_SrvrCallContext.u.updateLobParams.offset = offset;
+    m_SrvrCallContext.u.updateLobParams.pos = pos;
+    m_SrvrCallContext.u.updateLobParams.length = length;
+    m_SrvrCallContext.u.updateLobParams.data = data;
+
+    if (m_AsyncEnable == SQL_ASYNC_ENABLE_ON)
+    {
+        if ((m_AsyncThread = (HANDLE)_beginthreadex(NULL, 0, ThreadControlProc,
+            &m_SrvrCallContext, CREATE_SUSPENDED, &m_ThreadAddr)) == 0)
+        {
+            setNTError(m_ConnectHandle->getErrorMsgLang(), "SendExtractLob - _beginthreadex()");
+            rc = SQL_ERROR;
+        }
+        ResumeThread(m_AsyncThread);
+        rc = SQL_STILL_EXECUTING;
+        Sleep(0);
+    }
+    else
+    {
+        if ((m_SyncThread = (HANDLE)_beginthreadex(NULL, 0, ThreadControlProc,
+            &m_SrvrCallContext, CREATE_SUSPENDED, &m_ThreadAddr)) == 0)
+        {
+            setNTError(m_ConnectHandle->getErrorMsgLang(), "SendExtractLob - _beginthreadex()");
+            rc = SQL_ERROR;
+        }
+        else
+        {
+            ResumeThread(m_SyncThread);
+            WaitForSingleObject(m_SyncThread, INFINITE);
+            GetExitCodeThread(m_SyncThread, &m_ThreadStatus);
+            rc = m_ThreadStatus;
+            CloseHandle(m_SyncThread);
+            m_SyncThread = NULL;
+        }
+    }
+
+    return rc;
+}
+
+SQLRETURN CStmt::UpdateLob(IDL_long updateType,
+    IDL_string lobHandle,
+    IDL_long   lobHandleLen,
+    IDL_long_long totalLength,
+    IDL_long_long offset,
+    IDL_long_long pos,
+    IDL_long_long length,
+    BYTE *        data)
+{
+    SQLRETURN   rc = SQL_SUCCESS;
+    BOOL		SkipProcess = FALSE;
+
+    if (m_AsyncEnable == SQL_ASYNC_ENABLE_ON)
+    {
+        if (m_AsyncThread != NULL)
+        {
+            if (GetExitCodeThread(m_AsyncThread, &m_ThreadStatus))
+            {
+                if (m_ThreadStatus == STILL_ACTIVE)
+                    rc = SQL_STILL_EXECUTING;
+                else
+                {
+                    CloseHandle(m_AsyncThread);
+                    m_AsyncThread = NULL;
+                    if (m_AsyncCanceled == TRUE)
+                        rc = SQL_ERROR;
+                    else
+                        rc = m_ThreadStatus;
+                }
+            }
+            else
+            {
+                CloseHandle(m_AsyncThread);
+                m_AsyncThread = NULL;
+                setNTError(m_ConnectHandle->getErrorMsgLang(), "Fetch - GetExitCodeThread()");
+                rc = SQL_ERROR;
+            }
+        }
+        else
+        {
+            if (m_ThreadStatus == SQL_STILL_EXECUTING)
+                SkipProcess = TRUE;
+            rc = SendUpdateLob(updateType, lobHandle, lobHandleLen, totalLength, offset, pos, length, data);
+        }
+    }
+    else
+        rc = SendUpdateLob(updateType, lobHandle, lobHandleLen, totalLength, offset, pos, length, data);
+
+    return rc;
 }

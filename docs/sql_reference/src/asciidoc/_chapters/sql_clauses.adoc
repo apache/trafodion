@@ -62,8 +62,8 @@ default is:
 specifies the column has no default value. You cannot specify NO DEFAULT
 in an ALTER TABLE statement. See <<alter_table_statement,ALTER TABLE Statement>>.
 
-[[syntax_for_default_clause]]
-=== Syntax for Default Clause
+[[syntax_description_for_default]]
+=== Syntax Description for Default
 
 * `DEFAULT _literal_`
 +
@@ -157,8 +157,12 @@ separating the digits of integer output with colons.
 (FORMAT 'format-string') |
 
 (DATE, FORMAT 'format-string')
+```
 
-format-string for Date Formats is:
++
+```
+format-string is:
+
   YYYY-MM-DD
   MM/DD/YYYY
   YY/MM/DD
@@ -173,12 +177,18 @@ format-string for Date Formats is:
 +
 ```
 (FORMAT 'format-string')
+```
++
+```
+format-string is:
 
-format-string for other formats is:
   XXX
   99:99:99:99
  -99:99:99:99
 ```
+
+[[syntax_description_of_format]]
+=== Syntax Description of Format
 
 * `YYYY-MM-DD`
 +
@@ -227,23 +237,26 @@ must be a numeric value.
 specifies that the FORMAT clause output format is a timestamp. The input
 must be a numeric value.
 
-[[considerations_for_date_formats]]
-=== Considerations for Date Formats
+[[considerations_for_format]]
+=== Considerations for FORMAT
 
-The expression preceding the (FORMAT ”_format-string_') clause must be
+[[considerations_for_date_formats]]
+==== Considerations for Date Formats
+
+* The expression preceding the (`FORMAT _format-string_`) clause must be
 a DATE value.
 
-The expression preceding the (DATE, FORMAT _'format-string_') clause
+* The expression preceding the (DATE, `FORMAT _format-string_`) clause
 must be a quoted string in the USA, EUROPEAN, or DEFAULT date format.
 
 [[considerations_for_other_formats]]
 ==== Considerations for Other Formats
 
-For XXX, the expression preceding the (FORMAT _'format-string_')
+* For XXX, the expression preceding the (FORMAT `_format-string_`)
 clause must be a numeric value or a string value.
 
-For 99:99:99:99 and -99:99:99:99, the expression preceding the (FORMAT
-_'format-string_') clause must be a numeric value.
+* For 99:99:99:99 and -99:99:99:99, the expression preceding the (FORMAT
+`_format-string_`) clause must be a numeric value.
 
 [[examples_of_format]]
 === Examples of FORMAT
@@ -252,12 +265,6 @@ _'format-string_') clause must be a numeric value.
 +
 ```
 SELECT 'abcde' (FORMAT 'XXX') FROM (VALUES(1)) t;
-```
-
-* The format string 'YYYY-MM_DD' in this example will yield a sample result of 2008-07-17.
-+
-```
-SELECT CAST('2008-07-17' AS DATE) (FORMAT 'YYYY-MM-DD') FROM (VALUES(1)) t;
 ```
 
 * The format string 'MM/DD/YYYY' in this example will yield a sample result of 07/17/2008.
@@ -288,24 +295,6 @@ SELECT '2008-07-17' (DATE, FORMAT 'YYYYMMDD') FROM (VALUES(1)) t;
 +
 ```
 SELECT '2008-07-17' (DATE, FORMAT 'DD.MM.YYYY') FROM (VALUES(1)) t;
-```
-
-* The format string 'DD-MMM-YYYY' in this example will yield a sample result of 17–JUL-2008.
-+
-```
-SELECT '2008-07-17' (DATE, FORMAT 'DD-MMM-YYYY') FROM (VALUES(1)) t;
-```
-
-* The format string '99:99:99:99' in this example will yield a sample result of 12:34:56:78.
-+
-```
-SELECT 12345678 (FORMAT '99:99:99:99') FROM (VALUES(1)) t;
-```
-
-* The format string '-99:99:99:99' in this example will yield a sample result of -12:34:56:78.
-+
-```
-SELECT (-12345678) (FORMAT '-99:99:99:99') FROM (VALUES(1)) t;
 ```
 
 <<<
@@ -344,6 +333,9 @@ rows-size is:
           [ELSE number-rows ROWS] END
 ```
 
+[[syntax_description_of_sample]]
+=== Syntax Description of SAMPLE
+
 * `RANDOM _percent-size_`
 +
 directs {project-name} SQL to choose rows randomly (each row having an
@@ -364,7 +356,7 @@ exist in the intermediate result table. Each row is picked with a
 probability of _r_%, where _r_ is the sample size in PERCENT.
 Therefore, the actual size of the resulting sample is approximately _r_% of _N_. 
 The number of rows picked follows a binomial distribution with
-mean equal to _r_ *c_N_/100.
+mean equal to _r_*_N_/100.
 +
 If you specify a sample size greater than 100 PERCENT, {project-name} SQL
 returns all the rows in the result table plus duplicate rows. The
@@ -780,9 +772,7 @@ LASERPRINTER, X1     W         42000.00
 == SEQUENCE BY Clause
 
 The SEQUENCE BY clause of the SELECT statement specifies the order in
-which to sort the rows
-
-of the intermediate result table for calculating sequence functions.
+which to sort the rows of the intermediate result table for calculating sequence functions.
 This option is used for processing time-sequenced rows in data mining
 applications. See <<select_statement>>.
 
@@ -1039,8 +1029,7 @@ expressions in each item must be the same as the number of value columns
 in the column list.
 +
 In the example TRANSPOSE A,B,C AS V, the items are A,B, and C, and the
-value column is V. This form can be thought of as a shorter way of writing TRANSPOSE
-(A),(B),(C) AS (V).
+value column is V. This form can be thought of as a shorter way of writing TRANSPOSE (A),(B),\(C) AS (V).
 
 * `_transpose-item-list_`
 +
@@ -1055,7 +1044,7 @@ expressions must have compatible data types.
 For example, in the transpose set TRANSPOSE A,B,C AS V, the expressions
 A,B, and C have compatible data types.
 
-** `(_expression-list_) [,(_expression-list_)]&8230;`
+** `(_expression-list_) [,(_expression-list_)]...`
 +
 specifies a list of expressions enclosed in parentheses, followed by
 another list of expressions enclosed in parentheses, and so on. The

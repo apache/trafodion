@@ -46,7 +46,7 @@ NOTE: {project-name} SQL utilities are entered interactively or from script
 files using a client-based tool, such as the {project-name} Command Interface
 (TrafCI). To install and configure a client application that enables you
 to connect to and issue SQL utilities, see the
-{docs-url}/client_installation/index.html[_{project-name} Client Installation Guide_].
+http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide].
 
 <<<
 [[cleanup_statement]]
@@ -414,8 +414,10 @@ option is:
   | NO POPULATE INDEXES
   | NO DUPLICATE CHECK
   | NO OUTPUT
+  | NO RECOVERY
   | INDEX TABLE ONLY
   | REBUILD INDEXES
+  | UPSERT USING LOAD
 ```
 
 [[load_syntax]]
@@ -513,6 +515,10 @@ prevents the LOAD statement from displaying status messages. By default,
 the LOAD statement prints status messages listing the steps that the
 Bulk Loader is executing.
 
+** `NO RECOVERY`
++
+specifies that the Bulk Loader not use HBase snapshots for recovery. By default, the Bulk Loader handles recovery using the HBase snapshots mechanism.
+
 ** `INDEX TABLE ONLY`
 +
 specifies that the target table, which is an index, be populated with
@@ -529,6 +535,12 @@ CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` is turned *ON*. This CQD is turned
 In this case, the elapsed time of using LOAD Statement without options is nearly equal to 
 using LOAD WITH REBUILD INDEXES, and the elapsed time of the former is less than the latter 
 if this CQD is turned ON.
+
+** `UPSERT USING LOAD`
++
+specifies that data is inserted into target tables using rowset inserts without transactions.
++
+In this case, Trafodion uses regular HBase interface (Put) rather than HBase Bulk Loader when inserting multiple rows at a time.
 
 <<<
 [[load_considerations]]
@@ -1724,8 +1736,8 @@ PURGEDATA object
 [[purgedata_syntax]]
 === Syntax Description of PURGEDATA
 
-_object_
-
+* _object_
++
 is the name of the table from which to purge the data. See
 <<"database object names","Database Object Names">>.
 
@@ -2141,7 +2153,7 @@ directs {project-name} SQL to create a persistent sample table and store the
 random sample in it. This table can then be used later for updating statistics
 incrementally.
 
-**** `PERIODIC _size_ ROWS EVERY _period_ ROW`
+**** `PERIODIC _size_ ROWS EVERY _period_ ROWS`
 +
 directs {project-name} SQL to choose the first _size_ number of rows from
 each _period_ of rows. The value _size_ must be an integer that is

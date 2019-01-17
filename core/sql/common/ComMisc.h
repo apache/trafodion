@@ -90,6 +90,20 @@ NAString ComConvertTrafNameToNativeName(
                                          const NAString &schemaName,
                                          const NAString &objectName);
 
+// Hive names specified in the query may have any of the following
+// forms after they are fully qualified:
+//  hive.hive.t, hive.`default`.t, hive.hivesch.t, hive.hivesch
+// These names are valid in traf environment only and are used to determine
+// if hive ddl is being processed.
+//
+// Return equivalent native hive names of the format:
+//   `default`.t, `default`.t, hivesch.t, hivesch
+// Return NULL string in case of an error.
+NAString ComConvertTrafHiveNameToNativeHiveName(
+     const NAString &catalogName,
+     const NAString &schemaName,
+     const NAString &objectName);
+
 // returns TRUE if specified name is a reserved name.
 // Currently, reserved names for traf internal usage are:
 //   SYSKEY
@@ -97,5 +111,10 @@ NAString ComConvertTrafNameToNativeName(
 //   _DIVISION_*_   :_DIVISION_ prefix followed by division number and ending
 //                   with underscore(_)
 NABoolean ComTrafReservedColName(const NAString &colName);
+
+// Converts a library name like myfile.jar or myfile.so to this format
+// $TRAF_HOME/$UDR_CACHE_LIBDIR/<user>|myfile_<redeftime>.jar|so 
+Int32 ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime,NAString schemaName, NAString user, NAString&cachedLibName, NAString &cachedPathName );
+
 
 #endif // COMMISC_H

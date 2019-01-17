@@ -1,0 +1,3 @@
+1074a1075,1076
+> *** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
+> 

@@ -422,7 +422,16 @@ ExOperStats * ExFastExtractTcb::doAllocateStatsEntry(
 
   if (statsType == ComTdb::OPERATOR_STATS)
   {
-    return ex_tcb::doAllocateStatsEntry(heap, tdb);;
+     ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+     StmtStats *ss; 
+     if (espGlobals != NULL)
+        ss = espGlobals->getStmtStats();
+     else
+        ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+     ExHdfsScanStats *hdfsScanStats = new (heap) ExHdfsScanStats(heap, this, tdb);
+     if (ss != NULL)
+        hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+     return hdfsScanStats;
   }
   else
   {
@@ -433,20 +442,6 @@ ExOperStats * ExFastExtractTcb::doAllocateStatsEntry(
   }
 }
 
-Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck
-(Int64 &failedModTS,
- char * failedLocBuf,
- Int32 &failedLocBufLen)
-{
-  return ExpLOBinterfaceDataModCheck(lobGlob_,
-                                     targetLocation_,
-                                     hdfsHost_,
-                                     hdfsPort_,
-                                     myTdb().getModTSforDir(),
-                                     0,
-                                     failedModTS,
-                                     failedLocBuf, failedLocBufLen);
-}
 
 
 ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
@@ -466,10 +461,6 @@ ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
 ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 {
 
-  if (lobGlob_) {
-    ExpLOBinterfaceCleanup(lobGlob_);
-    lobGlob_ = NULL;
-  }
 
   if (sequenceFileWriter_ != NULL) {
      NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
@@ -486,14 +477,10 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
 Int32 ExHdfsFastExtractTcb::fixup()
 {
-  lobGlob_ = NULL;
-
   ex_tcb::fixup();
 
   strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
   hdfsPort_ = myTdb().getHdfsPortNum();
-  ExpLOBinterfaceInit
-    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
   
   modTS_ = myTdb().getModTSforDir();
 
@@ -622,6 +609,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
   ExOperStats *stats = NULL;
   ExFastExtractStats *feStats = getFastExtractStats();
+  ExHdfsScanStats *hdfsStats = getHdfsScanStats();
 
   while (TRUE)
   {
@@ -637,76 +625,9 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
     {
     case EXTRACT_NOT_STARTED:
     {
-      pstate.step_= EXTRACT_CHECK_MOD_TS;
+      pstate.step_ = EXTRACT_INITIALIZE;
     }
     break;
-
-    case EXTRACT_CHECK_MOD_TS:
-    {
-      // if no tgt file or input timestamp is -1, skip data mod check.
-      // Also, if this insert is being done with overwrite, then data mod
-      // check has already been done during directory cleanup. Skip it here.
-      if ((! myTdb().getTargetFile()) ||
-          (myTdb().getModTSforDir() == -1) ||
-          (myTdb().getOverwriteHiveTable()))
-        {
-          pstate.step_ = EXTRACT_INITIALIZE;
-          break;
-        }
-
-      numBuffers_ = 0;
-
-      memset (hdfsHost_, '\0', sizeof(hdfsHost_));
-      strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
-      hdfsPort_ = myTdb().getHdfsPortNum();
-      memset (fileName_, '\0', sizeof(fileName_));
-      memset (targetLocation_, '\0', sizeof(targetLocation_));
-      snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
-
-      Int64 failedModTS = -1;
-      Lng32 failedLocBufLen = 1000;
-      char failedLocBuf[failedLocBufLen];
-      retcode = 
-        lobInterfaceDataModCheck(failedModTS, failedLocBuf, failedLocBufLen);
-      if (retcode < 0)
-      {
-        Lng32 cliError = 0;
-        
-        Lng32 intParam1 = -retcode;
-        ComDiagsArea * diagsArea = NULL;
-        ExRaiseSqlError(getHeap(), &diagsArea, 
-                        (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
-                        NULL, &intParam1, 
-                        &cliError, 
-                        NULL, 
-                        "HDFS",
-                        (char*)"ExpLOBInterfaceDataModCheck",
-                        getLobErrStr(intParam1));
-        pentry_down->setDiagsArea(diagsArea);
-        pstate.step_ = EXTRACT_ERROR;
-        break;
-      }
-      
-      if (retcode == 1) // check failed
-      {
-        char errStr[200];
-        str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
-                    myTdb().getModTSforDir(), failedModTS);
-        
-        ComDiagsArea * diagsArea = NULL;
-        ExRaiseSqlError(getHeap(), &diagsArea, 
-                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
-                        NULL, NULL, NULL,
-                        errStr);
-        pentry_down->setDiagsArea(diagsArea);
-        pstate.step_ = EXTRACT_ERROR;
-        break;
-      }
-      
-      pstate.step_= EXTRACT_INITIALIZE;
-    }
-    break;
-    
     case EXTRACT_INITIALIZE:
     {
       pstate.processingStarted_ = FALSE;
@@ -790,7 +711,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           }
           else if (!isSequenceFile() && hdfsClient_ == NULL)
           {
-             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetCode);
+             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), (ExHdfsScanStats *)getHdfsScanStats(), hdfsClientRetCode);
              if (hdfsClientRetCode != HDFS_CLIENT_OK)
              {
                 createHdfsClientFileError(hdfsClientRetCode);
@@ -978,6 +899,10 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           {
             feStats->incProcessedRowsCount();
           }
+              if (hdfsStats != NULL) {
+                 hdfsStats->incUsedRows();
+                 hdfsStats->incAccessedRows();
+              }
           pstate.successRowCount_ ++;
         }
         else
@@ -986,6 +911,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           {
             feStats->incErrorRowsCount();
           }
+              if (hdfsStats != NULL) 
+                 hdfsStats->incAccessedRows();
           pstate.errorRowCount_ ++;
         }
         if (currBuffer_->bytesLeft_ < (Int32) maxExtractRowLength_)
@@ -1242,7 +1169,6 @@ void ExHdfsFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status, ComDia
   {
     g->setRowsAffected(privateState.matchCount_);
   }
-
 
   //
   // Insert into up queue

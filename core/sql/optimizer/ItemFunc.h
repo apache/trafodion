@@ -1198,6 +1198,30 @@ private:
 
 }; // class Between
 
+
+class Overlaps: public CacheableBuiltinFunction
+{
+public:
+  Overlaps(ItemExpr* d1, ItemExpr* e1, ItemExpr* d2, ItemExpr* e2)
+    : CacheableBuiltinFunction(ITM_OVERLAPS, 4, d1, e1, d2, e2)
+  {}
+
+  virtual ~Overlaps(){};
+
+  virtual ItemExpr *bindNode(BindWA * bindWA);
+  virtual const NAType *synthesizeType();
+  virtual ItemExpr *copyTopNode(ItemExpr *derivedNode = NULL
+                                , CollHeap *outHeap = 0);
+  virtual NABoolean isAPredicate() const {return true;}
+  virtual void unparse(NAString &result
+                       , PhaseEnum phase = DEFAULT_PHASE
+                       , UnparseFormatEnum form = USER_FORMAT
+                       , TableDesc *tabId = NULL) const;
+
+  virtual ItemExpr *preCodeGen(Generator*);
+
+};// class Overlaps
+
 class BoolResult : public BuiltinFunction
 {
   // Evaluates the final boolean result value for a predicate.
@@ -2512,8 +2536,8 @@ public:
   // This Ctor is used for SIGNAL statements with a string expression.
   RaiseError (Lng32 sqlcode,
 	      NAString SqlState,
-		  ItemExpr *messageExpr,
-          CollHeap * h=0)
+              ItemExpr *messageExpr,
+              CollHeap * h=0)
     : BuiltinFunction(ITM_RAISE_ERROR,  CmpCommon::statementHeap(),
                       1, messageExpr),
       theSQLCODE_(sqlcode),
@@ -2524,11 +2548,15 @@ public:
   RaiseError (Lng32 sqlcode = 0,
 	      const NAString & constraintName = "",
 	      const NAString & tableName = "",
+              const NAString & optionalStr = "",
+              const NAType *type = NULL,
               CollHeap * h=0)
     : BuiltinFunction(ITM_RAISE_ERROR),
       theSQLCODE_(sqlcode),
       constraintName_(constraintName, h),
-      tableName_(tableName, h)
+      tableName_(tableName, h),
+      optionalStr_(optionalStr, h),
+      type_(type)
     {};
 
   // copy ctor
@@ -2547,10 +2575,12 @@ public:
   void setSQLCODE(Lng32 sqlcode) 		{ theSQLCODE_ = sqlcode; }
 
 private:
-  Lng32     theSQLCODE_;
+  Lng32    theSQLCODE_;
   NAString constraintName_;
   NAString tableName_;
 
+  NAString optionalStr_;
+  const NAType * type_;
 }; // class RaiseError
 
 
@@ -4675,12 +4705,17 @@ public:
   ZZZBinderFunction(OperatorTypeEnum oper,
 		    ItemExpr *val1Ptr = NULL, ItemExpr *val2Ptr = NULL,
 		    ItemExpr *val3Ptr = NULL, ItemExpr *val4Ptr = NULL,
-		    ItemExpr *val5Ptr = NULL)
-       : BuiltinFunction(oper, CmpCommon::statementHeap(), 5,
-			 val1Ptr, val2Ptr, val3Ptr, val4Ptr, val5Ptr) {}
+		    ItemExpr *val5Ptr = NULL, ItemExpr *val6Ptr = NULL)
+       : BuiltinFunction(oper, CmpCommon::statementHeap(), 6,
+			 val1Ptr, val2Ptr, val3Ptr, val4Ptr, val5Ptr, val6Ptr),
+         flags_(0)
+  {}
 
   // a virtual function for performing name binding within the query tree
   virtual ItemExpr * bindNode(BindWA *bindWA);
+  
+  // helper function used by bindNode; returns true if there is an error
+  bool enforceDateOrTimestampDatatype(BindWA *bindWA, CollIndex child, int operand);
 
   // the synthesizeType method is needed only when we process an item
   // expression at DDL time, for DML the function gets transformed into
@@ -4703,6 +4738,17 @@ public:
 
   static ItemExpr *tryToUndoBindTransformation(ItemExpr *expr);
 
+  // OVERLAY clause was created for STUFF syntax.
+  NABoolean overlayFuncWasStuff()   { return (flags_ & WAS_STUFF_) != 0; }
+  void setOverlayFuncWasStuff(NABoolean v)
+  { (v ? flags_ |= WAS_STUFF_ : flags_ &= ~WAS_STUFF_); }
+
+private:
+  enum {
+    WAS_STUFF_ = 0x0001
+  };
+
+  Int64 flags_;
 };
 
 // --------------------------------------------------------------------------
@@ -5839,5 +5885,24 @@ public:
   NABoolean canBeUsedInGBorOB(NABoolean setErr);
 
 }; // class RowNumFunc
+
+class SplitPart : public CacheableBuiltinFunction
+{
+public: 
+  SplitPart(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr)
+    :CacheableBuiltinFunction(ITM_SPLIT_PART, 3, val1Ptr, val2Ptr, val3Ptr)
+    {
+      allowsSQLnullArg() = FALSE;
+    } 
+
+   virtual ~SplitPart();
+
+   // a virtual function for type propagating the node
+   virtual const NAType * synthesizeType();
+   
+   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+                      CollHeap *outheap = 0);
+   virtual ItemExpr * preCodeGen(Generator*);
+}; //class SplitPart
 
 #endif /* ITEMFUNC_H */

@@ -111,7 +111,8 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
     ExRtFragTable(master_glob, fragDir_, (char *) this);
 
   // if this tdb is displayed in the GUI then enable GUI display for ESPs
-  rtFragTable->displayGuiForESPs(displayExecution());
+  if (displayExecution() > 0)
+    rtFragTable->displayGuiForESPs(TRUE);
 
   // remember the fragment table in the globals
   master_glob->setRtFragTable(rtFragTable);
@@ -299,7 +300,7 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
 
   if (processLOB())
     {
-      glob->initLOBglobal(cliGlobals->currContext());
+      glob->initLOBglobal(cliGlobals->currContext(), useLibHdfs());
     }
 
   return (root_tcb);
@@ -387,7 +388,7 @@ ex_root_tcb::ex_root_tcb(
       tupp_descriptor *tp = new(glob->getSpace()) tupp_descriptor;
       char * dataPtr =
 	(char *)glob->getSpace()->allocateMemory(root_tdb.pkeyLen_);
-      tp->init((short) root_tdb.pkeyLen_,0,dataPtr);
+      tp->init( root_tdb.pkeyLen_,0,dataPtr);
       workAtp_->getTupp(numTuples++) = tp;
     }
   else if (pkeyExpr())
@@ -398,7 +399,7 @@ ex_root_tcb::ex_root_tcb(
       tupp_descriptor *tp = new(glob->getSpace()) tupp_descriptor;
       char * dataPtr =
 	(char *)glob->getSpace()->allocateMemory(root_tdb.pkeyLen_);
-      tp->init((short) root_tdb.pkeyLen_,0,dataPtr);
+      tp->init( root_tdb.pkeyLen_,0,dataPtr);
       pkeyAtp_->getTupp(2) = tp;
     }
   
@@ -421,12 +422,10 @@ ex_root_tcb::ex_root_tcb(
 
 #ifdef NA_DEBUG_GUI
   //-------------------------------------------------------------
-  // GSH: If user has requested use of MS windows based GUI 
-  // display then load the tdm_sqlexedbg dll and SetRootTcb.
-  // Note: displayExecution() return 2 if MS windows based GUI
-  // was requested.
+  // if the user has requested use of the executor GUI 
+  // display then load the dll and set it up
   //-----------------------------------------------------------
-  if (root_tdb.displayExecution() == 2)
+  if (root_tdb.displayExecution() == 1)
     getGlobals()->getScheduler()->startGui();
 #endif
 
@@ -518,9 +517,9 @@ void ex_root_tcb::registerSubtasks()
   // there is only one queue pair to the child, no parent queue, and
   // the work procedure does actually no work except interrupting
   // the work procedure immediately when a row can be returned
-  sched->registerUnblockSubtask(sWork,this,qchild.down);
+  sched->registerUnblockSubtask(sWork,this,qchild.down,"WK");
   sched->registerInsertSubtask(sWork,this,qchild.up);
-  asyncCancelSubtask_ = sched->registerNonQueueSubtask(sWork,this,"WK");
+  asyncCancelSubtask_ = sched->registerNonQueueSubtask(sWork,this);
    
   // the frag table has its own event and work procedure, but its
   // work procedure is called through a method of the root TCB
@@ -1451,6 +1450,8 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 		    stats->setStatsEnabled(getGlobals()->statsEnabled());
 
 #ifdef NA_DEBUG_GUI
+                  if (root_tdb().displayExecution() > 0)
+                    getGlobals()->getScheduler()->stopGui();
                   ex_tcb::objectCount = 0;
 #endif
                   // Make the rowset handle available

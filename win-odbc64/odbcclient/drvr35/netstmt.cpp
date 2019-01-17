@@ -1159,3 +1159,98 @@ SQLRETURN SQLEXECUTE_(SRVR_CALL_CONTEXT *srvrCallContext)
 
 } /* SQLEXECUTE_() */
 
+
+SQLRETURN EXTRACTLOB(SRVR_CALL_CONTEXT *srvrCallContext)
+{
+    CEE_status    sts;
+    SQLRETURN     rc = SQL_SUCCESS;
+
+    struct odbc_SQLsvc_ExtractLob_exc_ exception_ = { 0, 0, 0 };
+    BYTE   *sqlWarningOrError = 0;
+
+    CStmt   * pStatement = (CStmt *)srvrCallContext->sqlHandle;
+
+    sts = odbc_SQLDrvr_ExtractLOB_pst_(
+        srvrCallContext,
+        srvrCallContext->u.extractLobParams.extractType,
+        srvrCallContext->u.extractLobParams.lobHandle,
+        srvrCallContext->u.extractLobParams.lobHandleLen,
+        srvrCallContext->u.extractLobParams.extractLen,
+        &exception_,
+        srvrCallContext->u.extractLobParams.extractData
+        );
+
+    pStatement->setExceptionErrors(exception_.exception_nr, exception_.exception_detail);
+    switch (exception_.exception_nr)
+    {
+    case CEE_SUCCESS:
+        break;
+    case odbc_SQLSvc_ExtractLob_SQLError_exn_:
+        pStatement->setDiagRec(&exception_.u.SQLError);
+        break;
+    case odbc_SQLSvc_ExtractLob_InvalidConnection_exn_:
+        pStatement->setDiagRec(SERVER_ERROR, IDS_08_S01);
+        break;
+    case odbc_SQLSvc_ExtractLob_ParamError_exn_:
+        pStatement->setDiagRec(SERVER_ERROR, IDS_HY_C00, exception_.exception_nr,
+            exception_.u.ParamError.ParamDesc, NULL,
+            SQL_ROW_NUMBER_UNKNOWN, SQL_COLUMN_NUMBER_UNKNOWN, 1, pStatement->getSrvrIdentity());
+        break;
+    case odbc_SQLSvc_ExtractLob_SQLInvalidhandle_exn_:
+        break;
+    default:
+        pStatement->sendCDInfo(exception_.exception_nr);
+        pStatement->setDiagRec(exception_.exception_nr, "EXTRACTLOB", pStatement->getSrvrIdentity());
+        break;
+    }
+    return rc;
+}
+
+SQLRETURN UPDATELOB(SRVR_CALL_CONTEXT *srvrCallContext)
+{
+    CEE_status    sts;
+    SQLRETURN     rc = SQL_SUCCESS;
+
+    struct odbc_SQLSvc_UpdateLob_exc_ exception_ = { 0, 0, 0 };
+    BYTE   *sqlWarningOrError = 0;
+
+    CStmt   * pStatement = (CStmt *)srvrCallContext->sqlHandle;
+
+    sts = odbc_SQLDrvr_UpdateLob_pst_(
+        srvrCallContext,
+        srvrCallContext->u.updateLobParams.updateType,
+        srvrCallContext->u.updateLobParams.lobHandle,
+        srvrCallContext->u.updateLobParams.lobHandleLen,
+        srvrCallContext->u.updateLobParams.totalLength,
+        srvrCallContext->u.updateLobParams.offset,
+        srvrCallContext->u.updateLobParams.pos,
+        srvrCallContext->u.updateLobParams.length,
+        srvrCallContext->u.updateLobParams.data,
+        &exception_
+        );
+
+    pStatement->setExceptionErrors(exception_.exception_nr, exception_.exception_detail);
+    switch (exception_.exception_nr)
+    {
+    case CEE_SUCCESS:
+        break;
+    case odbc_SQLSvc_UpdateLob_SQLError_exn_:
+        pStatement->setDiagRec(&exception_.u.SQLError);
+        break;
+    case odbc_SQLSvc_UpdateLob_InvalidConnect_exn_:
+        pStatement->setDiagRec(SERVER_ERROR, IDS_08_S01);
+        break;
+    case odbc_SQLSvc_UpdateLob_ParamError_exn_:
+        pStatement->setDiagRec(SERVER_ERROR, IDS_HY_C00, exception_.exception_nr,
+            exception_.u.ParamError.ParamDesc, NULL,
+            SQL_ROW_NUMBER_UNKNOWN, SQL_COLUMN_NUMBER_UNKNOWN, 1, pStatement->getSrvrIdentity());
+        break;
+    case odbc_SQLSvc_UpdateLob_SQLInvalidhandle_exn_:
+        break;
+    default:
+        pStatement->sendCDInfo(exception_.exception_nr);
+        pStatement->setDiagRec(exception_.exception_nr, "UPDATELOB", pStatement->getSrvrIdentity());
+        break;
+    }
+    return rc;
+}

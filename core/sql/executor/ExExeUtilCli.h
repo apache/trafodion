@@ -33,13 +33,16 @@ class OutputInfo
   void dealloc(CollHeap * heap);
   void insert(Lng32 index, char * data);
   void insert(Lng32 index, char * data, Lng32 len);
+  void insert(Lng32 index, char * data, Lng32 len,Lng32 type,Lng32 *indOffset = NULL, Lng32 *varOffset = NULL);
   char * get(Lng32 index);
   short get(Lng32 index, char* &data, Lng32 &len);
+  short get(Lng32 index, char* &data, Lng32 &len, Lng32 &type,Lng32 *indOffset, Lng32 *varOffset);
 
  private:
   Lng32 numEntries_;
   char * data_[MAX_OUTPUT_ENTRIES];
   Lng32 len_[MAX_OUTPUT_ENTRIES];
+  Lng32 type_[MAX_OUTPUT_ENTRIES];
 };
 
 class ExeCliInterface : public NABasicObject
@@ -239,6 +242,8 @@ private:
   static Lng32 commitXn();
   static Lng32 rollbackXn();
   static Lng32 statusXn();
+  static Lng32 suspendXn();
+  static Lng32 resumeXn();
 
   Lng32 createContext(char* contextHandle); // out buf will return context handle
   Lng32 switchContext(char* contextHandle); // in buf contains context handle

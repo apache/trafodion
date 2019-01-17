@@ -25,6 +25,7 @@
 
 #ifndef LOCALIO_H
 #define LOCALIO_H
+#ifndef NAMESERVER_PROCESS
 
 #include <iostream>
 #include <string>
@@ -41,8 +42,8 @@ using namespace std;
 
 #define SQ_LIO_MAX_BUFFERS      1000 // shared buffers per node in real cluster,
                                      // SQ_LIO_MAX_BUFFERS/4 in virtual cluster
-#define SQ_LIO_SHM_PERMISSIONS  0640 // shared memory permissions
-#define SQ_LIO_MSQ_PERMISSIONS  0640 // message queue permissions
+#define SQ_LIO_SHM_PERMISSIONS  0660 // shared memory permissions
+#define SQ_LIO_MSQ_PERMISSIONS  0660 // message queue permissions
 
 #define SQ_LIO_NORMAL_MSG          1 // normal messages
 #define SQ_LIO_SIGNAL_TIMEOUT      (5000000) // 5 milliseconds (in nano seconds)
@@ -94,4 +95,4 @@ typedef struct LioSharedMemHdr
 
 typedef int SB_Verif_Type;
 #endif
-
+#endif

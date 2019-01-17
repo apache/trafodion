@@ -150,8 +150,9 @@ public:
 
 
   // functions to get and set roles for the current user
-  RETCODE getRoleList(Int32  &numRoles,
-                      Int32  *&roleIDs);
+  RETCODE getRoleList(Int32  &numEntries,
+                      Int32 *& roleIDs,
+                      Int32 *& granteeIDs);
 
   RETCODE resetRoleList();
 
@@ -258,8 +259,9 @@ private:
   char *databaseUserName_;
 
   // List of active roles for the databaseUser
-  Int32  *roleIDs_;
   Int32   numRoles_;
+  Int32  *roleIDs_;
+  Int32  *granteeIDs_;
 
   NABoolean userNameChanged_;
 
@@ -1006,7 +1008,11 @@ public:
   Lng32 setSecInvalidKeys( 
            /* IN */    Int32 numSiKeys,
            /* IN */    SQL_QIKEY siKeys[]);
-
+  Int32 checkLobLock(char* inLobLockId, NABoolean *found);
+  
+  Lng32 setLobLock(
+       /* IN */   char *lobLockId// objID+column number
+                   );
   Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue);
   Lng32 restoreCQD(const char * defaultName);
 

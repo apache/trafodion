@@ -199,7 +199,7 @@ SQLRETURN UTF8ToWChar(char *st, int stlen, wchar_t *wst, int wstlen, int *transl
 // The fuction translates a string between UTF-8 and Client Locale. 
 // If the first argument is TRUE, the function converts the given string from UTF-8 to Locale.
 // If the first argument is FALSE, the function converts the given string from Locale to UTF-8
-SQLRETURN TranslateUTF8(bool forward, char *inst, int inlen, char *outst, int outlen, int *translen, char *errorMsg)
+SQLRETURN TranslateUTF8(bool forward, const char *inst, int inlen, char *outst, int outlen, int *translen, char *errorMsg)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	int len;

@@ -22,6 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 use sqconfigdb;
+use sqnameserver;
 use sqnodes;
 use sqpersist;
 use POSIX;
@@ -75,6 +76,8 @@ my $SQ_IDTMSRV = $ENV{'SQ_IDTMSRV'};
 # define the error values that are being returned
 my $BDR_ERROR = 70;
 
+
+my $g_insDbUniqStrStmt = 0;
 
 sub printScript {
     ($dWhich, @rest) = @_;
@@ -194,7 +197,7 @@ sub printInitialLines {
 #    printScript(1, "   echo\n");
 #    printScript(1, "else\n");
 #    printScript(1, "   echo \"Aborting startup.\"\n");
-#    printScript(1, "   more \$TRAF_HOME/logs/sqcheckmon.log\n");
+#    printScript(1, "   more \$TRAF_LOG/sqcheckmon.log\n");
 #    printScript(1, "   exit 1\n");
 #    printScript(1, "fi\n");
 
@@ -278,6 +281,30 @@ sub executeShellCommand {
 
 }
 
+
+sub processNameserver {
+    my $err = 0;
+    while (<>) {
+        if (/^begin name-server/) {
+        }
+        elsif (/^end name-server/) {
+            if (sqnameserver::validateNameserver() != 0) {
+                $err = 1;
+            }
+            if ($err != 0) {
+                print "   Error: not a valid name-server configuration statement.\n";
+                print "Exiting without generating sqconfig.db due to errors.\n";
+                exit 1;
+            }
+            return;
+        }
+        else {
+            if (sqnameserver::parseStmt() != 0) {
+                $err = 1;
+            }
+        }
+    }
+}
 
 sub processNodes {
     my $bNodeSpecified = 0;
@@ -616,6 +643,27 @@ sub doInit {
 
 }
 
+sub setupDbUniqStrings {
+
+    my $my_scripts_dir = "$TRAF_HOME" . "/sql/scripts/" ;
+    for ($i=0; $i < $gdNumNodes; $i++) {
+        sqconfigdb::addDbUniqStr($i, 1, 'shell');
+        sqconfigdb::addDbUniqStr($i, 2, 'pstartd');
+        sqconfigdb::addDbUniqStr($i, 3, 'sqwatchdog');
+        sqconfigdb::addDbUniqStr($i, 4, 'idtmsrv');
+        sqconfigdb::addDbUniqStr($i, 5, 'tm');
+        sqconfigdb::addDbUniqStr($i, 6, 'service_monitor');
+        sqconfigdb::addDbUniqStr($i, 7, 'mxsscp');
+        sqconfigdb::addDbUniqStr($i, 8, 'mxssmp');
+        sqconfigdb::addDbUniqStr($i, 9, 'run_command');
+        sqconfigdb::addDbUniqStr($i, 10, 'mxosrvr');
+        sqconfigdb::addDbUniqStr($i, 11, 'tdm_arkesp');
+        sqconfigdb::addDbUniqStr($i, 12, 'tdm_arkcmp');
+        sqconfigdb::addDbUniqStr($i, 13, 'traf_notify');
+        sqconfigdb::addDbUniqStr($i, 14, 'mxlobsrvr');
+        sqconfigdb::addDbUniqStr($i, 15, 'trafns');
+    }
+}
 
 #
 # Main
@@ -641,6 +689,9 @@ while (<>) {
     elsif (/^begin persist/) {
         processPersist;
     }
+    elsif (/^begin name-server/) {
+        processNameserver;
+    }
     elsif (/^%/) {
         printSQShellCommand;
     }
@@ -660,6 +711,8 @@ while (<>) {
 }
 
 #printZoneList;
+
+setupDbUniqStrings();
 
 printScriptEndLines;
 

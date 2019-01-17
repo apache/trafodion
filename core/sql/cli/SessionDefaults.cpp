@@ -108,6 +108,7 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
   SDEntry(SessionDefaults::SCHEMA,                   SCHEMA,                     SessionDefaults::SDT_ASCII,          TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::STATISTICS_VIEW_TYPE,     STATISTICS_VIEW_TYPE,       SessionDefaults::SDT_ASCII,          FALSE,   FALSE, TRUE,  TRUE),
   SDEntry(SessionDefaults::SUSPEND_LOGGING,          SUSPEND_LOGGING,            SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
+  SDEntry(SessionDefaults::USE_LIBHDFS,              USE_LIBHDFS,                SessionDefaults::SDT_BOOLEAN,        TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::USER_EXPERIENCE_LEVEL,    USER_EXPERIENCE_LEVEL,      SessionDefaults::SDT_ASCII,          TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::WMS_PROCESS,              WMS_PROCESS,                SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE)
 };
@@ -237,6 +238,7 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setCancelEscalationMxosrvrInterval(120);
   setCancelEscalationSaveabend(FALSE);
   setModeSeabase(FALSE);
+  setUseLibHdfs(FALSE);
 }
   
 SessionDefaults::~SessionDefaults()
@@ -450,6 +452,12 @@ void SessionDefaults::setSessionDefaultAttributeValue
       };
     break;
 
+    case USE_LIBHDFS:
+      {
+         setUseLibHdfs(defaultValueAsBoolean);
+
+      }
+      break;
     case USER_EXPERIENCE_LEVEL:
       {
 	setUEL(attrValue, attrValueLen);
@@ -792,7 +800,6 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // locked row timeout
   AQREntry(   8550,     73,      2,     0,      0,   0, "",    0,     0),  
   AQREntry(   8550,     78,      1,    60,      0,   0, "",    0,     0),
-
   AQREntry(   8551,     12,      1,    60,      0,   0, "",    0,     0),
 
   // DP2/FS memory errors
@@ -816,6 +823,9 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
 
   // out of server storage
   AQREntry(   8551,   3502,      1,    60,      0,   0, "",    0,     0),
+
+  // locked row timeout
+  AQREntry(   8558,     0 ,      2,    10,      0,   0, "",    0,     0), 
 
   // lost open
   AQREntry(   8574,      0,      1,     0,      1,   0, "",    0,     0), 

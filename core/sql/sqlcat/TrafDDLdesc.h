@@ -311,9 +311,19 @@ public:
 
 class TrafConstrntKeyColsDesc : public TrafDesc {
 public:
+  enum ConsrntKeyDescFlags
+    { 
+      SYSTEM_KEY   = 0x0001
+    };
   // why almost no initializers? see note at top of file
   TrafConstrntKeyColsDesc() : TrafDesc(DESC_CONSTRNT_KEY_COLS_TYPE)
-  {}
+  {
+    constrntKeyColsDescFlags = 0;
+  }
+
+  void setSystemKey(NABoolean v) 
+  {(v ? constrntKeyColsDescFlags |= SYSTEM_KEY: constrntKeyColsDescFlags&= ~SYSTEM_KEY); };
+  NABoolean isSystemKey() { return (constrntKeyColsDescFlags & SYSTEM_KEY) != 0; };
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
@@ -871,7 +881,11 @@ public:
   DescStructPtr priv_desc;
 
   Int64 routineDescFlags; // my flags
-
+  Int64 libRedefTime; 
+  char *libBlobHandle;
+  char *libSchName;
+  Int32 libVersion;
+  Int64 libObjUID;
   char filler[24];
 };
 

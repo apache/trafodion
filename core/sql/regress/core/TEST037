@@ -171,6 +171,7 @@ create table system_name
 , STORE int not null 
 , SUBCLASS_ORIGIN int not null 
 , SUBSYSTEM_ID int not null 
+, SYS_GUID int not null 
 , system_name int not null 
 , TABLE_NAME int not null 
 , TYPE int not null 
@@ -1887,6 +1888,9 @@ prepare s1 from SELECT SUBCLASS_ORIGIN SUBCLASS_ORIGIN from (values(0)) SUBCLASS
 
 -- Expect success
 prepare s1 from SELECT SUBSYSTEM_ID SUBSYSTEM_ID from (values(0)) SUBSYSTEM_ID(SUBSYSTEM_ID);
+
+-- Expect success
+prepare s1 from SELECT SYS_GUID SYS_GUID from (values(0)) SYS_GUID (SYS_GUID);
 
 -- Expect success
 prepare s1 from SELECT T T from (values(0)) T(T);

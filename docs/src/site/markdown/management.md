@@ -59,4 +59,4 @@ If processes are not running as expected, then:
 If problems persist please review logs:
 
 * **```$TRAF_HOME/sql/local_hadoop/\*/log```**: Hadoop, HBase, and Hive logs.
-* **```$TRAF_HOME/logs```**: Trafodion logs.
+* **```$TRAF_LOG```**: Trafodion logs.

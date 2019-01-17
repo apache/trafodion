@@ -616,6 +616,9 @@ public class T4DSProperties extends T4Properties {
 	public void setConnectionTimeout(int connectionTimeout) {
 		super.setConnectionTimeout(connectionTimeout);
 	}
+	public void setClipVarchar(short clipVarchar) {
+		super.setClipVarchar(clipVarchar);
+	}
 
 	/**
 	 * Sets the max idle time value for the Type 4 connection. The default is

@@ -35,7 +35,7 @@ function Usage {
 }
 
 function LogIt {
-    echo  "`date`: $1" >> $TRAF_HOME/logs/startup.log
+    echo  "`date`: $1" >> $TRAF_LOG/startup.log
 }
 
 function echoLog {
@@ -44,10 +44,10 @@ function echoLog {
 }
 
 script_name=`/bin/basename $0`
-SQLOG_DIR=$TRAF_HOME/logs
+SQLOG_DIR=$TRAF_LOG
 SQMON_LOG=$SQLOG_DIR/sqmon.log
 SQGOMON_FILE=$TRAF_HOME/sql/scripts/gomon.cold
-SQSTOP_EXIT_STATUS=$TRAF_HOME/sql/scripts/sqstop.exit_status
+SQSTOP_EXIT_STATUS=$TRAF_VAR/sqstop.exit_status
 
 if [ $# -eq 0 ]; then
     shutdowntype=normal
@@ -74,13 +74,15 @@ if [[ ! -e $SQGOMON_FILE ]]; then
 fi
 
 # Check if the SQ environment is up or not
-sqcheck -i 1 -d 1 > /dev/null 2>&1
-sq_stat=$?
-if [[ $sq_stat -eq 255 ]]; then
-    lv_msg="SQ environment is not up."
-    echo "$lv_msg"
-    LogIt "End $script_name $shutdowntype, exit code: 0, $lv_msg"
-    exit 0;
+if [[ $shutdowntype == "normal" ]]; then  
+    sqcheck -i 1 -d 1 > /dev/null 2>&1
+    sq_stat=$?
+    if [[ $sq_stat -eq 255 ]]; then
+       lv_msg="The Trafodion environment is not up. Please issue 'sqstop abrupt' or 'ckillall' to kill any orphan processes."
+       echo "$lv_msg"
+       LogIt "End $script_name $shutdowntype, exit code: 0, $lv_msg"
+       exit 0;
+    fi
 fi
 
 rm -f $SQSTOP_EXIT_STATUS
@@ -95,7 +97,7 @@ dcsstop
 #lobstop
 
 # Issue the shutdown request
-echoLog "Shutting down ($shutdowntype) the SQ environment!"
+echoLog "Shutting down ($shutdowntype) the Trafodion environment!"
 echoLog "`date`"
 sqshell -a <<eof
 ps
@@ -103,7 +105,6 @@ shutdown $sparam
 eof
 
 echoLog "Issued a 'shutdown $shutdowntype' request"
-
 
 sleep 2
 
@@ -118,14 +119,17 @@ declare -i lv_process_count_curr
 declare -i lv_process_count_last
 declare -i lv_displayed_process_still_executing
 declare -i lv_exit_status
+declare -i lv_sleep_time
+declare -i lv_total_sleep_time
 
 let lv_num_checks=0
-let lv_max_checks=200
+let lv_max_checks=30
 let lv_done=0
 let lv_process_count_curr=0
 let lv_process_count_last=0
 let lv_displayed_process_still_executing=0
-
+let lv_sleep_time=5
+let lv_total_sleep_time=(lv_sleep_time '*' lv_max_checks)
 
 bFirst=1
 sq_stat=0
@@ -134,10 +138,9 @@ echoLog "Shutdown in progress";
 
 echoLog
 
-
 while [[ $sq_stat == 0 ]]; do
 
-    sleep 5
+    sleep ${lv_sleep_time}
 
     # Count the number of processes
     lv_process_count_curr=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | wc -l`
@@ -165,19 +168,22 @@ while [[ $sq_stat == 0 ]]; do
         if [ $lv_displayed_process_still_executing '==' 0 ]; then
 	    let lv_displayed_process_still_executing=1
 	    echoLog 
-	    echoLog "These are the processes still running. Please check if any application process (such as sqlci) is still running that might hamper shutdown"
+	    echoLog "These are the processes still running. Please check if any application process (such as sqlci) is still running that might hamper shutdown. Please ctl-c within the next ${lv_total_sleep_time} seconds if you want those processes to continue..."
 	    cstat | tee -a $SQMON_LOG
+	    echoLog "Please check if any application process (such as sqlci) is still running that might hamper shutdown. Please ctl-c within the next ${lv_total_sleep_time} seconds if you want those processes to continue..."
 	    let lv_num_checks=0
 	else
 	    lv_shutdown_status=2
+	    echoLog
 	    echoLog "`date`"
 	    lv_msg="SQ Shutdown is taking longer than usual and seems to be stalled at $lv_process_count_curr processes. "
 	    echoLog "$lv_msg"
 	    cstat >> $SQMON_LOG
-	    echoLog "Exiting."
+	    echoLog "Issuing 'sqstop abrupt'."
 	    let lv_exit_status=1
 	    LogIt "End $script_name $shutdowntype, exit code: $lv_exit_status, $lv_msg"
 	    echo "$lv_exit_status" > $SQSTOP_EXIT_STATUS
+	    sqstop abrupt
 	    exit $lv_exit_status
 	fi
     fi
@@ -221,7 +227,7 @@ if (test -n "${CLUSTERNAME}"); then
 					unbindip=`echo "$match_ip_interface"|awk '{print $2}'`
 					unbindlb=`echo "$match_ip_interface"|awk '{print $NF}'`
 					echoLog "pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb"
-					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_HOME/logs/ndcsunbind.log
+					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_LOG/ndcsunbind.log
 				fi
 	       done
 	   done
@@ -236,7 +242,7 @@ if (test -n "${CLUSTERNAME}"); then
 					unbindip=`echo "$match_ip_interface"|awk '{print $2}'`
 					unbindlb=`echo "$match_ip_interface"|awk '{print $NF}'`
 					echoLog "pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb"
-					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_HOME/logs/ndcsunbind.log
+					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $TRAF_LOG/ndcsunbind.log
 			   fi
 		   done
 	   done

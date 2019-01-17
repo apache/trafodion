@@ -411,6 +411,174 @@ March 01, 2016, 10:11
 10:11:12
 
 --- 1 row(s) selected.
+>>select to_char(time '23:05:10','HH') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+23    
+
+--- 1 row(s) selected.
+>>select to_char(time '23:05:10','HH12') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+11    
+
+--- 1 row(s) selected.
+>>select to_char(time '23:05:10','HH24') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+23    
+
+--- 1 row(s) selected.
+>>select to_char(time '23:05:10','MI') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+05    
+
+--- 1 row(s) selected.
+>>select to_char(time '23:05:10','SS') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+10    
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','YYYY') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+2016  
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','YYY') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+016   
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','YY') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+16    
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','Y') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+6     
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','MON') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+MAR   
+
+--- 1 row(s) selected.
+>>select to_char(date '2006-12-01','MM') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+12    
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','DY') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+TUE   
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','DAY') from (values(1)) as t(a);
+
+(EXPR)   
+---------
+
+TUESDAY  
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','CC') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+21    
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2016-03-01 12:05:10','D') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+3     
+
+--- 1 row(s) selected.
+>>select to_char(date '2006-12-01','DD') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+01    
+
+--- 1 row(s) selected.
+>>select to_char(date '2006-12-01','DDD') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+335   
+
+--- 1 row(s) selected.
+>>select to_char(date '2006-12-31','W') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+5     
+
+--- 1 row(s) selected.
+>>select to_char(date '2006-12-31','WW') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+53    
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2001-01-07 00:00:00','J') from (values(1)) as t(a);
+
+(EXPR) 
+-------
+
+2451917
+
+--- 1 row(s) selected.
+>>select to_char(date '2006-12-01','Q') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+4     
+
+--- 1 row(s) selected.
 >>
 >>select dateformat(time '10:11:12.1', default) from (values(1)) x(a);
 
@@ -547,6 +715,70 @@ March 01, 2016, 10:11
 ------
 
      2
+
+--- 1 row(s) selected.
+>>select extract(week from date '2005-01-01') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>select extract(epoch from timestamp '2000-12-30 20:38:40.12') from (values(1)) as t(a);
+
+(EXPR)
+---------------------
+
+         978208720.12
+
+--- 1 row(s) selected.
+>>select extract(dow from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     5
+
+--- 1 row(s) selected.
+>>select extract(doy from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+   172
+
+--- 1 row(s) selected.
+>>select extract(wom from timestamp '2018-06-21 20:38:40') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     3
+
+--- 1 row(s) selected.
+>>select extract(century from timestamp '2001-01-01 12:30:00') from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    21
+
+--- 1 row(s) selected.
+>>select extract(decade from interval '9' year - interval '99' year) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    -9
+
+--- 1 row(s) selected.
+>>select extract(quarter from interval '09' month) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     3
 
 --- 1 row(s) selected.
 >>

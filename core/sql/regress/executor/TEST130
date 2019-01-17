@@ -143,9 +143,11 @@ values((select * from t130lob1));
 
 --test empty_blob(), empty_clob()
 delete from t130lob2;
+insert into t130lob2 values(0,stringtolob('inserted row10'));
 insert into t130lob2 values (1, empty_blob());
 select lobtostring(c2,10) from t130lob2;
 delete from t130lob2;
+insert into t130lob2 values(0,stringtolob('inserted row10'));
 insert into t130lob2 values (1, empty_clob());
 select lobtostring(c2,10) from t130lob2;
 update t130lob2 set c2=stringtolob('inserted row11');
@@ -400,8 +402,7 @@ log;
 log LOG130;
 sh rm t130_extract_command;
 
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
-
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user\/trafodion\/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
 obey t130_extract_command;
 
 --binary input/update
@@ -416,7 +417,7 @@ log;
 
 log LOG130;
 sh rm t130_extract_command;
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user\/trafodion\/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
 obey t130_extract_command;
 
 update tlob130bin2 set c2=filetolob('anoush.jpg') ;
@@ -430,7 +431,7 @@ log;
 
 log LOG130;
 sh rm t130_extract_command;
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user\/trafodion\/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
 
 obey t130_extract_command;
 
@@ -481,7 +482,7 @@ log;
 
 log LOG130;
 sh rm t130_extract_command;
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user\/trafodion\/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
 obey t130_extract_command;
 
 -- combination blob and clob columns

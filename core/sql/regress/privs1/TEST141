@@ -24,6 +24,7 @@
 -- ============================================================================
 -- Functionality: Extended support for views for all levels:
 --    column, object, component
+--    get schema for {user | role} authID
 --
 -- Added in response to JIRA 1100
 --
@@ -55,6 +56,7 @@ drop schema if exists t141_user3 cascade;
 revoke component privilege "CREATE" on sql_operations from sql_user2;
 revoke component privilege "CREATE" on sql_operations from t141_role2;
 revoke component privilege "DML_SELECT_METADATA" on sql_operations from "PUBLIC";
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
 
 revoke role t141_role1 from sql_user1;
 revoke role t141_role2 from sql_user2;
@@ -188,6 +190,7 @@ grant role t141_role_md to sql_user1, sql_user2, sql_user3;
 -- set up component privilege infrastructure
 grant component privilege "CREATE" on sql_operations to sql_user2;
 grant component privilege "CREATE" on sql_operations to t141_role2;
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 
 -- ============================================================================
 ?section create_objects
@@ -292,6 +295,9 @@ grant update on u1t4 to sql_user3;
 grant select(c1, c3) on u1t4 to sql_user3;
 execute get_obj_privs;
 execute get_col_privs;
+get schemas for user sql_user1;
+get schemas for user sql_user2;
+get schemas for user sql_user3;
 
 -- have sql_user2 create some tables in sql_user1's schema
 -- have sql_user2 create some views, views that reference user1's objects fail
@@ -336,6 +342,9 @@ obey TEST141(create_objects);
 set schema t141_user1;
 execute get_obj_privs;
 execute get_col_privs;
+get schemas for role t141_role1;
+get schemas for role t141_role2;
+get schemas for role t141_role3;
 
 -- t141_role2 has create privilege on all schemas.
 -- have sql_user2 who belongs to  t141_role2 create some tables in 
@@ -428,6 +437,17 @@ create view u2v1 as select u1.c1, u2.c1 from u2t1 as u2, t141_user1.u1t2 as u1;
 -- user2 has no privs on u3t1
 create view u2v1 as select * from t141_user1.u3t1; 
 
+-- test get schemas for user and role
+-- schema owner sql_user2:  
+--   first test returns t144_user2 
+--   second test returns no rows
+-- schema owner t141_role:  both tests return t144_user2
+get schemas for user sql_user2;
+get schemas for role t141_role2; 
+
+-- these should fail with no priv
+get schemas for user sql_user1;
+get schemas for role t141_role1;
 
 -- ============================================================================
 ?section user3_objects
@@ -455,7 +475,7 @@ create view u3v4 as select c1, c3 from t141_user1.u1t4;
 
 -- following fail
 create view u3v5 as select c1, c3 from t141_user1.u1t3;
-get tables, match 'U3T%';
+get tables in schema t141_user1, match 'U3T%';
 get views;
 
 -- ============================================================================

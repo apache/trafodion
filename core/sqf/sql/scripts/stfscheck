@@ -1,5 +1,5 @@
-# log4cxx configuration for HDFS access via JNI
-
+#!/bin/bash
+#
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -21,17 +21,18 @@
 #
 # @@@ END COPYRIGHT @@@
 
-log4j.rootLogger=INFO, rootAppender
+#this is to check the health of STFS
 
-log4j.appender.rootAppender=org.apache.log4j.RollingFileAppender
-log4j.appender.rootAppender.fileName=hdfs.log
-log4j.appender.rootAppender.maxFileSize=100000000
-log4j.appender.rootAppender.maxBackupIndex=1
-log4j.appender.rootAppender.addPid=false
-log4j.appender.rootAppender.layout=org.apache.log4j.PatternLayout
-log4j.appender.rootAppender.layout.ConversionPattern=%d, %p, %c, %m%n
-
-log4j.logger.JniTop=ERROR
-log4j.logger.SeqFileReader=ERROR
-log4j.logger.SeqFileWriter=ERROR
-log4j.logger.HBase=ERROR
+if [ -e $SQ_PDSH ]; then
+ output=`$SQ_PDSH $MY_NODES localstfscheck`
+ echo $output | grep ERROR | grep Scratch
+ ol=`echo $output | grep ERROR | grep Scratch | wc -l`
+ if [ $ol -eq 0 ]; then
+  echo 'STFS is OK'
+ fi
+else
+ localstfscheck
+ if [ $? -eq 0 ]; then
+  echo 'STFS is OK'
+ fi
+fi

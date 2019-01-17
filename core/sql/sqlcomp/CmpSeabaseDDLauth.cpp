@@ -246,9 +246,24 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getAuthDetails(Int32 authID)
   }
 }
 
+// ----------------------------------------------------------------------------
+// public method:  getRoleIDs
+//
+// Return the list of roles that granted to the passed in authID
+//
+// Input:
+//    authID - the database authorization ID to search for
+//
+//  Output:
+//    A returned parameter:
+//       STATUS_GOOD: list of roles returned
+//       STATUS_NOTFOUND: no roles were granted
+//       STATUS_ERROR: error was returned, diags area populated
+// ----------------------------------------------------------------------------
 CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getRoleIDs(
   const Int32 authID,
-  std::vector<int32_t> &roleIDs)
+  std::vector<int32_t> &roleIDs,
+  std::vector<int32_t> &grantees)
 {
   NAString privMgrMDLoc;
   CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
@@ -257,11 +272,13 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getRoleIDs(
                     std::string(privMgrMDLoc.data()),
                     CmpCommon::diags());
   std::vector<std::string> roleNames;
-  std::vector<int32_t> roleDepths;
+  std::vector<int32_t> grantDepths;
 
-  if (role.fetchRolesForUser(authID,roleNames,roleIDs,roleDepths) == PrivStatus::STATUS_ERROR)
+  if (role.fetchRolesForAuth(authID,roleNames,roleIDs,grantDepths,grantees) == PrivStatus::STATUS_ERROR)
     return STATUS_ERROR;
-  return STATUS_GOOD; 
+
+  assert (roleIDs.size() == grantees.size());
+  return STATUS_GOOD;
 }
 
 // ----------------------------------------------------------------------------
@@ -1820,16 +1837,15 @@ bool CmpSeabaseDDLrole::describe(
       std::vector<std::string> granteeNames;
       std::vector<int32_t> grantDepths;
       std::vector<int32_t> grantorIDs;
-      
-      PrivStatus privStatus = PrivStatus::STATUS_GOOD;
-      
-      privStatus = roles.fetchUsersForRole(getAuthID(),granteeNames,
-                                           grantorIDs,grantDepths);
-      
-      // If no users were granted this role, nothing to do.                                     
+
+
+      PrivStatus privStatus = roles.fetchGranteesForRole(getAuthID() ,granteeNames,
+                                                         grantorIDs,grantDepths);
+
+      // If nobody was granted this role, nothing to do.                                     
       if (privStatus == PrivStatus::STATUS_NOTFOUND || granteeNames.size() == 0)
          return true;
-         
+
       if (privStatus == PrivStatus::STATUS_ERROR)                                   
          SEABASEDDL_INTERNAL_ERROR("Could not fetch users granted role.");
          

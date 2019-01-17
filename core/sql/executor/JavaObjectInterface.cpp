@@ -49,6 +49,7 @@ __thread NAString *tsRecentJMFromJNI = NULL;
 __thread NAString *tsSqlJniErrorStr = NULL;
 jclass JavaObjectInterface::gThrowableClass = NULL;
 jclass JavaObjectInterface::gStackTraceClass = NULL;
+jclass JavaObjectInterface::gOOMErrorClass = NULL;
 jmethodID JavaObjectInterface::gGetStackTraceMethodID = NULL;
 jmethodID JavaObjectInterface::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterface::gStackFrameToStringMethodID = NULL;
@@ -306,15 +307,14 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
 
   if (!isDefinedInOptions(options, "-XX:HeapDumpPath="))
     {
-      char *mySqRoot = getenv("TRAF_HOME");
+      char *mySqLogs = getenv("TRAF_LOG");
       int len;
-      if (mySqRoot != NULL)
+      if (mySqLogs != NULL)
         {
-          len = strlen(mySqRoot); 
+          len = strlen(mySqLogs); 
           oomDumpDir = new char[len+50];
           strcpy(oomDumpDir, "-XX:HeapDumpPath="); 
-          strcat(oomDumpDir, mySqRoot);
-          strcat(oomDumpDir, "/logs");
+          strcat(oomDumpDir, mySqLogs);
           jvm_options[numJVMOptions].optionString = (char *)oomDumpDir;
           jvm_options[numJVMOptions].extraInfo = NULL;
           numJVMOptions++;
@@ -442,6 +442,15 @@ JOI_RetCode JavaObjectInterface::initJVM(LmJavaOptions *options)
                       "()Ljava/lang/String;");
      }
   }                  
+  if (gOOMErrorClass == NULL)
+  {
+     lJavaClass =  (jclass)jenv_->FindClass("java/lang/OutOfMemoryError");
+     if (lJavaClass != NULL)
+     {
+        gOOMErrorClass = (jclass)jenv_->NewGlobalRef(lJavaClass);
+        jenv_->DeleteLocalRef(lJavaClass);
+     }
+  }
   return JOI_OK;
 }
  
@@ -565,10 +574,12 @@ void JavaObjectInterface::logError(std::string &cat, const char* file, int line)
   QRLogger::log(cat, LL_ERROR, "Java exception in file %s, line %d.", file, line);
 }
 
-NABoolean  JavaObjectInterface::getExceptionDetails(const char *fileName, int lineNo,
-                       const char *methodName)  
+NABoolean JavaObjectInterface::getExceptionDetails(const char *fileName, int lineNo,
+                                                   const char *methodName,
+                                                   NABoolean noDetails)
 {
    JNIEnv *jenv = jenv_;
+   NABoolean killProcess = FALSE;
    CliGlobals *cliGlobals = GetCliGlobals();
    NAString error_msg;
    if (gThrowableClass == NULL)
@@ -585,16 +596,29 @@ NABoolean  JavaObjectInterface::getExceptionDetails(const char *fileName, int li
        setSqlJniErrorStr(error_msg); 
        return FALSE;
    }
-   appendExceptionMessages(a_exception, error_msg);
+
+   if (appendExceptionMessages(a_exception, error_msg, noDetails))
+     killProcess = TRUE;
+
    setSqlJniErrorStr(error_msg); 
    logError(CAT_SQL_EXE, fileName, lineNo); 
    logError(CAT_SQL_EXE, methodName, error_msg); 
    jenv->ExceptionClear();
+   if (killProcess) {
+      // wait to get the hprof dump by JVM 
+      sleep(30);
+      abort();
+   }
    return TRUE;
 }
 
-void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAString &error_msg)
+NABoolean JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, 
+                                                       NAString &error_msg,
+                                                       NABoolean noDetails)
 {
+    NABoolean killProcess = FALSE;
+    if (jenv_->IsInstanceOf(a_exception, gOOMErrorClass) == JNI_TRUE)
+       killProcess = TRUE; 
     jstring msg_obj =
        (jstring) jenv_->CallObjectMethod(a_exception,
                                          gThrowableToStringMethodID);
@@ -616,7 +640,11 @@ void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAStri
                                         a_exception,
                                         gGetStackTraceMethodID);
     if (frames == NULL)
-       return;
+       return killProcess;
+
+    if (noDetails)
+      return killProcess;
+
     jsize frames_length = jenv_->GetArrayLength(frames);
 
     jsize i = 0;
@@ -638,9 +666,11 @@ void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAStri
     jthrowable j_cause = (jthrowable)jenv_->CallObjectMethod(a_exception, gGetCauseMethodID);
     if (j_cause != NULL) {
        error_msg += " Caused by \n";
-       appendExceptionMessages(j_cause, error_msg);
+       if (appendExceptionMessages(j_cause, error_msg, noDetails))
+         killProcess = TRUE;
     }
     jenv_->DeleteLocalRef(a_exception);
+    return killProcess;
 } 
 
 JOI_RetCode JavaObjectInterface::initJNIEnv()

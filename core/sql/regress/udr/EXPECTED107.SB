@@ -482,6 +482,9 @@ SCH.VALIDATE_CURRENT_ROLE_NAME
 SCH.VALIDATE_CURRENT_USER_NAME
 SCH.VALIDATE_SESSION_USER_NAME
 
+=======================
+ 37 row(s) returned
+
 --- SQL operation complete.
 >>
 >>showddl function errorwarn ;

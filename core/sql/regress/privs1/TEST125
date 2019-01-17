@@ -24,6 +24,7 @@
 --
 -- Tests that get statements return only what the user can see
 --  get schemas (in catalog)
+--  get schemas for role (get schemas for user is part of privs1/TEST144)
 --  get tables (in schemas)
 --  get views (in catalogs)
 --  get views (in schemas)
@@ -35,8 +36,8 @@
 --  get privileges on view
 --  get privileges on sequence
 --  get privileges on library
---  (tests for get privileges on functions, table_mapping functions, and
---   procedures is part of privs2/TEST144)
+--  (tests for get privileges on functions, table_mapping functions, 
+--   libraries and procedures is part of privs2/TEST144)
 --
 -- ============================================================================
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
@@ -266,6 +267,7 @@ get sequences, match 'T125SCH%';
 get libraries, match 'T125%';
 get functions;
 get procedures;
+get roles;
 
 get indexes on table players;
 get views on table players;
@@ -284,6 +286,11 @@ get libraries in schema t125sch2;
 get functions in schema t125sch2;
 get procedures in schema t125sch2;
 
+get procedures for user sql_user1;
+get procedures for user sql_user7;
+get functions for role t125_role1;
+get functions for role t125_adminrole;
+
 set schema t125sch3;
 get tables;
 get privileges on table games;
@@ -301,6 +308,13 @@ get privileges on library t125_l1 for user sql_user8;
 get functions in schema t125sch3;
 get procedures;
  
+get schemas for user sql_user1, match 'T125SCH%';
+get schemas for role t125_adminrole, match 'T125SCH%';
+
 get functions for library t125_l1;
 get procedures for library t125_l2;
 
+get procedures for user sql_user1;
+get procedures for user sql_user7;
+get functions for role t125_role1;
+get functions for role t125_adminrole;

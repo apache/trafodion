@@ -1,18 +1,5 @@
-#ifndef COMSQLEXEDBG_H
-#define COMSQLEXEDBG_H
-/* -*-C++-*-
- *****************************************************************************
- *
- * File:         ComSqlcmpdbg.h
- * Description:  This file contains declarations common to arkcmp components 	
- *               and tdm_sqlcmpdbg the GUI tool used to display query 
- *               compilation.
- *               
- * Created:      06/25/97
- * Modified:     $Author:
- * Language:     C++
- *
- *
+///////////////////////////////////////////////////////////////////////////////
+//
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -33,22 +20,9 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
- *
- *
- *****************************************************************************
- */
+//
+///////////////////////////////////////////////////////////////////////////////
 
-// forward reference
-class ExSubtask;
-class ExScheduler;
-class ex_tcb;
+#include "nstype.h"
 
-typedef struct tagSqlexedbgExpFuncs {
-  void (*fpDisplayTCBTree) (ExSubtask**, ExScheduler*);
-  void (*fpSetRootTCB) (ex_tcb*);
-} SqlexedbgExpFuncs;
-
-typedef SqlexedbgExpFuncs* (*fpGetSqlexedbgExpFuncs) (void); 
-
-#endif
-	
+#include "lnode.cxx"

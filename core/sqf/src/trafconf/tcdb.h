@@ -51,6 +51,7 @@ public:
     CTcdb( void );
     ~CTcdb( void );
 
+    int         AddNameServer( const char* nodeName );
     int         AddLNodeData( int nid
                             , int pnid
                             , int firstCore
@@ -69,8 +70,11 @@ public:
                                       , const char *dataValue );
     int         AddUniqueString( int nid, int id, const char *uniqStr );
     int         Close( void );
+    int         DeleteNameServer( const char *nodeName );
     int         DeleteNodeData( int pnid );
     int         DeleteUniqueString( int nid );
+    int         GetNameServer( const char *nodeName );
+    int         GetNameServers( int *count, int max, char **nodeNames );
     int         GetNode( int nid
                        , TcNodeConfiguration_t &nodeConfig );
     int         GetNode( const char *name

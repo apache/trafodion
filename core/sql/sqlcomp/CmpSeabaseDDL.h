@@ -45,6 +45,7 @@
 #include "PrivMgrMD.h"
 #include "ElemDDLHbaseOptions.h"
 #include "CmpContext.h"
+#include "parser.h"
 
 class ExpHbaseInterface;
 class ExeCliInterface;
@@ -411,7 +412,8 @@ class CmpSeabaseDDL
        Int64 & objectFlags,
        bool reportErrorNow = true,
        NABoolean checkForValidDef = FALSE,
-       Int64 * createTime = NULL);
+       Int64 * createTime = NULL,
+       Int64 * redefTime = NULL);
   
   short getObjectName(
        ExeCliInterface *cliInterface,
@@ -528,8 +530,9 @@ protected:
 		  NAString &colName);
 
   TrafDesc *getSeabaseRoutineDescInternal(const NAString &catName,
-                                             const NAString &schName,
-                                             const NAString &objName);
+                                          const NAString &schName,
+                                          const NAString &objName
+                                          );
 
   // note: this function expects hbaseCreateOptionsArray to have
   // HBASE_MAX_OPTIONS elements
@@ -1008,8 +1011,10 @@ protected:
      Int32 ownerID,
      NABoolean ignoreIfExists);
      
+  short createDefaultSystemSchema(ExeCliInterface * cliInterface);
   short createSchemaObjects(ExeCliInterface * cliInterface);
-  
+  short createLibrariesObject(ExeCliInterface * cliInterface);
+  short extractLibrary(ExeCliInterface *cliInterface,char *libHandle, char *cachedLibName);
   void  createSeabaseSchema(
      StmtDDLCreateSchema  * createSchemaNode,
      NAString             & currCatName);
@@ -1085,6 +1090,17 @@ protected:
                                    const ComObjectName &tgtTableName,
                                    const ComObjectName &srcTableName);
 
+public:
+  static NABoolean setupQueryTreeForHiveDDL(
+       Parser::HiveDDLInfo * hiveDDLInfo,
+       char * inputStr, 
+       CharInfo::CharSet inputStrCharSet,
+       NAString currCatName,
+       NAString currSchName,
+       ExprNode** node);
+
+protected:
+
   // makes a copy of underlying hbase table
   short cloneHbaseTable(
        const NAString &srcTable, const NAString &clonedTable,
@@ -1099,6 +1115,12 @@ protected:
        ExpHbaseInterface * ehi,
        ExeCliInterface * cilInterface,
        NABoolean withCreate);
+
+  short cloneAndTruncateTable(
+       const NATable * naTable, // IN: source table
+     NAString &tempTable, // OUT: temp table
+     ExpHbaseInterface * ehi,
+     ExeCliInterface * cliInterface);
 
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,
@@ -1295,7 +1317,8 @@ protected:
 
   void createSeabaseLibrary(StmtDDLCreateLibrary  * createLibraryNode,
                             NAString &currCatName, NAString &currSchName);
-  
+  void createSeabaseLibrary2(StmtDDLCreateLibrary  * createLibraryNode,
+                            NAString &currCatName, NAString &currSchName);
   void registerSeabaseUser (
                             StmtDDLRegisterUser        * registerUserNode);
   void alterSeabaseUser (
@@ -1307,10 +1330,12 @@ protected:
 
   void dropSeabaseLibrary(StmtDDLDropLibrary  * dropLibraryNode,
                           NAString &currCatName, NAString &currSchName);
-
+ 
   void  alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
 			    NAString &currCatName, NAString &currSchName);
-
+  void  alterSeabaseLibrary2(StmtDDLAlterLibrary  *alterLibraryNode,
+			    NAString &currCatName, NAString &currSchName);
+  short isLibBlobStoreValid(ExeCliInterface * cliInterface);
   void createSeabaseRoutine(StmtDDLCreateRoutine  * createRoutineNode,
                             NAString &currCatName, NAString &currSchName);
   
@@ -1319,6 +1344,7 @@ protected:
 
   short createSeabaseLibmgr(ExeCliInterface * cliInterface);
   short upgradeSeabaseLibmgr(ExeCliInterface * inCliInterface);
+  short upgradeSeabaseLibmgr2(ExeCliInterface * inCliInterface);
   short dropSeabaseLibmgr(ExeCliInterface *inCliInterface);
   short createLibmgrProcs(ExeCliInterface * cliInterface);
   short grantLibmgrPrivs(ExeCliInterface *cliInterface);
@@ -1364,6 +1390,14 @@ protected:
        const NAString &schemaNamePart,
        const NAString &objectNamePart,
        NATable *naTable,
+       ExeCliInterface &cliInterface,
+       NABoolean cascade
+   );
+
+  short unregisterHiveSchema
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
        ExeCliInterface &cliInterface,
        NABoolean cascade
    );
@@ -1415,16 +1449,21 @@ protected:
                              StmtDDLDropHbaseTable * dropTableNode,
                              NAString &currCatName, NAString &currSchName);
   
-  void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
+  void processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
+                               NAString &currCatName, NAString &currSchName);
+
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
   void dropSeabaseMDviews();
   void createSeabaseSchemaObjects();
   void updateVersion();
 
+  short initTrafMD(CmpDDLwithStatusInfo *mdti);
+  
   short createPrivMgrRepos(ExeCliInterface *cliInterface, NABoolean ddlXns);
   short initSeabaseAuthorization(ExeCliInterface *cliInterface,
                                  NABoolean ddlXns,
+                                 NABoolean isUpgrade,
                                  std::vector<std::string> &tablesCreated,
                                  std::vector<std::string> &tablesUpgraded);
 
@@ -1453,7 +1492,7 @@ protected:
   short truncateHbaseTable(const NAString &catalogNamePart, 
                            const NAString &schemaNamePart, 
                            const NAString &objectNamePart,
-                           NATable * naTable,
+                           const NABoolean hasSaltedColumn,
                            ExpHbaseInterface * ehi);
 
   void purgedataHbaseTable(DDLExpr * ddlExpr,
@@ -1465,15 +1504,24 @@ protected:
                   NABoolean inRecovery = FALSE);
   short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
   short copyOldReposToNew(ExeCliInterface * cliInterface);
+
   short dropAndLogReposViews(ExeCliInterface * cliInterface,
                              NABoolean & someViewSaved /* out */);
+  short createLibraries(ExeCliInterface * cliInterface);
+  short dropLibraries(ExeCliInterface * cliInterface, 
+                  NABoolean oldLibraries = FALSE, 
+                  NABoolean inRecovery = FALSE);
+  short alterRenameLibraries(ExeCliInterface * cliInterface, NABoolean newToOld);
+  short copyOldLibrariesToNew(ExeCliInterface * cliInterface);
 
 public:
 
   short upgradeRepos(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   short upgradeReposComplete(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   short upgradeReposUndo(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
-
+  short upgradeLibraries(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+  short upgradeLibrariesComplete(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+  short upgradeLibrariesUndo(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   NAString genHBaseObjName(const NAString &catName, 
 			   const NAString &schName,
 			   const NAString &objName);

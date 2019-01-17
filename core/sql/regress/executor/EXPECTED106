@@ -79,7 +79,7 @@ End of MXCI Session
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:06:19.088376
+FUNKY_OPT_UNIQUE  2018-09-11 06:33:58.000451
 
 --- 1 row(s) selected.
 >>
@@ -94,7 +94,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:06:19.088376
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:06:19.593994
+FUNKY_OPT_UNIQUE  2018-09-11 06:34:02.000806
 
 --- 1 row(s) selected.
 >>
@@ -109,7 +109,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:06:19.593994
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:06:25.701964
+FUNKY_OPT_UNIQUE  2018-09-11 06:34:06.000900
 
 --- 1 row(s) selected.
 >>
@@ -124,7 +124,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:06:25.701964
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:06:27.328307
+FUNKY_OPT_UNIQUE  2018-09-11 06:34:07.000032
 
 --- 1 row(s) selected.
 >>
@@ -197,7 +197,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:06:27.328307
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:06:27.705202
+subject launch canceler - FUNKY_OPT_UNIQUE  2018-09-11 06:34:07.000305
 
 --- 1 row(s) selected.
 >>
@@ -215,7 +215,7 @@ subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:06:27.705202
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:06:28.699544
+subject synch cancel - FUNKY_OPT_UNIQUE     2018-09-11 06:34:08.000400
 
 --- 1 row(s) selected.
 >>
@@ -242,7 +242,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:06:28.699544
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:06:38.788316
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:34:15.000481
 
 --- 1 row(s) selected.
 >>log;
@@ -254,7 +254,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:06:38.788316
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:06:38.813948
+subject execute s1 - FUNKY_OPT_UNIQUE       2018-09-11 06:34:15.000508
 
 --- 1 row(s) selected.
 >>
@@ -277,7 +277,7 @@ subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:06:38.813948
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:06:51.861646
+subject - FUNKY_OPT_UNIQUE                  2018-09-11 06:34:28.000500
 
 --- 1 row(s) selected.
 >>
@@ -304,7 +304,7 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:06:51.861646
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:06:51.912524
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:34:28.000539
 
 --- 1 row(s) selected.
 >>log;
@@ -329,7 +329,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:06:51.912524
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.714664
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:34:15.000384
 
 --- 1 row(s) selected.
 >>
@@ -341,7 +341,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.714664
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:06:51.735687
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:34:28.000405
 
 --- 1 row(s) selected.
 >>
@@ -358,7 +358,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_183_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_415_S1;
 
 --- SQL operation complete.
 >>
@@ -373,7 +373,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:06:51.817032
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:34:28.000496
 
 --- 1 row(s) selected.
 >>log;
@@ -441,7 +441,7 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:06:51.817032
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:03.399656
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:34:37.000537
 
 --- 1 row(s) selected.
 >>log;
@@ -467,7 +467,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:03.399656
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:07:16.484716
+subject - FUNKY_OPT_UNIQUE                  2018-09-11 06:34:53.000589
 
 --- 1 row(s) selected.
 >>
@@ -494,7 +494,7 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:07:16.484716
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:16.521981
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:34:53.000623
 
 --- 1 row(s) selected.
 >>log;
@@ -519,7 +519,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:16.521981
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.311535
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:34:37.000479
 
 --- 1 row(s) selected.
 >>
@@ -531,7 +531,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.311535
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:07:16.361158
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:34:50.000499
 
 --- 1 row(s) selected.
 >>
@@ -548,7 +548,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_222_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_473_S1;
 
 --- SQL operation complete.
 >>
@@ -563,7 +563,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:07:16.472310
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:34:53.000582
 
 --- 1 row(s) selected.
 >>log;
@@ -594,7 +594,7 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:07:16.472310
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.686506
+subject launch canceler - FUNKY_OPT_UNIQUE  2018-09-11 06:34:55.000817
 
 --- 1 row(s) selected.
 >>
@@ -612,7 +612,7 @@ subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.686506
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:07:18.705866
+subject synch cancel - FUNKY_OPT_UNIQUE     2018-09-11 06:34:55.000839
 
 --- 1 row(s) selected.
 >>
@@ -639,7 +639,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:07:18.705866
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:28.373358
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:35:02.000687
 
 --- 1 row(s) selected.
 >>log;
@@ -651,7 +651,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:28.373358
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:07:28.394035
+subject execute s1 - FUNKY_OPT_UNIQUE       2018-09-11 06:35:02.000710
 
 --- 1 row(s) selected.
 >>
@@ -672,7 +672,7 @@ subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:07:28.394035
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:07:48.064685
+subject - FUNKY_OPT_UNIQUE                  2018-09-11 06:35:26.000940
 
 --- 1 row(s) selected.
 >>
@@ -699,7 +699,7 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:07:48.064685
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:48.096812
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:35:26.000980
 
 --- 1 row(s) selected.
 >>log;
@@ -724,7 +724,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:48.096812
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.302277
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:35:02.000666
 
 --- 1 row(s) selected.
 >>
@@ -736,7 +736,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.302277
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:07:41.320811
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:35:15.000685
 
 --- 1 row(s) selected.
 >>
@@ -753,7 +753,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_237_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_488_S1;
 
 --- SQL operation complete.
 >>
@@ -768,7 +768,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:07:41.407319
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:35:15.000794
 
 --- 1 row(s) selected.
 >>log;
@@ -791,7 +791,7 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:07:41.407319
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.195393
+subject launch canceler - FUNKY_OPT_UNIQUE  2018-09-11 06:35:29.000124
 
 --- 1 row(s) selected.
 >>
@@ -809,7 +809,7 @@ subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.195393
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:07:50.215880
+subject synch cancel - FUNKY_OPT_UNIQUE     2018-09-11 06:35:29.000143
 
 --- 1 row(s) selected.
 >>
@@ -836,7 +836,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:07:50.215880
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:59.487739
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:35:35.000996
 
 --- 1 row(s) selected.
 >>log;
@@ -848,7 +848,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:59.487739
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:07:59.508758
+subject execute s1 - FUNKY_OPT_UNIQUE       2018-09-11 06:35:36.000017
 
 --- 1 row(s) selected.
 >>
@@ -869,7 +869,7 @@ subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:07:59.508758
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:08:25.759995
+subject - FUNKY_OPT_UNIQUE                  2018-09-11 06:35:58.000197
 
 --- 1 row(s) selected.
 >>
@@ -896,7 +896,7 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:08:25.759995
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:25.795455
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:35:58.000238
 
 --- 1 row(s) selected.
 >>log;
@@ -921,7 +921,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:25.795455
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.486860
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:35:35.000921
 
 --- 1 row(s) selected.
 >>
@@ -933,7 +933,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.486860
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:08:12.509301
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:35:48.000940
 
 --- 1 row(s) selected.
 >>
@@ -950,7 +950,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_253_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_504_S1;
 
 --- SQL operation complete.
 >>
@@ -965,7 +965,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:08:12.606156
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:35:49.000030
 
 --- 1 row(s) selected.
 >>log;
@@ -987,7 +987,7 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:08:12.606156
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.298685
+subject launch canceler - FUNKY_OPT_UNIQUE  2018-09-11 06:36:01.000614
 
 --- 1 row(s) selected.
 >>
@@ -1005,7 +1005,7 @@ subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.298685
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:08:29.318388
+subject synch cancel - FUNKY_OPT_UNIQUE     2018-09-11 06:36:01.000635
 
 --- 1 row(s) selected.
 >>
@@ -1032,7 +1032,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:08:29.318388
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:38.782601
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:36:08.000598
 
 --- 1 row(s) selected.
 >>log;
@@ -1044,7 +1044,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:38.782601
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:08:38.800701
+subject execute s1 - FUNKY_OPT_UNIQUE       2018-09-11 06:36:08.000621
 
 --- 1 row(s) selected.
 >>
@@ -1065,7 +1065,7 @@ subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:08:38.800701
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:08:56.574479
+subject - FUNKY_OPT_UNIQUE                  2018-09-11 06:36:26.000066
 
 --- 1 row(s) selected.
 >>
@@ -1092,7 +1092,7 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:08:56.574479
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:56.608716
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:36:26.000099
 
 --- 1 row(s) selected.
 >>log;
@@ -1117,7 +1117,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:56.608716
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.771967
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:36:08.000507
 
 --- 1 row(s) selected.
 >>
@@ -1129,7 +1129,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.771967
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:08:51.799087
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:36:21.000532
 
 --- 1 row(s) selected.
 >>
@@ -1146,7 +1146,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_268_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_519_S1;
 
 --- SQL operation complete.
 >>
@@ -1161,7 +1161,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:08:54.940529
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:36:24.000621
 
 --- 1 row(s) selected.
 >>log;
@@ -1201,7 +1201,7 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:08:54.940529
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.019859
+subject launch canceler - FUNKY_OPT_UNIQUE  2018-09-11 06:36:28.000327
 
 --- 1 row(s) selected.
 >>
@@ -1219,7 +1219,7 @@ subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.019859
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:08:59.038540
+subject synch cancel - FUNKY_OPT_UNIQUE     2018-09-11 06:36:28.000355
 
 --- 1 row(s) selected.
 >>
@@ -1246,7 +1246,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:08:59.038540
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:08.728176
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:36:36.000161
 
 --- 1 row(s) selected.
 >>log;
@@ -1258,7 +1258,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:08.728176
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:09:08.748097
+subject execute s1 - FUNKY_OPT_UNIQUE       2018-09-11 06:36:36.000183
 
 --- 1 row(s) selected.
 >>
@@ -1279,7 +1279,7 @@ subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:09:08.748097
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:09:25.863895
+subject - FUNKY_OPT_UNIQUE                  2018-09-11 06:36:53.000319
 
 --- 1 row(s) selected.
 >>
@@ -1306,7 +1306,7 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:09:25.863895
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:25.898587
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:36:53.000352
 
 --- 1 row(s) selected.
 >>log;
@@ -1331,7 +1331,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:25.898587
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.679253
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:36:36.000131
 
 --- 1 row(s) selected.
 >>
@@ -1343,7 +1343,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.679253
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:09:21.705227
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:36:49.000152
 
 --- 1 row(s) selected.
 >>
@@ -1360,7 +1360,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_306_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_578_S1;
 
 --- SQL operation complete.
 >>
@@ -1375,7 +1375,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:09:24.803186
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:36:52.000247
 
 --- 1 row(s) selected.
 >>log;
@@ -1383,6 +1383,15 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:09:24.803186
 >>
 >>
 >>obey TEST106(upsert_test1);
+>>cqd DYN_QUEUE_RESIZE_OVERRIDE 'ON';
+
+--- SQL operation complete.
+>>cqd GEN_TRSP_SIZE_DOWN '16';
+
+--- SQL operation complete.
+>>cqd GEN_TRSP_SIZE_UP '16';
+
+--- SQL operation complete.
 >>
 >>prepare s1 from 
 +>upsert using load into t106c 
@@ -1416,7 +1425,7 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:09:24.803186
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.259737
+subject launch canceler - FUNKY_OPT_UNIQUE  2018-09-11 06:36:55.000602
 
 --- 1 row(s) selected.
 >>
@@ -1434,7 +1443,7 @@ subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.259737
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:09:28.282876
+subject synch cancel - FUNKY_OPT_UNIQUE     2018-09-11 06:36:55.000634
 
 --- 1 row(s) selected.
 >>
@@ -1461,7 +1470,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:09:28.282876
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:37.705479
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:37:02.000489
 
 --- 1 row(s) selected.
 >>log;
@@ -1473,7 +1482,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:37.705479
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:09:37.727412
+subject execute s1 - FUNKY_OPT_UNIQUE       2018-09-11 06:37:02.000512
 
 --- 1 row(s) selected.
 >>
@@ -1494,7 +1503,7 @@ subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:09:37.727412
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:09:53.821321
+subject - FUNKY_OPT_UNIQUE                  2018-09-11 06:37:15.000544
 
 --- 1 row(s) selected.
 >>
@@ -1521,7 +1530,7 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:09:53.821321
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:53.952650
+done with synch_cancel - FUNKY_OPT_UNIQUE   2018-09-11 06:37:15.000581
 
 --- 1 row(s) selected.
 >>log;
@@ -1546,7 +1555,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:53.952650
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.708310
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:37:02.000440
 
 --- 1 row(s) selected.
 >>
@@ -1558,7 +1567,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.708310
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:09:50.732984
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:37:15.000459
 
 --- 1 row(s) selected.
 >>
@@ -1575,7 +1584,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_321_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_596_S1;
 
 --- SQL operation complete.
 >>
@@ -1590,12 +1599,20 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:09:53.825816
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:37:15.000546
 
 --- 1 row(s) selected.
 >>log;
 >>
->>
+>>cqd DYN_QUEUE_RESIZE_OVERRIDE reset;
+
+--- SQL operation complete.
+>>cqd GEN_TRSP_SIZE_DOWN reset;
+
+--- SQL operation complete.
+>>cqd GEN_TRSP_SIZE_UP reset;
+
+--- SQL operation complete.
 >>
 >>obey TEST106(cpu_bound_esps);
 >>
@@ -1643,10 +1660,10 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:09:53.825816
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
 +>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)                    
-------------------------------------------  --------------------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:10:06.471498
+done with synch_cancel - FUNKY_OPT_UNIQUE  2018-09-11 06:37:24.000952
 
 --- 1 row(s) selected.
 >>log;
@@ -1668,10 +1685,10 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:10:06.471498
 >>
 >>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)                    
-------------------------------------------  --------------------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:10:30.700079
+subject - FUNKY_OPT_UNIQUE                 2018-09-11 06:37:52.000240
 
 --- 1 row(s) selected.
 >>
@@ -1695,10 +1712,10 @@ subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:10:30.700079
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
 +>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)                    
-------------------------------------------  --------------------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:10:30.735707
+done with synch_cancel - FUNKY_OPT_UNIQUE  2018-09-11 06:37:52.000293
 
 --- 1 row(s) selected.
 >>log;
@@ -1723,7 +1740,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:10:30.735707
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.408419
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:37:24.000927
 
 --- 1 row(s) selected.
 >>
@@ -1735,7 +1752,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.408419
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:10:19.430779
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:37:37.000947
 
 --- 1 row(s) selected.
 >>
@@ -1752,7 +1769,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_337_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_615_S1;
 
 --- SQL operation complete.
 >>
@@ -1767,7 +1784,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:10:19.515222
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:37:41.000047
 
 --- 1 row(s) selected.
 >>log;
@@ -1830,7 +1847,7 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:10:19.515222
 (EXPR)                                     (EXPR)                    
 -----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.359509
+done with synch_cancel - FUNKY_OPT_UNIQUE  2018-09-11 06:38:01.000517
 
 --- 1 row(s) selected.
 >>log;
@@ -1855,7 +1872,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.359509
 (EXPR)                                     (EXPR)                    
 -----------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                 2015-07-10 17:11:06.522144
+subject - FUNKY_OPT_UNIQUE                 2018-09-11 06:38:28.000772
 
 --- 1 row(s) selected.
 >>
@@ -1882,7 +1899,7 @@ subject - FUNKY_OPT_UNIQUE                 2015-07-10 17:11:06.522144
 (EXPR)                                     (EXPR)                    
 -----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.564411
+done with synch_cancel - FUNKY_OPT_UNIQUE  2018-09-11 06:38:28.000814
 
 --- 1 row(s) selected.
 >>log;
@@ -1907,7 +1924,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.564411
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.305768
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:38:01.000478
 
 --- 1 row(s) selected.
 >>
@@ -1919,7 +1936,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.305768
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:10:55.328810
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:38:14.000502
 
 --- 1 row(s) selected.
 >>
@@ -1936,7 +1953,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_352_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_630_S1;
 
 --- SQL operation complete.
 >>
@@ -1951,7 +1968,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:10:55.406493
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:38:17.000590
 
 --- 1 row(s) selected.
 >>log;
@@ -2110,7 +2127,7 @@ CONTROL_RUNNING_QUERY =====================  SEQ_NO 1        NO CHILDREN
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:11:17.016966
+FUNKY_OPT_UNIQUE  2018-09-11 06:38:39.000193
 
 --- 1 row(s) selected.
 >>
@@ -2126,7 +2143,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:11:17.016966
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:11:47.131046
+FUNKY_OPT_UNIQUE  2018-09-11 06:39:09.000721
 
 --- 1 row(s) selected.
 >>
@@ -2142,7 +2159,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:11:47.131046
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:11:48.077070
+FUNKY_OPT_UNIQUE  2018-09-11 06:39:40.000544
 
 --- 1 row(s) selected.
 >>
@@ -2158,7 +2175,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:11:48.077070
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:12:18.192873
+FUNKY_OPT_UNIQUE  2018-09-11 06:39:43.000151
 
 --- 1 row(s) selected.
 >>
@@ -2174,7 +2191,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:12:18.192873
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:12:19.105450
+FUNKY_OPT_UNIQUE  2018-09-11 06:40:17.000355
 
 --- 1 row(s) selected.
 >>
@@ -2190,7 +2207,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:12:19.105450
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-07-10 17:12:49.225497
+FUNKY_OPT_UNIQUE  2018-09-11 06:40:48.000240
 
 --- 1 row(s) selected.
 >>
@@ -2204,9 +2221,9 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:12:49.225497
 >>log;
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_611_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_934_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000021348212303307894875569000000000206U3333300_611_S1. The query is not in OPEN or FETCH or EXECUTE state.
+*** ERROR[8031] Server declined cancel request for query ID MXID11000020942212403407567430015000000000206U3333300_934_S1. The query is not in OPEN or FETCH or EXECUTE state.
 
 --- SQL operation failed with errors.
 >>
@@ -2348,7 +2365,7 @@ FUNKY_OPT_UNIQUE  2015-07-10 17:12:49.225497
 (EXPR)                                     (EXPR)                    
 -----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.314100
+done with synch_cancel - FUNKY_OPT_UNIQUE  2018-09-11 06:41:17.000817
 
 --- 1 row(s) selected.
 >>log;
@@ -2373,7 +2390,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.314100
 (EXPR)                                     (EXPR)                    
 -----------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                 2015-07-10 17:14:00.677443
+subject - FUNKY_OPT_UNIQUE                 2018-09-11 06:41:30.000938
 
 --- 1 row(s) selected.
 >>
@@ -2400,7 +2417,7 @@ subject - FUNKY_OPT_UNIQUE                 2015-07-10 17:14:00.677443
 (EXPR)                                     (EXPR)                    
 -----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.717696
+done with synch_cancel - FUNKY_OPT_UNIQUE  2018-09-11 06:41:30.000975
 
 --- 1 row(s) selected.
 >>log;
@@ -2425,7 +2442,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.717696
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.295281
+canceler going to sleep - FUNKY_OPT_UNIQUE  2018-09-11 06:41:17.000801
 
 --- 1 row(s) selected.
 >>
@@ -2437,7 +2454,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.295281
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:14:00.323547
+canceler woke up - FUNKY_OPT_UNIQUE         2018-09-11 06:41:30.000824
 
 --- 1 row(s) selected.
 >>
@@ -2454,7 +2471,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_616_S1;
+>>control query cancel qid MXID11000020942212403407567430015000000000206U3333300_939_S1;
 
 --- SQL operation complete.
 >>
@@ -2469,7 +2486,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)                    
 ------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:14:00.465200
+canceler - FUNKY_OPT_UNIQUE                 2018-09-11 06:41:30.000907
 
 --- 1 row(s) selected.
 >>log;
@@ -2484,116 +2501,116 @@ canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:14:00.465200
 MSG                                                           (EXPR)            TS
 ------------------------------------------------------------  ----------------  --------------------------
 
-positive_test1, launch canceler, start                        FUNKY_OPT_UNIQUE  2015-07-10 17:06:28.605534
-positive_test1, launch canceler, finish                       FUNKY_OPT_UNIQUE  2015-07-10 17:06:28.702813
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:28.712618
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.626473
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.804751
-positive_test1, execute, start                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.816899
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.795368
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.811123
-positive_test1, execute, finished                             FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.865571
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.881210
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.925973
-positive_test2, launch canceler, start                        FUNKY_OPT_UNIQUE  2015-07-10 17:06:54.121258
-positive_test2, launch canceler, finished                     FUNKY_OPT_UNIQUE  2015-07-10 17:06:54.135947
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:54.144872
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.218202
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.414289
-positive_test2, execute s1, start                             FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.421669
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.425344
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.465426
-positive_test2, execute s1, finished                          FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.489121
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.500205
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.558636
-update_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.691347
-update_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.710009
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.718706
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.214420
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.388345
-update_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.397823
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:41.385593
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:07:41.400965
-update_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:07:48.069219
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:48.078175
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:48.109026
-delete_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.200100
-delete_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.221685
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.230056
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.371817
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.504170
-delete_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.512807
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:12.579070
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:08:12.595650
-delete_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:08:25.765256
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:25.774591
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:08:25.809037
-insert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.303373
-insert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.322696
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.330814
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.663779
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.796777
-insert_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.804614
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:54.896102
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:08:54.930493
-insert_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:08:56.579137
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:56.589386
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:08:56.622206
-insert_test2, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.024743
-insert_test2, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.042423
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.050281
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.564653
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.742892
-insert_test2, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.751928
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:09:24.776254
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:09:24.795329
-insert_test2, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:09:25.871938
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:25.880384
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:25.911426
-upsert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.265459
-upsert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.287050
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.294726
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.613861
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.723289
-upsert_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.731436
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.801878
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.819783
-upsert_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.825158
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.832495
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.970360
-cpu_bound_esps, launch canceler, start                        FUNKY_OPT_UNIQUE  2015-07-10 17:09:56.333247
-cpu_bound_esps, launch canceler, finished                     FUNKY_OPT_UNIQUE  2015-07-10 17:09:56.347915
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:56.355395
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.308852
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.491893
-cpu_bound_esps, execute s1, start                             FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.499750
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:10:19.492506
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:10:19.508940
-cpu_bound_esps, execute s1, finished                          FUNKY_OPT_UNIQUE  2015-07-10 17:10:30.705276
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:10:30.716871
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:10:30.748949
-escalation1, launch canceler, start                           FUNKY_OPT_UNIQUE  2015-07-10 17:10:33.132692
-escalation1, launch canceler, finished                        FUNKY_OPT_UNIQUE  2015-07-10 17:10:33.149281
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:10:33.158984
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.217942
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.376461
-escalation1, execute s1, start                                FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.381161
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:10:55.385636
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:10:55.400533
-escalation1, execute s1, finished                             FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.526582
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.539511
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.580843
-ustats_test, launch canceler, start                           FUNKY_OPT_UNIQUE  2015-07-10 17:13:38.014277
-ustats_test, launch canceler, finished                        FUNKY_OPT_UNIQUE  2015-07-10 17:13:38.035897
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:13:38.045217
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.211662
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.339719
-ustats_test, execute s1, start                                FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.345734
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.422546
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.458124
-ustats_test, execute s1, finished                             FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.681401
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.693030
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.731016
+positive_test1, launch canceler, start                        FUNKY_OPT_UNIQUE  2018-09-11 06:34:08.000319
+positive_test1, launch canceler, finish                       FUNKY_OPT_UNIQUE  2018-09-11 06:34:08.000404
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:34:08.000422
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:34:15.000320
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:34:15.000500
+positive_test1, execute, start                                FUNKY_OPT_UNIQUE  2018-09-11 06:34:15.000512
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:34:28.000478
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:34:28.000490
+positive_test1, execute, finished                             FUNKY_OPT_UNIQUE  2018-09-11 06:34:28.000504
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:34:28.000517
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:34:28.000556
+positive_test2, launch canceler, start                        FUNKY_OPT_UNIQUE  2018-09-11 06:34:30.000773
+positive_test2, launch canceler, finished                     FUNKY_OPT_UNIQUE  2018-09-11 06:34:30.000790
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:34:30.000803
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:34:37.000416
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:34:37.000552
+positive_test2, execute s1, start                             FUNKY_OPT_UNIQUE  2018-09-11 06:34:37.000558
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:34:53.000562
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:34:53.000575
+positive_test2, execute s1, finished                          FUNKY_OPT_UNIQUE  2018-09-11 06:34:53.000593
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:34:53.000603
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:34:53.000639
+update_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2018-09-11 06:34:55.000820
+update_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2018-09-11 06:34:55.000842
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:34:55.000854
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:35:02.000598
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:35:02.000704
+update_test1, execute, start                                  FUNKY_OPT_UNIQUE  2018-09-11 06:35:02.000714
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:35:15.000766
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:35:15.000785
+update_test1, execute, finished                               FUNKY_OPT_UNIQUE  2018-09-11 06:35:26.000947
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:35:26.000957
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:35:26.000997
+delete_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2018-09-11 06:35:29.000127
+delete_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2018-09-11 06:35:29.000146
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:35:29.000155
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:35:35.000856
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:35:36.000012
+delete_test1, execute, start                                  FUNKY_OPT_UNIQUE  2018-09-11 06:35:36.000020
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:35:49.000012
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:35:49.000023
+delete_test1, execute, finished                               FUNKY_OPT_UNIQUE  2018-09-11 06:35:58.000200
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:35:58.000214
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:35:58.000267
+insert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2018-09-11 06:36:01.000618
+insert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2018-09-11 06:36:01.000638
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:36:01.000648
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:36:08.000437
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:36:08.000616
+insert_test1, execute, start                                  FUNKY_OPT_UNIQUE  2018-09-11 06:36:08.000623
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:36:24.000600
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:36:24.000613
+insert_test1, execute, finished                               FUNKY_OPT_UNIQUE  2018-09-11 06:36:26.000068
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:36:26.000078
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:36:26.000116
+insert_test2, launch canceler, start                          FUNKY_OPT_UNIQUE  2018-09-11 06:36:28.000332
+insert_test2, launch canceler, finish                         FUNKY_OPT_UNIQUE  2018-09-11 06:36:28.000359
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:36:28.000371
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:36:36.000054
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:36:36.000178
+insert_test2, execute, start                                  FUNKY_OPT_UNIQUE  2018-09-11 06:36:36.000187
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:36:52.000227
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:36:52.000239
+insert_test2, execute, finished                               FUNKY_OPT_UNIQUE  2018-09-11 06:36:53.000322
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:36:53.000331
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:36:53.000367
+upsert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2018-09-11 06:36:55.000615
+upsert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2018-09-11 06:36:55.000637
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:36:55.000646
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:37:02.000376
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:37:02.000505
+upsert_test1, execute, start                                  FUNKY_OPT_UNIQUE  2018-09-11 06:37:02.000514
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:37:15.000529
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:37:15.000540
+upsert_test1, execute, finished                               FUNKY_OPT_UNIQUE  2018-09-11 06:37:15.000547
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:37:15.000556
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:37:15.000598
+cpu_bound_esps, launch canceler, start                        FUNKY_OPT_UNIQUE  2018-09-11 06:37:17.000965
+cpu_bound_esps, launch canceler, finished                     FUNKY_OPT_UNIQUE  2018-09-11 06:37:17.000989
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:37:17.000998
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:37:24.000862
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:37:24.000972
+cpu_bound_esps, execute s1, start                             FUNKY_OPT_UNIQUE  2018-09-11 06:37:24.000977
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:37:41.000023
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:37:41.000039
+cpu_bound_esps, execute s1, finished                          FUNKY_OPT_UNIQUE  2018-09-11 06:37:52.000257
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:37:52.000268
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:37:52.000309
+escalation1, launch canceler, start                           FUNKY_OPT_UNIQUE  2018-09-11 06:37:54.000648
+escalation1, launch canceler, finished                        FUNKY_OPT_UNIQUE  2018-09-11 06:37:54.000667
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:37:54.000677
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:38:01.000406
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:38:01.000537
+escalation1, execute s1, start                                FUNKY_OPT_UNIQUE  2018-09-11 06:38:01.000541
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:38:17.000572
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:38:17.000584
+escalation1, execute s1, finished                             FUNKY_OPT_UNIQUE  2018-09-11 06:38:28.000785
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:38:28.000793
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:38:28.000835
+ustats_test, launch canceler, start                           FUNKY_OPT_UNIQUE  2018-09-11 06:41:10.000830
+ustats_test, launch canceler, finished                        FUNKY_OPT_UNIQUE  2018-09-11 06:41:10.000847
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:41:10.000857
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2018-09-11 06:41:17.000715
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:41:17.000844
+ustats_test, execute s1, start                                FUNKY_OPT_UNIQUE  2018-09-11 06:41:17.000849
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2018-09-11 06:41:30.000889
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2018-09-11 06:41:30.000901
+ustats_test, execute s1, finished                             FUNKY_OPT_UNIQUE  2018-09-11 06:41:30.000942
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2018-09-11 06:41:30.000951
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2018-09-11 06:41:30.000991
 
 --- 110 row(s) selected.
 >>

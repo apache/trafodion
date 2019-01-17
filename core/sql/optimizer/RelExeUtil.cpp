@@ -84,6 +84,7 @@
 #include "StmtDDLAlterLibrary.h"
 #include "StmtDDLRegOrUnregHive.h"
 #include "StmtDDLCommentOn.h"
+#include "StmtDDLonHiveObjects.h"
 
 #include <cextdecs/cextdecs.h>
 #include "wstr.h"
@@ -275,6 +276,9 @@ const NAString DDLExpr::getText() const
 {
   NAString result(CmpCommon::statementHeap());
 
+  if (getDDLNode() && getDDLNode()->getOperatorType() ==  DDL_ON_HIVE_OBJECTS)
+    result = "HIVE_DDL";
+  else
     result = "DDL";
 
   return result;
@@ -391,10 +395,6 @@ const NAString ExeUtilExpr::getText() const
       result = "CREATE_TABLE_AS";
       break;
 
-    case FAST_DELETE_:
-      result = "FAST_DELETE";
-      break;
-
     case HIVE_TRUNCATE_:
       result = "HIVE_TRUNCATE";
       break;
@@ -447,8 +447,11 @@ const NAString ExeUtilExpr::getText() const
       result = "REGION_STATS";
       break;
       
-   default:
-
+    case HIVE_QUERY_:
+      result = "HIVE_QUERY";
+      break;
+      
+    default:
       result = "ADD_TO_EXEUTILEXPR::GETTEXT()";
       break;
 
@@ -843,30 +846,25 @@ RelExpr * ExeUtilCreateTableAs::copyTopNode(RelExpr *derivedNode,
 }
 
 // -----------------------------------------------------------------------
-// Member functions for class ExeUtilFastDelete
+// Member functions for class ExeUtilHiveTruncateLegacy
 // -----------------------------------------------------------------------
-RelExpr * ExeUtilFastDelete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+RelExpr * ExeUtilHiveTruncateLegacy::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
-  ExeUtilFastDelete *result;
+  ExeUtilHiveTruncateLegacy *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) ExeUtilFastDelete(getTableName(),
-					     getExprNode(), NULL, CharInfo::UnknownCharSet,
-					     doPurgedataCat_,
-					     noLog_,
-					     ignoreTrigger_,
-					     isPurgedata_,
-					     outHeap);
+    result = new (outHeap) ExeUtilHiveTruncateLegacy(getTableName(),
+                                                     pl_,
+                                                     outHeap);
   else
-    result = (ExeUtilFastDelete *) derivedNode;
+    result = (ExeUtilHiveTruncateLegacy *) derivedNode;
 
-  result->doParallelDelete_ = doParallelDelete_;
-  result->doParallelDeleteIfXn_ = doParallelDeleteIfXn_;
-  result->offlineTable_ = offlineTable_;
-  result->doLabelPurgedata_ = doLabelPurgedata_;
-
-  result->numLOBs_ = numLOBs_;
-  result->lobNumArray_ = lobNumArray_;
+  result->hiveTableLocation_= hiveTableLocation_;
+  result->hiveHostName_ = hiveHostName_;
+  result->hiveHdfsPort_ = hiveHdfsPort_;
+  result->suppressModCheck_ = suppressModCheck_;
+  result->dropTableOnDealloc_ = dropTableOnDealloc_;
+  result->noSecurityCheck_ = noSecurityCheck_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
@@ -880,29 +878,23 @@ RelExpr * ExeUtilHiveTruncate::copyTopNode(RelExpr *derivedNode, CollHeap* outHe
 
   if (derivedNode == NULL)
     result = new (outHeap) ExeUtilHiveTruncate(getTableName(),
-                                               pl_,
+                                               hiveTableName_,
+                                               hiveTruncQuery_,
                                                outHeap);
   else
     result = (ExeUtilHiveTruncate *) derivedNode;
 
-  result->hiveTableLocation_= hiveTableLocation_;
-  result->hiveHostName_ = hiveHostName_;
-  result->hiveHdfsPort_ = hiveHdfsPort_;
-  result->suppressModCheck_ = suppressModCheck_;
   result->dropTableOnDealloc_ = dropTableOnDealloc_;
+  result->noSecurityCheck_ = noSecurityCheck_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
-
-// -----------------------------------------------------------------------
-// Member functions for class ExeUtilHiveQuery
 // -----------------------------------------------------------------------
 RelExpr * ExeUtilHiveQuery::copyTopNode(RelExpr *derivedNode,
                                         CollHeap* outHeap)
 {
   ExeUtilHiveQuery *result;
-
   if (derivedNode == NULL)
     result = new (outHeap) 
       ExeUtilHiveQuery(hiveQuery(),
@@ -910,36 +902,27 @@ RelExpr * ExeUtilHiveQuery::copyTopNode(RelExpr *derivedNode,
                        outHeap);
   else
     result = (ExeUtilHiveQuery *) derivedNode;
-
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
-
 RelExpr * ExeUtilHiveQuery::bindNode(BindWA *bindWA)
 {
   if (type_ != FROM_STRING)
     {
-      // error case
       *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL can only be specified as a string.");
-      
       bindWA->setErrStatus();
       return NULL;
     }
 
-  // currently supported hive queries must start with:
-  //   create, drop, alter, truncate
-  // Check for it.
-
-  // first strip leading spaces.
+  // insert query returns an error from HiveClient.executeQuery on HDP platform.
+  // Until that issue is fixed, disallow insert from 'process hive statement'.
   hiveQuery_ = hiveQuery_.strip(NAString::leading, ' ');
-  if (NOT ((hiveQuery_.index("CREATE", 0, NAString::ignoreCase) == 0) ||
-           (hiveQuery_.index("DROP", 0, NAString::ignoreCase) == 0) ||
-           (hiveQuery_.index("ALTER", 0, NAString::ignoreCase) == 0) ||
-           //           (hiveQuery_.index("INSERT", 0, NAString::ignoreCase) == 0) ||
-           (hiveQuery_.index("TRUNCATE", 0, NAString::ignoreCase) == 0)))
+  if (NOT ((hiveQuery_.index("CREATE ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery_.index("DROP ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery_.index("ALTER ", 0, NAString::ignoreCase) == 0) ||
+           //           (hiveQuery_.index("INSERT ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery_.index("TRUNCATE ", 0, NAString::ignoreCase) == 0)))
     {
-      // error case
-      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only CREATE, DROP, ALTER or TRUNCATE hive DDL statements can be specified.");
-      
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Specified operation cannot be executed directly by Hive.");
       bindWA->setErrStatus();
       return NULL;
     }
@@ -947,11 +930,8 @@ RelExpr * ExeUtilHiveQuery::bindNode(BindWA *bindWA)
   RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
   if (bindWA->errStatus()) 
     return NULL;
-  
   return boundExpr;
 }
-
-// -----------------------------------------------------------------------
 // Member functions for class ExeUtilGetStatistics
 // -----------------------------------------------------------------------
 RelExpr * ExeUtilGetStatistics::copyTopNode(RelExpr *derivedNode,
@@ -4085,8 +4065,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean isVolatile = FALSE;
   NABoolean isRegister = FALSE;
   NABoolean isCommentOn = FALSE;
+  NABoolean isHive = FALSE;
 
-  returnStatus_ = FALSE;
 
   NABoolean specialType = FALSE;
   if (isUstat())  // special DDLExpr node for an Update Stats statement
@@ -4170,7 +4150,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
           externalTable = TRUE;
           isHbase_ = TRUE;
         }
-        else
+        else 
         {
           *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("External tables supported on hive tables only.");
           bindWA->setErrStatus();
@@ -4559,6 +4539,21 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       qualObjName_ = getExprNode()->castToStmtDDLNode()->
         castToStmtDDLCommentOn()->getObjectNameAsQualifiedName();
     }
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLonHiveObjects())
+    {
+      if (getExprNode()->castToStmtDDLNode()->castToStmtDDLonHiveObjects()->getOper() != StmtDDLonHiveObjects::PASSTHRU_DDL_)
+        {
+          if (CmpCommon::getDefault(TRAF_DDL_ON_HIVE_OBJECTS) == DF_OFF)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL on Hive objects is not allowed from Trafodion interface. Use hive shell to perform this operation.");
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
+
+      isHive = TRUE;
+      isHbase_ = TRUE;
+    }
 
     if (isCleanup_)
       {
@@ -4567,7 +4562,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       }
 
     if ((isCreateSchema || isDropSchema || isAlterSchema) || isRegister || isCommentOn ||
-        ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
+        ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq || isHive) &&
          (isCreate_ || isDrop_ || purgedata() || 
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable ||
@@ -4616,7 +4611,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         isHbase_ = TRUE;
       }
 
-    else
+    else if (NOT isHive)
       {
         if ((alterDropCol) || (alterEnableIndex))
           {
@@ -4637,13 +4632,27 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return NULL;
 
-  if (isHbase_ || externalTable || isVolatile)
+  if (isHbase_ || externalTable || isVolatile || isHive)
     return boundExpr;
 
   if (isView_ && (isCreate_ || isDrop_))
-    *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL views can only be created or dropped in trafodion schema.");
+    {
+      if (qualObjName_.getCatalogName().isNull())
+        *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("This view cannot be created or dropped.");
+      else
+        *CmpCommon::diags() << DgSqlCode(-3242) << DgString0(NAString("This view cannot be created or dropped in the specified catalog '") + qualObjName_.getCatalogName() + "'.");
+    }
+  else if ((NOT qualObjName_.getCatalogName().isNull()) &&
+           (NOT ((qualObjName_.getCatalogName() == TRAFODION_SYSCAT_LIT) ||
+                 (qualObjName_.getCatalogName() == HBASE_SYSTEM_SCHEMA) ||
+                 (qualObjName_.getCatalogName() == HIVE_SYSTEM_SCHEMA))))
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242) << 
+        DgString0(NAString("This DDL operation is not allowed in the specified catalog '" + qualObjName_.getCatalogName() + "'."));
+    }
   else
-    *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL operations can only be done on trafodion or external tables.");
+    *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("This DDL operation cannot be done.");
+
   bindWA->setErrStatus();
   return NULL;
 }
@@ -4842,11 +4851,20 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return NULL;
 
-  if ((NOT isVolatile_) &&
-      (NOT getTableName().isSeabase())) // can only create traf tables
+  NABoolean isHive = FALSE;
+  if ((getTableName().isHive()) &&
+      (CmpCommon::getDefault(TRAF_DDL_ON_HIVE_OBJECTS) == DF_ON))
     {
-      *CmpCommon::diags() << DgSqlCode(-3242)
-                          << DgString0("DDL operations can only be done on trafodion or external tables.");
+      isHive = TRUE;
+      upsertUsingLoadAllowed = FALSE;
+    }
+
+  if ((NOT isVolatile_) &&
+      (NOT getTableName().isSeabase()) && // can only create traf tables
+      (NOT isHive))
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242) << 
+        DgString0(NAString("This DDL operation is not allowed in the specified catalog '" + getTableName().getQualifiedNameObj().getCatalogName() + "'."));
 
       bindWA->setErrStatus();
       return NULL;
@@ -4921,7 +4939,9 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
             }
           else if (createTableNode->isVolatile())
 	    ctQuery_ = "CREATE VOLATILE TABLE ";
-	  else
+	  else if ((isHive) && (createTableNode->isExternal()))
+            ctQuery_ = "CREATE EXTERNAL TABLE ";
+          else
 	    ctQuery_ = "CREATE TABLE ";
 
           if (createTableNode->createIfNotExists())
@@ -4948,6 +4968,7 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	  
 	  ctQuery_ += "( ";
 
+          NAString hiveType;
 	  if (! pTableDefBody)
 	    {
 	      for (CollIndex i = 0; i < retDesc->getDegree(); i++)
@@ -4971,7 +4992,13 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 		  colDef += " ";
 		  
 		  NAType &colType = (NAType&)(queryRoot->compExpr()[i].getType());
-		  colType.getMyTypeAsText(&colDef);
+                 if (isHive)
+                    {
+                      colType.getMyTypeAsHiveText(&hiveType);
+                      colDef += hiveType;
+                    }
+                 else
+                   colType.getMyTypeAsText(&colDef);
 
 		  if (colType.isLob())
 		    upsertUsingLoadAllowed = FALSE;
@@ -5116,10 +5143,10 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	  // if attribute list is specified, append that to col definition.
 	  if (createTableNode->getChild(1/*StmtDDLCreateTable::INDEX_ATTRIBUTE_LIST*/))
 	    {
-	      ctQuery_ += " ";
-	      ctQuery_.append(&stmtText[attrListStartPos], 
-			      attrListEndPos - attrListStartPos);
-	    }
+              ctQuery_ += " ";
+              ctQuery_.append(&stmtText[attrListStartPos], 
+                              attrListEndPos - attrListStartPos);
+            }
 	}
       else
 	{
@@ -5128,7 +5155,24 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	  ctQuery_ = "";
 	  ctQuery_.append(stmtText, attrListEndPos);
 	}
-      
+
+      if (NOT createTableNode->getHiveOptions().isNull())
+        {
+          if (NOT isHive)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3242) << 
+                DgString0(NAString("WITH HIVE OPTIONS cannot be specified for non-Hive tables."));
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+          else
+            {
+              ctQuery_ += " ";
+              ctQuery_ += createTableNode->getHiveOptions();
+            }
+        }
+       
       if (createTableNode->isInMemoryObjectDefn())
 	ctQuery_.append(" IN MEMORY ");
 
@@ -5200,66 +5244,18 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
       // get the upd stats query
       usQuery_ = "UPDATE STATISTICS FOR TABLE ";
       usQuery_ += getTableName().getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
-      usQuery_ += " ON EVERY KEY SAMPLE SET ROWCOUNT %Ld;";
+      if (isHive)
+        usQuery_ += " ON EVERY COLUMN SAMPLE SET ROWCOUNT %Ld;";
+      else
+        usQuery_ += " ON EVERY KEY SAMPLE SET ROWCOUNT %Ld;";        
     }
 
   return boundExpr;
 }
 // -----------------------------------------------------------------------
-// member functions for class ExeUtilFastDelete
+// member functions for class ExeUtilHiveTruncateLegacy
 // -----------------------------------------------------------------------
-RelExpr * ExeUtilFastDelete::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound()) 
-    {
-      bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-      return this;
-    }
-
-  bindChildren(bindWA);
-  if (bindWA->errStatus()) 
-    return this;
-
-  // do not do override schema for this
-  bindWA->setToOverrideSchema(FALSE);
-  
-  NATable * naTable = bindWA->getNATable(getTableName());
-  if ((!naTable) || 
-      (bindWA->errStatus()))
-    return this;
-  
-  if ((getTableName().isHive()) ||
-      (naTable->isHiveTable()))
-    {
-      *CmpCommon::diags() << DgSqlCode(-3242) 
-                          << DgString0("Purgedata is not allowed for hive tables. Use Truncate command.");
-      bindWA->setErrStatus();
-      return NULL;
-    }
-  
-  if (! getTableName().isSeabase())
-    {
-      *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("PURGEDATA");
-      bindWA->setErrStatus();
-      return NULL;
-    }
-  
-  DDLExpr * ddlExpr = new(bindWA->wHeap()) DDLExpr(NULL,
-                                                   getStmtText(),
-                                                   CharInfo::UnknownCharSet,
-                                                   CmpCommon::statementHeap());
-  ddlExpr->setPurgedata(TRUE);
-  ddlExpr->setPurgedataTableName(getTableName());
-
-  RelExpr * boundExpr = ddlExpr->bindNode(bindWA);
-
-  return boundExpr;
-}
-
-// -----------------------------------------------------------------------
-// member functions for class ExeUtilHiveTruncate
-// -----------------------------------------------------------------------
-RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
+RelExpr * ExeUtilHiveTruncateLegacy::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound()) 
     {
@@ -5345,6 +5341,109 @@ RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
   hiveHdfsPort_ = hdfsPort;
   hiveModTS_ = -1;
 
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
+}
+
+// -----------------------------------------------------------------------
+// member functions for class ExeUtilHiveTruncate
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) 
+    {
+      bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+      return this;
+    }
+
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  NATable *naTable = NULL;
+
+  // do not do override schema for this
+  bindWA->setToOverrideSchema(FALSE);
+  
+  naTable = bindWA->getNATable(getTableName());
+  if (getIfExists() && (! naTable))
+    {
+      setTableNotExists(TRUE);
+
+      bindWA->resetErrStatus();
+      CmpCommon::diags()->clear();
+      RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+      if (bindWA->errStatus())
+        return NULL;
+      
+      return boundExpr;
+    }
+
+  if ((!naTable) || 
+      (bindWA->errStatus()))
+    return this;
+ 
+  if ((NOT getTableName().isHive()) ||
+      (!naTable->isHiveTable()))
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242) 
+                          << DgString0("Truncate is only allowed for hive tables.");
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  // if no security check is to be done, skip it.
+  if (NOT noSecurityCheck_)
+    {
+      // In Hive, you need admin privs to truncate files.  At this time, we don't
+      // know if the current user has admin privileges, return an error.
+      char * sentryEnv = getenv("SENTRY_SECURITY_FOR_HIVE");
+      if (sentryEnv && strcmp(sentryEnv, "TRUE") == 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-3242) 
+                              << DgString0("Truncate must be performed through native Hive interface.");
+          bindWA->setErrStatus();
+          return NULL;
+        }
+      
+      // If the current user has been granted the Trafodion Hive/DB root role or
+      // is DB__ROOT, allow the operation. 
+      // If the current user has select and delete privileges, allow the operation
+      if (bindWA->currentCmpContext()->isAuthorizationEnabled())
+        {
+          NABoolean found = FALSE;
+          if (ComUser::isRootUserID() ||
+              ComUser::currentUserHasRole(HIVE_ROLE_ID) ||
+              ComUser::currentUserHasRole(ROOT_ROLE_ID))
+            found = TRUE;
+          
+          if (!found)
+            {
+              PrivMgrUserPrivs *pPrivInfo = naTable->getPrivInfo();
+              if (pPrivInfo &&
+                  pPrivInfo->hasPriv(SELECT_PRIV) &&
+                  pPrivInfo->hasPriv(DELETE_PRIV))
+                found = TRUE;
+              
+              if (!found)
+                {
+                  *CmpCommon::diags()
+                    << DgSqlCode( -1051 )
+                    << DgTableName(naTable->getTableName().getQualifiedNameAsAnsiString());
+                  bindWA->setErrStatus();
+                  return NULL;
+                }
+            }
+        }
+    }
+
+  setHiveExternalTable(naTable->isHiveExternalTable());
+
+  // Allocate a TableDesc and attach it to this.
+  //
   RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
   if (bindWA->errStatus())
     return NULL;

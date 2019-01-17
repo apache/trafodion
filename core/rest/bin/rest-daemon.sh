@@ -98,12 +98,12 @@ wait_until_done ()
 
 # get log directory
 if [ "$REST_LOG_DIR" = "" ]; then
-  export REST_LOG_DIR="$REST_HOME/logs"
+  export REST_LOG_DIR="$TRAF_LOG/rest"
 fi
 mkdir -p "$REST_LOG_DIR"
 
 if [ "$REST_PID_DIR" = "" ]; then
-  REST_PID_DIR="$REST_HOME/tmp"
+  REST_PID_DIR="$TRAF_VAR"
 fi
 
 #if [ "$REST_IDENT_STRING" = "" ]; then

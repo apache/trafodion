@@ -46,10 +46,10 @@
 +>external name 'SESSIONIZE'
 +>library TEST108;
 
-*** ERROR[11246] An error occurred locating function or class 'SESSIONIZE' in library 'TEST002.dll'.
+*** ERROR[11246] An error occurred locating function or class 'SESSIONIZE' in library 'TEST002_212404327644014105.dll'.
 
 *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
-/home/centos/ansharma_trafr21/incubator-trafodion/core/sqf/rundir/udr/TEST002.dll: undefined symbol: SESSIONIZE.
+/mnt3/sandhyasun/trafodion/core/sqf/udr/cached_libs/SCH/TEST002_212404327644014105.dll: undefined symbol: SESSIONIZE.
 
 --- SQL operation failed with errors.
 >>

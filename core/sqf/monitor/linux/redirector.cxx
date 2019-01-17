@@ -25,19 +25,26 @@
 
 using namespace std;
 
+#ifndef NAMESERVER_PROCESS
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
+#endif
 #include <sys/epoll.h>
+#ifndef NAMESERVER_PROCESS
 #include <errno.h>
 #include <stdlib.h>
+#endif
 #include <string.h>
+#ifndef NAMESERVER_PROCESS
 #include <sys/time.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/stat.h>
+#endif
 
+#ifndef NAMESERVER_PROCESS
 #include "monlogging.h"
 #include "montrace.h"
 #include "monitor.h"
@@ -51,7 +58,10 @@ using namespace std;
 #include "replicate.h"
 #include "monsonar.h"
 #include "reqqueue.h"
+#include "ptpclient.h"
+#endif
 
+#ifndef NAMESERVER_PROCESS
 extern CNode *MyNode;
 extern sigset_t SigSet;
 extern CRedirector Redirector;
@@ -61,6 +71,9 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CMonStats *MonStats;
 extern CReqQueue ReqQueue;
+extern CPtpClient *PtpClient;
+extern bool NameServerEnabled;
+#endif
 
 const char *EpollEventString( __uint32_t events )
 {
@@ -127,6 +140,7 @@ const char *EpollOpString( int op )
     return( str );
 }
 
+#ifndef NAMESERVER_PROCESS
 CRedirect::CRedirect(int nid, int pid)
                     :fd_(-1)
                     ,activity_(false)
@@ -550,7 +564,10 @@ CRedirectAncestorStdin::~CRedirectAncestorStdin()
     TRACE_ENTRY;
 
     // Delete pending buffer (if any)
-    delete buffer_;
+    if (buffer_)
+    {
+        delete [] buffer_;
+    }
 
     // Delete queued data (if any)
     while (!ioDataList_.empty())
@@ -558,7 +575,7 @@ CRedirectAncestorStdin::~CRedirectAncestorStdin()
         // Get first data buffer from list
         buffer_ = ioDataList_.front();
         ioDataList_.pop_front();
-        delete buffer_;
+        delete [] buffer_;
     }
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
@@ -632,7 +649,7 @@ int CRedirectAncestorStdin::handleInput()
             retVal = -1;
 
             bufferPos_ = 0;
-            delete buffer_;
+            delete [] buffer_;
             buffer_ = NULL;
 
             reqType = STDIN_FLOW_ON;
@@ -645,16 +662,29 @@ int CRedirectAncestorStdin::handleInput()
         else
         {   // Have written all data, will need to get more.
             bufferPos_ = 0;
-            delete buffer_;
+            delete [] buffer_;
             buffer_ = NULL;
 
             reqType = STDIN_FLOW_ON;
         }
 
-    CReplStdinReq *repl
-        = new CReplStdinReq(MyPNID, pid_, reqType, ancestorNid_, ancestorPid_ );
-    Replicator.addItem(repl);
-
+        if (NameServerEnabled)
+        {
+            PtpClient->ProcessStdInReq( MyPNID
+                                      , pid_
+                                      , reqType
+                                      , ancestorNid_
+                                      , ancestorPid_  );
+        }
+        else
+        {
+            CReplStdinReq *repl = new CReplStdinReq( MyPNID
+                                                   , pid_
+                                                   , reqType
+                                                   , ancestorNid_
+                                                   , ancestorPid_ );
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -765,7 +795,7 @@ CRedirectStdinRemote::CRedirectStdinRemote(const char *filename,
                 char buf[MON_STRING_BUF_SIZE];
                 sprintf(buf, "[%s], %s is an unsupported file type.\n",
                         method_name, filename);
-                mon_log_write(MON_REDIR_STDINREMOTE_2, SQ_LOG_ERR, buf);
+                mon_log_write(MON_REDIR_STDINREMOTE_2, SQ_LOG_INFO, buf);
 
                 close(fd_);
                 fd_ = -1;
@@ -845,9 +875,24 @@ void CRedirectStdinRemote::handleOutput(ssize_t count, char *buffer)
                      (int)count);
     }
 
-    CReplStdioData *repl
-        = new CReplStdioData(requesterNid_, pid_, STDIN_DATA, count, buffer );
-    Replicator.addItem(repl);
+    if (NameServerEnabled)
+    {
+        PtpClient->ProcessStdIoData( requesterNid_
+                                   , pid_
+                                   , STDIN_DATA
+                                   , count
+                                   , buffer );
+    }
+    else
+    {
+        CReplStdioData *repl = new CReplStdioData( requesterNid_
+                                                 , pid_
+                                                 , STDIN_DATA
+                                                 , count
+                                                 , buffer );
+        Replicator.addItem(repl);
+    }
+
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdinRemoteDataReplIncr();
 
@@ -1133,10 +1178,24 @@ void CRedirectAncestorStdout::handleOutput(ssize_t count, char *buffer)
                      (int)count);
     }
 
-    CReplStdioData *repl
-        = new CReplStdioData(ancestor_nid_, ancestor_pid_, STDOUT_DATA, 
-                              count, buffer );
-    Replicator.addItem(repl);
+    if (NameServerEnabled)
+    {
+        PtpClient->ProcessStdIoData( ancestor_nid_
+                                   , ancestor_pid_
+                                   , STDOUT_DATA
+                                   , count
+                                   , buffer );
+    }
+    else
+    {
+        CReplStdioData *repl = new CReplStdioData( ancestor_nid_
+                                                 , ancestor_pid_
+                                                 , STDOUT_DATA
+                                                 , count
+                                                 , buffer );
+        Replicator.addItem(repl);
+    }
+
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdioDataReplIncr();
 
@@ -1491,7 +1550,7 @@ void CRedirector::stdinFd(int nid, int pid, int &pipeFd, char filename[],
             sprintf(buf, "[%s], unable to obtain file info for stdin file"
                     ", file=%s. Closing stdin pipe fd=%d\n",
                     method_name, filename, pipeFd );
-            mon_log_write(MON_REDIR_STDIN_FD_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_REDIR_STDIN_FD_1, SQ_LOG_DEBUG, buf);
 
             close ( pipeFd );
             pipeFd = -1;
@@ -1596,10 +1655,23 @@ void CRedirector::stdinFd(int nid, int pid, int &pipeFd, char filename[],
         fdMap_.insert(std::make_pair(pipeFd, redirect));
         fdMapLock_.unlock();
 
-        CReplStdinReq *repl
-            = new CReplStdinReq(nid, pid, STDIN_REQ_DATA, ancestor_nid,
-                                ancestor_pid );
-        Replicator.addItem(repl);
+        if (NameServerEnabled)
+        {
+            PtpClient->ProcessStdInReq( nid
+                                      , pid
+                                      , STDIN_REQ_DATA
+                                      , ancestor_nid
+                                      , ancestor_pid );
+        }
+        else
+        {
+            CReplStdinReq *repl = new CReplStdinReq( nid
+                                                   , pid
+                                                   , STDIN_REQ_DATA
+                                                   , ancestor_nid
+                                                   , ancestor_pid );
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -2124,3 +2196,4 @@ void CRedirector::start()
 
     TRACE_EXIT;
 }
+#endif

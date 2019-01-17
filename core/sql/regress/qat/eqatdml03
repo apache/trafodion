@@ -26,6 +26,8 @@
 >>--       testcase A6: use of for read committed access, for read committed access
 >>--         and for read committed access
 >>--       testcase A7: SELECT aggregate functions with where predicate
+>>--       testcase A8: SELECT WHERE datetime are overlaps with other datetime
+>>--                    or with expressions.
 >>
 >>-- All testcases are documented further below.
 >>
@@ -2363,7 +2365,458 @@ B
 >>
 >>--    <end-input>
 >>
+>>-- <testcase A8>
 >>
+>>--    <detail>
+>>--    select normal where clause test case - this tests the use of
+>>--    a OVERLAPS predicate in a where clause.
+>>
+>>--    <switches>
+>>--    pat-file uoutpat <mypat>
+>>
+>>--    <templates>
+>>--    US00
+>>
+>>--    <comment> base test
+>>--    <ufi-input>
+>>      select 'FAILED' 
++>      from btsel28
++>      where (date'1992-03-05', date'1995-03-07')
++>      overlaps (date'1996-03-07', date'1998-06-04')
++>      group by 1;
+
+--- 0 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'FAILED' 
++>      from btsel28
++>      where (date'1992-03-05', date'1996-03-07')
++>      overlaps (date'1996-03-07', date'1998-06-04')
++>      group by 1;
+
+--- 0 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'SUCCESS' 
++>      from btsel28
++>      where (date'1992-03-05', date'1997-03-07')
++>      overlaps (date'1996-03-07', date'1998-06-04')
++>      group by 1;
+
+(EXPR)
+-------
+
+SUCCESS
+
+--- 1 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'SUCCESS'
++>      from btsel28
++>      where (date'1992-03-05', date'1998-06-04')
++>      overlaps (date'1996-03-07', date'1998-06-04')
++>      group by 1;
+
+(EXPR)
+-------
+
+SUCCESS
+
+--- 1 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'FAILED'
++>      from btsel28
++>      where (date'1998-06-04', date'1998-06-04')
++>      overlaps (date'1996-03-07', date'1998-06-04')
++>      group by 1;
+
+--- 0 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'FAILED'
++>      from btsel28
++>      where (date'1996-06-04', date'1998-06-04')
++>      overlaps (date'1998-06-04', date'1998-06-04')
++>      group by 1;
+
+--- 0 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'SUCCESS'
++>      from btsel28
++>      where (date'1999-06-04', date'1998-06-04')
++>      overlaps (date'1998-06-04', date'1998-06-04')
++>      group by 1;
+
+(EXPR)
+-------
+
+SUCCESS
+
+--- 1 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'SUCCESS'
++>      from btsel28
++>      where (date'1998-06-04', date'1998-06-04')
++>      overlaps (date'1999-03-07', date'1998-06-04')
++>      group by 1;
+
+(EXPR)
+-------
+
+SUCCESS
+
+--- 1 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'SUCCESS'
++>      from btsel28
++>      where (date'1999-03-07', date'1998-06-04')
++>      overlaps (date'1999-03-07', date'1998-06-04')
++>      group by 1;
+
+(EXPR)
+-------
+
+SUCCESS
+
+--- 1 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select 'SUCCESS'
++>      from btsel28
++>      where (date'1999-03-07', date'1999-06-04')
++>      overlaps (date'1999-03-07', date'2000-06-04')
++>      group by 1;
+
+(EXPR)
+-------
+
+SUCCESS
+
+--- 1 row(s) selected.
+>>
+>>--    <comment> SELECT WHERE date are overlaps with date;
+>>--    <ufi-input>
+>>      select col_date
++>      from btsel28
++>      where (date'1995-01-01', date'2000-01-01')
++>      overlaps (date'1990-01-01', date'2010-01-01');
+
+COL_DATE
+----------
+
+2018-02-03
+?
+1997-05-13
+1988-08-17
+2017-09-29
+2003-12-04
+2010-07-27
+2018-02-03
+
+--- 8 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_date
++>      from btsel28
++>      where (col_date, date'2000-01-01')
++>      overlaps (date'1990-01-01', date'2010-01-01');
+
+COL_DATE
+----------
+
+2018-02-03
+?
+1997-05-13
+1988-08-17
+2017-09-29
+2003-12-04
+2010-07-27
+2018-02-03
+
+--- 8 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_date
++>      from btsel28
++>      where (col_date, date'1995-01-03')
++>      overlaps (date'2019-03-01', col_date);
+
+COL_DATE
+----------
+
+1988-08-17
+
+--- 1 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_date
++>      from btsel28
++>      where (date'2018-02-03', col_date)
++>      overlaps (col_date, date'1988-08-17');
+
+COL_DATE
+----------
+
+1988-08-17
+
+--- 1 row(s) selected.
+>>
+>>--    <comment> SELECT WHERE date are overlaps with timestamp
+>>--    <ufi-input>
+>>      select col_date, col_timestamp
++>      from btsel28
++>      where (date'1995-01-01', timestamp'2000-02-03 00:00:00')
++>      overlaps (date'2000-01-01', timestamp'2019-01-01 12:00:00');
+
+COL_DATE    COL_TIMESTAMP
+----------  --------------------------
+
+2018-02-03  2018-02-03 12:23:00.000000
+?           2017-02-03 12:23:00.000000
+1997-05-13  2016-02-03 12:23:00.000000
+1988-08-17  2015-02-03 12:23:00.000000
+2017-09-29  2014-02-03 12:23:00.000000
+2003-12-04  2013-02-03 12:23:00.000000
+2010-07-27  2012-02-03 12:23:00.000000
+2018-02-03  2011-02-03 12:23:00.000000
+
+--- 8 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_date, col_timestamp
++>      from btsel28
++>      where (col_date, col_timestamp)
++>      overlaps (date'2000-01-01', timestamp'2015-01-01 12:00:00');
+
+COL_DATE    COL_TIMESTAMP
+----------  --------------------------
+
+1997-05-13  2016-02-03 12:23:00.000000
+1988-08-17  2015-02-03 12:23:00.000000
+2017-09-29  2014-02-03 12:23:00.000000
+2003-12-04  2013-02-03 12:23:00.000000
+2010-07-27  2012-02-03 12:23:00.000000
+2018-02-03  2011-02-03 12:23:00.000000
+
+--- 6 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_date, col_timestamp
++>      from btsel28
++>      where (date'1997-03-08', timestamp'2010-01-01 13:00:00')
++>      overlaps (timestamp'2017-01-01 00:00:00', col_timestamp);
+
+--- 0 row(s) selected.
+>>
+>>--    <comment> SELECT WHERE date are overlaps with interval
+>>--    <ufi-input>
+>>      select col_date, col_ytom
++>      from btsel28
++>      where (date'1988-01-01', interval '30' year)
++>      overlaps (date'2028-03-02', -interval '11-02' year to month);
+
+COL_DATE    COL_YTOM
+----------  --------
+
+2018-02-03      1-03
+?               1-03
+1997-05-13  ?
+1988-08-17      1-03
+2017-09-29      1-03
+2003-12-04      1-03
+2010-07-27      1-03
+2018-02-03    - 1-03
+
+--- 8 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_date, col_ytom
++>      from btsel28
++>      where (col_date, col_ytom)
++>      overlaps (date'2028-03-02', -interval '11-02'  year to month);
+
+COL_DATE    COL_YTOM
+----------  --------
+
+2018-02-03      1-03
+2017-09-29      1-03
+2018-02-03    - 1-03
+
+--- 3 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_date, col_ytom
++>      from btsel28
++>      where (col_date, date'1972-01-03')
++>      overlaps (date'2018-03-02', interval '11-02'  year to month);
+
+--- 0 row(s) selected.
+>>
+>>--    <comment> SELECT WHERE time are overlaps with time
+>>--    <ufi-input>
+>>      select col_time
++>      from btsel28
++>      where (time'01:02:03', time'02:03:04')
++>      overlaps (time'03:04:05', time'02:01:01');
+
+COL_TIME
+--------
+
+12:23:00
+02:23:00
+11:00:00
+03:53:00
+04:26:10
+?
+17:09:00
+?
+
+--- 8 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_time
++>      from btsel28
++>      where (col_time, time'03:23:11')
++>      overlaps (time'13:23:32', time'05:00:00');
+
+COL_TIME
+--------
+
+12:23:00
+11:00:00
+17:09:00
+
+--- 3 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_time
++>      from btsel28
++>      where (col_time, time'03:23:11')
++>      overlaps (time'13:23:32', col_time);
+
+COL_TIME
+--------
+
+02:23:00
+17:09:00
+
+--- 2 row(s) selected.
+>>
+>>--    <comment> SELECT WHERE time are overlaps with interval
+>>--    <ufi-input>
+>>      select col_time, col_htos
++>      from btsel28
++>      where (time'01:02:03', interval '01:02:03' hour to second)
++>      overlaps (time'02:00:00', -interval'02:01' minute to second);
+
+COL_TIME  COL_HTOS
+--------  ----------------
+
+12:23:00    1:02:03.000000
+02:23:00    1:02:03.000000
+11:00:00    1:02:03.000000
+03:53:00  ?
+04:26:10    1:02:03.000000
+?           1:02:03.000000
+17:09:00  - 1:02:03.000000
+?           1:02:03.000000
+
+--- 8 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_time, col_htos
++>      from btsel28
++>      where (col_time, col_htos)
++>      overlaps (time'12:00:00', -interval '03:00' hour to minute);
+
+COL_TIME  COL_HTOS
+--------  ----------------
+
+11:00:00    1:02:03.000000
+
+--- 1 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select col_time, col_htos
++>      from btsel28
++>      where (col_time, col_htos)
++>      overlaps (time'01:00:00', interval '09:00' hour to minute);
+
+COL_TIME  COL_HTOS
+--------  ----------------
+
+02:23:00    1:02:03.000000
+03:53:00    ?
+04:26:10    1:02:03.000000
+
+--- 3 row(s) selected.
+>>
+>>--    <comment> hybird test
+>>--    <ufi-input>
+>>      select *
++>      from btsel28
++>      where (col_date, col_timestamp)
++>      overlaps (col_timestamp, col_htos);
+
+COL_DATE    COL_TIME  COL_TIMESTAMP               COL_YTOM  COL_HTOS
+----------  --------  --------------------------  --------  ----------------
+
+2017-09-29  04:26:10  2014-02-03 12:23:00.000000      1-03    1:02:03.000000
+2010-07-27  17:09:00  2012-02-03 12:23:00.000000      1-03  - 1:02:03.000000
+2018-02-03  ?         2011-02-03 12:23:00.000000    - 1-03    1:02:03.000000
+
+--- 3 row(s) selected.
+>>
+>>--    <ufi-input>
+>>      select *
++>      from btsel28
++>      where (col_date, col_timestamp)
++>      overlaps (col_timestamp, col_ytom);
+
+COL_DATE    COL_TIME  COL_TIMESTAMP               COL_YTOM  COL_HTOS
+----------  --------  --------------------------  --------  ----------------
+
+2017-09-29  04:26:10  2014-02-03 12:23:00.000000      1-03    1:02:03.000000
+
+--- 1 row(s) selected.
+>>
+>>--    <comment> OVERLAPS predicate error test case
+>>--    <ufi-input>
+>>      select count(*)
++>      from btsel28
++>      where ('asa', date'2019-01-01')
++>      overlaps (date'2018-03-01', date'2011-12-22');
+
+*** ERROR[4497] The first operand of overlaps part1 must be datetime.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--    <ufi-input>
+>>      select count(*)
++>      from btsel28
++>      where (col_date, col_time)
++>      overlaps (date'2011-01-01', date'2001-01-01');
+
+*** ERROR[4041] Type DATE cannot be compared with type TIME(0).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--    <ufi-input>
+>>      select count(*)
++>      from btsel28
++>      where (col_ytom, col_time)
++>      overlaps (col_htos, col_date);
+
+*** ERROR[4497] The first operand of overlaps part1 must be datetime.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- <end-test>
 >>LOG;

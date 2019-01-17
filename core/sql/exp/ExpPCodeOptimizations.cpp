@@ -4340,8 +4340,9 @@ NABoolean PCodeCfg::localCSE(INSTLIST** parent, PCodeBlock* tailBlock,
               (((ex_conv_clause*)clauseHead)->treatAllSpacesAsZero() ==
                ((ex_conv_clause*)clauseTail)->treatAllSpacesAsZero()));
             if ( match ) {
-               if ( ((ex_conv_clause*)clauseHead)->getInstruction() ==
-                    CONV_DATETIME_DATETIME )
+               ConvInstruction instr = ((ex_conv_clause*)clauseHead)->getInstruction();
+               if ((instr == CONV_DATETIME_DATETIME) ||
+                   ((instr >= CONV_INTERVALY_INTERVALMO) && (instr <= CONV_INTERVAL_ASCII)))
                {
                   Attributes *tgtH = ((ex_conv_clause*)clauseHead)->getOperand(0);
                   Attributes *tgtT = ((ex_conv_clause*)clauseTail)->getOperand(0);

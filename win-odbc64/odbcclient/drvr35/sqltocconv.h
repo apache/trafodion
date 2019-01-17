@@ -28,12 +28,15 @@
 #include <sqlExt.h>
 #include "DrvrGlobal.h"
 #include "charsetconv.h"
+#include "cconnect.h"
 
 #define ENDIAN_PRECISION_MAX	39
 
 namespace ODBC {
 
-unsigned long ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
+unsigned long ConvertSQLToC(CConnect *ConnectHandle,
+                            SQLHANDLE InputHandle,
+                            SQLINTEGER	ODBCAppVersion,
 							DWORD		DataLangId,
 							SQLSMALLINT	SQLDataType,
 							SQLSMALLINT	ODBCDataType,

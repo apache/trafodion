@@ -49,6 +49,7 @@ class ExScheduler;
 class ExExeStmtGlobals;
 class ExMasterStmtGlobals;
 class ExEidStmtGlobals;
+class ExEspStmtGlobals;
 class SqlSessionData;
 class ExStatisticsArea;
 class ex_tcb;
@@ -100,6 +101,7 @@ public:
 
   virtual ExExeStmtGlobals * castToExExeStmtGlobals();
   virtual ExEidStmtGlobals * castToExEidStmtGlobals();
+  virtual ExEspStmtGlobals * castToExEspStmtGlobals();
 
   inline void setStatsArea(ExStatisticsArea * statsArea)
     { statsArea_ = statsArea; }
@@ -183,7 +185,7 @@ public:
 
   ExLobGlobals *&getExLobGlobal();
   
-  void initLOBglobal(ContextCli *context);
+  void initLOBglobal(ContextCli *context, NABoolean useLibHdfs);
   
   SequenceValueGenerator * seqGen();
   
@@ -191,6 +193,7 @@ public:
 
   void setRollupColumnNum(Int16 v) { rollupColumnNum_ = v; }
   Int16 getRollupColumnNum() { return rollupColumnNum_; }
+  ExLobGlobals *getLobGlobals() {return exLobGlobals_; }
 
 private:
   enum FlagsTypeEnum 

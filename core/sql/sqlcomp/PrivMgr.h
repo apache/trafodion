@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include "PrivMgrDefs.h"
+#include "PrivMgrComponentDefs.h"
 #include "ComSmallDefs.h"
 #include "CmpSeabaseDDLauth.h"
 
@@ -103,13 +104,15 @@ class PrivMgr
       const int32_t authID,
       std::string &authName);
     
-    static const char * getSQLOperationName(SQLOperation operation);
     static const char * getSQLOperationCode(SQLOperation operation);
     static const char * getSQLOperationDescription(SQLOperation operation);
+    static const char * getSQLOperationName(SQLOperation operation);
+    static int32_t getSQLUnusedOpsCount();
     static bool isSQLAlterOperation(SQLOperation operation);
     static bool isSQLCreateOperation(SQLOperation operation);
     static bool isSQLDropOperation(SQLOperation operation);
     static bool isSQLManageOperation(SQLOperation operation);
+    static bool isSQLManageOperation(const char * operationCode);
     static const char * ObjectEnumToLit(ComObjectType objectType);
     static ComObjectType ObjectLitToEnum(const char *objectLiteral);    
     static bool isRoleID(int_32 authID){ return CmpSeabaseDDLauth::isRoleID(authID); }
@@ -165,6 +168,11 @@ class PrivMgr
     // -------------------------------------------------------------------
     // Accessors and destructors:
     // -------------------------------------------------------------------
+    PrivStatus getGranteeIDsForRoleIDs(
+      const std::vector<int32_t> & roleIDs,
+      std::vector<int32_t> & userIDs,
+      bool includeSysGrantor = true);
+
     inline std::string getMetadataLocation (void) {return metadataLocation_;}
     inline const std::string & getMetadataLocation (void) const {return metadataLocation_;}
     inline std::string getTrafMetadataLocation (void) {return trafMetadataLocation_;}

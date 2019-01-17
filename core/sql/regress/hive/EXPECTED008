@@ -1,0 +1,1366 @@
+>>cqd traf_ddl_on_hive_objects 'ON';
+
+--- SQL operation complete.
+>>
+>>set schema hive.sch008;
+
+*** ERROR[1003] Schema HIVE.SCH008 does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>showddl schema hive.sch008;
+
+*** ERROR[1003] Schema HIVE.SCH008 does not exist.
+
+--- SQL operation failed with errors.
+>>create database hive.sch008;
+
+--- SQL operation complete.
+>>create schema if not exists hive.sch008;
+
+--- SQL operation complete.
+>>showddl schema hive.sch008;
+
+/* Hive DDL */
+CREATE SCHEMA HIVE.SCH008;
+
+REGISTER /*INTERNAL*/ HIVE SCHEMA HIVE.SCH008;
+
+--- SQL operation complete.
+>>
+>>drop table if exists hive.sch008.t00801;
+
+--- SQL operation complete.
+>>create table hive.sch008.t00801 (a int, b int);
+
+--- SQL operation complete.
+>>invoke hive.sch008.t00801;
+
+-- Definition of hive table HIVE.SCH008.T00801
+-- Definition current  Sat Jun  2 18:28:46 2018
+
+  (
+    A                                INT
+  , B                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>showddl hive.sch008.t00801;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00801
+  (
+    A                                int
+  , B                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00801;
+/* ObjectUID = 1402470925633631767 */
+
+--- SQL operation complete.
+>>drop table hive.sch008.t00801;
+
+--- SQL operation complete.
+>>
+>>set schema hive.sch008;
+
+--- SQL operation complete.
+>>create table t00802 (a int, b int);
+
+--- SQL operation complete.
+>>invoke t00802;
+
+-- Definition of hive table HIVE.SCH008.T00802
+-- Definition current  Sat Jun  2 18:28:57 2018
+
+  (
+    A                                INT
+  , B                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>
+>>insert into t00802 values (1,2);
+
+--- 1 row(s) inserted.
+>>select * from t00802;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>-- hive execution of create as select... runs into an error due to a 
+>>-- security issue.
+>>-- Use regrhive until that issue is fixed.
+>>sh echo "create table sch008.t00803 as select * from sch008.t00802;" > TEST008_junk;
+>>sh regrhive.ksh -f TEST008_junk;
+>>cqd hive_ctas_in_native_mode 'ON';
+
+--- SQL operation complete.
+>>-- create table t00803 as select * from sch008.t00802;
+>>cqd hive_ctas_in_native_mode reset;
+
+--- SQL operation complete.
+>>invoke t00803;
+
+-- Definition of hive table HIVE.SCH008.T00803
+-- Definition current  Sat Jun  2 18:29:08 2018
+
+  (
+    A                                INT
+  , B                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>select * from t00803;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>-- ctas create executed in Hive and insert executed in sql
+>>drop table if exists t008032;
+
+--- SQL operation complete.
+>>explain options 'f' create table t008032 no load as select * from t00802;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    create_table_as                                       1.00E+000
+
+--- SQL operation complete.
+>>create table t008032 no load as select * from sch008.t00802;
+
+--- 0 row(s) inserted.
+>>invoke t008032;
+
+-- Definition of hive table HIVE.SCH008.T008032
+-- Definition current  Fri Jun 15 05:38:24 2018
+
+  (
+    A                                INT
+  , B                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>
+>>-- describe will show datatype 132 for b
+>>prepare s from insert into t00802 values (?, ?);
+
+--- SQL command prepared.
+>>describe s;
+---Describing the INPUT entries---
+[1] NAME "", HEADING ""
+    TYPE 4, FS 132, LEN 4, OCTLEN 4, CHARSET 0
+    PREC 0, LPREC 0, SCALE 0, DTCODE 0, NULL 1, MODE 1, IDX 1, ORDPOS 0
+    CAT "", SCH "", TABLE ""
+[2] NAME "", HEADING ""
+    TYPE 4, FS 132, LEN 4, OCTLEN 4, CHARSET 0
+    PREC 0, LPREC 0, SCALE 0, DTCODE 0, NULL 1, MODE 1, IDX 2, ORDPOS 0
+    CAT "", SCH "", TABLE ""
+>>
+>>-- alter will do QI and reload table definition
+>>alter table t00802 change b b bigint;
+
+--- SQL operation complete.
+>>
+>>select * from t00802;
+
+A            B                   
+-----------  --------------------
+
+          1                     2
+
+--- 1 row(s) selected.
+>>
+>>-- describe will show datatype 134 for b
+>>prepare s from insert into t00802 values (?, ?);
+
+--- SQL command prepared.
+>>describe s;
+---Describing the INPUT entries---
+[1] NAME "", HEADING ""
+    TYPE 4, FS 132, LEN 4, OCTLEN 4, CHARSET 0
+    PREC 0, LPREC 0, SCALE 0, DTCODE 0, NULL 1, MODE 1, IDX 1, ORDPOS 0
+    CAT "", SCH "", TABLE ""
+[2] NAME "", HEADING ""
+    TYPE -402, FS 134, LEN 8, OCTLEN 8, CHARSET 0
+    PREC 0, LPREC 0, SCALE 0, DTCODE 0, NULL 1, MODE 1, IDX 2, ORDPOS 0
+    CAT "", SCH "", TABLE ""
+>>
+>>invoke t00802;
+
+-- Definition of hive table HIVE.SCH008.T00802
+-- Definition current  Sat Jun  2 18:29:15 2018
+
+  (
+    A                                INT
+  , B                                LARGEINT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>showddl t00802;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00802
+  (
+    A                                int
+  , B                                bigint
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00802;
+/* ObjectUID = 1402470925633632981 */
+
+--- SQL operation complete.
+>>
+>>-- create in hive default schema
+>>drop table if exists hive.`default`.t00804;
+
+--- SQL operation complete.
+>>create table hive.`default`.`t00804` (`a` int);
+
+--- SQL operation complete.
+>>showddl hive.hive.t00804;
+
+/* Hive DDL */
+CREATE TABLE HIVE.HIVE.T00804
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.T00804;
+/* ObjectUID = 1402470925633635322 */
+
+--- SQL operation complete.
+>>insert into hive.hive.t00804 values (11);
+
+--- 1 row(s) inserted.
+>>
+>>create view if not exists hive.sch008.v00802 as select * from sch008.t00802;
+
+--- SQL operation complete.
+>>showddl hive.sch008.v00802;
+
+Original native Hive view text:
+select * from sch008.t00802
+
+Expanded native Hive view text:
+CREATE VIEW hive.sch008.v00802 AS
+  select t00802.a, t00802.b from sch008.t00802 ;
+
+REGISTER /*INTERNAL*/ HIVE VIEW HIVE.SCH008.V00802;
+/* ObjectUID = 1402470925633635814 */
+
+--- SQL operation complete.
+>>select * from v00802;
+
+A            B                   
+-----------  --------------------
+
+          1                     2
+
+--- 1 row(s) selected.
+>>alter view hive.sch008.v00802 as select * from sch008.t00802;
+
+--- SQL operation complete.
+>>showddl hive.sch008.v00802;
+
+Original native Hive view text:
+select * from sch008.t00802
+
+Expanded native Hive view text:
+CREATE VIEW hive.sch008.v00802 AS
+  select t00802.a, t00802.b from sch008.t00802 ;
+
+REGISTER /*INTERNAL*/ HIVE VIEW HIVE.SCH008.V00802;
+/* ObjectUID = 1402470925633635814 */
+
+--- SQL operation complete.
+>>
+>>-- view in a different schema than table
+>>create view hive.sch008.v00803 as select * from `default`.t00804;
+
+--- SQL operation complete.
+>>showddl hive.sch008.v00803;
+
+Original native Hive view text:
+select * from default.t00804
+
+Expanded native Hive view text:
+CREATE VIEW hive.sch008.v00803 AS
+  select t00804.a from hive.t00804 ;
+
+REGISTER /*INTERNAL*/ HIVE VIEW HIVE.SCH008.V00803;
+/* ObjectUID = 1402470925633636550 */
+
+--- SQL operation complete.
+>>-- next one should not return an error but it currently does.
+>>-- Tables in schemas different than views schema is not being handled.
+>>-- Track it as a known diff.
+>>prepare s from select * from v00803;
+
+--- SQL command prepared.
+>>
+>>get objects in schema hive.sch008;
+
+Objects in Schema HIVE.SCH008
+=============================
+
+t00802
+t00803
+t008032
+v00802
+v00803
+
+--- SQL operation complete.
+>>
+>>drop view if exists hive.sch008.v00802;
+
+--- SQL operation complete.
+>>invoke hive.sch008.v00802;
+
+*** ERROR[1388] Object HIVE.SCH008.V00802 does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>get objects in schema hive.sch008;
+
+Objects in Schema HIVE.SCH008
+=============================
+
+t00802
+t00803
+t008032
+v00803
+
+--- SQL operation complete.
+>>
+>>-- delimited names  using hive ` as delimiter.
+>>create table hive.`sch008`.`t00804` (`a` int);
+
+--- SQL operation complete.
+>>showddl hive.sch008.t00804;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00804
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00804;
+/* ObjectUID = 1402470925633637409 */
+
+--- SQL operation complete.
+>>create table hive.`sch008`.`t00804like` like `sch008`.`t00804`;
+
+--- SQL operation complete.
+>>create external table hive.`sch008`.`t00804like2` like `sch008`.`t00804`;
+
+--- SQL operation complete.
+>>showddl hive.sch008.t00804like;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00804LIKE
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00804LIKE;
+/* ObjectUID = 1402470925633637693 */
+
+--- SQL operation complete.
+>>showddl hive.sch008.t00804like2;
+
+/* Hive DDL */
+CREATE EXTERNAL TABLE HIVE.SCH008.T00804LIKE2
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00804LIKE2;
+/* ObjectUID = 1402470925633637856 */
+
+--- SQL operation complete.
+>>drop table if exists hive.sch008.`t00805like`;
+
+--- SQL operation complete.
+>>drop table if exists hive.sch008.`t00805like2`;
+
+--- SQL operation complete.
+>>
+>>-- delimited names  using traf " as delimiter.
+>>create table hive."sch008"."t00805" (`a` int);
+
+--- SQL operation complete.
+>>showddl hive.sch008.t00805;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00805
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00805;
+/* ObjectUID = 1402470925633638566 */
+
+--- SQL operation complete.
+>>
+>>-- create external hive table like a traf table
+>>drop table if exists hive.sch008.columns;
+
+--- SQL operation complete.
+>>explain create external table hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212395845354479165
+ROWS_OUT ................. 1
+EST_TOTAL_COST ........... 0
+STATEMENT ................ create external table hive.sch008.columns no load
+                             hive options 'stored as sequencefile'      as
+                             select * from trafodion."_MD_".columns;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
+DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  affinity_value ......... 0
+  max_max_cardinality .... 1
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled for privilege checks
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_DDL_ON_HIVE_OBJECT  ON
+  SCHEMA ................. HIVE.SCH008
+  GENERATE_EXPLAIN ....... ON
+
+
+CREATE_TABLE_AS ===========================  SEQ_NO 1        NO CHILDREN
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
+DESCRIPTION
+  max_card_est ........... -1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  CreateQuery ............ CREATE EXTERNAL TABLE HIVE.SCH008.COLUMNS (
+                             OBJECT_UID bigint, COLUMN_NAME varchar(256),
+                             COLUMN_NUMBER int, COLUMN_CLASS char(2),
+                             FS_DATA_TYPE int, SQL_DATA_TYPE char(32),
+                             COLUMN_SIZE int, COLUMN_PRECISION int,
+                             COLUMN_SCALE int, DATETIME_START_FIELD int,
+                             DATETIME_END_FIELD int, IS_UPSHIFTED char(2),
+                             COLUMN_FLAGS int, NULLABLE int,
+                             CHARACTER_SET char(40), DEFAULT_CLASS int,
+                             DEFAULT_VALUE varchar(1024),
+                             COLUMN_HEADING varchar(256),
+                             HBASE_COL_FAMILY varchar(40),
+                             HBASE_COL_QUALIFIER varchar(40),
+                             DIRECTION char(2), IS_OPTIONAL char(2),
+                             FLAGS bigint  )  stored as sequencefile
+  InsertQuery ............ insert into HIVE.SCH008.COLUMNS  select * from
+                             trafodion."_MD_".columns;
+  UpsertLoadQuery ........ NULL
+  UpdStatsQuery .......... UPDATE STATISTICS FOR TABLE HIVE.SCH008.COLUMNS ON
+                             EVERY COLUMN SAMPLE SET ROWCOUNT %Ld;
+
+--- SQL operation complete.
+>>create external table hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
+
+--- 0 row(s) inserted.
+>>create external table if not exists hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
+
+--- 0 row(s) inserted.
+>>showddl hive.sch008.columns;
+
+/* Hive DDL */
+CREATE EXTERNAL TABLE HIVE.SCH008.COLUMNS
+  (
+    OBJECT_UID                       bigint
+  , COLUMN_NAME                      varchar(256)
+  , COLUMN_NUMBER                    int
+  , COLUMN_CLASS                     char(2)
+  , FS_DATA_TYPE                     int
+  , SQL_DATA_TYPE                    char(32)
+  , COLUMN_SIZE                      int
+  , COLUMN_PRECISION                 int
+  , COLUMN_SCALE                     int
+  , DATETIME_START_FIELD             int
+  , DATETIME_END_FIELD               int
+  , IS_UPSHIFTED                     char(2)
+  , COLUMN_FLAGS                     int
+  , NULLABLE                         int
+  , CHARACTER_SET                    char(40)
+  , DEFAULT_CLASS                    int
+  , DEFAULT_VALUE                    varchar(1024)
+  , COLUMN_HEADING                   varchar(256)
+  , HBASE_COL_FAMILY                 varchar(40)
+  , HBASE_COL_QUALIFIER              varchar(40)
+  , DIRECTION                        char(2)
+  , IS_OPTIONAL                      char(2)
+  , FLAGS                            bigint
+  )
+  stored as sequencefile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.COLUMNS;
+/* ObjectUID = 1402470925633639085 */
+
+--- SQL operation complete.
+>>
+>>-- create managed hive table LIKE traf table
+>>drop table if exists hive.sch008.columns;
+
+--- SQL operation complete.
+>>create table hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
+
+--- 0 row(s) inserted.
+>>showddl hive.sch008.columns;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.COLUMNS
+  (
+    OBJECT_UID                       bigint
+  , COLUMN_NAME                      varchar(256)
+  , COLUMN_NUMBER                    int
+  , COLUMN_CLASS                     char(2)
+  , FS_DATA_TYPE                     int
+  , SQL_DATA_TYPE                    char(32)
+  , COLUMN_SIZE                      int
+  , COLUMN_PRECISION                 int
+  , COLUMN_SCALE                     int
+  , DATETIME_START_FIELD             int
+  , DATETIME_END_FIELD               int
+  , IS_UPSHIFTED                     char(2)
+  , COLUMN_FLAGS                     int
+  , NULLABLE                         int
+  , CHARACTER_SET                    char(40)
+  , DEFAULT_CLASS                    int
+  , DEFAULT_VALUE                    varchar(1024)
+  , COLUMN_HEADING                   varchar(256)
+  , HBASE_COL_FAMILY                 varchar(40)
+  , HBASE_COL_QUALIFIER              varchar(40)
+  , DIRECTION                        char(2)
+  , IS_OPTIONAL                      char(2)
+  , FLAGS                            bigint
+  )
+  stored as sequencefile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.COLUMNS;
+/* ObjectUID = 1402470925633639718 */
+
+--- SQL operation complete.
+>>
+>>-- ctas stmt is passed to Hive layer. 
+>>drop table if exists hive.hive.tempsrc;
+
+--- SQL operation complete.
+>>drop table if exists hive.hive.temptgt;
+
+--- SQL operation complete.
+>>create table hive.hive.tempsrc(a int);
+
+--- SQL operation complete.
+>>cqd hive_ctas_in_native_mode 'ON';
+
+--- SQL operation complete.
+>>explain options 'f' create external table hive.hive.temptgt as select * from tempsrc;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    hive_ddl                                              1.00E+000
+
+--- SQL operation complete.
+>>-- cannot create external table thru CTAS in Hive
+>>create external table hive.hive.temptgt as select * from tempsrc;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "create external table `default`.TEMPTGT as select * from tempsrc". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table
+
+--- SQL operation failed with errors.
+>>
+>>-- hive execution of CTAS returns an error due to a security issue on some
+>>-- platforms. Do not execute it until the issue is fixed.
+>>prepare s from create table hive.hive.temptgt as select * from tempsrc;
+
+--- SQL command prepared.
+>>--execute s;
+>>invoke hive.hive.temptgt;
+
+*** ERROR[1388] Object HIVE.HIVE.TEMPTGT does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>cqd hive_ctas_in_native_mode reset;
+
+--- SQL operation complete.
+>>
+>>-- create and drop hive table and external table
+>>drop table if exists t00806;
+
+--- SQL operation complete.
+>>create table t00806 (a int, b string);
+
+--- SQL operation complete.
+>>showddl t00806;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00806
+  (
+    A                                int
+  , B                                string
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00806;
+/* ObjectUID = 1402470925633640194 */
+
+--- SQL operation complete.
+>>create external table t00806 for t00806;
+
+--- SQL operation complete.
+>>showddl t00806;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00806
+  (
+    A                                int
+  , B                                string
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00806;
+/* ObjectUID = 1402470925633640194 */
+
+CREATE EXTERNAL TABLE T00806
+  FOR HIVE.SCH008.T00806
+;
+
+--- SQL operation complete.
+>>drop table if exists t00806;
+
+--- SQL operation complete.
+>>showddl t00806;
+
+*** ERROR[1388] Object HIVE.SCH008.T00806 does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select object_uid from trafodion."_MD_".objects where object_name = 'T00806';
+
+--- 0 row(s) selected.
+>>
+>>-- cleanup hive table
+>>drop table if exists t00806;
+
+--- SQL operation complete.
+>>create table t00806 (a int, b string);
+
+--- SQL operation complete.
+>>showddl t00806;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00806
+  (
+    A                                int
+  , B                                string
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00806;
+/* ObjectUID = 1402470925633643445 */
+
+--- SQL operation complete.
+>>create external table t00806 for t00806;
+
+--- SQL operation complete.
+>>showddl t00806;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00806
+  (
+    A                                int
+  , B                                string
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00806;
+/* ObjectUID = 1402470925633643445 */
+
+CREATE EXTERNAL TABLE T00806
+  FOR HIVE.SCH008.T00806
+;
+
+--- SQL operation complete.
+>>cleanup table t00806;
+
+--- SQL operation complete.
+>>showddl t00806;
+
+*** ERROR[1388] Object HIVE.SCH008.T00806 does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select trim(schema_name) || '.' || trim(object_name) from trafodion."_MD_".objects where object_name = 'T00806';
+
+--- 0 row(s) selected.
+>>drop table if exists t00806;
+
+--- SQL operation complete.
+>>create table t00806 (a int, b string);
+
+--- SQL operation complete.
+>>create external table t00806 for t00806;
+
+--- SQL operation complete.
+>>process hive ddl 'drop table sch008.t00806';
+
+--- SQL operation complete.
+>>showddl t00806;
+
+*** ERROR[4262] Object HIVE.SCH008.T00806 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'cleanup table' command to cleanup this table.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select trim(schema_name) || '.' || trim(object_name) from trafodion."_MD_".objects where object_name = 'T00806';
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SCH008.T00806                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+_HV_SCH008_.T00806                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
+--- 2 row(s) selected.
+>>cleanup table t00806;
+
+--- SQL operation complete.
+>>showddl t00806;
+
+*** ERROR[1388] Object HIVE.SCH008.T00806 does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select trim(schema_name) || '.' || trim(object_name) from trafodion."_MD_".objects where object_name = 'T00806';
+
+--- 0 row(s) selected.
+>>
+>>-- TRUNCATE TABLE tests
+>>-- hive managed table
+>>create table if not exists t00807 (a int, b int);
+
+--- SQL operation complete.
+>>showddl t00807;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00807
+  (
+    A                                int
+  , B                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00807;
+/* ObjectUID = 1402470925633648613 */
+
+--- SQL operation complete.
+>>insert into t00807 values (1,2), (3,4);
+
+--- 2 row(s) inserted.
+>>select * from t00807;
+
+A            B          
+-----------  -----------
+
+          1            2
+          3            4
+
+--- 2 row(s) selected.
+>>truncate table t00807;
+
+--- SQL operation complete.
+>>select * from t00807;
+
+--- 0 row(s) selected.
+>>drop table t00807;
+
+--- SQL operation complete.
+>>-- next truncate should return error
+>>truncate table t00807;
+
+*** ERROR[1388] Object HIVE.SCH008.T00807 does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>truncate table if exists t00807;
+
+--- SQL operation complete.
+>>
+>>-- hive external table
+>>drop table t00807;
+
+*** ERROR[1388] Table sch008.t00807 does not exist in Hive Metadata.
+
+--- SQL operation failed with errors.
+>>create external table if not exists t00807 (a int, b int);
+
+--- SQL operation complete.
+>>showddl t00807;
+
+/* Hive DDL */
+CREATE EXTERNAL TABLE HIVE.SCH008.T00807
+  (
+    A                                int
+  , B                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00807;
+/* ObjectUID = 1402470925633649823 */
+
+--- SQL operation complete.
+>>insert into t00807 values (1,2), (3,4);
+
+--- 2 row(s) inserted.
+>>select * from t00807;
+
+A            B          
+-----------  -----------
+
+          1            2
+          3            4
+
+--- 2 row(s) selected.
+>>truncate table t00807;
+
+--- SQL operation complete.
+>>select * from t00807;
+
+--- 0 row(s) selected.
+>>drop table t00807;
+
+--- SQL operation complete.
+>>
+>>-- hive partitioned external table.
+>>-- hive partitioned table insert/select not yet supported from traf interface.
+>>-- When supported, remove regrhive.ksh and do the insert/select from traf.
+>>-- Also enabled select from t00807.
+>>drop table t00807;
+
+*** ERROR[1388] Table sch008.t00807 does not exist in Hive Metadata.
+
+--- SQL operation failed with errors.
+>>create external table if not exists t00807 (a int) partitioned by (b int);
+
+--- SQL operation complete.
+>>
+>>-- TBD: insert into sch008.t00807 values (1,2);
+>>sh echo "insert into sch008.t00807 partition(b=2) values (1);" > TEST008_junk;
+>>sh regrhive.ksh -f TEST008_junk;
+>>
+>>-- TBD: select * from t00807;
+>>sh echo "select * from sch008.t00807;" > TEST008_junk;
+>>sh regrhive.ksh -f TEST008_junk | tee -a LOG008;
+t00807.a	t00807.b
+1	2
+>>
+>>truncate table t00807;
+
+--- SQL operation complete.
+>>
+>>-- TBD: select * from t00807;
+>>sh echo "select * from sch008.t00807;" > TEST008_junk;
+>>sh regrhive.ksh -f TEST008_junk | tee -a LOG008;
+t00807.a	t00807.b
+>>
+>>explain options 'f' create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    create_table_as                                       1.00E+000
+
+--- SQL operation complete.
+>>create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+
+--- 0 row(s) inserted.
+>>
+>>drop table t008072;
+
+--- SQL operation complete.
+>>
+>>drop table if exists trafodion.sch.t00807;
+
+--- SQL operation complete.
+>>create table trafodion.sch.t00807 (a int);
+
+--- SQL operation complete.
+>>explain options 'f' create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    create_table_as                                       1.00E+000
+
+--- SQL operation complete.
+>>create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+
+--- 0 row(s) inserted.
+>>invoke hive.sch008.t008072;
+
+-- Definition of hive table HIVE.SCH008.T008072
+-- Definition current  Fri Jun 15 05:43:02 2018
+
+  (
+    A                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>
+>>drop table t00807;
+
+--- SQL operation complete.
+>>drop table t008072;
+
+--- SQL operation complete.
+>>
+>>-- alter rename. Should unregister the source table.
+>>create table t00807 (a int);
+
+--- SQL operation complete.
+>>alter table t00807 rename to `default`.t00807ren;
+
+--- SQL operation complete.
+>>select * from trafodion."_MD_".objects where schema_name = 'HIVE' and object_name = 'T00807';
+
+--- 0 row(s) selected.
+>>-- should show
+>>showddl hive.t00807ren;
+
+/* Hive DDL */
+CREATE TABLE HIVE.HIVE.T00807REN
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+--- SQL operation complete.
+>>-- should not show
+>>showddl t00807ren;
+
+*** ERROR[1388] Object HIVE.SCH008.T00807REN does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>drop table hive.t00807ren;
+
+--- SQL operation complete.
+>>
+>>-- alter rename to the hive schema set in session (hive.sch008)
+>>create table t00807 (a int);
+
+--- SQL operation complete.
+>>alter table t00807 rename to t00807ren;
+
+--- SQL operation complete.
+>>-- should show
+>>showddl t00807ren;
+
+/* Hive DDL */
+CREATE TABLE HIVE.SCH008.T00807REN
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+--- SQL operation complete.
+>>-- should not show
+>>showddl hive.t00807ren;
+
+*** ERROR[1388] Object HIVE.HIVE.T00807REN does not exist in Hive Metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- msck (meta store check) command support
+>>msck repair table t00807ren;
+
+--- SQL operation complete.
+>>alter table t00807ren recover partitions;
+
+--- SQL operation complete.
+>>
+>>-- explain on hive DDL
+>>explain options 'f' drop table hive.hive.tnone;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    hive_ddl                                              1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' create table hive.hive.tnone (a bigint);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    hive_ddl                                              1.00E+000
+
+--- SQL operation complete.
+>>
+>>-- cannot access hive objects if not DB__HIVEROLE. 
+>>-- should return error, SQL_USER4 not authorized.
+>>log;
+>>process hive ddl 'drop table tnotexists';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>drop table hive.hive.tnotexists;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- grant/revoke to access hive objects
+>>showddl role DB__HIVEROLE;
+
+CREATE ROLE "DB__HIVEROLE";
+
+--- SQL operation complete.
+>>grant role DB__HIVEROLE to SQL_USER4;
+
+--- SQL operation complete.
+>>showddl role DB__HIVEROLE;
+
+CREATE ROLE "DB__HIVEROLE";
+
+--- SQL operation complete.
+>>
+>>-- should not return unauthorized error.
+>>log;
+>>process hive ddl 'drop table tnotexists';
+
+--- SQL operation complete.
+>>drop table hive.hive.tnotexists;
+
+*** ERROR[1388] Table tnotexists does not exist in Hive Metadata.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>revoke role DB__HIVEROLE from SQL_USER4;
+
+--- SQL operation complete.
+>>showddl role DB__HIVEROLE;
+
+CREATE ROLE "DB__HIVEROLE";
+
+--- SQL operation complete.
+>>
+>>-- should return error
+>>log;
+>>process hive ddl 'drop table tnotexists';
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>drop table hive.hive.tnotexists;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- next alter should be passed on to hive. will return error from hive.
+>>alter schema hive.sch008 abc;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "alter schema SCH008 abc". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: ParseException line 1:13 cannot recognize input near 'SCH008' 'abc' '<EOF>' in alter database statement
+
+--- SQL operation failed with errors.
+>>alter database hive.sch008 abc;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "alter database SCH008 abc". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: ParseException line 1:15 cannot recognize input near 'SCH008' 'abc' '<EOF>' in alter database statement
+
+--- SQL operation failed with errors.
+>>
+>>-- error cases
+>>set catalog hive;
+
+--- SQL operation complete.
+>>drop table if exists sch008.temptab;
+
+--- SQL operation complete.
+>>
+>>-- next drop should return error but hive doesn't return error 
+>>-- on a nonexistent table
+>>process hive ddl 'drop table sch008.temptab';
+
+--- SQL operation complete.
+>>
+>>drop table if exists sch008.temptab;
+
+--- SQL operation complete.
+>>
+>>create table sch008.temptab (a int);
+
+--- SQL operation complete.
+>>
+>>-- next create should return error that table exists
+>>create table sch008.temptab (a int);
+
+*** ERROR[1387] Table sch008.temptab already exists in Hive Metadata.
+
+--- SQL operation failed with errors.
+>>create table if not exists sch008.temptab (a int);
+
+--- SQL operation complete.
+>>
+>>set schema hive.sch008;
+
+--- SQL operation complete.
+>>
+>>-- create table error. largeint is not a valid type.
+>>create table temptab2(a largeint);
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "create table SCH008.TEMPTAB2(a largeint)". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: ParseException line 1:31 cannot recognize input near 'largeint' ')' '<EOF>' in column type
+
+--- SQL operation failed with errors.
+>>
+>>-- return error: schema not empty
+>>drop schema sch008;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "drop schema SCH008". Details: java.sql.SQLException: Error while processing statement: FAILED: Execution Error, return code 1 from org.apache.hadoop.hive.ql.exec.DDLTask. InvalidOperationException(message:Database sch008 is not empty. One or more tables exist.)
+
+--- SQL operation failed with errors.
+>>
+>>-- use of backquote should return an error for non-hive ddl
+>>create table trafodion.sch.`temp` (a int);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table trafodion.sch.`temp` (a int);
+                                  ^ (35 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create external table trafodion.sch.`temp` (a int);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create external table trafodion.sch.`temp` (a int);
+                                           ^ (44 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create table hive.hive.`temp` for hive.hive.`temp`;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "create table `default`.temp for hive.hive.`temp`". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: ParseException line 1:28 cannot recognize input near 'for' 'hive' '.' in create table statement
+
+--- SQL operation failed with errors.
+>>create external table hive.hive.`temp` for hive.hive.`temp`;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "create external table `default`.temp for hive.hive.`temp`". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: ParseException line 1:37 cannot recognize input near 'for' 'hive' '.' in create table statement
+
+--- SQL operation failed with errors.
+>>create table hive.hive.`temp` like hive.hive.`temp`;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "create table `default`.temp like hive.hive.`temp`". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: ParseException line 1:42 missing EOF at '.' near 'hive'
+
+--- SQL operation failed with errors.
+>>select * from `dual`;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from `dual`;
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot use keyword database to create/drop traf schemas
+>>create database trafodion.temp;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create database trafodion.temp;
+                              ^ (31 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>drop database trafodion.temp;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+drop database trafodion.temp;
+                            ^ (29 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>alter database trafodion.temp;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+alter database trafodion.temp;
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- return error: unsupported operation from 'process hive ddl' stmt
+>>process hive ddl 'grnt abc';
+
+*** ERROR[3242] This statement is not supported. Reason: Specified DDL operation cannot be executed directly by hive.
+
+--- SQL operation failed with errors.
+>>
+>>-- return error: table temp does not exist
+>>create table hive.hive.temptab2 as select * from trafodion.sch.temp;
+
+*** ERROR[4082] Object TRAFODION.SCH.TEMP does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>drop database hive.sch008 cascade;
+
+--- SQL operation complete.
+>>drop schema if exists hive.sch008 cascade;
+
+--- SQL operation complete.
+>>showddl schema hive.sch008;
+
+*** ERROR[1003] Schema HIVE.SCH008 does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>drop table hive.`default`.t00804;
+
+--- SQL operation complete.
+>>drop table hive.sch008.temptab;
+
+*** ERROR[1388] Table sch008.temptab does not exist in Hive Metadata.
+
+--- SQL operation failed with errors.
+>>
+>>revoke role DB__HIVEROLE from SQL_USER4;
+
+*** ERROR[1018] Grant of role or privilege DB__HIVEROLE from DB__ROOT to SQL_USER4 not found, revoke request ignored.
+
+--- SQL operation failed with errors.
+>>
+>>log;

@@ -818,19 +818,22 @@ class CmpDDLwithStatusInfo : public CmpCompileInfo
 
   enum
   {
-    DONE_                = 0x0001,
-    COMPUTE_ST_    = 0x0002,
-    COMPUTE_ET_    = 0x0004,
-    RETURN_ET_       = 0x0008,
-    START_               = 0x0010,
-    END_                   = 0x0020,
+    DONE_           = 0x0001,
+    COMPUTE_ST_     = 0x0002,
+    COMPUTE_ET_     = 0x0004,
+    RETURN_ET_      = 0x0008,
+    START_          = 0x0010,
+    END_            = 0x0020,
     XN_STARTED_     = 0x0040,
     MD_UPGRADE_     = 0x0080,
-    GET_MD_VERSION_    = 0x0100,
-    GET_SW_VERSION_    = 0x0200,
-    MD_CLEANUP_           = 0x0400,
-    CHECK_ONLY_          = 0x0800,
-    RETURN_DETAILS_    = 0x1000
+    GET_MD_VERSION_ = 0x0100,
+    GET_SW_VERSION_ = 0x0200,
+    MD_CLEANUP_     = 0x0400,
+    CHECK_ONLY_     = 0x0800,
+    RETURN_DETAILS_ = 0x1000,
+    INIT_TRAF_      = 0x2000,
+    MINIMAL_IT_     = 0x4000,
+    DDL_XNS_        = 0x8000,
   };
 
  public:
@@ -896,6 +899,18 @@ class CmpDDLwithStatusInfo : public CmpCompileInfo
   void setReturnDetails(NABoolean v)
   {(v ? statusFlags_ |= RETURN_DETAILS_ : statusFlags_ &= ~RETURN_DETAILS_); }
   NABoolean getReturnDetails() { return (statusFlags_ & RETURN_DETAILS_) != 0;}
+
+  void setInitTraf(NABoolean v)
+  {(v ? statusFlags_ |= INIT_TRAF_ : statusFlags_ &= ~INIT_TRAF_); }
+  NABoolean getInitTraf() { return (statusFlags_ & INIT_TRAF_) != 0;}
+
+  void setMinimalInitTraf(NABoolean v)
+  {(v ? statusFlags_ |= MINIMAL_IT_ : statusFlags_ &= ~MINIMAL_IT_); }
+  NABoolean getMinimalInitTraf() { return (statusFlags_ & MINIMAL_IT_) != 0;}
+
+  void setDDLXns(NABoolean v)
+  {(v ? statusFlags_ |= DDL_XNS_ : statusFlags_ &= ~DDL_XNS_); }
+  NABoolean getDDLXns() { return (statusFlags_ & DDL_XNS_) != 0;}
 
   void setMsg(const char * msg)
   {

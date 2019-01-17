@@ -190,6 +190,7 @@ public:
 
   void updateDiagsArea(ex_queue_entry * centry);
   void updateDiagsArea( ExeErrorCode rc_);
+  void updateDiagsArea(ComDiagsArea *da);
 
   NABoolean getPartitionEnd() const
   {
@@ -203,7 +204,9 @@ public:
   
   virtual Int32 numChildren() const;
   virtual const ex_tcb* getChild(Int32 pos) const;
-
+  virtual ex_tcb_private_state * allocatePstates(
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
 private:
   const ex_tcb * childTcb_;
   
@@ -360,7 +363,7 @@ class ExSequencePrivateState : public ex_tcb_private_state
   friend class ExSequenceTcb;
 
 public:
-  ExSequencePrivateState(const ExSequenceTcb * tcb);
+  ExSequencePrivateState();
   ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
   ~ExSequencePrivateState();
 

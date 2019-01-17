@@ -193,6 +193,23 @@ prevented by the check option on view <name>.
 *Recovery:* Insert into the base table rather than this view.
 
 <<<
+[[SQL-8145]]
+== SQL 8145
+
+```
+This statement is not supported or incorrect options were specified. Reason: <reason>
+```
+
+Where <reason> is the reason for operation failure.
+
+*Cause:* You attempted to perform an operation with incorrect options
+or unsupported features.
+
+*Effect:* The operation fails.
+
+*Recovery:* Fix the error and re-issue the statement.
+
+<<<
 [[SQL-8302]]
 == SQL 8302
 
@@ -462,6 +479,19 @@ or rollback.
 
 *Recovery:* The application that started the transaction must perform a
 commit or rollback. {project-name} must start any transactions it will later commit or rollback.
+
+<<<
+[[SQL-8691]]                                                                                    
+== SQL 8691
+```
+Field position must be great than zero.
+```
+
+*Cause:* You attempted to use an invalid value for the third operand of the split_part function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
 
 <<<
 [[SQL-8808]]

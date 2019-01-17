@@ -133,7 +133,8 @@ ExRtFragTable::ExRtFragTable(ExMasterStmtGlobals *glob,
 			     ExFragDir *fragDir,
 			     char  *generatedObject) :
      fragmentEntries_(glob->getDefaultHeap(),fragDir->getNumEntries()),
-     outstandingServiceRequests_(glob->getDefaultHeap())
+     outstandingServiceRequests_(glob->getDefaultHeap()),
+     displayInGui_(FALSE)
 {
   glob_                     = glob;
   fragDir_                  = fragDir;

@@ -42,6 +42,7 @@
 
 #include "Int64.h"
 #include "ComTdb.h"
+#include "ex_stdh.h"
 #include "ExScheduler.h"
 #include "ComTdbStats.h"
 #include "ComTdbUdr.h"
@@ -85,8 +86,10 @@ class ExRMSStats;
 class ExBMOStats;
 class ExUDRBaseStats;
 class ExFastExtractStats;
-class ExHdfsScanStats;
-class ExHbaseAccessStats;
+class ExStorageEngineStats;
+
+typedef ExStorageEngineStats ExHbaseAccessStats; 
+typedef ExStorageEngineStats ExHdfsScanStats; 
 
 //////////////////////////////////////////////////////////////////
 // forward classes
@@ -434,8 +437,7 @@ public:
   UInt32 pack(char * buffer);
 
   void merge(ExeSEStats * other);
-  void merge(ExHbaseAccessStats * other);
-  void merge(ExHdfsScanStats * other);
+  void merge(ExStorageEngineStats * other);
 
   void unpack(const char* &buffer);
 
@@ -566,8 +568,9 @@ public:
     REPLICATOR_STATS        = SQLSTATS_DESC_REPLICATOR_STATS,
     FAST_EXTRACT_STATS      = SQLSTATS_DESC_FAST_EXTRACT_STATS,
     REORG_STATS             = SQLSTATS_DESC_REORG_STATS,
-    HDFSSCAN_STATS    = SQLSTATS_DESC_HDFSSCAN_STATS,
-    HBASE_ACCESS_STATS    = SQLSTATS_DESC_HBASE_ACCESS_STATS,
+    SE_STATS                = SQLSTATS_DESC_SE_STATS,
+    HDFSSCAN_STATS          = SQLSTATS_DESC_SE_STATS,
+    HBASE_ACCESS_STATS      = SQLSTATS_DESC_SE_STATS,
     PROCESS_STATS           = SQLSTATS_DESC_PROCESS_STATS
   };
 
@@ -1795,24 +1798,24 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////
-//// class ExHdfsScanStats
+//// class ExStorageEngineStats
 ///////////////////////////////////////////////////////////////////
 
-class ExHdfsScanStats : public ExOperStats {
+class ExStorageEngineStats : public ExOperStats {
 public:
-  ExHdfsScanStats(NAMemory * heap,
+  ExStorageEngineStats(NAMemory * heap,
                           ex_tcb *tcb,
                           ComTdb * tdb);  // tbd - other, specific params?
 
-  ExHdfsScanStats(NAMemory * heap);
+  ExStorageEngineStats(NAMemory * heap);
 
-  ~ExHdfsScanStats();
+  ~ExStorageEngineStats();
 
   void init(NABoolean resetDop);
 
-  void merge(ExHdfsScanStats* other);
+  void merge(ExStorageEngineStats* other);
 
-  void copyContents(ExHdfsScanStats* other);
+  void copyContents(ExStorageEngineStats* other);
 
   ExOperStats * copyOper(NAMemory * heap);
   
@@ -1831,23 +1834,31 @@ public:
 char * tableName() const {return tableName_;}
 
   ExTimeStats &getHdfsTimer() { return timer_; }
+  ExTimeStats &getHbaseTimer() { return timer_; }
+
   inline void incBytesRead(Int64 bytesRead) {numBytesRead_ += bytesRead;}
 
   inline void incAccessedRows() {++accessedRows_;}
+  inline void incAccessedRows(Int64 v) {accessedRows_ += v;}
 
   inline void incUsedRows() {++usedRows_;}
+  inline void incUsedRows(Int64 v) {usedRows_ += v;}
 
-  inline void incMaxHdfsIOTime(Int64 v) {maxHdfsIOTime_ += v;}
+  inline void incMaxHdfsIOTime(Int64 v) {maxIOTime_ += v;}
+  inline void incMaxHbaseIOTime(Int64 v) {maxIOTime_ += v;}
+
   Int64 numBytesRead() const {return numBytesRead_;}
-
   Int64 rowsAccessed() const {return accessedRows_;}
-
   Int64 rowsUsed() const {return usedRows_;}
 
   NABoolean filterForSEstats(struct timespec currTimespec, Lng32 filter);
-  Int64 maxHdfsIOTime() const {return maxHdfsIOTime_;}
+
+  Int64 maxHdfsIOTime() const {return maxIOTime_;}
+  Int64 maxHbaseIOTime() const {return maxIOTime_;}
 
   ExHdfsScanStats * castToExHdfsScanStats();
+
+  ExHbaseAccessStats * castToExHbaseAccessStats();
 
   virtual const char * getNumValTxt(Int32 i) const;
 
@@ -1859,125 +1870,27 @@ char * tableName() const {return tableName_;}
 
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   
-  ExLobStats * lobStats() { return &lobStats_;}
   void setQueryId(char *queryId, Lng32 queryIdLen)
     {queryId_ = queryId;
      queryIdLen_ = queryIdLen;} 
   char *getQueryId() { return queryId_; }
   Lng32 getQueryIdLen() { return queryIdLen_; }
-  inline void incHdfsCalls() {++numHdfsCalls_;}
-  Int64 hdfsCalls() const {return numHdfsCalls_;}
+
+  inline void incHdfsCalls() {++numIOCalls_;}
+  inline void incHbaseCalls() {++numIOCalls_;}
+
+  Int64 hdfsCalls() const {return numIOCalls_;}
+  Int64 hbaseCalls() const {return numIOCalls_;}
 
 private:
 
   ExTimeStats timer_;
-  ExLobStats lobStats_;
-
   char * tableName_;
-
   Int64  numBytesRead_;
   Int64  accessedRows_;
   Int64  usedRows_;
-  Int64  numHdfsCalls_;
-  Int64  maxHdfsIOTime_;
-  char *queryId_;
-  Lng32 queryIdLen_;
-  Lng32 blockTime_;
-};
-
-/////////////////////////////////////////////////////////////////
-//// class ExHbaseAccessStats
-///////////////////////////////////////////////////////////////////
-
-class ExHbaseAccessStats : public ExOperStats {
- public:
-    ExHbaseAccessStats(NAMemory * heap,
-		       ex_tcb *tcb,
-		       ComTdb * tdb);  // tbd - other, specific params?
-  
-    ExHbaseAccessStats(NAMemory * heap);
-  
-    ~ExHbaseAccessStats();
-  
-    void init(NABoolean resetDop);
-  
-    void merge(ExHbaseAccessStats* other);
-  
-    void copyContents(ExHbaseAccessStats* other);
-  
-    ExOperStats * copyOper(NAMemory * heap);
-  
-    UInt32 packedLength();
-  
-  //////////////////////////////////////////////////////////////////
-  //// packs 'this' into a message. Converts pointers to offsets.
-  ////////////////////////////////////////////////////////////////////
-    UInt32 pack(char * buffer);
-  
-    void unpack(const char* &buffer);
-  
-  /////////////////////////////////////////////////////////////////
-  //// accessors, mutators
-  ///////////////////////////////////////////////////////////////////
-  char * tableName() const {return tableName_;}
-  
-    ExTimeStats &getHbaseTimer() { return timer_; }
-    inline void incBytesRead(Int64 bytesRead) {numBytesRead_ += bytesRead;}
-  
-    inline void incAccessedRows() {++accessedRows_;}
-    inline void incAccessedRows(Int64 v) {accessedRows_ += v;}
-  
-    inline void incUsedRows() {++usedRows_;}
-    inline void incUsedRows(Int64 v) {usedRows_ += v;}
- 
-    inline void incHbaseCalls() {++numHbaseCalls_;}
-
-    inline void incMaxHbaseIOTime(Int64 v) {maxHbaseIOTime_ += v;}
- 
-    Int64 numBytesRead() const {return numBytesRead_;}
-  
-    Int64 rowsAccessed() const {return accessedRows_;}
-  
-    Int64 rowsUsed() const {return usedRows_;}
-  
-    Int64 hbaseCalls() const {return numHbaseCalls_;}
-
-    Int64 maxHbaseIOTime() const {return maxHbaseIOTime_;}
-   
-    NABoolean filterForSEstats(struct timespec currTimespec, Lng32 filter);
-
-    ExHbaseAccessStats * castToExHbaseAccessStats();
-  
-    virtual const char * getNumValTxt(Int32 i) const;
-  
-    virtual Int64 getNumVal(Int32 i) const;
-    
-    virtual void getVariableStatsInfo(char * dataBuffer,
-				      char * datalen,
-				      Lng32 maxLen);
-  Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
-  
-  ExLobStats * lobStats() { return &lobStats_;}
-
-  //  ExHbaseStats * hbaseStats() { return &hbaseStats_;}
-  void setQueryId(char *queryId, Lng32 queryIdLen)
-    {queryId_ = queryId;
-     queryIdLen_ = queryIdLen;} 
-  char *getQueryId() { return queryId_; }
-  Lng32 getQueryIdLen() { return queryIdLen_; }
-  
- private:
-  
-  ExTimeStats timer_;
-  ExLobStats lobStats_;
-  
-  char * tableName_;
-  
-  Int64  numBytesRead_;
-  Int64  accessedRows_;
-  Int64  usedRows_;
-  Int64  numHbaseCalls_;
-  Int64  maxHbaseIOTime_;
+  Int64  numIOCalls_;
+  Int64  maxIOTime_;
   char *queryId_;
   Lng32 queryIdLen_;
   Lng32 blockTime_;
@@ -2087,8 +2000,7 @@ public:
   void merge(ExFragRootOperStats* other);
   void merge(ExUDRBaseStats * other);
   void merge(ExBMOStats * other);
-  void merge(ExHdfsScanStats * other);
-  void merge(ExHbaseAccessStats * other);
+  void merge(ExStorageEngineStats * other);
 
   ExOperStats * copyOper(NAMemory * heap);
 
@@ -3283,6 +3195,7 @@ public:
   }
   inline void setNumQueryInvKeys(Int32 n) { numQueryInvKeys_ = n; }
   inline void setNodesInCluster(short n) { nodesInCluster_ = n; }
+  inline void setConfiguredPidMax(pid_t pid) { configuredPidMax_ = pid; }
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   void reset();
 private: 
@@ -3320,6 +3233,7 @@ private:
   Int64 rmsStatsResetTimestamp_;
   Int32 numQueryInvKeys_;
   short nodesInCluster_;
+  pid_t configuredPidMax_;
 };
 
 

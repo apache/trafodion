@@ -96,6 +96,7 @@ class InterfaceConnection {
 	static final short SQL_ATTR_ACCESS_MODE = 101;
 	static final short SQL_ATTR_AUTOCOMMIT = 102;
 	static final short SQL_TXN_ISOLATION = 108;
+	static final short SET_SCHEMA = 1001; // this value is follow server side definition
 
 	// spj proxy syntax support
 	static final short SPJ_ENABLE_PROXY = 1040;
@@ -175,6 +176,11 @@ class InterfaceConnection {
 			t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "", temp, p);
 		}
 		sqlwarning_ = null;
+
+        this.termCharset_ =
+                t4props.getClientCharset() == null ? InterfaceUtilities.SQLCHARSETCODE_UTF8
+                        : InterfaceUtilities.getCharsetValue(t4props.getClientCharset());
+
 		connect();
 	}
 	
@@ -217,7 +223,7 @@ class InterfaceConnection {
 	private CONNECTION_CONTEXT_def getInContext(T4Properties t4props) {
 		inContext = new CONNECTION_CONTEXT_def();
 		inContext.catalog = t4props.getCatalog();
-		inContext.schema = t4props.getSchema();
+        inContext.setSchema(t4props.getSchema());
 		inContext.datasource = t4props.getServerDataSource();
 		inContext.userRole = t4props.getRoleName();
 		inContext.cpuToUse = t4props.getCpuToUse();
@@ -228,6 +234,7 @@ class InterfaceConnection {
 
 		inContext.queryTimeoutSec = t4props.getQueryTimeout();
 		inContext.idleTimeoutSec = (short) t4props.getConnectionTimeout();
+		inContext.clipVarchar = (short) t4props.getClipVarchar();
 		inContext.loginTimeoutSec = (short) t4props.getLoginTimeout();
 		inContext.txnIsolationLevel = (short) SQL_TXN_READ_COMMITTED;
 		inContext.rowSetSize = t4props.getFetchBufferSize();
@@ -388,6 +395,9 @@ class InterfaceConnection {
 	int getConnectionTimeout() {
 		return inContext.idleTimeoutSec;
 	}
+	short getClipVarchar() {
+		return inContext.clipVarchar;
+	}
 
 	String getCatalog() {
 		if (outContext != null) {
@@ -413,13 +423,34 @@ class InterfaceConnection {
 		return userDesc.userName;
 	}
 
-	String getSchema() {
-		if (outContext != null) {
-			return outContext.schema;
-		} else {
-			return inContext.schema;
-		}
-	}
+    String getSchema() {
+        if (outContext != null) {
+            return outContext.getSchema();
+        } else {
+            return inContext.getSchema();
+        }
+    }
+
+    void setSchemaDirect(String schema) {
+        outContext.setSchema(schema);
+    }
+    void setSchema(TrafT4Connection conn, String schema) throws SQLException {
+        if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(conn.props_, schema);
+            String temp = "Setting connection schema = " + schema;
+            t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "setSchema", temp, p);
+        }
+        if (schema == null || schema.length() == 0) {
+            return;
+        }
+        setConnectionAttr(conn, SET_SCHEMA, 0, schema);
+        setSchemaDirect(schema);
+        if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(conn.props_, schema);
+            String temp = "Setting connection schema = " + schema + " is done.";
+            t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "setSchema", temp, p);
+        }
+    }
 
 	void setLocale(Locale locale) {
 		this.locale = locale;
@@ -700,7 +731,7 @@ class InterfaceConnection {
 			_security.openCertificate();
 			this.encryptPassword();
 		}catch(SecurityException se) {	
-			if(se.getErrorCode() != 29713) {
+			if(se.getErrorCode() != 29713 && se.getErrorCode() != 29721) {
 				throw se; //we have a fatal error
 			}
 				
@@ -895,11 +926,8 @@ class InterfaceConnection {
 		setISOMapping(cr.isoMapping);
 
 		if (cr.isoMapping == InterfaceUtilities.getCharsetValue("ISO8859_1")) {
-			setTerminalCharset(InterfaceUtilities.getCharsetValue("ISO8859_1"));
 			this.inContext.ctxDataLang = 0;
 			this.inContext.ctxErrorLang = 0;
-		} else {
-			setTerminalCharset(InterfaceUtilities.getCharsetValue("UTF-8"));
 		}
 		
 		if(cr.securityEnabled) {
@@ -909,6 +937,7 @@ class InterfaceConnection {
 			this.oldEncryptPassword();
 			this.initDiag(false,false);
 		}
+        this.setConnectionAttr(this._t4Conn, TRANSPORT.SQL_ATTR_CLIPVARCHAR, this.inContext.clipVarchar, String.valueOf(this.inContext.clipVarchar));
 	}
 
 	// @deprecated

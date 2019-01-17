@@ -25,6 +25,7 @@
 
 #ifndef DEVICE_H_
 #define DEVICE_H_
+#ifndef NAMESERVER_PROCESS
 
 #include "msgdef.h"
 #include <string>
@@ -121,4 +122,5 @@ private:
     CLogicalDevice *ConfigDevice( CProcess *process );
 };
 
+#endif
 #endif /*DEVICE_H_*/

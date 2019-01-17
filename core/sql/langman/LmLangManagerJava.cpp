@@ -3418,8 +3418,8 @@ LmResult LmLanguageManagerJava::convertToTimestamp(
   char *inputChars = ((char *)inputRow) + param->inDataOffset();
   ComUInt32 len = param->actualInDataSize(inputRow);
 
-  // NOTE: jdbc only handles default timestamp: yyyy-mm-dd hh:mm:ss.msssss.
-  len = (len <= 26) ? len :  26;
+  // NOTE: jdbc only handles default timestamp: yyyy-mm-dd hh:mm:ss.nssssssss.
+  len = (len <= 29) ? len :  29;
 
   // First create the java.lang.String from the input bytes
   str_cpy_all(tempbuf, inputChars, (Lng32) len);

@@ -182,38 +182,6 @@ static short CmpDescribeTransaction(
    ULng32 &outbuflen,
    NAMemory      *h);
 
-short CmpDescribeHiveTable ( 
-                             const CorrName  &dtName,
-                             short type, // 1, invoke. 2, showddl. 3, createLike
-                             char* &outbuf,
-                             ULng32 &outbuflen,
-                             CollHeap *heap,
-                             UInt32 columnLengthLimit = UINT_MAX);
-
-short CmpDescribeSeabaseTable ( 
-     const CorrName  &dtName,
-     short type, // 1, invoke. 2, showddl. 3, createLike
-     char* &outbuf,
-     ULng32 &outbuflen,
-     CollHeap *heap,
-     const char * pkeyStr = NULL,
-     NABoolean withPartns = FALSE,
-     NABoolean withoutSalt = FALSE,
-     NABoolean withoutDivisioning = FALSE,
-     NABoolean withoutRowFormat = FALSE,
-     NABoolean withoutLobColumns = FALSE,
-     UInt32 columnLengthLimit = UINT_MAX,
-     NABoolean noTrailingSemi = FALSE,
-     
-     // used to add,rem,alter column definition from col list.
-     // valid for 'createLike' mode. 
-     // Used for 'alter add/drop/alter col'.
-     char * colName = NULL,
-     short ada = 0, // 0,add. 1,drop. 2,alter
-     const NAColumn * nacol = NULL,
-     const NAType * natype = NULL,
-     Space *inSpace = NULL);
-
 short CmpDescribeSequence ( 
                              const CorrName  &dtName,
                              char* &outbuf,
@@ -871,7 +839,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       rc = 
         CmpDescribeHiveTable(d->getDescribedTableName(), 
                              (d->getFormat() == Describe::INVOKE_ ? 1 : 2),
-                             outbuf, outbuflen, heap);
+                             outbuf, outbuflen, heap,
+                             d->getIsDetail());
       goto finally;  // we are done
     }
 
@@ -892,7 +861,10 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       rc = 
         CmpDescribeSeabaseTable(d->getDescribedTableName(), 
                                 (d->getFormat() == Describe::INVOKE_ ? 1 : 2),
-                                outbuf, outbuflen, heap, NULL, TRUE);
+                                outbuf, outbuflen, heap, NULL, NULL, TRUE,
+                                FALSE, FALSE, FALSE, FALSE, UINT_MAX, FALSE,
+                                NULL, 0, NULL, NULL, NULL,
+                                d->getIsDetail());
       goto finally;  // we are done
     }
 
@@ -2218,10 +2190,11 @@ short CmpDescribeHiveTable (
                              char* &outbuf,
                              ULng32 &outbuflen,
                              CollHeap *heap,
+                             NABoolean isDetail,
                              UInt32 columnLengthLimit)
 {
   const NAString& tableName =
-    dtName.getQualifiedNameObj().getObjectName();
+    dtName.getQualifiedNameObj().getQualifiedNameAsString();
  
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   NATable *naTable = bindWA.getNATable((CorrName&)dtName); 
@@ -2331,8 +2304,13 @@ short CmpDescribeHiveTable (
     {
       outputShortLine(space,"/* Hive DDL */");
 
-      sprintf(buf,  "CREATE TABLE %s",
-              tableName.data());
+      if (naTable->isHiveExternalTable())
+        sprintf(buf,  "CREATE EXTERNAL TABLE %s",
+                tableName.data());
+      else
+        sprintf(buf,  "CREATE TABLE %s",
+                tableName.data());
+            
       outputShortLine(space, buf);
     }
   
@@ -2377,9 +2355,132 @@ short CmpDescribeHiveTable (
       NAString colString(buf);
       Int32 j = i;
       outputColumnLine(space, colString, j);
-    }
+  }
 
   outputShortLine(space, "  )");
+
+  // show hive table partitions and buckets definition.
+  // this default database of hive which is mapped as schema HIVE in Trafodion
+  HiveMetaData* md = bindWA.getSchemaDB()->getNATableDB()->getHiveMetaDB();
+  NAString defSchema = ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
+  defSchema.toUpper();
+  NAString tableNameInt = dtName.getQualifiedNameObj().getObjectName();
+  NAString schemaNameInt = dtName.getQualifiedNameObj().getSchemaName();
+  if (dtName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString() == defSchema)
+     schemaNameInt = md->getDefaultSchemaName();
+   // Hive stores names in lower case
+   // Right now, just downshift, could check for mixed case delimited
+   // identifiers at a later point, or wait until Hive supports delimited identifiers
+  schemaNameInt.toLower();
+  tableNameInt.toLower();
+  hive_tbl_desc* htd = md->getTableDesc(schemaNameInt, tableNameInt, FALSE,
+                // reread Hive Table Desc from MD.
+                (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON),
+                TRUE);
+  if( htd && htd->getPartKey() && type == 2)
+  {
+       NAString partStr = "  PARTITIONED BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           partStr += colNameUpper;
+           partStr += ' ';
+           partStr += hpd->type_;
+           partStr += ",";
+       }
+       partStr[partStr.length()-1] = ')';
+       outputShortLine(space, partStr);
+  }
+  if(htd && htd->getBucketingKeys() && type == 2)
+  {
+       NAString bktStr = "  CLUSTERED BY (";
+       for(hive_bkey_desc* hbd = htd->getBucketingKeys(); hbd; hbd = hbd->next_)
+       {
+           bktStr += hbd->name_;
+           bktStr += ",";
+       }
+       bktStr[bktStr.length()-1] = ')';
+       outputShortLine(space, bktStr);
+
+       hive_skey_desc* sortkeyHeader = htd->getSortKeys();
+       if(sortkeyHeader)
+       {
+           NAString skStr = "  SORTED BY (";
+           for(hive_skey_desc* hsd = sortkeyHeader; hsd; hsd = hsd->next_)
+           {
+               skStr += hsd->name_;
+               if (hsd->orderInt_ == 0)
+                 skStr += " DESC";
+               skStr += ",";
+           }
+           skStr[skStr.length()-1] = ')';
+           outputShortLine(space, skStr);
+       }
+
+       bktStr = "  INTO ";
+       bktStr += std::to_string((long long)(htd->sd_->buckets_)).c_str();
+       bktStr += " BUCKETS ";
+       outputShortLine(space, bktStr);
+  }
+  if( htd && htd->getPartKey() && type == 3 && 
+      (CmpCommon::getDefault(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL) 
+       == DF_ON))
+  {
+       NAString storeStr = "  STORE BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           storeStr += colNameUpper;
+           storeStr += ",";
+       }
+       storeStr[storeStr.length()-1] = ')';
+       outputShortLine(space, storeStr);
+       if (gpClusterInfo->numOfSMPs() > 1)
+       {
+	 NAString saltStr = "  SALT USING ";
+	 char numNodes[20];
+	 str_itoa(gpClusterInfo->numOfSMPs(), numNodes);
+	 saltStr += numNodes;
+	 saltStr += " PARTITIONS ";
+	 outputShortLine(space, saltStr);
+       }
+  }
+  if( htd && htd->getPartKey() && type == 3 && 
+      (CmpCommon::getDefault(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL)
+       == DF_ON))
+  {
+       NAString storeStr = "  STORE BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           storeStr += colNameUpper;
+           storeStr += ",";
+       }
+       storeStr[storeStr.length()-1] = ')';
+       outputShortLine(space, storeStr);
+  }
+  if( htd && htd->getPartKey() && type == 3 && 
+      (CmpCommon::getDefault(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL)
+       == DF_ON))
+  {
+       NAString storeStr = "  STORE BY (";
+       NAString colNameUpper;
+       for(hive_pkey_desc* hpd = htd->getPartKey(); hpd; hpd = hpd->next_)
+       {
+           colNameUpper = hpd->name_;
+           colNameUpper.toUpper();
+           storeStr += colNameUpper;
+           storeStr += ",";
+       }
+       storeStr[storeStr.length()-1] = ')';
+       outputShortLine(space, storeStr);
+  }
 
   const HHDFSTableStats* hTabStats = NULL;
   if (naTable->getClusteringIndex())
@@ -2403,9 +2504,9 @@ short CmpDescribeHiveTable (
       else if (hTabStats->isSequenceFile())
         {
           if (type == 1)
-            outputShortLine(space, "  /* stored as sequence */");
+            outputShortLine(space, "  /* stored as sequencefile */");
           else if (type == 2)
-            outputShortLine(space, "  stored as sequence ");
+            outputShortLine(space, "  stored as sequencefile ");
         }
     }
 
@@ -2490,23 +2591,38 @@ short CmpDescribeHiveTable (
     }
 
   // if this hive table is registered in traf metadata, show that.
-  if ((type == 2) &&
-      (naTable->isRegistered()))
+  if (type == 2)
     {
-      Int64 objectUID = (Int64)naTable->objectUid().get_value();
+      if (naTable->isRegistered())
+        {
+          Int64 objectUID = (Int64)naTable->objectUid().get_value();
+          
+          outputShortLine(space, " ");
+          
+          sprintf(buf,  "REGISTER%sHIVE %s %s;",
+                  (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
+                  (isView ? "VIEW" : "TABLE"),
+                  naTable->getTableName().getQualifiedNameAsString().data());
+          
+          NAString bufnas(buf);
+          outputLongLine(space, bufnas, 0);
+          
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
+          outputShortLine(space, buf);
+        }
+      else if (isDetail)
+        {
+          // show a comment that this object should be registered
+          outputShortLine(space, " ");
 
-      outputShortLine(space, " ");
-
-      sprintf(buf,  "REGISTER%sHIVE %s %s;",
-              (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
-              (isView ? "VIEW" : "TABLE"),
-              naTable->getTableName().getQualifiedNameAsString().data());
-
-      NAString bufnas(buf);
-      outputLongLine(space, bufnas, 0);
-
-      str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
-      outputShortLine(space, buf);
+          outputShortLine(space, "-- Object is not registered in Trafodion Metadata.");
+          outputShortLine(space, "-- Register it using the next command:");
+          sprintf(buf, "--   REGISTER HIVE %s %s;",
+                  (isView ? "VIEW" : "TABLE"),
+                  naTable->getTableName().getQualifiedNameAsAnsiString().data());
+          NAString bufnas(buf);
+          outputLongLine(space, bufnas, 0);
+        }
     }
 
   // if this hive table has an associated external table, show ddl
@@ -2534,7 +2650,7 @@ short CmpDescribeHiveTable (
       short rc = CmpDescribeSeabaseTable(cn, 
                                          type,
                                          dummyBuf, dummyLen, heap, 
-                                         NULL, 
+                                         NULL, NULL,
                                          TRUE, FALSE, FALSE, FALSE, 
                                          FALSE,
                                          UINT_MAX, FALSE,
@@ -2965,6 +3081,7 @@ short CmpDescribeSeabaseTable (
                                char* &outbuf,
                                ULng32 &outbuflen,
                                CollHeap *heap,
+                               const char * pkeyName,
                                const char * pkeyStr,
                                NABoolean withPartns,
                                NABoolean withoutSalt,
@@ -2977,7 +3094,8 @@ short CmpDescribeSeabaseTable (
                                short ada,
                                const NAColumn * nacol,
                                const NAType * natype,
-                               Space *inSpace)
+                               Space *inSpace,
+                               NABoolean isDetail)
 {
   const NAString& tableName =
     dtName.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
@@ -3015,8 +3133,8 @@ short CmpDescribeSeabaseTable (
     }
 
   NABoolean isVolatile = naTable->isVolatileTable();
-  NABoolean isExternalTable = naTable->isExternalTable();
-  NABoolean isImplicitExternalTable = naTable->isImplicitExternalTable();
+  NABoolean isExternalTable = naTable->isTrafExternalTable();
+  NABoolean isImplicitExternalTable = naTable->isImplicitTrafExternalTable();
   NABoolean isHbaseMapTable = naTable->isHbaseMapTable();
   NABoolean isHbaseCellOrRowTable = 
     (naTable->isHbaseCellTable() || naTable->isHbaseRowTable());
@@ -3373,23 +3491,75 @@ short CmpDescribeSeabaseTable (
 
   if ((type == 3) && (pkeyStr))
     {
-      outputShortLine(*space, " , PRIMARY KEY ");
-      
+      if (pkeyName)
+        {
+          NAString pkeyPrefix(", CONSTRAINT ");
+          pkeyPrefix += NAString(pkeyName) + " PRIMARY KEY ";
+          outputLine(*space, pkeyPrefix.data(), 0);
+        }
+      else
+        {
+          outputShortLine(*space, " , PRIMARY KEY ");
+        }
+
       outputLine(*space, pkeyStr, 2);
     }
   else
     {
-      if ((naTable->getClusteringIndex()) &&
+      if ((naf) &&
           (nonSystemKeyCols > 0) &&
           (NOT isStoreBy))
         {
+          NAString pkeyConstrName;
+          NAString pkeyConstrObjectName;
+          if (type == 2) // showddl
+            {
+              const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
+              
+              for (Int32 i = 0; i < uniqueList.entries(); i++)
+                {
+                  AbstractRIConstraint *ariConstr = uniqueList[i];
+                  
+                  UniqueConstraint * uniqConstr = (UniqueConstraint*)ariConstr;
+                  if (uniqConstr->isPrimaryKeyConstraint())
+                    {                  
+                      pkeyConstrName =
+                        uniqConstr->getConstraintName().getQualifiedNameAsAnsiString(TRUE);
+                      pkeyConstrObjectName =
+                        uniqConstr->getConstraintName().getObjectName();
+                      break;
+                    }
+                } // for
+            } // type 2
+
           numBTpkeys = naf->getIndexKeyColumns().entries();
           
           if (type == 1)
             sprintf(buf,  "  PRIMARY KEY ");
           else
-            sprintf(buf,  "  , PRIMARY KEY ");
-          
+            {
+              // Display primary key name for showddl (type == 2).
+              // First check to see if pkey name is a generated random name or 
+              // a user specified name.
+              // If it is a generated random name, then dont display it.
+              // This is being done for backward compatibility in showddl
+              // output as well as avoid the need to update multiple
+              // regressions files.
+              // Currently we check to see if the name has random generated
+              // format to determine whether to display it or not.
+              // If it so happens that a user specified primary key constraint 
+              // has that exact format, then it will not be displayed.
+              // At some point in future, we can store in metadata if pkey 
+              // name was internally generated or user specified.
+              if ((type == 2) &&
+                  (NOT pkeyConstrObjectName.isNull()) &&
+                  (NOT ComIsRandomInternalName(pkeyConstrObjectName)))
+                sprintf(buf, " , CONSTRAINT %s PRIMARY KEY ",
+                        pkeyConstrName.data());
+              else
+                sprintf(buf,  "  , PRIMARY KEY ");
+            }
+
           // if all primary key columns are 'not serialized primary key',
           // then display that.
           NABoolean serialized = FALSE;
@@ -3915,6 +4085,18 @@ short CmpDescribeSeabaseTable (
 
           str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(*space, buf);
+        }
+      else if (isDetail)
+        {
+          // show a comment that this object should be registered
+          outputShortLine(*space, " ");
+
+          outputShortLine(*space, "-- Object is not registered in Trafodion Metadata.");
+          outputShortLine(*space, "-- Register it using the next command:");
+          sprintf(buf, "--   REGISTER HBASE TABLE %s;",
+                  naTable->getTableName().getQualifiedNameAsAnsiString().data());
+          NAString bufnas(buf);
+          outputLongLine(*space, bufnas, 0);
         }
     }
 

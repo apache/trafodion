@@ -44,7 +44,7 @@ public class Utils
    static boolean log = false;
    static String logFileName = "udr_tools.log";
    static String logLocation = null;
-   static String sqRoot = null;
+   static String Logs = null;
    static String userName = null;
 
    Utils () 
@@ -53,8 +53,8 @@ public class Utils
        log = Boolean.getBoolean("debugOn");
      
      if (log) { 
-       sqRoot = System.getenv("TRAF_HOME");
-       logLocation = sqRoot + "/logs/";
+       Logs = System.getenv("TRAF_LOG");
+       logLocation = Logs + "/";
      }
    }
 

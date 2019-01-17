@@ -34,9 +34,9 @@
 == Logs
 The key process logs are as follows...(replace <user> with the user that started the service, <instance> for the server instance and <hostname> for the machine name)
  
-* DcsMaster: $DCS_HOME/logs/dcs-<user>-<instance>-master-<hostname>.log
-* DcsServer: $DCS_HOME/logs/dcs-<user>-<instance>-server-<hostname>.log
-* ZooKeeper: $DCS_HOME/logs/dcs-<user>-<instance>-zookeeper-<hostname>.log
+* DcsMaster: $TRAF_LOG/dcs/dcs-<user>-<instance>-master-<hostname>.log
+* DcsServer: $TRAF_LOG/dcs/dcs-<user>-<instance>-server-<hostname>.log
+* ZooKeeper: $TRAF_LOG/dcs/dcs-<user>-<instance>-zookeeper-<hostname>.log
 
 [[trouble-resources]]
 == Resources 
@@ -155,7 +155,7 @@ Additionally, the utility <<trouble-tools-builtin-zkcli,zkcli>> may help investi
 
 [[trouble-ha]]
 == High Availability
-On Linux cluster, if you run into issues please check dcs log files located in $DCS_INSTALL_DIR/logs folder. 
+On Linux cluster, if you run into issues please check dcs log files located in $TRAF_LOG/dcs folder. 
 
 Validate that the interace is set up correctly. This command should only show one additional interface for HA configuration
 ----

@@ -62,7 +62,8 @@
 #include "Statement.h"
 #include "ExRsInfo.h"
 #include "Descriptor.h"
-
+#include "ExExeUtil.h"
+#include <sys/stat.h>
 #define TF_STRING(x) ((x) ? ("TRUE") : ("FALSE"))
 #define YN_STRING(x) ((x) ? ("YES") : ("NO"))
 
@@ -631,7 +632,10 @@ Int32 ExUdrTcb::fixup()
 
   UdrDebug1("[BEGIN TCB FIXUP] %p", this);
   setUdrTcbState(FIXUP);
-    
+  // CliGlobals *cliGlobals = getGlobals()->castToExExeStmtGlobals()->
+  // castToExMasterStmtGlobals()->getCliGlobals();
+  CliGlobals *cliGlobals = GetCliGlobals();
+  ExeCliInterface cliInterface(getHeap(), 0, cliGlobals->currContext());
   //
   // Non-zero return value indicates an error
   //
@@ -792,9 +796,65 @@ Int32 ExUdrTcb::fixup()
                      this, udrServer_->getUdrControlConnection());
         }
       }
-
+      
+      NAString cachedLibName, cachedLibPath;
+      if ((myTdb().getLibraryRedefTime() != -1) && (myTdb().getLibraryRedefTime() != 0))
+        {
+          // Cache library locally. 
+          NAString dummyUser;
+          NAString libOrJarName;
+        
+          if (myTdb().getLanguage() == COM_LANGUAGE_JAVA)
+            libOrJarName = myTdb().getPathName();
+          else
+            libOrJarName = myTdb().getContainerName();
+          Int32 err = 0;
+          if(ComGenerateUdrCachedLibName(libOrJarName.data(),
+                                         myTdb().getLibraryRedefTime(),
+                                         myTdb().getLibrarySchName(),
+                                         dummyUser,
+                                         cachedLibName, cachedLibPath))
+            {
+              NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
+               char errString[200];
+               NAString errNAString;
+               sprintf(errString , "Error %d creating directory :",err); 
+               errNAString = errString;
+               errNAString += cachedFullName;
+             
+              
+               *getOrCreateStmtDiags() <<  DgSqlCode(-4316)
+                                       << DgString0(( char *)errNAString.data());
+               return FIXUP_ERROR;
+            }
+           NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
+          //If the local copy already exists, don't bother extracting.
+          struct stat statbuf;
+          if (stat(cachedFullName, &statbuf) != 0)
+            {
+              ComDiagsArea *returnedDiags = ComDiagsArea::allocate(getHeap());
+              if (ExExeUtilLobExtractLibrary(&cliInterface,
+                                             (char *)myTdb().getLibraryBlobHandle(), 
+                                             ( char *)cachedFullName.data(),returnedDiags))
+                {
+                  *returnedDiags <<  DgSqlCode(-4316)
+                                << DgString0(( char *)cachedFullName.data());
+                  getOrCreateStmtDiags()->mergeAfter(*returnedDiags);
+                  returnedDiags->decrRefCount();
+                  returnedDiags = NULL;
+                  return FIXUP_ERROR;
+                }
+        
+              returnedDiags->decrRefCount();
+              returnedDiags = NULL;
+            }
+          
+        }
+      
       if (sendControlMessage(isResultSet ? UDR_MSG_RS_LOAD : UDR_MSG_LOAD, 
-                             TRUE))
+                             TRUE, 
+                             cachedLibName.length()? (char *)cachedLibName.data():NULL, 
+                             cachedLibPath.length()? (char *)cachedLibPath.data():NULL))
       {
         if (verifyUdrServerProcessId())
         {
@@ -1816,7 +1876,7 @@ void ExUdrTcb::releaseServerResources()
 // - RS CLOSE is sent by the RS operator when down queue entries are
 //   cancelled.
 NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
-                                       NABoolean callbackRequired)
+                                       NABoolean callbackRequired, char *cachedLibName, char *cachedLibPath)
 {
   // Determine the transid we should send in the message. We
   // use the statement transid if all the following are true
@@ -1837,7 +1897,7 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
   {
     transIdToSend = stmtTransId;
   }
-  
+ 
 #ifdef UDR_DEBUG
   {
     char stmtTx[256];
@@ -1848,7 +1908,8 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
     UdrDebug2("    stmt tx %s, msg tx %s", stmtTx, msgTx);
   }
 #endif
-
+ 
+ 
   ex_assert(outstandingControlStream_ == NULL,
     "Sending a UDR control message while one is already outstanding");
 
@@ -1882,17 +1943,38 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
       if (numInstances == 0)
         numInstances = 1; // I compute, therefore I am.
 
+      
       // Steps to create a LOAD message:
       // - First create a UdrLoadMsg instance on the IPC heap and initialize
       //   it with a UDR handle and UDR metadata
       // - Next put metadata for each formal parameter into the object
+
+      //In the case of java, the path name contains the fully qualified jar file location
+      NAString pathName, containerName;
+      if (udrTdb.getLanguage() == COM_LANGUAGE_JAVA)
+        {
+          pathName = cachedLibPath? cachedLibPath :udrTdb.getPathName();
+          if (cachedLibName)
+            {
+            pathName+= "/";
+            pathName+=cachedLibName;
+            }
+          containerName = udrTdb.getContainerName();
+        }
+      else
+        //In the case of C/C++ the DLL name and the path names need to be sent
+        //separately so langman can process them properly
+        {
+          pathName = cachedLibPath? cachedLibPath :udrTdb.getPathName();
+          containerName = cachedLibName?cachedLibName: udrTdb.getContainerName();
+        }
       UdrLoadMsg *loadMsg = new (h) UdrLoadMsg(
         h,
         udrTdb.getSqlName(),
         udrTdb.getRoutineName(),
         udrTdb.getSignature(),
-        udrTdb.getContainerName(),
-        udrTdb.getPathName(),
+        containerName,
+        pathName,
         udrTdb.getLibrarySqlName(),
         udrTdb.getTransactionAttrs(),
         udrTdb.getSqlAccessMode(),

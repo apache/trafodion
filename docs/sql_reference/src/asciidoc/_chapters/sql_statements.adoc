@@ -312,7 +312,7 @@ ALTER LIBRARY myudfs FILE $TMUDFLIB;
 [[alter_sequence_statement]]
 == ALTER SEQUENCE Statement
 
-The ALTER SEQUENCE Statement changes the future behavior of exiting sequence, including INCREMENT, MAXVALUE, CACHE and CYCLE. 
+The ALTER SEQUENCE Statement changes the future behavior of exiting sequence, including `INCREMENT`, `MAXVALUE`, `CACHE` and `CYCLE`. 
 
 Multiple options can be concurrently specified and separated by a space. Any options not altered will
 retain their previous settings.
@@ -322,7 +322,7 @@ ALTER SEQUENCE is a Trafodion SQL extension.
 For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<drop_sequence_statement,DROP SEQUENCE Statement>>.
 
 ```
-ALTER SEQUENCE [[catalog-name.]schema-name.]sequence
+ALTER SEQUENCE [[catalog-name.]schema-name.]sequence-name
 [INCREMENT BY integer]
 [MAXVALUE integer | NO MAXVALUE]
 [CACHE integer]
@@ -336,11 +336,62 @@ The options above serve the same purposes as they serve when you create a sequen
 
 NOTE:
 
-* START WITH, MINVALUE, NO CACHE and DATA TYPE cannot be changed. Instead, drop and recreate the sequence specifying the desired options.
+* `START WITH`, `MINVALUE`, `NO CACHE` and `DATA TYPE` cannot be changed. Instead, drop and recreate the sequence with desired options.
 
 * The unused preallocated values will be lost if a sequence is altered.
 
-* Some sequence values will be skipped if you change the INCREMENT BY before the first reference to `seqnum(SEQUENCE, next)`.
+* Some sequence values will be skipped if you change the `INCREMENT BY` before the first reference to `SEQNUM(_sequence-name_, NEXT)`.
+
++
+For example,
+
++
+** Create _sequence1_.
++
+```
+SQL>CREATE SEQUENCE sequence1
+START WITH        1
+INCREMENT BY      1;
+
+--- SQL operation complete.
+```
+
++
+** Change `INCREMENT BY` to 6.
++
+```
+SQL>ALTER SEQUENCE sequence1 
+INCREMENT BY 6;
+
+--- SQL operation complete.
+```
+
++
+** It always returns the initial value of the sequence by calling `SEQNUM(_sequence-name_, CURRENT)` or `SEQNUM(_sequence-name_, NEXT)` for the first time, so the fisrt reference to `SEQNUM(_sequence1_, NEXT)` is 1.
+
++
+```
+SQL>SELECT SEQNUM(sequence1, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   1
+
+--- 1 row(s) selected.
+```
+
++
+** It returns a new incremented value of the sequence with each subsequent reference to `SEQNUM(_sequence-name_, NEXT)`. 2, 3, 4, 5 and 6 are skipped because `INCREMENT BY` is changed to 6 before the first reference to `SEQNUM(_sequence1_, NEXT)`.
++
+```
+SQL>SELECT SEQNUM(sequence1, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   7
+
+--- 1 row(s) selected.
+```
 
 <<<
 [[alter_sequence_considerations]]
@@ -355,7 +406,7 @@ To issue an ALTER SEQUENCE statement, one of the following must be true:
 [[alter_sequence_examples]]
 === Examples of ALTER SEQUENCE
 
-The following statement changes the MAXVALUE and CACHE for the sequence named `employee_seq`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
+The following statement changes the `MAXVALUE` and `CACHE` for the sequence `_employee_seq_`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
 
 ```
 ALTER SEQUENCE employee_seq 
@@ -385,30 +436,33 @@ alter-action is:
    | DISABLE INDEX index-name 
    | DROP CONSTRAINT constraint-name [RESTRICT]
    | RENAME TO new-name
-   | DROP COLUMN [IF EXISTS] column-name
+   | DROP [COLUMN] [IF EXISTS] column-name
    | ALTER COLUMN column-definition
 
 column-definition is:
    column-name data-type
-      ([DEFAULT default]
-         [[constraint constraint-name] column-constraint])
+      [[DEFAULT default]
+         [[CONSTRAINT constraint-name] column-constraint]]
 
 data-type is:
-     char[acter] [(length)[characters]]
-         [CHARACTER SET char-set-name]
-         [UPSHIFT] [[not] casespecific]
-   | char[acter] varying (length)
-         [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar (length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | varchar2 (length) [character set char-set-name]
-         [upshift] [[not] casespecific]         
+     char[acter] [(length [characters])]
+                 [CHARACTER SET char-set-name]
+                 [UPSHIFT] [[NOT] CASESPECIFIC]
+   | char[acter] varying (length [characters])
+                         [CHARACTER SET char-set-name]
+                         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar (length [characters]) 
+             [CHARACTER SET char-set-name]
+             [UPSHIFT] [[NOT] CASESPECIFIC]
+   | varchar2 (length [characters]) 
+              [CHARACTER SET char-set-name]
+              [UPSHIFT] [[NOT] CASESPECIFIC]         
+   | nchar [(length [characters])]
+           [UPSHIFT] [[NOT] CASESPECIFIC] 
+   | nchar varying (length [characters]) 
+                   [UPSHIFT] [[NOT] CASESPECIFIC]
    | numeric [(precision [,scale])] [signed|unsigned]
-   | nchar [(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
-   | nchar varying(length) [character set char-set-name]
-         [upshift] [[not] casespecific]
+   | tinyint [signed|unsigned]
    | smallint [signed|unsigned]
    | int[eger] [signed|unsigned]
    | largeint
@@ -428,18 +482,19 @@ default is:
    | null
    | currentdate
    | currenttime
-   | currenttimestamp }
+   | currenttimestamp 
 
 column-constraint is:
-     not null
-   | unique
-   | check (condition)
-   | references ref-spec
+     NOT NULL
+   | UNIQUE
+   | PRIMARY KEY [ASC[ENDING] | DESC[ENDING]]
+   | CHECK (condition)
+   | REFERENCES ref-spec
 
 table-constraint is:
-     unique (column-list)
-   | check (condition)
-   | foreign key (column-list) references ref-spec
+     UNIQUE (column-list)
+   | CHECK (condition)
+   | FOREIGN KEY (column-list) REFERENCES ref-spec
 
 ref-spec is:
    referenced-table [(column-list)]
@@ -452,15 +507,15 @@ column-list is:
 [[alter_table_syntax]]
 === Syntax Description of ALTER TABLE
 
-* `_name_`
+* `_table-name_`
 +
 specifies the current name of the object. See <<database_object_names,Database Object Names>>.
 
-* `ADD [COLUMN] _column-definition_`
+* `ADD [IF NOT EXISTS][COLUMN] _column-definition_`
 +
 adds a column to _table_.
 +
-The clauses for the _column-definition_ are:
+The clauses for the `_column-definition_` are:
 
 ** `_column-name_`
 +
@@ -487,98 +542,107 @@ For any row that you add after the column is added, if no value is specified for
 receives a default value based on the current timestamp at the time the row is added.
 
 <<<
-** `[[constraint _constraint-name_] _column-constraint_]`
+** `[[CONSTRAINT _constraint-name_] _column-constraint_]`
 +
 specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be
-unique among constraint names in its schema. if you omit the schema portions of the name you specify in _constraint-name_,
-trafodion sql expands the constraint name by using the schema for _table_. see <<database_object_names,database object names>>.
+unique among constraint names in its schema. If you omit the schema portions of the name you specify in _constraint-name_,
+trafodion sql expands the constraint name by using the schema for _table_. See <<database_object_names,database object names>>.
 +
 if you do not specify a constraint name, trafodion sql constructs an sql identifier as the name for the constraint in the schema
-for _table._ the identifier consists of the fully qualified table name concatenated with a system-generated unique identifier.
+for _table._ The identifier consists of the fully qualified table name concatenated with a system-generated unique identifier.
 for example, a constraint on table a.b.c might be assigned a name such as a.b.c_123&#8230;_01&#8230;.
 
 *** `_column-constraint_` options:
 
-**** `not null` 
+**** `NOT NULL` 
 +
-is a column constraint that specifies that the column cannot contain nulls. if you omit not null, nulls are allowed in the column.
-if you specify both not null and no default, then each row inserted in the table must include a value for the column. see <<null,null>>.
+is a column constraint that specifies that the column cannot contain nulls. If you omit not null, nulls are allowed in the column.
+If you specify both not null and no default, then each row inserted in the table must include a value for the column. See <<null,null>>.
 
-**** `unique`
+**** `UNIQUE`
 +
-is a column constraint that specifies that the column cannot contain more than one occurrence of the same value. if you omit unique,
-duplicate values are allowed unless the column is part of the primary key. columns that you define as unique must be specified as not null.
+is a column constraint that specifies that the column cannot contain more than one occurrence of the same value. If you omit unique,
+duplicate values are allowed unless the column is part of the primary key. Columns that you define as unique must be specified as not null.
 
-**** `check (_condition_)`
+**** `PRIMARY KEY [ASC[ENDING] | DESC[ENDING]]`
++
+is a column constraint that specifies a column as the primary key for the table.
++
+ASCENDING and DESCENDING specify the direction for entries in one column within the key. The default is ASCENDING.
++
+The PRIMARY KEY value in each row of the table must be unique within the table. You can specify PRIMARY KEY only once on any CREATE TABLE statement.
++
+Trafodion SQL uses the primary key as the clustering key of the table to avoid creating a separate, unique index to implement
+the primary key constraint.
+
+**** `CHECK (_condition_)`
 +
 is a constraint that specifies a condition that must be satisfied for each row in the table. see <<search_condition,search condition>>.
 you cannot refer to the current_date, current_time, or current_timestamp function in a check constraint, and you cannot use
 subqueries in a check constraint.
 
 <<<
-**** `references _ref-spec_`
+**** `REFERENCES _ref-spec_`
 +
-specifies a references column constraint. the maximum combined length of the columns for a references constraint is 2048 bytes. +
+specifies a references column constraint. The maximum combined length of the columns for a references constraint is 2048 bytes. +
 
 ***** `_ref-spec_` is:
 +
 `_referenced-table_ [(_column-list_)]`
 +
-`_referenced-table_` is the table referenced by the foreign key in a referential constraint. _referenced-table_ cannot be a view.
+****** `_referenced-table_` is the table referenced by the foreign key in a referential constraint. _referenced-table_ cannot be a view.
 _referenced-table_ cannot be the same as _table_. _referenced-table_ corresponds to the foreign key in the _table_.
  +
-`_column-list_` specifies the column or set of columns in the _referenced-table_ that corresponds to the foreign key in _table_. the
+****** `_column-list_` specifies the column or set of columns in the _referenced-table_ that corresponds to the foreign key in _table_. the
 columns in the column list associated with references must be in the same order as the columns in the column list associated with foreign
 key. if _column-list_ is omitted, the referenced table's primary key columns are the referenced columns.
 +
 a table can have an unlimited number of referential constraints, and you can specify the same foreign key in more than one referential
 constraint, but you must define each referential constraint separately. you cannot create self-referencing foreign key constraints.
 
-* `add [constraint _constraint-name_] _table-constraint_`
+
+* `ADD [constraint _constraint-name_] _table-constraint_`
 +
 adds a constraint to the table and optionally specifies _constraint-name_ as the name for the constraint. the new constraint
 must be consistent with any data already present in the table. 
 
 <<<
-** `constraint _constraint-name_`
+** `CONSTRAINT _constraint-name_`
 +
 specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be unique among constraint
-names in its schema. if you omit the schema portions of the name you specify in _constraint-name_, trafodion sql expands the constraint
-name by using the schema for table. see <<database_object_names,database object names>>. 
+names in its schema. If you omit the schema portions of the name you specify in _constraint-name_, trafodion sql expands the constraint
+name by using the schema for table. See <<database_object_names,database object names>>. 
 +
-if you do not specify a constraint name, trafodion sql constructs an sql identifier as the name for the constraint in the schema for table. the
-identifier consists of the fully qualified table name concatenated with a system-generated unique identifier. for example, a constraint on table
+if you do not specify a constraint name, trafodion sql constructs an sql identifier as the name for the constraint in the schema for table. The
+identifier consists of the fully qualified table name concatenated with a system-generated unique identifier. For example, a constraint on table
 a.b.c might be assigned a name such as a.b.c_123&#8230;_01&#8230;.
 +
 ** `_table-constraint_` options:
 
-*** `unique (_column-list_)`
+*** `UNIQUE (_column-list_)`
 +
 is a table constraint that specifies that the column or set of columns cannot contain more 
 than one occurrence of the same value or set of values.
 +
-`_column-list_` cannot include more than one occurrence of the same column. in addition, the set of columns that you specify on a unique
+**** `_column-list_` cannot include more than one occurrence of the same column. In addition, the set of columns that you specify on a unique
 constraint cannot match the set of columns on any other unique constraint for the table or on the primary key constraint for the table.
 all columns defined as unique must be specified as not null.
 +
-a unique constraint is enforced with a unique index. if there is already a unique index on _column-list_, trafodion sql uses that index. if a
+a unique constraint is enforced with a unique index. If there is already a unique index on _column-list_, trafodion sql uses that index. if a
 unique index does not exist, the system creates a unique index.
 
-*** `check (_condition_)`
+*** `CHECK (_condition_)`
 +
 is a constraint that specifies a condition that must be satisfied for each row in the table.
-see <<search_condition,search condition>>. you cannot refer to the current_date, current_time, or current_timestamp function in a check
-constraint, and you cannot use subqueries in a check constraint.
+see <<search_condition,search condition>>. You cannot refer to the current_date, current_time, or current_timestamp function in a check constraint, and you cannot use subqueries in a check constraint.
 
-*** `foreign key (_column-list_) references _ref-spec_ not enforced`
+*** `FOREIGN KEY (_column-list_) references _ref-spec_ NOT ENFORCED`
 +
-is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key)
-in _table_ can contain only values that match those in a column or set of columns in the table specified in the references
-clause. however, because not enforced is specified, this relationship is not checked.
+is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key) in _table_ can contain only values that match those in a column or set of columns in the table specified in the references clause. However if `NOT ENFORCED` is specified, this relationship is not checked.
 +
-the two columns or sets of columns must have the same characteristics (data type, length, scale, precision). without the foreign key clause,
+the two columns or sets of columns must have the same characteristics (data type, length, scale, precision). Without the foreign key clause,
 the foreign key in _table_ is the column being defined; with the foreign key clause, the foreign key is the column or set of columns specified in
-the foreign key clause. for information about _ref-spec_, see references _ref-spec_ not enforced.
+the foreign key clause. For information about _ref-spec_, see references _ref-spec_ not enforced.
 
 <<<
 * ENABLE ALL [UNIQUE] INDEXES
@@ -649,7 +713,7 @@ adds a column to _table_ if it does not already exist in the table.
 +
 the clauses for the _column-definition_ are the same as described in add [column] _column-definition_.
 
-* `drop column [if exists] _column-name_`
+* `drop [column] [if exists] _column-name_`
 +
 drops the specified column from _table_, including the column’s data. you cannot drop a primary key column.
 
@@ -657,7 +721,7 @@ drops the specified column from _table_, including the column’s data. you cann
 +
 alters the data-type of a column in an existing Trafodion table. The following conditions have to be met, else SQL error 1404 will be returned.
 
-** the old (existing) column datatype and new column datatype must be VARCHAR (variable length string datatype).
+** the old (existing) column datatype and new column datatype must be compatible.
 ** new column length must be greater than or equal to old column length.
 ** old and new character sets must be the same.
 ** altered columns cannot be part of primary key or secondary index key.
@@ -754,6 +818,115 @@ ALTER TABLE persnl.project
 ```
 Alter TABLE PRODUCT 
 ALTER COLUMN vend_id RENAME TO cstm_id;
+```
+
+* This example adds the column _c2_ to the table _t1_, sets _c2_ as the primary key and specifies _pk_t1_ for the primary key. The direction for entries are descending.
++
+```
+SQL>ALTER TABLE t1 ADD c2 int CONSTRAINT pk_t1 PRIMARY KEY DESC;
+
+--- SQL operation complete.
+```
++
+```
+SQL>SHOWDDL t1;
+
+ 
+CREATE TABLE TRAFODION.SEABASE.T1
+  ( 
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               INT DEFAULT NULL NOT NULL NOT DROPPABLE
+      NOT SERIALIZED
+ , CONSTRAINT TRAFODION.SEABASE.PK_T1 PRIMARY KEY (C2 DESC)
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2, so it is not possible to alter the CHARACTER SET when using NCHAR, 
+as the following example shows.
+
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (*UCS2*) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *ALTER* and *CREATE* statement.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+ 
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 NCHAR CHARACTER SET ISO88591;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+alter table test1 alter column c1 nchar character set iso88591;
+                                              ^ (47 characters from start of SQL statement) [2018-07-13 10:24:12]
+```
+
+* This example shows how to alter the data type of NCHAR column _c1_.
+
++
+```
+SQL>CREATE TABLE test1 (c1 nchar);
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  (
+    C1                               CHAR(1) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+
+
+SQL>ALTER TABLE test1 ALTER COLUMN c1 varchar(10) CHARACTER SET ISO88591;
+
+--- SQL operation complete.
+
+
+SQL>SHOWDDL test1;
+
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  ( 
+    C1                               VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED /*altered_col*/
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 * The following table _orders_ has two non-unique indexes 
@@ -1118,7 +1291,7 @@ argument-list is:
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`_[[catalog-name.]schema-name.]procedure-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1484,16 +1657,29 @@ EXECUTE y;                              -- uses MYSCHEMA;
 [[control_query_default_examples]]
 === Examples of CONTROL QUERY DEFAULT
 
-* Increase the cache refresh time for the histogram cache to two hours (7,200 minutes).
+* This example changes the maximum degree of parallelism to 2 for a query. The value must be less than the number of CPUs in the cluster.
 +
 ```
-CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL '7200';
+SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS '2';
+
+--- SQL operation complete.
+```
++
+This example resets the `PARALLEL_NUM_ESPS` attribute to its system value in the current process.
+In this case, the compiler calculates the number of ESPs to be used.
++
+```
+SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS 'system';
+
+--- SQL operation complete.
 ```
 
-* Reset the CACHE_HISTOGRAMS_REFRESH_INTERVAL attribute to its initial value in the current process:
+* This example allows the optimizer to generate an execution using hash join.
 +
 ```
-CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL RESET;
+SQL>CONTROL QUERY DEFAULT HASH_JOIN 'ON';
+
+--- SQL operation complete.
 ```
 
 <<<
@@ -1515,10 +1701,10 @@ CREATE FUNCTION function-ref ([parameter-declaration[, parameter-declaration]...
        (return-parameter-declaration[, return-parameter-declaration]...)
     EXTERNAL NAME 'character-string-literal'
     LIBRARY [[catalog-name.]schema-name.]library-name
-    [language c]
+    [LANGUAGE c]
     [parameter style sql]
     [no sql]
-    [not deterministic | deterministic]
+    [NOT DETERMINISTIC | DETERMINISTIC]
     [final call | no final call]
     [no state area | state area size]
     [no parallelism | allow any parallelism]
@@ -1545,7 +1731,7 @@ specifies the name of the function and any SQL parameters that correspond to the
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_function-name_`
+`_[[catalog-name.]schema-name.]function-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1602,12 +1788,12 @@ trafodion. see <<data_types,data types>>.
 +
 specifies the case-sensitive name of the external function’s method.
 
-* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `library _[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of a library containing the external function. if you do not fully qualify the
 library name, trafodion sql qualifies it according to the schema of the current session.
 
-* `language c`
+* `LANGUAGE c`
 +
 specifies that the external function is written in the c language. this clause is optional.
 
@@ -1620,7 +1806,7 @@ language. this clause is optional.
 +
 specifies that the function does not perform sql operations. this clause is optional.
 
-* `deterministic | not deterministic`
+* `DETERMINISTIC | NOT DETERMINISTIC`
 +
 specifies whether the function always returns the same values for out parameters for a given set of argument
 values (deterministic, the default behavior) or does not return the same values (not deterministic). if the
@@ -1707,11 +1893,16 @@ inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOM
 AUTOCOMMIT must be turned ON (the default) for the session.
 
 ```
-CREATE [VOLATILE | UNIQUE] INDEX index ON table
+CREATE [VOLATILE | UNIQUE] INDEX index-name ON table
    (column-name [ASC[ENDING] | DESC[ENDING]]
    [,column-name [ASC[ENDING] | DESC[ENDING]]]...)
+   [populate-option]
    [HBASE_OPTIONS (hbase-options-list)]
    [SALT LIKE TABLE]
+
+populate-option is:
+  POPULATE
+| NO POPULATE
 
 hbase-options-list is:
    hbase-option = 'value'[, hbase-option = 'value']...
@@ -1733,7 +1924,7 @@ Unique index not only improves the query performance, but also provides data int
 +
 NOTE: Multiple NULL values are treated as duplicate values for a column which can contain only one NULL value.
 
-* `_index_`
+* `_index-name_`
 +
 is an SQL identifier that specifies the simple name for the new index. You cannot qualify _index_ with its schema
 name. Indexes have their own name space within a schema, so an index name might be the same as a table or constraint
@@ -1754,6 +1945,25 @@ Rows are ordered by values in the first column specified for the index. If multi
 for the first column, the values in the second column are used to order the rows, and so forth. If duplicate index
 rows occur in a non-unique index, their order is based on the sequence specified for the columns of the key of the
 underlying table. For ordering (but not for other purposes), nulls are greater than other values.
+
+* `populate-option`
+
+** `NO POPULATE`
++
+specifies that the index is not to be populated when it is created. 
++
+The index’s partition(s) are created, but no data is written to the index, and it is marked “offline”. You can drop an offline index with the DROP INDEX statement. 
+The DROP TABLE statement also drops offline indexes of the specified table. 
+DML statements have no effect on offline indexes. 
++
+If an index is created with the intention of using it for a constraint, it must be populated before creating the constraint. 
+You can populate an offline index and remove its offline designation by using the POPULATE INDEX utility.
+
+** `POPULATE`
++
+specifies that the index is to be created and populated. 
++
+The default is `POPULATE`.
 
 * `HBASE_OPTIONS (_hbase-option_ = '_value_'[, _hbase-option_ = '_value_']&#8230;)`
 +
@@ -1825,6 +2035,11 @@ partitions are not audited and empty.
 
 If the operation fails after basic semantic checks are performed, the index no longer exists and the entire transaction
 is rolled back even if it is a user-started transaction.
+
+If you are creating an index on a large Trafodion table that is already populated, 
+you should use the NO POPULATE option, and then run the POPULATE INDEX utility to load the index. 
+Because CREATE INDEX executes in a single transaction, it could experience transactional limitations such as a transaction timeout 
+if a large amount of data is to be moved.
 
 [[create_index_authorization_and_availability_requirements]]
 ==== Authorization and Availability Requirements
@@ -1936,6 +2151,14 @@ SQL>create unique index idx_t25 on t25(b);
 *** ERROR[1053] Unique index TRAFODION.SEABASE.IDX_T25 could not be created because the specified column(s) contain duplicate data. [2017-01-12 17:17:51]
 ```
 
+* This exmaple creates the index _index_test_ which is not to be populated on the column _c1_ of the table _test_.
++
+```
+SQL>create index index_test on test (c1) no populate;
+
+--- SQL operation complete.
+```
+
 <<<
 [[create_library_statement]]
 == CREATE LIBRARY Statement
@@ -1959,7 +2182,7 @@ CREATE LIBRARY [[catalog-name.]schema-name.]library-name
 [[create_library_syntax]]
 === Syntax Description of CREATE LIBRARY
 
-* `\[[_catalog-name_.]_schema-name_.]_library-name_`
+* `_[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify a name that is unique and does not exist for
@@ -1972,7 +2195,7 @@ and <<database_object_names,database object names>>.
 +
 specifies the full path of a deployed library file, which either an SPJ's jar file or a UDF's library file.
 +
-note: make sure to upload the library file to the trafodion cluster and then copy the library file to the
+NOTE: Make sure to upload the library file to the trafodion cluster and then copy the library file to the
 same directory on all the nodes in the cluster before running the create library statement. otherwise, you
 will see an error message indicating that the jar or dll file was not found.
 
@@ -2037,13 +2260,13 @@ CREATE PROCEDURE procedure-ref([sql-parameter-list])
    EXTERNAL NAME 'java-method-name [java-signature]'
    LIBRARY [[catalog-name.]schema-name.]library-name
    [external security external-security-type]
-   language java
+   LANGUAGE java
    parameter style java
    [no sql | contains sql | modifies sql data | reads sql data]
    [dynamic result sets integer]
-   [transaction required | no transaction required]
-   [deterministic | not deterministic]
-   [no isolate | isolate]
+   [TRANSACTION REQUIRED | NO TRANSACTION REQUIRED]
+   [DETERMINISTIC | NOT DETERMINISTIC]
+   [NO ISOLATE| ISOLATE]
 
 procedure-ref is:
    [[catalog-name.]schema-name.]procedure-name
@@ -2089,7 +2312,7 @@ the SPJ method.
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`_[[catalog-name.]schema-name.]procedure-name_`
 +
 where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information,
 see <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -2143,19 +2366,19 @@ pic[ture] x^1^ +
 nchar +
 nchar varying +
 national char[acter] +
-national char[acter] varying | java.lang.string
-| date | java.sql.date
-| time | java.sql.time
-| timestamp | java.sql.timestamp
+national char[acter] varying | java.lang.String
+| date | java.sql.Date
+| time | java.sql.Time
+| timestamp | java.sql.Timestamp
 | dec[imal]^2^ +
 pic[ture] s9^3^ +
-numeric (including numeric with a precision greater than eighteen)^2^ | java.math.bigdecimal
+numeric (including numeric with a precision greater than eighteen)^2^ | java.math.BigDecimal
 | smallint^2^ | short
-| int[eger]^2^ | int or java.lang.integer^4^
-| largeint^2^ | long or java.lang.long^4^
-| float | double or java.lang.double^4^
-| real | float or java.lang.float^4^
-| double precision | double or java.lang.double^4^
+| int[eger]^2^ | int or java.lang.Integer^4^
+| largeint^2^ | long or java.lang.Long^4^
+| float | double or java.lang.Double^4^
+| real | float or java.lang.Float^4^
+| double precision | double or java.lang.Double^4^
 |===
 +
 1. the trafodion database stores pic x as a char data type.
@@ -2186,20 +2409,20 @@ specifies the signature of the SPJ method and consists of:
 +
 `([_java-datatype_[, _java-datatype_]&#8230;])`
 +
-The Java signature is necessary only if you want to specify a Java wrapper class (for example, `java.lang.integer`) instead of a java
+The Java signature is necessary only if you want to specify a Java wrapper class (for example, `java.lang.Integer`) instead of a java
 primitive data type (for example, `int`). An SQL data type maps to a Java primitive data type by default.
 +
-The Java signature is case-sensitive and must be placed within parentheses, such as `(java.lang.integer, java.lang.integer`).
+The Java signature is case-sensitive and must be placed within parentheses, such as `(java.lang.Integer, java.lang.Integer`).
 The signature must specify each of the parameter data types in the order they appear in the Java method definition within
 the class file. Each Java data type that corresponds to an out or inout parameter must be followed by empty square
-brackets (`[ ]`), such as `java.lang.integer[]`.
+brackets (`[ ]`), such as `java.lang.Integer[]`.
 +
 <<<
 *** `_java-datatype_`
 +
 Specifies a mappable Java data type. For the mapping of the Java data types to SQL data types, see _sql-datatype_.
 
-* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `library _[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of a library containing the SPJ method. If you do not fully qualify the library name,
 then {project-name} qualifies it according to the schema of the current session.
@@ -2227,7 +2450,7 @@ the database. However, be careful about the users to whom you grant execute priv
 because those users will be able to execute the SPJ without requiring privileges to the underlying database objects.
 
 <<<
-* `language java`
+* `LANGUAGE java`
 +
 specifies that the external user-defined routine is written in the java language.
 
@@ -2252,27 +2475,27 @@ contains a `java.sql.resultset[]` object. If the method contains a result set ob
 The actual number of result sets returned by the SPJ method can be fewer than or equal to this number. If you do not specify
 this option, then the default value is 0 (zero), meaning that the SPJ does not return result sets.
 
-* `transaction required | no transaction required`
+* `TRANSACTION REQUIRED | NO TRANSACTION REQUIRED`
 +
-determines whether the SPJ must run in a transaction inherited from the calling application (`transaction required`, the default
-option) or whether the SPJ runs without inheriting the calling application’s transaction (`no transaction required`). Typically,
+determines whether the SPJ must run in a transaction inherited from the calling application (`TRANSACTION REQUIRED`, the default
+option) or whether the SPJ runs without inheriting the calling application’s transaction (`NO TRANSACTION REQUIRED`). Typically,
 you want the stored procedure to inherit the transaction from the calling application. However, if the SPJ method does
 not access the database or if you want the stored procedure to manage its own transactions, then you should set the stored
-procedure’s transaction attribute to no transaction required. For more information, see
+procedure’s transaction attribute to `NO TRANSACTION REQUIRED`. For more information, see
 <<effects_of_the_transaction_attribute_on_spjs,effects of the transaction attribute on SPJs>>.
 
 <<<
-* `deterministic | not deterministic`
+* `DETERMINISTIC | NOT DETERMINISTIC`
 +
 specifies whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
-(`deterministic`) or does not return the same values (`not deterministic`, the default option). If you specify `deterministic`,
+(`DETERMINISTIC`) or does not return the same values (`NOT DETERMINISTIC`, the default option). If you specify `DETERMINISTIC`,
 {project-name} is not required to call the SPJ each time to produce results; instead, {project-name} caches the results and
 reuses them during subsequent calls, thus optimizing the CALL statement.
 
-* `no isolate | isolate`
+* `NO ISOLATE | ISOLATE`
 +
-specifies that the SPJ executes either in the environment of the database server (`no isolate`) or in an isolated environment
-(`isolate`, the default option). {project-name} allows both options but always executes the SPJ in the UDR server process (`isolate`).
+specifies that the SPJ executes either in the environment of the database server (`NO ISOLATE`) or in an isolated environment
+(`ISOLATE`, the default option). {project-name} allows both options but always executes the SPJ in the UDR server process (`ISOLATE`).
 
 [[create_procedure_considerations]]
 === Considerations for CREATE PROCEDURE
@@ -2637,7 +2860,7 @@ DB ROOT or anyone granted the DB_ROOTROLE role can grant the CREATE_SCHEMA privi
 [[create_schema_examples]]
 === Examples of CREATE SCHEMA
 
-* This example creates a private schema schema named MYSCHEMA, which will be owned by the current user:
+* This example creates a private schema named MYSCHEMA, which will be owned by the current user:
 +
 ```
 CREATE SCHEMA myschema;
@@ -2667,53 +2890,53 @@ CREATE PRIVATE SCHEMA AUTHORIZATION JSmith;
 [[create_sequence_statement]]
 == CREATE SEQUENCE Statement
 
-The CREATE SEQUENCE Statement produces an automatic ascending sequence of numeric values, which can be used by multiple users as primary key values. For example, to generate only odd numbers in a sequence, you can create a sequence defined with START WITH=1, INCREMENT BY=2.
+The CREATE SEQUENCE Statement produces an automatic ascending sequence of numeric values, which can be used by multiple users as primary key values. For example, to generate only odd numbers in a sequence, you can create a sequence defined with `START WITH=1, INCREMENT BY=2`.
 
 Multiple options can be concurrently specified and separated by a space. 
 
 There are two expressions can be used with sequence:
 
-* `seqnum(SEQUENCE, current)`: get the current value which is returned from the sequence on the current session rather than the current value of the sequence. 
+* `SEQNUM(_sequence-name_, CURRENT)`: get the current value which is returned from the sequence on the current session rather than the current value of the sequence. 
 
 +
-For example, a sequence object called `employee_seq` which starts with 1 and caches up to 25 with only three users.
+For example, a sequence object called _employee_seq_ which starts with 1 and caches up to 25 with only three users.
 
 +
-If User A calls `seqnum(SEQUENCE, current)`, it will return 1 and reserve from 1 to 25, and User B immediately calls `seqnum(SEQUENCE, current)` and it will return 26 and reserve from 26 to 51, then User C immediately calls `seqnum(SEQUENCE, current)` and it will return 51 and reserve from 51 to 75. 
+If User A calls `SEQNUM(_employee_seq_, CURRENT)`, it will return 1 and reserve from 1 to 25, and User B immediately calls `SEQNUM(_sequence-name_, CURRENT)` and it will return 26 and reserve from 26 to 51, then User C immediately calls `SEQNUM(_sequence-name_, CURRENT)` and it will return 51 and reserve from 51 to 75. 
 
 +
-Now, if User A immediately calls `seqnum(SEQUENCE, next)`, it will return 2 rather than 76. 76 will be returned if User A immediately calls `seqnum(SEQUENCE, next)` after achieving 25 where the cache for User A is exhausted.
+Now, if User A immediately calls `SEQNUM(_employee_seq_, NEXT)`, it will return 2 rather than 76. 76 will be returned if User A immediately calls `SEQNUM(_employee_seq_, NEXT)` after achieving 25 where the cache for User A is exhausted.
 
-* `seqnum(SEQUENCE, next)`: advance the sequence and retrieve the next value. For an ascending sequence, this value is increasing.
+* `SEQNUM(_employee_seq_, NEXT)`: advance the sequence and retrieve the next value. For an ascending sequence, this value is increasing.
 
 +
 NOTE: 
 
-** It always returns the initial value of the sequence by calling `seqnum(SEQUENCE, current)` or `seqnum(SEQUENCE, next)` for the first time.
+** It always returns the initial value of the sequence by calling `SEQNUM(_sequence-name_, CURRENT)` or `SEQNUM(_sequence-name_, NEXT)` for the first time.
 
-** It returns a new incremented value of the sequence with each subsequent reference to `seqnum(SEQUENCE, next)`.
+** It returns a new incremented value of the sequence with each subsequent reference to `SEQNUM(_sequence-name_, NEXT)`.
 
 CREATE SEQUENCE is a Trafodion SQL extension.
 
 For more inforamation, see <<drop_sequence_statement,DROP SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
 
 ```
-CREATE SEQUENCE [[catalog-name.]schema-name.]sequence
+CREATE SEQUENCE [[catalog-name.]schema-name.]sequence-name
 [START WITH integer]
 [INCREMENT BY integer]
-[MAXVALUE integer | NOMAXVALUE]
+[MAXVALUE integer | NO MAXVALUE]
 [MINVALUE integer]
 [CACHE integer | NO CACHE]
 [CYCLE | NO CYCLE]
 [DATA TYPE]
 ```
-By default, it is an ascending sequence that starts with 1, increments by 1, has cache value of 25 and the
-maximum value of 2^63^-2, does not cycle and belongs to LARGEINT data type.
+By default, it is an ascending sequence that *starts with 1, increments by 1, has cache value of 25 and the
+maximum value of 2^63^-2, does not cycle and belongs to LARGEINT data type*.
 
 [[create_sequence_syntax]]
 === Syntax Description of CREATE SEQUENCE
 
-* `[[catalog-name.]schema-name.]sequence`
+* `_[[catalog-name.]schema-name.]sequence-name_`
 
 +
 Specifies the name of the sequence to be created, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters.
@@ -2727,65 +2950,65 @@ If you do not fully qualify the session name, Trafodion qualifies it according t
 * `START WITH`
 
 +
-Specifies the initial value. This value can only be positive, and must be greater than or equal to MINVALUE (if NO CACHE is specified) and less than MAXVALUE.  
+Specifies the initial value. This value can only be positive, and must be greater than or equal to `MINVALUE` (if `NO CACHE` is specified) and less than `MAXVALUE`.  
 
 +
-NOTE: If the initial value is beyond the range specified by MINVALUE or MAXVALUE, an error will be raised.
+NOTE: If the initial value is beyond the range specified by `MINVALUE` or `MAXVALUE`, an error will be raised.
 
 +
-If not specified, the START WITH defaults to 1. For an ascending sequence, this value is MINVALUE.
+If not specified, the `START WITH` defaults to 1. For an ascending sequence, this value is `MINVALUE`.
 
 * `INCREMENT BY`
 +
 Specifies the increment value between consecutive sequence values. 
 
 +
-NOTE: This value can only be positive, so that Trafodion only supports ascending sequence. The value must be smaller than or equal to the difference between MAXVALUE and MINVALUE. 
+NOTE: This value can only be positive, so that Trafodion only supports ascending sequence. The value must be smaller than or equal to the difference between `MAXVALUE` and `MINVALUE`. 
 
 +
-If not specified, the INCREMENT BY defaults to 1.
+If not specified, the `INCREMENT BY` defaults to 1.
 
 * `MAXVALUE`
 +
-Specifies the maximum value where an ascending sequence stops generating values or cycles. The default is 2^^63^-2.
+Specifies the maximum value where an ascending sequence stops generating values or cycles. The default is 2^63^-2.
 
 +
-The MAXVALUE of a sequence depends on the maximum value supported by the data type, and you can also specify a MAXVALUE within the range.
+The `MAXVALUE` of a sequence depends on the maximum value supported by the data type, and you can also specify a `MAXVALUE` within the range.
 
 +
 NOTE:
 
-** An error is returned if MAXVALUE is beyond supported range, or if subsequent value is generated for an ascending sequence when the MAXVALUE is exceeded with NO CYCLE specified.
+** An error is returned if `MAXVALUE` is beyond supported range, or if subsequent value is generated for an ascending sequence when the `MAXVALUE` is exceeded with `NO CYCLE` specified.
 
-** MAXVALUE might not be same as the actual maximum value that the sequence generated if the INCREAMENT BY is a value other than 1. For example, when a sequence is specified with START WITH 3, INCREMENT 4 and MAXVALUE 12 will return a maximum value of 11.
+** `MAXVALUE` might not be same as the actual maximum value that the sequence generated if the `INCREAMENT BY` is a value other than 1. For example, when a sequence is specified with `START WITH 3, INCREMENT 4` and `MAXVALUE 12` will return a maximum value of 11.
 
-* `NONMAXVALUE`
+* `NO MAXVALUE`
 +
-If NOMAXVALUE is specified, for an ascending sequence, the MAXVALUE is the value you specified or the maximum value supported by the data type.
+If `NO MAXVALUE` is specified, for an ascending sequence, the `MAXVALUE` is the value you specified or the maximum value supported by the data type.
 
 * `MINVALUE`
 +
 Specifies the minimum value where an ascending sequence cycles after hitting the maximum limit. The default is 1.
 
 +
-The MINVALUE of a sequence depends on the minimum value supported by the data type, and you can also specify a MINVALUE within the range.
+The `MINVALUE` of a sequence depends on the minimum value supported by the data type, and you can also specify a `MINVALUE` within the range.
 
 +
-If MINVALUE and START WITH are not specified, for an ascending sequence, the MINVALUE defaults to 1.
+If `MINVALUE` and `START WITH` are not specified, for an ascending sequence, the `MINVALUE` defaults to 1.
 
 * `CYCLE`
 +
-Specifies that the sequence exhausts its range and wraps around after reaching its MAXVALUE.
+Specifies that the sequence exhausts its range and wraps around after reaching its `MAXVALUE`.
 
 +
-If specified, for an ascending sequence, it restarts from MINVALUE after reaching MAXVALUE. 
+If specified, for an ascending sequence, it restarts from `MINVALUE` after reaching `MAXVALUE`. 
 
-* `NOCYCLE`
+* `NO CYCLE`
 +
-Specifies that the sequence cannot cycle once the MAXVALUE is reached, and throws an exception when generating subsequent value if the limit is exceeded. 
+Specifies that the sequence cannot cycle once the `MAXVALUE` is reached, and throws an exception when generating subsequent value if the limit is exceeded. 
 
 +
-NOCYCLE is the default. 
+`NO CYCLE` is the default. 
 
 * `CACHE`
 +
@@ -2807,14 +3030,14 @@ The CACHE value must be less than or equal to the value determined by following 
 The sequence cache will be repopulated when the cache is exhausted.
 
 +
-NOTE: The unused preallocated values will be lost and leave unintended gaps if unexpected shutdown occurs or the sequence object is manually restarted, Trafodion will continue to cache new values from where it left off, so that the same value will never appear twice unless CYCLE is specified.
+NOTE: The unused preallocated values will be lost and leave unintended gaps if unexpected shutdown occurs or the sequence object is manually restarted, Trafodion will continue to cache new values from where it left off, so that the same value will never appear twice unless `CYCLE` is specified.
 
-* `NOCACHE`
+* `NO CACHE`
 +
 Specifies the values of the sequence are not preallocated, which lowers the risk of losing values even if it might cause performance degradation. In this case, every request for a new value will be synchronously updated in the system table.
 
 +
-If both CACHE and NOCACHE are not specified, it will cache 25 values by default.
+If both `CACHE` and `NO CACHE` are not specified, it will cache 25 values by default.
 
 * `DATA TYPE`
 +
@@ -2824,13 +3047,13 @@ A sequence can be specified as following data types:
 [cols="1,1,1,options="header"]
 |===
 | Type   | Minimum value | Maximum value 
-| UNSIGNED SMALLINT   | 1                | 2^16^-1
-| UNSIGHED INTEGER    | 1                | 2^32^-1
+| SMALLINT UNSIGNED    | 1                | 2^16^-1
+| INTEGER UNSIGHED     | 1                | 2^32^-1
 | LARGEINT            | 1                | 2^63^-2
 |===
                 
 +
-If not specified, the default data type is LARGEINT.
+If not specified, the default data type is *LARGEINT*.
 
 <<<
 [[create_sequence_considerations]]
@@ -2853,19 +3076,40 @@ NOTE: In this case, if you create a sequence in a private schema, it will be own
 [[create_sequence_examples]]
 === Examples of CREATE SEQUENCE
 
-The following statement creates a sequence named `employee_seq`, that starts with 1, increments by 1, has maximum value of 10000, does not cycle, caches 20 at a time and belongs to UNSIGNED SAMLLINT.
+The following statement creates the sequence _employee_seq_, that starts with 1, increments by 2, has maximum value of 10000, does not cycle, caches 20 at a time and belongs to SMALLINT UNSIGNED.
 
 ```
 CREATE SEQUENCE   employee_seq
 START WITH        1
-INCREMENT BY      1
+INCREMENT BY      2
 MAXVALUE          10000   
-NOCYCLE
+NO CYCLE
 CACHE             20  
-UNSIGNED SMALLINT
+SMALLINT UNSIGNED 
 ```
 
-The first reference to `seqnum(empolyee_seq, next)` will return 10000, and the second reference will return 10001. Each subsequent reference will return a value 1 greater than the previous value.
+The first reference to `SEQNUM(_empolyee_seq_, NEXT)` returns 1.
+
+```
+SQL>SELECT SEQNUM(employee_seq, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   1
+
+--- 1 row(s) selected.
+```
+
+The second reference to `SEQNUM(_empolyee_seq_, NEXT)` returns 2. Each subsequent reference returns a value 2 greater than the previous value.
+```
+SQL>SELECT SEQNUM(employee_seq, NEXT) FROM DUAL;
+
+(EXPR)
+--------------------
+                   3
+
+--- 1 row(s) selected.
+```
 
 <<<
 [[create_table_statement]]
@@ -2914,18 +3158,23 @@ column-definition is:
 ```
 data-type is:
     char[acter] [(length [characters])]
-          [character set char-set-name]
-          [upshift] [[not]casespecific]
+                [character set char-set-name]
+                [upshift] [[not]casespecific]
   | char[acter] varying (length [characters])
-          [character set char-set-name]
+                        [character set char-set-name]
+                        [upshift] [[not]casespecific]
+  | varchar (length [characters]) 
+            [character set char-set-name]
+            [upshift] [[not]casespecific]
+  | varchar2 (length [characters]) 
+             [character set char-set-name]
+             [upshift] [[not]casespecific]          
+  | nchar [(length [characters])]
           [upshift] [[not]casespecific]
-  | varchar (length) [character set char-set-name]
-          [upshift] [[not]casespecific]
-  | varchar2 (length) [character set char-set-name]
-          [upshift] [[not]casespecific]          
-  | nchar (length) [characters] [upshift] [[not]casespecific]
-  | nchar varying(length [characters]) [upshift] [[not] casespecific]
+  | nchar varying (length [characters]) 
+                  [upshift] [[not] casespecific]
   | numeric [(precision [,scale])] [signed|unsigned]
+  | tinyint [signed|unsigned]
   | smallint [signed|unsigned]
   | int[eger] [signed|unsigned]
   | largeint
@@ -2946,9 +3195,9 @@ default is:
   | currenttimestamp
 
 column-constraint is:
-    not null
-  | unique
-  | primary key [asc[ending] | desc[ending]]
+    NOT NULL
+  | UNIQUE
+  | PRIMARY KEY [ASC[ENDING] | DESC[ENDING]]
   | CHECK (condition)
   | REFERENCES ref-spec
 
@@ -3146,6 +3395,7 @@ specifies a name for the column or table constraint. _constraint-name_ must have
 unique among constraint names in its schema. If you omit the schema portions of the name you specify in _constraint-name_,
 {project-name} SQL expands the constraint name by using the schema for _table_. See <<constraint_names,Constraint Names>> and
 <<database_object_names,Database Object Names>>.
+
 
 * `NOT NULL`
 +
@@ -3660,6 +3910,23 @@ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
+```
+
+* NATIONAL CHAR (or NCHAR) is a short-hand for CHARACTER SET UCS2. 
+So it is not possible to specify a CHARACTER SET clause when using NCHAR, 
+as the following example shows.
++
+NOTE: NCHAR or NATIONAL CHAR implicitly assumes that the character set is *UCS2*, 
+whether the character set was specified at installation time to be ISO88591 or UTF8, 
+and the character set (UCS2) of NCHAR or NATIONAL CHAR *cannot be specified* or *altered*. 
+This is true for both *CREATE* and *ALTER* statement.
++
+```
+SQL>CREATE TABLE test1 (c1 NCHAR(10) CHARACTER SET USC2);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table test1 (c1 nchar(10) character set usc2);
+                                       ^ (40 characters from start of SQL statement) [2018-07-13 04:02:39]
 ```
 
 <<<
@@ -4207,22 +4474,46 @@ For the searched DELETE form, if no WHERE clause exists, all rows are deleted fr
 ```
 Searched DELETE is:
 
-DELETE FROM table
-
-    [WHERE search-condition ]
-       [[for] access-option access]
+DELETE 
+[WITH NO ROLLBACK] ["["FIRST N"]"]
+FROM table-name
+[WHERE search-condition ]
+[[for] access-option access]
 
 access-option is:
-    read committed
+read committed
 ```
 
 [[delete_syntax]]
 === Syntax Description of DELETE
 
-* `_table_`
+* `_table-name_`
 +
 names the user table or view from which to delete rows. _table_ must be a base table or an updatable view. To refer to a
 table or view, use the ANSI logical name. See <<database_object_names,Database Object Names>>.
+
+* `WITH NO ROLLBACK`
++
+performs a non-transactional delete.
++
+A non-transactional delete is one that happens outside a transaction. It means that if the 
+statement is interrupted, any deletes that have been done are still permanent.
++
+NOTE: This option is only supported if there is no index on the table.
+
+* `FIRST _N_`
++
+specified that _N_ rows are to be deleted (assuming the table has at least _N_ rows and that
+the qualification criteria specified in the WHERE clause, if any, would select at least _N_ rows).
++
+You must enclose `First _N_` in square bracket ([ ]).
+The quotation marks (" ") around each square brackt in the syntax diagram indicate that 
+the bracket is a required character that you must type as shown (for example, `[FIRST 5]`).
+Do not include quotation marks in the FIRST clause.
++
+NOTE: When using this option without the `WITH NO ROLLBACK` option, and if you have a large 
+_N_ (tens of thousands), break up _N_ into smaller numbers and execute the DELETE statement 
+repeatedly for better performance.
 
 * `WHERE _search-condition_`
 +
@@ -4236,7 +4527,7 @@ If you do not specify a search condition, all rows in the table or view are dele
 specifies the access option required for data used to evaluate the search condition.
 See <<data_consistency_and_access_options,Data Consistency and Access Options>>.
 
-** `READ `COMMITTED
+** `READ COMMITTED`
 +
 specifies that any data used to evaluate the search condition must come from committed  rows.
 +
@@ -4310,6 +4601,45 @@ DELETE FROM invent.partsupp WHERE suppnum NOT IN
 delete from table1 where a in (select a from table1 where b > 200)
 ```
 
+* This example executes a non-transactional delete of first 1000 rows that satisfy the
+WHERE condition.
++
+```
+DELETE WITH NO ROLLBACK [FIRST 1000] 
+FROM test 
+WHERE id<30;
+```
+
+* This example shows that the option `WITH NO ROLLBACK` is only supported if there is no
+index on the table.
++
+```
+SQL>DELETE WITH NO ROLLBACK FROM test;
+
+*** ERROR[3232] INSERT, UPDATE, or DELETE of table TRAFODION.SEABASE.TEST with dependent Index : TRAFODION.SEABASE.INDEX_TEST is not allowed when NO ROLLBACK transaction setting is in effect. [2018-05-30 05:42:47]
+
+SQL>SHOWDDL test;
+
+CREATE TABLE TRAFODION.SEABASE.TEST
+  ( 
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               INT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_TEST ON TRAFODION.SEABASE.TEST
+  ( 
+    C1 ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.TEST TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
 <<<
 [[drop_function_statement]]
 == DROP FUNCTION Statement
@@ -4327,7 +4657,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `\[[_catalog-name_.]_schema-name_.]_function-name_`
+* `_[[catalog-name.]schema-name.]function-name_`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -4440,7 +4770,7 @@ DROP LIBRARY [[catalog-name.]schema-name.]library-name [restrict | cascade]
 [[drop_library_syntax]]
 === Syntax Description of DROP LIBRARY
 
-* `\[[_catalog-name_.]_schema-name_.]_library-name_`
+* `_[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql identifier with a
 maximum of 128 characters. specify the name of a library object that has already been registered in the schema. if
@@ -4510,7 +4840,7 @@ DROP PROCEDURE [[catalog-name.]schema-name.]procedure-name
 [[drop_procedure_syntax]]
 === Syntax Description of DROP PROCEDURE
 
-* `\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+* `_[[catalog-name.]schema-name.]procedure-name_`
 +
 specifies the ANSI logical name of the stored procedure in java (SPJ), where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify the name of a procedure that has already been registered in the
@@ -4565,9 +4895,9 @@ DROP ROLE role-name
 +
 is an existing role name. The role cannot be dropped if any of the following are true:
 
-* Any privileges are granted to the role.
-* The role is granted to any users.
-* The role owns any schemas.
+** Any privileges are granted to the role.
+** The role is granted to any users.
+** The role owns any schemas.
 
 [[drop_role_considerations]]
 === Considerations for DROP ROLE
@@ -4708,21 +5038,21 @@ The DROP SEQUENCE Statement removes a sequence from the Trafodion database.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run DDL statements inside a user-defined transaction (BEGIN WORK…COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements, AUTOCOMMIT must be turned ON (the default) for the session.
 
-If you want to change the initial value of a sequence, you can drop and then recreate a sequence with the same name and different START WITH value.
+If you want to change the initial value of a sequence, you can drop and then recreate a sequence with the same name and a different `START WITH` value.
 
 DROP SEQUENCE is a Trafodion SQL extension.
 
 For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
 
 ```
-DROP SEQUENCE [[catalog-name.]schema-name.]sequence 
+DROP SEQUENCE [[catalog-name.]schema-name.]sequence-name 
 ```
 
 <<<
 [[drop_sequence_syntax]]
 === Syntax Description of DROP SEQUENCE
 
-* `[[catalog-name.]schema-name.]sequence`
+* `_[[catalog-name.]schema-name.]sequence-name_`
 
 +
 Specifies the name of the sequence to be dropped, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters. 
@@ -5178,21 +5508,37 @@ GET is a {project-name} SQL extension.
 GET option
 
 option is:
-    COMPONENT PRIVILEGES ON component-name [FOR auth-name]
+    CATALOGS
+  | COMPONENT PRIVILEGES ON component-name [FOR auth-name]
   | COMPONENTS
   | FUNCTIONS FOR LIBRARY [[catalog-name.]schema-name.]library-name
   | FUNCTIONS [IN SCHEMA [catalog-name.]schema-name]
+  | HBASE REGISTERED TABLES IN CATALOG TRAFODION
+  | HIVE EXTERNAL TABLES IN CATALOG TRAFODION
+  | HIVE REGISTERED {OBJECTS | SCHEMAS | TABLES | VIEWS} IN CATALOG TRAFODION 
+  | INDEXES [IN SCHEMA schema-name]
+  | INDEXES [ON TABLE table-name]
   | LIBRARIES [IN SCHEMA [catalog-name.]schema-name]
   | PROCEDURES FOR LIBRARY [[catalog-name.]schema-name.]library-name
   | PROCEDURES [IN SCHEMA [catalog-name.]schema-name]
   | ROLES [FOR USER database-username]
+  | SEQUENCES [IN CATALOG catalog-name]
+  | SEQUENCES [IN SCHEMA schema-name}]
   | SCHEMAS [IN CATALOG catalog-name]
   | SCHEMAS FOR [USER | ROLE] authorization-id
+  | TABLES [IN CATALOG catalog-name]
   | TABLES [IN SCHEMA [catalog-name.]schema-name]
+  | TABLES [IN VIEW view-name]
   | USERS [FOR ROLE role-name]
+  | VIEWS [IN CATALOG catalog-name]
   | VIEWS [IN SCHEMA [catalog-name.]schema-name]
+  | VIEWS [IN VIEW view-name]
+  | VIEWS [ON VIEW view-name]
   | VIEWS ON TABLE [[catalog-name.]schema-name.]table-name
   | PRIVILEGES FOR {USER database-username | ROLE role-name}
+  | PRIVILEGES ON SEQUENCE sequence-name
+  | PRIVILEGES ON TABLE table-name
+  | PRIVILEGES ON VIEW view-name
 ```
 
 [[get_syntax]]
@@ -5218,94 +5564,112 @@ displays a list of all the existing components.
 displays the names of all the user-defined functions (UDFs) in the catalog and schema of the current session. By default,
 the catalog is TRAFODION, and the schema is SEABASE.
 
-* `FUNCTIONS FOR LIBRARY \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `FUNCTIONS FOR LIBRARY _[[catalog-name.]schema-name.]library-name_`
 +
 displays the UDFs that reference the specified library.
 
-* `functions in schema [_catalog-name_.]_schema-name_`
+* `FUNCTIONS [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the UDFs in the specified schema.
 
-* `libraries`
+* `LIBRARIES`
 +
 displays the names of all the libraries in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `libraries in schema [_catalog-name_.]_schema-name_`
+* `LIBRARIES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the libraries in the specified schema.
 
-* `procedures`
+* `PROCEDURES`
 +
 displays the names of all the procedures in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `procedures for library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `PROCEDURES FOR LIBRARY for _[[catalog-name.]schema-name.]library-name_`
 +
 displays the procedures that reference the specified library.
 
-* `procedures in schema [_catalog-name_.]_schema-name_`
+* `PROCEDURES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the procedures in the specified schema.
 
-* `roles`
+* `ROLES`
 +
 displays a list of all the existing roles.
 
-* `roles for user _database-username_`
+* `ROLES [FOR USER _database-username_]`
 +
 displays all the roles that have been granted to the specified database user. The _database-username_ can be a regular or delimited
 case-insensitive identifier. see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
-* `schemas`
+* `SCHEMAS`
 +
 displays the names of all the schemas in the catalog of the current session. By default, the catalog is trafodion.
 
-* `schemas in catalog _catalog-name_`
+* `SCHEMAS [IN CATALOG _catalog-name_]`
 +
 displays the names of all the schemas in the specified catalog. For the _catalog-name_, you can specify only trafodion.
 
-* `schemas for [user | role] _authorization-id_`
+* `SCHEMAS FOR [USER | ROLE] _authorization-id_`
 +
 displays all the schemas managed (or owned) by a specified user or role.
 
-* `_authorization-id_`
+** `_authorization-id_`
 +
 is the name of a user or role. you may specify either user or role for users or roles.
 
-* `tables`
+* `TABLES`
 +
 displays the names of all the tables in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `tables in schema [_catalog-name_.]_schema-name_`
+* `TABLES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the tables in the specified schema.
 
-* `users`
+* `TABLES [IN VIEW view-name]`
++
+returns tables that referenced by the view _view-name_.
+
+* `USERS`
 +
 displays a list of all the registered database users.
 
-* `users for role _role-name_`
+* `USERS [FOR ROLE _role-name_]`
 +
 displays all the database users who have been granted the specified role. The _role-name_ can be a regular or delimited
 case-insensitive identifier. For more information, see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
 <<<
-* `views`
+* `VIEWS`
 +
 displays the names of all the views in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `views in schema [_catalog-name_.]_schema-name_`
+* `VIEWS [IN SCHEMA _[catalog-name.]schema-name_]`
 +
 displays the names of all the views in the specified schema. For the _catalog-name_, you can specify only trafodion.
 
-* `views on table \[[_catalog-name_.]_schema-name_.]_table-name_`
+* `VIEWS [IN VIEW _view-name_]`
 +
-displays the names of all the views that were created for the specified table. If you do not qualify the table name with
+returns views that referenced by the view _view-name_.
+
+* `VIEWS [ON VIEW _view-name_]`
++
+returns views that reference the view _view-name_.
+
+* `VIEWS ON TABLE _[[catalog-name.]schema-name.]table-name_`
++
+returns views that reference the table _table-name_.
++
+If you do not qualify the table name with
 catalog and schema names, get uses the catalog and schema of the current session. For the _catalog-name_, you can specify
 only trafodion.
+
+* `PRIVILEGES FOR {USER | ROLE} _authorization-id_`
++
+displays all privileges for a specified user or role.
 
 [[get_considerations]]
 === Considerations for GET
@@ -5377,6 +5741,116 @@ GET VIEWS IN SCHEMA SEABASE2;
 +
 ```
 GET VIEWS ON TABLE T;
+```
+
+* This example makes comparisons among `GET VIEWS [IN VIEW _view-name_]`, `GET VIEWS [ON VIEW _view-name_]`, `GET VIEWS [ON TABLE _table-name_]`
+and `GET TABLES [IN VIEW _view-name_]`.
++
+Creates the table _t1_.
+
++
+```
+SQL>CREATE TABLE t1 (c1 int);
+
+--- SQL operation complete.
+```
+
++
+Creates the view _v1_ based on the table _t1_.
+
++
+```
+SQL>CREATE VIEW v1 AS SELECT * FROM t1;
+
+--- SQL operation complete.
+```
+
++
+Creates the view _v2_ based on the view _v1_.
+
++
+```
+SQL>CREATE VIEW v2 AS SELECT * FROM v1;
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no views are referenced by _v1_.
+
++
+```
+SQL>GET VIEWS IN VIEW v1;
+
+--- SQL operation complete.
+```
+
++
+This statement returns _v1_ as _v1_ is referenced by _v2_.
+
++
+```
+SQL>GET VIEWS IN VIEW v2;
+
+TRAFODION.SEABASE.V1
+
+--- SQL operation complete.
+```
+
++
+This statement returns _v2_ as _v2_ references _v1_.
+
++
+```
+SQL>GET VIEWS ON VIEW v1;
+
+TRAFODION.SEABASE.V2
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no views reference _v2_.
+
++
+```
+SQL>GET VIEWS ON VIEW v2;
+
+--- SQL operation complete.
+```
+
++
+This statements returns _v1_ as _v1_ references _t1_. 
+
++
+```
+SQL>GET VIEWS ON TABLE t1;
+
+TRAFODION.SEABASE.V1
+
+--- SQL operation complete.
+```
+
++
+This statement returns _t1_ as _t1_ is referenced by _v1_.
+
++
+```
+SQL>GET TABLES IN VIEW v1;
+
+TRAFODION.SEABASE.T1
+
+--- SQL operation complete.
+```
+
++
+This statement returns nothing as no tables are referenced by _v2_.
+
++
+```
+SQL>GET TABLES IN VIEW v2;
+
+--- SQL operation complete.
 ```
 
 * This GET statement displays the names of the libraries in the catalog and schema of the current session, which happens to be
@@ -5769,18 +6243,23 @@ System Version 0.9.1. Expected Version 1.0.0.
 The GRANT statement grants access privileges on an SQL object and its columns to specified users or roles.
 Privileges can be granted on the object, on one or more columns, or both.
 
+TIP: The user or role that creates the object becomes the object owner and has all privileges on the object.
+There is no need to grant privileges to the owner, the owner can grant/revoke privileges to/from other users or roles for safety.
+
 IMPORTANT: This statement works only when authentication and
 authorization are enabled in {project-name}. For more information, see
 {docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
-GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
-  ON [object-type] [schema.]object
+GRANT {privilege-name [,privilege-name]... |ALL [PRIVILEGES]} 
+  ON [object-type] [schema-name.]object-name
   TO grantee
   [WITH GRANT OPTION]
   [[GRANTED] BY grantor]
+```
 
-privilege is: 
+```
+privilege-name is:
     DELETE
   | EXECUTE
   | INSERT     [column-list]
@@ -5788,29 +6267,36 @@ privilege is:
   | SELECT     [column-list]
   | UPDATE     [column-list]
   | USAGE
+```
 
-object-type is: 
+```
+object-type is:
     FUNCTION
   | PROCEDURE
   | LIBRARY
   | SEQUENCE 
   | TABLE
+```
 
+```
 grantee is:
     auth-name
+```
 
+```
 grantor is:
     role-name
+```
 
+```
 column-list is:
     (column [,colummn] ...)
-
 ```
 
 <<<
 === syntax description of grant
 
-* `_privilege_ [,_privilege_ ] &#8230; | all [privileges]`
+* `_privilege-name_ [,_privilege-name_ ] &#8230; | all [privileges]`
 +
 Specifies the privileges to grant. You can specify these privileges for an object.
 +
@@ -5823,39 +6309,78 @@ Specifies the privileges to grant. You can specify these privileges for an objec
 | SELECT     [column-list] | Can use the select statement.
 | UPDATE     [column-list] | Can use the update statement on table objects.
 | USAGE                    | For libraries, can create procedures and functions on library objects.
+
 For sequence generators, can use the sequence in a SQL statement.
-| ALL                      | All the applicable privileges. When you specify all for a table or view, 
-this includes the select, delete, insert, references, and update privileges. When the object is a 
-stored procedure or user-defined function (UDF), only the execute privilege is applied. When the 
-object is a library, only the update and usage privileges are applied. When the object is a sequence
+
+| ALL                      | All the applicable privileges. 
+
+When you specify all for a table or view, 
+this includes the select, delete, insert, references, and update privileges. 
+
+When the object is a 
+stored procedure or user-defined function (UDF), only the execute privilege is applied. 
+
+When the 
+object is a library, only the update and usage privileges are applied. 
+
+When the object is a sequence
 generator, only the usage privilege is applied.
 |===
 
-* `ON [_object-type_] [_schema_.]_object_`
+* `ON _[object-type][schema-name.]object-name_`
 +
-Specifies an object on which to grant privileges. If none is specified, it defaults to TABLE.  See <<database_object_names,"Database Object Names>> for more details. _object-type_ can be:
+Specifies an object on which to grant privileges. For more information, see <<database_object_names,Database Object Names>>. 
 
-** `FUNCTION [_schema_.]_function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
-** `LIBRARY [_schema_.]_library-name_`, where _library-name_ is the name of a library object in the database.
-** `PROCEDURE [_schema_.]_procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
++
+If none is specified, it defaults to TABLE. 
+
++
+`_[object-type][schema-name.]object-name_` can be:
+
+** `FUNCTION _[schema-name.]function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
+** `LIBRARY _[schema-name.]library-name_`, where _library-name_ is the name of a library object in the database.
+** `PROCEDURE _[schema-name.]procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
 registered in the database.
-** `SEQUENCE [_schema_.]_sequence-name_`, where _sequence-name_ is the name of a sequence object in the database.
-** `[TABLE] [_schema_.]_object_`, where _object_ is a table or view. 
+** `SEQUENCE _[schema-name.]sequence-name_`, where _sequence-name_ is the name of a sequence object in the database.
+** `[TABLE] _[schema-name.]object_`, where _object_ is a table or view. 
 
-* `TO {_grantee_ &#8230; }`
+* `TO {_grantee_}`
 +
 Specifies the  _auth-name_ to which you grant privileges.
 
 * `_auth-name_`
 +
-Specifies the name of an authorization id to which you grant privileges. See <<authorization_ids,authorization ids>>. 
-The authorization id must be a registered database username, an existing role name, or public. the name is a regular 
-or delimited case-insensitive identifier. See <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
-If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public.
+Specifies the name of an authorization id to which you grant privileges. For more information, see <<authorization_ids,Authorization IDs>>. 
++
+The _auth-name_ is a regular or delimited case-insensitive identifier. For more information, see <<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
++
+The authorization id must be one of the following:
++
+** A registered database username
++
+** An existing role name
++
+** PUBLIC (If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public)
 
 * `WITH GRANT OPTION`
 +
 Specifies that the _auth-name_ to which a privilege is granted may in turn grant the same privilege to other users or roles.
++
+NOTE: `WITH GRANT OPTION` cannot be granted to PUBLIC.
++
+*Example*
++
+```
+SQL>GRANT SELECT ON t1 TO PUBLIC WITH GRANT OPTION;
+
+*** ERROR[1007] The WITH GRANT OPTION is not supported. [2018-06-11 10:56:21]
+```
++
+```
+SQL>GRANT ALL PRIVILEGES ON t1 TO PUBLIC WITH GRANT OPTION;
+
+*** ERROR[1007] The WITH GRANT OPTION is not supported. [2018-06-11 10:52:30]
+```
 
 * `[GRANTED] BY _grantor_`
 +
@@ -5878,18 +6403,123 @@ Specifies the list of columns to grant the requested privilege to.
 [[grant_authorization_and_availability_requirements]]
 ==== Authorization and Availability Requirements
 
-To grant a privilege on an object, you must have both that privilege and the right to grant that privilege. Privileges can 
-be granted directly to you or to one of the roles you have been granted. You can grant a privilege on an object if you are 
-the owner of the object (by which you are implicitly granted all privileges on the object) or the owner of the schema containing 
-the object, or if you have been granted both the privilege and the WITH GRANT OPTION for the privilege.
+* To grant a privilege on an object, you must have both that privilege and the right to grant that privilege. 
 
-If granting privileges on behalf of a role, you must specify the role in the [GRANTED] BY clause. To grant the privileges on 
-behalf of a role, you must be a member of the role, and the role must have the authority to grant the privileges; that is, the 
-role must have been granted the privileges WITH GRANT OPTION.
+* Privileges can be granted directly to you or to one of the roles you have been granted. 
 
-If you lack authority to grant one or more of the specified privileges, SQL returns a warning (yet does grant the specified 
-privileges for which you do have authority to grant). If you lack authority to grant any of the specified privileges, SQL returns 
+* You can grant a privilege on an object if one of the following is true:
++
+** If you are the owner of the object (by which you are implicitly granted all privileges on the object). 
+
++
+** The owner of the schema contains the object.
+
++
+** If you have been granted both the privilege and the `WITH GRANT OPTION` for the privilege.
+
+* If granting privileges on behalf of a role, you must specify the role in the `[GRANTED] BY` clause. 
++
+To grant the privileges on behalf of a role, you must be a member of the role, and the role must have the authority to grant the privileges; 
+that is, the role must have been granted the privileges `WITH GRANT OPTION`.
+
+* If you lack authority to grant:
+
+** If you lack authority to grant one or more of the specified privileges, SQL returns a warning (yet does grant the specified 
+privileges for which you do have authority to grant). 
+
++
+*Example*
+
++
+The owner of the table _customer_ is the _testuser1_, who grants `DELETE`, `INSERT` and `REFERENCES` privileges on the table _customer_ 
+to the user _testuser2_ with `WITH GRANT OPTION`.
+
++
+_testuser1_:
+
++ 
+```
+SQL>GRANT DELETE, INSERT, REFERENCES ON customer TO testuser2 WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+Then _testuser2_ tries to grant all privileges on table _customer_ to _testuser3_.
+
++
+The grant command returns a warning stating that only some of the privileges were granted.
+
++
+`DELETE`, `INSERT` and `REFERENCES` privileges are granted because _testuser2_ has been granted these privileges with grant option.
+
++
+`SELECT` and `UPDATE` privileges are not granted.
+
++
+_testuser2:_
+
++
+```
+SQL>GRANT ALL PRIVILEGES ON customer TO testuser3;
+
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the SELECT privilege. [2018-06-11 16:07:34]
+
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the UPDATE privilege. [2018-06-11 16:07:34]
+
+--- SQL operation complete.
+```
+
++
+Now check privileges for the _testuser1_, _testuser2_ and _testuser3_. 
+
++
+```
+SQL>SHOWDDL customer;
+
+CREATE TABLE TRAFODION.SEABASE.CUSTOMER
+  ( 
+    CUSTNUM                          NUMERIC(4, 0) UNSIGNED NO DEFAULT NOT NULL
+      NOT DROPPABLE NOT SERIALIZED
+  , CUSTNAME                         CHAR(18) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , STREET                           CHAR(22) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , CITY                             CHAR(14) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , STATE                            CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT _ISO88591' ' NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , PRIMARY KEY (CUSTNUM ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT NAMESPACE 'TRAF_RSRVD_3' 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER1 WITH GRANT OPTION;
+   GRANT INSERT, DELETE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER2 WITH GRANT OPTION;
+   GRANT INSERT, DELETE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER3 GRANTED BY TESTUSER2;
+
+--- SQL operation complete.
+```
+
++
+** If you lack authority to grant any of the specified privileges, SQL returns 
 an error.
+
++
+*Example*
+
++
+(continue from examples above)
+
++
+The user _testuser3_ tries to grant `DELETE` privilege to the _testuser4_ but fails as the _testuser3_ lacks authority.
+
++
+```
+SQL>GRANT DELETE ON CUSTOMER TO testuser4;
+
+*** ERROR[1012] No privileges were granted.  TESTUSER3 lacks grant option on the specified privileges.  [2018-06-11 16:21:31]
+```
 
 <<<
 [[grant_examples]]
@@ -5906,6 +6536,122 @@ GRANT SELECT (part_no, part_name), DELETE ON TABLE invent.partloc
 +
 ```
 GRANT SELECT ON TABLE invent.partloc TO ajones;
+```
+
+* This example explains how to grant the `SELECT` privilege to PUBLIC.
+
++
+The _testuser1_ creates the table _t1_. The _testuser2_ and _testuser3_ do not have the `SELECT` privilege on the table _t1_.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT * FROM t1;
+
+*** ERROR[4481] The testuser2 does not have SELECT privilege on table or view TRAFODION.SEABASE.T1. [2018-06-11 11:39:16]
+```
+
++
+The _testuser1_ grants the `SELECT` privilege to all current (_testuser2_ and _testuser3_) and future users.
+
++
+_testuser1_:
+
++
+```
+SQL>GRANT SELECT ON t1 TO PUBLIC；
+
+--- SQL operation complete.
+```
+
++
+Then _testuser2_ and _testuser3_ have the `SELECT` privilege on the table _t1_.
+
++
+_testuser3:_
+
++
+```
+SQL>SELECT * FROM t1;
+
+C1          C2         
+----------- -----------
+          1           2
+          3           4
+
+--- 2 row(s) selected.
+```
+
+* This example shows how to grant privileges to the specified role _"TECHNICAL_WRITER"_ and display privileges.
+
++
+```
+SQL>GRANT DELETE, INSERT, REFERENCES, SELECT (start_date,ship_timestamp,est_complete), UPDATE ON TABLE project TO "TECHNICAL_WRITER";
+
+--- SQL operation complete.
+```
+
++
+```
+SQL>GET PRIVILEGES FOR ROLE "TECHNICAL_WRITER";
+
+-IDU-R-    TRAFODION.SEABASE.PROJECT
+S------    TRAFODION.SEABASE.PROJECT <Column> EST_COMPLETE
+S------    TRAFODION.SEABASE.PROJECT <Column> SHIP_TIMESTAMP
+S------    TRAFODION.SEABASE.PROJECT <Column> START_DATE
+
+--- SQL operation complete.
+```
+
+* This example demonstrates how to grant the specified role _"TECHNICAL_WRITER"_ to the _testuser1_.
++
+```
+SQL>GRANT ROLE "TECHNICAL_WRITER" TO testuser1;
+
+--- SQL operation complete.
+```
+
+* This example illustrates how to grant the `USAGE` privilege.
++
+The _testuser1_ creates the sequence _sequence_testuser1_, at this time, the _testuser2_ can not use this sequence generator.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT SEQNUM(sequence_testuser1, NEXT) FROM DUAL;
+
+*** ERROR[4491] The user does not have the USAGE privilege on sequence TRAFODION.SEABASE.SEQUENCE_TESTUSER1. [2018-06-11 16:49:20]
+```
+
++
+Then the _testuser1_ grants the `USAGE` privilege to the _testuser2_.
+
++
+```
+SQL>GRANT USAGE ON SEQUENCE sequence_testuser1 TO testuser2;
+
+--- SQL operation complete.
+```
+
++
+Now the _testuser2_ can use the sequence generator.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT SEQNUM(sequence_testuser1, next) FROM DUAL;
+
+(EXPR)
+--------------------
+                  112
+
+--- 1 row(s) selected.
 ```
 
 <<<
@@ -5986,7 +6732,7 @@ has been granted to PUBLIC by default.
 specifies a component name on which to grant component privileges. Currently, the only valid component name is SQL_OPERATIONS.
 
 * `TO _grantee_`
-
++
 specifies an _auth-name_ to which you grant component privileges.
 
 * `_auth-name_`
@@ -6059,7 +6805,7 @@ grantee is:
 [[grant_role_syntax]]
 === Syntax Description of GRANT ROLE
 
-* `_role-name_ [,_role-name_]_`
+* `_role-name [,role-name]_`
 + 
 specifies the existing roles to grant.
 
@@ -6096,7 +6842,7 @@ The INSERT statement is a DML statement that inserts rows in a table or
 view.
 
 ```
-INSERT INTO table [(target-col-list)] insert-source
+INSERT INTO table-name [(target-col-list)] insert-source
 
 target-col-list is:
     colname [,colname]...
@@ -6108,11 +6854,11 @@ insert-source is:
 [[insert_syntax]]
 === Syntax Description of INSERT
 
-* `_table_`
+* `_table-name_`
 +
 names the user table or view in which to insert rows. _table_ must be a base table or an updatable view.
 
-* `_(target-col-list)_`
+* `_target-col-list_`
 +
 names the columns in the table or view in which to insert values. The data type of each target column must be 
 compatible with the data type of its corresponding source value. Within the list, each target column must
@@ -6124,14 +6870,14 @@ into the columns that do not appear in the list. See <<column_default_settings,C
 +
 If you do not specify _target-col-list_, row values from the source table are inserted into all columns in _table_. 
 The order of the column values in the source table must be the same order as that of the columns specified in the 
-CREATE TABLE for _table_. (This order is the same as that of the columns listed in the result table of SHOWDDL
-_table_.)
+CREATE TABLE for _table_. (This order is the same as that of the columns listed in the result table of `SHOWDDL
+table-name`.)
 
 * `_insert-source_`
 +
 specifies the rows of values to be inserted into all columns of _table_ or, optionally, into specified columns of _table_.
 
-* `_query-expr_`
+** `_query-expr_`
 +
 For the description of _query-expr_, _order-by-clause_, and _access-clause_, see the <<select_statement,SELECT Statement>>.
 
@@ -6269,7 +7015,7 @@ VALUES (1120, 'EXPERT MAILERS', '5769 N. 25TH PL',
 --- 1 row(s) inserted.
 ```
 Unlike the previous example, the insert source of this statement does not contain a value for the CREDIT column, which 
-has a default value. Asa result, this INSERT must include the column name list.
+has a default value. As a result, this INSERT must include the column name list.
 +
 This SELECT statement shows the default value 'C1' for CREDIT:
 +
@@ -6372,15 +7118,15 @@ INVOKE  table-name
 === Syntax Description of INVOKE
 
 * `_table-name_`
-_
++
 specifies the name of a table, view, or index for which to generate a record description. 
-See <<database_object_names,Database Object Names>>.
+For more information, see <<database_object_names,Database Object Names>>.
 
 [[invoke_considerations]]
 === Considerations for INVOKE
 
 [[invoke_required_privileges]]
-=== Required Privileges
+==== Required Privileges
 
 To issue an INVOKE statement, one of the following must be true:
 
@@ -6456,7 +7202,7 @@ The ON predicate must select a unique row if the MERGE has a _when-not-matched-c
 === Considerations for MERGE
 
 [[merge_upsert_using_single_row]]
-=== Upsert Using Single Row
+==== Upsert Using Single Row
 
 A MERGE statement allows you to specify a set of column values that should be updated if the row is found, and another 
 row to be inserted if the row is not found. The ON predicate must select exactly one row that is to be updated if the 
@@ -6593,7 +7339,7 @@ MERGE INTO t ON
 
 For each row selected out of the select-query, the MERGE statement is evaluated. Values selected are used 
 in the _on-clause_ to join with the column of the merged table. If the value is found, it is updated. If it
-is not found, the insert is done. The restrictions are the same as those for <<upsert_using_single_row, Upsert Using Single Row>.
+is not found, the insert is done. The restrictions are the same as those for <<upsert_using_single_row, Upsert Using Single Row>>.
 
 [[merge_examples]]
 === Examples of MERGE
@@ -6858,12 +7604,11 @@ Specifies the privileges to revoke. You can specify these privileges for an obje
 [cols="20%,80%"]
 |===
 | DELETE                   | Revokes the ability to use the DELETE statement.
-| EXECUTE                  | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability
+| EXECUTE                  | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability to execute a user-defined function (UDF).
 | INSERT     [columm-list] | Revokes the ability to use the INSERT statement.
 | REFERENCES [column-list] | Revokes the ability to create constraints that reference the object.
 | SELECT     [column-list] | Revokes the ability to use the SELECT statement.
 | UPDATE     [column-list] | Revokes the ability to use the UPDATE statement.
-to execute a user-defined function (UDF).
 | USAGE                    | For libraries, revokes the ability to access a library using the 
 CREATE PROCEDURE or CREATE FUNCTION statement.
 For sequence generators, revokes the ability to access a sequence in a SQL query.
@@ -6940,44 +7685,51 @@ REVOKE GRANT OPTION FOR SELECT (part_no, part_name), DELETE ON TABLE invent.part
 REVOKE SELECT (part_no, part_name), DELETE ON TABLE invent.partloc FROM jsmith, clerks;
 ```
 
-* To revoke a user’s SELECT privileges on a table:
+* To revoke a user’s SELECT privileges on a table.
++
+User administrator grants the SELECT privilege to _JSMITH_.
 +
 ```
--- User administrator grants the SELECT privilege to JSMITH:
 GRANT SELECT ON TABLE invent.partloc TO jsmith WITH GRANT OPTION;
-
--- JSMITH grants the SELECT privilege to AJONES:
+```
++
+_JSMITH_ grants the SELECT privilege to _AJONES_.
++
+```
 GRANT SELECT ON TABLE invent.partloc TO ajones;
-
--- If the user administrator attempts to revoke the SELECT
--- privilege from JSMITH, this would fail because
--- of the privilege granted to AJONES based on the
--- privilege granted to JSMITH.
--- To successfully revoke the SELECT privilege from
--- JSMITH, the SELECT privilege granted to AJONES
--- must be revoked first. For this example:
--- 1. JSMITH revokes the SELECT privilege granted to AJONES:
+```
++
+If the user administrator attempts to revoke the SELECT privilege from _JSMITH_, this would fail because of 
+the privilege granted to _AJONES_ based on the privilege granted to _JSMITH_. To successfully revoke the SELECT privilege from _JSMITH_, the SELECT privilege granted to _AJONES_ 
+must be revoked first. 
++
+For this example:
++
+_JSMITH_ revokes the SELECT privilege granted to _AJONES_.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM ajones;
-
--- 2. User administrator revokes the SELECT privilege on the
--- table from JSMITH:
+```
++
+User administrator revokes the SELECT privilege on the table from _JSMITH_, the REVOKE operation succeeds.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM jsmith RESTRICT;
-
--- The REVOKE operation succeeds.
--- An easier way to make the REVOKE operation successful is
--- to use the CASCADE option:
+```
++
+An easier way to make the REVOKE operation successful is to use the `CASCADE option`.
++
+The REVOKE operation succeeds because the `CASCADE option` causes all specified privileges, and all privileges that
+were granted based upon the specified privileges, to be removed.
++
+```
 REVOKE SELECT ON TABLE invent.partloc FROM jsmith CASCADE;
-
--- The REVOKE operation succeeds because the CASCADE option
--- causes all specified privileges, and all privileges that
--- were granted based upon the specified privileges, to be
--- removed.
 ```
 
-* Administration in the shipping department decides that the CLERKS role should no longer be able to grant
-privileges on the invent.partloc table. Fred has recently moved to another department, so JSMITH revokes
-the SELECT privilege on the invent.partloc table from Fred, who was granted the privilege by CLERKS. Then,
-JSMITH revokes the grant option from CLERKS:
+* Administration in the shipping department decides that the _CLERKS_ role should no longer be able to grant
+privileges on the _invent.partloc_ table. _Fred_ has recently moved to another department, so _JSMITH_ revokes
+the SELECT privilege on the _invent.partloc_ table from _Fred_, who was granted the privilege by _CLERKS_. Then,
+_JSMITH_ revokes the grant option from _CLERKS_:
 +
 ```
 REVOKE SELECT on table invent.partloc FROM fred GRANTED BY clerks;
@@ -7483,10 +8235,10 @@ operation. new is not allowed. an implicit old.* return list is assumed for a de
 <<<
 **** `_col-expr_ [[AS] _name_]`
 +
-specifies a derived column determined by the evaluation of an sql value expression in the list. any column referred to in a value
-expression is from the row in the old table exposed by the delete. the old table refers to column values before the delete operation.
+specifies a derived column determined by the evaluation of an sql value expression in the list. Any column referred to in a value
+expression is from the row in the old table exposed by the delete. The old table refers to column values before the delete operation.
 +
-By using the as clause, you can associate a derived column, _col-expr_, with a _name_. _name_ is an SQL identifier. See
+By using the `AS clause`, you can associate a derived column, _col-expr_, with a _name_. _name_ is an SQL identifier. See
 <<identifiers,Identifier>>.
 
 *** `[AS] _corr_ [(_col-expr-list_)]`
@@ -7552,22 +8304,22 @@ specifies a correlation name, _corr_, and an optional column list. See <<correla
 A _joined-table_ can be specified as:
 +
 ```
-_table-ref_ [_join-type_] JOIN _table-ref join-spec_
-| _table-ref_ NATURAL [_join-type_] JOIN _table-ref_
-| _table-ref_ CROSS JOIN _table-ref_
-| (_joined-table_)
+table-ref [join-type] JOIN table-ref join-spec
+| table-ref NATURAL [join-type] JOIN table-ref
+| table-ref CROSS JOIN table-ref
+| (joined-table)
 ```
 
 <<<
-*** `_join-type_ is: INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
+*** `_join-type_` is: 
 +
-is a joined table. You specify the _join-type_ by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
+`INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
++
+is a joined table. You specify the `_join-type_` by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
 If you omit the optional OUTER keyword and use LEFT, RIGHT, or FULL in a join, {project-name} SQL assumes the join is
 an outer join.
-+
-If you specify a CROSS join as the _join-type_, you cannot specify a NATURAL join or a
 
-*** `_join-spec_.`
+*** `_join-spec_`
 +
 If you specify an INNER, LEFT, RIGHT, or FULL join as the _join-type_ and you do not specify a NATURAL join, you
 must use an ON clause as the _join-spec_, as follows: subqueries are not allowed in the join predicate of FULL OUTER JOIN.
@@ -9525,23 +10277,23 @@ the UPSERT occurs within a transaction.
 * `_table_`
 +
 names the user table in which to insert or update rows. _table_ must be
-a base table. (_target-col-list_)
+a base table. 
+
+*`_target-col-list_`
 +
 names the columns in the table in which to insert or update values. The
-data type of each target
-+
-column must be compatible with the data type of its corresponding source
+data type of each target column must be compatible with the data type of its corresponding source
 value. Within the list, each target column must have the same position
 as its associated source value, whose position is determined by the
 columns in the table derived from the evaluation of the query expression
-(_query-expr_).
+(`_query-expr_`).
 +
 If you do not specify all of the columns in the target _table_ in the
-_target-col-list_, column default values are inserted into or updated
+`_target-col-list_`, column default values are inserted into or updated
 in the columns that do not appear in the list. See
 <<column_default_settings,Column Default Settings>>.
 +
-If you do not specify _target-col-list_, row values from the source
+If you do not specify `_target-col-list_`, row values from the source
 table are inserted into or updated in all columns in table. The order of
 the column values in the source table must be the same order as that of
 the columns specified in the CREATE TABLE for _table_. (This order is
@@ -9759,3 +10511,4 @@ VALUES (1+2, 3+4), (5, (select count (*) from t));
 
 --- 2 row(s) selected.
 ```
+datatype 

@@ -43,7 +43,7 @@
 
 
 #include "ex_god.h"
-#include "ComSqlexedbg.h"
+#include "ComSqlcmpdbg.h"
 #include "Platform.h"
 
 #include "ComExeTrace.h"
@@ -135,11 +135,6 @@ struct TraceEntry {
 
 class ExScheduler : public ExGod
 {
-  //---------------------------------------------------------------------
-  // GSH: These classes are defined in tdm_sqlexedbg component.
-  //---------------------------------------------------------------------
-  friend class CSqlexedbgTCBView;
-  friend class CSqlexedbgTaskView;
 
 public:
 
@@ -265,6 +260,14 @@ public:
   // (this method can also be called from the debugger)!!!
   // ---------------------------------------------------------------------
   void startGui();
+  void stopGui();
+  void getProcInfoForGui(int &frag, int &inst, int &numInst,
+                         int &nid, int &pid, char *procNameBuf,
+                         int procNameBufLen);
+  ExSubtask *getSubtasksForGui() { return subtasks_; }
+  ex_tcb *getLocalRootTcbForGui() { return localRootTcb_; }
+  int getFragInstIdForGui();
+
   // ---------------------------------------------------------------------
   // Method to aid in diagnosing looping problems
   // ---------------------------------------------------------------------
@@ -314,8 +317,8 @@ private:
 
   // should the GUI be displayed?
   NABoolean msGui_;
-  // function pointers for Microsoft GUI
-  SqlexedbgExpFuncs *pExpFuncs_;
+  // function pointers for GUI
+  SqlcmpdbgExpFuncs *pExpFuncs_;
   // root TCB
   ex_tcb *localRootTcb_;
 
@@ -359,13 +362,6 @@ private:
 class ExSubtask
 {
   friend class ExScheduler;
-  //---------------------------------------------------------------------
-  // GSH: These classes are defined in tdm_sqlexedbg component.
-  //---------------------------------------------------------------------
-  friend class CSqlexedbgTCBView;
-  friend class CSqlexedbgTaskView;
-  friend class CSqlexedbgApp;
-
 
 public:
 
@@ -379,9 +375,10 @@ public:
   //
   inline Int32 getBreakPoint() const      { return breakPoint_; }
   inline void setBreakPoint(Int32 val)     { breakPoint_ = val; }  
-  inline const char * getTaskName() const { return taskName_; }
+  inline const char * getTaskName() const   { return taskName_; }
   inline Int32 * getScheduledAddr()       { return &scheduled_; }
-  
+  inline ExSubtask *getNextForGUI()             { return next_; }
+
 protected:
 
   ExSubtask( 

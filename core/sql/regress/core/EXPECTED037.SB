@@ -75,7 +75,7 @@
 >>invoke table_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.TABLE_NAME
--- Definition current  Thu Dec  7 05:50:27 2017
+-- Definition current  Tue Jul 10 20:07:07 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -205,6 +205,7 @@
 +>, STORE int not null 
 +>, SUBCLASS_ORIGIN int not null 
 +>, SUBSYSTEM_ID int not null 
++>, SYS_GUID int not null 
 +>, system_name int not null 
 +>, TABLE_NAME int not null 
 +>, TYPE int not null 
@@ -224,7 +225,7 @@
 >>invoke system_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.SYSTEM_NAME
--- Definition current  Thu Dec  7 05:50:32 2017
+-- Definition current  Tue Jul 10 20:07:12 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -285,6 +286,7 @@
   , STORE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SUBCLASS_ORIGIN                  INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SUBSYSTEM_ID                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_GUID                         INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SYSTEM_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
   , TABLE_NAME                       INT NO DEFAULT NOT NULL NOT DROPPABLE
   , TYPE                             INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -358,9 +360,14 @@ create view sqlerror  as select usa from table_name;
 
 >>create view sqlstate  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
+*** ERROR[3128] SQLSTATE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
 
---- SQL operation failed with errors.
+*** ERROR[15001] A syntax error occurred at or before: 
+create view sqlstate  as select usa from table_name;
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>create view stddev  as select usa from table_name;
 
 *** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
@@ -376,9 +383,14 @@ create view table  as select usa from table_name;
 
 >>create view upshift  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
+*** ERROR[3128] UPSHIFT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
 
---- SQL operation failed with errors.
+*** ERROR[15001] A syntax error occurred at or before: 
+create view upshift  as select usa from table_name;
+                  ^ (19 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>create view variance  as select usa from table_name;
 
 *** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
@@ -398,27 +410,62 @@ create view table  as select usa from table_name;
 >>-- Expect error [3128]
 >>prepare s1 from SELECT AFTER AFTER from (values(0)) AFTER(AFTER);
 
---- SQL command prepared.
+*** ERROR[3128] AFTER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AFTER AFTER from (values(0)) AFTER(AFTER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT ASYNC ASYNC from (values(0)) ASYNC(ASYNC);
 
---- SQL command prepared.
+*** ERROR[3128] ASYNC is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ASYNC ASYNC from (values(0)) ASYNC(ASYNC);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT AT AT from (values(0)) AT(AT);
 
---- SQL command prepared.
+*** ERROR[3128] AT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AT AT from (values(0)) AT(AT);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT BEFORE BEFORE from (values(0)) BEFORE(BEFORE);
 
---- SQL command prepared.
+*** ERROR[3128] BEFORE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BEFORE BEFORE from (values(0)) BEFORE(BEFORE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT BIT_LENGTH BIT_LENGTH from (values(0)) BIT_LENGTH(BIT_LENGTH);
 
---- SQL command prepared.
+*** ERROR[3128] BIT_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BIT_LENGTH BIT_LENGTH from (values(0)) BIT_LENGTH(BIT_LENGTH);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [15001]
 >>prepare s1 from SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
@@ -433,72 +480,170 @@ SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT BREADTH BREADTH from (values(0)) BREADTH(BREADTH);
 
---- SQL command prepared.
+*** ERROR[3128] BREADTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BREADTH BREADTH from (values(0)) BREADTH(BREADTH);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT COMPLETION COMPLETION from (values(0)) COMPLETION(COMPLETION);
 
---- SQL command prepared.
+*** ERROR[3128] COMPLETION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COMPLETION COMPLETION from (values(0)) COMPLETION(COMPLETION);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT CONNECT CONNECT from (values(0)) CONNECT(CONNECT);
 
---- SQL command prepared.
+*** ERROR[3128] CONNECT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CONNECT CONNECT from (values(0)) CONNECT(CONNECT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT CYCLE CYCLE from (values(0)) CYCLE(CYCLE);
 
---- SQL command prepared.
+*** ERROR[3128] CYCLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CYCLE CYCLE from (values(0)) CYCLE(CYCLE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT DEFERRABLE DEFERRABLE from (values(0)) DEFERRABLE(DEFERRABLE);
 
---- SQL command prepared.
+*** ERROR[3128] DEFERRABLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEFERRABLE DEFERRABLE from (values(0)) DEFERRABLE(DEFERRABLE);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT DEFERRED DEFERRED from (values(0)) DEFERRED(DEFERRED);
 
---- SQL command prepared.
+*** ERROR[3128] DEFERRED is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEFERRED DEFERRED from (values(0)) DEFERRED(DEFERRED);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT DEPTH DEPTH from (values(0)) DEPTH(DEPTH);
 
---- SQL command prepared.
+*** ERROR[3128] DEPTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEPTH DEPTH from (values(0)) DEPTH(DEPTH);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT DICTIONARY DICTIONARY from (values(0)) DICTIONARY(DICTIONARY);
 
---- SQL command prepared.
+*** ERROR[3128] DICTIONARY is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DICTIONARY DICTIONARY from (values(0)) DICTIONARY(DICTIONARY);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT DISCONNECT DISCONNECT from (values(0)) DISCONNECT(DISCONNECT);
 
---- SQL command prepared.
+*** ERROR[3128] DISCONNECT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DISCONNECT DISCONNECT from (values(0)) DISCONNECT(DISCONNECT);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT DOMAIN DOMAIN from (values(0)) DOMAIN(DOMAIN);
 
---- SQL command prepared.
+*** ERROR[3128] DOMAIN is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DOMAIN DOMAIN from (values(0)) DOMAIN(DOMAIN);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT EACH EACH from (values(0)) EACH(EACH);
 
---- SQL command prepared.
+*** ERROR[3128] EACH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EACH EACH from (values(0)) EACH(EACH);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT EQUALS EQUALS from (values(0)) EQUALS(EQUALS);
 
---- SQL command prepared.
+*** ERROR[3128] EQUALS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EQUALS EQUALS from (values(0)) EQUALS(EQUALS);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT EXEC EXEC from (values(0)) EXEC(EXEC);
 
---- SQL command prepared.
+*** ERROR[3128] EXEC is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXEC EXEC from (values(0)) EXEC(EXEC);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT GENERAL GENERAL from (values(0)) GENERAL(GENERAL);
 
---- SQL command prepared.
+*** ERROR[3128] GENERAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GENERAL GENERAL from (values(0)) GENERAL(GENERAL);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect SYNTAX error now that we use IDENTITY as a token
 >>prepare s1 from SELECT IDENTITY IDENTITY from (values(0)) IDENTITY(IDENTITY);
@@ -513,22 +658,50 @@ SELECT IDENTITY IDENTITY from (values(0)) IDENTITY(IDENTITY);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT INITIALLY INITIALLY from (values(0)) INITIALLY(INITIALLY);
 
---- SQL command prepared.
+*** ERROR[3128] INITIALLY is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INITIALLY INITIALLY from (values(0)) INITIALLY(INITIALLY);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT INSENSITIVE INSENSITIVE from (values(0)) INSENSITIVE(INSENSITIVE);
 
---- SQL command prepared.
+*** ERROR[3128] INSENSITIVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INSENSITIVE INSENSITIVE from (values(0)) INSENSITIVE(INSENSITIVE);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT LEAVE LEAVE from (values(0)) LEAVE(LEAVE);
 
---- SQL command prepared.
+*** ERROR[3128] LEAVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LEAVE LEAVE from (values(0)) LEAVE(LEAVE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT LESS LESS from (values(0)) LESS(LESS);
 
---- SQL command prepared.
+*** ERROR[3128] LESS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LESS LESS from (values(0)) LESS(LESS);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect syntax error, LIMIT must be double quoted.
 >>prepare s1 from SELECT LIMIT LIMIT from (values(0)) LIMIT(LIMIT);
@@ -543,12 +716,26 @@ SELECT LIMIT LIMIT from (values(0)) LIMIT(LIMIT);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT LOOP LOOP from (values(0)) LOOP(LOOP);
 
---- SQL command prepared.
+*** ERROR[3128] LOOP is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LOOP LOOP from (values(0)) LOOP(LOOP);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT MODIFY MODIFY from (values(0)) MODIFY(MODIFY);
 
---- SQL command prepared.
+*** ERROR[3128] MODIFY is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MODIFY MODIFY from (values(0)) MODIFY(MODIFY);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT NEW NEW from (values(0)) NEW(NEW);
@@ -558,7 +745,14 @@ SELECT LIMIT LIMIT from (values(0)) LIMIT(LIMIT);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT NEXT NEXT from (values(0)) NEXT(NEXT);
 
---- SQL command prepared.
+*** ERROR[3128] NEXT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NEXT NEXT from (values(0)) NEXT(NEXT);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [15001]
 >>prepare s1 from SELECT NONE NONE from (values(0)) NONE(NONE);
@@ -573,7 +767,14 @@ SELECT NONE NONE from (values(0)) NONE(NONE);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT OBJECT OBJECT from (values(0)) OBJECT(OBJECT);
 
---- SQL command prepared.
+*** ERROR[3128] OBJECT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OBJECT OBJECT from (values(0)) OBJECT(OBJECT);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT OID OID from (values(0)) OID(OID);
@@ -588,47 +789,110 @@ SELECT NONE NONE from (values(0)) NONE(NONE);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT OPERATORS OPERATORS from (values(0)) OPERATORS(OPERATORS);
 
---- SQL command prepared.
+*** ERROR[3128] OPERATORS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OPERATORS OPERATORS from (values(0)) OPERATORS(OPERATORS);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT OTHERS OTHERS from (values(0)) OTHERS(OTHERS);
 
---- SQL command prepared.
+*** ERROR[3128] OTHERS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OTHERS OTHERS from (values(0)) OTHERS(OTHERS);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PAD PAD from (values(0)) PAD(PAD);
 
---- SQL command prepared.
+*** ERROR[3128] PAD is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PAD PAD from (values(0)) PAD(PAD);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PARAMETERS PARAMETERS from (values(0)) PARAMETERS(PARAMETERS);
 
---- SQL command prepared.
+*** ERROR[3128] PARAMETERS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PARAMETERS PARAMETERS from (values(0)) PARAMETERS(PARAMETERS);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PENDANT PENDANT from (values(0)) PENDANT(PENDANT);
 
---- SQL command prepared.
+*** ERROR[3128] PENDANT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PENDANT PENDANT from (values(0)) PENDANT(PENDANT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PREORDER PREORDER from (values(0)) PREORDER(PREORDER);
 
---- SQL command prepared.
+*** ERROR[3128] PREORDER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PREORDER PREORDER from (values(0)) PREORDER(PREORDER);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PRESERVE PRESERVE from (values(0)) PRESERVE(PRESERVE);
 
---- SQL command prepared.
+*** ERROR[3128] PRESERVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRESERVE PRESERVE from (values(0)) PRESERVE(PRESERVE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PRIOR PRIOR from (values(0)) PRIOR(PRIOR);
 
---- SQL command prepared.
+*** ERROR[3128] PRIOR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRIOR PRIOR from (values(0)) PRIOR(PRIOR);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PRIVATE PRIVATE from (values(0)) PRIVATE(PRIVATE);
 
---- SQL command prepared.
+*** ERROR[3128] PRIVATE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRIVATE PRIVATE from (values(0)) PRIVATE(PRIVATE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [15001]
 >>prepare s1 from SELECT PROTECTED PROTECTED from (values(0)) PROTECTED(PROTECTED);
@@ -643,32 +907,74 @@ SELECT PROTECTED PROTECTED from (values(0)) PROTECTED(PROTECTED);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT REF REF from (values(0)) REF(REF);
 
---- SQL command prepared.
+*** ERROR[3128] REF is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REF REF from (values(0)) REF(REF);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT REFERENCING REFERENCING from (values(0)) REFERENCING(REFERENCING);
 
---- SQL command prepared.
+*** ERROR[3128] REFERENCING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REFERENCING REFERENCING from (values(0)) REFERENCING(REFERENCING);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT RELATIVE RELATIVE from (values(0)) RELATIVE(RELATIVE);
 
---- SQL command prepared.
+*** ERROR[3128] RELATIVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RELATIVE RELATIVE from (values(0)) RELATIVE(RELATIVE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT RESIGNAL RESIGNAL from (values(0)) RESIGNAL(RESIGNAL);
 
---- SQL command prepared.
+*** ERROR[3128] RESIGNAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RESIGNAL RESIGNAL from (values(0)) RESIGNAL(RESIGNAL);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT RETURNS RETURNS from (values(0)) RETURNS(RETURNS);
 
---- SQL command prepared.
+*** ERROR[3128] RETURNS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RETURNS RETURNS from (values(0)) RETURNS(RETURNS);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT ROUTINE ROUTINE from (values(0)) ROUTINE(ROUTINE);
 
---- SQL command prepared.
+*** ERROR[3128] ROUTINE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ROUTINE ROUTINE from (values(0)) ROUTINE(ROUTINE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT ROW ROW from (values(0)) ROW(ROW);
@@ -683,57 +989,134 @@ SELECT ROW ROW from (values(0)) ROW(ROW);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SAVEPOINT SAVEPOINT from (values(0)) SAVEPOINT(SAVEPOINT);
 
---- SQL command prepared.
+*** ERROR[3128] SAVEPOINT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SAVEPOINT SAVEPOINT from (values(0)) SAVEPOINT(SAVEPOINT);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SCROLL SCROLL from (values(0)) SCROLL(SCROLL);
 
---- SQL command prepared.
+*** ERROR[3128] SCROLL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SCROLL SCROLL from (values(0)) SCROLL(SCROLL);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SEARCH SEARCH from (values(0)) SEARCH(SEARCH);
 
---- SQL command prepared.
+*** ERROR[3128] SEARCH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SEARCH SEARCH from (values(0)) SEARCH(SEARCH);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SENSITIVE SENSITIVE from (values(0)) SENSITIVE(SENSITIVE);
 
---- SQL command prepared.
+*** ERROR[3128] SENSITIVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SENSITIVE SENSITIVE from (values(0)) SENSITIVE(SENSITIVE);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SIGNAL SIGNAL from (values(0)) SIGNAL(SIGNAL);
 
---- SQL command prepared.
+*** ERROR[3128] SIGNAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SIGNAL SIGNAL from (values(0)) SIGNAL(SIGNAL);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SIMILAR SIMILAR from (values(0)) SIMILAR(SIMILAR);
 
---- SQL command prepared.
+*** ERROR[3128] SIMILAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SIMILAR SIMILAR from (values(0)) SIMILAR(SIMILAR);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SQLEXCEPTION SQLEXCEPTION from (values(0)) SQLEXCEPTION(SQLEXCEPTION);
 
---- SQL command prepared.
+*** ERROR[3128] SQLEXCEPTION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLEXCEPTION SQLEXCEPTION from (values(0)) SQLEXCEPTION(SQLEXCEPTION);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SQLSTATE SQLSTATE from (values(0)) SQLSTATE(SQLSTATE);
 
---- SQL command prepared.
+*** ERROR[3128] SQLSTATE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLSTATE SQLSTATE from (values(0)) SQLSTATE(SQLSTATE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SQLWARNING SQLWARNING from (values(0)) SQLWARNING(SQLWARNING);
 
---- SQL command prepared.
+*** ERROR[3128] SQLWARNING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLWARNING SQLWARNING from (values(0)) SQLWARNING(SQLWARNING);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT STRUCTURE STRUCTURE from (values(0)) STRUCTURE(STRUCTURE);
 
---- SQL command prepared.
+*** ERROR[3128] STRUCTURE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT STRUCTURE STRUCTURE from (values(0)) STRUCTURE(STRUCTURE);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SYSTEM_USER SYSTEM_USER from (values(0)) SYSTEM_USER(SYSTEM_USER);
 
---- SQL command prepared.
+*** ERROR[3128] SYSTEM_USER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SYSTEM_USER SYSTEM_USER from (values(0)) SYSTEM_USER(SYSTEM_USER);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT TEMPORARY TEMPORARY from (values(0)) TEMPORARY(TEMPORARY);
@@ -748,37 +1131,86 @@ SELECT TEMPORARY TEMPORARY from (values(0)) TEMPORARY(TEMPORARY);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT TEST TEST from (values(0)) TEST(TEST);
 
---- SQL command prepared.
+*** ERROR[3128] TEST is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TEST TEST from (values(0)) TEST(TEST);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT THERE THERE from (values(0)) THERE(THERE);
 
---- SQL command prepared.
+*** ERROR[3128] THERE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT THERE THERE from (values(0)) THERE(THERE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT TIMEZONE_HOUR TIMEZONE_HOUR from (values(0)) TIMEZONE_HOUR(TIMEZONE_HOUR);
 
---- SQL command prepared.
+*** ERROR[3128] TIMEZONE_HOUR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TIMEZONE_HOUR TIMEZONE_HOUR from (values(0)) TIMEZONE_HOUR(TIMEZONE_HOUR
+                                 ^ (34 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT TIMEZONE_MINUTE TIMEZONE_MINUTE from (values(0)) TIMEZONE_MINUTE(TIMEZONE_MINUTE);
 
---- SQL command prepared.
+*** ERROR[3128] TIMEZONE_MINUTE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TIMEZONE_MINUTE TIMEZONE_MINUTE from (values(0)) TIMEZONE_MINUTE(TIMEZON
+                                     ^ (38 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT TRANSLATION TRANSLATION from (values(0)) TRANSLATION(TRANSLATION);
 
---- SQL command prepared.
+*** ERROR[3128] TRANSLATION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRANSLATION TRANSLATION from (values(0)) TRANSLATION(TRANSLATION);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT TRIGGER TRIGGER from (values(0)) TRIGGER(TRIGGER);
 
---- SQL command prepared.
+*** ERROR[3128] TRIGGER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRIGGER TRIGGER from (values(0)) TRIGGER(TRIGGER);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT UNDER UNDER from (values(0)) UNDER(UNDER);
 
---- SQL command prepared.
+*** ERROR[3128] UNDER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UNDER UNDER from (values(0)) UNDER(UNDER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT USAGE USAGE from (values(0)) USAGE(USAGE);
@@ -793,152 +1225,362 @@ SELECT USAGE USAGE from (values(0)) USAGE(USAGE);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT VARIABLE VARIABLE from (values(0)) VARIABLE(VARIABLE);
 
---- SQL command prepared.
+*** ERROR[3128] VARIABLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VARIABLE VARIABLE from (values(0)) VARIABLE(VARIABLE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT VIRTUAL VIRTUAL from (values(0)) VIRTUAL(VIRTUAL);
 
---- SQL command prepared.
+*** ERROR[3128] VIRTUAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VIRTUAL VIRTUAL from (values(0)) VIRTUAL(VIRTUAL);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT VISIBLE VISIBLE from (values(0)) VISIBLE(VISIBLE);
 
---- SQL command prepared.
+*** ERROR[3128] VISIBLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VISIBLE VISIBLE from (values(0)) VISIBLE(VISIBLE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT WAIT WAIT from (values(0)) WAIT(WAIT);
 
---- SQL command prepared.
+*** ERROR[3128] WAIT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WAIT WAIT from (values(0)) WAIT(WAIT);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT WHILE WHILE from (values(0)) WHILE(WHILE);
 
---- SQL command prepared.
+*** ERROR[3128] WHILE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WHILE WHILE from (values(0)) WHILE(WHILE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT ZONE ZONE from (values(0)) ZONE(ZONE);
 
---- SQL command prepared.
+*** ERROR[3128] ZONE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ZONE ZONE from (values(0)) ZONE(ZONE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT CAST CAST from (values(0)) CAST(CAST);
 
---- SQL command prepared.
+*** ERROR[3128] CAST is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CAST CAST from (values(0)) CAST(CAST);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT CHARACTER_LENGTH CHARACTER_LENGTH from (values(0)) CHARACTER_LENGTH(CHARACTER_LENGTH);
 
---- SQL command prepared.
+*** ERROR[3128] CHARACTER_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CHARACTER_LENGTH CHARACTER_LENGTH from (values(0)) CHARACTER_LENGTH(CHAR
+                                       ^ (40 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT CHAR_LENGTH CHAR_LENGTH from (values(0)) CHAR_LENGTH(CHAR_LENGTH);
 
---- SQL command prepared.
+*** ERROR[3128] CHAR_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CHAR_LENGTH CHAR_LENGTH from (values(0)) CHAR_LENGTH(CHAR_LENGTH);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT DOUBLE DOUBLE from (values(0)) DOUBLE(DOUBLE);
 
---- SQL command prepared.
+*** ERROR[3128] DOUBLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DOUBLE DOUBLE from (values(0)) DOUBLE(DOUBLE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT ELSE ELSE from (values(0)) ELSE(ELSE);
 
---- SQL command prepared.
+*** ERROR[3128] ELSE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ELSE ELSE from (values(0)) ELSE(ELSE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT END END from (values(0)) END(END);
 
---- SQL command prepared.
+*** ERROR[3128] END is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT END END from (values(0)) END(END);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT FLOAT FLOAT from (values(0)) FLOAT(FLOAT);
 
---- SQL command prepared.
+*** ERROR[3128] FLOAT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FLOAT FLOAT from (values(0)) FLOAT(FLOAT);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT LOWER LOWER from (values(0)) LOWER(LOWER);
 
---- SQL command prepared.
+*** ERROR[3128] LOWER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LOWER LOWER from (values(0)) LOWER(LOWER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT MIN MIN from (values(0)) MIN(MIN);
 
---- SQL command prepared.
+*** ERROR[3128] MIN is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MIN MIN from (values(0)) MIN(MIN);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT NATIONAL NATIONAL from (values(0)) NATIONAL(NATIONAL);
 
---- SQL command prepared.
+*** ERROR[3128] NATIONAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NATIONAL NATIONAL from (values(0)) NATIONAL(NATIONAL);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT NCHAR NCHAR from (values(0)) NCHAR(NCHAR);
 
---- SQL command prepared.
+*** ERROR[3128] NCHAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NCHAR NCHAR from (values(0)) NCHAR(NCHAR);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT OCTET_LENGTH OCTET_LENGTH from (values(0)) OCTET_LENGTH(OCTET_LENGTH);
 
---- SQL command prepared.
+*** ERROR[3128] OCTET_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OCTET_LENGTH OCTET_LENGTH from (values(0)) OCTET_LENGTH(OCTET_LENGTH);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT POSITION POSITION from (values(0)) POSITION(POSITION);
 
---- SQL command prepared.
+*** ERROR[3128] POSITION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT POSITION POSITION from (values(0)) POSITION(POSITION);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT PRECISION PRECISION from (values(0)) PRECISION(PRECISION);
 
---- SQL command prepared.
+*** ERROR[3128] PRECISION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRECISION PRECISION from (values(0)) PRECISION(PRECISION);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT REAL REAL from (values(0)) REAL(REAL);
 
---- SQL command prepared.
+*** ERROR[3128] REAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REAL REAL from (values(0)) REAL(REAL);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SUBSTRING SUBSTRING from (values(0)) SUBSTRING(SUBSTRING);
 
---- SQL command prepared.
+*** ERROR[3128] SUBSTRING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SUBSTRING SUBSTRING from (values(0)) SUBSTRING(SUBSTRING);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SQL_FLOAT SQL_FLOAT from (values(0)) SQL_FLOAT(SQL_FLOAT);
 
---- SQL command prepared.
+*** ERROR[3128] SQL_FLOAT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_FLOAT SQL_FLOAT from (values(0)) SQL_FLOAT(SQL_FLOAT);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SQL_REAL SQL_REAL from (values(0)) SQL_REAL(SQL_REAL);
 
---- SQL command prepared.
+*** ERROR[3128] SQL_REAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_REAL SQL_REAL from (values(0)) SQL_REAL(SQL_REAL);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT SQL_VARCHAR SQL_VARCHAR from (values(0)) SQL_VARCHAR(SQL_VARCHAR);
 
---- SQL command prepared.
+*** ERROR[3128] SQL_VARCHAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_VARCHAR SQL_VARCHAR from (values(0)) SQL_VARCHAR(SQL_VARCHAR);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT TRIM TRIM from (values(0)) TRIM(TRIM);
 
---- SQL command prepared.
+*** ERROR[3128] TRIM is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRIM TRIM from (values(0)) TRIM(TRIM);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT UPPER UPPER from (values(0)) UPPER(UPPER);
 
---- SQL command prepared.
+*** ERROR[3128] UPPER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UPPER UPPER from (values(0)) UPPER(UPPER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT UPSHIFT UPSHIFT from (values(0)) UPSHIFT(UPSHIFT);
 
---- SQL command prepared.
+*** ERROR[3128] UPSHIFT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UPSHIFT UPSHIFT from (values(0)) UPSHIFT(UPSHIFT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT VARCHAR VARCHAR from (values(0)) VARCHAR(VARCHAR);
 
---- SQL command prepared.
+*** ERROR[3128] VARCHAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VARCHAR VARCHAR from (values(0)) VARCHAR(VARCHAR);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT VARYING VARYING from (values(0)) VARYING(VARYING);
 
---- SQL command prepared.
+*** ERROR[3128] VARYING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VARYING VARYING from (values(0)) VARYING(VARYING);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect SYNTAX error
 >>prepare s1 from SELECT COLLATE COLLATE from (values(0)) COLLATE(COLLATE);
@@ -1583,7 +2225,14 @@ SELECT ISOLATION ISOLATION from (values(0)) ISOLATION(ISOLATION);
 >>-- Expect SYNTAX error
 >>prepare s1 from SELECT LANGUAGE LANGUAGE from (values(0)) LANGUAGE(LANGUAGE);
 
---- SQL command prepared.
+*** ERROR[3128] LANGUAGE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LANGUAGE LANGUAGE from (values(0)) LANGUAGE(LANGUAGE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect SYNTAX error
 >>prepare s1 from SELECT LAST LAST from (values(0)) LAST(LAST);
@@ -4222,6 +4871,11 @@ SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
 >>
 >>-- Expect success
 >>prepare s1 from SELECT SUBSYSTEM_ID SUBSYSTEM_ID from (values(0)) SUBSYSTEM_ID(SUBSYSTEM_ID);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SYS_GUID SYS_GUID from (values(0)) SYS_GUID (SYS_GUID);
 
 --- SQL command prepared.
 >>

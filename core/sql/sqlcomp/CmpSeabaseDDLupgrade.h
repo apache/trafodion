@@ -212,11 +212,146 @@ struct MDDescsInfo
 // This section should reflect the upgrade steps needed to go from
 // previous to current version.
 // Modify it as needed.
-// Currently it is set to upgrade from V11(source major version 1, minor version 1)
-// to V21.
+// Currently it is set to upgrade from V210(source major version 1, minor version 1)
+// to V211.
 //////////////////////////////////////////////////////////////
 static const MDUpgradeInfo allMDupgradeInfo[] = {
   {SEABASE_AUTHS, SEABASE_AUTHS_OLD_MD,
+   seabaseAuthsDDL, sizeof(seabaseAuthsDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_COLUMNS, SEABASE_COLUMNS_OLD_MD,
+   seabaseColumnsDDL, sizeof(seabaseColumnsDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_DEFAULTS, SEABASE_DEFAULTS_OLD_MD,
+   seabaseDefaultsDDL, sizeof(seabaseDefaultsDDL),
+   NULL,0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+  
+  {SEABASE_INDEXES, SEABASE_INDEXES_OLD_MD,
+   seabaseIndexesDDL, sizeof(seabaseIndexesDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_KEYS, SEABASE_KEYS_OLD_MD,
+   seabaseKeysDDL, sizeof(seabaseKeysDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+
+  {SEABASE_LIBRARIES_USAGE, SEABASE_LIBRARIES_USAGE_OLD_MD,
+   seabaseLibrariesUsageDDL, sizeof(seabaseLibrariesUsageDDL),
+   NULL,0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+
+  {SEABASE_OBJECTS, SEABASE_OBJECTS_OLD_MD,
+   seabaseObjectsDDL, sizeof(seabaseObjectsDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE,NULL,NULL,NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_OBJECTS_UNIQ_IDX, SEABASE_OBJECTS_UNIQ_IDX_OLD_MD,
+   seabaseObjectsUniqIdxDDL, sizeof(seabaseObjectsUniqIdxDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE},
+
+  {SEABASE_REF_CONSTRAINTS, SEABASE_REF_CONSTRAINTS_OLD_MD,
+   seabaseRefConstraintsDDL, sizeof(seabaseRefConstraintsDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_ROUTINES, SEABASE_ROUTINES_OLD_MD,
+   seabaseRoutinesDDL, sizeof(seabaseRoutinesDDL),
+   NULL,NULL,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE},
+
+  {SEABASE_SEQ_GEN, SEABASE_SEQ_GEN_OLD_MD,
+   seabaseSeqGenDDL, sizeof(seabaseSeqGenDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_TABLES, SEABASE_TABLES_OLD_MD,
+   seabaseTablesDDL, sizeof(seabaseTablesDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_TABLE_CONSTRAINTS, SEABASE_TABLE_CONSTRAINTS_OLD_MD,
+   seabaseTableConstraintsDDL, sizeof(seabaseTableConstraintsDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+   
+  {SEABASE_TABLE_CONSTRAINTS_IDX, SEABASE_TABLE_CONSTRAINTS_IDX_OLD_MD, 
+   seabaseTableConstraintsIdxDDL, sizeof(seabaseTableConstraintsIdxDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE},
+
+  {SEABASE_TEXT, SEABASE_TEXT_OLD_MD,
+   seabaseTextDDL, sizeof(seabaseTextDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_UNIQUE_REF_CONSTR_USAGE, SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD,
+   seabaseUniqueRefConstrUsageDDL, sizeof(seabaseUniqueRefConstrUsageDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_VERSIONS, SEABASE_VERSIONS_OLD_MD,
+   seabaseVersionsDDL, sizeof(seabaseVersionsDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_VIEWS, SEABASE_VIEWS_OLD_MD,
+   seabaseViewsDDL, sizeof(seabaseViewsDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_VIEWS_USAGE, SEABASE_VIEWS_USAGE_OLD_MD,
+   seabaseViewsUsageDDL, sizeof(seabaseViewsUsageDDL),
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_VALIDATE_SPJ, SEABASE_VALIDATE_SPJ_OLD_MD,
+   NULL, 0,
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE},
+
+  {SEABASE_VALIDATE_LIBRARY, SEABASE_VALIDATE_LIBRARY_OLD_MD,
+   NULL, 0,
+   NULL, 0,
+   NULL, 0,
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE}
+
+};
+
+//////////////////////////////////////////////////////////////
+// This struct is set up for V110 to V210 upgrade.
+//////////////////////////////////////////////////////////////
+static const MDUpgradeInfo allMDv110tov210TablesInfo[] = {
+ {SEABASE_AUTHS, SEABASE_AUTHS_OLD_MD,
    seabaseAuthsDDL, sizeof(seabaseAuthsDDL),
    NULL, 0,
    NULL, 0,
@@ -385,6 +520,9 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
 
 };
 
+
+
+
 //////////////////////////////////////////////////////////////
 // This struct is set up for V23 to V30 upgrade.
 //////////////////////////////////////////////////////////////
@@ -431,11 +569,11 @@ static const MDUpgradeInfo allMDv23tov30TablesInfo[] = {
    "object_uid, column_name, keyseq_number, column_number, ordering, nonkeycol, 0",
    NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
-  {SEABASE_LIBRARIES, SEABASE_LIBRARIES_OLD_MD,
+  /*{SEABASE_LIBRARIES, SEABASE_LIBRARIES_OLD_MD,
    seabaseLibrariesDDL, sizeof(seabaseLibrariesDDL),
    NULL, 0,
    NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},*/
 
   {SEABASE_LIBRARIES_USAGE, SEABASE_LIBRARIES_USAGE_OLD_MD,
    seabaseLibrariesUsageDDL, sizeof(seabaseLibrariesUsageDDL),
@@ -578,12 +716,15 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
     UPDATE_MD_VIEWS,
     UPGRADE_REPOS,
     UPGRADE_PRIV_MGR,
+    UPGRADE_LIBRARIES,
     UPDATE_VERSION,
     OLD_REPOS_DROP,
+    OLD_LIBRARIES_DROP,
     METADATA_UPGRADED,
     UPGRADE_DONE,
     UPGRADE_FAILED,
     UPGRADE_FAILED_RESTORE_OLD_REPOS,
+    UPGRADE_FAILED_RESTORE_OLD_LIBRARIES,
     UPGRADE_FAILED_RESTORE_OLD_MD,
     UPGRADE_FAILED_DROP_OLD_MD,
     GET_MD_VERSION,
@@ -601,18 +742,21 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
   NABoolean isViewsUpgradeNeeded();
   NABoolean isReposUpgradeNeeded();
   NABoolean isPrivsUpgradeNeeded();
+  NABoolean isLibrariesUpgradeNeeded();
   NABoolean isUpgradeNeeded() 
   { return (isMDUpgradeNeeded() || 
             isViewsUpgradeNeeded() ||
             isReposUpgradeNeeded() ||
-            isPrivsUpgradeNeeded());
+            isPrivsUpgradeNeeded() ||
+            isLibrariesUpgradeNeeded());
   }
 
   short dropMDtables(ExpHbaseInterface *ehi, NABoolean oldTbls,
 		     NABoolean useOldNameForNewTables = FALSE);
 
   short dropReposTables(ExpHbaseInterface *ehi, NABoolean oldTbls);
-
+  short dropLibrariesTables(ExpHbaseInterface *ehi,
+                            NABoolean oldLibraries);
   short restoreOldMDtables(ExpHbaseInterface *ehi);
 
   short upgradePrivMgr(ExeCliInterface *cliInterface, 
@@ -709,6 +853,35 @@ class CmpSeabaseUpgradeRepository : public CmpSeabaseUpgradeSubsystem
   private:
 
     // avoid having state for now
+
+};
+
+//Libraries specialization
+class CmpSeabaseUpgradeLibraries : public CmpSeabaseUpgradeSubsystem
+{
+public:
+
+  CmpSeabaseUpgradeLibraries(void) { } ;
+  ~CmpSeabaseUpgradeLibraries(void) { } ;
+  
+  NABoolean needsUpgrade(CmpSeabaseMDupgrade * ddlState);
+
+  short doUpgrade(ExeCliInterface * cliInterface,
+                  CmpDDLwithStatusInfo * mdui,
+                  CmpSeabaseMDupgrade * ddlState,
+                  NABoolean ddlXns);
+
+  short doDrops(ExeCliInterface * cliInterface,
+                CmpDDLwithStatusInfo * mdui,
+                CmpSeabaseMDupgrade * ddlState);
+
+  short doUndo(ExeCliInterface * cliInterface,
+               CmpDDLwithStatusInfo * mdui,
+               CmpSeabaseMDupgrade * ddlState);
+  
+private:
+
+  // avoid having state for now
 
 };
 

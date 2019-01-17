@@ -38,7 +38,7 @@ java.net.InetAddress;
   String metrics = server.getMetrics();
   int masterInfoPort = server.getConfiguration().getInt("dcs.master.info.port", 40010);
   int serverInfoPort = server.getConfiguration().getInt("dcs.server.info.port", 40030);
-  String trafodionHome = server.getTrafodionHome();
+  String trafodionLog = server.getTrafodionLog();
   boolean trafodionLogs = server.getConfiguration().getBoolean(Constants.DCS_MASTER_TRAFODION_LOGS, Constants.DEFAULT_DCS_MASTER_TRAFODION_LOGS);
   String masterIP = server.getMasterHostName(); 
     try{
@@ -63,7 +63,7 @@ java.net.InetAddress;
   <a href="http://<% masterIP %>:<% masterInfoPort %>">Home</a>,
   <a href="/logs/">Dcs local logs</a>
   <%java>
-   if(! trafodionHome.isEmpty()) { 
+   if(! trafodionLog.isEmpty()) { 
      if(trafodionLogs) { 
   </%java>
 , <a href="/TrafodionLogs/">Trafodion local logs</a>

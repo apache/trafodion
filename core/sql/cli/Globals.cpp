@@ -177,10 +177,17 @@ void CliGlobals::init( NABoolean espProcess,
     cli_globals = this;
     int error;
     statsGlobals_ = (StatsGlobals *)shareStatsSegment(shmId_);
-    if (statsGlobals_ == NULL
-      || (statsGlobals_ != NULL && 
-        statsGlobals_->getVersion() != StatsGlobals::CURRENT_SHARED_OBJECTS_VERSION_))
+    NABoolean reportError = FALSE;
+    char msg[256];;
+    if ((statsGlobals_ == NULL)
+      || ((statsGlobals_ != NULL) && (statsGlobals_->getInitError(myPin_, reportError))))
     {
+      if (reportError) {
+         snprintf(msg, sizeof(msg),
+          "Version mismatch or Pid %d,%d is higher than the configured pid max %d",
+           myCpu_, myPin_, statsGlobals_->getConfiguredPidMax());
+         SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
+      }
       statsGlobals_ = NULL;
       statsHeap_ = new (getExecutorMemory()) 
         NAHeap("Process Stats Heap", getExecutorMemory(),
@@ -199,6 +206,7 @@ void CliGlobals::init( NABoolean espProcess,
       }
       else
       {
+        bool reincarnated;
         error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
 
         statsHeap_ = (NAHeap *)statsGlobals_->
@@ -214,10 +222,12 @@ void CliGlobals::init( NABoolean espProcess,
 	  NAHeap("Process Stats Heap", statsGlobals_->getStatsHeap(),
 		 8192,
 		 0);
-	statsGlobals_->addProcess(myPin_, statsHeap_);
+	reincarnated = statsGlobals_->addProcess(myPin_, statsHeap_);
         processStats_ = statsGlobals_->getExProcessStats(myPin_);
         processStats_->setStartTime(myStartTime_);
 	statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
+        if (reincarnated)
+           statsGlobals_->logProcessDeath(myCpu_, myPin_, "Process reincarnated before RIP");
       }
     }
     // create a default context and make it the current context
@@ -291,6 +301,7 @@ CliGlobals::~CliGlobals()
     error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
     statsGlobals_->removeProcess(myPin_);
     statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
+    statsGlobals_->logProcessDeath(myCpu_, myPin_, "Normal process death");
     sem_close((sem_t *)semId_);
   }
 }

@@ -77,6 +77,8 @@ UINT __stdcall ThreadControlProc(LPVOID pParam)
 	case SQL_API_SQLCOLUMNPRIVILEGES:
 	case SQL_API_SQLTABLEPRIVILEGES:
 	case SQL_API_SQLFOREIGNKEYS:
+    case SRVR_API_EXTRACTLOB:
+    case SRVR_API_UPDATELOB:
 		pStatement = (CStmt*)srvrCallContext->sqlHandle;
 		pConnection = pStatement->getConnectHandle();
 		break;
@@ -133,6 +135,16 @@ UINT __stdcall ThreadControlProc(LPVOID pParam)
         case SQL_API_SQLEXTENDEDFETCH:
 			rc = SQLFETCH_(srvrCallContext);
 			break;
+
+        case SRVR_API_EXTRACTLOB:
+            pConnection->m_srvrTCPIPSystem->odbcAPI = SRVR_API_EXTRACTLOB;
+            rc = EXTRACTLOB(srvrCallContext);
+            break;
+
+        case SRVR_API_UPDATELOB:
+            pConnection->m_srvrTCPIPSystem->odbcAPI = SRVR_API_UPDATELOB;
+            rc = UPDATELOB(srvrCallContext);
+            break;
 
 		case SQL_API_SQLFREESTMT:
 			rc = FREESTATEMENT(srvrCallContext);

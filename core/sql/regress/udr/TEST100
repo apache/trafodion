@@ -120,6 +120,7 @@ drop procedure T100_io_vv;
 drop procedure T100_io_dd;
 drop procedure T100_io_tt;
 drop procedure T100_io_mm;
+drop procedure T100_io_mmm;
 drop procedure T100_iii_iii;
 drop procedure T100_xxx_iii;
 drop procedure T100_ooo_iii;
@@ -237,6 +238,10 @@ library T100;
 
 create procedure T100_io_mm(IN IN1 timestamp(0), OUT OUT2 timestamp(0))
 external name 't100.T100_io_mm' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_mmm(IN IN1 timestamp(9), OUT OUT2 timestamp(9))
+external name 't100.T100_io_mmm' language java parameter style java no sql
 library T100;
 
 create procedure T100_iii_iii(IN IN1 int, IN IN2 int, IN IN3 int)
@@ -415,7 +420,11 @@ create procedure T100_PARAM_many (
     INOUT INOUT7000 decimal(9,0), INOUT INOUT8000 largeint,
     IN IN9000 double precision, IN IN10000 smallint,
     OUT OUT9000 double precision, OUT OUT10000 smallint,
-    INOUT INOUT9000 double precision, INOUT INOUT10000 smallint
+    INOUT INOUT9000 double precision, INOUT INOUT10000 smallint,
+
+    IN IN4000 timestamp(9),
+    OUT OUT4000 timestamp(9),
+    INOUT INOUT4000 timestamp(9),
 )
 external name 't100.T100_many' language java parameter style java no sql
 library T100;
@@ -598,6 +607,7 @@ call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP), ?x);
 call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(0)), ?x);
 call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(2)), ?x);
 call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(6)), ?x);
+call T100_io_mmm(cast(timestamp'12/31/1999 11:59:59.987654321 pm' as TIMESTAMP(9)), ?x);
 
 ?section all_datatypes2
 --
@@ -658,6 +668,7 @@ call T100_io_ss(cast(32768 as smallint), ?x);
 call T100_io_ss(cast(-32769 as smallint), ?x);
 call T100_io_ii(1 + 1 / 0, ?x);
 call T100_io_mm(interval'0.1'second + timestamp'12/31/9999 11:59:59.9 pm', ?x);
+call T100_io_mmm(interval'0.123456789'second(1,9) + timestamp'12/31/9999 11:59:59.123456789', ?x);
 
 ?section prepexec
 --------------------------------------------------------------------------

@@ -227,7 +227,7 @@ public:
   // allocated or copied to/from the ContextHeap, since some ctor and 
   // copying code specifies CmpCommon::statementHeap() explicitly, regardless 
   // of the parameter given to the overloaded new operator.
-  // Therefore, untill this is fixed, TriggerDB and its content cannot be
+  // Therefore, until this is fixed, TriggerDB and its content cannot be
   // allocated from the CmpCommon::contextHeap(), and is not persistent 
   // across statements. 
   //

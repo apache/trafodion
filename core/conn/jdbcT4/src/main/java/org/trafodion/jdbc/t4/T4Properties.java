@@ -126,7 +126,8 @@ public class T4Properties {
 	private boolean useArrayBinding_;
 	private boolean batchRecovery_;
 	private final String propPrefix_ = "t4jdbc.";
-
+	//clipVarchar flag
+	private short clipVarchar_ = 0;
 	// Default catalog 
 	static final String DEFAULT_CATALOG = "TRAFODION";
 
@@ -166,7 +167,6 @@ public class T4Properties {
 	private String _certificateFile;
 	private boolean _keepAlive = false;
 	private boolean _tokenAuth;
-
 	private static int DEFAULT_MAX_IDLE_TIMEOUT = 0; // Max idle timeout
 	// default = infinite
     
@@ -182,6 +182,8 @@ public class T4Properties {
 	static String t4GlobalLogFile = null;
 	static Logger t4GlobalLogger = null;
 	static FileHandler t4GlobalLogFileHandler = null;
+
+	private String clientCharset;
 
 	void initializeLogging() {
 		if (t4GlobalLogger != null) {
@@ -393,10 +395,10 @@ public class T4Properties {
 		setBatchRecovery(getProperty("batchRecovery"));
 		// setTransportBufferSize(getProperty("TransportBufferSize"));
 		setLanguage(getProperty("language"));
-
 		setMaxIdleTime(getProperty("maxIdleTime"));
 		setConnectionTimeout(getProperty("connectionTimeout"));
-		setFetchBufferSize(getProperty("fetchBufferSize"));
+		setClipVarchar(getProperty("clipVarchar"));
+		setFetchBufferSize(getProperty("fetchBufferSize")); 
 
 		// For LOB Support - SB 9/28/04
 		try {
@@ -436,6 +438,8 @@ public class T4Properties {
 
         setLobChunkSize(getProperty("lobChunkSize"));
         setUseLobHandle(getProperty("useLobHandle"));
+
+        setClientCharset(getProperty("clientCharset"));
 	}
 
 	T4Properties getT4Properties() {
@@ -506,10 +510,19 @@ public class T4Properties {
 		props.setProperty("SPJEnv", String.valueOf(SPJEnv_));
 		props.setProperty("keepRawFetchBuffer", String.valueOf(keepRawFetchBuffer_));
 		props.setProperty("cpuToUse", String.valueOf(cpuToUse_));
-		props.setProperty("sessionName", String.valueOf(sessionName));
-		props.setProperty("replacementString", String.valueOf(replacementString_));
-		props.setProperty("ISO88591", String.valueOf(ISO88591_));
 
+        // NOTE
+        // String.valueOf(null) will give a "null" string, this may raise bug.
+        // So do not use String.valueOf() for a String variable
+        if (sessionName != null) {
+            props.setProperty("sessionName", sessionName);
+        }
+        if (replacementString_ != null) {
+            props.setProperty("replacementString", replacementString_);
+        }
+        if (ISO88591_ != null) {
+            props.setProperty("ISO88591", ISO88591_);
+        }
 		if (_roleName != null)
 			props.setProperty("roleName", _roleName);
 		if (_applicationName != null)
@@ -528,10 +541,12 @@ public class T4Properties {
 		props.setProperty("keepAlive", String.valueOf(_keepAlive));
 		props.setProperty("tokenAuth", String.valueOf(_tokenAuth));
         props.setProperty("tcpNoDelay", String.valueOf(_tcpNoDelay));
-        
+
+        props.setProperty("clipVarchar", String.valueOf(clipVarchar_));
         props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
         props.setProperty("useLobHandle", String.valueOf(useLobHandle_));
-
+        if (clientCharset != null)
+            props.setProperty("clientCharset", clientCharset);
 		return props;
 	}
 
@@ -1290,6 +1305,19 @@ public class T4Properties {
 		setConnectionTimeout(tmpTimeout);
 	}
 
+	void setClipVarchar(String clipVarchar) {
+		short tmp = 0;
+		if (clipVarchar != null) {
+			try {
+				tmp = Short.parseShort(clipVarchar);
+			} catch (NumberFormatException ex) {
+				sqlExceptionMessage_ = "Incorrect value for clipVarchar set: " + clipVarchar + ". "
+						+ ex.getMessage();
+				tmp = 0;
+			}
+		}
+		setClipVarchar(tmp);
+	}
 	/*
 	 * Sets the connection timeout value for the Type 4 connection. Set this
 	 * value to 0 for infinite timeout. The default is set to -1. A negative
@@ -1316,7 +1344,9 @@ public class T4Properties {
 			connectionTimeout_ = connectionTimeout;
 		}
 	}
-
+	void setClipVarchar(short clipVarchar) {
+		clipVarchar_=clipVarchar;
+	}
 	/**
 	 * Sets the max idle time value for the Type 4 connection. The default is
 	 * set to 0 (no timeout). Negative values are treated as 0.
@@ -1363,6 +1393,9 @@ public class T4Properties {
 
 	int getConnectionTimeout() {
 		return connectionTimeout_;
+	}
+	short getClipVarchar() {
+		return clipVarchar_;
 	}
 
 	/**
@@ -2571,6 +2604,12 @@ public class T4Properties {
     Properties getClientInfoProperties() {
         return this.clientInfoProp;
     }
-	
-	
+
+    public String getClientCharset() {
+        return clientCharset;
+    }
+
+    public void setClientCharset(String clientCharset) {
+        this.clientCharset = clientCharset;
+    }
 }

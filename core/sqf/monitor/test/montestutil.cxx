@@ -134,8 +134,8 @@ void MonTestUtil::processArgs( int argc, char *argv[] )
     // enable tracing if trace flag supplied
     for (i=0; i<argc; i++)
     {
-        if ( strcmp(argv[i], "-t") == 0 ) gv_xmpi_trace = trace_ = true;
-//        if ( strcmp(argv[i], "-t") == 0 ) trace_ = true;
+//        if ( strcmp(argv[i], "-t") == 0 ) gv_xmpi_trace = trace_ = true;
+        if ( strcmp(argv[i], "-t") == 0 ) trace_ = true;
         if ( strcmp(argv[i], "-x") == 0 ) shutdownBeforeStartup_ = true;
         if ( strcmp(argv[i], "-y") == 0 ) nodedownBeforeStartup_ = true;
     }

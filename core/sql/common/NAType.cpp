@@ -690,7 +690,15 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
   switch (fs_datatype)
     {
     case REC_MIN_F_CHAR_H ... REC_MAX_F_CHAR_H:
-      *outputStr = "string";
+      {
+        SQLChar * ct = (SQLChar*)this;
+        char buf[20];
+        Int32 size = ct->getStrCharLimit();
+        str_itoa(size, buf);
+        *outputStr = "char(";
+        *outputStr += buf;
+        *outputStr += ")";
+      }
       break;
 
     case REC_MIN_V_CHAR_H ... REC_MAX_V_CHAR_H:
@@ -997,7 +1005,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     return new (heap) SQLDoublePrecision(heap, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "timestamp"))
-    return new (heap) SQLTimestamp(heap, TRUE /* allow NULL */ , 6);
+    return new (heap) SQLTimestamp(heap, TRUE /* allow NULL */ , DatetimeType::MAX_FRACTION_PRECISION);
 
   if ( !strcmp(hiveType, "date"))
     return new (heap) SQLDate(heap, TRUE /* allow NULL */);

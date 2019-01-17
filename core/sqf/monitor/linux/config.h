@@ -34,6 +34,23 @@
 
 class CConfigGroup;
 
+struct cluster_set
+{
+   ConfigType type;
+   int scopeLength;
+   int keyLength;
+   int valueLength;
+   char stringData;
+};
+
+struct unique_string_set
+{
+   int nid;
+   int unique_id;
+   int stringLength;
+   char stringData;
+};
+
 class CConfigKey
 {
  private:
@@ -127,7 +144,13 @@ public:
     int  getMaxUniqueId( int nid );
     void strIdToString ( strId_t stringId, string & value );
 
-   
+    int    PackRegistry( char *&buffer, ConfigType type );
+    void   UnpackRegistry( char *&buffer, int length );    
+    int    PackUniqueStrings( char *&buffer );
+    void   UnpackUniqueStrings( char *&buffer, int length );
+    int    getRegistrySize();
+    int    getUniqueStringsSize();
+
 protected:
 private:
     CConfigGroup *cluster_;     // predefined cluster global group 

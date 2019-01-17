@@ -498,11 +498,10 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
   NABoolean matchFlag = true;
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-  regex_t reg;
+  char * pattern;
   regmatch_t pm[1];
   const size_t nmatch = 1;
-  Lng32 cflags, z;
-  char * pattern;
+  Lng32 cflags, z = 0;
   char *srcStr= new (exHeap) char[len1+1];
   char ebuf[128];
 
@@ -513,11 +512,16 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
 
   str_cpy_all(pattern, op_data[2], len2);
   str_cpy_all(srcStr, op_data[1], len1);
-
-  z = regcomp(&reg, pattern, cflags);
+  if(rpattern_ != pattern)
+  {
+    if(rpattern_ != "") regfree(&reg);
+    rpattern_ = pattern;
+    z = regcomp(&reg, pattern, cflags);
+  }
 
   if (z != 0){
     //ERROR
+    memset(ebuf, 0, sizeof(ebuf));
     regerror(z, &reg,ebuf, sizeof(ebuf));
     ExRaiseSqlError(exHeap, diagsArea, (ExeErrorCode)8452);
     **diagsArea << DgString0(ebuf);
@@ -538,7 +542,6 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
   
 
   *(Lng32 *)op_data[0] = (Lng32)matchFlag;
-  regfree(&reg);
 
   NADELETEBASIC(pattern, exHeap);
   NADELETEBASIC(srcStr, exHeap);

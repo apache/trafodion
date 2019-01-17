@@ -130,6 +130,13 @@ CREATE TABLE TRAFODION.T144USER1.CUSTOMERS
 
 --- SQL operation complete.
 >>
+>>grant update, usage on library t144_l1 to sql_user2;
+
+--- SQL operation complete.
+>>grant usage on library t144_l2 to t144role1;
+
+--- SQL operation complete.
+>>
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
 
 --- SQL operation complete.
@@ -140,19 +147,19 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 
 CREATE_SCHEMA
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>
 >>obey TEST144(set_up);
->>set schema "_PRIVMGR_MD_";
-
---- SQL operation complete.
 >>prepare get_privs from
 +>select distinct
 +>   trim(substring (o.object_name,1,15)) as object_name,
 +>   grantor_id, grantee_id,
 +>   t144user1.t144_translatePrivsBitmap(privileges_bitmap) as granted_privs,
 +>   t144user1.t144_translatePrivsBitmap(grantable_bitmap) as grantable_privs
-+>from object_privileges p, "_MD_".objects o 
++>from "_PRIVMGR_MD_".object_privileges p, "_MD_".objects o 
 +>where p.object_uid in 
 +>  (select object_uid
 +>   from "_MD_".objects
@@ -182,18 +189,23 @@ GEN_PHONE                                                                       
 GEN_RANDOM                                                                      -2                 33334  ------E               ------E             
 GEN_TIME                                                                        -2                 33334  ------E               ------E             
 T144_L1                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L1                                                                      33334                 33335  ---UG--               NONE                
 T144_L2                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L2                                                                      33334               1000002  ----G--               NONE                
 T144_TRANSLATEP                                                                 -2                 33334  ------E               ------E             
 T144_TRANSLATEP                                                              33334                    -1  ------E               NONE                
 _TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
 
---- 10 row(s) selected.
+--- 12 row(s) selected.
 >>get privileges on function gen_phone;
 
 Privileges on Routine T144USER1.GEN_PHONE
 =========================================
 
 ------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on function gen_random;
@@ -203,6 +215,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 
 ------E    SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_time;
 
@@ -210,6 +225,9 @@ Privileges on Routine T144USER1.GEN_TIME
 ========================================
 
 ------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help;
@@ -220,6 +238,9 @@ Privileges on Routine _LIBMGR_.HELP
 ------E    DB__LIBMGRROLE
 ------E    DB__ROOT
 
+=======================
+ 2 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on table_mapping function "_LIBMGR_".event_log_reader;
 
@@ -228,6 +249,9 @@ Privileges on Routine _LIBMGR_.EVENT_LOG_READER
 
 ------E    DB__ROOT
 ------E    PUBLIC
+
+=======================
+ 2 row(s) returned
 
 --- SQL operation complete.
 >>
@@ -240,6 +264,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 
 ------E    SQL_USER1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help for sql_user1;
 
@@ -251,8 +278,71 @@ Privileges on Routine _LIBMGR_.EVENT_LOG_READER
 
 ------E    PUBLIC
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
->>sh sqlci -i "TEST144(cmds)" -u sql_user1;
+>>
+>>get functions for user sql_user1;
+
+Functions for User SQL_USER1
+============================
+
+TRAFODION."T144USER1".GEN_PHONE
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".GEN_TIME
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 4 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user1;
+
+Table mapping functions for User SQL_USER1
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user1;
+
+--- SQL operation complete.
+>>
+>>get libraries for user sql_user2;
+
+Libraries for User SQL_USER2
+============================
+
+TRAFODION."T144USER1".T144_L1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get libraries for user sql_user3;
+
+--- SQL operation complete.
+>>get libraries for user sql_user4;
+
+--- SQL operation complete.
+>>get libraries for role t144role1;
+
+Libraries for Role T144ROLE1
+============================
+
+TRAFODION."T144USER1".T144_L2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>sh sqlci -i "TEST144(cmds_user1)" -u sql_user1;
 >>values (user);
 
 (EXPR)
@@ -264,6 +354,44 @@ SQL_USER1
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user1;
+
+Functions for User SQL_USER1
+============================
+
+TRAFODION."T144USER1".GEN_PHONE
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".GEN_TIME
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 4 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user1;
+
+Table mapping functions for User SQL_USER1
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user1;
+
+--- SQL operation complete.
+>>get functions for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -271,6 +399,9 @@ Privileges on Routine T144USER1.GEN_TIME
 ========================================
 
 ------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>-- should return no rows for users other than sql_user1
@@ -280,6 +411,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 ==========================================
 
 ------E    SQL_USER1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>select customer_id, 
@@ -345,13 +479,15 @@ CUSTOMER_ID           TENANT_ID               PHONE                  CUSTOMER_AR
 
 *** ERROR[8822] The statement was not prepared.
 
+>>
+>>
 >>exit;
 
 End of MXCI Session
 
 >>
 >>-- no other user or role has privileges
->>sh sqlci -i "TEST144(cmds)" -u sql_user2;
+>>sh sqlci -i "TEST144(cmds_user2)" -u sql_user2;
 >>values (user);
 
 (EXPR)
@@ -363,6 +499,65 @@ SQL_USER2
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user2;
+
+Functions for User SQL_USER2
+============================
+
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user2;
+
+Table mapping functions for User SQL_USER2
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user2;
+
+--- SQL operation complete.
+>>get libraries for user sql_user2;
+
+Libraries for User SQL_USER2
+============================
+
+TRAFODION."T144USER1".T144_L1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>-- no privs
+>>get table_mapping functions for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for role t144role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -370,7 +565,9 @@ SQL_USER2
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -416,11 +613,13 @@ SQL_USER2
 
 *** ERROR[8822] The statement was not prepared.
 
+>>
+>>
 >>exit;
 
 End of MXCI Session
 
->>sh sqlci -i "TEST144(cmds)" -u sql_user3;
+>>sh sqlci -i "TEST144(cmds_user3)" -u sql_user3;
 >>values (user);
 
 (EXPR)
@@ -432,6 +631,41 @@ SQL_USER3
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user3;
+
+Functions for User SQL_USER3
+============================
+
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user3;
+
+Table mapping functions for User SQL_USER3
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user3;
+
+--- SQL operation complete.
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -439,7 +673,9 @@ SQL_USER3
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -485,11 +721,13 @@ SQL_USER3
 
 *** ERROR[8822] The statement was not prepared.
 
+>>
+>>
 >>exit;
 
 End of MXCI Session
 
->>sh sqlci -i "TEST144(cmds)" -u sql_user4;
+>>sh sqlci -i "TEST144(cmds_user4)" -u sql_user4;
 >>values (user);
 
 (EXPR)
@@ -501,6 +739,45 @@ SQL_USER4
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user4;
+
+Functions for User SQL_USER4
+============================
+
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user4;
+
+Table mapping functions for User SQL_USER4
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user4;
+
+--- SQL operation complete.
+>>get libraries for user sql_user4;
+
+--- SQL operation complete.
+>>get libraries for role t144role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -508,7 +785,9 @@ SQL_USER4
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -554,6 +833,8 @@ SQL_USER4
 
 *** ERROR[8822] The statement was not prepared.
 
+>>
+>>
 >>exit;
 
 End of MXCI Session
@@ -579,6 +860,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 
 ------E    SQL_USER2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_random for sql_user2;
 
@@ -586,6 +870,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 ==========================================
 
 ------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on function gen_time for user sql_user2;
@@ -595,6 +882,9 @@ Privileges on Routine T144USER1.GEN_TIME
 
 ------E    SQL_USER2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help for user sql_user2;
 
@@ -602,6 +892,46 @@ Privileges on Routine _LIBMGR_.HELP
 ===================================
 
 ------E    SQL_USER2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get functions for user sql_user2;
+
+Functions for User SQL_USER2
+============================
+
+TRAFODION."T144USER1".GEN_PHONE
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".GEN_TIME
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 4 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user2;
+
+Table mapping functions for User SQL_USER2
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user2;
+
+Procedures for User SQL_USER2
+=============================
+
+TRAFODION."_LIBMGR_".HELP
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>execute get_privs;
@@ -618,16 +948,17 @@ GEN_RANDOM                                                                   333
 GEN_TIME                                                                        -2                 33334  ------E               ------E             
 GEN_TIME                                                                     33334                 33335  ------E               NONE                
 T144_L1                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L1                                                                      33334                 33335  ---UG--               NONE                
 T144_L2                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L2                                                                      33334               1000002  ----G--               NONE                
 T144_TRANSLATEP                                                                 -2                 33334  ------E               ------E             
 T144_TRANSLATEP                                                              33334                    -1  ------E               NONE                
 _TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
 
---- 13 row(s) selected.
->>
+--- 15 row(s) selected.
 >>
 >>-- user2 can execute
->>sh sqlci -i "TEST144(cmds)" -u sql_user2;
+>>sh sqlci -i "TEST144(cmds_user2)" -u sql_user2;
 >>values (user);
 
 (EXPR)
@@ -639,6 +970,76 @@ SQL_USER2
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user2;
+
+Functions for User SQL_USER2
+============================
+
+TRAFODION."T144USER1".GEN_PHONE
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".GEN_TIME
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 4 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user2;
+
+Table mapping functions for User SQL_USER2
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user2;
+
+Procedures for User SQL_USER2
+=============================
+
+TRAFODION."_LIBMGR_".HELP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get libraries for user sql_user2;
+
+Libraries for User SQL_USER2
+============================
+
+TRAFODION."T144USER1".T144_L1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>-- no privs
+>>get table_mapping functions for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for role t144role1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -647,11 +1048,16 @@ Privileges on Routine T144USER1.GEN_TIME
 
 ------E    SQL_USER2
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -717,13 +1123,15 @@ COMMANDNAME
 RM - Remove a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
 --- SQL operation complete.
+>>
+>>
 >>exit;
 
 End of MXCI Session
 
 >>
 >>-- user3 still cannot execute
->>sh sqlci -i "TEST144(cmds)" -u sql_user3;
+>>sh sqlci -i "TEST144(cmds_user3)" -u sql_user3;
 >>values (user);
 
 (EXPR)
@@ -735,6 +1143,41 @@ SQL_USER3
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user3;
+
+Functions for User SQL_USER3
+============================
+
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user3;
+
+Table mapping functions for User SQL_USER3
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user3;
+
+--- SQL operation complete.
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -742,7 +1185,9 @@ SQL_USER3
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -788,6 +1233,8 @@ SQL_USER3
 
 *** ERROR[8822] The statement was not prepared.
 
+>>
+>>
 >>exit;
 
 End of MXCI Session
@@ -817,6 +1264,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 
 ------E    SQL_USER3
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_random for user sql_user3;
 
@@ -824,6 +1274,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 ==========================================
 
 ------E    SQL_USER3
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on function gen_time for user sql_user3;
@@ -835,6 +1288,45 @@ Privileges on Routine _LIBMGR_.HELP
 ===================================
 
 ------E    SQL_USER3
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get functions for user sql_user3;
+
+Functions for User SQL_USER3
+============================
+
+TRAFODION."T144USER1".GEN_PHONE
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user3;
+
+Table mapping functions for User SQL_USER3
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user3;
+
+Procedures for User SQL_USER3
+=============================
+
+TRAFODION."_LIBMGR_".HELP
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>execute get_privs;
@@ -853,15 +1345,17 @@ GEN_RANDOM                                                                   333
 GEN_TIME                                                                        -2                 33334  ------E               ------E             
 GEN_TIME                                                                     33334                 33335  ------E               NONE                
 T144_L1                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L1                                                                      33334                 33335  ---UG--               NONE                
 T144_L2                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L2                                                                      33334               1000002  ----G--               NONE                
 T144_TRANSLATEP                                                                 -2                 33334  ------E               ------E             
 T144_TRANSLATEP                                                              33334                    -1  ------E               NONE                
 _TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
 
---- 15 row(s) selected.
+--- 17 row(s) selected.
 >>
 >>-- user 3 can execute gen_phone, gen_random, and help but not gen_time
->>sh sqlci -i "TEST144(cmds)" -u sql_user3;
+>>sh sqlci -i "TEST144(cmds_user3)" -u sql_user3;
 >>values (user);
 
 (EXPR)
@@ -873,6 +1367,51 @@ SQL_USER3
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user3;
+
+Functions for User SQL_USER3
+============================
+
+TRAFODION."T144USER1".GEN_PHONE
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user3;
+
+Table mapping functions for User SQL_USER3
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user3;
+
+Procedures for User SQL_USER3
+=============================
+
+TRAFODION."_LIBMGR_".HELP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -880,7 +1419,9 @@ SQL_USER3
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -941,6 +1482,8 @@ COMMANDNAME
 RM - Remove a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
 --- SQL operation complete.
+>>
+>>
 >>exit;
 
 End of MXCI Session
@@ -964,9 +1507,36 @@ End of MXCI Session
 >>grant execute on procedure "_LIBMGR_".help to t144role1;
 
 --- SQL operation complete.
+>>get functions for role t144role1;
+
+Functions for Role T144ROLE1
+============================
+
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".GEN_TIME
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for role t144role1;
+
+--- SQL operation complete.
+>>get procedures for role t144role1;
+
+Procedures for Role T144ROLE1
+=============================
+
+TRAFODION."_LIBMGR_".HELP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
 >>grant role t144role1 to sql_user4;
 
 --- SQL operation complete.
+>>
 >>get privileges on function gen_phone for user sql_user4;
 
 --- SQL operation complete.
@@ -977,6 +1547,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 
 ------E    T144ROLE1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_time for user sql_user4;
 
@@ -984,6 +1557,9 @@ Privileges on Routine T144USER1.GEN_TIME
 ========================================
 
 ------E    T144ROLE1
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help for user sql_user4;
@@ -993,6 +1569,9 @@ Privileges on Routine _LIBMGR_.HELP
 
 ------E    T144ROLE1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_random for t144role1;
 
@@ -1000,6 +1579,56 @@ Privileges on Routine T144USER1.GEN_RANDOM
 ==========================================
 
 ------E    T144ROLE1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get functions for user sql_user4;
+
+Functions for User SQL_USER4
+============================
+
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".GEN_TIME
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user4;
+
+Table mapping functions for User SQL_USER4
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user4;
+
+Procedures for User SQL_USER4
+=============================
+
+TRAFODION."_LIBMGR_".HELP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get libraries for user sql_user4;
+
+Libraries for User SQL_USER4
+============================
+
+TRAFODION."T144USER1".T144_L2
+
+=======================
+ 1 row(s) returned
 
 --- SQL operation complete.
 >>execute get_privs;
@@ -1021,15 +1650,17 @@ GEN_TIME                                                                        
 GEN_TIME                                                                     33334                 33335  ------E               NONE                
 GEN_TIME                                                                     33334               1000002  ------E               NONE                
 T144_L1                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L1                                                                      33334                 33335  ---UG--               NONE                
 T144_L2                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L2                                                                      33334               1000002  ----G--               NONE                
 T144_TRANSLATEP                                                                 -2                 33334  ------E               ------E             
 T144_TRANSLATEP                                                              33334                    -1  ------E               NONE                
 _TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
 
---- 18 row(s) selected.
+--- 20 row(s) selected.
 >>
 >>-- user4 can execute through role t144role1
->>sh sqlci -i "TEST144(cmds)" -u sql_user4;
+>>sh sqlci -i "TEST144(cmds_user4)" -u sql_user4;
 >>values (user);
 
 (EXPR)
@@ -1041,6 +1672,69 @@ SQL_USER4
 >>set schema t144user1;
 
 --- SQL operation complete.
+>>get functions for user sql_user4;
+
+Functions for User SQL_USER4
+============================
+
+TRAFODION."T144USER1".GEN_RANDOM
+TRAFODION."T144USER1".GEN_TIME
+TRAFODION."T144USER1".T144_TRANSLATEPRIVSBITMAP
+
+=======================
+ 3 row(s) returned
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user4;
+
+Table mapping functions for User SQL_USER4
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user4;
+
+Procedures for User SQL_USER4
+=============================
+
+TRAFODION."_LIBMGR_".HELP
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get libraries for user sql_user4;
+
+Libraries for User SQL_USER4
+============================
+
+TRAFODION."T144USER1".T144_L2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>get libraries for role t144role1;
+
+Libraries for Role T144ROLE1
+============================
+
+TRAFODION."T144USER1".T144_L2
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
 >>-- should return privileges only for users that have execute privilege
 >>get privileges on function gen_time;
 
@@ -1049,11 +1743,16 @@ Privileges on Routine T144USER1.GEN_TIME
 
 ------E    T144ROLE1
 
+=======================
+ 1 row(s) returned
+
 --- SQL operation complete.
 >>-- should return no rows for users other than sql_user1
 >>get privileges on function gen_random for sql_user1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>select customer_id, 
 +>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
 +>       customer_areacode 
@@ -1109,6 +1808,8 @@ COMMANDNAME
 RM - Remove a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
 --- SQL operation complete.
+>>
+>>
 >>exit;
 
 End of MXCI Session
@@ -1124,6 +1825,9 @@ Privileges on Routine T144USER1.GEN_PHONE
 ------E    SQL_USER3
 ------E    SQL_USER5
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_random;
 
@@ -1135,6 +1839,9 @@ Privileges on Routine T144USER1.GEN_RANDOM
 ------E    SQL_USER3
 ------E    T144ROLE1
 
+=======================
+ 4 row(s) returned
+
 --- SQL operation complete.
 >>get privileges on function gen_time;
 
@@ -1144,6 +1851,9 @@ Privileges on Routine T144USER1.GEN_TIME
 ------E    SQL_USER1
 ------E    SQL_USER2
 ------E    T144ROLE1
+
+=======================
+ 3 row(s) returned
 
 --- SQL operation complete.
 >>get privileges on procedure "_LIBMGR_".help;
@@ -1156,6 +1866,9 @@ Privileges on Routine _LIBMGR_.HELP
 ------E    SQL_USER2
 ------E    SQL_USER3
 ------E    T144ROLE1
+
+=======================
+ 5 row(s) returned
 
 --- SQL operation complete.
 >>obey TEST144(test_revokes);
@@ -1184,12 +1897,18 @@ GEN_TIME                                                                        
 GEN_TIME                                                                     33334                 33335  ------E               NONE                
 GEN_TIME                                                                     33334               1000002  ------E               NONE                
 T144_L1                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L1                                                                      33334                 33335  ---UG--               NONE                
 T144_L2                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L2                                                                      33334               1000002  ----G--               NONE                
 T144_TRANSLATEP                                                                 -2                 33334  ------E               ------E             
 T144_TRANSLATEP                                                              33334                    -1  ------E               NONE                
 _TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
 
---- 18 row(s) selected.
+--- 20 row(s) selected.
+>>
+>>revoke usage on library t144_l2 from t144role1;
+
+--- SQL operation complete.
 >>
 >>revoke grant option for execute on function gen_phone from sql_user3 by sql_user2;
 
@@ -1255,16 +1974,13 @@ _TRAFODION_T144                                                                 
 
 --- SQL operation complete.
 >>obey TEST144(set_up);
->>set schema "_PRIVMGR_MD_";
-
---- SQL operation complete.
 >>prepare get_privs from
 +>select distinct
 +>   trim(substring (o.object_name,1,15)) as object_name,
 +>   grantor_id, grantee_id,
 +>   t144user1.t144_translatePrivsBitmap(privileges_bitmap) as granted_privs,
 +>   t144user1.t144_translatePrivsBitmap(grantable_bitmap) as grantable_privs
-+>from object_privileges p, "_MD_".objects o 
++>from "_PRIVMGR_MD_".object_privileges p, "_MD_".objects o 
 +>where p.object_uid in 
 +>  (select object_uid
 +>   from "_MD_".objects
@@ -1287,12 +2003,157 @@ GEN_PHONE                                                                       
 GEN_RANDOM                                                                      -2                 33334  ------E               ------E             
 GEN_TIME                                                                        -2                 33334  ------E               ------E             
 T144_L1                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L1                                                                      33334                 33335  ---UG--               NONE                
 T144_L2                                                                         -2                 33334  ---UG--               ---UG--             
 T144_TRANSLATEP                                                                 -2                 33334  ------E               ------E             
 T144_TRANSLATEP                                                              33334                    -1  ------E               NONE                
 _TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
 
---- 10 row(s) selected.
+--- 11 row(s) selected.
 >>
+>>revoke execute on function t144_translatePrivsBitmap from "PUBLIC";
+
+--- SQL operation complete.
+>>execute get_privs;
+
+OBJECT_NAME                                                   GRANTOR_ID            GRANTEE_ID            GRANTED_PRIVS         GRANTABLE_PRIVS
+------------------------------------------------------------  --------------------  --------------------  --------------------  --------------------
+
+CUSTOMERS                                                                       -2                 33334  SIDU-R-               SIDU-R-             
+CUSTOMERS                                                                    33334                    -1  SI-----               NONE                
+GEN_PHONE                                                                       -2                 33334  ------E               ------E             
+GEN_RANDOM                                                                      -2                 33334  ------E               ------E             
+GEN_TIME                                                                        -2                 33334  ------E               ------E             
+T144_L1                                                                         -2                 33334  ---UG--               ---UG--             
+T144_L1                                                                      33334                 33335  ---UG--               NONE                
+T144_L2                                                                         -2                 33334  ---UG--               ---UG--             
+T144_TRANSLATEP                                                                 -2                 33334  ------E               ------E             
+_TRAFODION_T144                                                                 -2                 33334  ----G--               ----G--             
+
+--- 10 row(s) selected.
+>>sh sqlci -i "TEST144(cmds_user2)" -u sql_user2;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t144user1;
+
+--- SQL operation complete.
+>>get functions for user sql_user2;
+
+--- SQL operation complete.
+>>get table_mapping functions for user sql_user2;
+
+Table mapping functions for User SQL_USER2
+==========================================
+
+TRAFODION."_LIBMGR_".EVENT_LOG_READER
+TRAFODION."_LIBMGR_".JDBC
+
+=======================
+ 2 row(s) returned
+
+--- SQL operation complete.
+>>get procedures for user sql_user2;
+
+--- SQL operation complete.
+>>get libraries for user sql_user2;
+
+Libraries for User SQL_USER2
+============================
+
+TRAFODION."T144USER1".T144_L1
+
+=======================
+ 1 row(s) returned
+
+--- SQL operation complete.
+>>
+>>-- no privs
+>>get table_mapping functions for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for role t144role1;
+
+*** ERROR[1339] T144ROLE1 is not a role.
+
+--- SQL operation failed with errors.
+>>
+>>obey TEST144(cmds);
+>>-- ============================================================================
+>>-- execute functions
+>>-- ============================================================================
+>>-- should return privileges only for users that have execute privilege
+>>get privileges on function gen_time;
+
+--- SQL operation complete.
+>>-- should return no rows for users other than sql_user1
+>>get privileges on function gen_random for sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>select customer_id, 
++>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
++>       customer_areacode 
++>from customers;
+
+*** ERROR[4482] The user does not have EXECUTE privilege on user-defined routine TRAFODION.T144USER1.GEN_PHONE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select customer_id, 
++>       'NUMBER: ' || gen_random(customer_id, 10) as tenant_id
++>from customers;
+
+*** ERROR[4482] The user does not have EXECUTE privilege on user-defined routine TRAFODION.T144USER1.GEN_RANDOM.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select customer_name, 
++>       'TIME: ' || cast (gen_time(customer_id, 5, 212342970132970472) as char(30)) as customer_time_updated
++>from customers;
+
+*** ERROR[4482] The user does not have EXECUTE privilege on user-defined routine TRAFODION.T144USER1.GEN_TIME.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select customer_id,
++>       'NUMBER: ' || gen_random(customer_id, 10) as tenant_id,
++>       'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
++>       customer_areacode 
++>from customers;
+
+*** ERROR[4482] The user does not have EXECUTE privilege on user-defined routine TRAFODION.T144USER1.GEN_RANDOM.
+
+*** ERROR[4482] The user does not have EXECUTE privilege on user-defined routine TRAFODION.T144USER1.GEN_PHONE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>set param ?proc 'rm';
+>>call "_LIBMGR_".help (?proc);
+
+*** ERROR[4482] The user does not have EXECUTE privilege on user-defined routine TRAFODION."_LIBMGR_".HELP.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
 >>
 >>log;

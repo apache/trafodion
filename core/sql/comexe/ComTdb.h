@@ -44,6 +44,7 @@
 #include "sqlcli.h"
 #include "ComSmallDefs.h"
 #include "PrivMgrDesc.h"        // Privilege descriptors
+#include "ExpLOBenums.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -251,7 +252,6 @@ public:
     ex_CLEANUP_VOLATILE_TABLES = 109,
     ex_GET_VOLATILE_INFO = 110,
     ex_CREATE_TABLE_AS = 111,
-    ex_FAST_DELETE       = 112,
     ex_GET_STATISTICS    = 113,
     ex_PROBE_CACHE = 114,
     ex_LONG_RUNNING = 116,
@@ -561,6 +561,10 @@ public:
 
   void setProcessLOB(NABoolean v){ v ? flags_ |= PROCESS_LOB: flags_ &= ~PROCESS_LOB;}
 
+  NABoolean useLibHdfs() const { return ((flags_ & USE_LIBHDFS) > 0);}
+
+  void setUseLibHdfs(NABoolean v){ v ? flags_ |= USE_LIBHDFS : flags_ &= ~USE_LIBHDFS ;}
+
   enum CollectStatsType
   {
     NO_STATS      = SQLCLI_NO_STATS,
@@ -675,7 +679,9 @@ private:
     // code generation:
     //  master root(ComTdbRoot), esp root(ComTdbSplitBottom),
     //  eid root (ComTdbEidRoot)
-    PROCESS_LOB = 0x0100
+    PROCESS_LOB = 0x0100,
+    //
+    USE_LIBHDFS = 0x0200
 
   };
 
@@ -1008,11 +1014,12 @@ class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
                              Int16 d, const char * sa, Int16 con, Int16 i, const char * ps,
                              const char * ta, Int32 mr, Int32 sas, const char * en,
                              const char * p, const char * uv, const char * es, const char * em,
-                             const char * lf, Int32 lv, const char * s, const char *ls)
+                             const char * lf, Int32 lv, const char * s, const char *ls, Int64 luid
+                             )
     : ComTdbVirtTableBase(),
     routine_name(rn), deterministic(d), call_on_null(con), isolate(i), max_results(mr),
     state_area_size(sas), external_name(en), library_filename(lf), library_version(lv),
-      signature(s), library_sqlname(ls)
+      signature(s), library_sqlname(ls),lib_obj_uid(luid)
       {
         strcpy(UDR_type, ut);
         strcpy(language_type, lt);
@@ -1056,6 +1063,10 @@ class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
   Int64 object_uid;
   Int32 object_owner_id;
   Int32 schema_owner_id;
+  Int64 lib_redef_time;
+  char *lib_blob_handle;
+  char *lib_sch_name;
+  Int64 lib_obj_uid;
 };
 
 class ComTdbVirtTableSequenceInfo : public ComTdbVirtTableBase
@@ -1106,7 +1117,7 @@ class ComTdbVirtTablePrivInfo : public ComTdbVirtTableBase
 
   virtual Int32 size() { return sizeof(ComTdbVirtTablePrivInfo);}
 
-  NAList<PrivMgrDesc>     *privmgr_desc_list;     
+  PrivMgrDescList         *privmgr_desc_list;     
 };
 
 class ComTdbVirtTableLibraryInfo : public ComTdbVirtTableBase

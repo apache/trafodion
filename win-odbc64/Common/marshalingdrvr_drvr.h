@@ -195,6 +195,33 @@ odbc_SQLDrvr_EndTransaction_param_pst_(
 	    , /* In    */ IDL_unsigned_short transactionOpt
 );
 
+CEE_status
+odbc_SQLDrvr_ExtractLob_param_pst_(
+    /* In    */ CInterface * pSystem
+  , /* In    */ IDL_char * & buffer
+  , /* In    */ long        & message_length
+  , /* In    */ IDL_long     extractType
+  , /* In    */ IDL_string   lobHandle
+  , /* In    */ IDL_long     lobHandleLen
+  , /* In    */ IDL_long     lobHandleCharset
+  , /* In    */ IDL_long     extractlen
+);
+
+CEE_status
+odbc_SQLDrvr_UpdateLob_param_pst_(
+    /* In    */ CInterface * pSystem
+  , /* In    */ IDL_char * & buffer
+  , /* In    */ long        & message_length
+  , /* In    */ IDL_long     updataType
+  , /* In    */ IDL_string   lobHandle
+  , /* In    */ IDL_long     lobHandleLen
+  , /* In    */ IDL_long     lobHandleCharset
+  , /* In    */ IDL_long_long     totalLength
+  , /* In    */ IDL_long_long     offset
+  , /* In    */ BYTE *        data
+  , /* In    */ IDL_long_long pos
+  , /* In    */ IDL_long_long length
+);
 /************************************************************************************************************
  *                                                                                                          *
  * Keeping these functions around for the collapsed driver - get rid of these when it is not needed anymore *

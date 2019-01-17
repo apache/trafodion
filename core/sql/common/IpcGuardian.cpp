@@ -212,14 +212,10 @@ NABoolean GuaProcessHandle::compare(const GuaProcessHandle &other) const
 
 NABoolean GuaProcessHandle::fromAscii(const char *ascii)
 {
- SB_Phandle_Type *tempPhandle;
 
- tempPhandle = get_phandle_with_retry((char *)ascii);
-
- if (!tempPhandle)
+  int retcode = get_phandle_with_retry((char *)ascii, &phandle_);
+  if (retcode != FEOK)
     return FALSE;
-
- memcpy ((void *)&phandle_, (void *)tempPhandle, sizeof(SB_Phandle_Type));
   return TRUE; 
 }
 
@@ -4110,12 +4106,11 @@ void IpcGuardianServer::spawnProcess(ComDiagsArea **diags,
 void IpcGuardianServer::useProcess(ComDiagsArea **diags,
 				      CollHeap *diagsHeap)
 {
-  NSK_PORT_HANDLE *procHandle;
-  NSK_PORT_HANDLE procHandleCopy;
+  SB_Phandle_Type procHandle;
   short usedlength;
   char processName[50];
   char *tmpProcessName;
-  short rc;
+  int rc;
 
   if (processName_ == NULL)
   {
@@ -4135,13 +4130,8 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
   short i = 0;
   while (i < 3)
   {
-    short gprc = 0;
-    procHandle = get_phandle_with_retry(tmpProcessName, &gprc);
-    if (procHandle != NULL)
-      rc = 0;
-    else
-      rc = gprc;
-    if ((rc != 0) || (procHandle == NULL))
+    rc = get_phandle_with_retry(tmpProcessName, &procHandle);
+    if (rc != FEOK)
     {
       serverState_ = ERROR_STATE;
       guardianError_ = rc;
@@ -4157,7 +4147,7 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
     else
     {
       //Phandle wrapper in porting layer
-      NAProcessHandle phandle(procHandle);
+      NAProcessHandle phandle(&procHandle);
 
       rc = phandle.decompose();
       if (rc != 0)
@@ -4174,9 +4164,7 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
       }
     }
 
-    memcpy(&procHandleCopy, procHandle, sizeof(NSK_PORT_HANDLE));
-    IpcProcessId serverProcId(
-         (const GuaProcessHandle &)procHandleCopy);
+    IpcProcessId serverProcId((const GuaProcessHandle &)procHandle);
 	      
     controlConnection_ = new(getServerClass()->getEnv()->getHeap())
       GuaConnectionToServer(getServerClass()->getEnv(),
@@ -4190,9 +4178,6 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
           castToGuaConnectionToServer()->getGuardianError();
       delete controlConnection_;
       controlConnection_ = NULL;
-      // clear phandle cache -- ALM CR8248
-      msg_set_phandle((char *)processName_, NULL); 
-      msg_mon_close_process(procHandle);
       DELAY(10);
     }
     else

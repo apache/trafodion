@@ -21,6 +21,8 @@
 
 # Need this to tell build which machine type.
 export SQ_MTYPE=64
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
 
 
 # All other environment variables are set in the common file.

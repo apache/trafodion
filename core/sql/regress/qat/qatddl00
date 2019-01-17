@@ -124,6 +124,8 @@ drop table btsel26;
 
 drop table btsel27;
 
+drop table btsel28;
+
 drop index btre201a;
 drop index btre201b;
 drop index btre201c;

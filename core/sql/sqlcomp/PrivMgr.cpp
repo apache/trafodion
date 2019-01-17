@@ -36,6 +36,7 @@
 #include "PrivMgrComponentOperations.h"
 #include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrPrivileges.h"
+#include "PrivMgrRoles.h"
 
 // Trafodion includes
 #include "ComDistribution.h"
@@ -152,6 +153,42 @@ PrivMgr::PrivMgr(const PrivMgr &other)
 PrivMgr::~PrivMgr() 
 {
   resetFlags();
+}
+
+// *****************************************************************************
+// * Method: getGranteeIDsForRoleIDs                              
+// *                                                       
+// *    Returns the grantees assigned to the passed in roles
+// *    role list
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <roleIDs>    list of roles to check
+// *  <granteeIDs> passed back the list (potentially empty) of users granted to 
+// *               the roleIDs
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: Role list returned
+// *           *: Unable to fetch granted roles, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgr::getGranteeIDsForRoleIDs(
+  const std::vector<int32_t>  & roleIDs,
+  std::vector<int32_t> & granteeIDs,
+  bool includeSysGrantor)
+{
+  std::vector<int32_t> granteeIDsForRoleIDs;
+  PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
+  if (roles.fetchGranteesForRoles(roleIDs, granteeIDsForRoleIDs, includeSysGrantor) == STATUS_ERROR)
+    return STATUS_ERROR;
+  for (size_t i = 0; i < granteeIDsForRoleIDs.size(); i++)
+  {
+     int32_t authID = granteeIDsForRoleIDs[i];
+     if (std::find(granteeIDs.begin(), granteeIDs.end(), authID) == granteeIDs.end())
+       granteeIDs.insert( std::upper_bound( granteeIDs.begin(), granteeIDs.end(), authID ), authID);
+  }
+  return STATUS_GOOD;
 }
 
 // ----------------------------------------------------------------------------
@@ -300,6 +337,27 @@ bool PrivMgr::getAuthNameFromAuthID(
   }
   return true;
 }
+
+// *****************************************************************************
+// * Function:  PrivMgr::getSQLUnusedOpsCount()
+// *
+// *    Returns the number of unused operations from the hard coded table
+// *    in PrivMgrComponentDefs.h for the sql_operations component.
+// *
+// *****************************************************************************
+int32_t PrivMgr::getSQLUnusedOpsCount()
+{
+  int32_t numUnusedOps = 0;
+  size_t numOps = sizeof(sqlOpList)/sizeof(ComponentOpStruct);
+  for (int i = 0; i < numOps; i++)
+  {
+    const ComponentOpStruct &opDefinition = sqlOpList[i];
+    if (opDefinition.unusedOp)
+      numUnusedOps++;
+  }
+  return numUnusedOps;
+}
+
 
 // *****************************************************************************
 // *                                                                           *
@@ -592,6 +650,7 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
 }
 //**************** End of PrivMgr::getSQLOperationDescription ******************
 
+
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgr::isAuthIDGrantedPrivs                                   *
@@ -860,6 +919,42 @@ bool PrivMgr::isSQLManageOperation(SQLOperation operation)
 
 // *****************************************************************************
 // *                                                                           *
+// * Function: PrivMgr::isSQLManageOperation                                   *
+// *                                                                           *
+// *    Determines if a SQL operation is within the list of manage operations. *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <operation>                     SQLOperation                    In       *
+// *    is the operation.                                                      *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: operation is a manage operation.                                    *
+// * false: operation is not a manage operation.                               *
+// *                                                                           *
+// *****************************************************************************
+bool PrivMgr::isSQLManageOperation(const char * operationCode)
+
+{
+  size_t numOps = sizeof(sqlOpList)/sizeof(ComponentOpStruct);
+  for (int i = 0; i < numOps; i++)
+  {
+    const ComponentOpStruct &opDefinition = sqlOpList[i];
+    if (std::string(opDefinition.operationCode) == std::string(operationCode))
+      return (PrivMgr::isSQLManageOperation((SQLOperation)opDefinition.operationID));
+   }
+   return false;
+}
+//******************* End of PrivMgr::isSQLManageOperation *********************
+
+
+// *****************************************************************************
+// *                                                                           *
 // * Function: PrivMgr::ObjectEnumToLit                                        *
 // *                                                                           *
 // *    Returns the two character literal associated with the object type enum.*
@@ -1010,7 +1105,7 @@ void PrivMgr::setFlags()
 //   QRLogger generates a message calls the log method in 
 //      sqf/commonLogger/CommonLogger (.h & .cpp) 
 //   CommonLogger interfaces with the log4cxx code which eventually puts
-//      a message into a log file called ../sqf/logs/master_exec_0_pid.log.  
+//      a message into a log file called $TRAF_LOG/master_exec_0_pid.log.  
 //      A new master log is created for each new SQL process started.
 //
 // Sometimes it is amazing that things actually work with all these levels

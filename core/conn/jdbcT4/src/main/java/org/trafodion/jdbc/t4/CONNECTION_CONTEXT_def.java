@@ -27,7 +27,7 @@ import java.nio.charset.UnsupportedCharsetException;
 class CONNECTION_CONTEXT_def {
 	String datasource = "";
 	String catalog = "";
-	String schema = "";
+    private String schema = "";
 	String location = "";
 	String userRole = "";
 
@@ -35,6 +35,7 @@ class CONNECTION_CONTEXT_def {
 	short autoCommit;
 	short queryTimeoutSec;
 	short idleTimeoutSec;
+	short clipVarchar;
 	short loginTimeoutSec;
 	short txnIsolationLevel;
 	short rowSetSize;
@@ -146,4 +147,12 @@ class CONNECTION_CONTEXT_def {
 
 		clientVersionList.insertIntoByteArray(buf);
 	}
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
 }

@@ -65,6 +65,7 @@ import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.RegionLocator;
@@ -85,7 +86,12 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PushEpochResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
@@ -100,6 +106,8 @@ import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 
 import org.apache.hadoop.ipc.RemoteException;
+
+import org.apache.hadoop.fs.FileSystem;
 
 import com.google.protobuf.ByteString;
 
@@ -173,6 +181,9 @@ public class TransactionManager {
   public static final int HBASE_DURABILITY = 20;
   public static final int HBASE_MEMSTORE_FLUSH_SIZE = 21;
   public static final int HBASE_SPLIT_POLICY = 22;
+  public static final int HBASE_CACHE_DATA_IN_L1 = 23;
+  public static final int HBASE_PREFETCH_BLOCKS_ON_OPEN = 24;
+  public static final int HBASE_HDFS_STORAGE_POLICY= 25;
 
   public static final int TM_COMMIT_FALSE = 0;
   public static final int TM_COMMIT_READ_ONLY = 1;
@@ -182,6 +193,7 @@ public class TransactionManager {
   public static final int TM_SLEEP = 1000;      // One second
   public static final int TM_SLEEP_INCR = 5000; // Five seconds
   public static final int TM_RETRY_ATTEMPTS = 5;
+  Configuration config;
 
   private IdTm idServer;
   private static final int ID_TM_SERVER_TIMEOUT = 1000;
@@ -1663,6 +1675,7 @@ public class TransactionManager {
     private TransactionManager(final Configuration conf, Connection connection) throws ZooKeeperConnectionException, IOException {
         this(LocalTransactionLogger.getInstance(), conf, connection);
         this.connection = connection;
+        this.config = conf;
         int intThreads = 16;
         String retryAttempts = System.getenv("TMCLIENT_RETRY_ATTEMPTS");
         String numThreads = System.getenv("TM_JAVA_THREAD_POOL_SIZE");
@@ -2795,10 +2808,13 @@ public class TransactionManager {
     private class ChangeFlags {
         boolean tableDescriptorChanged;
         boolean columnDescriptorChanged;
+        boolean storagePolicyChanged;
+        String storagePolicy_;
 
         ChangeFlags() {
            tableDescriptorChanged = false;
            columnDescriptorChanged = false;
+           storagePolicyChanged = false;
         }
 
         void setTableDescriptorChanged() {
@@ -2816,6 +2832,16 @@ public class TransactionManager {
        boolean columnDescriptorChanged() {
           return columnDescriptorChanged;
        }
+
+       void setStoragePolicyChanged(String str) {
+           storagePolicy_ = str;
+           storagePolicyChanged = true;
+       }
+
+       boolean storagePolicyChanged()    {
+           return storagePolicyChanged;
+       }
+ 
     }
 
    private ChangeFlags setDescriptors(Object[] tableOptions,
@@ -2996,6 +3022,11 @@ public class TransactionManager {
                    (Long.parseLong(tableOption));
                returnStatus.setTableDescriptorChanged();
                break ;
+           case HBASE_HDFS_STORAGE_POLICY:
+               //TODO HBase 2.0 support this
+               //So when come to HBase 2.0, no need to do this via HDFS, just set here
+             returnStatus.setStoragePolicyChanged(tableOption);
+             break ;
            case HBASE_SPLIT_POLICY:
                   // This method not yet available in earlier versions
                   // desc.setRegionSplitPolicyClassName(tableOption)); 
@@ -3053,6 +3084,9 @@ public class TransactionManager {
            else if (status.columnDescriptorChanged()) {
               admin.modifyColumn(tableName,colDesc);
               waitForCompletion(tblName,admin);
+           }
+           else if (status.storagePolicyChanged()) {
+             setStoragePolicy(tblName, status.storagePolicy_);
            }
         } finally {
            admin.close();
@@ -3138,7 +3172,7 @@ public class TransactionManager {
             admin.createTable(hdesc);
             admin.close();
     }
-
+    
     //Called only by DoPrepare.
     public void disableTable(final TransactionState transactionState, String tblName)
             throws IOException{
@@ -3225,6 +3259,80 @@ public class TransactionManager {
         if (LOG.isTraceEnabled()) LOG.trace("recoveryRequest -- EXIT TM" + tmid);
 
         return resultArray[0].getResultList();
+    }
+
+    public void setStoragePolicy(String tblName, String policy)
+      throws IOException {
+
+      int retryCount = 0;
+      int retrySleep = TM_SLEEP;
+      boolean retry = false;
+      org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService.BlockingInterface service;
+      org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyRequest.Builder request ; 
+      try {
+          Table tbl = connection.getTable(TableName.valueOf(tblName));
+          String rowkey = "0";
+          CoprocessorRpcChannel channel = tbl.coprocessorService(rowkey.getBytes());
+          service =
+            org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService.newBlockingStub(channel);
+          request =
+           org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyRequest.newBuilder();
+          String hbaseRoot = config.get("hbase.rootdir");
+          FileSystem fs = FileSystem.get(config);
+          //Construct the HDFS dir
+          //find out if namespace is there
+          String[] parts = tblName.split(":");
+          String namespacestr="";
+          String fullPath = hbaseRoot + "/data/" ;
+          String fullPath2 = hbaseRoot + "/data/default/";
+          if(fs.exists(new Path(fullPath2)) && parts.length == 1)  // no namespace in the path
+            fullPath = fullPath2;
+
+          if(parts.length >1) //have namespace
+            fullPath = fullPath + parts[0] + "/" + parts[1];
+          else
+            fullPath = fullPath + tblName;
+
+          request.setPath(fullPath);
+          request.setPolicy(policy);
+      }
+      catch (Exception e) {
+          throw new IOException(e);
+      }
+        
+      do {
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyResponse ret = null;
+          try{
+            ret = service.setStoragePolicy(null,request.build());
+           }
+           catch(ServiceException se) {
+             String msg = new String ("ERROR occurred while calling coprocessor service in setStoragePolicy, retry due to ");
+             LOG.warn(msg, se);
+             retry = true;
+          }
+          catch(Throwable te)
+          {
+             LOG.error("ERROR occurred while calling coprocessor service in setStoragePolicy, not retry due to ", te);
+             retry = false;
+          }
+          //handle result and error
+          if( ret == null)
+          {
+            retry = false;
+            LOG.error("setStoragePolicy Response ret null , not retry");
+          }
+          else if (ret.getStatus() == false)
+          {
+            LOG.error("setStoragePolicy Response ret false." +  ret.getException());
+            throw new IOException(ret.getException());
+          }
+          if(retryCount == RETRY_ATTEMPTS)
+          {
+            throw new IOException("coprocessor not response");
+          }
+          if (retry) 
+              retrySleep = retry(retrySleep);
+      } while (retry && retryCount++ < RETRY_ATTEMPTS);
     }
 }
 

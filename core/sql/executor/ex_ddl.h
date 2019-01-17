@@ -275,6 +275,7 @@ public:
 
   Int64 startTime_;
   Int64 endTime_;
+  Int64 queryStartTime_;
 
   char * data_;
   size_t dataLen_;

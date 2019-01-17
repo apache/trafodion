@@ -335,10 +335,10 @@ NOTICE: ../../licenses/NOTICE-server
 	cd $(@D) && $(MAKE) $(@F)
 
 rest-${TRAFODION_VER}:
-	ln -s ../rest/target/$@/$@ $@
+	ln -sf ../rest/target/$@/$@ $@
 
 dcs-${TRAFODION_VER}:
-	ln -s ../../dcs/target/$@/$@ $@
+	ln -sf ../../dcs/target/$@/$@ $@
 
 tmp/sqenv.sh:
 	@if [ ! -d tmp ]; then mkdir tmp; fi

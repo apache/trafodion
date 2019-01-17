@@ -1119,6 +1119,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDui2__(DYN_QUEUE_RESIZE_INIT_DOWN,		"4"),
   DDui2__(DYN_QUEUE_RESIZE_INIT_UP,		"4"),
   DDui1__(DYN_QUEUE_RESIZE_LIMIT,		"9"),
+  DDkwd__(DYN_QUEUE_RESIZE_OVERRIDE,             "OFF"),
 
   DDkwd__(EID_SPACE_USAGE_OPT,			"OFF"),
 
@@ -1221,8 +1222,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(FAKE_VOLUME_ASSIGNMENTS,		"OFF"),
   DDui1__(FAKE_VOLUME_NUM_VOLUMES,              "24"),
 
-  DDkwd__(FAST_DELETE,                          "OFF"),
-
  // upper and lower limit (2,10) must be in sync with error values in 
  //ExFastTransport.cpp
   DDkwd__(FAST_EXTRACT_DIAGS,			"OFF"),
@@ -1321,7 +1320,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_MJ_BUFFER_SIZE,			"32768"),
   DDui1__(GEN_MJ_NUM_BUFFERS,			"1"),
   DDui1__(GEN_MJ_SIZE_DOWN,			"2"),
-  DDui1__(GEN_MJ_SIZE_UP,			"1024"),
+  DDui1__(GEN_MJ_SIZE_UP,			"2048"),
   DDui1__(GEN_ONLJ_BUFFER_SIZE,			"5120"),
   DDui1__(GEN_ONLJ_LEFT_CHILD_QUEUE_DOWN,       "4"),
   DDui1__(GEN_ONLJ_LEFT_CHILD_QUEUE_UP,         "2048"),
@@ -1340,10 +1339,10 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_PROBE_CACHE_SIZE_UP,              "2048"),
   DDui1__(GEN_SAMPLE_SIZE_DOWN,			"16"),
   DDui1__(GEN_SAMPLE_SIZE_UP,			"16"),
-  DDui1__(GEN_SEQFUNC_BUFFER_SIZE,		"5120"),
-  DDui1__(GEN_SEQFUNC_NUM_BUFFERS,		"5"),
-  DDui1__(GEN_SEQFUNC_SIZE_DOWN,		"16"),
-  DDui1__(GEN_SEQFUNC_SIZE_UP,			"16"),
+  DDui1__(GEN_SEQFUNC_BUFFER_SIZE,		"10240"),
+  DDui1__(GEN_SEQFUNC_NUM_BUFFERS,		"10"),
+  DDui1__(GEN_SEQFUNC_SIZE_DOWN,		"512"),
+  DDui1__(GEN_SEQFUNC_SIZE_UP,			"2048"),
   DDui1__(GEN_SGBY_BUFFER_SIZE,			"5120"),
   DDui1__(GEN_SGBY_NUM_BUFFERS,			"5"),
   DDui1__(GEN_SGBY_SIZE_DOWN,			"2048"),
@@ -1362,7 +1361,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_SORT_MAX_BUFFER_SIZE,		"5242880"),
   DDui1__(GEN_SORT_MAX_NUM_BUFFERS,             "160"),
   DDui1__(GEN_SORT_NUM_BUFFERS,			"2"),
-  DDui1__(GEN_SORT_SIZE_DOWN,			"2"),
+  DDui1__(GEN_SORT_SIZE_DOWN,			"8"),
   DDui1__(GEN_SORT_SIZE_UP,			"1024"),
   DDkwd__(GEN_SORT_TOPN,		        "ON"),
   DDui1__(GEN_SORT_TOPN_THRESHOLD,              "10000"),
@@ -1383,8 +1382,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_TRAN_SIZE_UP,			"4"),
   DDui1__(GEN_TRSP_BUFFER_SIZE,			"10240"),
   DDui1__(GEN_TRSP_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_TRSP_SIZE_DOWN,			"16"),
-  DDui1__(GEN_TRSP_SIZE_UP,			"16"),
+  DDui1__(GEN_TRSP_SIZE_DOWN,			"2048"),
+  DDui1__(GEN_TRSP_SIZE_UP,			"2048"),
   DDui1__(GEN_TUPL_BUFFER_SIZE,			"1024"),
   DDui1__(GEN_TUPL_NUM_BUFFERS,			"4"),
   DDui1__(GEN_TUPL_SIZE_DOWN,			"2048"),
@@ -1405,9 +1404,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDui1__(GEN_UN_BUFFER_SIZE,			"10240"),
   DDui1__(GEN_UN_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_UN_SIZE_DOWN,			"8"),
-  DDui1__(GEN_UN_SIZE_UP,			"16"),
-
+  DDui1__(GEN_UN_SIZE_DOWN,			"2048"),
+  DDui1__(GEN_UN_SIZE_UP,			"2048"),
 
 
   // When less or equal to this CQD (5000 rows by default), a partial root 
@@ -1465,6 +1463,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_MAX_COLUMN_VAL_LENGTH,                  "1000"),
  DDui___(HBASE_MAX_ESPS,                        "9999"),
  DDui___(HBASE_MAX_NUM_SEARCH_KEYS,                  "512"),
+ DDkwd__(HBASE_MEMSTORE_FLUSH_SIZE_OPTION,              ""),
  DDui1__(HBASE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
 
   DDkwd__(HBASE_NATIVE_IUD,		"ON"),
@@ -1636,6 +1635,9 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DD_____(HIVE_CATALOG,                                ""),
 
+  DDkwd__(HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL, "OFF"),
+  DDkwd__(HIVE_CTAS_IN_NATIVE_MODE,             "OFF"),
+
   DDkwd__(HIVE_DATA_MOD_CHECK,                  "ON"),
 
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),
@@ -1754,6 +1756,11 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
  // For JDBC/ODBC batch operations, LOB  size limited to 4K bytes
   DDint__(LOB_INPUT_LIMIT_FOR_BATCH,  "16384"),
+ // Control the locking via RMS shared lock. This ensures the CLI and HDFS 
+ // operations for any LOB UID are done under a lock so concurrent operations 
+ // wont conflict and cause incosistent data. For non concurrent applications, 
+ // we can turn this off as a performance enhancement. 
+  DDkwd__(LOB_LOCKING,          "ON"),
    // Size of memoryin Megabytes  used to perform I/O to lob data file 
   // default size is 128MB   . Change to adjust memory usage. 
   DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "128"), 
@@ -2854,7 +2861,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
  
- 
   DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
@@ -2863,17 +2869,19 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
 
+  DDkwd__(TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT, "OFF"),   
+
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
   DDkwd__(TRAF_AUTO_CREATE_SCHEMA,                 "OFF"),   
 
-  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "OFF"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_BOOLEAN_IO,                        "OFF"),
 
-  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
+  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),     
 
-  DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "OFF"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
@@ -2882,7 +2890,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
   DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
- 
+
+  DDkwd__(TRAF_DDL_ON_HIVE_OBJECTS,             "ON"),
+
   DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
   DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
@@ -2918,15 +2928,22 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
 
+  DDkwd__(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL,    "ON"),
+
   // max size in bytes of a char or varchar column. Set to 16M
   DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
   DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
+  // max size in MB of a row that canbe accomodated  in scanner cache when 
+  // using th the default scanner cache size. 
+  DDint__(TRAF_MAX_ROWSIZE_IN_CACHE,     "10"),
 
   DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
   DDkwd__(TRAF_NO_DTM_XN,      "OFF"),
+
+  DDkwd__(TRAF_NO_HBASE_DROP_CREATE,                   "OFF"),
 
   DDint__(TRAF_NUM_HBASE_VERSIONS,                     "0"),
 
@@ -2937,6 +2954,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/user/trafodion/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
+
+  DDint__(TRAF_SEQUENCE_RETRY_TIMES,        "100"),
 
   DDkwd__(TRAF_SIMILARITY_CHECK,			"ROOT"),
 
@@ -3043,7 +3062,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // Use large queues on RHS of Flow/Nested Join when appropriate
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
-  DDkwd__(USE_LIBHDFS_SCAN,                     "OFF"),
+
+ XDDkwd__(USE_LIBHDFS,                          "OFF"),
+
+  DDkwd__(USE_LIB_BLOB_STORE,                   "ON"),         
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
 
@@ -5120,7 +5142,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             val = "OFF";
                     
           insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
-          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
                     
           NAString csVal;
           if (value == "ON")
@@ -5950,6 +5971,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         (attrEnum == USE_HIVE_SOURCE) ||
         (attrEnum == HIVE_FILE_CHARSET) ||
         (attrEnum == HBASE_DATA_BLOCK_ENCODING_OPTION) ||
+        (attrEnum == HBASE_MEMSTORE_FLUSH_SIZE_OPTION) ||
         (attrEnum == HBASE_COMPRESSION_OPTION))
       return DF_USER;
     
@@ -6297,6 +6319,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       break;
 
     case AUTO_QUERY_RETRY_WARNINGS:
+    case USE_LIBHDFS:
       if (tok == DF_ON ||
 	  tok == DF_OFF)
 	isValid = TRUE;

@@ -89,11 +89,9 @@ ExLobGlobals *&ex_globals::getExLobGlobal()
   return exLobGlobals_;
 }
 
-void ex_globals::initLOBglobal(ContextCli *context)
+void ex_globals::initLOBglobal(ContextCli *context, NABoolean useLibHdfs)
 {
-  // initialize lob interface
-  ExpLOBoper::initLOBglobal(exLobGlobals_, (NAHeap *)heap_, context, (char *)"default", (Int32)0);
-
+  exLobGlobals_ = ExpLOBoper::initLOBglobal((NAHeap *)heap_, context, useLibHdfs);
 }
 
 void ex_globals::reAllocate(short create_gui_sched)
@@ -135,9 +133,9 @@ void ex_globals::deleteMe(NABoolean fatalError)
   statsArea_ = NULL;
   cleanupTcbs();
   tcbList_.deallocate();
-  ExpLOBinterfaceCleanup(exLobGlobals_);
+  if (exLobGlobals_ != NULL)
+     ExpLOBoper::deleteLOBglobal(exLobGlobals_, (NAHeap *)heap_);
   exLobGlobals_ = NULL;
-
 }
 
 void ex_globals::deleteMemory(void *mem)
@@ -168,6 +166,11 @@ ExExeStmtGlobals * ex_globals::castToExExeStmtGlobals()
 }
 
 ExEidStmtGlobals * ex_globals::castToExEidStmtGlobals()
+{
+  return NULL;
+}
+
+ExEspStmtGlobals * ex_globals::castToExEspStmtGlobals()
 {
   return NULL;
 }

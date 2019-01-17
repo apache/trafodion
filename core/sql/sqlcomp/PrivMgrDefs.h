@@ -38,6 +38,13 @@
 // *
 // *****************************************************************************
 
+#define PRIVMGR_INTERNAL_ERROR(text)                                      \
+   *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)                   \
+            << DgString0(__FILE__)                                        \
+            << DgInt0(__LINE__)                                           \
+            << DgString1(text)                                            
+
+
 // Returns the result of the operation 
 enum PrivStatus { STATUS_UNKNOWN   = 20,
                   STATUS_GOOD      = 21,
@@ -69,16 +76,6 @@ inline const char * privStatusEnumToLit(PrivStatus privStatus)
   return result.c_str();
 }
   
-
-enum {SQL_OPERATIONS_COMPONENT_UID = 1};
-#define SQL_OPERATION_NAME "SQL_OPERATIONS"
-
-#define PRIVMGR_INTERNAL_ERROR(text)                                      \
-   *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)                   \
-            << DgString0(__FILE__)                                        \
-            << DgInt0(__LINE__)                                           \
-            << DgString1(text)                                            
-
 
 enum class PrivClass {
    ALL = 2,
@@ -155,77 +152,6 @@ inline bool isSequenceGeneratorPrivType(PrivType privType)
    
 }
      
-// Defines the list of privileges that are supported for the 
-// SQLOperation component
-enum class SQLOperation {
-   ALTER = 2,
-   ALTER_LIBRARY,
-   ALTER_ROUTINE,
-   ALTER_ROUTINE_ACTION,
-   ALTER_SCHEMA,
-   ALTER_SEQUENCE,
-   ALTER_SYNONYM,
-   ALTER_TABLE,
-   ALTER_TRIGGER,
-   ALTER_VIEW,
-   CREATE,
-   CREATE_CATALOG,
-   CREATE_INDEX,
-   CREATE_LIBRARY,
-   CREATE_PROCEDURE,
-   CREATE_ROUTINE,
-   CREATE_ROUTINE_ACTION,
-   CREATE_SCHEMA,
-   CREATE_SEQUENCE,
-   CREATE_SYNONYM,
-   CREATE_TABLE,
-   CREATE_TRIGGER,
-   CREATE_VIEW,
-   DML_DELETE,
-   DML_EXECUTE,
-   DML_INSERT,
-   DML_REFERENCES,
-   DML_SELECT,
-   DML_UPDATE,
-   DML_USAGE,
-   DROP,
-   DROP_CATALOG,
-   DROP_INDEX,
-   DROP_LIBRARY,
-   DROP_PROCEDURE,
-   DROP_ROUTINE,
-   DROP_ROUTINE_ACTION,
-   DROP_SCHEMA,
-   DROP_SEQUENCE,
-   DROP_SYNONYM,
-   DROP_TABLE,
-   DROP_TRIGGER,
-   DROP_VIEW,
-   MANAGE,
-   MANAGE_COMPONENTS,
-   MANAGE_LIBRARY,
-   MANAGE_LOAD,
-   MANAGE_PRIVILEGES,
-   MANAGE_ROLES,
-   MANAGE_STATISTICS,
-   MANAGE_USERS,
-   QUERY_ACTIVATE,
-   QUERY_CANCEL,
-   QUERY_SUSPEND,
-   REMAP_USER,
-   REGISTER_HIVE_OBJECT,
-   SHOW,
-   UNREGISTER_HIVE_OBJECT,
-   USE_ALTERNATE_SCHEMA,
-   COMMENT,
-   FIRST_OPERATION = ALTER,
-   LAST_OPERATION = COMMENT,
-   NUMBER_OF_OPERATIONS = LAST_OPERATION - FIRST_OPERATION + 1,
-   UNKNOWN,
-   FIRST_DML_PRIV = DML_DELETE,
-   LAST_DML_PRIV = DML_USAGE
-};
-
 enum class PrivDropBehavior {
    CASCADE = 2,
    RESTRICT = 3

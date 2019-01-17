@@ -46,6 +46,8 @@ OutputInfo::OutputInfo(Lng32 numEntries)
   : numEntries_(numEntries)
 {
   
+   ex_assert( numEntries <= MAX_OUTPUT_ENTRIES, "try to fetch more than max columns allowed");
+
    for (Int32 i = 0; i < numEntries_; i++)
     {
       data_[i] = NULL;
@@ -62,6 +64,13 @@ void OutputInfo::insert(Lng32 index, char * data, Lng32 len)
 {
   data_[index] = data;
   len_[index] = len;
+}
+
+void OutputInfo::insert(Lng32 index, char * data, Lng32 len, Lng32 type, Lng32 *indOffset , Lng32 *varOffset )
+{
+  data_[index] = data;
+  len_[index] = len;
+  type_[index] = type;
 }
 
 char * OutputInfo::get(Lng32 index)
@@ -84,11 +93,25 @@ short OutputInfo::get(Lng32 index, char* &data, Lng32 &len)
   return -1;
 }
 
+short OutputInfo::get(Lng32 index, char* &data, Lng32 &len, Lng32 &type, Lng32 *indOffset , Lng32 *varOffset )
+{
+  if (index < numEntries_)
+    {
+      data = data_[index];
+      len = len_[index];
+      type = type_[index];
+      return 0;
+    }
+
+  return -1;
+}
+
 void OutputInfo::dealloc(CollHeap * heap)
 {
   for (Int32 i = 0; i < numEntries_; i++)
     {
-      NADELETEBASIC(data_[i], heap);
+      if(data_[i] != NULL)
+        NADELETEBASIC(data_[i], heap);
     }
 }
 
@@ -1276,32 +1299,51 @@ short ExeCliInterface::fetchAllRows(Queue * &infoList,
 	
 	for (Int32 j = 0; j < numOutputEntries; j++)
 	{
-	  char * ptr;
+	  char * ptr, *r;
 	  Lng32   len;
-	  getPtrAndLen(j+1, ptr, len);
-
-	  NABoolean nullTerminate = 
+          Lng32   type;
+          short nulind=0;
+          short *indaddr=&nulind;
+          short **ind=&indaddr;
+          getAttributes(j+1, FALSE, type, len, NULL, NULL);
+	  getPtrAndLen(j+1, ptr, len, ind);
+          NABoolean  nullableCol = TRUE, isNullVal = FALSE;
+          if(*ind == NULL) // It is not a nullable value
+            isNullVal = FALSE; 
+          else
+          {
+            if( ((char*)*ind)[0] == -1 ) // NULL value
+              isNullVal = TRUE;
+          }
+  
+          if(isNullVal) 
+          {
+            oi->insert(j, NULL, 0, type);
+          }
+          else
+          {
+	    NABoolean nullTerminate = 
 	    DFS2REC::is8bitCharacter(outputAttrs_[j].fsDatatype_);
 
-	  char * r = new(getHeap()) char
-	    [(varcharFormat ? SQL_VARCHAR_HDR_SIZE : 0) 
-	     + len + (nullTerminate ? 1 : 0)];
-	  if (varcharFormat)
-	  {
-	    *(short*)r = (short)len;
-	    str_cpy_all(&r[SQL_VARCHAR_HDR_SIZE], ptr, len);
+	    r = new(getHeap()) char
+	      [(varcharFormat ? SQL_VARCHAR_HDR_SIZE : 0) 
+	       + len + (nullTerminate ? 1 : 0)];
+	    if (varcharFormat)
+	    {
+	      *(short*)r = (short)len;
+	      str_cpy_all(&r[SQL_VARCHAR_HDR_SIZE], ptr, len);
 
-	    if (nullTerminate)
-	      r[SQL_VARCHAR_HDR_SIZE + len] = 0;
-	  }
-	  else
-	  {
-	    str_cpy_all(r, ptr, len);
-	    
-	    if (nullTerminate)
-	      r[len] = 0;
-	  }
-	  oi->insert(j, r, len);
+	      if (nullTerminate)
+	        r[SQL_VARCHAR_HDR_SIZE + len] = 0;
+	    }
+	    else
+	    {
+	      str_cpy_all(r, ptr, len);
+	      if (nullTerminate)
+	        r[len] = 0;
+	    }
+	    oi->insert(j, r, len, type);
+           }
 	}
 	
 	infoList->insert(oi);
@@ -2079,6 +2121,16 @@ Lng32 ExeCliInterface::rollbackXn()
 Lng32 ExeCliInterface::statusXn()
 {
   return SQL_EXEC_Xact(SQLTRANS_STATUS, NULL);
+}
+
+Lng32 ExeCliInterface::suspendXn()
+{
+  return SQL_EXEC_Xact(SQLTRANS_SUSPEND, 0);
+}
+
+Lng32 ExeCliInterface::resumeXn()
+{
+  return SQL_EXEC_Xact(SQLTRANS_RESUME, 0);
 }
 
 Lng32 ExeCliInterface::createContext(char * contextHandle)

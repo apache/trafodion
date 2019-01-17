@@ -312,7 +312,22 @@ void Generator::initTdbFields(ComTdb *tdb)
       dynQueueSizeValuesAreValid_ = TRUE;
     }
 
-  if (getRightSideOfOnlj() && makeOnljRightQueuesBig_)
+  if  (ActiveSchemaDB()->getDefaults().getToken(DYN_QUEUE_RESIZE_OVERRIDE) == DF_ON)
+    {
+      tdb->setQueueResizeParams(tdb->getMaxQueueSizeDown(), tdb->getMaxQueueSizeUp(),
+                                queueResizeLimit_,queueResizeFactor_);
+    }
+  //Typically the sequence operaotr may have to deal with a large numer of rows when 
+  //it's part of the IM tree that performs elimination of dups. 
+  if ((tdb->getNodeType() == ComTdb::ex_SEQUENCE_FUNCTION) && isEffTreeUpsert())
+    {
+     tdb->setQueueResizeParams(tdb->getMaxQueueSizeDown(), tdb->getMaxQueueSizeUp(),
+                                queueResizeLimit_,queueResizeFactor_); 
+    }
+   // Make the size of the upQ of ONLJ the same as that of the upQ
+   // of the right child. 
+   if ((tdb->getNodeType() == ComTdb::ex_ONLJ || getRightSideOfOnlj()) 
+        && makeOnljRightQueuesBig_)
     {
       tdb->setQueueResizeParams(onljRightSideDownQueue_,
 			        onljRightSideUpQueue_,
@@ -343,7 +358,7 @@ void Generator::initTdbFields(ComTdb *tdb)
                               queueResizeLimit_,
                               queueResizeFactor_);
   }
-
+ 
   tdb->setTdbId(getAndIncTdbId());
 
   tdb->setPlanVersion(ComVersion_GetCurrentPlanVersion());
@@ -1657,6 +1672,7 @@ TrafDesc * Generator::createKeyDescs(Int32 numKeys,
 
 TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
                                                ComTdbVirtTableKeyInfo * keyInfo,
+                                               ComTdbVirtTableColumnInfo * columnInfo,
                                                NAMemory * space)
 {
   TrafDesc * first_key_desc = NULL;
@@ -1687,6 +1703,9 @@ TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
 	tgt->colname = NULL;
       
       tgt->position   = src->tableColNum;
+      ComTdbVirtTableColumnInfo * info = columnInfo +  src->tableColNum;
+      if(info->columnClass == COM_SYSTEM_COLUMN )
+        tgt->setSystemKey(TRUE);
     }
 
   return first_key_desc;
@@ -1704,8 +1723,8 @@ TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
 {
   // When authorization is enabled, each object must have at least one grantee
   // - the system grant to the object owner
-  NAList<PrivMgrDesc> *privGrantees = privInfo[0].privmgr_desc_list;
-  DCMPASSERT (privGrantees.size() > 0);
+  PrivMgrDescList *privGrantees = privInfo[0].privmgr_desc_list;
+  DCMPASSERT (privGrantees->entries() > 0);
  
   TrafDesc * priv_desc = TrafAllocateDDLdesc(DESC_PRIV_TYPE, space);
   TrafDesc * first_grantee_desc = NULL;
@@ -1715,17 +1734,18 @@ TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
   // attach to the privileges descriptor (priv_desc)
   for (int i = 0; i < privGrantees->entries(); i++)
     {
-      PrivMgrDesc &granteeDesc = (*privGrantees)[i];
+      PrivMgrDesc *granteeDesc = (*privGrantees)[i];
       TrafDesc * curr_grantee_desc = TrafAllocateDDLdesc(DESC_PRIV_GRANTEE_TYPE, space);
       if (! first_grantee_desc)
         first_grantee_desc = curr_grantee_desc;
 
-      curr_grantee_desc->privGranteeDesc()->grantee = granteeDesc.getGrantee();
+      curr_grantee_desc->privGranteeDesc()->grantee = granteeDesc->getGrantee();
 
       // generate a TrafPrivBitmap for the object level privs and
       // attach it to the privilege grantee descriptor (curr_grantee_desc)
       TrafDesc * bitmap_desc = TrafAllocateDDLdesc(DESC_PRIV_BITMAP_TYPE, space);
-      PrivMgrCoreDesc objDesc = granteeDesc.getTablePrivs();
+      PrivMgrCoreDesc objDesc = granteeDesc->getTablePrivs();
+
       bitmap_desc->privBitmapDesc()->columnOrdinal = -1;
       bitmap_desc->privBitmapDesc()->privBitmap = objDesc.getPrivBitmap().to_ulong();
       bitmap_desc->privBitmapDesc()->privWGOBitmap = objDesc.getWgoBitmap().to_ulong();
@@ -1733,14 +1753,14 @@ TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
 
       // generate a list of TrafPrivBitmapDesc, one for each column and
       // attach it to the TrafPrivGranteeDesc
-      size_t numCols = granteeDesc.getColumnPrivs().entries();
+      size_t numCols = granteeDesc->getColumnPrivs().entries();
       if (numCols > 0)
         {
           TrafDesc * first_col_desc = NULL;
           TrafDesc * prev_col_desc = NULL;
           for (int j = 0; j < numCols; j++)
             {
-              const PrivMgrCoreDesc colBitmap = granteeDesc.getColumnPrivs()[j];
+              const PrivMgrCoreDesc colBitmap = granteeDesc->getColumnPrivs()[j];
               TrafDesc * curr_col_desc = TrafAllocateDDLdesc(DESC_PRIV_BITMAP_TYPE, space);
               if (! first_col_desc)
                 first_col_desc = curr_col_desc;
@@ -2062,7 +2082,7 @@ TrafDesc * Generator::createVirtualTableDesc
 	  curr_constr_desc->constrntsDesc()->colcount = constrInfo[i].colCount;
 
 	  curr_constr_desc->constrntsDesc()->constr_key_cols_desc =
-	    Generator::createConstrKeyColsDescs(constrInfo[i].colCount, constrInfo[i].keyInfoArray, space);
+	    Generator::createConstrKeyColsDescs(constrInfo[i].colCount, constrInfo[i].keyInfoArray, columnInfo, space);
 
 	  if (constrInfo[i].ringConstrArray)
 	    {
@@ -2348,6 +2368,14 @@ TrafDesc *Generator::createVirtualRoutineDesc(
    strcpy(routine_desc->routineDesc()->signature, routineInfo->signature);
    routine_desc->routineDesc()->librarySqlName = new GENHEAP(space) char[strlen(routineInfo->library_sqlname)+1];
    strcpy(routine_desc->routineDesc()->librarySqlName, routineInfo->library_sqlname);
+   routine_desc->routineDesc()->libRedefTime = routineInfo->lib_redef_time;
+   routine_desc->routineDesc()->libBlobHandle = routineInfo->lib_blob_handle;
+
+   routine_desc->routineDesc()->libVersion = routineInfo->library_version;
+   routine_desc->routineDesc()->libObjUID = routineInfo->lib_obj_uid;
+   //routine_desc->routineDesc()->libSchName = new GENHEAP(space) char[strlen(routineInfo->lib_sch_name)+1];
+   //strcpy(routine_desc->routineDesc()->libSchName ,routineInfo->lib_sch_name);
+   routine_desc->routineDesc()->libSchName = routineInfo->lib_sch_name;
    routine_desc->routineDesc()->language  = 
            CmGetComRoutineLanguageAsRoutineLanguage(routineInfo->language_type);
    routine_desc->routineDesc()->UDRType  = 
@@ -3291,8 +3319,11 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
 
 void Generator::setHBaseNumCacheRows(double estRowsAccessed,
                                      ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
-                                     Float32 samplePercent)
+                                     Int32 hbaseRowSize,
+                                     Float32 samplePercent
+                                     )
 {
+ 
   // compute the number of rows accessed per scan node instance and use it
   // to set HBase scan cache size (in units of number of rows). This cache
   // is in the HBase client, i.e. in the java side of 
@@ -3334,6 +3365,11 @@ void Generator::setHBaseNumCacheRows(double estRowsAccessed,
       }
   }
 
+  // Limit the scanner cache size to a fixed number if we are dealing with
+  // very wide rows eg rows with varchar(16MB)
+  Int32 maxRowSizeInCache = CmpCommon::getDefaultNumeric(TRAF_MAX_ROWSIZE_IN_CACHE)*1024*1024;
+  if (hbaseRowSize > maxRowSizeInCache)
+    cacheRows = 2;
   hbpa->setNumCacheRows(cacheRows);
 }
 

@@ -316,7 +316,6 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
      // instances have and we have exhausted all data content in the block.
      // We will keep reading if the current block does not contain 
      // any instance of the record separator.
-     // 
      hdfsFile file = 
                  hdfsOpenFile(fs, fileInfo->mName, 
                               O_RDONLY, 
@@ -324,7 +323,6 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
                               0, // replication, take the default size 
                               fileInfo->mBlockSize // blocksize 
                               ); 
-      
      if ( file != NULL ) {
         tOffset offset = 0;
         tSize bufLen = sampleBufferSize;
@@ -332,9 +330,9 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
 
         buffer[bufLen] = 0; // extra null at the end to protect strchr()
                             // to run over the buffer.
-   
+
         NABoolean sampleDone = FALSE;
-   
+
         Int32 totalSamples = 10;
         Int32 totalLen = 0;
         Int32 recordPrefixLen = 0;
@@ -342,13 +340,12 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
         while (!sampleDone) {
    
            tSize szRead = hdfsPread(fs, file, offset, buffer, bufLen);
-
            if ( szRead <= 0 )
               break;
 
            CMPASSERT(szRead <= bufLen);
-      
-           char* pos = NULL;
+
+            char* pos = NULL;
    
              //if (isSequenceFile && offset==0 && memcmp(buffer, "SEQ6", 4) == 0)
              //   isSequenceFile_ = TRUE;
@@ -358,47 +355,41 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
 
            for (Int32 i=0; i<totalSamples; i++ ) {
    
-                if ( (pos=strchr(start, recordTerminator)) ) {
+              if ( (pos=strchr(start, recordTerminator)) ) {
    
-                  totalLen += pos - start + 1 + recordPrefixLen;
-                  samples++;
+                 totalLen += pos - start + 1 + recordPrefixLen;
+                 samples++;
    
-                  start = pos+1;
+                 start = pos+1;
    
-                  if ( start > buffer + szRead ) {
-                     sampleDone = TRUE;
-                     break;
-                  }
+                 if ( start > buffer + szRead ) {
+                    sampleDone = TRUE;
+                    break;
+                 }
 
-                  recordPrefixLen = 0;
+                 recordPrefixLen = 0;
 
-                } else {
-                  recordPrefixLen += szRead - (start - buffer + 1);
-                  break;
-                }
-           }
-
-   
-           if ( samples > 0 )
+              } else {
+                 recordPrefixLen += szRead - (start - buffer + 1);
+                 break;
+              }
+          }
+          if ( samples > 0 )
              break;
-           else
+          else
              offset += szRead;
-       }
-   
-       NADELETEBASIC(buffer, heap_);
-   
-       if ( samples > 0 ) {
-         sampledBytes_ += totalLen;
-         sampledRows_  += samples;
-       }
-   
-       hdfsCloseFile(fs, file);
+        }
+        NADELETEBASIC(buffer, heap_);
+        if ( samples > 0 ) {
+           sampledBytes_ += totalLen;
+           sampledRows_  += samples;
+        }
+        hdfsCloseFile(fs, file);
      } else {
        diags.recordError(NAString("Unable to open HDFS file ") + fileInfo->mName,
                          "HHDFSFileStats::populate");
      }
   }
-
   if (blockSize_)
     {
       numBlocks_ = totalSize_ / blockSize_;
@@ -410,7 +401,6 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
       diags.recordError(NAString("Could not determine block size of HDFS file ") + fileInfo->mName,
                         "HHDFSFileStats::populate");
     }
-
   if ( totalSize_ > 0 && diags.isSuccess())
     {
 
@@ -864,50 +854,40 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   Int32 hdfsPort = -1;
   NAString tableDir;
 
-  if (hsd)
-    {
-      if (hsd->isTextFile())
+  if (hsd) {
+     if (hsd->isTextFile())
         type_ = TEXT_;
-      else if (hsd->isSequenceFile())
+     else if (hsd->isSequenceFile())
         type_ = SEQUENCE_;
-      else if (hsd->isOrcFile())
+     else if (hsd->isOrcFile())
         type_ = ORC_;
-      else
+     else
         type_ = UNKNOWN_;
-    }
-
-  while (hsd && diags_.isSuccess())
-    {
-      // split table URL into host, port and filename
-      if (! splitLocation(hsd->location_,
-                          hdfsHost,
-                          hdfsPort,
-                          tableDir,
-                          diags_,
-                          hdfsPortOverride_)) {
-        return FALSE;
-      }
-
-      if (! connectHDFS(hdfsHost, hdfsPort)) {
-        return FALSE; // diags_ is set
-      }
-
-      // put back fully qualified URI
-      tableDir = hsd->location_;
-
-      // get the fine-resolution timestamp before visiting
-      // the tree, to avoid losing any updates while this
-      // method is executing
-      computeModificationTSmsec();
-
-      if (diags_.isSuccess())
+  }
+  // split table URL into host, port and filename
+  if (! splitLocation(hsd->location_,
+                hdfsHost,
+                hdfsPort,
+                tableDir,
+                diags_,
+                hdfsPortOverride_)) 
+      return FALSE;
+  if (! connectHDFS(hdfsHost, hdfsPort)) 
+     return FALSE; // diags_ is set
+  // put back fully qualified URI
+  tableDir = hsd->location_;
+  computeModificationTSmsec();
+  if (diags_.isSuccess()) {
+     modificationTSInMillisec_ = htd->setRedeftime(modificationTSInMillisec_);
+     while (hsd && diags_.isSuccess()) {
         // visit the directory
-      processDirectory(tableDir, hsd->buckets_, 
+        processDirectory(hsd->location_, hsd->buckets_, 
                        hsd->isTrulyText(), 
                        hsd->getRecordTerminator());
 
-      hsd = hsd->next_;
-    }
+        hsd = hsd->next_;
+     }
+  }
 
   disconnectHDFS();
   validationJTimestamp_ = JULIANTIMESTAMP();
@@ -923,10 +903,11 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
 
   diags_.reset();
 
-  // check only once within a specified time interval
-  if (expirationJTimestamp == -1 ||
+  // check if the stats needs to be fetched within a specified time interval
+  // when not requested to refresh
+  if (! refresh && (expirationJTimestamp == -1 ||
       (expirationJTimestamp > 0 &&
-       validationJTimestamp_ < expirationJTimestamp))
+       validationJTimestamp_ < expirationJTimestamp)))
     return result; // consider the stats still valid
 
   // if partitions get added or deleted, that gets
@@ -1157,8 +1138,6 @@ void HHDFSTableStats::disconnectHDFS()
 
 void HHDFSTableStats::computeModificationTSmsec()
 {
-  if (modificationTSInMillisec_ <= 0)
-    {
       HDFS_Client_RetCode rc;
 
       // get a millisecond-resolution timestamp via JNI
@@ -1177,9 +1156,6 @@ void HHDFSTableStats::computeModificationTSmsec()
           diags_.recordError(errMsg, "HHDFSTableStats::computeModificationTSmsec");
           modificationTSInMillisec_ = -1;
         }
-    }
-
-  return;
 }
 
 OsimHHDFSStatsBase* HHDFSTableStats::osimSnapShot(NAMemory * heap)

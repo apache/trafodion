@@ -6560,7 +6560,7 @@ the                                                        611
 >>
 >>-- copy a file with known content to the log directory and see whether
 >>-- we get the correct results
->>sh cp $$scriptsdir$$/udr/TEST002.sample_events $$TRAF_HOME$$/logs/master_exec_regr_999_99999.log;
+>>sh cp $$scriptsdir$$/udr/TEST002.sample_events $$TRAF_LOG$$/master_exec_regr_999_99999.log;
 >>
 >>select count(*) as num_events,
 +>       max(log_file_line) as num_lines,
@@ -6597,7 +6597,7 @@ LOG_TS                      SEVERITY    COMPONENT                               
 --- 8 row(s) selected.
 >>-- lines 20, 30 and 31 have parse errors and are also displayed
 >>
->>sh rm $$TRAF_HOME$$/logs/master_exec_regr_999_99999.log;
+>>sh rm $$TRAF_LOG$$/master_exec_regr_999_99999.log;
 >>
 >>-- some negative test cases
 >>prepare s from select * from udf(event_log_reader(10));

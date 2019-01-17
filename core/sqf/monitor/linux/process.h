@@ -71,7 +71,10 @@ class CProcessContainer
                                 , int pid
                                 , Verifier_t verifier
                                 , _TM_Txid_External trans_id );
+#ifndef NAMESERVER_PROCESS
     void Child_Exit ( CProcess * parent );
+    void ChildUnHooked_Exit ( CProcess * parent );
+#endif
     void CleanUpProcesses( void );
     CProcess *CloneProcess( int nid, 
                             PROCESSTYPE type, 
@@ -87,38 +90,66 @@ class CProcessContainer
                             int parent_verifier,
                             bool event_messages,
                             bool system_messages,
+#ifdef NAMESERVER_PROCESS
+                            char *path, 
+                            char *ldpath, 
+                            char *program, 
+#else
                             strId_t pathStrId,
                             strId_t ldpathStrId,
                             strId_t programStrId,
+#endif
                             char *infile,
                             char *outfile,
-                            struct timespec *creation_time);
+                            struct timespec *creation_time,
+                            int origPNidNs);
     void close_fds( void );
     CProcess *CompleteProcessStartup( char *process_name, 
                                       char *port, 
                                       int os_pid, 
                                       bool event_messages,
                                       bool system_messages,
-                                      struct timespec *creation_time );
+                                      struct timespec *creation_time,
+                                      int origPNidNs);
     CProcess *CreateProcess( CProcess *parent, 
                              int nid,
+#ifdef NAMESERVER_PROCESS
+                             int pid,
+                             Verifier_t verifier,
+                             bool event_messages,
+                             bool system_messages,
+#endif
                              PROCESSTYPE Type,
                              int debug,
                              int priority,
                              int backup,
                              bool unhooked,
                              char *process_name, 
+#ifdef NAMESERVER_PROCESS
+                            char *path, 
+                            char *ldpath, 
+                            char *program, 
+#else
                              strId_t pathStrId,
                              strId_t ldpathStrId,
                              strId_t programStrId,
+#endif
                              char *infile,
                              char *outfile
+                             , void *tag
                              , int & result
                              );
+#ifdef NAMESERVER_PROCESS
+    void DeleteAllDown();
+#endif
     bool Dump_Process( CProcess *dumper, CProcess *process, char *core_path );
     void DumpCallback( int nid, pid_t pid, int status );
-    static CProcess *ParentNewProcReply ( CProcess *process, int result );
     void Exit_Process( CProcess *process, bool abend, int downNode );
+#ifndef NAMESERVER_PROCESS
+    static CProcess *ParentNewProcReply ( CProcess *process, int result );
+#else
+    static CProcess *MonReply ( CProcess *process, int result );
+#endif
     CProcess *GetFirstProcess( void ) { return(head_); };
     CProcess *GetLastProcess( void ) { return(tail_); };
     inline sem_t *GetMutex() { return Mutex; };
@@ -131,9 +162,11 @@ class CProcessContainer
     inline nameMap_t *GetNameMap() { return nameMap_; };
     inline pidMap_t *GetPidMap() { return pidMap_; };
     CProcess *GetProcessLByType( PROCESSTYPE type );
+#ifndef NAMESERVER_PROCESS
     void KillAll( STATE node_State, CProcess *process );
     void KillAllDown();
     void KillAllDownSoft();
+#endif
     char *NormalizeName( char *name );
     bool Open_Process( int nid, int pid, Verifier_t verifier, int death_notification, CProcess *process );
     int ProcessCount( void ) { CAutoLock alock(pidMapLock_.getLocker()); return(numProcs_); }
@@ -155,10 +188,12 @@ protected:
     inline void SetNumProcs( int numProcs ) { numProcs_ = numProcs; };
 
 private:
-    int       numProcs_; // Number of processes in container
+    int    numProcs_; // Number of processes in container
     sem_t *Mutex;
 
-    bool      nodeContainer_;  // true when physical node process container
+    bool   nodeContainer_;  // true when physical node process container
+    bool   processNameFormatLong_; // when true process name format is: 
+                                   // '$Zxxxxpppppp' xxxx = nid, pppppp = pid
     nameMap_t *nameMap_;
     pidMap_t *pidMap_;
     CLock pidMapLock_;
@@ -196,15 +231,24 @@ class CProcess
     CProcess( CProcess *parent, 
               int nid, 
               int pid,
+#ifdef NAMESERVER_PROCESS
+              Verifier_t verifier,
+#endif
               PROCESSTYPE type,
               int priority,
               int backup, 
               bool debug,
               bool unhooked, 
               char *name, 
+#ifdef NAMESERVER_PROCESS
+              char *path,
+              char *ldpath,
+              char *program,
+#else
               strId_t  pathStrId, 
               strId_t  ldpathStrId, 
               strId_t  programStrId,
+#endif
               char *infile,
               char *outfile);
     ~CProcess( void );
@@ -216,9 +260,9 @@ class CProcess
                                 , Verifier_t verifier
                                 , _TM_Txid_External trans_id );
     void CompleteDump(DUMPSTATUS status, char *core_file);
-    void CompleteProcessStartup( char *port, int os_pid, bool event_messages, bool system_messages, bool preclone, struct timespec *creation_time );
+    void CompleteProcessStartup( char *port, int os_pid, bool event_messages, bool system_messages, bool preclone, struct timespec *creation_time, int origPNidNs );
     void CompleteRequest( int status );
-    bool Create (CProcess *parent, int & result);
+    bool Create (CProcess *parent, void* tag, int & result);
     bool Dump (CProcess *dumper, char *core_path);
     void DumpBegin(int nid, int pid, Verifier_t verifier, char *core_path);
     void DumpEnd(DUMPSTATUS status, char *core_file);
@@ -282,6 +326,7 @@ class CProcess
     inline void SetPairParentVerifier( int verifier ) { PairParentVerifier = verifier; }
     inline int GetPriority ( ) { return Priority; }
     inline void SetTag ( long long tag ) { Tag = tag; }
+    inline int GetReplyTag ( ) { return ReplyTag; }
     inline void SetReplyTag ( int tag ) { ReplyTag = tag; }
     inline const char * GetPort ( ) { return Port; }
     inline PROCESSTYPE GetType ( ) { return Type; }
@@ -299,8 +344,16 @@ class CProcess
     inline int GetDumperNid ( ) { return DumperNid; }
     inline int GetDumperVerifier ( ) { return DumperVerifier; }
     inline const char * GetDumpFile () { return dumpFile_.c_str(); }
+#ifdef NAMESERVER_PROCESS
+    inline int GetMonSockFd( ) { return monSockFd_; }
+    inline void SetMonSockFd( int sockFd ) { monSockFd_ = sockFd; }
+    inline int GetOrigPNidNs( ) { return origPNidNs_; }
+    inline void SetOrigPNidNs( int pnid ) { origPNidNs_ = pnid; }
+#endif
 
+#ifndef NAMESERVER_PROCESS
     inline CNotice * GetNoticeHead() { return NoticeHead; }
+#endif
 
     CProcess *GetProcessByType( PROCESSTYPE type );
     inline pid_t GetPriorPid ( ) { return priorPid_; }
@@ -313,6 +366,7 @@ class CProcess
     bool MakePrimary(void);
     bool MyTransactions( struct message_def *msg );
     bool Open( CProcess *opened_process, int death_notification );
+#ifndef NAMESERVER_PROCESS
     CNotice *RegisterDeathNotification( int nid
                                       , int pid
                                       , Verifier_t verifier
@@ -320,6 +374,7 @@ class CProcess
                                       , _TM_Txid_External trans_id );
     void ReplyNewProcess (struct message_def * reply_msg, CProcess * process,
                           int result);
+#endif
     void SendProcessCreatedNotice(CProcess *parent, int result);
     struct timespec GetCreationTime () { return CreationTime; }
     void SetCreationTime(int os_pid);
@@ -336,15 +391,25 @@ class CProcess
 
     void userArgs ( int argc, int argvLen, const char * argvList );
     void userArgs ( int argc, char user_argv[MAX_ARGS][MAX_ARG_SIZE] );
+    int getUserArgs( char user_argv[MAX_ARGS][MAX_ARG_SIZE] );
 
-    strId_t programStrId()    { return programStrId_; }
-    const char * program()    { return program_.c_str(); };
+#ifdef NAMESERVER_PROCESS
+    const char* path()        { return path_.c_str(); };
+    const char* ldpath()      { return ldpath_.c_str(); };
+#else
+    const char* path();
+    const char* ldpath();
+#endif
+    const char* program()     { return program_.c_str(); };
     bool isCmpOrEsp()         { return cmpOrEsp_; }
     const char *infile()      { return infile_.c_str(); };
     const char *outfile()     { return outfile_.c_str(); };
 
+#ifndef NAMESERVER_PROCESS
     strId_t pathStrId()       { return pathStrId_; };
     strId_t ldPathStrId()     { return ldpathStrId_; };
+    strId_t programStrId()    { return programStrId_; }
+#endif
 
     const char *fifo_stdin()  { return fifo_stdin_.c_str(); };
     const char *fifo_stdout() { return fifo_stdout_.c_str(); };
@@ -358,21 +423,35 @@ class CProcess
     inline int  decrReplRef() { --replRefCount_; return replRefCount_; }
     inline int replRefCount() { return replRefCount_; }
 
+#ifndef NAMESERVER_PROCESS
     void parentContext (struct message_def * msg) { requestBuf_ = msg; }
     struct message_def * parentContext ( void ) { return requestBuf_; }
+#else
+    void SetMonContext (struct message_def * msg) { requestBuf_ = msg; }
+    struct message_def * GetMonContext ( void ) { return requestBuf_; }
+#endif
 
     void SetHangupTime () { clock_gettime(CLOCK_REALTIME, &hangupTime_); }
     time_t GetHangupTime () { return hangupTime_.tv_sec; }
 
+#ifndef NAMESERVER_PROCESS
     void childAdd ( int nid, int pid );
+    int childCount ( void );
     void childRemove ( int nid, int pid );
     bool childRemoveFirst ( nidPid_t & child );
+
+    void childUnHookedAdd( int nid, int pid );
+    int childUnHookedCount( void );
+    void childUnHookedRemove( int nid, int pid );
+    bool childUnHookedRemoveFirst( nidPid_t & child );
+#endif
 
     struct message_def * GetDeathNotice ( void );
     void PutDeathNotice( struct message_def * );
 
 
     bool procExitReg(CProcess *targetProcess, _TM_Txid_External transId);
+    void procExitNotifierNodes( void );
     void procExitUnregAll( _TM_Txid_External transId );
 
     void validateObj( void );
@@ -456,8 +535,10 @@ private:
     int          userArgvLen_;
     char         *userArgv_;
 
+    string       path_;          // process's object lookup path to program
+    string       ldpath_;        // process's library load path for program
+    string       program_;       // program file name
     strId_t      programStrId_;
-    string       program_;   // object file name
     strId_t      pathStrId_;
     strId_t      ldpathStrId_;
     bool         firstInstance_; // reset on persistent process re-creation
@@ -490,17 +571,20 @@ private:
 
     enum  { MAX_CHILD_ENV_VARS = 300 };
 
+#ifndef NAMESERVER_PROCESS
     // Container to keep track of this process' children created on
     // the local node.  Needed because if this process abornmally terminates
     // the children will be terminated too.
     typedef list<nidPid_t> nidPidList_t;
     nidPidList_t children_;
+    nidPidList_t childrenUnHooked_;   // only used with Name Server enabled
 
     // Lock for children_ list.   Temporarily using a lock but should 
     // be able to eliminate for better performance.   Once lioCleanupThread
     // and syncThread uniformly queue requests to be processed by worker
     // thread this lock should not be necessary.
     CLock       childrenListLock_;
+#endif
 
     // Container to hold dead process info to be sent as death notices
     // to an ssmp process.   This is a NULL list except when the CProcess
@@ -509,14 +593,22 @@ private:
     ssmpDeath_t ssmpNotices_;
     CLock       ssmpNoticesLock_;
 
+#ifndef NAMESERVER_PROCESS
     // Container to keep track of the processes for which this process
     // is interested in process death.  deathInterestLock_ is used to
     // protect both the deathInterest_ and CNotice list.
+    typedef set<int> nidSet_t;
     nidPidList_t deathInterest_;
-    CLock       deathInterestLock_;
+    nidSet_t     deathInterestNid_;
+    CLock        deathInterestLock_;
 
     CNotice       *NoticeHead;   // List of processes requesting death notice 
     CNotice       *NoticeTail;
+#endif
+#ifdef NAMESERVER_PROCESS
+    int            monSockFd_;
+    int            origPNidNs_;
+#endif
 };
 
 #endif /*PROCESS_H_*/

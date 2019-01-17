@@ -46,6 +46,7 @@
 #include "ExpORCinterface.h"
 #include "ComSmallDefs.h"
 #include "HdfsClient_JNI.h"
+#include "ExpLOB.h"
 
 ex_tcb * ExHdfsScanTdb::build(ex_globals * glob)
 {
@@ -116,7 +117,6 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , numBytesProcessedInRange_(0)
   , exception_(FALSE)
   , checkRangeDelimiter_(FALSE)
-  , dataModCheckDone_(FALSE)
   , loggingErrorDiags_(NULL)
   , loggingFileName_(NULL)
   , logFileHdfsClient_(NULL)
@@ -129,8 +129,6 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
   useLibhdfsScan_ = hdfsScanTdb.getUseLibhdfsScan();
-  if (isSequenceFile())
-     useLibhdfsScan_ = TRUE;
   lobGlob_ = NULL;
   hdfsScanBufMaxSize_ = hdfsScanTdb.hdfsBufSize_;
   headRoom_ = (Int32)hdfsScanTdb.rangeTailIOSize_;
@@ -374,10 +372,9 @@ ex_tcb_private_state *ExHdfsScanTcb::allocatePstates(
 Int32 ExHdfsScanTcb::fixup()
 {
   lobGlob_ = NULL;
-
-  ExpLOBinterfaceInit
-    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, hdfsScanTdb().hostName_,hdfsScanTdb().port_);
-  
+  lobGlob_ = ExpLOBoper::initLOBglobal((NAHeap *)getGlobals()->getDefaultHeap(),
+                                         getGlobals()->castToExExeStmtGlobals()->getContext(), 
+                                         useLibhdfsScan_, TRUE);
   return 0;
 }
 
@@ -439,7 +436,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             checkRangeDelimiter_ = FALSE;
             if (getStatsEntry())
                hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
-            dataModCheckDone_ = FALSE;
 	    myInstNum_ = getGlobals()->getMyInstanceNumber();
 	    hdfsScanBufMaxSize_ = hdfsScanTdb().hdfsBufSize_;
 
@@ -448,11 +444,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 step_ = ASSIGN_RANGES_AT_RUNTIME;
                 break;
               }
-	    else if (getHdfsFileInfoListAsArray().isEmpty())
-	      {
-                step_ = CHECK_FOR_DATA_MOD_AND_DONE;
-		break;
-	      }
+	    else {
+               if (useLibhdfsScan_)
+                   step_ = INIT_HDFS_CURSOR;
+               else
+                   step_ = SETUP_HDFS_SCAN; 
+	    }
 
 	    beginRangeNum_ =  
 	      *(Lng32*)hdfsScanTdb().getHdfsFileRangeBeginList()->get(myInstNum_);
@@ -461,11 +458,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      *(Lng32*)hdfsScanTdb().getHdfsFileRangeNumList()->get(myInstNum_);
 
 	    currRangeNum_ = beginRangeNum_;
-
-	    if (numRanges_ > 0)
-              step_ = CHECK_FOR_DATA_MOD;
-            else
-              step_ = CHECK_FOR_DATA_MOD_AND_DONE;
+            if (numRanges_ <= 0)
+               step_ = DONE;
 	  }          
 	  break;
 
@@ -481,85 +475,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           else
             step_ = DONE;
           break;
-
-        case CHECK_FOR_DATA_MOD:
-        case CHECK_FOR_DATA_MOD_AND_DONE:
-          {
-            char * dirPath = hdfsScanTdb().hdfsRootDir_;
-            Int64 modTS = hdfsScanTdb().modTSforDir_;
-            if ((dirPath == NULL) || (modTS == -1))
-              dataModCheckDone_ = TRUE;
-
-            if (NOT dataModCheckDone_)
-              {
-                dataModCheckDone_ = TRUE;
-
-                Lng32 numOfPartLevels = hdfsScanTdb().numOfPartCols_;
-
-                if (hdfsScanTdb().hdfsDirsToCheck())
-                  {
-                    // TBD
-                  }
-             
-                Int64 failedModTS = -1;
-                Lng32 failedLocBufLen = 1000;
-                char failedLocBuf[failedLocBufLen];
-                retcode = ExpLOBinterfaceDataModCheck
-                  (lobGlob_,
-                   dirPath,
-                   hdfsScanTdb().hostName_,
-                   hdfsScanTdb().port_,
-                   modTS,
-                   numOfPartLevels,
-                   failedModTS,
-                   failedLocBuf, failedLocBufLen);
-              
-                if (retcode < 0)
-                  {
-                    Lng32 cliError = 0;
-		    
-                    Lng32 intParam1 = -retcode;
-                    ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
-                                    NULL, &intParam1, 
-                                    &cliError, 
-                                    NULL, 
-                                    "HDFS",
-                                    (char*)"ExpLOBInterfaceDataModCheck",
-                                    getLobErrStr(intParam1));
-                    pentry_down->setDiagsArea(diagsArea);
-                    step_ = HANDLE_ERROR_AND_DONE;
-                    break;
-                  }  
-
-                if (retcode == 1) // check failed
-                  {
-                    char errStr[200];
-                    str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
-                                modTS, failedModTS);
-
-                    ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
-                                    NULL, NULL, NULL,
-                                    errStr);
-                    pentry_down->setDiagsArea(diagsArea);
-                    step_ = HANDLE_ERROR_AND_DONE;
-                    break;
-                  }
-              }
-
-            if (step_ == CHECK_FOR_DATA_MOD_AND_DONE)
-              step_ = DONE;
-            else {
-              if (useLibhdfsScan_)
-                 step_ = INIT_HDFS_CURSOR;
-              else
-                 step_ = SETUP_HDFS_SCAN;
-            }
-          }        
-          break;
         case SETUP_HDFS_SCAN:
           {   
              if (hdfsScan_ != NULL)
@@ -571,6 +486,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
              hdfsScan_ = HdfsScan::newInstance((NAHeap *)getHeap(), hdfsScanBuf_, hdfsScanBufMaxSize_, 
                             hdfsScanTdb().hdfsIoByteArraySizeInKB_, 
                             &hdfsFileInfoListAsArray_, beginRangeNum_, numRanges_, hdfsScanTdb().rangeTailIOSize_, 
+                            isSequenceFile(), hdfsScanTdb().recordDelimiter_, 
                             hdfsStats_, hdfsScanRetCode);
              if (hdfsScanRetCode != HDFS_SCAN_OK) {
                 setupError(EXE_ERROR_HDFS_SCAN, hdfsScanRetCode, "SETUP_HDFS_SCAN", 
@@ -771,6 +687,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 openType = 2; // must open
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
+                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
                    NULL, //(char*)"",
                    (Lng32)Lob_External_HDFS_File,
@@ -810,7 +727,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                       }
                     else
                       ExRaiseSqlError(getHeap(), &diagsArea, 
-                                      (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                                      (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE));
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;
@@ -830,6 +747,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 
                     retcode = ExpLOBInterfaceSelectCursor
                       (lobGlob_,
+                       (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                        hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
                        NULL, //(char*)"",
                        (Lng32)Lob_External_HDFS_File,
@@ -940,6 +858,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 Int32 hdfsErrorDetail = 0;///this is the errno returned from the underlying hdfs call.
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
+                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_,
                    NULL, 
                    (Lng32)Lob_External_HDFS_File,
@@ -1511,6 +1430,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      {
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
+                  (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_, 
                    NULL,
                    (Lng32)Lob_External_HDFS_File,
@@ -1640,29 +1560,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	case CLOSE_FILE:
 	case ERROR_CLOSE_FILE:
 	  {
-	    if (getStatsEntry())
-	      {
-		ExHdfsScanStats * stats =
-		  getStatsEntry()->castToExHdfsScanStats();
-		
-		if (stats)
-		  {
-		    ExLobStats s;
-		    s.init();
-
-		    retcode = ExpLOBinterfaceStats
-		      (lobGlob_,
-		       &s, 
-		       hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
-		       NULL, //(char*)"",
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_);
-
-		    *stats->lobStats() = *stats->lobStats() + s;
-		  }
-	      }
-
             // if next file is not same as current file, then close the current file. 
             bool closeFile = true;
 
@@ -1679,6 +1576,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             {
                 retcode = ExpLOBinterfaceCloseFile
                   (lobGlob_,
+                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
                    hdfsFileName_,
                    NULL, 
                    (Lng32)Lob_External_HDFS_File,
@@ -2186,7 +2084,7 @@ void ExHdfsScanTcb::handleException(NAHeap *heap,
   if (!loggingFileCreated_) {
      logFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetcode);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
-        hdfsClientRetcode = logFileHdfsClient_->hdfsCreate(loggingFileName_, TRUE, FALSE);
+        hdfsClientRetcode = logFileHdfsClient_->hdfsCreate(loggingFileName_, TRUE, FALSE, FALSE);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
         loggingFileCreated_ = TRUE;
      else 

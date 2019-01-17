@@ -48,12 +48,12 @@ node
 ! Start the monitor processes across the cluster
 startup
 ! Start the test server
-exec {nowait,name \$SRV} $xserver -server $*
+exec {$nid1 nowait,name \$SRV} $xserver -server $*
 delay 1
 ! Display process status of our processes
 ps
 ! Start the client process
-exec {$type name \$CLI} $xclient -client $*
+exec {$nid0 $type name \$CLI} $xclient -client $*
 ! Display process status to see new processes
 ps
 ! Wait for our processes to stop, then stop the monitor processes and exit.

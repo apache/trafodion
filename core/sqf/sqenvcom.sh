@@ -32,12 +32,12 @@
 #Product version (Trafodion or derivative product)
 export TRAFODION_VER_PROD="Apache Trafodion"
 export TRAFODION_VER_MAJOR=2
-export TRAFODION_VER_MINOR=3
+export TRAFODION_VER_MINOR=4
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
 # Product copyright header
-export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
+export PRODUCT_COPYRIGHT_HEADER="2015-2018 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -60,6 +60,13 @@ fi
 # IBV for infiniband, TCP for tcp
 export SQ_IC=${SQ_IC:-TCP}
 export MPI_IC_ORDER=$SQ_IC
+
+export ARCH=`arch`
+if [ "${ARCH:0:3}" == "ppc" ]; then
+    export JRE_LIB_DIR=${ARCH}
+else
+    export JRE_LIB_DIR="amd64"
+fi
 
 # use sock
 #export SQ_TRANS_SOCK=1
@@ -106,10 +113,10 @@ export MAKEFLAGS="-j$cpucnt"
 if [ -z "$TOOLSDIR" ]; then
   if [[ -n "$CLUSTERNAME" ]]; then
     export TOOLSDIR=${TOOLSDIR:-/home/tools}
-    export MY_UDR_ROOT=/home/udr
+    export UDR_ROOT=/home/udr
   else
     export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
-    export MY_UDR_ROOT=$PWD
+    export UDR_ROOT=$PWD
   fi
 fi
 
@@ -147,6 +154,7 @@ else
 fi
 export TRAF_HOME=$PWD
 export TRAF_VAR=${TRAF_VAR:-$TRAF_HOME/tmp}
+export TRAF_LOG=${TRAF_LOG:-$TRAF_HOME/logs}
 export TRAF_CONF=${TRAF_CONF:-$TRAF_HOME/conf}
 
 # normal installed location, can be overridden in .trafodion
@@ -200,6 +208,7 @@ export DTM_COMMON_JAR=trafodion-dtm-cdh-${TRAFODION_VER}.jar
 export SQL_JAR=trafodion-sql-cdh-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
+export UDR_CACHE_LIBDIR=cached_libs
 
 
 if [[ "$HBASE_DISTRO" == "HDP" ]]; then
@@ -673,17 +682,34 @@ export SQ_LUNMGR_VERBOSITY=1
 # Control SQ default startup behavior (c=cold, w=warm, if removed sqstart will autocheck)
 export SQ_STARTUP=r
 
-# Monitor process creator:
+#
+# NOTE: in a Python installation when SQ_MON_RUN_MODE below
+#       is AGENT the SQ_MON_CREATOR must be MPIRUN
+#
 #   MPIRUN - monitor process is created by mpirun
-# Uncomment SQ_MON_CREATOR when running monitor in AGENT mode
+#            (meaning that mpirun is the parent process of the monitor process)
+#   AGENT  - monitor process runs in agent mode versus MPI collective
+#
+# Uncomment the next environment variable
 #export SQ_MON_CREATOR=MPIRUN
+if [[ "$SQ_MON_CREATOR" == "MPIRUN" ]]; then
+  export SQ_MON_RUN_MODE=${SQ_MON_RUN_MODE:-AGENT}
+  export MONITOR_COMM_PORT=${MONITOR_COMM_PORT:-23390}
+  export MONITOR_SYNC_PORT=${MONITOR_SYNC_PORT:-23380}
+  export TRAF_SCALING_FACTOR=${TRAF_SCALING_FACTOR:-0.75}
+fi
 
-# Monitor process run mode:
-#   AGENT - monitor process runs in agent mode versus MPI collective
-# Uncomment the three environment variables below
-#export SQ_MON_RUN_MODE=AGENT
-#export MONITOR_COMM_PORT=23399
-#export MONITOR_SYNC_PORT=23398
+#
+#   NAME-SERVER - to disable process replication and enable the name-server
+#
+# Uncomment the next environment variable
+#export SQ_NAMESERVER_ENABLED=1
+if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
+  export NS_COMM_PORT=${NS_COMM_PORT:-23370}
+  export NS_SYNC_PORT=${NS_SYNC_PORT:-23360}
+  export NS_M2N_COMM_PORT=${NS_M2N_COMM_PORT:-23350}
+  export MON2MON_COMM_PORT=${MON2MON_COMM_PORT:-23340}
+fi
 
 # Alternative logging capability in monitor
 export SQ_MON_ALTLOG=0
@@ -728,6 +754,11 @@ fi
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
+
+# set to 0 to disable process name long format in clusters larger that 256 nodes
+#export SQ_MON_PROCESS_NAME_FORMAT_LONG=0
+#   short format: '$Zxxpppp'     xx   = nid, pppp   = pid
+#   long  format: '$Zxxxxpppppp' xxxx = nid, pppppp = pid (default)
 
 # set to 0 to disable or 1 to enable configuration of DTM as a persistent process
 # must re-execute 'sqgen' to effect change

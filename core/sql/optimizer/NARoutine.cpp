@@ -96,7 +96,7 @@ NARoutine::NARoutine (CollHeap *heap)
     , hasOutParams_           (FALSE)
     , redefTime_              (0)
     , lastUsedTime_           (0)
-    , routineSecKeySet_       (heap)
+    , secKeySet_              (heap)
     , passThruDataNumEntries_ (0)
     , passThruData_           (NULL)
     , passThruDataSize_       (NULL)
@@ -114,9 +114,15 @@ NARoutine::NARoutine (CollHeap *heap)
     , dataSource_             ("", heap)
     , fileSuffix_             ("", heap)
     , schemaVersionOfRoutine_ (COM_VERS_UNKNOWN)
+    , libRedefTime_(0)
+    , libBlobHandle_("",heap)
+    , libSchName_("",heap)
+    , libVersion_(1)
+    , libObjUID_(0)
     , objectOwner_            (0)
     , schemaOwner_            (0)
     , privInfo_               (NULL)
+    , privDescs_               (NULL)
     , heap_                   (heap)
 {
 }
@@ -143,6 +149,11 @@ NARoutine::NARoutine (  const QualifiedName &name
     , externalPath_           ("", heap)
     , externalName_           ("", heap)
     , librarySqlName_         (NULL)
+    , libRedefTime_(-1)
+    , libBlobHandle_("",heap)
+    , libSchName_("",heap)
+    , libVersion_(1)
+    , libObjUID_(0)
     , signature_              ("", heap)
     , paramStyle_             (COM_STYLE_SQLROW)
     , paramStyleVersion_      (COM_ROUTINE_PARAM_STYLE_VERSION_1)
@@ -154,7 +165,7 @@ NARoutine::NARoutine (  const QualifiedName &name
     , hasOutParams_           (FALSE)
     , redefTime_              (0)
     , lastUsedTime_           (0)
-    , routineSecKeySet_       (heap)
+    , secKeySet_              (heap)
     , passThruDataNumEntries_ (0)
     , passThruData_           (NULL)
     , passThruDataSize_       (NULL)
@@ -175,6 +186,7 @@ NARoutine::NARoutine (  const QualifiedName &name
     , objectOwner_            (0)
     , schemaOwner_            (0)
     , privInfo_               (NULL)
+    , privDescs_               (NULL)
     , heap_(heap)
 {
   CollIndex colCount = 0;
@@ -275,6 +287,11 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     , externalName_           (old.externalName_, h)
     , signature_              (old.signature_, h)
     , librarySqlName_         (old.librarySqlName_, h)
+    , libRedefTime_           (old.libRedefTime_)
+    , libBlobHandle_          (old.libBlobHandle_,h)
+    , libSchName_             (old.libSchName_,h)
+    , libVersion_             (old.libVersion_)
+    , libObjUID_              (old.libObjUID_)
     , paramStyle_             (old.paramStyle_)
     , paramStyleVersion_      (old.paramStyleVersion_)
     , isDeterministic_        (old.isDeterministic_)
@@ -285,7 +302,7 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     , hasOutParams_           (old.hasOutParams_)
     , redefTime_              (old.redefTime_)
     , lastUsedTime_           (old.lastUsedTime_)
-    , routineSecKeySet_       (h)
+    , secKeySet_              (h)
     , isUniversal_            (old.isUniversal_)
     , executionMode_          (old.getExecutionMode())
     , objectUID_              (old.objectUID_)
@@ -307,6 +324,7 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     , objectOwner_            (0)
     , schemaOwner_            (0) 
     , privInfo_               (NULL)
+    , privDescs_               (NULL)
     , heap_                   (h)
 {
   extRoutineName_ = new (h) ExtendedQualName(*old.extRoutineName_, h);
@@ -335,7 +353,7 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     }
   }
 
-  routineSecKeySet_ = old.routineSecKeySet_;
+  secKeySet_ = old.secKeySet_;
 
   heapSize_ = (h ? h->getTotalSize() : 0);
 }
@@ -357,6 +375,9 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , externalPath_           (routine_desc->routineDesc()->libraryFileName, heap)
     , externalName_           ("", heap)
     , librarySqlName_         (routine_desc->routineDesc()->librarySqlName, COM_UNKNOWN_NAME, FALSE, heap) //TODO
+    , libRedefTime_            (routine_desc->routineDesc()->libRedefTime)
+    , libVersion_             (routine_desc->routineDesc()->libVersion)
+    , libObjUID_              (routine_desc->routineDesc()->libObjUID)
     , signature_              (routine_desc->routineDesc()->signature, heap)
     , paramStyle_             (routine_desc->routineDesc()->paramStyle)
     , paramStyleVersion_      (COM_ROUTINE_PARAM_STYLE_VERSION_1)
@@ -368,7 +389,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , hasOutParams_           (FALSE)
     , redefTime_              (0)  //TODO
     , lastUsedTime_           (0)
-    , routineSecKeySet_       (heap)
+    , secKeySet_              (heap)
     , passThruDataNumEntries_ (0)
     , passThruData_           (NULL)
     , passThruDataSize_       (0)
@@ -388,11 +409,20 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , objectOwner_            (routine_desc->routineDesc()->owner)
     , schemaOwner_            (routine_desc->routineDesc()->schemaOwner)
     , privInfo_               (NULL)
+    , privDescs_               (NULL)
     , heap_(heap)
 {
   char parallelism[5];
   CmGetComRoutineParallelismAsLit(routine_desc->routineDesc()->parallelism, parallelism);
   comRoutineParallelism_ = ((char *)parallelism);
+  if (routine_desc->routineDesc()->libBlobHandle)
+    libBlobHandle_   =       NAString(routine_desc->routineDesc()->libBlobHandle,heap);
+  else
+    libBlobHandle_ = NAString();
+  if (routine_desc->routineDesc()->libSchName)
+    libSchName_ = NAString(routine_desc->routineDesc()->libSchName,heap);
+  else
+    libSchName_ = NAString();
 
   if (paramStyle_ == COM_STYLE_JAVA_CALL)
   {
@@ -602,7 +632,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
     }
     
      
-  getPrivileges(routine_desc->routineDesc()->priv_desc);
+  getPrivileges(routine_desc->routineDesc()->priv_desc, bindWA);
 
   heapSize_ = (heap ? heap->getTotalSize() : 0);
 }
@@ -645,7 +675,7 @@ void NARoutine::setSasFormatWidth(NAString &width)
 // If authorization is enabled, set privs based on the passed in priv_desc
 // and set up query invalidation (security) keys for the routine.
 // ----------------------------------------------------------------------------
-void NARoutine::getPrivileges(TrafDesc *priv_desc)
+void NARoutine::getPrivileges(TrafDesc *priv_desc, BindWA *bindWA)
 {
   if ( !CmpCommon::context()->isAuthorizationEnabled() || ComUser::isRootUserID())
   {
@@ -677,52 +707,58 @@ void NARoutine::getPrivileges(TrafDesc *priv_desc)
                                 COM_STORED_PROCEDURE_OBJECT :
                                 COM_USER_DEFINED_ROUTINE_OBJECT);
 
-    std::vector <ComSecurityKey *>* secKeyVec = new(heap_) std::vector<ComSecurityKey *>;
-    if (privInterface.getPrivileges(objectUID_, objectType,
-                                    ComUser::getCurrentUser(), 
-                                   *privInfo_, secKeyVec) != STATUS_GOOD)
-    {
-      NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
-      privInfo_ = NULL;
-    }
-
+    // get all privileges granted to routine object
+    privDescs_ = new (heap_) PrivMgrDescList(heap_); //initialize empty list
+    PrivStatus privStatus = privInterface.getPrivileges(objectUID_, objectType, *privDescs_);
     cmpSBD.switchBackCompiler();
 
-    if (privInfo_)
-    {
-      for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec->begin();
-           iter != secKeyVec->end();
-           iter++)
-      {
-        // Insertion of the dereferenced pointer results in NASet making
-        // a copy of the object, and then we delete the original.
-        routineSecKeySet_.insert(**iter);
-          delete *iter;
-      }
-    }
+    if (privStatus == STATUS_ERROR)
+      return;
   }
   else
   {
-    // get roles granted to current user 
-    // SQL_EXEC_GetRoleList returns the list of roles from the CliContext
-    std::vector<int32_t> myRoles;
-    Int32 numRoles = 0;
-    Int32 *roleIDs = NULL;
-    if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
+    // convert priv_desc (TrafPrivDesc) in privDescs_ member
+    privDescs_ = new (heap_) PrivMgrDescList(heap_); //initialize empty list
+    TrafDesc *priv_grantees_desc = priv_desc->privDesc()->privGrantees;
+    while (priv_grantees_desc)
     {
-      *CmpCommon::diags() << DgSqlCode(-1034);
-      return;
+      PrivMgrDesc *privs = new (heap_) PrivMgrDesc(priv_grantees_desc->privGranteeDesc()->grantee);
+      TrafDesc *objectPrivs = priv_grantees_desc->privGranteeDesc()->objectBitmap;
+
+      PrivMgrCoreDesc objectDesc(objectPrivs->privBitmapDesc()->privBitmap,
+                                 objectPrivs->privBitmapDesc()->privWGOBitmap);
+
+      TrafDesc *priv_grantee_desc = priv_grantees_desc->privGranteeDesc();
+      TrafDesc *columnPrivs = priv_grantee_desc->privGranteeDesc()->columnBitmaps;
+      NAList<PrivMgrCoreDesc> columnDescs(NULL);
+      while (columnPrivs)
+      {
+        PrivMgrCoreDesc columnDesc(columnPrivs->privBitmapDesc()->privBitmap,
+                                   columnPrivs->privBitmapDesc()->privWGOBitmap,
+                                   columnPrivs->privBitmapDesc()->columnOrdinal);
+        columnDescs.insert(columnDesc);
+        columnPrivs = columnPrivs->next;
+      }
+
+      privs->setTablePrivs(objectDesc);
+      privs->setColumnPrivs(columnDescs);
+      privs->setHasPublicPriv(ComUser::isPublicUserID(privs->getGrantee()));
+
+      privDescs_->insert(privs);
+      priv_grantees_desc = priv_grantees_desc->next;
     }
-
-    // At this time we should have at least one entry in roleIDs (PUBLIC_USER)
-    CMPASSERT (roleIDs && numRoles > 0);
-
-    for (Int32 i = 0; i < numRoles; i++)
-      myRoles.push_back(roleIDs[i]);
-
-    privInfo_ = new (heap_) PrivMgrUserPrivs;
-    privInfo_->initUserPrivs(myRoles, priv_desc, ComUser::getCurrentUser(),objectUID_, routineSecKeySet_);
   }
+
+  // get roles granted to current user 
+  NAList <Int32> roleIDs(heap_);
+  NAList <Int32> grantees(heap_);
+  if (ComUser::getCurrentUserRoles(roleIDs, grantees) != 0)
+    return;
+
+  // set up privileges for current user
+  privInfo_ = new (heap_) PrivMgrUserPrivs;
+  privInfo_->initUserPrivs(roleIDs, privDescs_, ComUser::getCurrentUser(),
+                           objectUID_, &secKeySet_);
 }
 
 ULng32 NARoutineDBKey::hash() const

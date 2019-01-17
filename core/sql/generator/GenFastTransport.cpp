@@ -632,6 +632,16 @@ PhysicalFastExtract::codeGen(Generator *generator)
     newRecordSep[1] = '\0';
   }
 
+  NAString hiveSchemaNameNAString;
+  NAString hiveTableNameWithSchema;
+ 
+
+  if (isHiveInsert())
+  {
+    hiveSchemaNameNAString = getHiveTableDesc()->getNATable()->getTableName().getSchemaName();
+    hiveTableNameWithSchema = hiveSchemaNameNAString + "." + getHiveTableName();
+  }
+  
   Int64 modTS = -1;
   if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
       (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) != DF_OFF) &&
@@ -645,9 +655,11 @@ PhysicalFastExtract::codeGen(Generator *generator)
       if ((CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ROOT) ||
           (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ON))
         {
+          char * tiName = new(generator->wHeap()) char[hiveTableNameWithSchema.length()+2];
+          strcpy(tiName, hiveTableNameWithSchema.data());
           TrafSimilarityTableInfo * ti = 
             new(generator->wHeap()) TrafSimilarityTableInfo(
-                 (char*)getHiveTableName().data(),
+                 tiName,
                  TRUE, // isHive
                  (char*)getTargetName().data(), // root dir
                  hTabStats->getModificationTSmsec(),
@@ -664,6 +676,12 @@ PhysicalFastExtract::codeGen(Generator *generator)
           modTS = hTabStats->getModificationTSmsec();
         }
     } // do sim check
+
+  if (getHiveTableDesc() && 
+      getHiveTableDesc()->getNATable() &&
+      getHiveTableDesc()->getNATable()->isEnabledForDDLQI())
+    generator->objectUids().insert(
+         getHiveTableDesc()->getNATable()->objectUid().get_value());
 
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
   hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());

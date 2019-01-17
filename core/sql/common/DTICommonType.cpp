@@ -73,6 +73,22 @@ const char* DatetimeIntervalCommonType::getFieldName(rec_datetime_field field)
     return "YEARMONTHD";
   case REC_DATE_YEARWEEK_D_EXTRACT:
     return "YEARWEEKD";
+  case REC_DATE_CENTURY:
+    return "CENTURY";
+  case REC_DATE_DECADE:
+    return "DECADE";
+  case REC_DATE_WEEK:
+    return "WEEK";
+  case REC_DATE_QUARTER:
+    return "QUARTER";
+  case REC_DATE_EPOCH:
+    return "EPOCH";
+  case REC_DATE_DOW:
+    return "DOW";
+  case REC_DATE_DOY:
+    return "DOY";
+  case REC_DATE_WOM:
+    return "WOM";
   default:
     return NULL;
   }

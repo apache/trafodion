@@ -30,6 +30,7 @@
 #include "monlogging.h"
 #include "replicate.h"
 #include "mlio.h"
+#include "ptpclient.h"
 
 extern CMonitor *Monitor;
 extern CMonStats *MonStats;
@@ -37,10 +38,12 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CNode *MyNode;
 extern int MyPNID;
+extern CPtpClient *PtpClient;
+extern bool NameServerEnabled;
 
 CExtKillReq::CExtKillReq (reqQueueMsg_t msgType, int pid,
                           struct message_def *msg )
-    : CExternalReq(msgType, pid, msg)
+    : CExternalReq(msgType, -1, pid, -1, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEF", 4);
@@ -78,7 +81,7 @@ void CExtKillReq::Kill( CProcess *process )
     CNode  *node = NULL;
     CLNode *lnode = NULL;
 
-    const char method_name[] = "CMonitor::Kill";
+    const char method_name[] = "CExtKillReq::Kill";
     TRACE_ENTRY;
     
     process->SetAbended ( true );
@@ -88,12 +91,38 @@ void CExtKillReq::Kill( CProcess *process )
     if ( (node->GetState() == State_Up || 
           node->GetState() == State_Shutdown) && node->GetPNid() != MyPNID )
     {
-        // Replicate the kill to other nodes
-        CReplKill *repl = new CReplKill( process->GetNid()
-                                       , process->GetPid()
-                                       , process->GetVerifier()
-                                       , process->GetAbort());
-        Replicator.addItem(repl);
+        if (NameServerEnabled)
+        {
+            // Forward the process create to the target node
+            int rc = PtpClient->ProcessKill( process
+                                           , process->GetAbort()
+                                           , lnode->GetNid()
+                                           , node->GetName());
+            if (rc)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] - Can't send process kill "
+                          "request for child process %s (%d, %d) "
+                          "to child node %s, nid=%d\n"
+                        , method_name
+                        , process->GetName()
+                        , process->GetNid()
+                        , process->GetPid()
+                        , node->GetName()
+                        , lnode->GetNid() );
+                mon_log_write(MON_REQ_KILL_1, SQ_LOG_ERR, la_buf);
+            }
+        }
+        else
+        {
+            // Replicate the kill to other nodes
+            CReplKill *repl = new CReplKill( process->GetNid()
+                                           , process->GetPid()
+                                           , process->GetVerifier()
+                                           , process->GetAbort());
+            Replicator.addItem(repl);
+        }
     }
     else
     {
@@ -124,7 +153,8 @@ void CExtKillReq::Kill( CProcess *process )
 void CExtKillReq::performRequest()
 {
     bool status = FAILURE;
-    CProcess *process = NULL;
+    CProcess *cloneProcess = NULL;
+    CProcess *targetProcess = NULL;
     CProcess *backup = NULL;
 
     const char method_name[] = "CExtKillReq::performRequest";
@@ -181,41 +211,119 @@ void CExtKillReq::performRequest()
     {
         if ( target_process_name.size() )
         { // find by name (check node state, don't check process state, not backup)
-            process = Nodes->GetProcess( target_process_name.c_str()
-                                       , target_verifier
-                                       , true, false, false );
-            if ( process &&
-                (msg_->u.request.u.kill.target_nid == -1 ||
-                 msg_->u.request.u.kill.target_pid == -1))
+            if (msg_->u.request.u.kill.target_process_name[0] == '$' )
             {
-                backup = process->GetBackup ();
+                targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                  , target_verifier
+                                                  , true, false, false );
+                if ( targetProcess &&
+                    (msg_->u.request.u.kill.target_nid == -1 ||
+                     msg_->u.request.u.kill.target_pid == -1))
+                {
+                    backup = targetProcess->GetBackup ();
+                }
             }
         }
         else
         { // find by nid (check node state, don't check process state, backup is Ok)
-            process = Nodes->GetProcess( target_nid
-                                       , target_pid
-                                       , target_verifier
-                                       , true, false, true );
+            targetProcess = Nodes->GetProcess( target_nid
+                                             , target_pid
+                                             , target_verifier
+                                             , true, false, true );
             backup = NULL;
         }
 
-
-        if (process)
+        if ( targetProcess )
         {
-            process->SetAbort( msg_->u.request.u.kill.persistent_abort );
+            if (trace_settings & TRACE_REQUEST)
+            {
+                trace_printf( "%s@%d - Found targetProcess %s (%d,%d:%d), clone=%d\n"
+                            , method_name, __LINE__
+                            , targetProcess->GetName()
+                            , targetProcess->GetNid()
+                            , targetProcess->GetPid()
+                            , targetProcess->GetVerifier()
+                            , targetProcess->IsClone() );
+            }
+        }
+        else
+        {
+            if (NameServerEnabled)
+            {
+                if ( target_process_name.size() )
+                { // Name Server find by name:verifier
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                    , method_name, __LINE__
+                                    , target_process_name.c_str()
+                                    , target_verifier );
+                    }
+                    if (msg_->u.request.u.kill.target_process_name[0] == '$' )
+                    {
+                        cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                            , target_verifier );
+                        targetProcess = cloneProcess;
+                    }
+                }     
+                else
+                { // Name Server find by nid,pid:verifier
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                    , method_name, __LINE__
+                                    , target_nid
+                                    , target_pid
+                                    , target_verifier );
+                    }
+                    cloneProcess = Nodes->CloneProcessNs( target_nid
+                                                        , target_pid
+                                                        , target_verifier );
+                    targetProcess = cloneProcess;
+                }
+                if (targetProcess)
+                {
+                    if (trace_settings & TRACE_REQUEST)
+                        trace_printf( "%s@%d - Found targetProcess %s (%d,%d:%d), clone=%d\n"
+                                    , method_name, __LINE__
+                                    , targetProcess->GetName()
+                                    , targetProcess->GetNid()
+                                    , targetProcess->GetPid()
+                                    , targetProcess->GetVerifier()
+                                    , targetProcess->IsClone() );
+                }
+            }
+        }
+
+        if (targetProcess)
+        {
+            targetProcess->SetAbort( msg_->u.request.u.kill.persistent_abort );
             if (backup)
             {
                 // We are killing both the primary and backup processes
                 Kill( backup );
             }
-            Kill( process );
+            Kill( targetProcess );
+
+            if (NameServerEnabled && cloneProcess)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , cloneProcess->GetName()
+                                , cloneProcess->GetNid()
+                                , cloneProcess->GetPid()
+                                , cloneProcess->GetVerifier() );
+                }
+                Nodes->DeleteCloneProcess( cloneProcess );
+            }
 
             msg_->u.reply.type = ReplyType_Generic;
-            msg_->u.reply.u.generic.nid = process->GetNid();
-            msg_->u.reply.u.generic.pid = process->GetPid();
-            msg_->u.reply.u.generic.verifier = process->GetVerifier();
-            strcpy (msg_->u.reply.u.generic.process_name, process->GetName());
+            msg_->u.reply.u.generic.nid = targetProcess->GetNid();
+            msg_->u.reply.u.generic.pid = targetProcess->GetPid();
+            msg_->u.reply.u.generic.verifier = targetProcess->GetVerifier();
+            strcpy (msg_->u.reply.u.generic.process_name, targetProcess->GetName());
             msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
             status = SUCCESS;
         }

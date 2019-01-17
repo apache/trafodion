@@ -28,7 +28,7 @@
  * File:         ComSqlcmpdbg.h
  * Description:  This file contains declarations common to arkcmp components 	
  *               and tdm_sqlcmpdbg, the GUI tool used to display query
- *		 compilation.
+ *		 compilation and execution.
  *
  * Created:      06/25/97
  * Modified:     $Author:
@@ -39,7 +39,10 @@
  *****************************************************************************
  */
 
-#include "Platform.h"  // 64-BIT
+#include "Platform.h"
+
+class ExScheduler;
+class ExSubtask;
 
 class Sqlcmpdbg {
   // This class exists merely to give a nice naming scope for this enum
@@ -62,17 +65,19 @@ public:
 			 };
 };
 
-typedef struct tagSqlcmpdbgExpFuncs {
+struct SqlcmpdbgExpFuncs {
   void (*fpDisplayQueryTree) (Sqlcmpdbg::CompilationPhase,void* , void* );
-  void (*fpSqldbgSetPointers) (void*, void*, void*, void*, void* );
+  void (*fpSqldbgSetCmpPointers) (void*, void*, void*, void*, void* );
   void (*fpDoMemoStep) (Int32, Int32, Int32, void*, void*, void*);
   void (*fpHideQueryTree) (BOOL);
   void (*fpDisplayTDBTree) (Sqlcmpdbg::CompilationPhase, void*, void*);
-  BOOL (*fpDisplayExecution) (void);
+  int  (*fpExecutionDisplayIsEnabled) (void);
+  void (*fpSqldbgSetExePointers) (void *, void *, void *);
+  void (*fpDisplayExecution) (ExSubtask**, ExScheduler *);
   void (*fpCleanUp)(void);
-} SqlcmpdbgExpFuncs;
+};
 
-typedef SqlcmpdbgExpFuncs* (*fpGetSqlcmpdbgExpFuncs) (void); 
+typedef SqlcmpdbgExpFuncs* (*fpGetSqlcmpdbgExpFuncs) ();
 
 #endif
 	
