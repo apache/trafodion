@@ -22,26 +22,26 @@
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
 include ../macros.gmk #top level
+java_files:=$(shell find src/main/java -name *.java*)
 
 .NOTPARALLEL: all
 
 all: build_all
 
-build_all: mavenbuild
+build_all: target/trafodion-utility-*.jar 
 
-mavenbuild:
-	@if [ ! -f target/trafodion-utility-${TRAFODION_VER}.jar ]; then \
-		echo "$(MAVEN) site package -DskipTests" ; \
-		echo "### For full Maven output, see file build_utility.log" ; \
-		mkdir -p src/main/resources ; \
-		$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 > src/main/resources/trafodion-utility.jar.mf ; \
-		set -o pipefail && $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' ; \
-		cp -pf target/trafodion-utility-*.jar $(TRAF_HOME)/export/lib ; \
-	fi
+target/trafodion-utility-*.jar: $(java_files)
+	echo "$(MAVEN) site package -DskipTests"
+	echo "### For full Maven output, see file build_utility.log"
+	mkdir -p src/main/resources
+	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 > src/main/resources/trafodion-utility.jar.mf 
+	set -o pipefail && $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+	cp -pf target/trafodion-utility-*.jar $(TRAF_HOME)/export/lib
 
-clean:
-	-@if [ -d target ] ; then \
-		$(MAVEN) clean ; \
-	fi
+mvn_clean:
+	-$(MAVEN) clean | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+
+
+clean:  $(shell if [ -d target ]; then echo "mvn_clean"; fi)
 	$(RM) build_utility.log
 	$(RM) -rf $(TRAF_HOME)/export/lib/trafodion-utility-*.jar
