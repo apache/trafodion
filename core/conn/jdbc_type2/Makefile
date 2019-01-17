@@ -100,7 +100,7 @@ $(OBJS): $(EXPROOT)/lib/jdbcT2.jar
 $(OUTDIR)/type2version.o: $(TRAF_HOME)/export/include/SCMBuildStr.h
 
 mvn_clean:
-	$(MAVEN) clean
+	-$(MAVEN) clean | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 
 clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi)
 	$(RM) $(LIBEXPDIR)/libjdbcT2.so

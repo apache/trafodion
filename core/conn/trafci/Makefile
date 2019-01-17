@@ -39,6 +39,6 @@ target/trafciInstaller.jar target/trafciInstaller.tar: $(java_files)
 	java -jar target/trafciInstaller.jar -silent -installDir ${TRAF_HOME}
 
 mvn_clean:
-	@mvn -f pom.xml clean
+	-@mvn -f pom.xml clean| grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 
 clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi) 
