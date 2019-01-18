@@ -29,6 +29,7 @@ java_files:=$(shell find src/main/java -name *.java* >original.diff.log;find src
 #When add one more hadoop version, please addthe names in below 4 lines in order
 
 .NOTPARALLEL: all
+all: target/hbase-trx-apache1_2-$(TRAFODION_VER).jar target/hbase-trx-apache1_1-$(TRAFODION_VER).jar target/hbase-trx-apache1_0-$(TRAFODION_VER).jar target/hbase-trx-hdp2_3-$(TRAFODION_VER).jar target/hbase-trx-cdh5_7-$(TRAFODION_VER).jar target/hbase-trx-cdh5_5-$(TRAFODION_VER).jar target/hbase-trx-cdh5_4-$(TRAFODION_VER).jar 
 
 define trx
 	$(GENVERS) > $(VFILE)
@@ -65,8 +66,6 @@ target/hbase-trx-cdh5_5-$(TRAFODION_VER).jar: $(java_files)
 
 target/hbase-trx-cdh5_4-$(TRAFODION_VER).jar: $(java_files) 
 	$(call trx,cdh5_4,cdh54,CDH5.4)
-
-all: target/hbase-trx-apache1_2-$(TRAFODION_VER).jar target/hbase-trx-apache1_1-$(TRAFODION_VER).jar target/hbase-trx-apache1_0-$(TRAFODION_VER).jar target/hbase-trx-hdp2_3-$(TRAFODION_VER).jar target/hbase-trx-cdh5_7-$(TRAFODION_VER).jar target/hbase-trx-cdh5_5-$(TRAFODION_VER).jar target/hbase-trx-cdh5_4-$(TRAFODION_VER).jar 
 
 mvn_clean:
 	-$(MAVEN) -f pom.xml.apache10 clean| grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' 
