@@ -81,6 +81,7 @@ target/trafodion-dtm-hdp-${TRAFODION_VER}.jar: $(java_files)
 	$(call dtm, pom.xml.hdp)
 
 mavenbuild: target/trafodion-dtm-cdh-${TRAFODION_VER}.jar target/trafodion-dtm-apache-${TRAFODION_VER}.jar target/trafodion-dtm-hdp-${TRAFODION_VER}.jar
+	cp -pf target/trafodion-dtm-*.jar $(TRAF_HOME)/export/lib
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)

@@ -41,7 +41,7 @@ define trx
 	$(UNCOMMENT_STRING) $(3)
 	echo "$(MAVEN) -f pom.xml.$(2) install -DskipTests"
 	echo "### For full Maven output, see file build_trx_$(1).log"
-	set -o pipefail && $(MAVEN) -f pom.xml.$(2) install -DskipTests | tee -a build_trx_$(1).log| grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	set -o pipefail && $(MAVEN) -f pom.xml.$(2) install -DskipTests | tee -a build_trx_$(1).log| grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile' -e 'Compiling'
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/hbase-trx-$(1)-$(TRAFODION_VER).jar $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
