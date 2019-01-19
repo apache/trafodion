@@ -202,7 +202,6 @@ case $OPT_VALUE in
         echo -e "Active DCSMaster VM status:"
         echo -e "EC\tEU\tOC\tOU\tPERCENT_EU\tPERCENT_OU\t"
         echo -e "$EC\t|$EU\t|$OC\t|$OU\t|$PERCENT_EU\t\t|$PERCENT_OU\t"
-        #$STAT_CMD $activeDcsPid
         ;;
 
     -t)
@@ -216,7 +215,6 @@ case $OPT_VALUE in
 
         echo `$STAT_CMD $activeDcsPid \
             | sed -n '/Thread-5/, /ListenerService.java/p'`
-        #| awk '/java.lang.Thread.State/{print $2}' `
         ;;
     -s)
         "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/"dcs-"$TRAFODION_VER".jar" org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
