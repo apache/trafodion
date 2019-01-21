@@ -519,8 +519,10 @@ struct execute {
     char *xrt;                  /* load: xml row tag */
 #endif
     char *jsonKey;              /* load: json key */
-    unsigned int nl;            /* Null string length. Copy: number of loaders per extraction thread */
-    unsigned int el;            /* Empty String Length. Copy: total number of loaders per grandparent (ps * nl) */
+    unsigned int nl;            /* Null string length. */
+    unsigned int nloader;       /* Copy: number of loaders per extraction thread */
+    unsigned int el;            /* Empty String Length. */
+    unsigned int nltotal;       /* Copy: total number of loaders per grandparent (ps * nl) */
     unsigned int k;             /* load lines to skip. extract: returned rsds. Copy: grandparent ID */
     unsigned int sp;            /* extract Start Partition load/copy: number of target table fields */
     unsigned int ep;            /* extract End Partition, copy: number of tgtsql parameters */
@@ -5375,15 +5377,15 @@ static void etabadd(char type, char *run, int id)
                     l = etab[no].parent;
                     etab[l].ps = etab[no].ps;
                     etab[no].lstat = 4;     /* other threads to wait while gpar check tgt dbt */
-                    if ( etab[no].nl == 0 )
-                        etab[no].nl = etab[no].type == 'c' ? 2 : 1; /* initialize default number of loaders */
-                    etab[no].el = etab[no].ps * etab[no].nl ;
+                    if ( etab[no].nloader == 0 )
+                        etab[no].nloader = etab[no].type == 'c' ? 2 : 1; /* initialize default number of loaders */
+                    etab[no].nltotal = etab[no].ps * etab[no].nloader ;
                     etab[no].k = no;        /* save grand-parent copy thread (first 'c' thread for this pool) */
                     etab[no].run = etab[no].tgt ;
                     cimutex(&etab[no].pmutex);
                     cicondvar(&etab[no].pcvp);
                     cicondvar(&etab[no].pcvc);
-                    for ( i = 0, j = no; i < etab[j].nl ; i++ ) {
+                    for ( i = 0, j = no; i < etab[j].nloader ; i++ ) {
                         etabnew ( no++ );   /* Create new etab entry based on original 'c'/'p' struct */
                         etab[no].type = etab[l].type == 'c' ? 'C' : 'P';
                         if ( etab[no].type == 'C' ) 
@@ -5410,11 +5412,11 @@ static void etabadd(char type, char *run, int id)
                     etab[no].tbe = 1;
                     if ( etab[no].type == 'c' || etab[no].type == 'p' ) {
                         etab[no].parent = no;
-                        etab[no].iobuff = etab[no].ps * etab[no].nl ;   /* total number of loaders */
+                        etab[no].iobuff = etab[no].ps * etab[no].nloader ;   /* total number of loaders */
                         cimutex(&etab[no].pmutex);
                         cicondvar(&etab[no].pcvp);
                         cicondvar(&etab[no].pcvc);
-                        for ( i = 0, n = no; i < etab[j].nl ; i++ ) {
+                        for ( i = 0, n = no; i < etab[j].nloader ; i++ ) {
                             etabnew ( no++ );           /* Create new etab entry based on original 'c'/'p' struct */
                             etab[no].type = etab[l].type == 'c' ? 'C' : 'P';
                             if ( etab[no].type == 'C' ) 
@@ -5754,9 +5756,9 @@ static void etabadd(char type, char *run, int id)
                             }
                         } else if ( etab[no].type == 'c' ) {
                             etab[no].lstat = 4;             /* other threads to wait while gpar check tgt dbt */
-                            if ( etab[no].nl == 0 )
-                                etab[no].nl = NUMLOADERS;   /* initialize number of loaders to its default */
-                            etab[no].el = etab[no].ps * etab[no].nl ;
+                            if ( etab[no].nloader == 0 )
+                                etab[no].nloader = NUMLOADERS;   /* initialize number of loaders to its default */
+                            etab[no].nltotal = etab[no].ps * etab[no].nloader ;
                             etab[no].k = no;                /* save grand-parent copy thread (first 'c' thread for this pool) */
                             ll = strlen ( buff ) ;
                             if ( ( etab[no].run = malloc ( ll + 1 ) ) == (void *)NULL ) {
@@ -5779,7 +5781,7 @@ static void etabadd(char type, char *run, int id)
                                     goto etabadd_exit;
                                 }
                             }
-                            for ( i = 0, j = no; i < etab[j].nl ; i++ ) {
+                            for ( i = 0, j = no; i < etab[j].nloader ; i++ ) {
                                 etabnew ( no++ );           /* Create new etab entry based on original 'c' struct */
                                 etab[no].type = 'C';
                                 etab[no].mpre = tmpre ;
@@ -5861,11 +5863,11 @@ static void etabadd(char type, char *run, int id)
                                     etab[no].tbe = 1;
                                     if ( etab[no].type == 'c' ) {
                                         etab[no].parent = no;
-                                        etab[no].iobuff = etab[no].ps * etab[no].nl ;   /* total number of loaders */
+                                        etab[no].iobuff = etab[no].ps * etab[no].nloader ;   /* total number of loaders */
                                         cimutex(&etab[no].pmutex);
                                         cicondvar(&etab[no].pcvp);
                                         cicondvar(&etab[no].pcvc);
-                                        for ( i = 0, n = no; i < etab[j].nl ; i++ ) {
+                                        for ( i = 0, n = no; i < etab[j].nloader ; i++ ) {
                                             etabnew ( no++ );           /* Create new etab entry based on original 'c' struct */
                                             etab[no].type = 'C';
                                             etab[no].mpre = tmpre ;
@@ -5932,7 +5934,7 @@ static void etabadd(char type, char *run, int id)
                                         cimutex(&etab[no].pmutex);
                                         cicondvar(&etab[no].pcvp);
                                         cicondvar(&etab[no].pcvc);
-                                        for ( i = 0, n = no; i < etab[j].nl ; i++ ) {
+                                        for ( i = 0, n = no; i < etab[j].nloader ; i++ ) {
                                         etabnew ( no++ );           /* Create new etab entry based on original 'c' struct */
                                             etab[no].type = 'C';
                                             etab[no].mpre = tmpre ;
@@ -10350,9 +10352,9 @@ static int Oloadbuff(int eid)
     }
     if ( ( type == 'C' || type == 'P' ) && etab[gpar].post ) {
         MutexLock(&etab[gpar].pmutex);
-        etab[gpar].el--;                            /* decrease number of active loaders */
+        etab[gpar].nltotal--;                            /* decrease number of active loaders */
         MutexUnlock(&etab[gpar].pmutex);
-        if ( etab[gpar].el == 0 ) {                 /* no more active loaders: run post-SQL */
+        if ( etab[gpar].nltotal == 0 ) {                 /* no more active loaders: run post-SQL */
             var_set ( &thps[tid].tva, VTYPE_I, "tgt", etab[eid].tgt );
             etab[eid].flg2 |= 020000000 ;           /* Oexec to allocate/use its own handle */
             if ( etab[eid].post[0] == '@' )         /* run a sql script */
@@ -10772,7 +10774,7 @@ static int Ocopy(int eid)
     int tid = etab[eid].id; /* Thread ID */
     int echild = etab[eid].child;   /* first child process eid */ 
     int tchild = etab[echild].id;   /* first child process tid */ 
-    int nchild = (int)etab[eid].nl; /* number of children: each 'c'/'p' (extraction) thread
+    int nchild = (int)etab[eid].nloader; /* number of children: each 'c'/'p' (extraction) thread
                             has 'nchild' children 'C'/'P' (loading) threads having etab[] 
                             index from 'echild' to 'echild + nchild'*/
     int gpar = etab[eid].k;     /* grand parent eid */
@@ -14129,7 +14131,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                         etab[no].ps = (unsigned int) atoi(&str[l]);
                 } else if ( ( type == 'c' || type == 'p' ) && !strcmp(&str[n], "loaders") ) {
                     if ( !rp )  /* this is a command-line only option */
-                        etab[no].nl = (unsigned int) atoi(&str[l]);
+                        etab[no].nloader = (unsigned int) atoi(&str[l]);
                 } else if ( !strcmp(&str[n], "bpwc") ) {
                     etab[no].bpwc = (unsigned int) atoi(&str[l]);
                 } else if ( !strcmp(&str[n], "bpc") ) {
@@ -14146,7 +14148,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                                         __LINE__, &str[l] );
                     }
                     etab[no].flg |= 01000000 ;  /* complex load. Use Oload */
-                } else if ( type != 'c' && !strcmp(&str[n], "ns") ) {
+                } else if (!strcmp(&str[n], "ns") ) {
                     etab[no].ns = &str[l];
                     etab[no].nl = (unsigned int ) strlen( etab[no].ns );
                     etab[no].flg |= 01000000 ;  /* complex load. Use Oload */
