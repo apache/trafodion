@@ -525,7 +525,7 @@ ACOS (COS (0.3491))
 
 <<<
 [[add_months_function]]
-=== ADD_MONTHS Function
+== ADD_MONTHS Function
 
 The ADD_MONTHS function adds the integer number of months specified by
 _int_expr_ to _datetime_expr_ and normalizes the result. ADD_MONTHS is a {project-name} SQL
@@ -1930,7 +1930,7 @@ CEILING (2.25)
 
 <<<
 [[char_function]]
-=== CHAR Function
+== CHAR Function
 
 The CHAR function returns the character that has the specified code
 value, which must be of exact numeric with scale 0.
@@ -2409,7 +2409,7 @@ COS (0.3491)
 
 <<<
 [[cosh_function]]
-=== COSH Function
+== COSH Function
 
 The COSH function returns the hyperbolic cosine of a numeric value
 expression, where the expression is an angle expressed in radians.
@@ -5629,7 +5629,7 @@ See <<ucase_function,UCASE Function>>.
 
 <<<
 [[left_function]]
-=== LEFT Function
+== LEFT Function
 
 The LEFT function returns the leftmost specified number of characters
 from a character expression. Every character, including multi-byte
@@ -5786,7 +5786,7 @@ LOG (2.0)
 
 <<<
 [[log10_function]]
-=== LOG10 Function
+== LOG10 Function
 
 The LOG10 function returns the base 10 logarithm of a numeric value
 expression.
@@ -6810,7 +6810,7 @@ FROM mining.seqfcn SEQUENCE BY ts;
 
 <<<
 [[nullif_function]]
-=== NULLIF Function
+== NULLIF Function
 
 The NULLIF function compares the value of two expressions. Both
 expressions must be of comparable types. The return value is NULL when
