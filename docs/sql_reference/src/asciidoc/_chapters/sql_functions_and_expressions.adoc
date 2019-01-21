@@ -525,7 +525,7 @@ ACOS (COS (0.3491))
 
 <<<
 [[add_months_function]]
-=== ADD_MONTHS Function
+== ADD_MONTHS Function
 
 The ADD_MONTHS function adds the integer number of months specified by
 _int_expr_ to _datetime_expr_ and normalizes the result. ADD_MONTHS is a {project-name} SQL
@@ -1930,7 +1930,7 @@ CEILING (2.25)
 
 <<<
 [[char_function]]
-=== CHAR Function
+== CHAR Function
 
 The CHAR function returns the character that has the specified code
 value, which must be of exact numeric with scale 0.
@@ -2409,7 +2409,7 @@ COS (0.3491)
 
 <<<
 [[cosh_function]]
-=== COSH Function
+== COSH Function
 
 The COSH function returns the hyperbolic cosine of a numeric value
 expression, where the expression is an angle expressed in radians.
@@ -5629,7 +5629,7 @@ See <<ucase_function,UCASE Function>>.
 
 <<<
 [[left_function]]
-=== LEFT Function
+== LEFT Function
 
 The LEFT function returns the leftmost specified number of characters
 from a character expression. Every character, including multi-byte
@@ -5786,7 +5786,7 @@ LOG (2.0)
 
 <<<
 [[log10_function]]
-=== LOG10 Function
+== LOG10 Function
 
 The LOG10 function returns the base 10 logarithm of a numeric value
 expression.
@@ -6810,7 +6810,7 @@ FROM mining.seqfcn SEQUENCE BY ts;
 
 <<<
 [[nullif_function]]
-=== NULLIF Function
+== NULLIF Function
 
 The NULLIF function compares the value of two expressions. Both
 expressions must be of comparable types. The return value is NULL when
@@ -7020,7 +7020,7 @@ OCTET_LENGTH ('Robert')
 
 <<<
 [[offset_function]]
-=== OFFSET Function
+== OFFSET Function
 
 The OFFSET function is a sequence function that retrieves columns from
 previous rows of an intermediate result table ordered by a SEQUENCE BY
@@ -8437,7 +8437,7 @@ min_i1
 
 <<<
 [[runningstddev_function]]
-=== RUNNINGSTDDEV Function
+== RUNNINGSTDDEV Function
 
 The RUNNINGSTDDEV function is a sequence function that returns the
 standard deviation of non-null values of a column up to and including the
@@ -8793,7 +8793,7 @@ SINH (1.25)
 
 <<<
 [[space_function]]
-=== SPACE Function
+== SPACE Function
 
 The SPACE function returns a character string consisting of a specified
 number of spaces, each of which is 0x20 or 0x0020, depending on the
@@ -9659,7 +9659,7 @@ TAN (0.3491)
 
 <<<
 [[tanh_function]]
-=== TANH Function
+== TANH Function
 
 The TANH function returns the hyperbolic tangent of a numeric value
 expression, where the expression is an angle expressed in radians.
@@ -11126,7 +11126,7 @@ See <<lcase_function,LCASE Function>>.
 
 <<<
 [[upper_function]]
-=== UPPER Function
+== UPPER Function
 
 The UPPER function up-shifts alphanumeric characters. For
 non-alphanumeric characters, UCASE returns the same character. UPPER can
