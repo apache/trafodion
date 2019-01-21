@@ -289,23 +289,6 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
                                        CmpCommon::context()->sqlSession()->getParentQid());
-
-  //If is a native HIVE table and not already registered, we should register it 
-  //in traf metadata before do 'comment' operations.
-  if (QualifiedName::isHive(catalogNamePart)
-          && CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF)
-    {
-      char buf[2000]; 
-      str_sprintf(buf, "register internal hive table if not exists %s", extObjName.data());
-      Lng32 cliRC = cliInterface.executeImmediate(buf);
-      if (cliRC < 0) 
-      {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          processReturn();
-          return;
-      }
-    }
-
   Int64 objUID = 0;
   Int32 objectOwnerID = ROOT_USER_ID;
   Int32 schemaOwnerID = ROOT_USER_ID;
@@ -373,7 +356,7 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
     {
       //add or modify comment
       char query[2048];
-	  
+
       str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, '%s') ; ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID, 
