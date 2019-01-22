@@ -180,6 +180,7 @@ public:
 	SecPwd*			m_SecPwd;
 	ProcInfo		m_SecInfo;
     char            m_ClusterName[MAX_SQL_IDENTIFIER_LEN+1]; // seaquest cluster name
+    int             m_ClusterNameLength;
 private:
 	HANDLE						m_ConnectEvent;
 	IDL_OBJECT_def				m_RetSQLSvc_ObjRef;

@@ -59,6 +59,7 @@ CConnect::CConnect(SQLHANDLE InputHandle) : CHandle(SQL_HANDLE_DBC, InputHandle)
 
     lobHandleSave = NULL;
     lobHandleLenSave = 0;
+    m_ClusterNameLength = 0;
 }
 
 CConnect::~CConnect()
@@ -3394,7 +3395,7 @@ SQLRETURN CConnect::DoEncryption(SecPwd* &pSecPwd, ProcInfo SecInfo, USER_DESC_d
 					dir[strlen(dir)-1] = '\0';
 				}
 			}
-			pSecPwd = new SecPwd(dir, file, activefile, m_ClusterName);
+        pSecPwd = new SecPwd(dir, file, activefile, m_ClusterName, m_ClusterNameLength);
 	} 
 	catch (SecurityException se) {
 		retCode = se.getErrCode();
