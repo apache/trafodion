@@ -26,24 +26,25 @@ BLD_TRAFODION_DCS_TARNAME           =dcs-$(TRAFODION_VER).tar.gz
 
 VFILE			    =trafodion-dcs.jar.versions
 GENVERS			    =./genvers
+java_files:=$(shell find src/main/java -name *.java*|grep -v Vproc.java)
 
 .NOTPARALLEL: all
 
-all: build_all
+all: target/dcs-$(TRAFODION_VER).jar
 
-build_all: build_chk
+target/dcs-$(TRAFODION_VER).jar: $(java_files)
+	$(GENVERS) > $(VFILE)
+	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
+	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
 	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_dcs.log"
 	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_dcs.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	$(RM) $(VFILE)
 
-build_chk:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
-
-clean:
+mvn_clean:
 	-$(MAVEN) clean | grep ERROR
+
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi)
 	$(RM) build_dcs.log
 	$(RM) $(VFILE)
 	$(RM) ../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_DCS_TARNAME)
