@@ -36,8 +36,8 @@ target/dcs-$(TRAFODION_VER).jar: $(java_files)
 	$(GENVERS) > $(VFILE)
 	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
 	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
-	echo "$(MAVEN) site package -DskipTests"
-	echo "### For full Maven output, see file build_dcs.log"
+	@echo "$(MAVEN) site package -DskipTests"
+	@echo "### For full Maven output, see file build_dcs.log"
 	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_dcs.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	$(RM) $(VFILE)
 
