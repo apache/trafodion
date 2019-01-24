@@ -260,7 +260,9 @@ typedef enum {
    Lob_PurgeBackupLobDataFile,
    Lob_GetLength,
    Lob_GetFileName,
-   Lob_GetOffset
+   Lob_GetOffset,
+   Lob_GetFileSize,
+   Lob_ReadSourceFile
    
 } LobsOper;
 

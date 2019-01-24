@@ -355,6 +355,24 @@ Lng32 ExpLOBInterfaceGetLobLength(ExLobGlobals * exLobGlob,
 			          Int64 &outLobLen 
                                   
 				  );
+Lng32 ExpLOBInterfaceGetFileSize(ExLobGlobals * exLobGlob, 
+                                 char * filename,
+                                 char * lobHdfsServer,
+                                 Lng32 lobHdfsPort,	
+                                 Int64 &outFileSize
+                                 
+                                 );
+Lng32 ExpLOBInterfaceReadSourceFile(ExLobGlobals * exLobGlob,
+                                     char * filename, 
+                                     char * lobHdfsServer,
+                                     Lng32 lobHdfsPort,	      
+                                     Int64 readOffset,
+                                     Int64 allocMemSize,
+                                     char *&retBuf,
+                                     Int64 &retReadLen);
+
+
+
 Lng32 ExpLOBInterfaceGetFileName(ExLobGlobals * exLobGlob, 
 				  char * lobName, 
 				  char * lobLoc,

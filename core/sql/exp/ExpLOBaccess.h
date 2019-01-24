@@ -153,8 +153,8 @@ Ex_Lob_Error ExLobsOper (
     Int64       descNumIn,         // input desc Num (for flat files only)
     Int64       &descNumOut,       // output desc Num (for flat files only)
     Int64       &retOperLen,       // length of data involved in this operation
-    Int64       requestTagIn,      // only for checking status
-    Int64       &requestTagOut,    // returned with every request other than check status
+    Int64       &hdfsDataOffset,      // only for checking status
+    Int64       &unused_data_member,    // returned with every request other than check status
     Ex_Lob_Error  &requestStatus,  // returned req status
     Int64       &cliError,         // err returned by cli call
     char        *dir,              // directory in the storage
@@ -403,10 +403,10 @@ class ExLob : public NABasicObject
                             int blocksize=0, Int64 lobMaxSize = 0, 
                             ExLobGlobals *lobGlobals = NULL);
 
-  Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals);
-    Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, 
+  Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals);
+  Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, 
 			      LobsSubOper subOperation, 
-			      Int64 tgtOffset,Int64 &operLen, 
+			      Int64 &tgtOffset,Int64 &operLen, 
 			      Int64 lobMaxMemChunkLen);
     Ex_Lob_Error writeDataSimple(char *data, Int64 size, LobsSubOper subOperation, Int64 &operLen,
                                  int bufferSize = 0, short replication =0, int blocksize=0);
@@ -422,14 +422,14 @@ class ExLob : public NABasicObject
                                 Int64 bytesLeft, Int64 bufMaxSize, Int64 prefetch, ExLobGlobals *lobGlobals, Int32 *hdfsDetailError = NULL);
     Ex_Lob_Error deleteCursor(const char *cursorName, ExLobGlobals *lobGlobals);
   Ex_Lob_Error fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOffset, Int64 &outSize,NABoolean &isEOD,Int64 transId);
-  Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
+  Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 &tgtOffset, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize, Int64 lobGCLimit,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
   Ex_Lob_Error insertSelect(ExLob *srcLobPtr,char *handleIn,Int32 handleInLen, char *source, Int64 sourceLen, Int64 &operLen,Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *blackBox, Int32 blackBoxLen, char *handleOut, Int32 &handleOutLen,LobsSubOper so,Int64 xnId,void *lobGlobals);
   Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals);
   Ex_Lob_Error update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemLen,Int64 lobGCLimit,char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals);
-  Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
-  Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
-  Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
-  Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+  Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, Int64 &size, Int64 offset);
+  Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, Int64 &size, Int64 offset);
+  Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, Int64 &size, Int64 offset);
+  Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, Int64 &size, Int64 offset);
   Ex_Lob_Error statSourceFile(char *srcfile, Int64 &sourceEOF);
   Ex_Lob_Error delDesc(char *handleIn, Int32 handleInLen, Int64 transId);
   Ex_Lob_Error purgeLob();
@@ -441,11 +441,12 @@ class ExLob : public NABasicObject
   Ex_Lob_Error doSanityChecks(char *dir, LobsStorage storage,
                               Int32 handleInLen, Int32 handleOutLen, 
                               Int32 blackBoxLen);
-  Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset,Int64 lobMaxSize,Int64 lobMaxChunkMemSize, char *handleIn, Int32 handleInLen,Int64 lobGCLimit, void *lobGlobals);
+  Ex_Lob_Error checkAndDoGC(unsigned int size, Int64 &dataOffset,Int64 lobMaxSize,Int64 lobMaxChunkMemSize, char *handleIn, Int32 handleInLen,Int64 lobGCLimit, void *lobGlobals);
   Ex_Lob_Error readStats(char *buffer);
   Ex_Lob_Error initStats();
-  
+  #if 0
   Ex_Lob_Error insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,Int64 xnId,void *lobGlobals) ;
+#endif
   
   Ex_Lob_Error lockDesc();
   Ex_Lob_Error unlockDesc();
@@ -456,7 +457,7 @@ class ExLob : public NABasicObject
   
   Ex_Lob_Error getDesc(ExLobDesc &desc,char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 transId);
   
-  Ex_Lob_Error writeData(Int64 offset, char *data, Int32 size, Int64 &operLen);
+  Ex_Lob_Error writeData(Int64 &offset, char *data, Int32 size, Int64 &operLen);
   Ex_Lob_Error readDataToMem(char *memAddr, Int64 offset, Int64 size,
                              Int64 &operLen,char *handleIn, Int32 handleLenIn, 
                              NABoolean multipleChunks, Int64 transId);
