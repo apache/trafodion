@@ -22,25 +22,26 @@
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
 include ../macros.gmk #top level
+java_files:=$(shell find src/main/java -name *.java*)
 
 .NOTPARALLEL: all
 
 all: build_all
 
-build_all:	 
-	$(MAKE) mavenbuild
+build_all: target/trafodion-utility-*.jar 
+
+target/trafodion-utility-*.jar: $(java_files)
 	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_utility.log"
-
-mavenbuild:
-        # create a jar manifest file with the correct version information
 	mkdir -p src/main/resources
-	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 > src/main/resources/trafodion-utility.jar.mf
-        # run maven
+	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 > src/main/resources/trafodion-utility.jar.mf 
 	set -o pipefail && $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 	cp -pf target/trafodion-utility-*.jar $(TRAF_HOME)/export/lib
 
-clean:
-	$(MAVEN) clean
+mvn_clean:
+	-$(MAVEN) clean | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+
+
+clean:  $(shell if [ -d target ]; then echo "mvn_clean"; fi)
 	$(RM) build_utility.log
 	$(RM) -rf $(TRAF_HOME)/export/lib/trafodion-utility-*.jar

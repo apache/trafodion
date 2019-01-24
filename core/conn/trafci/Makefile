@@ -24,18 +24,21 @@
 include ../../macros.gmk #top level
 
 all:Trafci_deploy
-Trafci_deploy:Trafci_installer
-Trafci_installer:Trafci_jar
-Trafci_jar:
-	mvn clean install -DskipTests$
-Trafci_installer:
+Trafci_deploy: ../clients/trafci.zip
+
+java_files:=$(shell find src/main/java -name *.java*|grep -v Vproc.java)
+
+target/trafciInstaller.jar target/trafciInstaller.tar: $(java_files)
+	mvn install -DskipTests
 	./getBuildInfo
 	export buildId=`head -n 1 buildId`
 	mvn -f installer_pom.xml -DbldId=${buildId} clean package -DskipTests
-Trafci_deploy:
+
+../clients/trafci.zip: target/trafciInstaller.jar
 	zip -r ../clients/trafci.zip -j target/trafciInstaller.jar utils/README
 	java -jar target/trafciInstaller.jar -silent -installDir ${TRAF_HOME}
 
-clean:
-	mvn -f installer_pom.xml clean
-	mvn -f pom.xml clean
+mvn_clean:
+	-@mvn -f pom.xml clean| grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi) 

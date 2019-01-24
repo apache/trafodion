@@ -23,27 +23,29 @@
 
 include ../macros.gmk #top level
 BLD_TRAFODION_REST_TARNAME           =rest-$(TRAFODION_VER).tar.gz
+java_files:=$(shell find src/main/java -name *.java*)
 
 VFILE			    =trafodion-rest.jar.versions
 GENVERS			    =./genvers
 
 .NOTPARALLEL: all
 
-all: build_all
+all: target/rest-${TRAFODION_VER}.jar 
 
-build_all: build_chk
+target/rest-${TRAFODION_VER}.jar: $(java_files)
+	$(GENVERS) > $(VFILE)
+	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
+	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
 	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_rest.log"
 	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_rest.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	$(RM) $(VFILE)
 
-build_chk:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
 
-clean:
-	-$(MAVEN) clean |grep ERROR
+mvn_clean:
+	$(MAVEN) clean | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' 
+
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi) 
 	$(RM) build_rest.log
 	$(RM) $(VFILE)
 	$(RM) ../../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_REST_TARNAME)

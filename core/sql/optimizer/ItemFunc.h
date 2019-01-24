@@ -5891,9 +5891,7 @@ class SplitPart : public CacheableBuiltinFunction
 public: 
   SplitPart(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr)
     :CacheableBuiltinFunction(ITM_SPLIT_PART, 3, val1Ptr, val2Ptr, val3Ptr)
-    {
-      allowsSQLnullArg() = FALSE;
-    } 
+    {} 
 
    virtual ~SplitPart();
 

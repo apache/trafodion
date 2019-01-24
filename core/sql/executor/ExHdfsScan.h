@@ -353,7 +353,6 @@ protected:
   ComCondition * lastErrorCnd_;
   NABoolean checkRangeDelimiter_;
 
-  NABoolean dataModCheckDone_;
   ComDiagsArea * loggingErrorDiags_;
 
   // this array is populated from the info list stored as Queue.

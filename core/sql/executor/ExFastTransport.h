@@ -406,11 +406,6 @@ public:
 
 protected:
 
-
-  Lng32 lobInterfaceDataModCheck(Int64 &failedModTS,
-                                 char * failedLocBuf,
-                                 Int32 &failedLocBufLen);
-
   virtual void insertUpQueueEntry(ex_queue::up_status status,
                           ComDiagsArea *diags,
                           NABoolean popDownQueue);
@@ -426,7 +421,6 @@ protected:
     return strlen(myTdb().getNullString()) == 0;
   }
 
-  ExLobGlobals * lobGlob_;
 
   char hdfsHost_[500];
   int  hdfsPort_;

@@ -451,6 +451,8 @@ s/ID MXID11.*$/qid filtered/g
 
 s/DataModMismatchDetails:[ 0-9a-zA-Z:,=_\/\.\-]*/DataModMismatchDetails: removed/g
 
+s/fileLoc:[ 0-9a-zA-Z:,=_\/\.\-]*/fileLoc: removed/g
+
 " $sedInput
 
 #

@@ -84,6 +84,8 @@
 #include "arkcmp_proc.h"
 #include "CmpContext.h"
 
+#include "HiveClient_JNI.h"
+
 // Printf-style tracing macros for the debug build. The macros are
 // no-ops in the release build.
 #ifdef _DEBUG
@@ -2020,76 +2022,70 @@ Statement * Statement::getCurrentOfCursorStatement(char * cursorName)
 }
 
 RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
-                                       ExLobGlobals * lobGlob,
                                        NABoolean &simCheckFailed,
                                        ComDiagsArea &diagsArea)
 {
   simCheckFailed = FALSE;
-  Lng32 retcode = 0;
 
   if ((si->hdfsRootDir() == NULL) || (si->modTS() == -1))
     return SUCCESS;
+ 
+  char *tmpBuf = new (&heap_) char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6];
+  Lng32 numParts = 0;
+  char *parts[4];
+  Int64 redefTime;
 
-  Int64 failedModTS = -1;
-  Lng32 failedLocBufLen = 1000;
-  char failedLocBuf[failedLocBufLen];
-  retcode = ExpLOBinterfaceDataModCheck
-    (lobGlob,
-     si->hdfsRootDir(),
-     si->hdfsHostName(),
-     si->hdfsPort(),
-     si->modTS(),
-     si->numPartnLevels(),
-     failedModTS,
-     failedLocBuf, failedLocBufLen);
-  if (retcode < 0)
-    {
-      Lng32 intParam1 = -retcode;
-      diagsArea << DgSqlCode(-EXE_ERROR_FROM_LOB_INTERFACE)
-                << DgString0("HDFS")
-                << DgString1("ExpLOBInterfaceDataModCheck")
-                << DgString2(getLobErrStr(intParam1))
-                << DgInt0(intParam1)
-                << DgInt1(0);
-      if (intParam1 == LOB_DATA_READ_ERROR)
-        {
-          if ((failedLocBufLen > 0) && (strlen(failedLocBuf) > 0))
-            {
-              char errBuf[strlen(si->tableName()) + 100 + failedLocBufLen];
-              snprintf(errBuf,sizeof(errBuf), "%s (fileLoc: %s)", si->tableName(), failedLocBuf);
-              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
-                        << DgString0(errBuf);              
-            }
-          else
-            {
-              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
-                        << DgString0(si->tableName());
-            }
-          simCheckFailed = TRUE;
-        }
-
-      return ERROR;
-    }
-
-  if (retcode == 1) // check failed
-    {
-      char errStr[2000];
-      /* str_sprintf(errStr, "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
-                  si->modTS(), failedModTS, 
-                  (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));*/
-      snprintf(errStr,sizeof(errStr), 
+  LateNameInfo::extractParts(si->tableName(), tmpBuf, numParts, parts, FALSE);
+  switch (numParts) {
+     case 1:
+        parts[2] = parts[0];
+        parts[1] = (char *)"default";
+        parts[0] = (char *)"HIVE";
+        break;
+     case 2:
+        parts[2] = parts[1];
+        parts[1] = parts[0];
+        parts[0] = (char *)"HIVE";
+        break;
+     case 3:
+        break;
+     default:
+        diagsArea << DgSqlCode(-24114);
+        return ERROR;
+  }
+  if (stricmp(parts[1], "HIVE") == 0)
+     parts[1] = (char *)"default";
+  HVC_RetCode hvcRetcode = HiveClient_JNI::getRedefTime(parts[1], parts[2], redefTime);
+  if (hvcRetcode == HVC_OK) {
+     if (redefTime > si->modTS()) {
+        simCheckFailed = TRUE;
+        char errStr[strlen(si->tableName()) + 100 + strlen(si->hdfsRootDir())];
+        snprintf(errStr,sizeof(errStr), 
                "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
-               si->modTS(), failedModTS, 
-               (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
-      
-      diagsArea << DgSqlCode(-EXE_HIVE_DATA_MOD_CHECK_ERROR)
-                << DgString0(errStr);
-
-      simCheckFailed = TRUE;
-
-      return ERROR;
-    }
-  
+               si->modTS(), redefTime, 
+               si->hdfsRootDir());
+        diagsArea << DgSqlCode(-EXE_HIVE_DATA_MOD_CHECK_ERROR)
+                  << DgString0(errStr);
+        NADELETEBASIC(tmpBuf, &heap_);
+        return ERROR;
+     }
+  } else if (hvcRetcode == HVC_DONE) {
+      char errBuf[strlen(si->tableName()) + 100 + strlen(si->hdfsRootDir())];
+      snprintf(errBuf,sizeof(errBuf), "%s (fileLoc: %s)", si->tableName(), si->hdfsRootDir());
+      diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                << DgString0(errBuf); 
+      NADELETEBASIC(tmpBuf, &heap_);
+      return ERROR;             
+  } else {
+     diagsArea << DgSqlCode(-1192)
+          << DgString0("HiveClient_JNI::getRedefTime")
+          << DgString1("")
+          << DgInt0(hvcRetcode)
+          << DgString2(getSqlJniErrorStr());
+     NADELETEBASIC(tmpBuf, &heap_);
+     return ERROR; 
+  } 
+  NADELETEBASIC(tmpBuf, &heap_);
   return SUCCESS;
 }
 
@@ -2107,8 +2103,6 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
       (qsi->siList()->numEntries() == 0))
     return SUCCESS;
 
-  ExLobGlobals * lobGlob = NULL; //getRootTcb()->getGlobals()->getExLobGlobal();
-  NABoolean lobGlobInitialized = FALSE;
   qsi->siList()->position();
   for (Lng32 i = 0; i < qsi->siList()->numEntries(); i++)
     {
@@ -2118,16 +2112,7 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
       simCheckFailed = FALSE;
       if (si->isHive())
         {
-          if ((NOT lobGlobInitialized) &&
-              (lobGlob == NULL))
-            {
-              ExpLOBinterfaceInit
-                (lobGlob, &heap_, context_,
-                 FALSE, si->hdfsHostName(), si->hdfsPort());
-              lobGlobInitialized = TRUE;
-            }
-
-          retcode = doHiveTableSimCheck(si, lobGlob, simCheckFailed, diagsArea);
+          retcode = doHiveTableSimCheck(si,simCheckFailed, diagsArea);
           if (retcode == ERROR)
             {
               goto error_return; // diagsArea is set
@@ -2135,13 +2120,9 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
         }
     } // for
 
-  if (lobGlob)
-    ExpLOBinterfaceCleanup(lobGlob);
   return SUCCESS;
   
  error_return:
-  if (lobGlob)
-    ExpLOBinterfaceCleanup(lobGlob);
   return ERROR;
 }
 

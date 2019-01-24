@@ -1021,7 +1021,7 @@ CREATE SCHEMA HIVE.HIVESCH0078;
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8577] Table, index, or view HIVE.HIVESCH007.THIVE1 was not found.
+*** WARNING[8577] Table, index, or view HIVE.HIVESCH007.THIVE1 (fileLoc: hdfs://localhost:9000/user/hive/warehouse/hivesch007.db/thive1) was not found.
 
 --- 0 row(s) selected.
 >>

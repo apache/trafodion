@@ -536,6 +536,15 @@
   </dependencies>
   
   <profiles>
+    <profile>
+      <id>doclint-java8-disable</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <properties>
+        <javadoc.opts>-Xdoclint:none</javadoc.opts>
+      </properties>
+    </profile>
     <!-- JDBC drivers needed for compile, but not site docs
          This allows turning off dependency on command line (-P '!jdbc') -->
     <profile>
@@ -640,6 +649,7 @@
         <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <docfilessubdirs>true</docfilessubdirs>
+	  <additionalparam>${javadoc.opts}</additionalparam>
         </configuration>
         <reportSets>
           <reportSet>
