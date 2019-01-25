@@ -27,14 +27,14 @@ argList = sys.argv
 execNode = 0
 
 def isDev():
-	mySQROOT = ''
+	mySQVAR = ''
 	try:
-		mySQROOT = os.environ['TRAF_HOME']
+		mySQVAR = os.environ['TRAF_VAR']
 	except:
 		print "ERROR: $TRAF_HOME variable not set.  Please setup SeaQuest environment."
 		exit(1)
 
-	sqconfig = "%s/sql/scripts/sqconfig" % mySQROOT
+	sqconfig = "%s/sqconfig" % mySQVAR
 	grepCommand = ['grep', 'node-name=.[^A-Za-z].[0-9]*', sqconfig]
 
 	proc = subprocess.Popen(grepCommand, stdout = subprocess.PIPE, shell=False)

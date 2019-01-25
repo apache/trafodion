@@ -370,7 +370,7 @@ packageinstaller:
 	chmod +x $(PKG_BIN)
 
 srcpackage:
-	-rm etc/ms.env
+	-rm $(TRAF_VAR)/ms.env
 	tar chzf ${SRC_PKG_TAR} -X build-scripts/package.exclude -X build-scripts/package.exclude.$(SQ_MBTYPE) .
 
 #	Targets to tar/gzip the regression tree
@@ -387,7 +387,7 @@ package-dcs:
 
 #	Targets to tar/gzip the self installer with sources
 srcpackagebin:
-	-rm etc/ms.env
+	-rm $(TRAF_VAR)/ms.env
 	cat $(TRAF_HOME)/sql/scripts/sqinstall > $(SRC_PKG_BIN)
 	echo "__ARCHIVE_BELOW__" >> $(SRC_PKG_BIN)
 	tar chzf - -X build-scripts/package.exclude -X build-scripts/package.exclude.$(SQ_MBTYPE) . >> $(SRC_PKG_BIN)

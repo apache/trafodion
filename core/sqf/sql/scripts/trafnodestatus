@@ -64,10 +64,10 @@ if [[ -z $TRAF_HOME ]]; then
     traf_exit 5;
 fi
 
-if [[ -z $SQSCRIPTS_DIR ]]; then
-    SQSCRIPTS_DIR=$TRAF_HOME/sql/scripts
+if [[ -z $SQVAR_DIR ]]; then
+    SQVAR_DIR=$TRAF_VAR
 fi
-SQCONFIGDB_FILE="$SQSCRIPTS_DIR/sqconfig.db"
+SQCONFIGDB_FILE="$SQVAR_DIR/sqconfig.db"
 if [[ ! -e ${SQCONFIGDB_FILE} ]]; then
     traf_echo "Cannot find the Trafodion configuration DB file ${SQCONFIGDB_FILE}"
     traf_echo "Please execute sqgen to generate this file."

@@ -114,7 +114,7 @@ sub printInitialLines {
     printScript(1, "#!/bin/sh \n");
     printTime;
 
-#    $smenv = "$ENV{'SQETC_DIR'}/seamonster.env";
+#    $smenv = "$ENV{'TRAF_VAR'}/seamonster.env";
 #    if ( -e $smenv ) {
 #      print "\nThe SeaMonster environment variable file $smenv exists.\n";
 #      print "The file will not be re-generated.\n\n";
@@ -135,7 +135,7 @@ sub printInitialLines {
 #      close(ETC);
 #    }
 
-    $msenv = "$ENV{'SQETC_DIR'}/ms.env";
+    $msenv = "$ENV{'TRAF_VAR'}/ms.env";
 
     open (ETC,">>$msenv")
         or die("unable to open $msenv");
@@ -223,7 +223,7 @@ sub printOverflowLines {
         return;
     }
 
-    $msenv = "$ENV{'SQETC_DIR'}/ms.env";
+    $msenv = "$ENV{'TRAF_VAR'}/ms.env";
 
     open (ETC,">>$msenv")
         or die("unable to open $msenv");
@@ -558,7 +558,7 @@ sub openFiles {
 sub endGame {
 
     if ($bVirtualNodes == 1) {
-        open (SQSH,">$sqshell")
+        open (SQSH,">$ENV{'TRAF_VAR'}/$sqshell")
             or die("unable to open $sqshell");
         printInitLinesAuxFiles (SQSH);
 

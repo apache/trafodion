@@ -425,7 +425,7 @@ if [[ -z ${TRAF_AGENT} ]]; then
     $SQPDSHA "rm -rf $TRAF_VAR/hbase_classpath"
 
     # Clear unique strings
-    $SQPDSHA "cd $TRAF_HOME/sql/scripts; utilConfigDb -u"
+    $SQPDSHA "cd $TRAF_VAR; utilConfigDb -u"
 
     echoLog "Executing sqipcrm (output to sqipcrm.out)"
     sqipcrm > $TRAF_LOG/sqipcrm.out 2>&1
@@ -477,8 +477,8 @@ let lv_num_checks=0
 #Long recoveries on a cluster could delay TX services
 let lv_max_checks=600
 # Check if resource is a work station
-if [[ -e ${TRAF_HOME}/etc/ms.env ]] ; then
-   VIRT_NODES=`awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $TRAF_HOME/etc/ms.env`
+if [[ -e ${TRAF_VAR}/ms.env ]] ; then
+   VIRT_NODES=`awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $TRAF_VAR/ms.env`
    if [[ -n "$VIRT_NODES" ]] ; then
       #Some utilities on workstations will timeout if we wait too long
       lv_max_checks=360

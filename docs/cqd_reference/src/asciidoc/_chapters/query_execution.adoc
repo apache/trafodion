@@ -256,7 +256,7 @@ Multiple locations can be specified, separated by a colon. For example, /tmp/scr
 * Specify this location at installation time.
 
 +
-Currently the scratch directory locations are set at installation time. The code that manages scratch and temporary files reads environment variables in $TRAF_HOME/etc/ms.env to determine where to create scratch files.
+Currently the scratch directory locations are set at installation time. The code that manages scratch and temporary files reads environment variables in $TRAF_VAR/ms.env to determine where to create scratch files.
 
 +
 The CQD overrides the STFS_HDD_LOCATION (disk) and STFS_SSD_LOCATION (SSD disk) environment variables. 
@@ -274,7 +274,7 @@ The directories MUST exist on every node and the Trafodion user must have permis
 * If the scratch directory location is not set at installation time, this CQD is valid only for the duration of the session.
 
 +
-These settings will not be stored in $TRAF_HOME/etc/ms.env and will override the environment variables settings as long as the CQD is in effect.
+These settings will not be stored in $TRAF_VAR/ms.env and will override the environment variables settings as long as the CQD is in effect.
 
 | *Production Usage*          | Please contact {project-support}.
 | *Impact*                    |

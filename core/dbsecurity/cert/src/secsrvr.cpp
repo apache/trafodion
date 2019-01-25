@@ -227,7 +227,7 @@ static void SetupCertFilename()
    char *pub_filename = getenv("SQCERT_PUBKEY");
    char *clustername  = getenv("CLUSTERNAME");
    char *homedir  = getenv("HOME");
-   char *sqroot  = getenv("TRAF_HOME");
+   char *sqvar  = getenv("TRAF_VAR");
    char *certdir = getenv("SQCERT_DIR");
 
    // Get the Certificate directory and the filename
@@ -245,9 +245,9 @@ static void SetupCertFilename()
       else
       { // it's a workstation
 
-      if (sqroot != NULL)
+      if (sqvar != NULL)
       {
-         strncpy (privkey_file, sqroot, MS_MON_MAX_PROCESS_PATH);
+         strncpy (privkey_file, sqvar, MS_MON_MAX_PROCESS_PATH);
          privkey_file[MS_MON_MAX_PROCESS_PATH-1] = 0;
       }
       else

@@ -449,7 +449,7 @@ function sqsavelogs {
     cp -p $TRAF_LOG/stdout_* ${lv_stdout_dir_name}
 
     lv_config_dir_name=${lv_copy_to_dir}/sqconfig_db
-    cp -p $TRAF_HOME/sql/scripts/sqconfig.db ${lv_config_dir_name}/${lv_node}_sqconfig.db
+    cp -p $TRAF_VAR/sqconfig.db ${lv_config_dir_name}/${lv_node}_sqconfig.db
 
     sqsave_linux_info ${lv_linux_collection_dir}/linux
 
@@ -610,12 +610,12 @@ function sqcollectlogs {
 
     cp -p $TRAF_HOME/sqenv.sh .
     cp -p $TRAF_HOME/sqenvcom.sh .
-    cp -p $TRAF_HOME/etc/ms.env .
+    cp -p $TRAF_VAR/ms.env .
     cp -p $TRAF_HOME/sql/scripts/gomon.cold .
     cp -p $TRAF_HOME/sql/scripts/gomon.warm .
-    cp -p $TRAF_HOME/sql/scripts/sqconfig .
-    cp -p $TRAF_HOME/sql/scripts/mon.env . 2>/dev/null
-    cp -p $TRAF_HOME/sql/scripts/shell.env . 2>/dev/null
+    cp -p $TRAF_CONF/sqconfig .
+    cp -p $TRAF_VAR/mon.env . 2>/dev/null
+    cp -p $TRAF_VAR/shell.env . 2>/dev/null
     cd ..
 #   end configuration info
 

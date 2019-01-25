@@ -606,7 +606,7 @@ void IpcServer::logEspRelease(const char * filename, int lineNum,
   {
     /*
     Coverage notes: to test this code in a dev regression requires
-    changing $TRAF_HOME/etc/ms.env.  However, it was tested in
+    changing $TRAF_VAR/ms.env.  However, it was tested in
     stress test on May 10, 2012.
     */
     char logMsg[500];
@@ -1624,7 +1624,7 @@ WaitReturnStatus IpcSetOfConnections::waitOnSet(IpcTimeout timeout,
                             /*
                             Coverage notes: to test this code in a dev 
                             regression requires changing 
-                            $TRAF_HOME/etc/ms.env.  However, it was 
+                            $TRAF_VAR/ms.env.  However, it was 
                             tested in stress test on 
                             May 10, 2012.
                             */

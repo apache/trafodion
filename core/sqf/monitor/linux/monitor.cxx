@@ -1375,11 +1375,22 @@ int main (int argc, char *argv[])
     if ( IsAgentMode || IsNameServer )
     {
         MON_Props xprops( true );
+        char *envfile;
+        env = getenv( "TRAF_CONF" );
+        if (env)
+        {
+           envfile = new char [strlen(env)+16];
+           strcpy(envfile, env);
+        } else {
+           envfile = new char [17];
+           strcpy(envfile, ".");
+        }
 #ifdef NAMESERVER_PROCESS
-        xprops.load( "nameserver.env" );
+        strcat(envfile, "/nameserver.env");
 #else
-        xprops.load( "monitor.env" );
+        strcat(envfile, "/monitor.env");
 #endif
+        xprops.load( envfile );
         MON_Smap_Enum xenum( &xprops );
         while ( xenum.more( ) )
         {

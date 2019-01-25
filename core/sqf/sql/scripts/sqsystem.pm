@@ -40,10 +40,10 @@ sub isProd
 
 sub isSingleNode
 {
-   my $TRAF_HOME = $ENV{'TRAF_HOME'};
+   my $TRAF_CONF = $ENV{'TRAF_CONF'};
 
    # Get the number of nodes in the instance
-   my $TempList = `grep 'node-name=.[^A-Za-z].[0-9]*' $TRAF_HOME/sql/scripts/sqconfig | grep -v "\#" | cut -d"=" -f3 | cut -d";" -f1 | sort -u`;
+   my $TempList = `grep 'node-name=.[^A-Za-z].[0-9]*' $TRAF_CONF/sqconfig | grep -v "\#" | cut -d"=" -f3 | cut -d";" -f1 | sort -u`;
    if (!$TempList)
      {# Single-node development system
       return 1;  # true

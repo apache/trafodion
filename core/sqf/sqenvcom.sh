@@ -226,8 +226,8 @@ fi
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
 # so we can determine if we are on a workstation or not
-if [[ -e ${TRAF_HOME}/etc/ms.env ]] ; then
-  VIRT_NODES=$(awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $TRAF_HOME/etc/ms.env)
+if [[ -e ${TRAF_VAR}/ms.env ]] ; then
+  VIRT_NODES=$(awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $TRAF_VAR/ms.env)
   if [[ -n "$VIRT_NODES" ]] ; then
      export SQ_VIRTUAL_NODES="$VIRT_NODES"
   fi
@@ -964,7 +964,7 @@ This is not supported. To change environments, do the following:
   sqstop
   <make any changes, e.g. update Hadoop, HBase, MySQL>
   start a new shell and source in sqenv.sh
-  rm \$TRAF_HOME/etc/ms.env
+  rm \$TRAF_VAR/ms.env
   sqgen
   start a new shell and source in sqenv.sh
   sqstart

@@ -30,7 +30,7 @@
 # - Restarts HBase
 # - Repairs HBase (ilh_hbase_repair)
 # - Checks whether HBase is ready (uses ilh_hbcheck)
-# - Deletes the Trafodion env file: $TRAF_HOME/etc/ms.env
+# - Deletes the Trafodion env file: $TRAF_VAR/ms.env
 # - Regenerates Config (sqgen)
 # - Starts up Trafodion (sqstart)
 #
@@ -51,7 +51,7 @@ echo 'This script will do the following:'
 echo ' - Kill the Trafodion env (pkillall)'
 echo " - Kill the HBase env and delete the zookeeper data directory (ilh_cleanhb ${lv_ilh_cleanhb_mode})"
 echo ' - Restart HBase (swstarthbase)'
-echo ' - Delete the env file: $TRAF_HOME/etc/ms.env'
+echo ' - Delete the env file: $TRAF_VAR/ms.env'
 echo ' - sqgen'
 echo ' - sqstart'
 
@@ -98,8 +98,8 @@ echo "Repairing HBase (hbase hbck -repair)"
 ilh_hbase_repair y
 
 echo "--------------------------------------"
-echo "deleting $TRAF_HOME/etc/ms.env"
-rm $TRAF_HOME/etc/ms.env
+echo "deleting $TRAF_VAR/ms.env"
+rm $TRAF_VAR/ms.env
 
 run_util sqgen
 

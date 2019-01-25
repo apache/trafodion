@@ -512,8 +512,8 @@ static Check_Status checkRequiredAttributes(LDAPFileContents & config)
 // *       no other env variables are used if this is present                  *
 // * TRAFAUTH_CONFIGDIR -- If present, directory in which file will be found.  *
 // *       overrides any other defaults from below                             *
-// * TRAF_HOME -- Prefix for standard location:                                *
-// *       $TRAF_HOME/etc/.traf_authentication_config                          *
+// * TRAF_CONF -- Standard location:                                *
+// *       $TRAF_CONF/.traf_authentication_config                          *
 // *                                                                           *
 // * Our algorithm for picking the name/location for the config file is:       *
 // *  IF AUTHLDAP_CONFIGFILE is set to a non-empty string                      *
@@ -523,7 +523,7 @@ static Check_Status checkRequiredAttributes(LDAPFileContents & config)
 // *       the contents are used as the dir and .traf_authentication_config    *
 // *       is the name of the file in that dir                                 *
 // *    ELSE                                                                   *
-// *        use TRAF_HOME/etc/.traf_authentication_config                      *
+// *        use TRAF_CONF/.traf_authentication_config                      *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -537,7 +537,6 @@ static char *getAuthConfigFilename(void)
 
 {
 
-#define AUTH_CONFIG_FNAME_SUFFIX "/sql/scripts/.traf_authentication_config"
 #define AUTH_CONFIG_SIMPLE_NAME "/.traf_authentication_config"
 
    if (configFilename != NULL)
@@ -581,20 +580,20 @@ char *configFile = getenv("TRAFAUTH_CONFIGFILE");
    }    
 
 // If we get here the full name or the explicit directory were
-// not specified.  Append the name to the value of TRAF_HOME.
-char *sqRoot = getenv("TRAF_HOME"); //ACH changing for Trafodion?
+// not specified.  Append the name to the value of TRAF_CONF.
+char *sqRoot = getenv("TRAF_CONF"); //ACH changing for Trafodion?
 
    if (sqRoot == NULL || strlen(sqRoot) == 0)
       return configFilename;
 
-   bufSize = strlen(sqRoot) + strlen(AUTH_CONFIG_FNAME_SUFFIX) + 1;
+   bufSize = strlen(sqRoot) + strlen(AUTH_CONFIG_SIMPLE_NAME) + 1;
    configFilename = new char[bufSize];  
    if (configFilename == NULL)
       return configFilename;
 
    freeConfigFilename = true;
    strcpy(configFilename,sqRoot);
-   strcat(configFilename,AUTH_CONFIG_FNAME_SUFFIX);
+   strcat(configFilename,AUTH_CONFIG_SIMPLE_NAME);
    return configFilename;
    
 }

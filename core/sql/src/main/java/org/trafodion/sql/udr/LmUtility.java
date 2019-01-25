@@ -961,7 +961,7 @@ public class LmUtility {
      **/
     public static Path getSandboxRoot()
     {
-        return Paths.get(System.getenv("TRAF_HOME"), "udr");
+        return Paths.get(System.getenv("TRAF_VAR"), "udr");
     }
 
     /**
@@ -978,7 +978,7 @@ public class LmUtility {
         if (userid == null || userid.length() == 0)
             return getSandboxRootForUser(getPublicUserId());
 
-        return Paths.get(System.getenv("TRAF_HOME"), "udr", userid);
+        return Paths.get(System.getenv("TRAF_VAR"), "udr", userid);
     }
 
     /**
@@ -995,7 +995,7 @@ public class LmUtility {
         if (userid == null || userid.length() == 0)
             return getExternalLibsDirForUser(getPublicUserId());
 
-        return Paths.get(System.getenv("TRAF_HOME"), "udr", userid, "external_libs");
+        return Paths.get(System.getenv("TRAF_VAR"), "udr", userid, "external_libs");
     }
 
     static class JarFilter implements FilenameFilter {

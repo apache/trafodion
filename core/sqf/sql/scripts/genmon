@@ -21,4 +21,4 @@ echo "Generating mon.env"
 #
 # @@@ END COPYRIGHT @@@
 #
-echo "TRAF_HOME=$TRAF_HOME" > mon.env
+echo "TRAF_HOME=$TRAF_HOME" > $TRAF_VAR/mon.env

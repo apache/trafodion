@@ -44,7 +44,7 @@ function monRegClusterData
 {
 
 # Monitor registry: cluster keys and values
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -59,7 +59,7 @@ function monNodeSpecificConfig
 
 # Node configuration: for specific node
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -94,7 +94,7 @@ function monNodeConfig
 
 # Node configuration: for all nodes
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -110,7 +110,7 @@ select "nid=", l.lNid \
 EOF
 
 echo "Spare nodes:"
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -124,7 +124,7 @@ select "pnid=", s.pNid \
 EOF
 
 echo "Excluded cores nodes:"
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -143,7 +143,7 @@ function monLNodeSpecificConfig
 
 # Logical Node configuration: for specific node
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -164,7 +164,7 @@ function monLNodeConfig
 
 # Node configuration: for all nodes
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -184,7 +184,7 @@ function monSNodeSpecificConfig
 
 # Spare Node configuration: for specific node
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -204,7 +204,7 @@ function monSNodeConfig
 
 # Spare Node configuration: for all nodes
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -223,7 +223,7 @@ function monPNodeSpecificConfig
 
 # Physical Node configuration: for specific node
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -242,7 +242,7 @@ function monPNodeConfig
 
 # Physical Node configuration: for all nodes
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -260,7 +260,7 @@ function monRegSpecificProcData
 
 # Monitor registry: process keys and values for a specific process
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -274,7 +274,7 @@ function monRegProcData
 {
 
 # Monitor registry: process keys and values
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .separator ""
 .headers on
 .mode list
@@ -287,7 +287,7 @@ EOF
 function persistentData
 {
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .headers on
 select * from monRegPersistData;
 EOF
@@ -297,7 +297,7 @@ EOF
 function uniqueStrings
 {
 
-sqlite3 sqconfig.db <<EOF
+sqlite3 $TRAF_VAR/sqconfig.db <<EOF
 .headers on
 select * from monRegUniqueStrings;
 EOF

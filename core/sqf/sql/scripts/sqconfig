@@ -44,6 +44,6 @@ end name-server
 #
 ###############################################################################
 begin overflow
-hdd $TRAF_HOME/tmp
+hdd $TRAF_VAR
 #ssd /ssd/directory
 end overflow

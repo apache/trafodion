@@ -2210,7 +2210,10 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     setEnvFromRegistry ( childEnv, nextEnv );
 
     xprops_exe_file = NULL;
-    xprops.load("mon.env");
+    char *envfile = new char [strlen(trafVar_.c_str())+9];
+    strcpy(envfile, trafVar_.c_str());
+    strcat(envfile, "/mon.env");
+    xprops.load(envfile);
     MON_Smap_Enum xenum(&xprops);
     if (xenum.more())
     {

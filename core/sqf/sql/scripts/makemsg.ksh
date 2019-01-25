@@ -23,7 +23,7 @@
 #
 function GetSQcnfg {
 # Get SQ Node configuration
- TempList=`grep -o 'node-name=.[^A-Za-z].[0-9]*' $TRAF_HOME/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
+ TempList=`grep -o 'node-name=.[^A-Za-z].[0-9]*' $TRAF_CONF/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
 
  i=0
  for NODE in $TempList
@@ -43,7 +43,7 @@ function GetSQcnfg {
  
  else
      echo
-     echo "Could not parse $TRAF_HOME/sql/scripts/sqconfig file."
+     echo "Could not parse $TRAF_CONF/sqconfig file."
      echo "Please ensure sqenv.sh has been sourced and the sqconfig file is valid.  Then, re-run sqgen."
      echo
      exit 1;

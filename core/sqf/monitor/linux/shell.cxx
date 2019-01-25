@@ -2729,8 +2729,8 @@ int copy_config_db( char *node_name )
     char cmd[256];
     int  error = 0;
 
-    sprintf(cmd, "pdcp -p -w %s %s/sql/scripts/sqconfig.db %s/sql/scripts/.", node_name,
-              getenv("TRAF_HOME"), getenv("TRAF_HOME") );
+    sprintf(cmd, "pdcp -p -w %s %s/sqconfig.db %s/.", node_name,
+              getenv("TRAF_VAR"), getenv("TRAF_VAR") );
 
     error = system(cmd);
 
@@ -5610,6 +5610,7 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     char np[6];
     char path[MAX_SEARCH_PATH];
     char sqroot[MAX_PROCESS_PATH];
+    char sqvar[MAX_PROCESS_PATH];
     pid_t os_pid;
     const char method_name[] = "start_monitor";
     // Set working directory for monitor if needed
@@ -5756,7 +5757,11 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     // do it here so that variables can be overwritten
     char **xvals = NULL;
     MON_Props xprops(true);
-    xprops.load("shell.env");
+    strcpy (sqvar, getenv("TRAF_VAR"));
+    char *envfile = new char [strlen(sqvar)+11];
+    strcpy(envfile, sqvar);
+    strcat(envfile, "/shell.env");
+    xprops.load(envfile);
     MON_Smap_Enum xenum(&xprops);
     int xsize = xprops.size();
     int xinx;

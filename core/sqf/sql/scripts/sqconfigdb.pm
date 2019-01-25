@@ -363,7 +363,7 @@ sub openDb {
                   RaiseError => 1,
                   PrintError => 0,
                   ShowErrorStatement => 1};
-    $DBH = DBI->connect("dbi:SQLite:dbname=sqconfig.db","","",$dbargs);
+    $DBH = DBI->connect("dbi:SQLite:dbname=$ENV{'TRAF_VAR'}/sqconfig.db","","",$dbargs);
 #   Disable database synchronization (fsync) because it slows down writes
 #   too much.
     $DBH->do("PRAGMA synchronous = OFF");

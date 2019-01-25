@@ -444,7 +444,7 @@ void ReadCppEventsUDFInterface::describeDesiredDegreeOfParallelism(
 {
   // check for configurations with virtual nodes. Run the UDF serially
   // in those cases, since all the virtual nodes share the same node.
-  int usesNoVirtualNodes = system("grep '^[ \t]*_virtualnodes ' $TRAF_HOME/sql/scripts/sqconfig >/dev/null");
+  int usesNoVirtualNodes = system("grep '^[ \t]*_virtualnodes ' $TRAF_CONF/sqconfig >/dev/null");
 
   if (usesNoVirtualNodes != 0 || useParallelExecForVirtualNodes_)
     // this TMUDF needs to run once on each node, since every
