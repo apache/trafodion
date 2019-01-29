@@ -31,9 +31,7 @@
 --     (10/21/2014) - Created.
 -- 
 
--- remove after this is made the default.  
-cqd TRAF_BLOB_AS_VARCHAR 'OFF'; 
-cqd TRAF_CLOB_AS_VARCHAR 'OFF'; 
+
 
 
 ?section clnup
@@ -500,6 +498,11 @@ log LOG130;
 sh rm t130_extract_command;
 sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',create,truncate);/g" >> t130_extract_command;
 obey t130_extract_command;
+
+--test alter 
+alter table tlob130bt add column c5 blob;
+--should show default value NULL
+select c5 from tlob130bt; 
 
 ?section lob_gc_cleanup
 log;

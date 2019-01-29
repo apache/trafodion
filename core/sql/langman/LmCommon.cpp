@@ -282,8 +282,18 @@ LmHandle loadDll(
   // load the library. We can simply load the DLL.
   LmHandle container = NULL;
   const char *operation = "dlopen";
-  container = (LmHandle) dlopen(libraryName, RTLD_NOW | RTLD_GLOBAL);
-
+  short trycount = 3;
+  while (trycount >0)
+    {
+      container = (LmHandle) dlopen(libraryName, RTLD_NOW | RTLD_GLOBAL);
+      if (container == NULL)
+        {
+          sleep(30);
+          trycount--;
+        }
+      else
+        trycount = 0;
+    }
   LM_DEBUG3("%s(%s) returned 0x%08x\n", operation, libraryName, container);
   
   if (container == NULL)

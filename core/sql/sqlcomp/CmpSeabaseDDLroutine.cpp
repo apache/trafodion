@@ -1205,7 +1205,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   libUID = getObjectInfo(&cliInterface,
                          libCatNamePart, libSchNamePart, 
                          libObjNamePart, COM_LIBRARY_OBJECT,
-                         dummy32,dummy32,dummy64,FALSE,FALSE, &dummy64, &redefTime);
+                         dummy32,dummy32,dummy64,TRUE,FALSE, &dummy64, &redefTime);
      
 
   if (libUID < 0)

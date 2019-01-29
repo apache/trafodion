@@ -49,10 +49,14 @@ enum LOBcliQueryType
   {
     LOB_CLI_INIT,
 
-    // create the desc table
+    // create the desc tables
     LOB_CLI_CREATE,
 
-    // drops the desc table
+    // alter the MD table and create LOB desc tables
+    LOB_CLI_ALTER,
+    
+
+    // drops the desc tables
     LOB_CLI_DROP,
 
     // cleanup LOBs. Cant use CLI_DROP as MD may be in an inconsistent state.

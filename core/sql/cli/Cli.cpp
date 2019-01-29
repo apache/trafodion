@@ -9517,20 +9517,23 @@ Lng32 SQLCLI_LOBddlInterface
   switch (qType)
     {
     case LOB_CLI_CREATE:
+    case LOB_CLI_ALTER :
       {
-	// create lob metadata table
-	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, column_name varchar(256 bytes) character set utf8, primary key (lobnum)) ",lobMDName);
-	 lobDebugInfo(query,0,__LINE__,lobTrace);
+        if (qType != LOB_CLI_ALTER)
+          {
+            // create lob metadata table
+            str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, column_name varchar(256 bytes) character set utf8, primary key (lobnum)) ",lobMDName);
+            lobDebugInfo(query,0,__LINE__,lobTrace);
 
-	// set parserflags to allow ghost table
-	currContext.setSqlParserFlags(0x1);
+            // set parserflags to allow ghost table
+            currContext.setSqlParserFlags(0x1);
 	
-	cliRC = cliInterface->executeImmediate(query);	
-	currContext.resetSqlParserFlags(0x1);
+            cliRC = cliInterface->executeImmediate(query);	
+            currContext.resetSqlParserFlags(0x1);
 	
-	if (cliRC < 0)
-	    goto error_return;
-	
+            if (cliRC < 0)
+              goto error_return;
+          }
 	// populate the lob metadata table
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
