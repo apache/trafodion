@@ -693,6 +693,7 @@ public:
     ,scale_(scale)
     ,precision_(precision)
   {
+    precision_high_ = 0;
     setCollation(CharInfo::DefaultCollation);
     setClassID(SimpleTypeID);        
     memset(fillers_, 0, sizeof(fillers_));
@@ -707,6 +708,7 @@ public:
       ,precision_(precision)
       ,collation_(collation)
   {
+    precision_high_ = 0;
     setClassID(SimpleTypeID);        
     memset(fillers_, 0, sizeof(fillers_));
   } 
@@ -723,6 +725,7 @@ public:
 	      DefaultClass defClass,
 	      Int16 upshift)
       {
+        precision_high_ = 0;
         setClassID (SimpleTypeID);
 	setLength (length);
 	setScale (scale);
@@ -744,6 +747,7 @@ public:
      length_ = 0;
      scale_ = 0;
      precision_ = 0;
+     precision_high_ = 0;
      setCollation(CharInfo::DefaultCollation);
      memset(fillers_, 0, sizeof(fillers_));    
    }
@@ -759,9 +763,10 @@ public:
   Int16 getScale()            {return scale_;}
   UInt16 getScaleAsUI()       {return (UInt16)scale_;}
 
-  Int32 getPrecision()        {return (UInt16)precision_;} // Treat as UInt16 in case 0x8000 or bigger
+  Int32 getPrecision()
+  {return (UInt16)precision_ | ((UInt32)precision_high_ << 16);}
   inline void setPrecision(Int32 precision)
-                              {precision_ = (Int16)precision;}
+  {precision_ = (Int16)precision; precision_high_ = (Int16)((UInt32)precision >> 16);}
 
   // overload member scale_ to store the charset.
   void setCharSet(CharInfo::CharSet charSet)
@@ -856,13 +861,14 @@ private:
   Int16 precision_; // 06-07
   Int16 isoMapping_; // 08-09
   Int16 collation_; // 10-11
+  Int16 precision_high_; // 12-13
 
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char fillers_[4]; //12-15
+  char fillers_[2]; //14-15
 
 };
 
