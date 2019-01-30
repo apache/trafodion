@@ -160,8 +160,9 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
         {
            char errString[200];
            NAString errNAString;
-           sprintf(errString , "Error %d creating directory : %s", err, cachedLibPath.data()); 
+           sprintf(errString , "Error %d creating directory : ",err); 
            errNAString = errString;
+           errNAString += cachedLibPath;
            *CmpCommon::diags() <<  DgSqlCode(-4316)
                                   << DgString0(( char *)errNAString.data());
            bindWA->setErrStatus();

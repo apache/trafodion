@@ -818,8 +818,9 @@ Int32 ExUdrTcb::fixup()
              
                char errString[200];
                NAString errNAString;
-               sprintf(errString , "Error %d creating directory %s :",err, cachedLibPath.data()); 
-               errNAString = errString;            
+               sprintf(errString , "Error %d creating directory :",err ); 
+               errNAString = errString ;   
+               errNAString += cachedLibPath;         
                *getOrCreateStmtDiags() <<  DgSqlCode(-4316)
                                        << DgString0(( char *)errNAString.data());
                return FIXUP_ERROR;
