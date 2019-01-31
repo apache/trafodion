@@ -7082,7 +7082,7 @@ const NAType *LOBconvert::synthesizeType()
 
       Lng32 tgtSize = MINOF((Lng32)op1.getLobLength(), tgtSize_);
 
-      NAType *result = new HEAP SQLVarChar(HEAP, tgtSize, Lob_Invalid_Storage,
+      NAType *result = new HEAP SQLVarChar(HEAP, tgtSize,
 					   typ1.supportsSQLnull());
       return result;
     }
@@ -7114,7 +7114,7 @@ const NAType *LOBextract::synthesizeType()
   
   Lng32 tgtSize = MINOF((Lng32)op1.getLobLength(), tgtSize_);
   
-  NAType *result = new HEAP SQLVarChar(HEAP, tgtSize, Lob_Invalid_Storage,
+  NAType *result = new HEAP SQLVarChar(HEAP, tgtSize,
 				       typ1.supportsSQLnull());
   return result;
 }

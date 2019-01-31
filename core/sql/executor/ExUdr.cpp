@@ -809,20 +809,18 @@ Int32 ExUdrTcb::fixup()
           else
             libOrJarName = myTdb().getContainerName();
           Int32 err = 0;
-          if(ComGenerateUdrCachedLibName(libOrJarName.data(),
+          if(err=ComGenerateUdrCachedLibName(libOrJarName.data(),
                                          myTdb().getLibraryRedefTime(),
                                          myTdb().getLibrarySchName(),
                                          dummyUser,
                                          cachedLibName, cachedLibPath))
             {
-              NAString cachedFullName = cachedLibPath+"/"+cachedLibName;
+             
                char errString[200];
                NAString errNAString;
-               sprintf(errString , "Error %d creating directory :",err); 
-               errNAString = errString;
-               errNAString += cachedFullName;
-             
-              
+               sprintf(errString , "Error %d creating directory :",err ); 
+               errNAString = errString ;   
+               errNAString += cachedLibPath;         
                *getOrCreateStmtDiags() <<  DgSqlCode(-4316)
                                        << DgString0(( char *)errNAString.data());
                return FIXUP_ERROR;

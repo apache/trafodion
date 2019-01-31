@@ -5672,7 +5672,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
                                           newSchName.length(),
                                           objUID,
                                           numLobs,
-                                          LOB_CLI_CREATE,
+                                          LOB_CLI_ALTER,
                                           lobNumList,
                                           lobTypList,
                                           lobLocList,
