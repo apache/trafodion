@@ -3381,7 +3381,7 @@ Lng32 HSGlobalsClass::Initialize()
             LM->StartTimer("Execute query to get row count");
             query  = "SELECT COUNT(*) FROM ";
             query += getTableName(user_table->data(), nameSpace);
-            query += " FOR READ UNCOMMITTED ACCESS";
+            query += " FOR SKIP CONFLICT ACCESS";
             retcode = cursor.fetchNumColumn(query, NULL, &actualRowCount);
             LM->StopTimer();
             HSHandleError(retcode);
@@ -4285,7 +4285,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     dml += cardHint;
 
     dml += sampleOption;
-    dml += " FOR READ UNCOMMITTED ACCESS";
+    dml += " FOR SKIP CONFLICT ACCESS";
     const Int32 hsALLOW_SPECIALTABLETYPE = 0x1;
     if (objDef->getNameSpace() == COM_IUD_LOG_TABLE_NAME)
     {
@@ -5884,7 +5884,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
 
         group->clistr->append(" GROUP BY ");
         group->clistr->append(columnName.data());
-        group->clistr->append(" FOR READ UNCOMMITTED ACCESS) T(");
+        group->clistr->append(" FOR SKIP CONFLICT ACCESS) T(");
         group->clistr->append(columnName.data());
         if (isVarChar)
         {
@@ -9397,7 +9397,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
 
             mgroup->clistr->append(" GROUP BY ");
             mgroup->clistr->append(mgroupColNames);
-            mgroup->clistr->append(" FOR READ UNCOMMITTED ACCESS) T(");
+            mgroup->clistr->append(" FOR SKIP CONFLICT ACCESS) T(");
             mgroup->clistr->append(mgroupColNames);
             mgroup->clistr->append(", FMTVAL, SUMVAL)");
             if(collectMCSkewedValues)
@@ -11729,7 +11729,7 @@ Lng32 HSGlobalsClass::prepareToReadColumnsIntoMem(HSCursor *cursor, Int64 rows)
   if (samplingUsed && !sampleTableUsed)
      internalSortQuery.append(sampleOption->data());
 
-  internalSortQuery.append(" FOR READ UNCOMMITTED ACCESS");  
+  internalSortQuery.append(" FOR SKIP CONFLICT ACCESS");  
 
   LM->Log("Preparing rowset...");
   // Allocate descriptors and statements for CLI and prepare rowset by
@@ -16314,7 +16314,7 @@ void HSInMemoryTable::generateSelectDQuery(NAString& smplTable, NAString& queryT
 
   queryText.append(" WHERE ");
   queryText.append(whereCondition_);
-  queryText.append(" FOR READ UNCOMMITTED ACCESS");
+  queryText.append(" FOR SKIP CONFLICT ACCESS");
 }
 
 
@@ -16413,7 +16413,7 @@ HSInMemoryTable::generateSelectIQuery(NAString& smplTable,
   queryText.append(" FROM ");
   queryText.append(smplTable.data());
 
-  queryText.append("_I FOR READ UNCOMMITTED ACCESS");
+  queryText.append("_I FOR SKIP CONFLICT ACCESS");
 }
 
 
