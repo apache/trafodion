@@ -532,7 +532,7 @@ Int64 HSTableDef::getRowCountUsingSelect()
 
   NAString query  = "SELECT COUNT(*) FROM ";
   query += getTableName(getObjectFullName(), getNameSpace());
-  query += " FOR READ UNCOMMITTED ACCESS;";
+  query += " FOR SKIP CONFLICT ACCESS;";
 
   if (cursor.fetchNumColumn(query, NULL, &rows) < 0) 
      rows = -1; // Error
