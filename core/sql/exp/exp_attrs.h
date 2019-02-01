@@ -688,7 +688,7 @@ public:
 
   SimpleType(Lng32 length,
              short scale,
-	     short precision)
+	     Int32 precision)
     :length_(length)
     ,scale_(scale)
     ,precision_(precision)
@@ -700,7 +700,7 @@ public:
 
   SimpleType(Lng32 length,
              short scale,
-	     short precision,
+	     Int32 precision,
 	     short collation)
       :length_(length)
       ,scale_(scale)
@@ -714,7 +714,7 @@ public:
   SimpleType( Int16 datatype, 
 	      Int32 length,
 	      Int16 scale,
-	      Int16 precision,
+	      Int32 precision,
 	      ExpTupleDesc::TupleDataFormat tdf, 
 	      Int32 alignment,
 	      Int16 nullFlag, 
@@ -759,9 +759,8 @@ public:
   Int16 getScale()            {return scale_;}
   UInt16 getScaleAsUI()       {return (UInt16)scale_;}
 
-  Int32 getPrecision()        {return (UInt16)precision_;} // Treat as UInt16 in case 0x8000 or bigger
-  inline void setPrecision(Int32 precision)
-                              {precision_ = (Int16)precision;}
+  Int32 getPrecision() {return precision_;}
+  inline void setPrecision(Int32 precision) {precision_ = precision;}
 
   // overload member scale_ to store the charset.
   void setCharSet(CharInfo::CharSet charSet)
@@ -853,16 +852,16 @@ public:
 private:
   Int32 length_;    // 00-03
   Int16 scale_;     // 04-05
-  Int16 precision_; // 06-07
-  Int16 isoMapping_; // 08-09
-  Int16 collation_; // 10-11
+  Int32 precision_; // 06-09
+  Int16 isoMapping_; // 10-11
+  Int16 collation_; // 12-13
 
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char fillers_[4]; //12-15
+  char fillers_[2]; //14-15
 
 };
 

@@ -1,0 +1,22 @@
+>>
+>>obey test316(test64k);
+>>
+>>create table cs316t64k (a varchar(65537) character set utf8);
+
+--- SQL operation complete.
+>>
+>>-- This would generate a warning or error of string overflow before
+>>-- the fix of JIRA 3259
+>>-- WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+>>insert into cs316t64k values ('aaa');
+
+--- 1 row(s) inserted.
+>>
+>>
+>>obey test316(clnup);
+>>
+>>drop table if exists cs316t64k;
+
+--- SQL operation complete.
+>>
+>>log;
