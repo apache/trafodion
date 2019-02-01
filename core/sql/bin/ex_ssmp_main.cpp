@@ -51,6 +51,7 @@
 #include "PortProcessCalls.h"
 #include "seabed/ms.h"
 #include "seabed/fs.h"
+#include "seabed/pctl.h"
 extern void my_mpi_fclose();
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(mxssmp)
@@ -246,8 +247,12 @@ void runServer(Int32 argc, char **argv)
     }
   }
 */
-    // wait for system messages only until ssmp starts receiving msgs.
-    cc->wait(300);
+    // Wait for messages, but we need ssmp to wake up periodically to
+    // perform garbage collection.
+    short mask = XWAIT(LREQ | LDONE, ssmpGlobals->getStatsMergeTimeout());
+    if (mask & LREQ) {
+      cc->wait(0);
+    }
     // go do GC.
     ssmpGlobals->work();
   }
