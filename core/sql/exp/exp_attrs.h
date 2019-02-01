@@ -688,12 +688,11 @@ public:
 
   SimpleType(Lng32 length,
              short scale,
-	     short precision)
+	     Int32 precision)
     :length_(length)
     ,scale_(scale)
     ,precision_(precision)
   {
-    precision_high_ = 0;
     setCollation(CharInfo::DefaultCollation);
     setClassID(SimpleTypeID);        
     memset(fillers_, 0, sizeof(fillers_));
@@ -701,14 +700,13 @@ public:
 
   SimpleType(Lng32 length,
              short scale,
-	     short precision,
+	     Int32 precision,
 	     short collation)
       :length_(length)
       ,scale_(scale)
       ,precision_(precision)
       ,collation_(collation)
   {
-    precision_high_ = 0;
     setClassID(SimpleTypeID);        
     memset(fillers_, 0, sizeof(fillers_));
   } 
@@ -716,7 +714,7 @@ public:
   SimpleType( Int16 datatype, 
 	      Int32 length,
 	      Int16 scale,
-	      Int16 precision,
+	      Int32 precision,
 	      ExpTupleDesc::TupleDataFormat tdf, 
 	      Int32 alignment,
 	      Int16 nullFlag, 
@@ -725,7 +723,6 @@ public:
 	      DefaultClass defClass,
 	      Int16 upshift)
       {
-        precision_high_ = 0;
         setClassID (SimpleTypeID);
 	setLength (length);
 	setScale (scale);
@@ -747,7 +744,6 @@ public:
      length_ = 0;
      scale_ = 0;
      precision_ = 0;
-     precision_high_ = 0;
      setCollation(CharInfo::DefaultCollation);
      memset(fillers_, 0, sizeof(fillers_));    
    }
@@ -763,10 +759,8 @@ public:
   Int16 getScale()            {return scale_;}
   UInt16 getScaleAsUI()       {return (UInt16)scale_;}
 
-  Int32 getPrecision()
-  {return (UInt16)precision_ | ((UInt32)precision_high_ << 16);}
-  inline void setPrecision(Int32 precision)
-  {precision_ = (Int16)precision; precision_high_ = (Int16)((UInt32)precision >> 16);}
+  Int32 getPrecision() {return precision_;}
+  inline void setPrecision(Int32 precision) {precision_ = precision;}
 
   // overload member scale_ to store the charset.
   void setCharSet(CharInfo::CharSet charSet)
@@ -858,10 +852,9 @@ public:
 private:
   Int32 length_;    // 00-03
   Int16 scale_;     // 04-05
-  Int16 precision_; // 06-07
-  Int16 isoMapping_; // 08-09
-  Int16 collation_; // 10-11
-  Int16 precision_high_; // 12-13
+  Int32 precision_; // 06-09
+  Int16 isoMapping_; // 10-11
+  Int16 collation_; // 12-13
 
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
