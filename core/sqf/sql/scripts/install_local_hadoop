@@ -1006,8 +1006,7 @@ EOF
 EOF
 
 
-  mkdir -p $TRAF_HOME/etc
-  SYSTEM_DEFAULTS_TEXT_FILE=$TRAF_HOME/etc/SQSystemDefaults.conf
+  SYSTEM_DEFAULTS_TEXT_FILE=$TRAF_CONF/SQSystemDefaults.conf
 
   # alternative method for open source build, system defaults in a text file
   cat <<EOF >${SYSTEM_DEFAULTS_TEXT_FILE}.temp

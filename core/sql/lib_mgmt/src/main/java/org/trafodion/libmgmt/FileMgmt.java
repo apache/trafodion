@@ -614,7 +614,7 @@ public class FileMgmt {
         }
 
         static String getLocalLibDirName(String userName) throws SQLException {
-		String root = System.getenv("TRAF_HOME");
+		String root = System.getenv("TRAF_VAR");
 		if (root == null || "".equals(root.trim())) {
 			LOG.error("Cant get your traf installation path!");
 			throw new SQLException("Cant get your traf installation path!");

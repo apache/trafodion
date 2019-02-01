@@ -203,17 +203,17 @@ $L_PDSH rm -f /dev/shm/sem.rms* 2>/dev/null
 # Clean up Floating IP bound
 if (test -n "${CLUSTERNAME}"); then
 	# Check whether floating ip is configured.
-	gv_floating_ip=`grep -i "begin floating_ip" $TRAF_HOME/sql/scripts/sqconfig | grep -v '^#'`
+	gv_floating_ip=`grep -i "begin floating_ip" $TRAF_CONF/sqconfig | grep -v '^#'`
 	if [ -n "$gv_floating_ip" ]; then
 		echoLog "Clean up Floating IP..."
 
 		cmd_timeout="-u 30"
 
 		# Get floating ip addresses.
-		gv_float_external_ip=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_HOME/sql/scripts/sqconfig | grep -v '^#' | grep external-ip | awk 'BEGIN{FS=";"}{split($3, ary, "="); print ary[2];}'`
-		gv_float_external_interface=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_HOME/sql/scripts/sqconfig | grep -v '^#' | grep external-ip | awk 'BEGIN{FS=";"}{split($2, ary, "="); print ary[2];}'`
-		gv_float_internal_ip=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_HOME/sql/scripts/sqconfig | grep -v '^#' | grep internal-ip | awk 'BEGIN{FS=";"}{split($3, ary, "="); print ary[2];}'`
-		gv_float_internal_interface=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_HOME/sql/scripts/sqconfig | grep -v '^#' | grep internal-ip | awk 'BEGIN{FS=";"}{split($2, ary, "="); print ary[2];}'`
+		gv_float_external_ip=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_CONF/sqconfig | grep -v '^#' | grep external-ip | awk 'BEGIN{FS=";"}{split($3, ary, "="); print ary[2];}'`
+		gv_float_external_interface=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_CONF/sqconfig | grep -v '^#' | grep external-ip | awk 'BEGIN{FS=";"}{split($2, ary, "="); print ary[2];}'`
+		gv_float_internal_ip=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_CONF/sqconfig | grep -v '^#' | grep internal-ip | awk 'BEGIN{FS=";"}{split($3, ary, "="); print ary[2];}'`
+		gv_float_internal_interface=`sed -n '/begin floating_ip/,/end floating_ip/p' $TRAF_CONF/sqconfig | grep -v '^#' | grep internal-ip | awk 'BEGIN{FS=";"}{split($2, ary, "="); print ary[2];}'`
 
 		# Check and get all the nodes that the ext/int IP address have been set. And do the unbind.
 		

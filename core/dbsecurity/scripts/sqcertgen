@@ -22,7 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 
-CERTDIR=$TRAF_HOME/sqcert
+CERTDIR=$TRAF_VAR/sqcert
 CLUSTNAME=`echo $CLUSTERNAME`
 
 if (test -n "${CLUSTNAME}"); then
@@ -151,6 +151,8 @@ then
 else 
     options=$1
 fi
+
+cd $CERTDIR
 
 
 case $options in 

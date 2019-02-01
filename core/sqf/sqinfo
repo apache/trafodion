@@ -88,20 +88,20 @@ function DO_ENV_INFO {
 		echo
 		echo "acquiring other environment info..."
 		if [ $sbi = 0 ]; then
-			if [ -r "$TRAF_HOME/sql/scripts/mon.env" ]; then
-				echo "sql/scripts/mon.env:"
-				cat $TRAF_HOME/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
+			if [ -r "$TRAF_VAR/mon.env" ]; then
+				echo "mon.env:"
+				cat $TRAF_VAR/mon.env|grep -v '^#'|grep -v '^$'
 				echo
 			fi
 		fi
-		if [ -r "$TRAF_HOME/sql/scripts/mon.env" ]; then
-			echo "sql/scripts/mon.env:"
-			cat $TRAF_HOME/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
+		if [ -r "$TRAF_VAR/mon.env" ]; then
+			echo "mon.env:"
+			cat $TRAF_VAR/mon.env|grep -v '^#'|grep -v '^$'
 			echo
 		fi
-		if [ -r "$TRAF_HOME/sql/scripts/shell.env" ]; then
-			echo "sql/scripts/shell.env:"
-			cat $TRAF_HOME/sql/scripts/shell.env|grep -v '^#'|grep -v '^$'
+		if [ -r "$TRAF_VAR/shell.env" ]; then
+			echo "shell.env:"
+			cat $TRAF_VAR/shell.env|grep -v '^#'|grep -v '^$'
 			echo
 		fi
 	fi
@@ -214,8 +214,8 @@ function DO_SQL_INFO {
 	echo
 	echo "acquiring sql info..."
 
-	if [ "$TRAF_HOME" ]; then
-		cfg=$TRAF_HOME/sql/scripts/sqconfig
+	if [ "$TRAF_CONF" ]; then
+		cfg=$TRAF_CONF/sqconfig
 		if [ -r "$cfg" ]; then
 			echo "cat $cfg:"
 			if [ $full = 1 ]; then
@@ -228,7 +228,7 @@ function DO_SQL_INFO {
 			return
 		fi
 	else
-		echo "\$TRAF_HOME not set"
+		echo "\$TRAF_CONF not set"
 		return
 	fi
 }

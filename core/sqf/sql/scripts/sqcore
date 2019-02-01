@@ -134,7 +134,7 @@ fi
 # The following can be used to pull the database locations from the sqconfig file,
 # which assumes that the file is correctly configured. Note, that if used the zero-based
 # node calculation should be un-commented from the below "if" statement.
-#dirlist=`grep database $TRAF_HOME/sql/scripts/sqconfig | /bin/gawk '{print $2"$"$3"/"$1}'; $SQ_PDSH -a "find -L $TRAF_HOME/sql -name core\.\* | /bin/gawk -F\/core '{print \\\$1}' | uniq" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}'`
+#dirlist=`grep database $TRAF_CONF/sqconfig | /bin/gawk '{print $2"$"$3"/"$1}'; $SQ_PDSH -a "find -L $TRAF_HOME/sql -name core\.\* | /bin/gawk -F\/core '{print \\\$1}' | uniq" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}'`
 
 MY_NODES_PRM=" -a "
 if [ -n "$MY_NODES" ];then

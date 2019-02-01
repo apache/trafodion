@@ -29,7 +29,7 @@
 #   (uses ilh_cleanhb)
 # - Restarts HBase
 # - Checks whether HBase is ready (uses ilh_hbcheck)
-# - Deletes the Trafodion env file: $TRAF_HOME/etc/ms.env
+# - Deletes the Trafodion env file: $TRAF_VAR/ms.env
 # - Regenerates Config (sqgen)
 # - Starts up Trafodion (sqstart)
 # - Initializes Trafodion (sqlci -> initialize trafodion)
@@ -49,7 +49,7 @@ echo 'This script will do the following:'
 echo ' - Kill the Trafodion env (pkillall)'
 echo ' - Kill the HBase env and Delete the HDFS data directory associated with HBase (ilh_cleanhb 2)'
 echo ' - Restart HBase (swstarthbase)'
-echo ' - Delete the env file: $TRAF_HOME/etc/ms.env'
+echo ' - Delete the env file: $TRAF_VAR/ms.env'
 echo ' - sqgen'
 echo ' - sqstart'
 echo ' - sqlci -> initialize trafodion'
@@ -85,8 +85,8 @@ else
     run_util ilh_hbcheck
 fi
 
-echo "deleting $TRAF_HOME/etc/ms.env"
-rm $TRAF_HOME/etc/ms.env
+echo "deleting $TRAF_VAR/ms.env"
+rm $TRAF_VAR/ms.env
 
 run_util sqgen
 

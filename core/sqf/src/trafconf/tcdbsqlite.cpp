@@ -1370,7 +1370,7 @@ int CTcdbSqlite::Initialize( void )
     else
     {
         snprintf( dbase, sizeof(dbase)
-                , "%s/sql/scripts/sqconfig.db", getenv("TRAF_HOME"));
+                , "%s/sqconfig.db", getenv("TRAF_VAR"));
     }
     if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
     {

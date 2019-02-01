@@ -930,10 +930,10 @@ const char *ms_getenv_str(const char *pp_key) {
     if (!gv_ms_env_loaded) {
         if (!gv_ms_env.load(gp_config_arg_file)) { // try to load arg config
             if (!gv_ms_env.load(gp_config_file)) { // try to load default config
-                char *lp_root = getenv(gp_ms_env_sq_root);
-                if (lp_root != NULL) {
+                char *lp_var = getenv(gp_ms_env_sq_var);
+                if (lp_var != NULL) {
                     SB_Buf_Lline lv_file;
-                    sprintf(&lv_file, "%s/etc/%s", lp_root, gp_config_file);
+                    sprintf(&lv_file, "%s/%s", lp_var, gp_config_file);
                     gv_ms_env.load(&lv_file);
                 }
             }
@@ -1605,10 +1605,10 @@ void msg_init_env_load_exe(const char *pp_exe, SB_Props *pp_env) {
     SB_Props lv_exe_env(true);
 
     if (!lv_exe_env.load(pp_exe)) {
-        char *lp_root = getenv(gp_ms_env_sq_root);
-        if (lp_root != NULL) {
+        char *lp_var = getenv(gp_ms_env_sq_var);
+        if (lp_var != NULL) {
             SB_Buf_Lline lv_file;
-            sprintf(&lv_file, "%s/etc/%s", lp_root, pp_exe);
+            sprintf(&lv_file, "%s/%s", lp_var, pp_exe);
             lv_exe_env.load(&lv_file);
         }
     }

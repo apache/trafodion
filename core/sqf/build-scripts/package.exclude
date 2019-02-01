@@ -25,13 +25,10 @@ sql/scripts/gen_app_file.awk
 sql/scripts/gen_sm_app_file.sh
 sql/scripts/gen_sm_map.sh
 sql/scripts/init_bdr.sql 
-sql/scripts/mon.env
 sql/scripts/monitor
 sql/scripts/rmscheck.sql
-sql/scripts/sqshell.env
 sql/scripts/sq_ase.*
 sql/scripts/sq_tse.*
-sql/scripts/sqconfig.db
 sql/scripts/sqipcrm.out
 sql/scripts/sqstart.exit_status
 sql/scripts/sqstop.exit_status

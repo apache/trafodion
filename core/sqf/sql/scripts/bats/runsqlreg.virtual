@@ -24,7 +24,6 @@
 
 # This script rebuilds SQ environment
 
-cd $TRAF_HOME/sql/scripts
 echo $PWD
 echo "***"
 echo "*** Stopping SQ Environment"
@@ -35,7 +34,7 @@ ckillall
 echo "***"
 echo "*** Generating SQ Environment configuration"
 echo "***"
-sqgen sqconfig
+sqgen $TRAF_CONF/sqconfig
 cleandb
 
 echo "***"

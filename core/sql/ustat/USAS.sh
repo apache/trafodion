@@ -458,11 +458,11 @@ AutoTempTable="NEO.PUBLIC_ACCESS_SCHEMA.USTAT_AUTO_TMP_TABLES"
   # First find the total number of SQL storage nodes.
   # this line greps for the node-id text line in sqconfig file, looking for
   # storage nodes. The logical node names are stored in $nodes.
-  nodes=$(grep "^node-id=" $TRAF_HOME/sql/scripts/sqconfig | grep storage | cut -d ';' -f 2 | cut -d '=' -f 2)
+  nodes=$(grep "^node-id=" $TRAF_CONF/sqconfig | grep storage | cut -d ';' -f 2 | cut -d '=' -f 2)
 
 
   # grep the number of cores per SQ node
-  cores=$(grep "^node-id=" $TRAF_HOME/sql/scripts/sqconfig | grep storage | cut -d ';' -f 3 | cut -d '=' -f 2 | cut -d '-' -f 2)
+  cores=$(grep "^node-id=" $TRAF_CONF/sqconfig | grep storage | cut -d ';' -f 3 | cut -d '=' -f 2 | cut -d '-' -f 2)
 
   #
   # Uncomment and modify the following two variables to unit test special cases. 
@@ -472,16 +472,16 @@ AutoTempTable="NEO.PUBLIC_ACCESS_SCHEMA.USTAT_AUTO_TMP_TABLES"
   #cores="7 7"
   #nodes="n3 n4"
 
-  headnodes=$(grep "^node-id=" $TRAF_HOME/sql/scripts/sqconfig | grep connection | cut -d ';' -f 2 | cut -d '=' -f 2)
+  headnodes=$(grep "^node-id=" $TRAF_CONF/sqconfig | grep connection | cut -d ';' -f 2 | cut -d '=' -f 2)
 
   # If no storage text line exists as in workstation environment, grep for
   # _virtualnodes.
   if [ "$nodes" = "" ]; then
-    nodes=$(grep "^_virtualnodes" $TRAF_HOME/sql/scripts/sqconfig)
+    nodes=$(grep "^_virtualnodes" $TRAF_CONF/sqconfig)
   
     # We can not find node text line. Bail out.
     if [ "$nodes" = "" ]; then
-       log "Ill-formatted sqconfig file at $TRAF_HOME/sql/scripts."
+       log "Ill-formatted sqconfig file at $TRAF_CONF"
        log "Exit the USAS.sh script."
       
        # In the future, we can hook up this exit with SQ version of EMS log.

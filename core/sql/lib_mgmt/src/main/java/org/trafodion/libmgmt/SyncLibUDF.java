@@ -95,8 +95,8 @@ public class SyncLibUDF extends UDR {
         // in those cases, since all the virtual nodes share the same node.
         String cmd[] = new String[] { "grep",
                                       "^[ \t]*_virtualnodes ",
-                                      System.getenv("TRAF_HOME") +
-                                      "/sql/scripts/sqconfig" };
+                                      System.getenv("TRAF_CONF") +
+                                      "/sqconfig" };
 
         try {
             Process p = Runtime.getRuntime().exec(cmd);

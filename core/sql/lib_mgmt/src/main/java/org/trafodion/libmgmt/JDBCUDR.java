@@ -27,7 +27,7 @@ under the License.
  *
  * select ... from udf(JDBC(
  *    <name of JDBC driver jar>, // file name of the JDBC driver jar, stored
- *                               // in $TRAF_HOME/udr/public/external_libs
+ *                               // in $TRAF_VAR/udr/public/external_libs
  *    <name of JDBC driver class in the jar>,
  *    <connection string>,
  *    <user name>,
@@ -98,7 +98,7 @@ class JDBCUDR extends UDR
             Path driverJarPath = Paths.get(driverJar_);
 
             // for security reasons, we sandbox the allowed driver jars
-            // into $TRAF_HOME/udr/public/external_libs
+            // into $TRAF_VAR/udr/public/external_libs
             driverJarPath = driverJarPath.normalize();
             if (driverJarPath.isAbsolute())
               {

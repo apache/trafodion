@@ -125,9 +125,9 @@ call "_LIBMGR_".putfile('abcd', 'udr_test102_1', 1, 1, 0);
 
 -- expect two lines with the contents of the two files below
 log;
-sh cat $$TRAF_HOME$$/udr/lib/DB__ROOT/udr_test102_1 >>LOG102;
+sh cat $$TRAF_VAR$$/udr/lib/DB__ROOT/udr_test102_1 >>LOG102;
 sh echo " " >>LOG102;
-sh cat $$TRAF_HOME$$/udr/lib/DB__ROOT/udr_test102_3 >>LOG102;
+sh cat $$TRAF_VAR$$/udr/lib/DB__ROOT/udr_test102_3 >>LOG102;
 sh echo " " >>LOG102;
 log LOG102;
 

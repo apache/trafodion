@@ -23,8 +23,8 @@
 # @@@ END COPYRIGHT @@@
 #
 
-if [ -f $TRAF_HOME/sql/scripts/sqshell.env ]; then
-    . $TRAF_HOME/sql/scripts/sqshell.env
+if [ -f $TRAF_VAR/sqshell.env ]; then
+    . $TRAF_VAR/sqshell.env
 fi
 
 if [[ -z ${TRAF_AGENT} ]]; then
@@ -117,7 +117,7 @@ fi
 sqshell -c node info
 
 # If the 'shell.env' file does not exist, we are in a real cluster
-if [ -e $TRAF_HOME/sql/scripts/sqshell.env ]; then
+if [ -e $TRAF_VAR/sqshell.env ]; then
    sqshell -c set CLUSTERNAME=$CLUSTERNAME
 fi
 

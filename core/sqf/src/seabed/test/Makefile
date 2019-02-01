@@ -995,7 +995,7 @@ $(OUTDIR)/tcheck.o: tcheck.cpp
 	$(RCXXINCLUDESSRC)
 
 testfiles:
-	@if [ ! -r sqconfig.db ]; then \
+	@if [ ! -r $(TRAF_VAR)/sqconfig.db ]; then \
 		echo "creating sqconfig.db"; \
 		./gocleandb; \
 	fi
@@ -1044,7 +1044,7 @@ clean:
 	@grep 'HOOK_ENABLE=1' ms.env >/dev/null 2>/dev/null; if [ $$? == 0 ]; then echo "touch c s"; touch c s; fi
 
 cleanall: clean
-	$(RM) -fr $(BUILD_PLAT) stdout_* t9thread.rh6x.supp sqconfig.db
+	$(RM) -fr $(BUILD_PLAT) stdout_* t9thread.rh6x.supp $(TRAF_VAR)/sqconfig.db
 
 cleaner: clean
 	$(RM) *~

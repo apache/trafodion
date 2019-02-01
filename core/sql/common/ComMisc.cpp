@@ -377,7 +377,7 @@ Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString sc
   if (userid.length()!=0)       
     {
 
-      cachedLibPath = getenv("TRAF_HOME") ;
+      cachedLibPath = getenv("TRAF_VAR") ;
       cachedLibPath += "/udr";
       if ( stat(cachedLibPath, &statbuf) != 0)
          {
@@ -422,7 +422,7 @@ Int32  ComGenerateUdrCachedLibName(NAString libname,Int64 redeftime, NAString sc
     }
   else
     {
-      cachedLibPath = getenv("TRAF_HOME") ;
+      cachedLibPath = getenv("TRAF_VAR") ;
       cachedLibPath += "/udr";
       if ( stat(cachedLibPath, &statbuf) != 0)
          {

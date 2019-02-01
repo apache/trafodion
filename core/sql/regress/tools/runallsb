@@ -127,7 +127,7 @@ fi
 #
 
 # Check if resource is a cluster
-SQCONFIG=$TRAF_HOME/sql/scripts/sqconfig
+SQCONFIG=$TRAF_CONF/sqconfig
 CONN_NODE=$(grep -v '^#' $SQCONFIG | grep -m 1 connection | sed -e "s@node-name=\(n[0-9]*\);.*@\1@" | cut -d ';' -f2)
 
 # if CONN_NODE is empty then resource is a workstation otherwise resource is a cluster
