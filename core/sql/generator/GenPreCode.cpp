@@ -129,6 +129,9 @@ static void generateKeyExpr(const ValueIdSet & externalInputs,
 						ieKeyCol,
 						ieKeyVal);
 
+      // Bind it so potential incompatible data type issues are handled
+      keyExpr->bindNode(generator->getBindWA());
+
       // Synthesize its type for and assign a ValueId to it.
       keyExpr->synthTypeAndValueId();
 
