@@ -113,7 +113,7 @@ static void generateKeyExpr(const ValueIdSet & externalInputs,
 			    Generator* generator,
                             NABoolean replicatePredicates = FALSE)
   {
-  ItemExpr * keyExpr;
+  BiRelat * keyExpr;
   CollIndex keyCount = listOfKeyColumns.entries();
 
   for (CollIndex keyNum = 0; keyNum < keyCount; keyNum++)
@@ -130,6 +130,9 @@ static void generateKeyExpr(const ValueIdSet & externalInputs,
 						ieKeyVal);
 
       // Bind it so potential incompatible data type issues are handled
+      const NAType & keyType = listOfKeyColumns[keyNum].getType();      
+      if (keyType.supportsSQLnull())
+        keyExpr->setSpecialNulls(TRUE);  // allow NULL ieKeyVal for nullable keys
       keyExpr->bindNode(generator->getBindWA());
 
       // Synthesize its type for and assign a ValueId to it.
