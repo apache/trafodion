@@ -301,15 +301,22 @@ class ExpLOBiud : public ExpLOBoper {
 	    Space * space);
   ExpLOBiud();
 
+  
   ex_expr::exp_return_type insertDesc(char *op_data[],
-				      CollHeap*h,
-				      ComDiagsArea** diagsArea);
+                                       char *lobData,
+                                       Int64 lobLen,
+                                       Int64 lobHdfsDataOffset,
+                                       char *&result,
+                                       CollHeap*h,
+                                       ComDiagsArea** diagsArea);
 
   ex_expr::exp_return_type insertData(Lng32 handleLen,
-				      char * handle,
-				      char *op_data[],
-				      CollHeap*h,
-				      ComDiagsArea** diagsArea);
+                                                char *&handle,
+                                                char *lobData,
+                                                Int64 lobLen,
+                                                Int64 &hdfsDataOffset,
+                                                CollHeap*h,
+                                                ComDiagsArea** diagsArea);
 
   NABoolean isAppend()
   {
