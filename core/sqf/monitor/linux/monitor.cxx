@@ -1391,6 +1391,7 @@ int main (int argc, char *argv[])
         strcat(envfile, "/monitor.env");
 #endif
         xprops.load( envfile );
+        delete [] envfile;
         MON_Smap_Enum xenum( &xprops );
         while ( xenum.more( ) )
         {
