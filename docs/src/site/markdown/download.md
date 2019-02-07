@@ -24,6 +24,11 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 
 # Download
 
+## 2.3.0 (February 2019)
+
+* [Release Notes](release-notes-2-3-0.html)
+* [Documentation](documentation.html#230_Release)
+
 ## 2.2.0 (March 2018)
 
 * [Release Notes](release-notes-2-2-0.html)
