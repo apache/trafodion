@@ -540,7 +540,7 @@ static Int64 SikGcInterval = -1;
 void SsmpGlobals::work()
 {
 
-  getIpcEnv()->getAllConnections()->waitOnAll(0);
+  getIpcEnv()->getAllConnections()->waitOnAll(getStatsMergeTimeout());
   finishPendingSscpMessages();
 
   // Cleanup IpcEnvironment

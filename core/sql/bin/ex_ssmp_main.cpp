@@ -227,33 +227,6 @@ void runServer(Int32 argc, char **argv)
 
   while (TRUE)
   {
-
-/*
- * Until ssmp starts receiving messages, disable this check.
- * We need ssmp to wake up periodically to perform garbage collection.
- *
-    // wait for the first open message to come in
-    while (cc->getConnection() == NULL)
-      cc->wait(IpcInfiniteTimeout);
-
-    // start the first receive operation
-#ifdef _DEBUG_RTS
-    cerr << "No. of Requesters-1 "  << cc->getNumRequestors() << " \n";
-#endif
-    while (cc->getNumRequestors() > 0)
-    for (;;)
-    {
-      ssmpGlobals->work();
-    }
-  }
-*/
-    // Wait for messages, but we need ssmp to wake up periodically to
-    // perform garbage collection.
-    short mask = XWAIT(LREQ | LDONE, ssmpGlobals->getStatsMergeTimeout());
-    if (mask & LREQ) {
-      cc->wait(0);
-    }
-    // go do GC.
     ssmpGlobals->work();
   }
 }

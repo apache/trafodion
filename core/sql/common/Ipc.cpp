@@ -848,11 +848,6 @@ GuaConnectionToClient *IpcConnection::castToGuaConnectionToClient()
   return NULL;
 }
 
-SqlTableConnection *IpcConnection::castToSqlTableConnection()
-{
-  return NULL;
-}
-
 Int64 IpcConnection::getSqlTableTransid()
 {
   return -1;
@@ -1151,6 +1146,52 @@ void IpcConnection::reportBadMessage()
 //  Methods for class IpcAllConnections
 // -----------------------------------------------------------------------
 
+
+// wait for something to happen on any of the connections like awaitio(-1)
+WaitReturnStatus IpcAllConnections::waitOnAll(
+     IpcTimeout timeout,
+     NABoolean calledByESP,
+     NABoolean *timedout,
+     Int64 *waitTime)
+{
+  WaitReturnStatus retcode;
+  struct timespec startts;
+  struct timespec endts;
+  clock_gettime(CLOCK_MONOTONIC, &startts);
+
+  if (timeout != IpcImmediately && timeout != IpcInfiniteTimeout) {
+     short mask;
+     if (ipcEnv_->getControlConnection() != NULL) {
+        mask = XWAIT(LREQ | LDONE, timeout);
+        if (mask & LREQ) 
+           retcode = ipcEnv_->getControlConnection()->castToGuaReceiveControlConnection()->wait(IpcImmediately);
+        else if (mask & LDONE)
+           retcode = pendingIOs_->waitOnSet(IpcImmediately, calledByESP, timedout); 
+        if (timedout != NULL) {
+           if (mask != 0)
+              *timedout = FALSE;
+           else
+              *timedout = TRUE;
+        }
+     }
+     else
+        retcode = pendingIOs_->waitOnSet(timeout, calledByESP, timedout); 
+  }
+  else
+     retcode = pendingIOs_->waitOnSet(timeout, calledByESP, timedout); 
+  clock_gettime(CLOCK_MONOTONIC, &endts);
+  if (startts.tv_nsec > endts.tv_nsec)
+    {
+      // borrow 1 from tv_sec, convert to nanosec and add to tv_nsec.
+      endts.tv_nsec += 1 * 1000 * 1000 * 1000;
+      endts.tv_sec -= 1;
+    }
+  if (waitTime != NULL) 
+    *waitTime = ((endts.tv_sec - startts.tv_sec) * 1000LL * 1000LL * 1000LL)
+      +  (endts.tv_nsec - startts.tv_nsec);
+  return retcode;
+}
+
 #ifdef IPC_INTEGRITY_CHECKING
 
 void IpcAllConnections::checkIntegrity(void)
@@ -1196,22 +1237,6 @@ void IpcAllConnections::checkLocalIntegrity(void)
   }
 
 #endif
-
-void IpcAllConnections::waitForAllSqlTableConnections(Int64 transid)
-{
-  // wait for SqlTableConnections (with matched transid) to complete.
-
-  IpcSetOfConnections x = getPendingIOs();
-
-  for (CollIndex i = 0; x.setToNext(i); i++)
-    {
-      if (x.element(i)->castToSqlTableConnection())
-	{
-	  if (x.element(i)->getSqlTableTransid() == transid)
-	    x.element(i)->wait(IpcInfiniteTimeout);
-	}
-    }
-}
 
 CollIndex IpcAllConnections::fillInListOfPendingPins(char *buff,
                                                      ULng32 buffSize,
@@ -5005,7 +5030,7 @@ short getDefineShort( char * defineName )
   if (heap_ == NULL)
     heap_ = new DefaultIpcHeap; // here it's ok to use global operator new
   
-  allConnections_ = new(heap_) IpcAllConnections(heap_, 
+  allConnections_ = new(heap_) IpcAllConnections(this, heap_, 
     (serverType == IPC_SQLESP_SERVER
      || serverType == IPC_SQLSSCP_SERVER
      || serverType == IPC_SQLSSMP_SERVER));
