@@ -2214,6 +2214,7 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     strcpy(envfile, trafVar_.c_str());
     strcat(envfile, "/mon.env");
     xprops.load(envfile);
+    delete [] envfile;
     MON_Smap_Enum xenum(&xprops);
     if (xenum.more())
     {
