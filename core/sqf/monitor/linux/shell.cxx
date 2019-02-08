@@ -5762,6 +5762,7 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     strcpy(envfile, sqvar);
     strcat(envfile, "/shell.env");
     xprops.load(envfile);
+    delete [] envfile;
     MON_Smap_Enum xenum(&xprops);
     int xsize = xprops.size();
     int xinx;
