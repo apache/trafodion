@@ -120,7 +120,7 @@ import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
-#ifdef HDP2.3 HDP2.4 CDH5.7 APACHE1.2
+#ifdef HDP2.3 HDP2.4 CDH5.5 CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.ChoreService;
 import org.apache.hadoop.hbase.ScheduledChore;
 #endif
@@ -1501,10 +1501,10 @@ CoprocessorService, Coprocessor {
       {
         closeResponseBuilder.setHasException(true);
         closeResponseBuilder.setException(oop.toString());
-        LOG.warn("closeScanner - OutOfOrderProtocolException, transaction was not found, txId: " + transId + ",returned exception" + ", region " + m_regionDetails);
+        LOG.warn("closeScanner - OutOfOrderProtocolExc, transaction was not found, txId: " + transId + ",returned exception" + ", region " + m_regionDetails);
       }
       else
-        LOG.warn("closeScanner - suppressing OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", region " + m_regionDetails);
+        LOG.warn("closeScanner - suppressing OutOfOrderProtocolExc, transaction was not found, txId: " + transId + ", region " + m_regionDetails);
     }
 
     CloseScannerResponse cresponse = closeResponseBuilder.build();
@@ -2244,10 +2244,10 @@ CoprocessorService, Coprocessor {
       {
         performResponseBuilder.setHasException(true);
         performResponseBuilder.setException(oop.toString());
-        LOG.warn("performScan - OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", return exception" + ", region " + m_regionDetails);
+        LOG.warn("performScan - OutOfOrderProtocolExc, transaction was not found, txId: " + transId + ", return exception" + ", region " + m_regionDetails);
       }
       else
-        LOG.warn("performScan - suppressing OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", region " + m_regionDetails);
+        LOG.warn("performScan - suppressing OutOfOrderProtocolExc, transaction was not found, txId: " + transId + ", region " + m_regionDetails);
     }
 
     if (mue != null)
@@ -3509,7 +3509,7 @@ CoprocessorService, Coprocessor {
             + this.memoryUsagePerformGC
             + ", MemoryUsageWarnOnly: "
             + this.memoryUsageWarnOnly
-            + ", Suppress OutOfOrderProtocolException: "
+            + ", Suppress OutOfOrderProtocolExc: "
             + this.suppressOutOfOrderProtocolException);
 
         // Start the clean core thread
@@ -3543,12 +3543,19 @@ CoprocessorService, Coprocessor {
         // Start the memory usage chore thread if the threshold
         // selected is greater than the default of 100%.   
 
-        if (memoryUsageThreshold < DEFAULT_MEMORY_THRESHOLD &&
+        if (memoryUsageThreshold <= DEFAULT_MEMORY_THRESHOLD &&
             memoryUsageThread == null) {
           LOG.warn("start - starting memoryUsageThread");
 
           memoryUsageThread = new MemoryUsageChore(this, memoryUsageTimer, stoppable2);
+#ifdef HDP2.3 HDP2.4 CDH5.5 CDH5.7 APACHE1.2
 
+          if (this.memoryUsageThread != null) {
+             s_ChoreService.scheduleChore(this.memoryUsageThread);
+          }
+        }
+
+#else
           UncaughtExceptionHandler handler2 = new UncaughtExceptionHandler() {
 
             public void uncaughtException(final Thread t, final Throwable e)
@@ -3562,6 +3569,7 @@ CoprocessorService, Coprocessor {
           ChoreThread2 = new Thread(memoryUsageThread);
           Threads.setDaemonThreadRunning(ChoreThread2, n2 + ".memoryUsage", handler2);
         }
+#endif
 
 	if (TransactionalLeasesThread == null) {
 	    TransactionalLeasesThread = new Thread(this.transactionLeases);
@@ -3738,7 +3746,7 @@ CoprocessorService, Coprocessor {
           + ", MemoryUsageThreshold: " + this.memoryUsageThreshold
           + ", MemoryUsagePerformGC: " + this.memoryUsagePerformGC
           + ", MemoryUsageWarnOnly: " + this.memoryUsageWarnOnly
-          + ", Suppress OutOfOrderProtocolException: " + this.suppressOutOfOrderProtocolException);
+          + ", Suppress OutOfOrderProtocolExc: " + this.suppressOutOfOrderProtocolException);
 
     if (LOG.isTraceEnabled()) LOG.trace("start");
   }
@@ -3772,7 +3780,7 @@ CoprocessorService, Coprocessor {
 #ifdef HDP2.3 HDP2.4 CDH5.5
   private synchronized void setupChoreService() { 
       if (s_ChoreService == null) {
-    s_ChoreService = new ChoreService("Cleanup ChoreService", this.txnChoreServiceThreadPoolSize);  
+    s_ChoreService = new ChoreService("Cleanup ChoreService", TrxRegionEndpoint.txnChoreServiceThreadPoolSize);
       }
   }
 #endif
@@ -3780,7 +3788,7 @@ CoprocessorService, Coprocessor {
 #ifdef CDH5.7 APACHE1.2
   private synchronized void setupChoreService() {
       if (s_ChoreService == null) {
-    s_ChoreService = new ChoreService("Cleanup ChoreService", this.txnChoreServiceThreadPoolSize, true);
+    s_ChoreService = new ChoreService("Cleanup ChoreService", TrxRegionEndpoint.txnChoreServiceThreadPoolSize, true);
       }
   }
 #endif

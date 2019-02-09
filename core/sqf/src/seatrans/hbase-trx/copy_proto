@@ -1,0 +1,11 @@
+#/bin/bash
+
+lv_files=`find -name *.${1}`
+
+for lv_source in ${lv_files}; do
+  echo "source: ${lv_source}"
+  java_file=`echo ${lv_source} | sed -e s/\.${1}//`
+  echo "java file: $java_file"
+  echo "Executing: cp -p ${lv_source} ${java_file}"
+  cp -p ${lv_source} ${java_file}
+done

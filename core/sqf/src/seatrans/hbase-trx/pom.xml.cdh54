@@ -63,6 +63,16 @@
           <skipAssembly>true</skipAssembly>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+       </plugin>
+
         <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.5</version>
@@ -87,6 +97,21 @@
             </archive>
           </configuration>
         </plugin>
+<!--        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>3.0.2</version>
+          <configuration>
+           <outputDirectory>target/cdh54</outputDirectory>
+          </configuration>
+          <executions>
+             <execution>
+                <goals>
+                   <goal>check</goal>
+                </goals>
+             </execution>
+          </executions>
+        </plugin> -->
     </plugins>
   </build>
 
@@ -207,6 +232,11 @@ if we can combine these profiles somehow -->
              <dependency>
                  <groupId>org.apache.hadoop</groupId>
                  <artifactId>hadoop-common</artifactId>
+                 <version>${hadoop.version}</version>
+             </dependency>
+             <dependency>
+                 <groupId>org.apache.hadoop</groupId>
+                 <artifactId>hadoop-distcp</artifactId>
                  <version>${hadoop.version}</version>
              </dependency>
          </dependencies>

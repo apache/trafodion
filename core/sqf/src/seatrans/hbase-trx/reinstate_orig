@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # @@@ START COPYRIGHT @@@
 #
@@ -20,7 +21,6 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-#!/bin/sh
 
 lv_fnames=`find -name "*.java.tmpl" | sed -e "s/\.tmpl$//" `
 
