@@ -47,6 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.fs.FileSystem;
@@ -134,6 +135,9 @@ import org.apache.hadoop.hbase.regionserver.LeaseException;
 import org.apache.hadoop.hbase.regionserver.LeaseListener;
 import org.apache.hadoop.hbase.regionserver.Leases;
 import org.apache.hadoop.hbase.regionserver.Leases.LeaseStillHeldException;
+#ifdef CDH5.7 APACHE1.2
+import org.apache.hadoop.hbase.regionserver.Region;
+#endif
 import org.apache.hadoop.hbase.regionserver.RegionCoprocessorHost;
 import org.apache.hadoop.hbase.regionserver.RegionScanner;
 import org.apache.hadoop.hbase.regionserver.RegionServerServices;
@@ -244,7 +248,11 @@ CoprocessorService, Coprocessor {
   private double avgWriteToLogTime    =    0;
 
   private HRegionInfo regionInfo = null;
+#ifdef CDH5.7 APACHE1.2
+  private Region m_Region = null;
+#else
   private HRegion m_Region = null;
+#endif
 #ifdef CDH5.7 APACHE1.2
   private HRegion t_Region = null;
 #else
@@ -269,6 +277,7 @@ CoprocessorService, Coprocessor {
   protected static int transactionLeaseTimeout = 0;
   private static int scannerLeaseTimeoutPeriod = 0;
   private static int scannerThreadWakeFrequency = 0;
+  private Configuration config;
 
   // Transaction state defines
   private static final int COMMIT_OK = 1;
@@ -4138,11 +4147,11 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: start");
     RegionCoprocessorEnvironment tmp_env = 
       (RegionCoprocessorEnvironment)env;
-#ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
-    this.m_Region = (HRegion)
+#ifdef CDH5.7 APACHE1.2
+    this.m_Region =
        tmp_env.getRegion();
 #else
-    this.m_Region =
+    this.m_Region = (HRegion)
        tmp_env.getRegion();
 #endif
     this.regionInfo = this.m_Region.getRegionInfo();
@@ -4151,8 +4160,8 @@ CoprocessorService, Coprocessor {
 #else
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
 #endif
-    this.fs = this.m_Region.getFilesystem();
-
+    this.config = tmp_env.getConfiguration();
+    this.fs = FileSystem.get(config);
     org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration(); 
 
     synchronized (stoppableLock) {
@@ -4202,20 +4211,13 @@ CoprocessorService, Coprocessor {
 #else
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
 #endif
-    this.fs = this.m_Region.getFilesystem();
-    tHLog = this.m_Region.getWAL();
-
     RegionServerServices rss = tmp_env.getRegionServerServices();
+    tHLog = rss.getWAL(regionInfo);
     ServerName sn = rss.getServerName();
     lv_hostName = sn.getHostname();
     lv_port = sn.getPort();
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: Hostname " + lv_hostName + " port " + lv_port);
     this.regionInfo = this.m_Region.getRegionInfo();
-#ifdef CDH5.7 APACHE1.2
-    this.nextLogSequenceId = new AtomicLong(this.m_Region.getSequenceId());
-#else
-    this.nextLogSequenceId = this.m_Region.getSequenceId();
-#endif
 #ifdef CDH5.7 APACHE1.2
     this.t_Region = (HRegion)tmp_env.getRegion();
 #else
@@ -4315,7 +4317,7 @@ CoprocessorService, Coprocessor {
 
     try {
           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Trafodion Recovery:  Flushing cache in startRegionAfterRecovery " + m_Region.getRegionInfo().getRegionNameAsString());
-#ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
+#ifdef HDP2.3 HDP2.4 APACHE1.1 CDH5.7 APACHE1.2
           m_Region.flush(true);
 #else
           m_Region.flushcache();
@@ -4616,7 +4618,7 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    */
   public void checkRow(final byte [] row, String op) throws IOException {
-    if(!this.m_Region.rowIsInRange(this.regionInfo, row)) {
+    if(!HRegion.rowIsInRange(this.regionInfo, row)) {
       throw new WrongRegionException("Requested row out of range for " +
        op + " on HRegion " + this + ", startKey='" +
        Bytes.toStringBinary(this.regionInfo.getStartKey()) + "', getEndKey()='" +
@@ -4660,7 +4662,11 @@ CoprocessorService, Coprocessor {
    * @return long 
    * @throws LeaseStillHeldException 
    */
+#ifdef APACHE1.2 CDH5.7
+  protected synchronized long addScanner(long transId, RegionScanner s, Region r)
+#else
   protected synchronized long addScanner(long transId, RegionScanner s, HRegion r)
+#endif
      throws LeaseStillHeldException {
     long scannerId = performScannerId.getAndIncrement();
 

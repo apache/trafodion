@@ -1,0 +1,561 @@
+// @@@ START COPYRIGHT @@@
+//
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+// This file contains protocol buffers that are used for TrxRegionProtocol.
+
+package hbase.pb;
+
+option java_package = "org.apache.hadoop.hbase.coprocessor.transactional.generated";
+
+option java_outer_classname = "TrxRegionProtos";
+option java_generic_services = true;
+//option java_generate_equals_and_hash = true;
+option optimize_for = SPEED;
+
+import "HBase.proto";
+import "ClusterStatus.proto";
+import "Client.proto";
+
+message AbortTransactionRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int32 participantNum = 3;
+  required bool dropTableRecorded = 4;
+  optional bool ignoreUnknownTransactionException = 5;
+}
+
+message AbortTransactionResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message AbortTransactionMultipleRequest{
+  repeated bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int32 participantNum = 3;
+}
+
+message AbortTransactionMultipleResponse {
+  repeated string exception = 1;
+  optional bool hasException = 2;
+}
+
+message BeginTransactionRequest{
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+}
+
+message BeginTransactionResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message CommitRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 commitId = 3;
+  required int32 participantNum = 4;
+  optional bool ignoreUnknownTransactionException = 5;
+}
+
+message CommitResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message CommitMultipleRequest{
+  repeated bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 commitId = 3;
+  required int32 participantNum = 4;
+  optional bool ignoreUnknownTransactionException = 5;
+}
+
+message CommitMultipleResponse {
+  repeated string exception = 1;
+  optional bool hasException = 2;
+}
+
+message CommitRequestRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 startEpoch = 3;
+  required int32 participantNum = 4;
+  required bool dropTableRecorded = 5;
+}
+
+message CommitRequestResponse {
+  required int32 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CommitRequestMultipleRequest{
+  repeated bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 startEpoch = 3;
+  required int32 participantNum = 4;
+}
+
+message CommitRequestMultipleResponse {
+  repeated int32 result = 1;
+  repeated string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CommitIfPossibleRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 startEpoch = 3;
+  required int64 commitId = 4;
+  required int32 participantNum = 5;
+}
+
+message CommitIfPossibleResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message CheckAndDeleteRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto delete = 8;
+}
+
+message CheckAndDeleteResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CheckAndDeleteRegionTxRequest {
+  required int64 tid = 1;
+  required int64 commitId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto delete = 8;
+  required bool autoCommit = 9;
+}
+
+message CheckAndDeleteRegionTxResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CheckAndPutRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto put = 8;
+}
+
+message CheckAndPutResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CheckAndPutRegionTxRequest {
+  required int64 tid = 1;
+  required int64 commitId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto put = 8;
+  required bool autoCommit = 9;
+}
+
+message CheckAndPutRegionTxResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CloseScannerRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required int64 scannerId = 3;
+}
+
+message CloseScannerResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message DeleteMultipleTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  repeated MutationProto delete = 4;
+}
+
+message DeleteMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message DeleteRegionTxRequest {
+  required int64 tid = 1;
+  required int64 commitId = 2;
+  required bytes regionName = 3;
+  required MutationProto delete = 4;
+  required bool autoCommit = 5;
+}
+
+message DeleteRegionTxResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message DeleteTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto delete = 4;
+}
+
+message DeleteTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message GetTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required Get get = 4;
+}
+
+message GetTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message OpenScannerRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required Scan scan = 4;
+}
+
+message OpenScannerResponse {
+  required int64 scannerId = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message PerformScanRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required int64 scannerId = 4;
+  required int32 numberOfRows = 5;
+  required bool  closeScanner = 6;
+  required int64 nextCallSeq = 7;
+}
+
+message PerformScanResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  required int64  nextCallSeq = 3;
+  required bool   hasMore = 4;
+  optional string exception = 5;
+  optional bool   hasException = 6;
+}
+
+message PutRegionTxRequest {
+  required int64 tid = 1;
+  required int64 commitId = 2;
+  required bytes regionName = 3;
+  required MutationProto put = 4;
+  required bool  autoCommit = 5;
+}
+
+message PutRegionTxResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message PutTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto put = 4;
+}
+
+message PutTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message PutMultipleTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  repeated MutationProto put = 4;
+}
+
+message PutMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message PushEpochRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 epoch = 3;
+}
+
+message PushEpochResponse{
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message RecoveryRequestRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required int32 tmId = 3;
+}
+
+message RecoveryRequestResponse {
+  repeated int64 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message TlogDeleteRequest{
+  required bytes regionName = 1;
+  required Scan scan = 2;
+  required int64 auditSeqNum = 3;
+  required bool ageCommitted = 4;
+}
+
+message TlogDeleteResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  optional bool hasException = 3;
+  optional string exception = 4;
+}
+
+message TlogWriteRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required MutationProto put = 3;
+  required bytes family = 4;
+  required bytes qualifier = 5;
+  required int64 commitId = 6;
+  optional bool forced = 7;
+}
+
+message TlogWriteResponse {
+  repeated int64 result = 1;
+  optional bool  hasException = 2;
+  optional string exception = 3;
+}
+
+message TlogTransactionStatesFromIntervalRequest{
+  required int64 clusterId = 1;
+  required int64 auditSeqNum =2;
+  required Scan scan = 3;
+}
+
+message TlogTransactionStatesFromIntervalResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  optional string exception = 3;
+  optional bool hasException = 4;
+}
+
+message TrafEstimateRowCountRequest {
+  // numCols = 1 for aligned tables; = # columns for non-aligned tables
+  required int32 numCols = 1;  
+}
+
+message TrafEstimateRowCountResponse {
+  required int64 totalEntries = 1;
+  required int64 totalSizeBytes = 2;
+  // the next three values will be non-zero only for the first region,
+  // and only when the format is non-aligned
+  required int32 putKVsSampled = 3;
+  required int32 nonPutKVsSampled = 4;
+  required int32 missingKVsCount = 5;
+  optional string exception = 6;
+  optional bool hasException = 7;
+}
+
+message TrafSetStoragePolicyRequest {
+  required  string path = 1;
+  required  string policy = 2;
+}
+
+message TrafSetStoragePolicyResponse {
+  required bool status = 1;
+  required string exception = 2;
+}
+
+message TransactionalAggregateRequest {
+  /** The request passed to the TransactionalAggregateService consists of three parts
+   *  (1) the (canonical) classname of the ColumnInterpreter implementation
+   *  (2) the Scan query
+   *  (3) any bytes required to construct the ColumnInterpreter object
+   *      properly
+   */
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 startId = 3;
+  required string interpreter_class_name = 4;
+  required Scan scan = 5;
+  optional bytes  interpreter_specific_bytes = 6;
+  
+}
+
+message TransactionalAggregateResponse {
+  /**
+   * The TransactionalAggregateService methods all have a response that either is a Pair
+   * or a simple object. When it is a Pair both first_part and second_part
+   * have defined values (and the second_part is not present in the response
+   * when the response is not a pair). Refer to the TransactionalAggregateImplementation 
+   * class for an overview of the TransactionalAggregateResponse object constructions. 
+   */ 
+  repeated bytes first_part = 3;
+  optional bytes second_part = 4;
+
+}
+
+message TransactionPersist {
+  repeated int64 txById = 1;
+  repeated int64 seqNoListSeq = 2;
+  repeated int64 seqNoListTxn = 3;
+  required int64 nextSeqId = 4;
+  required int64 onlineEpoch = 5;
+}
+
+message TransactionStateMsg {
+  required int64 txId = 1;
+  repeated MutationProto put = 2;
+  repeated MutationProto delete = 3;
+  repeated bool putOrDel = 4;
+  repeated int64 txnsToCheck = 5;
+  required int64 startSeqNum = 6;
+  required int64 seqNum = 7;
+  required int64 logSeqId = 8;
+  required bool reinstated = 9;
+  required int32 status = 10;
+  required int32 commitProgress = 11;
+}
+
+service TrxRegionService {
+  rpc abortTransaction(AbortTransactionRequest)
+    returns(AbortTransactionResponse);
+  rpc abortTransactionMultiple (AbortTransactionMultipleRequest)
+    returns(AbortTransactionMultipleResponse);
+  rpc beginTransaction(BeginTransactionRequest)
+    returns(BeginTransactionResponse);
+  rpc checkAndDelete(CheckAndDeleteRequest)
+    returns(CheckAndDeleteResponse);
+  rpc checkAndDeleteRegionTx(CheckAndDeleteRegionTxRequest)
+    returns(CheckAndDeleteRegionTxResponse);
+  rpc checkAndPut(CheckAndPutRequest)
+    returns(CheckAndPutResponse);
+  rpc checkAndPutRegionTx(CheckAndPutRegionTxRequest)
+    returns(CheckAndPutRegionTxResponse);
+  rpc closeScanner(CloseScannerRequest)
+    returns(CloseScannerResponse);
+  rpc commit(CommitRequest)
+    returns(CommitResponse);
+  rpc commitIfPossible(CommitIfPossibleRequest)
+    returns(CommitIfPossibleResponse);
+  rpc commitRequestMultiple(CommitRequestMultipleRequest)
+    returns(CommitRequestMultipleResponse);
+  rpc commitMultiple(CommitMultipleRequest)
+    returns(CommitMultipleResponse);
+  rpc commitRequest(CommitRequestRequest)
+    returns(CommitRequestResponse);
+  rpc deleteRegionTx(DeleteRegionTxRequest)
+    returns(DeleteRegionTxResponse);
+  rpc delete(DeleteTransactionalRequest)
+    returns(DeleteTransactionalResponse);
+  rpc deleteMultiple(DeleteMultipleTransactionalRequest)
+    returns(DeleteMultipleTransactionalResponse);
+  rpc get(GetTransactionalRequest)
+    returns(GetTransactionalResponse);
+  rpc performScan(PerformScanRequest)
+    returns(PerformScanResponse);
+  rpc openScanner(OpenScannerRequest)
+    returns(OpenScannerResponse);
+  rpc putRegionTx(PutRegionTxRequest)
+    returns(PutRegionTxResponse);
+  rpc put(PutTransactionalRequest)
+    returns(PutTransactionalResponse);
+  rpc putMultiple(PutMultipleTransactionalRequest)
+    returns(PutMultipleTransactionalResponse);
+  rpc pushOnlineEpoch(PushEpochRequest)
+    returns(PushEpochResponse);
+  rpc recoveryRequest(RecoveryRequestRequest)
+    returns(RecoveryRequestResponse);
+  rpc deleteTlogEntries(TlogDeleteRequest)
+    returns(TlogDeleteResponse);
+  rpc putTlog(TlogWriteRequest)
+    returns(TlogWriteResponse);
+  rpc getTransactionStatesPriorToAsn(TlogTransactionStatesFromIntervalRequest)
+    returns(TlogTransactionStatesFromIntervalResponse);
+  rpc trafEstimateRowCount(TrafEstimateRowCountRequest)
+    returns(TrafEstimateRowCountResponse);
+  rpc GetMax (TransactionalAggregateRequest)
+    returns (TransactionalAggregateResponse);
+  rpc GetMin (TransactionalAggregateRequest) 
+    returns (TransactionalAggregateResponse);
+  rpc GetSum (TransactionalAggregateRequest) 
+    returns (TransactionalAggregateResponse);
+  rpc GetRowNum (TransactionalAggregateRequest) 
+    returns (TransactionalAggregateResponse);
+  rpc GetAvg (TransactionalAggregateRequest) 
+    returns (TransactionalAggregateResponse);
+  rpc GetStd (TransactionalAggregateRequest) 
+    returns (TransactionalAggregateResponse);
+  rpc GetMedian (TransactionalAggregateRequest) 
+    returns (TransactionalAggregateResponse);
+  rpc setStoragePolicy (TrafSetStoragePolicyRequest)
+    returns (TrafSetStoragePolicyResponse);
+
+}

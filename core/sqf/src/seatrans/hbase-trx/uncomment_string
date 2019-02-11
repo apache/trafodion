@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +20,6 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-#!/bin/bash
 
 if [[ -z $1 ]]; then
   return;

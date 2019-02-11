@@ -1,0 +1,406 @@
+// @@@ START COPYRIGHT @@@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+
+// This file contains protocol buffers that are used for TrxRegionProtocol.
+
+package hbase.pb;
+
+option java_package = "org.apache.hadoop.hbase.coprocessor.transactional.generated";
+
+option java_outer_classname = "SsccRegionProtos";
+option java_generic_services = true;
+//option java_generate_equals_and_hash = true;
+option optimize_for = SPEED;
+
+import "HBase.proto";
+import "ClusterStatus.proto";
+import "Client.proto";
+
+message SsccAbortTransactionRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+}
+
+message SsccAbortTransactionResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message SsccBeginTransactionRequest{
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+}
+
+message SsccBeginTransactionResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message SsccCommitRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 commitId = 3;
+  optional bool ignoreUnknownTransactionException = 4;
+}
+
+message SsccCommitResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message SsccCommitRequestRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+}
+
+message SsccCommitRequestResponse {
+  required int32 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccCommitIfPossibleRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+}
+
+message SsccCommitIfPossibleResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+  optional bool wasSuccessful = 3;
+}
+
+message SsccCheckAndDeleteRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto delete = 8;
+}
+
+message SsccCheckAndDeleteResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccCheckAndDeleteRegionTxRequest {
+  required int64 tid = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto delete = 8;
+  required bool autoCommit = 9;
+}
+
+message SsccCheckAndDeleteRegionTxResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccCheckAndPutRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto put = 8;
+}
+
+message SsccCheckAndPutResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccCheckAndPutRegionTxRequest {
+  required int64 tid = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto put = 8;
+  required bool autoCommit = 9;
+}
+
+message SsccCheckAndPutRegionTxResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccCloseScannerRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required int64 scannerId = 3;
+}
+
+message SsccCloseScannerResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message SsccDeleteMultipleTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  repeated MutationProto delete = 4;
+}
+
+message SsccDeleteMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+  optional int32  status = 4;
+}
+
+message SsccDeleteRegionTxRequest {
+  required int64 tid = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto delete = 4;
+  required bool autoCommit = 5;
+}
+
+message SsccDeleteRegionTxResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+  optional int32  status = 4;
+}
+
+message SsccDeleteTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto delete = 4;
+}
+
+message SsccDeleteTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+  optional int32  status = 4;
+}
+
+message SsccGetTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required Get get = 4;
+}
+
+message SsccGetTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccOpenScannerRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required Scan scan = 4;
+}
+
+message SsccOpenScannerResponse {
+  required int64 scannerId = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccPerformScanRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required int64 scannerId = 4;
+  required int32 numberOfRows = 5;
+  required bool  closeScanner = 6;
+  required int64 nextCallSeq = 7;
+}
+
+message SsccPerformScanResponse {
+  repeated Result result = 1;
+  required int64  count = 2;
+  required int64  nextCallSeq = 3;
+  required bool   hasMore = 4;
+  optional string exception = 5;
+  optional bool   hasException = 6;
+}
+
+message SsccPutRegionTxRequest {
+  required int64 tid = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto put = 4;
+  optional bool  isStateless = 5;
+  required bool  autoCommit = 6;
+}
+
+message SsccPutRegionTxResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool   hasException = 3;
+  optional int32  status = 4;
+}
+
+
+message SsccPutTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto put = 4;
+  optional bool isStateless = 5;
+}
+
+message SsccPutTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+  optional int32  status = 4;
+}
+
+message SsccPutMultipleTransactionalRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  repeated MutationProto put = 4;
+  optional bool isStateless = 5;
+}
+
+message SsccPutMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+  optional int32  status = 4;
+}
+
+message SsccRecoveryRequestRequest {
+  required int64 transactionId = 1;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required int32 tmId = 4;
+}
+
+message SsccRecoveryRequestResponse {
+  repeated int64 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message SsccTransactionalAggregateRequest {
+  /** The request passed to the TransactionalAggregateService consists of three parts
+   *  (1) the (canonical) classname of the ColumnInterpreter implementation
+   *  (2) the Scan query
+   *  (3) any bytes required to construct the ColumnInterpreter object
+   *      properly
+   */
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+  required int64 startId = 3;
+  required string interpreter_class_name = 4;
+  required Scan scan = 5;
+  optional bytes  interpreter_specific_bytes = 6;
+}
+
+message SsccTransactionalAggregateResponse {
+  /**
+   * The TransactionalAggregateService methods all have a response that either is a Pair
+   * or a simple object. When it is a Pair both first_part and second_part
+   * have defined values (and the second_part is not present in the response
+   * when the response is not a pair). Refer to the TransactionalAggregateImplementation 
+   * class for an overview of the TransactionalAggregateResponse object constructions. 
+   */ 
+  repeated bytes first_part = 3;
+  optional bytes second_part = 4;
+
+}
+
+service SsccRegionService {
+  rpc abortTransaction(SsccAbortTransactionRequest)
+    returns(SsccAbortTransactionResponse);
+  rpc beginTransaction(SsccBeginTransactionRequest)
+    returns(SsccBeginTransactionResponse);
+  rpc checkAndDelete(SsccCheckAndDeleteRequest)
+    returns(SsccCheckAndDeleteResponse);
+  rpc checkAndDeleteRegionTx(SsccCheckAndDeleteRegionTxRequest)
+    returns(SsccCheckAndDeleteRegionTxResponse);
+  rpc checkAndPut(SsccCheckAndPutRequest)
+    returns(SsccCheckAndPutResponse);
+  rpc checkAndPutRegionTx(SsccCheckAndPutRegionTxRequest)
+    returns(SsccCheckAndPutRegionTxResponse);
+  rpc closeScanner(SsccCloseScannerRequest)
+    returns(SsccCloseScannerResponse);
+  rpc commit(SsccCommitRequest)
+    returns(SsccCommitResponse);
+  rpc commitIfPossible(SsccCommitIfPossibleRequest)
+    returns(SsccCommitIfPossibleResponse);
+  rpc commitRequest(SsccCommitRequestRequest)
+    returns(SsccCommitRequestResponse);
+  rpc deleteRegionTx(SsccDeleteRegionTxRequest)
+    returns(SsccDeleteRegionTxResponse);
+  rpc delete(SsccDeleteTransactionalRequest)
+    returns(SsccDeleteTransactionalResponse);
+  rpc deleteMultiple(SsccDeleteMultipleTransactionalRequest)
+    returns(SsccDeleteMultipleTransactionalResponse);
+  rpc get(SsccGetTransactionalRequest)
+    returns(SsccGetTransactionalResponse);
+  rpc performScan(SsccPerformScanRequest)
+    returns(SsccPerformScanResponse);
+  rpc openScanner(SsccOpenScannerRequest)
+    returns(SsccOpenScannerResponse);
+  rpc putRegionTx(SsccPutRegionTxRequest)
+    returns(SsccPutRegionTxResponse);
+  rpc put(SsccPutTransactionalRequest)
+    returns(SsccPutTransactionalResponse);
+  rpc putMultiple(SsccPutMultipleTransactionalRequest)
+    returns(SsccPutMultipleTransactionalResponse);
+  rpc recoveryRequest(SsccRecoveryRequestRequest)
+    returns(SsccRecoveryRequestResponse);
+  rpc GetMax (SsccTransactionalAggregateRequest)
+    returns (SsccTransactionalAggregateResponse);
+  rpc GetMin (SsccTransactionalAggregateRequest) 
+    returns (SsccTransactionalAggregateResponse);
+  rpc GetSum (SsccTransactionalAggregateRequest) 
+    returns (SsccTransactionalAggregateResponse);
+  rpc GetRowNum (SsccTransactionalAggregateRequest) 
+    returns (SsccTransactionalAggregateResponse);
+  rpc GetAvg (SsccTransactionalAggregateRequest) 
+    returns (SsccTransactionalAggregateResponse);
+  rpc GetStd (SsccTransactionalAggregateRequest) 
+    returns (SsccTransactionalAggregateResponse);
+  rpc GetMedian (SsccTransactionalAggregateRequest) 
+    returns (SsccTransactionalAggregateResponse);
+}
+

@@ -89,6 +89,7 @@ ifdefpattern = "#ifdef"
 endifpattern = "#endif"
 elsepattern = "#else"
 ifndefpattern = "#ifndef"
+ifdefinedpattern = "#ifdefined"
 elseifpattern = "#elseif"
 #distro passed in as argument, can only be one tag set by makefile at a time.
 }
@@ -167,11 +168,13 @@ elseifpattern = "#elseif"
      {
        printline = 0
        matchBegun = 1
+       unmatchBegun = 0
      }
      else
      {
       printline = 0
       unmatchBegun = 1
+      matchBegun = 0
      }
    }
  if($1 == ifndefpattern)
@@ -180,13 +183,31 @@ elseifpattern = "#elseif"
     {
       printline = 0
       unmatchBegun = 1
+      matchBegun = 0
     }
     else
     {
      printline = 0
      matchBegun = 1
+     unmatchBegun = 0
     }
   }
+  if($0 ~ ifdefinedpattern)
+  {
+    if(($2 ~ distro) || ($4 ~ distro))
+    {
+      printline = 0
+      matchBegun = 1
+      unmatchBegun = 0
+    }
+    else
+    {
+      printline = 0
+      unmatchBegun = 1
+      matchBegun = 0
+    }
+  }
+
 ######################
 # This section is final printing based on flags
 ######################

@@ -46,6 +46,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.ServerName;
@@ -84,6 +85,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Mutation;
 import java.util.ListIterator;
 import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.fs.FileSystem;
 
 #ifdef HDP2.3 APACHE1.1 CDH5.5 CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.regionserver.ScannerContext;
@@ -141,7 +143,7 @@ private ConcurrentHashMap<Long,TransactionalRegionScannerHolder> scanners =
 
 static ConcurrentHashMap<String, Object> trxRegionMap;
 
-private ConcurrentHashMap<String, TrxTransactionState> transactionsById = new ConcurrentHashMap<String, TrxTransactionState>();
+private ConcurrentHashMap<Long, TrxTransactionState> transactionsById = new ConcurrentHashMap<Long, TrxTransactionState>();
 private SortedMap<Long, TrxTransactionState> commitedTransactionsBySequenceNumber = Collections.synchronizedSortedMap(new TreeMap<Long, TrxTransactionState>());
 private Set<TrxTransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
 private AtomicBoolean blockAll = new AtomicBoolean(false);
@@ -153,8 +155,11 @@ private boolean hasFlushed = false;
 private boolean m_isTrafodionMetadata = false;
 
 Configuration my_config;
-
+#ifdef APACHE1.2 CDH5.7
+Region my_Region;
+#else
 HRegion my_Region;
+#endif
 HRegionInfo regionInfo;
 WAL tHLog;
 ServerName sn;
@@ -177,14 +182,17 @@ int cleanAT = 0;
 long minSeqID = 0;
 int flushCount = 0;
 int regionState = 0;
+FileSystem fs = null;
 private Object recoveryCheckLock = new Object();
 private Object editReplay = new Object();
 public static String zTrafPath = "/hbase/Trafodion/";
 private static String zNodePath = zTrafPath + "recovery/";
 private static ZooKeeperWatcher zkw1 = null;
 private static Object zkRecoveryCheckLock = new Object();
+String m_regionDetails = null;
 
 SplitBalanceHelper sbHelper;
+RegionServerServices rss;
 // Region Observer Coprocessor START
 @Override
 public void start(CoprocessorEnvironment e) throws IOException {
@@ -192,21 +200,24 @@ public void start(CoprocessorEnvironment e) throws IOException {
 
     RegionCoprocessorEnvironment regionCoprEnv = (RegionCoprocessorEnvironment)e;
     RegionCoprocessorEnvironment re = (RegionCoprocessorEnvironment) e;
-#ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
-    my_Region = (HRegion) re.getRegion();
-#else
+#ifdef APACHE1.2 CDH5.7
     my_Region = re.getRegion();
+#else
+    my_Region = (HRegion) re.getRegion();
 #endif
     regionInfo = my_Region.getRegionInfo();
     String lv_regionName = this.regionInfo.getRegionNameAsString();
+    String skey = (Bytes.equals(this.regionInfo.getStartKey(), HConstants.EMPTY_START_ROW)) ? "skey=null" : ("skey=" + Hex.encodeHexString(regionInfo.getStartKey()));
+    String ekey = (Bytes.equals(this.regionInfo.getEndKey(), HConstants.EMPTY_END_ROW)) ? "ekey=null" : ("ekey=" + Hex.encodeHexString(regionInfo.getEndKey()));
+    m_regionDetails = new String(lv_regionName + "," + skey + "," + ekey);
     m_isTrafodionMetadata = lv_regionName.contains("_MD_");
     LOG.info ("TRX RegionObserver coprocessor, " 
-	      + " region: " + lv_regionName 
+	      + " region: " + m_regionDetails
 	      + " isTrafodionMD: " + m_isTrafodionMetadata
 	      );
 
     this.my_config = regionCoprEnv.getConfiguration();
-
+    this.fs = FileSystem.get(my_config);
     org.apache.hadoop.conf.Configuration conf = regionCoprEnv.getConfiguration();
     this.splitDelayLimit = conf.getInt(SPLIT_DELAY_LIMIT, SPLIT_DELAY_DEFAULT);
     this.activeDelayLen = conf.getInt(ACTIVE_DELAY_LEN, ACTIVETXN_DELAY_DEFAULT);
@@ -232,8 +243,9 @@ public void start(CoprocessorEnvironment e) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: trxRegionObserver put data structure into CoprocessorEnvironment ");
     }
  
-   tHLog = my_Region.getWAL();
-   RegionServerServices rss = re.getRegionServerServices();
+   rss = re.getRegionServerServices();
+
+   tHLog = rss.getWAL(regionInfo);
    sn = rss.getServerName();
    hostName = sn.getHostname();
    port = sn.getPort();
@@ -268,7 +280,7 @@ public void start(CoprocessorEnvironment e) throws IOException {
    }
 
    @SuppressWarnings("unchecked")
-   ConcurrentHashMap<String, TrxTransactionState> transactionsByIdCheck = (ConcurrentHashMap<String, TrxTransactionState>)
+   ConcurrentHashMap<Long, TrxTransactionState> transactionsByIdCheck = (ConcurrentHashMap<Long, TrxTransactionState>)
                                                                        transactionsRefMap
                                                                        .get(lv_regionName+trxkeytransactionsById);
    if(transactionsByIdCheck != null) {
@@ -345,7 +357,7 @@ public void start(CoprocessorEnvironment e) throws IOException {
      transactionsRefMap.put(lv_regionName+trxkeyScanners, this.scanners);
    }
 
-   sbHelper = new SplitBalanceHelper(my_Region, zkw1, conf);
+   sbHelper = new SplitBalanceHelper((HRegion)my_Region, zkw1, conf);
 
    if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: trxRegionObserver load start complete");
 
@@ -613,7 +625,7 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
                  if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: ZKW Create Recovery zNode TM " + node + " region encoded name " + lv_encoded + " region info bytes " + new String(lv_byte_region_info));
                  createRecoveryzNode(node, lv_encoded, lv_byte_region_info);
                   } catch (IOException exp) {
-                  LOG.error("Trafodion Recovery Region Observer CP: ZKW Create recovery zNode failed");
+                  LOG.error("Trafodion Recovery Region Observer CP postOpen: ZKW Create recovery zNode failed ", exp);
             }
       }
 
@@ -704,7 +716,8 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                 }
                 ZKUtil.createAndFailSilent(zkw1, zNodePathTMKey, data);
           } catch (KeeperException e) {
-          throw new IOException("Trafodion Recovery Region Observer CP: ZKW Unable to create recovery zNode to TM, throw IOException " + node, e);
+             if (LOG.isErrorEnabled()) LOG.error("Trafodion Recovery Region Observer CP: ZKW Unable to create recovery zNode to TM " + node + " ", e);
+             throw new IOException("Trafodion Recovery Region Observer CP: ZKW Unable to create recovery zNode to TM, throw IOException " + node, e);
           }
        }
 } // end of createRecoveryzNode
@@ -810,15 +823,15 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                 blockNonPhase2.set(true);
 
 	        if(LOG.isInfoEnabled()) {
-#ifdef HDP2.3 APACHE1.1 CDH5.7 APACHE1.2
-                    HRegion region = (HRegion) c.getEnvironment().getRegion();
+#ifdef CDH5.7 APACHE1.2
+                Region region = c.getEnvironment().getRegion();
 #else
-	            HRegion region = c.getEnvironment().getRegion();
+	            HRegion region = (HRegion) c.getEnvironment().getRegion();
 #endif
 	            LOG.debug("preClose -- setting close var to true on: " + region.getRegionInfo().getRegionNameAsString());
 	        }
 	        try {
-                 sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, transactionsById, pendingDelayLen);
+                 sbHelper.pendingAndScannersWait(commitPendingTransactions, null /*scanners*/, transactionsById, pendingDelayLen);
                  commitAndScannersChecked = true;
 	        } catch(IOException ioe) {
 	          LOG.error("Encountered exception when calling pendingAndScannersWait(): " + ioe);
