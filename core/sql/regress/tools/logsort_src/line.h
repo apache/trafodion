@@ -40,3 +40,5 @@ int line_isnnrows(char *line);
 int line_isignore(char *line);
 int line_isstats(char *line);
 int line_isoptstats(char *line);
+int line_isgetheadingorfooting(char *line);
+int line_issqloperationcomplete(char *line);

@@ -56,7 +56,10 @@
 
 #define TOKEN_MXCI_DIRECTIVE 10   /* a SQL/MX MXCI directive */
 
-#define TOKEN_OTHER 11
+#define TOKEN_GET 11
+#define TOKEN_OBJECT_TYPE 12
+
+#define TOKEN_OTHER 13
 
 /*  parse states  */
 
@@ -78,6 +81,10 @@
 #define IN_OTHER 12
 
 #define START_AFTER_NULL_STMT 13
+
+#define IN_GET 14
+#define IN_INTERESTING_GET 15
+#define FOUND_INTERESTING_GET 16
 
 /*
 
@@ -150,6 +157,7 @@ switch (state)
       else if (token_type == TOKEN_PREPARE) rc = IN_PREPARE;
       else if (token_type == TOKEN_EXECUTE) rc = IN_EXECUTE;
       else if (token_type == TOKEN_MXCI_DIRECTIVE) rc = START;  /* so we ignore directives */
+      else if (token_type == TOKEN_GET) rc = IN_GET;
       else if (token_type != TOKEN_SEMICOLON) rc = IN_OTHER;
       else rc = START_AFTER_NULL_STMT;
       break;
@@ -170,9 +178,11 @@ switch (state)
       else rc = IN_SELECT;
       break;
       }
+   case FOUND_INTERESTING_GET:
    case FOUND_SELECT_WITHOUT_ORDER_BY:
       {
       if (token_type == TOKEN_SELECT) rc = IN_SELECT;
+      else if (token_type == TOKEN_GET) rc = IN_GET;
       else if (token_type == TOKEN_PREPARE) rc = IN_PREPARE;
       else if (token_type == TOKEN_EXECUTE) rc = IN_EXECUTE;
       else if (token_type == TOKEN_MXCI_DIRECTIVE) rc = START; /* so we ignore MXCI directives */
@@ -281,6 +291,19 @@ switch (state)
       else if (token_type != TOKEN_SEMICOLON) rc = IN_OTHER;
       break;
       }
+   case IN_GET:
+      {
+      if (token_type == TOKEN_OBJECT_TYPE) rc = IN_INTERESTING_GET;
+      else if (token_type == TOKEN_SEMICOLON) rc = START;
+      /* else remain in IN_GET state */
+      break;
+      }
+   case IN_INTERESTING_GET:
+      {
+      if (token_type == TOKEN_SEMICOLON) rc = FOUND_INTERESTING_GET;
+      /* else remain in IN_INTERESTING_GET state */
+      break;
+      }
    default:
       {
       printf("Error:  unknown token type %d.\n",token_type);
@@ -322,7 +345,7 @@ else if (isalpha(*token))
    {
    int length;
    int i;
-   char buffer[10];
+   char buffer[20];
 
    *token_type_ptr = TOKEN_IDENTIFIER;
 
@@ -330,7 +353,7 @@ else if (isalpha(*token))
                         isdigit(*next) ||
                         (*next == '_');   next++) ;
    length = next - token;
-   if (length < 10)
+   if (length < 20)
       {
       for (i = 0; i < length; i++) buffer[i] = toupper(token[i]);
       buffer[i] = '\0';
@@ -346,6 +369,18 @@ else if (isalpha(*token))
       else if (strcmp(buffer,"PREPARE") == 0) *token_type_ptr = TOKEN_PREPARE;
       else if (strcmp(buffer,"FROM") == 0) *token_type_ptr = TOKEN_FROM;
       else if (strcmp(buffer,"EXECUTE") == 0) *token_type_ptr = TOKEN_EXECUTE;
+      else if (strcmp(buffer,"GET") == 0) *token_type_ptr = TOKEN_GET;
+      else if (strcmp(buffer,"TABLES") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"INDEXES") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"LIBRARIES") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"SCHEMAS") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"VIEWS") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"PRIVILEGES") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"FUNCTIONS") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"PROCEDURES") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"SEQUENCES") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"ROLES") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
+      else if (strcmp(buffer,"OBJECTS") == 0) *token_type_ptr = TOKEN_OBJECT_TYPE; /* for GET statement */
       }
    }
 else if (*token == ';')
@@ -497,13 +532,30 @@ while (*next != '\n')
       while ((*next == ' ') || (*next == '\t')) next++;
 
       if ((t->parsestate == FOUND_SELECT_WITHOUT_ORDER_BY)||
+          (t->parsestate == FOUND_INTERESTING_GET)||
           (t->parsestate == START))
          {
          /*  we have seen the end of a statement - record whether
              the statement was interesting                         */
-
-         t->stmt[t->last_stmt] =
-           (t->parsestate == FOUND_SELECT_WITHOUT_ORDER_BY);
+         
+         switch (t->parsestate)
+            {
+            case FOUND_SELECT_WITHOUT_ORDER_BY: 
+               {
+               t->stmt[t->last_stmt] = token_stream::SELECT_WITHOUT_ORDER_BY;
+               break;
+               }
+            case FOUND_INTERESTING_GET: 
+               {
+               t->stmt[t->last_stmt] = token_stream::INTERESTING_GET;
+               break;
+               }
+            default:
+               {
+               t->stmt[t->last_stmt] = token_stream::UNINTERESTING_STATEMENT;
+               break;
+               }
+            }
 
          t->last_stmt++;
          if (t->last_stmt == STMT_QUEUE_LENGTH) t->last_stmt = 0;
@@ -541,9 +593,29 @@ int token_stream_interesting(struct token_stream *t)
 
 {
 return (t->first_stmt != t->last_stmt) &&  /*  make sure at least one stmt  */
-       t->stmt[t->first_stmt];
+       (t->stmt[t->first_stmt] == token_stream::SELECT_WITHOUT_ORDER_BY);
 }
 
+
+/*
+
+    token_stream_is_get
+
+    This function determines whether the statement just found is
+    a GET statement with sortable output.
+
+    entry parameters:  t - the token stream
+
+    exit parameter:  returns TRUE if so, FALSE if not
+
+                                                                          */
+
+int token_stream_is_get(struct token_stream *t)
+
+{
+return (t->first_stmt != t->last_stmt) &&  /*  make sure at least one stmt  */
+       (t->stmt[t->first_stmt] == token_stream::INTERESTING_GET);
+}
 
 
 /*
