@@ -1809,7 +1809,7 @@ drop the default context
 8889 ZZZZZ 99999 BEGINNER MINOR LOGONLY The provided buffer to retrieve Result Set proxy syntax is either null or not big enough.
 8890 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The SQL compiler failed to initialize properly.  Query results may differ from what is expected, due to different compiler defaults.
 8891 ZZZZZ 99999 BEGINNER MINOR LOGONLY Non-ASCII character host variable type was specified for $0~string0 field.
-8892 ZZZZZ 99999  UUUUUUUU UUUUU UUUUUUU --- unused as of 5/7/12 ---
+8892 07009 99999 BEGINNER MINOR LOGONLY The statement argument count exceeds the descriptor entry count.
 8893 07008 99999 BEGINNER MINOR LOGONLY The statement argument count does not match the descriptor entry count.
 8894 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Argument $0~string0 of CLI function $1~string1 is reserved for future use and must be set to $2~string2 when calling the function.
 8895 ZZZZZ 99999 BEGINNER MINOR LOGONLY The character set $0~string0 for the descriptor item SQLDESC_CHAR_SET is not valid.
