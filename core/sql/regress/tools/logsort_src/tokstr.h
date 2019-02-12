@@ -51,7 +51,9 @@ struct token_stream
                                 last_stmt                             */
    int last_stmt;           /*  next slot to add a statement in the queue  */
 
-   int stmt[STMT_QUEUE_LENGTH];  /*  a circular queue for statements  */
+   enum stmtState { SELECT_WITHOUT_ORDER_BY, INTERESTING_GET, UNINTERESTING_STATEMENT };
+
+   stmtState stmt[STMT_QUEUE_LENGTH];  /*  a circular queue for statements  */
    } ;
 
 /*  public function definitions  */
@@ -59,5 +61,6 @@ struct token_stream
 struct token_stream *token_stream_create(int ignore_order_by_option);
 int token_stream_add(struct token_stream *t,char *text);
 int token_stream_interesting(struct token_stream *t);
+int token_stream_is_get(struct token_stream *t);
 void token_stream_clear(struct token_stream *t);
 void token_stream_advance(struct token_stream *t,int advance_factor);
