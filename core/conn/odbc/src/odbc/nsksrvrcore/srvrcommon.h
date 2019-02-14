@@ -107,15 +107,6 @@ extern void formatQueryStateMsg( char *queryStateMsg
 							, const char *sqlText = NULL
 							);
 
-//LCOV_EXCL_START
-extern Int32 getMXCS_SCHEMAversion(
-    /* In    */ CEE_tag_def objtag_
-  , /* In    */ const CEE_handle_def *call_id_
-  , /* In    */ SMD_QUERY_TABLE *queryTable
-  , /* Out	 */ ERROR_DESC_LIST_def *sqlWarning
-);
-//LCOV_EXCL_STOP
-
 extern SRVR_STMT_HDL *getSrvrStmt( const IDL_char *stmtLabel
 				 , BOOL            canAddStmt
 				 , const char     *moduleName      = NULL
@@ -135,20 +126,6 @@ extern void removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt);
 extern Int32 getAllocLength(Int32 DataType, Int32 Length);
 extern void releaseCachedObject(BOOL internalStmt, NDCS_SUBSTATE mx_sub = NDCS_INIT);
 
-extern short do_ExecSql( 
-    /* In    */ CEE_tag_def objtag_
-  , /* In    */ const CEE_handle_def *call_id_
-  , /* Out   */ odbc_SQLSvc_Prepare_exc_ *prepareException
-  , /* Out   */ odbc_SQLSvc_ExecuteN_exc_ *executeException
-  , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
-  , /* In    */ DIALOGUE_ID_def dialogueId
-  , /* In    */ SMD_QUERY_TABLE *queryTable
-  , /* In    */ const IDL_char *stmtLabel
-  , /* In    */ const IDL_char *catalogNm
-  , /* In    */ const IDL_char *locationNm
-  , /* In    */ char *inputParam[]
-  , /* Out   */ SQLItemDescList_def *outputDesc);
-
 extern void convertWildcard(UInt32 metadataId, BOOL isPV, const IDL_char *inName, IDL_char *outName, BOOL isCatalog=FALSE);
 extern void convertWildcardNoEsc(UInt32 metadataId, BOOL isPV, const IDL_char *inName, IDL_char *outName, BOOL isCatalog=FALSE);
 extern BOOL checkIfWildCard(const IDL_char *inName, IDL_char *outName);
@@ -161,31 +138,6 @@ extern short execDirectSQLQuery(SRVR_STMT_HDL *pSrvrStmt, char *pSqlStr,
 // in one of their module.
 // This is done to minimize the compilcations in project settings and also it is felt that
 // each DLL may have different implementation for these functions
-
-extern short executeSQLQuery( CEE_tag_def objtag_
-				  , const CEE_handle_def *call_id_
-				  , DIALOGUE_ID_def dialogueId
-				  , SMD_QUERY_TABLE *queryTable
-				  , const IDL_char *stmtLabel
-				  , const IDL_char *locationNm
-				  , char *inputParam[]
-				  , odbc_SQLSvc_Prepare_exc_ *prepareException
-				  , odbc_SQLSvc_ExecuteN_exc_ *executeException
-				  , ERROR_DESC_LIST_def	*sqlWarning);
-
-extern short executeAndFetchSQLQuery( CEE_tag_def objtag_
-						  , const CEE_handle_def *call_id_
-						  , DIALOGUE_ID_def dialogueId
-						  , SMD_QUERY_TABLE *queryTable
-						  , const IDL_char *stmtLabel
-						  , IDL_long maxRowCnt
-						  , char *inputParam[]
-						  , odbc_SQLSvc_Prepare_exc_ *prepareException
-						  , odbc_SQLSvc_ExecuteN_exc_ *executeException
-						  , odbc_SQLSvc_FetchN_exc_ *fetchException
-						  , ERROR_DESC_LIST_def	*sqlWarning
-						  , IDL_long *rowsAffected
-						  , SQLValueList_def *outputValueList);
 
 extern short executeAndFetchSMDQuery(CEE_tag_def objtag_
 						  , const CEE_handle_def *call_id_
