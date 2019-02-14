@@ -170,7 +170,8 @@ static char* buildName(const char* dir, const char* fileName, const char* server
 
 SecPwd::SecPwd(const char *dir, const char* fileName,
         const char* activeFileName,
-        const char* serverName) throw (SecurityException)
+        const char* serverName,
+        int serverNameLength) throw (SecurityException)
 : m_sec(NULL), certFile(NULL), activeCertFile(NULL)
 {
     char* dir_from_env = NULL;
@@ -224,7 +225,7 @@ SecPwd::SecPwd(const char *dir, const char* fileName,
     if (lcid == 0x804) // if local charset is gbk
     {
         serverNameGBKToUtf8 = (char *)malloc(MAX_SQL_IDENTIFIER_LEN + 1);
-        if (TranslateUTF8(TRUE, serverName, MAX_SQL_IDENTIFIER_LEN,
+        if (TranslateUTF8(TRUE, serverName, serverNameLength,
             serverNameGBKToUtf8, MAX_SQL_IDENTIFIER_LEN, &translen, transError) != SQL_SUCCESS)
         {
             free(serverNameGBKToUtf8);
