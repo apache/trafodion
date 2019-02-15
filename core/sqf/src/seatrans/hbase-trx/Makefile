@@ -22,108 +22,63 @@
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 SHELL := /bin/bash
 
-BLD_HBASE_APACHE10_TRX_JARNAME     =hbase-trx-apache1_0-$(TRAFODION_VER).jar
-BLD_HBASE_APACHE11_TRX_JARNAME     =hbase-trx-apache1_1-$(TRAFODION_VER).jar
-BLD_HBASE_APACHE12_TRX_JARNAME     =hbase-trx-apache1_2-$(TRAFODION_VER).jar
-BLD_HBASE_CDH54_TRX_JARNAME        =hbase-trx-cdh5_4-$(TRAFODION_VER).jar
-BLD_HBASE_CDH55_TRX_JARNAME        =hbase-trx-cdh5_5-$-$(TRAFODION_VER).jar
-BLD_HBASE_CDH57_TRX_JARNAME        =hbase-trx-cdh5_7-$-$(TRAFODION_VER).jar
-BLD_HBASE_MAPR_TRX_JARNAME         =hbase-trx-mapr4_0-$(TRAFODION_VER).jar
-BLD_HBASE_HDP_TRX_JARNAME          =hbase-trx-hdp2_3-$(TRAFODION_VER).jar
-BLD_HBASE_HDP263_TRX_JARNAME       =hbase-trx-hdp263-$(TRAFODION_VER).jar
-BLD_HBASE_SSCC_TRX_JARNAME         =hbase-trx-sscc-$(TRAFODION_VER).jar
-
 VFILE			    =hbase-trx.jar.versions
 GENVERS			    =./genvers
 UNCOMMENT_STRING	    =./uncomment_string
 REINSTATE_ORIG   	    =./reinstate_orig
 COPY_PROTO   	            =./copy_proto
+java_files:=$(shell find src/main/java -name *.java* >original.diff.log;find src/main/java -name "*.java.tmpl" | sed -e "s/\.tmpl$$//" >generated.diff.log;  grep -F -v -f generated.diff.log original.diff.log)
 
 .NOTPARALLEL: all
+all: target/hbase-trx-apache1_2-$(TRAFODION_VER).jar \
+     target/hbase-trx-apache1_1-$(TRAFODION_VER).jar \
+     target/hbase-trx-apache1_0-$(TRAFODION_VER).jar \
+     target/hbase-trx-hdp263-$(TRAFODION_VER).jar \
+     target/hbase-trx-hdp2_3-$(TRAFODION_VER).jar \
+     target/hbase-trx-cdh5_7-$(TRAFODION_VER).jar \
+     target/hbase-trx-cdh5_5-$(TRAFODION_VER).jar \
+     target/hbase-trx-cdh5_4-$(TRAFODION_VER).jar 
 
-all: build_all
-
-jdk_1_7_cdh54: build_chk_cdh54
+define trx
+	$(GENVERS) > $(VFILE)
+	jar_nm=target/hbase-trx-$(1)-$(TRAFODION_VER).jar
+	if [ $(GENVERS) -nt target/hbase-trx-$(1)-$(TRAFODION_VER).jar ]; then echo "update manifest"; $(RM) -f target/hbase-trx-$(1)-$(TRAFODION_VER).jar; fi
+	if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/hbase-trx-$(1)-$(TRAFODION_VER).jar ]; then echo "update manifest"; $(RM) -f target/hbase-trx-$(1)-$(TRAFODION_VER).jar; fi
+	echo $(3)
 	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) CDH5.4
-	$(COPY_PROTO) nopb
-	echo "$(MAVEN) package -DskipTests"
-	echo "### For full Maven output, see file build_trx.log"
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh54 package install -DskipTests | tee -a build_trx.log
+	$(UNCOMMENT_STRING) $(3)
+	$(COPY_PROTO) $(4)
+	echo "$(MAVEN) -f pom.xml.$(2) install -DskipTests"
+	echo "### For full Maven output, see file build_trx_$(1).log"
+	set -o pipefail && $(MAVEN) -f pom.xml.$(2) install -DskipTests | tee -a build_trx_$(1).log| grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile' -e 'Compiling'
 	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_CDH54_TRX_JARNAME) $(TRAF_HOME)/export/lib
+	cp -pf target/hbase-trx-$(1)-$(TRAFODION_VER).jar $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
+endef
 
-jdk_1_7_cdh55: build_chk_cdh55
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) CDH5.5
-	$(COPY_PROTO) nopb
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh55 package install -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_CDH55_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
+target/hbase-trx-apache1_2-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,apache1_2,apache12,APACHE1.2,nopb)
 
-jdk_1_7_cdh57: build_chk_cdh57
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) CDH5.7
-	$(COPY_PROTO) nopb
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh57 package install -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_CDH57_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
+target/hbase-trx-apache1_1-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,apache1_1,apache11,APACHE1.1,nopb)
 
-jdk_1_7_mapr: build_chk_mapr
-	set -o pipefail && $(MAVEN) -f pom.xml.mapr package -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_MAPR_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
+target/hbase-trx-apache1_0-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,apache1_0,apache10,APACHE1.0,nopb)
 
-jdk_1_7_hdp: build_chk_hdp
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) HDP2.3 
-	$(COPY_PROTO) nopb
-	set -o pipefail && $(MAVEN) -f pom.xml.hdp package -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_HDP_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
+target/hbase-trx-hdp2_3-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,hdp2_3,hdp,HDP2.3,nopb)
 
-jdk_1_7_hdp263: build_chk_hdp263
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) HDP2.3 
-	$(COPY_PROTO) pb
-	set -o pipefail && $(MAVEN) -f pom.xml.hdp263 package -DskipTests | tee -a build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_HDP263_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
+target/hbase-trx-hdp263-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,hdp263,hdp263,HDP2.3,pb)
 
-jdk_1_7_apache10: build_chk_apache10
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) APACHE1.0
-	$(COPY_PROTO) nopb
-	set -o pipefail && $(MAVEN) -f pom.xml.apache10 package -DskipTests | tee build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_APACHE10_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
+target/hbase-trx-cdh5_7-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,cdh5_7,cdh57,CDH5.7,nopb)
 
-jdk_1_7_apache11: build_chk_apache11
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) APACHE1.1
-	$(COPY_PROTO) nopb
-	set -o pipefail && $(MAVEN) -f pom.xml.apache11 package -DskipTests | tee build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_APACHE11_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
+target/hbase-trx-cdh5_5-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,cdh5_5,cdh55,CDH5.5,nopb)
 
-jdk_1_7_apache12: build_chk_apache12
-	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) APACHE1.2
-	$(COPY_PROTO) nopb
-	set -o pipefail && $(MAVEN) -f pom.xml.apache12 package -DskipTests | tee build_trx.log
-	mkdir -p $(TRAF_HOME)/export/lib
-	cp -pf target/$(BLD_HBASE_APACHE12_TRX_JARNAME) $(TRAF_HOME)/export/lib
-	$(RM) $(VFILE)
-
-build_all: jdk_1_7_cdh54 jdk_1_7_cdh55 jdk_1_7_cdh57 jdk_1_7_hdp jdk_1_7_hdp263 jdk_1_7_apache10 jdk_1_7_apache11 jdk_1_7_apache12
+target/hbase-trx-cdh5_4-$(TRAFODION_VER).jar: $(java_files) 
+	$(call trx,cdh5_4,cdh54,CDH5.4,nopb)
 
 depcheck:
 	$(MAVEN) -f pom.xml.cdh54 org.owasp:dependency-check-maven:check
@@ -136,72 +91,11 @@ depcheck:
 	$(MAVEN) -f pom.xml.apache11 org.owasp:dependency-check-maven:check
 	$(MAVEN) -f pom.xml.apache12 org.owasp:dependency-check-maven:check
 
-build_chk_apache10:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_APACHE10_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE10_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_APACHE10_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE10_TRX_JARNAME); fi
+mvn_clean:
+	-$(MAVEN) -f pom.xml.apache10 clean| grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR' 
 
-build_chk_apache11:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_APACHE11_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE11_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_APACHE11_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE11_TRX_JARNAME); fi
-
-build_chk_apache12:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_APACHE12_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE12_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_APACHE12_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_APACHE12_TRX_JARNAME); fi
-
-build_chk_cdh54:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_CDH54_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH54_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_CDH54_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH54_TRX_JARNAME); fi
-
-build_cdh54: jdk_1_7_cdh54
-
-build_chk_cdh55:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_CDH55_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH55_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_CDH55_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH55_TRX_JARNAME); fi
-
-build_chk_cdh57:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_CDH57_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH57_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_CDH57_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_CDH57_TRX_JARNAME); fi
-
-build_chk_mapr:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_MAPR_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_MAPR_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_MAPR_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_MAPR_TRX_JARNAME); fi
-
-build_chk_hdp:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_HDP_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_HDP_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP_TRX_JARNAME); fi
-
-build_chk_hdp263:
-	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_HBASE_HDP263_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP263_TRX_JARNAME); fi
-	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_HDP263_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP263_TRX_JARNAME); fi
-
-clean:
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE10_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE11_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE12_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH54_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH55_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH57_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_MAPR_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_HDP_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_HDP263_TRX_JARNAME)
+clean: $(shell if [ -d target ]; then echo "mvn_clean"; fi) 
+	$(RM) $(TRAF_HOME)/export/lib/hbase-trx-*-$(TRAFODION_VER).jar
 	$(REINSTATE_ORIG)
-	-$(MAVEN) -f pom.xml.apache10 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.apache11 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.apache12 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh54 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh55 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh57 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.mapr clean | grep ERROR
-	-$(MAVEN) -f pom.xml.hdp clean | grep ERROR
-	-$(MAVEN) -f pom.xml.hdp263 clean | grep ERROR
-	$(RM) build_trx.log
+	$(RM) *.log
 	$(RM) $(VFILE)
