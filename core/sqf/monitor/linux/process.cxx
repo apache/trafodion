@@ -205,6 +205,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     , cmpOrEsp_(false)
     , trafConf_()
     , trafHome_()
+    , trafLog_()
     , trafVar_()
     , fd_stdin_(-1)
     , fd_stdout_(-1)
@@ -1926,6 +1927,11 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     {
         trafHome_ = env ;
     }
+    env = getenv( "TRAF_LOG" );
+    if (env)
+    {
+        trafLog_ = env ;
+    }
     env = getenv( "TRAF_VAR" );
     if (env)
     {
@@ -1999,6 +2005,7 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
 
     setEnvStrVal ( childEnv, nextEnv, "TRAF_CONF", trafConf_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_HOME", trafHome_.c_str() );
+    setEnvStrVal ( childEnv, nextEnv, "TRAF_LOG", trafLog_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_VAR", trafVar_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "USER", user );
     setEnvStrVal ( childEnv, nextEnv, "HOME", home );

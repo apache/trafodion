@@ -48,7 +48,7 @@ class SecPwd
 {  
    public:
       // cert_file - fully qualified certificate file name
-     SecPwd(const char *dir, const char* certFile, const char* activeCertFile, const char* serverName) 
+     SecPwd(const char *dir, const char* certFile, const char* activeCertFile, const char* serverName, int serverNameLength)
          throw (SecurityException);
       ~SecPwd();
 

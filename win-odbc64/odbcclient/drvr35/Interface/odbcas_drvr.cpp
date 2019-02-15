@@ -323,6 +323,7 @@ odbcas_ASSvc_GetObjRefHdl_(
 		{
 			memcpy(pConnection->m_ClusterName, curptr + msg_total_length, clusternameLength);
 			msg_total_length += clusternameLength;
+            pConnection->m_ClusterNameLength = clusternameLength;
 		}
 
 	}

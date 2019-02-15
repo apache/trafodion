@@ -545,6 +545,7 @@ private:
     bool         cmpOrEsp_;
     string       trafConf_;     // TRAF_CONF passed to object file
     string       trafHome_;     // TRAF_HOME passed to object file
+    string       trafLog_;      // TRAF_LOG passed to object file
     string       trafVar_;      // TRAF_VAR passed to object file
 
     string       infile_;    // process's stdin

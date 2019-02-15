@@ -1940,10 +1940,6 @@ void SplitBottomRequestMessage::actOnReceive(IpcConnection * connection)
                 // in this split bottom code.
 		stmtGlobals->castToExEspStmtGlobals()->setNoNewRequest(TRUE);
 
-		// wait for DML requests.
-		stmtGlobals->getIpcEnvironment()->getAllConnections()->
-		  waitForAllSqlTableConnections(stmtGlobals->getTransid());
-
                 // Change frag instance state.  Want to let other active
                 // frag instances work until all msgs to producer ESPs get 
                 // replies.

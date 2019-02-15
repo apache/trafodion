@@ -65,7 +65,7 @@ SB_Label_Map gv_sock_epoll_ctl_type_label_map = {
     "<unknown>", ga_sock_epoll_ctl_type_labels
 };
 
-static SB_Trans::Sock_Controller gv_sock_ctlr;
+static SB_Trans::Sock_Controller *gv_sock_ctlr = NULL;
 
 static const char *sock_get_label_epoll_ctl(int pv_value) {
     return SB_get_label(&gv_sock_epoll_ctl_type_label_map, pv_value);
@@ -77,6 +77,20 @@ static void *sock_comp_thread_fun(void *pp_arg) {
     lp_thread->run();
     return NULL;
 }
+
+SB_Trans::Sock_Controller *getGlobalSockCtrl() {
+  if (gv_sock_ctlr != NULL)
+     return gv_sock_ctlr;
+  SB_util_short_lock();
+  if (gv_sock_ctlr != NULL) {
+     SB_util_short_unlock();
+     return gv_sock_ctlr;
+  }
+  gv_sock_ctlr = new SB_Trans::Sock_Controller();
+  SB_util_short_unlock();
+  return gv_sock_ctlr;
+}
+
 
 SB_Trans::Sock_Comp_Thread::Sock_Comp_Thread(const char *pp_name)
 : Thread(sock_comp_thread_fun, pp_name),
@@ -104,7 +118,7 @@ void SB_Trans::Sock_Comp_Thread::run() {
 
     iv_running = true;
     while (!iv_fin) {
-        gv_sock_ctlr.epoll_wait(WHERE, -1);
+        getGlobalSockCtrl()->epoll_wait(WHERE, -1);
     }
     if (gv_ms_trace_sock)
         trace_where_printf(WHERE, "EXITING comp thread\n");
@@ -193,11 +207,11 @@ int SB_Trans::Sock_Client::connect(char *pp_host, int pv_port) {
     }
     if (lv_sock == -1)
         return lv_errno;
-    lv_err = gv_sock_ctlr.set_nodelay(WHERE, lv_sock);
+    lv_err = getGlobalSockCtrl()->set_nodelay(WHERE, lv_sock);
     SB_util_assert_ieq(lv_err, 0);
-    lv_err = gv_sock_ctlr.set_size_recv(WHERE, lv_sock, SIZE);
+    lv_err = getGlobalSockCtrl()->set_size_recv(WHERE, lv_sock, SIZE);
     SB_util_assert_ieq(lv_err, 0);
-    lv_err = gv_sock_ctlr.set_size_send(WHERE, lv_sock, SIZE);
+    lv_err = getGlobalSockCtrl()->set_size_send(WHERE, lv_sock, SIZE);
     SB_util_assert_ieq(lv_err, 0);
     memset(&lv_addr, 0, sizeof(lv_addr));
     lv_addr.sin_family = AF_INET;
@@ -462,7 +476,7 @@ int SB_Trans::Sock_Controller::set_size_send(const char *pp_where,
 }
 
 void SB_Trans::Sock_Controller::shutdown(const char *pp_where) {
-    gv_sock_ctlr.shutdown_this(pp_where);
+    getGlobalSockCtrl()->shutdown_this(pp_where);
 }
 
 void SB_Trans::Sock_Controller::shutdown_this(const char *pp_where) {
@@ -511,16 +525,16 @@ void SB_Trans::Sock_Controller::sock_add(const char *pp_where,
     if (gv_ms_trace_sock)
         trace_where_printf(WHERE, "%s-add fd=%d, eh=%p\n",
                            pp_where, pv_sock, pfp(pp_eh));
-    gv_sock_ctlr.epoll_ctl(pp_where,
+    getGlobalSockCtrl()->epoll_ctl(pp_where,
                            EPOLL_CTL_ADD,
                            pv_sock,
                            EPOLLIN,
                            pp_eh);
     // need lock - can only have one comp thread
-    gv_sock_ctlr.lock();
+    getGlobalSockCtrl()->lock();
     if (ip_comp_thread == NULL) {
         ip_shutdown_eh = new Sock_Shutdown_EH();
-        gv_sock_ctlr.epoll_ctl(pp_where,
+        getGlobalSockCtrl()->epoll_ctl(pp_where,
                                EPOLL_CTL_ADD,
                                ip_shutdown_eh->get_read_fd(),
                                EPOLLIN,
@@ -531,7 +545,7 @@ void SB_Trans::Sock_Controller::sock_add(const char *pp_where,
             trace_where_printf(WHERE, "starting sock comp thread %s\n", la_name);
         ip_comp_thread->start();
     }
-    gv_sock_ctlr.unlock();
+    getGlobalSockCtrl()->unlock();
 }
 
 void SB_Trans::Sock_Controller::sock_del(const char *pp_where,
@@ -539,14 +553,14 @@ void SB_Trans::Sock_Controller::sock_del(const char *pp_where,
     const char *WHERE = "Sock_Controller::sock_del";
     if (gv_ms_trace_sock)
         trace_where_printf(WHERE, "%s-delete fd=%d\n", pp_where, pv_sock);
-    gv_sock_ctlr.epoll_ctl(pp_where, EPOLL_CTL_DEL, pv_sock, 0, NULL);
+    getGlobalSockCtrl()->epoll_ctl(pp_where, EPOLL_CTL_DEL, pv_sock, 0, NULL);
 }
 
 void SB_Trans::Sock_Controller::sock_mod(const char *pp_where,
                                          int         pv_sock,
                                          int         pv_events,
                                          Sock_EH    *pp_eh) {
-    gv_sock_ctlr.epoll_ctl(pp_where, EPOLL_CTL_MOD, pv_sock, pv_events, pp_eh);
+    getGlobalSockCtrl()->epoll_ctl(pp_where, EPOLL_CTL_MOD, pv_sock, pv_events, pp_eh);
 }
 
 void SB_Trans::Sock_Controller::unlock() {
@@ -643,13 +657,13 @@ SB_Trans::Sock_Server *SB_Trans::Sock_Listener::accept() {
         }
         SB_util_assert_ine(lv_sock, -1);
     }
-    lv_err = gv_sock_ctlr.set_reuseaddr(WHERE, lv_sock);
+    lv_err = getGlobalSockCtrl()->set_reuseaddr(WHERE, lv_sock);
     SB_util_assert_ieq(lv_err, 0);
-    lv_err = gv_sock_ctlr.set_nodelay(WHERE, lv_sock);
+    lv_err = getGlobalSockCtrl()->set_nodelay(WHERE, lv_sock);
     SB_util_assert_ieq(lv_err, 0);
-    lv_err = gv_sock_ctlr.set_size_recv(WHERE, lv_sock, SIZE);
+    lv_err = getGlobalSockCtrl()->set_size_recv(WHERE, lv_sock, SIZE);
     SB_util_assert_ieq(lv_err, 0);
-    lv_err = gv_sock_ctlr.set_size_send(WHERE, lv_sock, SIZE);
+    lv_err = getGlobalSockCtrl()->set_size_send(WHERE, lv_sock, SIZE);
     SB_util_assert_ieq(lv_err, 0);
     if (gv_ms_trace_sock)
         trace_where_printf(WHERE, "accept completed on sock=%d, new sock=%d\n",
@@ -715,7 +729,7 @@ void SB_Trans::Sock_Listener::listen(char *pp_host, int *pp_port) {
                                lv_domain, lv_sock);
     }
     SB_util_assert_ine(lv_sock, -1);
-    lv_err = gv_sock_ctlr.set_reuseaddr(WHERE, lv_sock);
+    lv_err = getGlobalSockCtrl()->set_reuseaddr(WHERE, lv_sock);
     SB_util_assert_ieq(lv_err, 0);
     memset(&lv_addr, 0, sizeof(lv_addr));
     lv_addr.sin_family = static_cast<uint16_t>(lv_domain);
@@ -929,7 +943,7 @@ SB_Trans::Sock_User_Common::~Sock_User_Common() {
                           pfp(this), iv_sock);
     if (iv_sock >= 0) {
         if (iv_sock_added)
-            gv_sock_ctlr.sock_del(la_where, iv_sock);
+            getGlobalSockCtrl()->sock_del(la_where, iv_sock);
         lv_err = ::close(iv_sock);
         lv_errno = errno;
         if (gv_ms_trace_sock) {
@@ -964,7 +978,7 @@ void SB_Trans::Sock_User_Common::event_change(int      pv_events,
 
     if (pv_events != iv_events) {
         sprintf(la_where, "%s%s", ip_where, WHERE);
-        gv_sock_ctlr.sock_mod(la_where, iv_sock, pv_events, pp_eh);
+        getGlobalSockCtrl()->sock_mod(la_where, iv_sock, pv_events, pp_eh);
         iv_events = pv_events;
     }
 }
@@ -974,7 +988,7 @@ void SB_Trans::Sock_User_Common::event_init(Sock_EH *pp_eh) {
     SB_Buf_Line  la_where;
 
     sprintf(la_where, "%s%s", ip_where, WHERE);
-    gv_sock_ctlr.sock_add(la_where, iv_sock, pp_eh);
+    getGlobalSockCtrl()->sock_add(la_where, iv_sock, pp_eh);
     iv_sock_added = true;
 }
 
@@ -1015,7 +1029,7 @@ void SB_Trans::Sock_User_Common::set_nonblock() {
     int          lv_err;
 
     sprintf(la_where, "%s%s", ip_where, WHERE);
-    lv_err = gv_sock_ctlr.set_nonblock(la_where, iv_sock);
+    lv_err = getGlobalSockCtrl()->set_nonblock(la_where, iv_sock);
     SB_util_assert_ieq(lv_err, 0);
 }
 
@@ -1029,7 +1043,7 @@ void SB_Trans::Sock_User_Common::stop() {
     lv_status = iv_sock_mutex.lock();
     SB_util_assert_ieq(lv_status, 0); // sw fault
     if (iv_sock_added) {
-        gv_sock_ctlr.sock_del(la_where, iv_sock);
+        getGlobalSockCtrl()->sock_del(la_where, iv_sock);
         iv_sock_added = false;
     }
     lv_status = iv_sock_mutex.unlock();

@@ -944,6 +944,35 @@ The SQL compiler failed to initialize properly. Query results may differ from wh
 
 *Recovery:* Stop the {project-name}  and restart it.
 
+[[SQL-8892]]
+== SQL 8892
+
+```
+The statement argument count exceeds the descriptor entry count.
+```
+
+*Cause:* The output descriptor used by sqlci or mxosrvr on a CALL statement is insufficiently wide.
+
+*Effect:* The operation fails.
+
+*Recovery:* Re-prepare and re-execute the statement.
+
+<<<
+[[SQL-8893]]
+== SQL 8893
+
+```
+The statement argument count does not match the descriptor entry count.
+```
+
+*Cause:* The output descriptor used by sqlci or mxosrvr on a non-CALL statement has a different size than the statement output. This has been
+observed, for example, when SELECTing from a Hive table, where an ALTER TABLE ADD COLUMN command has been done in the Hive shell between
+the time the {project-name} SELECT was prepared and when it was executed, or when a cached query plan has been used.
+
+*Effect:* The operation fails.
+
+*Recovery:* Re-execute the statement.
+
 [[SQL-8901]]
 == SQL 8901
 
@@ -957,6 +986,8 @@ attempt was made to contact a nonexistent {project-name} UDR server.
 *Effect:* The operation fails.
 
 *Recovery:* Retry the {project-name} statement.
+
+
 
 <<<
 [[SQL-8904]]

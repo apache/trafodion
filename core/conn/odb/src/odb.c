@@ -374,10 +374,14 @@ enum DBs {
 
 struct tdesc {              /* ODBC Table description for insert ops */
     SQLSMALLINT Otype;      /* ODBC Data Type */
-    SQLULEN Osize;          /* ODBC Column Size */
+    SQLSMALLINT Octype;     /* ODBC C data type */
     SQLSMALLINT Odec;       /* ODBC Decimal digits */
-    SQLCHAR *Oname;         /* ODBC Column name */
     SQLSMALLINT Onull;      /* ODBC Column nullability */
+    SQLSMALLINT OnameLen;   /* ODBC column name length */
+    SQLCHAR *Oname;         /* ODBC Column name */
+    SQLULEN Osize;          /* ODBC Column Size */
+    SQLLEN OdisplaySize;    /* ODBC column display size */
+    SQLLEN Ocdatabufl;      /* ODBC C type buffer Size */
     size_t dl;              /* Default string length */
     size_t start;           /* Start address in rowset */
     size_t pad;             /* Used to memory align ODBC buffer elements on HP-UX */
@@ -507,15 +511,18 @@ struct execute {
     char *ns;                   /* load/extract Null string */
     char *es;                   /* extract=emptystring, copy: tgtsql with positional parameters */
     char *sql;                  /* extract custom SQL */
-    char *sb;                   /* extract split by column name, load=bad file */
+    char *sb;                   /* extract split by column name */
+    char *bad;                  /* bad file */
     char *key[MAX_PK_COLS];     /* diff key column names */
     char loadcmd[3];                /* load/copy=command to use INSERT/UPSERT/UPSERT USING LOAD, IN/UP/UL */ 
 #ifdef XML
     char *xrt;                  /* load: xml row tag */
 #endif
     char *jsonKey;              /* load: json key */
-    unsigned int nl;            /* Null string length. Copy: number of loaders per extraction thread */
-    unsigned int el;            /* Empty String Length. Copy: total number of loaders per grandparent (ps * nl) */
+    unsigned int nl;            /* Null string length. */
+    unsigned int nloader;       /* Copy: number of loaders per extraction thread */
+    unsigned int el;            /* Empty String Length. */
+    unsigned int nltotal;       /* Copy: total number of loaders per grandparent (ps * nl) */
     unsigned int k;             /* load lines to skip. extract: returned rsds. Copy: grandparent ID */
     unsigned int sp;            /* extract Start Partition load/copy: number of target table fields */
     unsigned int ep;            /* extract End Partition, copy: number of tgtsql parameters */
@@ -5370,15 +5377,15 @@ static void etabadd(char type, char *run, int id)
                     l = etab[no].parent;
                     etab[l].ps = etab[no].ps;
                     etab[no].lstat = 4;     /* other threads to wait while gpar check tgt dbt */
-                    if ( etab[no].nl == 0 )
-                        etab[no].nl = etab[no].type == 'c' ? 2 : 1; /* initialize default number of loaders */
-                    etab[no].el = etab[no].ps * etab[no].nl ;
+                    if ( etab[no].nloader == 0 )
+                        etab[no].nloader = etab[no].type == 'c' ? 2 : 1; /* initialize default number of loaders */
+                    etab[no].nltotal = etab[no].ps * etab[no].nloader ;
                     etab[no].k = no;        /* save grand-parent copy thread (first 'c' thread for this pool) */
                     etab[no].run = etab[no].tgt ;
                     cimutex(&etab[no].pmutex);
                     cicondvar(&etab[no].pcvp);
                     cicondvar(&etab[no].pcvc);
-                    for ( i = 0, j = no; i < etab[j].nl ; i++ ) {
+                    for ( i = 0, j = no; i < etab[j].nloader ; i++ ) {
                         etabnew ( no++ );   /* Create new etab entry based on original 'c'/'p' struct */
                         etab[no].type = etab[l].type == 'c' ? 'C' : 'P';
                         if ( etab[no].type == 'C' ) 
@@ -5405,11 +5412,11 @@ static void etabadd(char type, char *run, int id)
                     etab[no].tbe = 1;
                     if ( etab[no].type == 'c' || etab[no].type == 'p' ) {
                         etab[no].parent = no;
-                        etab[no].iobuff = etab[no].ps * etab[no].nl ;   /* total number of loaders */
+                        etab[no].iobuff = etab[no].ps * etab[no].nloader ;   /* total number of loaders */
                         cimutex(&etab[no].pmutex);
                         cicondvar(&etab[no].pcvp);
                         cicondvar(&etab[no].pcvc);
-                        for ( i = 0, n = no; i < etab[j].nl ; i++ ) {
+                        for ( i = 0, n = no; i < etab[j].nloader ; i++ ) {
                             etabnew ( no++ );           /* Create new etab entry based on original 'c'/'p' struct */
                             etab[no].type = etab[l].type == 'c' ? 'C' : 'P';
                             if ( etab[no].type == 'C' ) 
@@ -5480,11 +5487,13 @@ static void etabadd(char type, char *run, int id)
                     etab[no].parent = no;
                     etab[no].id = no;
                 }
+
+                if (etab[no].bad) {        /* bad file */
+                    if (etabout(no, etab[no].bad))
+                        goto etabadd_exit;
+                }
+
                 if ( etab[no].type == 'l' ) {   /* load job */
-                    if ( etab[no].sb ) {        /* bad file */
-                        if ( etabout ( no , etab[no].sb ) )
-                            goto etabadd_exit;
-                    }
                     if ( etab[no].ps ) {
                         cimutex(&etab[no].pmutex);
                         cicondvar(&etab[no].pcvp);
@@ -5747,9 +5756,9 @@ static void etabadd(char type, char *run, int id)
                             }
                         } else if ( etab[no].type == 'c' ) {
                             etab[no].lstat = 4;             /* other threads to wait while gpar check tgt dbt */
-                            if ( etab[no].nl == 0 )
-                                etab[no].nl = NUMLOADERS;   /* initialize number of loaders to its default */
-                            etab[no].el = etab[no].ps * etab[no].nl ;
+                            if ( etab[no].nloader == 0 )
+                                etab[no].nloader = NUMLOADERS;   /* initialize number of loaders to its default */
+                            etab[no].nltotal = etab[no].ps * etab[no].nloader ;
                             etab[no].k = no;                /* save grand-parent copy thread (first 'c' thread for this pool) */
                             ll = strlen ( buff ) ;
                             if ( ( etab[no].run = malloc ( ll + 1 ) ) == (void *)NULL ) {
@@ -5772,7 +5781,7 @@ static void etabadd(char type, char *run, int id)
                                     goto etabadd_exit;
                                 }
                             }
-                            for ( i = 0, j = no; i < etab[j].nl ; i++ ) {
+                            for ( i = 0, j = no; i < etab[j].nloader ; i++ ) {
                                 etabnew ( no++ );           /* Create new etab entry based on original 'c' struct */
                                 etab[no].type = 'C';
                                 etab[no].mpre = tmpre ;
@@ -5854,11 +5863,11 @@ static void etabadd(char type, char *run, int id)
                                     etab[no].tbe = 1;
                                     if ( etab[no].type == 'c' ) {
                                         etab[no].parent = no;
-                                        etab[no].iobuff = etab[no].ps * etab[no].nl ;   /* total number of loaders */
+                                        etab[no].iobuff = etab[no].ps * etab[no].nloader ;   /* total number of loaders */
                                         cimutex(&etab[no].pmutex);
                                         cicondvar(&etab[no].pcvp);
                                         cicondvar(&etab[no].pcvc);
-                                        for ( i = 0, n = no; i < etab[j].nl ; i++ ) {
+                                        for ( i = 0, n = no; i < etab[j].nloader ; i++ ) {
                                             etabnew ( no++ );           /* Create new etab entry based on original 'c' struct */
                                             etab[no].type = 'C';
                                             etab[no].mpre = tmpre ;
@@ -5925,7 +5934,7 @@ static void etabadd(char type, char *run, int id)
                                         cimutex(&etab[no].pmutex);
                                         cicondvar(&etab[no].pcvp);
                                         cicondvar(&etab[no].pcvc);
-                                        for ( i = 0, n = no; i < etab[j].nl ; i++ ) {
+                                        for ( i = 0, n = no; i < etab[j].nloader ; i++ ) {
                                         etabnew ( no++ );           /* Create new etab entry based on original 'c' struct */
                                             etab[no].type = 'C';
                                             etab[no].mpre = tmpre ;
@@ -10211,11 +10220,12 @@ static int Oloadbuff(int eid)
                                 MutexUnlock(&etab[gpar].pmutex);
                             }
                         }
-                        else {                /* either multi ('L') or single ('l') threaded loaders */
-                            if (tLastRow != Orown) { /* ensure no duplicated rows in bad file */
-                                tLastRow = Orown;
-                                prec('L', (unsigned char *)(etab[eid].Orowsetl + etab[par].s*(Orown - 1)), eid);
-                            }
+
+                        if (tLastRow != Orown) { /* ensure no duplicated rows in bad file */
+                            char type = etab[eid].type;
+                            tLastRow = Orown;
+                            if (type == 'l') type = 'L';
+                            prec(type, (unsigned char *)(etab[eid].Orowsetl + etab[par].s*(Orown - 1)), eid);
                         }
                         break;
                     }
@@ -10342,9 +10352,9 @@ static int Oloadbuff(int eid)
     }
     if ( ( type == 'C' || type == 'P' ) && etab[gpar].post ) {
         MutexLock(&etab[gpar].pmutex);
-        etab[gpar].el--;                            /* decrease number of active loaders */
+        etab[gpar].nltotal--;                            /* decrease number of active loaders */
         MutexUnlock(&etab[gpar].pmutex);
-        if ( etab[gpar].el == 0 ) {                 /* no more active loaders: run post-SQL */
+        if ( etab[gpar].nltotal == 0 ) {                 /* no more active loaders: run post-SQL */
             var_set ( &thps[tid].tva, VTYPE_I, "tgt", etab[eid].tgt );
             etab[eid].flg2 |= 020000000 ;           /* Oexec to allocate/use its own handle */
             if ( etab[eid].post[0] == '@' )         /* run a sql script */
@@ -10764,24 +10774,16 @@ static int Ocopy(int eid)
     int tid = etab[eid].id; /* Thread ID */
     int echild = etab[eid].child;   /* first child process eid */ 
     int tchild = etab[echild].id;   /* first child process tid */ 
-    int nchild = (int)etab[eid].nl; /* number of children: each 'c'/'p' (extraction) thread
+    int nchild = (int)etab[eid].nloader; /* number of children: each 'c'/'p' (extraction) thread
                             has 'nchild' children 'C'/'P' (loading) threads having etab[] 
                             index from 'echild' to 'echild + nchild'*/
     int gpar = etab[eid].k;     /* grand parent eid */
     int gchild = gpar+1;        /* grand parent first child eid */
     int gptid = etab[gpar].id;  /* grand parent tid */
     SQLSMALLINT Oncol;      /* ODBC number of columns in the result set */
-    SQLULEN *Ors=0;         /* ODBC Record Display Size array pointer */
-    int *start = 0;         /* rowset columns offset */
-    unsigned int *padl = 0; /* pad used to align length indicators */
     unsigned int ucs = 0;   /* Local ucs2toutf8 conversion flag */
     SQLCHAR *Op = 0 ;       /* Orowsetl buffer pointer used during UCS-2/UTF-8 conversion */
     SQLCHAR Oname[MAXOBJ_LEN];  /* ODBC Column Name */
-    SQLSMALLINT Onamel,     /* ODBC column name length returned by SQLDescribeCol */
-                *Odt=0,     /* ODBC data type returned by SQLDescribeCol */
-                *Ocdt=0,    /* ODBC C data type used to bind source/target */
-                *Odd=0,     /* ODBC decimal digit returned by SQLDescribeCol */
-                Onull;      /* ODBC nullable returned by SQLDescribeCol */
     SQLUSMALLINT Otf = 0 ;  /* ODBC target field number */
     struct timeval tve;     /* timeval struct to define elapesd/timelines */
     long telaps = 0,        /* Elapsed time in ms */
@@ -11000,44 +11002,9 @@ static int Ocopy(int eid)
     }
     etab[eid].sp = (unsigned int)Oncol; /* save number of src/tgt table fields for prec */
 
-    /* Allocate memory for the record size array */
-    if ( (Ors = (SQLULEN *)calloc ((size_t)Oncol, sizeof(SQLULEN))) == (void *)NULL ) {
-            fprintf(stderr, "odb [Ocopy(%d)] - Error allocating record size array memory: [%d] %s\n",
-                __LINE__, errno, strerror(errno));
-        goto ocopy_exit;
-    }   
-
-    /* Allocate memory for the data type array */
-    if ( (Odt = (SQLSMALLINT *)calloc ((size_t)Oncol, sizeof(SQLSMALLINT))) == (void *)NULL ) {
-            fprintf(stderr, "odb [Ocopy(%d)] - Error allocating data types array memory: [%d] %s\n",
-                __LINE__, errno, strerror(errno));
-        goto ocopy_exit;
-    }   
-
-    /* Allocate memory for the local bind data type array */
-    if ( (Ocdt = (SQLSMALLINT *)calloc ((size_t)Oncol, sizeof(SQLSMALLINT))) == (void *)NULL ) {
-        fprintf(stderr, "odb [Ocopy(%d)] - Error allocating C data types array memory: [%d] %s\n",
-            __LINE__, errno, strerror(errno));
-        goto ocopy_exit;
-    }   
-
-    /* Allocate memory for decimals array */
-    if ( (Odd = (SQLSMALLINT *)calloc ((size_t)Oncol, sizeof(SQLSMALLINT))) == (void *)NULL ) {
-            fprintf(stderr, "odb [Ocopy(%d)] - Error allocating decimals array memory: [%d] %s\n",
-                __LINE__, errno, strerror(errno));
-        goto ocopy_exit;
-    }   
-
-    /* Allocate memory for start array */
-    if ( (start = (int *)calloc ((size_t)Oncol, sizeof(int))) == (void *)NULL ) {
-            fprintf(stderr, "odb [Ocopy(%d)] - Error allocating start array memory: [%d] %s\n",
-                __LINE__, errno, strerror(errno));
-        goto ocopy_exit;
-    }   
-
-    /* Allocate memory for pad array */
-    if ( (padl = (unsigned int *)calloc ((size_t)Oncol, sizeof(unsigned int))) == (void *)NULL ) {
-            fprintf(stderr, "odb [Ocopy(%d)] - Error allocating padl array memory: [%d] %s\n",
+    /* Allocate memory for the tdesc array */
+    if ( (etab[eid].td = (struct tdesc *)calloc ((size_t)Oncol, sizeof(struct tdesc))) == (void *)NULL ) {
+            fprintf(stderr, "odb [Ocopy(%d)] - Error allocating tdesc array memory: [%d] %s\n",
                 __LINE__, errno, strerror(errno));
         goto ocopy_exit;
     }   
@@ -11045,104 +11012,120 @@ static int Ocopy(int eid)
     /* Get Result Set columns descriptions */
     for (j = 0; j < Oncol; j++) {
         if ( !SQL_SUCCEEDED(Or=SQLDescribeCol(Ostmt, (SQLUSMALLINT)(j+1),
-                Oname, (SQLLEN)sizeof(Oname), &Onamel, &Odt[j], &Ors[j], &Odd[j], &Onull))) {
+                NULL, 0, &etab[eid].td[j].OnameLen, &etab[eid].td[j].Otype, &etab[eid].td[j].Osize,
+                &etab[eid].td[j].Odec, &etab[eid].td[j].Onull))) {
             Oerr(eid, tid, __LINE__, Ostmt, SQL_HANDLE_STMT);
             goto ocopy_exit;
         }
+
+        if ((etab[eid].td[j].Oname = (SQLCHAR*)malloc(etab[eid].td[j].OnameLen + 1)) == (void *)NULL) {
+            fprintf(stderr, "odb [Ocopy(%d)] - Error allocating etab[%d].td[%d].Oname array memory: [%d] %s\n",
+                __LINE__, eid, j, errno, strerror(errno));
+            goto ocopy_exit;
+        }
+
+        if (!SQL_SUCCEEDED(Or = SQLColAttribute(Ostmt, (SQLUSMALLINT)(j + 1), SQL_DESC_NAME, etab[eid].td[j].Oname,
+                etab[eid].td[j].OnameLen + 1, &etab[eid].td[j].OnameLen, NULL))) {
+            Oerr(eid, tid, __LINE__, Ostmt, SQL_HANDLE_STMT);
+            goto ocopy_exit;
+        }
+
         if ( etab[gpar].flg2 & 04000 ) {        /* Force Char Binding */
             if(!SQL_SUCCEEDED(Or=SQLColAttribute(Ostmt, (SQLUSMALLINT)(j+1), SQL_DESC_DISPLAY_SIZE,
-                (SQLPOINTER) NULL, (SQLSMALLINT) 0, (SQLSMALLINT *) NULL, (SQLPOINTER) &Ors[j]))) {
+                (SQLPOINTER) NULL, (SQLSMALLINT) 0, (SQLSMALLINT *) NULL, (SQLPOINTER)&etab[eid].td[j].OdisplaySize))) {
                 Oerr(eid, tid, __LINE__, Ostmt, SQL_HANDLE_STMT);
                 goto ocopy_exit;
             }
             if ( etab[eid].dbt != VERTICA ) { /* Vertica's CHAR field length is in bytes (not chars) */
-                if ( etab[eid].dbt == ORACLE && Odt[j] == SQL_TYPE_TIMESTAMP )
+                if ( etab[eid].dbt == ORACLE && etab[eid].td[j].Otype == SQL_TYPE_TIMESTAMP )
                 /* The precision of Oracle's Timestamp is always 9 */
                 {
-                    Ors[j] = SQL_TIMESTAMP_LEN + 10; /* Display Size of TIMESTAMP(9) */
+                    etab[eid].td[j].OdisplaySize = SQL_TIMESTAMP_LEN + 10; /* Display Size of TIMESTAMP(9) */
                 }
-                switch ( Odt[j] ) {
+                switch (etab[eid].td[j].Otype) {
                 case SQL_WCHAR:
                 case SQL_WVARCHAR:
                 case SQL_WLONGVARCHAR:
-                    Ors[j] *= etab[eid].bpwc;   /* Space for UTF-8 conversion */
+                    etab[eid].td[j].OdisplaySize *= etab[eid].bpwc;   /* Space for UTF-8 conversion */
                     break;
                 case SQL_CHAR:
                 case SQL_VARCHAR:
                 case SQL_LONGVARCHAR:
-                    Ors[j] *= etab[eid].bpc;
+                    etab[eid].td[j].OdisplaySize *= etab[eid].bpc;
                     break;
                 }
             }
-            Ocdt[j] = SQL_C_CHAR ;          /* Bind to char */
+            etab[eid].td[j].Octype = SQL_C_CHAR ;          /* Bind to char */
         } else {    /* Try to use "C Default" data types to minimize conversions and reduce buffer size */
-            switch ( Odt[j] ) {
+            switch ( etab[eid].td[j].Otype ) {
             case SQL_INTEGER:
             case SQL_SMALLINT:
             case SQL_BIGINT:
-                Ors[j] = sizeof (SQLBIGINT) ;
-                Ocdt[j] = SQL_C_SBIGINT ;
+                etab[eid].td[j].Osize = sizeof (SQLBIGINT) ;
+                etab[eid].td[j].Octype = SQL_C_SBIGINT ;
                 break;
             case SQL_FLOAT:
             case SQL_DOUBLE:
-                Ors[j] = sizeof (SQLDOUBLE) ;
-                Ocdt[j] = SQL_C_DOUBLE ;
+                etab[eid].td[j].Osize = sizeof (SQLDOUBLE) ;
+                etab[eid].td[j].Octype = SQL_C_DOUBLE ;
                 break;
             case SQL_TYPE_DATE:
-                Ors[j] = sizeof (SQL_DATE_STRUCT) ;
-                Ocdt[j] = SQL_C_TYPE_DATE ;
+                etab[eid].td[j].Osize = sizeof (SQL_DATE_STRUCT) ;
+                etab[eid].td[j].Octype = SQL_C_TYPE_DATE ;
                 break;
             case SQL_TYPE_TIMESTAMP:
-                Ors[j] = sizeof (SQL_TIMESTAMP_STRUCT) ;
-                Ocdt[j] = SQL_C_TYPE_TIMESTAMP ;
+                etab[eid].td[j].Osize = sizeof (SQL_TIMESTAMP_STRUCT) ;
+                etab[eid].td[j].Octype = SQL_C_TYPE_TIMESTAMP ;
                 break;
             case SQL_BINARY:
             case SQL_VARBINARY:
             case SQL_LONGVARBINARY:
-                Ocdt[j] = SQL_C_BINARY ;
+                etab[eid].td[j].Octype = SQL_C_BINARY ;
                 break;
             default:
-                Ocdt[j] = SQL_C_CHAR ;
+                etab[eid].td[j].Octype = SQL_C_CHAR ;
                 if(!SQL_SUCCEEDED(Or=SQLColAttribute(Ostmt, (SQLUSMALLINT)(j+1), SQL_DESC_DISPLAY_SIZE,
-                    (SQLPOINTER) NULL, (SQLSMALLINT) 0, (SQLSMALLINT *) NULL, (SQLPOINTER) &Ors[j]))) {
+                    (SQLPOINTER) NULL, (SQLSMALLINT) 0, (SQLSMALLINT *) NULL, (SQLPOINTER) &etab[eid].td[j].OdisplaySize))) {
                     Oerr(eid, tid, __LINE__, Ostmt, SQL_HANDLE_STMT);
                     goto ocopy_exit;
                 }
                 if ( etab[eid].dbt != VERTICA ) {   /* Vertica's CHAR field length is in bytes (not chars) */
-                    switch ( Odt[j] ) {
+                    switch ( etab[eid].td[j].Otype ) {
                     case SQL_WCHAR:
                     case SQL_WVARCHAR:
                     case SQL_WLONGVARCHAR:
-                        Ors[j] *= etab[eid].bpwc;   /* Space for UTF-8 conversion */
+                        etab[eid].td[j].OdisplaySize *= etab[eid].bpwc;   /* Space for UTF-8 conversion */
                         break;
                     case SQL_CHAR:
                     case SQL_VARCHAR:
                     case SQL_LONGVARCHAR:
-                        Ors[j] *= etab[eid].bpc;
+                        etab[eid].td[j].OdisplaySize *= etab[eid].bpc;
                         break;
                     }
                 }
                 break;
             }
         }
-        Ors[j]++;   /* buffer should contain space for NULL termination in order to avoid truncation */
+        ++etab[eid].td[j].OdisplaySize;   /* buffer should contain space for NULL termination in order to avoid truncation */
         #ifdef __hpux
             if (Ors[j] % WORDSZ )
-                padl[j] = WORDSZ - (unsigned int)Ors[j] % WORDSZ ;
+                padl[j] = WORDSZ - (unsigned int)etab[eid].td[j].OdisplaySize % WORDSZ ;
         #endif
         if ( ( j + 1 ) == (int)etab[eid].seqp ) {   /* Allocate extra space for sequence and length indicator */
             sqo = etab[eid].s ; /* record sequence offset */
             etab[eid].s += (size_t) ( sizeof(SQLBIGINT) + sizeof(SQLLEN) ) ;
         }
-        start[j] = (int)etab[eid].s;
-        etab[eid].s += (size_t)(Ors[j] + padl[j] + sizeof(SQLLEN));
+        etab[eid].td[j].start = (int)etab[eid].s;
+        etab[eid].td[j].Ocdatabufl = etab[eid].td[j].Octype == SQL_C_CHAR ? etab[eid].td[j].OdisplaySize : (SQLLEN)etab[eid].td[j].Osize;
+        etab[eid].s += (size_t)(etab[eid].td[j].Ocdatabufl + etab[eid].td[j].pad + sizeof(SQLLEN));
         if ( etab[eid].flg & 0400000 && eid == gpar )   /* Grand Parent to Describe result set */
             fprintf(stderr, "--- col #%d, name=%s type=%d (%s) size=%lu, dec=%d, nullable=%s\n",
-                j, (char *)Oname, Odt[j], expandtype(Odt[j]), (unsigned long) Ors[j], (int) Odd[j], Onull ? "yes" : "no");
+                j, (char *)Oname, etab[eid].td[j].Otype, expandtype(etab[eid].td[j].Otype), (unsigned long)etab[eid].td[j].Osize,
+                (int) etab[eid].td[j].Odec, etab[eid].td[j].Onull ? "yes" : "no");
         if ( fdmp && eid == gpar )  /* Grand Parent to initialize ODBC dump */ 
             fprintf(fdmp, "[%d] Column %d: name=%s, type=%d (%s), size=%lu, decimals=%d, nullable=%s\n",
-                tid, j, (char *)Oname, (int)Odt[j], expandtype(Odt[j]),
-                (unsigned long)Ors[j], (int)Odd[j], Onull ? "yes" : "no" ) ; 
+                tid, j, (char *)etab[eid].td[j].Oname, (int)etab[eid].td[j].Otype, expandtype(etab[eid].td[j].Otype),
+                (unsigned long)etab[eid].td[j].Ocdatabufl, (int)etab[eid].td[j].Odec, etab[eid].td[j].Onull ? "yes" : "no" ) ;
     }
 
     /* Calculate rowset if buffer size is set */
@@ -11168,7 +11151,7 @@ static int Ocopy(int eid)
         goto ocopy_exit;
     }
 
-    /* Allocate memory for children rowset and status array */
+    /* Allocate memory for children rowset and status array and pass td to children */
     for ( i = echild ; i < echild + nchild ; i++ ) {
         if ( (etab[i].Orowsetl = (SQLCHAR *)calloc (etab[eid].r, etab[eid].s)) == (void *)NULL ||
             (etab[i].Ostatusl = (SQLUSMALLINT *)calloc (etab[eid].r, sizeof(SQLUSMALLINT))) == (void *)NULL ) {
@@ -11176,6 +11159,8 @@ static int Ocopy(int eid)
                     __LINE__, i, errno, strerror(errno));
             goto ocopy_exit;
         }
+        etab[i].td = etab[eid].td;
+        etab[i].sp = etab[eid].sp;
     }
     rbl = etab[eid].r * etab[eid].s ;
 
@@ -11247,8 +11232,9 @@ static int Ocopy(int eid)
 
     /* Bind Source */
     for (j = 0; j < Oncol; j++) {
-        if (!SQL_SUCCEEDED(Or=SQLBindCol(Ostmt, (SQLUSMALLINT)j + 1, Ocdt[j],
-                &etab[eid].Orowsetl[start[j]], Ors[j], (SQLLEN *)&etab[eid].Orowsetl[start[j]+Ors[j]+padl[j]]))) {
+        if (!SQL_SUCCEEDED(Or=SQLBindCol(Ostmt, (SQLUSMALLINT)j + 1, etab[eid].td[j].Octype,
+                &etab[eid].Orowsetl[etab[eid].td[j].start], etab[eid].td[j].Ocdatabufl,
+            (SQLLEN *)&etab[eid].Orowsetl[etab[eid].td[j].start + etab[eid].td[j].Ocdatabufl + etab[eid].td[j].pad]))) {
             Oerr(eid, tid, __LINE__, Ostmt, SQL_HANDLE_STMT);
             goto ocopy_exit;
         }
@@ -11263,9 +11249,9 @@ static int Ocopy(int eid)
             Otf++;
         for ( i = echild ; i < echild + nchild ; i++ ) {
             if (!SQL_SUCCEEDED(Or=SQLBindParameter(thps[etab[i].id].Os, Otf,
-                    SQL_PARAM_INPUT, Ocdt[k], Odt[k], Ors[k], Odd[k],
-                    &etab[i].Orowsetl[start[k]], Ors[k],
-                    (SQLLEN *)&etab[i].Orowsetl[start[k]+Ors[k]+padl[k]]))) {
+                    SQL_PARAM_INPUT, etab[eid].td[k].Octype, etab[eid].td[k].Otype, etab[eid].td[k].Osize,
+                    etab[eid].td[k].Odec, &etab[i].Orowsetl[etab[eid].td[k].start], etab[eid].td[k].Ocdatabufl,
+                    (SQLLEN *)&etab[i].Orowsetl[etab[eid].td[k].start + etab[eid].td[k].Ocdatabufl + etab[eid].td[k].pad]))) {
                 Oerr(i, etab[i].id, __LINE__, thps[etab[i].id].Os, SQL_HANDLE_STMT);
                 goto ocopy_exit;
             }
@@ -11400,10 +11386,9 @@ static int Ocopy(int eid)
                         case SQL_WCHAR:
                         case SQL_WVARCHAR:
                         case SQL_WLONGVARCHAR:
-                            if ( ucs2toutf8 ( Op + start[k] ,
-                                        (SQLLEN *)(Op + start[k] + Ors[k] + padl[k]),
-                                        Ors[k],
-                                        etab[eid].bucs2 ) ) {
+                            if ( ucs2toutf8 ( Op + etab[eid].td[k].start ,
+                                        (SQLLEN *)(Op + etab[eid].td[k].start + etab[eid].td[k].Ocdatabufl + etab[eid].td[k].pad),
+                                    etab[eid].td[k].Ocdatabufl, etab[eid].bucs2 ) ) {
                                     fprintf(stderr, "odb [Ocopy(%d)] - Error converting UCS-2 column %s\n",
                                         __LINE__, (char *)etab[eid].td[k].Oname);
                             }
@@ -11608,20 +11593,18 @@ static int Ocopy(int eid)
     if (Ocmd) 
         if (!etab[eid].tgtsql)
             free ( Ocmd );
-    if ( Ors )
-        free ( Ors ) ;
-    if ( Odt ) 
-        free ( Odt ) ;
-    if ( Ocdt ) 
-        free ( Ocdt ) ;
-    if ( Odd ) 
-        free ( Odd ) ;
-    if ( start )
-        free ( start ) ;
-    if ( padl )
-        free ( padl ) ;
+
+    if (etab[eid].td) {
+        for (j = 0; j < (int)etab[eid].sp; ++j) {
+            if (etab[eid].td[j].Oname)
+                free(etab[eid].td[j].Oname);
+        }
+        free(etab[eid].td);
+    }
+
     if ( etab[eid].Orowsetl )
         free (etab[eid].Orowsetl);
+
     return(fexst);
 }
 
@@ -12237,6 +12220,55 @@ static void Ocompare(int eid)
         free ( etab[eid].Orowsetl2 );
 }
 
+/* decode_buf
+ * decode contents in buf to string and save in buf
+ *
+ * ibuf: input buffer
+ * type: input buffer C type
+ * obuf: output buffer
+ * size: output buffer dispaly size
+ * return obuf
+ */
+static char* decode_buf(char *ibuf, SQLSMALLINT type, char *obuf, SQLULEN size) {
+    switch (type)
+    {
+    case SQL_C_SHORT:
+    case SQL_C_SSHORT:
+        snprintf(obuf, size, "%hd", *((unsigned short*)ibuf));
+        return obuf;
+    case SQL_C_USHORT:
+        snprintf(obuf, size, "%hu", *((unsigned short*)ibuf));
+        return obuf;
+    case SQL_C_LONG:
+        snprintf(obuf, size, "%ld", *((long*)ibuf));
+        return obuf;
+    case SQL_C_ULONG:
+        snprintf(obuf, size, "%lu", *((unsigned long*)ibuf));
+        return obuf;
+    case SQL_C_FLOAT:
+        snprintf(obuf, size, "%f", *((float*)ibuf));
+        return obuf;
+    case SQL_C_DOUBLE:
+        snprintf(obuf, size, "%lf", *((double*)ibuf));
+        return obuf;
+    case SQL_C_STINYINT:
+        snprintf(obuf, size, "%hhd", *((char*)ibuf));
+        return obuf;
+    case SQL_C_UTINYINT:
+        snprintf(obuf, size, "%hhu", *((unsigned char*)ibuf));
+        return obuf;
+    case SQL_C_SBIGINT:
+        snprintf(obuf, size, "%lld", *((long long*)ibuf));
+        return obuf;
+    case SQL_C_UBIGINT:
+        snprintf(obuf, size, "%llu", *((long long*)ibuf));
+        return obuf;
+    default:
+        strncpy(obuf, ibuf, size);
+        return obuf;
+    }
+}
+
 /* prec:
  * print rows 
  *
@@ -12253,8 +12285,13 @@ static void prec(char type, unsigned char *podbc, int eid)
     unsigned int nfields = (unsigned int)etab[eid].cmt; /* Initialize number of fields */
     unsigned char *p = 0;       /* pointer to string to print */
     SQLLEN Ofl = 0;             /* Field Length */
+    SQLLEN bufl = 20;
+    SQLCHAR *tbuf = (SQLCHAR*)malloc(bufl);
+    if (!tbuf) {
+        fprintf(stderr, "prec(%d): alloc memory for tbuf failed\n", __LINE__);
+    }
 
-    if ( type == 'L' ) {
+    if ( type == 'L' || type == 'C' ) {
         gpar = etab[eid].parent;
         /* nfields = (unsigned int)etab[gpar].sp ; */
         /* fix jira 2034, write to bad_record if load with parameter 'bad', etab[gpar].sp equals 0 always */
@@ -12262,7 +12299,7 @@ static void prec(char type, unsigned char *podbc, int eid)
     }
     MutexLock(&etab[gpar].pmutex);      /* lock mutex */
     if ( !(etab[gpar].flg2 & 0200) ) {
-        if ( type != 'L' ) {
+        if ( type != 'L' && type != 'C' ) {
             fputs(islower(etab[eid].td[0].Oname[0]) ? "dtype" : "DTYPE", etab[eid].fo);
             for ( i = 0 ; i < nfields ; i++ ) {
                 fputc(etab[eid].fs, etab[eid].fo);
@@ -12272,7 +12309,7 @@ static void prec(char type, unsigned char *podbc, int eid)
             etab[gpar].flg2 |= 0200 ;
         }
     }
-    if ( type == 'L' ) {
+    if ( type == 'L' || type == 'C' ) {
         if ( etab[eid].fo == stderr ) {
             fputs(">>> ", stderr);
         }
@@ -12281,15 +12318,36 @@ static void prec(char type, unsigned char *podbc, int eid)
         fputc(etab[eid].fs, etab[eid].fo);
     }
     for ( i = 0 ; i < nfields ; i++ ) {
+        SQLULEN cdatal;
+        if (type == 'C') {
+            cdatal = etab[eid].td[i].Ocdatabufl;
+        }
+        else {
+            cdatal = etab[eid].td[i].Osize;
+        }
         if ( i )
             fputc(etab[eid].fs, etab[eid].fo);
-        if ( *((char *)podbc + etab[eid].td[i].start + etab[eid].td[i].Osize + etab[eid].td[i].pad ) == SQL_NULL_DATA ) {
+        if ( *((char *)podbc + etab[eid].td[i].start + cdatal + etab[eid].td[i].pad ) == SQL_NULL_DATA ) {
             fputs(etab[eid].ns ? etab[eid].ns : "", etab[eid].fo);
-        } else if ( *(SQLLEN *)(podbc + etab[eid].td[i].start + etab[eid].td[i].Osize + etab[eid].td[i].pad ) == 0 ) {
+        } else if ( *(SQLLEN *)(podbc + etab[eid].td[i].start + cdatal + etab[eid].td[i].pad ) == 0 ) {
             fputs(etab[eid].es ? etab[eid].es : "", etab[eid].fo);
         } else {
             p = podbc + etab[eid].td[i].start;
-            Ofl = *(SQLLEN *)( p + etab[eid].td[i].Osize + etab[eid].td[i].pad ) ; 
+            Ofl = *(SQLLEN *)(p + cdatal + etab[eid].td[i].pad);
+
+            if (type == 'C') {
+                if (bufl < etab[eid].td[i].OdisplaySize) {
+                    bufl = etab[eid].td[i].OdisplaySize + 1;
+                    tbuf = (SQLCHAR*)realloc(tbuf, bufl);
+                    if (!tbuf) {
+                        fprintf(stderr, "prec(%d): alloc memory for tbuf failed\n", __LINE__);
+                    }
+                }
+
+                Ofl = etab[eid].td[i].OdisplaySize;
+                p = decode_buf(p, etab[eid].td[i].Octype, tbuf, Ofl);
+            }
+
             for ( ; *p && Ofl ; p++, Ofl-- )
                 fputc( *p , etab[eid].fo );
         }
@@ -14020,8 +14078,8 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                 } else if ( type == 'l' && !strcmp(&str[n], "map") ) {
                     etab[no].map = &str[l];
                     etab[no].flg |= 01000000 ;  /* complex load. Use Oload */
-                } else if ( type == 'l' && !strcmp(&str[n], "bad") ) {
-                    etab[no].sb = &str[l];
+                } else if ( (type == 'l' || type == 'c') && !strcmp(&str[n], "bad") ) {
+                    etab[no].bad = &str[l];
                 } else if ( type == 'c' && !strcmp(&str[n], "errdmp") ) {
                     if ( !(strcmp(&str[l], "stdout") ) ) {
                         etab[no].fdmp = stdout ;
@@ -14073,7 +14131,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                         etab[no].ps = (unsigned int) atoi(&str[l]);
                 } else if ( ( type == 'c' || type == 'p' ) && !strcmp(&str[n], "loaders") ) {
                     if ( !rp )  /* this is a command-line only option */
-                        etab[no].nl = (unsigned int) atoi(&str[l]);
+                        etab[no].nloader = (unsigned int) atoi(&str[l]);
                 } else if ( !strcmp(&str[n], "bpwc") ) {
                     etab[no].bpwc = (unsigned int) atoi(&str[l]);
                 } else if ( !strcmp(&str[n], "bpc") ) {
@@ -14090,7 +14148,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                                         __LINE__, &str[l] );
                     }
                     etab[no].flg |= 01000000 ;  /* complex load. Use Oload */
-                } else if ( type != 'c' && !strcmp(&str[n], "ns") ) {
+                } else if (!strcmp(&str[n], "ns") ) {
                     etab[no].ns = &str[l];
                     etab[no].nl = (unsigned int ) strlen( etab[no].ns );
                     etab[no].flg |= 01000000 ;  /* complex load. Use Oload */

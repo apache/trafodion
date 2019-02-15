@@ -496,6 +496,21 @@ else
                   }
                token_stream_advance(t,1);  /*  advance past SELECT  */
                }
+            else if (token_stream_is_get(t))
+               {
+               /*  we are just after a GET with sortable output  */
+               headingcount = 0;
+               if (line_isblank(linebuf)) state = 10;
+               else if (line_is0rows(linebuf)) state = 0;
+               else if (line_iserror(linebuf)) state = 0;
+               else
+                  {
+                  printf("Unexpected line after a GET statement:\n");
+                  printf("%s",linebuf);
+                  state = 0;
+                  }
+               token_stream_advance(t,1);  /*  advance past GET  */
+               }
             else
                {
                /*  We are just after some other statement.  If the
@@ -689,6 +704,119 @@ else
             else if (!line_iswarning(linebuf))
                state = 0;
             myFputs(linebuf,out,strip_stats_option,mightbestats(state));
+            break;
+            }
+         case 10:   /* after blank line after GET statement */
+            {
+            if (line_isheading(linebuf)) state = 11;
+            /* 0 rows selected after a blank line can happen with Trafodion sqlci */
+            else if (line_issqloperationcomplete(linebuf))
+               state = 0;  /* for Trafodion */
+            /* error message after a blank line can happen with Trafodion sqlci */
+            else if (line_iserror(linebuf))
+               state = 0;  /* for Trafodion */
+            /* warning messages occur after a blank line also in Trafodion sqlci */
+            else if (line_iswarning(linebuf))
+               state = 9;  /* there will be a blank line after the warning */
+            else
+               {
+               printf("Unexpected line after a GET statement:\n");
+               printf("%s",linebuf);
+               state = 0;
+               }
+            myFputs(linebuf,out,strip_stats_option,mightbestats(state));
+            break;
+            }
+         case 11:  /* after GET statement header text, e.g. "Tables in Schema TRAFODION.SCH" */
+            {
+            if (line_isgetheadingorfooting(linebuf))
+               {
+               headingcount++;
+               state = 12;
+               }
+            /* 0 rows selected after a blank line can happen with Trafodion sqlci */
+            else if (line_is0rows(linebuf))
+               state = 0;  /* for Trafodion */
+            /* error message after a blank line can happen with Trafodion sqlci */
+            else if (line_iserror(linebuf))
+               state = 0;  /* for Trafodion */
+            /* warning messages occur after a blank line also in Trafodion sqlci */
+            else if (line_iswarning(linebuf))
+               state = 9;  /* there will be a blank line after the warning */
+            else
+               {
+               printf("Unexpected line after a GET statement:\n");
+               printf("%s",linebuf);
+               state = 0;
+               }
+            myFputs(linebuf,out,strip_stats_option,mightbestats(state));
+            break;
+            }
+         case 12: /* after "===============" header line for GET statement */
+            {
+            if (line_isblank(linebuf))
+               {
+               state = 13;
+               line_within_row = 0;
+               }
+            else
+               {
+               printf("Unexpected line after a GET header:\n");
+               printf("%s",linebuf);
+               state = 0;
+               }
+            myFputs(linebuf,out,strip_stats_option,mightbestats(state));
+            break;
+            }
+         case 13:  /*  we are at a row of GET statement output */
+            {
+            if (line_isblank(linebuf))
+               {
+               /*  a blank line means no more GET output  */
+               
+               if (rw)  /* add any outstanding row to the list */
+                  {
+                  row_list_add(r,rw);
+                  rw = NULL;
+                  }
+
+               struct row *rw1;
+               char *returned_line;
+
+               while ((rw1 = row_list_remove_min(r)) != NULL)
+                  {
+                  while ((returned_line = row_remove(rw1)) != NULL)
+                     {
+                     myFputs(returned_line,out,strip_stats_option,mightbestats(state));
+                     }
+                  row_destroy(rw1);
+                  }
+
+               myFputs(linebuf,out,strip_stats_option,mightbestats(state));
+
+               /*  BUG - the test in the next statement should be:
+                   if (there are outstanding statements) ...
+                   But, need to write a new token_stream fn. to do this  */
+
+               if (token_stream_interesting(t)) state = 2;
+               else if (token_stream_is_get(t)) state = 2;
+               else state = 0;
+               }
+            else
+               {
+               if (line_within_row == headingcount)
+                  {
+                  row_list_add(r,rw);
+                  rw = NULL;
+                  line_within_row = 0;
+                  }
+               if (line_within_row == 0)
+                  {
+                  rw = row_create(headingcount);
+                  }
+               row_add(rw,linebuf);
+               line_within_row++;
+               }
             break;
             }
          default:

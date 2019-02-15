@@ -561,3 +561,38 @@ else
 
 return rc;
 }
+
+/*
+
+    line_isgetheadingorfooting
+
+    This function determines if a line is a header or footer line
+    for GET statement output.
+
+    entry parameters:  line - the line to analyze
+
+    exit parameters:  returns TRUE if so, FALSE if not.
+
+                                                                          */
+
+int line_isgetheadingorfooting(char *line)
+{
+return (strncmp(line,"==========",10) == 0);
+}
+
+/*
+
+    line_issqloperationcomplete
+
+    This function determines if a line is "SQL operation complete."
+
+    entry parameters:  line - the line to analyze
+
+    exit parameters:  returns TRUE if so, FALSE if not.
+
+                                                                          */
+
+int line_issqloperationcomplete(char *line)
+{
+return (strcmp(line,"--- SQL operation complete.\n") == 0);
+}
