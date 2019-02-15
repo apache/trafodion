@@ -3695,6 +3695,393 @@ evaluates to null:
 ```
 
 <<<
+[[overlaps_predicate]]
+=== OVERLAPS Predicate
+
+The OVERLAPS predicate evaluates whether two date-time periods overlap each other. The date-time period is a pair of date-time expressions.
+
+```
+(start 1, end 1) OVERLAPS (start 2, end 2)
+```
+
+[[syntax_description_of_overlaps]]
+==== Syntax Description of OVERLAPS
+
+* `_start 1, start 2_`
+
++
+Specifies the beginning of a date-time period, which can be a DATE, TIME or TIMESTAMP value.
+
++
+NOTE: `_start 1, start 2_` cannot be NULL.
+
+
+* `_end 1, end 2_`
++
+Specifies the end of a date-time period, which can be a DATE, TIME, TIMESTAMP or INTERVAL value.
+
++
+NOTE: `_end 1, end 2_` cannot be NULL.
+
++ 
+The INTERVAL value advances or decrements date-time period. 
+
++
+*Example*
+
++
+These two date-time periods overlap since TIMESTAMP '2019-11-02 01:00:00' is less than one hour before TIMESTAMP '2019-11-02 02:00:01'.
+
++
+```
+SELECT 'Technical Writer' FROM DUAL 
+WHERE  
+(TIMESTAMP '2019-11-02 02:00:01', INTERVAL -'1' HOUR)
+OVERLAPS
+(TIMESTAMP '2019-11-02 01:00:00', INTERVAL '2' HOUR);
+
+(EXPR)
+----------------
+Technical Writer
+
+--- 1 row(s) selected.
+```
+
+[[considerations_for_overlaps]]
+==== Considerations for OVERLAPS 
+
+* If two date-time periods are not instantaneous, they overlap when they share a common period, that is, they must have one-second overlap for TIME/TIMESTAMP or one-day overlap for DATE/TIMESTAMP.
+
++
+TIP: S1-E1 stands for `_(start 1, end 1)_`, S2-E2 stands for `_(start 2, end 2)_`, and so forth.
+
++
+```
+Date-time Period                                                                       Overlap?
+-----------------------|-------------S1-E1-------------|--------------------------
+
+  |-----S2-E2-----|                                                                    No
+
+  |--------S3-E3-------|                                                               No
+
+  |--------------S4-E4--------------|                                                  Yes
+
+  |----------------------S5-E5-------------------------|                               Yes
+
+  |----------------------------S6-E6-------------------------------|                   Yes
+
+                       |-----S7-E7-----|                                               Yes
+
+                       |-------------S8-E8-------------|                               Yes
+
+                       |-------------------S9-E9-------------------|                   Yes
+
+                                       |--S10-E10--|                                   Yes
+
+                                       |----S11-E11----|                               Yes
+
+                                       |-------S12-E12-------|                         Yes
+
+                                                       |--S13-E13--|                   No
+
+                                                                |--S14-E14--|          No    
+-----------------------|-------------S1-E1-------------|--------------------------                                           
+```
++
+*Example*
+
++
+** These two date-time periods have one-second overlap.
+
++
+```
+SELECT 'Technical Writer' FROM DUAL 
+WHERE  
+(TIMESTAMP '2019-11-02 00:00:01', TIMESTAMP '2019-11-02 00:00:03')
+OVERLAPS
+(TIMESTAMP '2019-11-02 00:00:02', TIMESTAMP '2019-11-02 00:00:05');
+
+(EXPR)
+----------------
+Technical Writer
+
+--- 1 row(s) selected.
+```
+
++
+** These two date-time periods have one-day overlap.
+
++
+```
+SELECT 'Technical Writer' FROM DUAL WHERE  
+(TIMESTAMP '2019-11-03 00:00:01', TIMESTAMP '2019-11-02 00:00:01')
+OVERLAPS
+(TIMESTAMP '2019-11-03 00:00:01', TIMESTAMP '2019-11-01 00:00:01');
+
+(EXPR)
+----------------
+Technical Writer
+
+--- 1 row(s) selected.
+```
+
+* If two date-time periods are instantaneous, they overlap when they are exactly the same.
+
++
+*Example*
+
++
+```
+SELECT 'Technical Writer' FROM DUAL 
+WHERE  
+(TIMESTAMP '2019-11-02 00:00:01', TIMESTAMP '2019-11-02 00:00:01')
+OVERLAPS
+(TIMESTAMP '2019-11-02 00:00:01', TIMESTAMP '2019-11-02 00:00:01');
+
+(EXPR)
+----------------
+Technical Writer
+
+--- 1 row(s) selected.
+```
+
+* If two date-time periods have only an endpoint in common, they do not overlap.  
+
++
+*Example*
+
++
+** The literal is not returned since the common single date of '2019-11-02' does not constitute an overlap.
+
++
+```
+SELECT 'Technical Writer' FROM DUAL 
+WHERE  
+(DATE '2019-11-01', DATE '2019-11-02')
+OVERLAPS
+(DATE '2019-11-02', DATE '2019-11-03');
+
+--- 0 row(s) selected.
+```
+
++
+** The literal is not returned since the common single timestamp of '2019-11-02 00:00:03' does not constitute an overlap.
+
++
+```
+SELECT 'Technical Writer' FROM DUAL 
+WHERE  
+(TIMESTAMP '2019-11-02 00:00:01', TIMESTAMP '2019-11-02 00:00:03')
+OVERLAPS
+(TIMESTAMP '2019-11-02 00:00:03', TIMESTAMP '2019-11-02 00:00:05');
+
+--- 0 row(s) selected.
+```
+
+* OVERLAPS always takes the earlier parameter of the pair as the `_start_` and the later parameter of the pair as the `_end_` whether the first and the second parameter of the pair are specified in a chronological order or not.
+
++
+*Example*
+
++
+OVERLAPS considers TIME '01:00:00' as the `_start_` and TIME '19:00:00' as the `_end_` for the first range, which entirely contains the second range. 
+
++
+```
+SELECT 'Technical Writer' FROM DUAL 
+WHERE  
+(TIME '19:00:00', TIME '01:00:00') 
+OVERLAPS
+(TIME '01:00:01', TIME '18:59:59');
+
+(EXPR)
+----------------
+Technical Writer
+
+--- 1 row(s) selected.
+```
+
+* The date-time period is regarded as an open interval (`_start_` < date-time < `_end_`), that is, the `_start_` and `_end_` values are not included in the period. 
+
+
+[[examples_of_overlaps]]
+==== Examples of OVERLAPS
+
+* Rows of table _t1_, _t2_ and _t3_ are returned since each two periods overlap.
+
++
+```
+SELECT * FROM t1
+WHERE
+(DATE'2018-11-02', -INTERVAL '03-02' YEAR TO MONTH)
+OVERLAPS 
+(date'2018-07-30', date'2019-11-02');
+
+C1
+-----------------------------------------------------
+
+Technical writing is a highly valuable skill.
+```
+
++
+```
+SELECT * FROM t2 
+WHERE 
+(TIME'00:00:01', INTERVAL '00:03:04' HOUR TO SECOND)
+OVERLAPS
+(TIME'03:04:05', -INTERVAL'03:01:01' HOUR TO SECOND);
+
+C1
+-----------------------------------------------------
+
+Technical writing is not just about understanding technical information and recording it in a document.
+```
+
+
++
+```
+SELECT * FROM t3
+WHERE 
+(CURRENT_TIMESTAMP, INTERVAL -'2' HOUR)
+OVERLAPS
+(CURRENT_TIMESTAMP + INTERVAL '1' SECOND, CAST (('2018-11-02 00:00:01') AS TIMESTAMP)); 
+
+C1
+-----------------------------------------------------
+
+Technical writing takes high-level information and processes it into digestible content for a specific audience.  
+
+--- 1 row(s) selected.
+```
+
+* OVERLAPS works with the WHERE clause.
+
++
+Suppose that the table _t4_ like this:
+
++
+```
+CREATE TABLE t4 AS
+SELECT '(yesterday, today) OVERLAPS (today, tomorrow)' description, 
+SYSDATE-1 start1, SYSDATE end1, SYSDATE start2, SYSDATE+1 end2 FROM DUAL
+UNION ALL
+SELECT '(today, tomorrow) OVERLAPS (tomorrow, tomorrow)', 
+SYSDATE start1, SYSDATE+1 end1, SYSDATE+1 start2, SYSDATE+1 end2 FROM DUAL
+UNION ALL
+SELECT '(today, today) OVERLAPS (today, tomorrow)', 
+SYSDATE start1, SYSDATE end1, SYSDATE start2, SYSDATE+1 end2 FROM DUAL
+UNION ALL
+SELECT '(today, today) OVERLAPS (today, today)' description, 
+SYSDATE start1, SYSDATE end1, SYSDATE start2, SYSDATE end2 FROM DUAL
+
+--- 4 row(s) inserted.
+```
+
++
+```
+SELECT * FROM t4;
+
+DESCRIPTION                                     START1     END1       START2     END2      
+----------------------------------------------- ---------- ---------- ---------- ----------
+(today, today) OVERLAPS (today, today)          2019-02-15 2019-02-15 2019-02-15 2019-02-15
+(today, today) OVERLAPS (today, tomorrow)       2019-02-15 2019-02-15 2019-02-15 2019-02-16
+(today, tomorrow) OVERLAPS (tomorrow, tomorrow) 2019-02-15 2019-02-16 2019-02-16 2019-02-16
+(yesterday, today) OVERLAPS (today, tomorrow)   2019-02-14 2019-02-15 2019-02-15 2019-02-16
+
+--- 4 row(s) selected.
+```
+
++
+Two rows are returned since:
+
++
+[cols="70%,30%"]
+|===
+^| Condition ^| TRUE or FALSE
+| (yesterday, today) OVERLAPS (today, tomorrow) | FALSE
+| (today, tomorrow) OVERLAPS (tomorrow, tomorrow)  | FALSE
+| (today, today) OVERLAPS (today, today) | TRUE
+| (today, today) OVERLAPS (today, tomorrow) | TRUE
+|===
+
++
+```
+SELECT * FROM t4 WHERE (start1,end1) OVERLAPS (start2,end2);
+
+DESCRIPTION                                     START1     END1       START2     END2      
+----------------------------------------------- ---------- ---------- ---------- ----------
+(today, today) OVERLAPS (today, today)          2019-02-15 2019-02-15 2019-02-15 2019-02-15
+(today, today) OVERLAPS (today, tomorrow)       2019-02-15 2019-02-15 2019-02-15 2019-02-16
+
+--- 2 row(s) selected.
+```
+
++
+* OVERLAPS helps avoid scheduling conflicts. 
+
++
+Suppose that the table _employee_ and the table _tech_event_calendar_2019_ are as follows.
+
++
+The table _employee_:
+
++
+```
+SELECT * FROM employee;
+
+NAME                 AVAILABLE_START AVAILABLE_END
+-------------------- --------------- -------------
+Aven                 2019-01-02      2019-01-10   
+Alex                 2019-02-28      2019-03-03   
+Andy                 2019-04-09      2019-04-10   
+Eason                2019-05-02      2019-05-08   
+Kevin                2019-11-20      2019-12-10   
+Seth                 2019-12-09      2019-12-16   
+
+--- 6 row(s) selected.
+```
+
++
+The table _tech_event_calendar_2019_:
+
++
+```
+SELECT * FROM tech_event_calendar_2019;
+
+EVENT                          EVENT_START EVENT_END  LOCATION                                                     
+------------------------------ ----------- ---------- ----------
+
+MWC Barcelona                  2019-02-25  2019-02-28 Barcelona, Spain                                                       
+Google Cloud Next              2019-04-09  2019-04-11 San Francisco, CA                                            
+Microsoft Build                2019-05-06  2019-05-08 Seattle, WA                                                            
+Dreamforce                     2019-11-19  2019-11-22 San Francisco, CA                                                      
+
+--- 4 row(s) selected.
+```
+
++
+This statement finds employees who will be avaliable to attend tech events.
+
++
+```
+SELECT name, event, event_start, event_end, location 
+FROM employee, tech_event_calendar_2019  
+WHERE 
+(available_start, available_end) 
+OVERLAPS 
+(event_start, event_end);
+
+NAME                 EVENT                          EVENT_START EVENT_END  LOCATION                                       
+-------------------- ------------------------------ ----------- ---------- ----------
+
+Andy                 Google Cloud Next              2019-04-09  2019-04-11 San Francisco, CA                        
+Eason                Microsoft Build                2019-05-06  2019-05-08 Seattle, WA                                       
+Kevin                Dreamforce                     2019-11-19  2019-11-22 San Francisco, CA              
+
+--- 3 row(s) selected.
+```
+
+<<<
 [[quantified_comparison_predicates]]
 === Quantified Comparison Predicates
 
