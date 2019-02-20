@@ -3753,7 +3753,7 @@ Technical Writer
 * If two date-time periods are not instantaneous, they overlap when they share a common period, that is, they must have one-second overlap for TIME/TIMESTAMP or one-day overlap for DATE/TIMESTAMP.
 
 +
-TIP: S1-E1 stands for `_(start 1, end 1)_`, S2-E2 stands for `_(start 2, end 2)_`, and so forth.
+TIP: The diagram below describes how various time periods overlap the time period S1-E1. Here, Sn-En refers to `_(start n, end n)_`.
 
 +
 ```
