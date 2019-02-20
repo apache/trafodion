@@ -37,7 +37,7 @@
 #
 #   DCS_OPTS       Extra Java runtime options.
 #
-#   DCS_CONF_DIR   Alternate conf dir. Default is ${DCS_HOME}/conf.
+#   DCS_CONF_DIR   Alternate conf dir. Default is ${TRAF_CONF}/dcs.
 #
 #   DCS_ROOT_LOGGER The root appender. Default is INFO,console
 #
@@ -96,8 +96,8 @@ if [ "$MAVEN_HOME" != "" ]; then
 fi
 
 # override default settings for this command, if applicable
-if [ -f "$DCS_HOME/conf/dcs-env-$COMMAND.sh" ]; then
-  . "$DCS_HOME/conf/dcs-env-$COMMAND.sh"
+if [ -f "$TRAF_CONF/dcs/dcs-env-$COMMAND.sh" ]; then
+  . "$TRAF_CONF/dcs/dcs-env-$COMMAND.sh"
 fi
 
 # check envvars which might override default args

@@ -80,14 +80,14 @@ export DCS_ZOOKEEPER_OPTS=
 # export DCS_REST_OPTS="$DCS_REST_OPTS $DCS_JMX_BASE -Dcom.sun.management.jmxremote.port=10103"
 # export DCS_ZOOKEEPER_OPTS="$DCS_ZOOKEEPER_OPTS $DCS_JMX_BASE -Dcom.sun.management.jmxremote.port=10104"
 
-# File naming host on which DCS Primary Master is configured to run. $DCS_HOME/conf/master by default.
-# export DCS_PRIMARY_MASTER=${DCS_HOME}/conf/master
+# File naming host on which DCS Primary Master is configured to run. $TRAF_HOME/dcs/master by default.
+# export DCS_PRIMARY_MASTER=${TRAF_HOME}/dcs/master
 
-# File naming hosts on which DCS Backup Masters is configured to run. $DCS_HOME/conf/backup-masters by default.
-# export DCS_BACKUP_MASTERS=${DCS_HOME}/conf/backup-masters
+# File naming hosts on which DCS Backup Masters is configured to run. $TRAF_CONF/dcs/backup-masters by default.
+# export DCS_BACKUP_MASTERS=${TRAF_CONF}/dcs/backup-masters
 
-# File naming hosts on which DCS Servers will run. $DCS_HOME/conf/servers by default.
-# export DCS_SERVERS=${DCS_HOME}/conf/servers
+# File naming hosts on which DCS Servers will run. $TRAF_CONF/dcs/servers by default.
+# export DCS_SERVERS=${TRAF_CONF}/dcs/servers
 
 # Extra ssh options.  Empty by default.
 # export DCS_SSH_OPTS="-o ConnectTimeout=1 -o SendEnv=DCS_CONF_DIR"

@@ -37,7 +37,7 @@ a thorough read of this chapter will help with non-standard configurations. Plea
 requirements have been satisfied. Failure to do so will cause you grief debugging strange errors.
 
 Trafodion REST uses the same configuration mechanism as Apache Hadoop.
-All configuration files are located in the _$REST_INSTALL_DIR/conf/_ directory.
+All configuration files are located in the _$TRAF_CONF/rest/_ directory.
 
 [TIP]
 ====
@@ -48,7 +48,7 @@ ensure well-formedness of your document after an edit session.
 .Keep Configuration In Sync Across the Cluster
 [WARNING]
 ====
-After you make an edit to any configuration file, make sure you copy the content of the _$REST_INSTALL_DIR/conf_ directory to all nodes of the cluster.
+After you make an edit to any configuration file, make sure you copy the content of the _$TRAF_CONF/rest_ directory to all nodes of the cluster.
 The server will not do this for you. Use +rsync+, +scp+, or another secure mechanism for copying the configuration files to your nodes.
 A restart is needed for servers to pick up changes.
 ====
@@ -89,7 +89,7 @@ This `rest.zookeeper.quorum` property defaults to a single ensemble member at `l
 == Configuration Files
          
 === _rest-site.xml_ and _rest-default.xml_
-You add site-specific configuration to the file _$REST_INSTALL_DIR/conf/rest-site.xml_. For the list of configurable properties, 
+You add site-specific configuration to the file _$TRAF_CONF/rest/rest-site.xml_. For the list of configurable properties, 
 see <<rest_default_configurations,REST Default Configuration>> below or view the raw _rest-default.xml_ source 
 file in the source code at _src/main/resources_.
 
@@ -108,7 +108,7 @@ include::../../../../target/asciidoc/rest-default.adoc[]
 === _rest-env.sh_
 Set server environment variables in this file. Examples include options to pass the JVM on start of
 the server such as heap size and garbarge collector configs. You can also set configurations for server configuration, log directories,
-niceness, ssh options, where to locate process pid files, etc. Open the file at _$REST_INSTALL_DIR/conf/rest-env.sh_ and peruse its content.
+niceness, ssh options, where to locate process pid files, etc. Open the file at _$TRAF_CONF/rest/rest-env.sh_ and peruse its content.
 Each option is fairly well documented.  Add your own environment variables here if you want them read by the server on startup.
   
 Changes here will require a restart for the server to notice the change.
@@ -121,7 +121,7 @@ Changes here will require a restart for the server to notice the change.
 
 [[rest.keystore]]
 === _rest-keystore_  
-This file will only be present if the property _rest.https.password_ has been set in _$REST_INSTALL_DIR/conf/rest-site.xml_. 
+This file will only be present if the property _rest.https.password_ has been set in _$TRAF_CONF/rest/rest-site.xml_. 
 Please see <<important.configurations,Important Configurations>> for more detail.
       
 [[important.configurations]]
@@ -133,7 +133,7 @@ The default value is 4200. This is the port the embedded Jetty server binds to
 waiting for client HTTP connections. The value may need to be changed
 if this port number conflicts with other ports in use on your cluster.
            
-To change this configuration, edit _$REST_INSTALL_DIR/conf/rest-site.xml_, copy the changed file around the cluster and restart.
+To change this configuration, edit _$TRAF_CONF/rest/rest-site.xml_, copy the changed file around the cluster and restart.
 
 === `rest.https.port`
 The default value is 4201. This is the port the embedded Jetty server binds to
@@ -141,7 +141,7 @@ waiting for client HTTPS connections. The value may need to be changed
 if this port number conflicts with other ports in use on your cluster.
 
 === `rest.ssl.password`
-This property is not present by default in _$REST_INSTALL_DIR/conf/rest-site.xml_. Typically the Trafodion
+This property is not present by default in _$TRAF_CONF/rest/rest-site.xml_. Typically the Trafodion
 installer sets this property to an obfuscated password string. If this property is present then the server
 will setup HTTPS in the embedded Jetty server. To create an obfuscated password for this property use
 the following command:
@@ -157,9 +157,9 @@ MD5:{obfuscated password string}
 ----
 
 Copy/paste the entire string including "OBF:" into this property.
-The server will use this property when creating the _$REST_INSTALL_DIR/conf/rest-keystore_ directory.
+The server will use this property when creating the _$TRAF_CONF/rest/rest-keystore_ directory.
            
-To change this configuration, edit _$REST_INSTALL_DIR/conf/rest-site.xml_, copy the changed file around the cluster and restart.
+To change this configuration, edit _$TRAF_CONF/rest/rest-site.xml_, copy the changed file around the cluster and restart.
 
 [TIP]
 ====
@@ -182,4 +182,4 @@ CRYPT:{obfuscated password string}
 The default value is 23400. This is the port the embedded JDBC Type 4 driver
 uses to connect to Trafodion DCS. 
 
-To change this configuration, edit _$REST_INSTALL_DIR/conf/rest-site.xml_, copy the changed file around the cluster and restart.
+To change this configuration, edit _$TRAF_CONF/rest/rest-site.xml_, copy the changed file around the cluster and restart.

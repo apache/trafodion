@@ -70,7 +70,7 @@ do
 done
  
 # Allow alternate REST conf dir location.
-REST_CONF_DIR="${REST_CONF_DIR:-$REST_HOME/conf}"
+REST_CONF_DIR="${REST_CONF_DIR:-$TRAF_CONF/rest}"
 # List of REST servers.
 REST_SERVERS="${REST_SERVERS:-$REST_CONF_DIR/servers}"
 # List of REST secondary masters.

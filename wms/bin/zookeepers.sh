@@ -26,7 +26,7 @@
 #
 # Environment Variables
 #
-#   WMS_CONF_DIR  Alternate WMS conf dir. Default is ${WMS_HOME}/conf.
+#   WMS_CONF_DIR  Alternate WMS conf dir. Default is ${TRAF_CONF}/wms.
 #   WMS_SLAVE_SLEEP Seconds to sleep between spawning remote commands.
 #   WMS_SSH_OPTS Options passed to ssh when running remote commands.
 #

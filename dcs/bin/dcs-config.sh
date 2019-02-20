@@ -75,7 +75,7 @@ do
 done
  
 # Allow alternate DCS conf dir location.
-DCS_CONF_DIR="${DCS_CONF_DIR:-$DCS_HOME/conf}"
+DCS_CONF_DIR="${DCS_CONF_DIR:-$TRAF_CONF/dcs}"
 # List of DCS servers.
 DCS_SERVERS="${DCS_SERVERS:-$DCS_CONF_DIR/servers}"
 #List of DCS masters

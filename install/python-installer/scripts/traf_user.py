@@ -52,6 +52,8 @@ def run():
     traf_user_dir = '%s/%s' % (home_dir, traf_user)
     traf_dirname = dbcfgs['traf_dirname']
     traf_home = '%s/%s' % (traf_user_dir, traf_dirname)
+    traf_log = dbcfgs['traf_log']
+    traf_var = dbcfgs['traf_var']
 
     hbase_xml_file = dbcfgs['hbase_xml_file']
     auth_key_file = '%s/.ssh/authorized_keys' % traf_user_dir
@@ -103,7 +105,9 @@ def run():
     nodes = dbcfgs['node_list'].split(',')
     trafodion_config = """
 export TRAF_HOME="%s"
-export TRAF_VAR=$TRAF_HOME/tmp
+export TRAF_VAR="%s"
+export TRAF_CONF="%s"
+export TRAF_LOG="%s"
 export MY_SQROOT=$TRAF_HOME # for compatibility
 export JAVA_HOME="%s"
 export node_count="%s"
@@ -113,7 +117,7 @@ export ZOOKEEPER_NODES="%s"
 export ZOOKEEPER_PORT="%s"
 export SECURE_HADOOP="%s"
 export CLUSTERNAME="%s"
-""" % (traf_home, dbcfgs['java_home'], str(len(nodes)), hadoop_type, dbcfgs['enable_ha'],
+""" % (traf_home, traf_var, TRAF_CFG_DIR, traf_log, dbcfgs['java_home'], str(len(nodes)), hadoop_type, dbcfgs['enable_ha'],
        zk_nodes, zk_port, dbcfgs['secure_hadoop'], socket.gethostname())
 
     # save additonal configs for elastic

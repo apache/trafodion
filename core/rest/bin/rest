@@ -38,7 +38,7 @@
 #
 #   REST_OPTS       Extra Java runtime options.
 #
-#   REST_CONF_DIR   Alternate conf dir. Default is ${REST_HOME}/conf.
+#   REST_CONF_DIR   Alternate conf dir. Default is ${TRAF_CONF}/rest
 #
 #   REST_ROOT_LOGGER The root appender. Default is INFO,console
 #
@@ -94,8 +94,8 @@ if [ "$MAVEN_HOME" != "" ]; then
 fi
 
 # override default settings for this command, if applicable
-if [ -f "$REST_HOME/conf/rest-env-$COMMAND.sh" ]; then
-  . "$REST_HOME/conf/rest-env-$COMMAND.sh"
+if [ -f "$TRAF_CONF/rest/rest-env-$COMMAND.sh" ]; then
+  . "$TRAF_CONF/rest/rest-env-$COMMAND.sh"
 fi
 
 # check envvars which might override default args

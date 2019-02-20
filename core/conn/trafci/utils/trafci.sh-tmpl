@@ -206,9 +206,9 @@ elif [[ -n "$DCS_MASTER_FLOATING_IP" ]]; then
 elif [[ -n "$DCS_MASTER_QUORUM" ]]; then
    # client config DCS non-HA
    host_opts="-h ${DCS_MASTER_QUORUM}"
-elif [[ -r "$DCS_INSTALL_DIR/conf/dcs-env.sh" ]]; then
+elif [[ -r "$TRAF_CONF/dcs/dcs-env.sh" ]]; then
    # no client config, check for DCS server config
-   source "$DCS_INSTALL_DIR/conf/dcs-env.sh"
+   source "$TRAF_CONF/dcs/dcs-env.sh"
    if [[ -n "$DCS_MASTER_FLOATING_IP" ]]; then
      host_opts="-h ${DCS_MASTER_FLOATING_IP}:${DCS_MASTER_PORT:-23400}"
    elif [[ -s "$DCS_PRIMARY_MASTER" ]]; then

@@ -3,6 +3,16 @@
   {
       "prompt":"Enter directory name to install trafodion to"
   },
+  "traf_log":
+  {
+      "prompt":"Enter directory path for log files",
+      "default":"/var/log/trafodion"
+  },
+  "traf_var":
+  {
+      "prompt":"Enter directory path for temporary working files",
+      "default":"/var/lib/trafodion"
+  },
   "home_dir":
   {
       "prompt":"Enter trafodion user's home directory",

@@ -33,6 +33,9 @@ class Node(Script):
               owner = params.traf_user, 
               group = params.traf_group, 
               create_parents = True)
+    cmd = "source /etc/trafodion/trafodion_config 2>/dev/null; cp -rf $TRAF_HOME/conf/* %s/"  % params.traf_conf_dir
+    Execute(cmd,user=params.traf_user)
+
     # cluster file will be over-written by trafodionmaster install
     # until then, make file that shell can source without error
     traf_conf_path = os.path.join(params.traf_conf_dir, "traf-cluster-env.sh")
@@ -61,6 +64,18 @@ class Node(Script):
          content=params.traf_priv_key,
          mode=0600)
 
+    # log and tmp dirs
+    Directory(params.traf_logdir, 
+              mode=0755, 
+              owner = params.traf_user, 
+              group = params.traf_group, 
+              create_parents = True)
+    Directory(params.traf_vardir, 
+              mode=0755, 
+              owner = params.traf_user, 
+              group = params.traf_group, 
+              create_parents = True)
+
     # generate public key from the private one
     cmd = "ssh-keygen -y -f " + trafhome + "/.ssh/id_rsa > " + trafhome + "/.ssh/id_rsa.pub"
     Execute(cmd,user=params.traf_user)
@@ -84,7 +99,7 @@ class Node(Script):
          group = params.traf_group, 
          content=InlineTemplate(params.traf_env_template,trim_blocks=False),
          mode=0644)
-    # initialize & verify env (e.g., bashrc creates $TRAF_VAR as trafodion user)
+    # initialize & verify env
     cmd = "source ~/.bashrc"
     Execute(cmd,user=params.traf_user)
 
@@ -117,9 +132,9 @@ class Node(Script):
            group = params.traf_group, 
            content = InlineTemplate(params.traf_ldap_template),
            mode=0750)
-      cmd = "source ~/.bashrc ; mv -f ~/.traf_authentication_config $TRAF_HOME/sql/scripts/"
+      cmd = "source ~/.bashrc ; mv -f ~/.traf_authentication_config $TRAF_CONF/"
       Execute(cmd,user=params.traf_user)
-      cmd = "source ~/.bashrc ; ldapconfigcheck -file $TRAF_HOME/sql/scripts/.traf_authentication_config"
+      cmd = "source ~/.bashrc ; ldapconfigcheck -file $TRAF_CONF/.traf_authentication_config"
       Execute(cmd,user=params.traf_user)
       cmd = 'source ~/.bashrc ; ldapcheck --verbose --username=%s' % params.traf_db_admin
       Execute(cmd,user=params.traf_user)
@@ -165,7 +180,7 @@ class Node(Script):
               owner=params.traf_user,
               mode=0644)
     # install DCS conf files
-    cmd = "source ~/.bashrc ; mv -f ~/dcs-env.sh ~/log4j.properties ~/dcs-site.xml ~/masters ~/servers $DCS_INSTALL_DIR/conf/"
+    cmd = "source ~/.bashrc ; mv -f ~/dcs-env.sh ~/log4j.properties ~/dcs-site.xml ~/masters ~/servers $TRAF_CONF/dcs/"
     Execute(cmd,user=params.traf_user)
 
     XmlConfig("rest-site.xml",
@@ -174,7 +189,7 @@ class Node(Script):
               owner=params.traf_user,
               mode=0644)
     # install REST conf files
-    cmd = "source ~/.bashrc ; mv -f ~/rest-site.xml $REST_INSTALL_DIR/conf/"
+    cmd = "source ~/.bashrc ; mv -f ~/rest-site.xml $TRAF_CONF/rest/"
     Execute(cmd,user=params.traf_user)
 
 

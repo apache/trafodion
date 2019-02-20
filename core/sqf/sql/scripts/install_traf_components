@@ -133,7 +133,9 @@ else
   DCS_HOME=$(/bin/ls -d $MY_SW_ROOT/dcs-*)
 
 # Configure DCS
-  echo "Adding DCS_INSTALL_DIR=$DCS_INSTALL_DIR to ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  mkdir -p $TRAF_CONF/dcs
+  cp -rf $DCS_HOME/conf/* $TRAF_CONF/dcs/
+  echo "Adding DCS_INSTALL_DIR=$DCS_HOME to ~/.trafodion"  | tee -a ${MY_LOG_FILE}
   if [[ -f ~/.trafodion ]]
   then
     mv -f ~/.trafodion ~/.trafodion.orig
@@ -143,7 +145,7 @@ else
   echo "export DCS_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion | tee -a ${MY_LOG_FILE}
 
   echo "Setting DCS env and site.xml file" | tee -a ${MY_LOG_FILE}
-  cd $DCS_HOME/conf/
+  cd $TRAF_CONF/dcs/
   mv dcs-env.sh dcs-env.sh.orig
   echo "TRAF_HOME=$TRAF_HOME" > dcs-env.sh
   sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
@@ -172,13 +174,13 @@ else
   </configuration>
 EOF
 
-  echo "Configured $DCS_HOME/conf/dcs-site.xml" | tee -a ${MY_LOG_FILE}
+  echo "Configured $TRAF_CONF/dcs/dcs-site.xml" | tee -a ${MY_LOG_FILE}
 
   echo "localhost" > masters
-  echo "Configured $DCS_HOME/conf/masters" | tee -a ${MY_LOG_FILE}
+  echo "Configured $TRAF_CONF/dcs/masters" | tee -a ${MY_LOG_FILE}
 
   echo "localhost 4" > servers
-  echo "Configured $DCS_HOME/conf/servers" | tee -a ${MY_LOG_FILE}
+  echo "Configured $TRAF_CONF/dcs/servers" | tee -a ${MY_LOG_FILE}
 
 fi
 
@@ -220,7 +222,9 @@ else
   REST_HOME=$(/bin/ls -d $MY_SW_ROOT/rest-*)
 
 # Configure REST
-  echo "Adding REST_INSTALL_DIR=$REST_INSTALL_DIR to via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  mkdir -p $TRAF_CONF/rest
+  cp -rf $REST_HOME/conf/* $TRAF_CONF/rest/
+  echo "Adding REST_INSTALL_DIR=$REST_HOME to via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
   if [[ -f ~/.trafodion ]]
   then
     mv -f ~/.trafodion ~/.trafodion.orig
@@ -229,7 +233,7 @@ else
   RESTDIR=${REST_HOME##*/}
   echo "export REST_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion  | tee -a ${MY_LOG_FILE}
   echo "Setting REST env and site.xml "  | tee -a ${MY_LOG_FILE}
-  cd $REST_HOME/conf/
+  cd $TRAF_CONF/rest/
   mv rest-env.sh rest-env.sh.orig
 
   echo "TRAF_HOME=$TRAF_HOME" > rest-env.sh
@@ -255,7 +259,7 @@ else
   </configuration>
 EOF
 
-  echo "Configured $REST_HOME/conf/rest-site.xml" | tee -a ${MY_LOG_FILE}
+  echo "Configured $TRAF_CONF/rest/rest-site.xml" | tee -a ${MY_LOG_FILE}
   echo "Adding swrest script..." | tee -a ${MY_LOG_FILE}
   cat <<EOF >$TRAF_HOME/sql/scripts/swrest
 #!/bin/sh

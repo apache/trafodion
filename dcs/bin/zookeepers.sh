@@ -26,7 +26,7 @@
 #
 # Environment Variables
 #
-#   DCS_CONF_DIR  Alternate DCS conf dir. Default is ${DCS_HOME}/conf.
+#   DCS_CONF_DIR  Alternate DCS conf dir. Default is ${TRAF_CONF}/dcs.
 #   DCS_SLAVE_SLEEP Seconds to sleep between spawning remote commands.
 #   DCS_SSH_OPTS Options passed to ssh when running remote commands.
 #

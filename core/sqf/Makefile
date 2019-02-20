@@ -312,7 +312,7 @@ PKG_REGRESS_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-regress.tgz"
 SEAMONSTER_TAR ?= "seamonster_${SQ_BUILD_TYPE}-src.tar.gz"
 
 #	Targets to tar/gzip the tree
-package: pkglist-files pkglist-symlinks tmp/sqenv.sh
+package: pkglist-files pkglist-symlinks tmp/sqenv.sh conf/dcs conf/rest
 	mkdir -p ../../${DISTRIBUTION_DIR}
 	chmod o-rwx $(PKG_BIN_DIRS)
 	chmod -R o-rwx $(PKG_BIN_OBJS)
@@ -337,8 +337,16 @@ NOTICE: ../../licenses/NOTICE-server
 rest-${TRAFODION_VER}:
 	ln -sf ../rest/target/$@/$@ $@
 
+conf/rest: rest-${TRAFODION_VER}
+	mkdir -p $@
+	cp -f rest-${TRAFODION_VER}/conf/* $@/
+
 dcs-${TRAFODION_VER}:
 	ln -sf ../../dcs/target/$@/$@ $@
+
+conf/dcs: dcs-${TRAFODION_VER}
+	mkdir -p $@
+	cp -f dcs-${TRAFODION_VER}/conf/* $@/
 
 tmp/sqenv.sh:
 	@if [ ! -d tmp ]; then mkdir tmp; fi

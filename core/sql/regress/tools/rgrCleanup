@@ -1,4 +1,4 @@
 #temp solution to cleanup udr cached files
 #can be removed when cleanup mechanism for cached files in implemented
-echo "rm -rf $TRAF_HOME/udr/*/$UDR_CACHE_LIBDIR/* 2>$NULL"
-rm -rf $TRAF_HOME/udr/*/$UDR_CACHE_LIBDIR/* 2>$NULL
+echo "rm -rf $TRAF_VAR/udr/*/$UDR_CACHE_LIBDIR/* 2>$NULL"
+rm -rf $TRAF_VAR/udr/*/$UDR_CACHE_LIBDIR/* 2>$NULL

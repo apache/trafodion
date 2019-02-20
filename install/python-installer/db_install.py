@@ -361,6 +361,8 @@ def user_input(options, prompt_mode=True, pwd=''):
         g('traf_pwd')
     g('dcs_cnt_per_node')
     g('scratch_locs')
+    g('traf_log')
+    g('traf_var')
     g('traf_start')
 
     # kerberos

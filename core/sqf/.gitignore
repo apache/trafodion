@@ -63,3 +63,6 @@ Linux-x86_64/
 # bundled component links
 /dcs-*
 /rest-*
+# component default conf files
+/conf/dcs
+/conf/rest
