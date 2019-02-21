@@ -165,7 +165,7 @@ NAString CharType::getCharSetName() const
 
 NAString CharType::getCharSetAsPrefix(CharInfo::CharSet cs)
 {
-  return NAString(SQLCHARSET_INTRODUCER_IN_LITERAL) + CharInfo::getCharSetName(cs);
+    return NAString(SQLCHARSET_INTRODUCER_IN_LITERAL) + CharInfo::getCharSetName(cs);
 }
 
 NAString CharType::getCharSetAsPrefix() const
@@ -501,10 +501,19 @@ const NAType* CharType::synthesizeType(NATypeSynthRuleEnum synthRule,
 
   CharLenInfo res_CharLenInfo(res_len_in_Chars,
                               res_nominalSize);
-                              
+      
   if (DFS2REC::isAnyVarChar(op1.getFSDatatype()) OR
-      DFS2REC::isAnyVarChar(op2.getFSDatatype()) OR
-      makeTypeVarchar)
+      DFS2REC::isAnyVarChar(op2.getFSDatatype()))
+    makeTypeVarchar = TRUE;
+  
+  NABoolean makeTypeBinary = FALSE;
+  if (DFS2REC::isBinaryString(op1.getFSDatatype()) OR
+      DFS2REC::isBinaryString(op2.getFSDatatype()))
+    makeTypeBinary = TRUE;
+
+  if (makeTypeBinary)
+    return new(h) SQLBinaryString(h, res_nominalSize, null, makeTypeVarchar);
+  else if (makeTypeVarchar)
     return new(h) SQLVarChar(h, res_CharLenInfo, null, upshift, caseinsensitive,
 			     op1.getCharSet(), co, ce);
   else
@@ -675,14 +684,6 @@ Lng32 CharType::getMaxSingleCharacterValue() const
 
 
   switch (getCharSet()) {
-#ifdef IS_MP
-    case CharInfo::KANJI_MP:
-    case CharInfo::KSC5601_MP:
-      return 0xffff;  // return max NAWchar as KANJI/KSC's code points are not
-                      // checked
-      break;
-#endif
-
     case CharInfo::ISO88591:
       switch (getCollation()) {
 	case CharInfo::DefaultCollation: return UCHAR_MAX;
@@ -697,6 +698,10 @@ Lng32 CharType::getMaxSingleCharacterValue() const
       break;
 
     case CharInfo::UTF8:
+      return UCHAR_MAX;
+      break;
+
+    case CharInfo::BINARY:
       return UCHAR_MAX;
       break;
 
@@ -803,10 +808,25 @@ NABoolean CharType::createSQLLiteral(const char * buf,
       valPtr += getVarLenHdrSize();
     }
 
+  if (sourceCS == CharInfo::BINARY)
+    *resultLiteral += " X";
+
   *resultLiteral += "'";
 
   switch (sourceCS)
     {
+    case CharInfo::BINARY:
+      {
+        Lng32 hexlen = str_computeHexAsciiLen(valLen);
+        
+        tempBuf = new(h) char[hexlen+1];
+        Lng32 rc = str_convertToHexAscii(valPtr, valLen,
+                                         tempBuf, hexlen+1,
+                                         TRUE /*append null*/);
+        *resultLiteral += tempBuf;
+      }
+      break;
+
     case CharInfo::UTF8:
       *resultLiteral += NAString(valPtr, valLen);
       break;
@@ -1160,6 +1180,7 @@ void CharType::minMaxRepresentableValue(void* bufPtr,
   {
   case CharInfo::ISO88591:
   case CharInfo::SJIS:
+  case CharInfo::BINARY:
     if (isMax)
       minmax_char = (char)getMaxSingleCharacterValue();
     else
@@ -1623,3 +1644,112 @@ const NAType* SQLClob::synthesizeType(NATypeSynthRuleEnum synthRule,
   return NULL;
 }
 
+// ----------------------------------------------------------------------
+// class SQLBinaryString
+// ----------------------------------------------------------------------
+SQLBinaryString::SQLBinaryString(NAMemory *h,
+                                 Lng32 maxLen,
+                                 NABoolean allowSQLnull,
+                                 NABoolean varLenFlag
+		 )
+     : CharType(h, varLenFlag ? LiteralVARCHAR : LiteralCHAR,
+		maxLen, 1,
+		FALSE, allowSQLnull, FALSE, FALSE,
+		varLenFlag, 
+                CharInfo::BINARY,
+                CharInfo::DefaultCollation, CharInfo::COERCIBLE,
+		CharInfo::UnknownCharSet)
+{}
+
+//  encoding of the max char value
+double SQLBinaryString::getMaxValue() const
+{
+  EncodedValue dummyVal(0.0);
+
+  double encodedval = dummyVal.minMaxValue(this, FALSE);
+
+  return encodedval;
+}
+
+//  encoding of the min char value
+double SQLBinaryString::getMinValue() const
+{
+  EncodedValue dummyVal(0.0);
+
+  double encodedval = dummyVal.minMaxValue(this, TRUE);
+
+  return encodedval;
+}
+
+NABoolean SQLBinaryString::isCompatible(const NAType& other, UInt32 * flags) const
+{
+  return NAType::isCompatible(other, flags);
+}
+
+NAString SQLBinaryString::getTypeSQLname(NABoolean terse) const
+{
+  char  lenbuf[30];
+  char* sp = lenbuf;
+
+  NAString rName(isVaryingLen() ? "VARBINARY" : "BINARY");
+
+  sprintf(sp, "(%d) ", getStrCharLimit());
+  rName += sp;
+
+  if (! terse)
+    getTypeSQLnull(rName, terse);
+
+  return rName;
+}
+
+// -----------------------------------------------------------------------
+// Type synthesis for binary operators
+// -----------------------------------------------------------------------
+const NAType* SQLBinaryString::synthesizeType(NATypeSynthRuleEnum synthRule,
+                                            const NAType& operand1,
+                                            const NAType& operand2,
+                                            CollHeap* h,
+                                            UInt32 *flags) const
+{
+  //
+  // If the second operand's type synthesis rules have higher precedence than
+  // this operand's rules, use the second operand's rules.
+  //
+  if (operand2.getSynthesisPrecedence() > getSynthesisPrecedence())
+    return operand2.synthesizeType(synthRule, operand1, operand2, h, flags);
+ 
+  Lng32 res_nominalSize = 0;
+  NABoolean makeTypeVarchar = FALSE;
+
+  switch (synthRule) {
+  case SYNTH_RULE_UNION:
+    res_nominalSize = MAXOF( operand1.getNominalSize(), operand2.getNominalSize());
+    break;
+  case SYNTH_RULE_CONCAT:
+    res_nominalSize = operand1.getNominalSize() + operand2.getNominalSize();
+    break;
+  default:
+    return NULL;
+  }
+
+  NABoolean null = operand1.supportsSQLnull() OR operand2.supportsSQLnull();
+  if (DFS2REC::isAnyVarChar(operand1.getFSDatatype()) OR
+      DFS2REC::isAnyVarChar(operand2.getFSDatatype()))
+    makeTypeVarchar = TRUE;
+  
+  return new(h) SQLBinaryString(h, res_nominalSize, null, makeTypeVarchar);
+} // synthesizeType()
+
+void SQLBinaryString::minRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                            NAString ** stringLiteral,
+                                            CollHeap* h) const
+{
+  minMaxRepresentableValue(bufPtr, bufLen, stringLiteral, FALSE, h);
+}
+
+void SQLBinaryString::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
+                                            NAString ** stringLiteral,
+                                            CollHeap* h) const
+{
+  minMaxRepresentableValue(bufPtr, bufLen, stringLiteral, TRUE, h);
+}

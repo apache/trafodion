@@ -625,7 +625,11 @@ enum OperatorTypeEnum {
                         ITM_MONTHS_BETWEEN     = 2342,
                         ITM_YEARWEEK           = 2343,
                         ITM_YEARWEEKD          = 2344,
-                        ITM_TO_TIMESTAMP          = 2345,
+                        ITM_TO_TIMESTAMP       = 2345,
+                        ITM_TO_BINARY          = 2346,
+                        ITM_ENCODE_BASE64      = 2347,
+                        ITM_DECODE_BASE64      = 2348,
+                        ITM_TO_CHAR            = 2349,
 
                         // misc. functions
                         ITM_NARROW = 2350, // a variant on Cast used for key building

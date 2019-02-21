@@ -1647,6 +1647,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui___(HIVE_INSERT_ERROR_MODE,               "1"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
+  DDui___(HIVE_MAX_BINARY_LENGTH,               "128"), 
   DDui___(HIVE_MAX_ESPS,                        "9999"),
   DDui___(HIVE_MAX_STRING_LENGTH_IN_BYTES,      "32000"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
@@ -2874,6 +2875,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
   DDkwd__(TRAF_AUTO_CREATE_SCHEMA,                 "OFF"),   
+
+  DDkwd__(TRAF_BINARY_INPUT,                          "OFF"),
+  DDkwd__(TRAF_BINARY_OUTPUT,                         "OFF"),
+  DDkwd__(TRAF_BINARY_SPJ_SUPPORT,                    "OFF"),
+  DDkwd__(TRAF_BINARY_SUPPORT,                        "ON"),
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "OFF"), //set to OFF to enable Lobs support  
 

@@ -228,6 +228,7 @@ ExFunctionInetNtoa::ExFunctionInetNtoa(){};
 ExFunctionSoundex::ExFunctionSoundex(){};
 ExFunctionAESEncrypt::ExFunctionAESEncrypt(){};
 ExFunctionAESDecrypt::ExFunctionAESDecrypt(){};
+ExFunctionBase64EncDec::ExFunctionBase64EncDec(){};
 
 ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 				 Attributes ** attr, Space * space)
@@ -308,6 +309,16 @@ ExFunctionAESDecrypt::ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
        args_num(in_args_num), aes_mode(aes_mode)
 {
 };
+
+ExFunctionBase64EncDec::ExFunctionBase64EncDec(OperatorTypeEnum oper_type,
+                                               Attributes ** attr, 
+                                               Space * space, 
+                                               NABoolean isEncode)
+     : ex_function_clause(oper_type, 2, attr, space), 
+      isEncode_(isEncode)
+{
+};
+
 
 ExFunctionConvertHex::ExFunctionConvertHex(OperatorTypeEnum oper_type,
 					   Attributes ** attr, Space * space)
@@ -5059,9 +5070,8 @@ ex_expr::exp_return_type ex_function_hivehash::eval(char *op_data[],
     // operand is a null value. All null values hash to the same hash value. 
     hashValue = 0; // hive semantics: hash(NULL) = 0
   } else
-  if ( (DFS2REC::isSQLVarChar(srcOp->getDatatype()) || 
-        DFS2REC::isANSIVarChar(srcOp->getDatatype())) && 
-       getOperand(1)->getVCIndicatorLength() > 0 ) 
+  if ( (DFS2REC::isAnyVarChar(srcOp->getDatatype())) &&
+      getOperand(1)->getVCIndicatorLength() > 0 )
   {
       length = srcOp->getLength(op_data[-MAX_OPERANDS + 1]);
       hashValue = ex_function_hivehash::hashForCharType(op_data[1],length);
@@ -5070,7 +5080,7 @@ ex_expr::exp_return_type ex_function_hivehash::eval(char *op_data[],
       length = srcOp->getLength();
       hashValue = ex_function_hivehash::hashForCharType(op_data[1],length);
   } else
-  if ( DFS2REC::isBinary(srcOp->getDatatype()) ) {
+  if ( DFS2REC::isBinaryNumeric(srcOp->getDatatype()) ) {
       hashValue = *(ULng32*)(op_data[1]);
   } // TBD: other SQ types
 
@@ -9050,4 +9060,39 @@ aes_decrypt_error:
   *(*diagsArea) << DgString0("AES_DECRYPT FUNCTION");
 
   return ex_expr::EXPR_ERROR;
+}
+
+ex_expr::exp_return_type ExFunctionBase64EncDec::eval(char * op_data[],
+                                                      CollHeap *heap,
+                                                      ComDiagsArea **diagsArea)
+{
+  Attributes *tgt = getOperand(0);
+
+  Lng32 source_len = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
+  unsigned char * source = (unsigned char *)op_data[1];
+
+  char * result = op_data[0];
+
+  Int32 retLen = -1;
+  if (isEncode_)
+    {
+
+      retLen = str_encode_base64(source, source_len, result, tgt->getLength());
+    }
+  else
+    {
+      retLen = str_decode_base64(source, source_len, result, tgt->getLength());
+    }
+
+  if (retLen < 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, EXE_OPENSSL_ERROR);
+      *(*diagsArea) << DgString0("AES_DECRYPT FUNCTION");
+      
+      return ex_expr::EXPR_ERROR;
+    }
+
+  tgt->setVarLength(retLen, op_data[-MAX_OPERANDS]);
+
+  return ex_expr::EXPR_OK;
 }

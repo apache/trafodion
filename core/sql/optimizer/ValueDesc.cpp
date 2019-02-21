@@ -417,6 +417,20 @@ void ValueId::coerceType(const NAType& desiredType,
                SQLVarChar(STMTHEAP, SQL_BOOLEAN_DISPLAY_SIZE, 
                           desiredType.supportsSQLnull());
            }
+	 else if ((DFS2REC::isBinaryString(desiredType.getFSDatatype())) &&
+                  (CmpCommon::getDefault(TRAF_BINARY_INPUT) == DF_OFF))
+	   {
+             if (desiredType.getFSDatatype() == REC_BINARY_STRING)
+               newType = new (STMTHEAP) 
+                 SQLChar(STMTHEAP,
+                         desiredType.getNominalSize(), 
+                         desiredType.supportsSQLnull());
+             else
+               newType = new (STMTHEAP) 
+                 SQLVarChar(STMTHEAP,
+                            desiredType.getNominalSize(), 
+                            desiredType.supportsSQLnull());               
+	   } // Binary String
 	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
 	   {
 	     // If bignum IO is not enabled or

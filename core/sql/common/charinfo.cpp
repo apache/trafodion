@@ -102,6 +102,7 @@ static const struct mapCS mapCSArray[] = {
   { /*16*/ CharInfo::KSC5601,        SQLCHARSETSTRING_MB_KSC5601, 10, TRUE,    FALSE,  1,    2, "?" },
   { /*17*/ CharInfo::GB2312,         SQLCHARSETSTRING_GB2312,      6, TRUE,    FALSE,  1,    2, "?" },
   { /*18*/ CharInfo::GBK,            SQLCHARSETSTRING_GBK,         3, TRUE,    FALSE,  1,    2, "?" },
+  { /*19*/ CharInfo::BINARY,         SQLCHARSETSTRING_BINARY,      6, TRUE,    TRUE,   1,    1, "?" },
 };
 
 #define SIZEOF_CS  (sizeof(mapCSArray)/sizeof(mapCS))
@@ -193,7 +194,8 @@ NABoolean CharInfo::isCharSetFullySupported(CharSet cs)
 NABoolean CharInfo::isHexFormatSupported(CharSet cs) {
   return ( (cs == CharInfo::ISO88591) || (cs == CharInfo::UNICODE) || 
            (cs == CharInfo::UTF8) ||
-           (is_NCHAR_MP(cs)) 
+           (is_NCHAR_MP(cs)) ||
+           (cs == CharInfo::BINARY)
          );
 }
 

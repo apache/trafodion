@@ -1,0 +1,603 @@
+>>
+>>cqd traf_binary_support 'ON';
+
+--- SQL operation complete.
+>>cqd traf_binary_input 'ON';
+
+--- SQL operation complete.
+>>cqd traf_binary_output 'ON';
+
+--- SQL operation complete.
+>>
+>>obey TEST004(setup_binary);
+>>-----------------------------------------------------------
+>>-------------- BINARY datatype ---------------------------
+>>-----------------------------------------------------------
+>>
+>>drop table if exists t004t3 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t004t3_like;
+
+--- SQL operation complete.
+>>drop table if exists t004t3_as;
+
+--- SQL operation complete.
+>>
+>>create table t004t3(a binary(5) not null primary key, b varbinary(10));
+
+--- SQL operation complete.
+>>invoke t004t3;
+
+-- Definition of Trafodion table TRAFODION.SCH.T004T3
+-- Definition current  Mon Aug 13 23:34:27 2018
+
+  (
+    A                                BINARY(5) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                VARBINARY(10) DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t004t3_like like t004t3;
+
+--- SQL operation complete.
+>>invoke t004t3_like;
+
+-- Definition of Trafodion table TRAFODION.SCH.T004T3_LIKE
+-- Definition current  Mon Aug 13 23:34:37 2018
+
+  (
+    A                                BINARY(5) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                VARBINARY(10) DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t004t3_as primary key (a) as select * from t004t3;
+
+--- 0 row(s) inserted.
+>>invoke t004t3_as;
+
+-- Definition of Trafodion table TRAFODION.SCH.T004T3_AS
+-- Definition current  Mon Aug 13 23:34:44 2018
+
+  (
+    A                                BINARY(5) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                VARBINARY(10) DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>create table if not exists t004t3_salt(a binary(4) not null primary key)
++>  salt using 2 partitions;
+
+--- SQL operation complete.
+>>invoke t004t3_salt;
+
+-- Definition of Trafodion table TRAFODION.SCH.T004T3_SALT
+-- Definition current  Mon Aug 13 23:34:46 2018
+
+  (
+    A                                BINARY(4) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+  PRIMARY KEY ("_SALT_" ASC, A ASC)
+
+--- SQL operation complete.
+>>
+>>create view t004t3_view as select * from t004t3;
+
+--- SQL operation complete.
+>>invoke t004t3_view;
+
+-- Definition of Trafodion view TRAFODION.SCH.T004T3_VIEW
+-- Definition current  Mon Aug 13 23:34:50 2018
+
+  (
+    A                                BINARY(5) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                VARBINARY(10) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>obey TEST004(dml_binary);
+>>insert into t004t3 values ('ab', 123);
+
+--- 1 row(s) inserted.
+>>insert into t004t3 values (234, 'ba');
+
+--- 1 row(s) inserted.
+>>
+>>select to_hex(a), to_hex(b) from t004t3;
+
+(EXPR)      (EXPR)              
+----------  --------------------
+
+6162000000  7B00                
+EA00000000  6261                
+
+--- 2 row(s) selected.
+>>select to_hex(left(a, 1)) from t004t3;
+
+(EXPR)
+------
+
+61    
+EA    
+
+--- 2 row(s) selected.
+>>select to_hex(b || 'a') from t004t3;
+
+(EXPR)                
+----------------------
+
+7B0061                
+626161                
+
+--- 2 row(s) selected.
+>>select to_hex( a || 'a') from t004t3;
+
+(EXPR)      
+------------
+
+616200000061
+EA0000000061
+
+--- 2 row(s) selected.
+>>
+>>insert into t004t3_as select * from t004t3;
+
+--- 2 row(s) inserted.
+>>select to_hex(a), to_hex(b) from t004t3_as;
+
+(EXPR)      (EXPR)              
+----------  --------------------
+
+6162000000  7B00                
+EA00000000  6261                
+
+--- 2 row(s) selected.
+>>
+>>select cast(to_binary('ab') as char(10)) from dual;
+
+(EXPR)    
+----------
+
+ab        
+
+--- 1 row(s) selected.
+>>
+>>select * from t004t3 where a = to_binary('ab');
+
+A           B                   
+----------  --------------------
+
+6162000000  7B00                
+
+--- 1 row(s) selected.
+>>
+>>select to_hex(cast(10 as binary(4))) from dual;
+
+(EXPR)  
+--------
+
+0A000000
+
+--- 1 row(s) selected.
+>>select to_hex(cast(-10 as binary(4))) from dual;
+
+(EXPR)  
+--------
+
+F6FF0000
+
+--- 1 row(s) selected.
+>>select cast(10 as binary(4)) from dual;
+
+(EXPR)  
+--------
+
+0A000000
+
+--- 1 row(s) selected.
+>>select cast(-10 as binary(4)) from dual;
+
+(EXPR)  
+--------
+
+F6FF0000
+
+--- 1 row(s) selected.
+>>
+>>select cast(to_binary(12.34) as smallint) from dual;
+
+(EXPR)
+------
+
+  1234
+
+--- 1 row(s) selected.
+>>select cast(to_binary(12.34) as numeric(4,2)) from dual;
+
+(EXPR) 
+-------
+
+  12.34
+
+--- 1 row(s) selected.
+>>
+>>select cast(cast(10 as binary(4)) as  int) from dual;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>
+>>select to_hex(cast(a as binary(10))), 
++>       to_hex(cast (b as varbinary(11))) from t004t3;
+
+(EXPR)                (EXPR)                
+--------------------  ----------------------
+
+61620000000000000000  7B00                  
+EA000000000000000000  6261                  
+
+--- 2 row(s) selected.
+>>
+>>select char_length(a), char_length(b) from t004t3;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+         5           2
+         5           2
+
+--- 2 row(s) selected.
+>>select octet_length(a), octet_length(b) from t004t3;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+         5           2
+         5           2
+
+--- 2 row(s) selected.
+>>
+>>delete from t004t3;
+
+--- 2 row(s) deleted.
+>>prepare s from insert into t004t3 values (?, ?);
+
+--- SQL command prepared.
+>>execute s using 1, 'abc';
+
+--- 1 row(s) inserted.
+>>execute s using 'x', 20.34;
+
+--- 1 row(s) inserted.
+>>select to_hex(a), to_hex(b) from t004t3;
+
+(EXPR)      (EXPR)              
+----------  --------------------
+
+3100000000  616263              
+7800000000  32302E3334          
+
+--- 2 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>delete from t004t3 where a = to_binary('x');
+
+--- 1 row(s) deleted.
+>>select to_hex(a), to_hex(b) from t004t3;
+
+(EXPR)      (EXPR)              
+----------  --------------------
+
+3100000000  616263              
+
+--- 1 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>select to_hex(a), to_hex(b) from t004t3;
+
+(EXPR)      (EXPR)              
+----------  --------------------
+
+3100000000  616263              
+7800000000  32302E3334          
+
+--- 2 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>update t004t3 set b = 1;
+
+--- 2 row(s) updated.
+>>select to_hex(a), to_hex(b) from t004t3;
+
+(EXPR)      (EXPR)              
+----------  --------------------
+
+3100000000  01                  
+7800000000  01                  
+
+--- 2 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>select to_hex(a), to_hex(b) from t004t3;
+
+(EXPR)      (EXPR)              
+----------  --------------------
+
+3100000000  616263              
+7800000000  32302E3334          
+
+--- 2 row(s) selected.
+>>
+>>select to_binary(10000000) from dual;
+
+(EXPR)  
+--------
+
+80969800
+
+--- 1 row(s) selected.
+>>
+>>-- select after turning off traf_binary_output. 
+>>-- this is to test selects from clients which not yet support binary datatype
+>>cqd traf_binary_output 'OFF';
+
+--- SQL operation complete.
+>>select a,b from t004t3;
+
+A           B                   
+----------  --------------------
+
+3100000000  616263              
+7800000000  32302E3334          
+
+--- 2 row(s) selected.
+>>select to_binary(10000000) from dual;
+
+(EXPR)  
+--------
+
+80969800
+
+--- 1 row(s) selected.
+>>cqd traf_binary_output 'ON';
+
+--- SQL operation complete.
+>>
+>>-- input after turning off traf_binary_input.
+>>-- this is to test inserts from clients which do not yet support binary datatype
+>>-- params are typed as char/varchar in this case.
+>>cqd traf_binary_input 'OFF';
+
+--- SQL operation complete.
+>>begin work;
+
+--- SQL operation complete.
+>>prepare s from insert into t004t3 values (?,?);
+
+--- SQL command prepared.
+>>execute s using 'abc', 'xyz';
+
+--- 1 row(s) inserted.
+>>select * from t004t3;
+
+A           B                   
+----------  --------------------
+
+3100000000  616263              
+6162632020  78797A              
+7800000000  32302E3334          
+
+--- 3 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>cqd traf_binary_input 'ON';
+
+--- SQL operation complete.
+>>
+>>-- return warning and truncate 2 digits.
+>>select cast(to_binary(10000000) as binary(2)) from dual;
+
+*** WARNING[8408] An error occurred during the evaluation of a conversion expression. Details: Conversion of Source Type:BINARY(4)(REC_BINARY_STRING) Source Value:0x80969800 to Target Type:BINARY(2)(REC_BINARY_STRING).
+
+(EXPR)
+------
+
+8096  
+
+--- 1 row(s) selected.
+>>
+>>obey TEST004(errors_binary);
+>>select * from t004t3 where a = 'ab';
+
+*** ERROR[4041] Type BINARY(5)  cannot be compared with type CHAR(2) CHARACTER SET ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select b + 1 from t004t3;
+
+*** ERROR[4034] The operation (VARBINARY(10) + NUMERIC(1))  is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select -b from t004t3;
+
+*** ERROR[4034] The operation (NUMERIC(1) - VARBINARY(10))  is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t004t3 where a = 1;
+
+*** ERROR[4041] Type BINARY(5) cannot be compared with type NUMERIC(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select cast(100 as binary(1)) from dual;
+
+*** ERROR[8408] An error occurred during the evaluation of a conversion expression. Details: Conversion of Source Type:NUMERIC(3, 0)(REC_BIN16_SIGNED) Source Value:100 to Target Type:BINARY(1)(REC_BINARY_STRING).
+
+--- 0 row(s) selected.
+>>select cast(to_binary(1) as date) from dual;
+
+*** ERROR[8408] An error occurred during the evaluation of a conversion expression. Details: Conversion of Source Type:BINARY(1)(REC_BINARY_STRING) Source Value:0x01 to Target Type:DATE(REC_DATETIME).
+
+--- 0 row(s) selected.
+>>select cast(to_binary('ab') as char(1)) from dual;
+
+*** ERROR[8408] An error occurred during the evaluation of a conversion expression. Details: Conversion of Source Type:BINARY(2)(REC_BINARY_STRING) Source Value:0x6162 to Target Type:CHAR(1) CHARACTER SET ISO88591(REC_BYTE_F_ASCII).
+
+--- 0 row(s) selected.
+>>select cast(to_binary(12.34) as int) from dual;
+
+*** ERROR[8408] An error occurred during the evaluation of a conversion expression. Details: Conversion of Source Type:BINARY(2)(REC_BINARY_STRING) Source Value:0xD204 to Target Type:INT(REC_BIN32_SIGNED).
+
+--- 0 row(s) selected.
+>>
+>>obey TEST004(hive_binary);
+>>-- create and populate hive binary datatype from hive
+>>process hive ddl 'drop table tbinary';
+
+--- SQL operation complete.
+>>process hive ddl 'create table tbinary(a binary)';
+
+--- SQL operation complete.
+>>sh echo "insert into tbinary values ('a'), (1), (NULL);" > TEST004_junk;
+>>sh regrhive.ksh -f TEST004_junk;
+>>
+>>cqd hive_max_binary_length '10';
+
+--- SQL operation complete.
+>>invoke hive.hive.tbinary;
+
+-- Definition of hive table HIVE.HIVE.TBINARY
+-- Definition current  Mon Aug 13 23:35:31 2018
+
+  (
+    A                                VARBINARY(10)
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>select to_hex(a) from hive.hive.tbinary;
+
+(EXPR)              
+--------------------
+
+61                  
+31                  
+?                   
+
+--- 3 row(s) selected.
+>>insert into hive.hive.tbinary values ('a'), (1), (null);
+
+--- 3 row(s) inserted.
+>>select * from hive.hive.tbinary;
+
+A                   
+--------------------
+
+61                  
+31                  
+?                   
+61                  
+31                  
+?                   
+
+--- 6 row(s) selected.
+>>select to_hex(a) from hive.hive.tbinary;
+
+(EXPR)              
+--------------------
+
+61                  
+31                  
+?                   
+61                  
+31                  
+?                   
+
+--- 6 row(s) selected.
+>>insert overwrite table hive.hive.tbinary select a from t004t3;
+
+--- 2 row(s) inserted.
+>>select to_hex(a) from hive.hive.tbinary;
+
+(EXPR)              
+--------------------
+
+3100000000          
+7800000000          
+
+--- 2 row(s) selected.
+>>
+>>prepare s from insert into hive.hive.tbinary values (?);
+
+--- SQL command prepared.
+>>execute s using x'1020';
+
+--- 1 row(s) inserted.
+>>set param ?p x'3040';
+>>insert into hive.hive.tbinary values (?p);
+
+--- 1 row(s) inserted.
+>>select a from hive.hive.tbinary;
+
+A                   
+--------------------
+
+3100000000          
+7800000000          
+1020                
+3040                
+
+--- 4 row(s) selected.
+>>select * from hive.hive.tbinary where a = _binary x'1020';
+
+A                   
+--------------------
+
+1020                
+
+--- 1 row(s) selected.
+>>
+>>select cast(column_name as char(30) character set iso88591), 
++>       sql_data_type, fs_data_type, hive_data_type,
++>       column_size, column_scale, 
++>       column_number, part_col_number, bucket_col_number, sort_col_number
++>  from table(hivemd(columns))
++>  where table_name = 'tbinary'
++>  order by column_number;
+
+(EXPR)                          SQL_DATA_TYPE                     FS_DATA_TYPE  HIVE_DATA_TYPE                    COLUMN_SIZE  COLUMN_SCALE  COLUMN_NUMBER  PART_COL_NUMBER  BUCKET_COL_NUMBER  SORT_COL_NUMBER
+------------------------------  --------------------------------  ------------  --------------------------------  -----------  ------------  -------------  ---------------  -----------------  ---------------
+
+a                               VARBINARY                                   69  binary                                     10            -1              0               -1                 -1               -1
+
+--- 1 row(s) selected.
+>>
+>>
+>>log;

@@ -1282,7 +1282,7 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
         return -1;
       }
     }
-  else if ((DFS2REC::isBinary(intervalOpType->getDatatype())) &&
+  else if ((DFS2REC::isBinaryNumeric(intervalOpType->getDatatype())) &&
            (datetimeEndField == REC_DATE_DAY))
     {
       // special modeSpecial4 case.

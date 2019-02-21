@@ -1944,7 +1944,7 @@ private:
       // from its original type, or is a fixed numeric with nonzero scale.
       Int32 actualDatatype = group->colSet[0].datatype;
       if (group->ISdatatype != actualDatatype ||
-          (actualDatatype >= REC_MIN_BINARY && actualDatatype <= REC_MAX_BINARY
+          (actualDatatype >= REC_MIN_BINARY_NUMERIC && actualDatatype <= REC_MAX_BINARY_NUMERIC
                                             && group->colSet[0].scale > 0))
         convertedValues[index] = convertToISdatatype((T*)NULL, valToConvert, group);
       else

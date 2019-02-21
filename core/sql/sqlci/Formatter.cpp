@@ -231,6 +231,13 @@ Lng32 Formatter::display_length(Lng32 datatype,
       d_len = d_buflen = SQL_BOOLEAN_DISPLAY_SIZE;
       break;
 
+    // binary values are displayed in HEX format. 
+    // 1 source byte will be displayed as 2 HEX bytes.
+    case REC_BINARY_STRING:
+    case REC_VARBINARY_STRING:
+      d_len = d_buflen = str_computeHexAsciiLen(length);
+      break;
+
     default:
       d_len = d_buflen = length;
       break;
@@ -285,6 +292,7 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
       (datatype == REC_BYTE_V_ANSI) ||
       (datatype == REC_NCHAR_V_UNICODE) ||	// 12/9/97
       (datatype == REC_NCHAR_V_ANSI_UNICODE) ||	// 6/26/98
+      (datatype == REC_VARBINARY_STRING) ||
       (datatype == REC_BLOB) ||
       (datatype == REC_CLOB)
      ) 
@@ -346,6 +354,8 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
   case REC_FLOAT64: 
   case REC_DATETIME: 
   case REC_BOOLEAN:
+    //  case REC_BINARY_STRING:
+    //  case REC_VARBINARY_STRING:
   {
     short retcode = convDoIt(data,
 			     length,
@@ -477,6 +487,20 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
                              NULL, // conversion error flag
                              CONV_ALLOW_INVALID_CODE_VALUE);   
   }
+  break;
+
+  case REC_BINARY_STRING:
+  case REC_VARBINARY_STRING:
+    {
+      Lng32 retLen = str_convertToHexAscii(
+           data, length,
+           buf, display_length, FALSE);
+      if (retLen < 0)
+        {
+          // should not happen
+          assert(0);
+        }
+    }
   break;
 
   default:

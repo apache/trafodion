@@ -73,7 +73,7 @@ static void getCaseDatatypes(short attr_type1, Lng32 attr_len1, short &type_op1,
   //
   if ((type_op1 >= REC_MIN_INTERVAL) && (type_op1 <= REC_MAX_INTERVAL))
     {
-    if ( ((type_op2 >= REC_MIN_BINARY) && (type_op2 <= REC_MAX_BINARY)) ||
+    if ( ((type_op2 >= REC_MIN_BINARY_NUMERIC) && (type_op2 <= REC_MAX_BINARY_NUMERIC)) ||
          ((type_op2 >= REC_MIN_DECIMAL) && (type_op2 <= REC_MAX_DECIMAL)) ||
          (type_op2 == REC_DATETIME) ||
          ((type_op2 >= REC_MIN_INTERVAL) && (type_op2 <= REC_MAX_INTERVAL) &&
@@ -124,7 +124,7 @@ static void getCaseDatatypes(short attr_type1, Lng32 attr_len1, short &type_op1,
 
   if ((type_op2 >= REC_MIN_INTERVAL) && (type_op2 <= REC_MAX_INTERVAL)) 
     {
-    if ( ((type_op1 >= REC_MIN_BINARY) && (type_op1 <= REC_MAX_BINARY)) ||
+    if ( ((type_op1 >= REC_MIN_BINARY_NUMERIC) && (type_op1 <= REC_MAX_BINARY_NUMERIC)) ||
          ((type_op1 >= REC_MIN_DECIMAL) && (type_op1 <= REC_MAX_DECIMAL)) ||
          (type_op1 == REC_DATETIME) )
       {
@@ -564,8 +564,8 @@ const ArithInstruction ex_arith_clause::computeCaseIndex(OperatorTypeEnum op,
       // for binary numeric and interval datatypes, arith done only if scales
       // are the same and operation is addition or subtraction
       if (((op == ITM_PLUS) || (op == ITM_MINUS)) &&
-	  (((result->getDatatype() >= REC_MIN_BINARY) &&
-	    (result->getDatatype() <= REC_MAX_BINARY)) ||
+	  (((result->getDatatype() >= REC_MIN_BINARY_NUMERIC) &&
+	    (result->getDatatype() <= REC_MAX_BINARY_NUMERIC)) ||
 	   ((result->getDatatype() >= REC_MIN_INTERVAL) &&
 	    (result->getDatatype() <= REC_MAX_INTERVAL))))
 	{
@@ -697,6 +697,8 @@ const ex_comp_clause::CompInstrStruct ex_comp_clause::compInstrInfo[] =
     // instructions added to this array.
     {ITM_ANY_COMP, REC_UNKNOWN,     REC_UNKNOWN,        instrAndText(ASCII_COMP)},
     {ITM_ANY_COMP, REC_UNKNOWN,     REC_UNKNOWN,        instrAndText(COMP_COMPLEX)},
+
+    {ITM_ANY_COMP, REC_UNKNOWN,     REC_UNKNOWN,        instrAndText(BINARY_COMP)},
 
     {ITM_EQUAL, REC_BIN8_SIGNED,    REC_BIN8_SIGNED,    instrAndText(EQ_BIN8S_BIN8S)},
     {ITM_EQUAL, REC_BIN8_UNSIGNED,  REC_BIN8_UNSIGNED,  instrAndText(EQ_BIN8U_BIN8U)},
@@ -1166,8 +1168,8 @@ const CompInstruction ex_comp_clause::computeCaseIndex(OperatorTypeEnum op,
       
       // for all numeric, datetime and interval datatypes, comparison done
       // only if scale is the same
-      if (((attr1->getDatatype() >= REC_MIN_BINARY) &&
-	   (attr1->getDatatype() <= REC_MAX_BINARY)) ||
+      if (((attr1->getDatatype() >= REC_MIN_BINARY_NUMERIC) &&
+	   (attr1->getDatatype() <= REC_MAX_BINARY_NUMERIC)) ||
 	  ((attr1->getDatatype() >= REC_DECIMAL_UNSIGNED) &&
 	   (attr1->getDatatype() <= REC_DECIMAL_LSE)) ||
 	  (attr1->getDatatype() == REC_DATETIME) ||
@@ -1187,6 +1189,17 @@ const CompInstruction ex_comp_clause::computeCaseIndex(OperatorTypeEnum op,
 	    }
 	} // numeric, datetime or interval types
     } // comparison supported 
+  else
+    {
+      if (((attr1->getDatatype() == REC_BINARY_STRING) ||
+           (attr1->getDatatype() == REC_VARBINARY_STRING)) &&
+          ((attr2->getDatatype() == REC_BINARY_STRING) ||
+           (attr2->getDatatype() == REC_VARBINARY_STRING)))
+        {
+          instruction = BINARY_COMP;
+          setInstrArrayIndex(findIndexIntoInstrArray(instruction));
+        }
+    }
 
   if (instruction == COMP_NOT_SUPPORTED)
     setInstrArrayIndex(-1);
@@ -1726,6 +1739,18 @@ const ex_conv_clause::ConvInstrStruct ex_conv_clause::convInstrInfo[] = {
   {REC_BOOLEAN,       REC_BYTE_F_ASCII,      instrAndText(CONV_BOOL_ASCII)},
   {REC_BOOLEAN,       REC_BYTE_V_ASCII,      instrAndText(CONV_BOOL_ASCII)},
 
+  {REC_BINARY_STRING, REC_BINARY_STRING,     instrAndText(CONV_BINARY_TO_BINARY)},
+  {REC_BINARY_STRING, REC_VARBINARY_STRING,  instrAndText(CONV_BINARY_TO_VARBINARY)},
+  {REC_BINARY_STRING, REC_UNKNOWN,           instrAndText(CONV_BINARY_TO_OTHER)},
+
+  {REC_VARBINARY_STRING,REC_BINARY_STRING,   instrAndText(CONV_VARBINARY_TO_BINARY)},
+  {REC_VARBINARY_STRING,REC_VARBINARY_STRING,instrAndText(CONV_VARBINARY_TO_VARBINARY)},
+  {REC_VARBINARY_STRING,REC_UNKNOWN,         instrAndText(CONV_VARBINARY_TO_OTHER)},
+
+  {REC_UNKNOWN,       REC_BINARY_STRING,     instrAndText(CONV_OTHER_TO_BINARY)},
+  {REC_UNKNOWN,       REC_VARBINARY_STRING,  instrAndText(CONV_OTHER_TO_VARBINARY)},
+
+
 };
 
 Lng32 ex_conv_clause::findIndexIntoInstrArray(ConvInstruction ci)
@@ -1894,8 +1919,32 @@ ConvInstruction ex_conv_clause::findInstruction(short sourceType, Lng32 sourceLe
   // See handling of dataConversionErrorFlag in exp_conv.cpp.
   if (instruction == CONV_NOT_SUPPORTED)
     {
-      if ((DFS2REC::isNumeric(sourceType)) &&
-          (DFS2REC::isTinyint(targetType)))
+      if (targetType == REC_BINARY_STRING)
+        {
+          instruction = CONV_OTHER_TO_BINARY;
+          
+          setInstrArrayIndex(findIndexIntoInstrArray(instruction));
+        }
+      else if (targetType == REC_VARBINARY_STRING)
+        {
+          instruction = CONV_OTHER_TO_VARBINARY;
+          
+          setInstrArrayIndex(findIndexIntoInstrArray(instruction));
+        }
+      else if (sourceType == REC_BINARY_STRING)
+        {
+          instruction = CONV_BINARY_TO_OTHER;
+          
+          setInstrArrayIndex(findIndexIntoInstrArray(instruction));
+        }
+      else if (sourceType == REC_VARBINARY_STRING)
+        {
+          instruction = CONV_VARBINARY_TO_OTHER;
+          
+          setInstrArrayIndex(findIndexIntoInstrArray(instruction));
+        }
+      else if ((DFS2REC::isNumeric(sourceType)) &&
+               (DFS2REC::isTinyint(targetType)))
         {
           if (targetType == REC_BIN8_SIGNED)
             {

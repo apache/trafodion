@@ -3995,10 +3995,10 @@ ex_expr::exp_return_type checkPrecision(Int64 source,
     // nor an integer and the source is either a float, integer, or bigger
     if ((sourceType >= REC_MIN_NUMERIC) &&
         (sourceType <= REC_MAX_NUMERIC) &&
-        (targetType >= REC_MIN_BINARY) &&
-        (targetType <= REC_MAX_BINARY) &&
-        ((sourceType < REC_MIN_BINARY) ||
-         (sourceType > REC_MAX_BINARY) ||
+        (targetType >= REC_MIN_BINARY_NUMERIC) &&
+        (targetType <= REC_MAX_BINARY_NUMERIC) &&
+        ((sourceType < REC_MIN_BINARY_NUMERIC) ||
+         (sourceType > REC_MAX_BINARY_NUMERIC) ||
          (sourcePrecision == 0) ||
          (sourcePrecision > targetPrecision)))  {
       //
@@ -4088,8 +4088,8 @@ ex_expr::exp_return_type checkPrecision(Int64 source,
 	(sourceType <= REC_MAX_NUMERIC) &&
            (targetType >= REC_MIN_INTERVAL) &&
            (targetType <= REC_MAX_INTERVAL)) &&
-        ((sourceType < REC_MIN_BINARY) || // ??
-         (sourceType > REC_MAX_BINARY) || // ??
+        ((sourceType < REC_MIN_BINARY_NUMERIC) || // ??
+         (sourceType > REC_MAX_BINARY_NUMERIC) || // ??
          (sourcePrecision == 0) || // ??
          (sourcePrecision > ((targetType == REC_INT_SECOND) ?
                        (targetPrecision + targetScale) : targetPrecision))))  {
@@ -4131,8 +4131,8 @@ ex_expr::exp_return_type checkPrecision(Int64 source,
       //
     if ((sourceType >= REC_MIN_INTERVAL) &&
          (sourceType <= REC_MAX_INTERVAL) &&
-        (targetType >= REC_MIN_BINARY) &&
-        (targetType <= REC_MAX_BINARY) &&
+        (targetType >= REC_MIN_BINARY_NUMERIC) &&
+        (targetType <= REC_MAX_BINARY_NUMERIC) &&
          (sourcePrecision > targetPrecision))  {
 
       if ((source < getMinDecValue(targetPrecision, targetType)) ||
@@ -4269,9 +4269,9 @@ ex_expr::exp_return_type convExactToDec(char *target,
 ///////////////////////////////////////////////
 // find the first non blank character
 ///////////////////////////////////////////////
-char * str_find_first_nonblank(char *s, Lng32 len) {
+char * str_find_first_nonpad(char *s, Lng32 len, char padChar) {
   for (Lng32 i = 0; i < len; i++)
-    if (s[i] != ' ') 
+    if (s[i] != padChar) 
       return &s[i];
   return 0;
 };
@@ -4620,7 +4620,7 @@ ex_expr::exp_return_type convCharToChar(
               // check whether the characters from firstUntranslatedChar onwards are all blanks
               remainingScanStringLen = input_length - (firstUntranslatedChar - input_to_scan);
               canIgnoreOverflowChars = 
-                !(str_find_first_nonblank(firstUntranslatedChar, remainingScanStringLen));
+                !(str_find_first_nonpad(firstUntranslatedChar, remainingScanStringLen, ' '));
             }
 
           if (!canIgnoreOverflowChars)
@@ -4690,7 +4690,7 @@ ex_expr::exp_return_type convCharToChar(
               Lng32 remainingSourceStringLen = src2Len - (firstUntranslatedChar - src2);
               // check whether the characters from firstUntranslatedChar onwards are all blanks
               canIgnoreOverflowChars = 
-                !(str_find_first_nonblank(firstUntranslatedChar, remainingSourceStringLen));
+                !(str_find_first_nonpad(firstUntranslatedChar, remainingSourceStringLen, ' '));
             }
 
           if (!canIgnoreOverflowChars)
@@ -4807,8 +4807,8 @@ ex_expr::exp_return_type convCharToChar(
                   Lng32 remainingSourceStringLen = sourceLen - outputDataLen;
                   // check whether the characters from first truncated char onwards are all blanks
                   relevantCharsGotTruncated = 
-                    (str_find_first_nonblank(&(source[outputDataLen]),
-                                             remainingSourceStringLen) != NULL);
+                    (str_find_first_nonpad(&(source[outputDataLen]),
+                                           remainingSourceStringLen, ' ') != NULL);
                 }
               else
                 relevantCharsGotTruncated = TRUE;
@@ -6516,7 +6516,8 @@ convDoIt(char * source,
             {
               ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
                                     source, sourceLen, sourceType, sourceScale,
-                                    targetType, tempFlags);
+                                    targetType, tempFlags, targetLen, targetScale,
+                                    targetPrecision, sourcePrecision);
               return ex_expr::EXPR_ERROR;
             }
         }
@@ -10226,8 +10227,8 @@ convDoIt(char * source,
 
         if (copyLen < sourceLen) 
           {
-            char * first_nonblank = str_find_first_nonblank(
-                 &source[copyLen], sourceLen - copyLen);
+            char * first_nonblank = str_find_first_nonpad(
+                 &source[copyLen], sourceLen - copyLen, ' ');
             
             if (first_nonblank)  // if truncated portion isn't all blanks
               {
@@ -10910,8 +10911,8 @@ convDoIt(char * source,
               str_cpy_all(target, source, copyLen);
               if (copyLen < sourceLen) 
                 {
-                  char * first_nonblank = str_find_first_nonblank(
-                       &source[copyLen], sourceLen - copyLen);
+                  char * first_nonblank = str_find_first_nonpad(
+                       &source[copyLen], sourceLen - copyLen, ' ');
                   
                   if (first_nonblank)  // if truncated portion isn't all blanks
                     {
@@ -11034,7 +11035,7 @@ convDoIt(char * source,
           // put null character at the end
           target[targetLen] = 0;
           if ((targetLen < sourceLen) &&
-              str_find_first_nonblank(&source[targetLen], sourceLen - targetLen))
+              str_find_first_nonpad(&source[targetLen], sourceLen - targetLen, ' '))
             ExRaiseSqlWarning(heap, diagsArea, EXE_STRING_OVERFLOW);
         }
       }
@@ -11114,7 +11115,7 @@ convDoIt(char * source,
           else {
             target[targetLen] = 0;
           }
-          if (str_find_first_nonblank(&source[targetLen], actSourceLen - targetLen))
+          if (str_find_first_nonpad(&source[targetLen], actSourceLen - targetLen, ' '))
             ExRaiseSqlWarning(heap, diagsArea, EXE_STRING_OVERFLOW);
         }
       }
@@ -11304,6 +11305,157 @@ convDoIt(char * source,
     }
     break;
 
+  case CONV_BINARY_TO_BINARY:
+  case CONV_VARBINARY_TO_BINARY:
+    {
+      Lng32 copyLen = ((targetLen >= sourceLen) ? sourceLen : targetLen);
+      str_cpy_all(target, source, copyLen);
+      
+      if (targetLen > copyLen) 
+        {
+          /* zero pad target */
+          str_pad(&target[copyLen], targetLen - copyLen, '\0');
+        }
+      else if (copyLen < sourceLen) 
+        {
+          char * first_nonzero = str_find_first_nonpad(
+               &source[copyLen], sourceLen - copyLen, '\0');
+          if (first_nonzero)
+            {
+              if (dataConversionErrorFlag) // want conversion flag instead of warning?
+                *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
+              else
+                // no - raise a warning
+                ExRaiseDetailSqlError(heap, diagsArea, (ExeErrorCode)(-EXE_CONVERSION_ERROR),
+                                      source, sourceLen, sourceType, sourceScale,
+                                      targetType, 0, targetLen, targetScale, 
+                                      targetPrecision, sourcePrecision);
+            }
+        }
+    }
+    break;
+
+  case CONV_BINARY_TO_VARBINARY:
+  case CONV_VARBINARY_TO_VARBINARY:
+    {
+      Lng32 copyLen = ((targetLen >= sourceLen) ? sourceLen : targetLen);
+      str_cpy_all(target, source, copyLen);
+      setVCLength(varCharLen, varCharLenSize, copyLen);
+
+      if (copyLen < sourceLen) 
+        {
+          char * first_nonzero = str_find_first_nonpad(
+               &source[copyLen], sourceLen - copyLen, '\0');
+          if (first_nonzero)
+            {
+              if (dataConversionErrorFlag)
+                *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
+              else
+                // no - raise a warning
+                ExRaiseDetailSqlError(heap, diagsArea, (ExeErrorCode)(-EXE_CONVERSION_ERROR),
+                                      source, sourceLen, sourceType, sourceScale,
+                                      targetType, 0, targetLen, targetScale, 
+                                      targetPrecision, sourcePrecision);
+            }
+        }
+    }
+    break;
+
+  case CONV_OTHER_TO_BINARY:
+    {
+      Lng32 copyLen = ((targetLen >= sourceLen) ? sourceLen : targetLen);
+      str_cpy_all(target, source, copyLen);
+      
+      if (targetLen > copyLen) 
+        {
+          /* zero pad target */
+          str_pad(&target[copyLen], targetLen - copyLen, '\0');
+        }
+      else if (copyLen < sourceLen) 
+        {
+          if (dataConversionErrorFlag)
+            *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_CONVERSION_ERROR,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, 0, targetLen, targetScale, 
+                                    targetPrecision, sourcePrecision);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+    }
+    break;
+
+  case CONV_OTHER_TO_VARBINARY:
+    {
+      Lng32 copyLen = ((targetLen >= sourceLen) ? sourceLen : targetLen);
+      str_cpy_all(target, source, copyLen);
+      setVCLength(varCharLen, varCharLenSize, copyLen);
+
+      if (copyLen < sourceLen)
+        {
+          if (dataConversionErrorFlag)
+            *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_CONVERSION_ERROR,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, 0, targetLen, targetScale, 
+                                    targetPrecision, sourcePrecision);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+    }
+    break;
+
+  case CONV_BINARY_TO_OTHER:
+  case CONV_VARBINARY_TO_OTHER:
+    {
+      Lng32 copyLen = ((targetLen >= sourceLen) ? sourceLen : targetLen);
+      str_cpy_all(target, source, copyLen);
+
+      if (varCharLen && (varCharLenSize > 0))
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+
+      // if source len is > target len, return error. There is no truncation.
+      if (sourceLen > targetLen)
+        {
+          if (dataConversionErrorFlag)
+            *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_CONVERSION_ERROR,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, 0, targetLen, targetScale, 
+                                    targetPrecision, sourcePrecision);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      // if target len > source len and target datatype is string, blankpad.
+      // Otherwise return error.
+      else if (targetLen > sourceLen)
+        {
+          if (DFS2REC::isCharacterString(targetType))
+            {
+              char padChar = 0;
+              if (DFS2REC::isCharacterString(targetType))
+                padChar = ' ';
+              
+              str_pad(target+sourceLen, targetLen-sourceLen, padChar);
+            }
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_CONVERSION_ERROR,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, 0, targetLen, targetScale, 
+                                    targetPrecision, sourcePrecision);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+    }
+    break;
+
   case CONV_NOT_SUPPORTED:
   default:
     {
@@ -11318,8 +11470,7 @@ convDoIt(char * source,
                           targetScale);
     
     // this conversion is not supported.
-    //      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_NOT_SUPPORTED);
-      return ex_expr::EXPR_ERROR;
+    return ex_expr::EXPR_ERROR;
     }
   break;
 
@@ -11406,7 +11557,6 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
     else
       warningMark = 0;
 
-
   switch (getInstruction()) {
 
 
@@ -11461,7 +11611,7 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 	source = (char*)ptrVal;
       }
 
-    retcode =  convDoIt(source, //op_data[1],
+    retcode =  convDoIt(source,
 			src->getLength(op_data[-MAX_OPERANDS + 1]),
 			src->getDatatype(),
 			src->getPrecision(),
@@ -11508,15 +11658,13 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
   };
   }; // switch
 
-// If this conv clause came from either an update or an insert, and if
-// the data types are char types and the target size is smaller than source
-// size, the checkTruncError flag should be set.
-// In this section, if the flag is set, and a warning is returned as the
-// result of the conversion, an error should be issued instead of a warning.
-// This is according to ANSI SQL92
-// If this is for SPECIAL1_MODE, then neither warnings nor errors should be
-// returned for truncations of char types on inserts and updates.
-
+  // If this conv clause came from either an update or an insert, and if
+  // the data types are char types and the target size is smaller than source
+  // size, the checkTruncError flag should be set.
+  // In this section, if the flag is set, and a warning is returned as the
+  // result of the conversion, an error should be issued instead of a warning.
+  // This is according to ANSI SQL92
+  
   if (getCheckTruncationFlag() && *diagsArea) {
     Int32 warningMark2 = (*diagsArea)->getNumber(DgSqlCode::WARNING_);
     Int32 counter = warningMark2 - warningMark;
@@ -11533,14 +11681,24 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
                               0,
                               tgt->getLength(),
                               tgt->getScale(),
-                              tgt->getPrecision());
+                              tgt->getPrecision(),
+                              src->getPrecision());
         retcode = ex_expr::EXPR_ERROR;
       }
       else if (((*diagsArea)->getWarningEntry(warningMark2 - counter + 1))->
                 getSQLCODE() == EXE_NUMERIC_OVERFLOW) {
              (*diagsArea)->deleteWarning(warningMark2-counter);
              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
-                                   this, op_data);
+                                   op_data[1],
+                                   src->getLength(op_data[-MAX_OPERANDS + 1]),
+                                   src->getDatatype(),
+                                   src->getScale(),
+                                   tgt->getDatatype(),
+                                   0,
+                                   tgt->getLength(),
+                                   tgt->getScale(),
+                                   tgt->getPrecision(),
+                                   src->getPrecision());
              retcode = ex_expr::EXPR_ERROR;
            }
       counter--;
@@ -11915,7 +12073,7 @@ ex_expr::exp_return_type swapBytes(Attributes *attr,
   rec_datetime_field endField; 
   ExpDatetime *dtAttr;
 
-  if (dataType >= REC_MIN_BINARY && dataType <= REC_MAX_BINARY)
+  if (dataType >= REC_MIN_BINARY_NUMERIC && dataType <= REC_MAX_BINARY_NUMERIC)
   {
      swapBytes(ptr, storageLength);
   }

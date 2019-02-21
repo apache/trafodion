@@ -51,7 +51,7 @@
 // numeric types
 #define REC_MIN_NUMERIC 128
 
-#define REC_MIN_BINARY 130
+#define REC_MIN_BINARY_NUMERIC 130
 #define REC_BIN16_SIGNED 130
 #define REC_BIN16_UNSIGNED 131
 #define REC_BIN32_SIGNED 132
@@ -61,7 +61,7 @@
 #define REC_BIN8_SIGNED 136     // tinyint signed
 #define REC_BIN8_UNSIGNED 137   // tinyint unsigned
 #define REC_BIN64_UNSIGNED 138
-#define REC_MAX_BINARY 138
+#define REC_MAX_BINARY_NUMERIC 138
 
 #define REC_MIN_FLOAT   142
 #define REC_IEEE_FLOAT32 142
@@ -116,6 +116,7 @@
   #define REC_BYTE_F_DOUBLE              2      // MP same name
   #define REC_NCHAR_F_UNICODE            2	// [MXsynonym]
 
+  #define REC_BINARY_STRING              9
   #define REC_MAX_F_CHAR_H              47      // MP same name
 
   #define REC_MIN_V_CHAR_H              64      // MP same name
@@ -124,6 +125,7 @@
   #define REC_BYTE_V_DOUBLE             66      // MP same name
   #define REC_NCHAR_V_UNICODE           66	// [MXsynonym]
 
+  #define REC_VARBINARY_STRING          69
   #define REC_BYTE_V_ASCII_LONG         70      // MX only: ODBC LONG VARCHAR
 
 // These types do not exist in MP, *and* they do not exist as persistent
@@ -160,7 +162,7 @@
 
   #define REC_BOOLEAN                  170
 
-  #define REC_DATETIME                  192
+  #define REC_DATETIME                 192
 
 // The ANSI defines are also in cli/SqlCLI.h (since they are externalized)
 // and must be the same as those defined there.  We don't source that file
@@ -279,7 +281,7 @@ public:
 
   // REC_BYTE_V_ANSI, REC_BYTE_V_ANSI_DOUBLE
   static Int32 isANSIVarChar(Int32 d)
-  { return REC_MIN_V_N_CHAR_H <= d	&& d <= REC_MAX_V_N_CHAR_H; }
+  { return ((REC_MIN_V_N_CHAR_H <= d	&& d <= REC_MAX_V_N_CHAR_H)); }
 
   static Int32 isAnyVarChar(Int32 d)
   { return ((REC_MIN_V_CHAR_H <= d	&& d <= REC_MAX_V_CHAR_H) ||
@@ -330,8 +332,8 @@ public:
   static Int32 isFloat(Int32 d)
   { return REC_MIN_FLOAT <= d         && d <= REC_MAX_FLOAT; }
 
-  static Int32 isBinary(Int32 d)
-  { return (REC_MIN_BINARY <= d) && (d <= REC_MAX_BINARY); }
+  static Int32 isBinaryNumeric(Int32 d)
+  { return (REC_MIN_BINARY_NUMERIC <= d) && (d <= REC_MAX_BINARY_NUMERIC); }
 
   static Int32 isNumeric(Int32 d)
   { return (REC_MIN_NUMERIC <= d) && (d <= REC_MAX_NUMERIC); }
@@ -344,6 +346,14 @@ public:
 
   static Int32 isTinyint(Int32 d)
   {return ((d == REC_BIN8_SIGNED) || (d == REC_BIN8_UNSIGNED)); }
+
+  static Int32 isBinaryString(Int32 d)
+  {return ((d == REC_BINARY_STRING) || (d == REC_VARBINARY_STRING)); }
+
+  static Int32 isCharacterString(Int32 d)
+  { return ((REC_MIN_CHARACTER <= d && d <= REC_MAX_CHARACTER) &&
+            (! isBinaryString(d))); }
+
 };
 
 

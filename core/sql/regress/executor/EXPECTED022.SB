@@ -1974,7 +1974,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (32768 as decimal(5)) as smallint) from dual;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:32768 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:32768 to Target Type:SMALLINT(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-10 as decimal(2)) as numeric(1)) from dual;
@@ -2065,7 +2065,7 @@ Hello
 >>
 >>select cast (cast (32768 as decimal(5) unsigned) as smallint) from dual;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:32768 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:32768 to Target Type:SMALLINT(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as decimal(2) unsigned) as numeric(1)) from dual;
@@ -3928,12 +3928,12 @@ Hello
 >>-- negative test on cast smallint to VAR/NCAR 
 >>select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(1)) from dual;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:65535 to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,UTF8).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:65535 to Target Type:CHAR(1) CHARACTER SET UCS2(REC_BYTE_F_ASCII).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR VARYING(1)) from dual;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-5535 to Target Type:VARCHAR(REC_BYTE_V_ASCII,1 BYTES,UTF8).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-5535 to Target Type:VARCHAR(1) CHARACTER SET UCS2(REC_BYTE_V_ASCII).
 
 --- 0 row(s) selected.
 >>
@@ -3979,7 +3979,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast(cast(N'-10' as integer) as nchar(1)) from dual;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,UTF8).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:CHAR(1) CHARACTER SET UCS2(REC_BYTE_F_ASCII).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'2147483648' as integer) as nchar varying(1)) from dual;
@@ -4021,7 +4021,7 @@ Hello
 >>-- negative test on cast DEC to VAR/NCAR 
 >>select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from dual;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:12345.56 to Target Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,UTF8).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:12345.56 to Target Type:CHAR(2) CHARACTER SET UCS2(REC_BYTE_F_ASCII).
 
 --- 0 row(s) selected.
 >>
@@ -4514,12 +4514,12 @@ IU          SS
 >>-- should return truncation error
 >>insert into t022u2 (a) values ('abcdefghijkl');
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII,12 BYTES,ISO88591) Source Value:abcdefghijkl to Target Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(12) CHARACTER SET ISO88591(REC_BYTE_V_ASCII) Source Value:abcdefghijkl to Target Type:CHAR(10) CHARACTER SET ISO88591(REC_BYTE_F_ASCII).
 
 --- 0 row(s) inserted.
 >>update t022u2 set a = 'abcdefghijkl';
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,12 BYTES,ISO88591) Source Value:abcdefghijkl to Target Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(12) CHARACTER SET ISO88591(REC_BYTE_F_ASCII) Source Value:abcdefghijkl to Target Type:CHAR(10) CHARACTER SET ISO88591(REC_BYTE_F_ASCII).
 
 --- 0 row(s) updated.
 >>

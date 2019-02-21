@@ -3444,6 +3444,14 @@ Lng32 HSCursor::buildNAType()
           type = new(heap_) SQLBooleanNative(heap_, nullflag);
           break;
 
+        case REC_BINARY_STRING:
+          type = new(heap_) SQLBinaryString(heap_, length, nullflag, FALSE);
+          break;
+
+        case REC_VARBINARY_STRING:
+          type = new(heap_) SQLBinaryString(heap_, length, nullflag, TRUE);
+          break;
+
         default:
           HSFuncMergeDiags(- UERR_UNSUPPORTED_DATATYPE);
           retcode_ = -1;

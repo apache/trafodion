@@ -45,6 +45,11 @@
 
 #include <stdarg.h>
 
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+
 #include "ComResWords.h"
 
 /*
@@ -670,6 +675,58 @@ Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen)
   return length;
 }
 
+Lng32 str_encoded_len_base64(Lng32 len)
+{
+  return ((4 * len / 3) + 3) & ~3;
+}
+
+Lng32 str_decoded_len_base64(Lng32 len)
+{
+  return (len * 3) / 4;
+}
+
+Lng32 str_encode_base64(const unsigned char* in, Lng32 in_len,
+                        char *out, Lng32 out_len)
+{
+  Lng32 ret = 0;
+
+  BIO *b64 = BIO_new(BIO_f_base64());
+  BIO *bio = BIO_new(BIO_s_mem());
+  BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+  BIO_push(b64, bio);
+
+  ret = BIO_write(b64, in, in_len);
+  BIO_flush(b64);
+  if (ret > 0)
+    {
+      ret = BIO_read(bio, out, out_len);
+    }
+
+  BIO_free(b64);
+  return ret;
+}
+
+Lng32 str_decode_base64(const unsigned char* in, Lng32 in_len,
+                        char *out, Lng32 out_len)
+{
+  Lng32 ret = 0;
+
+  BIO *b64 = BIO_new(BIO_f_base64());
+  BIO *bio = BIO_new(BIO_s_mem());
+  BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+  BIO_push(b64, bio);
+
+  ret = BIO_write(bio, in, in_len);
+  BIO_flush(bio);
+  if (ret)
+    {
+      ret = BIO_read(b64, out, out_len);
+    }
+
+  BIO_free(b64);
+  return ret;
+}
+
 // Strips leading and/or trailing blanks. src will contain a NULL after the
 // end of the first non-blank character.The length of the "stripped" string
 // is returned in len.
@@ -1228,10 +1285,10 @@ size_t str_computeHexAsciiLen(size_t srcByteLen)
 // NULL character - i.e. '\0' - is appended to the output string.
 // -----------------------------------------------------------------------
 Int32 str_convertToHexAscii(const char * src,               // in
-                          const size_t srcLength,         // in
-                          char *       result,            // out
-                          const size_t maxResultSize,     // in
-                          NABoolean    addNullAtEnd)      // in - default is TRUE
+                            const size_t srcLength,         // in
+                            char *       result,            // out
+                            const size_t maxResultSize,     // in
+                            NABoolean    addNullAtEnd)      // in - default is TRUE
 {
   const char hexArray[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                              'A', 'B', 'C', 'D', 'E', 'F'};

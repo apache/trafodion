@@ -24,6 +24,7 @@
 #include <openssl/err.h>
 
 #include <string.h>
+#include <stdint.h>
 
 #include "Platform.h"
 /**
@@ -57,4 +58,6 @@ void aes_create_key(const unsigned char * input,
                     Lng32 input_len,
                     unsigned char * key,
                     Int32 aes_mode);
+
 #endif
+

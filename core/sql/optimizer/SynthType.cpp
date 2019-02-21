@@ -423,6 +423,17 @@ NABoolean CharType::isComparable(const NAType &otherNA,
   return cmpOK;
 }
 
+NABoolean SQLBinaryString::isComparable(const NAType &otherNA,
+                                      ItemExpr *parentOp,
+                                      Int32 emitErr,
+                                      UInt32 * flags) const
+{
+  if (NOT NAType::isComparable(otherNA, parentOp, emitErr, flags))
+    return FALSE;
+
+  return TRUE;
+}
+
 // -----------------------------------------------------------------------
 // additional, miscellaneous helper functions
 // -----------------------------------------------------------------------
@@ -550,7 +561,17 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
       }
     }
 
+    // binary datatypes can only be compared with binary datatypes
+    if (((DFS2REC::isBinaryString(operand1->getFSDatatype())) &&
+         (NOT DFS2REC::isBinaryString(operand2->getFSDatatype()))) ||
+        ((DFS2REC::isBinaryString(operand2->getFSDatatype())) &&
+         (NOT DFS2REC::isBinaryString(operand1->getFSDatatype()))))
+      {
+        emitDyadicTypeSQLnameMsg(-4041, *operand1, *operand2);
 
+        return FALSE;
+      }
+            
     allowsUnknown = allowsUnknown OR
                     operand1->supportsSQLnullLogical() OR
                     operand2->supportsSQLnullLogical();
@@ -1433,6 +1454,36 @@ const NAType *BuiltinFunction::synthesizeType()
 
         retType = new HEAP
             SQLVarChar(HEAP, maxLength, TRUE);
+      }
+      break;
+
+    case ITM_ENCODE_BASE64:
+      {
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        Int32 source_len = typ1.getNominalSize();
+
+        Int32 maxLength = str_encoded_len_base64(source_len);
+
+        retType = new HEAP SQLVarChar(HEAP, maxLength, TRUE);
+      }
+      break;
+
+    case ITM_DECODE_BASE64:
+      {
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
+          return NULL;
+        }
+
+        Int32 source_len = typ1.getNominalSize();
+
+        Int32 maxLength = str_decoded_len_base64(source_len);
+
+        retType = new HEAP SQLVarChar(HEAP, maxLength, TRUE);
       }
       break;
 
@@ -2648,11 +2699,12 @@ const NAType *Cast::synthesizeType()
 
   const NAType &src = vid.getType();
   const NAType &tgt = (typeChanged)? *result: *getType();
+
   NABuiltInTypeEnum srcQual = src.getTypeQualifier();
   NABuiltInTypeEnum tgtQual = tgt.getTypeQualifier();
 
-  if ((src.getTypeQualifier() == NA_CHARACTER_TYPE) &&
-      (tgt.getTypeQualifier() == NA_CHARACTER_TYPE))
+  if ((DFS2REC::isCharacterString(src.getFSDatatype())) &&
+      (DFS2REC::isCharacterString(tgt.getFSDatatype())))
     {
       const CharType &cSrc = (CharType&)src;
       CharType &cTgt       = (CharType&)tgt;
@@ -2671,6 +2723,7 @@ const NAType *Cast::synthesizeType()
            ((CharType*)result)->setCharSet(cSrc.getCharSet());
          }
     }
+
   const NAType &res = (typeChanged)? *result: *getType();
   //
   // The NULL constant can be cast to any type.
@@ -2729,7 +2782,11 @@ const NAType *Cast::synthesizeType()
   // In other words, a) use isCompatible(), not isComparable(),
   // and b) just pass the tgt's collation/coercibility along!
   //
-  if ((srcQual == NA_LOB_TYPE) && (tgtQual != NA_LOB_TYPE))
+  if (DFS2REC::isBinaryString(tgt.getFSDatatype()))
+    legal = TRUE;
+  else if (DFS2REC::isBinaryString(src.getFSDatatype()))
+    legal = TRUE;
+  else if ((srcQual == NA_LOB_TYPE) && (tgtQual != NA_LOB_TYPE))
     legal = FALSE;
   else if (charsetChanged && src.isCompatible(res))
     legal = TRUE;
@@ -3357,40 +3414,6 @@ const NAType *Function::synthesizeType()
 {
   // Function derives directly from ItemExpr, so safe to do this
   const NAType *result = ItemExpr::synthesizeType();
-
-if (0)
-{
-  if (result->getTypeQualifier() == NA_CHARACTER_TYPE) {
-    Int32 n = getNumCHARACTERArgs(this);
-    if (n > 1) {
-#ifndef NDEBUG
-//      if (NCHAR_DEBUG > 0)
-	{
-          NAString unparsed(CmpCommon::statementHeap());
-	  unparse(unparsed, DEFAULT_PHASE, USER_FORMAT_DELUXE);
-	  cerr << "## FUNCTION " << (Int32)getOperatorType()
-	       << " (" << n << " char-type args)\t"
-	       << unparsed
-	       << "\t *might* not be computing its result collation/coercibility properly and/or pushing co/co back down to its children..." << endl;
-
-	  // Also emit a warning so you can catch this in regression results
-	  unparsed.prepend("## FUNCTION, co/co issue: ");
-	  *CmpCommon::diags() << DgSqlCode(+1110) << DgString0(unparsed);
-	}
-#endif
-}
-
-//	  WE DO *NOT* SYNTHESIZE A RESULT CoAndCo here
-//	  nor push it back down to children via propagateCoAndCoToChildren,
-//	  because that might not be the right thing.
-//	  If the above CERR msg appears and you see a problem,
-//	  you should add a synthesizeType method for that particular
-//	  Function-derived class.
-//    CharType *ct = (CharType *)result;
-//    propagateCoAndCoToChildren(this,
-//				 ct->getCollation(), ct->getCoercibility());
-    }
-  }
 
   return result;
 }
@@ -4100,16 +4123,25 @@ const NAType *Repeat::synthesizeType()
       size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
 
-  NAType *result =
-    new (HEAP) SQLVarChar(HEAP, CharLenInfo((Lng32)size_in_chars, (Lng32)size_in_bytes),
-			  (typ1.supportsSQLnullLogical() ||
-			   typ2.supportsSQLnullLogical()),
-			  ctyp1.isUpshifted(),
-			  ctyp1.isCaseinsensitive(),
-			  ctyp1.getCharSet(),
-			  ctyp1.getCollation(),
-			  ctyp1.getCoercibility());
-
+  NAType *result = NULL;
+  if (DFS2REC::isCharacterString(typ1.getFSDatatype()))
+    result = new (HEAP) SQLVarChar(
+         HEAP,
+         CharLenInfo((Lng32)size_in_chars, (Lng32)size_in_bytes),
+         (typ1.supportsSQLnullLogical() ||
+          typ2.supportsSQLnullLogical()),
+         ctyp1.isUpshifted(),
+         ctyp1.isCaseinsensitive(),
+         ctyp1.getCharSet(),
+         ctyp1.getCollation(),
+         ctyp1.getCoercibility());
+  else
+    result = new HEAP SQLBinaryString(
+         HEAP,
+         size_in_bytes,
+         (typ1.supportsSQLnullLogical() ||
+          typ2.supportsSQLnullLogical()),
+         TRUE);
   return result;
 }
 
@@ -4249,16 +4281,25 @@ const NAType *Replace::synthesizeType()
  
   CharLenInfo CLInfo( size_in_chars, size_in_bytes );
 
-  NAType *result =
-    new (HEAP) SQLVarChar(HEAP, CLInfo,
-			  (typ1->supportsSQLnullLogical() ||
-			   typ2->supportsSQLnullLogical() ||
-			   typ3->supportsSQLnullLogical()),
-			  ctyp1->isUpshifted(),
-			  ctyp1->isCaseinsensitive(),
-			  ctyp1->getCharSet(),
-			  ctyp1->getCollation(),
-			  ctyp1->getCoercibility());
+  NAType *result = NULL;
+  if (DFS2REC::isCharacterString(typ1->getFSDatatype()))
+    result =
+      new (HEAP) SQLVarChar(HEAP, CLInfo,
+                            (typ1->supportsSQLnullLogical() ||
+                             typ2->supportsSQLnullLogical() ||
+                             typ3->supportsSQLnullLogical()),
+                            ctyp1->isUpshifted(),
+                            ctyp1->isCaseinsensitive(),
+                            ctyp1->getCharSet(),
+                            ctyp1->getCollation(),
+                            ctyp1->getCoercibility());
+  else
+    result = new HEAP SQLBinaryString(
+         HEAP, size_in_bytes,
+         (typ1->supportsSQLnullLogical() ||
+          typ2->supportsSQLnullLogical() ||
+          typ3->supportsSQLnullLogical()),
+         TRUE);
 
   return result;
 }
@@ -4826,7 +4867,7 @@ const NAType *Lower::synthesizeType()
   // Check that the operands are compatible.
   //
   const NAType& operand = vid.getType();
-  if (operand.getTypeQualifier() != NA_CHARACTER_TYPE) {
+  if (NOT DFS2REC::isCharacterString(operand.getFSDatatype())) {
     // 4043 The operand of a LOWER function must be character.
     *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextForError());
     return NULL;
@@ -4881,7 +4922,7 @@ const NAType *Upper::synthesizeType()
   //
   const NAType& operand = vid.getType();
 
-  if (operand.getTypeQualifier() != NA_CHARACTER_TYPE) {
+  if (NOT DFS2REC::isCharacterString(operand.getFSDatatype())) {
     // 4043 The operand of an UPPER function must be character.
     *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextForError());
     return NULL;
@@ -5163,11 +5204,6 @@ const NAType *Substring::synthesizeType()
   }
 
   CharInfo::CharSet op1_cs = operand1->getCharSet();
-  /*
-    ((operand1->getFSDatatype() == REC_CLOB) ?
-     ((SQLClob*)operand1)->getCharSet() :
-     ((CharType *)operand1)->getCharSet());
-  */
 
   const CharType *charOperand = (CharType *) operand1;
   Lng32 maxLength_bytes = charOperand->getDataStorageSize();
@@ -5227,36 +5263,6 @@ const NAType *Substring::synthesizeType()
     }	  	// constant length op
   }	  	// length operand specified
 
-/*
-  length64 = length;
-
-  if ((NOT DFS2REC::isAnyVarChar(operand1->getFSDatatype())) &&
-      (pos > 0) &&
-      (length64 > 0) &&
-      ((pos + length64 - 1) <= maxLength))
-    resultIsFixedChar = TRUE;
-*/
-
- // 12/22/97: the substring inherits the charset, collation and
- // coercibility from the source string.
-
-/*  if (resultIsFixedChar)
-    return new HEAP
-      SQLChar(maxLength,
-	      operand1->supportsSQLnull() OR
-	      operand2->supportsSQLnull() OR
-	      ((operand3 != NULL) AND operand3->supportsSQLnull())
-	      ,charOperand->isUpshifted()
-	      ,charOperand->isCaseinsensitive()
-	      ,FALSE
-	      ,charOperand->getCharSet()
-	      ,charOperand->getCollation()
-	      ,charOperand->getCoercibility()
-	      );
-  else
-*/
-
-
   if (operand1->getFSDatatype() == REC_CLOB)
     {
       return new HEAP
@@ -5265,24 +5271,29 @@ const NAType *Substring::synthesizeType()
 		operand2->supportsSQLnull() OR
 		((operand3 != NULL) AND operand3->supportsSQLnull()));
     }
+  else if (DFS2REC::isCharacterString(operand1->getFSDatatype()))
+    {
+      return new HEAP
+        SQLVarChar(HEAP, CharLenInfo(maxLength_chars, maxLength_bytes), // OLD: maxLength
+                   operand1->supportsSQLnull() OR
+                   operand2->supportsSQLnull() OR
+                   ((operand3 != NULL) AND operand3->supportsSQLnull())
+                   ,charOperand->isUpshifted()
+                   ,charOperand->isCaseinsensitive()
+                   ,operand1->getCharSet()
+                   ,charOperand->getCollation()
+                   ,charOperand->getCoercibility()
+                   );
+    }
   else
     {
-    
-
       return new HEAP
-	SQLVarChar(HEAP, CharLenInfo(maxLength_chars, maxLength_bytes), // OLD: maxLength
-		   operand1->supportsSQLnull() OR
-		   operand2->supportsSQLnull() OR
-		   ((operand3 != NULL) AND operand3->supportsSQLnull())
-		   ,charOperand->isUpshifted()
-		   ,charOperand->isCaseinsensitive()
-		   ,operand1->getCharSet()
-		   ,charOperand->getCollation()
-		   ,charOperand->getCoercibility()
-		   );
-      
+	SQLBinaryString(HEAP, maxLength_bytes,
+                      operand1->supportsSQLnull() OR
+                      operand2->supportsSQLnull() OR
+                      ((operand3 != NULL) AND operand3->supportsSQLnull()),
+                      TRUE);
     }
-  
 }
 
 // -----------------------------------------------------------------------
@@ -5373,15 +5384,25 @@ const NAType *Trim::synthesizeType()
   //
   Int32 size = trimSource->getDataStorageSize();
 
-  return new HEAP
-    SQLVarChar(HEAP, CharLenInfo(trimSource->getStrCharLimit(), size )
-	      ,trimChar->supportsSQLnull() OR trimSource->supportsSQLnull()
-	      ,trimSource->isUpshifted()
-	      ,trimSource->isCaseinsensitive()
-              ,trimSource->getCharSet()
-	      ,trimSource->getCollation()
-	      ,trimSource->getCoercibility()
-	      );
+  if (DFS2REC::isBinaryString(vid2.getType().getFSDatatype()))
+    {
+      return new HEAP
+	SQLBinaryString(HEAP, size,
+                        trimChar->supportsSQLnull() OR trimSource->supportsSQLnull(),
+                        TRUE);
+    }
+  else
+    {
+      return new HEAP
+        SQLVarChar(HEAP, CharLenInfo(trimSource->getStrCharLimit(), size )
+                   ,trimChar->supportsSQLnull() OR trimSource->supportsSQLnull()
+                   ,trimSource->isUpshifted()
+                   ,trimSource->isCaseinsensitive()
+                   ,trimSource->getCharSet()
+                   ,trimSource->getCollation()
+                   ,trimSource->getCoercibility()
+                   );
+    }
 }
 
 // -----------------------------------------------------------------------
@@ -5438,8 +5459,8 @@ const NAType *Translate::synthesizeType()
   //
 
   const NAType& operand = vid.getType();
-  if (operand.getTypeQualifier() != NA_CHARACTER_TYPE) {
-    // 4043 The operand of an UPPER function must be character.
+  if (NOT DFS2REC::isCharacterString(operand.getFSDatatype())) {
+    // 4043 The operand of TRANSLATE function must be character.
     *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
     return NULL;
   }
@@ -5627,6 +5648,7 @@ const NAType *Translate::synthesizeType()
 const NAType *ValueIdUnion::synthesizeType()
 {
   const NAType *result = NULL;
+
   CollIndex i = 0;
 
   // if this is the case of insert values list tuples, then

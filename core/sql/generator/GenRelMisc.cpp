@@ -3996,6 +3996,20 @@ short TupleList::codeGen(Generator * generator)
 	  ItemExpr * childNode = (ItemExpr *) tupleTree[j];
           if (castTo)
           {
+            const NAType &srcType = childNode->getValueId().getType();
+            const NAType &tgtType = castNode->getValueId().getType();
+
+            if ((hiveTextInsert()) &&
+                (DFS2REC::isBinaryString(tgtType.getFSDatatype())) &&
+                (NOT DFS2REC::isAnyCharacter(srcType.getFSDatatype())))
+              {
+                childNode = new(bindWA->wHeap()) 
+                  ZZZBinderFunction(ITM_TO_CHAR, childNode);
+                childNode = childNode->bindNode(bindWA);
+                if (bindWA->errStatus())
+                  return -1;            
+              }
+
 	    // When we have ins/upd target cols which are
 	    // MP NCHAR in MX-NSK-Rel1 (i.e., SINGLE-byte),
 	    // and the source was from a Tuple/TupleList,

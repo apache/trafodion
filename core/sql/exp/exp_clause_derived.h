@@ -1193,7 +1193,10 @@ enum CompInstruction {
   GE_BIN8S_BIN8S      =189,
   GE_BIN8U_BIN8U      =190,
 
-  COMP_NOT_SUPPORTED  =191
+  // comparison between sql binary/varbinary datatypes
+  BINARY_COMP         =191,
+
+  COMP_NOT_SUPPORTED  =192
 };
 
 class  ex_comp_clause : public ex_clause {
@@ -1706,7 +1709,17 @@ enum ConvInstruction {
   CONV_NUMERIC_BIN8U                    =284,
 
   CONV_BIN8S_BIN8U                     =285,
-  CONV_BIN8U_BIN8S                     =286
+  CONV_BIN8U_BIN8S                     =286,
+
+  CONV_BINARY_TO_BINARY                =287,
+  CONV_BINARY_TO_VARBINARY             =288,
+  CONV_VARBINARY_TO_BINARY             =289,
+  CONV_VARBINARY_TO_VARBINARY          =290,
+
+  CONV_BINARY_TO_OTHER                 =291,
+  CONV_VARBINARY_TO_OTHER              =292,
+  CONV_OTHER_TO_BINARY                 =293,
+  CONV_OTHER_TO_VARBINARY              =294
 };
 
 class  ex_conv_clause : public ex_clause {

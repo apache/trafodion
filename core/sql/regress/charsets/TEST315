@@ -325,6 +325,9 @@ select overlay(cast(NULL as char(10)) placing 'abcde' from 30 for 6)  from dual;
 select converttohex(overlay (uf8 placing uf8v from 4 for 2)) from cs315t4;
 select converttohex(overlay(_utf8 x'C3B6C3BAC3BBE0A0A0' placing _UTF8 x'C3B6'  from  2 for 2)) from dual;
 select stuff ('abcdefg', 3, 4, 'xy') from dual;
+select stuff ('abcdefg', 1, 0, 'xy') from dual;
+select unhex(hex((overlay(to_binary('abcdefg') placing to_binary('wx') from 2 for 3)))) from dual;
+select unhex(hex((overlay(to_binary('abcdefg') placing 'wx' from 2 for 3)))) from dual;
 
 -- OVERLAY error cases
 select overlay('w1234567xyz' placing 'abcde' from 1.2 for 4)  from dual;

@@ -116,9 +116,9 @@ static ItemExpr *CreateCastExpr(ItemExpr &source, const NAType &target,
 }
 
 int CreateAllCharsExpr(const NAType &formalType,
-                               ItemExpr &actualValue,
-                               CmpContext *cmpContext,
-                               ItemExpr *&newExpr)
+                       ItemExpr &actualValue,
+                       CmpContext *cmpContext,
+                       ItemExpr *&newExpr)
 {
   int result = 0;
   NAMemory *h = cmpContext->statementHeap();
@@ -127,7 +127,7 @@ int CreateAllCharsExpr(const NAType &formalType,
   Lng32 maxLength = GetDisplayLength(formalType);
   maxLength = MAXOF(maxLength, 1);
 
-  if (formalType.getTypeQualifier() != NA_CHARACTER_TYPE )
+  if (NOT DFS2REC::isCharacterString(formalType.getFSDatatype()))
   {
     typ = new (h) SQLVarChar(h, maxLength);
   }
@@ -145,8 +145,6 @@ int CreateAllCharsExpr(const NAType &formalType,
   }
 
   newExpr = CreateCastExpr(actualValue, *typ, cmpContext);
-
-
   if (newExpr == NULL)
   {
     result = -1;
@@ -309,11 +307,10 @@ static short ft_codegen(Generator *generator,
   //    if 1, do error check and return error.
   //    if 2, do error check and ignore row, if error
   //    if 3, insert null if an error occurs
-  Lng32 hiveInsertErrMode = 0;
+  Lng32 hiveInsertErrMode = CmpCommon::getDefaultNumeric(HIVE_INSERT_ERROR_MODE);
   if ((fastExtract) && (fastExtract->isHiveInsert()) &&
       (fastExtract->getHiveTableDesc()) &&
-      (fastExtract->getHiveTableDesc()->getNATable()) &&
-      ((hiveInsertErrMode = CmpCommon::getDefaultNumeric(HIVE_INSERT_ERROR_MODE)) > 0))
+      (fastExtract->getHiveTableDesc()->getNATable()))
     {
       hiveNATable = fastExtract->getHiveTableDesc()->getNATable();
       hiveNAColArray = &hiveNATable->getNAColumnArray();
@@ -336,19 +333,24 @@ static short ft_codegen(Generator *generator,
 
     // Hive insert converts child data into string format and inserts
     // it into target table.
-    // If child type can into an error during conversion, then
+    // If child type can run into an error during conversion, then
     // add a Cast to convert from child type to target type before
     // converting to string format to be inserted.
     if (hiveNAColArray)
       {
+        ItemExpr *newExpr = NULL;
         const NAColumn *hiveNACol = (*hiveNAColArray)[i];
         const NAType *hiveNAType = hiveNACol->getType();
-        // if tgt type was a hive 'string', do not return a conversion err
-        if ((lmExpr->getValueId().getType().errorsCanOccur(*hiveNAType)) &&
-            (NOT ((DFS2REC::isSQLVarChar(hiveNAType->getFSDatatype())) &&
-                  (((SQLVarChar*)hiveNAType)->wasHiveString()))))
+        const NAType &lmExprType = lmExpr->getValueId().getType();
+        // if tgt type was a hive 'string' of hive 'binary', 
+        // do not return a conversion err
+        if ((hiveInsertErrMode > 0) &&
+            (lmExprType.errorsCanOccur(*hiveNAType)) &&
+            (NOT (((DFS2REC::isSQLVarChar(hiveNAType->getFSDatatype())) &&
+                   (((SQLVarChar*)hiveNAType)->wasHiveString())) ||
+                  (DFS2REC::isBinaryString(hiveNAType->getFSDatatype())))))
           {
-            ItemExpr *newExpr = 
+            newExpr = 
               new(generator->wHeap()) Cast(lmExpr, hiveNAType);
             newExpr = newExpr->bindNode(generator->getBindWA());
             if (!newExpr || generator->getBindWA()->errStatus())
@@ -361,6 +363,39 @@ static short ft_codegen(Generator *generator,
             
             lmExpr = newExpr;
             formalType = (NAType*)hiveNAType;
+          }
+
+        // if targettype is binary datatype, then encode_base64 before
+        // inserting it.
+        if (DFS2REC::isBinaryString(hiveNAType->getFSDatatype()))
+          {
+            // convert value to string format before encoding.
+            if (formalType->getTypeQualifier() != NA_CHARACTER_TYPE)
+              {
+                Lng32 maxLength = GetDisplayLength(*formalType);
+                maxLength = MAXOF(maxLength, 1);
+
+                NAType * typ = new(generator->wHeap()) SQLVarChar(HEAP, 
+                                                                  maxLength);
+                newExpr = 
+                  new(generator->wHeap()) Cast(lmExpr, typ);
+                newExpr = newExpr->bindNode(generator->getBindWA());
+                if (!newExpr || generator->getBindWA()->errStatus())
+                  {
+                    GenExit();
+                  }
+                lmExpr = newExpr;
+              }
+
+            newExpr = new(generator->wHeap()) BuiltinFunction
+              (ITM_ENCODE_BASE64,
+               generator->wHeap(), 1, lmExpr);
+            newExpr = newExpr->bindNode(generator->getBindWA());
+            if (!newExpr || generator->getBindWA()->errStatus())
+              {
+                GenExit();
+              }
+            lmExpr = newExpr;
           }
       }
 

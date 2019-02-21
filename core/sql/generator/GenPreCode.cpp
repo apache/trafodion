@@ -8444,16 +8444,15 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 
       CMPASSERT(coll1==coll2);
 
-	  if (CollationInfo::isSystemCollation(coll1))
-	  {
-	    setCollationEncodeComp(TRUE);
+      if (CollationInfo::isSystemCollation(coll1))
+        {
+          setCollationEncodeComp(TRUE);
+          {
 
-	    {
-
-	      ItemExpr * newIe1 = child(0);
-	      ItemExpr * newIe2 = child(1);
+            ItemExpr * newIe1 = child(0);
+            ItemExpr * newIe2 = child(1);
 	      
-	      if (! (cType1 == cType2)) 
+            if (! (cType1 == cType2)) 
 	      {
 
 		NAType *resultType ;
@@ -8461,144 +8460,146 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		Lng32 Prec= MAXOF(cType1.getStrCharLimit(), cType2.getStrCharLimit());
         	     
 		if (len != cType1.getMaxLenInBytesOrNAWChars()) 
-		{
-		  if (DFS2REC::isAnyVarChar(cType1.getFSDatatype()))
-		  {
-		    resultType = new (generator->wHeap())
-		      SQLVarChar(generator->wHeap(), CharLenInfo(Prec, len),
-				  cType1.supportsSQLnull(), 
-				  cType1.isUpshifted(),
-				  cType1.isCaseinsensitive(),
-				  cType1.getCharSet(),
-				  cType1.getCollation(),
-				  cType1.getCoercibility()
-				 );
-		  }
-		  else
-		  {
-		    resultType = new (generator->wHeap())
-		      SQLChar(generator->wHeap(), CharLenInfo(Prec, len),
-				  cType1.supportsSQLnull(), 
-				  cType1.isUpshifted(),
-				  cType1.isCaseinsensitive(),
-				  FALSE,
-				  cType1.getCharSet(),
-				  cType1.getCollation(),
-				  cType1.getCoercibility()
-				 );
-		  }
+                  {
+                    if (DFS2REC::isAnyVarChar(cType1.getFSDatatype()))
+                      {
+                        resultType = new (generator->wHeap())
+                          SQLVarChar( generator->wHeap(),
+                                      CharLenInfo(Prec, len),
+                                      cType1.supportsSQLnull(), 
+                                      cType1.isUpshifted(),
+                                      cType1.isCaseinsensitive(),
+                                      cType1.getCharSet(),
+                                      cType1.getCollation(),
+                                      cType1.getCoercibility()
+                                      );
+                      }
+                    else
+                      {
+                        resultType = new (generator->wHeap())
+                          SQLChar( generator->wHeap(),
+                                   CharLenInfo(Prec, len),
+                                   cType1.supportsSQLnull(), 
+                                   cType1.isUpshifted(),
+                                   cType1.isCaseinsensitive(),
+                                   FALSE,
+                                   cType1.getCharSet(),
+                                   cType1.getCollation(),
+                                   cType1.getCoercibility()
+                                   );
+                      }
 
-		  newIe1 = new(generator->wHeap()) Cast(newIe1,resultType);
-		}
+                    newIe1 = new(generator->wHeap()) Cast(newIe1,resultType);
+                  }
 
 		if (len != cType2.getMaxLenInBytesOrNAWChars()) 
-		{
-		  if (DFS2REC::isAnyVarChar(cType2.getFSDatatype()))
-		  {
-		    resultType = new (generator->wHeap())
-		      SQLVarChar(generator->wHeap(), CharLenInfo(Prec, len),
-				  cType2.supportsSQLnull(), 
-				  cType2.isUpshifted(),
-				  cType2.isCaseinsensitive(),
-				  cType2.getCharSet(),
-				  cType2.getCollation(),
-				  cType2.getCoercibility()
-				 );
-		  }
-		  else
-		  {
-		    resultType = new (generator->wHeap())
-		      SQLChar(generator->wHeap(), CharLenInfo(Prec, len),
-				  cType2.supportsSQLnull(), 
-				  cType2.isUpshifted(),
-				  cType2.isCaseinsensitive(),
-				  FALSE,
-				  cType2.getCharSet(),
-				  cType2.getCollation(),
-				  cType2.getCoercibility()
-				 );
-		  }
+                  {
+                    if (DFS2REC::isAnyVarChar(cType2.getFSDatatype()))
+                      {
+                        resultType = new (generator->wHeap())
+                          SQLVarChar( generator->wHeap(),
+                                      CharLenInfo(Prec, len),
+                                      cType2.supportsSQLnull(), 
+                                      cType2.isUpshifted(),
+                                      cType2.isCaseinsensitive(),
+                                      cType2.getCharSet(),
+                                      cType2.getCollation(),
+                                      cType2.getCoercibility()
+                                      );
+                      }
+                    else
+                      {
+                        resultType = new (generator->wHeap())
+                          SQLChar( generator->wHeap(),
+                                   CharLenInfo(Prec, len),
+                                   cType2.supportsSQLnull(), 
+                                   cType2.isUpshifted(),
+                                   cType2.isCaseinsensitive(),
+                                   FALSE,
+                                   cType2.getCharSet(),
+                                   cType2.getCollation(),
+                                   cType2.getCoercibility()
+                                   );
+                      }
 
-		  newIe2 = new(generator->wHeap()) Cast(newIe2,resultType);
-		}
+                    newIe2 = new(generator->wHeap()) Cast(newIe2,resultType);
+                  }
 	      }
 
-	      ItemExpr * newEncode;
+            ItemExpr * newEncode;
 	      
-	      newEncode = 
-		    new(generator->wHeap()) 
-		    CompEncode(newIe1,FALSE, -1, CollationInfo::Compare);
+            newEncode = 
+              new(generator->wHeap()) 
+              CompEncode(newIe1,FALSE, -1, CollationInfo::Compare);
 
-	      newEncode->bindNode(generator->getBindWA());
-	      newEncode = newEncode->preCodeGen(generator);
-	      if (!newEncode)
-		return NULL;
-	      setChild(0, newEncode);
+            newEncode->bindNode(generator->getBindWA());
+            newEncode = newEncode->preCodeGen(generator);
+            if (!newEncode)
+              return NULL;
+            setChild(0, newEncode);
 
+            newEncode = 
+              new(generator->wHeap()) 
+              CompEncode(newIe2, FALSE, -1,CollationInfo::Compare);
 
-	      newEncode = 
-		    new(generator->wHeap()) 
-		    CompEncode(newIe2, FALSE, -1,CollationInfo::Compare);
+            newEncode->bindNode(generator->getBindWA());
+            newEncode = newEncode->preCodeGen(generator);
+            if (!newEncode)
+              return NULL;
+            setChild(1, newEncode);
+          }
 
-	      newEncode->bindNode(generator->getBindWA());
-	      newEncode = newEncode->preCodeGen(generator);
-	      if (!newEncode)
-		return NULL;
-	      setChild(1, newEncode);
-	    }
+        }
+      else
+        {
+          // update both operands if case insensitive comparions
+          // are to be done.
 
-	  }
-	  else
-	  {
-	     // update both operands if case insensitive comparions
-	     // are to be done.
+          NABoolean doCIcomp =
+            ((cType1.isCaseinsensitive()) && (cType2.isCaseinsensitive()));
 
-	    NABoolean doCIcomp =
-	      ((cType1.isCaseinsensitive()) && (cType2.isCaseinsensitive()));
+          ItemExpr * newChild = NULL;
+          if ((doCIcomp) &&
+              (NOT cType1.isUpshifted()))
+            {
+              newChild = child(0);
 
-	    ItemExpr * newChild = NULL;
-	    if ((doCIcomp) &&
-		(NOT cType1.isUpshifted()))
-	      {
-		newChild = child(0);
+              // Add UPPER except if it is NULL constant value.
+              if (newChild->getOperatorType() != ITM_CONSTANT || !((ConstValue *)newChild)->isNull())
+                newChild = new (generator->wHeap()) Upper(newChild);
 
-		// Add UPPER except if it is NULL constant value.
-		if (newChild->getOperatorType() != ITM_CONSTANT || !((ConstValue *)newChild)->isNull())
-		    newChild = new (generator->wHeap()) Upper(newChild);
+              newChild = newChild->bindNode(generator->getBindWA());
+              if (! newChild || generator->getBindWA()->errStatus())
+                return NULL;
 
-		newChild = newChild->bindNode(generator->getBindWA());
-		if (! newChild || generator->getBindWA()->errStatus())
-		  return NULL;
+              newChild = newChild->preCodeGen(generator);
+              if (! newChild)
+                return NULL;
 
-		newChild = newChild->preCodeGen(generator);
-		if (! newChild)
-		  return NULL;
+              setChild(0, newChild);
+            }
 
-		setChild(0, newChild);
-	      }
+          if ((doCIcomp) &&
+              (NOT cType2.isUpshifted()))
+            {
+              newChild = child(1);
 
-	    if ((doCIcomp) &&
-		(NOT cType2.isUpshifted()))
-	      {
-		newChild = child(1);
+              // Add UPPER except if it is NULL constant value.
+              if (newChild->getOperatorType() != ITM_CONSTANT || !((ConstValue *)newChild)->isNull())
+                newChild = new (generator->wHeap()) Upper(newChild);
 
-		// Add UPPER except if it is NULL constant value.
-		if (newChild->getOperatorType() != ITM_CONSTANT || !((ConstValue *)newChild)->isNull())
-		    newChild = new (generator->wHeap()) Upper(newChild);
+              newChild = newChild->bindNode(generator->getBindWA());
+              if (! newChild || generator->getBindWA()->errStatus())
+                return NULL;
 
-		newChild = newChild->bindNode(generator->getBindWA());
-		if (! newChild || generator->getBindWA()->errStatus())
-		  return NULL;
+              newChild = newChild->preCodeGen(generator);
+              if (! newChild)
+                return NULL;
 
-		newChild = newChild->preCodeGen(generator);
-		if (! newChild)
-		  return NULL;
-
-		setChild(1, newChild);
-	      }
-	    }
-	  }
-
+              setChild(1, newChild);
+            }
+        }
+    }
 
   // following is for simple types.
   const NAType &type1B =

@@ -255,6 +255,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
     }
 
   asciiValue = new (h) NATypeToItem(asciiType->newCopy(h));
+
   castValue = new(h) Cast(asciiValue, newGivenType);
   ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
 
@@ -263,6 +264,9 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   
   if (newGivenType->getTypeQualifier() == NA_INTERVAL_TYPE)
     ((Cast*)castValue)->setAllowSignInInterval(TRUE);
+
+  if (DFS2REC::isBinaryString(givenType.getFSDatatype()))
+    castValue = new(h) BuiltinFunction(ITM_DECODE_BASE64, h, 1, castValue);
 
   if (castValue && asciiValue)
     result = 1;
@@ -739,7 +743,7 @@ R4 is an aligned format row, tupp index 2 in work_cri_desc.
 Each column is of type as defined in hive metadata.
 Columns that are present only in the output expression (i.e. are not
 present in selection predicate) are placed in this tupp.
-This tupp is populated by project_convert_expr, which is called 
+This tupp is populated by move_cols_convert_expr, which is called 
 only if the row returns TRUE for the selection predicate. The goal is 
 to not convert columns for rows that do not pass the selection predicate.
 
@@ -814,7 +818,7 @@ short FileScan::codeGenForHive(Generator * generator)
   ex_expr *executor_expr = 0;
   ex_expr *proj_expr = 0;
   ex_expr *convert_expr = 0;
-  ex_expr *project_convert_expr = 0;
+  ex_expr *move_cols_convert_expr = 0;
 
   // set flag to enable pcode for indirect varchar
   NABoolean vcflag = exp_gen->handleIndirectVC();
@@ -1006,7 +1010,7 @@ short FileScan::codeGenForHive(Generator * generator)
       projectOnlyTuppIndex,                 // [IN] target tupp index
       hdfsRowFormat,                        // [IN] target tuple format
       projectOnlyColsRecLength,             // [OUT] target tuple length
-      &project_convert_expr,                // [OUT] move expression
+      &move_cols_convert_expr,                // [OUT] move expression
       &tuple_desc,                     // [optional OUT] target tuple desc
       ExpTupleDesc::LONG_FORMAT,       // [optional IN] target desc format
       NULL,
@@ -1331,7 +1335,7 @@ if (hTabStats->isOrcFile())
 		   executor_expr,
 		   proj_expr,
 		   convert_expr,
-                   project_convert_expr,
+                   move_cols_convert_expr,
 		   hdfsVals.entries(),      // size of convertSkipList
 		   convertSkipList,
 		   hdfsHostName, 

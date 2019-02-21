@@ -665,10 +665,12 @@ void ItemExpr::bindChildren(BindWA *bindWA)
   Int32 savedCurrChildNo = currChildNo();
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
    
-    ItemExpr *boundExpr = child(i)->bindNode(bindWA);
-    if (bindWA->errStatus()) return;
-    child(i) = boundExpr;
-      
+    if (child(i) != NULL) {
+      ItemExpr *boundExpr = child(i)->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+        return;
+      child(i) = boundExpr;
+    }
       
   }
   currChildNo() = savedCurrChildNo;
@@ -2226,6 +2228,13 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
     return NULL;  // error
   }
 
+  // binary types can be compared with all other datatypes
+  if ((DFS2REC::isBinaryString(type1.getFSDatatype())) ||
+      (DFS2REC::isBinaryString(type2.getFSDatatype())))
+    {
+      return thisPtr;
+    }
+ 
   // Check if we are to allow certain incompatible comparisons
   if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
   {
@@ -3424,6 +3433,8 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
 
     case ITM_AES_ENCRYPT:
     case ITM_AES_DECRYPT:
+    case ITM_ENCODE_BASE64:
+    case ITM_DECODE_BASE64:
       break;
     default:
       {
@@ -4415,6 +4426,28 @@ ItemExpr *Trim::bindNode(BindWA *bindWA)
   bindChildren(bindWA);
   if (bindWA->errStatus()) 
     return this;
+
+  // child0 is trim operand.
+  // child1 is expression to be trimmed.
+  // if trim operand is null, set it based on trim expression.
+  // if trim expr is binary string, trim operand becomes '\0'.
+  // Otherwise it becomes ' '
+  if (child(0) == NULL)
+    {
+      const NAType &type1 = 
+        child(1)->castToItemExpr()->getValueId().getType();
+       
+      ItemExpr * trimOper = NULL;
+      if (DFS2REC::isBinaryString(type1.getFSDatatype()))
+        trimOper = new (PARSERHEAP()) SystemLiteral(NAString('\0'), CharInfo::ISO88591);
+      else
+        trimOper = new (PARSERHEAP()) SystemLiteral(" ", WIDE_(" "));
+
+      trimOper = trimOper->bindNode(bindWA);
+      if (bindWA->errStatus())
+        return this;
+      setChild(0, trimOper);
+    }
 
   if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
     {
@@ -5790,10 +5823,10 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
       ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
        (((naType0->getTypeQualifier() == NA_INTERVAL_TYPE) &&
          (naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
-        ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+        ((DFS2REC::isCharacterString(naType0->getFSDatatype())) &&
          (naType1->getTypeQualifier() == NA_NUMERIC_TYPE)) ||
         ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
-         (naType1->getTypeQualifier() == NA_CHARACTER_TYPE)) ||
+         (DFS2REC::isCharacterString(naType1->getFSDatatype()))) ||
         ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
          (naType1->getTypeQualifier() == NA_DATETIME_TYPE)))))
     {
@@ -6488,6 +6521,10 @@ ItemExpr *Cast::bindNode(BindWA *bindWA)
   if (getType()->getTypeQualifier() == NA_CHARACTER_TYPE &&
       ((CharType *)getType())->isUpshifted())
     boundExpr = applyUpperToSource(bindWA, boundExpr, 0);
+
+  // currently const folding is not being done if cast to BINARY datatype
+  if (DFS2REC::isBinaryString(getType()->getFSDatatype()))
+    setConstFoldingDisabled(TRUE);
 
 // COMMENTED OUT -- causing problems in Generator key-building --	     ##
 // FIX LATER -- for now, just catch this problem at run-time instead of compile,
@@ -7307,8 +7344,7 @@ ItemExpr *Case::bindNode(BindWA *bindWA)
             {
               // do nothing
             }
-          else if (thenClause->getValueId().getType().getTypeQualifier() 
-                   == NA_CHARACTER_TYPE)
+          else if (DFS2REC::isCharacterString(thenClause->getValueId().getType().getFSDatatype()))
             {
               if (thenClause->getValueId().getType().getNominalSize() > dLen)
                 dLen = thenClause->getValueId().getType().getNominalSize();
@@ -9344,7 +9380,7 @@ ItemExpr *QuantifiedComp::bindNode(BindWA *bindWA)
 
       if (type1.getTypeQualifier() != type2.getTypeQualifier())
 	{
-	  if ((type1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
+	  if ((DFS2REC::isCharacterString(type1.getFSDatatype())) &&
 	      (type2.getTypeQualifier() == NA_NUMERIC_TYPE))
 	    {
 	      // only supporting char lhs at this time. Add more later.
@@ -10344,7 +10380,7 @@ ItemExpr *ValueIdUnion::bindNode(BindWA *bindWA)
       Int32 otherChildIndex = -1;
       Int32 convType = -1;
       if ((type1.getTypeQualifier() == NA_NUMERIC_TYPE) &&
-	  (type2.getTypeQualifier() == NA_CHARACTER_TYPE))
+	  (DFS2REC::isCharacterString(type2.getFSDatatype())))
 	{
 	  // convert leftSource(NUMERIC) to char type
 	  srcChildIndex = 0;
@@ -12379,6 +12415,64 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
       }
       break;
 
+    case ITM_TO_BINARY:
+      {
+	ItemExpr *child0 = child(0)->castToItemExpr()->bindNode(bindWA); 
+	if (bindWA->errStatus()) 
+	  return this;
+
+        Lng32 binLen = 0;
+        if (child(1) != NULL)
+          {
+            ItemExpr *child1 = child(1)->castToItemExpr()->bindNode(bindWA);
+            if (bindWA->errStatus()) 
+              return this;
+
+            // parser has already validated that child1 is an unsigned const.
+            NABoolean negate;
+            ConstValue * cv = child1->castToConstValue(negate);
+            binLen = (Lng32)cv->getExactNumericValue();
+          }
+
+        const NAType &type0 = child0->getValueId().getType();
+        if (binLen == 0)
+          binLen = type0.getNominalSize();
+        SQLBinaryString *bin = 
+          new(bindWA->wHeap()) SQLBinaryString(bindWA->wHeap(),
+                                               binLen, type0.supportsSQLnull(),
+                                               type0.isVaryingLen());
+
+        Cast *cast = new(bindWA->wHeap()) Cast(child0, bin);
+        parseTree = cast;
+      }
+      break;
+
+    case ITM_TO_CHAR:
+      {
+	ItemExpr *child0 = child(0)->castToItemExpr()->bindNode(bindWA); 
+	if (bindWA->errStatus()) 
+	  return this;
+        
+        ItemExpr* ie = NULL;
+        const NAType &type0 = child0->getValueId().getType();
+        if (type0.getTypeQualifier() == NA_DATETIME_TYPE)
+          {
+            ie = new(bindWA->wHeap()) DateFormat
+              (child0, "UNSPECIFIED", DateFormat::FORMAT_TO_CHAR);
+          }
+        else
+          {
+            Lng32 len = type0.getDisplayLength();
+            SQLVarChar *vc = new(bindWA->wHeap()) SQLVarChar
+              (bindWA->wHeap(), len, type0.supportsSQLnull());
+            
+            ie = new(bindWA->wHeap()) Cast(child0, vc);
+          }
+        
+        parseTree = ie;
+      }
+      break;
+
     ////////////////////////////////////////////////////////////////////////
     // OVERLAY ( src_str PLACING replace_str FROM start_pos [ FOR length ]
     // is equivalent to:
@@ -12485,7 +12579,6 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
           strcpy(buf, "SUBSTRING(@A1 FROM 1 FOR case when @A3 <= 0 then @A5 else @A3 end - 1) || @A2 || SUBSTRING (@A1 FROM @A3 + char_length(@A2) ); "); 
       }
       break;
-      
       
     default:
       {

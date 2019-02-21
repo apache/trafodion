@@ -436,7 +436,8 @@ static NAString *removeConsecutiveQuotes(const NAWchar *s,
   if (literalPrefixCS != CharInfo::UnknownCharSet) // the TOK_SBYTE_LITERAL case
   {
     targetCS = literalPrefixCS;
-    PARSERASSERT(targetCS == CharInfo::ISO88591 || targetCS == CharInfo::UTF8);
+    PARSERASSERT(targetCS == CharInfo::ISO88591 || targetCS == CharInfo::UTF8
+                 || targetCS == CharInfo::BINARY);
     //
     // Note that an _ISO88591'string-literal' may contain Western European characters
     // (i.e., 0 <= code_points < 255).
@@ -1095,6 +1096,8 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
               cs = CharInfo::getCharSetEnum(csName);
               if (CharInfo::isCharSetFullySupported(cs))
                 {
+                  if (cs == CharInfo::BINARY)
+                    isHexStringLiteral = TRUE;
                   return constructStringLiteralWithCharSet(isHexStringLiteral, cs, lvalp, quote);
                 } 
               else if (cs != CharInfo::UnknownCharSet)
@@ -2834,6 +2837,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 	  if ( cc == L'\'' ){
 	      return constructStringLiteralWithCharSet(TRUE, 
 						       SqlParser_DEFAULT_CHARSET,
+                                                       //CharInfo::BINARY,
 						       lvalp,
 						       L'\'');
 	  }

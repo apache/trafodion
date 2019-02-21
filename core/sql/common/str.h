@@ -328,6 +328,14 @@ Lng32 str_encode(char *tgt, Lng32 tgtMaxLen, void *src, Lng32 srcLen);
 Lng32 str_decoded_len(Lng32 srcLen);
 Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen);
 
+// Base64 encoding and decoding.
+Lng32 str_encoded_len_base64(Lng32 len);
+Lng32 str_decoded_len_base64(Lng32 len);
+Lng32 str_encode_base64(const unsigned char* in, Lng32 in_len,
+                        char *out, Lng32 out_len);
+Lng32 str_decode_base64(const unsigned char* in, Lng32 in_len,
+                        char *out, Lng32 out_len);
+
 //------------------------------------------------------------------------
 // Strips leading and/or trailing blanks. src will contain a NULL after the
 // end of the first non-blank character.The length of the "stripped" string

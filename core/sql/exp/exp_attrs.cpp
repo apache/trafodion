@@ -251,6 +251,9 @@ switch (datatype)
   case REC_CLOB: return extFormat? (char *)"CLOB":(char *)"REC_CLOB";
   case REC_BOOLEAN: return extFormat ? (char *)"BOOLEAN" : (char *)"REC_BOOLEAN";
 
+  case REC_BINARY_STRING: return extFormat ? (char *)"BINARY" : (char *)"REC_BINARY_STRING";
+  case REC_VARBINARY_STRING: return extFormat ? (char *)"VARBINARY" : (char *)"REC_VARBINARY_STRING";
+
   // When you add new datatype in /common/dfs2rec.h, don't
   // forget add new case here. Otherwise, showplan won't display it.
   default: return extFormat? (char *)"UNKNOWN":(char *)"add datatype in getDatatypeAsString()";
@@ -571,6 +574,7 @@ Int32 Attributes::getFirstCharLength(const char              *buf,
   // treat it as single byte character.
   if( cs == CharInfo::ISO88591 ||
       cs == CharInfo::UCS2 ||
+      cs == CharInfo::BINARY ||
       buf[0] == 0)
   {
       firstCharLenInBuf = 1;
@@ -588,7 +592,7 @@ Int32 Attributes::convertOffsetToChar(const char        *buf,
                                       Int32             offset, 
                                       CharInfo::CharSet cs)
 {
-  if (cs == CharInfo::ISO88591 || cs == CharInfo::UCS2)
+  if (cs == CharInfo::ISO88591 || cs == CharInfo::UCS2 || cs == CharInfo::BINARY)
      return(offset);
 
   Int32 firstCharLenInBuf;
@@ -621,7 +625,7 @@ Int32 Attributes::convertCharToOffset (const char        *buf,
                                        Int32             maxBufLen,
                                        CharInfo::CharSet cs)
 {
-  if (cs == CharInfo::ISO88591 || cs == CharInfo::UCS2)
+  if (cs == CharInfo::ISO88591 || cs == CharInfo::UCS2 || cs == CharInfo::BINARY)
      return((numOfChar <= maxBufLen) ? numOfChar - 1 : maxBufLen);
 
   Int32 firstCharLenInBuf;
@@ -658,7 +662,7 @@ Int32 Attributes::getCharLengthInBuf
 {
   Int32 numberOfCharacterInBuf;
 
-  if (cs == CharInfo::ISO88591 || cs == CharInfo::UCS2)
+  if (cs == CharInfo::ISO88591 || cs == CharInfo::BINARY || cs == CharInfo::UCS2)
   {
     numberOfCharacterInBuf = endOfBuf - buf;
     if(charLengthInBuf != NULL)

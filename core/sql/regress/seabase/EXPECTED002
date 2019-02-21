@@ -1265,6 +1265,9 @@ hive
 *** WARNING[8742] GetMetaDataInfo operation could not be completed. Reason: Datatype array<string> for column 'a' in table hive.hive.thivearr is not supported. This table will be ignored.
 
 --- 0 row(s) selected.
+>>process hive ddl 'drop table thivearr';
+
+--- SQL operation complete.
 >>
 >>process hive ddl 'drop table thivealldt';
 

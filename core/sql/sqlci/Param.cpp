@@ -349,6 +349,8 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   case REC_NCHAR_F_UNICODE:
   case REC_NCHAR_V_UNICODE:
   case REC_BLOB:
+  case REC_BINARY_STRING:
+  case REC_VARBINARY_STRING:
   case REC_CLOB:
   {
     char *VCLen = NULL;
@@ -365,15 +367,16 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     // 5/27/98: added VARCHAR cases
     if ((targetType == REC_BYTE_V_ASCII) || 
         (targetType == REC_BYTE_V_ASCII_LONG) ||
-        (targetType == REC_NCHAR_V_UNICODE))       
+        (targetType == REC_NCHAR_V_UNICODE) ||
+        (targetType == REC_VARBINARY_STRING))
       {
         // add bytes for variable length field
         VCLenSize = vcIndLen; //sizeof(short);
         VCLen = converted_value = new char[targetLen + VCLenSize];
-      } else
+      } 
+    else
       converted_value = new char[targetLen];
-
-
+    
     ex_expr::exp_return_type ok;
     CharInfo::CharSet TCS = sqlci_env->getTerminalCharset();
     CharInfo::CharSet ISOMAPCS = sqlci_env->getIsoMappingCharset();
@@ -381,12 +384,12 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     NAString* tempstr;
     if ( 
          (
-              DFS2REC::isAnyCharacter(sourceType) && DFS2REC::isAnyCharacter(targetType) &&
+              DFS2REC::isCharacterString(sourceType) && DFS2REC::isCharacterString(targetType) &&
               !(getUTF16StrLit() != NULL && sourceType == REC_NCHAR_F_UNICODE && targetScale == CharInfo::UCS2) &&
               /*source*/cs != targetScale/*i.e., targetCharSet*/
           ) && (origTargetType != REC_BLOB)
          )
-         
+      
     {
       charBuf cbuf((unsigned char*)pParamValue, sourceLen);
       NAWcharBuf* wcbuf = 0;

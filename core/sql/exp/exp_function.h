@@ -1095,7 +1095,40 @@ private:
   Int32 args_num;
 };
 
-class  ExFunctionTokenStr : public ex_function_clause {
+class ExFunctionBase64EncDec : public ex_function_clause {
+public:
+  ExFunctionBase64EncDec(OperatorTypeEnum oper_type,
+                                    Attributes ** attr,
+                                    Space * space,
+                                    NABoolean isEncode);
+  ExFunctionBase64EncDec();
+
+  ex_expr::exp_return_type eval(char *op_datap[], CollHeap*,
+                                           ComDiagsArea** = 0);
+  //  long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // ---------------------------------------------------------------------
+private:
+  NABoolean isEncode_; // TRUE, encode. FALSE, decode
+};
+
+class ExFunctionTokenStr : public ex_function_clause {
 public:
   ExFunctionTokenStr(OperatorTypeEnum oper_type,
 				Attributes ** attr,
