@@ -2879,7 +2879,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_BINARY_INPUT,                          "OFF"),
   DDkwd__(TRAF_BINARY_OUTPUT,                         "OFF"),
   DDkwd__(TRAF_BINARY_SPJ_SUPPORT,                    "OFF"),
-  DDkwd__(TRAF_BINARY_SUPPORT,                        "ON"),
+  DDkwd__(TRAF_BINARY_SUPPORT,                        "OFF"),
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "OFF"), //set to OFF to enable Lobs support  
 
