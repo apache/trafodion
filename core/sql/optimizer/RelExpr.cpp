@@ -11627,7 +11627,7 @@ const NAString Tuple::getText() const
 TupleList::TupleList(const TupleList & other) : Tuple(other)
 {
   castToList_ = other.castToList_;
-  createdForInList_ = other.createdForInList_;
+  flags_ = other.flags_;
 }
 
 RelExpr * TupleList::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)

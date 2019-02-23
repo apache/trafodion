@@ -170,6 +170,7 @@ public class SessionInterface implements SessionDefaults
          sessObj.setConnObj(getConnection());
          sessObj.setStmtObj(getStatement(sessObj.getConnObj()));
          sessObj.setSessionValues();
+         sessObj.setBinaryCQDs();
          this.getDriverVersion();     
       }
             

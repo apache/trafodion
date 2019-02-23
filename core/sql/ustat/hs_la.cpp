@@ -344,8 +344,8 @@ Lng32 HSSqTableDef::DescribeColumnNames()
                                             (Lng32*)&colInfo_[i].colCollation, 0, 0, 0, 0);
             HSHandleError(retcode_);
           }
-        else if ((colInfo_[i].datatype >= REC_MIN_BINARY &&  // May be type NUMERIC
-                  colInfo_[i].datatype <= REC_MAX_BINARY)    //    instead of INT
+        else if ((colInfo_[i].datatype >= REC_MIN_BINARY_NUMERIC &&  // May be type NUMERIC
+                  colInfo_[i].datatype <= REC_MAX_BINARY_NUMERIC)    //    instead of INT
                      ||
                  (colInfo_[i].datatype >= REC_MIN_DECIMAL &&
                  colInfo_[i].datatype <= REC_MAX_DECIMAL))

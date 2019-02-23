@@ -15,7 +15,7 @@
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:09:22 2017
+-- Definition current  Mon Nov  6 11:03:38 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -43,7 +43,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:09:35 2017
+-- Definition current  Mon Nov  6 11:03:56 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -72,7 +72,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:09:45 2017
+-- Definition current  Mon Nov  6 11:04:04 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -104,7 +104,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:09:55 2017
+-- Definition current  Mon Nov  6 11:04:12 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -134,7 +134,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:10:02 2017
+-- Definition current  Mon Nov  6 11:04:19 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -199,7 +199,7 @@ A            B            C
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:10:13 2017
+-- Definition current  Mon Nov  6 11:04:26 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -237,7 +237,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:10:21 2017
+-- Definition current  Mon Nov  6 11:04:31 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -277,7 +277,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:10:25 2017
+-- Definition current  Mon Nov  6 11:04:35 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -315,7 +315,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Mar 17 06:10:28 2017
+-- Definition current  Mon Nov  6 11:04:38 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -355,7 +355,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Mar 17 06:10:34 2017
+-- Definition current  Mon Nov  6 11:04:45 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -400,7 +400,7 @@ A            B            C            E            D
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Mar 17 06:10:37 2017
+-- Definition current  Mon Nov  6 11:04:47 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -440,7 +440,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Mar 17 06:10:45 2017
+-- Definition current  Mon Nov  6 11:05:00 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -475,7 +475,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Mar 17 06:10:52 2017
+-- Definition current  Mon Nov  6 11:05:07 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -507,7 +507,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Fri Mar 17 06:11:08 2017
+-- Definition current  Mon Nov  6 11:05:24 2017
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -539,7 +539,7 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Fri Mar 17 06:11:42 2017
+-- Definition current  Mon Nov  6 11:05:54 2017
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -588,7 +588,7 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t02;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T02
--- Definition current  Fri Mar 17 06:12:21 2017
+-- Definition current  Mon Nov  6 11:06:30 2017
 
   (
     "cf".SYSKEY                      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -640,7 +640,7 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t03;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T03
--- Definition current  Fri Mar 17 06:12:54 2017
+-- Definition current  Mon Nov  6 11:07:05 2017
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -677,7 +677,7 @@ A            B            C            D
 >>invoke t027t02;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T02
--- Definition current  Fri Mar 17 06:13:14 2017
+-- Definition current  Mon Nov  6 11:07:24 2017
 
   (
     OBJECT_UID                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -790,7 +790,7 @@ create index t027t01i2 on t027t01("cf2".b);
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:13:52 2017
+-- Definition current  Mon Nov  6 11:08:04 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -822,7 +822,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:14:06 2017
+-- Definition current  Mon Nov  6 11:08:17 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -843,7 +843,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:14:44 2017
+-- Definition current  Mon Nov  6 11:08:55 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -864,7 +864,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:15:18 2017
+-- Definition current  Mon Nov  6 11:09:32 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -886,7 +886,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:15:52 2017
+-- Definition current  Mon Nov  6 11:10:08 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -907,7 +907,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:16:26 2017
+-- Definition current  Mon Nov  6 11:10:44 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -928,7 +928,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:17:04 2017
+-- Definition current  Mon Nov  6 11:11:19 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -949,7 +949,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:17:38 2017
+-- Definition current  Mon Nov  6 11:11:51 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -970,7 +970,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:18:11 2017
+-- Definition current  Mon Nov  6 11:12:26 2017
 
   (
     A                                INT DEFAULT NULL /*altered_col*/
@@ -991,7 +991,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:18:44 2017
+-- Definition current  Mon Nov  6 11:13:02 2017
 
   (
     A                                SMALLINT DEFAULT 0 NOT NULL NOT DROPPABLE
@@ -1028,7 +1028,7 @@ A       B   C       Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:19:18 2017
+-- Definition current  Mon Nov  6 11:13:38 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1060,7 +1060,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:19:59 2017
+-- Definition current  Mon Nov  6 11:14:16 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -1089,7 +1089,7 @@ A                     B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:20:41 2017
+-- Definition current  Mon Nov  6 11:14:58 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -1116,7 +1116,7 @@ A                     C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:20:55 2017
+-- Definition current  Mon Nov  6 11:15:10 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -1145,7 +1145,7 @@ A                     C                 Z            B
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:21:36 2017
+-- Definition current  Mon Nov  6 11:15:51 2017
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -1183,7 +1183,7 @@ TRAFODION.SCH027.T027V1
 >>invoke t027v1;
 
 -- Definition of Trafodion view TRAFODION.SCH027.T027V1
--- Definition current  Fri Mar 17 06:21:54 2017
+-- Definition current  Mon Nov  6 11:16:08 2017
 
   (
     A                                LARGEINT DEFAULT NULL
@@ -1199,7 +1199,7 @@ TRAFODION.SCH027.T027V1
 >>invoke t027v1;
 
 -- Definition of Trafodion view TRAFODION.SCH027.T027V1
--- Definition current  Fri Mar 17 06:22:46 2017
+-- Definition current  Mon Nov  6 11:17:02 2017
 
   (
     A                                SMALLINT DEFAULT NULL
@@ -1223,7 +1223,7 @@ TRAFODION.SCH027.T027V1
 --- SQL operation failed with errors.
 >>alter table t027t7 alter column c char(1);
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII,2 BYTES,ISO88591) Source Value:cd to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,ISO88591).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(2) CHARACTER SET ISO88591(REC_BYTE_V_ASCII) Source Value:cd to Target Type:CHAR(1) CHARACTER SET ISO88591(REC_BYTE_F_ASCII).
 
 *** ERROR[1404] Column C cannot be altered. Reason: Old data could not be updated using the altered column definition.
 
@@ -1276,7 +1276,7 @@ TRAFODION.SCH027.T027V1
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:25:45 2017
+-- Definition current  Mon Nov  6 11:20:11 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1305,7 +1305,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:26:05 2017
+-- Definition current  Mon Nov  6 11:20:30 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1334,7 +1334,7 @@ A            BB  C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:26:23 2017
+-- Definition current  Mon Nov  6 11:20:48 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1543,7 +1543,7 @@ TRAFODION.SCH027.T027V122
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Mar 17 06:33:35 2017
+-- Definition current  Mon Nov  6 11:27:14 2017
 
   (
     SYSKEY                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1567,7 +1567,7 @@ TRAFODION.SCH027.T027V122
 >>invoke t027t1;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T1
--- Definition current  Fri Mar 17 06:33:56 2017
+-- Definition current  Mon Nov  6 11:27:48 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1598,7 +1598,7 @@ A            B            C            D            E            F            G
 >>invoke t027t1;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T1
--- Definition current  Fri Mar 17 06:34:13 2017
+-- Definition current  Mon Nov  6 11:28:01 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE

@@ -333,6 +333,7 @@ Lng32 MCWrapper::setupMCColumnIterator (HSColGroupStruct *group, MCIterator** it
 
       case REC_BYTE_F_ASCII: 
       case REC_BYTE_F_DOUBLE:
+      case REC_BINARY_STRING:
         iter[currentLoc] = new (STMTHEAP) MCFixedCharIterator((char*)group->strData, group->ISlength);
 
         MCFcharIter = (MCFixedCharIterator*)(iter[currentLoc]);
@@ -345,6 +346,7 @@ Lng32 MCWrapper::setupMCColumnIterator (HSColGroupStruct *group, MCIterator** it
 
       case REC_BYTE_V_ASCII: 
       case REC_BYTE_V_DOUBLE:
+      case REC_VARBINARY_STRING:
         iter[currentLoc] = new (STMTHEAP) MCVarCharIterator((char*)group->strData);
 
         MCVcharIter = (MCVarCharIterator*)iter[currentLoc];
@@ -5258,6 +5260,7 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
 
           case REC_BYTE_F_ASCII:
           case REC_BYTE_F_DOUBLE:
+          case REC_BINARY_STRING:
             // Length is in bytes, not chars. Add size for object that references
             // the string, which is stored in a separate array.
             elementSize = group->ISlength + sizeof(ISFixedChar);
@@ -5265,6 +5268,7 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
 
           case REC_BYTE_V_ASCII:
           case REC_BYTE_V_DOUBLE:
+          case REC_VARBINARY_STRING:
             elementSize = group->varcharContentSize() + sizeof(ISVarChar);
             break;
 
@@ -7734,6 +7738,7 @@ Int32 HSGlobalsClass::processIUSColumn(HSColGroupStruct* smplGroup,
         break;
       case REC_BYTE_F_ASCII:
       case REC_BYTE_F_DOUBLE:
+      case REC_BINARY_STRING:
         {
           // Create an object to be used with the value iterator; does not own its content.
           // In setting length, take into account that length in IUSFixedChar is in
@@ -7751,6 +7756,7 @@ Int32 HSGlobalsClass::processIUSColumn(HSColGroupStruct* smplGroup,
         break;
       case REC_BYTE_V_ASCII:
       case REC_BYTE_V_DOUBLE:
+      case REC_VARBINARY_STRING:
         {
           // Create an object to be used with the value iterator; does not own its content.
           // In setting length, take into account that length in IUSFixedChar is in
@@ -10659,8 +10665,10 @@ void processNullsForColumn(HSColGroupStruct *group, Lng32 rowsRead, T* dummyPtr)
   // copy data for MC
   if ( HSGlobalsClass::performISForMC() && (group->mcs_usingme > 0) &&
       (group->ISdatatype != REC_BYTE_F_ASCII) && 
+      (group->ISdatatype != REC_BINARY_STRING) && 
       (group->ISdatatype != REC_BYTE_F_DOUBLE) &&
       (group->ISdatatype != REC_BYTE_V_ASCII) && 
+      (group->ISdatatype != REC_VARBINARY_STRING) && 
       (group->ISdatatype != REC_BYTE_V_DOUBLE)   
      )
 
@@ -10814,6 +10822,7 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
 
           case REC_BYTE_F_ASCII:
           case REC_BYTE_F_DOUBLE:
+          case REC_BINARY_STRING:
             // Set up elements of data array, which are pointers to char values.
             chPtr = (ISFixedChar*)group->nextData;
             dataPtr = (char*)group->strNextData;
@@ -10830,6 +10839,7 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
 
           case REC_BYTE_V_ASCII:
           case REC_BYTE_V_DOUBLE:
+          case REC_VARBINARY_STRING:
             {
               // Set up elements of data array, which are pointers to varchar
               // values (2-byte length field followed by string). The length
@@ -10997,6 +11007,8 @@ bool isInternalSortType(HSColumnStruct &col)
       case REC_IEEE_FLOAT64:
       case REC_BYTE_F_ASCII:
       case REC_BYTE_V_ASCII:
+      case REC_BINARY_STRING:
+      case REC_VARBINARY_STRING:
         return true;
 
       case REC_BYTE_F_DOUBLE:
@@ -11087,8 +11099,8 @@ NABoolean isInternalSortEfficient(Int64 rows, HSColGroupStruct *group)
        // then compute this column using IS regardless of UEC
        returnVal = TRUE;
     }
-  else if ((dataType >= REC_MIN_BINARY &&
-       dataType <= REC_MAX_BINARY)||
+  else if ((dataType >= REC_MIN_BINARY_NUMERIC &&
+       dataType <= REC_MAX_BINARY_NUMERIC)||
        dataType == REC_DECIMAL_LSE ||
        dataType == REC_DECIMAL_UNSIGNED ||
        dataType == REC_DECIMAL_LS)
@@ -11931,6 +11943,7 @@ Lng32 doSort(HSColGroupStruct *group)
 
       case REC_BYTE_F_ASCII:
       case REC_BYTE_F_DOUBLE:
+      case REC_BINARY_STRING:
       {
         //
         // Set the GLOBAL ISFixedChar instance with this column's values
@@ -11961,6 +11974,7 @@ Lng32 doSort(HSColGroupStruct *group)
       }
       case REC_BYTE_V_ASCII:
       case REC_BYTE_V_DOUBLE:
+      case REC_VARBINARY_STRING:
       {
         //
         // Set the GLOBAL ISVarChar instance with this column's values
@@ -12431,6 +12445,7 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
 
       case REC_BYTE_F_ASCII:
       case REC_BYTE_F_DOUBLE:
+      case REC_BINARY_STRING:
         //
         // Set the GLOBAL ISFixedChar instance with this column's values
         //
@@ -12444,6 +12459,7 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
 
       case REC_BYTE_V_ASCII:
       case REC_BYTE_V_DOUBLE:
+      case REC_VARBINARY_STRING:
         //
         // Set the GLOBAL ISVarChar instance with this column's values
         //
@@ -12794,7 +12810,7 @@ T HSGlobalsClass::convertToISdatatype(T* dummy,  // just so compiler can instant
         }
     }
   else if (col.datatype >= REC_MIN_DECIMAL && col.datatype <= REC_MAX_DECIMAL ||
-           col.datatype >= REC_MIN_BINARY && col.datatype <= REC_MAX_BINARY)    //scale > 0, per caller
+           col.datatype >= REC_MIN_BINARY_NUMERIC && col.datatype <= REC_MAX_BINARY_NUMERIC)    //scale > 0, per caller
     {
       // The fractional part has been normalized to use the full number of scale
       // digits (e.g., 123.1 is represented as "123.100" for a Numeric(6,3)).
@@ -13859,6 +13875,7 @@ Lng32 HSGlobalsClass::mergeDatasetsForIUS(
         break;
       case REC_BYTE_F_ASCII:
       case REC_BYTE_F_DOUBLE:
+      case REC_BINARY_STRING:
         {
           // Create an object to be used with the value iterator; does not own its content.
           IUSFixedChar fixedChar(FALSE);
@@ -13872,6 +13889,7 @@ Lng32 HSGlobalsClass::mergeDatasetsForIUS(
         break;
       case REC_BYTE_V_ASCII:
       case REC_BYTE_V_DOUBLE:
+      case REC_VARBINARY_STRING:
         {
           // Create an object to be used with the value iterator; does not own its content.
           IUSVarChar varChar(FALSE);
@@ -14177,6 +14195,7 @@ Int32 copyValue(ISFixedChar &value, char *valueBuff, const HSColumnStruct &colDe
   switch (colDesc.datatype)
     {
         case REC_BYTE_F_ASCII:
+        case REC_BINARY_STRING:
           *len = (short)MINOF(colDesc.length, maxCharBoundaryLen);
           memmove(valueBuff,
                  ((ISFixedChar*)((void*)&value))->getContent(), // make it work with template
@@ -14230,6 +14249,7 @@ Int32 copyValue(ISVarChar &value, char *valueBuff, const HSColumnStruct &colDesc
   switch (colDesc.datatype)
     {
         case REC_BYTE_V_ASCII:
+        case REC_VARBINARY_STRING:
           ptr = ((ISVarChar*)((void*)&value))->getContent(); // make it work with template
           *len = (short)MINOF(*(short*)ptr, maxCharBoundaryLen);
           memmove(valueBuff, ptr+sizeof(short), *len);
@@ -14272,8 +14292,8 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
     char *ptr = NULL;
     Int32 retcode = 0;  // status is good unless no case for type
 
-    if ((colDesc.datatype >= REC_MIN_BINARY &&
-        colDesc.datatype <= REC_MAX_BINARY)||
+    if ((colDesc.datatype >= REC_MIN_BINARY_NUMERIC &&
+        colDesc.datatype <= REC_MAX_BINARY_NUMERIC)||
         colDesc.datatype == REC_DECIMAL_LSE ||
         colDesc.datatype == REC_DECIMAL_UNSIGNED ||
         colDesc.datatype == REC_DECIMAL_LS)
@@ -14821,11 +14841,13 @@ Lng32 setBufferValue(MCWrapper& value,
                break;
              case REC_BYTE_F_ASCII:
              case REC_BYTE_F_DOUBLE:
+             case REC_BINARY_STRING:
                 ((MCFixedCharIterator*)(value.allCols_[i]))->copyToISFixChar(isf, value.index_);
                 retcode = copyValue(isf, valueBuff, mgroup->colSet[i], len);
                break;
              case REC_BYTE_V_ASCII:
              case REC_BYTE_V_DOUBLE:
+             case REC_VARBINARY_STRING:
                 ((MCVarCharIterator*)(value.allCols_[i]))->copyToISVarChar(isv, value.index_);
                 retcode = copyValue(isv, valueBuff, mgroup->colSet[i], len);
                break;
@@ -16705,6 +16727,7 @@ Lng32 HSGlobalsClass::processFastStatsBatch(CollIndex numCols, HSColGroupStruct*
 
         case REC_BYTE_F_ASCII:
         case REC_BYTE_F_DOUBLE:
+        case REC_BINARY_STRING:
           //group->fastStatsHist = new(STMTHEAP) FastStatsHist<ISFixedChar*>(group, cbf);
           LM->Log("char types not yet supported for fast-stats");
           retcode=-1;
@@ -16713,6 +16736,7 @@ Lng32 HSGlobalsClass::processFastStatsBatch(CollIndex numCols, HSColGroupStruct*
 
         case REC_BYTE_V_ASCII:
         case REC_BYTE_V_DOUBLE:
+        case REC_VARBINARY_STRING:
           //group->fastStatsHist = new(STMTHEAP) FastStatsHist<ISVarChar*>(group, cbf);
           LM->Log("char types not yet supported for fast-stats");
           retcode=-1;

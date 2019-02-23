@@ -118,6 +118,12 @@ class InterfaceResultSet {
         /* BOOLEAN TYPE */
         static final int SQLTYPECODE_BOOLEAN = -701;
 
+        /* BINARY TYPE */
+        static final int SQLTYPECODE_BINARY = 60;
+
+        /* VARBINARY TYPE */
+        static final int SQLTYPECODE_VARBINARY = 61;
+
 	/* Date/Time/TimeStamp related constants */
 	static final int SQLDTCODE_DATE = 1;
 	static final int SQLDTCODE_TIME = 2;
@@ -156,10 +162,11 @@ class InterfaceResultSet {
 		case SQLTYPECODE_BITVAR:
                 case SQLTYPECODE_BLOB:
                 case SQLTYPECODE_CLOB:
+                case SQLTYPECODE_VARBINARY:
 			allocLength = bufferLen + 2;
 			break;
 		case SQLTYPECODE_CHAR:
-
+                case SQLTYPECODE_BINARY:
 			// allocLength = SQLOctetLength - 1; // no null at the end
 			allocLength = SQLOctetLength;
 			if (maxRowLen > 0) {
@@ -227,6 +234,16 @@ class InterfaceResultSet {
 			retObj = tbuffer;
 			break;
 		case SQLTYPECODE_VARCHAR:
+			tbuffer = new byte[byteLen];
+			System.arraycopy(ibuffer, byteIndex, tbuffer, 0, byteLen);
+			retObj = tbuffer;
+			break;
+		case SQLTYPECODE_BINARY:
+			tbuffer = new byte[byteLen];
+			System.arraycopy(ibuffer, byteIndex, tbuffer, 0, byteLen);
+			retObj = tbuffer;
+			break;
+		case SQLTYPECODE_VARBINARY:
 			tbuffer = new byte[byteLen];
 			System.arraycopy(ibuffer, byteIndex, tbuffer, 0, byteLen);
 			retObj = tbuffer;
@@ -392,6 +409,7 @@ class InterfaceResultSet {
 
 		switch (desc.sqlDataType_) {
 		case SQLTYPECODE_CHAR:
+                case SQLTYPECODE_BINARY:
 			length = desc.sqlOctetLength_;
 			tbuffer = new byte[length];
 			System.arraycopy(values, noNullValue, tbuffer, 0, length);
@@ -402,6 +420,7 @@ class InterfaceResultSet {
 		case SQLTYPECODE_VARCHAR_LONG:
 		case SQLTYPECODE_BLOB:
 		case SQLTYPECODE_CLOB:
+                case SQLTYPECODE_VARBINARY:
 			boolean shortLength = desc.precision_ < Math.pow(2, 15);
 			int dataOffset = noNullValue + ((shortLength) ? 2 : 4);
 
@@ -686,6 +705,8 @@ class InterfaceResultSet {
 					case SQLTYPECODE_VARCHAR:
 					case SQLTYPECODE_BLOB:
 					case SQLTYPECODE_CLOB:
+                                        case SQLTYPECODE_BINARY:
+                                        case SQLTYPECODE_VARBINARY:
 						byteIndex++;
 						break;
 					}

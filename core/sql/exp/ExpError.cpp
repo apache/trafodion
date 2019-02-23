@@ -39,6 +39,7 @@
 #include  "str.h"
 #include "ComDiags.h"
 #include "exp_clause_derived.h"
+#include "exp_datetime.h"
 
 // Single allocation of buf is split up to be used for opstrings,
 // formatting.
@@ -58,6 +59,22 @@
 class PCIType;
 extern char * exClauseGetText(OperatorTypeEnum ote);
 extern char * getDatatypeAsString( Int32 Datatype, NABoolean extFormat );
+extern short
+convertTypeToText_basic(char * text,
+                        Lng32 fs_datatype,
+                        Lng32 length,
+                        Lng32 precision,
+                        Lng32 scale,
+                        rec_datetime_field datetimestart,
+                        rec_datetime_field datetimeend,
+                        short datetimefractprec,
+                        short intervalleadingprec,
+                        short upshift,
+			short caseinsensitive,
+                        CharInfo::CharSet charSet,
+                        const char * collation_name,
+                        const char * displaydatatype,
+			short displayCaseSpecific);
 
 ComDiagsArea *ExAddCondition(CollHeap* heap, ComDiagsArea** diagsArea,
 			     Lng32 err, ComCondition** newCond,
@@ -233,78 +250,88 @@ void ExConvertErrorToString(CollHeap* heap,
 {
   ex_expr::exp_return_type retCode = ex_expr::EXPR_OK;
 
-    Int32 vcharLen = 0;
-    Int32 counter;
-    Int32 errorMark    = ComDiagsArea::INVALID_MARK_VALUE;
-    Int32 warningMark  = ComDiagsArea::INVALID_MARK_VALUE;
-    Int32 errorMark1; 
-    Int32 warningMark1;
+  Int32 vcharLen = 0;
+  Int32 counter;
+  Int32 errorMark    = ComDiagsArea::INVALID_MARK_VALUE;
+  Int32 warningMark  = ComDiagsArea::INVALID_MARK_VALUE;
+  Int32 errorMark1; 
+  Int32 warningMark1;
     
-
-    if(*diagsArea){
-      errorMark = (*diagsArea)->getNumber(DgSqlCode::ERROR_);
-      warningMark = (*diagsArea)->getNumber(DgSqlCode::WARNING_);
-    }
-           
-    retCode = convDoIt( src,
-			srcLength,             //source length
-			srcType,               //source type
-			0,                     //source precision
-			srcScale,              //source scale
-			result,                //target
-			maxResultSize,         //targetlength
-			REC_BYTE_V_ASCII,      //target type
-			0,                     //target precision
-			SQLCHARSETCODE_UTF8,   //target scale
-			(char*)&vcharLen,      //vcharlength 
-			sizeof(vcharLen),      //vchar length size
-			heap,
-			diagsArea,
-			CONV_UNKNOWN,
-			0,
-			CONV_CONTROL_LOOPING | CONV_ALLOW_INVALID_CODE_VALUE);
-    
-    //Before proceeding, delete any errors and warnings that may have
-    //been introduced by convDoIt from above.
-    if(*diagsArea){
-      errorMark1 = (*diagsArea)->getNumber(DgSqlCode::ERROR_);
-      warningMark1 = (*diagsArea)->getNumber(DgSqlCode::WARNING_);
-      counter = errorMark1 - errorMark;
-      while(counter){
-        (*diagsArea)->deleteError(errorMark1 - counter);
-        counter--;
-      }
-      counter = warningMark1 - warningMark;
-      while(counter){
-        (*diagsArea)->deleteWarning(warningMark1 - counter);
-        counter--;
-      }
-    }
-
-    if (retCode == ex_expr::EXPR_OK ){
-      // need to zero terminate the result buffer to printf error string
-      if (vcharLen < maxResultSize - 1)
-        result[vcharLen] = '\0';
-      else
-        result[maxResultSize - 1] = '\0';
-      return;
-    }
-
-    //Once we reach this point, all we can do is just dump the source memory.
+  if (DFS2REC::isBinaryString(srcType)) {
     if(convertToHexAscii(src, srcLength, result, maxResultSize) == 0 ){
       return;
     }
 
-    // Once we reach this point, there is nothing we can do much.
-    // Attempt to display "-E" indicating error, else NULL.
-    if(maxResultSize >=3){
-      result[0] = '-';
-      result[1] = 'E';
-      result[2] = '\0';
-    }
-    else
-      result[0] = '\0';
+    result[0] = '?';
+    result[1] = '\0';
+    
     return;
+  }
+
+  if(*diagsArea){
+    errorMark = (*diagsArea)->getNumber(DgSqlCode::ERROR_);
+    warningMark = (*diagsArea)->getNumber(DgSqlCode::WARNING_);
+  }
+           
+  retCode = convDoIt( src,
+                      srcLength,             //source length
+                      srcType,               //source type
+                      0,                     //source precision
+                      srcScale,              //source scale
+                      result,                //target
+                      maxResultSize,         //targetlength
+                      REC_BYTE_V_ASCII,      //target type
+                      0,                     //target precision
+                      SQLCHARSETCODE_UTF8,   //target scale
+                      (char*)&vcharLen,      //vcharlength 
+                      sizeof(vcharLen),      //vchar length size
+                      heap,
+                      diagsArea,
+                      CONV_UNKNOWN,
+                      0,
+                      CONV_CONTROL_LOOPING | CONV_ALLOW_INVALID_CODE_VALUE);
+    
+  //Before proceeding, delete any errors and warnings that may have
+  //been introduced by convDoIt from above.
+  if(*diagsArea){
+    errorMark1 = (*diagsArea)->getNumber(DgSqlCode::ERROR_);
+    warningMark1 = (*diagsArea)->getNumber(DgSqlCode::WARNING_);
+    counter = errorMark1 - errorMark;
+    while(counter){
+      (*diagsArea)->deleteError(errorMark1 - counter);
+      counter--;
+    }
+    counter = warningMark1 - warningMark;
+    while(counter){
+      (*diagsArea)->deleteWarning(warningMark1 - counter);
+      counter--;
+    }
+  }
+
+  if (retCode == ex_expr::EXPR_OK ){
+    // need to zero terminate the result buffer to printf error string
+    if (vcharLen < maxResultSize - 1)
+      result[vcharLen] = '\0';
+    else
+      result[maxResultSize - 1] = '\0';
+    return;
+  }
+
+  //Once we reach this point, all we can do is just dump the source memory.
+  if(convertToHexAscii(src, srcLength, result, maxResultSize) == 0 ){
+    return;
+  }
+
+  // Once we reach this point, there is nothing we can do much.
+  // Attempt to display "-E" indicating error, else NULL.
+  if(maxResultSize >=3){
+    result[0] = '-';
+    result[1] = 'E';
+    result[2] = '\0';
+  }
+  else
+    result[0] = '\0';
+  return;
 }
 
 //Detailed error support for pcode expression evaluation.
@@ -532,7 +559,8 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     UInt32 flags,
                                     Int32 tgtLength,
                                     Int32 tgtScale,
-                                    Int32 tgtPrecision)
+                                    Int32 tgtPrecision,
+                                    Int32 srcPrecision)
 {
   //if looping situation, no need to proceed further, return back.
   if(flags & CONV_CONTROL_LOOPING)
@@ -574,26 +602,55 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                          OPVALUE_LEN);
 
   char srcDatatypeDetail[200];
-  if ((DFS2REC::isAnyCharacter(srcType)) &&
-      (srcLength >= 0) &&
-      (srcScale > 0))
+  char tgtDatatypeDetail[200];
+  char srcTypeAsText[1000];
+  char tgtTypeAsText[100];
+  srcTypeAsText[0] = 0;
+  tgtTypeAsText[0] = 0;
+
+  if (srcPrecision != -1)
+    {
+      rec_datetime_field startField;
+      rec_datetime_field endField;
+      ExpDatetime::getDatetimeFields(srcPrecision, startField, endField);
+      convertTypeToText_basic(srcTypeAsText, 
+                              srcType, srcLength, srcPrecision, srcScale,
+                              startField, endField, 0, 0, 0, 0,
+                              (CharInfo::CharSet)srcScale,
+                              NULL, NULL, 0);
+      strcpy(srcDatatypeDetail, getDatatypeAsString(srcType, false));
+    }
+  else if ((DFS2REC::isCharacterString(srcType)) &&
+           (srcLength >= 0) &&
+           (srcScale > 0) &&
+           (srcPrecision == -1))
     str_sprintf(srcDatatypeDetail, "%s,%d BYTES,%s", 
                 getDatatypeAsString(srcType, false), 
-                //                srcLength/CharInfo::bytesPerChar((CharInfo::CharSet)srcScale),
                 srcLength,
                 (srcScale == CharInfo::ISO88591 ? "ISO88591" : "UTF8"));
   else
     strcpy(srcDatatypeDetail, getDatatypeAsString(srcType, false));
-  
-  char tgtDatatypeDetail[200];
-  if ((DFS2REC::isAnyCharacter(tgtType)) &&
-      (tgtLength >= 0) &&
-      (tgtScale > 0))
+
+  if (tgtLength != -1)
+    {
+      rec_datetime_field startField;
+      rec_datetime_field endField;
+      ExpDatetime::getDatetimeFields(tgtPrecision, startField, endField);
+
+      convertTypeToText_basic(tgtTypeAsText, 
+                              tgtType, tgtLength, tgtPrecision, tgtScale,
+                              startField, endField, 0, 0, 0, 0, 
+                              (CharInfo::CharSet)tgtScale,
+                              NULL, NULL, 0);
+      strcpy(tgtDatatypeDetail, getDatatypeAsString(tgtType, false));
+    }
+  else if ((DFS2REC::isCharacterString(tgtType)) &&
+           (tgtLength >= 0) &&
+           (tgtScale > 0))
     str_sprintf(tgtDatatypeDetail, "%s,%d %s,%s", 
                 getDatatypeAsString(tgtType, false), 
                 tgtPrecision ? tgtPrecision : tgtLength,
                 tgtPrecision ? "CHARS" : "BYTES",
-                //                tgtLength/CharInfo::bytesPerChar((CharInfo::CharSet)tgtScale),
                 (tgtScale == CharInfo::ISO88591 ? "ISO88591" : "UTF8"));
   else
     strcpy(tgtDatatypeDetail, getDatatypeAsString(tgtType, false));
@@ -601,10 +658,12 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
   str_sprintf(buf,
               " %s of Source Type:%s(%s) Source Value:%s to Target Type:%s(%s).",
               intermediate? "Intermediate conversion" : "Conversion",
-              getDatatypeAsString(srcType, true),
+              (strlen(srcTypeAsText) == 0 ? getDatatypeAsString(srcType,true) :
+               srcTypeAsText),              
               srcDatatypeDetail,
               opString,
-              getDatatypeAsString(tgtType,true),
+              (strlen(tgtTypeAsText) == 0 ? getDatatypeAsString(tgtType,true) :
+               tgtTypeAsText),
               tgtDatatypeDetail);
   
   **diagsArea << DgSqlCode(-err);

@@ -237,6 +237,7 @@ enum PARAMETER_MODE {
 #define SQLCHARSETSTRING_BIG5              "BIG5"
 #define SQLCHARSETSTRING_UCS2              SQLCHARSETSTRING_UNICODE
 #define SQLCHARSETSTRING_ISO_MAPPING       "ISO_MAPPING"
+#define SQLCHARSETSTRING_BINARY            "BINARY"
 #endif /* SQLCHARSETSTRING_DEFINED */
 
 /* specifies the supported character sets (for numeric value version of 
@@ -259,6 +260,7 @@ enum SQLCHARSET_CODE {
   SQLCHARSETCODE_MB_KSC5601     = 16,
   SQLCHARSETCODE_GB2312         = 17,
   SQLCHARSETCODE_GBK            = 18,
+  SQLCHARSETCODE_BINARY         = 19,
 
   /* specifies that the user input string is in the same charset that is
      set as the value of the ISO_MAPPING default in the defaults table.
@@ -401,12 +403,19 @@ enum SQLTYPE_CODE {
 
     /* LONG VARCHAR/ODBC CHARACTER VARYING */
     SQLTYPECODE_VARCHAR_LONG  = -1,		/* ## NEGATIVE??? */
+
     /* BLOB TYPE */
     SQLTYPECODE_BLOB  = -602,
     SQLTYPECODE_CLOB  = -603,
 
     /* BOOLEAN TYPE */
     SQLTYPECODE_BOOLEAN = -701,
+
+    /* BINARY TYPE */
+    SQLTYPECODE_BINARY = 60,
+
+    /* VARBINARY TYPE */
+    SQLTYPECODE_VARBINARY = 61,
 
     /* no ANSI value 13 */
 

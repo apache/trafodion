@@ -132,7 +132,8 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     UInt32 flags,
                                     Int32 tgtLength = -1,
                                     Int32 tgtScale = -1,
-                                    Int32 tgtPrecision = 0);
+                                    Int32 tgtPrecision = 0,
+                                    Int32 srcPrecision = -1);
 char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen);
                                                                 
 #endif /* EXP_ERROR_H */

@@ -1327,6 +1327,30 @@ C3B6C3B6E0A0A0
 abxyg           
 
 --- 1 row(s) selected.
+>>select stuff ('abcdefg', 1, 0, 'xy') from dual;
+
+(EXPR)          
+----------------
+
+xyabcdefg       
+
+--- 1 row(s) selected.
+>>select unhex(hex((overlay(to_binary('abcdefg') placing to_binary('wx') from 2 for 3)))) from dual;
+
+(EXPR)          
+----------------
+
+awxefg          
+
+--- 1 row(s) selected.
+>>select unhex(hex((overlay(to_binary('abcdefg') placing 'wx' from 2 for 3)))) from dual;
+
+(EXPR)          
+----------------
+
+awxefg          
+
+--- 1 row(s) selected.
 >>
 >>-- OVERLAY error cases
 >>select overlay('w1234567xyz' placing 'abcde' from 1.2 for 4)  from dual;

@@ -3277,8 +3277,9 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
 	    // whose length is equal to the max length of varchar.
 	    // Remove the UPSHIFT attr from the target. We don't want
 	    // to upshift data for key lookup.
+
 	    if ((keycol->getValueId().getType().getVarLenHdrSize() > 0) ||
-		(char_t.isUpshifted()))
+                (char_t.isUpshifted()))
 	      {
 		if (!CollationInfo::isSystemCollation(char_t.getCollation()))
 		{
@@ -3295,7 +3296,7 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
                                  char_t.getCoercibility()
                                  );
                     }
-                  else
+                  else if (DFS2REC::isCharacterString(keycol->getValueId().getType().getFSDatatype()))
                     {
                       targetType = new(wHeap())
                         SQLChar(wHeap(), CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
@@ -3307,6 +3308,15 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
                                 char_t.getCollation(),
                                 char_t.getCoercibility()
                                 );
+                    }
+                  else if (DFS2REC::isBinaryString(keycol->getValueId().getType().getFSDatatype()))                  
+                    {
+                      targetType = new(wHeap())
+                        SQLBinaryString(wHeap(),
+                                        keycol->getValueId().getType().getNominalSize(),
+                                        keycol->getValueId().getType().supportsSQLnull(),
+                                        FALSE
+                                        );                
                     }
 		}
 	      }

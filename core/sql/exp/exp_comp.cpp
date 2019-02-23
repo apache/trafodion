@@ -1198,7 +1198,23 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] =
 	((ComplexType *)getOperand(1))->comp(getOperType(), getOperand(2), op_data);
       break;
-      
+
+    case BINARY_COMP:
+      {
+        Lng32 length1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
+        Lng32 length2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]) ;
+        
+        char padChar = 0;
+
+        Int32 compare_code =
+          charStringCompareWithPad( op_data[1], length1, op_data[2], length2, 
+                                    padChar);
+
+        retcode = processResult(compare_code, (Lng32 *)op_data[0], 
+                                heap, diagsArea);
+      }
+      break;
+    
     case COMP_NOT_SUPPORTED:
       {
 	// this comparison operation not supported.

@@ -128,13 +128,14 @@ public:
      KSC5601  = SQLCHARSETCODE_MB_KSC5601, // 16
      GB2312   = SQLCHARSETCODE_GB2312,     // 17
      GBK      = SQLCHARSETCODE_GBK,        // 18
+     BINARY   = 19,                        // 19
      //
      // synonyms
      SQL_TEXT	    = UNICODE,
      UCS2	    = UNICODE,
      DefaultCharSet = ISO88591,
 
-     CHARSET_MAX    = 18,
+     CHARSET_MAX    = 19,
 
      // for internal use only
      ISO_MAPPING_CODE = SQLCHARSETCODE_ISO_MAPPING // 9999

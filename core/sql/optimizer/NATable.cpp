@@ -3216,6 +3216,24 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       }
       break;
 
+    case REC_BINARY_STRING:
+      {
+        Lng32 sizeInChars = charCount ;
+        type = new (heap)
+          SQLBinaryString(heap,
+                          column_desc->length, column_desc->isNullable(), FALSE);
+      }
+      break;
+
+    case REC_VARBINARY_STRING:
+      {
+        Lng32 sizeInChars = charCount ;
+        type = new (heap)
+          SQLBinaryString(heap,
+                          column_desc->length, column_desc->isNullable(), TRUE);
+      }
+      break;
+
     default:
       {
 	// 4031 Column %s is an unknown data type, %d.

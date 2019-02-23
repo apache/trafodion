@@ -1,0 +1,181 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- Tests for binary datatype
+
+obey TEST004(clean_up);
+
+log LOG004 clear;
+
+cqd traf_binary_support 'ON';
+cqd traf_binary_input 'ON';
+cqd traf_binary_output 'ON';
+
+obey TEST004(setup_binary);
+obey TEST004(dml_binary);
+obey TEST004(errors_binary);
+obey TEST004(hive_binary);
+
+log;
+
+?section setup_binary
+-----------------------------------------------------------
+-------------- BINARY datatype ---------------------------
+-----------------------------------------------------------
+
+drop table if exists t004t3 cascade;
+drop table if exists t004t3_like;
+drop table if exists t004t3_as;
+
+create table t004t3(a binary(5) not null primary key, b varbinary(10));
+invoke t004t3;
+
+create table if not exists t004t3_like like t004t3;
+invoke t004t3_like;
+
+create table if not exists t004t3_as primary key (a) as select * from t004t3;
+invoke t004t3_as;
+
+create table if not exists t004t3_salt(a binary(4) not null primary key)
+  salt using 2 partitions;
+invoke t004t3_salt;
+
+create view t004t3_view as select * from t004t3;
+invoke t004t3_view;
+
+?section dml_binary
+insert into t004t3 values ('ab', 123);
+insert into t004t3 values (234, 'ba');
+
+select to_hex(a), to_hex(b) from t004t3;
+select to_hex(left(a, 1)) from t004t3;
+select to_hex(b || 'a') from t004t3;
+select to_hex( a || 'a') from t004t3;
+
+insert into t004t3_as select * from t004t3;
+select to_hex(a), to_hex(b) from t004t3_as;
+
+select cast(to_binary('ab') as char(10)) from dual;
+
+select * from t004t3 where a = to_binary('ab');
+
+select to_hex(cast(10 as binary(4))) from dual;
+select to_hex(cast(-10 as binary(4))) from dual;
+select cast(10 as binary(4)) from dual;
+select cast(-10 as binary(4)) from dual;
+
+select cast(to_binary(12.34) as smallint) from dual;
+select cast(to_binary(12.34) as numeric(4,2)) from dual;
+
+select cast(cast(10 as binary(4)) as  int) from dual;
+
+select to_hex(cast(a as binary(10))), 
+       to_hex(cast (b as varbinary(11))) from t004t3;
+
+select char_length(a), char_length(b) from t004t3;
+select octet_length(a), octet_length(b) from t004t3;
+
+delete from t004t3;
+prepare s from insert into t004t3 values (?, ?);
+execute s using 1, 'abc';
+execute s using 'x', 20.34;
+select to_hex(a), to_hex(b) from t004t3;
+
+begin work;
+delete from t004t3 where a = to_binary('x');
+select to_hex(a), to_hex(b) from t004t3;
+rollback work;
+select to_hex(a), to_hex(b) from t004t3;
+
+begin work;
+update t004t3 set b = 1;
+select to_hex(a), to_hex(b) from t004t3;
+rollback work;
+select to_hex(a), to_hex(b) from t004t3;
+
+select to_binary(10000000) from dual;
+
+-- select after turning off traf_binary_output. 
+-- this is to test selects from clients which not yet support binary datatype
+cqd traf_binary_output 'OFF';
+select a,b from t004t3;
+select to_binary(10000000) from dual;
+cqd traf_binary_output 'ON';
+
+-- input after turning off traf_binary_input.
+-- this is to test inserts from clients which do not yet support binary datatype
+-- params are typed as char/varchar in this case.
+cqd traf_binary_input 'OFF';
+begin work;
+prepare s from insert into t004t3 values (?,?);
+execute s using 'abc', 'xyz';
+select * from t004t3;
+rollback work;
+cqd traf_binary_input 'ON';
+
+-- return warning and truncate 2 digits.
+select cast(to_binary(10000000) as binary(2)) from dual;
+
+?section errors_binary
+select * from t004t3 where a = 'ab';
+select b + 1 from t004t3;
+select -b from t004t3;
+select * from t004t3 where a = 1;
+select cast(100 as binary(1)) from dual;
+select cast(to_binary(1) as date) from dual;
+select cast(to_binary('ab') as char(1)) from dual;
+select cast(to_binary(12.34) as int) from dual;
+
+?section hive_binary
+-- create and populate hive binary datatype from hive
+process hive ddl 'drop table tbinary';
+process hive ddl 'create table tbinary(a binary)';
+sh echo "insert into tbinary values ('a'), (1), (NULL);" > TEST004_junk;
+sh regrhive.ksh -f TEST004_junk;
+
+cqd hive_max_binary_length '10';
+invoke hive.hive.tbinary;
+select to_hex(a) from hive.hive.tbinary;
+insert into hive.hive.tbinary values ('a'), (1), (null);
+select * from hive.hive.tbinary;
+select to_hex(a) from hive.hive.tbinary;
+insert overwrite table hive.hive.tbinary select a from t004t3;
+select to_hex(a) from hive.hive.tbinary;
+
+prepare s from insert into hive.hive.tbinary values (?);
+execute s using x'1020';
+set param ?p x'3040';
+insert into hive.hive.tbinary values (?p);
+select a from hive.hive.tbinary;
+select * from hive.hive.tbinary where a = _binary x'1020';
+
+select cast(column_name as char(30) character set iso88591), 
+       sql_data_type, fs_data_type, hive_data_type,
+       column_size, column_scale, 
+       column_number, part_col_number, bucket_col_number, sort_col_number
+  from table(hivemd(columns))
+  where table_name = 'tbinary'
+  order by column_number;
+
+?section errors_binary
+select b + 1 from t004t3;
+select -b from t004t3;
+select * from t004t3 where a = 1;

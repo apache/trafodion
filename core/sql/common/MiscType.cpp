@@ -509,3 +509,4 @@ NABoolean SQLUnknown::errorsCanOccur(const NAType& target, NABoolean lax) const
 {
   return TRUE;
 }
+

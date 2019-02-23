@@ -634,6 +634,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ENABLE             
 %token <tokval> TOK_END
 %token <tokval> TOK_ENCODE_KEY          /* Tandem extension */
+%token <tokval> TOK_ENCODE_BASE64
+%token <tokval> TOK_DECODE_BASE64
 %token <tokval> TOK_ENFORCED
 %token <tokval> TOK_ENFORCERS
 %token <tokval> TOK_ENTERPRISE
@@ -694,6 +696,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_FOUND
 %token <tokval> TOK_FRACTION            /* Tandem extension non-reserved word */
 %token <tokval> TOK_FROM
+%token <tokval> TOK_FROM_HEX
 %token <tokval> TOK_FULL
 %token <tokval> TOK_GENERAL             /* ANSI SQL potential-reserved word */
 %token <tokval> TOK_GENERATE
@@ -718,6 +721,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SERIALIZED
 %token <tokval> TOK_HEX                 /* HP Neo extension non-reserved word */
 %token <tokval> TOK_HEXADECIMAL         /* HP Neo extension non-reserved word */
+%token <tokval> TOK_UNHEX
 %token <tokval> TOK_HIGH_VALUE          /* Tandem extension non-reserved word */
 // QSTUFF
 %token <tokval> TOK_HOLD                /* standard holdable cursor */
@@ -1124,8 +1128,10 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_TINYINT
 %token <tokval> TOK_TITLE
 %token <tokval> TOK_TO
+%token <tokval> TOK_TO_BINARY
 %token <tokval> TOK_TO_CHAR
 %token <tokval> TOK_TO_DATE
+%token <tokval> TOK_TO_HEX
 %token <tokval> TOK_TO_NUMBER
 %token <tokval> TOK_TO_TIME
 %token <tokval> TOK_TO_TIMESTAMP
@@ -3056,7 +3062,6 @@ numeric_literal :       numeric_literal_exact
                   SqlParser_CurrentParser->collectItem4HQC($$);
 		}
 
-/* type item */
 character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific_option
                 {
 //
@@ -3475,12 +3480,9 @@ character_string_literal: sbyte_string_literal
   }
        | std_char_string_literal /* i.e., no charset prefix */
 
-/* type stringval */
 sbyte_string_literal : TOK_SBYTE_LITERAL
-       | sbyte_string_literal TOK_SBYTE_LITERAL
+                      | sbyte_string_literal TOK_SBYTE_LITERAL
            {
-             // sbyte_string_literal ::= sbyte_string_literal TOK_SBYTE_LITERAL
-
              // Mismatch example: The user specifies _iso88591'abc' _utf8'def'
              if (charsetMismatchError(&$1, &$2)) YYERROR;
 
@@ -8756,7 +8758,7 @@ datetime_value_function : TOK_CURDATE '(' ')'
               }
 
 /* type item */
-datetime_misc_function_used_as_default:      TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
+datetime_misc_function_used_as_default: TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
                                {
                                  NAString * ves= unicodeToChar
                                    (ToTokvalPlusYYText(&$3)->yytext,
@@ -8778,7 +8780,6 @@ datetime_misc_function_used_as_default:      TOK_TO_CHAR '(' value_expression ',
                                    DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
                                  ((DateFormat *)$$)->setOriginalString(fullstr);
                                }
-
 /* type item */
 datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				{
@@ -8894,11 +8895,21 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 
                                 $$ = new (PARSERHEAP()) Cast ($3, dt);
                                 }
+    | TOK_TO_BINARY '(' value_expression ',' unsigned_integer ')'
+                               {
+                                 ConstValue * cv = new (PARSERHEAP()) ConstValue($5);
+                                 $$ = new (PARSERHEAP()) 
+				   ZZZBinderFunction(ITM_TO_BINARY, $3, cv);
+			       }
+    | TOK_TO_BINARY '(' value_expression ')'
+                               {
+                                 $$ = new (PARSERHEAP()) 
+				   ZZZBinderFunction(ITM_TO_BINARY, $3);
+			       }
     | TOK_TO_CHAR '(' value_expression ')'
                                {
-                                 $$ = new (PARSERHEAP()) DateFormat
-                                   ($3, "UNSPECIFIED", DateFormat::FORMAT_TO_CHAR);
-
+                                 $$ = new (PARSERHEAP()) 
+                                   ZZZBinderFunction(ITM_TO_CHAR, $3);
 			       }
     | TOK_TO_DATE '(' value_expression ',' character_string_literal ')'
                                {
@@ -9006,6 +9017,15 @@ string_function :
            $$ = new (PARSERHEAP()) ConvertHex(ITM_CONVERTFROMHEX, $3);
         } 
 
+     | TOK_UNHEX '('   value_expression   ')'
+        {
+           $$ = new (PARSERHEAP()) ConvertHex(ITM_CONVERTFROMHEX, $3);
+        } 
+     | TOK_FROM_HEX '('   value_expression   ')'
+        {
+           $$ = new (PARSERHEAP()) ConvertHex(ITM_CONVERTFROMHEX, $3);
+        } 
+
      | TOK_CONVERTTOHEX   '('   value_expression   ')'
         {
           if ( (SqlParser_DEFAULT_CHARSET == CharInfo::ISO88591) ||
@@ -9017,6 +9037,14 @@ string_function :
           {
               $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_CONVERTTOHX, $3);
           }
+        }
+     | TOK_TO_HEX   '('   value_expression   ')'
+        {
+          $$ = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, $3);
+        }
+     | TOK_HEX   '('   value_expression   ')'
+        {
+          $$ = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, $3);
         }
      | TOK_CONVERTTOHX_INTN  '('   value_expression   ')'
         {
@@ -9086,8 +9114,10 @@ string_function :
      /* ODBC extension: map LTRIM(str) to TRIM(LEADING FROM str) */
      | TOK_LTRIM '(' value_expression ')'
 	     { 
-		$$ = new (PARSERHEAP()) Trim((Int32)Trim::LEADING,
-			    new (PARSERHEAP()) SystemLiteral(" ", WIDE_(" ")), $3); 
+		$$ = new (PARSERHEAP()) Trim
+                  ((Int32)Trim::LEADING,
+                   NULL, 
+                   $3); 
 	     }
 
      | TOK_OCTET_LENGTH '(' value_expression ')'
@@ -9151,8 +9181,10 @@ string_function :
      /* ODBC extension: RTRIM(str) is the same as TRIM(TRAILING FROM str) */
      | TOK_RTRIM '(' value_expression ')'
 	{ 
-            $$ = new (PARSERHEAP()) Trim((Int32)Trim::TRAILING,
-	              new (PARSERHEAP()) SystemLiteral(" ", WIDE_(" ")), $3); 
+            $$ = new (PARSERHEAP()) Trim
+              ((Int32)Trim::TRAILING,
+               NULL, 
+               $3); 
         }
 
      | TOK_RTRIM '(' value_expression ',' value_expression ')'
@@ -9303,6 +9335,7 @@ string_function :
 		    $$ = 
 		      new (PARSERHEAP()) ZZZBinderFunction(ITM_OVERLAY, $3, $5, $7, $9);
                   }
+
      | TOK_OVERLAY '(' value_expression TOK_PLACING value_expression TOK_FROM value_expression ')'
                   {
 		    $$ = 
@@ -9318,7 +9351,6 @@ string_function :
         {                     
                $$ = new (PARSERHEAP()) SplitPart($3, $5, $7);
         }
-
 
 
 /* type item */
@@ -9579,7 +9611,7 @@ cache_option : TOK_CACHE NUMERIC_LITERAL_EXACT_NO_SCALE
 datatype_option : int_type
      {
        NumericType * type = (NumericType*)$1;
-       if (NOT DFS2REC::isBinary(type->getFSDatatype()))
+       if (NOT DFS2REC::isBinaryNumeric(type->getFSDatatype()))
          YYERROR;
 
         // CACHE Option
@@ -10341,6 +10373,18 @@ misc_function :
                $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_DECRYPT, CmpCommon::statementHeap(),
                                                        2, $3, $5);
              }
+       | TOK_ENCODE_BASE64 '(' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_ENCODE_BASE64, 
+                                                       CmpCommon::statementHeap(),
+                                                       1, $3);
+             }
+       | TOK_DECODE_BASE64 '(' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_DECODE_BASE64, 
+                                                       CmpCommon::statementHeap(),
+                                                       1, $3);
+             }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
@@ -10681,20 +10725,24 @@ optional_sort_direction:  empty
 /* type item */
 trim_operands : value_expression
         { 
-            $$ = new (PARSERHEAP()) Trim(Trim::BOTH,
-                 new (PARSERHEAP()) SystemLiteral(" ", WIDE_(" ")), $1); 
+            $$ = new (PARSERHEAP()) Trim
+              (Trim::BOTH,
+               NULL,
+               $1); 
         }
      | TOK_FROM value_expression
         { 
-          $$ = new (PARSERHEAP()) Trim(
-               Trim::BOTH,
-               new (PARSERHEAP()) ConstValue(" ", WIDE_(" ")), $2); 
+          $$ = new (PARSERHEAP()) Trim
+            (Trim::BOTH,
+             NULL,
+             $2); 
         }
      | trim_spec TOK_FROM value_expression
         { 
-          $$ = new (PARSERHEAP()) Trim(
-               $1,
-               new (PARSERHEAP()) ConstValue(" ", WIDE_(" ")), $3); 
+          $$ = new (PARSERHEAP()) Trim
+            ($1,
+             NULL,
+             $3); 
         }
      | value_expression TOK_FROM value_expression
         { $$ = new (PARSERHEAP()) Trim(Trim::BOTH, $1, $3); }
@@ -10705,9 +10753,6 @@ trim_operands : value_expression
 trim_spec : TOK_LEADING     {  $$ = (Int32) Trim::LEADING;  }
         | TOK_TRAILING      {  $$ = (Int32) Trim::TRAILING; }
         | TOK_BOTH          {  $$ = (Int32) Trim::BOTH;     }
-
-
-
 
 /* type stringval */
 date_format : TOK_DEFAULT   
@@ -11680,17 +11725,50 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
             $3.collation_, $3.coercibility_);
          if (checkError3179($$)) YYERROR;
        }
+     | TOK_BINARY 
+       {
+         if (CmpCommon::getDefault(TRAF_BINARY_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLChar(PARSERHEAP(),
+                                           DEFAULT_STRING_SIZE, TRUE, FALSE, FALSE);
+         else
+           $$ = new (PARSERHEAP()) SQLBinaryString(PARSERHEAP(),
+                                                   DEFAULT_STRING_SIZE, TRUE, FALSE);
+         if (checkError3179($$)) 
+           YYERROR;
+       }
      | TOK_BINARY left_unsigned_right
        {
          // odbc SQL_BINARY is BINARY(n). Binary data of fixed length n.
-         $$ = new (PARSERHEAP()) SQLChar(PARSERHEAP(), $2, TRUE, FALSE, FALSE);
+         if (CmpCommon::getDefault(TRAF_BINARY_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLChar(PARSERHEAP(), $2, TRUE, FALSE, FALSE);
+         else
+           $$ = new (PARSERHEAP()) SQLBinaryString(PARSERHEAP(), $2, TRUE, FALSE);
+         if (checkError3179($$)) YYERROR;
+       }
+     | TOK_VARBINARY
+       {
+         if (CmpCommon::getDefault(TRAF_BINARY_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), DEFAULT_STRING_SIZE);
+         else
+           {
+             $$ = new (PARSERHEAP()) SQLBinaryString(PARSERHEAP(), DEFAULT_STRING_SIZE, TRUE, TRUE);
+           }
          if (checkError3179($$)) YYERROR;
        }
      | TOK_VARBINARY left_unsigned_right
        {
-         // odbc SQL_VARBINARY is VARBINARY(n). Variable length binary data 
-         // of maximum length n. The maximum length is set by the user.
-         $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $2);
+         if (CmpCommon::getDefault(TRAF_BINARY_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $2);
+         else
+           $$ = new (PARSERHEAP()) SQLBinaryString(PARSERHEAP(), $2, TRUE, TRUE);
+         if (checkError3179($$)) YYERROR;
+       }
+     | TOK_BINARY TOK_VARYING left_unsigned_right
+       {
+         if (CmpCommon::getDefault(TRAF_BINARY_SUPPORT) == DF_OFF)
+           $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $3);
+         else
+           $$ = new (PARSERHEAP()) SQLBinaryString(PARSERHEAP(), $3, TRUE, TRUE);
          if (checkError3179($$)) YYERROR;
        }
      | TOK_LONG TOK_VARBINARY
@@ -34025,7 +34103,6 @@ nonreserved_word :      TOK_ABORT
 		      | TOK_HEADER
                       | TOK_HEADING
                       | TOK_HEADINGS
-                      | TOK_HEX
                       | TOK_HEXADECIMAL
                       | TOK_HORIZONTAL
                       | TOK_HIGH_VALUE
@@ -34490,17 +34567,21 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_DIFF1
                       | TOK_DIFF2
                       | TOK_ENCODE_KEY
+                      | TOK_ENCODE_BASE64
+                      | TOK_DECODE_BASE64
                       | TOK_EXP
                       | TOK_EXTEND
                       | TOK_FIRSTDAYOFYEAR
                       | TOK_FLOOR
                       | TOK_FN
+                      | TOK_FROM_HEX
                       | TOK_GREATEST
                       | TOK_GROUPING_ID
                       | TOK_HASHPARTFUNC
                       | TOK_HASH2PARTFUNC
                       | TOK_HBASE_TIMESTAMP
                       | TOK_HBASE_VERSION
+                      | TOK_HEX
                       | TOK_HIVE
                       | TOK_HIVEMD
                       | TOK_INET_ATON
@@ -34587,8 +34668,10 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_TANH
                       | TOK_THIS
                       | TOK_TOKENSTR
+                      | TOK_TO_BINARY
                       | TOK_TO_CHAR
                       | TOK_TO_DATE
+                      | TOK_TO_HEX
                       | TOK_TO_NUMBER
                       | TOK_TO_TIME
                       | TOK_TO_TIMESTAMP
@@ -34651,7 +34734,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_EXTERNALTOSTRING
                       | TOK_EMPTY_CLOB
                       | TOK_EMPTY_BLOB
-                      
+                      | TOK_UNHEX
 
 nonreserved_datatype  : TOK_ANSIVARCHAR
                       | TOK_BIGINT

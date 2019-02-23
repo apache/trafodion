@@ -510,6 +510,35 @@ class InterfaceStatement {
 	            }
 			}
 			break;
+		case InterfaceResultSet.SQLTYPECODE_BINARY:
+		case InterfaceResultSet.SQLTYPECODE_VARBINARY:
+                    System.out.println("here binary datatype");
+			if (paramValue instanceof InputStream) {
+				InputStream is = (InputStream)paramValue;
+				dataLen = 0;
+				try {
+					int bytesRead = is.read(values, noNullValue + dataOffset, maxLength - dataOffset);
+					dataLen = bytesRead;
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				System.arraycopy(Bytes.createIntBytes(dataLen, this.ic_.getByteSwap()), 0, values, noNullValue, dataOffset);
+			}
+			else {
+				tmpBarray = (byte[])paramValue;
+				dataLen = tmpBarray.length;
+				dataOffset = 4;
+	            if (maxLength > dataLen) {
+	                System.arraycopy(Bytes.createIntBytes(dataLen, this.ic_.getByteSwap()), 0, values, noNullValue, dataOffset);
+	                System.arraycopy(tmpBarray, 0, values, (noNullValue + dataOffset), dataLen);
+	            } else {
+	                throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "23",
+	                        "BINARY input data is longer than the length for column: " + paramNumber);
+	            }
+			}
+			break;
+
 		case InterfaceResultSet.SQLTYPECODE_CLOB:
 			String charSet = "";
 
@@ -763,14 +792,14 @@ class InterfaceStatement {
 		case InterfaceResultSet.SQLTYPECODE_BITVAR:
 		case InterfaceResultSet.SQLTYPECODE_BPINT_UNSIGNED:
 		default:
-			if (ic_.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
-				Object p[] = T4LoggingUtilities.makeParams(stmt_.connection_.props_, locale, pstmt, paramValue,
-						paramNumber);
-				String temp = "Restricted_Datatype_Error";
-				ic_.t4props_.t4Logger_.logp(Level.FINEST, "InterfaceStatement", "convertObjectToSQL2", temp, p);
-			}
-
-			throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "restricted_data_type", null);
+                    if (ic_.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+                        Object p[] = T4LoggingUtilities.makeParams(stmt_.connection_.props_, locale, pstmt, paramValue,
+                                                                   paramNumber);
+                        String temp = "Restricted_Ddatatype_Error" + "datatype = " + dataType;
+                        ic_.t4props_.t4Logger_.logp(Level.FINEST, "InterfaceStatementtt", "convertObjectToSQL222", temp, p);
+                    }
+                    
+                    throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "restricted_data_type", null);
 		}
 		if (ic_.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 			Object p[] = T4LoggingUtilities

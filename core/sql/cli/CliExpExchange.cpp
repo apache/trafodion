@@ -502,8 +502,8 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV1(
 	   ((NOT DFS2REC::isAnyCharacter(op->getDatatype())) &&
 	    (descItem.scale != op->getScale())) || 
 	   (descItem.length != op->getLength())        ||
-	   ((descItem.datatype >= REC_MIN_BINARY) &&
-	    (descItem.datatype <= REC_MAX_BINARY) &&
+	   ((descItem.datatype >= REC_MIN_BINARY_NUMERIC) &&
+	    (descItem.datatype <= REC_MAX_BINARY_NUMERIC) &&
 	    (((isInputDesc) &&
 	      (descItem.precision > 0)) ||
 	     ((NOT isInputDesc) &&
@@ -605,8 +605,8 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV2(
 	//   is greater than zero, and less than operand's precision or op's 
 	//   precision is zero.
          ||
-	   ((descItem.datatype >= REC_MIN_BINARY) &&
-            (descItem.datatype <= REC_MAX_BINARY) &&
+	   ((descItem.datatype >= REC_MIN_BINARY_NUMERIC) &&
+            (descItem.datatype <= REC_MAX_BINARY_NUMERIC) &&
 	    (((isInputDesc) &&
 	      (NOT isRWRS) &&
 	      (descItem.precision > 0)) ||
@@ -2919,8 +2919,8 @@ InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 		source = intermediate;
 	      } // sourceType == REC_BYTE_V_ANSI
 	    
-	    if ((sourceType >= REC_MIN_BINARY) &&
-		(sourceType <= REC_MAX_BINARY) &&
+	    if ((sourceType >= REC_MIN_BINARY_NUMERIC) &&
+		(sourceType <= REC_MAX_BINARY_NUMERIC) &&
 		(sourceType == operand->getDatatype()) &&
 		(sourcePrecision > 0) &&
 		(sourcePrecision == operand->getPrecision()))
@@ -4016,8 +4016,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	      } // sourceType == REC_BYTE_V_ANSI
 	    
 	    if ((sourcePrecision > 0) &&
-		((sourceType >= REC_MIN_BINARY) &&
-                 (sourceType <= REC_MAX_BINARY) &&
+		((sourceType >= REC_MIN_BINARY_NUMERIC) &&
+                 (sourceType <= REC_MAX_BINARY_NUMERIC) &&
                  (sourceType == operand->getDatatype()) &&
                  (sourcePrecision == operand->getPrecision()) ||
                  (DFS2REC::isAnyCharacter(sourceType) && !suppressCharLimitCheck())))

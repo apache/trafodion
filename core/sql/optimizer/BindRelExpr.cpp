@@ -1092,6 +1092,24 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         naType = (NAType*)&cast->getValueId().getType();
       }
     
+    if ((DFS2REC::isBinaryString(naType->getFSDatatype())) &&
+        (CmpCommon::getDefault(TRAF_BINARY_OUTPUT) == DF_OFF) &&
+        (NOT bindWA->inCTAS()) &&
+        (NOT bindWA->inViewDefinition()))
+      {
+        ItemExpr * cast = NULL;
+        cast = new (bindWA->wHeap()) 
+          ConvertHex(ITM_CONVERTTOHEX, col->getValueId().getItemExpr());
+
+        cast = cast->bindNode(bindWA);
+        if (bindWA->errStatus()) 
+          return;
+        col->setValueId(cast->getValueId());
+        compExpr[i] = cast->getValueId();
+        
+        naType = (NAType*)&cast->getValueId().getType();
+      }
+    
     // if OFF, return tinyint as smallint.
     // This is needed until all callers/drivers have full support to
     // handle IO of tinyint datatypes.
@@ -8721,18 +8739,22 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
     }
 
     // Genesis 10-980611-7153
-    if (castTo && prevTupleNumEntries != castToList().entries()) break;
+    if (castTo && prevTupleNumEntries != castToList().entries()) 
+      break;
 
     for (CollIndex j = 0; j < prevTupleNumEntries; j++) {
       // If any unknown type in the tuple, coerce it to the target type.
       // Also do same MP-NCHAR magic as above.
+      ValueId srcVID = vidList[j];
       if (castTo) {
         ValueId src = vidList[j];
         src.coerceType(castToList()[j].getType());
 
+        ItemExpr *srcIE = src.getItemExpr();
+        ItemExpr *tgtIE = castToList()[j].getItemExpr();
+        
         // tmpAssign MUST BE ON HEAP -- see note above!
-        Assign *tmpAssign = new(bindWA->wHeap())
-          Assign(castToList()[j].getItemExpr(), src.getItemExpr());
+        Assign *tmpAssign = new(bindWA->wHeap()) Assign(tgtIE, srcIE);
         tmpAssign = (Assign *)tmpAssign->bindNode(bindWA);
         if (bindWA->errStatus()) 
           return this;
@@ -9815,17 +9837,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       return this;
     }
      
-    // if my child is a TupleList, then all tuples are to be converted/cast
-    // to the corresponding target type of the tgtColList.
-    // Pass on the tgtColList to TupleList so it can generate the Cast nodes
-    // with the target types during the TupleList::bindNode.
-    if (child(0)->getOperatorType() == REL_TUPLE_LIST) {
-      ValueIdList tgtColList;
-      getTableDesc()->getUserColumnList(tgtColList);
-      TupleList *tl = (TupleList *)child(0)->castToRelExpr();
-      tl->castToList() = tgtColList;
-    }
- 
     RelExpr *feResult = FastExtract::makeFastExtractTree(
          getTableDesc(),
          child(0).getPtr(),
@@ -17643,7 +17654,6 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
     return this;
   }
 
-
   // check validity of target location
   if (getTargetType() == FILE)
   {
@@ -17677,7 +17687,6 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
     }
   }
 
-
   if (getDelimiter().length() == 0)
   {
     delimiter_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_DELIMITER);
@@ -17686,18 +17695,21 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
   // if inserting into a hive table and an explicit null string was
   // not specified in the unload command, and the target table has a user
   // specified null format string, then use it.
+  const HHDFSTableStats* hTabStats = NULL;
   if ((isHiveInsert()) &&
       (hiveTableDesc_ && hiveTableDesc_->getNATable() && 
-       hiveTableDesc_->getNATable()->getClusteringIndex()) &&
-      (NOT nullStringSpec_))
+       hiveTableDesc_->getNATable()->getClusteringIndex()))
     {
-      const HHDFSTableStats* hTabStats = 
+      hTabStats = 
         hiveTableDesc_->getNATable()->getClusteringIndex()->getHHDFSTableStats();
-
-      if (hTabStats->getNullFormat())
+      
+      if (NOT nullStringSpec_)
         {
-          nullString_ = hTabStats->getNullFormat();
-          nullStringSpec_ = TRUE;
+          if (hTabStats->getNullFormat())
+            {
+              nullString_ = hTabStats->getNullFormat();
+              nullStringSpec_ = TRUE;
+            }
         }
     }
 
@@ -17713,11 +17725,28 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
     recordSeparator_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_RECORD_SEPARATOR);
   }
 
-
   if (!isHiveInsert())
   {
     bindWA->setIsFastExtract();
   }
+
+  ValueIdList tgtColList;
+  TupleList *tl = NULL;
+  if ((isHiveInsert() && hTabStats && hTabStats->isTextFile()) &&
+      (child(0) && child(0)->getOperatorType() == REL_TUPLE_LIST))
+  {
+    // if my child is a TupleList, then all tuples are to be converted/cast
+    // to the corresponding target type of the tgtColList.
+    // Pass on the tgtColList to TupleList so it can generate the Cast nodes
+    // with the target types during the TupleList::bindNode.
+    hiveTableDesc_->getUserColumnList(tgtColList);
+    tl = (TupleList *)child(0)->castToRelExpr();
+    tl->castToList() = tgtColList;
+
+    tl->setCastTo(TRUE);
+    tl->setHiveTextInsert(TRUE);
+  }
+
   // Bind the child nodes.
   bindChildren(bindWA);
   if (bindWA->errStatus())

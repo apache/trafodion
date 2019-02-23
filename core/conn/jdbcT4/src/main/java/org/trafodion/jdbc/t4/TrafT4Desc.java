@@ -61,6 +61,10 @@ class TrafT4Desc {
 			return "java.sql.Clob";
 		case Types.BLOB:
 			return "java.sql.Blob";
+                case Types.BINARY:
+                    return "java.sql.Binary";
+                case Types.VARBINARY:
+                    return "jave.sql.Varbinary";
 		case Types.BIT:
 		default:
 			return null;
@@ -102,6 +106,10 @@ class TrafT4Desc {
 			return "BLOB";
 		case Types.CLOB:
 			return "CLOB";
+                case Types.BINARY:
+                    return "BINARY";
+                case Types.VARBINARY:
+                    return "VARBINARY";
 		case Types.OTHER:
 			if (sqlDataType_ == SQLTYPECODE_INTERVAL) {
 				return "INTERVAL";
@@ -133,6 +141,8 @@ class TrafT4Desc {
 		case Types.LONGVARCHAR:
 		case Types.CLOB:
 		case Types.BLOB:
+                case Types.BINARY:
+                case Types.VARBINARY:
 			break;
 		default:
                         System.out.println("Data type is " + dataType_);
@@ -335,7 +345,7 @@ class TrafT4Desc {
 			}
 			break;
 		case Types.CHAR:
-
+                case Types.BINARY:
 			// sqlOctetLength_ = maxLen+1;
 			sqlOctetLength_ = maxLen;
 			displaySize_ = maxLen;
@@ -345,6 +355,7 @@ class TrafT4Desc {
 		case Types.LONGVARCHAR:
 		case Types.BLOB:
 		case Types.CLOB:
+                case Types.VARBINARY:
                         boolean shortLength = maxLen < Math.pow(2, 15);
                         int dataOffset = ((shortLength) ? 2 : 4);
 			if (sqlDataType_ == SQLTYPECODE_VARCHAR) {
@@ -457,7 +468,8 @@ class TrafT4Desc {
 	public static final int SQLTYPECODE_CLOB = -603;
 	public static final int SQLTYPECODE_SMALLINT = 5;
 	public static final int SQLTYPECODE_INTEGER = 4;
-
+        public static final int SQLTYPECODE_BINARY = 60;
+        public static final int SQLTYPECODE_VARBINARY = 61;
 	// datetime codes taken from NCS - File ....\....\...\Common\DrvrSrvr.h
 	public static final int SQLDTCODE_YEAR = 4;
 	public static final int SQLDTCODE_YEAR_TO_MONTH = 5;

@@ -487,6 +487,11 @@ void SqlciEnv::datatypeSupport()
   // can handle boolean datatype
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_BOOLEAN_IO 'ON';", this);
 
+  // can handle binary datatype
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_BINARY_SUPPORT 'ON';", this);
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_BINARY_INPUT 'ON';", this);
+  SqlCmd::executeQuery("CONTROL QUERY DEFAULT TRAF_BINARY_OUTPUT 'ON';", this);
+
   if (!specialError_)
     {
       exit(EXIT_FAILURE);

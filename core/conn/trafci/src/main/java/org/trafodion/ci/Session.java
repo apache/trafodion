@@ -1547,7 +1547,7 @@ static {
     		this.sessionRole = this.getUserRoleName();
         	if (this.debugOn)
         		System.out.println("Session getUserRoleName::"  + this.sessionRole);
- 		}    			  
+        }    			  
       } 
       catch (NullPointerException npe) 
       {    	 
@@ -1563,6 +1563,29 @@ static {
       }
    }
    
+  protected void setBinaryCQDs()
+    {
+        try
+            {
+                Statement stmt = this.connObj.createStatement();
+                stmt.executeUpdate("CQD TRAF_BINARY_SUPPORT 'ON'");
+            } catch (Exception se)
+            {
+                System.out.println("error:"+se.getMessage());
+            }
+
+        try
+            {
+                Statement stmt = this.connObj.createStatement();
+                stmt.executeUpdate("CQD TRAF_BINARY_OUTPUT 'ON'");
+            } catch (Exception se)
+            {
+                System.out.println("error:"+se.getMessage());
+            }
+
+
+    }
+
    protected String getUserRoleName()
    {
 

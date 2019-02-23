@@ -468,7 +468,7 @@ zz     ZZ     ZZ               1            1            1
 >>-- Ansi 6.13 GR 2:  char and varchar concats are different vis-a-vis length
 >>update T050a set b=a, c=trim(lower(b))||trim(a);
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII,6 BYTES,ISO88591) Source Value:UPPLOW to Target Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(6) CHARACTER SET ISO88591(REC_BYTE_V_ASCII) Source Value:UPPLOW to Target Type:CHAR(5) CHARACTER SET ISO88591(REC_BYTE_F_ASCII).
 
 --- 0 row(s) updated.
 >>		-- 1 warn 8402
@@ -485,7 +485,7 @@ zz     ZZ     ZZ               1            1            1
 >>		-- aa,AA,BBAA; Low,LOW,UPPLO; zz,ZZ,ZZZZ
 >>update T050a set b=a, c=lower(b)||a;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:BB   AA    to Target Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(10) CHARACTER SET ISO88591(REC_BYTE_F_ASCII) Source Value:BB   AA    to Target Type:CHAR(5) CHARACTER SET ISO88591(REC_BYTE_F_ASCII).
 
 --- 0 row(s) updated.
 >>				-- 3 ERROR 8402

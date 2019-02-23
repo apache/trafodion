@@ -634,6 +634,11 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
       d_len = SQL_BOOLEAN_DISPLAY_SIZE;
       break;
 
+    case REC_BINARY_STRING:
+    case REC_VARBINARY_STRING:
+      d_len = length;
+      break;
+
     default:
       d_len = length;
       break;
@@ -706,7 +711,7 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
         SQLVarChar * ct = (SQLVarChar*)this;
         if (ct->wasHiveString())
           *outputStr = "string";
-        else
+        else if (DFS2REC::isCharacterString(fs_datatype))
           {
             char buf[20];
             // Hive doesn't have the "n bytes" notation,
@@ -717,6 +722,8 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
             *outputStr += buf;
             *outputStr += ")";
           }
+        else
+          *outputStr = "binary";
       }
       break;
 
@@ -998,6 +1005,17 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
       return nat;
     }
   
+  if ( !strcmp(hiveType, "binary"))
+    {
+      Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_BINARY_LENGTH);
+      NAType * nat = NULL;
+      if (CmpCommon::getDefault(TRAF_BINARY_SUPPORT) == DF_OFF)
+        nat = new (heap) SQLVarChar(heap, len);
+      else
+        nat = new (heap) SQLBinaryString(heap, len, TRUE, TRUE);
+      return nat;
+    }
+
   if ( !strcmp(hiveType, "float"))
     return new (heap) SQLReal(heap, TRUE /* allow NULL*/);
 

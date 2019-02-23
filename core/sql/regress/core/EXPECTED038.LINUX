@@ -692,8 +692,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
-        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>SELECT *
@@ -3129,22 +3129,22 @@ E1
 >>
 >>select * from T038g where cast(g1 as numeric(1)) = cast (-8 as numeric(1)) - 1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:NUMERIC(1, 0)(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select * from T038g where cast(g1 as numeric(1)) = cast (-9 as numeric(1)) - 1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:NUMERIC(1, 0)(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select * from T038g where cast(g1 as numeric(1)) = cast (8 as numeric(1)) + 1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:NUMERIC(1, 0)(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select * from T038g where cast(g1 as numeric(1)) = cast (9 as numeric(1)) + 1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:123456 to Target Type:NUMERIC(1, 0)(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select * from T038g where g1 = cast (1 as numeric(1)) / cast (0 as numeric(1));

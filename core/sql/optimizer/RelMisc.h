@@ -952,15 +952,14 @@ public:
   // constructor
   TupleList(ItemExpr *tupleListExpr,
 	CollHeap *oHeap = CmpCommon::statementHeap())
-    : Tuple(REL_TUPLE_LIST,tupleListExpr, oHeap), numberOfTuples_(-1), createdForInList_(FALSE)
+    : Tuple(REL_TUPLE_LIST,tupleListExpr, oHeap), numberOfTuples_(-1), 
+      flags_(0)
   {}
 
   TupleList(const TupleList & other);
 
   ValueIdList & castToList() { return castToList_; }
   Lng32 numTuples() const { return numberOfTuples_; }
-  NABoolean createdForInList() const { return createdForInList_; }
-  void setCreatedForInList (NABoolean flag) { createdForInList_ = flag; }
 
   // a virtual function for performing name binding within the query tree
   RelExpr * bindNode(BindWA *bindWAPtr);
@@ -1004,7 +1003,25 @@ public:
   // set vidlist = ith tuple of this tuplelist and return TRUE
   RelExpr* getTuple(BindWA *bindWA, ValueIdList& vidList, CollIndex i);
 
+  NABoolean createdForInList() { return (flags_ & CREATED_FOR_IN_LIST) != 0; }
+  void setCreatedForInList(NABoolean v)
+  { (v ? flags_ |= CREATED_FOR_IN_LIST : flags_ &= ~CREATED_FOR_IN_LIST); }
+
+  NABoolean hiveTextInsert() { return (flags_ & HIVE_TEXT_INSERT) != 0; }
+  void setHiveTextInsert(NABoolean v)
+  { (v ? flags_ |= HIVE_TEXT_INSERT : flags_ &= ~HIVE_TEXT_INSERT); }
+
+  NABoolean castTo() { return (flags_ & CAST_TO) != 0; }
+  void setCastTo(NABoolean v)
+  { (v ? flags_ |= CAST_TO : flags_ &= ~CAST_TO); }
+
 private:
+  enum Flags
+    {
+      CREATED_FOR_IN_LIST   = 0x0001,
+      HIVE_TEXT_INSERT      = 0x0002,
+      CAST_TO               = 0x0004
+    };
 
   // set needsFixup to TRUE iff tuplelist needs INFER_CHARSET fixup
   RelExpr* needsCharSetFixup(BindWA *bindWA,
@@ -1034,7 +1051,8 @@ private:
   // converted before returning. Used (currently) if this list will be
   // inserted into a table.
   ValueIdList castToList_;
-  NABoolean createdForInList_;
+
+  Int32 flags_;
 }; // class TupleList
 
 // -----------------------------------------------------------------------

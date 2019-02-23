@@ -3300,11 +3300,32 @@ enum DefaultConstants
   BMO_MEMORY_LIMIT_UPPER_BOUND,
   BMO_MEMORY_ESTIMATE_RATIO_CAP,
 
+  // if OFF, binary/varbinary is not supported. It is treated as char/varchar.
+  // if ON,  binary is supported as table cols and in cast stmts.
+  // This is needed until binary/varbinary support is fully
+  // supported and externalized.
+  TRAF_BINARY_SUPPORT,
+
+  // If ON, binary is supported as returned datatype from a select stmt,
+  // otherwise returned as char/varchar.
+  TRAF_BINARY_OUTPUT,
+
+  // If ON, input params are typed as binary,
+  // otherwise typed as char/varchar.
+  TRAF_BINARY_INPUT,
+
+  // if ON, spj input/output params are typed as binary.
+  // Otherwise typed as char/varchar.
+  TRAF_BINARY_SPJ_SUPPORT,
+
   // if set, cleanse output of explain text by filtering values that
   // may not be deterministic on different systems.
   // Same as explain format: options 'c'
   // Used during dev regressions to cleanse explain output.
   EXPLAIN_OPTION_C,
+
+  // max length of hive binary datatype
+  HIVE_MAX_BINARY_LENGTH,
 
   // Threshold when TOPN sort becomes a regular sort
   GEN_SORT_TOPN_THRESHOLD,

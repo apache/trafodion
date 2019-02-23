@@ -541,6 +541,16 @@ NABoolean NAColumn::createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       type = new (heap) SQLBooleanNative(heap, column_desc->isNullable());
       break;
 
+    case REC_BINARY_STRING :
+      type = new (heap) SQLBinaryString(heap, column_desc->length,
+                                        column_desc->isNullable(), FALSE);
+      break;
+      
+    case REC_VARBINARY_STRING :
+      type = new (heap) SQLBinaryString(heap, column_desc->length,
+                                        column_desc->isNullable(), TRUE);
+      break;
+
     default:
       {
 	// 4031 Column %s is an unknown data type, %d.

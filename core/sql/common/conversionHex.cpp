@@ -206,6 +206,7 @@ hex_conversion_code verifyAndConvertHex(const NAWchar *str, Int32 len, NAWchar q
     case CharInfo::KSC5601_MP:
     case CharInfo::ISO88591:
     case CharInfo::UTF8:
+    case CharInfo::BINARY:
       {
         Int32   StrLength = (Int32)(tmpStr->length());
         result = convHexToChar(tmpStr->data(), StrLength, cs, heap);

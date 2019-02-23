@@ -1548,9 +1548,9 @@ $1~String1 --------------------------------
 8403 22011 99999 BEGINNER MINOR LOGONLY The length argument of function SUBSTRING cannot be less than zero or greater than source string length.
 8404 22027 99999 BEGINNER MINOR LOGONLY The trim character argument of function TRIM must be one character in length.
 8405 22008 99999 BEGINNER MINOR LOGONLY The operand of function CONVERTTIMESTAMP is out of range.
-8406 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 03/30/04 ---
+8406 22001 99999 BEGINNER MINOR LOGONLY An overflow occurred during conversion of source to target datatype. 
 8407 22008 99999 BEGINNER MINOR LOGONLY The operand of function JULIANTIMESTAMP is out of range.
-8408 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 03/30/04 ---
+8408 22001 99999 BEGINNER MINOR LOGONLY An error occurred during the evaluation of a conversion expression. Details:$0~string0
 8409 22019 99999 BEGINNER MINOR LOGONLY The escape character argument of a LIKE predicate must be one character in length.
 8410 22025 99999 BEGINNER MINOR LOGONLY An escape character in a LIKE pattern must be followed by another escape character, an underscore, or a percent character.
 8411 22003 99999 BEGINNER MINOR LOGONLY A numeric overflow occurred during an arithmetic computation or data conversion.$0~string0

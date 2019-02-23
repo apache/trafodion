@@ -420,7 +420,6 @@ CharInfo::CharSet encodingCharSet_;
 }; // class CharType
 
 
-
 // ***********************************************************************
 //
 //  SQLChar : SQL CHARACTER
@@ -455,9 +454,9 @@ public:
 	   CharInfo::CharSet encoding	= CharInfo::UnknownCharSet
           );
 //copy ctor
-	SQLChar (const SQLChar & sqlChar,
-		NAMemory * heap):CharType(sqlChar,heap)
-	{}
+  SQLChar (const SQLChar & sqlChar,
+           NAMemory * heap):CharType(sqlChar,heap)
+  {}
 short getFSDatatype() const;
 
 // ---------------------------------------------------------------------
@@ -870,5 +869,76 @@ private:
 
 }; // class SQLClob
 
+// ***********************************************************************
+//
+//  SQLBinaryString : SQL BINARY string
+//
+// ***********************************************************************
+class SQLBinaryString : public CharType
+{
+public:
+// ---------------------------------------------------------------------
+// Constructor functions 
+// ---------------------------------------------------------------------
+  SQLBinaryString (NAMemory *h,
+                   Lng32 maxLength, 
+                   NABoolean allowSQLnull	= TRUE,
+                   NABoolean varLenFlag	= FALSE
+                   );
+  SQLBinaryString (const SQLBinaryString & sqlCharBinary,
+                   NAMemory * heap):CharType(sqlCharBinary,heap)
+  {}
+  
+  short getFSDatatype() const
+  { return (isVaryingLen() ? REC_VARBINARY_STRING : REC_BINARY_STRING); }
+
+  virtual NAString getTypeSQLname(NABoolean terse = FALSE) const;
+
+  virtual NAType::SynthesisPrecedence getSynthesisPrecedence() const
+  {
+    return SYNTH_PREC_BINARY;
+  }
+
+  // get the encoding of the max char value
+  double getMaxValue() const;
+  
+  // get the encoding of the min char value
+  double getMinValue() const;
+  
+  virtual double encode (void*) const
+  {return 0;}
+
+  // ---------------------------------------------------------------------
+  // Methods that return the binary form of the minimum and the maximum
+  // representable values.
+  // ---------------------------------------------------------------------
+  virtual void minRepresentableValue(void*, Lng32*, 
+				     NAString** stringLiteral = NULL,
+				     CollHeap* h=0) const;
+  virtual void maxRepresentableValue(void*, Lng32*, 
+				     NAString** stringLiteral = NULL,
+				     CollHeap* h=0) const;
+  
+  virtual NABoolean isCompatible(const NAType& other, UInt32 * flags) const;
+  
+  virtual NABoolean isComparable(const NAType &otherNA,
+				 ItemExpr *parentOp,
+				 Int32 emitErr,
+                                 UInt32 * flags) const;
+
+  const NAType* synthesizeType(NATypeSynthRuleEnum synthRule,
+                               const NAType& operand1,
+                               const NAType& operand2,
+                               CollHeap* h,
+                               UInt32 *flags) const;
+
+  // ---------------------------------------------------------------------
+  // A virtual function to return a copy of the type.
+  // ---------------------------------------------------------------------
+  virtual NAType *newCopy(NAMemory * h=0) const 
+  { return new(h) SQLBinaryString(*this,h); }
+  
+private:
+}; // class SQLBinaryString
 
 #endif /* CHARTYPE_H */

@@ -633,6 +633,14 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
      str_sprintf(text, "BOOLEAN");
      break;
 
+   case REC_BINARY_STRING:
+     str_sprintf(text, "BINARY(%d)", length);
+     break;
+
+   case REC_VARBINARY_STRING:
+     str_sprintf(text, "VARBINARY(%d)", length);
+     break;
+
     default:
       str_sprintf(text, "**ERROR (unknown type %d)", fs_datatype);
       return -1; // error case
@@ -767,6 +775,14 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
      numeric_value = SQLTYPECODE_BOOLEAN;
      break;
 
+   case REC_BINARY_STRING:
+     numeric_value = SQLTYPECODE_BINARY;
+     break;
+
+   case REC_VARBINARY_STRING:
+     numeric_value = SQLTYPECODE_VARBINARY;
+     break;
+
    case REC_INT_YEAR:
    case REC_INT_MONTH:
    case REC_INT_YEAR_MONTH:
@@ -887,6 +903,12 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
    case REC_BOOLEAN:
      return COM_BOOLEAN_SDT_LIT;
      break;
+
+   case REC_BINARY_STRING:
+     return COM_CHAR_BINARY_SDT_LIT;
+
+   case REC_VARBINARY_STRING:
+     return COM_CHAR_VARBINARY_SDT_LIT;
 
    case REC_INT_YEAR:
    case REC_INT_MONTH:

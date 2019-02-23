@@ -232,6 +232,7 @@ process hive statement 'drop table thivearr';
 process hive statement 'create table thivearr (a array<string>)';
 -- should return warning 8742
 select table_name from table(hivemd(columns)) where table_name = 'thivearr';
+process hive ddl 'drop table thivearr';
 
 process hive ddl 'drop table thivealldt';
 process hive ddl 'create table thivealldt(a smallint, b int, c bigint, d decimal(3,1), e string, f char(10), g varchar(7), h date, i timestamp)';

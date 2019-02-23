@@ -19,7 +19,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 
--- Tests for tinyint, largeint unsigned datatypes
+-- Tests for tinyint, largeint unsigned, binary datatypes
 
 
 obey TEST003(clean_up);

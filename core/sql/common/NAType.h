@@ -457,6 +457,7 @@ public:
   , SYNTH_PREC_FLOAT
   , SYNTH_PREC_INTERVAL		// > Numeric (ANSI 6.15, multiplication)
   , SYNTH_PREC_DATETIME		// > Interval (ANSI 6.14, addition)
+  , SYNTH_PREC_BINARY
   };
 
   virtual NAType::SynthesisPrecedence getSynthesisPrecedence() const

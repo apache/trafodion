@@ -109,6 +109,7 @@ short BuiltinFunction::codeGen(Generator * generator)
         {
           case CharInfo::ISO88591:
           case CharInfo::UTF8:
+          case CharInfo::BINARY:
           // case CharInfo::SJIS:  // Uncomment this if we ever support SJIS
            function_clause =
                new(generator->getSpace()) ex_like_clause_char(getOperatorType()
@@ -349,6 +350,7 @@ short BuiltinFunction::codeGen(Generator * generator)
         {
           case CharInfo::ISO88591:
           case CharInfo::UTF8:
+          case CharInfo::BINARY:
           // case CharInfo::SJIS:  // Uncomment this if we ever support SJIS
 	   function_clause = new(generator->getSpace()) 
 		ex_function_substring(getOperatorType(), 
@@ -409,6 +411,7 @@ short BuiltinFunction::codeGen(Generator * generator)
         {
           case CharInfo::ISO88591:
           case CharInfo::UTF8:
+          case CharInfo::BINARY:
           // case CharInfo::SJIS: // Uncomment this if we ever support SJIS
 	    function_clause = new(generator->getSpace()) 
 		ex_function_char_length(ITM_CHAR_LENGTH, attr, space);
@@ -443,6 +446,7 @@ short BuiltinFunction::codeGen(Generator * generator)
         {
           case CharInfo::ISO88591:
           case CharInfo::UTF8:
+          case CharInfo::BINARY:
           // case CharInfo::SJIS: // Uncomment this if we ever support SJIS
 	   function_clause = new(generator->getSpace()) 
              ex_function_position(ITM_POSITION, attr, space,
@@ -715,12 +719,25 @@ short BuiltinFunction::codeGen(Generator * generator)
       break;
     }
 
+    case ITM_ENCODE_BASE64:
+    case ITM_DECODE_BASE64:
+      {
+        function_clause =
+          new(generator->getSpace()) ExFunctionBase64EncDec
+          (getOperatorType(),
+           attr,
+           space,
+           (getOperatorType() == ITM_ENCODE_BASE64 ? TRUE : FALSE));
+      }
+      break;
+
     case ITM_SPLIT_PART:
     {
       function_clause = 
             new (generator->getSpace()) ex_function_split_part(getOperatorType(), attr, space);
       break;
     }
+
     default:
       break;
     }
@@ -1982,6 +1999,7 @@ short Trim::codeGen(Generator * generator)
   {
     case CharInfo::ISO88591:
     case CharInfo::UTF8:
+    case CharInfo::BINARY:
     // case CharInfo::SJIS: // Uncomment this if we ever support SJIS
       function_clause = new(generator->getSpace()) 
 		ex_function_trim_char(ITM_TRIM,

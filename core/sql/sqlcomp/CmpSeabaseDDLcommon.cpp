@@ -2908,7 +2908,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 
         if (serializedOption == 1) // option explicitly specified
           {
-            if (DFS2REC::isBinary(datatype))
+            if (DFS2REC::isBinaryNumeric(datatype))
               setFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
             else if (numericType->isEncodingNeeded())
               {
@@ -2919,7 +2919,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
           }
         else if ((serializedOption == -1) && // not specified
                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
-                 (DFS2REC::isBinary(datatype)) &&
+                 (DFS2REC::isBinaryNumeric(datatype)) &&
                  (NOT alignedFormat))
           {
             setFlags(hbaseColFlags, NAColumn::SEABASE_SERIALIZED);
@@ -2974,7 +2974,6 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
       }
       break;
       
-
     default:
       {
         *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_COLUMN_DATATYPE);

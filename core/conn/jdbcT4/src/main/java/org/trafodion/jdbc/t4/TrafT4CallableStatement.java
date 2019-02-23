@@ -317,9 +317,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
-		// BINARY, VARBINARY, LONGVARBINARY not supported
-		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "datatype_not_supported",
-				null);
+		return getBytes(parameterIndex);
 	}
 
 	public byte[] getBytes(String parameterName) throws SQLException {

@@ -1166,8 +1166,10 @@ public:
   {
     if ((((source >= REC_MIN_NUMERIC) && (source <= REC_MAX_NUMERIC)) &&
 	 ((target >= REC_MIN_NUMERIC) && (target <= REC_MAX_NUMERIC))) ||
-	(((source >= REC_MIN_CHARACTER) && (source <= REC_MAX_CHARACTER)) &&
-	 ((target >= REC_MIN_CHARACTER) && (target <= REC_MAX_CHARACTER))) ||
+        ((DFS2REC::isCharacterString(source)) && 
+         (DFS2REC::isCharacterString(target))) ||
+        ((DFS2REC::isBinaryString(source)) && 
+         (DFS2REC::isBinaryString(target))) ||
 	((source == REC_DATETIME) && (target == REC_DATETIME)) ||
 	(((source >= REC_MIN_INTERVAL) && (source <= REC_MAX_INTERVAL)) &&
 	 ((target >= REC_MIN_INTERVAL) && (target <= REC_MAX_INTERVAL))) ||
@@ -1182,9 +1184,9 @@ public:
   static NABoolean implicitConversionSupported(short source, short target)
   {
     if ((((source >= REC_MIN_CHARACTER) && (source <= REC_MAX_CHARACTER)) &&
-	 ((target == REC_DATETIME) || ((target >= REC_MIN_BINARY) && (target <= REC_MAX_BINARY)))) ||
+	 ((target == REC_DATETIME) || ((target >= REC_MIN_BINARY_NUMERIC) && (target <= REC_MAX_BINARY_NUMERIC)))) ||
 	(((target >= REC_MIN_CHARACTER) && (target <= REC_MAX_CHARACTER)) &&
-	 ((source == REC_DATETIME) || ((source >= REC_MIN_BINARY) && (source <= REC_MAX_BINARY)))))
+	 ((source == REC_DATETIME) || ((source >= REC_MIN_BINARY_NUMERIC) && (source <= REC_MAX_BINARY_NUMERIC)))))
       return TRUE;
     else
       return FALSE;
@@ -1192,7 +1194,7 @@ public:
 
   NABoolean isExactNumeric(short type)
   {
-    if ((type >= REC_MIN_BINARY) && (type <= REC_MAX_BINARY) ||
+    if ((type >= REC_MIN_BINARY_NUMERIC) && (type <= REC_MAX_BINARY_NUMERIC) ||
 	(type >= REC_MIN_DECIMAL) && (type <= REC_MAX_DECIMAL))
       return TRUE;
     else

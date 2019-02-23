@@ -197,6 +197,36 @@ SQLRETURN SRVR::GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length,
 			ODBCCharset = SQLCharset;
 			break;
 
+		case SQLTYPECODE_BINARY:
+			ODBCPrecision = Length;
+			ODBCDataType = SQL_BINARY;
+			SignType = FALSE;
+			totalMemLen += Length;
+			if (!bRWRS)
+				totalMemLen += 1;
+			ODBCCharset = SQLCharset;
+			break;
+		case SQLTYPECODE_VARBINARY:
+			ODBCPrecision = Length;
+			ODBCDataType = SQL_VARBINARY;
+			SignType = FALSE;
+			// Varchar indicator length can 2 or 4 bytes depending on length of the column
+			if (Length > SHRT_MAX)	// 32767
+			{
+				totalMemLen = ((totalMemLen + 4 - 1) >> 2) << 2; 
+				totalMemLen += Length + 4;
+			}
+			else
+			{
+				totalMemLen = ((totalMemLen + 2 - 1) >> 1) << 1; 
+				totalMemLen += Length + 2;
+			}
+
+			if (!bRWRS)
+				totalMemLen += 1;
+			ODBCCharset = SQLCharset;
+			break;
+
                 case SQLTYPECODE_TINYINT:
 			ODBCPrecision = 3;
 			ODBCDataType = SQL_TINYINT;
@@ -714,6 +744,15 @@ SQLRETURN SRVR::SetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc, Int3
 			VarPtr = memPtr + memOffSet;
 			memOffSet += SQLItemDesc->maxLen + 3;
 			break;
+		case SQLTYPECODE_BINARY:
+			VarPtr = memPtr + memOffSet;
+			memOffSet += SQLItemDesc->maxLen + 1;
+			break;
+		case SQLTYPECODE_VARBINARY:
+			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+			VarPtr = memPtr + memOffSet;
+			memOffSet += SQLItemDesc->maxLen + 3;
+			break;
                 case SQLTYPECODE_BOOLEAN:
                 case SQLTYPECODE_TINYINT:
                 case SQLTYPECODE_TINYINT_UNSIGNED:
@@ -1016,6 +1055,7 @@ SQLRETURN SRVR::AllocAssignValueBuffer(
 			{
 			case SQLTYPECODE_CHAR:
 			case SQLTYPECODE_VARCHAR:
+                        case SQLTYPECODE_BINARY:
 				VarPtr = memPtr + memOffSet;  
 				memOffSet += SQLItemDesc->maxLen + 1;
 				AllocLength = SQLItemDesc->maxLen + 1;
@@ -1023,6 +1063,7 @@ SQLRETURN SRVR::AllocAssignValueBuffer(
 			case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 			case SQLTYPECODE_BLOB:
 			case SQLTYPECODE_CLOB:
+                        case SQLTYPECODE_VARBINARY:
 				if( SQLItemDesc->maxLen > SHRT_MAX )
 				{
 					memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
@@ -2507,6 +2548,7 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 		{
 		case SQLTYPECODE_CHAR:
 		case SQLTYPECODE_VARCHAR:
+                case SQLTYPECODE_BINARY:
 			VarPtr = memPtr + memOffSet;					
 			memOffSet += SqlDescInfo[i].Length + 1;
 			break;
@@ -2514,6 +2556,7 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 		case SQLTYPECODE_VARCHAR_LONG:
 		case SQLTYPECODE_BLOB:
 		case SQLTYPECODE_CLOB:
+                case SQLTYPECODE_VARBINARY:
 			if( SqlDescInfo[i].Length > SHRT_MAX )
 			{
 				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
@@ -3689,15 +3732,17 @@ SQLRETURN SRVR::FETCH(SRVR_STMT_HDL *pSrvrStmt)
 					case SQLTYPECODE_BITVAR:
 					case SQLTYPECODE_BLOB:
 					case SQLTYPECODE_CLOB:
+                                case SQLTYPECODE_VARBINARY:
 						allocLength = (allocLength>(UInt32)maxRowLen+3)?(UInt32)maxRowLen+3:allocLength;
 						srcDataLength = *(USHORT *)pBytes;
 						srcDataLength = (srcDataLength>(UInt32)maxRowLen)?(UInt32)maxRowLen:srcDataLength;
 						*(USHORT *)pBytes=srcDataLength;
 						break;
-					case SQLTYPECODE_CHAR:
-					case SQLTYPECODE_BIT:
-					case SQLTYPECODE_VARCHAR:
-						allocLength = (allocLength>(UInt32)maxRowLen+1)?(UInt32)maxRowLen+1:allocLength;
+                                case SQLTYPECODE_CHAR:
+                                case SQLTYPECODE_BIT:
+                                case SQLTYPECODE_VARCHAR:
+                                case SQLTYPECODE_BINARY:
+                                  allocLength = (allocLength>(UInt32)maxRowLen+1)?(UInt32)maxRowLen+1:allocLength;
 						break;
 				}
 			}
@@ -3816,6 +3861,7 @@ SQLRETURN SRVR::FETCHPERF(SRVR_STMT_HDL *pSrvrStmt,
 					case SQLTYPECODE_BITVAR:
 					case SQLTYPECODE_BLOB:
 					case SQLTYPECODE_CLOB:
+                                        case SQLTYPECODE_VARBINARY:
 						dataLength = *(USHORT *)pBytes;
 						allocLength = dataLength+3;
 						if (maxRowLen != 0)
@@ -3833,6 +3879,7 @@ SQLRETURN SRVR::FETCHPERF(SRVR_STMT_HDL *pSrvrStmt,
 						break;
 					case SQLTYPECODE_CHAR:
 					case SQLTYPECODE_VARCHAR:
+                                        case SQLTYPECODE_BINARY:
 						allocLength = dataLength+1;	
 						if (maxRowLen != 0)
 							allocLength = (allocLength>(UInt32)maxRowLen+1)?(UInt32)maxRowLen+1:allocLength;
@@ -3855,6 +3902,7 @@ SQLRETURN SRVR::FETCHPERF(SRVR_STMT_HDL *pSrvrStmt,
 					case SQLTYPECODE_BITVAR:
 					case SQLTYPECODE_BLOB:
 					case SQLTYPECODE_CLOB:
+                                        case SQLTYPECODE_VARBINARY:
 						*(outputDataValue->_buffer+lsize + 1 + allocLength - 1) = 0;
 						break;
 				}
@@ -6583,6 +6631,7 @@ SQLRETURN SRVR::FETCHCATALOGPERF(SRVR_STMT_HDL *pSrvrStmt,
 					case SQLTYPECODE_BITVAR:
 					case SQLTYPECODE_BLOB:
 					case SQLTYPECODE_CLOB:
+                                        case SQLTYPECODE_VARBINARY:
 						dataLength = *(USHORT *)pBytes;
 
 						allocLength = dataLength + 3;
@@ -6597,6 +6646,7 @@ SQLRETURN SRVR::FETCHCATALOGPERF(SRVR_STMT_HDL *pSrvrStmt,
 					case SQLTYPECODE_CHAR:
 					case SQLTYPECODE_BIT:
 					case SQLTYPECODE_VARCHAR:
+                                        case SQLTYPECODE_BINARY:
 						allocLength = dataLength + 1;
 						if (maxRowLen != 0)
 							allocLength = (allocLength>(UInt32)maxRowLen+1)?(UInt32)maxRowLen+1:allocLength;
@@ -7062,6 +7112,7 @@ SQLRETURN SRVR::SetIndandVarPtr(SQLDESC_ID *pDesc,
 		{
 		case SQLTYPECODE_CHAR:
 		case SQLTYPECODE_VARCHAR:
+                case SQLTYPECODE_BINARY:
 			VarPtr = memPtr + memOffSet;					
 			memOffSet += SqlDescInfo[i].Length;
 			if (!bRWRS)
@@ -7070,6 +7121,7 @@ SQLRETURN SRVR::SetIndandVarPtr(SQLDESC_ID *pDesc,
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_BLOB:
 		case SQLTYPECODE_CLOB:
+                case SQLTYPECODE_VARBINARY:
 			if( SqlDescInfo[i].Length > SHRT_MAX )
 			{
 				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2; 

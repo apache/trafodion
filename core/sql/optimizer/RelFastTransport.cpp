@@ -119,7 +119,7 @@ RelExpr *FastExtract::makeFastExtractTree(
   }
 
   const NABoolean isSequenceFile = hTabStats->isSequenceFile();
-    
+  
   FastExtract * unloadRelExpr =
     new (bindWA->wHeap()) FastExtract(
          child,

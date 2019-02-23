@@ -780,14 +780,14 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 							"invalid_cast_specification", null);
 				}
 			}
-        case Types.BLOB:
-        case Types.CLOB:
-            x = getLocalString(columnIndex);
-            Blob blob = new TrafT4Blob(connection_, (String) x, null);
-            return blob.getBytes(1, (int)blob.length());
+                case Types.BLOB:
+                case Types.CLOB:
+                    x = getLocalString(columnIndex);
+                    Blob blob = new TrafT4Blob(connection_, (String) x, null);
+                    return blob.getBytes(1, (int)blob.length());
 		default:
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
-					null);
+                    throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+                                                            null);
 		}
 	}
 
@@ -846,12 +846,12 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 			} else {
 				return null;
 			}
-        case Types.BLOB:
-        case Types.CLOB:
-            Clob clob = getClob(columnIndex);
-            return clob.getCharacterStream(); 
+                case Types.BLOB:
+                case Types.CLOB:
+                    Clob clob = getClob(columnIndex);
+                    return clob.getCharacterStream(); 
 		default:
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+                    throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 

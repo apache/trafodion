@@ -368,10 +368,9 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
             if (attrs[i]->getVCIndicatorLength() > 0)
               attrs[i]->setVCIndicatorLength(VC_ACTUAL_LENGTH); 
 	    
-            // all fields except char/varchar fields may need alignment
+            // all fields except char/varchar/binary fields may need alignment
             // at runtime.
-            if ((attrs[i]->getDatatype() < REC_MIN_CHARACTER) ||
-                (attrs[i]->getDatatype() > REC_MAX_CHARACTER))
+            if (NOT DFS2REC::isAnyCharacter(attrs[i]->getDatatype()))
               attrs[i]->needDataAlignment();
 	    
             if (varchar_seen)
@@ -444,10 +443,9 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
             if (attrs[i]->getVCIndicatorLength() > 0)
               attrs[i]->setVCIndicatorLength( VC_ACTUAL_LENGTH ); 
 	    
-            // all fields except char/varchar fields may need alignment
+            // all fields except char/varchar/binary fields may need alignment
             // at runtime.
-            if ((attrs[i]->getDatatype() < REC_MIN_CHARACTER) ||
-                (attrs[i]->getDatatype() > REC_MAX_CHARACTER))
+            if (NOT DFS2REC::isAnyCharacter(attrs[i]->getDatatype()))
               attrs[i]->needDataAlignment();
 	    
             if (attrs[i]->getNullFlag())
@@ -649,10 +647,9 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
             nullableCnt++;
           }
 
-          // all fields except char/varchar fields may need to be aligned
+          // all fields except char/varchar/binary fields may need to be aligned
           // at runtime
-          if ((attrs[i]->getDatatype() < REC_MIN_CHARACTER) ||
-              (attrs[i]->getDatatype() > REC_MAX_CHARACTER))
+          if (NOT DFS2REC::isAnyCharacter(attrs[i]->getDatatype()))
             attrs[i]->needDataAlignment();
 
           // Handle variable length fields. Some varchars (aggregates)

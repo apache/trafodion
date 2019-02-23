@@ -1674,6 +1674,8 @@ enum ComSQLDataType { COM_UNKNOWN_SDT
 #define COM_BLOB_SDT_LIT                       "BLOB              "
 #define COM_CLOB_SDT_LIT                       "CLOB              "
 #define COM_BOOLEAN_SDT_LIT                    "BOOLEAN           "
+#define COM_CHAR_BINARY_SDT_LIT                     "BINARY            "
+#define COM_CHAR_VARBINARY_SDT_LIT                  "VARBINARY         "
 
 enum ComViewCheckOption { COM_UNKNOWN_CHECK_OPTION
                         , COM_CASCADE_CHECK_OPTION

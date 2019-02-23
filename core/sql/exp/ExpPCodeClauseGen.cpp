@@ -4434,7 +4434,7 @@ ex_function_char_length::pCodeGenerate(Space *space, UInt32 f)
   PCIID branchToEnd = PCode::nullBranch(this, code, attrs);
 
   // Just return length if the string is fixed
-  if (attrs[1]->getDatatype() == REC_BYTE_F_ASCII) {
+  if (DFS2REC::isSQLFixedChar(attrs[1]->getDatatype())) {
     AML aml(PCIT::MBIN32S, PCIT::IBIN32S);
     OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
           (Int32)attrs[1]->getLength());

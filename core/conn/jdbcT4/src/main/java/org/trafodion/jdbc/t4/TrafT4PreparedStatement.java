@@ -529,10 +529,8 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.LONGVARCHAR:
 		case Types.CLOB:
 		case Types.BLOB:
-		case Types.BINARY:  // At this time Database does not have
-			// this column data type
-		case Types.VARBINARY:  // At this time Database does not
-			// have this column data type //#endif-java
+		case Types.BINARY: 
+		case Types.VARBINARY: 
 		case Types.LONGVARBINARY:  // At this time Database does not
 			// have this column data type
 			byte[] buffer = new byte[length];
@@ -632,10 +630,8 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.LONGVARCHAR:
 		case Types.BLOB:
 		case Types.CLOB:
-		case Types.BINARY: // At this time Database does not have
-			// this column data type
-		case Types.VARBINARY:  // At this time Database does not
-			// have this column data type
+		case Types.BINARY:
+		case Types.VARBINARY:
 		case Types.LONGVARBINARY:  // At this time Database does not
 			// have this column data type
 			byte[] buffer2 = new byte[length];
@@ -699,11 +695,13 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		switch (dataType) {
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGVARCHAR:
+                case Types.CHAR:
+                case Types.VARCHAR:
+                case Types.LONGVARCHAR:
 		case Types.BLOB:
 		case Types.CLOB:
+                case Types.BINARY:
+                case Types.VARBINARY:
             addParamValue(parameterIndex, x.getBytes(1, (int) x.length()));
 		    break;
 
@@ -906,11 +904,13 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		switch (dataType) {
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGVARCHAR:
-        case Types.BLOB:
-        case Types.CLOB:
+                case Types.CHAR:
+                case Types.VARCHAR:
+                case Types.LONGVARCHAR:
+                case Types.BLOB:
+                case Types.CLOB:
+                case Types.BINARY:
+                case Types.VARBINARY:
             addParamValue(parameterIndex, x.getSubString(1, (int) x.length()));
             break;
 		default:
@@ -1449,6 +1449,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.DATE:
 		case Types.TIME:
 		case Types.TIMESTAMP:
+                    //case Types.VARBINARY:
 		case Types.OTHER: // This type maps to the Database
 			// INTERVAL
 			addParamValue(parameterIndex, x);
@@ -1456,7 +1457,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 
 		case Types.ARRAY:
-		case Types.BINARY:
 		case Types.BIT:
 		case Types.DATALINK:
 		case Types.JAVA_OBJECT:
@@ -1482,6 +1482,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.LONGVARBINARY:
 		case Types.NULL:
 		case Types.REAL:
+		case Types.BINARY:
 		case Types.VARBINARY:
 			setObject(parameterIndex, x, dataType);
 			break;
