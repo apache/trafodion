@@ -73,7 +73,8 @@ ComTdbControl::ComTdbControl(ControlQueryType cqt,
     value2_(value2), 
     value3_(value3),
     actionType_(NONE_),
-    nonResettable_(FALSE)
+    nonResettable_(FALSE),
+    flags_(0)
 {}
 
 Long ComTdbControl::pack(void * space)

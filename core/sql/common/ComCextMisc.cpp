@@ -26,6 +26,7 @@
 #include "seabed/ms.h"
 #include "seabed/fs.h"
 #include <string.h>
+#include "ComRtUtils.h"
 
 typedef SB_Phandle_Type *PNSK_PORT_HANDLE;
 
@@ -56,7 +57,8 @@ const NSKTIMESTAMP  ONE_MINUTE          = 60000000;             // microseconds 
 const NSKTIMESTAMP  ONE_YEAR            = 31536000000000LL;     // microseconds in a year
 const NSKTIMESTAMP  TANDEM_EPOCH        = 211024440000000000LL; // 1974/12/31  0:00:00.000000
 
-
+static BOOL sv_envJulianTimestamp = FALSE;
+static BOOL sv_useLinuxJulianTimestamp = FALSE;
 
 BOOL GetMicroseconds( _int64 * t, short type = 0 );
 
@@ -768,6 +770,16 @@ _int64 TIME_SINCE_COLDLOAD (void)
    return (microseconds);
 }
 
+Int64 julianTimestampLinux() 
+{
+   struct timespec timeVal;
+   int retcode = clock_gettime(CLOCK_REALTIME, &timeVal);
+   if (retcode != 0)
+      return -1;
+   Int64 julianTimeVal = ComRtGetJulianFromUTC(timeVal);
+   return julianTimeVal;
+}
+
 extern "C"
 DLLEXPORT
 _int64 JULIANTIMESTAMP (short   type,
@@ -804,13 +816,31 @@ _int64 JULIANTIMESTAMP (short   type,
 
    if (node == OMITSHORT)
       node = -1;
-
+   
    if (node == -1)
       {  // local request
       switch (type)
          {
          case 0:  // GMT
             {
+            if (! sv_envJulianTimestamp) {
+               sv_useLinuxJulianTimestamp = TRUE;
+               const char *strUseLinuxJulianTimestamp = getenv("USE_LINUX_JULIANTIMESTAMP");
+               if (strUseLinuxJulianTimestamp != NULL) {
+                  if (atoi(strUseLinuxJulianTimestamp) == 0)
+                     sv_useLinuxJulianTimestamp = FALSE;
+               }
+               sv_envJulianTimestamp = TRUE;
+            }
+            if (sv_useLinuxJulianTimestamp) {
+               time = julianTimestampLinux(); 
+               if (time == -1) {
+                  if (error != NULL)
+                     *error = errno;
+               } 
+               return time;
+            }
+            
             if (!GetMicroseconds (&time, 0))
                time = (_int64) -1;
             else

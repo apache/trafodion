@@ -327,7 +327,9 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
 
   CmpInternalErrorJmpBufPtr = &CmpInternalErrorJmpBuf;
   
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
   NewHandler_NSK newHandler(stmtNewHandler);
+#endif
   
   try 
     {

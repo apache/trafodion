@@ -151,6 +151,7 @@ private:
 }; // end of CmpGuaControlConnection
 
 
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 #include <new>
 
 // This NewHandler class is to setup the error handling routines
@@ -223,5 +224,5 @@ inline NewHandler_NSK::~NewHandler_NSK()
 {
   CmpSetNewHandler(prevPNH_);
 }
-
+#endif
 #endif

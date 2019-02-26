@@ -2295,6 +2295,8 @@ TrafDesc * Generator::createVirtualTableDesc
         new GENHEAP(space) char[strlen(snapshotName) + 1];
       strcpy(table_desc->tableDesc()->snapshotName, snapshotName);
     }
+ else
+    table_desc->tableDesc()->snapshotName = NULL;
 
   if (genPackedDesc && space)
     {

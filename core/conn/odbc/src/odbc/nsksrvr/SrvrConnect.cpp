@@ -2526,7 +2526,6 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 		updateSrvrState(SRVR_CONNECT_REJECTED);
 	}
 
-	// RAJANI KANTH
 	/*
 	 * Read the set values as it has SQL_ATTR_WARNING has to be
 	 * set before the connection is established
@@ -2565,7 +2564,6 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 			}
 		}
 	}
-	// Rajani End
 
 	/*
 	 We should get rid of this, but we cant right now
@@ -2599,8 +2597,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 //LCOV_EXCL_STOP
 	}
 
-
-	odbc_SQLSvc_SetConnectionOption_sme_(objtag_,
+        	odbc_SQLSvc_SetConnectionOption_sme_(objtag_,
 										call_id_,
 										&setConnectException,
 										dialogueId,
@@ -8150,7 +8147,7 @@ odbc_SQLSrvr_Execute2_ame_(
 	BYTE     *outValues              = NULL;
     SQLItemDescList_def outputItemDescList = {0,0};
     SQLValueList_def outputValueList = {0,0};
-	ERROR_DESC_LIST_def sqlWarning = {0,0};
+    ERROR_DESC_LIST_def sqlWarning = {0,0};
 	char errorText[512];
 
 	IDL_long cursorLength = (cursorName != NULL) ? strlen(cursorName) : 0;

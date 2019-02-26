@@ -499,6 +499,8 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  DDkwd__(CALL_EMBEDDED_ARKCMP,       "OFF"),
  DDui___(CANCEL_MINIMUM_BLOCKING_INTERVAL,      "60"),
 
+ DDkwd__(CANCEL_QUERY_ALLOWED,       "ON"), // Make sure it is in sync with SSD
+
  DDkwd__(CASCADED_GROUPBY_TRANSFORMATION,       "ON"),
 
  XDDansi_(CATALOG,				TRAFODION_SYSCAT_LIT),

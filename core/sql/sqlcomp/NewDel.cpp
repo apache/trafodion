@@ -86,7 +86,7 @@
 #include "HeapLog.h"
 #include "NewDel.h"
 
-
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 //
 // NOTE: The variable globalCmpNewHandler ends up being used only by
 //       tdm_arkcmp, not sqlci, so it is not a concern for sqlci.
@@ -159,3 +159,4 @@ PNH CmpGetNewHandler()
 {
   return globalCmpNewHandler;
 }
+#endif
