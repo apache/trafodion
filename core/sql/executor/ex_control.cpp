@@ -423,7 +423,7 @@ short ExControlTcb::work()
                     currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
                   }
               }
-:		    else if (strcmp(value[1], "CANCEL_QUERY_ALLOWED") == 0)
+		    else if (strcmp(value[1], "CANCEL_QUERY_ALLOWED") == 0)
 		      {
 			if (stricmp(value[2], "OFF") == 0)
 			  currContext->getSessionDefaults()->setCancelQueryAllowed(FALSE);
