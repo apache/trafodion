@@ -1161,7 +1161,7 @@ WaitReturnStatus IpcAllConnections::waitOnAll(
 
   if (timeout != IpcImmediately && timeout != IpcInfiniteTimeout) {
      short mask;
-     if (ipcEnv_->getControlConnection() != NULL) {
+     if (ipcEnv_->getControlConnection() != NULL && (! GetCliGlobals()->isEspProcess())) {
         mask = XWAIT(LREQ | LDONE, timeout);
         if (mask & LREQ) 
            retcode = ipcEnv_->getControlConnection()->castToGuaReceiveControlConnection()->wait(IpcImmediately);
