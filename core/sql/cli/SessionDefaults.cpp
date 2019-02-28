@@ -72,7 +72,7 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
                                                      CANCEL_ESCALATION_SAVEABEND,
                                                                                  SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::CANCEL_LOGGING,           CANCEL_LOGGING,             SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
-  SDEntry(SessionDefaults::CANCEL_QUERY_ALLOWED,     CANCEL_QUERY_ALLOWED,       SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
+  SDEntry(SessionDefaults::CANCEL_QUERY_ALLOWED,     CANCEL_QUERY_ALLOWED,       SessionDefaults::SDT_BOOLEAN,        TRUE,    TRUE,  TRUE,  FALSE),
   SDEntry(SessionDefaults::CANCEL_UNIQUE_QUERY,      CANCEL_UNIQUE_QUERY,        SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::CATALOG,                  CATALOG,                    SessionDefaults::SDT_ASCII,          TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::COMPILER_IDLE_TIMEOUT,    COMPILER_IDLE_TIMEOUT,      SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),  

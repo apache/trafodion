@@ -57,6 +57,7 @@
 // executor, don't include 'NewDel.h' and can not link with NewDel.o
 // 
 // -----------------------------------------------------------------------
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 typedef void (*PNH)();
 class NAMemory;
 
@@ -79,5 +80,5 @@ Lng32 CurrentGlobalMemory();
 // Compiler operator "new" handler.
 PNH CmpSetNewHandler(PNH handler);
 PNH CmpGetNewHandler();
-
+#endif
 #endif
