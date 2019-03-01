@@ -42,9 +42,11 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 
 
 <table><tr><td>
-  <p><h5>We're working on release 2.3!</h5></p> 
+  <p><h5>We're working on release 2.4!</h5></p>
   <p>Check out the <a href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap">Roadmap</a> page for planned content.</p>
-  <p><h5>Apache Trafodion 2.2.0, our first release as a Top Level Project, was released on March 12, 2018.</h5></p> 
+  <p><h5>Apache Trafodion 2.3.0 was released February 28, 2019.</h5></p>
+  <p>Check it out on the <a href="http://trafodion.apache.org/download.html">Download</a> page.</p>
+  <p><h5>Apache Trafodion 2.2.0, our first release as a Top Level Project, was released on March 12, 2018.</h5></p>
   <p>Check it out on the <a href="http://trafodion.apache.org/download.html">Download</a> page.</p>
   <p><h5>Apache Trafodion is now a Top Level Project!</h5></p>
   <p>See the <a href="http://globenewswire.com/news-release/2018/01/10/1286517/0/en/The-Apache-Software-Foundation-Announces-Apache-Trafodion-as-a-Top-Level-Project.html">NewsWire</a> article for the official announcement.</p>
