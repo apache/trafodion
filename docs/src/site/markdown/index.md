@@ -3,7 +3,7 @@
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+      https://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,8 +31,8 @@ Running out of room with your current SQL solution? Starting a new operational a
 
 Trafodion provides SQL access to structured, semi-structured, and unstructured data allowing you to run operational, historical, and analytical workloads on a single platform.
 
-[revolution]: http://trafodion.apache.org
-[scale]: http://trafodion.apache.org
+[revolution]: https://trafodion.apache.org
+[scale]: https://trafodion.apache.org
 [stack]: index.html
 
 
@@ -45,15 +45,15 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
   <p><h5>We're working on release 2.4!</h5></p>
   <p>Check out the <a href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap">Roadmap</a> page for planned content.</p>
   <p><h5>Apache Trafodion 2.3.0 was released February 28, 2019.</h5></p>
-  <p>Check it out on the <a href="http://trafodion.apache.org/download.html">Download</a> page.</p>
+  <p>Check it out on the <a href="https://trafodion.apache.org/download.html">Download</a> page.</p>
   <p><h5>Apache Trafodion 2.2.0, our first release as a Top Level Project, was released on March 12, 2018.</h5></p>
-  <p>Check it out on the <a href="http://trafodion.apache.org/download.html">Download</a> page.</p>
+  <p>Check it out on the <a href="https://trafodion.apache.org/download.html">Download</a> page.</p>
   <p><h5>Apache Trafodion is now a Top Level Project!</h5></p>
-  <p>See the <a href="http://globenewswire.com/news-release/2018/01/10/1286517/0/en/The-Apache-Software-Foundation-Announces-Apache-Trafodion-as-a-Top-Level-Project.html">NewsWire</a> article for the official announcement.</p>
+  <p>See the <a href="https://globenewswire.com/news-release/2018/01/10/1286517/0/en/The-Apache-Software-Foundation-Announces-Apache-Trafodion-as-a-Top-Level-Project.html">NewsWire</a> article for the official announcement.</p>
   <p>See also this nice <a href="https://thenewstack.io/sql-hadoop-database-trafodion-bridges-transactions-analysis-divide/">article</a> where Trafodion's own Suresh Subbiah spreads the word on Trafodion's features.</p>
   <p><h5>Apache Trafodion 2.1.0-incubating was released on May 1, 2017.</h5></p>  
   <p><h5>Want to discuss Trafodion in Chinese? Join the Trafodion discussion on Tencent QQ!</h5></p> 
-  <p><a href="http://im.qq.com/">QQ</a> Group ID: 233105278.</p>
+  <p><a href="https://im.qq.com/">QQ</a> Group ID: 233105278.</p>
 </td></tr></table>
 
 <!-- 20160524 GTA Need more logos before using this part.
