@@ -108,7 +108,6 @@ export TRAF_HOME="%s"
 export TRAF_VAR="%s"
 export TRAF_CONF="%s"
 export TRAF_LOG="%s"
-export MY_SQROOT=$TRAF_HOME # for compatibility
 export JAVA_HOME="%s"
 export node_count="%s"
 export HADOOP_TYPE="%s"

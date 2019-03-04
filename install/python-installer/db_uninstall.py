@@ -77,7 +77,7 @@ def main():
         node_list = cfgs['node_list']
       # user input
       else:
-        traf_conf = '/var/lib/trafodion'
+        traf_var = '/var/lib/trafodion'
         node_lists = raw_input('Enter Trafodion node list to uninstall(separated by comma): ')
         if not node_lists: err_m('Empty value')
         node_list = ' '.join(expNumRe(node_lists))
