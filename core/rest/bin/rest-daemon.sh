@@ -26,7 +26,7 @@
 #
 # Environment Variables
 #
-#   REST_CONF_DIR   Alternate REST conf dir. Default is ${REST_HOME}/conf.
+#   REST_CONF_DIR   Alternate REST conf dir. Default is ${TRAF_CONF}/rest.
 #   REST_LOG_DIR    Where log files are stored.  PWD by default.
 #   REST_PID_DIR    The pid files are stored. ${REST_HOME}/tmp by default.
 #   REST_IDENT_STRING   A string representing this instance. $USER by default

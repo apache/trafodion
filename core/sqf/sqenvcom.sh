@@ -113,10 +113,8 @@ export MAKEFLAGS="-j$cpucnt"
 if [ -z "$TOOLSDIR" ]; then
   if [[ -n "$CLUSTERNAME" ]]; then
     export TOOLSDIR=${TOOLSDIR:-/home/tools}
-    export UDR_ROOT=/home/udr
   else
     export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
-    export UDR_ROOT=$PWD
   fi
 fi
 
@@ -155,7 +153,7 @@ fi
 export TRAF_HOME=$PWD
 export TRAF_VAR=${TRAF_VAR:-$TRAF_HOME/tmp}
 export TRAF_LOG=${TRAF_LOG:-$TRAF_HOME/logs}
-export TRAF_CONF=${TRAF_CONF:-$TRAF_HOME/conf}
+export TRAF_CONF=${TRAF_CONF:-$TRAF_HOME/sql/local_hadoop/traf_conf}
 
 # normal installed location, can be overridden in .trafodion
 export DCS_INSTALL_DIR=$TRAF_HOME/dcs-$TRAFODION_VER

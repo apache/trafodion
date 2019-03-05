@@ -25,7 +25,7 @@
 #
 # Environment Variables
 #
-#   DCS_CONF_DIR   Alternate DCS conf dir. Default is ${DCS_HOME}/conf.
+#   DCS_CONF_DIR   Alternate DCS conf dir. Default is ${TRAF_CONF}/dcs.
 #   DCS_LOG_DIR    Where log files are stored.  PWD by default.
 #   DCS_PID_DIR    The pid files are stored. ${DCS_HOME}/tmp by default.
 #   DCS_IDENT_STRING   A string representing this instance. $USER by default

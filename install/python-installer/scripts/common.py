@@ -186,7 +186,7 @@ class HadoopDiscover(object):
                         self.distro = 'CDH' + cluster['fullVersion']
                         break
                 except KeyError:
-                    log_err('Failed to get hadoop distribution info from management url')
+                    err_m('Failed to get hadoop distribution info from management url')
 
     def get_hdfs_srvname(self):
         return self._get_service_name('HDFS')
@@ -217,7 +217,7 @@ class HadoopDiscover(object):
             if ver in self.distro: has_version = 1
 
         if not has_version:
-            log_err('Sorry, currently Trafodion doesn\'t support %s version' % self.distro)
+            err_m('Sorry, currently Trafodion doesn\'t support %s version' % self.distro)
 
     def get_hadoop_users(self):
         if 'CDH' in self.distro:

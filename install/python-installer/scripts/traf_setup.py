@@ -27,7 +27,7 @@ import os
 import sys
 import re
 import json
-from constants import DEF_HBASE_HOME, TRAF_SUDOER_FILE, TRAF_CFG_FILE
+from constants import DEF_HBASE_HOME, TRAF_SUDOER_FILE, TRAF_CFG_FILE, TRAF_CFG_DIR
 from common import err, cmd_output, run_cmd, get_default_home
 
 def run():
@@ -40,6 +40,8 @@ def run():
     traf_user = dbcfgs['traf_user']
     traf_dirname = dbcfgs['traf_dirname']
     traf_home = '%s/%s/%s' % (home_dir, traf_user, traf_dirname)
+    traf_var = dbcfgs['traf_var']
+    traf_log = dbcfgs['traf_log']
 
     traf_ver = dbcfgs['traf_version']
     distro = dbcfgs['distro']
@@ -63,6 +65,9 @@ def run():
         run_cmd('cp -f %s %s.bak' % (bashrc_file, bashrc_file))
     run_cmd('cp -f %s %s' % (bashrc_template, bashrc_file))
     run_cmd('chown -R %s:%s %s*' % (traf_user, traf_user, bashrc_file))
+    # copy default config files
+    run_cmd('cp -rf %s/conf/* %s/' % (traf_home, TRAF_CFG_DIR))
+    run_cmd('chown -R %s:%s %s' % (traf_user, traf_user, TRAF_CFG_DIR))
 
     ### copy init script ###
     init_script = '%s/sysinstall/etc/init.d/trafodion' % traf_home
@@ -78,6 +83,9 @@ def run():
         if not os.path.exists(locpath):
             run_cmd('mkdir -p %s' % locpath)
             run_cmd('chown %s %s' % (traf_user,locpath))
+    # var,log locations
+    run_cmd('mkdir -p %s %s' % (traf_var,traf_log))
+    run_cmd('chown %s %s %s' % (traf_user,traf_var,traf_log))
 
     ### copy jar files ###
     hbase_lib_path = dbcfgs['hbase_lib_path']
@@ -89,7 +97,7 @@ def run():
         if v2 == '6': v2 = '5'
         if v2 == '8': v2 = '7'
     elif distro == 'HDP':
-        if v2 == '4': v2 = '3'
+        if int(v2) > 3: v2 = '3'
 
     hbase_trx_jar = 'hbase-trx-%s%s_%s-%s.jar' % (distro.lower(), v1, v2, traf_ver)
     traf_hbase_trx_path = '%s/%s' % (traf_lib_path, hbase_trx_jar)

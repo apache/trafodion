@@ -63,6 +63,8 @@ traf_priv_key = config['configurations']['trafodion-env']['traf.sshkey.priv']
 traf_node_list = default("/clusterHostInfo/traf_node_hosts", '')
 
 traf_scratch = config['configurations']['trafodion-env']['traf.node.dir']
+traf_logdir = config['configurations']['trafodion-env']['traf.log.dir']
+traf_vardir = config['configurations']['trafodion-env']['traf.var.dir']
 
 traf_ldap_template = config['configurations']['trafodion-env']['ldap_content']
 traf_ldap_enabled = config['configurations']['trafodion-env']['traf.ldap.enabled']

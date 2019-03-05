@@ -71,7 +71,7 @@ do
 done
  
 # Allow alternate WMS conf dir location.
-WMS_CONF_DIR="${WMS_CONF_DIR:-$WMS_HOME/conf}"
+WMS_CONF_DIR="${WMS_CONF_DIR:-$TRAF_CONF/wms}"
 # List of WMS servers.
 WMS_SERVERS="${WMS_SERVERS:-$WMS_CONF_DIR/servers}"
 

@@ -27,7 +27,7 @@ import re
 import getpass
 from optparse import OptionParser
 from scripts.constants import INSTALLER_LOC, TRAF_CFG_FILE, TRAF_CFG_DIR, TRAF_USER, DBCFG_FILE
-from scripts.common import run_cmd, format_output, err_m, \
+from scripts.common import run_cmd, run_cmd_as_user, format_output, err_m, \
                            expNumRe, ParseInI, Remote, info, get_sudo_prefix
 
 def get_options():
@@ -63,26 +63,21 @@ def main():
     else:
         pwd = ''
 
-    node_list = ''
-    # parse node list from trafodion_config
-    if os.path.exists(TRAF_CFG_FILE):
-        with open(TRAF_CFG_FILE, 'r') as f:
-            traf_cfgs = f.readlines()
-        try:
-            line = [l for l in traf_cfgs if 'NODE_LIST' in l][0]
-            node_list = re.search(r'NODE_LIST="(.*)"', line).groups()[0]
-        except Exception as e:
-            err_m('Cannot find node list info from %s: %s' % (TRAF_CFG_FILE, e))
-    # parse node list from installation config file
-    elif options.cfgfile:
+    try:
+      traf_var = run_cmd_as_user(TRAF_USER,"echo $TRAF_VAR")
+      node_list = run_cmd_as_user(TRAF_USER,"trafconf -name")
+    except:
+      if options.cfgfile:
         if not os.path.exists(options.cfgfile):
             err_m('Cannot find config file \'%s\'' % options.cfgfile)
         config_file = options.cfgfile
         p = ParseInI(config_file, 'dbconfigs')
         cfgs = p.load()
+        traf_var = cfgs['traf_var']
         node_list = cfgs['node_list']
-    # user input
-    else:
+      # user input
+      else:
+        traf_var = '/var/lib/trafodion'
         node_lists = raw_input('Enter Trafodion node list to uninstall(separated by comma): ')
         if not node_lists: err_m('Empty value')
         node_list = ' '.join(expNumRe(node_lists))
@@ -104,7 +99,7 @@ def main():
         remote.execute('trafid=`getent passwd %s|awk -F: \'{print $3}\'`; if [[ -n $trafid ]]; then ps -f -u $trafid|awk \'{print $2}\'|xargs %s kill -9; fi' % (TRAF_USER, sudo_prefix), chkerr=False)
         remote.execute('%s /usr/sbin/userdel -rf %s' % (sudo_prefix, TRAF_USER), chkerr=False)
         remote.execute('%s /usr/sbin/groupdel %s' % (sudo_prefix, TRAF_USER), chkerr=False)
-        remote.execute('%s rm -rf /etc/security/limits.d/%s.conf %s /tmp/hsperfdata_%s 2>/dev/null' % (sudo_prefix, TRAF_USER, TRAF_CFG_DIR, TRAF_USER), chkerr=False)
+        remote.execute('%s rm -rf /etc/security/limits.d/%s.conf %s %s /tmp/hsperfdata_%s 2>/dev/null' % (sudo_prefix, TRAF_USER, TRAF_CFG_DIR, traf_var, TRAF_USER), chkerr=False)
 
     run_cmd('rm -f %s/*.status %s' % (INSTALLER_LOC, DBCFG_FILE))
     format_output('Trafodion Uninstall Completed')

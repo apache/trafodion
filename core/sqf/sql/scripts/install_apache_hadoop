@@ -1599,9 +1599,11 @@ else
   DCS_HOME=$(ls -d $MY_SW_ROOT/dcs-*)
 
   # configure DCS
+  mkdir -p $TRAF_CONF/dcs
+  cp -rf $DCS_HOME/conf/* $TRAF_CONF/dcs/
 
   #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
-  echo "Adding DCS_INSTALL_DIR=$DCS_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  echo "Adding DCS_INSTALL_DIR=$DCS_HOME to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
   echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
   if [[ -f ~/.trafodion ]]
   then
@@ -1611,7 +1613,7 @@ else
   DCSDIR=${DCS_HOME##*/}
   echo "export DCS_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion
 
-  cd $DCS_HOME/conf/
+  cd $TRAF_CONF/dcs/
   mv dcs-env.sh dcs-env.sh.orig
    # SQROOT env var does not propagate thru ssh command
   echo "TRAF_HOME=$TRAF_HOME" > dcs-env.sh
@@ -1751,6 +1753,8 @@ else
   # configure REST
 
   #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
+  mkdir -p $TRAF_CONF/rest
+  cp -rf $REST_HOME/conf/* $TRAF_CONF/rest/
   echo "Adding REST_INSTALL_DIR=$REST_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
   echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
   if [[ -f ~/.trafodion ]]
@@ -1760,7 +1764,7 @@ else
   fi
   RESTDIR=${REST_HOME##*/}
   echo "export REST_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion
-  cd $REST_HOME/conf/
+  cd $TRAF_CONF/rest/
   mv rest-env.sh rest-env.sh.orig
    # SQROOT env var does not propagate thru ssh command
   echo "TRAF_HOME=$TRAF_HOME" > rest-env.sh

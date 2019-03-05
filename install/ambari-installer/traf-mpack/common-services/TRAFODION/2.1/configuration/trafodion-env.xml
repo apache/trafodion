@@ -45,6 +45,24 @@
       <type>string</type>
     </value-attributes>
   </property>
+  <property>
+    <name>traf.log.dir</name>
+    <display-name>Trafodion logs directory</display-name>
+    <value>/var/log/trafodion</value>
+    <description>Directory path where log files are created</description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.var.dir</name>
+    <display-name>Trafodion temporary working directory</display-name>
+    <value>/var/lib/trafodion</value>
+    <description>Directory path where small generated files are stored</description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
 
   <property>
     <name>traf.ldap.enabled</name>
@@ -181,6 +199,10 @@
 export JAVA_HOME={{java_home}}
 
 export TRAF_USER={{traf_user}}
+
+export TRAF_CONF={{traf_conf_dir}}
+export TRAF_LOG={{traf_logdir}}
+export TRAF_VAR={{traf_vardir}}
 
 export DB_ADMIN_USER={{traf_db_admin}}
 

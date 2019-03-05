@@ -26,22 +26,20 @@
 import os
 import sys
 import json
-from constants import TRAF_CFG_FILE
+from constants import TRAF_CFG_DIR, TRAF_CFG_FILE
 from common import append_file, write_file, mod_file, cmd_output, \
                    ParseInI, ParseXML, err, run_cmd
 
 def run():
     dbcfgs = json.loads(dbcfgs_json)
 
-    traf_home = os.environ['TRAF_HOME']
-    traf_ver = dbcfgs['traf_version']
     hbase_xml_file = dbcfgs['hbase_xml_file']
 
-    dcs_conf_dir = '%s/dcs-%s/conf' % (traf_home, traf_ver)
+    dcs_conf_dir = '%s/dcs' % (TRAF_CFG_DIR)
     dcs_srv_file = dcs_conf_dir + '/servers'
     dcs_master_file = dcs_conf_dir + '/masters'
     dcs_site_file = dcs_conf_dir + '/dcs-site.xml'
-    rest_site_file = '%s/rest-%s/conf/rest-site.xml' % (traf_home, traf_ver)
+    rest_site_file = '%s/rest/rest-site.xml' % (TRAF_CFG_DIR)
 
     ### dcs setting ###
     # servers

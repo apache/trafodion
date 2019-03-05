@@ -77,7 +77,7 @@ class Master(Script):
          mode=0644)
 
     # install sqconfig
-    Execute('source ~/.bashrc ; mv -f ~/sqconfig $TRAF_HOME/sql/scripts/',user=params.traf_user)
+    Execute('source ~/.bashrc ; mv -f ~/sqconfig $TRAF_CONF/',user=params.traf_user)
 
     # write cluster-env in trafodion home dir
     traf_nodes = ' '.join(loc_node_list)
@@ -106,7 +106,7 @@ class Master(Script):
     Execute(cmd,user=params.traf_user)
 
     # Execute SQ gen
-    Execute('source ~/.bashrc ; rm -f $TRAF_HOME/sql/scripts/sqconfig.db; sqgen',user=params.traf_user)
+    Execute('source ~/.bashrc ; rm -f $TRAF_VAR/sqconfig.db; sqgen',user=params.traf_user)
 
 
   #To stop the service, use the linux service stop command and pipe output to log file

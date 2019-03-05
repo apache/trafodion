@@ -38,7 +38,7 @@
 #
 #   WMS_OPTS       Extra Java runtime options.
 #
-#   WMS_CONF_DIR   Alternate conf dir. Default is ${WMS_HOME}/conf.
+#   WMS_CONF_DIR   Alternate conf dir. Default is ${TRAF_CONF}/wms
 #
 #   WMS_ROOT_LOGGER The root appender. Default is INFO,console
 #
@@ -98,8 +98,8 @@ if [ "$MAVEN_HOME" != "" ]; then
 fi
 
 # override default settings for this command, if applicable
-if [ -f "$WMS_HOME/conf/wms-env-$COMMAND.sh" ]; then
-  . "$WMS_HOME/conf/wms-env-$COMMAND.sh"
+if [ -f "$TRAF_CONF/wms/wms-env-$COMMAND.sh" ]; then
+  . "$TRAF_CONF/wms/wms-env-$COMMAND.sh"
 fi
 
 # check envvars which might override default args

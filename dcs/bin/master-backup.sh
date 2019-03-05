@@ -27,7 +27,7 @@
 #
 #   DCS_MASTERS File for specifying all DcsMaster hosts
 #     Default is ${DCS_CONF_DIR}/masters
-#   DCS_CONF_DIR  Alternate Dcs conf dir. Default is ${DCS_HOME}/conf.
+#   DCS_CONF_DIR  Alternate Dcs conf dir. Default is ${TRAF_CONF}/dcs.
 #   DCS_SLAVE_SLEEP Seconds to sleep between spawning remote commands.
 #   DCS_SSH_OPTS Options passed to ssh when running remote commands.
 #
@@ -53,7 +53,7 @@ args=${args/master-backup/master}
 
 instance=2
 
-if [ -f ${DCS_INSTALL_DIR}/conf/masters ]; then
+if [ -f ${TRAF_CONF}/dcs/masters ]; then
   while read master
   do
     if [[ ! -z $activeMaster && "$master" =~ $activeMaster ]]; then
@@ -74,7 +74,7 @@ if [ -f ${DCS_INSTALL_DIR}/conf/masters ]; then
   
     let instance++
 
-  done < "${DCS_INSTALL_DIR}/conf/masters"
+  done < "${TRAF_CONF}/dcs/masters"
 fi
 
 wait

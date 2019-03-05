@@ -59,7 +59,7 @@ import java.security.PrivilegedExceptionAction;
  * loader tries the following, in sequence:
  * - the CLASSPATH as defined in the environment variable
  * - the name of the container for the UDR
- * - jar files in $TRAF_HOME/udr/public/external_libs, in alphabetical
+ * - jar files in $TRAF_VAR/udr/public/external_libs, in alphabetical
  *   order
  *
  **/

@@ -1013,7 +1013,7 @@ function cdt {
     cd $MPI_TMPDIR
 }
 function cdc {
-    cd /local/cores/$UID
+    cd $TRAF_CONF
 }
 function cdj {
     cd $TRAF_HOME/../sql/src/main/java/org/trafodion/sql

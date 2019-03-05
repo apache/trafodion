@@ -105,8 +105,8 @@ drill.exec: {
 EOF
 
 # copy the Drill JDBC driver into the external_libs folder for UDRs
-mkdir -p ${TRAF_HOME}/udr/external_libs
-cp ${MY_SW_ROOT}/drill/jars/jdbc-driver/drill-jdbc-all-${DRILL_VERSION}.jar ${TRAF_HOME}/udr/external_libs
+mkdir -p ${TRAF_VAR}/udr/external_libs
+cp ${MY_SW_ROOT}/drill/jars/jdbc-driver/drill-jdbc-all-${DRILL_VERSION}.jar ${TRAF_VAR}/udr/external_libs
 
 echo "Installed a local copy of Drill. Start a drillbit with the"
 echo "swstartdrill command, connect with swdrill."

@@ -198,7 +198,7 @@ def main():
         run_cmd_as_user(cfgs['traf_user'], 'dcsstart')
     else:
         info('Trafodion instance is not up, do sqgen ...')
-        run_cmd_as_user(cfgs['traf_user'], 'rm %s/sql/scripts/sqconfig.db' % cfgs['traf_home'])
+        run_cmd_as_user(cfgs['traf_user'], 'rm %s/sqconfig.db' % cfgs['traf_var'])
         run_cmd_as_user(cfgs['traf_user'], 'sqgen')
         ok('Setup completed. You need to start trafodion manually')
 

@@ -662,6 +662,8 @@ else
   mkdir $MY_SW_ROOT
   cd $MY_SW_ROOT
   mkdir log
+  mkdir -p traf_conf
+  cp -rf  $TRAF_HOME/conf/* traf_conf/
 
   echo
   echo "Checking Java version..."
@@ -1368,16 +1370,11 @@ echo "$MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   tar -xf ${MYSQL_JDBC_TAR}
   ln -s `dirname mysql-connector-java-*/mysql-connector-java-*.jar` mysql-connector-java
   # copy the MySQL JDBC driver to the udr directory, so UDRs can use it
-  mkdir -p ${TRAF_HOME}/udr/external_libs
-  cp ${MY_SW_ROOT}/mysql-connector-java/mysql-connector-java*.jar ${TRAF_HOME}/udr/external_libs
+  mkdir -p ${TRAF_VAR}/udr/external_libs
+  cp ${MY_SW_ROOT}/mysql-connector-java/mysql-connector-java*.jar ${TRAF_VAR}/udr/external_libs
 
 fi
 # end of MySQL JDBC setup
-
-#udr cached lib setup
-echo "Creating udr cached lib : ${MY_UDR_CACHE_LIBDIR}"
-mkdir -p $MY_PUBLIC_UDR_CACHE_LIBDIR
-#end of udr cached lib setup
 
 cd $MY_SW_ROOT
 

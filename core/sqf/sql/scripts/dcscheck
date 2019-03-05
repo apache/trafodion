@@ -71,17 +71,17 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
   $L_PDSH $jpscmd |/bin/egrep 'DcsMaster|DcsServer' > $tmpjps
 
 ### Get the configured number of DcsMaster's
-  if [ -s ${DCS_INSTALL_DIR}/conf/masters ]; then
-     let cfg_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/masters`
-     list_of_masters=`cat ${DCS_INSTALL_DIR}/conf/masters | /bin/egrep -v '^#|^$'|paste -sd ' ' -`
+  if [ -s ${TRAF_CONF}/dcs/masters ]; then
+     let cfg_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${TRAF_CONF}/dcs/masters`
+     list_of_masters=`cat ${TRAF_CONF}/dcs/masters | /bin/egrep -v '^#|^$'|paste -sd ' ' -`
    else
      let cfg_dcsmaster_cnt=1
    fi
 
 ### Get the configured number of DcsServer and mxosrvr
-   if [ -f ${DCS_INSTALL_DIR}/conf/servers ]; then
-      let cfg_mxo_cnt=`cat $DCS_INSTALL_DIR/conf/servers|awk '{if ($2=="") k=1;else k=$2;cnt+=k} END {print cnt}'`
-      let cfg_dcsserver_cnt=`cat $DCS_INSTALL_DIR/conf/servers|awk '{if ($2=="") p=1;else p+=1;} END {print p}'`
+   if [ -f ${TRAF_CONF}/dcs/servers ]; then
+      let cfg_mxo_cnt=`cat ${TRAF_CONF}/dcs/servers|awk '{if ($2=="") k=1;else k=$2;cnt+=k} END {print cnt}'`
+      let cfg_dcsserver_cnt=`cat ${TRAF_CONF}/dcs/servers|awk '{if ($2=="") p=1;else p+=1;} END {print p}'`
    fi
 
 ### Check if there are any DcsMaster and DcsServer's that are started 

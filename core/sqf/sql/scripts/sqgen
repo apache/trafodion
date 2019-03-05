@@ -218,9 +218,6 @@ if [[ -z ${TRAF_AGENT} ]]; then
         echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR/tmp "
         $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR/tmp
     
-        echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $PWD "
-        $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $PWD
-    
     fi
 fi
 
@@ -308,10 +305,10 @@ if [[ -z ${TRAF_AGENT} ]]; then
         fi
 
         echo
-        echo "Copying Trafodion Configuration files to $PWD"
+        echo "Copying Trafodion Configuration files to $TRAF_VAR"
 
-        echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $PWD "
-        $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $PWD
+        echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $TRAF_VAR/ "
+        $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $TRAF_VAR/
 
         echo
     fi

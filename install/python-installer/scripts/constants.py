@@ -58,6 +58,6 @@ PARCEL_HDFS_BIN = PARCEL_DIR + '/CDH/bin/hdfs'
 
 TRAF_HSPERFDATA_FILE = '/tmp/hsperfdata_trafodion'
 TRAF_SUDOER_FILE = '/etc/sudoers.d/trafodion'
-TRAF_CFG_DIR = '/etc/trafodion/'
+TRAF_CFG_DIR = '/etc/trafodion/conf'
 TRAF_CFG_FILE = '/etc/trafodion/trafodion_config'
 TRAF_USER = 'trafodion'

@@ -33,7 +33,7 @@ if [[ -z $TRAF_HOME && -r /etc/trafodion/conf/client_config ]]; then
 fi
 
 # If we have client config or server config, no arguments needed
-if [[ -r /etc/trafodion/conf/client_config || -r "$DCS_INSTALL_DIR/conf/dcs-env.sh" ]]; then
+if [[ -r /etc/trafodion/conf/client_config || -r "$TRAF_CONF/dcs/dcs-env.sh" ]]; then
   $TRAF_HOME/trafci/bin/trafci.sh
 else
   # try localhost

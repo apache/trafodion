@@ -569,7 +569,7 @@ sub endGame {
 
         print "\nGenerated SQ Shell environment file: $sqshell\n";
 
-        chmod 0700, $sqshell;
+        chmod 0700, "$ENV{'TRAF_VAR'}/$sqshell";
     }
 #    print SQSH "\nshell \$1 \$2 \$3 \$4 \$5 \$6 \$7 \$8 \$9\n";
 

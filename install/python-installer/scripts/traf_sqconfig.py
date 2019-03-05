@@ -35,10 +35,9 @@ def run():
     scratch_locs = dbcfgs['scratch_locs'].split(',')
 
     # this script is running by trafodion user, so get sqroot from env
-    traf_home = os.environ['TRAF_HOME']
-    if traf_home == '': err('TRAF_HOME var is empty')
-    sqconfig_file = traf_home + '/sql/scripts/sqconfig'
-    sqconfig_persist_file = traf_home + '/sql/scripts/sqconfig.persist'
+    traf_conf = os.environ['TRAF_CONF']
+    if traf_conf == '': err('TRAF_CONF var is empty')
+    sqconfig_file = traf_conf + '/sqconfig'
 
     core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
     core = int(core)-1 if int(core) <= 256 else 255

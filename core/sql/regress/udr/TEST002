@@ -243,9 +243,9 @@ from udf(timeseries(table(select * from t002_Timeseries
 order by p, slice_time;
 
 -- JDBC queries through a TMUDF. Note that this requires the Trafodion T4
--- driver jar to exist in $TRAF_HOME/udr/external_libs.
-sh mkdir -p $$TRAF_HOME$$/udr/external_libs;
-sh cp $$TRAF_HOME$$/export/lib/jdbcT2.jar $$TRAF_HOME$$/udr/external_libs;
+-- driver jar to exist in $TRAF_VAR/udr/external_libs.
+sh mkdir -p $$TRAF_VAR$$/udr/external_libs;
+sh cp $$TRAF_HOME$$/export/lib/jdbcT2.jar $$TRAF_VAR$$/udr/external_libs;
 
 -- with default ports, $$QUOTE$$$$JDBC_T4_URL$$$$QUOTE$$ should be
 -- 'jdbc:t4jdbc://localhost:23400/:'

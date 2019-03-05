@@ -168,19 +168,8 @@ echo "SQ_PROPS_TDM_ARKESP=tdm_arkesp.env"
 echo ""
 echo "STFS_HDD_LOCATION=\$TRAF_VAR"
 echo ""
-echo "#setting UDR_ROOT"
-if [ -d "/home/udr" ]; then
-  w=`whoami`
-  dircreate=/home/udr/$w
-  if [ ! -d $dircreate ]; then
-    mkdir --mode=775 $dircreate 2>/dev/null
-  fi
-  echo "UDR_ROOT=$dircreate"
-else
-  if [ ! -d "$TRAF_HOME/udr" ]; then
-    mkdir $TRAF_HOME/udr 2>/dev/null
-  fi
-  echo "UDR_ROOT=\$TRAF_HOME/udr"
+if [ ! -d "$TRAF_VAR/udr" ]; then
+  mkdir $TRAF_VAR/udr 2>/dev/null
 fi
 
 echo "UDR_CACHE_LIBDIR=cached_libs"

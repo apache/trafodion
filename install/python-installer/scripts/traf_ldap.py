@@ -34,8 +34,9 @@ def run():
 
     db_root_user = dbcfgs['db_root_user']
     traf_home = os.environ['TRAF_HOME']
+    traf_conf = os.environ['TRAF_CONF']
     sqenv_file = traf_home + '/sqenvcom.sh'
-    traf_auth_config = '%s/sql/scripts/.traf_authentication_config' % traf_home
+    traf_auth_config = '%s/.traf_authentication_config' % traf_conf
     traf_auth_template = '%s/sql/scripts/traf_authentication_config' % traf_home
 
     ldap_hostname = ''

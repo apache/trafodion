@@ -28,7 +28,7 @@ import sys
 import re
 import json
 import socket
-from constants import DEF_HBASE_HOME, TRAF_SUDOER_FILE, TRAF_CFG_FILE
+from constants import DEF_HBASE_HOME, TRAF_SUDOER_FILE, TRAF_CFG_FILE, TRAF_CFG_DIR
 from common import err, cmd_output, run_cmd, get_default_home, mod_file, write_file
 
 def run():
@@ -78,8 +78,9 @@ def run():
     ### untar the copied trafoion binaries ###
     TRAF_PKG_FILE = '/tmp/traf_bin.tar.gz'
     run_cmd('mkdir -p %s' % traf_home)
-    run_cmd('mkdir -p /etc/trafodion')
+    run_cmd('mkdir -p %s' % TRAF_CFG_DIR)
     run_cmd('tar xf %s -C %s' % (TRAF_PKG_FILE, traf_home))
+    run_cmd('cp -rf %s/conf/* %s/' % (traf_home, TRAF_CFG_DIR))
 
     run_cmd('mv -f /tmp/trafodion_config %s' % TRAF_CFG_FILE)
     run_cmd('cp -rf /tmp/.ssh %s/..' % traf_home)
@@ -98,7 +99,7 @@ def run():
     run_cmd('chmod 700 %s/../.ssh' % traf_home)
     cmd_output('chmod 600 %s/../.ssh/{id_rsa,config,authorized_keys}' % traf_home)
     run_cmd('chmod 777 %s' % TRAF_CFG_FILE)
-    run_cmd('chown -R %s:%s /etc/trafodion' % (traf_user, traf_group))
+    run_cmd('chown -R %s:%s %s' % (traf_user, traf_group, TRAF_CFG_DIR))
     run_cmd('chmod +r %s/{hbase-trx-*,trafodion-utility-*}' % dbcfgs['hbase_lib_path'])
     run_cmd('chown -R %s:%s %s' % (traf_user, traf_group, traf_user_dir))
 
