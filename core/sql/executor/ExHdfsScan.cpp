@@ -594,6 +594,21 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           {
              BYTE *headRoomStartAddr;
              headRoomCopied_ = bufLogicalEnd_ - (BYTE *)hdfsBufNextRow_;
+
+             // make sure the tail is not unexpectedly long (otherwise we might
+             // overrun the beginning of our buffer)
+             if (headRoomCopied_ > headRoom_)
+               {
+                 ComDiagsArea * diagsArea = NULL;
+                 ExRaiseSqlError(getHeap(), &diagsArea, 
+                                 EXE_HIVE_ROW_TOO_LONG, 
+                                 NULL, NULL, NULL, NULL, 
+                                 NULL, NULL);
+                 pentry_down->setDiagsArea(diagsArea);
+                 step_ = HANDLE_ERROR;
+                 break;
+               }
+
              if (retArray_[BUF_NO] == 0)
                 headRoomStartAddr = hdfsScanBuf_[1].buf_ - headRoomCopied_;
              else

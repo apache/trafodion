@@ -229,6 +229,24 @@ available partition.
 *Recovery:* Determine why none of the partitions were available, then
 correct the error and resubmit.
 
+<<<
+[[SQL-8457]]
+== SQL 8457
+
+```
+An unexpectedly long row was read from a Hive table. The row is too long to process.
+```
+
+*Cause:* A row was read from a Hive table that is longer than what was expected. To avoid
+buffer overrun, the query was aborted.
+
+*Effect:* The operation fails.
+
+*Recovery:* If there is an external table definition in {project-name} for the Hive table,
+drop and recreate it with accurate limits on VARCHAR column size. If there is not such
+an external table definition, use CQD HIVE_MAX_STRING_LENGTH_IN_BYTES 'nnnn', where
+nnnn is the longest string in the Hive table. Then resubmit the query.
+
 [[SQL-8553]]
 == SQL 8553
 

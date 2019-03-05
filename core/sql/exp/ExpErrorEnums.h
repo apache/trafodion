@@ -170,6 +170,7 @@ enum ExeErrorCode
   EXE_INVALID_LOB_HANDLE                = 8443,
   EXE_ERROR_HDFS_SCAN                   = 8447,
   EXE_INVALID_INTERVAL_RESULT           = 8453,
+  EXE_HIVE_ROW_TOO_LONG                 = 8457,
   EXE_LAST_EXPRESSIONS_ERROR		= 8499,
 
   // ---------------------------------------------------------------------

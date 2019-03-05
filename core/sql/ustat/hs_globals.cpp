@@ -15998,8 +15998,7 @@ Lng32 doubleToHSDataBuffer(const double dbl, HSDataBuffer& dbf)
 /**********************************************************************/
 /* METHOD:  managePersistentSamples()                                 */
 /* PURPOSE: Create or delete persistent sample tables from update     */
-/*          statistics command line. These are NOT the automatically  */
-/*          managed persistent samples used by IUS.                   */
+/*          statistics command line.                                  */
 /* RETCODE:  0 - successful                                           */
 /*          -1 - failure                                              */
 /**********************************************************************/
@@ -16071,6 +16070,7 @@ Lng32 managePersistentSamples()
     {
       if (hs_globals->optFlags & CREATE_SAMPLE_OPT)  /* create sample requested*/
       {
+        hs_globals->setHiveMaxStringLengthInBytes();
         if (sampleList->createAndInsert(hs_globals->objDef, table, 
                                         sampleRows, tableRows, 
                                         isEstimate,
@@ -16084,6 +16084,7 @@ Lng32 managePersistentSamples()
                              table.data(), intStr, retcode); 
             LM->Log(LM->msg);
           }
+        hs_globals->resetCQDs();
       }
       if (hs_globals->optFlags & REMOVE_SAMPLE_OPT)  /* remove sample requested*/
       {

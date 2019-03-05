@@ -1594,6 +1594,10 @@ $1~String1 --------------------------------
 8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error $0~String0  returned while retrieving region stats from hbase.
 8452 ZZZZZ 99999 BEGINNER MINOR LOGONLY The regular expression is invalid. Cause: $0~String0
 8453 ZZZZZ 99999 BEGINNER MINOR LOGONLY This expression results in an invalid interval value '$0~String0'
+8454 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+8455 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+8456 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+8457 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An unexpectedly long row was read from a Hive table. The row is too long to process.
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.
 8552 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~int0 was returned by the file system while fetching the version of the system $0~string0.
