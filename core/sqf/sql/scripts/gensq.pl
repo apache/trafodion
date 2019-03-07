@@ -35,8 +35,6 @@ my $ProcessType_SSMP      = 11;
 
 my $gDebug = 0;
 
-my $bVirtualNodes=0;
-
 $gRoleEnumStorage     = "storage";
 $gRoleEnumEdge        = "connection";
 $gRoleEnumAggregation = "aggregation";
@@ -123,9 +121,6 @@ sub printInitialLines {
 #      #Create SeaMonster environment variable file
 #      open (ETC,">>$smenv")
 #          or die("unable to open $smenv");
-#      if ($bVirtualNodes == 1) {
-#          print ETC "SM_VIRTUALNODE=1\n";
-#      }
 #      if (!$ENV{'SHARED_HARDWARE'} || $ENV{SHARED_HARDWARE} eq 'YES') {
 #          print ETC "SM_PIPEDEPTH=6\n";
 #          print ETC "SM_LOWATER=3\n";
@@ -147,20 +142,7 @@ sub printInitialLines {
         print ETC "SQ_TRANS_SOCK=0\n";
     }
 
-    if ($bVirtualNodes == 1) {
-        $virtualnode_string = "SQ_VIRTUAL_NODES=$gdNumNodes\n";
-        $virtualnid_string = "SQ_VIRTUAL_NID=0\n";
-        printScript(1, "export $virtualnode_string");
-        printScript(1, "export $virtualnid_string");
-
-        print ETC "$virtualnode_string";
-        print ETC "$virtualnid_string";
-           # Allow specific mirroring ON override for virtual node
-        print ETC "MS_STREAMS_MIN=20000\n";
-        print ETC "MS_STREAMS_MAX=20000\n";
-    }
     # Cluster
-    else {
         print ETC "MS_STREAMS_MIN=20000\n";
         print ETC "MS_STREAMS_MAX=20000\n";
         $hugePages=`cat /proc/sys/vm/nr_hugepages`;
@@ -174,7 +156,6 @@ sub printInitialLines {
         else {
             print ETC "SQ_RMS_ENABLE_HUGEPAGES=0\n";
         }
-    }
 
     print ETC "CLASSPATH=$ENV{'CLASSPATH'}:\n";
     close (ETC);
@@ -204,9 +185,7 @@ sub printInitialLines {
 
 #    genSQShellStart();
 
-#    if ($bVirtualNodes == 0) {
 #        printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
-#    }
 #    printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
 #    printScript(1, "\nset MY_NODES=\$MY_NODES\n");
 
@@ -312,32 +291,13 @@ sub processNodes {
     while (<>) {
         next if (/^$/);
         next if (/^#/);
-        if (/^_virtualnodes/) {
-            @words=split(' ',$_);
-            $gdNumNodes=@words[1];
-            $bVirtualNodes=1;
-            my $l_dNodeIndex = 0;
-
-            print "Generating virtual configuration database, node-name=$g_HostName, virtual nodes count=$gdNumNodes\n";
-
-            sqnodes::genVirtualConfigDb( $g_HostName, $gdNumNodes );
-            for ($l_dNodeIndex = 0; $l_dNodeIndex < $gdNumNodes; $l_dNodeIndex++) {
-
-                $gNodeIdToZoneIdIndex[$l_dNodeIndex] = $l_dNodeIndex;
-
-                push(@g_EdgeNodes, $l_dNodeIndex);
-            }
-        }
-        elsif (/^end node/) {
+        if (/^end node/) {
 
             # Just for the time being - this should be an error
-            if (($bNodeSpecified == 0) &&
-                ($bVirtualNodes == 0)) {
+            if ($bNodeSpecified == 0) {
                 $gdNumNodes = 1;
             }
 
-            if ($bVirtualNodes == 0)
-            {
                 if (sqnodes::validateConfig() == 0)
                 {   # Valid configuration, generate sqconfig.db
                     $gdNumNodes = sqnodes::numNodes();
@@ -355,7 +315,6 @@ sub processNodes {
                 for ($i=0; $i < $gdNumNodes; $i++) {
                     push(@g_BackupTSENode, $i);
                 }
-            }
 
             return;
         }
@@ -557,20 +516,6 @@ sub openFiles {
 
 sub endGame {
 
-    if ($bVirtualNodes == 1) {
-        open (SQSH,">$ENV{'TRAF_VAR'}/$sqshell")
-            or die("unable to open $sqshell");
-        printInitLinesAuxFiles (SQSH);
-
-        print SQSH "export SQ_VIRTUAL_NODES=$gdNumNodes\n";
-        print SQSH "export SQ_VIRTUAL_NID=0\n";
-
-        close(SQSH);
-
-        print "\nGenerated SQ Shell environment file: $sqshell\n";
-
-        chmod 0700, "$ENV{'TRAF_VAR'}/$sqshell";
-    }
 #    print SQSH "\nshell \$1 \$2 \$3 \$4 \$5 \$6 \$7 \$8 \$9\n";
 
 
@@ -635,8 +580,6 @@ sub doInit {
 
 
 #    $coldscriptFileName=sprintf("%s.cold", $scriptFileName);
-
-    $sqshell = "sqshell.env";
 
     $gdNumCpuCores = `cat /proc/cpuinfo | grep "processor" | wc -l`;
 #print "The number of cores is $gdNumCpuCores\n";

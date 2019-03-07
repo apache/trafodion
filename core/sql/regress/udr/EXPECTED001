@@ -386,10 +386,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 5    .    6    root                                                  1.79E+001
-4    .    5    esp_exchange                    1:4(hash2)            5.00E+001
+4    .    5    esp_exchange                    1:2(hash2)            5.00E+001
 3    .    4    tmudf                           XO                    5.00E+001
 2    .    3    sort                                                  1.00E+002
-1    .    2    esp_exchange                    4(hash2):1            1.00E+002
+1    .    2    esp_exchange                    2(hash2):1            1.00E+002
 .    .    1    trafodion_scan                  CLICKS                1.00E+002
 
 --- SQL operation complete.
@@ -478,11 +478,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 6    .    7    root                                                  1.79E+001
-5    .    6    esp_exchange                    1:4(hash2) (m)        5.00E+001
+5    .    6    esp_exchange                    1:2(hash2) (m)        5.00E+001
 4    .    5    sort                                                  5.00E+001
 3    .    4    tmudf                           XO                    5.00E+001
 2    .    3    sort                                                  1.00E+002
-1    .    2    esp_exchange                    4(hash2):1            1.00E+002
+1    .    2    esp_exchange                    2(hash2):1            1.00E+002
 .    .    1    trafodion_scan                  CLICKS                1.00E+002
 
 --- SQL operation complete.

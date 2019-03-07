@@ -221,16 +221,6 @@ if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     export SQL_JAR=trafodion-sql-apache-${TRAFODION_VER}.jar
 fi
 
-# check for workstation env
-# want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
-# so we can determine if we are on a workstation or not
-if [[ -e ${TRAF_VAR}/ms.env ]] ; then
-  VIRT_NODES=$(awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $TRAF_VAR/ms.env)
-  if [[ -n "$VIRT_NODES" ]] ; then
-     export SQ_VIRTUAL_NODES="$VIRT_NODES"
-  fi
-fi
-
 export SQ_IDTMSRV=1
 
 # Turn on/off generation of Service Monitor

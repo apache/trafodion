@@ -3974,10 +3974,6 @@ Sort TopN                -1
 ---
 > >>obey STATS_CMD_QID;
 > >>get statistics for qid MXID11000011701212378219753251307000000000206U3333300_518_S1;
-21c22
-< Number of Cpus           1
----
-> Number of Cpus           2
 38a40,50
 >    Id       DOP Table Name
 >   EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs        SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
@@ -4018,10 +4014,6 @@ Sort TopN                -1
 ---
 > >>obey STATS_CMD_QID;
 > >>get statistics for qid MXID11000011701212378219753251307000000000206U3333300_522_S1;
-21c22
-< Number of Cpus           1
----
-> Number of Cpus           2
 >>
 >>
 >>control query default detailed_statistics 'system' ;
@@ -4050,10 +4042,6 @@ Sort TopN                -1
 ---
 > >>obey STATS_CMD_QID;
 > >>get statistics for qid MXID11000011701212378219753251307000000000206U3333300_526_S1;
-21c22
-< Number of Cpus           1
----
-> Number of Cpus           2
 >>
 >>
 >>obey TESTRTS(exeindp2_stats);

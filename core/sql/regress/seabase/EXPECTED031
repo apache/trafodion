@@ -599,7 +599,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 4    .    5    root                                                  1.00E+000
 3    .    4    sort_partial_aggr_ro                                  1.00E+000
-2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+2    .    3    esp_exchange                    1:2(hash2)            1.00E+000
 1    .    2    sort_partial_aggr_le                                  1.00E+000
 .    .    1    hive_scan                       T031HIVE              1.00E+000
 

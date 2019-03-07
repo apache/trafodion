@@ -83,12 +83,6 @@ else
    lv_monitor_not_running_on_curr_node=1
 fi
 
-if [[ ! -z ${SQ_VIRTUAL_NODES} ]]; then
-    # Running in a single node environment
-    traf_echo "Trafodion has been configured to run on a single virtual node environment."
-    traf_exit 1
-fi
-
 grep_out_mon=`$TRAF_HOME/sql/scripts/cstat | grep "monitor COLD" `
 lv_ret=$?
 if [[ $lv_ret == 0 ]]; then
