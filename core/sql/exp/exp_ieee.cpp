@@ -107,6 +107,12 @@ double doConvReal64ToReal64(double op1)
   return temp;
 }
 
+// Note: A copy of this function's logic has been inlined
+// in exp_eval.cpp. So if you change this, change that logic
+// also. (We may ultimately want to inline this function 
+// everywhere, or even all the functions in this module, but 
+// that requires a more complete study of performance impacts 
+// than I am prepared to invest at the moment.)
 
 double MathReal64Add(double x, double y, short *ov)
 {
