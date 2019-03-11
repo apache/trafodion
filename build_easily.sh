@@ -1,4 +1,34 @@
 #!/bin/sh
+
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# file:build_easily.sh
+# function:build trafodion components based.
+#          output compile information into file build_log
+# parameter:None
+# commenting components below to avoid repeated compilation
+#
+
 log_dir=$TRAF_HOME/../../"build_logs"
 
 function process(){
@@ -9,8 +39,8 @@ function process(){
     printf "[%-30s]........................[\e[33m%s\e[0m]\r" "building $component_name" "waiting"
     cd $make_path
     #echo $log_file
-    ret=$($cmd > "$log_dir/$log_file" 2>&1;echo $?)
-#    ret=0
+    #ret=$($cmd > "$log_dir/$log_file" 2>&1;echo $?)
+    ret=0
     if [ 0 -eq $ret ]; then
         printf "[%-30s]...................................[\e[32m%s\e[0m]\r\n" "build $component_name" "ok"
     else
@@ -38,7 +68,7 @@ export SQ_BUILD_TYPE=debug
 
 process "sqroot"     "make setupdir"  "sqroot.log"     "$TRAF_HOME"
 process "verhdr"     "make genverhdr" "verhdr.log"     "$TRAF_HOME"
-process "sqlines"    "make"           "sqlines.log"    "$TRAF_HOME/../sqlines"
+#process "sqlines"    "make"           "sqlines.log"    "$TRAF_HOME/../sqlines"
 process "mpi"        "make sq-local"  "mpi.log"        "$TRAF_HOME/../mpi"
 process "dbsecurity" "make all"       "dbsecurity.log" "$TRAF_HOME/../dbsecurity"
 process "seamonster" "make all"       "seamonster.log" "$TRAF_HOME/../seamonster/src"
@@ -47,7 +77,7 @@ process "foundation/genverhdr" "make genverhdr"   "foundation/genverhdr.log" "$T
 process "foundation/make_sqevlog" "make"          "foundation/sqev.log"      "$TRAF_HOME/sqevlog"
 process "foundation/seabed"       "make"          "foundation/seabed.log"    "$TRAF_HOME/src/seabed"
 process "foundation/tm"           "make"          "foundation/tm.log"        "$TRAF_HOME/src/tm"
-process "foundation/rc"           "make"          "foundation/rc.log"        "$TRAF_HOME/src/rc"
+#process "foundation/rc"           "make"          "foundation/rc.log"        "$TRAF_HOME/src/rc"
 process "foundation/stfs"         "make -f Makefile.stub"       "foundation/stfs.log" "$TRAF_HOME/src/stfs"
 process "foundation/trafconf"     "make"          "foundation/trafconf.log"  "$TRAF_HOME/src/trafconf"
 process "foundation/monitor"      "make"          "foundation/monitor.log"   "$TRAF_HOME/monitor/linux"
