@@ -38,9 +38,7 @@ function process(){
     make_path=$4
     printf "[%-30s]........................[\e[33m%s\e[0m]\r" "building $component_name" "waiting"
     cd $make_path
-    #echo $log_file
-    #ret=$($cmd > "$log_dir/$log_file" 2>&1;echo $?)
-    ret=0
+    ret=$($cmd > "$log_dir/$log_file" 2>&1;echo $?)
     if [ 0 -eq $ret ]; then
         printf "[%-30s]...................................[\e[32m%s\e[0m]\r\n" "build $component_name" "ok"
     else
