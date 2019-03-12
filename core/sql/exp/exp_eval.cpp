@@ -54,6 +54,7 @@
 
 #include <unistd.h>
 #include <sys/mman.h>
+#include <fenv.h>  // floating point environment stuff
 
 #include "exp_ovfl_ptal.h"
 
@@ -71,6 +72,10 @@ double MathConvReal64ToReal64(double op1, Int16 * ov);
 // result is UInt32
 #define EXP_CLEAR_SIGNBIT(result) \
   ( ((result) & 0x80000000) ? ((result) ^ 0x80000002) : (result) )
+
+// macros for branch prediction hints in gcc
+#define LIKELY(x)       __builtin_expect((x),1)
+#define UNLIKELY(x)     __builtin_expect((x),0)
 
 
 void setVCLength(char * VCLen, Int32 VCLenSize, UInt32 value);
@@ -5019,11 +5024,26 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       FLT64ASSIGN(&flt64_1, (stack[pCode[0]] + pCode[1]));
       FLT64ASSIGN(&flt64_2, (stack[pCode[2]] + pCode[3]));
 
+      // The following is an inlining of most of MathReal64Add (from exp/exp_ieee.cpp), 
+      // done for performance reasons. For the SUM aggregate, in large queries we expect 
+      // millions or billions of rows; the inlining makes a difference at that scale.
+
+      unsigned int mxcsr;
+      __asm__ ("stmxcsr %0" : "=m" (*&mxcsr)); 
+      /* Clear the relevant bits.  */ 
+      mxcsr &= ~(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO | FE_UNDERFLOW);
+      /* And put them into effect.  */
+      __asm__ ("ldmxcsr %0" : : "m" (*&mxcsr));
+  
       flt64_0 = flt64_1 + flt64_2;
-      if ((flt64_0 < -DBL_MAX) || (flt64_0 > DBL_MAX) ||
-          ((flt64_0 != 0) && (flt64_0 < DBL_MIN) &&
-           (flt64_0 > -DBL_MIN)))
+  
+      unsigned int cs;
+      __asm__ ("stmxcsr %0" : "=m" (*&cs));
+      cs &= (FE_UNDERFLOW | FE_OVERFLOW | FE_DIVBYZERO | FE_INVALID);
+      if (UNLIKELY(cs))  // if there was an error (this is unlikely)
         {
+          ov = 0;
+          MathEvalException(flt64_0, cs, &ov);  // don't bother inlining error path
           goto Error1_;
         }
 

@@ -40,4 +40,6 @@ double MathConvReal64ToReal64(double x, short * ov);
 }
 #endif
 
+void MathEvalException(double result, unsigned long exc, short * ov); // so exp_eval.cpp can get it
+
 #endif
