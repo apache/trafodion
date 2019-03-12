@@ -20,7 +20,7 @@
 # @@@ END COPYRIGHT @@@
 
 begin node
-_virtualnodes 2
+node-id=0;node-name=HOSTNAME;cores=0-3;processors=1;roles=connection,aggregation,storage
 end node
 
 begin name-server

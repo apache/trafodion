@@ -1,4 +1,51 @@
-1570c1570
-< 0
+1541c1541,1544
+< --- SQL command prepared.
 ---
-> 1
+> *** ERROR[2235] Compiler Internal Error: An unknown error, originated from file ../optimizer/NodeMap.cpp at line #nnn.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1549c1552,1553
+< --- 10000 row(s) inserted.
+---
+> *** ERROR[15017] Statement INS06 was not found.
+> 
+1557c1561
+<  10000
+---
+>  0
+1611c1615,1618
+< --- SQL command prepared.
+---
+> *** ERROR[2235] Compiler Internal Error: An unknown error, originated from file ../optimizer/NodeMap.cpp at line #nnn.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1617,1628c1624
+< LC RC OP OPERATOR OPT DESCRIPTION CARD
+< ---- ---- ---- -------------------- -------- -------------------- ---------
+< 
+< 8 . 9 root 1.00E+004
+< 7 . 8 esp_exchange 1:4(hash2) 1.00E+004
+< 6 . 7 esp_exchange 4(hash2):1 1.00E+004
+< 4 5 6 tuple_flow 1.00E+004
+< . . 5 TRAFODION_load h T025T007 1.00E+000
+< 3 . 4 transpose 1.00E+004
+< 2 . 3 transpose 1.00E+003
+< 1 . 2 transpose 1.00E+002
+< . . 1 tuplelist 1.00E+001
+---
+> *** ERROR[8804] The provided input statement does not exist in the current context.
+1630c1626
+< --- SQL operation complete.
+---
+> --- SQL operation failed with errors.
+1634c1630,1631
+< --- 10000 row(s) inserted.
+---
+> *** ERROR[15017] Statement INS07 was not found.
+> 
+1674c1671
+< --- 10000 row(s) inserted.
+---
+> --- 0 row(s) inserted.

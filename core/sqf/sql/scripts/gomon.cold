@@ -23,10 +23,6 @@
 # @@@ END COPYRIGHT @@@
 #
 
-if [ -f $TRAF_VAR/sqshell.env ]; then
-    . $TRAF_VAR/sqshell.env
-fi
-
 if [[ -z ${TRAF_AGENT} ]]; then
    echo  "***"
    echo  "***" `date`  " - Starting Monitor processes"
@@ -115,11 +111,6 @@ then
 fi
 
 sqshell -c node info
-
-# If the 'shell.env' file does not exist, we are in a real cluster
-if [ -e $TRAF_VAR/sqshell.env ]; then
-   sqshell -c set CLUSTERNAME=$CLUSTERNAME
-fi
 
 # Starting TSID
 

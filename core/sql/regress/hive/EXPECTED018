@@ -792,7 +792,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 4    .    5    root                                                  1.00E+011
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+011
+3    .    4    esp_exchange                    1:2(hash2)            1.00E+011
 1    .    3    unload                                                1.00E+011
 .    .    1    trafodion_scan                  CUSTOMER_DEMOGRAPHIC  1.00E+011
 
@@ -847,7 +847,7 @@ Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.043
 >>
 >>log;
 regrhadoop.ksh fs -du -s /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_4.gz
-78431  78431  /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_4.gz
+78233  78233  /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_4.gz
 >>
 >>--exp4
 >>explain options 'f' 
@@ -859,7 +859,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 4    .    5    root                                                  1.00E+011
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+011
+3    .    4    esp_exchange                    1:2(hash2)            1.00E+011
 1    .    3    unload                                                1.00E+011
 .    .    1    trafodion_scan                  CUSTOMER_DEMOGRAPHIC  1.00E+011
 
@@ -887,7 +887,7 @@ Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.230
 regrhadoop.ksh fs -cat /user/trafodion/bulkload/customer_demographics_salt/file* | wc -l
 20000
 regrhadoop.ksh fs -ls /user/trafodion/bulkload/customer_demographics_salt/file* |  grep file | wc -l
-4
+2
 >>
 >>--unload 7
 >>UNLOAD  
@@ -2136,7 +2136,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 4    .    5    root                                                  1.00E+011
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+011
+3    .    4    esp_exchange                    1:2(hash2)            1.00E+011
 1    .    3    unload                                                1.00E+011
 .    .    1    trafodion_scan                  CUSTOMER_DEMOGRAPHIC  1.00E+011
 

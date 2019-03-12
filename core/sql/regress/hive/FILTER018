@@ -32,7 +32,7 @@ s/Logging Location:.*/Loggin Location:@loggingLocation@/
 s/Time:.*/Time:@time@/
 s/snapshot_temp_location.*/snapshot_temp_location location/g
 s/\(778224\).*\(778224\)\(.*\)/\1\3/g
-s/\(78431\).*\(78431\)\(.*\)/\1\3/g
+s/\(78233\).*\(78233\)\(.*\)/\1\3/g
 /^org\.apache\.hadoop/d
 /^org\.trafodion/d
 " $fil

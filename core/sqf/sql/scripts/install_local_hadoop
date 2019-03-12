@@ -665,6 +665,21 @@ else
   mkdir -p traf_conf
   cp -rf  $TRAF_HOME/conf/* traf_conf/
 
+  cat <<-EOF > traf_conf/sqconfig
+  begin node
+  node-id=0;node-name=$(hostname -f);cores=0-3;processors=1;roles=connection,aggregation,storage
+  end node
+  
+  begin name-server
+  nodes=0
+  end name-server
+  
+  begin overflow
+  hdd $TRAF_VAR
+  #ssd /ssd/directory
+  end overflow
+  EOF
+
   echo
   echo "Checking Java version..."
 

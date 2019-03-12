@@ -148,8 +148,6 @@ Query_Invalidation_Keys explain output
 >>log;
 No. Query Invalidation Keys 
 No. Query Invalidation Keys 
-No. Query Invalidation Keys 
-numQueryInvKeys: 
 numQueryInvKeys: 
 >>
 >>exit;

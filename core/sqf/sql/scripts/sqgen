@@ -178,11 +178,6 @@ while [ $# != 0 ]
     shift
   done
 
-if [[ ! -f $SQCONFIG_FILE ]]
-then
-  echo "Using default sqconfig file"
-  cp -f $TRAF_HOME/sql/scripts/sqconfig $SQCONFIG_FILE
-fi
 
 export SQLOG_DIR=$TRAF_LOG
 mkdir -p $TRAF_VAR
