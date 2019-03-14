@@ -7097,6 +7097,98 @@ PI()
 ```
 
 <<<
+[[pivot_function]]
+== PIVOT Function
+
+The PIVOT function transposes rows of a table into a column.
+
+PIVOT is a Trafodion SQL extension.
+
+`PIVOT (_source-column_[, DELIMITER '_delimiter_'])`
+
+[[syntax_description_of_pivot]]
+=== Syntax Description of PIVOT
+
+* `_source-column_`
+
++
+is a column containing rows to be rotated.
+
+* `_delimiter_`
+
++
+is a delimiter used to separate values in a column.
+
++
+NOTE: If the `DELIMITER '_delimiter_'` is omitted, the default delimiter is a comma.
+
++
+*Example*
+
++
+```
+SELECT PIVOT(vendor_id), PIVOT(vendor_email) FROM vendor;
+
+(EXPR)                   (EXPR)                                                                                                                          
+------------------------ --------------------------------------------------
+111,232,367              tom@hotmail.com,jerry@hotmail.com,aven@hotmail.com   
+
+--- 1 row(s) selected.
+```
+
++
+NOTE: An empty space is a valid delimiter.
+
++
+*Example*
+
++
+```
+SELECT PIVOT(vendor_email, delimiter ' ') FROM vendor;
+
+(EXPR)
+--------------------------------------------------
+tom@hotmail.com jerry@hotmail.com aven@hotmail.com                                                                          
+
+--- 1 row(s) selected.
+```
+
++
+NOTE: The `_delimiter_` can be only a single character. If the `_delimiter_` contains multiple characters, then only the first character will be used as the delimiter.
+
++
+*Example*
+
++
+```
+SELECT PIVOT(vendor_email, delimiter '|~|') FROM vendor;
+
+(EXPR)
+------------------------------------------------------------------------
+tom@hotmail.com|jerry@hotmail.com|aven@hotmail.com                                                                              
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_pivot]]
+=== Examples of PIVOT
+
+* This example aligns products horizontally into logical sets based on shop names.
+
++
+```
+SELECT shop, PIVOT(product, delimiter '-') as product FROM salesorder GROUP BY shop;
+
+SHOP        PRODUCT                                                                                                                         
+----------  ----------------------
+Shop1       A-B-C                                                                                                                     
+Shop2       T-E-C-H-N-I-C-A-L                                                                                                                       
+Shop3       W-R-I-T-E-R    
+
+--- 3 row(s) selected.
+```
+
+<<<
 [[position_function]]
 == POSITION Function
 
@@ -8858,7 +8950,7 @@ NOTE: The `_delimiter_` cannot be NULL.
 +
 NOTE: The function counts from the first `_delimiter_` if the `_delimiter_` appears more than once in the `_source-string_`.
 +
-Example
+*Example*
 +
 ```
 SQL>SELECT SPLIT_PART ('technical writer','t',2) FROM DUAL;
@@ -8872,7 +8964,7 @@ echnical wri
 +
 NOTE: The function returns an empty string if the `_delimiter_` does not exist in the `_source-string_`.
 +
-Example
+*Example*
 +
 ```
 SQL>SELECT SPLIT_PART ('technical_writer','@_@',1) FROM DUAL;
@@ -8886,7 +8978,7 @@ SQL>SELECT SPLIT_PART ('technical_writer','@_@',1) FROM DUAL;
 +
 NOTE: Empty space before of after the `_delimiter_` is returned as a valid part if the `_source-string_` starts or ends with the `_delimiter_`.
 +
-Example
+*Example*
 +
 ```
 SQL>SELECT SPLIT_PART ('|t|e|c|h|n|i|c|a|l', '|', 1), SPLIT_PART ('|w|r|i|t|e|r|', '|', 8) FROM DUAL;
@@ -8908,7 +9000,7 @@ NOTE: The `_field-position_` cannot be NULL.
 +
 NOTE: The function returns an empty string if the `_field-position_` exceeds the number of `_source-string_` parts after splitting.
 +
-Example 
+*Example* 
 +
 ```
 SQL>SELECT SPLIT_PART ('technical writer',' ',3) FROM DUAL;
