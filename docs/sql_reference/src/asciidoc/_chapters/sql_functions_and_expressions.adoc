@@ -7100,7 +7100,7 @@ PI()
 [[pivot_function]]
 == PIVOT Function
 
-The PIVOT function transposes rows of a table into a column.
+The PIVOT function transposes rows of a table into a column, aggregating data in the process of the rotation.
 
 PIVOT is a Trafodion SQL extension.
 
@@ -7126,14 +7126,33 @@ NOTE: If the `DELIMITER '_delimiter_'` is omitted, the default delimiter is a co
 *Example*
 
 +
+The table _vendor_ is as follows:
+
++
 ```
-SELECT PIVOT(vendor_id), PIVOT(vendor_email) FROM vendor;
+SELECT * FROM vendor;
 
-(EXPR)                   (EXPR)                                                                                                                          
------------------------- --------------------------------------------------
-111,232,367              tom@hotmail.com,jerry@hotmail.com,aven@hotmail.com   
+VENDOR_ID VENDOR_NAME    VENDOR_EMAIL           VENDOR_EMAIL_ID
+--------- -------------- ---------------------- ---------------
+      111 Tom            tom@hotmail.com        1
+      232 Jerry          jerry@hotmail.com      2
+      232 Jerry          jerry@gmail.com        3
+      367 Aven           aven@hotmail.com       4
+      367 Aven           aven@gmail.com         5
+      367 Aven           aven@outlook.com       6
 
---- 1 row(s) selected.
+--- 6 row(s) selected.
+```
+
++
+```
+SELECT PIVOT(vendor_id), PIVOT(vendor_email) FROM vendor GROUP BY vendor_id;
+
+(EXPR)           (EXPR)                                                                                                                          
+---------------- ----------------------------------------------------
+111              tom@hotmail.com                                                                                                                 
+232,232          jerry@gmail.com,jerry@hotmail.com                                                                                               
+367,367,367      aven@gmail.com,aven@hotmail.com,aven@outlook.com 
 ```
 
 +
@@ -7144,13 +7163,15 @@ NOTE: An empty space is a valid delimiter.
 
 +
 ```
-SELECT PIVOT(vendor_email, delimiter ' ') FROM vendor;
+SELECT PIVOT(vendor_email, delimiter ' ') FROM vendor GROUP BY vendor_id;
 
 (EXPR)
---------------------------------------------------
-tom@hotmail.com jerry@hotmail.com aven@hotmail.com                                                                          
+-----------------------------------------------------------------------
+tom@hotmail.com                                                                                                                 
+jerry@gmail.com jerry@hotmail.com                                                                                               
+aven@gmail.com aven@hotmail.com aven@outlook.com                                                                                
 
---- 1 row(s) selected.
+--- 3 row(s) selected.
 ```
 
 +
@@ -7161,19 +7182,52 @@ NOTE: The `_delimiter_` can be only a single character. If the `_delimiter_` con
 
 +
 ```
-SELECT PIVOT(vendor_email, delimiter '|~|') FROM vendor;
+SELECT PIVOT(vendor_email, delimiter '|~|') FROM vendor GROUP BY vendor_id;
 
 (EXPR)
-------------------------------------------------------------------------
-tom@hotmail.com|jerry@hotmail.com|aven@hotmail.com                                                                              
+--------------------------------------------------------------------------
+tom@hotmail.com                                                                                                                 
+jerry@gmail.com|jerry@hotmail.com                                                                                               
+aven@gmail.com|aven@hotmail.com|aven@outlook.com                                                                                
 
---- 1 row(s) selected.
+--- 3 row(s) selected.
 ```
 
 [[examples_of_pivot]]
 === Examples of PIVOT
 
 * This example aligns products horizontally into logical sets based on shop names.
+
++
+The table _saleorder_ is as follows:
+
++
+```
+SELECT * FROM salesorder;
+
+SHOP       PRODUCT             
+---------- --------------------
+Shop1      A                   
+Shop1      B                   
+Shop1      C                   
+Shop2      T                   
+Shop2      E                   
+Shop2      C                   
+Shop2      H                   
+Shop2      N                   
+Shop2      I                   
+Shop2      C                   
+Shop2      A                   
+Shop2      L                   
+Shop3      W                   
+Shop3      R                   
+Shop3      I                   
+Shop3      T                   
+Shop3      E                   
+Shop3      R                   
+
+--- 18 row(s) selected.
+```
 
 +
 ```
