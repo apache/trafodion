@@ -2334,16 +2334,14 @@ LARGEINT value.
 [[considerations_for_converttimestamp]]
 === Considerations for CONVERTTIMESTAMP
 
-The _julian-timestamp_ value must be in the range from 148731
-63200000000 to 274927348799999999.
-
+The _julian-timestamp_ value must be in the range from 148731163200000000 to 274927348799999999.
 
 [[relationship_to_the_juliantimestamp_function]]
 ==== Relationship to the JULIANTIMESTAMP Function
 
-The operand of CONVERTTIMESTAMP is a Julian timestamp, and the function
+The operand of the CONVERTTIMESTAMP function is a Julian timestamp, and the function
 result is a value of data type TIMESTAMP. The operand of the
-CONVERTTIMESTAMP function is a value of data type TIMESTAMP, and the
+JULIANTIMESTAMP function is a value of data type TIMESTAMP, and the
 function result is a Julian timestamp. That is, the two functions have
 an inverse relationship to one another.
 
@@ -5478,7 +5476,7 @@ ISNULL(last_name, 'Smith')
 
 The JULIANTIMESTAMP function converts a datetime value into a 64-bit
 Julian timestamp value that represents the number of microseconds that
-have elapsed between 4713 B.C., January 1, 00:00, and the specified
+have elapsed between January 1, 4713 B.C., 00:00:00, and the specified
 datetime value. JULIANTIMESTAMP returns a value of data type LARGEINT.
 
 The function is evaluated once when the query starts execution and is
@@ -8615,6 +8613,100 @@ FROM mining.seqfcn SEQUENCE BY ts;
 
 --- 5 row(s) selected.
 ```
+
+<<<
+[[reverse_function]]
+== REVERSE Function
+
+The REVERSE function returns the `_format-string_` in its reverse order.
+
+REVERSE is a Trafodion SQL extension.
+
+`REVERSE (_format-string_)`
+
+[[syntax_description_of_reverse]]
+=== Syntax Description of REVERSE
+
+* `_format-string_`
++
+is the string to be reversed.
+
++
+NOTE: The `_format-string_` cannot be NULL. 
+
++
+*Example*
+
++
+```
+SQL>SELECT REVERSE(NULL) FROM DUAL;
+
+*** ERROR[4097] A NULL operand is not allowed in function (REVERSE(NULL)). [2019-03-12 03:23:40]
+```
+
++
+NOTE: Trailing blanks in the `_format-string_` become leading blanks in the result.
+
++
+*Example*
+
++
+```
+SELECT REVERSE ('TechnicalWriter    ') FROM DUAL;
+
+(EXPR)
+-------------------
+    retirWlacinhceT
+
+--- 1 row(s) selected.
+```
+
+[[example_of_reverse]]
+=== Example of REVERSE
+
+* This example reverses the string '2019-11-02'.
+
++
+```
+SELECT REVERSE ('2019-11-02') from dual;
+
+(EXPR)
+----------
+20-11-9102
+
+--- 1 row(s) selected.
+```
+
+* This example reverses product names of the table _product_. 
+
++
+```
+SELECT REVERSE (prod_name) FROM product;
+
+(EXPR)
+--------------------------------
+torraC                          
+hsiF                            
+feeB                            
+pmirhS                          
+
+--- 4 row(s) selected.
+```
+
+* This example shows that the REVERSE function works with the LEFT function.
+
++
+```
+SELECT REVERSE(LEFT(REVERSE('TechnicalWriter'), 6)) FROM DUAL;
+
+(EXPR)
+------
+Writer
+
+--- 1 row(s) selected.
+```
+
+
 
 <<<
 [[second_function]]
@@ -11840,9 +11932,11 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 [[examples_of_unix_timestamp]]
 === Examples of UNIX_TIMESTAMP 
 
+* This example uses the current timestamp to produce the unix timestamp.
+
 +
 ```
->>select unix_timestamp() from dual;
+SELECT UNIX_TIMESTAMP() FROM DUAL;
 
 (EXPR)
 --------------------
@@ -11852,6 +11946,20 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 --- 1 row(s) selected.
 
 ```
+
+* This example uses the specified timestamp to produce the unix timestamp.
+
++
+```
+SELECT UNIX_TIMESTAMP('2019-11-02 20:36:18') FROM DUAL;
+
+(EXPR)
+----------------------
+            1572726978
+
+--- 1 row(s) selected.
+```
+
 
 <<<
 [[zeroifnull_function]]
