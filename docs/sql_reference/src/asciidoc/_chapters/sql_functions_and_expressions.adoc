@@ -5476,7 +5476,7 @@ ISNULL(last_name, 'Smith')
 
 The JULIANTIMESTAMP function converts a datetime value into a 64-bit
 Julian timestamp value that represents the number of microseconds that
-have elapsed between 4713 B.C., January 1, 00:00:00, and the specified
+have elapsed between January 1, 4713 B.C., 00:00:00, and the specified
 datetime value. JULIANTIMESTAMP returns a value of data type LARGEINT.
 
 The function is evaluated once when the query starts execution and is
