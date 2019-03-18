@@ -1018,6 +1018,12 @@ function cdc {
 function cdj {
     cd $TRAF_HOME/../sql/src/main/java/org/trafodion/sql
 }
+function cdci {
+    cd $TRAF_HOME/../conn/trafci/src/main/java/org/trafodion/ci
+}
+function cdt4 {
+    cd $TRAF_HOME/../conn/jdbcT4/src/main/java/org/trafodion/jdbc/t4
+}
 # ls variants
 function lst {
 ls -lsrt $*
