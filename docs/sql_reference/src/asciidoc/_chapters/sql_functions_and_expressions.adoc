@@ -7146,13 +7146,16 @@ VENDOR_ID VENDOR_NAME    VENDOR_EMAIL           VENDOR_EMAIL_ID
 
 +
 ```
-SELECT PIVOT(vendor_id), PIVOT(vendor_email) FROM vendor GROUP BY vendor_id;
+SELECT vendor_id, PIVOT(vendor_email) FROM vendor GROUP BY vendor_id;
 
-(EXPR)           (EXPR)                                                                                                                          
----------------- ----------------------------------------------------
-111              tom@hotmail.com                                                                                                                 
-232,232          jerry@gmail.com,jerry@hotmail.com                                                                                               
-367,367,367      aven@gmail.com,aven@hotmail.com,aven@outlook.com 
+VENDOR_ID (EXPR)                                                                                                                          
+--------- --------------------------------------------------------------------------------------------------------------------------------
+      111 tom@hotmail.com                                                                                                                 
+      232 jerry@gmail.com,jerry@hotmail.com                                                                                               
+      367 aven@gmail.com,aven@hotmail.com,aven@outlook.com                                                                                
+
+--- 3 row(s) selected.
+
 ```
 
 +
