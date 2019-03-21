@@ -64,7 +64,7 @@ class TrafT4Desc {
                 case Types.BINARY:
                     return "java.sql.Binary";
                 case Types.VARBINARY:
-                    return "jave.sql.Varbinary";
+                    return "java.sql.Varbinary";
 		case Types.BIT:
 		default:
 			return null;

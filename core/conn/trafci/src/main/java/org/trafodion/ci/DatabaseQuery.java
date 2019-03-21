@@ -503,10 +503,7 @@ public class DatabaseQuery extends QueryWrapper
 
       ParameterMetaData paramMetaData=null;
       paramMetaData = pStmt.getParameterMetaData();
-      if (paramMetaData == null)
-          {
-              System.out.println("pmd is null");
-          }
+
       String sqlQueryStr=((TrafT4Statement)pStmt).getSQL();
       List<String> namedParamList=getParamNames(sqlQueryStr);
       
@@ -580,7 +577,7 @@ public class DatabaseQuery extends QueryWrapper
                         pStmt.setNull(index+1,Types.NULL);
                      else
                      {
-                int paramType = paramMetaData.getParameterType(i+1);
+                int paramType = paramMetaData.getParameterType(index+1);
                 if ((paramType == Types.BINARY) ||
                     (paramType == Types.VARBINARY))
                     {
@@ -730,7 +727,7 @@ public class DatabaseQuery extends QueryWrapper
                          value = evaluateParameterValue(pv);
                          if (sessObj.isDebugOn())
                          {
-                        	 System.out.println("@@@Debug: DatabaseQuery:: pv = " +  pv);
+                             System.out.println("@@@Debug: DatabaseQuery:: pv = " +  pv);
                              System.out.println("@@@Debug: DatabaseQuery:: value = " + value);
                          }
                      }
@@ -1109,10 +1106,6 @@ public class DatabaseQuery extends QueryWrapper
 
             ParameterMetaData paramMetaData=null;
             paramMetaData = ps.getParameterMetaData();
-            if (paramMetaData == null)
-                {
-                    System.out.println("pmd is null");
-                }
 
             int index=0;
             for (int i=0;i < paramList.size(); i++)
@@ -1138,7 +1131,7 @@ public class DatabaseQuery extends QueryWrapper
                         ps.setNull(index+1,Types.NULL);
                      }else
                      {
-                       int paramType = paramMetaData.getParameterType(i+1);
+                       int paramType = paramMetaData.getParameterType(index+1);
                        if ((paramType == Types.BINARY) ||
                            (paramType == Types.VARBINARY))
                            {
