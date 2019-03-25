@@ -327,7 +327,7 @@ Ex_Lob_Error ExLob::writeData(Int64 &offset, char *data, Int32 size, Int64 &oper
     //Int64 writeOffset;
 
     if (! useLibHdfs_ ) {
-       offset = hdfsClient_->hdfsWriteImmediate(data, size, hdfsClientRetcode); 
+      offset = hdfsClient_->hdfsWriteImmediate(data, size, hdfsClientRetcode,0,TRUE); 
        if (hdfsClientRetcode != HDFS_CLIENT_OK)
           return LOB_DATA_WRITE_ERROR;
        operLen = size;

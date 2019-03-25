@@ -461,7 +461,7 @@ HDFS_Client_RetCode HdfsClient::init()
     JavaMethods_[JM_HDFS_WRITE      ].jm_name      = "hdfsWrite";
     JavaMethods_[JM_HDFS_WRITE      ].jm_signature = "([B)I";
     JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].jm_name      = "hdfsWriteImmediate";
-    JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].jm_signature = "([B)J";
+    JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].jm_signature = "([BZ)J";
     JavaMethods_[JM_HDFS_READ       ].jm_name      = "hdfsRead";
     JavaMethods_[JM_HDFS_READ       ].jm_signature = "(JLjava/nio/ByteBuffer;)I";
     JavaMethods_[JM_HDFS_CLOSE      ].jm_name      = "hdfsClose";
@@ -692,7 +692,7 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
   return bytesWritten; 
 }
 
-Int64 HdfsClient::hdfsWriteImmediate(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode, int maxChunkSize)
+Int64 HdfsClient::hdfsWriteImmediate(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode, int maxChunkSize, NABoolean doRetry)
 {
   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsWriteImmediate(%ld) called.", len);
 
@@ -706,6 +706,7 @@ Int64 HdfsClient::hdfsWriteImmediate(const char* data, Int64 len, HDFS_Client_Re
   Int64 offset = 0;
   jlong writeOffset = -1;
   jlong chunkWriteOffset;
+  jboolean j_doRetry = doRetry;
   do 
   {
      if ((chunkLen > 0) && (lenRemain > chunkLen))
@@ -727,7 +728,7 @@ Int64 HdfsClient::hdfsWriteImmediate(const char* data, Int64 len, HDFS_Client_Re
 
      tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].jm_full_name;
      // Java method returns the cumulative bytes written
-     chunkWriteOffset = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].methodID, jbArray);
+     chunkWriteOffset = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE_IMMEDIATE].methodID, jbArray,j_doRetry);
      if (writeOffset == -1)
         writeOffset = chunkWriteOffset;
 
