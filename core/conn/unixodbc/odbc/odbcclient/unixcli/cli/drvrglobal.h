@@ -108,7 +108,7 @@ typedef int (*FPSQLGetPrivateProfileString) (
 #define	SQLERRWARN 1
 #define	ESTIMATEDCOSTRGERRWARN	2
 
-#define MAX_DOUBLE_TO_CHAR_LEN (DBL_MANT_DIG - DBL_MIN_EXP + 12)
+#define MAX_DOUBLE_TO_CHAR_LEN (DBL_DIG + 13)  // sign(1) + integer(1) + point(1) + fraction(DBL_DIG + 2) + e(1) + sign(1) + exp(3) + '\0' + align(2)
 
 typedef enum TRANSPORT_TYPE
 {

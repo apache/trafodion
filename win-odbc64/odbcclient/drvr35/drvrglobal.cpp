@@ -837,79 +837,35 @@ char* rSup( char* string )
 	return string;
 }
 
-bool use_gcvt(double number, char* string, short size)
+/* double_to_char:
+*  number: the number to be converted to char string.
+*  precision: the number of digits after the decimal point(0 <= precision <= DBL_DIG).
+*  string: the buffer to receive a null terminated string result on success.
+*  size: the buffer size of string.
+*
+*  return: true on succeeded, false on failed.
+*/
+bool double_to_char(double number, int precision, char* string, short size)
 {
-	char *buffer,*temp ;
-	int length;
-
-	temp = _gcvt (number, size, string);
-	length = strlen(temp);
-	buffer = (char *) malloc (length + 2);
-	if (buffer==NULL)
-		return false;
-
-	strcpy(buffer,temp);
-	if (temp[length-1] == '.')
-	{
-		strcpy(buffer,temp);
-		strcat(buffer,"0");
-	}
-	if (temp[0] == '.')
-	{
-		strcpy( buffer, "0");
-		strcat( buffer, temp);
-	}
-	strcpy(string,buffer);
-	free (buffer);
-
-	if (strlen(string)>size)
-		return false;
-	else
-		return true;
-}
-
-bool double_to_char (double number, int precision, char* string, short size)
-{
-    bool rc = false;
-    char format[16] = { '\0' };
+    char format[8] = { '\0' };
     size_t actualLen = 0;
 
-    // make sure any precision of possible double value can be format to the buf. 
+    // make sure any precision of possible double value can be format to the buf.
     char buf[MAX_DOUBLE_TO_CHAR_LEN] = { '\0' };
 
-    // precision should less than size
-    precision = precision < size ? precision : size - 1;
-
     // precission should be limit to a reasonable range.
-    if ((precision < 0) || (precision >(DBL_MANT_DIG - DBL_MIN_EXP))) {
-        goto fun_exit;
+    if ((precision < 0) || (precision > DBL_DIG))
+        return false;
+
+    if ((sprintf(format, "%%.%dlg", (precision > FLT_DIG) ? (precision + 2) : (precision + 3)) < 0) ||
+        ((actualLen = sprintf(buf, format, number)) < 0) ||
+        (actualLen > size)) {
+        return false;
     }
 
-    // we want to return reasonable value even when caller didn't provide sufficiently buffer. 
-    // here using loop because actualLen may increase even precision decrease when fix-point
-    // notation to exponential notation. for example:
-    // for double d = 12345678.9, the caller only provide size=8.
-    // d will first convert to "1.234568e+07", actualLen == 12. then convert to "1.2e+07".
-    do {
-        if (sprintf(format, "%%.%dlg", precision) < 0) {
-            goto fun_exit;
-        }
-        if ((actualLen = sprintf(buf, format, number)) < 0) {
-            goto fun_exit;
-        }
-        if (size > actualLen) {
-            strcpy(string, buf);
-            rc = true;
-            break;
-        }
-        else {
-            precision -= (actualLen - size + 1);
-        }
-    } while ((precision >= 0));
-
-fun_exit:
-	return rc;
-} 
+    strcpy(string, buf);
+    return true;
+}
 
 bool ctoi64(char* string, __int64& out, bool* truncation)
 {

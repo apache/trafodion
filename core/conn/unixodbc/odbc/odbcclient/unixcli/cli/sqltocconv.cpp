@@ -663,7 +663,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				else {
 					dTmp = *(double *)srcDataPtr;
 //					_gcvt(dTmp, DBL_DIG, cTmpBuf);
-					if (!double_to_char (dTmp, DBL_DIG + 1, cTmpBuf, targetLength))
+					if (!double_to_char (dTmp, DBL_DIG, cTmpBuf, targetLength))
 						return IDS_22_001;
 				}
 			}
@@ -1028,7 +1028,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				else {
 					dTmp = *(double *)srcDataPtr;
 //					_gcvt(dTmp, DBL_DIG, cTmpBuf);
-					if (!double_to_char (dTmp, DBL_DIG + 1, cTmpBuf, targetLength))
+					if (!double_to_char (dTmp, DBL_DIG, cTmpBuf, targetLength))
 						return IDS_22_001;
 				}
 			}
