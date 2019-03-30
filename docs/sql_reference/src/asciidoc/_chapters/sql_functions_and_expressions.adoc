@@ -7073,6 +7073,191 @@ The first three rows retrieved display null because the offset from the
 current row does not fall within the result table.
 
 <<<
+[[overlay_function]]
+== OVERLAY Function
+
+The OVERLAY function replaces some characters of the `_source-string_` (or the whole `_source-string_`) with the `_replacement-string_`.
+
+
+The OVERLAY function is similar to the INSERT function (see <<insert_function,INSERT Function>>) except that the arguments are in a different order and the `_length_` is optional.
+
+OVERLAY is a Trafodion SQL extension.
+
+`OVERLAY (_source-string_ PLACING _replacement-string_ FROM _start_ [FOR _length_])`
+
+
+[[syntax_description_of_overlay]]
+=== Syntax Description of OVERLAY
+
+* `_source-string_`
+
++
+is the string to be partly (or entirely) overlaid.
+
+* `_replacement-string_`
+
++
+is the string to overlay.
+
+* `_start_`
+
++
+is the position at which to begin the overlay.
+
++
+NOTE: The `_start_` must be an integer greater than or equal to 1.
+
++
+NOTE: If `_start_` is greater than the length of the `_source-string_`, then the `_replacement-string_` is simply appended. 
+
++
+*Example*
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 10) FROM DUAL;
+
+(EXPR)
+-------------
+writer_      
+
+--- 1 row(s) selected.
+```
+
+
+* `_length_`
+
++
+specifies the number of characters to be replaced from the `_source-string_`.
+
++
+NOTE: If the `_length_` is not specified, then it defaults to the length of the `_replacement-string_`.
+
++
+*Example*
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2) FROM DUAL;
+
+(EXPR)
+-------------
+w_iter       
+
+--- 1 row(s) selected.
+```
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 1) FROM DUAL;
+
+(EXPR)
+-------------
+w_iter       
+
+--- 1 row(s) selected.
+```
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 2) FROM DUAL;
+
+(EXPR)
+-------------
+w_ter       
+
+--- 1 row(s) selected.
+```
+
++
+NOTE: If the `_length_` is 0, then the `_replacement-string_` is inserted into the `_source-string_` without deleting any characters in the `_source-string_`.
+
++
+*Example*
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 0) FROM DUAL;
+
+(EXPR)
+-------------
+w_riter      
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_overlay]]
+=== Examples of OVERLAY
+
+* The following examples demonstrate how to use the OVERLAY function and return the corresponding results.
++
+[cols="70%,30%"]
+|===
+^| *Statement* ^| *Result*
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2) FROM DUAL | w_iter
+| SELECT OVERLAY ('writer' PLACING '_' FROM 4) FROM DUAL | wri_er
+| SELECT OVERLAY ('writer' PLACING '_' FROM 7) FROM DUAL | writer_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 10) FROM DUAL	| writer_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 0) FROM DUAL | w_riter
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 1) FROM DUAL | w_iter
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 3) FROM DUAL | w_er 
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 5) FROM DUAL | w_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 7) FROM DUAL | w_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 1 FOR 6) FROM DUAL | _
+|===
+
++
+[cols="70%,30%"]
+|===
+^| *Statement* ^| *Result*
+| SELECT OVERLAY ('writer' PLACING '' FROM 2) FROM DUAL | writer
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 0) FROM DUAL	| writer
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 1) FROM DUAL	| witer 
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 3) FROM DUAL	| wer
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 5) FROM DUAL	| w
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 7) FROM DUAL	| w
+| SELECT OVERLAY ('writer' PLACING '' FROM 1 FOR 6) FROM DUAL |
+|===
+
++
+[cols="70%,30%"]
+|===
+^| *Statement* ^| *Result*
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 0) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 1) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 3) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 5) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 7) FROM DUAL	| writer
+|===
+
+* This example replaces the word _stackoverflow_ with the word _reddit_ at 5 position, 13 characters long.
+
++
+```
+SELECT OVERLAY ('www.stackoverflow.com' PLACING 'reddit' FROM 5 FOR 13) FROM DUAL;
+
+(EXPR)
+------------------------------------------------
+www.reddit.com                                  
+
+--- 1 row(s) selected.
+```
+
+* This example changes the road name of Münster city, _Dunantstraße_, to the _Dunantstrasse_.
+
++
+```
+SELECT OVERLAY ('Dunantstraße' PLACING 'ss' FROM 11 FOR 1) FROM DUAL;
+
+(EXPR)
+--------------------------
+Dunantstrasse             
+
+--- 1 row(s) selected.
+```
+
+<<<
 [[pi_function]]
 == PI Function
 
@@ -7147,7 +7332,8 @@ VENDOR_ID VENDOR_NAME    VENDOR_EMAIL           VENDOR_EMAIL_ID
 SELECT vendor_id, PIVOT(vendor_email) FROM vendor GROUP BY vendor_id;
 
 VENDOR_ID (EXPR)                                                                                                                          
---------- --------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------
+
       111 tom@hotmail.com                                                                                                                 
       232 jerry@gmail.com,jerry@hotmail.com                                                                                               
       367 aven@gmail.com,aven@hotmail.com,aven@outlook.com                                                                                
@@ -8924,7 +9110,7 @@ the desired number of bits. See the notes at the beginning of this section
 about storing hash values efficiently.
 
 [[examples_of_sha2]]
-=== examples of SHA2
+=== Examples of SHA2
 ```
 >>SELECT SHA2('abc', 224) from dual;
 
@@ -9161,8 +9347,8 @@ SQL>SELECT SPLIT_PART ('technical writer',' ',3) FROM DUAL;
 --- 1 row(s) selected.
 ```
 
-[[example_of_split_part]]
-=== Example of SPLIT_PART
+[[examples_of_split_part]]
+=== Examples of SPLIT_PART
 
 * This example returns the desired part of the source string.
 +
@@ -11505,7 +11691,7 @@ RAND ([numeric-expression])
 [[rand_function_syntax]]
 === Syntax Descriptions of RAND Function
 
-* _numeric-expression_
+* `_numeric-expression_`
 
 +
 is an SQL numeric value expression that specifies the value for the argument of the RAND function. For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
@@ -11518,15 +11704,17 @@ is an SQL numeric value expression that specifies the value for the argument of 
 ** the seed value should be an integer greater than or equal to 0, and cannot be NULL.
 
 +
-For example,
+*Example*
 
 +
 ```
 SQL>SELECT RAND(1-100) FROM DUAL;
 
 *** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-99 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW. [2018-04-18 04:44:37]
+```
 
-
++
+```
 SQL>SELECT RAND(NULL) FROM DUAL;
 
 *** ERROR[4097] A NULL operand is not allowed in function (RANDOMNUM(NULL)). [2018-04-18 04:44:48]
@@ -11543,7 +11731,7 @@ for each run of the program.
 ** the RAND function will produce different series of numbers even it is called consecutively within a query.
 
 +
-For example,
+*Example*
 
 +
 ```
@@ -11559,7 +11747,7 @@ SQL>SELECT RAND(), RAND(), RAND() FROM DUAL;
 * To get desired numbers within a specified range, you can use a combination of built-in functions, operators and clauses.
 
 +
-For example,
+*Example*
 
 +
 ```
