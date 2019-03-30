@@ -7108,7 +7108,7 @@ is the position at which to begin the overlay.
 NOTE: The `_start_` must be an integer greater than or equal to 1.
 
 +
-NOTE: If the `_start_` is greater than the length of the `_source-string_`, then the `_replacement-string_` is simply appended. 
+NOTE: If `_start_` is greater than the length of the `_source-string_`, then the `_replacement-string_` is simply appended. 
 
 +
 *Example*
