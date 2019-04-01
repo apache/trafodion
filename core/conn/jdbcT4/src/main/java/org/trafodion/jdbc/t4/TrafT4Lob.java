@@ -50,7 +50,7 @@ public abstract class TrafT4Lob {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, lobHandle);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getClob", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, lobHandle);
 			lr.setParameters(p);
@@ -80,7 +80,7 @@ public abstract class TrafT4Lob {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, this.connection_, this.lobHandle_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getClob", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, this.connection_, this.lobHandle_);
 			lr.setParameters(p);

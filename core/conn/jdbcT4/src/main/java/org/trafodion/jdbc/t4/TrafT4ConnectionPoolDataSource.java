@@ -89,7 +89,7 @@ public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements ja
 			Object p[] = T4LoggingUtilities.makeParams(null);
 			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getPooledConnection", "", p);
 		}
-		if (getLogWriter() != null) {
+		if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(null);
 			lr.setParameters(p);
@@ -127,7 +127,7 @@ public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements ja
 			Object p[] = T4LoggingUtilities.makeParams(null, username);
 			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getPooledConnection", "", p);
 		}
-		if (getLogWriter() != null) {
+		if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(null, username);
 			lr.setParameters(p);
@@ -158,7 +158,7 @@ public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements ja
 			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getReference", "", p);
 		}
 		try {
-			if (getLogWriter() != null) {
+			if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
@@ -192,7 +192,7 @@ public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements ja
 			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "setPropertyCycle", "", p);
 		}
 		try {
-			if (getLogWriter() != null) {
+			if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null, propertyCycle);
 				lr.setParameters(p);
@@ -220,7 +220,7 @@ public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements ja
 			t4Logger_.logp(Level.FINE, "TrafT4ConnectionPoolDataSource", "getPropertyCycle", "", p);
 		}
 		try {
-			if (getLogWriter() != null) {
+			if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
@@ -275,7 +275,7 @@ public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements ja
 					"Note, super called before this.", p);
 		}
 		try {
-			if (getLogWriter() != null) {
+			if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
@@ -308,7 +308,7 @@ public class TrafT4ConnectionPoolDataSource extends T4DSProperties implements ja
 					"Note, super called before this.", p);
 		}
 		try {
-			if (getLogWriter() != null) {
+			if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null, props);
 				lr.setParameters(p);

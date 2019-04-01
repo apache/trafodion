@@ -53,7 +53,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getArray", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -73,7 +73,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getArray", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -95,7 +95,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBigDecimal", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -133,7 +133,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, scale);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBigDecimal", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, scale);
 			lr.setParameters(p);
@@ -158,7 +158,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBigDecimal", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -177,7 +177,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, scale);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBigDecimal", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, scale);
 			lr.setParameters(p);
@@ -197,7 +197,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBoolean", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -229,7 +229,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBoolean", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -248,7 +248,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getByte", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -280,7 +280,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getByte", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -299,7 +299,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBytes", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -325,7 +325,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getBytes", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -344,7 +344,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getDate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -396,7 +396,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getDate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, cal);
 			lr.setParameters(p);
@@ -427,7 +427,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getDate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -446,7 +446,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getDate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, cal);
 			lr.setParameters(p);
@@ -465,7 +465,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getDouble", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -496,7 +496,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getDouble", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -515,7 +515,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getFloat", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -547,7 +547,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getFloat", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -566,7 +566,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getInt", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -597,7 +597,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getInt", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -616,7 +616,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getLong", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -647,7 +647,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getLong", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -666,7 +666,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getObject", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -766,7 +766,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, map);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getObject", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, map);
 			lr.setParameters(p);
@@ -785,7 +785,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getOjbect", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -804,7 +804,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, map);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getObject", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, map);
 			lr.setParameters(p);
@@ -823,7 +823,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getRef", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -842,7 +842,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getRef", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -861,7 +861,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getShort", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -892,7 +892,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getShort", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -911,7 +911,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getString", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -976,7 +976,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getString", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -995,7 +995,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTime", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -1040,7 +1040,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTime", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, cal);
 			lr.setParameters(p);
@@ -1071,7 +1071,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTime", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -1090,7 +1090,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTime", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, cal);
 			lr.setParameters(p);
@@ -1109,7 +1109,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTimestamp", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -1154,7 +1154,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTimestamp", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, cal);
 			lr.setParameters(p);
@@ -1188,7 +1188,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTimestamp", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -1207,7 +1207,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getTimestamp", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, cal);
 			lr.setParameters(p);
@@ -1226,7 +1226,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getURL", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex);
 			lr.setParameters(p);
@@ -1246,7 +1246,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "getURL", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName);
 			lr.setParameters(p);
@@ -1265,7 +1265,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, sqlType);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "registerOutParameter", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, sqlType);
 			lr.setParameters(p);
@@ -1287,7 +1287,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, sqlType, scale);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "registerOutParameter", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, sqlType, scale);
 			lr.setParameters(p);
@@ -1309,7 +1309,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, sqlType, typeName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "registerOutParameter", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, sqlType, typeName);
 			lr.setParameters(p);
@@ -1331,7 +1331,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "registerOutParameter", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType);
 			lr.setParameters(p);
@@ -1350,7 +1350,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType, scale);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "registerOutParameter", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType, scale);
 			lr.setParameters(p);
@@ -1369,7 +1369,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType, typeName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "registerOutParameter", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType, typeName);
 			lr.setParameters(p);
@@ -1388,7 +1388,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, length);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setAsciiStream", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, length);
 			lr.setParameters(p);
@@ -1407,7 +1407,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setBigDecimal", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1426,7 +1426,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, length);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setBinaryStream", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, length);
 			lr.setParameters(p);
@@ -1445,7 +1445,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setBoolean", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1464,7 +1464,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setByte", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1483,7 +1483,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setBytes", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1502,7 +1502,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, reader, length);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setCharacterStream", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, reader, length);
 			lr.setParameters(p);
@@ -1521,7 +1521,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setDate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1540,7 +1540,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setDate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, cal);
 			lr.setParameters(p);
@@ -1559,7 +1559,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setDouble", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1578,7 +1578,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setFloat", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1597,7 +1597,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setInt", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1616,7 +1616,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setLong", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1635,7 +1635,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setNull", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType);
 			lr.setParameters(p);
@@ -1654,7 +1654,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType, typeName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setNull", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, sqlType, typeName);
 			lr.setParameters(p);
@@ -1673,7 +1673,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setObject", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1692,7 +1692,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, targetSqlType);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setObject", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, targetSqlType);
 			lr.setParameters(p);
@@ -1711,7 +1711,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, targetSqlType, scale);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setObject", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, targetSqlType, scale);
 			lr.setParameters(p);
@@ -1730,7 +1730,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setShort", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1749,7 +1749,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setString", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1768,7 +1768,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setTime", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1787,7 +1787,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setTime", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, cal);
 			lr.setParameters(p);
@@ -1806,7 +1806,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setTimestamp", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1825,7 +1825,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, cal);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setTimestamp", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, cal);
 			lr.setParameters(p);
@@ -1844,7 +1844,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, length);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setUnicodeStream", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x, length);
 			lr.setParameters(p);
@@ -1863,7 +1863,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "setURL", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterName, x);
 			lr.setParameters(p);
@@ -1882,7 +1882,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "wasNull", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1900,7 +1900,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "execute", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1937,7 +1937,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "executeBatch", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1965,7 +1965,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "executeQuery", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1995,7 +1995,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "executeUpdate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2121,7 +2121,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
 			lr.setParameters(p);
@@ -2139,7 +2139,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
 			lr.setParameters(p);
@@ -2158,7 +2158,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType);
 			lr.setParameters(p);
@@ -2178,7 +2178,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 					resultSetConcurrency, resultSetHoldability);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
 					resultSetConcurrency, resultSetHoldability);
@@ -2199,7 +2199,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 					moduleTimestamp, stmtName);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, moduleName, moduleVersion,
 					moduleTimestamp, stmtName);

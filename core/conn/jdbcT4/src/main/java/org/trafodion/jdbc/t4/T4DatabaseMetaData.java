@@ -75,6 +75,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	// ----------------------------------------------------------------------
 	// First, a variety of minor information about the target database.
 
+	T4Properties getT4props() {
+		return connection_.props_;
+	}
+
+
 	/*
 	 * Can all the procedures returned by getProcedures be called by the current
 	 * user?
@@ -82,11 +87,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean allProceduresAreCallable() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "allProceduresAreCallable", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "allProceduresAreCallable", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -105,11 +110,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean allTablesAreSelectable() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "allTablesAreSelectable", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "allTablesAreSelectable", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -129,11 +134,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * is good enough.
 	 */
 	public String getURL() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getURL", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getURL", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -153,11 +158,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getUserName() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getUserName", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getUserName", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -177,11 +182,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public boolean isReadOnly() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "isReadOnly", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "isReadOnly", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -201,11 +206,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public boolean nullsAreSortedHigh() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedHigh", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedHigh", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -224,11 +229,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean nullsAreSortedLow() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedLow", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedLow", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -247,11 +252,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean nullsAreSortedAtStart() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedAtStart", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedAtStart", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -270,11 +275,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean nullsAreSortedAtEnd() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedAtEnd", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullsAreSortedAtEnd", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -293,11 +298,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return database product name
 	 */
 	public String getDatabaseProductName() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseProductName", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseProductName", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -317,11 +322,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getDatabaseProductVersion() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseProductVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseProductVersion", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -340,11 +345,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return JDBC driver name
 	 */
 	public String getDriverName() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverName", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverName", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -363,11 +368,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return JDBC driver version
 	 */
 	public String getDriverVersion() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverVersion", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -386,12 +391,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return JDBC driver major version
 	 */
 	public int getDriverMajorVersion() {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverMajorVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverMajorVersion", "", p);
 		}
 		try {
-			if (connection_.props_.getLogWriter() != null) {
+			if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 				lr.setParameters(p);
@@ -413,12 +418,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return JDBC driver minor version number
 	 */
 	public int getDriverMinorVersion() {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverMinorVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDriverMinorVersion", "", p);
 		}
 		try {
-			if (connection_.props_.getLogWriter() != null) {
+			if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 				lr.setParameters(p);
@@ -440,11 +445,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean usesLocalFiles() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "usesLocalFiles", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "usesLocalFiles", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -463,11 +468,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if the database uses a local file for each table
 	 */
 	public boolean usesLocalFilePerTable() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "usesLocalFilePerTable", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "usesLocalFilePerTable", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -488,12 +493,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return false always for the Type 4 driver.
 	 */
 	public boolean supportsMixedCaseIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_
 					.logp(Level.FINE, "T4DatabaseMetaData", "supportsMixedCaseIdentifiers", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -512,11 +517,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean storesUpperCaseIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesUpperCaseIdentifiers", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesUpperCaseIdentifiers", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -536,11 +541,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean storesLowerCaseIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesLowerCaseIdentifiers", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesLowerCaseIdentifiers", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -560,11 +565,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean storesMixedCaseIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesMixedCaseIdentifiers", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesMixedCaseIdentifiers", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -585,12 +590,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always true for the Type 4 drive.
 	 */
 	public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMixedCaseQuotedIdentifiers",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMixedCaseQuotedIdentifiers",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -610,12 +615,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesUpperCaseQuotedIdentifiers",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesUpperCaseQuotedIdentifiers",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -635,12 +640,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesLowerCaseQuotedIdentifiers",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "storesLowerCaseQuotedIdentifiers",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -660,12 +665,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", " storesMixedCaseQuotedIdentifiers",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", " storesMixedCaseQuotedIdentifiers",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -686,11 +691,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the quoting string ".
 	 */
 	public String getIdentifierQuoteString() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getIdentifierQuoteString", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getIdentifierQuoteString", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -711,11 +716,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getSQLKeywords() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSQLKeywords", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSQLKeywords", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -737,11 +742,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getNumericFunctions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getNumericFunctions", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getNumericFunctions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -763,11 +768,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getStringFunctions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getStringFunctions", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getStringFunctions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -788,11 +793,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getSystemFunctions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSystemFunctions", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSystemFunctions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -812,11 +817,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getTimeDateFunctions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTimeDateFunctions", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTimeDateFunctions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -842,11 +847,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * 
 	 */
 	public String getSearchStringEscape() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSearchStringEscape", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSearchStringEscape", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -866,11 +871,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the string containing the extra characters
 	 */
 	public String getExtraNameCharacters() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getExtraNameCharacters", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getExtraNameCharacters", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -892,12 +897,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsAlterTableWithAddColumn() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsAlterTableWithAddColumn",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsAlterTableWithAddColumn",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -916,12 +921,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsAlterTableWithDropColumn() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsAlterTableWithDropColumn",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsAlterTableWithDropColumn",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -945,11 +950,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsColumnAliasing() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsColumnAliasing", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsColumnAliasing", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -971,11 +976,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean nullPlusNonNullIsNull() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullPlusNonNullIsNull", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "nullPlusNonNullIsNull", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -994,11 +999,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsConvert() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsConvert", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsConvert", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1020,11 +1025,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @see Types
 	 */
 	public boolean supportsConvert(int fromType, int toType) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, fromType, toType);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsConvert", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), fromType, toType);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsConvert", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, fromType, toType);
 			lr.setParameters(p);
@@ -1133,12 +1138,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true for Type 4 driver
 	 */
 	public boolean supportsTableCorrelationNames() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsTableCorrelationNames", "",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsTableCorrelationNames", "",
 					p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1159,12 +1164,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return false always for Type 4 driver.
 	 */
 	public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"supportsDifferentTableCorrelationNames", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1184,12 +1189,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return false always for Type 4 driver.
 	 */
 	public boolean supportsExpressionsInOrderBy() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_
 					.logp(Level.FINE, "T4DatabaseMetaData", "supportsExpressionsInOrderBy", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1208,11 +1213,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsOrderByUnrelated() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOrderByUnrelated", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOrderByUnrelated", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1231,11 +1236,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsGroupBy() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGroupBy", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGroupBy", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1254,11 +1259,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsGroupByUnrelated() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGroupByUnrelated", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGroupByUnrelated", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1278,11 +1283,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsGroupByBeyondSelect() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGroupByBeyondSelect", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGroupByBeyondSelect", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1302,11 +1307,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always true for the Type 4 driver.
 	 */
 	public boolean supportsLikeEscapeClause() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsLikeEscapeClause", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsLikeEscapeClause", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1325,11 +1330,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsMultipleResultSets() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMultipleResultSets", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMultipleResultSets", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1349,12 +1354,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsMultipleTransactions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_
 					.logp(Level.FINE, "T4DatabaseMetaData", "supportsMultipleTransactions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1373,11 +1378,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsNonNullableColumns() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsNonNullableColumns", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsNonNullableColumns", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1398,11 +1403,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsMinimumSQLGrammar() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMinimumSQLGrammar", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMinimumSQLGrammar", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1421,11 +1426,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsCoreSQLGrammar() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCoreSQLGrammar", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCoreSQLGrammar", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1444,11 +1449,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsExtendedSQLGrammar() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsExtendedSQLGrammar", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsExtendedSQLGrammar", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1468,11 +1473,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsANSI92EntryLevelSQL", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsANSI92EntryLevelSQL", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1491,12 +1496,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsANSI92IntermediateSQL() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsANSI92IntermediateSQL", "",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsANSI92IntermediateSQL", "",
 					p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1515,11 +1520,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsANSI92FullSQL() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsANSI92FullSQL", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsANSI92FullSQL", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1538,12 +1543,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsIntegrityEnhancementFacility() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"supportsIntegrityEnhancementFacility", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1562,11 +1567,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsOuterJoins() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOuterJoins", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOuterJoins", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1585,11 +1590,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsFullOuterJoins() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsFullOuterJoins", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsFullOuterJoins", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1608,11 +1613,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsLimitedOuterJoins() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsLimitedOuterJoins", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsLimitedOuterJoins", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1631,11 +1636,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the vendor term
 	 */
 	public String getSchemaTerm() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSchemaTerm", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSchemaTerm", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1654,11 +1659,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the vendor term
 	 */
 	public String getProcedureTerm() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getProcedureTerm", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getProcedureTerm", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1677,11 +1682,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the vendor term
 	 */
 	public String getCatalogTerm() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCatalogTerm", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCatalogTerm", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1700,11 +1705,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean isCatalogAtStart() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "isCatalogAtStart", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "isCatalogAtStart", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1723,11 +1728,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the separator string
 	 */
 	public String getCatalogSeparator() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCatalogSeparator", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCatalogSeparator", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1746,12 +1751,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInDataManipulation() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInDataManipulation",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInDataManipulation",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1770,12 +1775,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInProcedureCalls() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInProcedureCalls",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInProcedureCalls",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1794,12 +1799,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInTableDefinitions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInTableDefinitions",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInTableDefinitions",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1818,12 +1823,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInIndexDefinitions",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSchemasInIndexDefinitions",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1842,12 +1847,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"supportsSchemasInPrivilegeDefinitions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1866,12 +1871,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInDataManipulation() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInDataManipulation",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInDataManipulation",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1890,12 +1895,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInProcedureCalls",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInProcedureCalls",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1914,12 +1919,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInTableDefinitions",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInTableDefinitions",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1938,12 +1943,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInIndexDefinitions",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsCatalogsInIndexDefinitions",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1962,12 +1967,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"supportsCatalogsInPrivilegeDefinitions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -1986,11 +1991,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsPositionedDelete() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsPositionedDelete", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsPositionedDelete", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2009,11 +2014,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsPositionedUpdate() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsPositionedUpdate", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsPositionedUpdate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2031,11 +2036,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsSelectForUpdate() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSelectForUpdate", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSelectForUpdate", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2055,11 +2060,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsStoredProcedures() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsStoredProcedures", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsStoredProcedures", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2078,12 +2083,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsSubqueriesInComparisons() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInComparisons",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInComparisons",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2102,11 +2107,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsSubqueriesInExists() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInExists", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInExists", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2125,11 +2130,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsSubqueriesInIns() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInIns", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInIns", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2148,12 +2153,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for Type 4 driver.
 	 */
 	public boolean supportsSubqueriesInQuantifieds() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInQuantifieds",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsSubqueriesInQuantifieds",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2173,12 +2178,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always for the Type 4 driver.
 	 */
 	public boolean supportsCorrelatedSubqueries() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_
 					.logp(Level.FINE, "T4DatabaseMetaData", "supportsCorrelatedSubqueries", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2197,11 +2202,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsUnion() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsUnion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsUnion", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2220,11 +2225,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsUnionAll() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsUnionAll", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsUnionAll", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2244,12 +2249,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * remain open
 	 */
 	public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOpenCursorsAcrossCommit",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOpenCursorsAcrossCommit",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2269,12 +2274,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * remain open
 	 */
 	public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOpenCursorsAcrossRollback",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOpenCursorsAcrossRollback",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2294,12 +2299,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * remain open
 	 */
 	public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOpenStatementsAcrossCommit",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsOpenStatementsAcrossCommit",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2319,12 +2324,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * remain open
 	 */
 	public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"supportsOpenStatementsAcrossRollback", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2349,11 +2354,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max literal length
 	 */
 	public int getMaxBinaryLiteralLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxBinaryLiteralLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxBinaryLiteralLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2372,11 +2377,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max literal length
 	 */
 	public int getMaxCharLiteralLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxCharLiteralLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxCharLiteralLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2395,11 +2400,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max literal length
 	 */
 	public int getMaxColumnNameLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnNameLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnNameLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2418,11 +2423,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max number of columns
 	 */
 	public int getMaxColumnsInGroupBy() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInGroupBy", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInGroupBy", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2441,11 +2446,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max columns
 	 */
 	public int getMaxColumnsInIndex() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInIndex", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInIndex", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2464,11 +2469,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max columns
 	 */
 	public int getMaxColumnsInOrderBy() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInOrderBy", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInOrderBy", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2487,11 +2492,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max columns
 	 */
 	public int getMaxColumnsInSelect() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInSelect", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInSelect", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2510,11 +2515,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max columns
 	 */
 	public int getMaxColumnsInTable() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInTable", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxColumnsInTable", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2533,11 +2538,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max connections
 	 */
 	public int getMaxConnections() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxConnections", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxConnections", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2557,11 +2562,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * (ID_MAX)
 	 */
 	public int getMaxCursorNameLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxCursorNameLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxCursorNameLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2580,11 +2585,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max index length in bytes
 	 */
 	public int getMaxIndexLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxIndexLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxIndexLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2603,11 +2608,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max name length in bytes
 	 */
 	public int getMaxSchemaNameLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxSchemaNameLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxSchemaNameLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2626,11 +2631,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max name length in bytes
 	 */
 	public int getMaxProcedureNameLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxProcedureNameLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxProcedureNameLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2649,9 +2654,9 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max name length in bytes
 	 */
 	public int getMaxCatalogNameLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxCatalogNameLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxCatalogNameLength", "", p);
 		}
 		if (connection_.props_.getLogWriter() != null) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
@@ -2672,11 +2677,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max row size in bytes
 	 */
 	public int getMaxRowSize() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxRowSize", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxRowSize", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2695,11 +2700,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "doesMaxRowSizeIncludeBlobs", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "doesMaxRowSizeIncludeBlobs", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2718,11 +2723,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max length in bytes
 	 */
 	public int getMaxStatementLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxStatementLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxStatementLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2741,11 +2746,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the maximum
 	 */
 	public int getMaxStatements() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxStatements", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxStatements", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2764,11 +2769,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max name length in bytes
 	 */
 	public int getMaxTableNameLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxTableNameLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxTableNameLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2787,11 +2792,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return the maximum
 	 */
 	public int getMaxTablesInSelect() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxTablesInSelect", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxTablesInSelect", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2810,11 +2815,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return max name length in bytes
 	 */
 	public int getMaxUserNameLength() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxUserNameLength", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getMaxUserNameLength", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2838,12 +2843,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @see Connection
 	 */
 	public int getDefaultTransactionIsolation() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDefaultTransactionIsolation", "",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDefaultTransactionIsolation", "",
 					p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2861,11 +2866,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true always since Type supports transactions.
 	 */
 	public boolean supportsTransactions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsTransactions", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsTransactions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2887,12 +2892,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @see Connection
 	 */
 	public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, "supportsTransactionIsolationLevel");
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsTransactionIsolationLevel",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), "supportsTransactionIsolationLevel");
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsTransactionIsolationLevel",
 					"", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, "supportsTransactionIsolationLevel");
 			lr.setParameters(p);
@@ -2912,12 +2917,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"supportsDataDefinitionAndDataManipulationTransactions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2936,12 +2941,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"supportsDataManipulationTransactionsOnly", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2961,12 +2966,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"dataDefinitionCausesTransactionCommit", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -2985,12 +2990,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return true if so
 	 */
 	public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData",
 					"dataDefinitionIgnoredInTransactions", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -3030,12 +3035,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
 			throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities
-					.makeParams(connection_.props_, catalog, schemaPattern, procedureNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getProcedures", "", p);
+					.makeParams(getT4props(), catalog, schemaPattern, procedureNamePattern);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getProcedures", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities
 					.makeParams(connection_.props_, catalog, schemaPattern, procedureNamePattern);
@@ -3162,12 +3167,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern,
 			String columnNamePattern) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern,
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern,
 					procedureNamePattern, columnNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getProcedureColumns", "", p);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getProcedureColumns", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern,
 					procedureNamePattern, columnNamePattern);
@@ -3297,12 +3302,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 
 	public java.sql.ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String types[])
 			throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern,
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern, tableNamePattern,
 					types);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTables", "", p);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTables", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern,
 					types);
@@ -3420,11 +3425,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * name
 	 */
 	public java.sql.ResultSet getSchemas() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSchemas", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSchemas", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -3486,11 +3491,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * name
 	 */
 	public java.sql.ResultSet getCatalogs() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCatalogs", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCatalogs", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -3538,11 +3543,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * type
 	 */
 	public java.sql.ResultSet getTableTypes() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTableTypes", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTableTypes", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -3623,12 +3628,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern,
 			String columnNamePattern) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern,
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern, tableNamePattern,
 					columnNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getColumns", "", p);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getColumns", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern,
 					columnNamePattern);
@@ -3753,11 +3758,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern)
 			throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table, columnNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getColumnPrivileges", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table, columnNamePattern);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getColumnPrivileges", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table, columnNamePattern);
 			lr.setParameters(p);
@@ -3854,11 +3859,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
 			throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTablePrivileges", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern, tableNamePattern);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTablePrivileges", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern);
 			lr.setParameters(p);
@@ -3948,11 +3953,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope,
 			boolean nullable) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table, scope, nullable);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getBestRowIdentifier", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table, scope, nullable);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getBestRowIdentifier", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table, scope, nullable);
 			lr.setParameters(p);
@@ -4043,11 +4048,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * name @return ResultSet - each row is a column description
 	 */
 	public java.sql.ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getVersionColumns", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getVersionColumns", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
 			lr.setParameters(p);
@@ -4128,11 +4133,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return ResultSet - each row is a primary key column description
 	 */
 	public java.sql.ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getPrimaryKeys", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getPrimaryKeys", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
 			lr.setParameters(p);
@@ -4243,11 +4248,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @see #getExportedKeys
 	 */
 	public java.sql.ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getImportedKeys", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getImportedKeys", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
 			lr.setParameters(p);
@@ -4358,11 +4363,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @see #getImportedKeys
 	 */
 	public java.sql.ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getExportedKeys", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getExportedKeys", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
 			lr.setParameters(p);
@@ -4481,12 +4486,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getCrossReference(String primaryCatalog, String primarySchema, String primaryTable,
 			String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, primaryCatalog, primarySchema, primaryTable,
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), primaryCatalog, primarySchema, primaryTable,
 					foreignCatalog, foreignSchema, foreignTable);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCrossReference", "", p);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getCrossReference", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, primaryCatalog, primarySchema, primaryTable,
 					foreignCatalog, foreignSchema, foreignTable);
@@ -4597,11 +4602,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * @return ResultSet - each row is a SQL type description
 	 */
 	public java.sql.ResultSet getTypeInfo() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTypeInfo", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getTypeInfo", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -4679,11 +4684,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 */
 	public java.sql.ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique,
 			boolean approximate) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table, unique, approximate);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getIndexInfo", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table, unique, approximate);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getIndexInfo", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table, unique, approximate);
 			lr.setParameters(p);
@@ -4787,11 +4792,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 
 	private java.sql.ResultSet getGenericCatInfo(String catalog, String schema, String table, String method,
 			short apiType) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", method, "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schema, table);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", method, "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schema, table);
 			lr.setParameters(p);
@@ -4860,11 +4865,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean deletesAreDetected(int type)
 	 *------------------------------------------------------------*/
 	public boolean deletesAreDetected(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "deleteAreDetected", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "deleteAreDetected", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -4881,11 +4886,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * Connection getConnection()
 	 *----------------------------------------------------------------*/
 	public java.sql.Connection getConnection() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getConnection", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getConnection", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -4904,12 +4909,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 *--------------------------------------------------------------*/
 	public java.sql.ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
 			throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, typeNamePattern,
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern, typeNamePattern,
 					types);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getUDTs", "", p);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getUDTs", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, typeNamePattern,
 					types);
@@ -4956,11 +4961,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean insertsAreDetected(int type)
 	 *------------------------------------------------------------*/
 	public boolean insertsAreDetected(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "insertsAreDetected", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "insertsAreDetected", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -4977,11 +4982,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean updatesAreDetected(int type)
 	 *------------------------------------------------------------*/
 	public boolean updatesAreDetected(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "updatesAreDetected", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "updatesAreDetected", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -4998,11 +5003,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean othersDeletesAreVisible(int type)
 	 *------------------------------------------------------------*/
 	public boolean othersDeletesAreVisible(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "type", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "type", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -5019,11 +5024,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean othersInsertsAreVisible(int type)
 	 *------------------------------------------------------------*/
 	public boolean othersInsertsAreVisible(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "othersInsertsAreVisible", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "othersInsertsAreVisible", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -5040,11 +5045,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean othersUpdatesAreVisible(int type)
 	 *------------------------------------------------------------*/
 	public boolean othersUpdatesAreVisible(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "othersUpdatesAreVisible", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "othersUpdatesAreVisible", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -5061,11 +5066,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean ownDeletesAreVisible(int type)
 	 *------------------------------------------------------------*/
 	public boolean ownDeletesAreVisible(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "ownDeletesAreVisible", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "ownDeletesAreVisible", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -5082,11 +5087,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean ownInsertsAreVisible(int type)
 	 *------------------------------------------------------------*/
 	public boolean ownInsertsAreVisible(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "ownInsertsAreVisible", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "ownInsertsAreVisible", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -5103,11 +5108,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean ownUpdatesAreVisible(int type)
 	 *------------------------------------------------------------*/
 	public boolean ownUpdatesAreVisible(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "ownUpdatesAreVisible", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "ownUpdatesAreVisible", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -5124,11 +5129,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean supportsBatchUpdates()
 	 *-----------------------------------------------------------*/
 	public boolean supportsBatchUpdates() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsBatchUpdates", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsBatchUpdates", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5145,11 +5150,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean supportsResultSetType(int type)
 	 *------------------------------------------------------------*/
 	public boolean supportsResultSetType(int type) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsResultSetType", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsResultSetType", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type);
 			lr.setParameters(p);
@@ -5172,12 +5177,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	 * boolean supportsResultSetConcurrency(int type, int concurrency)
 	 *------------------------------------------------------------*/
 	public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type, concurrency);
-			connection_.props_.t4Logger_
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), type, concurrency);
+			getT4props().t4Logger_
 					.logp(Level.FINE, "T4DatabaseMetaData", "supportsResultSetConcurrency", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, type, concurrency);
 			lr.setParameters(p);
@@ -5206,11 +5211,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public boolean supportsNamedParameters() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsNamedParameters", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsNamedParameters", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5224,11 +5229,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public boolean supportsMultipleOpenResults() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMultipleOpenResults", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsMultipleOpenResults", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5242,11 +5247,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public boolean supportsGetGeneratedKeys() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGetGeneratedKeys", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsGetGeneratedKeys", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5260,11 +5265,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, typeNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSuperTypes", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern, typeNamePattern);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSuperTypes", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, typeNamePattern);
 			lr.setParameters(p);
@@ -5305,11 +5310,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSuperTables", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern, tableNamePattern);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSuperTables", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, tableNamePattern);
 			lr.setParameters(p);
@@ -5348,12 +5353,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 
 	public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern,
 			String attributeNamePattern) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, typeNamePattern,
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), catalog, schemaPattern, typeNamePattern,
 					attributeNamePattern);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getAttributes", "", p);
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getAttributes", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, catalog, schemaPattern, typeNamePattern,
 					attributeNamePattern);
@@ -5425,11 +5430,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public int getJDBCMajorVersion() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getJDBCMajorVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getJDBCMajorVersion", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5443,11 +5448,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public int getJDBCMinorVersion() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getJDBCMinorVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getJDBCMinorVersion", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5461,11 +5466,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public int getSQLStateType() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSQLStateType", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getSQLStateType", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5479,11 +5484,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public boolean locatorsUpdateCopy() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "locatorsUpdateCopy", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "locatorsUpdateCopy", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5497,11 +5502,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public boolean supportsStatementPooling() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsStatementPooling", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "supportsStatementPooling", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5515,12 +5520,12 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, holdability);
-			connection_.props_.t4Logger_
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props(), holdability);
+			getT4props().t4Logger_
 					.logp(Level.FINE, "T4DatabaseMetaData", "supportsResultSetHoldability", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, holdability);
 			lr.setParameters(p);
@@ -5534,11 +5539,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public int getResultSetHoldability() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getResultSetHoldability", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getResultSetHoldability", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5552,11 +5557,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public int getDatabaseMajorVersion() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseMajorVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseMajorVersion", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5571,11 +5576,11 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 	}
 
 	public int getDatabaseMinorVersion() throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseMinorVersion", "", p);
+		if (getT4props().t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(getT4props());
+			getT4props().t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "getDatabaseMinorVersion", "", p);
 		}
-		if (connection_.props_.getLogWriter() != null) {
+		if ( getT4props().t4Logger_.isLoggable(Level.FINE) && getT4props().getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -5605,7 +5610,7 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			connection.props_.t4Logger_.logp(Level.FINE, "T4DatabaseMetaData", "", "", p);
 		}
 		try {
-			if (connection.props_.getLogWriter() != null) {
+			if ( connection.props_.t4Logger_.isLoggable(Level.FINE) && connection.props_.getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection.props_, connection);
 				lr.setParameters(p);

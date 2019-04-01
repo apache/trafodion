@@ -41,7 +41,7 @@ public class TrafT4PooledConnection implements javax.sql.PooledConnection {
 				connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "addConnectionEventListener", "",
 						p);
 			}
-			if (connection_ != null && connection_.props_.getLogWriter() != null) {
+			if ( connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, listener);
 				lr.setParameters(p);
@@ -65,7 +65,7 @@ public class TrafT4PooledConnection implements javax.sql.PooledConnection {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "close", "", p);
 		}
-		if (connection_ != null && connection_.props_.getLogWriter() != null) {
+		if ( connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -92,7 +92,7 @@ public class TrafT4PooledConnection implements javax.sql.PooledConnection {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "getConnection", "", p);
 		}
-		if (connection_ != null && connection_.props_.getLogWriter() != null) {
+		if ( connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
@@ -120,7 +120,7 @@ public class TrafT4PooledConnection implements javax.sql.PooledConnection {
 				connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "removeConnectionEventListener",
 						"", p);
 			}
-			if (connection_ != null && connection_.props_.getLogWriter() != null) {
+			if ( connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, listener);
 				lr.setParameters(p);
@@ -201,7 +201,7 @@ public class TrafT4PooledConnection implements javax.sql.PooledConnection {
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, pds, t4props);
 				connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "", "", p);
 			}
-			if (connection_ != null && connection_.props_.getLogWriter() != null) {
+			if ( connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, pds, t4props);
 				lr.setParameters(p);
