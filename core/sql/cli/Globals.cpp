@@ -463,6 +463,7 @@ CliGlobals * CliGlobals::createCliGlobals(NABoolean espProcess)
   result =  new CliGlobals(espProcess);
   //pthread_key_create(&thread_key, SQ_CleanupThread);
   cli_globals = result;
+  HBaseClient_JNI::getInstance();
   return result;
 }
 

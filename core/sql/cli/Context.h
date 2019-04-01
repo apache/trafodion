@@ -189,10 +189,6 @@ public:
   }
 
   inline ExProcessStats *getExProcessStats() { return processStats_; }
-  void setHbaseClient(HBaseClient_JNI *hbaseClientJNI)
-  { hbaseClientJNI_ = hbaseClientJNI; }
-  HBaseClient_JNI *getHBaseClient() { return hbaseClientJNI_; }
-
   HiveClient_JNI *getHiveClient() { return hiveClientJNI_; }
   void setHiveClient(HiveClient_JNI *hiveClientJNI)
   { hiveClientJNI_ = hiveClientJNI; }
@@ -514,7 +510,6 @@ private:
   Int64 udrXactId_;  // transid that UDR Server is interested to know
                      // if aborted
   NAString jniErrorStr_; 
-  HBaseClient_JNI *hbaseClientJNI_;
   HiveClient_JNI *hiveClientJNI_;
   HdfsClient *hdfsClientJNI_;
 

@@ -89,6 +89,7 @@ class ExProcessStats;
 class CliGlobals;
 class CLISemaphore;
 class HBaseClient_JNI;
+class MonarchClient_JNI;
 class HiveClient_JNI;
 class HdfsClient;
 class TransMode;
@@ -374,6 +375,18 @@ inline
   ULng32 unusedMemoryQuota();
   void yieldMemoryQuota(ULng32 size);
   NABoolean isEspProcess() { return espProcess_; }
+
+  void setHbaseClient(HBaseClient_JNI *hbaseClientJNI)
+     { hbaseClientJNI_ = hbaseClientJNI; }
+  HBaseClient_JNI *getHBaseClient() { return hbaseClientJNI_; }
+
+  void setBigtableClient(HBaseClient_JNI *hbaseClientJNI)
+     { bigtableClientJNI_ = hbaseClientJNI; }
+  HBaseClient_JNI *getBigtableClient() { return bigtableClientJNI_; }
+
+  void setMonarchClient(MonarchClient_JNI *monarchClientJNI)
+     { monarchClientJNI_ = monarchClientJNI; }
+  MonarchClient_JNI *getMonarchClient() { return monarchClientJNI_; }
 private:
   enum {
     DEFAULT_CONTEXT_HANDLE = 2000
@@ -510,6 +523,9 @@ private:
   LmLanguageManagerC *langManC_;
   LmLanguageManagerJava *langManJava_;
   NABoolean espProcess_;
+  HBaseClient_JNI *hbaseClientJNI_;
+  HBaseClient_JNI *bigtableClientJNI_;
+  MonarchClient_JNI *monarchClientJNI_;
 };
 
 // -----------------------------------------------------------------------
