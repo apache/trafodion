@@ -97,7 +97,7 @@ class LmLanguageManager;
 class LmLanguageManagerC;
 class LmLanguageManagerJava;
 extern CliGlobals *cli_globals;
-static __thread ContextTidMap *tsCurrentContextMap = NULL;
+extern __thread ContextTidMap *tsCurrentContextMap;
 static  pthread_key_t thread_key;
 
 // A cleanup function when thread exits
