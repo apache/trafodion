@@ -249,6 +249,8 @@ class HSLogMan
          void LogTimestamp(const char *text = ""); /* log current local time, to microseconds */
          char msg[2000];                  /* general purpose buffer for      */
                                           /* formmatting messages            */
+         char truncationBuffer0[sizeof(msg)];  // buffer for truncating column name lists if needed
+         char truncationBuffer1[sizeof(msg)]; // buffer for truncating column name lists if needed
 
          NAString* logFileName() { return logFile_; };
 
@@ -263,6 +265,7 @@ class HSLogMan
 
          LogSetting GetLogSetting() const { return logSetting_; }
          void SetLogSetting(LogSetting logSetting);
+         const char * truncate(const char * data, size_t size, int bufferNumber = 0);
 
     protected:
          HSLogMan();                      /* ensure only 1 instance of class */

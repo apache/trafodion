@@ -1918,6 +1918,7 @@ drop the default context
 9226 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: one interval for column $0~String0 is reset to zero. A regular UPDATE STATISTICS is performed instead.
 9227 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: an interval for column $0~String0 is reduced to zero rows using IUS. A regular UPDATE STATISTICS is performed instead.
 9228 ZZZZZ 99999 BEGINNER MINOR LOGONLY There were no sample tables to drop.
+9229 ZZZZZ 99999 BEGINNER MAJOR DBADMIN More than $0~String0 columns were specified in the multi-column list $1~String1.
 9230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: $0~int0 columns could not be processed due to insufficient memory, and are being processed by regular UPDATE STATISTICS instead.
 9231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: only RANDOM <percentage> PERCENT is allowed as the sampling specification with PERSISTENT.
 9232 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: cannot proceed because of the on-going IUS transaction originated at $0~String0. 

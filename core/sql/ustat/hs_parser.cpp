@@ -511,6 +511,32 @@ Lng32 AddColumnSet(HSColSet &colSet)
         return HS_WARNING;
       }
 
+    Lng32 maxNumCols =
+      (ActiveSchemaDB()->getDefaults()).getAsLong(USTAT_MULTI_COLUMN_LIMIT);
+    if (numCols > maxNumCols)
+      {
+        // parsing reversed the column order; for error messages, we
+        // unreverse it to make more sense to the user
+        NAString columnNames(colSet[numCols-1].colname->data()); 
+        for (i = numCols-2; i >= 0; i--)
+          {
+            columnNames += ", ";
+            columnNames += colSet[i].colname->data();
+          }
+
+        if (LM->LogNeeded())
+          {
+            sprintf(LM->msg, "\t\tToo many columns in multi-column histogram (%s); limit is %d (CQD USTAT_MULTI_COLUMN_LIMIT)",
+              LM->truncate(columnNames.data(),sizeof(LM->msg)-200),maxNumCols);
+            LM->Log(LM->msg);
+          }
+        char temp[20];
+        sprintf(temp,"%d",maxNumCols);
+        HSFuncMergeDiags(- UERR_MULTI_COLUMN_LIMIT_EXCEEDED, temp, columnNames.data());
+        retcode = -1;
+        HSHandleError(retcode);
+      }     
+
     for (i=0; i<numCols; i++)          // update column numbers, position & NO DUPLICATES
       {
         HSColumnStruct &col = colSet[i];
@@ -543,7 +569,7 @@ Lng32 AddColumnSet(HSColSet &colSet)
       {
         if (LM->LogNeeded())
           {
-            sprintf(LM->msg, "\t\tNon-Unique Column Group (%s)", colNames.data());
+            sprintf(LM->msg, "\t\tNon-Unique Column Group (%s)", LM->truncate(colNames.data(),sizeof(LM->msg)-200));
             LM->Log(LM->msg);
           }
         HSFuncMergeDiags(- UERR_COLUMNLIST_NOT_UNIQUE, colNames.data());

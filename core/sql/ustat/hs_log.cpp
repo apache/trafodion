@@ -342,6 +342,32 @@ void HSLogMan::SetLogSetting(LogSetting logSetting)
 }
 
 /***********************************************/
+/* METHOD:  truncate()                         */
+/* PURPOSE: Truncate a string so it fits in    */
+/* the log buffer (or other buffer)            */
+/* INPUT:   data - data string to truncate     */
+/* size - the size to truncate it to           */
+/***********************************************/
+const char * HSLogMan::truncate(const char * data, size_t size, int bufferNumber)
+{
+  const char * result = data;  // don't move it if we don't need to
+  if (size > sizeof(msg)-200)
+    size = sizeof(msg)-200;
+
+  if (strlen(data) > size)
+    {
+      char * targetBuffer = truncationBuffer0;
+      if (bufferNumber > 0)
+        targetBuffer = truncationBuffer1;
+      strncpy(targetBuffer,data,size);
+      strcpy(targetBuffer+size,"...");
+      result = targetBuffer;
+    }
+  return result;
+}
+
+
+/***********************************************/
 /* METHOD:  StartLog()                         */
 /* PURPOSE: Begin capturing log information    */
 /* INPUT:   needExplain - Indicator of whether */

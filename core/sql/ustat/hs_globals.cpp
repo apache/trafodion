@@ -994,7 +994,8 @@ void HSGlobalsClass::formGroupSets()
       {
          if (LM->LogNeeded())
          {
-            sprintf(LM->msg, "\tMC: GROUP (%s) has state DONT_TRY, is skipped", mgroup_set->colNames->data());
+            sprintf(LM->msg, "\tMC: GROUP (%s) has state DONT_TRY, is skipped", 
+              LM->truncate(mgroup_set->colNames->data(),sizeof(LM->msg-200)));
             LM->Log(LM->msg);
          }
       }
@@ -1004,7 +1005,8 @@ void HSGlobalsClass::formGroupSets()
 
          if (LM->LogNeeded())
          {
-            sprintf(LM->msg, "\tMC: GROUP (%s) is a HEAD GROUP ", mgroup_set->colNames->data());
+            sprintf(LM->msg, "\tMC: GROUP (%s) is a HEAD GROUP ", 
+              LM->truncate(mgroup_set->colNames->data(),sizeof(LM->msg-200)));
             LM->Log(LM->msg);
          }
 
@@ -1050,14 +1052,15 @@ void HSGlobalsClass::formGroupSets()
               myNextNeighbpr = myNextNeighbpr->mcis_next;
 
               sprintf(LM->msg, "\tMC: GROUP (%s) is neighbor of HEAD GROUP (%s)", 
-                      myNextNeighbpr->colNames->data(), mgroup_set->colNames->data());
+                      LM->truncate(myNextNeighbpr->colNames->data(),sizeof(LM->msg-1100)), 
+                      LM->truncate(mgroup_set->colNames->data(),sizeof(LM->msg-1100),1));
               LM->Log(LM->msg);
             }
 
             if (mgroup_set->mcis_groupWeight.isNull())
             {
                sprintf(LM->msg, "\tMC: GROUP (%s) has no neighbors", 
-                       mgroup_set->colNames->data());
+                       LM->truncate(mgroup_set->colNames->data(),sizeof(LM->msg-200)));
                LM->Log(LM->msg);
             }
          }
@@ -5199,7 +5202,8 @@ void HSGlobalsClass::getMemoryRequirementsForOneMCGroup(HSColGroupStruct* mgroup
   {
     sprintf(LM->msg, "MC: Group with columns %s requires (%ld) bytes of memory"
                      " for internal sort including (%ld) bytes for MC processing.",
-                      mgroup->colNames->data(), mgroup->mcis_totalMCmemNeeded, mgroup->memNeeded);
+                     LM->truncate(mgroup->colNames->data(),sizeof(LM->msg-200)), 
+                     mgroup->mcis_totalMCmemNeeded, mgroup->memNeeded);
     LM->Log(LM->msg);
   }
 }
@@ -9212,10 +9216,10 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
         if (coveredByIS)
         {
             if (LM->LogNeeded())
-            {
+            {                  
                char title[1000];
                sprintf(title, "MC: Compute using Internal Sort (%s) with%sskew",
-                               mgroup->colNames->data(), collectMCSkewedValues? " " : " NO ");
+                               LM->truncate(mgroup->colNames->data(),sizeof(title)-50), collectMCSkewedValues? " " : " NO ");
                LM->StartTimer(title);
                (void)getTimeDiff(TRUE);
             }
@@ -9352,7 +9356,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
             {
                char title[1000];
                sprintf(title, "MC: Compute using SQL (%s) with%sskew",
-                               mgroup->colNames->data(), collectMCSkewedValues? " " : " NO ");
+                               LM->truncate(mgroup->colNames->data(),sizeof(title)-50), collectMCSkewedValues? " " : " NO ");
                LM->StartTimer(title);
                (void)getTimeDiff(TRUE);
             }
