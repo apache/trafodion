@@ -7073,6 +7073,191 @@ The first three rows retrieved display null because the offset from the
 current row does not fall within the result table.
 
 <<<
+[[overlay_function]]
+== OVERLAY Function
+
+The OVERLAY function replaces some characters of the `_source-string_` (or the whole `_source-string_`) with the `_replacement-string_`.
+
+
+The OVERLAY function is similar to the INSERT function (see <<insert_function,INSERT Function>>) except that the arguments are in a different order and the `_length_` is optional.
+
+OVERLAY is a Trafodion SQL extension.
+
+`OVERLAY (_source-string_ PLACING _replacement-string_ FROM _start_ [FOR _length_])`
+
+
+[[syntax_description_of_overlay]]
+=== Syntax Description of OVERLAY
+
+* `_source-string_`
+
++
+is the string to be partly (or entirely) overlaid.
+
+* `_replacement-string_`
+
++
+is the string to overlay.
+
+* `_start_`
+
++
+is the position at which to begin the overlay.
+
++
+NOTE: The `_start_` must be an integer greater than or equal to 1.
+
++
+NOTE: If `_start_` is greater than the length of the `_source-string_`, then the `_replacement-string_` is simply appended. 
+
++
+*Example*
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 10) FROM DUAL;
+
+(EXPR)
+-------------
+writer_      
+
+--- 1 row(s) selected.
+```
+
+
+* `_length_`
+
++
+specifies the number of characters to be replaced from the `_source-string_`.
+
++
+NOTE: If the `_length_` is not specified, then it defaults to the length of the `_replacement-string_`.
+
++
+*Example*
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2) FROM DUAL;
+
+(EXPR)
+-------------
+w_iter       
+
+--- 1 row(s) selected.
+```
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 1) FROM DUAL;
+
+(EXPR)
+-------------
+w_iter       
+
+--- 1 row(s) selected.
+```
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 2) FROM DUAL;
+
+(EXPR)
+-------------
+w_ter       
+
+--- 1 row(s) selected.
+```
+
++
+NOTE: If the `_length_` is 0, then the `_replacement-string_` is inserted into the `_source-string_` without deleting any characters in the `_source-string_`.
+
++
+*Example*
+
++
+```
+SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 0) FROM DUAL;
+
+(EXPR)
+-------------
+w_riter      
+
+--- 1 row(s) selected.
+```
+
+[[examples_of_overlay]]
+=== Examples of OVERLAY
+
+* The following examples demonstrate how to use the OVERLAY function and return the corresponding results.
++
+[cols="70%,30%"]
+|===
+^| *Statement* ^| *Result*
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2) FROM DUAL | w_iter
+| SELECT OVERLAY ('writer' PLACING '_' FROM 4) FROM DUAL | wri_er
+| SELECT OVERLAY ('writer' PLACING '_' FROM 7) FROM DUAL | writer_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 10) FROM DUAL	| writer_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 0) FROM DUAL | w_riter
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 1) FROM DUAL | w_iter
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 3) FROM DUAL | w_er 
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 5) FROM DUAL | w_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 2 FOR 7) FROM DUAL | w_
+| SELECT OVERLAY ('writer' PLACING '_' FROM 1 FOR 6) FROM DUAL | _
+|===
+
++
+[cols="70%,30%"]
+|===
+^| *Statement* ^| *Result*
+| SELECT OVERLAY ('writer' PLACING '' FROM 2) FROM DUAL | writer
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 0) FROM DUAL	| writer
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 1) FROM DUAL	| witer 
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 3) FROM DUAL	| wer
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 5) FROM DUAL	| w
+| SELECT OVERLAY ('writer' PLACING '' FROM 2 FOR 7) FROM DUAL	| w
+| SELECT OVERLAY ('writer' PLACING '' FROM 1 FOR 6) FROM DUAL |
+|===
+
++
+[cols="70%,30%"]
+|===
+^| *Statement* ^| *Result*
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 0) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 1) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 3) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 5) FROM DUAL	| writer
+| SELECT OVERLAY ('' PLACING 'writer' FROM 2 FOR 7) FROM DUAL	| writer
+|===
+
+* This example replaces the word _stackoverflow_ with the word _reddit_ at 5 position, 13 characters long.
+
++
+```
+SELECT OVERLAY ('www.stackoverflow.com' PLACING 'reddit' FROM 5 FOR 13) FROM DUAL;
+
+(EXPR)
+------------------------------------------------
+www.reddit.com                                  
+
+--- 1 row(s) selected.
+```
+
+* This example changes the road name of Münster city, _Dunantstraße_, to the _Dunantstrasse_.
+
++
+```
+SELECT OVERLAY ('Dunantstraße' PLACING 'ss' FROM 11 FOR 1) FROM DUAL;
+
+(EXPR)
+--------------------------
+Dunantstrasse             
+
+--- 1 row(s) selected.
+```
+
+<<<
 [[pi_function]]
 == PI Function
 
@@ -7092,6 +7277,156 @@ PI()
 +
 ```
 PI()
+```
+
+<<<
+[[pivot_function]]
+== PIVOT Function
+
+The PIVOT function transposes rows of a table into a column, aggregating data in the process of the rotation.
+
+PIVOT is a Trafodion SQL extension.
+
+`PIVOT (_source-column_[, DELIMITER '_delimiter_'])`
+
+[[syntax_description_of_pivot]]
+=== Syntax Description of PIVOT
+
+* `_source-column_`
+
++
+is a column containing rows to be rotated.
+
+* `_delimiter_`
+
++
+is a delimiter used to separate values in a column.
+
++
+NOTE: If the `DELIMITER '_delimiter_'` is omitted, the default delimiter is a comma.
+
++
+*Example*
+
++
+The table _vendor_ is as follows:
+
++
+```
+SELECT * FROM vendor;
+
+VENDOR_ID VENDOR_NAME    VENDOR_EMAIL           VENDOR_EMAIL_ID
+--------- -------------- ---------------------- ---------------
+      111 Tom            tom@hotmail.com        1
+      232 Jerry          jerry@hotmail.com      2
+      232 Jerry          jerry@gmail.com        3
+      367 Aven           aven@hotmail.com       4
+      367 Aven           aven@gmail.com         5
+      367 Aven           aven@outlook.com       6
+
+--- 6 row(s) selected.
+```
+
++
+```
+SELECT vendor_id, PIVOT(vendor_email) FROM vendor GROUP BY vendor_id;
+
+VENDOR_ID (EXPR)                                                                                                                          
+--------------------------------------------------------------
+
+      111 tom@hotmail.com                                                                                                                 
+      232 jerry@gmail.com,jerry@hotmail.com                                                                                               
+      367 aven@gmail.com,aven@hotmail.com,aven@outlook.com                                                                                
+
+--- 3 row(s) selected.
+
+```
+
++
+NOTE: An empty space is a valid delimiter.
+
++
+*Example*
+
++
+```
+SELECT PIVOT(vendor_email, delimiter ' ') FROM vendor GROUP BY vendor_id;
+
+(EXPR)
+-----------------------------------------------------------------------
+tom@hotmail.com                                                                                                                 
+jerry@gmail.com jerry@hotmail.com                                                                                               
+aven@gmail.com aven@hotmail.com aven@outlook.com                                                                                
+
+--- 3 row(s) selected.
+```
+
++
+NOTE: The `_delimiter_` can be only a single character. If the `_delimiter_` contains multiple characters, then only the first character will be used as the delimiter.
+
++
+*Example*
+
++
+```
+SELECT PIVOT(vendor_email, delimiter '|~|') FROM vendor GROUP BY vendor_id;
+
+(EXPR)
+--------------------------------------------------------------------------
+tom@hotmail.com                                                                                                                 
+jerry@gmail.com|jerry@hotmail.com                                                                                               
+aven@gmail.com|aven@hotmail.com|aven@outlook.com                                                                                
+
+--- 3 row(s) selected.
+```
+
+[[examples_of_pivot]]
+=== Examples of PIVOT
+
+* This example aligns products horizontally into logical sets based on shop names.
+
++
+The table _saleorder_ is as follows:
+
++
+```
+SELECT * FROM salesorder;
+
+SHOP       PRODUCT             
+---------- --------------------
+Shop1      A                   
+Shop1      B                   
+Shop1      C                   
+Shop2      T                   
+Shop2      E                   
+Shop2      C                   
+Shop2      H                   
+Shop2      N                   
+Shop2      I                   
+Shop2      C                   
+Shop2      A                   
+Shop2      L                   
+Shop3      W                   
+Shop3      R                   
+Shop3      I                   
+Shop3      T                   
+Shop3      E                   
+Shop3      R                   
+
+--- 18 row(s) selected.
+```
+
++
+```
+SELECT shop, PIVOT(product, delimiter '-') as product FROM salesorder GROUP BY shop;
+
+SHOP        PRODUCT                                                                                                                         
+----------  ----------------------
+Shop1       A-B-C                                                                                                                     
+Shop2       T-E-C-H-N-I-C-A-L                                                                                                                       
+Shop3       W-R-I-T-E-R    
+
+--- 3 row(s) selected.
 ```
 
 <<<
@@ -8775,7 +9110,7 @@ the desired number of bits. See the notes at the beginning of this section
 about storing hash values efficiently.
 
 [[examples_of_sha2]]
-=== examples of SHA2
+=== Examples of SHA2
 ```
 >>SELECT SHA2('abc', 224) from dual;
 
@@ -8950,7 +9285,7 @@ NOTE: The `_delimiter_` cannot be NULL.
 +
 NOTE: The function counts from the first `_delimiter_` if the `_delimiter_` appears more than once in the `_source-string_`.
 +
-Example
+*Example*
 +
 ```
 SQL>SELECT SPLIT_PART ('technical writer','t',2) FROM DUAL;
@@ -8964,7 +9299,7 @@ echnical wri
 +
 NOTE: The function returns an empty string if the `_delimiter_` does not exist in the `_source-string_`.
 +
-Example
+*Example*
 +
 ```
 SQL>SELECT SPLIT_PART ('technical_writer','@_@',1) FROM DUAL;
@@ -8978,7 +9313,7 @@ SQL>SELECT SPLIT_PART ('technical_writer','@_@',1) FROM DUAL;
 +
 NOTE: Empty space before of after the `_delimiter_` is returned as a valid part if the `_source-string_` starts or ends with the `_delimiter_`.
 +
-Example
+*Example*
 +
 ```
 SQL>SELECT SPLIT_PART ('|t|e|c|h|n|i|c|a|l', '|', 1), SPLIT_PART ('|w|r|i|t|e|r|', '|', 8) FROM DUAL;
@@ -9000,7 +9335,7 @@ NOTE: The `_field-position_` cannot be NULL.
 +
 NOTE: The function returns an empty string if the `_field-position_` exceeds the number of `_source-string_` parts after splitting.
 +
-Example 
+*Example* 
 +
 ```
 SQL>SELECT SPLIT_PART ('technical writer',' ',3) FROM DUAL;
@@ -9012,8 +9347,8 @@ SQL>SELECT SPLIT_PART ('technical writer',' ',3) FROM DUAL;
 --- 1 row(s) selected.
 ```
 
-[[example_of_split_part]]
-=== Example of SPLIT_PART
+[[examples_of_split_part]]
+=== Examples of SPLIT_PART
 
 * This example returns the desired part of the source string.
 +
@@ -11356,7 +11691,7 @@ RAND ([numeric-expression])
 [[rand_function_syntax]]
 === Syntax Descriptions of RAND Function
 
-* _numeric-expression_
+* `_numeric-expression_`
 
 +
 is an SQL numeric value expression that specifies the value for the argument of the RAND function. For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
@@ -11369,15 +11704,17 @@ is an SQL numeric value expression that specifies the value for the argument of 
 ** the seed value should be an integer greater than or equal to 0, and cannot be NULL.
 
 +
-For example,
+*Example*
 
 +
 ```
 SQL>SELECT RAND(1-100) FROM DUAL;
 
 *** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-99 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW. [2018-04-18 04:44:37]
+```
 
-
++
+```
 SQL>SELECT RAND(NULL) FROM DUAL;
 
 *** ERROR[4097] A NULL operand is not allowed in function (RANDOMNUM(NULL)). [2018-04-18 04:44:48]
@@ -11394,7 +11731,7 @@ for each run of the program.
 ** the RAND function will produce different series of numbers even it is called consecutively within a query.
 
 +
-For example,
+*Example*
 
 +
 ```
@@ -11410,7 +11747,7 @@ SQL>SELECT RAND(), RAND(), RAND() FROM DUAL;
 * To get desired numbers within a specified range, you can use a combination of built-in functions, operators and clauses.
 
 +
-For example,
+*Example*
 
 +
 ```

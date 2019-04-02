@@ -512,7 +512,6 @@ class InterfaceStatement {
 			break;
 		case InterfaceResultSet.SQLTYPECODE_BINARY:
 		case InterfaceResultSet.SQLTYPECODE_VARBINARY:
-                    System.out.println("here binary datatype");
 			if (paramValue instanceof InputStream) {
 				InputStream is = (InputStream)paramValue;
 				dataLen = 0;
