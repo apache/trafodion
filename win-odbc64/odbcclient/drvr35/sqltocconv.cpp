@@ -36,6 +36,7 @@
 #include <errno.h>
 
 #define MAXCHARLEN 32768 //32K
+#define OUTBUF_MAX 1024
 
 // for server2008 when using function pow() then throws STATUS_ILLEGAL_INSTRUCTION
 double pow(int base, short power, unsigned long *error)
@@ -200,7 +201,7 @@ unsigned long ODBC::ConvertSQLToC(CConnect *m_ConnectHandle,
 	USHORT		usTmp;
 	SLONG		lTmp;
 	ULONG		ulTmp;
-	CHAR		cTmpBuf[MAX_DOUBLE_TO_CHAR_LEN];
+	CHAR		cTmpBuf[OUTBUF_MAX];
 	CHAR		cTmpBuf1[30];
 	__int64		tempVal64;
 	__int64		power;
@@ -665,7 +666,7 @@ unsigned long ODBC::ConvertSQLToC(CConnect *m_ConnectHandle,
 				else {
 					dTmp = *(double *)srcDataPtr;
 //					_gcvt(dTmp, DBL_DIG, cTmpBuf);
-					if (!double_to_char (dTmp, DBL_DIG + 1, cTmpBuf, sizeof(cTmpBuf)))
+					if (!double_to_char (dTmp, DBL_DIG, cTmpBuf, sizeof(cTmpBuf)))
 						return IDS_22_001;
 				}
 			}
@@ -1017,7 +1018,7 @@ unsigned long ODBC::ConvertSQLToC(CConnect *m_ConnectHandle,
 				else {
 					dTmp = *(double *)srcDataPtr;
 //					_gcvt(dTmp, DBL_DIG, cTmpBuf);
-                    if (!double_to_char(dTmp, DBL_DIG + 1, cTmpBuf, sizeof(cTmpBuf)))
+                    if (!double_to_char(dTmp, DBL_DIG, cTmpBuf, sizeof(cTmpBuf)))
 						return IDS_22_001;
 				}
 			}
