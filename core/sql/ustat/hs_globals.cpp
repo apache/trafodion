@@ -5470,6 +5470,14 @@ Lng32 HSGlobalsClass::CollectStatistics()
       }
     else if (optFlags & IUS_PERSIST)  // PERSIST keyword given with sample clause
       {
+        // If all the user columns in the table are LOB columns, our sample table
+        // would have zero columns. So return an error for that case.
+        if (objDef->allUserColumnsAreLOBs())
+          {
+            HSFuncMergeDiags(- UERR_ALL_LOB_COLUMNS);
+            return -1;
+          }
+
         // Create a persistent sample table. It will be used for this non-IUS
         // execution of Update Stats, and updated incrementally for subsequent
         // IUS operations.
@@ -16026,6 +16034,14 @@ Lng32 managePersistentSamples()
     if (errorCode)
       {
         *CmpCommon::diags() << DgSqlCode(-UERR_BAD_EST_ROWCOUNT) << DgInt0(errorCode) << DgInt1(breadCrumb);
+        return -1;
+      }
+
+    // If all the user columns in the table are LOB columns, our sample table
+    // would have zero columns. So return an error for that case.
+    if (hs_globals->objDef->allUserColumnsAreLOBs())
+      {
+        HSFuncMergeDiags(- UERR_ALL_LOB_COLUMNS);
         return -1;
       }
 

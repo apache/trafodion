@@ -316,11 +316,12 @@ contact {project-support}.
 == SQL 9220
 
 ```
-The table is empty, so no persistent sample table was created.
+No persistent sample table was created because the table was empty or there were no histograms needing update.
 ```
 
-*Cause:* UPDATE STATISTICS SAMPLE RANDOM PERSISTENT was specified but the table was empty. Histograms
-were created, however no persistent sample table was created.
+*Cause:* If UPDATE STATISTICS SAMPLE RANDOM PERSISTENT was specified, the table was empty. Histograms
+were created, however no persistent sample table was created. If UPDATE STATISTICS ON EXISTING COLUMNS
+PERSISTENT was specified and there were no existing histograms, no persistent sample table is created.
 
 *Effect:* The operation completes.
 
@@ -373,6 +374,24 @@ another UPDATE STATISTICS INCREMENTAL operation was already in progress for the 
 *Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
 is necessary.
 
+[[SQL-9233]]
+== SQL 9233
+
+```
+No operation was done since the table consists only of LOB columns.
+```
+
+*Cause:* An UPDATE STATISTICS command requested creation of a persistent sample table, there
+were no user columns in the base table to create a sample table from. UPDATE STATISTICS is 
+not supported on LOB columns, so it skips LOB columns when computing which columns to create
+in the sample table.
+
+*Effect:* {project-name} is unable to continue processing.
+
+*Recovery:* If this was not the intended statement correct and resubmit. Otherwise no recovery
+is necessary.
+
+<<<
 [[SQL-9240]]
 == SQL 9240
 

@@ -1390,3 +1390,25 @@ void HSTableDef::addTruncatedSelectList(NAString & qry)
       }
   }
 
+//
+// METHOD:  allUserColumnsAreLOBs()
+//
+// PURPOSE: Determines if all user columns are LOBs. If so,
+//          returns TRUE. Otherwise, returns FALSE.
+//
+NABoolean HSTableDef::allUserColumnsAreLOBs()
+  {
+    for (Int32 i = 0; i < numCols_; i++)
+      {
+        if (!DFS2REC::isLOB(colInfo_[i].datatype))
+          {
+            if (strcmp(*colInfo_[i].colname,"SYSKEY") != 0) // SYSKEY is not a user column
+              return FALSE;
+            // we don't need to check for "_SALT_" or divisioning columns
+            // since those could only be present if there were user key columns
+          }
+      }
+    return TRUE;
+  }
+
+

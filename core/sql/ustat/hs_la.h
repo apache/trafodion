@@ -122,6 +122,8 @@ class HSTableDef : public NABasicObject
 
     void addTruncatedSelectList(NAString & qry);
 
+    NABoolean allUserColumnsAreLOBs();
+
   protected:
     NABoolean setObjectUID(NABoolean createExternalObject);
 
