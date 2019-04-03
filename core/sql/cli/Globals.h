@@ -89,7 +89,6 @@ class ExProcessStats;
 class CliGlobals;
 class CLISemaphore;
 class HBaseClient_JNI;
-class MonarchClient_JNI;
 class HiveClient_JNI;
 class HdfsClient;
 class TransMode;
@@ -380,13 +379,6 @@ inline
      { hbaseClientJNI_ = hbaseClientJNI; }
   HBaseClient_JNI *getHBaseClient() { return hbaseClientJNI_; }
 
-  void setBigtableClient(HBaseClient_JNI *hbaseClientJNI)
-     { bigtableClientJNI_ = hbaseClientJNI; }
-  HBaseClient_JNI *getBigtableClient() { return bigtableClientJNI_; }
-
-  void setMonarchClient(MonarchClient_JNI *monarchClientJNI)
-     { monarchClientJNI_ = monarchClientJNI; }
-  MonarchClient_JNI *getMonarchClient() { return monarchClientJNI_; }
 private:
   enum {
     DEFAULT_CONTEXT_HANDLE = 2000
@@ -524,8 +516,6 @@ private:
   LmLanguageManagerJava *langManJava_;
   NABoolean espProcess_;
   HBaseClient_JNI *hbaseClientJNI_;
-  HBaseClient_JNI *bigtableClientJNI_;
-  MonarchClient_JNI *monarchClientJNI_;
 };
 
 // -----------------------------------------------------------------------
