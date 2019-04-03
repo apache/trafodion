@@ -93,7 +93,6 @@
 
 #include "ExRsInfo.h"
 #include "../../dbsecurity/auth/inc/dbUserAuth.h"
-#include "HBaseClient_JNI.h"
 #include "ComDistribution.h"
 #include "LmRoutine.h"
 #include "HiveClient_JNI.h"
@@ -164,7 +163,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     ddlStmtsExecuted_(FALSE),
     numCliCalls_(0),
     jniErrorStr_(&exHeap_),
-    hbaseClientJNI_(NULL),
     hiveClientJNI_(NULL),
     hdfsClientJNI_(NULL),
     arkcmpArray_(&exHeap_),
@@ -414,7 +412,6 @@ void ContextCli::deleteMe()
   NADELETE(env_, IpcEnvironment, ipcHeap_);
   NAHeap *parentHeap = cliGlobals_->getProcessIpcHeap();
   NADELETE(ipcHeap_, NAHeap, parentHeap);
-  HBaseClient_JNI::deleteInstance();
   HiveClient_JNI::deleteInstance();
   disconnectHdfsConnections();
   delete hdfsHandleList_;
@@ -2939,9 +2936,8 @@ void ContextCli::dropSession(NABoolean clearCmpCache)
   setStatsArea(NULL, FALSE, FALSE, TRUE);
 
   volatileSchemaCreated_ = FALSE;
-  
-  HBaseClient_JNI::deleteInstance();
-  HiveClient_JNI::deleteInstance();
+
+  HiveClient_JNI::deleteInstance();  
   disconnectHdfsConnections();
 }
 

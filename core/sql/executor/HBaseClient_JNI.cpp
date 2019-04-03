@@ -139,27 +139,26 @@ char* HBaseClient_JNI::getErrorText(HBC_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 HBaseClient_JNI* HBaseClient_JNI::getInstance()
 {
-   ContextCli *currContext = GetCliGlobals()->currContext();
-   HBaseClient_JNI *hbaseClient_JNI = currContext->getHBaseClient();
-   if (hbaseClient_JNI == NULL)
-   {
-     NAHeap *heap = currContext->exHeap();
-    
-     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap);
-     currContext->setHbaseClient(hbaseClient_JNI);
+   CliGlobals *cliGlobals = GetCliGlobals();
+   NAHeap *heap = cliGlobals->getExecutorMemory();
+   HBaseClient_JNI *hbaseClient_JNI;
+     
+   hbaseClient_JNI = cliGlobals->getHBaseClient();
+   if (hbaseClient_JNI == NULL) {
+      hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap);
+      cliGlobals->setHbaseClient(hbaseClient_JNI);
    }
    return hbaseClient_JNI;
 }
 
 void HBaseClient_JNI::deleteInstance()
 {
-   ContextCli *currContext = GetCliGlobals()->currContext();
-   HBaseClient_JNI *hbaseClient_JNI = currContext->getHBaseClient();
+   CliGlobals *cliGlobals = GetCliGlobals();
+   HBaseClient_JNI *hbaseClient_JNI = cliGlobals->getHBaseClient();
    if (hbaseClient_JNI != NULL)
    {
-      NAHeap *heap = currContext->exHeap();
-      NADELETE(hbaseClient_JNI, HBaseClient_JNI, heap);
-      currContext->setHbaseClient(NULL);
+      NADELETE(hbaseClient_JNI, HBaseClient_JNI, cliGlobals->getExecutorMemory());
+      cliGlobals->setHbaseClient(NULL);
    }
 }
 

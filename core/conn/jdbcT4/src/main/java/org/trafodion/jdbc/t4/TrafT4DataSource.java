@@ -209,7 +209,7 @@ public class TrafT4DataSource extends T4DSProperties implements javax.sql.DataSo
 			t4Logger_.logp(Level.FINE, "TrafT4DataSource", "setLogWriter",
 					"Note, this constructor was called before the previous constructor", p);
 		}
-		if (getLogWriter() != null) {
+		if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(null, out);
 			lr.setParameters(p);
@@ -281,7 +281,7 @@ public class TrafT4DataSource extends T4DSProperties implements javax.sql.DataSo
 					"Note, this constructor was called before the previous constructor", p);
 		}
 		try {
-			if (getLogWriter() != null) {
+			if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
@@ -318,7 +318,7 @@ public class TrafT4DataSource extends T4DSProperties implements javax.sql.DataSo
 					"Note, this constructor was called before the previous constructor", p);
 		}
 		try {
-			if (getLogWriter() != null) {
+			if ( t4Logger_.isLoggable(Level.FINE) && getLogWriter() != null ) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);

@@ -68,6 +68,7 @@
 
 #include "ExCextdecs.h"
 CliGlobals * cli_globals = NULL;
+__thread ContextTidMap *tsCurrentContextMap = NULL;
 
 CLISemaphore globalSemaphore ;
 
@@ -462,6 +463,7 @@ CliGlobals * CliGlobals::createCliGlobals(NABoolean espProcess)
   result =  new CliGlobals(espProcess);
   //pthread_key_create(&thread_key, SQ_CleanupThread);
   cli_globals = result;
+  HBaseClient_JNI::getInstance();
   return result;
 }
 
@@ -494,13 +496,9 @@ ContextCli *CliGlobals::currContext()
 {
   if (tsCurrentContextMap == NULL ||
                tsCurrentContextMap->context_ == NULL)
-  {
-    tsCurrentContextMap = getThreadContext(syscall(SYS_gettid));
-    //pthread_setspecific(thread_key, tsCurrentContextMap);
-    if (tsCurrentContextMap == NULL)
-       return defaultContext_; 
-  }
-  return tsCurrentContextMap->context_; 
+     return defaultContext_; 
+  else 
+     return tsCurrentContextMap->context_; 
 }
 
 

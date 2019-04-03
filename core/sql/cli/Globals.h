@@ -97,7 +97,7 @@ class LmLanguageManager;
 class LmLanguageManagerC;
 class LmLanguageManagerJava;
 extern CliGlobals *cli_globals;
-static __thread ContextTidMap *tsCurrentContextMap = NULL;
+extern __thread ContextTidMap *tsCurrentContextMap;
 static  pthread_key_t thread_key;
 
 // A cleanup function when thread exits
@@ -374,6 +374,11 @@ inline
   ULng32 unusedMemoryQuota();
   void yieldMemoryQuota(ULng32 size);
   NABoolean isEspProcess() { return espProcess_; }
+
+  void setHbaseClient(HBaseClient_JNI *hbaseClientJNI)
+     { hbaseClientJNI_ = hbaseClientJNI; }
+  HBaseClient_JNI *getHBaseClient() { return hbaseClientJNI_; }
+
 private:
   enum {
     DEFAULT_CONTEXT_HANDLE = 2000
@@ -510,6 +515,7 @@ private:
   LmLanguageManagerC *langManC_;
   LmLanguageManagerJava *langManJava_;
   NABoolean espProcess_;
+  HBaseClient_JNI *hbaseClientJNI_;
 };
 
 // -----------------------------------------------------------------------
