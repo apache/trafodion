@@ -467,7 +467,7 @@ class T4Connection {
 			LogicalByteArray wbuffer;
 
 			wbuffer = GetSQLCatalogsMessage.marshal(m_dialogueId, stmtLabel, APIType, catalogNm, schemaNm, tableNm,
-					tableTypeList, columnNm, columnType, rowIdScope, nullable, uniqueness, accuracy, sqlType,
+					tableTypeList, columnNm, columnType, rowIdScope, nullable, uniqueness, accuracy, TRANSPORT.TYPE_SELECT_CATALOG, //sqlType,
 					metadataId, fkcatalogNm, fkschemaNm, fktableNm, m_ic);
 
 			getInputOutput().setTimeout(m_ic.getQueryTimeout());

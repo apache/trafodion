@@ -5492,10 +5492,12 @@ SQLRETURN SRVR::PREPARE2withRowsets(SRVR_STMT_HDL* pSrvrStmt)
 	HANDLE_ERROR(retcode, sqlWarning);
 
 	if (pSrvrStmt->maxRowsetSize > 1 
+/*
             && (   pSrvrStmt->sqlStmtType == TYPE_INSERT_PARAM
 	        || pSrvrStmt->sqlStmtType == TYPE_UPDATE
 	        || pSrvrStmt->sqlStmtType == TYPE_DELETE
 		)
+*/
 	   )
 		retcode = WSQL_EXEC_SetStmtAttr(pStmt,SQL_ATTR_INPUT_ARRAY_MAXSIZE,pSrvrStmt->maxRowsetSize, NULL);
 	else

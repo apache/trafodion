@@ -1209,8 +1209,8 @@ odbc_SQLSvc_Prepare2withRowsets_sme_(
 		if (pSrvrStmt->maxRowsetSize == ROWSET_NOT_DEFINED) pSrvrStmt->maxRowsetSize = DEFAULT_ROWSET_SIZE;
 
 // this part is for NAR (not Atomic Rowset Recovery)
-		if (pSrvrStmt->maxRowsetSize > 1
-            && (pSrvrStmt->sqlStmtType == TYPE_INSERT_PARAM))
+		if (pSrvrStmt->maxRowsetSize > 1)
+//            && (pSrvrStmt->sqlStmtType == TYPE_INSERT_PARAM))
 //	        || pSrvrStmt->sqlStmtType == TYPE_UPDATE
 //	        || pSrvrStmt->sqlStmtType == TYPE_DELETE))
 		{

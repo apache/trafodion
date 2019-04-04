@@ -69,6 +69,7 @@ class InterfaceStatement {
 		cursorName_ = stmt.cursorName_;
 		t4statement_ = new T4Statement(this);
 		stmt_ = stmt;
+                sqlQueryType_ = TRANSPORT.SQL_QUERY_TYPE_NOT_SET;
 	};
 
 	public int getSqlQueryType() {
@@ -953,6 +954,9 @@ class InterfaceStatement {
 	 * @return
 	 */
 	private short getTransactionStatus(String sql) {
+		short rt1 = 0;
+                return rt1;
+/*
 		String tokens[] = sql.split("[^a-zA-Z]+", 3);
 		short rt1 = 0;
 		if (tokens.length > 1 && tokens[1].equalsIgnoreCase("WORK")) {
@@ -962,16 +966,50 @@ class InterfaceStatement {
 				|| tokens[0].equalsIgnoreCase("ROLLBACK")) {
 			rt1 = TRANSPORT.TYPE_END_TRANSACTION;
 		}
-		
 		return rt1;
+*/
 	}
 	
 	// -------------------------------------------------------------
 	//TODO: this whole function needs to be rewritten
 	short getSqlStmtType(String str) {
-		str=str.replaceAll("\\n"," ");
-		str=str.replaceAll("\\s*/\\*.*?\\*/\\s*", " ").trim();
+		short rt1 = TRANSPORT.TYPE_UNKNOWN;
+		switch (sqlQueryType_) {
+			case TRANSPORT.SQL_SELECT_UNIQUE:
+			case TRANSPORT.SQL_SELECT_NON_UNIQUE:
+				rt1 = TRANSPORT.TYPE_SELECT;
+				break;
+			case TRANSPORT.SQL_INSERT_UNIQUE:
+			case TRANSPORT.SQL_INSERT_NON_UNIQUE:
+			case TRANSPORT.SQL_INSERT_RWRS:
+				if (stmt_ .inputDesc_ != null && stmt_.inputDesc_.length > 0)
+					rt1 = TRANSPORT.TYPE_INSERT_PARAM;
+				else
+					rt1 = TRANSPORT.TYPE_INSERT;
+				break;
+			case TRANSPORT.SQL_UPDATE_UNIQUE:
+			case TRANSPORT.SQL_UPDATE_NON_UNIQUE:
+				rt1 = TRANSPORT.TYPE_UPDATE;
+				break;
+			case TRANSPORT.SQL_DELETE_UNIQUE:
+			case TRANSPORT.SQL_DELETE_NON_UNIQUE:
+				rt1 = TRANSPORT.TYPE_DELETE;
+				break;
+			case TRANSPORT.SQL_CALL_NO_RESULT_SETS:
+			case TRANSPORT.SQL_CALL_WITH_RESULT_SETS:
+				rt1 = TRANSPORT.TYPE_CALL;
+				break;
+			default:
+				break;
+		}
+		return rt1;
 
+                
+ 
+//		str=str.replaceAll("\\n"," ");
+		//str=str.replaceAll("\\s*/\\*.*?\\*/\\s*", " ").trim();
+
+/*
 		// 7708
 		stmtIsLock = false;
 
@@ -1063,6 +1101,7 @@ class InterfaceStatement {
 					else
 						m_StmtType = TYPE_UNKNOWN;
 				}*/
+/*
 			case InterfaceConnection.MODE_CMD:
 				if (str3.equals("STATUS") || str3.equals("INFO") || str3.equals("LIST")) {
 					rt1 = TRANSPORT.TYPE_SELECT;
@@ -1076,8 +1115,8 @@ class InterfaceStatement {
 				break;
 			}
 		}
-		
 		return rt1;
+*/
 
 	} // end getSqlStmtType
 
@@ -1227,7 +1266,7 @@ class InterfaceStatement {
 //		else
 //			txId = Bytes.createIntBytes(0, false);
 		txId = Bytes.createIntBytes(0, false);
-
+/*
 		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
 			throw TrafT4Messages.createSQLException(pstmt.connection_.props_, ic_.getLocale(), "infostats_invalid_error",
 					null);
@@ -1236,6 +1275,7 @@ class InterfaceStatement {
 					"config_cmd_invalid_error", null);
 		}
 
+*/
 		PrepareReply pr = t4statement_.Prepare(sqlAsyncEnable, (short) this.stmtType_, this.sqlStmtType_,
 				pstmt.stmtLabel_, stmtLabelCharset, cursorName, cursorNameCharset, moduleName, moduleNameCharset,
 				moduleTimestamp, sqlString, sqlStringCharset, stmtOptions, maxRowsetSize, txId);
@@ -1359,7 +1399,7 @@ class InterfaceStatement {
 			inputDataValue.userBuffer = stmt.rowwiseRowsetBuffer_;
 			inputDataValue.length = stmt.rowwiseRowsetBuffer_.limit() - 4;
 
-			if (this.sqlQueryType_ == 16) // use the param values
+			if (this.sqlQueryType_ == TRANSPORT.SQL_INSERT_RWRS) // use the param values
 			{
 				try {
 					inputRowCnt = Integer.parseInt(paramValues[0].toString());
@@ -1455,6 +1495,7 @@ class InterfaceStatement {
             }
 
 			//set the statement mode as the command succeeded
+/*
 			if (sqlStmtType_ == TRANSPORT.TYPE_QS_OPEN) {
 				this.ic_.setMode(InterfaceConnection.MODE_WMS);
 			} else if (sqlStmtType_ == TRANSPORT.TYPE_QS_CLOSE) {
@@ -1464,7 +1505,7 @@ class InterfaceStatement {
 			} else if(sqlStmtType_ == TRANSPORT.TYPE_CMD_CLOSE) {
 				this.ic_.setMode(InterfaceConnection.MODE_SQL);
 			}
-
+*/
 			// set the statement label if we didnt get one back.
 			if (er.stmtLabels == null || er.stmtLabels.length == 0) {
 				er.stmtLabels = new String[1];
@@ -1488,7 +1529,8 @@ class InterfaceStatement {
 				desc[0] = stmt.outputDesc_;
 			}
 
-			if (this.sqlStmtType_ == TRANSPORT.TYPE_CALL) {
+			if (sqlQueryType_  == TRANSPORT.SQL_CALL_NO_RESULT_SETS ||
+					sqlQueryType_ == TRANSPORT.SQL_CALL_WITH_RESULT_SETS) {
 				TrafT4CallableStatement cstmt = (TrafT4CallableStatement) stmt;
 				Object[] outputValueArray;
 				if(er.returnCode == TRANSPORT.NO_DATA_FOUND) { //this should really only happen with LAST0 specified
@@ -1543,11 +1585,13 @@ class InterfaceStatement {
 
     protected void setTransactionStatus(TrafT4Connection conn, String sql) {
 		short tranStatus = getTransactionStatus(sql);
+/*
 		if(tranStatus == TRANSPORT.TYPE_BEGIN_TRANSACTION){
 			conn.setBeginTransaction(true);
 		}else if (tranStatus == TRANSPORT.TYPE_END_TRANSACTION){
 			conn.setBeginTransaction(false);
 		}
+*/
 		
 	}
 } // end class InterfaceStatement

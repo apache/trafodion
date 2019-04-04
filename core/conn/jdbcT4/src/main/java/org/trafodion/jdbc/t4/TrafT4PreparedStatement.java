@@ -279,11 +279,13 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 						"batch_command_failed", null);
 				throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
 			}
+/*
 			if (sqlStmtType_ == TRANSPORT.TYPE_SELECT) {
 				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"select_in_batch_not_supported", null);
 				throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
 			}
+*/
 			if (connection_._isClosed()) {
 				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_connection",
 						null);
@@ -354,11 +356,12 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		int inDescLength = 0;
 
 		validateExecuteInvocation();
+/*
 		if (sqlStmtType_ != TRANSPORT.TYPE_SELECT) {
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "non_select_invalid",
 					null);
 		}
-
+*/
 		if (inputDesc_ != null) {
 			if (!usingRawRowset_)
 				valueArray = getValueArray();
@@ -403,7 +406,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		if (sqlStmtType_ == TRANSPORT.TYPE_SELECT && (ist_.stmtIsLock != true)) {
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "select_invalid", null);
 		}
-
 		if (usingRawRowset_ == false) {
 			if (inputDesc_ != null) {
 				if (!usingRawRowset_)
@@ -2197,6 +2199,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 		sqlStmtType_ = ist_.getSqlStmtType(sql);
+/*
 		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"infostats_invalid_error", null);
@@ -2204,52 +2207,13 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"config_cmd_invalid_error", null);
 		}
+*/
 		ist_.setTransactionStatus(connection_, sql);
 		sql_ = sql;
 
 
 		//stmtLabel_ = generateStmtLabel();
 
-		usingRawRowset_ = false;
-	}
-
-	TrafT4PreparedStatement(TrafT4Connection connection, String moduleName, int moduleVersion, long moduleTimestamp,
-			String stmtName, boolean isSelect, int holdability) {
-		if (connection.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection.props_, connection, moduleName, moduleVersion,
-					moduleTimestamp, stmtName, isSelect, holdability);
-			connection.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "", "", p);
-		}
-		try {
-			if ( connection.props_.t4Logger_.isLoggable(Level.FINE) && connection.props_.getLogWriter() != null ) {
-				LogRecord lr = new LogRecord(Level.FINE, "");
-				Object p[] = T4LoggingUtilities.makeParams(connection.props_, connection, moduleName, moduleVersion,
-						moduleTimestamp, stmtName, isSelect, holdability);
-				lr.setParameters(p);
-				lr.setSourceClassName("TrafT4PreparedStatement");
-				lr.setSourceMethodName("");
-				T4LogFormatter lf = new T4LogFormatter();
-				String temp = lf.format(lr);
-				connection.props_.getLogWriter().println(temp);
-			}
-		} catch (SQLException se) {
-			// ignore
-		}
-		connection_ = connection;
-		moduleName_ = moduleName;
-		moduleVersion_ = moduleVersion;
-		moduleTimestamp_ = moduleTimestamp;
-		stmtLabel_ = stmtName;
-		sqlStmtType_ = (isSelect) ? TRANSPORT.TYPE_SELECT : TRANSPORT.TYPE_UNKNOWN;
-		usingRawRowset_ = false;
-
-		// Make Sure you initialize the other fields to the right value
-		fetchSize_ = TrafT4ResultSet.DEFAULT_FETCH_SIZE;
-		maxRows_ = 0;
-		fetchDirection_ = ResultSet.FETCH_FORWARD;
-		queryTimeout_ = connection_.getServerHandle().getQueryTimeout();
-		resultSetType_ = ResultSet.TYPE_FORWARD_ONLY;
-		resultSetHoldability_ = holdability;
 		usingRawRowset_ = false;
 	}
 
@@ -2331,7 +2295,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	 */
 	public String getStatementType() {
 		String stmtType = "";
-
 		switch (sqlStmtType_) {
 		case TRANSPORT.TYPE_SELECT:
 			stmtType = "SELECT";

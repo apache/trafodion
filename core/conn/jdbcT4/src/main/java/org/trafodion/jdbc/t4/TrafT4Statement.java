@@ -368,7 +368,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 				}
 
 				sqlStmtType_ = ist_.getSqlStmtType(sql);
-
+/*
 				if (sqlStmtType_ == TRANSPORT.TYPE_SELECT) {
 					se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"select_in_batch_not_supported", null);
@@ -382,6 +382,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 							"config_cmd_invalid_error", null);
 					throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
 				}
+*/
 				ist_.setTransactionStatus(connection_, sql);
 			}
 
@@ -462,10 +463,12 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 		}
 
 		validateExecDirectInvocation(sql);
+/*
 		if (sqlStmtType_ != TRANSPORT.TYPE_SELECT && sqlStmtType_ != TRANSPORT.TYPE_STATS) {
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "non_select_invalid",
 					null);
 		}
+*/
 		try {
 			ist_.execute(TRANSPORT.SRVR_API_SQLEXECDIRECT, 0, 0, null, queryTimeout_, sql_, this);
 
@@ -510,9 +513,11 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 		}
 		validateExecDirectInvocation(sql);
 		// 7708
+/*
 		if (sqlStmtType_ == TRANSPORT.TYPE_SELECT && (ist_.stmtIsLock != true)) {
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "select_invalid", null);
 		}
+*/
 		try {
 			ist_.execute(TRANSPORT.SRVR_API_SQLEXECDIRECT, 0, 0, null, queryTimeout_, sql_, this);
 
@@ -1250,7 +1255,9 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			if (desc == null) {
 				resultSet_[i] = null;
 			} else {
-				resultSet_[i] = new TrafT4ResultSet(this, desc, stmt_labels[i], this.sqlStmtType_==TRANSPORT.TYPE_CALL);
+				resultSet_[i] = new TrafT4ResultSet(this, desc, stmt_labels[i], 
+                                        (ist_.getSqlQueryType() == TRANSPORT.SQL_CALL_WITH_RESULT_SETS ||
+                                         ist_.getSqlQueryType() == TRANSPORT.SQL_CALL_NO_RESULT_SETS));
 				resultSet_[i].proxySyntax_ = proxySyntax[i];
 			}
 		}

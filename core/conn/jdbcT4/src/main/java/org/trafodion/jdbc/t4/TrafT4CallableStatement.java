@@ -2190,28 +2190,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			connection_.props_.getLogWriter().println(temp);
 		}
 	}
-
-	TrafT4CallableStatement(TrafT4Connection connection, String moduleName, int moduleVersion, long moduleTimestamp,
-			String stmtName) throws SQLException {
-		super(connection, moduleName, moduleVersion, moduleTimestamp, stmtName, false, connection.holdability_);
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, moduleName, moduleVersion,
-					moduleTimestamp, stmtName);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4CallableStatement", "", "", p);
-		}
-		if ( connection_.props_.t4Logger_.isLoggable(Level.FINE) && connection_.props_.getLogWriter() != null ) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, moduleName, moduleVersion,
-					moduleTimestamp, stmtName);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4CallableStatement");
-			lr.setSourceMethodName("");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
-	}
-
+	
 	// Interface methods
 	void prepareCall(String sql, int queryTimeout, int holdability) throws SQLException {
 		super.ist_.prepare(sql, queryTimeout, this);
