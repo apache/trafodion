@@ -759,7 +759,7 @@ NATreeFragment::setFreedNSKMemory(short value)
       myPid = getpid();
       sprintf(fileName, "/proc/%d/status", myPid);
       procStatusFile_ = fopen(fileName, "r");
-      char *envVar = getenv("EXECUTOR_VM_RESERVE_SIZE");
+      static char *envVar = getenv("EXECUTOR_VM_RESERVE_SIZE");
       if (envVar)
         executorVmReserveSize_ = atol(envVar);
       else
@@ -2532,10 +2532,10 @@ NAHeap::NAHeap(const char  * name)
 
   if (deallocTraceArray == 0)
   {
-    char *deallocTraceEnvvar = getenv("EXE_DEALLOC_MEM_TRACE");
+    static char *deallocTraceEnvvar = getenv("EXE_DEALLOC_MEM_TRACE");
     if (deallocTraceEnvvar != NULL)
     {
-      deallocTraceArray =
+           deallocTraceArray =
         (DeallocTraceEntry (*) [deallocTraceEntries])malloc(sizeof(DeallocTraceEntry) * deallocTraceEntries);
       memset((void *)deallocTraceArray, '\0', sizeof(DeallocTraceEntry) * deallocTraceEntries);
     }

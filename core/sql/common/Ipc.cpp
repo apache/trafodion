@@ -5610,47 +5610,10 @@ void * operator new[](size_t size, IpcEnvironment *env)
 char *getServerProcessName(IpcServerType serverType, const char *nodeName, short nodeNameLen, 
                            short cpuNum, char *processName, short *envType)
 {
-  const char *overridingDefineName = NULL;
-  char *processPrefixFromEnvvar = NULL;
   const char *processPrefix = NULL;
   char serverNodeName[MAX_SEGMENT_NAME_LEN+1];
   short len;
 
-  switch (serverType)
-  {
-    case IPC_SQLSSCP_SERVER:
-      overridingDefineName = "=_MX_SSCP_PROCESS_PREFIX"; 
-      break;
-    case IPC_SQLSSMP_SERVER:
-      overridingDefineName = "=_MX_SSMP_PROCESS_PREFIX";
-      break;
-    case IPC_SQLQMS_SERVER:
-      overridingDefineName = "=_MX_QMS_PROCESS_PREFIX";
-      break;
-    case IPC_SQLQMP_SERVER:
-      overridingDefineName = "=_MX_QMP_PROCESS_PREFIX";
-      break;
-    case IPC_SQLQMM_SERVER:
-      overridingDefineName = "=_MX_QMM_PROCESS_PREFIX";
-      break;
-    default:
-      return NULL;
-  }
-  
-  if (overridingDefineName)
-  {
-        processPrefixFromEnvvar = 
-	  getenv((overridingDefineName[0] == '=') 
-	         ? &overridingDefineName[1]
-	         : overridingDefineName);
-   }
- 
-    if (processPrefixFromEnvvar != NULL)
-    { 
-      if (processPrefixFromEnvvar[0] != '$' || str_len(processPrefixFromEnvvar) > 4) 
-        return NULL;
-      processPrefix = processPrefixFromEnvvar;
-    }  
    if (processPrefix == NULL)
    {
        switch (serverType)

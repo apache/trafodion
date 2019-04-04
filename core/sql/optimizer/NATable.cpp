@@ -6910,11 +6910,14 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
           qualifiedName_.getExtendedQualifiedNameAsString().data(),
           privDetails.c_str());
   QRLogger::log(CAT_SQL_EXE, LL_DEBUG, "%s", msg);
-  if (getenv("DBUSER_DEBUG"))
+#ifndef NDEBUG
+    static char *dbuser_debug = getenv("DBUSER_DEBUG");
+    if (dbuser_debug != NULL)
   {
     printf("[DBUSER:%d] %s\n", (int) getpid(), msg);
     fflush(stdout);
   }
+#endif
 }
 
 // Call privilege manager to get privileges and security keys
@@ -7018,7 +7021,7 @@ bool NATable::isEnabledForDDLQI() const
           // types of tables but will abend here otherwise. If this 
           // causes problems, the envvar below can be used as a 
           // temporary workaround. 
-          char *noAbendOnLp1398600 = getenv("NO_ABEND_ON_LP_1398600");
+          static char *noAbendOnLp1398600 = getenv("NO_ABEND_ON_LP_1398600");
           if (!noAbendOnLp1398600 || *noAbendOnLp1398600 == '0')
             abort();
         }

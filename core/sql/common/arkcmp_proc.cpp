@@ -129,14 +129,14 @@ void deinitializeArkcmp()
 //          1, other errors during CmpContext creation.
 Int32 arkcmp_main_entry()
 {
-
+#ifdef _DEBUG
   if (getenv("SQL_CMP_MSGBOX_PROCESS") != NULL )
      MessageBox(NULL, "Server: Process Launched", "tdm_arkcmp",
 		MB_OK|MB_ICONINFORMATION);
   // The following call causes output messages to be displayed in the
   // same order on NSK and Windows.
   cout.sync_with_stdio();
-
+#endif
   initializeArkcmp();
   try
   {

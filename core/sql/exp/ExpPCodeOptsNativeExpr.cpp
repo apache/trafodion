@@ -5758,9 +5758,7 @@ void PCodeCfg::layoutNativeCode()
 
   expr_->setPCodeNative(FALSE); // For now, assume no native code generated.
 
-  NABoolean debug = FALSE;
-  if (getenv("NATIVE_EXPR_DEBUG"))
-    debug = TRUE;
+  static NABoolean debug = (getenv("NATIVE_EXPR_DEBUG") != NULL);
 
   PCodeBinary* pCode = expr_->getPCodeBinary();
 

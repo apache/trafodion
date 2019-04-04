@@ -5000,7 +5000,7 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   // interval is (this mirrors the logic in runtimestats/ssmpipc.cpp), so
   // we can fail-safe the histogram cache.
 
-  char *sct = getenv("RMS_SIK_GC_INTERVAL_SECONDS");  // in seconds
+  static char *sct = getenv("RMS_SIK_GC_INTERVAL_SECONDS");  // in seconds
   if (sct)
     {
       siKeyGCinterval_ = ((Int64) str_atoi(sct, str_len(sct)));

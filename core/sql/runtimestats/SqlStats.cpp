@@ -1592,7 +1592,7 @@ StatsGlobals * shareStatsSegment(Int32 &shmid, NABoolean checkForSSMP)
   StatsGlobals * statsGlobals;
   long enableHugePages;
   int shmFlag = RMS_SHMFLAGS;
-  char *envShmHugePages = getenv("SQ_RMS_ENABLE_HUGEPAGES");
+  static char *envShmHugePages = getenv("SQ_RMS_ENABLE_HUGEPAGES");
   if (envShmHugePages != NULL)
   {
      enableHugePages = (long) str_atoi(envShmHugePages,
