@@ -97,6 +97,7 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        langManJava_(NULL)
        , myVerifier_(-1)
        , espProcess_(espProcess)
+       , hbaseClientJNI_(NULL)
 {
   globalsAreInitialized_ = FALSE;
   executorMemory_.setThreadSafe();
