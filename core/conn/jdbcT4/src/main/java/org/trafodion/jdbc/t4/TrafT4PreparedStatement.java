@@ -389,9 +389,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		int inDescLength = 0;
 
 		validateExecuteInvocation();
-		if (sqlStmtType_ == TRANSPORT.TYPE_SELECT && (ist_.stmtIsLock != true)) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "select_invalid", null);
-		}
 		if (usingRawRowset_ == false) {
 			if (inputDesc_ != null) {
 				if (!usingRawRowset_)

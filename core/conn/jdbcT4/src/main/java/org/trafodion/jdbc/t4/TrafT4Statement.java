@@ -447,12 +447,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 		}
 
 		validateExecDirectInvocation(sql);
-/*
-		if (sqlStmtType_ != TRANSPORT.TYPE_SELECT && sqlStmtType_ != TRANSPORT.TYPE_STATS) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "non_select_invalid",
-					null);
-		}
-*/
 		try {
 			ist_.execute(TRANSPORT.SRVR_API_SQLEXECDIRECT, 0, 0, null, queryTimeout_, sql_, this);
 
@@ -496,12 +490,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateExecDirectInvocation(sql);
-		// 7708
-/*
-		if (sqlStmtType_ == TRANSPORT.TYPE_SELECT && (ist_.stmtIsLock != true)) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "select_invalid", null);
-		}
-*/
 		try {
 			ist_.execute(TRANSPORT.SRVR_API_SQLEXECDIRECT, 0, 0, null, queryTimeout_, sql_, this);
 

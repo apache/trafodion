@@ -27,7 +27,7 @@ import java.sql.SQLException;
 
 final class T4ResultSet {
 	private String m_stmtLabel;
-        private InterfaceConnection m_ic; 
+	private InterfaceConnection m_ic; 
 	private T4Connection m_serverConnection; 
 	static final short SQL_CLOSE = 0;
 

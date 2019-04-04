@@ -30,7 +30,7 @@ final class T4Statement {
 	private String m_stmtLabel;
 	private String m_stmtExplainLabel;
 	private static short EXTERNAL_STMT = 0;
-        private InterfaceConnection m_ic; 
+	private InterfaceConnection m_ic; 
 	private T4Connection m_serverConnection; 
 
 	boolean m_processing = false;

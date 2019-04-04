@@ -53,7 +53,6 @@ class InterfaceStatement {
 	int stmtHandle_;
 	int estimatedCost_;
 	boolean prepare2 = false;
-	boolean stmtIsLock = false; 
 
 	// used for SPJ transaction
 	static Class LmUtility_class_ = null;
@@ -69,7 +68,7 @@ class InterfaceStatement {
 		cursorName_ = stmt.cursorName_;
 		t4statement_ = new T4Statement(this);
 		stmt_ = stmt;
-                sqlQueryType_ = TRANSPORT.SQL_QUERY_TYPE_NOT_SET;
+		sqlQueryType_ = TRANSPORT.SQL_QUERY_TYPE_NOT_SET;
 	};
 
 	public int getSqlQueryType() {
@@ -933,20 +932,6 @@ class InterfaceStatement {
 		return dataValue;
 	}
 
-	boolean hasParameters(String sql) {
-		boolean foundParam = false;
-
-		String[] s = sql.split("\"[^\"]*\"|'[^']*'");
-		for (int i = 0; i < s.length; i++) {
-			if (s[i].indexOf('?') != -1) {
-				foundParam = true;
-				break;
-			}
-		}
-
-		return foundParam;
-	}
-	
 	// -------------------------------------------------------------
 	short getSqlStmtType(String str) {
 		short rt1 = TRANSPORT.TYPE_UNKNOWN;
@@ -1344,18 +1329,6 @@ class InterfaceStatement {
                 ic_.setSchemaDirect(schema);
             }
 
-			//set the statement mode as the command succeeded
-/*
-			if (sqlStmtType_ == TRANSPORT.TYPE_QS_OPEN) {
-				this.ic_.setMode(InterfaceConnection.MODE_WMS);
-			} else if (sqlStmtType_ == TRANSPORT.TYPE_QS_CLOSE) {
-				this.ic_.setMode(InterfaceConnection.MODE_SQL);
-			} else if(sqlStmtType_ == TRANSPORT.TYPE_CMD_OPEN) {
-				this.ic_.setMode(InterfaceConnection.MODE_CMD);
-			} else if(sqlStmtType_ == TRANSPORT.TYPE_CMD_CLOSE) {
-				this.ic_.setMode(InterfaceConnection.MODE_SQL);
-			}
-*/
 			// set the statement label if we didnt get one back.
 			if (er.stmtLabels == null || er.stmtLabels.length == 0) {
 				er.stmtLabels = new String[1];
@@ -1379,7 +1352,7 @@ class InterfaceStatement {
 				desc[0] = stmt.outputDesc_;
 			}
 
-			if (sqlQueryType_  == TRANSPORT.SQL_CALL_NO_RESULT_SETS ||
+			if (sqlQueryType_ == TRANSPORT.SQL_CALL_NO_RESULT_SETS ||
 					sqlQueryType_ == TRANSPORT.SQL_CALL_WITH_RESULT_SETS) {
 				TrafT4CallableStatement cstmt = (TrafT4CallableStatement) stmt;
 				Object[] outputValueArray;
