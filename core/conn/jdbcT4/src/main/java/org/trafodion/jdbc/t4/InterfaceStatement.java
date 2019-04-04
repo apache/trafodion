@@ -1091,7 +1091,6 @@ class InterfaceStatement {
 	void prepare(String sql, int queryTimeout, TrafT4PreparedStatement pstmt) throws SQLException {
 		int sqlAsyncEnable = 0;
 		this.stmtType_ = this.EXTERNAL_STMT;
-		this.sqlStmtType_ = getSqlStmtType(sql);
 		int stmtLabelCharset = 1;
 		String cursorName = pstmt.cursorName_;
 		int cursorNameCharset = 1;
@@ -1118,6 +1117,7 @@ class InterfaceStatement {
 
 		pr_ = pr;
 		this.sqlQueryType_ = pr.sqlQueryType;
+		this.sqlStmtType_ = getSqlStmtType(sqlString);
 
 		switch (pr.returnCode) {
 		case TRANSPORT.SQL_SUCCESS:

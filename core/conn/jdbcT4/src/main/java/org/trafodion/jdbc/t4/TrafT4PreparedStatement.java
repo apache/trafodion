@@ -2180,7 +2180,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
-		sqlStmtType_ = ist_.getSqlStmtType(sql);
+		sqlStmtType_ = TRANSPORT.TYPE_UNKNOWN;
 		sql_ = sql;
 
 
@@ -2207,6 +2207,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 		try {
 			super.ist_.prepare(sql, queryTimeout, this);
+                        sqlStmtType_ = ist_.getSqlStmtType(sql);
 		} catch (SQLException e) {
 			performConnectionErrorChecks(e);
 			throw e;
