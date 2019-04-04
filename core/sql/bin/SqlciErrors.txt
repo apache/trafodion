@@ -1909,7 +1909,7 @@ drop the default context
 9217 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms are currently maintained for the table.
 9218 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms need to be updated.
 9219 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: An operation failed, possibly due to an invalid WHERE clause.
-9220 ZZZZZ 99999 BEGINNER INFRM DBADMIN The table is empty, so no persistent sample table was created.
+9220 ZZZZZ 99999 BEGINNER INFRM DBADMIN No persistent sample table was created because the table was empty or there were no histograms needing update.
 9221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS cannot be performed due to the absence of the IUS persistent sample table for $0~string0.  Use a regular UPDATE STATISTICS command with the sample clause and PERSISTENT first to create such a persistent sample table.
 9222 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the rowcount in an interval for column $0~String0 changed more than the percentage specified by CQD USTAT_IUS_INTERVAL_ROWCOUNT_CHANGE_THRESHOLD. A regular UPDATE STATISTICS is performed instead.
 9223 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the total rowcount for column $0~String0 changed more than the percentage specified by CQD USTAT_IUS_TOTAL_ROWCOUNT_CHANGE_THRESHOLD. A regular UPDATE STATISTICS is performed instead.
@@ -1921,7 +1921,7 @@ drop the default context
 9230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: $0~int0 columns could not be processed due to insufficient memory, and are being processed by regular UPDATE STATISTICS instead.
 9231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: only RANDOM <percentage> PERCENT is allowed as the sampling specification with PERSISTENT.
 9232 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: cannot proceed because of the on-going IUS transaction originated at $0~String0. 
-9233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused --- 
+9233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No operation was done since the table consists only of LOB columns. 
 9234 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: a new high frequency value is detected for column $0~string0. A regular UPDATE STATISTICS is performed instead.
 9235 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
 9236 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the histogram for column $0~string0 is empty. A regular UPDATE STATISTICS is performed instead.

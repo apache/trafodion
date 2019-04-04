@@ -285,12 +285,27 @@ update statistics for table stest create sample random 20 percent;
 
 get tables; -- should be the same as previous "get tables" except only one sample table
 
+-- attempt to create persistent sample table on a table of all LOB columns
+
+control query default TRAF_BLOB_AS_VARCHAR 'OFF';
+control query default TRAF_CLOB_AS_VARCHAR 'OFF';
+
+create table slobs (c_clob clob, c_blob blob);
+insert into slobs values (stringtolob('clob_1'), stringtolob('blob_1'));
+
+update statistics for table slobs on (c_clob, c_blob) sample random 50 percent persistent; -- gets error 9246
+update statistics for table slobs create sample random 100 percent; -- gets error 9233
+update statistics for table slobs on every column sample random 100 percent persistent; -- gets error 9233
+update statistics for table slobs on every key sample random 100 percent persistent; -- gets error 9233
+update statistics for table slobs on existing column sample random 100 percent persistent; -- gets warning 9220
+update statistics for table slobs on necessary column sample random 100 percent persistent; -- gets warning 9220
 
 ?section clnup
 
 drop table stest;
 drop table stestc;
 drop table stest_empty;
+drop table slobs;
 
 get tables;  -- sample tables should be gone too
 
