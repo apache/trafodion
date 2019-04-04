@@ -526,9 +526,9 @@ Lng32 AddColumnSet(HSColSet &colSet)
 
         if (LM->LogNeeded())
           {
-            sprintf(LM->msg, "\t\tToo many columns in multi-column histogram (%s); limit is %d (CQD USTAT_MULTI_COLUMN_LIMIT)",
-              LM->truncate(columnNames.data(),sizeof(LM->msg)-200),maxNumCols);
-            LM->Log(LM->msg);
+            *LM << "\t\tToo many columns in multi-column histogram (" << columnNames.data() 
+                << "); limit is " << maxNumCols << " (CQD USTAT_MULTI_COLUMN_LIMIT)";
+            LM->FlushToLog();
           }
         char temp[20];
         sprintf(temp,"%d",maxNumCols);
@@ -569,8 +569,8 @@ Lng32 AddColumnSet(HSColSet &colSet)
       {
         if (LM->LogNeeded())
           {
-            sprintf(LM->msg, "\t\tNon-Unique Column Group (%s)", LM->truncate(colNames.data(),sizeof(LM->msg)-200));
-            LM->Log(LM->msg);
+            *LM << "\t\tNon-Unique Column Group (" << colNames.data() <<")";
+            LM->FlushToLog();
           }
         HSFuncMergeDiags(- UERR_COLUMNLIST_NOT_UNIQUE, colNames.data());
         retcode = -1;
