@@ -947,29 +947,6 @@ class InterfaceStatement {
 		return foundParam;
 	}
 	
-	/**
-	 * Get the transaction status
-	 * 
-	 * @param sql
-	 * @return
-	 */
-	private short getTransactionStatus(String sql) {
-		short rt1 = 0;
-                return rt1;
-/*
-		String tokens[] = sql.split("[^a-zA-Z]+", 3);
-		short rt1 = 0;
-		if (tokens.length > 1 && tokens[1].equalsIgnoreCase("WORK")) {
-			if (tokens[0].equalsIgnoreCase("BEGIN"))
-				rt1 = TRANSPORT.TYPE_BEGIN_TRANSACTION;
-		} else if (tokens[0].equalsIgnoreCase("COMMIT")
-				|| tokens[0].equalsIgnoreCase("ROLLBACK")) {
-			rt1 = TRANSPORT.TYPE_END_TRANSACTION;
-		}
-		return rt1;
-*/
-	}
-	
 	// -------------------------------------------------------------
 	//TODO: this whole function needs to be rewritten
 	short getSqlStmtType(String str) {
@@ -1246,7 +1223,6 @@ class InterfaceStatement {
 		int sqlAsyncEnable = 0;
 		this.stmtType_ = this.EXTERNAL_STMT;
 		this.sqlStmtType_ = getSqlStmtType(sql);
-		this.setTransactionStatus(pstmt.connection_, sql);
 		int stmtLabelCharset = 1;
 		String cursorName = pstmt.cursorName_;
 		int cursorNameCharset = 1;
@@ -1389,7 +1365,6 @@ class InterfaceStatement {
 
 		if (executeAPI == TRANSPORT.SRVR_API_SQLEXECDIRECT) {
 			sqlStmtType_ = getSqlStmtType(sql);
-			setTransactionStatus(stmt.connection_, sql);
 			stmt.outputDesc_ = null; // clear the output descriptors
 		}
 
@@ -1583,15 +1558,4 @@ class InterfaceStatement {
         return "";
     }
 
-    protected void setTransactionStatus(TrafT4Connection conn, String sql) {
-		short tranStatus = getTransactionStatus(sql);
-/*
-		if(tranStatus == TRANSPORT.TYPE_BEGIN_TRANSACTION){
-			conn.setBeginTransaction(true);
-		}else if (tranStatus == TRANSPORT.TYPE_END_TRANSACTION){
-			conn.setBeginTransaction(false);
-		}
-*/
-		
-	}
 } // end class InterfaceStatement

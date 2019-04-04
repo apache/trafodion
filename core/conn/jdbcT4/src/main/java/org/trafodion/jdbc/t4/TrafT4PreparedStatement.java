@@ -279,13 +279,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 						"batch_command_failed", null);
 				throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
 			}
-/*
-			if (sqlStmtType_ == TRANSPORT.TYPE_SELECT) {
-				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-						"select_in_batch_not_supported", null);
-				throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
-			}
-*/
 			if (connection_._isClosed()) {
 				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_connection",
 						null);
@@ -356,12 +349,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		int inDescLength = 0;
 
 		validateExecuteInvocation();
-/*
-		if (sqlStmtType_ != TRANSPORT.TYPE_SELECT) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "non_select_invalid",
-					null);
-		}
-*/
 		if (inputDesc_ != null) {
 			if (!usingRawRowset_)
 				valueArray = getValueArray();
@@ -402,7 +389,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		int inDescLength = 0;
 
 		validateExecuteInvocation();
-		// if (sqlStmtType_ == TRANSPORT.TYPE_SELECT)
 		if (sqlStmtType_ == TRANSPORT.TYPE_SELECT && (ist_.stmtIsLock != true)) {
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "select_invalid", null);
 		}
@@ -2165,7 +2151,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"config_cmd_invalid_error", null);
 		}
-		ist_.setTransactionStatus(connection_, sql);
 		sql_ = sql;
 
 
@@ -2199,16 +2184,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 		sqlStmtType_ = ist_.getSqlStmtType(sql);
-/*
-		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"infostats_invalid_error", null);
-		} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"config_cmd_invalid_error", null);
-		}
-*/
-		ist_.setTransactionStatus(connection_, sql);
 		sql_ = sql;
 
 

@@ -368,22 +368,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 				}
 
 				sqlStmtType_ = ist_.getSqlStmtType(sql);
-/*
-				if (sqlStmtType_ == TRANSPORT.TYPE_SELECT) {
-					se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"select_in_batch_not_supported", null);
-					throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
-				} else if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-					se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"infostats_invalid_error", null);
-					throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
-				} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-					se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"config_cmd_invalid_error", null);
-					throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
-				}
-*/
-				ist_.setTransactionStatus(connection_, sql);
 			}
 
 			Object[] commands = batchCommands_.toArray();
@@ -1176,7 +1160,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 
 		validateExecDirectInvocation();
 		sqlStmtType_ = ist_.getSqlStmtType(sql);
-		ist_.setTransactionStatus(connection_, sql);
                 sql_ = sql;
 
 	}

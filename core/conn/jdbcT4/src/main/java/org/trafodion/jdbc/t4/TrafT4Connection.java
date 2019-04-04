@@ -1398,7 +1398,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		// Rollback the Transaction when autoCommit mode is OFF
 		try {
-			if (getAutoCommit() == false || isBeginTransaction) {
+			if (getAutoCommit() == false ) {    
 				rollback();
 			}
 		} catch (SQLException sqex) {
@@ -1823,16 +1823,6 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 	byte[] transactionToJoin;
 	
-	private boolean isBeginTransaction = false;
-	
-	protected boolean isBeginTransaction() {
-		return isBeginTransaction;
-	}
-
-	protected void setBeginTransaction(boolean isBeginTransaction) {
-		this.isBeginTransaction = isBeginTransaction;
-	}
-
 
 	public Object unwrap(Class iface) throws SQLException {
 		try {

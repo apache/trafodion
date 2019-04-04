@@ -1245,16 +1245,13 @@ class InterfaceConnection {
 
 	void endTransaction(short commitOption) throws SQLException {
 		EndTransactionReply etr_ = null;
-		if (autoCommit && !_t4Conn.isBeginTransaction()) {
+		if (autoCommit) { 
 			throw TrafT4Messages.createSQLException(t4props_, locale, "invalid_commit_mode", null);
 		}
 
 		isConnectionOpen();
-		// XA_RESUMETRANSACTION();
-
 		try {
 			etr_ = t4connection_.EndTransaction(commitOption);
-			_t4Conn.setBeginTransaction(false);
 		} catch (SQLException tex) {
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(t4props_, commitOption);
