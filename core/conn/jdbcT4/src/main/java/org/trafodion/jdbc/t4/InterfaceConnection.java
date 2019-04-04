@@ -41,6 +41,7 @@ import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Handler;
@@ -84,8 +85,8 @@ class InterfaceConnection {
 	T4Properties t4props_;
 	SQLWarning sqlwarning_;
 
-	Hashtable encoders = new Hashtable(11);
-	Hashtable decoders = new Hashtable(11);
+	HashMap encoders = new HashMap(11);
+	HashMap decoders = new HashMap(11);
 
 	// static fields from odbc_common.h and sql.h
 	static final int SQL_TXN_READ_UNCOMMITTED = 1;

@@ -147,8 +147,8 @@ public class FunkyNamesTest extends BaseTest {
             assertEquals(2, rs.getInt(2));
             assertEquals(3, rs.getInt(3));
            
-            assertEquals(1, rs.getInt("Value"));
             if (tgtPH()) {
+                assertEquals(1, rs.getInt("Value"));
                 assertEquals(2, rs.getInt("VALUE"));
                 assertEquals(3, rs.getInt("value"));
             } else if (tgtSQ()||tgtTR()) {
@@ -156,8 +156,9 @@ public class FunkyNamesTest extends BaseTest {
                 // case-insensitive.  The following 2 are the same as
                 // the previous one.  It has been decided that this
                 // behavior will remain the same.
-                assertEquals(1, rs.getInt("VALUE"));
-                assertEquals(1, rs.getInt("value"));
+                assertEquals(3, rs.getInt("Value"));
+                assertEquals(3, rs.getInt("VALUE"));
+                assertEquals(3, rs.getInt("value"));
             }
             try {
                 if (tgtPH()) {

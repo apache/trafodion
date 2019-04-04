@@ -948,7 +948,6 @@ class InterfaceStatement {
 	}
 	
 	// -------------------------------------------------------------
-	//TODO: this whole function needs to be rewritten
 	short getSqlStmtType(String str) {
 		short rt1 = TRANSPORT.TYPE_UNKNOWN;
 		switch (sqlQueryType_) {
@@ -980,121 +979,6 @@ class InterfaceStatement {
 				break;
 		}
 		return rt1;
-
-                
- 
-//		str=str.replaceAll("\\n"," ");
-		//str=str.replaceAll("\\s*/\\*.*?\\*/\\s*", " ").trim();
-
-/*
-		// 7708
-		stmtIsLock = false;
-
-		String tokens[] = str.split("[^a-zA-Z]+", 3);
-		short rt1 = TRANSPORT.TYPE_UNKNOWN;
-		String str3 = "";
-
-		if (tokens[0].length() > 0)
-			str3 = tokens[0].toUpperCase();
-		else
-			str3 = tokens[1].toUpperCase();
-
-		if(str3.equals("JOINXATXN")){
-			rt1 = TRANSPORT.TYPE_SELECT;
-		}
-		else if(str3.equals("WMSOPEN")) {
-			rt1 = TRANSPORT.TYPE_QS_OPEN;
-		}
-		else if(str3.equals("WMSCLOSE")) {
-			rt1 = TRANSPORT.TYPE_QS_CLOSE;
-		}
-		else if(str3.equals("CMDOPEN")) {
-			rt1 = TRANSPORT.TYPE_CMD_OPEN;
-		}
-		else if(str3.equals("CMDCLOSE")) {
-			rt1 = TRANSPORT.TYPE_CMD_CLOSE;
-		}
-		else {
-			switch(this.ic_.getMode()) {
-			case InterfaceConnection.MODE_SQL:
-				if ((str3.equals("SELECT")) || (str3.equals("WITH"))|| (str3.equals("SHOWSHAPE")) || (str3.equals("INVOKE"))
-						|| (str3.equals("SHOWCONTROL")) || (str3.equals("SHOWDDL")) || (str3.equals("EXPLAIN"))
-						|| (str3.equals("SHOWPLAN")) || (str3.equals("REORGANIZE")) || (str3.equals("MAINTAIN"))
-						|| (str3.equals("SHOWLABEL")) || (str3.equals("VALUES"))
-						|| (str3.equals("REORG")) || (str3.equals("SEL")) || (str3.equals("GET")) || (str3.equals("SHOWSTATS"))
-						|| str3.equals("GIVE") || str3.equals("STATUS") || str3.equals("INFO") || str3.equals("LIST")
-						) {
-					rt1 = TRANSPORT.TYPE_SELECT;
-				}
-				else if (str3.equals("UPDATE") || str3.equals("MERGE")) {
-					rt1 = TRANSPORT.TYPE_UPDATE;
-				} else if (str3.equals("DELETE") || str3.equals("STOP") || str3.equals("START")) {
-					rt1 = TRANSPORT.TYPE_DELETE;
-				} else if (str3.equals("INSERT") || str3.equals("INS") || str3.equals("UPSERT")) {
-					if (hasParameters(str)) {
-						rt1 = TRANSPORT.TYPE_INSERT_PARAM;
-					} else {
-						rt1 = TRANSPORT.TYPE_INSERT;
-					}
-				}
-				else if (str3.equals("CREATE")) {
-					rt1 = TRANSPORT.TYPE_CREATE;
-				} else if (str3.equals("GRANT")) {
-					rt1 = TRANSPORT.TYPE_GRANT;
-				} else if (str3.equals("DROP")) {
-					rt1 = TRANSPORT.TYPE_DROP;
-				} else if (str3.equals("CALL")) {
-					rt1 = TRANSPORT.TYPE_CALL;
-				} else if (str3.equals("EXPLAIN")) {
-					rt1 = TRANSPORT.TYPE_EXPLAIN;
-				} else if (str3.equals("INFOSTATS")) {
-					rt1 = TRANSPORT.TYPE_STATS;
-				}
-				break;
-			case InterfaceConnection.MODE_WMS:
-				if (str3.equals("STATUS") || str3.equals("INFO")) {
-					rt1 = TRANSPORT.TYPE_SELECT;
-				}
-				break;
-				/* FROM ODBC
-					if (_strnicmp(token, "STATUS", 6) == 0)
-						m_StmtType = TYPE_SELECT;
-					else if (_strnicmp(token, "CANCEL", 6) == 0)
-						m_StmtType = TYPE_UNKNOWN;
-					else if (_strnicmp(token, "SUSPEND", 7) == 0)
-						m_StmtType = TYPE_UNKNOWN;
-					else if (_strnicmp(token, "RESUME", 6) == 0)
-						m_StmtType = TYPE_UNKNOWN;
-					else if (_strnicmp(token, "ALTPRI", 6) == 0)
-						m_StmtType = TYPE_UNKNOWN;
-					else if (_strnicmp(token, "ADD", 3) == 0)
-						m_StmtType = TYPE_UNKNOWN;
-					else if (_strnicmp(token, "ALTER", 5) == 0)
-						m_StmtType = TYPE_UNKNOWN;
-					else if (_strnicmp(token, "DELETE", 6) == 0)
-						m_StmtType = TYPE_UNKNOWN;
-					else if (_strnicmp(token, "INFO", 4) == 0)
-						m_StmtType = TYPE_SELECT;
-					else
-						m_StmtType = TYPE_UNKNOWN;
-				}*/
-/*
-			case InterfaceConnection.MODE_CMD:
-				if (str3.equals("STATUS") || str3.equals("INFO") || str3.equals("LIST")) {
-					rt1 = TRANSPORT.TYPE_SELECT;
-				}
-				else if(str3.equals("ADD") || str3.equals("ALTER")) {
-					rt1 = TRANSPORT.TYPE_INSERT;
-				}
-				else if(str3.equals("DELETE") || str3.equals("STOP") || str3.equals("START")) {
-					rt1 = TRANSPORT.TYPE_DELETE;
-				}
-				break;
-			}
-		}
-		return rt1;
-*/
-
 	} // end getSqlStmtType
 
 	// -------------------------------------------------------------
@@ -1242,16 +1126,7 @@ class InterfaceStatement {
 //		else
 //			txId = Bytes.createIntBytes(0, false);
 		txId = Bytes.createIntBytes(0, false);
-/*
-		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-			throw TrafT4Messages.createSQLException(pstmt.connection_.props_, ic_.getLocale(), "infostats_invalid_error",
-					null);
-		} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-			throw TrafT4Messages.createSQLException(pstmt.connection_.props_, ic_.getLocale(),
-					"config_cmd_invalid_error", null);
-		}
 
-*/
 		PrepareReply pr = t4statement_.Prepare(sqlAsyncEnable, (short) this.stmtType_, this.sqlStmtType_,
 				pstmt.stmtLabel_, stmtLabelCharset, cursorName, cursorNameCharset, moduleName, moduleNameCharset,
 				moduleTimestamp, sqlString, sqlStringCharset, stmtOptions, maxRowsetSize, txId);
