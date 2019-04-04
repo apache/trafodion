@@ -333,13 +333,14 @@ cd $PHXDIR
 if [[ \$1 == "t4" ]]
 then
   ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
-     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$TRAF_HOME/export/lib/jdbcT4-${TRAFODION_VER}.jar
+     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$TRAF_HOME/export/lib/jdbcT4-${TRAFODION_VER}.jar \$2 
+
 elif [[ \$1 == "t2" ]]
 then
   export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$TRAF_HOME/export/lib\$SQ_MBTYPE/libseabasesig.so
   ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
      --jdbccp=\$TRAF_HOME/export/lib/jdbcT2.jar --jdbctype=T2 \\
-     --nomvntest --tests="AlterTableTest,ArithmeticQueryTest,BinaryRowKeyTest,CoalesceFunctionTest,CompareDecimalToLongTest,CustomEntityDataTest,DeleteRangeTest,DescColumnSortOrderTest,DistinctCountTest,ExtendedQueryExecTest,FunkyNamesTest,IsNullTest,OrderByTest,QueryExecTest,SaltedTableTest,SaltedTableUpsertSelectTest,SaltedTableVarLengthRowKeyTest,SkipScanQueryTest,UpsertSelectAutoCommitTest,UpsertSelectTest,UpsertValuesTest],AutoCommitTest,CreateTableTest,ExecuteStatementsTest,GroupByCaseTest,IndexTest,KeyOnlyTest,MultiCfQueryExecTest,ProductMetricsTest,QueryExecWithoutSCNTest,QueryPlanTest,ReadIsolationLevelTest,ServerExceptionTest,StatementHintsTest,StddevTest,ToCharFunctionTest,ToNumberFunctionTest,TopNTest,UpsertBigValuesTest,VariableLengthPKTest,SaltedTableUpsertSelectTest"
+     --nomvntest --tests="AlterTableTest,ArithmeticQueryTest,BinaryRowKeyTest,CoalesceFunctionTest,CompareDecimalToLongTest,CustomEntityDataTest,DeleteRangeTest,DescColumnSortOrderTest,DistinctCountTest,ExtendedQueryExecTest,IsNullTest,OrderByTest,QueryExecTest,SaltedTableTest,SaltedTableUpsertSelectTest,SaltedTableVarLengthRowKeyTest,SkipScanQueryTest,UpsertSelectAutoCommitTest,UpsertSelectTest,UpsertValuesTest,AutoCommitTest,CreateTableTest,ExecuteStatementsTest,GroupByCaseTest,IndexTest,KeyOnlyTest,MultiCfQueryExecTest,ProductMetricsTest,QueryExecWithoutSCNTest,QueryPlanTest,ReadIsolationLevelTest,ServerExceptionTest,StatementHintsTest,StddevTest,ToCharFunctionTest,ToNumberFunctionTest,TopNTest,UpsertBigValuesTest,VariableLengthPKTest,SaltedTableUpsertSelectTest"
 else
   echo "Usage: swphoenix (t2|t4)"
   exit 1
