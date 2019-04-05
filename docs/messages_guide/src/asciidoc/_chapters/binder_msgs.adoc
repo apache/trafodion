@@ -174,13 +174,13 @@ between 1 and the <value-2> of SELECT expressions.
 == SQL 4008
 
 ```
-A sub query is not allowed inside an aggregate function.
+A subquery is not allowed inside an aggregate function.
 ```
 
 *Cause:* This error can occur only if support for subqueries inside
 aggregate functions has been turned off (e.g., via CQD UDF_SUBQ_IN_AGGS_AND_GBYS 'OFF').
 (Note: By default, this support is presently turned on.)
-You specified a sub query within an aggregate function, which is
+You specified a subquery within an aggregate function, which is
 not supported when this support has been turned off.
 
 *Effect:* The operation fails.
@@ -322,12 +322,12 @@ Derived column name <name> was specified more than once.
 == SQL 4019
 
 ```
-The select list of a sub query in a select list must be scalar (degree of one).
+The select list of a subquery in a select list must be scalar (degree of one).
 ```
 
-*Cause:* This error can only appear if support for mulit-degree subqueries has been turned
+*Cause:* This error can only appear if support for multi-degree subqueries has been turned
 off (e.g. via CQD ALLOW_MULTIDEGREE_SUBQ_IN_SELECTLIST 'OFF'). (Note: By default, this
-support is turned on.) You specified a sub query of degree greater than one inside a select list,
+support is turned on.) You specified a subquery of degree greater than one inside a select list,
 and the support for this was turned off.
 
 *Effect:* The operation fails.
@@ -1167,10 +1167,10 @@ operands must be numeric.
 == SQL 4082
 
 ```
-Table, view or stored procedure <name> does not exist or is inaccessible.
+Object <name> does not exist or is inaccessible.
 ```
 
-*Cause:* You referred to table <name>, which does not exist or is
+*Cause:* You referred to the object <name>, which does not exist or is
 inaccessible (for example, on a downed disk volume).
 
 *Effect:* The operation fails.
@@ -1237,10 +1237,10 @@ in each TRANSPOSE item.
 == SQL 4089
 
 ```
-Check constraint <name> contains a sub query. This is not yet supported.
+Check constraint <name> contains a subquery. This is not yet supported.
 ```
 
-*Cause:* You specified a constraint <name> that contains a sub query,
+*Cause:* You specified a constraint <name> that contains a subquery,
 which is not supported.
 
 *Effect:* The operation fails.
@@ -1748,9 +1748,9 @@ the update correctly and receives an error:
 
 ```
 In a query with a GROUP BY, DISTINCT, or aggregate function, each
-```
 column in the ORDER BY clause must be one of the columns explicitly
 SELECTed by the query. Column in error: <name>.
+```
 
 *Cause:* You attempted to perform a query with an aggregate function, a
 GROUP BY clause, or a DISTINCT clause. A column in the ORDER BY clause,
@@ -1823,8 +1823,8 @@ one table.
 == SQL 4125
 
 ```
-The select list of a sub query in a row value constructor must be
-scalar (degree of one) if the sub query is one of several expressions
+The select list of a subquery in a row value constructor must be
+scalar (degree of one) if the subquery is one of several expressions
 rather than the only expression in the constructor.
 ```
 
@@ -1894,6 +1894,34 @@ allow this particular attribute to be changed.
 
 *Recovery:* If a different attribute was intended, correct the syntax and resubmit.
 
+[[SQL-4131]]
+== SQL 4131
+
+```
+Current_time, current_date, or current_timestamp is not allowed in a check constraint.
+```
+
+*Cause:* You attempted to create a constraint referencing current_time, current_date
+or current_timestamp.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4132]]
+== SQL 4132
+
+```
+Current_user, session_user, or system_user is not allowed in a check constraint.
+```
+
+*Cause:* You attempted to create a constraint referencing current_user, session_user, 
+or system_user.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
 [[SQL-4133]]
 == SQL 4133
 
@@ -1928,7 +1956,7 @@ database software does not allow.
 
 ```
 In an INSERT-SELECT, each column in the ORDER BY clause must be one
-of the columns in the selected list of the query. Column in error: B.
+of the columns in the select list of the query. Column in error: B.
 ```
 
 *Cause:* You tried to SQL-compile an INSERT-SELECT statement that

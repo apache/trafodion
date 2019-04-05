@@ -1123,7 +1123,7 @@ $1~String1 --------------------------------
 4051 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 must be character.
 4052 42000 99999 BEGINNER MAJOR DBADMIN The second operand of function $0~string0 must be numeric.
 4053 42000 99999 BEGINNER MAJOR DBADMIN The third operand of function $0~string0 must be numeric.
-4054 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The MAINTAIN control information table contains an incorrect format.
+4054 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
 4055 42000 99999 BEGINNER MAJOR DBADMIN The select lists or tuples must have comparable data types.  $0~String0 and $1~String1 are not comparable.
 4056 42000 99999 BEGINNER MAJOR DBADMIN Exposed name $0~TableName appears more than once.
 4057 42000 99999 BEGINNER MAJOR DBADMIN Correlation name $0~String0 conflicts with qualified identifier of table $1~TableName.
@@ -1153,7 +1153,7 @@ $1~String1 --------------------------------
 4081 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 5/7/12 ---
 4082 42000 99999 BEGINNER MAJOR DBADMIN Object $0~TableName does not exist or is inaccessible.
 4083 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 5/7/12 ---
-4084 42000 99999 ADVANCED MAJOR DBADMIN SQL object $0~TableName is corrupt.
+4084 42000 99999 ADVANCED MAJOR DBADMIN --- unused ---
 4085 0A000 99999 BEGINNER MAJOR DBADMIN File organization $0~String0 of object $1~TableName is not supported.
 4086 42000 99999 BEGINNER MAJOR DBADMIN Environment variable or define $0~String0 does not exist.
 4087 42000 99999 BEGINNER MAJOR DBADMIN Prototype value '$0~String0' is not a valid qualified name.
@@ -1189,7 +1189,7 @@ $1~String1 --------------------------------
 4117 42000 99999 BEGINNER MAJOR DBADMIN The cursor query expression might be nonupdatable.
 4118 42000 99999 BEGINNER MAJOR DBADMIN The cursor query expression is not updatable.
 4119 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The requested number of parallel extract streams must be greater than one and cannot exceed the number of maximally configured ESPs, $0~Int0.
-4120 42000 99999 BEGINNER MAJOR DBADMIN In a query with a GROUP BY, DISTINCT, or aggregate function, each column in the ORDER BY clause must be one of the columns explicitly SELECTed by the query.  Column in error: $0~ColumnName.
+4120 42000 99999 BEGINNER MAJOR DBADMIN In a query with a GROUP BY, DISTINCT, or aggregate function, each column in the ORDER BY clause must be one of the columns explicitly SELECTed by the query. Column in error: $0~ColumnName.
 4121 42000 99999 BEGINNER MAJOR DBADMIN In a query with a GROUP BY, DISTINCT, or aggregate function, each column in the ORDER BY clause must be one of the columns explicitly SELECTed by the query.  Column in error: $0~ColumnName.  Table in scope: $1~String0.
 4122 42000 99999 BEGINNER MAJOR DBADMIN NULL cannot be assigned to NOT NULL column $0~ColumnName.
 4123 42000 99999 BEGINNER MAJOR DBADMIN NULL cannot be cast to a NOT NULL data type.
@@ -1206,7 +1206,7 @@ $1~String1 --------------------------------
 4134 42000 99999 BEGINNER MAJOR DBADMIN The operation ($0~String0) is not allowed.  Try UNION ALL instead.
 4135 42000 99999 BEGINNER MAJOR DBADMIN In an INSERT-SELECT, each column in the ORDER BY clause must be one of the columns in the select list of the query.  Column in error: $0~ColumnName.
 4136 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An outer SELECT was used in a DELETE [FIRST N] statement without using the [LAST 1] clause.
-4137 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A DELETE [FIRST N] statement was specified on table $0~TableName which has more than one partition, without using the PARTITION clause. 
+4137 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 4138 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of a subquery in the WHERE clause of a DELETE [FIRST N] statement is not supported.
 4139 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of a subquery in the WHERE clause of a Long Running Update statement is not supported.
 4140 42000 99999 BEGINNER MAJOR DBADMIN The second operand of function $0~string0 must be of interger type.
