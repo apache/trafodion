@@ -614,3 +614,38 @@ void HSLogMan::LogTimestamp(const char *text)
             text, ts[0], ts[1], ts[2], ts[3], ts[4], ts[5], ts[6], ts[7]);
     Log(msg);
   }
+
+// Newer log methods: These methods eliminate the need to use
+// sprintf and snprintf to the fixed length buffer msg in the HSLogMan
+// class. Over time, we can eliminate the Log() method, and change the
+// other Log methods to use these methods.
+
+// Append a character string to the log buffer
+HSLogMan & HSLogMan::operator<<(const char * data)
+  {
+    if (logNeeded_)
+      logStreamBuffer_ += data;
+    return *this;
+  }
+
+// Append the text equivalent of a 64-bit integer to the log buffer
+HSLogMan & HSLogMan::operator<<(Int64 data)
+  {
+    if (logNeeded_)
+      {
+        char buffer[24];  // big enough for any 64-bit signed integer
+        sprintf(buffer,"%ld", data);
+        logStreamBuffer_ += buffer;
+      }
+    return *this;
+  }
+
+// Write out whatever is in the log buffer and then clear it
+void HSLogMan::FlushToLog()
+  {
+    if (logNeeded_)
+      {
+        QRLogger::log(CAT_SQL_USTAT, LL_INFO, "%s", logStreamBuffer_.data());
+        logStreamBuffer_.clear();
+      }
+  }

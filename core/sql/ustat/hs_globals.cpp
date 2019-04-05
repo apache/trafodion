@@ -994,8 +994,8 @@ void HSGlobalsClass::formGroupSets()
       {
          if (LM->LogNeeded())
          {
-            sprintf(LM->msg, "\tMC: GROUP (%s) has state DONT_TRY, is skipped", mgroup_set->colNames->data());
-            LM->Log(LM->msg);
+            *LM << "\tMC: GROUP (" << mgroup_set->colNames->data() << ") has state DONT_TRY, is skipped";
+            LM->FlushToLog();
          }
       }
       else if ((mgroup_set->mcis_groupHead) && (mgroup_set->state != PROCESSED))
@@ -1004,8 +1004,8 @@ void HSGlobalsClass::formGroupSets()
 
          if (LM->LogNeeded())
          {
-            sprintf(LM->msg, "\tMC: GROUP (%s) is a HEAD GROUP ", mgroup_set->colNames->data());
-            LM->Log(LM->msg);
+            *LM << "\tMC: GROUP (" << mgroup_set->colNames->data() << ") is a HEAD GROUP ";
+            LM->FlushToLog();
          }
 
          mgroup =  multiGroup;
@@ -1049,16 +1049,15 @@ void HSGlobalsClass::formGroupSets()
             {
               myNextNeighbpr = myNextNeighbpr->mcis_next;
 
-              sprintf(LM->msg, "\tMC: GROUP (%s) is neighbor of HEAD GROUP (%s)", 
-                      myNextNeighbpr->colNames->data(), mgroup_set->colNames->data());
-              LM->Log(LM->msg);
+              *LM << "\tMC: GROUP (" << myNextNeighbpr->colNames->data() << 
+                     ") is neighbor of HEAD GROUP (" << mgroup_set->colNames->data() << ")"; 
+              LM->FlushToLog();
             }
 
             if (mgroup_set->mcis_groupWeight.isNull())
             {
-               sprintf(LM->msg, "\tMC: GROUP (%s) has no neighbors", 
-                       mgroup_set->colNames->data());
-               LM->Log(LM->msg);
+              *LM << "\tMC: GROUP (" << mgroup_set->colNames->data() << ") has no neighbors"; 
+              LM->FlushToLog();
             }
          }
       }
@@ -1762,8 +1761,8 @@ void HSColGroupStruct::freeISMemory(NABoolean freeStrData, NABoolean freeMCData)
   HSLogMan *LM = HSLogMan::Instance();
   if (LM->LogNeeded())
     {
-      sprintf(LM->msg, "Freeing IS memory for column %s", colNames->data());
-      LM->Log(LM->msg);
+      *LM << "Freeing IS memory for column " << colNames->data();
+      LM->FlushToLog();
     }
 
   // used by MC in-memory since a column might have been processed but kept
@@ -5197,10 +5196,11 @@ void HSGlobalsClass::getMemoryRequirementsForOneMCGroup(HSColGroupStruct* mgroup
 
   if (LM->LogNeeded())
   {
-    sprintf(LM->msg, "MC: Group with columns %s requires (%ld) bytes of memory"
-                     " for internal sort including (%ld) bytes for MC processing.",
-                      mgroup->colNames->data(), mgroup->mcis_totalMCmemNeeded, mgroup->memNeeded);
-    LM->Log(LM->msg);
+    *LM << "MC: Group with columns " << mgroup->colNames->data() << " requires (" 
+        << mgroup->mcis_totalMCmemNeeded 
+        << ") bytes of memory for internal sort including ("
+        << mgroup->memNeeded << ") bytes for MC processing.";
+    LM->FlushToLog();
   }
 }
 
@@ -9222,7 +9222,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
             if (LM->LogNeeded())
             {
                char title[1000];
-               sprintf(title, "MC: Compute using Internal Sort (%s) with%sskew",
+               sprintf(title, "MC: Compute using Internal Sort (%.940s) with%sskew",
                                mgroup->colNames->data(), collectMCSkewedValues? " " : " NO ");
                LM->StartTimer(title);
                (void)getTimeDiff(TRUE);
@@ -9359,7 +9359,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
             if (LM->LogNeeded())
             {
                char title[1000];
-               sprintf(title, "MC: Compute using SQL (%s) with%sskew",
+               sprintf(title, "MC: Compute using SQL (%.940s) with%sskew",
                                mgroup->colNames->data(), collectMCSkewedValues? " " : " NO ");
                LM->StartTimer(title);
                (void)getTimeDiff(TRUE);
@@ -10647,8 +10647,8 @@ void HSColGroupStruct::print()
 
     if (this != NULL)
       {
-        sprintf(LM->msg, "\t\t\t%d, %u, %u, (%s)", colCount, oldHistid, newHistid, colNames->data());
-        LM->Log(LM->msg);
+        *LM << "\t\t\t" << colCount << ", " << oldHistid << ", " << newHistid << ", (" << colNames->data() << ")";
+        LM->FlushToLog();
         if (this->next != NULL)
           this->next->print();
       }

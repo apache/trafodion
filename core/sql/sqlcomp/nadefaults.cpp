@@ -3168,6 +3168,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
   DDflt0_(USTAT_MODIFY_DEFAULT_UEC,             "0.05"),
+  DDui1__(USTAT_MULTI_COLUMN_LIMIT,             "10"),
   DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation (in GB) feasible with NAHEAP.
   DDui1__(USTAT_NUM_MC_GROUPS_FOR_KEYS,         "10"),
   DDkwd__(USTAT_PROCESS_GAPS,                   "ON"),

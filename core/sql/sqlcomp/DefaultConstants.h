@@ -523,6 +523,7 @@ enum DefaultConstants
   USTAT_MIN_ROWCOUNT_FOR_SAMPLE,     // Smallest table for which sampling used
   USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE, // Smallest table for which lowest sampling rate used
   USTAT_MODIFY_DEFAULT_UEC,    // Modify the default UEC
+  USTAT_MULTI_COLUMN_LIMIT,    // Limit on number of columns in a multi-column histogram
   USTAT_UEC_HI_RATIO,          // When the estimated UEC/ROWCOUNT ratio is
   USTAT_UEC_LOW_RATIO,         // between HI_RATIO and LOW_RATIO, we will avoid
                                // calling xValue() to find the root value.

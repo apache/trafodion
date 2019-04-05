@@ -359,6 +359,33 @@ a persistent sample table.
 is necessary.
 
 <<<
+[[SQL-9229]]
+== SQL 9229
+
+```
+More than <limit> columns were specified in the multi-column list <column-list>.
+```
+
+Where <limit> is the limit on the number of columns that {project-name} supports in a multi-column histogram.
+
+Where <column-list> is a list of columns explicitly specified in the UPDATE STATISTICS statement.
+
+*Cause:* The UPDATE STATISTICS statement requests creation of a multi-column histogram on more columns
+than {project-name} supports. It is possible that the user intended to create single-column histograms
+on each column, but inadvertantly used the wrong syntax.
+
+*Effect:* The operation fails.
+
+*Recovery:* If single-column histograms were intended, correct the syntax and resubmit. If the user 
+genuinely needs a multi-column histogram on the set of columns specified, raise the limit by 
+specifying CQD USTAT_MULTI_COLUMN_LIMIT 'n', where n is the number of columns in the list. Note: 
+A multi-column histogram is useful when there are correlations between column values in the set
+of columns. Usually when such correlations exist in a large column set, they exist also in a smaller
+subset of the columns. From a compilation perspective, compile time improves on smaller column sets. 
+Too, the likelyhood of histograms on large column sets being useful is small: A query would need to 
+group on the entire set of columns, or have predicates involving all of the columns.
+
+<<<
 [[SQL-9232]]
 == SQL 9232
 
