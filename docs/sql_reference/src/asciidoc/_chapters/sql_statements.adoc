@@ -3222,6 +3222,12 @@ key-column-list is:
 like-spec is:
     LIKE source-table [include-option]...
 
+include-option is:
+    WITH CONSTRAINTS
+  | WITHOUT DIVISION
+  | WITHOUT LOB COLUMNS
+  | WITHOUT SALT
+
 hbase-options-list is:
     hbase-option = 'value'[, hbase-option = 'value']...
 ```
@@ -3492,6 +3498,11 @@ the NOT NULL column constraints that exist for the source table with different c
 +
 directs {project-name} SQL to not use divisioning from _source-table_. If this clause is omitted, then 
 the _table_ will have the same divisioning as the _source-table_.
+
+*** `WITHOUT LOB COLUMNS`
++
+directs {project-name} SQL to not use LOB columns from the _source-table_. If this clause is omitted, then 
+the _table_ will have the same LOB columns as the _source-table_.
 
 *** `WITHOUT SALT`
 +
@@ -4012,6 +4023,44 @@ An error is returned.
 CREATE TABLE t1 (c1 int not null primary key, c2 char(50));
 
 CREATE TABLE t2 (c1 int, c2 char (50) UPSHIFT NOT NULL) AS SELECT * FROM t1;
+```
+
+<<<
+[[create_table_examples_create_table_like]]
+==== Examples of CREATE TABLE LIKE
+
+* This example shows how to use the CREATE TABLE LIKE statement without using the LOB columns _c3_ and _c4_. 
+
++
+```
+CREATE TABLE t1 (c1 INT, c2 CHAR(99), c3 BLOB, c4 CLOB(9999));
+
+--- SQL operation complete.
+```
+
++
+```
+CREATE TABLE t2 LIKE t1 WITHOUT LOB COLUMNS;
+
+--- SQL operation complete.
+```
+
++
+```
+SHOWDDL t2;
+
+CREATE TABLE TRAFODION.SEABASE.T2
+  ( 
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               CHAR(99) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T2 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 <<<
