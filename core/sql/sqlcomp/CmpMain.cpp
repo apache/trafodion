@@ -545,13 +545,16 @@ char* localizedText(QueryText& qt, CharInfo::CharSet &localizedTextCharSet, NAMe
 
 void CmpMain::FlushQueryCachesIfLongTime(Lng32 begTimeInSec)
 {
-  Lng32 max_cache_flush_time = 24 * 60 * 60;  // 24 hours by default
 
-  if ( char *sct = getenv("RMS_SIK_GC_INTERVAL_SECONDS") )
+  static Lng32 max_cache_flush_time = 24 * 60 * 60;  // 24 hours by default
+  static bool gotSikGcInterval = FALSE;
+
+  static char *sct = getenv("RMS_SIK_GC_INTERVAL_SECONDS");
+  if (sct != NULL)
   {
-     max_cache_flush_time = (Lng32)str_atoi(sct, str_len(sct)) ;
-     if (max_cache_flush_time < 10)
-         max_cache_flush_time = 10;
+         max_cache_flush_time = (Lng32)str_atoi(sct, str_len(sct)) ;
+         if (max_cache_flush_time < 10)
+             max_cache_flush_time = 10;
   }
 
   // NOTE: For this purpose, we can ignore the microseconds part of the TimeVal.

@@ -1234,7 +1234,7 @@ public class T4Properties {
 	 * 
 	 * @param networkTimeout
 	 *            The network timeout value in seconds.
-	 * @see #setNetworkTimeout(int)
+	 * @see #setNetworkTimeout(String)
 	 * @see #getNetworkTimeout()
 	 */
 	void setNetworkTimeout(String networkTimeout) {
@@ -1256,7 +1256,7 @@ public class T4Properties {
 	 * 
 	 * @param networkTimeout
 	 *            The network timeout value in seconds.
-	 * @see #setNetworkTimeout(String)
+	 * @see #setNetworkTimeout(int)
 	 * @see #getNetworkTimeout()
 	 */
 	void setNetworkTimeout(int networkTimeout) {

@@ -84,7 +84,6 @@ void InliningInfo::merge(InliningInfo *other)
 	ForceCardinalityInfo(*(other->forceCardinalityInfo_));
     }
 
-    if (getenv("SC_BUG")!=NULL) return;
     if (other->triggerBindInfo_ != NULL)
     {
       triggerBindInfo_  = new (CmpCommon::statementHeap())

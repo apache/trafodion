@@ -67,6 +67,7 @@ class T4Connection {
 		m_io.setConnectionIdleTimeout(ic.getConnectionTimeout());
 		// trace_connection - AM
 		m_io.setT4Connection(this);
+                m_io.setNetworkTimeout(ic.t4props_.getNetworkTimeout());
 		m_io.openIO();
 		getInputOutput().setTimeout(ic.getLoginTimeout());
 		checkConnectionIdleTimeout();
@@ -349,7 +350,7 @@ class T4Connection {
 			LogicalByteArray wbuffer = SetConnectionOptionMessage.marshal(m_dialogueId, connectionOption,
 					optionValueNum, optionValueStr, this.m_ic);
 
-			getInputOutput().setTimeout(m_ic.t4props_.getNetworkTimeout());
+			getInputOutput().setTimeout(m_ic.getQueryTimeout());
 
 			LogicalByteArray rbuffer = getReadBuffer(TRANSPORT.SRVR_API_SQLSETCONNECTATTR, wbuffer);
 
@@ -396,7 +397,7 @@ class T4Connection {
 		try {
 			LogicalByteArray wbuffer = EndTransactionMessage.marshal(m_dialogueId, transactionOpt, this.m_ic);
 
-			getInputOutput().setTimeout(m_ic.t4props_.getNetworkTimeout());
+			getInputOutput().setTimeout(m_ic.getQueryTimeout());
 
 			LogicalByteArray rbuffer = getReadBuffer(TRANSPORT.SRVR_API_SQLENDTRAN, wbuffer);
 
@@ -469,7 +470,7 @@ class T4Connection {
 					tableTypeList, columnNm, columnType, rowIdScope, nullable, uniqueness, accuracy, sqlType,
 					metadataId, fkcatalogNm, fkschemaNm, fktableNm, m_ic);
 
-			getInputOutput().setTimeout(m_ic.t4props_.getNetworkTimeout());
+			getInputOutput().setTimeout(m_ic.getQueryTimeout());
 
 			LogicalByteArray rbuffer = getReadBuffer(TRANSPORT.SRVR_API_GETCATALOGS, wbuffer);
 

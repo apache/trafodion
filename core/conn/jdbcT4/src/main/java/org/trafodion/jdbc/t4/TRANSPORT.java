@@ -202,6 +202,7 @@ class TRANSPORT {
 	// ================ SQL Statement type ====================
 
 	static final short TYPE_UNKNOWN = 0;
+
 	static final short TYPE_SELECT = 0x0001;
 	static final short TYPE_UPDATE = 0x0002;
 	static final short TYPE_DELETE = 0x0004;
@@ -232,6 +233,7 @@ class TRANSPORT {
 	// Database Software"
 	// document Version 0.4 Created on May 10, 2005.
 	//
+	static final int SQL_QUERY_TYPE_NOT_SET  = 99;
 	static final int SQL_OTHER = -1;
 	static final int SQL_UNKNOWN = 0;
 	static final int SQL_SELECT_UNIQUE = 1;
@@ -246,6 +248,11 @@ class TRANSPORT {
 	static final int SQL_SET_TRANSACTION = 10;
 	static final int SQL_SET_CATALOG = 11;
 	static final int SQL_SET_SCHEMA = 12;
+	static final int SQL_CALL_NO_RESULT_SETS = 13;
+  	static final int SQL_CALL_WITH_RESULT_SETS = 14;
+  	static final int SQL_SP_RESULT_SET = 15;
+  	static final int SQL_INSERT_RWRS = 16;
+
 
 	// ================ Execute2 return values ====================
 

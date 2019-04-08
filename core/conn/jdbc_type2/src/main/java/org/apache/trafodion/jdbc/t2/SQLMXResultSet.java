@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.HashMap;
 
 public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 	// java.sql.ResultSet interface methods
@@ -272,17 +273,20 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_findColumn].methodEntry();
 		try {
-			int i;
-
 			if (isClosed_)
 				throw Messages.createSQLException(connection_.locale_,
 						"invalid_cursor_state", null);
-			for (i = 0; i < outputDesc_.length; i++) {
-				if (columnName.equalsIgnoreCase(outputDesc_[i].name_))
-					return i + 1;
+ 			if (colMap_ == null) {
+ 				colMap_ = new HashMap<String, Integer>();
+				for (int columnIndex = 1; columnIndex <= outputDesc_.length ; columnIndex++) {
+					colMap_.put(outputDesc_[columnIndex-1].name_.toUpperCase(), columnIndex);
+				}
 			}
-			throw Messages.createSQLException(connection_.locale_,
+			Integer colIdx = colMap_.get(columnName.toUpperCase());
+			if (colIdx == null)
+				throw Messages.createSQLException(connection_.locale_,
 					"invalid_column_name", null);
+			return colIdx;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_findColumn].methodExit();
@@ -4293,6 +4297,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 	boolean isClosed_;
 	int currentRow_;
 	boolean endOfData_;
+	HashMap<String, Integer> colMap_;
 	// Fetch outputs updated by JNI Layer
 	boolean wasNull_;
 	int totalRowsFetched_;

@@ -41,6 +41,7 @@ import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Handler;
@@ -84,8 +85,8 @@ class InterfaceConnection {
 	T4Properties t4props_;
 	SQLWarning sqlwarning_;
 
-	Hashtable encoders = new Hashtable(11);
-	Hashtable decoders = new Hashtable(11);
+	HashMap encoders = new HashMap(11);
+	HashMap decoders = new HashMap(11);
 
 	// static fields from odbc_common.h and sql.h
 	static final int SQL_TXN_READ_UNCOMMITTED = 1;
@@ -1245,16 +1246,13 @@ class InterfaceConnection {
 
 	void endTransaction(short commitOption) throws SQLException {
 		EndTransactionReply etr_ = null;
-		if (autoCommit && !_t4Conn.isBeginTransaction()) {
+		if (autoCommit) { 
 			throw TrafT4Messages.createSQLException(t4props_, locale, "invalid_commit_mode", null);
 		}
 
 		isConnectionOpen();
-		// XA_RESUMETRANSACTION();
-
 		try {
 			etr_ = t4connection_.EndTransaction(commitOption);
-			_t4Conn.setBeginTransaction(false);
 		} catch (SQLException tex) {
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(t4props_, commitOption);

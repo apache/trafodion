@@ -592,9 +592,7 @@ void QRLogger::log(const std::string &cat,
 NABoolean QRLogger::initLog4cxx(ExecutableModule module)
 {
    NABoolean retcode;
-   bool singleSqlLogFile = TRUE;
-   if (getenv("TRAF_MULTIPLE_SQL_LOG_FILE"))
-      singleSqlLogFile = FALSE;
+   static bool singleSqlLogFile = (getenv("TRAF_MULTIPLE_SQL_LOG_FILE") != NULL);
    QRLogger::instance().setModule(module);
    if (singleSqlLogFile)
       retcode =  QRLogger::instance().initLog4cxx("log4cxx.trafodion.sql.config");

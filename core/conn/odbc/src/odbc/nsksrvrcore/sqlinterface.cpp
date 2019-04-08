@@ -4580,17 +4580,17 @@ SQLRETURN SRVR::EXECDIRECT(SRVR_STMT_HDL* pSrvrStmt)
 
 	if (pSrvrStmt->stmtType == EXTERNAL_STMT && srvrGlobal->srvrType == CORE_SRVR)
 	{
-		tempSqlString = new char[strlen(pSrvrStmt->sqlString) + 1];
-		if (tempSqlString == NULL)
+		if (strnicmp(pSrvrStmt->sqlString, "INFOSTATS", 9) == 0)
 		{
-			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
+			tempSqlString = new char[strlen(pSrvrStmt->sqlString) + 1];
+			if (tempSqlString == NULL)
+			{
+				SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, 
 					srvrGlobal->srvrObjRef, 1, "tempSqlString");
-			exit(0);
-		}
-		strcpy(tempSqlString,pSrvrStmt->sqlString);
-		if (sqlStmtType == TYPE_STATS)
-		{
+				exit(0);
+			}
+			strcpy(tempSqlString,pSrvrStmt->sqlString);
 			retcode = doInfoStats(pSrvrStmt);
 			if (retcode != SQL_SUCCESS) 
 			{
@@ -5192,8 +5192,8 @@ SQLRETURN SRVR::PREPARE2(SRVR_STMT_HDL* pSrvrStmt,bool isFromExecDirect)
 	UInt32 flags = 0;
 	if(isFromExecDirect)
 		flags = flags | PREPARE_STANDALONE_QUERY;
-      
-	if (pSrvrStmt->sqlStmtType == TYPE_STATS)
+
+	if (strnicmp(pSrvrStmt->sqlString, "INFOSTATS", 9) == 0)
 	{
 		retcode = doInfoStats(pSrvrStmt);
 		if (retcode != SQL_SUCCESS) 
@@ -5492,10 +5492,12 @@ SQLRETURN SRVR::PREPARE2withRowsets(SRVR_STMT_HDL* pSrvrStmt)
 	HANDLE_ERROR(retcode, sqlWarning);
 
 	if (pSrvrStmt->maxRowsetSize > 1 
+/*
             && (   pSrvrStmt->sqlStmtType == TYPE_INSERT_PARAM
 	        || pSrvrStmt->sqlStmtType == TYPE_UPDATE
 	        || pSrvrStmt->sqlStmtType == TYPE_DELETE
 		)
+*/
 	   )
 		retcode = WSQL_EXEC_SetStmtAttr(pStmt,SQL_ATTR_INPUT_ARRAY_MAXSIZE,pSrvrStmt->maxRowsetSize, NULL);
 	else

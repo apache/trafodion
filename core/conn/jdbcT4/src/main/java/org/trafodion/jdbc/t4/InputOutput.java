@@ -60,6 +60,10 @@ class InputOutput {
 	// socket
 	// factory
 
+        // This is minimum time the socket read and write will wait
+        // All other timeouts will be multiple of this timeout
+        private int m_networkTimeout;
+
 	static {
 		try {
 			String factStr = System.getProperty("t4jdbc.socketFactoryClass");
@@ -118,6 +122,10 @@ class InputOutput {
 		m_connectionIdleTimeout = timeout;
 	}
 	
+        void setNetworkTimeout(int timeout) {
+           m_networkTimeout = timeout; 
+        }
+
 	String getRemoteHost() {
 		return this.m_addr.getIPorName();
 	}
@@ -161,7 +169,10 @@ class InputOutput {
 						// can immediately
 						// reused if connection
 						// is lost.
-						m_socket.setSoTimeout(0);
+						//Set the network timeout to be at least 10 seconds
+						if (m_networkTimeout == 0)
+                                                    m_networkTimeout = 10;
+						m_socket.setSoTimeout(m_networkTimeout * 1000);
                         // disable/enable Nagle's algorithm
                         m_socket.setTcpNoDelay(this.m_addr.m_t4props.getTcpNoDelay());
 						//
@@ -271,7 +282,6 @@ class InputOutput {
 		//
 		// If m_socket is not null, then we will assume it is already open.
 		//
-
 	} // end openIO
 
 	// ----------------------------------------------------------
@@ -570,36 +580,43 @@ class InputOutput {
 	// ----------------------------------------------------------
 	int recv_nblk(byte[] buf, int offset) throws SQLException {
 		int num_read = 0;
-
 		boolean retry = false;
-		
 		do {
 			try {
-				m_socket.setSoTimeout(m_timeout * 1000);
-	
-				num_read = m_is.read(buf, offset, buf.length - offset);
-	
-				// if the socket.read returns -1 then return 0 instead of -1
-				if (num_read < 0) {
-					num_read = 0;
-				}
-				m_socket.setSoTimeout(0); // set timeout back to infinite
-				retry = false;
-				
+				boolean innerRetry = true;
+                        	int pendingTimeout = m_timeout;
+                                if (pendingTimeout == 0)
+                                   pendingTimeout = Integer.MAX_VALUE;
+				do {
+					try {
+						num_read = m_is.read(buf, offset, buf.length - offset);
+						// if the socket.read returns -1 then return 0 instead of -1
+						if (num_read < 0) 
+							num_read = 0;
+						innerRetry = false;
+						retry = false;
+                        		}
+	                		catch (SocketTimeoutException ste) {
+						pendingTimeout -= m_networkTimeout;
+						if (pendingTimeout < 0) {
+							innerRetry = false;
+							throw ste;
+						}
+                        		}
+				} while (innerRetry);
 			} catch (SocketTimeoutException ste) {
 				// the first exception should try to cancel and wait for the cancel message from the server
-				if(retry == false) {
+				if (retry == false) {
 					this.m_t4conn.m_ic.cancel();
 					retry = true;
 					continue;
-				}
+                		}
 				
 				// if cancel didnt work the first time, clean everything up
 				try {
 					m_socket.close();
 					this.m_t4conn.m_ic.setIsClosed(true);
 					this.m_t4conn.m_ic.cancel();
-	
 					throw ste;
 				} catch (Exception e) {
 					SQLException se = TrafT4Messages
@@ -609,13 +626,12 @@ class InputOutput {
 				}
 			} catch (Exception e) {
 				SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_read_error", e.getMessage());
-	
 				se.initCause(e);
 				throw se;
 			} finally {
 				resetTimedOutConnection();
 			}
-		}while(retry);
+		} while(retry);
 
 		return num_read;
 	} // recv_nblk

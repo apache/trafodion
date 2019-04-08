@@ -86,7 +86,8 @@ Int64
 getCurrentTimestamp()
 {
   // return timestamp in local civil time
-  return CONVERTTIMESTAMP(JULIANTIMESTAMP(0,0,0,-1),0,-1,0);
+  //return CONVERTTIMESTAMP(JULIANTIMESTAMP(0,0,0,-1),0,-1,0);
+  return JULIANTIMESTAMP(0,0,0,-1);
 }
 
 static Int64 getCurrentTimestampUEpoch()

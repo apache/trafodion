@@ -1439,7 +1439,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 {
   NAString statement;
 
-  NABoolean sqlmxRegress = (getenv("SQLMX_REGRESS") != NULL);
+  static NABoolean sqlmxRegress = (getenv("SQLMX_REGRESS") != NULL);
 
   // if regressions are running and this explain is for a DDL, then
   // do not return root specific explain info. This is done to avoid

@@ -53,7 +53,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
+import java.util.HashMap;
 import javax.sql.PooledConnection;
 
 /**
@@ -1332,9 +1332,9 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		while ((pRef = refStmtQ_.poll()) != null) {
 			stmtLabel = (String) refToStmt_.get(pRef);
-			// All PreparedStatement objects are added to Hashtable
+			// All PreparedStatement objects are added to HashMap
 			// Only Statement objects that produces ResultSet are added to
-			// Hashtable
+			// HashMap
 			// Hence stmtLabel could be null
 			if (stmtLabel != null) {
 				try {
@@ -1398,7 +1398,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		// Rollback the Transaction when autoCommit mode is OFF
 		try {
-			if (getAutoCommit() == false || isBeginTransaction) {
+			if (getAutoCommit() == false ) {    
 				rollback();
 			}
 		} catch (SQLException sqex) {
@@ -1619,7 +1619,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		
 		refStmtQ_ = new ReferenceQueue();
-		refToStmt_ = new Hashtable();
+		refToStmt_ = new HashMap();
 		pRef_ = new WeakReference(this, ic_.refQ_);
 		ic_.refTosrvrCtxHandle_.put(pRef_, ic_);
 		props_ = t4props;
@@ -1812,8 +1812,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	// Connection
 	Map userMap_;
 	ReferenceQueue refStmtQ_;
-	Hashtable refToStmt_;
-	Hashtable refToRS_;
+	HashMap refToStmt_;
 	int holdability_;
 	TrafT4DataSource ds_;
 	TrafT4PooledConnection pc_;
@@ -1823,16 +1822,6 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 	byte[] transactionToJoin;
 	
-	private boolean isBeginTransaction = false;
-	
-	protected boolean isBeginTransaction() {
-		return isBeginTransaction;
-	}
-
-	protected void setBeginTransaction(boolean isBeginTransaction) {
-		this.isBeginTransaction = isBeginTransaction;
-	}
-
 
 	public Object unwrap(Class iface) throws SQLException {
 		try {

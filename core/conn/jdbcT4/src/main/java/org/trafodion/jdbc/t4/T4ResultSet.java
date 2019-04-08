@@ -25,18 +25,21 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.SQLException;
 
-final class T4ResultSet extends T4Connection {
+final class T4ResultSet {
 	private String m_stmtLabel;
+	private InterfaceConnection m_ic; 
+	private T4Connection m_serverConnection; 
 	static final short SQL_CLOSE = 0;
 
 	boolean m_processing = false;
 
 	T4ResultSet(InterfaceResultSet ir) throws SQLException {
-		super(ir.ic_);
+		m_ic = ir.ic_;
+		m_serverConnection = m_ic.getT4Connection();
 		m_stmtLabel = ir.stmtLabel_;
 
 		if (m_stmtLabel == null) {
-			throwInternalException();
+			m_serverConnection.throwInternalException();
 
 		}
 	}
@@ -64,9 +67,9 @@ final class T4ResultSet extends T4Connection {
 			String cursorName, int cursorCharset, String stmtOptions) throws SQLException {
 
 		try {
-			getInputOutput().setTimeout(m_ic.t4props_.getNetworkTimeout());
+			m_serverConnection.getInputOutput().setTimeout(queryTimeout);
 
-			LogicalByteArray wbuffer = FetchMessage.marshal(m_dialogueId, sqlAsyncEnable, queryTimeout, stmtHandle,
+			LogicalByteArray wbuffer = FetchMessage.marshal(m_ic.getDialogueId(), sqlAsyncEnable, queryTimeout, stmtHandle,
 					m_stmtLabel, stmtCharset, maxRowCnt, 0 // infinite row size
 					, cursorName, cursorCharset, stmtOptions, this.m_ic);
 
@@ -82,17 +85,17 @@ final class T4ResultSet extends T4Connection {
 		catch (SQLException se) {
 			throw se;
 		} catch (CharacterCodingException e) {
-			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale,
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_,  m_serverConnection.getLocale(),
 					"translation_of_parameter_failed", "FetchMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_,  m_serverConnection.getLocale(), "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "fetch_perf_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_,  m_serverConnection.getLocale(), "fetch_perf_message_error", e
 					.getMessage());
 
 			se.initCause(e);
@@ -115,30 +118,30 @@ final class T4ResultSet extends T4Connection {
 	CloseReply Close() throws SQLException {
 
 		try {
-			getInputOutput().setTimeout(m_ic.t4props_.getNetworkTimeout());
+			m_serverConnection.getInputOutput().setTimeout(m_ic.getQueryTimeout());
 
-			LogicalByteArray wbuffer = CloseMessage.marshal(m_dialogueId, m_stmtLabel, SQL_CLOSE, this.m_ic);
+			LogicalByteArray wbuffer = CloseMessage.marshal(m_ic.getDialogueId(), m_stmtLabel, SQL_CLOSE, this.m_ic);
 
 			LogicalByteArray rbuffer = getReadBuffer(TRANSPORT.SRVR_API_SQLFREESTMT, wbuffer);
 
-			CloseReply cr = new CloseReply(rbuffer, m_ncsAddress.getIPorName(), m_ic);
+			CloseReply cr = new CloseReply(rbuffer, m_serverConnection.getNCSAddress().getIPorName(), m_ic);
 
 			return cr;
 		} // end try
 		catch (SQLException se) {
 			throw se;
 		} catch (CharacterCodingException e) {
-			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale,
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_,  m_serverConnection.getLocale(),
 					"translation_of_parameter_failed", "CloseMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_,  m_serverConnection.getLocale(), "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "close_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_,  m_serverConnection.getLocale(), "close_message_error", e
 					.getMessage());
 
 			se.initCause(e);
@@ -153,7 +156,7 @@ final class T4ResultSet extends T4Connection {
 
 		try {
 			m_processing = true;
-			buf = super.getReadBuffer(odbcAPI, wbuffer);
+			buf = m_serverConnection.getReadBuffer(odbcAPI, wbuffer);
 			m_processing = false;
 		} catch (SQLException se) {
 			m_processing = false;
