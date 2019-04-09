@@ -488,6 +488,207 @@ ABS (-20 + 12)
 ```
 
 <<<
+[[aes_encrypt_function]]
+== AES_ENCRYPT Function
+ 
+The AES_ENCRYPT function encrypts a `_string_` using a specified encryption `_key_` with the AES (Advanced Encryption Standard) algorithm and returns a binary string. 
+
+This function prevents sensitive data from being visible to the public. For example, use the AES_ENCRYPT function to encrypt a person's identity number or preserve user confidentiality.
+
+`AES_ENCRYPT (_string_, _key_)`
+
+[[syntax_description_of_aes_encrypt]]
+=== Syntax Description of AES_ENCRYPT
+
+* `_string_` 
++
+is the data to be encrypted, it can contain a mix of uppercase and lowercase letters, and includes numbers and special characters. 
+
++
+NOTE: This parameter is case-sensitive.
+
+* `_key_` 
++
+is the encryption key to encrypt the `_string_`, it can contain a mix of uppercase and lowercase letters, and includes numbers and special characters. 
+
++
+NOTE: This parameter is case-sensitive.
+
++
+This _key_ can be hashed using a cryptographic hash function, such as SHA, SHA2 and MD5.
+
++
+*Example*
+
++
+** This example demonstrates how the AES_ENCRYPT function works with the SHA function.
+
++
+```
+SELECT AES_ENCRYPT ('hello',SHA ('world')) FROM DUAL;
+
+(EXPR)
+----------------
+[}âXéò0Êw«æÝAÆc
+
+--- 1 row(s) selected.
+```
+
++
+** This example demonstrates how the AES_ENCRYPT function works with the SHA2 function.
+
++
+```
+SELECT AES_ENCRYPT ('hello',SHA2 ('world',512)) FROM DUAL;
+
+(EXPR)
+----------------
+¤÷èx¼ó=L*Ì-µO*A
+
+--- 1 row(s) selected.
+```
+
++
+** This example demonstrates how the AES_ENCRYPT function works with the MD5 function.
+
++
+```
+SELECT AES_ENCRYPT ('hello',MD5 ('world')) FROM DUAL;
+
+(EXPR)
+----------------
+C¡ïcåsí[1Ø
+
+--- 1 row(s) selected.
+```
+
++
+TIP: The CQD `BLOCK_ENCRYPTION_MODE` controls the mode for the block-based encryption algorithm. The default mode is the  aes-128-ecb, which means the encryption using a key length of 128 bits and the ECB (Electronic Code Book) mode—the symmetric encryption scheme which replaces each block of the clear text by the block of ciphertext. 
+
++
+[cols="50%,50%"]
+|===
+^| *Value* ^| *Mode*
+^| 0 ^| aes-128-ecb
+^| 1 ^| aes-192-ecb
+^| 2 ^| aes-256-ecb
+|===
+
++
+*Example*
+
++
+The following examples show the different results returned from the AES_ENCRYPT function based on the value of the CQD `BLOCK_ENCRYPTION_MODE`. 
+
++
+** The mode aes_192_ecb is in effect.
+
++
+```
+CQD BLOCK_ENCRYPTION_MODE '1';
+
+--- SQL operation complete.
+```
+
++
+```
+SELECT AES_ENCRYPT ('Technical_Writer','Coder') FROM DUAL;
+
+(EXPR)
+--------------------------------
+4}\îî¢Ø­ã^ûh<á¼Æ7õé³ê!cH^Ð
+```
+
++
+This example uses the CONVERTTOHEX function to convert the encrypted string to the hexadecimal string for display purpose.
+
++
+```
+SELECT CONVERTTOHEX (AES_ENCRYPT ('Technical_Writer','Coder')) FROM DUAL;
+
+(EXPR)
+----------------------------------------------------------------
+2DB19032AD86EFEC2D37AC670D1993DAE2E9FA6CC08B044C9989BB2600007B7B
+
+--- 1 row(s) selected.
+```
+
++
+** The mode aes_256_ecb is in effect. 
+
++
+```
+CQD BLOCK_ENCRYPTION_MODE '2';
+
+--- SQL operation complete.
+```
+
++
+```
+SELECT AES_ENCRYPT ('Technical_Writer','Coder') FROM DUAL;
+
+(EXPR)
+--------------------------------
+Ô_8ÆðÑ=Uú2g1¥@°Ô3yä­
+
+--- 1 row(s) selected.
+```
+
++
+```
+SELECT CONVERTTOHEX (AES_ENCRYPT ('Technical_Writer','Coder')) FROM DUAL;
+
+(EXPR)
+----------------------------------------------------------------
+2DB19032AD86EFEC2D37AC670D1993DAE2E9FA6CC08B044C9989BB2600007B7B
+
+--- 1 row(s) selected.
+```
+
+[[considerations_for_aes_encrypt]]
+=== Considerations for AES_ENCRYPT 
+
+Neither argument can be NULL.
+
+[[examples_of_aes_encrypt]]
+=== Examples of AES_ENCRYPT
+
+* This example encrypts the string _'2019-11-02 00:00:00'_ with the key _'888'_.
+
++
+```
+SELECT AES_ENCRYPT('2019-11-02 00:00:00', '888') FROM DUAL;
+
+(EXPR)
+--------------------------------
+ºMµ-b(úaP\ìqXqsnTç<`®
+
+--- 1 row(s) selected.
+```
+
+* This example encrypts the string _'Oct 9, 2013 was my first day in Muenster'_ with the key _'Germany-10:06'_ and inserts the encrypted string into the table _t1_.
+
++
+```
+INSERT INTO t1 VALUES (AES_ENCRYPT('Oct 9, 2013 was my first day in Muenster','Germany-10:06'), 'Anniversary');
+
+--- 1 row(s) inserted.
+```
+
++
+```
+SELECT * FROM t1;
+
+C1                                                                                                  C2                                                                                                 
+--------------------------------------------------------------------------------------------------- ---------------------------------------------------------------------------------------------------
+lnWEÂªç¸
+        }öÓ/Å±ÄÖ 
+                P'5]û-S°±[Üý6)Òâ(                                                    Anniversary                                                                                        
+
+--- 1 row(s) selected.
+```
+
+<<<
 [[acos_function]]
 == ACOS Function
 

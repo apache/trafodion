@@ -1250,7 +1250,7 @@ The result table of the TRANSPOSE query is:
 [cols="5*",options="header"]
 |=====
 | KEYCOL | VALCOL | A | B  | C
-| 1      | 1      | 1 | 10 | 100
+| 1      | 11     | 1 | 10 | 100
 | 2      | 103    | 1 | 10 | 100
 | 3      | 6      | 1 | 10 | 100
 | 1      | 22     | 2 | 20 | 200
