@@ -586,6 +586,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_111,      "OFF"),
   DDkwd__(COMP_BOOL_112,      "OFF"),
   DDkwd__(COMP_BOOL_113,      "OFF"),
+  DDkwd__(COMP_BOOL_114,      "ON"),  // If set to "OFF", turns off JIRA TRAFODION-3296 fix
   DDkwd__(COMP_BOOL_115,      "OFF"),
   DDkwd__(COMP_BOOL_116,      "OFF"),
   DDkwd__(COMP_BOOL_117,      "OFF"),

@@ -2947,6 +2947,25 @@ Use of predefined UDF <name> is deprecated and this function will be removed in 
 
 *Recovery:* See message.
 
+[[SQL-4484]]
+== SQL 4484
+
+```
+A subquery specifies both [LAST N] and ORDER BY. This is not supported.
+```
+
+*Cause:* You specified both [LAST N] and ORDER BY in a subquery. {project-name} SQL does not support this operation.
+
+*Effect:* The operation fails.
+
+*Recovery:* The [LAST N] feature is typically used for performance testing purposes. That is, the intent is to
+materialize all rows for a query but not return them to the client. Thus one can test the performance of a query
+apart from the overhead of transmitting the results through the client. For a subquery the benefit of doing this
+is less clear. {project-name} SQL does not support this combination for performance testing purposes in a 
+subquery in most cases. If you desire [LAST N] + ORDER BY semantics (apart
+from any performance consideration), you can recode the subquery to an equivalent form, [FIRST N] + ORDER BY, by 
+reversing the sense of the ORDER BY. That is, change ASC columns in the ORDER BY to DESC, and vice versa.
+
 [[SQL-4497]]
 == SQL 4497
 
