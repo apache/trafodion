@@ -637,7 +637,7 @@ explain options 'f' xx;
 -- should return one row, -1865644273
 execute xx;
 
-prepare xx from select val from t1 where val in (select [any 1] val from t2 order by val);
+prepare xx from select val from t002x1 where val in (select [any 1] val from t002x2 order by val);
 
 -- query plan should be a firstn plan
 explain options 'f' xx;
@@ -646,7 +646,7 @@ explain options 'f' xx;
 prepare xx from select val from t002x1 where val in (select [last 1] val from t002x2 order by val);
 
 -- limit n has same semantics as [any n]
-prepare xx from select val from t1 where val in (select val from t2 order by val limit 1);
+prepare xx from select val from t002x1 where val in (select val from t002x2 order by val limit 1);
 
 -- query plan should be a firstn plan
 explain options 'f' xx;

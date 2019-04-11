@@ -1391,7 +1391,7 @@ VAL
 
 --- 1 row(s) selected.
 >>
->>prepare xx from select val from t1 where val in (select [any 1] val from t2 order by val);
+>>prepare xx from select val from t002x1 where val in (select [any 1] val from t002x2 order by val);
 
 --- SQL command prepared.
 >>
@@ -1403,10 +1403,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 5    .    6    root                                                  1.00E+002
 3    4    5    nested_join                                           1.00E+002
-.    .    4    trafodion_scan                  T1                    1.00E+002
+.    .    4    trafodion_scan                  T002X1                1.00E+002
 2    .    3    hash_groupby                                          1.00E+000
 1    .    2    firstn                                                1.00E+000
-.    .    1    trafodion_scan                  T2                    1.00E+002
+.    .    1    trafodion_scan                  T002X2                1.00E+002
 
 --- SQL operation complete.
 >>
@@ -1419,7 +1419,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 >>
 >>-- limit n has same semantics as [any n]
->>prepare xx from select val from t1 where val in (select val from t2 order by val limit 1);
+>>prepare xx from select val from t002x1 where val in (select val from t002x2 order by val limit 1);
 
 --- SQL command prepared.
 >>
@@ -1431,10 +1431,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 5    .    6    root                                                  1.00E+002
 3    4    5    nested_join                                           1.00E+002
-.    .    4    trafodion_scan                  T1                    1.00E+002
+.    .    4    trafodion_scan                  T002X1                1.00E+002
 2    .    3    hash_groupby                                          1.00E+000
 1    .    2    firstn                                                1.00E+000
-.    .    1    trafodion_scan                  T2                    1.00E+002
+.    .    1    trafodion_scan                  T002X2                1.00E+002
 
 --- SQL operation complete.
 >>
