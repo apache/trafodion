@@ -3501,7 +3501,7 @@ the _table_ will have the same divisioning as the _source-table_.
 
 *** `WITHOUT LOB COLUMNS`
 +
-directs {project-name} SQL to not use LOB columns from the _source-table_. If this clause is omitted, then 
+directs {project-name} SQL to not include LOB columns from the _source-table_. If this clause is omitted, then 
 the _table_ will have the same LOB columns as the _source-table_.
 
 *** `WITHOUT SALT`
