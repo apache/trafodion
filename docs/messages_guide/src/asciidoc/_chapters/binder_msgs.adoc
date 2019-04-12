@@ -1983,6 +1983,34 @@ without using the [LAST 1] clause.
 
 *Recovery:* Use a [LAST 1] clause in the outer SELECT.
 
+[[SQL-4140]]
+== SQL 4140
+
+```
+The second operand of function <function-name> must be of interger type.
+```
+
+*Cause:* The expression given for the second operand of the indicated function
+must be an integer data type but is not. 
+
+*Effect:* {project-name} is unable to compile the statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4141]]
+== SQL 4141
+
+```
+The default value operand of function <function-name> must be of the same type as the first operand.
+```
+
+*Cause:* The expression given for the default value operand of the indicated function
+must have the same data type as the first operand, but does not.
+
+*Effect:* {project-name} is unable to compile the statement.
+
+*Recovery:* Modify the statement and resubmit.
+
 [[SQL-4150]]
 == SQL 4150
 
@@ -2145,12 +2173,10 @@ statement.
 == SQL 4161
 
 ```
-Union between embedded <name-1> expression and embedded <name-2>
-expression not supported. Tables in scope: <name-3>, <name-4>.
+Embedded INSERT, UPDATE or DELETE statement is not allowed in a UNION operation. Tables in scope: <name-1>, <name-2>.
 ```
 
-*Cause:* You attempted to perform a union between two embedded
-expressions.
+*Cause:* You attempted to perform a union on an embedded INSERT, UPDATE or DELETE statement. This is not allowed.
 
 *Effect:* {project-name} is unable to compile the
 statement.
@@ -2270,11 +2296,11 @@ statement.
 == SQL 4169
 
 ```
-Embedded delete statements are not allowed when using DECLARE . . .
+Embedded delete statements are not allowed when using DECLARE ...
 FOR UPDATE clause.
 ```
 
-*Cause:* You attempted to perform a DECLARE. . . FOR UPDATE clause that
+*Cause:* You attempted to perform a DECLARE ... FOR UPDATE clause that
 included an embedded DELETE statement.
 
 *Effect:* {project-name} is unable to compile the
