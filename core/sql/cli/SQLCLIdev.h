@@ -37,7 +37,20 @@
 *
 *
 ******************************************************************************
-*/
+ }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         throw;
+       }
+#endif
+   }
+
+   RecordError(NULL, retcode);
+   return retcode;*/
 
 #include "sqlcli.h"
 #include "Platform.h"  // 64-BIT
@@ -96,7 +109,12 @@ enum SQLCLIDevCollectStatsType
                                    // level.
 
 };
-
+//This internal call allows a caller to switch back to the default context.
+//In general this is not allow. But it's currently used in one place in 
+//UdrServer alone
+Int32 SQL_EXEC_SwitchContext_Internal(/*IN*/ Int32 context_handle,
+                                /*OUT OPTIONAL*/ Int32 *prev_context_handle,
+                                /*IN*/ Int32 allowSwitchBackToDefault);
 enum SQLATTRHOLDABLE_INTERNAL_TYPE
 {
   SQLCLIDEV_NONHOLDABLE = SQL_NONHOLDABLE,

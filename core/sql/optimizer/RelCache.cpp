@@ -31,6 +31,9 @@
 *
 ******************************************************************************
 */
+#define   SQLPARSERGLOBALS_FLAGS   // must precede all #include's
+#define   SQLPARSERGLOBALS_NADEFAULTS
+
 #include "AllRelExpr.h"
 #include "CacheWA.h"
 #include "CmpMain.h"
@@ -38,7 +41,7 @@
 #include "OptHints.h"
 #include "QRDescGenerator.h"
 #include "HDFSHook.h"
-
+#include "SqlParserGlobals.h"      // must be last #include
 // append an ascii-version of GenericUpdate into cachewa.qryText_
 void GenericUpdate::generateCacheKey(CacheWA& cwa) const
   // NB: This comment applies to all generateCacheKey methods. 
@@ -1078,7 +1081,11 @@ NABoolean RelRoot::isCacheableExpr(CacheWA& cwa)
     return FALSE;
   }
   if (cwa.getPhase() == CmpMain::PARSE) {
-    if (compExprTree_ || compExpr_.entries() > 0) {
+    // it is unclear why select...insert is not being cached.
+    // For now, cache it only for internal queries. This is needed to
+    // improve compile time of internal lob queries.
+
+    if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) &&(compExprTree_ || compExpr_.entries() > 0)) {
       // insert-returning is not cacheable after parse
       return FALSE; 
     }
@@ -1086,7 +1093,7 @@ NABoolean RelRoot::isCacheableExpr(CacheWA& cwa)
   else if (cwa.getPhase() >= CmpMain::BIND) {
     // make sure select list is cacheable
     if (compExprTree_) {
-      if (!compExprTree_->isCacheableExpr(cwa)) { 
+      if  (!compExprTree_->isCacheableExpr(cwa)) { 
         return FALSE; 
       }
     }

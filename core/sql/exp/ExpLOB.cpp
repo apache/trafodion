@@ -708,9 +708,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
                                                 CollHeap*h,
                                                 ComDiagsArea** diagsArea)
 {
-  Lng32 rc;
-
- 
+  Lng32 rc; 
   Lng32 handleLen = 0;
   char lobHandleBuf[LOB_HANDLE_LEN];
   Int64 descTS = NA_JulianTimestamp();
@@ -990,7 +988,7 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
 					    CollHeap*h,
 					    ComDiagsArea** diagsArea)
 {
-
+  char timeBuf[1024] = "";
   ex_expr::exp_return_type err;
   Int32 retcode = 0;
   Int32 cliError = 0;
@@ -1132,6 +1130,8 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
           return err;      
         }
     }
+ 
+ 
   err = insertDesc(op_data,inputAddr, chunkMemSize,lobHdfsOffset, result,h, diagsArea);
   if (err == ex_expr::EXPR_ERROR)  
     {
@@ -1191,9 +1191,9 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
             }
           char * handle = op_data[0];
           handleLen = getOperand(0)->getLength();
-          LobsSubOper so = Lob_None;
+            LobsSubOper so = Lob_None;
           if (fromFile())
-            so = Lob_File;
+            so = Lob_Memory; //It's already been read into memory above
           else if (fromString()) {
             if (getOperand(1)->getVCIndicatorLength() > 0)
               lobLen = getOperand(1)->getLength(op_data[1]-getOperand(1)->getVCIndicatorLength());
@@ -1204,7 +1204,8 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
           else if (fromBuffer())
             so= Lob_Buffer;
           else if (fromExternal())
-            so = Lob_External_File;
+          so = Lob_External_File;
+         
 
           retcode = ExpLOBInterfaceUpdateAppend
             (getExeGlobals()->getExLobGlobal(), 
@@ -1239,7 +1240,12 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
             }
           inputSize -= chunkMemSize;
           if (fromFile())
-            sourceFileReadOffset +=chunkMemSize;       
+            {
+              sourceFileReadOffset +=chunkMemSize; 
+              getExeGlobals()->getExLobGlobal()->getHeap()->deallocateMemory(inputAddr);
+              
+            }
+                        
           inputAddr += chunkMemSize;
         }
     }
@@ -1489,8 +1495,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     {
       if(fromFile())
         {
-          lobData = new (h) char[lobLen];  
-          str_cpy_and_null(lobData,op_data[1],lobLen,'\0',' ',TRUE);
+          
           retcode = ExpLOBInterfaceGetFileSize(getExeGlobals()->getExLobGlobal(), 
                                                lobData,//filename 
                                                getLobHdfsServer(),
@@ -1548,11 +1553,15 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
           inputAddr = retBuf;
                                                
         }
+<<<<<<< HEAD
       ex_expr::exp_return_type err = insertData(handleLen, lobHandle, inputAddr, inputSize, lobHdfsOffset, h, diagsArea);;
 
+=======
+      ex_expr::exp_return_type err = insertData(handleLen, lobHandle, inputAddr, chunkMemSize, lobHdfsOffset, h, diagsArea);;
+>>>>>>> fda1844... Changes for LOB query caching
       if (err == ex_expr::EXPR_ERROR)
 	return err;
-      err = insertDesc(op_data, inputAddr,inputSize, lobHdfsOffset, result,h, diagsArea);
+      err = insertDesc(op_data, inputAddr,chunkMemSize, lobHdfsOffset, result,h, diagsArea);
       if (err == ex_expr::EXPR_ERROR)
 	return err;
       return err;
@@ -1608,7 +1617,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
               handleLen = getOperand(0)->getLength();
               LobsSubOper so = Lob_None;
               if (fromFile())
-                so = Lob_File;
+                so = Lob_Memory; // It's already been read into memory above.
               else if (fromString()) {
                 if (getOperand(1)->getVCIndicatorLength() > 0)
                   lobLen = getOperand(1)->getLength(op_data[1]-getOperand(1)->getVCIndicatorLength());
@@ -1619,8 +1628,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
               else if (fromBuffer())
                 so= Lob_Buffer;
               else if (fromExternal())
-                so = Lob_External_File;
-
+              so = Lob_External_File;
+                
               retcode = ExpLOBInterfaceUpdateAppend
                 (getExeGlobals()->getExLobGlobal(), 
                  (getTcb()->getStatsEntry() != NULL ? getTcb()->getStatsEntry()->castToExHdfsScanStats() : NULL),
@@ -1654,7 +1663,10 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
                 }
               inputSize -= chunkMemSize;
               if (fromFile())
-                sourceFileReadOffset +=chunkMemSize;       
+                {
+                  sourceFileReadOffset +=chunkMemSize;
+                  getExeGlobals()->getExLobGlobal()->getHeap()->deallocateMemory(inputAddr);
+                }     
               inputAddr += chunkMemSize;
             }
         }
@@ -1756,6 +1768,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
       Lng32 cliError = 0;
 
       char * data = op_data[1];
+      if (fromFile())
+        data[lobLen] = '\0';
       if (fromBuffer())
         {
           memcpy(&lobLen, op_data[3],sizeof(Int64)); // user specified buffer length
@@ -1771,6 +1785,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
         }
 
      
+          
       if (isAppend() && !fromEmpty())
         {
           rc = ExpLOBInterfaceUpdateAppend

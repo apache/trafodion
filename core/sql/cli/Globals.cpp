@@ -619,6 +619,8 @@ Lng32 CliGlobals::switchContext(ContextCli * newContext)
         tsCurrentContextMap != NULL && 
            newContext == tsCurrentContextMap->context_)
      return 0;
+  if (newContext == defaultContext_)
+    tsCurrentContextMap = NULL;
   retcode = currContext()->getTransaction()->suspendTransaction();
   if (retcode != 0)
      return retcode;

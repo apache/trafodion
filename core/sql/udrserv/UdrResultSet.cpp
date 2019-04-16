@@ -299,7 +299,7 @@ UdrResultSet::deallocateUDRGeneratedFields()
   singleRowFetchEnabled_ = FALSE;
 
   if (prevContext != 0)
-    SQL_EXEC_SwitchContext(prevContext, NULL);
+    SQL_EXEC_SwitchContext_Internal(prevContext, NULL,TRUE);
 
   // Let's clear cli diags if there are any
   SQL_EXEC_ClearDiagnostics(NULL);
@@ -543,7 +543,7 @@ UdrResultSet::setContext(SQLCTX_HANDLE &oldCtx, ComDiagsArea &d)
 
   SQLCTX_HANDLE tmpCtx;
   Int32 result = SQL_EXEC_SwitchContext((Lng32) getContextHandle(),
-                                      &tmpCtx);
+                                        &tmpCtx);
 
   if (result < 0)
   {
@@ -565,7 +565,7 @@ UdrResultSet::resetContext(SQLCTX_HANDLE ctxHandle, ComDiagsArea &d)
     return 0;
 
   SQLCTX_HANDLE tmpCtxHandle;
-  Int32 result = SQL_EXEC_SwitchContext(ctxHandle, &tmpCtxHandle);
+  Int32 result = SQL_EXEC_SwitchContext_Internal(ctxHandle, &tmpCtxHandle,TRUE);
 
   if (result < 0)
   {

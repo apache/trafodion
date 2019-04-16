@@ -4323,7 +4323,23 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
     generator->oltOptInfo()->setOltEidLeanOpt(FALSE);
     oltOptInfo().setOltEidLeanOpt(FALSE);
   }
+ if (updateCurrentOf())
+    generator->setAqrEnabled(FALSE);
 
+
+ if ((((NATable*)getTableDesc()->getNATable())->getTableType() == ExtendedQualName::GHOST_TABLE) &&
+
+     (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+
+     (CmpCommon::getDefault(AUTO_QUERY_RETRY) == DF_SYSTEM) &&
+
+     (NOT generator->aqrEnabled()))
+
+   {
+
+     generator->setAqrEnabled(TRUE);
+
+   }
   // Accumulate the values that are provided as inputs by my parent
   // together with the values that are produced as outputs by my
   // children. Use these values for rewriting the VEG expressions.
@@ -4527,6 +4543,20 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
   if (updateCurrentOf())
     generator->setAqrEnabled(FALSE);
 
+
+  if ((((NATable*)getTableDesc()->getNATable())->getTableType() == ExtendedQualName::GHOST_TABLE) &&
+
+      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+
+      (CmpCommon::getDefault(AUTO_QUERY_RETRY) == DF_SYSTEM) &&
+
+      (NOT generator->aqrEnabled()))
+
+    {
+
+      generator->setAqrEnabled(TRUE);
+
+    }
   if (getTableDesc()->getNATable()->hasLobColumn())
     {
       oltOptInfo().setOltOpt(FALSE);

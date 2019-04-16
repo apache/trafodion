@@ -569,12 +569,14 @@ public:
   NABoolean isCacheable() const
   { 
     return    (type_ == NORMAL_TABLE)
-           || (type_ == TRIGTEMP_TABLE)
-           || (type_ == EXCEPTION_TABLE)
-           //|| (type_ == IUD_LOG_TABLE)
-           //|| (type_ == RANGE_LOG_TABLE)
-      || (type_ == INDEX_TABLE)  
-      || ((type_ == GHOST_TABLE)&& qualName_.isLOBDesc())
+      || (type_ == TRIGTEMP_TABLE)
+      || (type_ == EXCEPTION_TABLE)
+      //|| (type_ == IUD_LOG_TABLE)
+      //|| (type_ == RANGE_LOG_TABLE)
+      || (type_ == INDEX_TABLE)
+      || (type_ == SCHEMA_TABLE)
+      || (type_ == SG_TABLE)
+      || ((type_ == GHOST_TABLE))
   ; }
   
   NABoolean hasPartnClause() const {return NOT partnClause_.isEmpty();}
