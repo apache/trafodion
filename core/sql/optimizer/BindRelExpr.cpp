@@ -5349,6 +5349,45 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     return this;
   }
 
+  // if this is a subquery with [first n] + ORDER BY, we have to rewrite it
+  if (!isTrueRoot() &&  // if it is a subquery
+      hasOrderBy() &&   // and there is an order by
+      ((getFirstNRows() != -1) || (getFirstNRowsParam())) && // and there is [first/last/any n]
+      (CmpCommon::getDefault(COMP_BOOL_114) == DF_ON))  // and this fix is turned on
+    {
+      if ((getFirstNRows() >= 0) || (getFirstNRowsParam()))
+        {
+          if (needFirstSortedRows())
+            {
+              // [first n] + ORDER BY case, need to rewrite the subquery
+              return rewriteFirstNOrderBySubquery(bindWA);
+            }
+          else
+            {
+              // [any n] + ORDER BY case: We can ignore the ORDER BY, since the
+              // user said any n rows will do
+              removeOrderByTree();
+            }
+        }
+      else
+        {
+          // [last 0] or [last 1] case
+          
+          // There are two possible approaches here. We could change the 
+          // [last n] to [first n], and reverse the sense of the ORDER BY
+          // (that is, adding Inverse nodes or removing them, depending).
+          // But [last n] is usually used for performance testing purposes;
+          // the idea is to fetch all the data but not return it. This 
+          // makes sense at the top level, but not so much at the subquery
+          // level. And inverting the sort order and transforming to [first n]
+          // would defeat this performance testing purpose. So, for now
+          // we will simply forbid this case.
+          *CmpCommon::diags() << DgSqlCode(-4484);
+          bindWA->setErrStatus();
+          return this;
+        }
+    }
+
   if (isTrueRoot()) 
     {
       // if this is simple scalar aggregate on a seabase table
@@ -6806,6 +6845,100 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
              
   return boundExpr;
 } // RelRoot::bindNode()
+
+
+RelExpr * RelRoot::rewriteFirstNOrderBySubquery(BindWA *bindWA)
+{
+  // We have a subquery of the form:
+  //
+  // select [first n] <x> from <t> order by <y>
+  //
+  // Unfortunately, there are chicken-and-egg problems that prevent us
+  // from pushing the ORDER BY down to the firstN node. (We have to wait
+  // until normalizeNode time to insure we get the right ValueIds, but
+  // the RelRoot containing the ORDER BY has already been deleted by
+  // the time we get there.) To circumvent that, we rewrite the subquery
+  // in this form:
+  //
+  // select <x>
+  // from (select <x>, row_number() over(order by <y>) rn from <t>)
+  // where rn <= n
+  //
+  // Aside: For row subqueries in the top-most select list, the 
+  // chicken-and-egg problem doesn't exist because the top-most RelRoot
+  // does survive until normalizeNode time.
+  //
+  // To perform this transformation, we take the input tree (on the left
+  // below) and rewrite it to the output tree (on the right below). Since
+  // this transformation is being done before binding, we move around
+  // ItemExpr trees instead of ValueIds. Binding happens at the end of
+  // the method, after the rewrite.
+  //
+  //   
+  //                                       new RelRoot (newRelRoot), with copy of
+  //                                        original select list
+  //                                          | 
+  //                                       new RenameTable (renameTable), 
+  //                                         with the WHERE rn <= n
+  //                                         clause attached
+  //                                          |
+  //     RelRoot of subquery (this)        original RelRoot (this),
+  //       with original select             with ROW_NUMBER ORDER BY aggregate added
+  //       list (originalSelectList)         to select list, ORDER BY removed 
+  //        |                                from RelRoot 
+  //        |                                 |
+  //        |                              new RelSequence (sequenceNode)
+  //        |                                 |
+  //     Subquery tree (query)             Subquery tree (query)            
+
+
+  // point to subquery tree
+  RelExpr * query = child(0)->castToRelExpr();
+
+  // retain a pointer to the present select list to put in our new RelRoot
+  ItemExpr * originalSelectList = getCompExprTree();
+
+  // create "row_number() over(order by <y>) as rn" parse tree, removing the
+  // order by tree from this RelRoot in the process
+  Aggregate * rowNumberOverOrderBy = 
+    new (bindWA->wHeap()) Aggregate(ITM_COUNT, 
+                                    new (bindWA->wHeap()) SystemLiteral(1),
+                                    FALSE /*i.e. not distinct*/,
+                                    ITM_COUNT_STAR__ORIGINALLY,
+                                    '!');
+  rowNumberOverOrderBy->setOLAPInfo(NULL, removeOrderByTree(), -INT_MAX, 0);
+  NAString rowNumberColumnName = "_sys_RN_" + bindWA->fabricateUniqueName();
+  ColRefName * colRefName = new (bindWA->wHeap()) ColRefName(rowNumberColumnName, bindWA->wHeap());
+  RenameCol * rename = new (bindWA->wHeap())RenameCol(rowNumberOverOrderBy, colRefName);
+
+  // add it to select list of the current RelRoot
+  compExprTree_ = new (bindWA->wHeap()) ItemList(compExprTree_,rename);
+
+  // put a RelSequence node on top of the query node, and make it the child of this
+  RelSequence * sequenceNode = new (bindWA->wHeap()) RelSequence(query,NULL);
+  sequenceNode->setHasOlapFunctions(TRUE);
+  this->child(0) = sequenceNode;
+
+  // put a RenameTable node on top of this
+  NAString corrName = "_sys_X_" + bindWA->fabricateUniqueName();
+  RenameTable * renameTable = new (bindWA->wHeap()) RenameTable(this, corrName);
+
+  // attach the WHERE RN <= n clause to the RenameTable node
+  DCMPASSERT(getFirstNRows() >= 0); // we are only called for [first n] cases
+  ConstValue * n = new (bindWA->wHeap()) ConstValue(getFirstNRows(),bindWA->wHeap());
+  ColReference * colReference = new (bindWA->wHeap()) ColReference(colRefName);
+  BiRelat * whereClause = new (bindWA->wHeap()) BiRelat(ITM_LESS_EQ,colReference,n);     
+  renameTable->addSelPredTree(whereClause);
+
+  // create a new select <x> from (current RelRoot) where rn <= n tree
+  RelRoot * newRelRoot = new (bindWA->wHeap()) RelRoot(renameTable,REL_ROOT,originalSelectList);    
+
+  // remove the getFirstNRows of RelRoot
+  setFirstNRows(-1);
+      
+  return newRelRoot->bindNode(bindWA);
+} // RelRoot::rewriteFirstNOrderBySubquery
+
 
 // Present the select list as a tree of Item Expressions
 ItemExpr *RelRoot::selectList()

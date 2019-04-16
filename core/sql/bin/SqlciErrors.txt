@@ -1438,7 +1438,7 @@ $1~String1 --------------------------------
 4481 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on table or view $1~string1$2~string2.
 4482 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on user-defined routine $1~string1.
 4483 ZZZZZ 99999 BEGINNER MINOR LOGONLY This LOB conversion function is not allowed in the VALUES clause with multiple input value rows. Use it with a single value row.
-4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY -- available --
+4484 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A subquery specifies both [LAST N] and ORDER BY. This is not supported.
 4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid option for BULK LOAD or BULK UNLOAD $0~String0 
 4486 ZZZZZ 99999 BEGINNER MINOR LOGONLY Constraints are not supported with $0~String0. Disable the constraints and try again. 
 4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path: $0~String0  

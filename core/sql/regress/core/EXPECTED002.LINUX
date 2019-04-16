@@ -28,6 +28,17 @@
 
 --- SQL operation complete.
 >>
+>>create table t002x1(val integer);
+
+--- SQL operation complete.
+>>create table t002x2(val integer);
+
+--- SQL operation complete.
+>>
+>>create table t002t2840(a int not null, b int, primary key (a));
+
+--- SQL operation complete.
+>>
 >>?section dml
 >>-- INSERT queries
 >>insert into t002t1 values (10, 'abc', 20, 'xy');
@@ -61,6 +72,17 @@
 >>insert into t002sub values (1,1), (2,1);
 
 --- 2 row(s) inserted.
+>>
+>>insert into t002x1 values(994707150),(1923979352),(-1865644273);
+
+--- 3 row(s) inserted.
+>>insert into t002x2 values(994707150),(1923979352),(-1865644273);
+
+--- 3 row(s) inserted.
+>>
+>>insert into t002t2840 values (1,1),(2,2),(3,3),(4,4),(5,5),(6,6);
+
+--- 6 row(s) inserted.
 >>
 >>?section subqtests
 >>-- Expect 2 identical rows saying "2 2";
@@ -876,7 +898,7 @@ A            AMAX         B                   BMAX                C            C
 >>insert into  t002FUI values(13);
 
 --- 1 row(s) inserted.
->>insert into t002sol values(2),(5),(4),(3),(7);
+>>insert into  t002sol values(2),(5),(4),(3),(7);
 
 --- 5 row(s) inserted.
 >>
@@ -1273,29 +1295,29 @@ RESULT_VALUE
 >>-- Should return 7
 >>select x from (select [first 1] x from t002sol order by x desc );
 
-X
-----------
+X          
+-----------
 
- 7
+          7
 
 --- 1 row(s) selected.
 >>
 >>-- Tests of limit n in subqueries
 >>
 >>-- Should return 1
->>select
+>>select 
 +>(select y aa from t002sub b where b.x = a.b limit 1) as result_value
 +>from t002main a;
 
 RESULT_VALUE
-----------
+------------
 
- 1
+           1
 
 --- 1 row(s) selected.
 >>
 >>-- Should get a cardinality violation (error 8401)
->>select
+>>select 
 +>(select y aa from t002sub b where b.y = a.b limit 2) as result_value
 +>from t002main a;
 
@@ -1304,14 +1326,14 @@ RESULT_VALUE
 --- 0 row(s) selected.
 >>
 >>-- Should return 1
->>select
+>>select 
 +>(select y aa from t002sub b where b.y = a.b limit 1) as result_value
 +>from t002main a;
 
 RESULT_VALUE
-----------
+------------
 
- 1
+           1
 
 --- 1 row(s) selected.
 >>
@@ -1320,20 +1342,132 @@ RESULT_VALUE
 +>(select count(*) from t002sub limit 20) as result_value
 +>from t002main;
 
-RESULT_VALUE
-----------
+RESULT_VALUE        
+--------------------
 
- 2
+                   2
 
 --- 1 row(s) selected.
 >>
->>-- Should return 7
+>>-- Should return 2
 >>select x from (select x from t002sol order by x desc limit 1);
 
-X
-----------
+X          
+-----------
 
- 2
+          2
 
 --- 1 row(s) selected.
+>>
+>>-- Tests of [first/any/last n] and limit n with ORDER BY in subqueries
+>>-- (Note that limit n is the same as [any n])
+>>
+>>prepare xx from select val from t002x1 where val in (select [first 1] val from t002x2 order by val);
+
+--- SQL command prepared.
+>>
+>>-- query plan should be a sequence plan, not a firstn plan; the ORDER BY causes a rewrite
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+002
+4    3    5    hybrid_hash_semi_joi  u                               1.00E+002
+.    .    4    trafodion_scan                  T002X1                1.00E+002
+2    .    3    sequence                                              3.40E+001
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T002X2                1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- should return one row, -1865644273
+>>execute xx;
+
+VAL        
+-----------
+
+-1865644273
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from select val from t002x1 where val in (select [any 1] val from t002x2 order by val);
+
+--- SQL command prepared.
+>>
+>>-- query plan should be a firstn plan
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+002
+3    4    5    nested_join                                           1.00E+002
+.    .    4    trafodion_scan                  T002X1                1.00E+002
+2    .    3    hash_groupby                                          1.00E+000
+1    .    2    firstn                                                1.00E+000
+.    .    1    trafodion_scan                  T002X2                1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- should fail with error 4484
+>>prepare xx from select val from t002x1 where val in (select [last 1] val from t002x2 order by val);
+
+*** ERROR[4484] A subquery specifies both [LAST N] and ORDER BY. This is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- limit n has same semantics as [any n]
+>>prepare xx from select val from t002x1 where val in (select val from t002x2 order by val limit 1);
+
+--- SQL command prepared.
+>>
+>>-- query plan should be a firstn plan
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+002
+3    4    5    nested_join                                           1.00E+002
+.    .    4    trafodion_scan                  T002X1                1.00E+002
+2    .    3    hash_groupby                                          1.00E+000
+1    .    2    firstn                                                1.00E+000
+.    .    1    trafodion_scan                  T002X2                1.00E+002
+
+--- SQL operation complete.
+>>
+>>prepare xx from select b from t002t2840 where b in (select [first 2] b+1 from t002t2840
++> order by b+1);
+
+--- SQL command prepared.
+>>
+>>-- query plan should be a sequence plan (the query gets rewritten)
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  5.00E+001
+4    3    5    hybrid_hash_semi_joi  u                               5.00E+001
+.    .    4    trafodion_scan                  T002T2840             1.00E+002
+2    .    3    sequence                                              3.40E+001
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T002T2840             1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- should get 2 rows, with values 2 and 3
+>>execute xx;
+
+B          
+-----------
+
+          2
+          3
+
+--- 2 row(s) selected.
+>>
+>>
 >>log;

@@ -250,6 +250,10 @@ public:
   // a virtual function for performing name binding within the query tree
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
+  // bind time method that rewrites subqueries with [first n] + ORDER BY 
+  // into OLAP subqueries
+  RelExpr * rewriteFirstNOrderBySubquery(BindWA *bindWAPtr);
+
   // a virtual function to get addressability to the list of output values
   virtual ItemExpr * selectList();
 
