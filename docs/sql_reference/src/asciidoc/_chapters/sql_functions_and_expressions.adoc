@@ -5370,7 +5370,7 @@ update tlob1 set c2=filetolob('hdfs:///lobs/lob_update.txt', append) where c1 = 
 [[floor_function]]
 == FLOOR Function
 
-The FLOOR function rounds down `_numeric-expression_` to the next largest integer less than or equal to `_numeric-expression_`.  
+The FLOOR function rounds down a `_numeric-expression_` to the largest integer less than or equal to `_numeric-expression_`.  
 
 `FLOOR (_numeric-expression_)`
 
@@ -5444,7 +5444,7 @@ SELECT FLOOR (-99.99), FLOOR (99.99) FROM DUAL;
 [[comparison_between_floor_and_ceil]]
 ==== Comparison between FLOOR and CEIL
 
-The CEIL (CEILING) function, which is *reverse* of the FLOOR function, rounds up `_numeric-expression_` and returns the smallest integer greater than or equal to `_numeric-expression_`. 
+The CEIL (CEILING) function, which is *reverse* of the FLOOR function, rounds up a `_numeric-expression_` and returns the smallest integer greater than or equal to `_numeric-expression_`. 
 
 ```
           -1.5                              1.5
@@ -5498,7 +5498,7 @@ Trafodion provides the following functions to round numbers, and these functions
 
 |`FLOOR (_numeric-expression_)`
 
-|Rounds `_numeric-expression_` *downward* to an integer. 
+|Rounds a `_numeric-expression_` *downward* to an integer. 
 
 .2+| The result has a scale of 0.
 
@@ -5509,7 +5509,7 @@ Trafodion provides the following functions to round numbers, and these functions
 
 `CEILING (_numeric-expression_)` 
 
-|Rounds `_numeric-expression_` *upward* to an integer.
+|Rounds a `_numeric-expression_` *upward* to an integer.
 
 |TRUNC +
 (TRUNCATE)
@@ -5518,7 +5518,7 @@ Trafodion provides the following functions to round numbers, and these functions
 
 `TRUNCATE (_numeric-expression_, _num_)`
 
-|Truncates `_numeric-expression_` on `_num_` decimal positions without rounding.
+|Truncates a `_numeric-expression_` on `_num_` decimal positions without rounding.
 
 |The TRUNC function is similar to the ROUND function in terms of *reducing the number of decimal places*. +
 
@@ -5528,11 +5528,11 @@ However, the TRUNC function *does not perform any rounding* as the ROUND functio
 
 |`ROUND (_numeric-expression_, _num_)` 
 
-|Rounds `_numeric-expression_` on `_num_` decimal positions.
+|Rounds a `_numeric-expression_` on `_num_` decimal positions.
 
 This is the most complicated one of the four functions. For more information, see <<round_function,ROUND Function>>.
 
-|The result has the same scale as `_numeric-expression_`.
+|The result has the same scale as the `_numeric-expression_`.
 
 |===
 
