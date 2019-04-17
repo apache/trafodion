@@ -5367,6 +5367,664 @@ insert into tlob130txt1 values(1,filetolob('lob_input_a1.txt'));
 update tlob1 set c2=filetolob('hdfs:///lobs/lob_update.txt', append) where c1 = 3;
 ```
 
+[[floor_function]]
+== FLOOR Function
+
+The FLOOR function rounds down a `_numeric-expression_` to the largest integer less than or equal to `_numeric-expression_`.  
+
+`FLOOR (_numeric-expression_)`
+
+[[syntax_description_of_floor]]
+=== Syntax Description of FLOOR
+
+`_numeric-expression_`
+
+is an SQL numeric value expression to be rounded down. For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
+
+* Decimal Number or Integer
+
++
+** If `_numeric-expression_` is a decimal number, then the fractional part is truncated, and the result has a scale of 0.
+
++
+*Example*
+
++
+```
+SELECT FLOOR (-1.23), FLOOR (1.23), FLOOR (-12.3), FLOOR (12.3) FROM DUAL;
+
+(EXPR)        (EXPR)       (EXPR)       (EXPR)     
+------------- ------------ ------------ -----------
+           -2            1          -13          12
+
+--- 1 row(s) selected.
+```
+
++
+** If `_numeric-expression_` is an integer, then the result is itself.
+
++
+*Example*
+
++
+```
+SELECT FLOOR (-99), FLOOR (-1), FLOOR (0), FLOOR (1), FLOOR (99) FROM DUAL;
+
+(EXPR) (EXPR) (EXPR) (EXPR) (EXPR)
+------ ------ ------ ------ ------
+   -99     -1      0      1     99
+
+--- 1 row(s) selected.
+```
+
++
+* Negative Number 
+
++
+** If `_numeric-expression_` is a negative number, note that a *smaller* value has a *larger* absolute value.
+
++
+*Example*
+
++
+```
+SELECT FLOOR (-99.99), FLOOR (99.99) FROM DUAL;
+
+(EXPR)       (EXPR)
+-----------  ------
+
+       -100      99
+
+--- 1 row(s) selected.
+```
+
+[[considerations_for_floor]]
+=== Considerations for FLOOR 
+
+[[comparison_between_floor_and_ceil]]
+==== Comparison between FLOOR and CEIL
+
+The CEIL (CEILING) function, which is *reverse* of the FLOOR function, rounds up a `_numeric-expression_` and returns the smallest integer greater than or equal to `_numeric-expression_`. 
+
+```
+          -1.5                              1.5
+            ↑                                ↑
+---- -2 ----·---- -1 --------0-------- 1 ----·---- 2 ----
+      ↓            ↓                   ↓           ↓
+  FLOOR(-1.5)  CEIL(-1.5)         FLOOR(1.5)  CEIL(1.5)
+```  
+
+|===
+
+^| `_numeric-expression_` ^|*FLOOR*   ^|*CEIL*  
+
+^|0.3 ^|0 ^|1
+
+^|1.8 ^|1 ^|2
+
+^|2.37 ^|2 ^|3
+
+^|3.84 ^|3 ^|4
+
+^|4.123 ^|4 ^|5
+
+^|5.999 ^|5 ^|6
+
+^|-0.3 ^|-1 ^|0
+
+^|-1.8 ^|-2 ^|-1
+
+^|-2.37 ^|-3 ^|-2
+
+^|-3.84 ^|-4 ^|-3
+
+^|-4.123 ^|-5 ^|-4
+
+^|-5.999 ^|-6 ^|-5
+
+|===
+
+                      
+[[comparison_among_functions_of_rounding_numbers]]
+==== Comparison among Functions of Rounding Numbers
+
+Trafodion provides the following functions to round numbers, and these functions can be interchanged in certain circumstances.
+
+|===
+
+^|*Function*  ^|*Syntax*   ^|*Description*  ^|*Note*
+
+|FLOOR 
+
+|`FLOOR (_numeric-expression_)`
+
+|Rounds a `_numeric-expression_` *downward* to an integer. 
+
+.2+| The result has a scale of 0.
+
+|CEIL +
+(CEILING)
+
+|`CEIL (_numeric-expression_)` +
+
+`CEILING (_numeric-expression_)` 
+
+|Rounds a `_numeric-expression_` *upward* to an integer.
+
+|TRUNC +
+(TRUNCATE)
+
+|`TRUNC (_numeric-expression_, _num_)` +
+
+`TRUNCATE (_numeric-expression_, _num_)`
+
+|Truncates a `_numeric-expression_` on `_num_` decimal positions without rounding.
+
+|The TRUNC function is similar to the ROUND function in terms of *reducing the number of decimal places*. +
+
+However, the TRUNC function *does not perform any rounding* as the ROUND function does.
+
+|ROUND 
+
+|`ROUND (_numeric-expression_, _num_)` 
+
+|Rounds a `_numeric-expression_` on `_num_` decimal positions.
+
+This is the most complicated one of the four functions. For more information, see <<round_function,ROUND Function>>.
+
+|The result has the same scale as the `_numeric-expression_`.
+
+|===
+
+[[rounding_decimal_numbers]]
+===== Rounding Decimal Numbers 
+
+[[decimal_numbers_have_multiple_digits_right_to_the_decimal]]
+====== Decimal Numbers Have Multiple Digits Right to the Decimal
+
+|===
+
+^| *Function* ^| *Negative Decimal* ^| *Positive Decimal*
+
+|FLOOR 	
+
+|FLOOR (-0.123456789)=-1 
+
+|FLOOR (0.123456789)=0 
+
+|CEIL +
+(CEILING)
+
+|CEIL (-0.123456789)=0 
+
+|CEIL (0.123456789)=1 
+
+|
+TRUNC +
+(TRUNCATE)	
+
+|TRUNC (-0.123456789,0)=0 +
+
+TRUNC (-0.123456789,1)=-0.1 +
+
+TRUNC (-0.123456789,2)=-0.12 +
+
+TRUNC (-0.123456789,3)=-0.123 +
+
+TRUNC (-0.123456789,4)=-0.1234 +
+
+TRUNC (-0.123456789,5)=-0.12345 +
+
+TRUNC (-0.123456789,6)=-0.123456 +
+
+TRUNC (-0.123456789,7)=-0.1234567 +
+
+TRUNC (-0.123456789,8)=-0.12345678 +
+
+TRUNC (-0.123456789,9)=-0.123456789 +
+
+TRUNC (-0.123456789,10)=-0.1234567890	
+
+|TRUNC (0.123456789,0)=0 +
+
+TRUNC (0.123456789,1)=0.1 +
+
+TRUNC (0.123456789,2)=0.12 +
+
+TRUNC (0.123456789,3)=0.123 +
+
+TRUNC (0.123456789,4)=0.1234 +
+
+TRUNC (0.123456789,5)=0.12345 +
+
+TRUNC (0.123456789,6)=0.123456 +
+
+TRUNC (0.123456789,7)=0.1234567 +
+
+TRUNC (0.123456789,8)=0.12345678 +
+
+TRUNC (0.123456789,9)=0.123456789 +
+
+TRUNC (0.123456789,10)=0.1234567890 
+
+.2+|ROUND 
+
+|ROUND (-0.123456789,0)=0.000000000 +
+
+ROUND (-0.123456789,1)=-0.100000000 +
+
+ROUND (-0.123456789,2)=-0.120000000 +
+
+ROUND (-0.123456789,3)=-0.123000000 +
+
+ROUND (-0.123456789,4)=-0.123500000 +
+
+ROUND (-0.123456789,5)=-0.123460000 +
+
+ROUND (-0.123456789,6)=-0.123457000 +
+
+ROUND (-0.123456789,7)=-0.123456800 +
+
+ROUND (-0.123456789,8)=-0.123456790 +
+
+ROUND (-0.123456789,9)=-0.123456789 +
+
+ROUND (-0.123456789,10)=-0.123456789	
+
+|ROUND (0.123456789,0)=0.000000000 +
+
+ROUND (0.123456789,1)=0.100000000 +
+
+ROUND (0.123456789,2)=0.120000000 +
+
+ROUND (0.123456789,3)=0.123000000 +
+
+ROUND (0.123456789,4)=0.123500000 +
+
+ROUND (0.123456789,5)=0.123460000 +
+
+ROUND (0.123456789,6)=0.123457000 +
+
+ROUND (0.123456789,7)=0.123456800 +
+
+ROUND (0.123456789,8)=0.123456790 +
+
+ROUND (0.123456789,9)=0.123456789 +
+
+ROUND (0.123456789,10)=0.123456789
+
+|ROUND (-0.123456789,-1)=0.000000000 +
+
+ROUND (-0.123456789,-2)=0.000000000 +
+
+ROUND (-0.123456789,-3)=0.000000000 +
+
+ROUND (-0.123456789,-4)=0.000000000 +
+
+ROUND (-0.123456789,-5)=0.000000000 +
+
+ROUND (-0.123456789,-6)=0.000000000 +
+
+ROUND (-0.123456789,-7)=0.000000000 +
+
+ROUND (-0.123456789,-8)=0.000000000 + 
+
+ROUND (-0.123456789,-9)=0.000000000 +
+
+ROUND (-0.123456789,-10)=0.000000000	
+
+|ROUND (0.123456789,-1)=0.000000000 +
+
+ROUND (0.123456789,-2)=0.000000000 +
+
+ROUND (0.123456789,-3)=0.000000000 +
+
+ROUND (0.123456789,-4)=0.000000000 +
+ 
+ROUND (0.123456789,-5)=0.000000000 +
+ 
+ROUND (0.123456789,-6)=0.000000000 +
+ 
+ROUND (0.123456789,-7)=0.000000000 +
+ 
+ROUND (0.123456789,-8)=0.000000000 +
+ 
+ROUND (0.123456789,-9)=0.000000000 +
+ 
+ROUND (0.123456789,-10)=0.000000000 +
+ 
+|===
+
+[[decimal_numbers_have_multiple_digits_left_to_the_decimal]]
+====== Decimal Numbers Have Multiple Digits Left to the Decimal
+
+|===
+
+^| *Function* ^| *Negative Decimal* ^| *Positive Decimal*
+
+|FLOOR 	
+
+|FLOOR (-123456789.1)= -123456790
+
+|FLOOR (123456789.1)=123456789
+
+|CEIL +
+(CEILING)
+
+|CEIL (-123456789.1)= -123456789
+
+|CEIL (123456789.1)=123456790
+
+|
+TRUNC +
+(TRUNCATE)	
+
+|TRUNC (-123456789.1,0)=-123456789 +
+
+TRUNC (-123456789.1,1)=-123456789.1
+
+|TRUNC (123456789.1,0)=123456789 +
+
+TRUNC (123456789.1,1)=123456789.1
+
+.2+|ROUND 
+
+|ROUND (-123456789.1,0)=-123456789.0 +
+
+ROUND (-123456789.1,1)=-123456789.1 +
+
+ROUND (-123456789.1,2)=-123456789.1 +
+
+ROUND (-123456789.1,3)=-123456789.1 +
+
+ROUND (-123456789.1,4)=-123456789.1 +
+
+ROUND (-123456789.1,5)=-123456789.1 +
+
+ROUND (-123456789.1,6)=-123456789.1 +
+
+ROUND (-123456789.1,7)=-123456789.1 +
+
+ROUND (-123456789.1,8)=-123456789.1 +
+
+ROUND (-123456789.1,9)=-123456789.1 +
+
+ROUND (-123456789.1,10)=-123456789.1	
+
+|ROUND (123456789.1,0)=123456789.0 +
+
+ROUND (123456789.1,1)=123456789.1 +
+
+ROUND (123456789.1,2)=123456789.1 +
+
+ROUND (123456789.1,3)=123456789.1 +
+
+ROUND (123456789.1,4)=123456789.1 +
+
+ROUND (123456789.1,5)=123456789.1 +
+
+ROUND (123456789.1,6)=123456789.1 +
+
+ROUND (123456789.1,7)=123456789.1 +
+
+ROUND (123456789.1,8)=123456789.1 +
+
+ROUND (123456789.1,9)=123456789.1 +
+
+ROUND (123456789.1,10)=123456789.1
+
+| ROUND (-123456789.1,-1)=-123456790.0 +
+
+ROUND (-123456789.1,-2)=-123456800.0 +
+
+ROUND (-123456789.1,-3)=-123457000.0 +
+
+ROUND (-123456789.1,-4)=-123460000.0 +
+
+ROUND (-123456789.1,-5)=-123500000.0 +
+
+ROUND (-123456789.1,-6)=-123000000.0 +
+
+ROUND (-123456789.1,-7)=-120000000.0 +
+
+ROUND (-123456789.1,-8)=-100000000.0 +
+
+ROUND (-123456789.1,-9)=0.0 +
+
+ROUND (-123456789.1,-10)=0.0	 
+
+|ROUND (123456789.1,-1)=123456790.0 +
+
+ROUND (123456789.1,-2)=123456800.0 +
+
+ROUND (123456789.1,-3)=123457000.0 +
+
+ROUND (123456789.1,-4)=123460000.0 +
+
+ROUND (123456789.1,-5)=123500000.0 +
+
+ROUND (123456789.1,-6)=123000000.0 +
+
+ROUND (123456789.1,-7)=120000000.0 +
+
+ROUND (123456789.1,-8)=100000000.0 +
+
+ROUND (123456789.1,-9)=0.0 +
+
+ROUND (123456789.1,-10)=0.0
+ 
+|===
+
+[[rounding_integers]]
+===== Rounding Integers
+
+[[zero]]
+====== Zero
+
+|===
+
+^| *Function*  ^| *Zero* 
+
+|FLOOR 
+
+|FLOOR (0)=0
+
+|CEIL +
+(CEILING)
+
+|CEIL (0)=0
+
+|TRUNC +
+(TRUNCATE)
+
+|TRUNC (0)=0 
+
+|ROUND
+
+|ROUND (0)=0 
+
+|===
+
+[[rounding_down]]
+====== Rounding Down
+
+|===
+
+^| *Function* ^| *Negative Integer* ^| *Positive Decimal*
+
+|FLOOR 
+
+|FLOOR (-333)=-333 
+
+|FLOOR (333)=333 
+
+|CEIL +
+(CEILING)
+
+|CEIL (-333)=-333
+
+|CEIL (333)=333
+
+|TRUNC +
+(TRUNCATE)
+
+|TRUNC (-333,0)=-333 +
+TRUNC (-333,1)=-333
+
+|TRUNC (333,0)=333 +
+TRUNC (333,1)=333
+
+.2+|ROUND
+
+|ROUND (-333,0)=-333 +
+
+ROUND (-333,1)=-333 +
+
+ROUND (-333,2)=-333 +
+
+ROUND (-333,3)=-333 +
+
+ROUND (-333,4)=-333 +
+
+|ROUND (333,0)=333 +
+
+ROUND (333,1)=333 +
+ 
+ROUND (333,2)=333 +
+
+ROUND (333,3)=333 +
+
+ROUND (333,4)=333 +
+
+|*ROUND (-333,-1)=-330* +
+
+*ROUND (-333,-2)=-300* +
+
+*ROUND (-333,-3)=0* +
+
+ROUND (-333,-4)=0
+
+|*ROUND (333,-1)=330* +
+
+*ROUND (333,-2)=300* +
+
+*ROUND (333,-3)=0* +
+
+ROUND (333,-4)=0
+
+|===
+
+[[rounding_up]]
+====== Rounding Up
+
+|===
+
+^| *Function* ^| *Negative Integer* ^| *Positive Decimal*
+
+|FLOOR 
+
+|FLOOR (-888)=-888 
+
+|FLOOR (888)=888 
+
+|CEIL +
+(CEILING)
+
+|CEIL (-888)=-888
+
+|CEIL (888)=888
+
+|TRUNC +
+(TRUNCATE)
+
+|TRUNC (-888,0)=-888 +
+TRUNC (-888,1)=-888
+
+|TRUNC (888,0)=888 +
+TRUNC (888,1)=888
+
+.2+|ROUND
+
+|ROUND (-888,0)=-888 +
+
+ROUND (-888,1)=-888 +
+
+ROUND (-888,2)=-888 +
+
+ROUND (-888,3)=-888 +
+
+ROUND (-888,4)=-888 +
+
+|ROUND (888,0)=888 +
+
+ROUND (888,1)=888 +
+ 
+ROUND (888,2)=888 +
+
+ROUND (888,3)=888 +
+
+ROUND (888,4)=888 +
+
+|*ROUND (-888,-1)=-890* +
+
+*ROUND (-888,-2)=-900* +
+
+*ROUND (-888,-3)=1000* +
+
+ROUND (-888,-4)=0
+
+|*ROUND (888,-1)=890* +
+
+*ROUND (888,-2)=900* +
+
+*ROUND (888,-3)=1000* +
+
+ROUND (888,-4)=0
+
+|===
+
+[[examples_of_floor]]
+=== Examples of FLOOR
+
+* This example uses the FLOOR function to show the longitude and the latitude of the cities clearly and concisely.
+
++
+```
+SELECT * FROM city_info;
+
+CITY                 LONGITUDE          LATITUDE              
+-------------------- -----------------  ----------------------
+Shanghai             121.522179         31.267401
+Muenster             7.626100           51.960700
+Amsterdam            4.903600           52.368000
+Paris                2.352200           48.856600
+Vienna               16.373800          48.208200
+Helsinki             24.938400          60.169900
+
+--- 6 row(s) selected.
+```
+
++
+```
+SELECT city, 
+FLOOR (longitude) AS Floor_Longitude, 
+FLOOR (latitude) AS Floor_Latitude 
+FROM city_info
+ORDER BY longitude DESC;
+
+CITY                 FLOOR_LONGITUDE    FLOOR_LATITUDE              
+-------------------- -----------------  ----------------------
+Shanghai             121.0              31.0
+Helsinki             24.0               60.0
+Vienna               16.0               48.0
+Muenster             7.0                51.0
+Amsterdam            4.0                52.0
+Paris                2.0                48.0
+
+--- 6 row(s) selected.
+```
+
+
 <<<
 [[group_concat_function]]
 == GROUP_CONCAT Function
