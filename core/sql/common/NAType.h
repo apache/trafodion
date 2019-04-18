@@ -524,6 +524,11 @@ public:
   virtual void print(FILE* ofd = stdout, const char* indent = DEFAULT_INDENT);
 
   // ---------------------------------------------------------------------
+  // Display function for debugging
+  // ---------------------------------------------------------------------
+  void display();
+
+  // ---------------------------------------------------------------------
   // A method for generating the hash key.
   // SQL builtin types should return getTypeSQLName()
   // ---------------------------------------------------------------------

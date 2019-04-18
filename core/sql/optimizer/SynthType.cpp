@@ -3895,7 +3895,6 @@ const NAType *MathFunc::synthesizeType()
     case ITM_PI:
     case ITM_POWER:
     case ITM_RADIANS:
-    case ITM_ROUND:
     case ITM_SCALE_TRUNC:
     case ITM_SIN:
     case ITM_SINH:
@@ -3904,6 +3903,32 @@ const NAType *MathFunc::synthesizeType()
     case ITM_TANH:
       {
 	result = new HEAP SQLDoublePrecision(HEAP, nullable);
+      }
+      break;
+
+    case ITM_ROUND:
+      {
+        // if the first operand of ROUND is BigNum, then return
+        // the BigNum type; otherwise return DOUBLE PRECISION
+        ValueId vid0 = child(0)->getValueId();
+        const NAType &typ0 = vid0.getType();
+        if (((const NumericType &)typ0).isBigNum())
+          {
+            const SQLBigNum & btyp0 = (const SQLBigNum &)typ0;
+            Lng32 precision = btyp0.getPrecision();
+            if (precision < CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED))
+              precision++;  // increase precision when we can since rounding up might add a digit
+            result = new HEAP SQLBigNum(HEAP, 
+                                        precision,
+                                        btyp0.getScale(),
+	                                btyp0.isARealBigNum(),
+	                                !btyp0.isUnsigned(), 
+	                                btyp0.supportsSQLnull());
+          }
+        else
+          {
+            result = new HEAP SQLDoublePrecision(HEAP, nullable);
+          }
       }
       break;
 

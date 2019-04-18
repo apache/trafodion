@@ -1123,7 +1123,7 @@ $1~String1 --------------------------------
 4051 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 must be character.
 4052 42000 99999 BEGINNER MAJOR DBADMIN The second operand of function $0~string0 must be numeric.
 4053 42000 99999 BEGINNER MAJOR DBADMIN The third operand of function $0~string0 must be numeric.
-4054 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
+4054 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The second operand of function $0~string0 may not be larger than $1~Int0.
 4055 42000 99999 BEGINNER MAJOR DBADMIN The select lists or tuples must have comparable data types.  $0~String0 and $1~String1 are not comparable.
 4056 42000 99999 BEGINNER MAJOR DBADMIN Exposed name $0~TableName appears more than once.
 4057 42000 99999 BEGINNER MAJOR DBADMIN Correlation name $0~String0 conflicts with qualified identifier of table $1~TableName.

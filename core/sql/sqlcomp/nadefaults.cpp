@@ -624,6 +624,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_148,      "ON"), // Used for GroupBy Cardinality Enhancement for complex expressions
   DDkwd__(COMP_BOOL_149,      "ON"), // Used for testing multi-col uniqueness cardinality enhancement
 
+  DDkwd__(COMP_BOOL_15,     "ON"),  // If ON, use runtime ROUND for BigNums; if OFF, rewrite ROUND for BigNums in terms of other functions
   DDkwd__(COMP_BOOL_150,      "OFF"),
   DDkwd__(COMP_BOOL_151,      "OFF"),
   DDkwd__(COMP_BOOL_152,      "OFF"),

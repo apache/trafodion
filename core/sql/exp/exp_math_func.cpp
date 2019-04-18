@@ -38,6 +38,7 @@
 
 #include "Platform.h"
 #include "errno.h"
+#include "exp_bignum.h"
 
 
 // on NT platform, call system math functions.
@@ -157,6 +158,13 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
       case ITM_CEIL:
         break;
 
+      case ITM_ROUND:
+        if ((getOperand(0)->getDatatype() != REC_FLOAT64) &&
+            (getOperand(0)->getDatatype() != REC_NUM_BIG_SIGNED) &&
+            (getOperand(0)->getDatatype() != REC_NUM_BIG_UNSIGNED) )
+           return evalUnsupportedOperations(op_data, heap, diagsArea);  
+        break;   
+
       default:
         if (getOperand(0)->getDatatype() != REC_FLOAT64)
            return evalUnsupportedOperations(op_data, heap, diagsArea);
@@ -182,6 +190,18 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 
     case ITM_ROUND:
     {
+      if ((getOperand(1)->getDatatype() == REC_NUM_BIG_SIGNED) || 
+          (getOperand(1)->getDatatype() == REC_NUM_BIG_UNSIGNED))
+        {
+          BigNum operBN(getOperand(0)->getLength(), getOperand(0)->getPrecision(), getOperand(0)->getScale(), 0);
+          Attributes * left = getOperand(1);
+          Attributes * right = (getNumOperands() > 2) ? getOperand(2) : NULL;
+          if (operBN.round(left,right,op_data,heap,diagsArea))
+            return ex_expr::EXPR_ERROR;  // diagnostic was raised by BigNum::round
+        }
+      else
+        {
+ 
       double op, res;
       short err1 = 0, err2 = 0, err3 = 0;
       Int32 roundTo;
@@ -248,6 +268,7 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
       }
 
       *(double *)op_data[0] = res;
+      }
 
       break;
     }

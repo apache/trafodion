@@ -108,6 +108,12 @@ public:
 		  NAMemory *heap,
 		  ComDiagsArea** diagsArea);
 
+  short round (Attributes * left,
+               Attributes * right,
+               char * op_data[],
+               NAMemory *heap,
+               ComDiagsArea** diagsArea);
+
   // if desc <> 0, then this is a descending key.
   void encode(const char * inBuf, char * outBuf, short desc = 0);
 

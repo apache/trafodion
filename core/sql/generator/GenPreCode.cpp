@@ -10033,17 +10033,56 @@ ItemExpr * MathFunc::preCodeGen(Generator * generator)
   if (nodeIsPreCodeGenned())
     return this;
 
+  // for ROUND, if the first operand is a BigNum, don't cast
+  // the children to DOUBLE PRECISION; but do make sure the
+  // second operand is an integer
+  NABoolean castIt = TRUE;
+  if (getOperatorType() == ITM_ROUND)
+    {
+      const NAType &typ0 = child(0)->getValueId().getType();
+      if (((const NumericType &)typ0).isBigNum())
+        {
+          castIt = FALSE;
+
+          if (getArity() > 1)
+            {
+              const NumericType &typ1 = (const NumericType &)child(1)->getValueId().getType();
+              if (!typ1.isInteger() || 
+                  ((typ1.getFSDatatype() != REC_BIN8_SIGNED) &&
+                   (typ1.getFSDatatype() != REC_BIN8_UNSIGNED) && 
+                   (typ1.getFSDatatype() != REC_BIN16_SIGNED) &&
+                   (typ1.getFSDatatype() != REC_BIN16_UNSIGNED) &&
+                   (typ1.getFSDatatype() != REC_BIN32_SIGNED) &&
+                   (typ1.getFSDatatype() != REC_BIN32_UNSIGNED) &&
+                   (typ1.getFSDatatype() != REC_BIN64_SIGNED) &&
+                   (typ1.getFSDatatype() != REC_BIN64_UNSIGNED) ) )
+                {
+                  child(1) = new (generator->wHeap())
+                    Cast(child(1),
+                     new (generator->wHeap()) SQLLargeInt(
+                      generator->wHeap(), 
+                      typ1.isSigned(), 
+                      typ1.supportsSQLnullLogical()));
+                  child(1)->bindNode(generator->getBindWA());
+                }
+            }
+        }
+    }
+
   for (Int32 i = 0; i < getArity(); i++)
     {
-      const NAType &typ = child(i)->getValueId().getType();
+      if (castIt)
+        {
+          const NAType &typ = child(i)->getValueId().getType();
 
-      // Insert a cast node to convert child to a double precision.
-      child(i) = new (generator->wHeap())
-	Cast(child(i),
+          // Insert a cast node to convert child to a double precision.
+          child(i) = new (generator->wHeap())
+	    Cast(child(i),
 	     new (generator->wHeap()) SQLDoublePrecision(
 		  generator->wHeap(), typ.supportsSQLnullLogical()));
 
-      child(i)->bindNode(generator->getBindWA());
+          child(i)->bindNode(generator->getBindWA());
+        }
 
       child(i) = child(i)->preCodeGen(generator);
       if (! child(i).getPtr())
