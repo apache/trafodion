@@ -279,8 +279,13 @@ First input field is `0` (zero), second input field is `1` and so on
 * `FIXED:<START>:<LENGTH>` to load fixed format fields made of `<LENGTH>` characters starting at `<START>`.
 +
 NOTE: `<START>` starts from zero.
-* `EMPTYASNULL`: loads empty strings in the input file as NULLs (default is to load empty string as empty strings)
-* `EMPTYASCONST:<CONSTANT>`: loads empty fields in the input file as `<CONSTANT>`
+* `EMPTYASEMPTY`: loads empty strings in the input file as empty strings (default is to load empty string as NULLs).
+* `EMPTYASCONST:<CONSTANT>`: loads empty fields in the input file as `<CONSTANT>`.
++
+NOTE: Currently, only `EMPTYASEMPTY` and `EMPTYASCONST` are valid empty mapping options. If the empty mapping option is specified in the mapfile, then an empty string is treated as an empty string or a constant. +
+If `ns` option is specified, then an empty string is treated as an empty string. +
+odb always prefers to use the empty mapping option if it conflicts with the `ns` option. +
+If both the empty mapping option and the `ns` option are not specified, then an empty string is treated as NULL.
 * `NULL`: inserts `NULL`
 * `:transformation operators` (optional):
 * `SUBSTR:<START>:<END>`. For example, if you have an input field containing `Tib:student` a transformation rule
