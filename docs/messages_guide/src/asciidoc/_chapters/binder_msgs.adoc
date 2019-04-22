@@ -540,7 +540,7 @@ It does not support this in the BEFORE part of a trigger.
 == SQL 4034
 
 ```
-The operation (<data-type> <operation-data-type>) operation is not allowed.
+The operation (<data-type> <operation> <data-type>) <additional-info> is not allowed.
 ```
 
 *Cause:* You specified an operation that is not supported. Sometimes this message is accompanied
@@ -1926,16 +1926,15 @@ or system_user.
 == SQL 4133
 
 ```
-Both trim character and source have to be CHARACTER type.
+For the TRIM function, the trim character and source must be of CHARACTER type.
 ```
 
-*Cause:* The type of the trim source and trim character is not
+*Cause:* The type of the trim source or trim character is not
 CHARACTER.
 
 *Effect:* The operation fails.
 
-*Recovery:* Make sure the type of the source and trim character is
-CHARACTER.
+*Recovery:* Correct the statement and resubmit.
 
 [[SQL-4134]]
 == SQL 4134
@@ -1956,7 +1955,7 @@ database software does not allow.
 
 ```
 In an INSERT-SELECT, each column in the ORDER BY clause must be one
-of the columns in the select list of the query. Column in error: B.
+of the columns in the select list of the query. Column in error: <column-name>.
 ```
 
 *Cause:* You tried to SQL-compile an INSERT-SELECT statement that
@@ -2504,6 +2503,20 @@ columns that are part of a referential constraint.
 
 *Recovery:* Modify the statement and resubmit.
 
+[[SQL-4185]]
+== SQL 4185
+
+```
+Select list index is not allowed to be specified in the GROUP BY clause for this query.
+```
+
+*Cause:* In a GROUP BY clause, you specified an index (that is, a number), but the index is not valid.
+For example, the select list might be "*", or the index might refer to an aggregate function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Modify the statement and resubmit.
+
 [[SQL-4189]]
 == SQL 4189
 
@@ -2519,6 +2532,48 @@ clause.
 
 *Recovery:* Do not use ORDER BY with an embedded INSERT, UPDATE, or
 DELETE statement.
+
+[[SQL-4191]]
+== SQL 4191
+
+```
+Schema name <schema-name> specified as part of the volatile table or index must be the same as the current user name, <user-name>.
+```
+
+*Cause:* The inferred or specified schema name of a volatile object is incorrect. One way this can happen is by attempting
+to create a volatile index on a non-volatile table. That is not allowed.
+
+*Effect:* The statement does not compile.
+
+*Recovery:* If the intent was to create an index on a non-volatile table, omit the keyword VOLATILE in the CREATE INDEX statement.
+
+[[SQL-4192]]
+== SQL 4192
+
+```
+An invalid volatile object name was specified.
+```
+
+*Cause:* In a context where {project-name} expected a volatile object name, a non-volatile object name was specified
+instead. One way this can happen is if you specify CREATE VOLATILE INDEX on a non-volatile table.
+
+*Effect:* The statement does not compile.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-4193]]
+== SQL 4193
+
+```
+The schema name prefix <prefix> is reserved and cannot be used.
+```
+
+*Cause:* You attempted to use a schema name beginning with <prefix>. This is not allowed as {project-name} reserves 
+these names for internal use.
+
+*Effect:* The statement does not compile.
+
+*Recovery:* Correct the statement and resubmit.
 
 [[SQL-4200]]
 == SQL 4200
