@@ -33,7 +33,7 @@
 >>invoke t001t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T1
--- Definition current  Tue Aug  9 03:54:49 2016
+-- Definition current  Mon Apr 22 18:33:14 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -55,7 +55,7 @@
 >>invoke t001t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T2
--- Definition current  Tue Aug  9 03:54:50 2016
+-- Definition current  Mon Apr 22 18:33:17 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -71,7 +71,7 @@
 >>invoke t001t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T3
--- Definition current  Tue Aug  9 03:54:50 2016
+-- Definition current  Mon Apr 22 18:33:18 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -89,7 +89,7 @@
 >>invoke $$TEST_SCHEMA$$.t001ut1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT1
--- Definition current  Tue Aug  9 03:54:50 2016
+-- Definition current  Mon Apr 22 18:33:20 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -105,7 +105,7 @@
 >>invoke $$TEST_SCHEMA_NAME$$.t001ut2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT2
--- Definition current  Tue Aug  9 03:54:50 2016
+-- Definition current  Mon Apr 22 18:33:21 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -121,7 +121,7 @@
 >>invoke         t001ut3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT3
--- Definition current  Tue Aug  9 03:54:51 2016
+-- Definition current  Mon Apr 22 18:33:23 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -466,13 +466,13 @@ select a from t001t1 where b like _SJIS'sj';
 >>
 >>select a from t001t1 where trim(1 from 2) = '';
 
-*** ERROR[4133] Both trim character and source have to be CHARACTER typed.
+*** ERROR[4133] For the TRIM function, the trim character and source must be of CHARACTER type.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select a from t001t1 where trim(1 from b) = '';
 
-*** ERROR[4133] Both trim character and source have to be CHARACTER typed.
+*** ERROR[4133] For the TRIM function, the trim character and source must be of CHARACTER type.
 
 *** ERROR[8822] The statement was not prepared.
 

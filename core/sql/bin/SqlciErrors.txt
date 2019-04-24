@@ -1202,7 +1202,7 @@ $1~String1 --------------------------------
 4130 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is a read-only DEFAULTS attribute and cannot be updated.
 4131 42000 99999 BEGINNER MAJOR DBADMIN Current_time, current_date, or current_timestamp is not allowed in a check constraint.
 4132 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Current_user, session_user, or system_user is not allowed in a check constraint.
-4133 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Both trim character and source have to be CHARACTER typed.
+4133 ZZZZZ 99999 BEGINNER MAJOR DBADMIN For the TRIM function, the trim character and source must be of CHARACTER type.
 4134 42000 99999 BEGINNER MAJOR DBADMIN The operation ($0~String0) is not allowed.  Try UNION ALL instead.
 4135 42000 99999 BEGINNER MAJOR DBADMIN In an INSERT-SELECT, each column in the ORDER BY clause must be one of the columns in the select list of the query.  Column in error: $0~ColumnName.
 4136 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An outer SELECT was used in a DELETE [FIRST N] statement without using the [LAST 1] clause.
@@ -1386,24 +1386,24 @@ $1~String1 --------------------------------
 4391 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Parameters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
 4392 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The REGEXP predicate only supports the default collating sequence.
 4400 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Internal error
-4401 ZZZZZ 99999 BEGINNER MAJOR LOGONLY No Privileged Segment
-4402 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Program file not authorized
-4403 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Security Server not running
-4404 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Registration with Security Server failed
-4405 ZZZZZ 99999 BEGINNER MAJOR LOGONLY No shared segment in Security Server
-4406 ZZZZZ 99999 BEGINNER MINOR LOGONLY Too many requestors to Security Server
-4407 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Security policy file not found
-4408 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Error in security policy file
-4409 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Bad security policy
-4410 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Digest mismatch
-4411 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Decryption error
-4412 ZZZZZ 99999 BEGINNER MAJOR LOGONLY SECKEYS key file not found
-4413 ZZZZZ 99999 BEGINNER MAJOR LOGONLY SECKEYS key file error
-4414 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Certificate expired
-4415 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Certificate not found
-4416 ZZZZZ 99999 BEGINNER MINOR LOGONLY Certificate has been updated
-4417 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Error in shared segment
-4418 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Unauthorized user
+4401 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4402 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4403 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4404 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4405 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4406 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
+4407 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4408 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4409 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4410 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4411 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4412 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4413 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4414 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4415 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4416 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
+4417 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
+4418 ZZZZZ 99999 BEGINNER MAJOR LOGONLY --- unused ---
 4450 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Function $0~String0 is not a built-in function or registered user-defined function.
 4451 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Action $0~String0 is not a registered action for user-defined function $1~String1.
 4452 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Function $0~String0 expects $1~Int0 input values but was called with $2~Int1 values.
