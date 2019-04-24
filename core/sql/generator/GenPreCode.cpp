@@ -10047,15 +10047,7 @@ ItemExpr * MathFunc::preCodeGen(Generator * generator)
           if (getArity() > 1)
             {
               const NumericType &typ1 = (const NumericType &)child(1)->getValueId().getType();
-              if (!typ1.isInteger() || 
-                  ((typ1.getFSDatatype() != REC_BIN8_SIGNED) &&
-                   (typ1.getFSDatatype() != REC_BIN8_UNSIGNED) && 
-                   (typ1.getFSDatatype() != REC_BIN16_SIGNED) &&
-                   (typ1.getFSDatatype() != REC_BIN16_UNSIGNED) &&
-                   (typ1.getFSDatatype() != REC_BIN32_SIGNED) &&
-                   (typ1.getFSDatatype() != REC_BIN32_UNSIGNED) &&
-                   (typ1.getFSDatatype() != REC_BIN64_SIGNED) &&
-                   (typ1.getFSDatatype() != REC_BIN64_UNSIGNED) ) )
+              if (!typ1.isInteger() || !DFS2REC::isBinaryNumeric(typ1.getFSDatatype()))
                 {
                   child(1) = new (generator->wHeap())
                     Cast(child(1),

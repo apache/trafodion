@@ -866,6 +866,7 @@ short BigNum::round (Attributes * left,
           case REC_BIN16_SIGNED:
             rightOperandValue = *((Int16 *)op_data[2]);
             break;
+          case REC_BPINT_UNSIGNED:
           case REC_BIN16_UNSIGNED:
             rightOperandValue = *((UInt16 *)op_data[2]);
             break;
