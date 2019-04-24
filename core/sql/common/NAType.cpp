@@ -403,6 +403,11 @@ void NAType::print(FILE* ofd, const char* indent)
 #endif
 }
 
+void NAType::display()
+{
+  std::cout << getTypeSQLname().data() << std::endl;
+}
+
 // -- The external name for the type (text representation)
 
 NAString NAType::getTypeSQLname(NABoolean) const

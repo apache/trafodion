@@ -843,6 +843,90 @@ short BigNum::castFrom (Attributes * source,
   return 0;
 };
 
+// this method implements the ROUND function on big nums
+short BigNum::round (Attributes * left,
+                     Attributes * right,
+                     char * op_data[],
+                     NAMemory *heap,
+                     ComDiagsArea** diagsArea)
+{
+  // obtain the rounding value
+  Int64 roundingValue = left->getScale();
+  if (right)
+    {
+      Int64 rightOperandValue = 0;
+      switch (right->getDatatype())
+        {
+          case REC_BIN8_SIGNED:
+            rightOperandValue = *((char *)op_data[2]);
+            break;
+          case REC_BIN8_UNSIGNED:
+            rightOperandValue = *((unsigned char *)op_data[2]);
+            break;
+          case REC_BIN16_SIGNED:
+            rightOperandValue = *((Int16 *)op_data[2]);
+            break;
+          case REC_BPINT_UNSIGNED:
+          case REC_BIN16_UNSIGNED:
+            rightOperandValue = *((UInt16 *)op_data[2]);
+            break;
+          case REC_BIN32_SIGNED:
+            rightOperandValue = *((Int32 *)op_data[2]);
+            break;
+          case REC_BIN32_UNSIGNED:
+            rightOperandValue = *((UInt32 *)op_data[2]);
+            break;
+          case REC_BIN64_SIGNED:
+            rightOperandValue = *((Int64 *)op_data[2]);
+            break;
+          case REC_BIN64_UNSIGNED:
+            rightOperandValue = *((UInt64 *)op_data[2]);
+            break;
+          default:
+            {
+              // MathFunc::preCodeGen (generator/GenPreCode.cpp) should
+              // have guaranteed that we have an integer type here
+              if (heap)
+                ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
+              return -1;
+            }
+            break;
+        }
+      roundingValue -= rightOperandValue;
+    }
+
+  // Extract sign
+  char leftSign = BIGN_GET_SIGN(op_data[1], left->getLength());
+
+  // Clear sign bits
+  BIGN_CLR_SIGN(op_data[1], getLength());
+ 
+  short result = BigNumHelper::RoundHelper(left->getLength(), getLength(), op_data[1], roundingValue, op_data[0]);
+  if (result < 0)
+    {
+      if (heap)
+        ExRaiseSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                        NULL, NULL, NULL, NULL,
+                        " The error occurred when rounding up a value.");
+      return -1;
+    }
+
+  // Reset sign bits
+  if (leftSign)
+    BIGN_SET_SIGN(op_data[1], left->getLength());
+
+  if (leftSign && (result == 0)) 
+    {
+      BIGN_SET_SIGN(op_data[0], getLength());
+    }
+  else 
+    {
+      BIGN_CLR_SIGN(op_data[0], getLength());
+    }
+
+  return 0;
+}
+
 
 void BigNum::encode(const char * inBuf, char * outBuf, short desc)
 {

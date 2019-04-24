@@ -507,6 +507,74 @@ short BigNumHelper::DivHelper(Lng32 dividendLength,
 
 }
 
+// The following method rounds a Big Num (without signs).
+short BigNumHelper::RoundHelper(Lng32 sourceLength,
+                                Lng32 targetLength,
+                                char * sourceData,
+                                Int64 roundingValue,
+                                char * targetData)
+{
+  short rc = 0;
+
+  const int MaxPrecision = 128;  // the max of CQD MAX_NUMERIC_PRECISION_ALLOWED
+  unsigned short tempBCDDataInShorts[MaxPrecision / 2];  // allow sufficient room for expansion
+  rc = ConvBigNumToBcdHelper(sourceLength, sizeof(tempBCDDataInShorts), sourceData, (char *)tempBCDDataInShorts, NULL);  // TODO: need heap?
+  
+  if (rc == 0)
+    {
+      // The format for BCD is two digits per short, that is, one digit per byte.
+      // The shorts are arranged big-endian, and within the shorts the digits
+      // are arranged big-endian.
+
+      // To round, we just zero out the last roundingValue digits. We also need 
+      // to keep track of whether to round up or down. If the digits to be zeroed
+      // are greater than or equal to 5000...000, we round up, otherwise we round
+      // down.
+
+      unsigned char * tempBCDDataInChars = (unsigned char *)tempBCDDataInShorts;
+      NABoolean roundUp = FALSE;
+      size_t limit = 0;
+      if (roundingValue < 0)
+        roundingValue = 0;  // don't go off the right end; roundingValue of 0 is a no-op
+
+      if (MaxPrecision - 1 - roundingValue > 0) // if not off left end
+        {
+          limit = MaxPrecision - 1 - roundingValue; // lowest digit to retain
+          if (roundingValue > 0)
+            roundUp = (tempBCDDataInChars[limit+1] >= 0x05); // highest digit to zero out (if any) 
+        }          
+
+      // zero out all the rounded digits
+      for (size_t i = MaxPrecision-1; i > limit; i--)
+        {
+          tempBCDDataInChars[i] = '\0';         
+        }
+
+      // if we need to round up, add one (with carries as needed)
+      for (int j = limit; roundUp && (j >= 0); j--)
+        {
+          if (tempBCDDataInChars[j] >= 0x09)
+            tempBCDDataInChars[j] = '\0';  // add + carry
+          else
+            {
+              tempBCDDataInChars[j]++;
+              roundUp = FALSE;
+            }
+        } 
+
+      // if we overflowed when rounding up, raise an error
+      if (roundUp)
+        {
+          return -1;  // numeric overflow
+        } 
+
+      // convert result back to BigNum
+      rc = ConvBcdToBigNumHelper(sizeof(tempBCDDataInShorts),targetLength,(char *)tempBCDDataInShorts,targetData);
+    }
+
+  return rc;
+}
+
 // The following method converts a given Big Num (without sign) into
 // its equivalent BCD string representation (with the more significant decimal
 // digits in the lower addresses).
@@ -648,7 +716,7 @@ short BigNumHelper::ConvBcdToBigNumHelper(Lng32 sourceLength,
   while ((zeros < sourceLength) && !sourceData[zeros])
     zeros++;
   if (zeros == sourceLength)
-    return 0;
+    return 1; // indicate that it is all zeros
 
   Int32 actualSourceLength = sourceLength - zeros;
   char * actualSourceData = sourceData + zeros;
@@ -754,6 +822,8 @@ short BigNumHelper::ConvBcdToBigNumWithSignHelper(Lng32 sourceLength,
                                                           targetLength,
                                                           sourceData + 1,
                                                           targetData);
+  if (returnValue == 1)  // don't care if all zeros
+    returnValue = 0;
 
   // Set up sign after magnitude set.  TargetData already cleared.
   if (sourceData[0] == '-')
@@ -806,6 +876,9 @@ short BigNumHelper::ConvAsciiToBigNumHelper(Lng32 sourceLength,
                                                            targetLength,
                                                            sourceData,
                                                            targetData);
+  if (returnValue == 1)  // don't care if all zeros
+    returnValue = 0;
+
   // Restore source to ASCII.
   for (i = 0; i < sourceLength; i++)
     sourceData[i] += '0';

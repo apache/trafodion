@@ -12075,9 +12075,13 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 		roundTo = 
 		  (Lng32)((ConstValue*)secondOpExpr)->getExactNumericValue();
 
-		if (roundTo > MAX_NUMERIC_PRECISION)
+		Lng32 maxPrecision = MAX_NUMERIC_PRECISION;
+		if (type_op1.isComplexType())
+		  maxPrecision = CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED);
+
+		if (roundTo > maxPrecision)
 		  {
-		    *CmpCommon::diags() << DgSqlCode(-4052) << DgString0("ROUND");
+		    *CmpCommon::diags() << DgSqlCode(-4054) << DgString0("ROUND") << DgInt0(maxPrecision);
 		    bindWA->setErrStatus();
 		    return this;
 		  }
@@ -12202,7 +12206,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	    //5. In the case of inexact numbers, round even is performed if required.
 	    
 	    //ROUND processing:              
-	    if( type_op1.isExact() )//MOD does not support inexact expressions.
+	    if( type_op1.isExact() && //MOD does not support inexact expressions.
+	        !( CmpCommon::getDefault(COMP_BOOL_15) == DF_ON &&
+	           type_op1.isBigNum() ) ) // exclude runtime BigNum case
             {
 	      if(child(1) == NULL)//In ROUND(expr,num), num is optional, defaults to 0.
               { 

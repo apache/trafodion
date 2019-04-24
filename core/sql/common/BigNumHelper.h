@@ -96,6 +96,13 @@ static short DivHelper(Lng32 dividendLength,
 		       char * quotientData,
                        char * tempData);
 
+// The following method rounds a Big Num (without signs).
+static short RoundHelper(Lng32 sourceLength,
+                         Lng32 targetLength,
+                         char * sourceData,
+                         Int64 roundingValue,
+                         char * targetData);
+
 // The following method converts a given Big Num (without sign) into
 // its equivalent BCD string representation (with the more significant decimal
 // digits in the lower addresses).
@@ -107,7 +114,8 @@ static short ConvBigNumToBcdHelper(Lng32 sourceLength,
 
 // The following method converts a given BCD string representation (without sign,
 // and with the more significant decimal digits in the lower addresses) 
-// into its equivalent Big Num representation.
+// into its equivalent Big Num representation. Returns 0 if successful,
+// 1 if successful and result is all zero, -1 if unsuccessful (overflow).
 static short ConvBcdToBigNumHelper(Lng32 sourceLength,
 			           Lng32 targetLength,
 			           char * sourceData,

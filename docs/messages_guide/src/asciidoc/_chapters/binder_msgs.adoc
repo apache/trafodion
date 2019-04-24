@@ -820,6 +820,20 @@ type other than numeric, which is required.
 
 *Recovery:* Correct the syntax and resubmit.
 
+[[SQL-4054]]
+== SQL 4054
+
+```
+The second operand of function <name> may not be larger than <value>.
+```
+
+*Cause:* You specified the second operand of a function <name> with a
+numeric value larger than <value>. This is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
 [[SQL-4055]]
 == SQL 4055
 
