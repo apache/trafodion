@@ -368,9 +368,9 @@ It is *reverse* of the CEIL function.
 
 | <<round_function, ROUND Function>> 
 
-|`ROUND (_numeric-expression_, _num_)` 
+|`ROUND (_numeric-expression_, _decimal-place_)` 
 
-|Rounds a `_numeric-expression_` on `_num_` decimal positions.
+|Rounds a `_numeric-expression_` on `_decimal-place_` decimal positions.
 
 This is the most complicated one of the four functions. For more information, see <<round_function,ROUND Function>>.
 
@@ -379,11 +379,11 @@ This is the most complicated one of the four functions. For more information, se
 |<<trunc_function, TRUNC Function>>  +
 (TRUNCATE)
 
-|`TRUNC (_numeric-expression_, _num_)` +
+|`TRUNC (_numeric-expression_, _decimal-place_)` +
 
-`TRUNCATE (_numeric-expression_, _num_)`
+`TRUNCATE (_numeric-expression_, _decimal-place_)`
 
-|Truncates a `_numeric-expression_` on `_num_` decimal positions without rounding.
+|Truncates a `_numeric-expression_` on `_decimal-place_` decimal positions without rounding.
 
 |The TRUNC function is similar to the ROUND function in terms of *reducing the number of decimal places*. +
 
@@ -5993,8 +5993,8 @@ The FLOOR function rounds down a `_numeric-expression_` to the largest integer l
 
 `FLOOR (_numeric-expression_)`
 
-[[syntax_description_of_floor]]
-=== Syntax Description of FLOOR
+[[syntax_descriptions_of_floor]]
+=== Syntax Descriptions of FLOOR
 
 `_numeric-expression_`
 
@@ -6627,7 +6627,7 @@ than or equal to 0 with a scale of zero.
 [[examples_of_left]]
 === Examples of LEFT
 
-* Return_'robert':
+* Return 'robert':
 +
 ```
 left('robert john smith', 6)
@@ -12458,6 +12458,122 @@ CHAR(20). This expression uses the TRIM function to return the value
 +
 ```
 TRIM(first_name) || ' ' || TRIM (last_name)
+```
+
+[[trunc_function]]
+== TRUNC Function
+
+The TRUNC (TRUNCATE) function truncates `_numeric-expression_` on an optional `_decimal-place_` decimal position(s), that is, it rounds down `_numeric-expression_` to the nearest (or equal) integer closer to zero *without rounding*.
+
+TRUNC is a Trafodion SQL extension.
+
+`TRUNC (_numeric-expression_[, _decimal-place_])`
+
+[[syntax_descriptions_of_trunc]]
+=== Syntax Descriptions of TRUNC
+
+* `_numeric-expression_`
+
++
+is an SQL numeric expression to be truncated.
+
++
+For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
+
+* `_decimal-place_`
+
++
+is an integer specifying the precision of the truncation.
+
+NOTE: `_numeric-expression_` and `_decimal-place_` cannot be NULL.
+
+NOTE: Currently, `_decimal-place_` can be zero or a positive integer, while *negative integer* is *not supported*.
+ 
+NOTE: If `_decimal-place_` is omitted, `_numeric-expression_` is truncated to zero decimal position, which means all digits after the decimal point are removed. 
+
+*Example*
+
+```
+SELECT TRUNC (-1.2345), TRUNC (1.2345) FROM DUAL
+
+(EXPR)       (EXPR)     
+-----------  -----------
+
+         -1            1
+
+--- 1 row(s) selected.
+```
+
+NOTE: If `_decimal-place_` is a positive integer, `_numeric-expression_` is truncated to `_decimal-place_` decimal position(s) to the right of the decimal point. +
+*Example* +
+1 for truncating to a multiple of 0.1 +
+2 for truncating to a multiple of 0.01 +
+3 for truncating to a multiple of 0.001 +
+
+*Example*
+
+```
+SELECT TRUNC (1.2345,1), TRUNC (1.2345,2), TRUNC (1.2345, 3), TRUNC (1.2345, 4) FROM DUAL;
+
+(EXPR)        (EXPR)        (EXPR)        (EXPR)      
+------------  ------------  ------------  ------------ 
+
+         1.2          1.23         1.234        1.2345
+
+--- 1 row(s) selected.
+```
+
+NOTE: `_decimal-place_` cannot be larger than the number of decimal digits.
+
+[[considerations_for_trunc]]
+=== Considerations for TRUNC
+
+* Trafodion provides the <<ceil_function, CEIL Function>>, the <<floor_function, FLOOR Function>>, the <<round_function, ROUND Function>> and the <<trunc_function, TRUNC Function>> to round numbers, these functions can be interchanged in certain circumstances.
+
++
+*Example*
+
++
+|===
+
+^| *Condition*  ^| *Result*
+
+| All of the following conditions for the TRUNC function are true： +
+  &#9702; `_numeric-expression_` is *greater* than zero +
+  &#9702; `_decimal-place_` is not specified 
+
+| *TRUNC* function = *FLOOR* function
+
+| All of the following conditions for the TRUNC function are true： +
+  &#9702; `_numeric-expression_` is *less* than zero +
+  &#9702; `_decimal-place_` is not specified 
+
+| *TRUNC* function = *CEIL* function
+
+|===
+
+* The TRUNC function is similar to the ROUND function in terms of *reducing the number of decimal places*. 
+
++
+However, the TRUNC function *does not perform any rounding* as the ROUND function does.
+
+TIP: For more information, see <<comparison_of_rounding_functions,Comparison of Rounding Functions>>.
+
+[[examples_of_trunc]]
+=== Examples of TRUNC
+
+* This example demonstrates how the TRUNC function works with other functions.
+
++
+```
+SELECT ROUND(TRUNC(ABS(-1.7256),3),2) FROM DUAL;
+
+(EXPR)               
+---------------------
+
+                1.730
+
+--- 1 row(s) selected.
 ```
 
 <<<

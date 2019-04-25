@@ -6343,7 +6343,8 @@ column-list is:
 ```
 
 <<<
-=== syntax description of grant
+[[syntax_descriptions_of_grant]]
+=== Syntax Descriptions of Grant
 
 * `_privilege-name_ [,_privilege-name_ ] &#8230; | all [privileges]`
 +
