@@ -297,13 +297,11 @@ Use these mathematical functions within an SQL numeric value expression:
 | <<asin_function,ASIN Function>>       | Returns the arcsine of a numeric value expression as an angle expressed in radians.
 | <<atan_function,ATAN Function>>       | Returns the arctangent of a numeric value expression as an angle expressed in radians.
 | <<atan2_function,ATAN2 Function>>     | Returns the arctangent of the x and y coordinates, specified by two numeric value expressions, as an angle expressed in radians.
-| <<ceiling_function,CEILING Function>> | Returns the smallest integer greater than or equal to a numeric value expression.
 | <<cos_function,COS Function>>         | Returns the cosine of a numeric value expression, where the expression is an angle expressed in radians.
 | <<crc32_function,CRC32 Function>>     | Returns CRC32 checksum
 | <<cosh_function,COSH Function>>       | Returns the hyperbolic cosine of a numeric value expression, where the expression is an angle expressed in radians.
 | <<degrees_function,DEGREES Function>> | Converts a numeric value expression expressed in radians to the number of degrees.
 | <<exp_function,EXP Function>>         | Returns the exponential value (to the base e) of a numeric value expression.
-| <<floor_function,FLOOR Function>>     | Returns the largest integer less than or equal to a numeric value  expression.
 | <<log_function,LOG Function>>         | Returns the natural logarithm of a numeric value expression.
 | <<log10_function,LOG10 Function>>     | Returns the base 10 logarithm of a numeric value expression.
 | <<mod_function,MOD Function>>         | Returns the remainder (modulus) of an integer value expression divided by an integer value expression.
@@ -311,7 +309,6 @@ Use these mathematical functions within an SQL numeric value expression:
 | <<pi_function,PI Function>>           | Returns the constant value of pi as a floating-point value.
 | <<power_function,POWER Function>>     | Returns the value of a numeric value expression raised to the power of an integer value expression. You can also use the exponential operator \*\*.
 | <<radians_function,RADIANS Function>> | Converts a numeric value expression expressed in degrees to the number of radians.
-| <<round_function,ROUND Function>>     | Returns the value of _numeric_expr_ round to _num_ places to the right of the decimal point.
 | <<sign_function,SIGN Function>>       | Returns an indicator of the sign of a numeric value expression. If value is less than zero, returns -1 as the indicator. If value is zero,
 returns 0. If value is greater than zero, returns 1.
 | <<sin_function,SIN Function>>         | Returns the sine of a numeric value expression, where the expression is an angle expressed in radians.
@@ -2599,32 +2596,156 @@ VALUES (001, 'User JBrook, executed at ' || CAST (CURRENT_TIMESTAMP AS CHAR(26))
 ```
 
 <<<
-[[ceiling_function]]
-== CEILING Function
+[[ceil_function]]
+== CEIL Function
 
-The CEILING function returns the smallest integer, represented as a
-FLOAT data type, greater than or equal to a numeric value expression.
+The CEIL (CEILING) function rounds up a `_numeric-expression_` to the smallest integer greater than or equal to `_numeric-expression_`.  
 
-CEILING is a {project-name} SQL extension.
+`CEIL (_numeric-expression_)`
 
-```
-CEILING (numeric-expression)
-```
+CEIL is a {project-name} SQL extension.
 
-* `_numeric-expression_`
+[[syntax_descriptions_of_ceil]]
+=== Syntax Descriptions of CEIL
+
+`_numeric-expression_` is an SQL numeric value expression to be rounded up. 
+
+For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
+
+* If `_numeric-expression_` is a decimal number, then the fractional part is truncated, and the result has a scale of 0.
+
 +
-is an SQL numeric value expression that specifies the value for the
-argument of the CEILING function.
-See <<numeric_value_expressions,Numeric Value Expressions>>.
+*Example*
 
-[[examples_of_ceiling]]
-=== Examples of CEILING
-
-* This function returns the integer value 3.00000000000000000E+000,
-represented as a FLOAT data type:
 +
 ```
-CEILING (2.25)
+SELECT CEIL (-1.23), CEIL (1.23), CEIL (-12.3), CEIL (12.3) FROM DUAL;
+
+(EXPR)        (EXPR)       (EXPR)       (EXPR)     
+------------- ------------ ------------ -----------
+           -1            2          -12          13
+
+--- 1 row(s) selected.
+```
+
+* If `_numeric-expression_` is an integer, then the result is itself.
+
++
+*Example*
+
++
+```
+SELECT CEIL (-99), CEIL (-1), CEIL (0), CEIL (1), CEIL (99) FROM DUAL;
+
+(EXPR) (EXPR) (EXPR) (EXPR) (EXPR)
+------ ------ ------ ------ ------
+   -99     -1      0      1     99
+
+--- 1 row(s) selected.
+```
+
+* The absolute value of the result of the positive `_numeric-expression_` is greater than that of the negative `_numeric-expression_` in the two opposite numbers.
+
++
+*Example*
+
++
+```
+SELECT CEIL (-99.99), CEIL (99.99) FROM DUAL;
+
+(EXPR)       (EXPR)
+-----------  ------
+
+        -99     100
+
+--- 1 row(s) selected.
+```
+
+[[considerations_for_ceil]]
+=== Considerations for CEIL 
+
+[[comparison_between_ceil_and_floor]]
+==== Comparison between CEIL and FLOOR
+
+The FLOOR function, which is *reverse* of the CEIL function, rounds down a `_numeric-expression_` and returns the largest integer smaller than or equal to `_numeric-expression_`. 
+
+TIP: For more information, see <<comparison_of_rounding_functions,Comparison of Rounding Functions>>.
+
+```
+          -1.5                              1.5
+            ↑                                ↑
+---- -2 ----·---- -1 --------0-------- 1 ----·---- 2 ----
+      ↓            ↓                   ↓           ↓
+  FLOOR(-1.5)  CEIL(-1.5)         FLOOR(1.5)  CEIL(1.5)
+```
+
+|===
+
+^| `_numeric-expression_` ^|*FLOOR*   ^|*CEIL*  
+
+^|0.3 ^|0 ^|1
+
+^|1.8 ^|1 ^|2
+
+^|2.37 ^|2 ^|3
+
+^|3.84 ^|3 ^|4
+
+^|4.123 ^|4 ^|5
+
+^|5.999 ^|5 ^|6
+
+^|-0.3 ^|-1 ^|0
+
+^|-1.8 ^|-2 ^|-1
+
+^|-2.37 ^|-3 ^|-2
+
+^|-3.84 ^|-4 ^|-3
+
+^|-4.123 ^|-5 ^|-4
+
+^|-5.999 ^|-6 ^|-5
+
+|===
+
+[[examples_of_ceil]]
+=== Examples of CEIL
+
+* This example uses the CEIL function to round up values to the next penny.
+
++
+```
+SELECT * FROM ORDERS;
+
+CUSTOMER_NAME    PRODUCT_NAME       PRICE              QUANTITY
+---------------  -----------------  -----------------  -----------------
+
+Kevin            PC                 7899.99            36
+Andy             Monitor            14566.78           3
+Eason            Keyboard           1099.73            45
+Magic            Memory             1634.74            57
+William          CPU                1940.98            75
+Aven             Hard Disk          2566.82            134
+
+--- 6 row(s) selected.
+```
+
++
+```
+SELECT customer_name, product_name, CEIL (price * quantity) AS total FROM orders ORDER BY total;
+
+CUSTOMER_NAME    PRODUCT_NAME     TOTAL
+---------------  ---------------  ---------------
+
+Andy             Monitor          43701                                                                                     
+Eason            Keyboard         49488                                                                                     
+Magic            Memory           93181                                                                                     
+William          CPU              145574
+Kevin            PC               284400                                                                                   
+Aven             Hard Disk        343954                                                                                    
+
+--- 6 row(s) selected.
 ```
 
 <<<
@@ -5877,12 +5998,11 @@ The FLOOR function rounds down a `_numeric-expression_` to the largest integer l
 
 `_numeric-expression_`
 
-is an SQL numeric value expression to be rounded down. For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
+is an SQL numeric value expression to be rounded down. 
 
-* Decimal Number or Integer
+For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
 
-+
-** If `_numeric-expression_` is a decimal number, then the fractional part is truncated, and the result has a scale of 0.
+* If `_numeric-expression_` is a decimal number, then the fractional part is truncated, and the result has a scale of 0.
 
 +
 *Example*
@@ -5898,8 +6018,7 @@ SELECT FLOOR (-1.23), FLOOR (1.23), FLOOR (-12.3), FLOOR (12.3) FROM DUAL;
 --- 1 row(s) selected.
 ```
 
-+
-** If `_numeric-expression_` is an integer, then the result is itself.
+* If `_numeric-expression_` is an integer, then the result is itself.
 
 +
 *Example*
@@ -5915,11 +6034,7 @@ SELECT FLOOR (-99), FLOOR (-1), FLOOR (0), FLOOR (1), FLOOR (99) FROM DUAL;
 --- 1 row(s) selected.
 ```
 
-+
-* Negative Number 
-
-+
-** If `_numeric-expression_` is a negative number, note that a *smaller* value has a *larger* absolute value.
+* The absolute value of the result of the negative `_numeric-expression_` is greater than that of the positive `_numeric-expression_` in the two opposite numbers.
 
 +
 *Example*
