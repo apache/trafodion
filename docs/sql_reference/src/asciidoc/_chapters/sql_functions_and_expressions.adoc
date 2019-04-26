@@ -2601,7 +2601,9 @@ VALUES (001, 'User JBrook, executed at ' || CAST (CURRENT_TIMESTAMP AS CHAR(26))
 
 The CEIL (CEILING) function rounds up a `_numeric-expression_` to the smallest integer greater than or equal to `_numeric-expression_`.  
 
-`CEIL (_numeric-expression_)`
+```
+CEIL (numeric-expression)
+```
 
 CEIL is a {project-name} SQL extension.
 
@@ -5991,7 +5993,9 @@ update tlob1 set c2=filetolob('hdfs:///lobs/lob_update.txt', append) where c1 = 
 
 The FLOOR function rounds down a `_numeric-expression_` to the largest integer less than or equal to `_numeric-expression_`.  
 
-`FLOOR (_numeric-expression_)`
+```
+FLOOR (numeric-expression)
+```
 
 [[syntax_descriptions_of_floor]]
 === Syntax Descriptions of FLOOR
@@ -6627,7 +6631,7 @@ than or equal to 0 with a scale of zero.
 [[examples_of_left]]
 === Examples of LEFT
 
-* Return 'robert':
+* Return_'robert':
 +
 ```
 left('robert john smith', 6)
@@ -12463,11 +12467,19 @@ TRIM(first_name) || ' ' || TRIM (last_name)
 [[trunc_function]]
 == TRUNC Function
 
-The TRUNC (TRUNCATE) function truncates `_numeric-expression_` on an optional `_decimal-place_` decimal position(s), that is, it rounds down `_numeric-expression_` to the nearest (or equal) integer closer to zero *without rounding*.
+The TRUNC (TRUNCATE) function truncates `_numeric-expression_`. 
+
+* If `_decimal-place_` is not supplied, or is supplied and is zero, it rounds `_numeric-expression_` to the nearest integer closer to zero. 
+
+* If `_decimal-place_` is supplied and is positive, say, n, it rounds `_numeric-expression_` to the nearest multiple of 10^-n^ that is closer to zero. 
+
+In these two cases, decimal places to the right of the decimal point are effectively deleted. 
+
+```
+TRUNC (numeric-expression[, decimal-place])
+```
 
 TRUNC is a Trafodion SQL extension.
-
-`TRUNC (_numeric-expression_[, _decimal-place_])`
 
 [[syntax_descriptions_of_trunc]]
 === Syntax Descriptions of TRUNC
@@ -12555,7 +12567,7 @@ NOTE: `_decimal-place_` cannot be larger than the number of decimal digits.
 * The TRUNC function is similar to the ROUND function in terms of *reducing the number of decimal places*. 
 
 +
-However, the TRUNC function *does not perform any rounding* as the ROUND function does.
+However, the TRUNC function rounds toward zero, while the ROUND function rounds to the nearest integer.
 
 TIP: For more information, see <<comparison_of_rounding_functions,Comparison of Rounding Functions>>.
 
