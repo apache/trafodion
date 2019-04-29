@@ -7417,6 +7417,11 @@ static void Oload(int eid)
                         }
                     } else if ( etab[eid].ns && !strncmp(etab[eid].ns, str, (size_t)ifl) ) {
                         ifl = SQL_NULL_DATA;
+                    }
+                    else if ( (ifl == 0) && (map[rmap[k]].op != 14) && (map[rmap[k]].op != 15) ) {
+                        if (!etab[eid].ns) {
+                            ifl = SQL_NULL_DATA;
+                        }
                     } else {
                         switch ( map[rmap[k]].op ) {    /* manipulate str if needed */
                         case 1:         /* substr */
@@ -7541,8 +7546,6 @@ static void Oload(int eid)
                         {
                             if (ifl > 0) {
                                 double dv = 0;
-                                char tformat[64];
-                                sprintf(tformat, "%%.%dlf", etab[eid].td[rmap[k]].Odec);
 
                                 str[ifl] = '\0';
                                 if (!(is_valid_numeric(str, strlen(str)) && sscanf(str, "%lf", &dv))) {
@@ -7551,7 +7554,7 @@ static void Oload(int eid)
                                     mi = 0; /* SKIP THIS ROW */
                                 }
                                 dv = dv / map[rmap[k]].scale;
-                                ifl = sprintf(str, tformat, dv);
+                                ifl = sprintf(str, "%.*lf", etab[eid].td[rmap[k]].Odec, dv);
                             }
                         }
                             break;
@@ -7606,9 +7609,15 @@ static void Oload(int eid)
                         if ( ifl > 0 ) {
                             MEMCPY(Odp, str, ifl);
                         } else if ( ifl == 0 ) {
-                            ifl = SQL_NULL_DATA ;
+                            if (!etab[eid].ns) {
+                                ifl = SQL_NULL_DATA;
+                            }
                         } else if ( ifl == EMPTY ) {
                             ifl = 0 ;
+                        }
+                        else {
+                            fprintf(stderr, "odb [Oload(%d)] - Error: get unexpected string length(%d) while parsing row %d col %d field.\n", __LINE__,
+                                ifl, n + 1, k + 1);
                         }
                     }
                     *((SQLLEN *)(Odp + etab[eid].td[rmap[k]].Osize + etab[eid].td[rmap[k]].pad)) = (SQLLEN)ifl ;
@@ -10220,7 +10229,6 @@ static int Oloadbuff(int eid)
                                 MutexUnlock(&etab[gpar].pmutex);
                             }
                         }
-
                         if (tLastRow != Orown) { /* ensure no duplicated rows in bad file */
                             char type = etab[eid].type;
                             tLastRow = Orown;
@@ -12229,7 +12237,7 @@ static void Ocompare(int eid)
  * size: output buffer dispaly size
  * return obuf
  */
-static char* decode_buf(char *ibuf, SQLSMALLINT type, char *obuf, SQLULEN size) {
+static char* decode_buf(char *ibuf, SQLSMALLINT type, char *obuf, SQLLEN size) {
     switch (type)
     {
     case SQL_C_SHORT:
@@ -12345,7 +12353,7 @@ static void prec(char type, unsigned char *podbc, int eid)
                 }
 
                 Ofl = etab[eid].td[i].OdisplaySize;
-                p = decode_buf(p, etab[eid].td[i].Octype, tbuf, Ofl);
+                p = (unsigned char*)decode_buf((char*)p, (SQLSMALLINT)etab[eid].td[i].Octype, (char*)tbuf, (SQLLEN)Ofl);
             }
 
             for ( ; *p && Ofl ; p++, Ofl-- )
