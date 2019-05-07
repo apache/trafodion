@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.codec.binary.Hex;
@@ -37,6 +38,10 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.HConstants;
+
+import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
 
 /**
  * Holds client-side transaction information. Client's use them as opaque objects passed around to transaction
@@ -142,6 +147,37 @@ public class TransactionState {
         else {
           if (LOG.isTraceEnabled()) LOG.trace("TransactionState global transaction begun: " + transactionId);
         }
+    }
+
+    public static TransactionState getInstance(long transactionID) throws IOException
+    {
+       Map<Long, TransactionState> mapTransactionStates = TransactionMap.getInstance();
+       TransactionState ts = new TransactionState(transactionID);
+
+       long startIdVal = -1;
+
+       // Set the startid
+       if ((RMInterface.envTransactionAlgorithm == RMInterface.AlgorithmType.SSCC)) {
+          startIdVal = RMInterface.getTmId();
+       }
+       ts.setStartId(startIdVal);
+
+       synchronized (mapTransactionStates) {
+           TransactionState ts2 = mapTransactionStates.get(transactionID);
+           if (ts2 != null) {
+              // Some other thread added the transaction while we were creating one.  It's already in the
+              // map, so we can use the existing one.
+              if (LOG.isTraceEnabled()) LOG.trace("TransactionState:getInstance, found TransactionState object while creating a new one " + ts2);
+               ts = ts2;
+           }
+           else {
+              if (LOG.isTraceEnabled()) LOG.trace("TransactionState:getInstance,, adding new TransactionState to map " 
+						     + ts);
+              mapTransactionStates.put(transactionID, ts);
+           }
+       }// end synchronized
+      if (LOG.isTraceEnabled()) LOG.trace("TransactionState:getInstance - new ts created: " + ts);
+      return ts;
     }
 
     public boolean addTableName(final String table) {

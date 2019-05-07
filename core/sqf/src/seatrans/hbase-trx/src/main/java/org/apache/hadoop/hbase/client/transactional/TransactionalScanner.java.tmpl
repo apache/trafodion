@@ -180,12 +180,6 @@ public class TransactionalScanner extends AbstractClientScanner {
 
         this.closed = false;
 
-        // Need to add the next region as a participant to the transaction so it gets phase 1 notification
-        // and does not orphan the TransactionState object in the region that gets created during the scan
-        if (LOG.isTraceEnabled()) LOG.trace("nextScanner() calling RMInterface.registerTransaction for startKey "
-                  +  Hex.encodeHexString(this.currentBeginKey));
-        RMInterface.registerTransaction(ttable, ts, this.currentBeginKey);
-
       TrxRegionProtos.OpenScannerRequest.Builder requestBuilder = OpenScannerRequest.newBuilder();
       requestBuilder.setTransactionId(ts.getTransactionId());
       requestBuilder.setStartId(ts.getStartId());
