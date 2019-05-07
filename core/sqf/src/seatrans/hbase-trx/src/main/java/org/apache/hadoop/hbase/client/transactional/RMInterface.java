@@ -25,6 +25,8 @@
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
+import java.util.ArrayList;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -119,6 +121,8 @@ public class RMInterface {
     private int intThreads = 16;
     private Connection connection;
     static TransactionManager txm;
+    private static List<String> createdTables;
+    private static boolean envBroadcastMode;
 
     static {
         System.loadLibrary("stmlib");
@@ -127,6 +131,11 @@ public class RMInterface {
            envTransactionAlgorithm = (Integer.parseInt(envset) == 1) ? AlgorithmType.SSCC : AlgorithmType.MVCC;
         else
            envTransactionAlgorithm = AlgorithmType.MVCC;
+        String useBroadcastMode = System.getenv("TM_USE_BROADCAST_MODE");
+        if (useBroadcastMode != null)
+          envBroadcastMode = (Integer.parseInt(useBroadcastMode) == 1) ? true : false;
+
+        createdTables = new ArrayList<String>();
     }
 
     private native String createTableReq(byte[] lv_byte_htabledesc, byte[][] keys, int numSplits, int keyLength, long transID, byte[] tblName);
@@ -336,8 +345,6 @@ public class RMInterface {
         if (ts == null) { 
            ts = TransactionState.getInstance(transactionID);
         }
-        HRegionLocation location = pv_table.getRegionLocation(row, false /*reload*/);
-
         HRegionLocation locationRow;
         boolean refresh = false;
         if (createdTables.size() > 0 && createdTables.contains(Bytes.toString(pv_table.getTableName()))){
@@ -359,7 +366,6 @@ public class RMInterface {
             if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - setting keys to infinite for location " + locationRow);
             HRegionInfo regionInfo = new HRegionInfo (locationRow.getRegionInfo().getTable(), HConstants.EMPTY_START_ROW, HConstants.EMPTY_END_ROW);
             location = new HRegionLocation(regionInfo, locationRow.getServerName());
-            register = true;
         }
         if (location == null) {
            if (scanRange) {
@@ -452,7 +458,10 @@ public class RMInterface {
         	LOG.error("createTable exception. Unable to create table " + desc.getNameAsString() + " txid " + transID + " exception " + retstr);
         	throw new IOException("createTable exception. Unable to create table " + desc.getNameAsString() + " Reason: " + retstr);
         }
-        if (LOG.isTraceEnabled()) LOG.trace("Exit createTable, txid: " + transID + " Table: " + desc.getNameAsString());
+        if (LOG.isTraceEnabled()) LOG.trace("Adding \'" + desc.getNameAsString() + "\' to createdTables");
+        createdTables.add(desc.getNameAsString());
+        if (LOG.isTraceEnabled()) LOG.trace("Exit createTable, txid: " + transID
+            + " Table: " + desc.getNameAsString() + " createdTables size: " + createdTables.size());
     }
 
     public void truncateTableOnAbort(String tblName, long transID) throws IOException {
@@ -568,6 +577,7 @@ public class RMInterface {
                    "INFINITE" : Hex.encodeHexString(scan.getStopRow())));
 
         //TransactionState ts = registerTransaction(transactionID, scan.getStartRow());
+        TransactionState ts = registerTransaction(ttable, transactionID, scan.getStartRow(), scan.getStopRow(), false, 0);
         ResultScanner res = ttable.getScanner(ts, scan);
         if (LOG.isTraceEnabled()) LOG.trace("EXIT getScanner");
         return res;
@@ -591,9 +601,18 @@ public class RMInterface {
     public void put(final long transactionID, final List<Put> puts) throws IOException {
          if (LOG.isTraceEnabled()) LOG.trace("Enter put (list of puts) txid: " + transactionID);
         TransactionState ts = null;
-      	for (Put put : puts) {
-      	    ts = registerTransaction(transactionID, put.getRow());
-      	}
+        if ((envBroadcastMode == false))  //  || (skipConflictCheck == false))
+        {
+      	   for (Put put : puts) {
+      	      ts = registerTransaction(transactionID, put.getRow());
+      	   }
+        }
+        // The only way to get here is if both envBroadcastMode AND skipConflictCheck are true
+        else
+        {
+             if (puts.size() > 0)
+                 ts = registerTransaction(transactionID, puts.get(0).getRow());
+        }
         if (ts == null){
            ts = mapTransactionStates.get(transactionID);
         }
@@ -717,4 +736,10 @@ public class RMInterface {
     {
         return ttable.checkAndDelete(row,family,qualifier,value,delete);
     }
+
+    private String getTableNameAsString()
+    {
+        return Bytes.toString(ttable.getTableName());
+    }
+
 }
