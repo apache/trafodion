@@ -65,7 +65,6 @@ import org.apache.hadoop.hbase.client.transactional.TransactionState;
 import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
-import org.apache.hadoop.hbase.client.transactional.TransactionalTableClient;
 import org.apache.hadoop.hbase.client.transactional.TransactionalTable;
 import org.apache.hadoop.hbase.client.transactional.SsccTransactionalTable;
 
@@ -94,7 +93,6 @@ import com.google.protobuf.ByteString;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Set;
@@ -372,12 +370,6 @@ public class RMInterface {
               scanRegionLocations = pv_table.getRegionsInRange(startRow, endRow, refresh);
               scanRegionLocationsIter = scanRegionLocations.iterator();
               location = scanRegionLocationsIter.next();
-/*
-              locationRow = pv_table.getRegionLocation(startRow, refresh);
-              HRegionInfo regionInfo = new HRegionInfo (locationRow.getRegionInfo().getTable(), startRow, endRow);
-              location = new HRegionLocation(regionInfo, locationRow.getServerName());
-              register = true;
-*/
            }
            else 
               location = pv_table.getRegionLocation(startRow, refresh);
@@ -388,7 +380,7 @@ public class RMInterface {
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, created TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() + "], endKey: "
                   + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " and transaction [" + transactionID + "]");
            // if this region hasn't been registered as participating in the transaction, we need to register it
-           if ( (! register) && ts.addRegion(trLocation)) {
+           if (ts.addRegion(trLocation)) {
               register = true;
           if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, added TransactionRegionLocation ["
                   + trLocation.getRegionInfo().getRegionNameAsString() + "], endKey: "
@@ -549,7 +541,7 @@ public class RMInterface {
         ttable.delete(ts, delete, false);
     }
 
-    public synchronized void deleteRegionTx(final Delete delete, final boolean autoCommit) throws IOException {
+    public void deleteRegionTx(final Delete delete, final boolean autoCommit) throws IOException {
         long tid = getTmId();
         if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx tid: " + tid  + " autoCommit " + autoCommit);
         ttable.deleteRegionTx(tid, delete, autoCommit);
@@ -576,14 +568,13 @@ public class RMInterface {
            + (Bytes.equals(scan.getStopRow(), HConstants.EMPTY_END_ROW) ?
                    "INFINITE" : Hex.encodeHexString(scan.getStopRow())));
 
-        //TransactionState ts = registerTransaction(transactionID, scan.getStartRow());
         TransactionState ts = registerTransaction(ttable, transactionID, scan.getStartRow(), scan.getStopRow(), false, 0);
         ResultScanner res = ttable.getScanner(ts, scan);
         if (LOG.isTraceEnabled()) LOG.trace("EXIT getScanner");
         return res;
     }
 
-    public synchronized void putRegionTx(final Put put, final boolean autoCommit) throws IOException {
+    public void putRegionTx(final Put put, final boolean autoCommit) throws IOException {
         long tid = getTmId();
         if (LOG.isTraceEnabled()) LOG.trace("Enter putRegionTx, autoCommit: " + autoCommit
                + ", tid " + tid);

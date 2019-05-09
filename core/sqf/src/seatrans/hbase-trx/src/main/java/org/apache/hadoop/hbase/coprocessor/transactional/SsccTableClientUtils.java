@@ -166,7 +166,7 @@ public class SsccTableClientUtils {
 
     private static HBaseAdmin admin;
 
-    private static void genTransId() {
+    private static void genTransId() throws IOException {
         // System.out.println("gen  ||  " + Thread.currentThread().getName() +
         // "   ||   " + transMap);
 

@@ -106,7 +106,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * Table with transactional support.
  */
-public class TransactionalTable extends HTable implements TransactionalTableClient {
+public class TransactionalTable extends HTable {
     static final Log LOG = LogFactory.getLog(TransactionalTable.class);
     static Configuration       config;
     static private Connection connection = null;

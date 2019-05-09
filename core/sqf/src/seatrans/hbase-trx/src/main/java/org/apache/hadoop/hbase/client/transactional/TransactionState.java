@@ -26,9 +26,10 @@ package org.apache.hadoop.hbase.client.transactional;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Set;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.codec.binary.Hex;
 
@@ -37,6 +38,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.util.ByteArrayKey;
 import org.apache.hadoop.hbase.HConstants;
 
 import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
@@ -88,7 +90,7 @@ public class TransactionState {
     private String recordException;
     private static long TM_MAX_REGIONSERVER_STRING = 3072;
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
-    public Set<TransactionRegionLocation> participatingRegions;
+    private TrafodionLocationList participatingRegions;
     /**
      * Regions to ignore in the twoPase commit protocol. They were read only, or already said to abort.
      */
@@ -102,15 +104,6 @@ public class TransactionState {
     }
 
     static {
-       String concurrentHM = System.getenv("DTM_USE_CONCURRENTHM");
-       if (concurrentHM != null) 
-           useConcurrentHM = (Integer.parseInt(concurrentHM) == 0) ? false : true;
-       else
-           useConcurrentHM = false;
-       if (useConcurrentHM) 
-          LOG.info("Using ConcurrentHashMap synchronization to synchronize participatingRegions");
-       else 
-          LOG.info("Using synchronizedSet to synchronize participatingRegions");
        String localTxns = System.getenv("DTM_LOCAL_TRANSACTIONS");
        if (localTxns != null) 
           envLocalTransaction = (Integer.parseInt(localTxns) == 0) ? false : true;
@@ -118,7 +111,7 @@ public class TransactionState {
           envLocalTransaction = false; 
     }
 
-    public TransactionState(final long transactionId) {
+    public TransactionState(final long transactionId) throws IOException { 
         this.transactionId = transactionId;
         setStatus(TransState.STATE_ACTIVE);
         countLock = new Object();
@@ -132,14 +125,7 @@ public class TransactionState {
         setNodeId();
         setClusterId();
         recordException = null;
-
-        if(useConcurrentHM) {
-          participatingRegions = Collections.newSetFromMap((new ConcurrentHashMap<TransactionRegionLocation, Boolean>()));
-        }
-        else {
-          participatingRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
-        }
-
+        participatingRegions = new TrafodionLocationList();
         localTransaction = envLocalTransaction;
         if (localTransaction) {
           if (LOG.isTraceEnabled()) LOG.trace("TransactionState local transaction begun: " + transactionId);
@@ -412,7 +398,7 @@ public class TransactionState {
         return added;
     }
 
-    public Set<TransactionRegionLocation> getParticipatingRegions() {
+    public TrafodionLocationList getParticipatingRegions() {
         return participatingRegions;
     }
 
@@ -658,13 +644,20 @@ public class TransactionState {
        byte[] endKey_orig;
        byte[] endKey;
        boolean isIgnoredRegion = false;
+       
 
        LOG.error("Starting " + (ute == true ? "UTE " : "NPTE ") + "for trans: " + this.toString());
-       for (TransactionRegionLocation location : getParticipatingRegions()) {
-          isIgnoredRegion = getRegionsToIgnore().contains(location);
-          if (! isIgnoredRegion) {
+         for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                                    getParticipatingRegions().getList().values()) {
+           for (TransactionRegionLocation location : tableMap.values()) {
              participantNum++;
-          }
+             startKey = location.getRegionInfo().getStartKey();
+             endKey_orig = location.getRegionInfo().getEndKey();
+             if (endKey_orig == null || endKey_orig == HConstants.EMPTY_END_ROW)
+                endKey = null;
+             else
+                endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
+
 
           startKey = location.getRegionInfo().getStartKey();
           endKey_orig = location.getRegionInfo().getEndKey();
@@ -672,7 +665,6 @@ public class TransactionState {
               endKey = null;
           else
               endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
-
           LOG.error((ute == true ? "UTE " : "NPTE ") + "for transId: " + getTransactionId()
                     + " participantNum " + (isIgnoredRegion ? " Ignored region " : participantNum)
                     + " location " + location.getRegionInfo().getRegionNameAsString()
@@ -682,6 +674,7 @@ public class TransactionState {
                              (Bytes.equals(endKey, HConstants.EMPTY_END_ROW) ? "INFINITE" : Hex.encodeHexString(endKey)) : "NULL")
                     + " RegionEndKey " + ((endKey_orig != null) ?
                              (Bytes.equals(endKey_orig, HConstants.EMPTY_END_ROW) ? "INFINITE" : Hex.encodeHexString(endKey_orig)) : "NULL"));
+          }
        }
        exceptionLogged = true;
     }
