@@ -569,7 +569,6 @@ public class RMInterface {
                    "INFINITE" : Hex.encodeHexString(scan.getStopRow())));
 
         TransactionState ts = registerTransaction(ttable, transactionID, scan.getStartRow(), scan.getStopRow(), false, 0);
-        TransactionState ts = registerTransaction(ttable, transactionID, scan.getStartRow(), scan.getStopRow(), false, 0);
         ResultScanner res = ttable.getScanner(ts, scan);
         if (LOG.isTraceEnabled()) LOG.trace("EXIT getScanner");
         return res;
