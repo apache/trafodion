@@ -272,17 +272,6 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::start(ComDiagsArea **diags,
 #endif
     UdrDebug1("  Using a nowait depth of %d", nowaitDepth);
 
-    // If everything is successful, nodeName is not deallocated
-    // because allocateServerProcess() creates IpcGuardianServer
-    // instance which stores nodeName pointer.
-    char *nodeName = new (myIpcHeap()) char[9];
-    nodeName[0] = '\\';
-    if (ComRtGetOSClusterName(&nodeName[1], 8, NULL) <= 0)
-    {
-      myIpcHeap()->deallocateMemory(nodeName);
-      nodeName = NULL;
-    }
-
     NABoolean waitedCreation = TRUE;
     // co-locate the tdm_udrserv with the executor process (master or ESP)
     // This is done for a couple of reasons: One is that since the ESPs
@@ -298,7 +287,7 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::start(ComDiagsArea **diags,
     ipcServer_ =
       udrServerClass_->allocateServerProcess(diags,
                                              diagsHeap,
-                                             nodeName,
+                                             NULL,
                                              collocatedCPU,
                                              IPC_PRIORITY_DONT_CARE,
                                              1,   // espLevel (not relevant for UDR servers) 
@@ -957,14 +946,6 @@ ExUdrServerManager::ExUdrServerManager(IpcEnvironment* env,
     , traceFile_(NULL)
 #endif
 {
-  char *nodeName = new (myIpcHeap()) char[9];
-  nodeName[0] = '\\';
-  if (ComRtGetOSClusterName(&nodeName[1], 8, NULL) <= 0)
-  {
-    myIpcHeap()->deallocateMemory(nodeName);
-    nodeName = NULL;
-  }
-
   //
   // Create the UDR server class. This does not actually
   // start any processes. Use allocateServerProcess() to

@@ -137,7 +137,7 @@ public:
   // Mutator methods (for code generator only)
   void setMapArray(Lng32 entries, ExEspNodeMapEntry *me) 
                                       { map_ = me; entries_ = entries; }
-  void setEntry(Lng32 instance, const char *clusterName, Lng32 nodeNumber);
+  void setEntry(Lng32 instance, const char *clusterName, Lng32 nodeNumber, Space *space);
 
   // pack and unpack
   Long pack(void * space);

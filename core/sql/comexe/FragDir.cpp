@@ -41,6 +41,8 @@
 #include "ComPackDefs.h"
 #include "PartInputDataDesc.h"
 #include "Ipc.h"
+#include "trafconf/trafconfig.h"
+static const int nodeNameLen = TC_PROCESSOR_NAME_MAX;//defined in trafconf/trafconfig.h
 
 ExFragDir::ExFragDir(Lng32 entries, Space *space,
             NABoolean multiFragments, NABoolean fragmentQuotas,
@@ -150,11 +152,13 @@ const char * ExEspNodeMap::getClusterName(Lng32 instance) const
 
 void ExEspNodeMap::setEntry(Lng32 instance,
 			    const char *clusterName,
-			    Lng32 nodeNumber)
+			    Lng32 nodeNumber,
+			    Space *space)
 {
   if (map_ && entries_ > instance)
     {
-      map_[instance].clusterName_ = clusterName;
+      map_[instance].clusterName_ = space->allocateMemory(nodeNameLen);
+      strcpy(map_[instance].clusterName_, clusterName);
       map_[instance].nodeNumber_ = nodeNumber;
     }
 }

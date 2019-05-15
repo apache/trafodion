@@ -2806,9 +2806,9 @@ private:
   // put server cpu location in the given string. e.g. \EJR0101 cpu 1
   void getCpuLocationString(char *location);
 
-  // the node name (Expand) on which the process is started or NULL for local
-  // node, note that this name must NOT contain the leading backslash
-  const char  * nodeName_;
+  // the node name on which the process is started (determined
+  // only if needed at process start time as a function of actualCpuNum_)
+  char  * nodeName_;
 
   // The program file name of the server; if partially qualified it gets
   // expanded with $SYSTEM.SYSTEM as the default. A DEFINE name could also
@@ -2816,8 +2816,13 @@ private:
   // name unspecified or has the same system as "nodeName_".
   const char  * className_;
 
-  // the requested CPU number (on node "nodeName_")
+  // the requested Trafodion node number to start the process on
+  // (for historical reasons this is called a CpuNum); IPC_CPU_DONT_CARE
+  // if we don't care which node 
   IpcCpuNum   cpuNum_;
+
+  // the actual Trafodion node where the process was started
+  IpcCpuNum   actualCpuNum_;
 
   // remember if node-down caused server to be created on a CPU 
   // different from the requested one. (tbd - could the IpcConnection's
@@ -2915,7 +2920,7 @@ public:
 
   inline IpcServerType getServerType() { return serverType_;}
 
-  char *getProcessName(const char *nodeName, short nodeNameLen, short cpuNum, char *processName);
+  char *getProcessName(short cpuNum, char *processName);
   NABoolean parallelOpens() { return parallelOpens_; }
   NowaitedEspServer nowaitedEspServer_;
 private:
@@ -3418,7 +3423,7 @@ void * operator new[](size_t size, IpcEnvironment *env);
 
 void operator delete(void *p, IpcEnvironment *env);
 
-char *getServerProcessName(IpcServerType serverType, const char *nodeName, short nodeNameLen, 
+char *getServerProcessName(IpcServerType serverType,
                            short cpuNum, char *processName, short *envType = NULL);
 
 #endif /* IPC_H */

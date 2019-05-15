@@ -41,8 +41,9 @@
 #include "exp_function.h"
 
 #include "CliSemaphore.h"
+#include "trafconf/trafconfig.h"
 
-static const int nodeNameLen = 256;
+static const int nodeNameLen = TC_PROCESSOR_NAME_MAX;//defined in trafconf/trafconfig.h
 //<pb>
 //==============================================================================
 //  Helper functions called only by NodeMap member functions.
@@ -1856,6 +1857,7 @@ short NodeMap::codeGen(const PartitioningFunction *partFunc,
 		       const Lng32 numESPs,
 		       Generator *generator)
 {
+  Int32 rc = 0;
   if (partFunc == NULL)
     {
       generator->setGenObj(NULL, NULL);
@@ -1866,35 +1868,20 @@ short NodeMap::codeGen(const PartitioningFunction *partFunc,
   const NodeMap *compNodeMap = partFunc->getNodeMap();
   ExEspNodeMap *exeNodeMap = new(space) ExEspNodeMap;
   ExEspNodeMapEntry *mapEntries = new (space) ExEspNodeMapEntry[numESPs];
-  char clusterNameTemp[256];
-  NABoolean result;
   
   assert(numESPs == compNodeMap->getNumEntries());
-  assert(IPC_CPU_DONT_CARE == ANY_NODE);
-
+  
+  char *clusterName =  new (space) char[nodeNameLen]; 
+  strcpy(clusterName,"NODE");
+ 
   exeNodeMap->setMapArray(numESPs, mapEntries);
-
+  MS_Mon_Node_Info_Type nodeInfo;
   for (Lng32 i = 0; i < numESPs; i++)
-    {
+    {    
       const NodeMapEntry *ne = compNodeMap->getNodeMapEntry(i); 
-      short actualClusterNameLen = 0;
-      char *clusterName;
-
-      result = gpClusterInfo->NODE_ID_TO_NAME(ne->getClusterNumber(), 
-                                                                                              clusterNameTemp, 
-                                                                                              sizeof(clusterNameTemp)-1, 
-                                                                                              &actualClusterNameLen);
-      if (!result || actualClusterNameLen == 0)
-	clusterName = NULL; // error, don't have a node name
-      else
-	{
-	  clusterName = new (space) char[9-1];
-	  // copy the name over into the generated space, but leave
-	  // the leading backslash off
-	  str_cpy_all(clusterName,&clusterNameTemp[1],actualClusterNameLen-1);
-	  clusterName[actualClusterNameLen-1] = 0; // add a NUL terminator
-	}
-      exeNodeMap->setEntry(i,clusterName,ne->getNodeNumber());
+      rc = msg_mon_get_node_info_detail(ne->getNodeNumber(), &nodeInfo);
+      strcpy(clusterName, nodeInfo.node[0].node_name);
+      exeNodeMap->setEntry(i,clusterName,ne->getNodeNumber(),space);
     }
 
   generator->setGenObj(NULL, (ComTdb*) exeNodeMap);

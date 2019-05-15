@@ -207,14 +207,6 @@ class ExExeUtilTcb : public ex_tcb
                           char * &gluedQuery,
                           Lng32 &gluedQuerySize);
 
-  short extractObjectParts(
-                           char * objectName,
-                           char * sys,
-                           char * &cat,
-                           char * &sch,
-                           char * &tab,
-                           char * ansiNameBuf);
-
   // extract parts from 'objectName' and fixes up delimited names.
   Lng32 extractParts
   (char * objectName,
