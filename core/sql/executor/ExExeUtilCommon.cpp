@@ -286,41 +286,6 @@ short ExExeUtilTcb::work()
   return -1;
 }
 
-short ExExeUtilTcb::extractObjectParts(
-     char * objectName,
-     char * sys,
-     char * &cat,
-     char * &sch,
-     char * &tab,
-     char * ansiNameBuf)
-{
-  Lng32 error = 0;
-
-  error = ComRtGetOSClusterName(sys, 10, NULL);
-  if (error <= 0)
-    {
-      return -1;
-    }
-
-  char * parts[3];
-  Lng32 numParts;
-  if (LateNameInfo::extractParts(objectName,
-				 ansiNameBuf,
-				 numParts,
-				 parts,
-				 FALSE) ||
-      (numParts != 3))
-    {
-      return -1;
-    }
-
-  cat = parts[0];
-  sch = parts[1];
-  tab = parts[2];
-
-  return 0;
-}
-
 NABoolean ExExeUtilTcb::isUpQueueFull(short size)
 {
   if ((qparent_.up->getSize() - qparent_.up->getLength()) < size)

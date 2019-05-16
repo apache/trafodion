@@ -528,7 +528,7 @@
 2009 40000 99999 ADVANCED MAJOR DBADMIN The user transaction must be rolled back (or committed, if that makes sense in the application) before Compiler can be restarted and proceed.
 2010 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal IPC error.
 2011 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server process could not be created - Operating system error $0~int0 while resolving program file name $1~string0.
-2012 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server process $0~string0 could not be created on $1~string1 - Operating system error $2~int0, TPCError = $3~int1, error detail = $4~int2.  (See variants of Seabed procedure msg_mon_start_process for details).
+2012 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server process $0~string0 could not be created on $1~string1 - Operating system error $2~int0, TPCError = $3~int1, error detail = $4~int2. $2~string2
 2013 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server process $0~string0 could not be created on $1~string1 - Operating system error $2~int0.
 2014 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server process $0~string0 could not be created on $1~string1 - Operating system error $2~int0 on swap file.
 2015 ZZZZZ 99999 ADVANCED CRTCL DIALOUT Server process $0~string0 could not be created on $1~string1 - CPU is unavailable (Operating system error $2~int0).

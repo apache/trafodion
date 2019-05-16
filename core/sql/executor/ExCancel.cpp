@@ -512,8 +512,7 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
         char processName[50];
         ContextCli *context = getGlobals()->castToExExeStmtGlobals()->
                 castToExMasterStmtGlobals()->getStatement()->getContext();
-        context->getSsmpManager()->getServerClass()->getProcessName(nodeName, (short)
-                           str_len(nodeName), cpu, processName);
+        context->getSsmpManager()->getServerClass()->getProcessName(cpu, processName);
         *diagsArea << DgString0(processName);
       }
 

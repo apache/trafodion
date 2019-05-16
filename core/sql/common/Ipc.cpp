@@ -4959,9 +4959,9 @@ void IpcServerClass::freeServerProcess(IpcServer *s)
   NADELETE(s, IpcServer, environment_->getHeap());
 }
 
-char *IpcServerClass::getProcessName(const char *nodeName, short nodeNameLen, short cpuNum, char *processName)
+char *IpcServerClass::getProcessName(short cpuNum, char *processName)
 {
-  return getServerProcessName(serverType_, nodeName, nodeNameLen, cpuNum, processName);
+  return getServerProcessName(serverType_, cpuNum, processName);
 }
 // -----------------------------------------------------------------------
 // methods for class IpcEnvironment
@@ -5607,7 +5607,7 @@ void * operator new[](size_t size, IpcEnvironment *env)
   return env->getHeap()->allocateMemory(size);
 }
 
-char *getServerProcessName(IpcServerType serverType, const char *nodeName, short nodeNameLen, 
+char *getServerProcessName(IpcServerType serverType,
                            short cpuNum, char *processName, short *envType)
 {
   const char *processPrefix = NULL;

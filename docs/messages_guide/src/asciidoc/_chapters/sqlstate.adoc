@@ -216,8 +216,8 @@ numbers) and error messages (negative SQLCODE numbers).
 | 01609    | 2009    | The user transaction must be rolled back (or committed, if that makes sense in the application) before MXCMP can be restarted and proceed.
 | 0160A    | 2010    | Internal IPC error.
 | 0160B    | 2011    | Unable to create server process.  error <num> while resolving program file name <name>.
-| 0160C    | 2012    | Unable to create server process <name>.  error <num>, TPC error = <num>, error detail = <num>. (See  procedure PROCESS_LAUNCH_ for details).
-| 0160D    | 2013    | Unable to create server process <name>.  error <num> on program file.
+| 0160C    | 2012    | Server process <name> could not be created on <node> - Operating system error <OSerror>, TPCError = <Msgerror>, error detail = <detail>. <reason>
+| 0160D    | 2013    | Server process <name> could not be created on <node> - Operating system error <OSerror>.
 | 0160E    | 2014    | Unable to create server process <name>.  error <num> on swap file.
 | 0160F    | 2015    | Unable to create server process <name>. CPU is unavailable ( error <num>).
 | 0160G    | 2016    | Server process <name> was started but had undefined externals.
@@ -1663,8 +1663,8 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | X0208    | -2008   | Internal error: out of virtual memory.
 | X020A    | -2010   | Internal IPC error.
 | X020B    | -2011   | Unable to create server process. Error <num> while resolving program file name <name>.
-| X020C    | -2012   | Unable to create server process <name>. Error <num>, TPC Error = <num>, error detail = <text>. (See  procedure PROCESS_LAUNCH_ for details).
-| X020D    | -2013   | Unable to create server process <name>.  error <num> on program file.
+| X020C    | -2012   | Server process <name> could not be created on <node> - Operating system error <OSerror>, TPCError = <Msgerror>, error detail = <detail>. <reason>
+| X020D    | -2013   | Server process <name> could not be created on <node> - Operating system error <OSerror>.
 | X020E    | -2014   | Unable to create server process <name>.  error <num> on swap file.
 | X020F    | -2015   | Unable to create server process <name>. CPU is unavailable ( error <num>).
 | X020G    | -2016   | Server process <name> was started but had undefined externals.

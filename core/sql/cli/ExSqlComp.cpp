@@ -172,7 +172,8 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
   //  
   if (ret == ERROR)
   {
-	error(arkcmpErrorServer);
+	if ((!diagArea_->contains(-2013)) && (!diagArea_->contains(-2012))) // avoid generating redundant error
+	  error(arkcmpErrorServer);
 	if (getenv("DEBUG_SERVER"))
 	  MessageBox(NULL, "ExSqlComp:createServer", "error ", MB_OK|MB_ICONINFORMATION);
   }
@@ -911,7 +912,7 @@ ExSqlComp::ExSqlComp(void* ex_environment,
                      short version,
                      char *nodeName ,
                      IpcEnvironment *env):
-isShared_(FALSE), lastContext_(NULL), resendingControls_(FALSE)
+isShared_(FALSE), lastContext_(NULL), resendingControls_(FALSE), nodeName_(NULL)
 {
   h_ = h;
 
@@ -930,17 +931,11 @@ isShared_(FALSE), lastContext_(NULL), resendingControls_(FALSE)
   breakReceived_ = FALSE;
   currentISPRequest_ = 0;
   connectionType_ = CmpMessageConnectionType::DMLDDL;
-  nodeName_ = new (h_) char[9];
   if (nodeName)
    {
+     nodeName_ = new (h_) char[strlen(nodeName)+1];
      strcpy(nodeName_,nodeName);
    }
-  else
-    {
-      nodeName_[0] = '\\';
-      if (ComRtGetOSClusterName(&nodeName_[1], 8, NULL) <= 0)
-	nodeName_ = nodeName;
-    }
   server_ = 0;
 
   diagArea_ = ComDiagsArea::allocate(h_);  

@@ -79,36 +79,44 @@ correct the problem.
 == SQL 2012
 
 ```
-Server process <name> could not be created - error <number> <number-1>, TPCError = <number-2>, error detail = <text>.
+Server process <name> could not be created on <node> - Operating system error <OSerror>, TPCError = <Msgerror>, error detail = <detail>. <reason>
 ```
 
 Where <name> is the name of the server process.
 
-Where <number-1> is the error number.
+Where <node> is the node where {project-name} attempted to create the process.
 
-Where <number-2> is the TPCError.
+Where <OSerror> is the error number returned by the {project-name} monitor layer.
 
-Where <text> is the error message text.
+Where <Msgerror> is the error number returned by the {project-name} message layer.
+
+Where <detail> is additional error information from the message layer.
+
+Where <reason> is text that interprets the error information.
 
 *Cause:* {project-name} was unable to create server
 process <name> because of the process control procedure error <number>
-it received. More information appears in detail <text>.
+it received on the program file. More information appears in <reason>.
 
 *Effect:* The operation fails.
 
-*Recovery:* Use the process control procedure error to diagnose and correct the problem.
+*Recovery:* Use the error information to diagnose and correct the problem. For example, if the <reason> is "Could not access executable file", it may
+be that there is a file system problem on the executable file or the directory it resides in. Execute permission may have
+been removed, or the file itself may no longer be there.
 
 <<<
 [[SQL-2013]]
 == SQL 2013
 
 ```
-Server process <name> could not be created - error <number> on program file.
+Server process <name> could not be created on <node> - Operating system error <OSerror>.
 ```
 
 Where <name> is the name of the server process.
 
-Where <number> is the error number.
+Where <node> is the node where {project-name} attempted to create the process.
+
+Where <OSerror> is the error number returned by the {project-name} monitor layer.
 
 *Cause:* {project-name} was unable to create server
 process <name> because of the process control procedure error <number>

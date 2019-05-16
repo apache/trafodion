@@ -81,8 +81,7 @@ IpcServer *ExSsmpManager::getSsmpServer(NAHeap *heap, char *nodeName, short cpuN
 
    char *tmpProcessName;
 
-   tmpProcessName = ssmpServerClass_->getProcessName(nodeName,
-             (short) str_len(nodeName), cpuNum, ssmpProcessName);
+   tmpProcessName = ssmpServerClass_->getProcessName(cpuNum, ssmpProcessName);
    ex_assert(tmpProcessName != NULL, "ProcessName can't be null");
 
    processNameLen = str_len(tmpProcessName);
@@ -146,8 +145,7 @@ void ExSsmpManager::removeSsmpServer(char *nodeName, short cpuNum)
    Int32 processNameLen = 0;
 
    char *tmpProcessName;
-   tmpProcessName = ssmpServerClass_->getProcessName(nodeName,
-             (short) str_len(nodeName), cpuNum, ssmpProcessName);
+   tmpProcessName = ssmpServerClass_->getProcessName(cpuNum, ssmpProcessName);
    ex_assert(tmpProcessName != NULL, "ProcessName can't be null");
 
    processNameLen = str_len(tmpProcessName);
@@ -432,8 +430,7 @@ ULng32 SsmpGlobals::deAllocateServer(char *nodeName, short nodeNameLen,  short c
   serverId.nodeName_[0] = '\0';
   serverId.cpuNum_ = cpuNum;
   char *tmpProcessName;
-  tmpProcessName = sscpServerClass_->getProcessName(serverId.nodeName_,
-            (short) str_len(serverId.nodeName_), cpuNum, sscpProcessName);
+  tmpProcessName = sscpServerClass_->getProcessName(cpuNum, sscpProcessName);
   ex_assert(tmpProcessName != NULL, "ProcessName can't be null");
 
   sscps_->position(tmpProcessName, str_len(tmpProcessName));
@@ -500,8 +497,7 @@ void SsmpGlobals::allocateServerOnNextRequest(char *nodeName,
   // we will pretend that we got a NodeDown and NodeUp message and
   // issue an EMS event.
   char *tmpProcessName;
-  tmpProcessName = sscpServerClass_->getProcessName(serverId.nodeName_,
-            (short) str_len(serverId.nodeName_), cpuNum, sscpProcessName);
+  tmpProcessName = sscpServerClass_->getProcessName(cpuNum, sscpProcessName);
   ex_assert(tmpProcessName != NULL, "ProcessName can't be null");
 
   sscps_->position(tmpProcessName, str_len(tmpProcessName));
