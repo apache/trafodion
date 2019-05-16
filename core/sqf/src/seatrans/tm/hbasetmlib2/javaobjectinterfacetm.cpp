@@ -21,6 +21,7 @@
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
 
+#include "seabed/ms.h"
 #include "tmlogging.h"
 #include "javaobjectinterfacetm.h"
 
@@ -149,11 +150,30 @@ int JavaObjectInterfaceTM::createJVM()
   jvm_options[numJVMOptions++].optionString = classPathArg;
   jvm_options[numJVMOptions++].optionString = (char *) "-XX:-LoopUnswitching";
   //  jvm_options[numJVMOptions++].optionString = (char *) "-Xcheck:jni";
-
+  int debugPort = 0;
+  int my_nid;
+  int my_pid;
+  static const char *debugPortStr = getenv("JVM_DEBUG_PORT");
+  static const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
+  if (debugPortStr != NULL)
+     debugPort = atoi(debugPortStr);
+  if (debugPort > 0) {
+     const char *debugTimeoutStr = getenv("JVM_DEBUG_TIMEOUT");
+     if (debugTimeoutStr != NULL)
+        debugTimeout_ = atoi(debugTimeoutStr);
+     debugPort_ = debugPort;
+     msg_mon_get_process_info(NULL, &my_nid, &my_pid);
+     // to allow debugging multiple processes at the same time,
+     // specify a port that is a multiple of 1000 and the code will
+     // add pid mod 1000 to the port number to use
+     if (debugPort_ % 1000 == 0)
+         debugPort_ += (my_pid % 1000);
+  }
   if (debugPort_ > 0)
     {
-      sprintf(debugOptions,"-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d,suspend=y",
-                                                                       debugPort_,         debugTimeout_);
+      sprintf(debugOptions,"-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d,suspend=%s",
+                                  debugPort_, debugTimeout_, 
+                                  (suspendOnDebug != NULL ? "y" : "n"));
       jvm_options[numJVMOptions++].optionString = debugOptions;
     }
 

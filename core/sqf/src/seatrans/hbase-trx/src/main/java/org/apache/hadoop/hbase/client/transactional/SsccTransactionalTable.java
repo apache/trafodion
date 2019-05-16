@@ -120,7 +120,7 @@ import java.util.concurrent.Executors;
 /**
  * Table with transactional support.
  */
-public class SsccTransactionalTable extends HTable implements TransactionalTableClient {
+public class SsccTransactionalTable extends TransactionalTable {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
     /*   // Not necessary for 0.98
     private RpcRetryingCallerFactory rpcCallerFactory;    
@@ -150,7 +150,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
      * @throws IOException
      */
     public SsccTransactionalTable( final byte[] tableName, Connection connection) throws IOException {
-        super( tableName,connection, threadPool);       
+        super( tableName,connection);       
         this.connection = connection;
     }
 

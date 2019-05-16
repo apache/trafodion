@@ -56,6 +56,7 @@ import org.apache.hadoop.hbase.client.transactional.TransactionManager;
 import org.apache.hadoop.hbase.client.transactional.TransactionRegionLocation;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
 import org.apache.hadoop.hbase.client.transactional.TransState;
+import org.apache.hadoop.hbase.client.transactional.TrafodionLocationList;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TlogDeleteRequest;
@@ -769,7 +770,7 @@ public class TmAuditTlog {
    * Return  : void
    * Purpose : write commit/abort for a given transaction
    */
-   public void doTlogWrite(final TransactionState transactionState, final String lvTxState, final Set<TransactionRegionLocation> regions, final boolean hasPeer, boolean forced, long recoveryASN) throws IOException {
+   public void doTlogWrite(final TransactionState transactionState, final String lvTxState, final TrafodionLocationList regions, final boolean hasPeer, boolean forced, long recoveryASN) throws IOException {
      int loopCount = 0;
      long threadId = Thread.currentThread().getId();
      final long lvTransid = transactionState.getTransactionId();
@@ -781,6 +782,16 @@ public class TmAuditTlog {
         // To facilitate branch notification we translate the regions into table names that can then
         // be translated back into new region names following a restart.  THis allows us to ensure all
         // branches reply prior to cleanup
+        boolean addComma = false;
+        for (String tableName : regions.getList().keySet()) {
+           if (addComma)
+              tableString.append(",");
+           else
+              addComma = true;
+           tableString.append(tableName); 
+           
+        }
+/*
         Iterator<TransactionRegionLocation> it = regions.iterator();
         List<String> tableNameList = new ArrayList<String>();
         while (it.hasNext()) {
@@ -792,6 +803,7 @@ public class TmAuditTlog {
               tableString.append(name);
            }
         }
+*/
         if (LOG.isTraceEnabled()) LOG.trace("table names: " + tableString.toString() + " in thread " + threadId);
      }
      long key = transactionState.getTransSeqNum();
@@ -1105,12 +1117,12 @@ public class TmAuditTlog {
    }
 
    public void putSingleRecord(final long lvTransid, final long lvStartId, final long lvCommitId, final String lvTxState, 
-         final Set<TransactionRegionLocation> regions, final boolean hasPlaceHolder, boolean forced) throws IOException {
+         final TrafodionLocationList regions, final boolean hasPlaceHolder, boolean forced) throws IOException {
       putSingleRecord(lvTransid, lvStartId, lvCommitId, lvTxState, regions, hasPlaceHolder, forced, -1);
    }
 
    public void putSingleRecord(final long lvTransid, final long lvStartId, final long lvCommitId, final String lvTxState, 
-         final Set<TransactionRegionLocation> regions, final boolean hasPlaceHolder, boolean forced, long recoveryASN) throws IOException {
+         final TrafodionLocationList regions, final boolean hasPlaceHolder, boolean forced, long recoveryASN) throws IOException {
 
       long threadId = Thread.currentThread().getId();
       if (LOG.isTraceEnabled()) LOG.trace("putSingleRecord start in thread " + threadId);
@@ -1132,6 +1144,15 @@ public class TmAuditTlog {
          // To facilitate branch notification we translate the regions into table names that can then
          // be translated back into new region names following a restart.  THis allows us to ensure all
          // branches reply prior to cleanup
+        boolean addComma = false;
+        for ( String tableName : regions.getList().keySet()) {
+           if (addComma)
+              tableString.append(",");
+           else
+              addComma = true;
+           tableString.append(tableName); 
+        }
+/*   
          Iterator<TransactionRegionLocation> it = regions.iterator();
          List<String> tableNameList = new ArrayList<String>();
          while (it.hasNext()) {
@@ -1143,6 +1164,7 @@ public class TmAuditTlog {
                tableString.append(name);
             }
          }
+*/
          if (LOG.isTraceEnabled()) LOG.trace("table names: " + tableString.toString() + " in thread " + threadId);
       }
       long key = lvTransid;

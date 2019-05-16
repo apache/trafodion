@@ -3314,6 +3314,16 @@ void ExHbaseAccessTcb::getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExcep
   retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",0, totalExceptionCount);
 }
 
+int ExHbaseAccessTcb::compareRowIds()
+{
+   UInt32 rowIdLen = hbaseAccessTdb().getRowIDLen();
+   if (beginRowId_.size() == 0)
+      return 0;
+   if (endRowId_.size() == 0)
+      return 0;
+   return endRowId_.compare(0, rowIdLen, beginRowId_);
+}
+
 static const char * const BatchSizeEnvvar = 
   getenv("SQL_CANCEL_BATCH_SIZE");
 static const Lng32 BatchSize = (BatchSizeEnvvar &&

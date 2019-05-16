@@ -104,6 +104,7 @@ import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+import org.apache.hadoop.hbase.util.ByteArrayKey;
 
 import org.apache.hadoop.ipc.RemoteException;
 
@@ -280,7 +281,7 @@ public class TransactionManager {
         if(endKey_orig == null || endKey_orig == HConstants.EMPTY_END_ROW)
           endKey = null;
         else
-          endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
+          endKey =  TransactionManager.binaryIncrementPos(endKey_orig, -1); 
     }
 
     /**
@@ -726,15 +727,17 @@ public class TransactionManager {
                    if(value == TransactionalReturn.COMMIT_RESEND) {
                      // Handle situation where repeated region is in list due to different endKeys
                      int count = 0;
-                     for(TransactionRegionLocation trl : this.transactionState.getParticipatingRegions()) {
-                       if(trl.getRegionInfo().getTable().toString()
-                               .compareTo(location.getRegionInfo().getTable().toString()) == 0
-                               &&
-                          Arrays.equals(trl.getRegionInfo().getStartKey(),
-                               location.getRegionInfo().getStartKey())) {
-                         count++;
-                       }
+                     String tblName = location.getRegionInfo().getTable().getNameAsString();
+                     HashMap<ByteArrayKey,TransactionRegionLocation> regionMap =  
+                          transactionState.getParticipatingRegions().getList().get(tblName);
+                     if (regionMap != null) {
+                        for (TransactionRegionLocation trl : regionMap.values()) {
+                           if (Arrays.equals(trl.getRegionInfo().getStartKey(),
+                                  location.getRegionInfo().getStartKey())) 
+                              count++;
+                        }
                      }
+
                      if(count > 1) {
                        commitStatus = TransactionalReturn.COMMIT_OK;
                        retry = false;
@@ -1661,7 +1664,7 @@ public class TransactionManager {
     }
     if(LOG.isTraceEnabled()) LOG.trace("checkException -- EXIT txid: " + ts.getTransactionId());
 
-}
+   }
 
   /**
    * threadPool - pool of thread for asynchronous requests
@@ -1730,6 +1733,7 @@ public class TransactionManager {
     protected TransactionManager(final TransactionLogger transactionLogger, final Configuration conf, Connection conn)
             throws ZooKeeperConnectionException, IOException {
         this.transactionLogger = transactionLogger;
+        this.config = conf;
         conf.setInt("hbase.client.retries.number", 3);
         connection = conn;
     }
@@ -1739,7 +1743,7 @@ public class TransactionManager {
      *
      * @return new transaction state
      */
-    public TransactionState beginTransaction() {
+    public TransactionState beginTransaction() throws IOException {
         long transactionId = transactionLogger.createNewTransactionLog();
         if (LOG.isTraceEnabled()) LOG.trace("Beginning transaction " + transactionId);
         return new TransactionState(transactionId);
@@ -1750,7 +1754,7 @@ public class TransactionManager {
      *
      * @return new transaction state
      */
-    public TransactionState beginTransaction(long transactionId) throws IdTmException {
+    public TransactionState beginTransaction(long transactionId) throws IOException, IdTmException {
         //long transactionId =
       if (LOG.isTraceEnabled()) LOG.trace("Enter beginTransaction, txid: " + transactionId);
       TransactionState ts = new TransactionState(transactionId);
@@ -1789,25 +1793,28 @@ public class TransactionManager {
      * @throws IOException
      * @throws CommitUnsuccessfulException
      */
-    public int prepareCommit(final TransactionState transactionState) throws CommitUnsuccessfulException, IOException {
+    public int prepareCommit(final TransactionState transactionState) throws CommitUnsuccessfulException, IOException 
+   {
        if (LOG.isTraceEnabled()) LOG.trace("Enter prepareCommit, txid: " + transactionState.getTransactionId()
-                          + " with " + transactionState.getParticipatingRegions().size() + " participants");
+                          + " with " + transactionState.getParticipatingRegions().getList().size() + " participants");
 
+       int loopCount = 0;
+       // (need one CompletionService per request for thread safety, can share pool of threads
+       CompletionService<Integer> compPool = new ExecutorCompletionService<Integer>(threadPool);
+       boolean allReadOnly = true;
        if (batchRegionServer && (TRANSACTION_ALGORITHM == AlgorithmType.MVCC)) {
-         boolean allReadOnly = true;
-         int loopCount = 0;
          if (transactionState.islocalTransaction()){
            if(LOG.isTraceEnabled()) LOG.trace("TransactionManager.prepareCommit local transaction " + transactionState.getTransactionId());
          }
          else
            if(LOG.isTraceEnabled()) LOG.trace("TransactionManager.prepareCommit global transaction " + transactionState.getTransactionId());
-         // (need one CompletionService per request for thread safety, can share pool of threads
-         CompletionService<Integer> compPool = new ExecutorCompletionService<Integer>(threadPool);
 
             ServerName servername;
             List<TransactionRegionLocation> regionList;
             Map<ServerName, List<TransactionRegionLocation>> locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
-            for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+            for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                 transactionState.getParticipatingRegions().getList().values()) {
+              for (TransactionRegionLocation location : tableMap.values()) {
                 servername = location.getServerName();
                 if(!locations.containsKey(servername)) {
                     regionList = new ArrayList<TransactionRegionLocation>();
@@ -1817,6 +1824,7 @@ public class TransactionManager {
                     regionList = locations.get(servername);
                 }
                 regionList.add(location);
+              }
             }
 
             for(final Map.Entry<ServerName, List<TransactionRegionLocation>> entry : locations.entrySet()) {
@@ -1920,8 +1928,6 @@ public class TransactionManager {
                                TransactionalReturn.COMMIT_OK;
        }
        else {
-       boolean allReadOnly = true;
-       int loopCount = 0;
        ServerName servername;
        List<TransactionRegionLocation> regionList;
        Map<ServerName, List<TransactionRegionLocation>> locations = null;
@@ -1933,12 +1939,12 @@ public class TransactionManager {
        else
          if(LOG.isTraceEnabled()) LOG.trace("TransactionManager.prepareCommit global transaction " + transactionState.getTransactionId());
 
-       // (need one CompletionService per request for thread safety, can share pool of threads
-       CompletionService<Integer> compPool = new ExecutorCompletionService<Integer>(threadPool);
           if(batchRSMetricsFlag)
              locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
 
-          for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+          for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                 transactionState.getParticipatingRegions().getList().values()) {
+            for (TransactionRegionLocation location : tableMap.values()) {
              if(batchRSMetricsFlag)  {
                  servername = location.getServerName();
                  if(!locations.containsKey(servername)) {
@@ -1951,7 +1957,6 @@ public class TransactionManager {
                  regionList.add(location);
              }
 
-
              loopCount++;
              final TransactionRegionLocation myLocation = location;
              final byte[] regionName = location.getRegionInfo().getRegionName();
@@ -1962,10 +1967,11 @@ public class TransactionManager {
                  return doPrepareX(regionName, transactionState.getTransactionId(), transactionState.getStartEpoch(), lvParticipantNum, myLocation);
                }
              });
+            }
            }
 
            if(batchRSMetricsFlag)  {
-               this.regions += transactionState.getParticipatingRegions().size();
+               this.regions += transactionState.getParticipatingRegions().getList().size();
                this.regionServers += locations.size();
                String rsToRegion = locations.size() + " RS / " + transactionState.getParticipatingRegions().size() + " Regions";
                if(batchRSMetrics.get(rsToRegion) == null) {
@@ -2226,7 +2232,9 @@ public class TransactionManager {
              ServerName servername;
              List<TransactionRegionLocation> regionList;
              Map<ServerName, List<TransactionRegionLocation>> locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
-             for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+             for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                 transactionState.getParticipatingRegions().getList().values()) {
+              for (TransactionRegionLocation location : tableMap.values()) {
                 if (transactionState.getRegionsToIgnore().contains(location)) {
                    continue;
                 }
@@ -2240,6 +2248,7 @@ public class TransactionManager {
                     regionList = locations.get(servername);
                 }
                 regionList.add(location);
+              }
              }
 
              for(final Map.Entry<ServerName, List<TransactionRegionLocation>> entry : locations.entrySet()) {
@@ -2272,19 +2281,22 @@ public class TransactionManager {
         if (LOG.isDebugEnabled()) {
            LOG.debug("sending commits for ts: " + transactionState + ", with commitId: "
                     + transactionState.getCommitId() + " and " + transactionState.getParticipatingRegions().size() + " participants" );
-           for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+          for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                 transactionState.getParticipatingRegions().getList().values()) {
+            for (TransactionRegionLocation location : tableMap.values()) {
                LOG.debug("TransactionRegionLocation Name: "
                     + location.getRegionInfo().getRegionNameAsString()
                     + "\n Start key    : " + Hex.encodeHexString(location.getRegionInfo().getStartKey())
                     + "\n End key    : " + Hex.encodeHexString(location.getRegionInfo().getEndKey()));
-           }
+            }
+          }
         }
 
-           int participants = transactionState.participatingRegions.size() - transactionState.regionsToIgnore.size();
-           if (LOG.isTraceEnabled()) LOG.trace("Committing [" + transactionState.getTransactionId() + "] with " + participants + " participants" );
+           int participants = transactionState.getParticipatingRegions().size() - transactionState.regionsToIgnore.size();
            // (Asynchronously send commit
-           for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
-              if (LOG.isTraceEnabled()) LOG.trace("sending commits ... [" + transactionState.getTransactionId() + "]");
+           for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                 transactionState.getParticipatingRegions().getList().values()) {
+             for (TransactionRegionLocation location : tableMap.values()) {
               if (transactionState.getRegionsToIgnore().contains(location)) {
                  continue;
               }
@@ -2308,10 +2320,11 @@ public class TransactionManager {
                  }
               });
            }
+          }
+        }
 
         // all requests sent at this point, can record the count
         transactionState.completeSendInvoke(loopCount);
-      }
 
         //if DDL is involved with this transaction, need to complete it.
         if(transactionState.hasDDLTx())
@@ -2447,8 +2460,7 @@ public class TransactionManager {
     } while (retry && retryCount++ <= RETRY_ATTEMPTS);
 
     if (LOG.isTraceEnabled()) LOG.trace("doCommitDDL  EXIT [" + transactionState.getTransactionId() + "]");
-}
-
+    }
 
     /**
      * Abort a s transaction.
@@ -2464,11 +2476,13 @@ public class TransactionManager {
       transactionState.setStatus(TransState.STATE_ABORTED);
       // (Asynchronously send aborts
       if (batchRegionServer && (TRANSACTION_ALGORITHM == AlgorithmType.MVCC)) {
-            ServerName servername;
-            List<TransactionRegionLocation> regionList;
-            Map<ServerName, List<TransactionRegionLocation>> locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
+          ServerName servername;
+          List<TransactionRegionLocation> regionList;
+          Map<ServerName, List<TransactionRegionLocation>> locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
 
-            for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+          for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                 transactionState.getParticipatingRegions().getList().values()) {
+            for (TransactionRegionLocation location : tableMap.values()) {
                if (transactionState.getRegionsToIgnore().contains(location)) {
                   continue;
                }
@@ -2494,14 +2508,17 @@ public class TransactionManager {
                        return doAbortX(entry.getValue(), transactionState.getTransactionId(), lv_participant);
                     }
                  });
+              }
             }
             transactionState.completeSendInvoke(loopCount);
       }
       else {
         loopCount = 0;
-        for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+        for (HashMap<ByteArrayKey,TransactionRegionLocation> tableMap : 
+                 transactionState.getParticipatingRegions().getList().values()) {
+          for (TransactionRegionLocation location : tableMap.values()) {
             if (transactionState.getRegionsToIgnore().contains(location)) {
-               continue;
+              continue;
             }
             loopCount++;
             final int participantNum = loopCount;
@@ -2515,10 +2532,11 @@ public class TransactionManager {
                 return doAbortX(regionName, transactionState.getTransactionId(), participantNum, location.isTableRecodedDropped(), false);
               }
             });
+          }
+         }
         }
         // all requests sent at this point, can record the count
         transactionState.completeSendInvoke(loopCount);
-      }
          
        IOException savedException = null;
 
@@ -3114,7 +3132,7 @@ public class TransactionManager {
     }
 
     public void dropTable(final TransactionState transactionState, String tblName)
-            throws IOException{
+            throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("dropTable ENTRY, TxId: " + transactionState.getTransactionId() + "TableName: " + tblName);
 
         //Record this drop table request in TmDDL.
@@ -3128,10 +3146,11 @@ public class TransactionManager {
            
             // Also set a flag in all current participating regions belonging to this table
             // to indicate this table is recorded for drop.
-            for(TransactionRegionLocation trl : transactionState.getParticipatingRegions())
-            {
-                if(trl.getRegionInfo().getTable().toString().compareTo(tblName) == 0)
-                    trl.setTableRecordedDropped();
+            HashMap<ByteArrayKey,TransactionRegionLocation> regionMap =  
+                  transactionState.getParticipatingRegions().getList().get(tblName);
+            if (regionMap != null) {
+               for (TransactionRegionLocation trRegion : regionMap.values()) 
+                  trRegion.setTableRecordedDropped();
             }
     }
 

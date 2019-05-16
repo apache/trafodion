@@ -2905,6 +2905,11 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 
 	case SCAN_OPEN:
 	  {
+            // Bypass scan when beginRowId_ is less than endRowId_
+            if (tcb_->compareRowIds() < 0) {
+               step_ = DONE;
+               break;
+            }
             // Pre-fetch is disabled because it interfers with
             // Delete operations
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
@@ -3323,6 +3328,11 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 	    // this row cannot be deleted.
 	    // But if there is a scan expr, then we need to also retrieve the columns used
 	    // in the pred. Add those.
+            // Bypass scan when beginRowId_ is less than endRowId_
+            if (tcb_->compareRowIds() < 0) {
+               step_ = DONE;
+               break;
+            }
 	    LIST(HbaseStr) columns(tcb_->getHeap());
 	    if (tcb_->hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
 	      {

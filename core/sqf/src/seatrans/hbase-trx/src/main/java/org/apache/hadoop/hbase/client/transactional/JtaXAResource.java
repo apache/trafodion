@@ -149,7 +149,12 @@ public class JtaXAResource implements XAResource {
     public void start(final Xid xid, final int flags) throws XAException {
         LOG.trace("start [" + xid.toString() + "] ");
         // TODO, check flags
-        TransactionState state = this.transactionManager.beginTransaction();
+        TransactionState state =  null;
+        try {
+           state = this.transactionManager.beginTransaction();
+        } catch (IOException e) {
+           throw new XAException(e.getMessage());
+        }
         threadLocalTransactionState.set(state);
         xidToTransactionState.put(xid, state);
     }

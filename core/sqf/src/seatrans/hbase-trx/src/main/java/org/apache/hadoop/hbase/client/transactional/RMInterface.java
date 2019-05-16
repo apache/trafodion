@@ -25,6 +25,8 @@
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
+import java.util.ArrayList;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -44,7 +46,7 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
-import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.RegionLocator;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.client.Connection;
@@ -63,7 +65,6 @@ import org.apache.hadoop.hbase.client.transactional.TransactionState;
 import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
-import org.apache.hadoop.hbase.client.transactional.TransactionalTableClient;
 import org.apache.hadoop.hbase.client.transactional.TransactionalTable;
 import org.apache.hadoop.hbase.client.transactional.SsccTransactionalTable;
 
@@ -92,8 +93,8 @@ import com.google.protobuf.ByteString;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,12 +112,16 @@ public class RMInterface {
 
     public AlgorithmType TRANSACTION_ALGORITHM;
     static Map<Long, Set<RMInterface>> mapRMsPerTransaction = new HashMap<Long,  Set<RMInterface>>();
-    private TransactionalTableClient ttable = null;
+    private TransactionalTable ttable = null;
+    private boolean bRegisterRegionsAtTransEnd;
     private ExecutorService threadPool;
     private CompletionService<Integer> compPool;
     private int intThreads = 16;
     private Connection connection;
     static TransactionManager txm;
+    private static List<String> createdTables;
+    private static boolean envBroadcastMode;
+
     static {
         System.loadLibrary("stmlib");
         String envset = System.getenv("TM_USE_SSCC");
@@ -124,9 +129,13 @@ public class RMInterface {
            envTransactionAlgorithm = (Integer.parseInt(envset) == 1) ? AlgorithmType.SSCC : AlgorithmType.MVCC;
         else
            envTransactionAlgorithm = AlgorithmType.MVCC;
+        String useBroadcastMode = System.getenv("TM_USE_BROADCAST_MODE");
+        if (useBroadcastMode != null)
+          envBroadcastMode = (Integer.parseInt(useBroadcastMode) == 1) ? true : false;
+
+        createdTables = new ArrayList<String>();
     }
 
-    private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
     private native String createTableReq(byte[] lv_byte_htabledesc, byte[][] keys, int numSplits, int keyLength, long transID, byte[] tblName);
     private native String dropTableReq(byte[] lv_byte_tblname, long transID);
     private native String truncateOnAbortReq(byte[] lv_byte_tblName, long transID); 
@@ -136,19 +145,20 @@ public class RMInterface {
       System.out.println("MAIN ENTRY");
     }
 
-    private IdTm idServer;
+    protected static IdTm idServer;
     private static final int ID_TM_SERVER_TIMEOUT = 1000; // 1 sec 
 
     public enum AlgorithmType {
        MVCC, SSCC
     }
 
-    private static AlgorithmType envTransactionAlgorithm;
+    protected static AlgorithmType envTransactionAlgorithm;
     private AlgorithmType transactionAlgorithm;
 
     public RMInterface(final String tableName, Connection connection) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface constructor:"
 					    + " tableName: " + tableName);
+        bRegisterRegionsAtTransEnd = true; 
 
         this.connection = connection;
         transactionAlgorithm = envTransactionAlgorithm;
@@ -292,99 +302,112 @@ public class RMInterface {
        }
     }
 
-    public synchronized TransactionState registerTransaction(final TransactionalTableClient pv_table,
+    public TransactionState registerTransaction(final TransactionalTable pv_table, 
 							     final long transactionID,
-							     final byte[] row) throws IOException {
-        if (LOG.isTraceEnabled()) LOG.trace("Enter registerTransaction, transaction ID: " + transactionID
-             + " row " + Hex.encodeHexString(row));
-        boolean register = false;
-        short ret = 0;
+							     final byte[] startRow) throws IOException 
+    {
+       return registerTransaction (pv_table, transactionID, startRow, null, 
+                                 false, 0, false );
+    }
 
+    public TransactionState registerTransaction(final TransactionalTable pv_table, 
+							     final long transactionID, 
+							     final byte[] startRow,
+							     final byte[] endRow,			
+							     final boolean pv_skipConflictCheck,
+							     int pv_tmFlags) throws IOException 
+    {
+       return registerTransaction (pv_table, transactionID, startRow, endRow, 
+                                 pv_skipConflictCheck, 0, true );
+    }
+
+    public TransactionState registerTransaction(final TransactionalTable pv_table, 
+							     final long transactionID, 
+							     final byte[] startRow,
+							     final byte[] endRow,			
+							     final boolean pv_skipConflictCheck,
+							     int pv_tmFlags, boolean scanRange) 
+                                                                   throws IOException 
+    {
+        if (LOG.isTraceEnabled()) LOG.trace("Enter registerTransaction, table: " + getTableNameAsString() + " transaction ID: " + transactionID
+             + " startRow " + Hex.encodeHexString(startRow)
+             + " endRow " + Hex.encodeHexString(endRow));
+        boolean register = false;
+        
         TransactionState ts = mapTransactionStates.get(transactionID);
 
-        if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
+        if (LOG.isTraceEnabled()) 
+           LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
 
         // if we don't have a TransactionState for this ID we need to register it with the TM
-        if (ts == null) {
-           if (LOG.isTraceEnabled()) LOG.trace("registerTransaction transactionID (" + transactionID +
-                    ") not found in mapTransactionStates of size: " + mapTransactionStates.size());
-           ts = new TransactionState(transactionID);
+        if (ts == null) { 
+           ts = TransactionState.getInstance(transactionID);
+        }
+        HRegionLocation locationRow;
+        boolean refresh = false;
+        if (createdTables.size() > 0 && createdTables.contains(Bytes.toString(pv_table.getTableName()))){
+            if (LOG.isTraceEnabled()) LOG.trace("Locations being refreshed : "
+                + Bytes.toString(pv_table.getTableName()) + " for transaction " + transactionID
+                + "  CreatedTables size " + createdTables.size());
+            refresh = true;
+            createdTables.remove(Bytes.toString(pv_table.getTableName()));
+        }
 
-           long startIdVal = -1;
-
-           // Set the startid
-           if (transactionAlgorithm == AlgorithmType.SSCC) {
-              IdTmId startId;
-              try {
-                 startId = new IdTmId();
-                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction getting new startId with timeout " + ID_TM_SERVER_TIMEOUT);
-                 idServer.id(ID_TM_SERVER_TIMEOUT, startId);
-                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction idServer.id returned: " + startId.val);
-              } catch (IdTmException exc) {
-                 LOG.error("registerTransaction: IdTm threw exception " , exc);
-                 throw new IOException("registerTransaction: IdTm threw exception ", exc);
-              }
-              startIdVal = startId.val;
+        HRegionLocation location = null;
+        List<HRegionLocation> scanRegionLocations = null;
+        Iterator<HRegionLocation> scanRegionLocationsIter = null;
+        
+        // set keys to infinite
+        if ((envBroadcastMode == true) && (pv_skipConflictCheck == true))
+        { 
+            locationRow = pv_table.getRegionLocation(startRow, refresh);
+            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - setting keys to infinite for location " + locationRow);
+            HRegionInfo regionInfo = new HRegionInfo (locationRow.getRegionInfo().getTable(), HConstants.EMPTY_START_ROW, HConstants.EMPTY_END_ROW);
+            location = new HRegionLocation(regionInfo, locationRow.getServerName());
+        }
+        if (location == null) {
+           if (scanRange) {
+              scanRegionLocations = pv_table.getRegionsInRange(startRow, endRow, refresh);
+              scanRegionLocationsIter = scanRegionLocations.iterator();
+              location = scanRegionLocationsIter.next();
            }
-           ts.setStartId(startIdVal);
-
-           synchronized (mapTransactionStates) {
-              TransactionState ts2 = mapTransactionStates.get(transactionID);
-              if (ts2 != null) {
-                 // Some other thread added the transaction while we were creating one.  It's already in the
-                 // map, so we can use the existing one.
-                 if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, found TransactionState object while creating a new one " + ts2);
-                 ts = ts2;
-              }
-              else {
-                 if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, adding new TransactionState to map " + ts);
-                 mapTransactionStates.put(transactionID, ts);
-              }
-           }// end synchronized
-           register = true;
+           else 
+              location = pv_table.getRegionLocation(startRow, refresh);
         }
-        else {
-            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - Found TS in map for tx " + ts);
-        }
-        HRegionLocation location = pv_table.getRegionLocation(row, false /*reload*/);
-
-        if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - retrieved location with startKey="
-              + Hex.encodeHexString(location.getRegionInfo().getStartKey()) + ", endKey="
-              + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " row= " + Hex.encodeHexString(row));
-        TransactionRegionLocation trLocation = new TransactionRegionLocation(location.getRegionInfo(),
+        do {
+           TransactionRegionLocation trLocation = new TransactionRegionLocation(location.getRegionInfo(),
                                                                              location.getServerName());
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, created TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() + "], endKey: "
                   + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " and transaction [" + transactionID + "]");
-
-        // if this region hasn't been registered as participating in the transaction, we need to register it
-        if (ts.addRegion(trLocation)) {
-          register = true;
+           // if this region hasn't been registered as participating in the transaction, we need to register it
+           if (ts.addRegion(trLocation)) {
+              register = true;
           if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, added TransactionRegionLocation ["
                   + trLocation.getRegionInfo().getRegionNameAsString() + "], endKey: "
                   + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction " + transactionID
-                  + " with " + ts.getParticipantCount() + " participants");
-        }
+                        + " with " + ts.getParticipantCount() + " participants");
+           }
 
-        // register region with TM.
-        if (register) {
+           // register region with TM.
+           if (register) {
             ts.registerLocation(location);
-             if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, called registerLocation TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() +  "\nEncodedName: [" + trLocation.getRegionInfo().getEncodedName() + "], endKey: "
+               if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, called registerLocation TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() +  "\nEncodedName: [" + trLocation.getRegionInfo().getEncodedName() + "], endKey: "
                   + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction [" + transactionID + "]");
-        }
-        else {
-          if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction did not send registerRegion for transaction " + transactionID);
-        }
-
-        if ((ts == null) || (ret != 0)) {
-            LOG.error("registerTransaction failed, TransactionState is NULL"); 
-            throw new IOException("registerTransaction failed with error.");
-        }
-
+           }
+           else {
+              if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction did not send registerRegion for transaction " + transactionID);
+           }
+           if (scanRange && scanRegionLocationsIter.hasNext())
+              location = scanRegionLocationsIter.next();
+           else
+              break;
+           register = false;
+        } while (true);
         if (LOG.isTraceEnabled()) LOG.trace("Exit registerTransaction, transaction ID: " + transactionID + ", startId: " + ts.getStartId());
         return ts;
     }
 
-    public synchronized TransactionState registerTransaction(final long transactionID,
+    public TransactionState registerTransaction(final long transactionID,
 							     final byte[] row) throws IOException {
 
        if (LOG.isTraceEnabled()) LOG.trace("Enter registerTransaction,"
@@ -396,54 +419,7 @@ public class RMInterface {
        return ts;
     }
 
-    public static synchronized TransactionState registerTransaction(final TransactionalTableClient pv_table,
-		     TransactionState ts,
-		     final byte[] row) throws IOException {
-       if (LOG.isTraceEnabled()) LOG.trace("Enter static registerTransaction, trans: " + ts
-              + " row " + Hex.encodeHexString(row));
-       boolean register = false;
-       final long transactionID = ts.getTransactionId();
-       short ret = 0;
-       HRegionLocation location = pv_table.getRegionLocation(row, false /*reload*/);
-
-       if (LOG.isTraceEnabled()) LOG.trace("static RMInterface:registerTransaction - retrieved location with startKey="
-               + Hex.encodeHexString(location.getRegionInfo().getStartKey()) + ", endKey="
-               + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " row= " + Hex.encodeHexString(row));
-       HRegionInfo hri = location.getRegionInfo();
-       TransactionRegionLocation trLocation = new TransactionRegionLocation(hri, location.getServerName());
-
-       if (LOG.isTraceEnabled()) LOG.trace("static RMInterface:registerTransaction, created TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() + "], endKey: "
-               + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " and transaction [" + transactionID + "]");
-
-       // if this region hasn't been registered as participating in the transaction, we need to register it
-       if (ts.addRegion(trLocation)) {
-          register = true;
-          if (LOG.isTraceEnabled()) LOG.trace("static RMInterface:registerTransaction, added TransactionRegionLocation ["
-                + trLocation.getRegionInfo().getRegionNameAsString() + "], endKey: "
-                + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction " + transactionID
-                + " with " + ts.getParticipantCount() + " participants");
-       }
-
-       // register region with TM.
-       if (register) {
-          ts.registerLocation(location);
-          if (LOG.isTraceEnabled()) LOG.trace("static RMInterface:registerTransaction, called registerLocation TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() +  "\nEncodedName: [" + trLocation.getRegionInfo().getEncodedName() + "], endKey: "
-                   + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction [" + transactionID + "]");
-       }
-       else {
-          if (LOG.isTraceEnabled()) LOG.trace("static RMInterface:registerTransaction did not send registerRegion for transaction " + ts.getTransactionId());
-       }
-
-       if ((ts == null) || (ret != 0)) {
-          LOG.error("static registerTransaction failed, TransactionState is NULL");
-          throw new IOException("static registerTransaction failed with error.");
-       }
-
-       if (LOG.isTraceEnabled()) LOG.trace("Exit static registerTransaction, transaction ID: " + transactionID + ", startId: " + ts.getStartId());
-       return ts;
-    }
-
-    public long getTmId() throws IOException {
+    protected static long getTmId() throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter getTmId");
 
         long IdVal = -1;
@@ -474,7 +450,10 @@ public class RMInterface {
         	LOG.error("createTable exception. Unable to create table " + desc.getNameAsString() + " txid " + transID + " exception " + retstr);
         	throw new IOException("createTable exception. Unable to create table " + desc.getNameAsString() + " Reason: " + retstr);
         }
-        if (LOG.isTraceEnabled()) LOG.trace("Exit createTable, txid: " + transID + " Table: " + desc.getNameAsString());
+        if (LOG.isTraceEnabled()) LOG.trace("Adding \'" + desc.getNameAsString() + "\' to createdTables");
+        createdTables.add(desc.getNameAsString());
+        if (LOG.isTraceEnabled()) LOG.trace("Exit createTable, txid: " + transID
+            + " Table: " + desc.getNameAsString() + " createdTables size: " + createdTables.size());
     }
 
     public void truncateTableOnAbort(String tblName, long transID) throws IOException {
@@ -521,7 +500,7 @@ public class RMInterface {
       if (LOG.isTraceEnabled()) LOG.trace("clearTransactionStates exit txid: " + transactionID);
     }
 
-    static public synchronized void unregisterTransaction(final long transactionID) {
+    static public void unregisterTransaction(final long transactionID) {
       TransactionState ts = null;
       if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction txid: " + transactionID);
       ts = mapTransactionStates.remove(transactionID);
@@ -532,13 +511,13 @@ public class RMInterface {
     }
 
     // Not used?
-    static public synchronized void unregisterTransaction(TransactionState ts) {
+    static public void unregisterTransaction(TransactionState ts) {
         if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction ts: " + ts.getTransactionId());
         mapTransactionStates.remove(ts.getTransactionId());
         if (LOG.isTraceEnabled()) LOG.trace("Exit unregisterTransaction ts: " + ts.getTransactionId());
     }
 
-    public synchronized TransactionState getTransactionState(final long transactionID) throws IOException {
+    public TransactionState getTransactionState(final long transactionID) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("getTransactionState txid: " + transactionID);
         TransactionState ts = mapTransactionStates.get(transactionID);
         if (ts == null) {
@@ -548,7 +527,7 @@ public class RMInterface {
         if (LOG.isTraceEnabled()) LOG.trace("EXIT getTransactionState");
         return ts;
     }
-    public synchronized Result get(final long transactionID, final Get get) throws IOException {
+    public Result get(final long transactionID, final Get get) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("get txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, get.getRow());
         Result res = ttable.get(ts, get, false);
@@ -556,20 +535,20 @@ public class RMInterface {
         return res;	
     }
 
-    public synchronized void delete(final long transactionID, final Delete delete) throws IOException {
+    public void delete(final long transactionID, final Delete delete) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("delete txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, delete.getRow());
         ttable.delete(ts, delete, false);
     }
 
-    public synchronized void deleteRegionTx(final Delete delete, final boolean autoCommit) throws IOException {
+    public void deleteRegionTx(final Delete delete, final boolean autoCommit) throws IOException {
         long tid = getTmId();
         if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx tid: " + tid  + " autoCommit " + autoCommit);
         ttable.deleteRegionTx(tid, delete, autoCommit);
         if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx EXIT tid: " + tid);
     }
 
-    public synchronized void delete(final long transactionID, final List<Delete> deletes) throws IOException {
+    public void delete(final long transactionID, final List<Delete> deletes) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter delete (list of deletes) txid: " + transactionID);
         TransactionState ts = null;
 	for (Delete delete : deletes) {
@@ -582,20 +561,20 @@ public class RMInterface {
         if (LOG.isTraceEnabled()) LOG.trace("Exit delete (list of deletes) txid: " + transactionID);
     }
 
-    public synchronized ResultScanner getScanner(final long transactionID, final Scan scan) throws IOException {
+    public ResultScanner getScanner(final long transactionID, final Scan scan) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("getScanner txid: " + transactionID
            + " scan startRow=" + (Bytes.equals(scan.getStartRow(), HConstants.EMPTY_START_ROW) ?
                    "INFINITE" : Hex.encodeHexString(scan.getStartRow())) + ", endRow="
            + (Bytes.equals(scan.getStopRow(), HConstants.EMPTY_END_ROW) ?
                    "INFINITE" : Hex.encodeHexString(scan.getStopRow())));
 
-        TransactionState ts = registerTransaction(transactionID, scan.getStartRow());
+        TransactionState ts = registerTransaction(ttable, transactionID, scan.getStartRow(), scan.getStopRow(), false, 0);
         ResultScanner res = ttable.getScanner(ts, scan);
         if (LOG.isTraceEnabled()) LOG.trace("EXIT getScanner");
         return res;
     }
 
-    public synchronized void putRegionTx(final Put put, final boolean autoCommit) throws IOException {
+    public void putRegionTx(final Put put, final boolean autoCommit) throws IOException {
         long tid = getTmId();
         if (LOG.isTraceEnabled()) LOG.trace("Enter putRegionTx, autoCommit: " + autoCommit
                + ", tid " + tid);
@@ -603,19 +582,28 @@ public class RMInterface {
         if (LOG.isTraceEnabled()) LOG.trace("putRegionTx Exit tid: " + tid);
     }
 
-    public synchronized void put(final long transactionID, final Put put) throws IOException {
+    public void put(final long transactionID, final Put put) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter Put txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, put.getRow());
         ttable.put(ts, put, false);
         if (LOG.isTraceEnabled()) LOG.trace("Exit Put txid: " + transactionID);
     }
 
-    public synchronized void put(final long transactionID, final List<Put> puts) throws IOException {
+    public void put(final long transactionID, final List<Put> puts) throws IOException {
          if (LOG.isTraceEnabled()) LOG.trace("Enter put (list of puts) txid: " + transactionID);
         TransactionState ts = null;
-      	for (Put put : puts) {
-      	    ts = registerTransaction(transactionID, put.getRow());
-      	}
+        if ((envBroadcastMode == false))  //  || (skipConflictCheck == false))
+        {
+      	   for (Put put : puts) {
+      	      ts = registerTransaction(transactionID, put.getRow());
+      	   }
+        }
+        // The only way to get here is if both envBroadcastMode AND skipConflictCheck are true
+        else
+        {
+             if (puts.size() > 0)
+                 ts = registerTransaction(transactionID, puts.get(0).getRow());
+        }
         if (ts == null){
            ts = mapTransactionStates.get(transactionID);
         }
@@ -623,7 +611,7 @@ public class RMInterface {
         if (LOG.isTraceEnabled()) LOG.trace("Exit put (list of puts) txid: " + transactionID);
     }
 
-    public synchronized boolean checkAndPut(final long transactionID,
+    public boolean checkAndPut(final long transactionID,
                                             final byte[] row,
                                             final byte[] family,
                                             final byte[] qualifier,
@@ -645,7 +633,7 @@ public class RMInterface {
                    put, autoCommit);
     }
 
-    public synchronized boolean checkAndDelete(final long transactionID,
+    public boolean checkAndDelete(final long transactionID,
                                                final byte[] row,
                                                final byte[] family,
                                                final byte[] qualifier,
@@ -739,4 +727,10 @@ public class RMInterface {
     {
         return ttable.checkAndDelete(row,family,qualifier,value,delete);
     }
+
+    private String getTableNameAsString()
+    {
+        return Bytes.toString(ttable.getTableName());
+    }
+
 }

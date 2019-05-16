@@ -139,7 +139,7 @@ int main () {
    printf("After lp_myHbaseTM->doCommit(transactionId = %ld), retcode = %d \n", lv_txid, lv_retcode);
 
    ctrlPtNum = lp_myHbaseTM->addControlPoint();
-   printf("After lp_myHbaseTM->addControlPoint, transactionId = %ld \n", lv_txid);
+   printf("After lp_myHbaseTM->addControlPoint, (transactionId = %ld),  ctrlPtNum = %ld \n", lv_txid, ctrlPtNum);
 
    delete lp_myHbaseTM;
    
