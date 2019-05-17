@@ -621,6 +621,7 @@ messagesTable.parseMessagesFile(eTextFileName)
 print
 print datetime.datetime.ctime(datetime.datetime.now()) + ": reading enum files"
 enumFileList = ( [ ['ustat/hs_const.h','USTAT_ERROR_CODES'],
+    ['arkcmp/CmpErrors.h','ArkcmpErrorCode'],
     ['sqlcomp/CmpDDLCatErrorCodes.h','CatErrorCode'],
     ['optimizer/opt_error.h','OptimizerSQLErrorCode'],
     ['optimizer/UdrErrors.h','UDRErrors'],
