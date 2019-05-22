@@ -674,7 +674,6 @@ enum SQLTRANS_COMMAND {
      to abort any implicit transactions started by cli */
   SQLTRANS_ROLLBACK_IMPLICIT_XN = 8,
 
-  SQLTRANS_BEGIN_WITH_DP2_XNS   = 9
 };
 
 /* specifies the type/format of an AUTHID */

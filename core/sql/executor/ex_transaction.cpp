@@ -68,8 +68,7 @@ ExTransaction::ExTransaction(CliGlobals * cliGlob, CollHeap *heap)
        autoCommitDisabled_(FALSE),
        savepointId_(0),
        volatileSchemaExists_(FALSE),
-       dp2Xns_(FALSE)
-       ,transtag_(-1)
+       transtag_(-1)
 {
   transMode_ = new(heap) TransMode(TransMode::SERIALIZABLE_, 
 			     TransMode::READ_WRITE_,
@@ -85,7 +84,6 @@ ExTransaction::~ExTransaction()
   if (userTransMode_)
     NADELETE(userTransMode_, TransMode, heap_);
   userTransMode_ = 0;
-  dp2Xns_ = FALSE;
   heap_ = NULL;
 }
 
@@ -310,8 +308,6 @@ return;
 
 short ExTransaction::beginTransaction()
 {
-  dp2Xns_ = FALSE;
-
   if (xnInProgress())
     {
       // Set the transaDiagsArea.
@@ -453,8 +449,6 @@ short ExTransaction::resumeTransaction()
 
 short ExTransaction::rollbackStatement()
 {
-  dp2Xns_ = FALSE;
-
   if (! xnInProgress())
     {
       if (transDiagsArea_)
@@ -493,8 +487,6 @@ short ExTransaction::rollbackStatement()
 //This method does nowaited rollback transaction.
 short ExTransaction::rollbackTransaction(NABoolean isWaited)
 {
-  dp2Xns_ = FALSE;
-
   if (! xnInProgress())
     {
       if (transDiagsArea_)
@@ -550,8 +542,6 @@ short ExTransaction::rollbackTransactionWaited()
 short ExTransaction::doomTransaction()
 {
   Int32 rc = 0;
-
-  dp2Xns_ = FALSE;
 
   if (! xnInProgress())
     {
@@ -643,8 +633,6 @@ void ExTransaction::cleanupTransaction()
 
 short ExTransaction::commitTransaction(NABoolean waited)
 {
-  dp2Xns_ = FALSE;
-
   if (! xnInProgress())
     {
       // Set the transaDiagsArea.
@@ -699,8 +687,12 @@ short ExTransaction::commitTransaction(NABoolean waited)
   //calling DEALLOCATE_ERR so memory of allocated error str
   //is deallocated appropriately.
   DEALLOCATE_ERR(errStr);
-  
-  if (waited)
+ 
+  // In Trafodion, TM is blocking. But, TM can return early based on the env variable DTM_EARLYCOMMITREPLY 
+  // The same environment variable is used here 
+  static NABoolean earlyReply = ((getenv("DTM_EARLYCOMMITREPLY") != NULL) && 
+                    (atoi(getenv("DTM_EARLYCOMMITREPLY")) != 0)); 
+  if (earlyReply)
     waitForCommitCompletion(transid_);
 
   resetXnState();

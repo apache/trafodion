@@ -7153,16 +7153,6 @@ Lng32 SQLCLI_Xact(/*IN*/ CliGlobals * cliGlobals,
       }
     break;
 
-    case SQLTRANS_BEGIN_WITH_DP2_XNS:
-      {
-	if (! (currContext.getTransaction()->xnInProgress()))
-	  {
-	    currContext.getTransaction()->beginTransaction();
-	    currContext.getTransaction()->setDp2Xns(TRUE);
-	  }
-      }
-    break;
-
     case SQLTRANS_SUSPEND:
       {
         currContext.getTransaction()->suspendTransaction();
