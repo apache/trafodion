@@ -3386,6 +3386,12 @@ enum DefaultConstants
   HIVE_CREATE_TABLE_LIKE_PARTITION_NO_NULL,
 
   CANCEL_QUERY_ALLOWED,
+
+  // Determines if a transaction needs to be started for select
+  // 0 - No transactions for SELECT
+  // 1 - Transaction started for SELECT .. FOR UPDATE
+  // 2 - Transaction started for SELECT with isolaton level other than skip conflict access 
+  BEGIN_TRANSACTION_FOR_SELECT, 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
