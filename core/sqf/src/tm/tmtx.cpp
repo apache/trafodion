@@ -298,7 +298,7 @@ bool TM_TX_Info::state_change_commit_helper (CTmTxMessage * pp_msg, bool pv_read
          case XA_OK:
          {
               iv_tx_state = TM_TX_STATE_FORGETTING;
-              if (gv_tm_info.earlyCommitReply() && pp_msg->replyPending())
+              if (pp_msg->replyPending())
                  // For HBase branches we need to reply here if there were no other branches.
                  // This is the early reply for commit.  However, we still need to wait for the 
                  // HBase library to complete commit processing before we can forget the transaction.

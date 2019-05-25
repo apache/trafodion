@@ -222,41 +222,6 @@ short ExTransaction::waitForRollbackCompletion(Int64 transid)
   return 0;
 }
 
-
-short ExTransaction::waitForCommitCompletion(Int64 transid)
-{
-  //  if (transMode_->rollbackMode() == TransMode::ROLLBACK_MODE_NOWAITED_)
-  //    return 0;
-
-  short status;
-  short rc = 0;
-
-  if (transid)
-    rc = STATUSTRANSACTION(&status, transid); // using param transid
-  else
-    rc = STATUSTRANSACTION(&status);  // using current transid
-  if ((rc == 0) && (status != 3))
-    {
-      // check for return status in a loop until the transaction
-      // is aborted.
-      Lng32 delayTime = 1; // units of 1/100th of a seconds.
-      NABoolean done = FALSE;
-      while (! done)
-	{
-	  DELAY(delayTime);
-	  delayTime *= 2;
-	  if (transid)
-	    rc = STATUSTRANSACTION(&status, transid); // using param transid.
-	  else
-	    rc = STATUSTRANSACTION(&status); // using current transid
-	  if (! ((rc == 0) && (status != 3)))
-	    done = TRUE;
-	}
-    }
-
-  return 0;
-}
-
 static void setSpecialAIValues(Lng32 &aivalue)
 {
   // on Linux we get these definitions from tm.h
@@ -631,7 +596,7 @@ void ExTransaction::cleanupTransaction()
   resetXnState();
 }
 
-short ExTransaction::commitTransaction(NABoolean waited)
+short ExTransaction::commitTransaction()
 {
   if (! xnInProgress())
     {
@@ -688,13 +653,6 @@ short ExTransaction::commitTransaction(NABoolean waited)
   //is deallocated appropriately.
   DEALLOCATE_ERR(errStr);
  
-  // In Trafodion, TM is blocking. But, TM can return early based on the env variable DTM_EARLYCOMMITREPLY 
-  // The same environment variable is used here 
-  static NABoolean earlyReply = ((getenv("DTM_EARLYCOMMITREPLY") != NULL) && 
-                    (atoi(getenv("DTM_EARLYCOMMITREPLY")) != 0)); 
-  if (earlyReply)
-    waitForCommitCompletion(transid_);
-
   resetXnState();
 
   return rc;
@@ -1193,7 +1151,7 @@ short ExTransTcb::work()
           castToExMasterStmtGlobals()->getStatement()->
           getContext()->closeAllCursors(ContextCli::CLOSE_ALL, ContextCli::CLOSE_CURR_XN);
 
-        rc = ta->commitTransaction(FALSE);
+        rc = ta->commitTransaction();
         if (rc != 0)
           handleErrors(pentry_down, ta->getDiagsArea());
 
@@ -1223,51 +1181,6 @@ short ExTransTcb::work()
       }
       break;
       
-      case COMMIT_WAITED_: {
-        if (ta->userEndedExeXn()) {
-          ta->cleanupTransaction();
-          handleErrors(pentry_down, NULL, 
-             (ExeErrorCode)(-CLI_USER_ENDED_XN_CLEANUP));
-
-          break;
-        }
-
-        // close all open cursors that are part of this xn-- ANSI requirement.
-        // get current context and close all statements.
-        getGlobals()->castToExExeStmtGlobals()->
-          castToExMasterStmtGlobals()->getStatement()->
-          getContext()->closeAllCursors(ContextCli::CLOSE_ALL, ContextCli::CLOSE_CURR_XN);
-
-        rc = ta->commitTransaction(TRUE);
-        if (rc != 0)
-          handleErrors(pentry_down, ta->getDiagsArea());
-	      	  
-        if (cliGlobals->currContext()->ddlStmtsExecuted())
-          {
-            ComDiagsArea * diagsArea = NULL;
-            ExSqlComp::ReturnStatus cmpStatus = 
-              cliGlobals->currContext()->sendXnMsgToArkcmp
-              (NULL, 0,
-               EXSQLCOMP::DDL_NATABLE_INVALIDATE,
-               diagsArea);
-            if (cmpStatus == ExSqlComp::ERROR)
-              {
-                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
-
-                handleErrors(pentry_down, NULL, 
-                             (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
- 
-                return -1;
-              }
-          }
-        
-        cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
-   
-        // if user had specified AUTO COMMIT, turn it back on.
-        ta->enableAutoCommit();
-      }
-      break;
-
       case ROLLBACK_:  {
         if (ta->userEndedExeXn()) {
           ta->cleanupTransaction();

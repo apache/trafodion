@@ -21283,22 +21283,6 @@ transaction_statement : TOK_BEGIN
               {
 		$$ = new (PARSERHEAP()) RelTransaction(COMMIT_);
               }
-      | TOK_COMMIT TOK_NO TOK_WAITED
-              {
-		$$ = new (PARSERHEAP()) RelTransaction(COMMIT_);
-              }
-      | TOK_COMMIT TOK_WORK TOK_NO TOK_WAITED
-              {
-		$$ = new (PARSERHEAP()) RelTransaction(COMMIT_);
-              }
-      | TOK_COMMIT TOK_WAITED
-              {
-		$$ = new (PARSERHEAP()) RelTransaction(COMMIT_WAITED_);
-              }
-      | TOK_COMMIT TOK_WORK TOK_WAITED
-              {
-		$$ = new (PARSERHEAP()) RelTransaction(COMMIT_WAITED_);
-              }
       | TOK_ET
               {
 		$$ = new (PARSERHEAP()) RelTransaction(COMMIT_);

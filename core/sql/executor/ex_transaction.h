@@ -84,8 +84,7 @@ public:
   short waitForRollbackCompletion(Int64 transid);
 
   void cleanupTransaction();
-  short commitTransaction(NABoolean waited = FALSE);
-  short waitForCommitCompletion(Int64 transid);
+  short commitTransaction();
 
   short inheritTransaction();
   short validateTransaction();

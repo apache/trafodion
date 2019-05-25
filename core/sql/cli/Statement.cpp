@@ -4892,10 +4892,7 @@ short Statement::commitTransaction(ComDiagsArea &diagsArea)
 	  StmtDebug2("  About to COMMIT, stmt %p, tx %s...", this,
 		     TransIdToText(statementGlobals_->getTransid()));
 	  // do waited commit for DDL queries
-	  NABoolean waited = FALSE;
-	  //if (root_tdb->ddlQuery())
-	  //	    waited = TRUE;
-	  short taRetcode = context_->commitTransaction(waited);
+	  short taRetcode = context_->commitTransaction();
 	  
           StmtDebug1("  Return code is %d", (Lng32) taRetcode);
       

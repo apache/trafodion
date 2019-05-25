@@ -159,7 +159,6 @@ class TM_Info
        bool             iv_allTMsOpen;
        int32            iv_sync_otag;
        bool             iv_TSE_xa_start;
-       bool             iv_earlyCommitReply;
        // Audit and control points
        bool             iv_write_cp;
        bool             iv_initiate_cp;
@@ -519,8 +518,6 @@ class TM_Info
        void tm_up();
        void wake_TMUP_waiters(short pv_error);
        bool TSE_xa_start() {return iv_TSE_xa_start;}
-       bool earlyCommitReply() {return iv_earlyCommitReply;}
-       void earlyCommitReply(bool pv_set) {iv_earlyCommitReply=pv_set;}
        
        bool tmTrace(int level) {if (iv_trace_level >= level) return true; return false;}
        int32    iv_trace_level;
