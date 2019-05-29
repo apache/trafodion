@@ -442,7 +442,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:17:20 2018
+-- Definition current  Thu May 23 14:49:17 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -460,7 +460,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:17:20 2018
+-- Definition current  Thu May 23 14:49:17 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -475,7 +475,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed May 16 06:17:22 2018
+-- Definition current  Thu May 23 14:49:18 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -492,7 +492,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:17:36 2018
+-- Definition current  Thu May 23 14:49:22 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -507,7 +507,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed May 16 06:17:37 2018
+-- Definition current  Thu May 23 14:49:22 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -524,7 +524,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:17:42 2018
+-- Definition current  Thu May 23 14:49:23 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -539,7 +539,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed May 16 06:17:43 2018
+-- Definition current  Thu May 23 14:49:24 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -557,7 +557,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:17:43 2018
+-- Definition current  Thu May 23 14:49:24 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -572,7 +572,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed May 16 06:17:43 2018
+-- Definition current  Thu May 23 14:49:24 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -589,7 +589,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:17:58 2018
+-- Definition current  Thu May 23 14:49:28 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -604,7 +604,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed May 16 06:17:59 2018
+-- Definition current  Thu May 23 14:49:28 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -622,7 +622,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:18:04 2018
+-- Definition current  Thu May 23 14:49:29 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -637,7 +637,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Wed May 16 06:18:05 2018
+-- Definition current  Thu May 23 14:49:29 2019
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -661,8 +661,8 @@ A1           C1           B1
 --- SQL operation complete.
 >>
 >>sh sqlci -iTEST116\(concurrent_ddl\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_ddl
 >>cqd ddl_transactions 'ON';
 
@@ -696,7 +696,7 @@ End of MXCI Session
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Wed May 16 06:18:30 2018
+-- Definition current  Thu May 23 14:49:47 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -831,7 +831,7 @@ T116T1
 >>invoke t116t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T2
--- Definition current  Wed May 16 06:19:38 2018
+-- Definition current  Thu May 23 14:50:31 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -857,7 +857,7 @@ T116T1
 >>invoke t116t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T2
--- Definition current  Wed May 16 06:19:49 2018
+-- Definition current  Thu May 23 14:50:40 2019
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -985,8 +985,8 @@ T116T1
 >>
 >>-- insert a row using a concurrent hbase xn
 >>sh sqlci -iTEST116\(concurrent_hbase_xn_ins\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_hbase_xn_ins
 >>cqd traf_use_region_xn 'OFF';
 
@@ -1038,8 +1038,8 @@ A            B
 >>
 >>-- insert a row using a concurrent region xn
 >>sh sqlci -iTEST116\(concurrent_region_xn_ins\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_region_xn_ins
 >>cqd traf_use_region_xn 'ON';
 
@@ -1068,8 +1068,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 4642 regionTX: false status: PENDING neverReadOnly: false scan Size: 2 write Size: 1 startSQ: 2 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1600600654243836 regionTX: true status: COMMITED neverReadOnly: false scan Size: 2 write Size: 1 startSQ: 2 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:2]] which , inserted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1526451716937.fa9bf89e5ceeac7ed4ee428544f09af0.]
-org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:525)
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 8126 regionTX: false status: PENDING neverReadOnly: false scan Size: 2 write Size: 1 startSQ: 2 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1634334811878908 regionTX: true status: COMMITED neverReadOnly: false scan Size: 2 write Size: 1 startSQ: 2 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:2]] which , inserted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1558623121191.90b94d12b26d1b1967c987c4a0ccab8f.]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:528)ZZZZZZZ?
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1094,8 +1094,8 @@ A            B
 >>
 >>-- upsert a row using a concurrent hbase xn
 >>sh sqlci -iTEST116\(concurrent_hbase_xn_ups\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_hbase_xn_ups
 >>cqd traf_use_region_xn 'OFF';
 
@@ -1147,8 +1147,8 @@ A            B
 >>
 >>-- insert a row using a concurrent region xn
 >>sh sqlci -iTEST116\(concurrent_region_xn_ups\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_region_xn_ups
 >>cqd traf_use_region_xn 'ON';
 
@@ -1177,8 +1177,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 4646 regionTX: false status: PENDING neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 6 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1600600673118601 regionTX: true status: COMMITED neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 6 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:6]] which , inserted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1526451716937.fa9bf89e5ceeac7ed4ee428544f09af0.]
-org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:525)
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 8130 regionTX: false status: PENDING neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 6 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1634334824462293 regionTX: true status: COMMITED neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 6 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:6]] which , inserted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1558623121191.90b94d12b26d1b1967c987c4a0ccab8f.]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:528)
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1206,8 +1206,8 @@ A            B
 >>
 >>-- delete a row using a concurrent hbase xn
 >>sh sqlci -iTEST116\(concurrent_hbase_xn_del\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_hbase_xn_del
 >>cqd traf_use_region_xn 'OFF';
 
@@ -1257,8 +1257,8 @@ End of MXCI Session
 >>
 >>-- delete a row using a concurrent region xn
 >>sh sqlci -iTEST116\(concurrent_region_xn_del\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_region_xn_del
 >>cqd traf_use_region_xn 'ON';
 
@@ -1287,8 +1287,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 4652 regionTX: false status: PENDING neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 11 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1600600691993433 regionTX: true status: COMMITED neverReadOnly: false scan Size: 0 write Size: 1 startSQ: 11 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:11]] which , deleted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1526451716937.fa9bf89e5ceeac7ed4ee428544f09af0.]
-org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:525)
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 8136 regionTX: false status: PENDING neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 11 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1634334837046089 regionTX: true status: COMMITED neverReadOnly: false scan Size: 0 write Size: 1 startSQ: 11 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:11]] which , deleted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1558623121191.90b94d12b26d1b1967c987c4a0ccab8f.]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:528)
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1311,8 +1311,8 @@ org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:525)
 >>
 >>-- delete a row using a concurrent hbase xn
 >>sh sqlci -iTEST116\(concurrent_hbase_xn_checkanddel\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_hbase_xn_checkanddel
 >>cqd traf_use_region_xn 'OFF';
 
@@ -1362,8 +1362,8 @@ End of MXCI Session
 >>
 >>-- delete a row using a concurrent region xn
 >>sh sqlci -iTEST116\(concurrent_region_xn_checkanddel\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_region_xn_checkanddel
 >>cqd traf_use_region_xn 'ON';
 
@@ -1392,8 +1392,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 4658 regionTX: false status: PENDING neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 15 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1600600710868339 regionTX: true status: COMMITED neverReadOnly: false scan Size: 0 write Size: 1 startSQ: 15 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:15]] which , deleted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1526451716937.fa9bf89e5ceeac7ed4ee428544f09af0.]
-org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:525)
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 8142 regionTX: false status: PENDING neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 15 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1634334849629541 regionTX: true status: COMMITED neverReadOnly: false scan Size: 0 write Size: 1 startSQ: 15 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:15]] which , deleted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1558623121191.90b94d12b26d1b1967c987c4a0ccab8f.]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:528)
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1416,8 +1416,8 @@ org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:525)
 >>
 >>-- update row using a concurrent hbase xn
 >>sh sqlci -iTEST116\(concurrent_hbase_xn_checkandupd\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_hbase_xn_checkandupd
 >>cqd traf_use_region_xn 'OFF';
 
@@ -1472,8 +1472,8 @@ A            B
 >>
 >>-- update row using a concurrent region xn
 >>sh sqlci -iTEST116\(concurrent_region_xn_checkandupd\) >> LOG116;
-Apache Trafodion Conversational Interface 2.3.0
-Copyright (c) 2015-2017 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.4.0
+Copyright (c) 2015-2018 Apache Software Foundation
 >>?section concurrent_region_xn_checkandupd
 >>cqd traf_use_region_xn 'ON';
 
@@ -1502,8 +1502,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 4664 regionTX: false status: PENDING neverReadOnly: false scan Size: 2 write Size: 1 startSQ: 20 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1600600729743055 regionTX: true status: COMMITED neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 20 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:20]] which , inserted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1526451716937.fa9bf89e5ceeac7ed4ee428544f09af0.]
-org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:525)
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: This Transaction [[transactionId: 8148 regionTX: false status: PENDING neverReadOnly: false scan Size: 2 write Size: 1 startSQ: 20 prepareEditSize: 0 endEditSize: 0 editSize: 1]] has a scan, scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01] that conflicts with a committed Transaction [[transactionId: 1634334862214223 regionTX: true status: COMMITED neverReadOnly: false scan Size: 1 write Size: 1 startSQ: 20 prepareEditSize: 1 endEditSize: 1 editSize: 1 commitedSQ:20]] which , inserted a row with key[\x80\x00\x00\x01], in the region [TRAFODION.SCH.T116T6,,1558623121191.90b94d12b26d1b1967c987c4a0ccab8f.]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:528)
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1514,6 +1514,208 @@ A            B
           1          111
 
 --- 1 row(s) selected.
+>>
+>>obey TEST116(begin_transaction_for_select);
+>>set transaction autocommit off ;
+
+--- SQL operation complete.
+>>cqd begin_transaction_for_select '2' ;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 for update ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 for read committed access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 for read uncommitted access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 for skip conflict access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>cqd begin_transaction_for_select '1' ;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 for update ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>select * from trafodion.sch.t116t6 for read committed access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>select * from trafodion.sch.t116t6 for read uncommitted access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>select * from trafodion.sch.t116t6 for skip conflict access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>cqd begin_transaction_for_select '0' ;
+
+--- SQL operation complete.
+>>select * from trafodion.sch.t116t6 for update ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>select * from trafodion.sch.t116t6 ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>select * from trafodion.sch.t116t6 for read committed access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>select * from trafodion.sch.t116t6 for read uncommitted access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>select * from trafodion.sch.t116t6 for skip conflict access ;
+
+A            B          
+-----------  -----------
+
+          1          111
+
+--- 1 row(s) selected.
+>>commit work;
+
+*** ERROR[8605] Committing a transaction which has not started.
+
+--- SQL operation failed with errors.
+>>set transaction autocommit on ;
+
+--- SQL operation complete.
 >>
 >>
 >>obey TEST116(clean_up);

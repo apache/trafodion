@@ -367,6 +367,7 @@ sh sqlci -iTEST116\(concurrent_region_xn_checkandupd\) >> LOG116;
 commit work;
 select * from t116t6;
 
+obey TEST116(begin_transaction_for_select);
 
 obey TEST116(clean_up);
 log;
@@ -439,6 +440,43 @@ cqd traf_use_region_xn 'ON';
 prepare s from update trafodion.sch.t116t6 set b = 111 where a = 1;
 explain options 'f' s;
 execute s;
+
+?section begin_transaction_for_select
+set transaction autocommit off ;
+cqd begin_transaction_for_select '2' ;
+select * from trafodion.sch.t116t6 for update ;
+commit work;
+select * from trafodion.sch.t116t6 ;
+commit work;
+select * from trafodion.sch.t116t6 for read committed access ;
+commit work;
+select * from trafodion.sch.t116t6 for read uncommitted access ;
+commit work;
+select * from trafodion.sch.t116t6 for skip conflict access ;
+commit work;
+cqd begin_transaction_for_select '1' ;
+select * from trafodion.sch.t116t6 for update ;
+commit work;
+select * from trafodion.sch.t116t6 ;
+commit work;
+select * from trafodion.sch.t116t6 for read committed access ;
+commit work;
+select * from trafodion.sch.t116t6 for read uncommitted access ;
+commit work;
+select * from trafodion.sch.t116t6 for skip conflict access ;
+commit work;
+cqd begin_transaction_for_select '0' ;
+select * from trafodion.sch.t116t6 for update ;
+commit work;
+select * from trafodion.sch.t116t6 ;
+commit work;
+select * from trafodion.sch.t116t6 for read committed access ;
+commit work;
+select * from trafodion.sch.t116t6 for read uncommitted access ;
+commit work;
+select * from trafodion.sch.t116t6 for skip conflict access ;
+commit work;
+set transaction autocommit on ;
 
 ?section clean_up
 drop table t116t1;

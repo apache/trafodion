@@ -4235,6 +4235,22 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
      getGroupAttr()->getCharacteristicInputs());
 
   generator->oltOptInfo()->mayDisableOperStats(&oltOptInfo());
+  if (isHbaseTable() || isSeabaseTable()) {
+     int beginTransForSelect = ActiveSchemaDB()->getDefaults().getAsLong(BEGIN_TRANSACTION_FOR_SELECT);
+     switch (beginTransForSelect) {
+        case 2: 
+           if (accessOptions().accessType() != TransMode::SKIP_CONFLICT_ACCESS_
+             && accessOptions().accessType() != TransMode::READ_UNCOMMITTED_ACCESS_)
+              generator->setTransactionFlag(TRUE);
+           // no break here because the transaction is required for updatable select when it is 2
+        case 1:
+           if (generator->updatableSelect())
+              generator->setTransactionFlag(TRUE);
+           break;
+        default:
+           break;
+     }
+  }
   markAsPreCodeGenned();
   return this;
 } // FileScan::preCodeGen()

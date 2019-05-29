@@ -454,6 +454,7 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  XDDkwd__(AUTO_QUERY_RETRY_WARNINGS,            "OFF"),
 
   DDkwd__(BASE_NUM_PAS_ON_ACTIVE_PARTS,		"OFF"),
+  DDint__(BEGIN_TRANSACTION_FOR_SELECT,         "1"),
 
  // see comments in DefaultConstants.h
   DDkwd__(BIGNUM_IO,		                "SYSTEM"),
