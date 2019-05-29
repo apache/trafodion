@@ -2087,7 +2087,7 @@ Lng32 ExeCliInterface::beginWork()
 
 Lng32 ExeCliInterface::commitWork()
 {
-  return executeImmediate("commit work waited;");
+  return executeImmediate("commit work;");
 }
 
 Lng32 ExeCliInterface::rollbackWork()

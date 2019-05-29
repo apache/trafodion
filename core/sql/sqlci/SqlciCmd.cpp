@@ -634,7 +634,7 @@ short Exit::process(SqlciEnv * sqlci_env)
 	{
 	case 'y':
 	case 'Y':
-	  SqlCmd::executeQuery("COMMIT WORK WAITED;", sqlci_env);
+	  SqlCmd::executeQuery("COMMIT WORK;", sqlci_env);
 	  sqlci_env->get_logfile()->WriteAll("Transaction committed."); //##I18N
 	  retval = -1;
 	  break;

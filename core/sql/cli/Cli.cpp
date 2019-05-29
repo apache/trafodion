@@ -10561,7 +10561,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
           cliRC = cqdCliInterface->beginWork();
           if (cliRC < 0)
             {
-              if (myDiags != NULL)
+              if (myDiags == NULL)
                  myDiags = ComDiagsArea::allocate(exHeap);
               cqdCliInterface->retrieveSQLDiagnostics(myDiags);
               diags.mergeAfter(*myDiags);
