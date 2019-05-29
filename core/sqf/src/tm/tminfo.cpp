@@ -106,7 +106,6 @@ TM_Info::TM_Info()
    iv_SysRecovMode = TM_DEFAULT_SYSRECOVERY_MODE;
    iv_maxRecoveringTxns = TM_DEFAULT_MAXRECOVERINGTXNS;
    iv_AllRmParticRecov = DEFAULT_ALL_RM_PARTIC_RECOV;
-   iv_earlyCommitReply = TM_DEFAULT_EARLY_COMMIT_REPLY;
 
    memset(iv_open_tms, 0, sizeof(Tm_phandle_info) * MAX_NODES);
 
@@ -828,17 +827,6 @@ void TM_Info::initialize()
          trace_printf("TM will configure one TLOG per TM process for audit.\n");
        else
          trace_printf("TM will use a single TLOG for all audit.\n");
-    }
-
-    iv_earlyCommitReply = TM_DEFAULT_EARLY_COMMIT_REPLY;
-    ms_getenv_bool ("DTM_EARLYCOMMITREPLY", &iv_earlyCommitReply);
-
-    if (iv_trace_level)
-    {
-       if (iv_earlyCommitReply)
-         trace_printf("TM will reply early to HBase commits.\n");
-       else
-         trace_printf("TM will wait for HBase commits to complete before replying.\n");
     }
 
     int lv_maxRecoveringTxns = 0;

@@ -665,7 +665,7 @@ public:
   void addToOpenStatementList(SQLSTMT_ID *statement_id, Statement *statement);
   void removeFromOpenStatementList(SQLSTMT_ID * statement_id);
 
-  short commitTransaction(NABoolean waited);
+  short commitTransaction();
   short releaseAllTransactionalRequests();
 
   void closeAllCursors(enum CloseCursorType, 

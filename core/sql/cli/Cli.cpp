@@ -7153,16 +7153,6 @@ Lng32 SQLCLI_Xact(/*IN*/ CliGlobals * cliGlobals,
       }
     break;
 
-    case SQLTRANS_BEGIN_WITH_DP2_XNS:
-      {
-	if (! (currContext.getTransaction()->xnInProgress()))
-	  {
-	    currContext.getTransaction()->beginTransaction();
-	    currContext.getTransaction()->setDp2Xns(TRUE);
-	  }
-      }
-    break;
-
     case SQLTRANS_SUSPEND:
       {
         currContext.getTransaction()->suspendTransaction();
@@ -10571,7 +10561,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
           cliRC = cqdCliInterface->beginWork();
           if (cliRC < 0)
             {
-              if (myDiags != NULL)
+              if (myDiags == NULL)
                  myDiags = ComDiagsArea::allocate(exHeap);
               cqdCliInterface->retrieveSQLDiagnostics(myDiags);
               diags.mergeAfter(*myDiags);

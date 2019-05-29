@@ -84,8 +84,7 @@ public:
   short waitForRollbackCompletion(Int64 transid);
 
   void cleanupTransaction();
-  short commitTransaction(NABoolean waited = FALSE);
-  short waitForCommitCompletion(Int64 transid);
+  short commitTransaction();
 
   short inheritTransaction();
   short validateTransaction();
@@ -194,13 +193,6 @@ public:
 
   NABoolean mayHoldLock()  { return mayHoldLock_; }
 
-  void setDp2Xns(NABoolean x)
-  {
-    dp2Xns_ = x;
-  }
-
-  NABoolean dp2Xns()  { return dp2Xns_; }
-
   void resetXnState();
 
 private:
@@ -296,15 +288,6 @@ private:
   // Two flags that help track whether a transaction can be suspended.
   NABoolean mayAlterDb_;
   NABoolean mayHoldLock_;
-
-  // if set to TRUE, then dp2 transactions are allowed. DP2 transactions
-  // are currently allowed for single row unique queries which are being
-  // executed in auto commit mode. It could be either implicit autocommit 
-  // where exe commits the Xn at the end, or explicit autocommit mode where 
-  // the app commits the Xn after each stmt.
-  // If they are allowed, then their use is determined in PartitionAccess
-  // operator based on other conditions.
-  NABoolean dp2Xns_;
   int transtag_;
 };
 

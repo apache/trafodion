@@ -1117,12 +1117,12 @@ RETCODE ContextCli::deallocStmt(SQLSTMT_ID * statement_id,
   return SUCCESS;
 }
 
-short ContextCli::commitTransaction(NABoolean waited)
+short ContextCli::commitTransaction()
 {
   releaseAllTransactionalRequests();
 
   // now do the actual commit
-  return transaction_->commitTransaction(waited);
+  return transaction_->commitTransaction();
 }
 
 short ContextCli::releaseAllTransactionalRequests()

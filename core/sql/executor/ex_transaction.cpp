@@ -68,8 +68,7 @@ ExTransaction::ExTransaction(CliGlobals * cliGlob, CollHeap *heap)
        autoCommitDisabled_(FALSE),
        savepointId_(0),
        volatileSchemaExists_(FALSE),
-       dp2Xns_(FALSE)
-       ,transtag_(-1)
+       transtag_(-1)
 {
   transMode_ = new(heap) TransMode(TransMode::SERIALIZABLE_, 
 			     TransMode::READ_WRITE_,
@@ -85,7 +84,6 @@ ExTransaction::~ExTransaction()
   if (userTransMode_)
     NADELETE(userTransMode_, TransMode, heap_);
   userTransMode_ = 0;
-  dp2Xns_ = FALSE;
   heap_ = NULL;
 }
 
@@ -224,41 +222,6 @@ short ExTransaction::waitForRollbackCompletion(Int64 transid)
   return 0;
 }
 
-
-short ExTransaction::waitForCommitCompletion(Int64 transid)
-{
-  //  if (transMode_->rollbackMode() == TransMode::ROLLBACK_MODE_NOWAITED_)
-  //    return 0;
-
-  short status;
-  short rc = 0;
-
-  if (transid)
-    rc = STATUSTRANSACTION(&status, transid); // using param transid
-  else
-    rc = STATUSTRANSACTION(&status);  // using current transid
-  if ((rc == 0) && (status != 3))
-    {
-      // check for return status in a loop until the transaction
-      // is aborted.
-      Lng32 delayTime = 1; // units of 1/100th of a seconds.
-      NABoolean done = FALSE;
-      while (! done)
-	{
-	  DELAY(delayTime);
-	  delayTime *= 2;
-	  if (transid)
-	    rc = STATUSTRANSACTION(&status, transid); // using param transid.
-	  else
-	    rc = STATUSTRANSACTION(&status); // using current transid
-	  if (! ((rc == 0) && (status != 3)))
-	    done = TRUE;
-	}
-    }
-
-  return 0;
-}
-
 static void setSpecialAIValues(Lng32 &aivalue)
 {
   // on Linux we get these definitions from tm.h
@@ -310,8 +273,6 @@ return;
 
 short ExTransaction::beginTransaction()
 {
-  dp2Xns_ = FALSE;
-
   if (xnInProgress())
     {
       // Set the transaDiagsArea.
@@ -453,8 +414,6 @@ short ExTransaction::resumeTransaction()
 
 short ExTransaction::rollbackStatement()
 {
-  dp2Xns_ = FALSE;
-
   if (! xnInProgress())
     {
       if (transDiagsArea_)
@@ -493,8 +452,6 @@ short ExTransaction::rollbackStatement()
 //This method does nowaited rollback transaction.
 short ExTransaction::rollbackTransaction(NABoolean isWaited)
 {
-  dp2Xns_ = FALSE;
-
   if (! xnInProgress())
     {
       if (transDiagsArea_)
@@ -550,8 +507,6 @@ short ExTransaction::rollbackTransactionWaited()
 short ExTransaction::doomTransaction()
 {
   Int32 rc = 0;
-
-  dp2Xns_ = FALSE;
 
   if (! xnInProgress())
     {
@@ -641,10 +596,8 @@ void ExTransaction::cleanupTransaction()
   resetXnState();
 }
 
-short ExTransaction::commitTransaction(NABoolean waited)
+short ExTransaction::commitTransaction()
 {
-  dp2Xns_ = FALSE;
-
   if (! xnInProgress())
     {
       // Set the transaDiagsArea.
@@ -699,10 +652,7 @@ short ExTransaction::commitTransaction(NABoolean waited)
   //calling DEALLOCATE_ERR so memory of allocated error str
   //is deallocated appropriately.
   DEALLOCATE_ERR(errStr);
-  
-  if (waited)
-    waitForCommitCompletion(transid_);
-
+ 
   resetXnState();
 
   return rc;
@@ -1201,7 +1151,7 @@ short ExTransTcb::work()
           castToExMasterStmtGlobals()->getStatement()->
           getContext()->closeAllCursors(ContextCli::CLOSE_ALL, ContextCli::CLOSE_CURR_XN);
 
-        rc = ta->commitTransaction(FALSE);
+        rc = ta->commitTransaction();
         if (rc != 0)
           handleErrors(pentry_down, ta->getDiagsArea());
 
@@ -1231,51 +1181,6 @@ short ExTransTcb::work()
       }
       break;
       
-      case COMMIT_WAITED_: {
-        if (ta->userEndedExeXn()) {
-          ta->cleanupTransaction();
-          handleErrors(pentry_down, NULL, 
-             (ExeErrorCode)(-CLI_USER_ENDED_XN_CLEANUP));
-
-          break;
-        }
-
-        // close all open cursors that are part of this xn-- ANSI requirement.
-        // get current context and close all statements.
-        getGlobals()->castToExExeStmtGlobals()->
-          castToExMasterStmtGlobals()->getStatement()->
-          getContext()->closeAllCursors(ContextCli::CLOSE_ALL, ContextCli::CLOSE_CURR_XN);
-
-        rc = ta->commitTransaction(TRUE);
-        if (rc != 0)
-          handleErrors(pentry_down, ta->getDiagsArea());
-	      	  
-        if (cliGlobals->currContext()->ddlStmtsExecuted())
-          {
-            ComDiagsArea * diagsArea = NULL;
-            ExSqlComp::ReturnStatus cmpStatus = 
-              cliGlobals->currContext()->sendXnMsgToArkcmp
-              (NULL, 0,
-               EXSQLCOMP::DDL_NATABLE_INVALIDATE,
-               diagsArea);
-            if (cmpStatus == ExSqlComp::ERROR)
-              {
-                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
-
-                handleErrors(pentry_down, NULL, 
-                             (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
- 
-                return -1;
-              }
-          }
-        
-        cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
-   
-        // if user had specified AUTO COMMIT, turn it back on.
-        ta->enableAutoCommit();
-      }
-      break;
-
       case ROLLBACK_:  {
         if (ta->userEndedExeXn()) {
           ta->cleanupTransaction();
