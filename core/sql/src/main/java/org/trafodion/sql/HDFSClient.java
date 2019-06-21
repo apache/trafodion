@@ -534,7 +534,6 @@ public class HDFSClient
                trycount++;
                if (trycount == 3)
                  {
-                    fsOut.close();
                     throw new IOException("HDFSwrite did not succeed due to multiple concurrent writes ");    
                  }
              }
