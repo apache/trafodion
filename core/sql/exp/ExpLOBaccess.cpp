@@ -1512,7 +1512,7 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
                                         &dataOffset, &chunkMemSize,
                                         &outDescPartnKey, &outDescSyskey, 
                                         0,
-                                        xnId,lobTrace_,NULL);
+                                        xnId,lobTrace_);
     
       if (clierr < 0 || clierr == 100)       
         return LOB_DESC_UPDATE_ERROR;

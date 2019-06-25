@@ -1553,12 +1553,9 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
           inputAddr = retBuf;
                                                
         }
-<<<<<<< HEAD
-      ex_expr::exp_return_type err = insertData(handleLen, lobHandle, inputAddr, inputSize, lobHdfsOffset, h, diagsArea);;
 
-=======
       ex_expr::exp_return_type err = insertData(handleLen, lobHandle, inputAddr, chunkMemSize, lobHdfsOffset, h, diagsArea);;
->>>>>>> fda1844... Changes for LOB query caching
+
       if (err == ex_expr::EXPR_ERROR)
 	return err;
       err = insertDesc(op_data, inputAddr,chunkMemSize, lobHdfsOffset, result,h, diagsArea);
