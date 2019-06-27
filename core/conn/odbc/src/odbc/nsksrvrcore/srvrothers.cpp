@@ -3234,15 +3234,26 @@ odbc_SQLSvc_EndTransaction_sme_(
 	SRVRTRACE_ENTER(FILE_SME+5);
 
 	char stmtLabel[MAX_STMT_LABEL_LEN+1];
-	Int32 rc = SQL_SUCCESS;
 	SRVR_STMT_HDL	*pSrvrStmt = NULL;
+	bool isTransPending = (WSQL_EXEC_Xact(SQLTRANS_STATUS, 0) == 0);
+	Int32 rc = SQL_SUCCESS;
+
+	exception_->exception_nr = 0;
+	sqlWarning->_buffer = NULL;
+	sqlWarning->_length = 0;
 
 	switch (transactionOpt) {
 	case SQL_COMMIT:
-		pSrvrStmt = getSrvrStmt("STMT_COMMIT_1", FALSE);
+		if (isTransPending)
+			pSrvrStmt = getSrvrStmt("STMT_COMMIT_1", FALSE);
+		else
+			return;
 		break;
 	case SQL_ROLLBACK:
-		pSrvrStmt = getSrvrStmt("STMT_ROLLBACK_1", FALSE);
+		if (isTransPending)
+			pSrvrStmt = getSrvrStmt("STMT_ROLLBACK_1", FALSE);
+		else
+			return;
 		break;
 	default:
 		exception_->exception_nr = odbc_SQLSvc_EndTransaction_ParamError_exn_;
