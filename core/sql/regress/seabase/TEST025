@@ -1040,7 +1040,7 @@ CREATE TABLE T025T006
 salt using 4 partitions;
 
 --control query default def_num_smp_cpus '4';
-control query shape esp_exchange(cut,4);
+control query shape esp_exchange(cut,2);
 
 prepare ins06 from
 upsert using load into T025T006(a, c)
@@ -1083,7 +1083,7 @@ CREATE TABLE T025T008 (a INTEGER UNSIGNED GENERATED ALWAYS AS IDENTITY
 ;
 
 --control query default def_num_smp_cpus '4';
-control query shape esp_exchange (cut, 4);
+control query shape esp_exchange (cut, 2);
 
 prepare ins07 from
 upsert using load into t025t007 (b,c)
