@@ -1542,7 +1542,13 @@ NABoolean OptimizerSimulator::massageTableUID(OsimHistogramEntry* entry, NAHashD
 void OptimizerSimulator::execHiveSQL(const char* hiveSQL)
 {
     if (HiveClient_JNI::executeHiveSQL(hiveSQL) != HVC_OK)
-      raiseOsimException("Error running hive SQL.");
+    {
+        NAString error("Error running hive SQL. ");
+        const char * jniErrorStr = GetCliGlobals()->getJniErrorStr();
+        if (jniErrorStr)
+          error += jniErrorStr;
+        raiseOsimException(error.data());
+    }
 }
 
 short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen, NABoolean isHive)
