@@ -37,20 +37,7 @@
 *
 *
 ******************************************************************************
- }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         throw;
-       }
-#endif
-   }
-
-   RecordError(NULL, retcode);
-   return retcode;*/
+*/
 
 #include "sqlcli.h"
 #include "Platform.h"  // 64-BIT

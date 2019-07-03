@@ -8560,7 +8560,7 @@ Lng32 SQLCLI_LOBcliInterface
 	// insert into lob descriptor handle table
         str_sprintf(query, "select syskey from (insert into table(ghost table %s) values (%ld, 1, %ld)) x",
                     lobDescHandleName, descPartnKey, (dataLen ? *dataLen : 0));
-                /*str_sprintf(query, "select syskey from (insert into table(ghost table cast(? as varchar(1024)) values (cast(? as largeint), 1, cast(? as largeint))) x");*/
+                
 		   
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
@@ -8568,20 +8568,7 @@ Lng32 SQLCLI_LOBcliInterface
 	
         Int64 descSyskey = 0;
 	Lng32 len = 0;
-        /*
-        strcpy(stmtName,"INS1");
-        cliRC = cliInterface->executeImmediatePrepare(query,NULL,0,&rowsAffected,FALSE,stmtName);
-	if (cliRC < 0)
-	    goto error_return;
-        char *inputValues = new (currContext.exHeap()) char[sizeof(Int32) + strlen(lobDescHandleName) + sizeof(Int64)*2];
-        *(Int32 *)inputValues= strlen(lobDescHandleName);
-        memcpy(&inputValues[sizeof(Int32)],lobDescHandleName,strlen(lobDescHandleName));
-       
-        inputValues[sizeof(Int32) + strlen(lobDescHandleName)] = descPartnKey;
-        inputValues[sizeof(Int32) + strlen(lobDescHandleName)+sizeof(Int64)] = (dataLen ? *dataLen : 0);
-        inputValuesLen = sizeof(Int32) + strlen(lobDescHandleName)+sizeof(Int64)*2;
-        cliRC = cliInterface->clearExecFetchCloseOpt((char *)inputValues,inputValuesLen,(char*)&descSyskey,&len, &rowsAffected);
-        */
+     
         cliRC = cliInterface->executeImmediate(query,
 					       (char*)&descSyskey, &len, FALSE);
         if (cliRC < 0)
