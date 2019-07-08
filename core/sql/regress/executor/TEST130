@@ -379,6 +379,10 @@ select lobtostring(c2, 40 ) from tlob130txt2;
 --should update with full poem
 update tlob130txt2 set c2=filetolob('hdfs:///user/trafodion/lobs/lob_input_d1.txt', append) where c1 = 3;
 select lobtostring(c2, 200 ) from tlob130txt2;
+update tlob130txt2 set c2=NULL where c1=3;
+select * from tlob130txt2;
+update tlob130txt2 set c2=filetolob('hdfs:///user/trafodion/lobs/lob_input_d1.txt', append) where c1 = 3;
+select lobtostring(c2, 200 ) from tlob130txt2;
 
 -- should see wrong text in the last few lines
 update tlob130txt2 set c2=filetolob('hdfs:///user/trafodion/lobs/lob_input_e1.txt') where c1 =3 ;

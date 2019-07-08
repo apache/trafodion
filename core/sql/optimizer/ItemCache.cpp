@@ -1506,7 +1506,7 @@ void UDFunction::generateCacheKey(CacheWA& cwa) const
     child(i)->generateCacheKey(cwa);
   }
  
-  if (getRoutineDesc()->getLocale() != 0 )
+  if (getRoutineDesc() && getRoutineDesc()->getLocale() != 0 )
   {
     cwa += ", LOCALE: ";
     char dFmt[20]; 
@@ -1580,5 +1580,68 @@ ItemExpr* ValueIdProxy::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
   }
   markAsNormalizedForCache();
   return this;
+}
+
+
+
+
+
+// --------------------------------------------------------------
+// member functions for LOBoper operator
+// --------------------------------------------------------------
+NABoolean LOBoper::isCacheableExpr(CacheWA& cwa)
+{
+  if (NOT ItemExpr::isCacheableExpr(cwa))
+    return FALSE;
+
+  return TRUE;
+}
+
+void LOBoper::generateCacheKey(CacheWA& cwa) const
+{
+  ItemExpr::generateCacheKey(cwa);
+
+  char oper[20];
+  cwa += " operType: ";
+  cwa += str_itoa((int)getOperatorType(), oper);
+  cwa += " ";
+}
+
+
+void LOBinsert::generateCacheKey(CacheWA & cwa) const
+{
+  LOBoper::generateCacheKey(cwa);
+   char oper[40];
+  cwa += " fromObj: ";
+  cwa += str_itoa((int)getObj(), oper);
+  cwa += " isAppend: ";
+  cwa += append_? "1":"0";
+  cwa += " ";
+  
+}
+
+void LOBconvert::generateCacheKey(CacheWA & cwa) const
+{
+  LOBoper::generateCacheKey(cwa);
+   char oper[40];
+  cwa += " fromObj: ";
+  cwa += str_itoa((int)getObj(), oper);
+  cwa += " tgtSize: ";
+  cwa += str_itoa((int)getTgtSize(), oper);
+  cwa += " ";
+  
+}
+
+
+void LOBupdate::generateCacheKey(CacheWA & cwa) const
+{
+  LOBoper::generateCacheKey(cwa);
+   char oper[40];
+  cwa += " fromObj: ";
+  cwa += str_itoa((int)getObj(), oper);
+  cwa += " isAppend: ";
+  cwa += append_? "1":"0"; 
+  cwa += " ";
+  
 }
 

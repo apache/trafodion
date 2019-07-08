@@ -493,24 +493,52 @@ public class HDFSClient
           return -1;
     }
 
-    long hdfsWriteImmediate(byte[] buff) throws IOException
+    long hdfsWriteImmediate(byte[] buff, boolean doRetry) throws IOException
     {
+
       if (logger_.isDebugEnabled()) 
-         logger_.debug("HDFSClient.hdfsWriteClose() - started" );
-      FSDataOutputStream fsOut;
-      FileStatus filestatus;
-      long writeOffset; 
-      if (fs_.exists(filepath_)) {
-         filestatus = fs_.getFileStatus(filepath_);
-         fsOut = fs_.append(filepath_);
-         writeOffset = filestatus.getLen(); 
-      }
-      else {
-         fsOut = fs_.create(filepath_);
-         writeOffset = 0;
-      }
-      fsOut.write(buff);
-      fsOut.close();
+         logger_.debug("HDFSClient.hdfsWriteImmediate() - started" );
+   
+        FSDataOutputStream fsOut=null;
+        FileStatus filestatus = null;
+        long writeOffset=0;
+        long writeEndOffset =0;
+        int trycount = 0;
+        
+        while (trycount < 3)
+        {
+          try
+          { 
+            if (logger_.isDebugEnabled()) 
+                logger_.debug("HDFSClient.hdfsWriteImmediate() - started" );
+  
+            if (fs_.exists(filepath_)) {
+                filestatus = fs_.getFileStatus(filepath_);
+                fsOut = fs_.append(filepath_);
+                 writeOffset = filestatus.getLen(); 
+             }
+             else {
+                   fsOut = fs_.create(filepath_);
+                   writeOffset = 0;
+             }
+             fsOut.write(buff);
+             fsOut.hflush();
+             writeEndOffset = fsOut.getPos(); 
+             } finally {
+                if (fsOut != null )
+                   fsOut.close();
+           }
+           // Do a checksum to ensure writeOffset is really the right value.
+          if (doRetry && (buff.length != writeEndOffset-writeOffset))
+            {
+               trycount++;
+               if (trycount == 3)
+                 {
+                    throw new IOException("HDFSwrite did not succeed due to multiple concurrent writes ");    
+                 }
+             }
+           else trycount = 100; //if doRetry is false or writeOffset is ok
+        } //while
       return writeOffset;
     }
     

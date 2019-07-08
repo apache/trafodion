@@ -327,7 +327,7 @@ Ex_Lob_Error ExLob::writeData(Int64 &offset, char *data, Int32 size, Int64 &oper
     //Int64 writeOffset;
 
     if (! useLibHdfs_ ) {
-       offset = hdfsClient_->hdfsWriteImmediate(data, size, hdfsClientRetcode); 
+      offset = hdfsClient_->hdfsWriteImmediate(data, size, hdfsClientRetcode,0,TRUE); 
        if (hdfsClientRetcode != HDFS_CLIENT_OK)
           return LOB_DATA_WRITE_ERROR;
        operLen = size;
@@ -1478,12 +1478,55 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
           if (clierr < 0 || clierr == 100)       
             return LOB_DESC_UPDATE_ERROR;
         }
+     
+      chunkMemSize = MINOF(lobMaxChunkMemSize, inputSize);
+      if (so == Lob_File)
+        {
+          //read a chunk of the file input data
+          err = readSourceFile(source_filename,retBuf,chunkMemSize, sourceFileReadOffset);
+             
+          if (err != LOB_OPER_OK)              
+            return err;
+                
+          inputAddr = retBuf;
+        }
+      str_sprintf(logBuf,"Calling writeLobData.sourceLen:%ld, dataOffset:%ld",sourceLen,dataOffset);
+      lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
+      if(sourceLen !=0)  
+        {     
+          err = writeLobData(inputAddr, chunkMemSize,so,dataOffset,operLen,lobMaxChunkMemSize);
+          str_sprintf(logBuf,"writeLobData returned. operLen:%ld",operLen);
+          lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
+          if (err != LOB_OPER_OK)
+            {
+              lobDebugInfo("writeLobData Failed",0,__LINE__,lobTrace_); 
+              return err;
+            }
+        }
+      lobDebugInfo("Calling CLI LOB_CLI_UPDATE_UNIQUE",0,__LINE__,lobTrace_);
+      clierr = SQL_EXEC_LOBcliInterface(handleIn, 
+                                        handleInLen, 
+                                        blackBox, &blackBoxLen,
+                                        handleOut, &handleOutLen,
+                                        LOB_CLI_UPDATE_UNIQUE, LOB_CLI_ExecImmed,
+                                        &dataOffset, &chunkMemSize,
+                                        &outDescPartnKey, &outDescSyskey, 
+                                        0,
+                                        xnId,lobTrace_);
+    
+      if (clierr < 0 || clierr == 100)       
+        return LOB_DESC_UPDATE_ERROR;
+      inputSize -= chunkMemSize;
+      if (so ==Lob_File)
+        sourceFileReadOffset +=chunkMemSize;       
+      inputAddr += chunkMemSize;
+      //Insert rest of the chunks   
       while (inputSize >0)
         {
           chunkMemSize = MINOF(lobMaxChunkMemSize, inputSize);
           if (so == Lob_File)
             {
-               //read a chunk of the file input data
+              //read a chunk of the file input data
               err = readSourceFile(source_filename,retBuf,chunkMemSize, sourceFileReadOffset);
              
               if (err != LOB_OPER_OK)              
@@ -1491,38 +1534,35 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
                 
               inputAddr = retBuf;
             }
-          str_sprintf(logBuf,"Calling writeLobData.sourceLen:%ld, dataOffset:%ld",sourceLen,dataOffset);
-          lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-          if(sourceLen !=0)  
-            {     
-              err = writeLobData(inputAddr, chunkMemSize,so,dataOffset,operLen,lobMaxChunkMemSize);
-              str_sprintf(logBuf,"writeLobData returned. operLen:%ld",operLen);
-              lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-              if (err != LOB_OPER_OK)
-                {
-                  lobDebugInfo("writeLobData Failed",0,__LINE__,lobTrace_); 
-                  return err;
-                }
+          str_sprintf(logBuf,"Calling writeLobData: inputAddr: %ld, InputSize%ld, tgtOffset:%ld",(long)inputAddr,sourceLen,dataOffset);
+          err = writeLobData(inputAddr, chunkMemSize,so,dataOffset,operLen,lobMaxChunkMemSize);
+          if (err != LOB_OPER_OK)
+            {
+              lobDebugInfo("writeLobData returned error",0,__LINE__,lobTrace_);
+              return err;
             }
-          lobDebugInfo("Calling CLI LOB_CLI_UPDATE_UNIQUE",0,__LINE__,lobTrace_);
-          clierr = SQL_EXEC_LOBcliInterface(handleIn, 
-                                            handleInLen, 
+          lobDebugInfo("Calling cli LOB_CLI_INSERT_APPEND",0,__LINE__,lobTrace_);
+          clierr = SQL_EXEC_LOBcliInterface(handleIn, handleInLen, 
                                             blackBox, &blackBoxLen,
                                             handleOut, &handleOutLen,
-                                            LOB_CLI_UPDATE_UNIQUE, LOB_CLI_ExecImmed,
+                                            LOB_CLI_INSERT_APPEND, LOB_CLI_ExecImmed,
                                             &dataOffset, &chunkMemSize,
                                             &outDescPartnKey, &outDescSyskey, 
                                             0,
                                             xnId,lobTrace_);
     
-          if (clierr < 0 || clierr == 100)       
-            return LOB_DESC_UPDATE_ERROR;
+    
+          if (clierr < 0 || clierr == 100) 
+            { // some error or EOD.
+              str_sprintf(logBuf,"cli LOB_CLI_INSERT_APPEND returned :%d", clierr);
+              lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
+              return LOB_DESC_APPEND_ERROR;
+            }
           inputSize -= chunkMemSize;
           if (so ==Lob_File)
             sourceFileReadOffset +=chunkMemSize;       
           inputAddr += chunkMemSize;
         }
-        
       return LOB_OPER_OK;
     }
 

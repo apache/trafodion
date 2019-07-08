@@ -5380,32 +5380,11 @@ Lng32 SQL_EXEC_SETROWSETDESCPOINTERS(SQLDESC_ID * sql_descriptor,
 
 
 Lng32 SQL_EXEC_SwitchContext(/*IN*/           SQLCTX_HANDLE   ctxt_handle,
-                            /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_ctxt_handle)
-{
-   Lng32 retcode;
-
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      retcode =
-      SQLCLI_SwitchContext(GetCliGlobals(),
-			   ctxt_handle,
-			   prev_ctxt_handle);
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         throw;
-       }
-#endif
-   }
-
-   RecordError(NULL, retcode);
-   return retcode;
+                             /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_ctxt_handle
+                             )
+{  
+  return  SQL_EXEC_SwitchContext_Internal(ctxt_handle,
+                                          prev_ctxt_handle, FALSE);
 }
 Lng32 SQL_EXEC_SWITCHCONTEXT(
 		/*IN*/ SQLCTX_HANDLE context_handle,
@@ -5739,6 +5718,36 @@ Lng32 SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 
    threadContext->decrNumOfCliCalls();
    tmpSemaphore->release();
+   return retcode;
+}
+
+Int32 SQL_EXEC_SwitchContext_Internal(/*IN*/ SQLCTX_HANDLE context_handle,
+                                /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_context_handle,
+                                /*IN*/ Int32 allowSwitchBackToDefault)
+{
+  Lng32 retcode;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+
+   try
+   {
+      retcode =
+      SQLCLI_SwitchContext(GetCliGlobals(),
+			   context_handle,
+			   prev_context_handle, allowSwitchBackToDefault);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         throw;
+       }
+#endif
+   }
+
+   RecordError(NULL, retcode);
    return retcode;
 }
 

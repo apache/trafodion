@@ -3009,8 +3009,10 @@ public:
   
   // method to do precode generation
   virtual ItemExpr * preCodeGen(Generator*);
+  virtual NABoolean isCacheableExpr(CacheWA& cwa);
+  virtual void generateCacheKey(CacheWA& cwa) const;
 
-  ObjectType getObj() { return obj_; }
+  ObjectType getObj() const { return obj_; }
 
   short &lobNum() {return lobNum_; }
   LobsStorage &lobStorageType() { return lobStorageType_; }
@@ -3072,7 +3074,7 @@ class LOBinsert : public LOBoper
 
   // returns TRUE so this could be evaluated in master.
   virtual NABoolean isAUserSuppliedInput() const { return TRUE; };
-
+  virtual void generateCacheKey(CacheWA& cwa) const;
   Int64 & insertedTableObjectUID() { return objectUID_; }
   
   NAString &insertedTableSchemaName() { return schName_; }
@@ -3175,6 +3177,7 @@ class LOBupdate : public LOBoper
   virtual short codeGen(Generator*);
   // method to do precode generation
   virtual ItemExpr * preCodeGen(Generator*);
+  virtual void generateCacheKey(CacheWA& cwa) const ;
   // virtual Int32 getArity() const;
   NABoolean isAppend() { return append_; };
 
@@ -3220,8 +3223,8 @@ class LOBconvert : public LOBoper
 
   // method to do code generation
   virtual short codeGen(Generator*);
-
-  Lng32 getTgtSize() { return tgtSize_; }
+  virtual void generateCacheKey(CacheWA& cwa) const;
+  Lng32 getTgtSize() const{ return tgtSize_; }
  private:
   Lng32 tgtSize_;
  

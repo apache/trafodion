@@ -607,7 +607,8 @@ Lng32 SQLCLI_GetStmtAttrs( /*IN*/ CliGlobals *cliGlobals,
 
    Lng32 SQLCLI_SwitchContext(/*IN*/           CliGlobals    * cliGlobals,
                              /*IN*/           SQLCTX_HANDLE   ctxt_handle,
-                             /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_ctxt_handle);
+                              /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_ctxt_handle,
+                              /*IN */ bool allowSwitchBackToDefault);
 
    Lng32 SQLCLI_Xact(/*IN*/                 CliGlobals * cliGlobals,
                     /*IN* (SQLTRANS_COMMAND) */  Lng32   command,

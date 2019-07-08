@@ -6961,14 +6961,15 @@ Lng32 SQLCLI_SetDescPointers(/*IN*/         CliGlobals * cliGlobals,
 Lng32 SQLCLI_SwitchContext(
      /*IN*/ CliGlobals * cliGlobals,
      /*IN*/           SQLCTX_HANDLE   context_handle,
-     /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_context_handle)
+     /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_context_handle,
+     /*IN */    bool allowSwitchBackToDefault )
 {
   Lng32 retcode = SUCCESS;
 
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
 
-  if (context_handle == cliGlobals->getDefaultContext()->getContextHandle())
+  if (!allowSwitchBackToDefault && (context_handle == cliGlobals->getDefaultContext()->getContextHandle()))
   {
      diags << DgSqlCode(-CLI_DEFAULT_CONTEXT_NOT_ALLOWED);
      return SQLCLI_ReturnCode(&currContext,-CLI_DEFAULT_CONTEXT_NOT_ALLOWED);
@@ -8371,6 +8372,10 @@ Lng32 SQLCLI_LOBcliInterface
   short schNameLen = 0;
   char schName[512];
   char logBuf[4096];
+  Int64 inputValues[5];
+  Lng32 inputValuesLen = 0;
+  Int64 rowsAffected = 0;
+
   lobDebugInfo("In LobCliInterface",0,__LINE__,lobTrace);
   if (inLobHandle)
     {
@@ -8405,7 +8410,7 @@ Lng32 SQLCLI_LOBcliInterface
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
 
   char * query = new(currContext.exHeap()) char[4096];
-
+  char stmtName[200];
   if (outLobHandleLen)
     *outLobHandleLen = 0;
 
@@ -8444,10 +8449,9 @@ Lng32 SQLCLI_LOBcliInterface
       {
 	strcpy(query, "set transaction autocommit on;");
 	cliRC = cliInterface->executeImmediate(query);
-
-	if (cliRC < 0)
-	    goto error_return;
-
+        if (cliRC < 0)
+          goto error_return;
+        
 	cliRC = 0;
       }
       break;
@@ -8554,17 +8558,21 @@ Lng32 SQLCLI_LOBcliInterface
     case LOB_CLI_INSERT:
       {
 	// insert into lob descriptor handle table
-	str_sprintf(query, "select syskey from (insert into table(ghost table %s) values (%ld, 1, %ld)) x",
-		    lobDescHandleName, descPartnKey, (dataLen ? *dataLen : 0));
+        str_sprintf(query, "select syskey from (insert into table(ghost table %s) values (%ld, 1, %ld)) x",
+                    lobDescHandleName, descPartnKey, (dataLen ? *dataLen : 0));
+                
+		   
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
 	
-	Int64 descSyskey = 0;
+        Int64 descSyskey = 0;
 	Lng32 len = 0;
-	cliRC = cliInterface->executeImmediate(query,
+     
+        cliRC = cliInterface->executeImmediate(query,
 					       (char*)&descSyskey, &len, FALSE);
-
+        if (cliRC < 0)
+          goto error_return;
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
@@ -9163,8 +9171,9 @@ Lng32 SQLCLI_LOBcliInterface
       tempCliRC = cliInterface->executeImmediate(query);
       if (tempCliRC < 0)
 	cliRC = tempCliRC;
+    
     }
-
+ 
   NADELETEBASIC(query, currContext.exHeap());
 
   if (cliRC < 0)

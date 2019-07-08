@@ -1907,7 +1907,7 @@ Int32 SQL_EXEC_SETSTMTATTR(
 Int32 SQL_EXEC_SwitchContext(
 		/*IN*/ SQLCTX_HANDLE context_handle,
 		/*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_context_handle);
-
+               
 Int32 SQL_EXEC_SWITCHCONTEXT(
 		/*IN*/ SQLCTX_HANDLE context_handle,
 		/*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_context_handle);
