@@ -4293,11 +4293,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
        SQL_EXEC_SetParserFlagsForExSqlComp_Internal(hsALLOW_SPECIALTABLETYPE);
     }
 
-    // initialize sourceTableRowCount to -1. The method that sets this parameter
-    // will not change this value if there is an error. So if 
-    // sourceTableRowCount = -1 after the call, we know something went wrong 
-    // and we do not use this value.
-    Int64 sourceTableRowCount = -1;
     // on very busy system, some "update statistics" implementation steps like
     // "Process_Query" step in HSSample::make() that calls HSFuncExecQuery
     // may experience failures resulting in a flurry of callcatcher error 9200 
@@ -4307,11 +4302,12 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // 2 cqds allow user control of these retries.
     Int32 centiSecs = getDefaultAsLong(USTAT_RETRY_DELAY);
     Int32 limit = getDefaultAsLong(USTAT_RETRY_LIMIT);
+    Int64 printPlan = 1;
     if (limit < 1 || centiSecs < 1) // user does not want any retry
     {
       LM->StartTimer("Populate sample table");
       retcode = HSFuncExecQuery(dml, - UERR_INTERNAL_ERROR, &sampleRowCount, 
-                                HS_QUERY_ERROR, &sourceTableRowCount, objDef);
+                                HS_QUERY_ERROR, &printPlan , objDef);
       LM->StopTimer();
     }
     else // user wants retry
@@ -4320,7 +4316,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
       HSFuncExecQuery("CONTROL QUERY DEFAULT AUTO_QUERY_RETRY 'ON'");
       LM->StartTimer("Populate sample table (with possible retry)");
       retcode = HSFuncExecQuery(dml, - UERR_INTERNAL_ERROR, &sampleRowCount, 
-                                HS_QUERY_ERROR, &sourceTableRowCount, objDef);
+                                HS_QUERY_ERROR, &printPlan, objDef);
       LM->StopTimer();
       HSFuncExecQuery("CONTROL QUERY DEFAULT AUTO_QUERY_RETRY RESET");
     }
@@ -4392,6 +4388,12 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
         LM->Log(LM->msg);
       }
 
+ 
+    double sampleRatio = samplePercent / 100;
+    double tableRowCntDbl = ((double)sampleRowCount) / sampleRatio;
+    if (!isnormal(tableRowCntDbl))  // if we get NaN, infinity etc, just use original row count
+      tableRowCntDbl = (double)tableRowCnt;
+
     // TEMP: ignore empty sample set if bulk load is on as rowcount is currently not 
     // being returned by bulk load.
     if ((sampleRowCount == 0) &&                    // sample set is empty;
@@ -4406,20 +4408,16 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
       hs_globals->sampleTableUsed = TRUE;
       hs_globals->samplingUsed    = TRUE;
       hs_globals->sampleSeconds   = getTimeDiff();
-      // If (a) current row count is estimate (for R2.3 and later, this is unlikely)
+      // If (a) current row count is estimate
       //    (b) user has not specified the rowcount and
-      //    (c) we appear to get a meaningful rowcount for the source table 
-      //        (source table rowcount >= rows inserted into sample table) and
-      //    (d) CLUSTER sampling not used
-      // we set the actualRowCount to the value obtained from the statistics table
-      // This works since every row of the source table is scanned for EID sampling
-      // and the number of rows scanned is recorded in the stats area.
+      //    (c) CLUSTER sampling not used
+      // we set the actualRowCount to the value inferred by the number of sample
+      // rows and the sampling ratio.
       if (rowCountIsEstimate &&
           !(hs_globals->optFlags & ROWCOUNT_OPT) &&
-          (sourceTableRowCount > sampleRowCount) &&
           (hs_globals->optFlags & SAMPLE_REQUESTED) != SAMPLE_RAND_2) 
         {
-          tableRowCnt = sourceTableRowCount;
+          tableRowCnt = (Int64)tableRowCntDbl;
           if (LM->LogNeeded())
           {
             convertInt64ToAscii(tableRowCnt, intStr);
@@ -4428,7 +4426,8 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
           }
         }
       }
-    else if (rowCountIsEstimate && sourceTableRowCount > sampleRowCount) tableRowCnt = sourceTableRowCount;
+    else if (rowCountIsEstimate) 
+      tableRowCnt = (Int64)tableRowCntDbl;
 
     LM->StopTimer();
 
@@ -7044,13 +7043,13 @@ Lng32 HSGlobalsClass::CollectStatisticsForIUS(Int64 currentSampleSize,
 // is in the same schema as the one referenced by tblDef). This avoids problems
 // in parsing the fully qualified name posed by the possibility of periods within
 // delimited identifiers.
-static const char* extractTblName(const NAString& fullyQualifiedName,
-		                          HSTableDef* tblDef)
+static void extractTblName(const NAString& fullyQualifiedName,
+		           HSTableDef* tblDef, NAString & out)
 {
   Lng32 tblNameOffset = tblDef->getCatName().length() +
                         tblDef->getSchemaName().length() +
                         2;  // 2 dot separators
-  return fullyQualifiedName.data() + tblNameOffset;
+  out = fullyQualifiedName.data() + tblNameOffset;
 }
 
 // Update the persistent sample table and determine its new cardinality.
@@ -7134,8 +7133,9 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
   }
 
   rowsAffected = 0;
-  const char* insSourceTblName = extractTblName(*hssample_table + "_I", objDef);
-  NABoolean needEspParReset = setEspParallelism(objDef, insSourceTblName);
+  NAString insSourceTblName;
+  extractTblName(*hssample_table + "_I", objDef, insSourceTblName /* out */);
+  NABoolean needEspParReset = setEspParallelism(objDef, insSourceTblName.data());
  
   // can't retry this one, as it uses non-transactional upsert using load + random
   // select; a retry might add *another* random sample to a partial sample from
@@ -14375,7 +14375,8 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
                            colDesc.scale, // display width for fractional seconds
                            // Fractional second; compute microseconds, remove trailing
                            // zeroes beyond the scale.
-                           (dtvals[6] * 1000 + dtvals[7]) / (Int32)pow(10, 6-colDesc.scale));
+                           (dtvals[6] * 1000 + dtvals[7]) / 
+                           (Int32)pow(10, 6 - MINOF(6, colDesc.scale)));
                  else
                    sprintf(valueBuff, "%04d-%02d-%02d %02d:%02d:%02d",
                                       dtvals[0], dtvals[1], dtvals[2],
