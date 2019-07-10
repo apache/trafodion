@@ -85,7 +85,7 @@ Lng32 HSFuncExecQueryBody( const char *dml
                     , short sqlcode
                     , Int64 *rowsAffected
                     , const char *errorToken
-                    , Int64 *srcTabRowCount
+                    , NABoolean printPlan
                     , const HSTableDef *tabDef
                     , short errorToIgnore
                     , NABoolean checkMdam

@@ -176,6 +176,9 @@ Lng32 HSExecDirect( SQLSTMT_ID * stmt
 //          inactivateErrorCatcher = TRUE if the caller already has an
 //                HSErrorCatcher object active (that is, the caller wants
 //                to capture diagnostics itself).
+// Note: srcTabRowCount is an obsolete parameter. Its only function now
+// is to control whether plan information should be kept. Later we can
+// clean this out, replacing it with an NABoolean.
 // -----------------------------------------------------------------------
 Lng32 HSFuncExecQuery( const char *dml
                     , short sqlcode
@@ -194,7 +197,7 @@ Lng32 HSFuncExecQuery( const char *dml
   HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE,
                               inactivateErrorCatcher);
   retcode = HSFuncExecQueryBody(dml,sqlcode,rowsAffected,errorToken,
-                                srcTabRowCount,tabDef,errorToIgnore,checkMdam);
+                                srcTabRowCount != NULL,tabDef,errorToIgnore,checkMdam);
   HSHandleError(retcode);
   return retcode;
 }
@@ -209,7 +212,7 @@ Lng32 HSFuncExecQueryBody( const char *dml
                     , short sqlcode
                     , Int64 *rowsAffected
                     , const char *errorToken
-                    , Int64 *srcTabRowCount
+                    , NABoolean printPlan
                     , const HSTableDef *tabDef
                     , short errorToIgnore
                     , NABoolean checkMdam
@@ -293,7 +296,7 @@ Lng32 HSFuncExecQueryBody( const char *dml
   HSHandleError(retcode);
 
   // execute immediate this statement
-  retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0, checkMdam);
+  retcode = HSExecDirect(&stmt, &srcDesc, printPlan, checkMdam);
   // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
   if (retcode >= 0) retcode = 0;
   // If sqlcode is HS_WARNING, then this means failures should be returned as
@@ -332,11 +335,6 @@ Lng32 HSFuncExecQueryBody( const char *dml
                            , 0);
       SQL_EXEC_GetDiagnosticsStmtInfo(&sql_item, &rc_desc);
       SQL_EXEC_DeallocDesc(&rc_desc);
-
-      if (srcTabRowCount)
-      {
-        getRowCountFromStats(srcTabRowCount, tabDef) ;
-      }
     }
   return retcode;
 }
@@ -362,6 +360,9 @@ Lng32 HSFuncExecQueryBody( const char *dml
 //                there is no such expected error.
 //          checkMdam = if TRUE, determine whether the query uses MDAM, and
 //                include this information in the ulog.
+// Note: srcTabRowCount is an obsolete parameter. Its only function now
+// is to control whether plan information should be kept. Later we can
+// clean this out, replacing it with an NABoolean.
 // -----------------------------------------------------------------------
 Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
                                            , short sqlcode
@@ -411,7 +412,7 @@ Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
       // execute the statement
  
       retcode = HSFuncExecQueryBody(dml, sqlcode, rowsAffected, errorToken,
-                                srcTabRowCount, tabDef, errorToIgnore, checkMdam);
+                                srcTabRowCount != NULL, tabDef, errorToIgnore, checkMdam);
 
       // Figure out if we want to ignore certain conditions 
 
@@ -5850,59 +5851,6 @@ Lng32 checkMdam(SQLSTMT_ID *stmt)
 
   return retcode;
 }
-
-/***********************************************/
-/* METHOD:  getRowCountFromStats(Int64* )      */
-/* PURPOSE: Get row count from stats for the   */
-/*          previously executed statement.     */
-/*          Currently this method cannot access*/
-/*          stats for an arbitrary statement.  */
-/*          Used to get an accurate value for  */
-/*          rowcount when EID sampling is used */
-/* INPUT:   Int64* rowsAffected                */
-/***********************************************/
-void getRowCountFromStats(Int64 * rowsAffected, const HSTableDef *tabDef)
-  {
-    // 9/18/2013: The query underlying this function no longer works. It depended
-    // on specific information (in a specific location) for the variable_info
-    // column of the Statistics virtual table, which seems to have changed. The
-    // necessary info (table name and # accessed rows) is not present in a single
-    // row of that table.
-    return;
-
-    Lng32 retcode = 0;
-    char  rowcount[31];
-    char tabName[600] ;
-    if (!tabDef) return;
-
-	  str_pad(tabName, 600, ' ') ;
-
-    // longest valid ANSI name is 128*3. Allowing some extra space
-    // for funny delimited names.
-    if (tabDef->getObjectFullName().length() > 596) return;
-
-    tabName[0] = '%';
-    strcpy(&(tabName[1]), tabDef->getObjectFullName().data());
-    tabName[tabDef->getObjectFullName().length()+1] = ' ';
-    tabName[tabDef->getObjectFullName().length()+2] = '%';
-    tabName[tabDef->getObjectFullName().length()+3] = 0;
-
-    HSCliStatement getStats(HSCliStatement::ROWCOUNT_FROM_STATS,
-			    (char *)&tabName);
-
-    retcode = getStats.open();
-    if (retcode !=0 ) return ;
-
-    retcode = getStats.fetch(1,(void *)&rowcount[0]);
-    if ((retcode != 0) && (retcode !=100)) return;
-
-    retcode = getStats.close();
-    if (retcode !=0 ) return ;
-
-    *rowsAffected = atoInt64(rowcount) ;
-
-    return ;
-  }
 
 /**************************************************************************/
 /* METHOD:  ucsToDouble()                                                 */
