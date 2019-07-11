@@ -5474,6 +5474,7 @@ static void etabadd(char type, char *run, int id)
             }
             do {
                 if ( fl ) {                         /* input file with list of tables */
+                    etabnew(-1);
                     etab[no] = edef;
                     if ( etab[no].seqp ) {          /* :seq option at command line level: set global sequence */
                         f2 |= 0002 ;                /* switch global sequence flag on */
