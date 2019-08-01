@@ -1540,9 +1540,9 @@ int main(int ac, char *av[])
             fprintf(stderr, "\tChild EID (.child): %d\n", etab[i].child);
             fprintf(stderr, "\tTBE flag (.tbe): %d\n", etab[i].tbe);
             fprintf(stderr, "\tField Separator (.fs): %d (decimal value)\n", etab[i].fs);
-            fprintf(stderr, "\tMuti Charaters Field Separator (.mcfs): %s\n", etab[i].mcfs);
+            fprintf(stderr, "\tMulti Characters Field Separator (.mcfs): %s\n", etab[i].mcfs);
             fprintf(stderr, "\tRecord Separator (.rs): %d (decimal value)\n", etab[i].rs);
-            fprintf(stderr, "\tMuti Charaters Record Separator (.mcrs): %s\n", etab[i].mcrs);
+            fprintf(stderr, "\tMulti Characters Record Separator (.mcrs): %s\n", etab[i].mcrs);
             fprintf(stderr, "\tString Qualifier (.sq): %d (decimal value)\n", etab[i].sq);
             fprintf(stderr, "\tEscape Character (.ec): %d (decimal value)\n", etab[i].ec);
             fprintf(stderr, "\tEmbed file Character (.em): %d (decimal value)\n", etab[i].em);
@@ -15054,15 +15054,15 @@ static void usagexit()
         "      Defaults/notes:\n"
         "      * src file: local file or {hdfs,mapr}[@host,port[,huser]].<HDFS_PATH>\n"
         "      * fs: default ','. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
-        "      * mcfs: default use fs as feild seperator. If mcfs was set then use mcfs as filed\n"
-        "              seperator. mcfs means multi characters seperator and support escape sequence:\n"
+        "      * mcfs: default use fs as field separator. If mcfs was set then use mcfs as field\n"
+        "              separator. mcfs means multi characters separator and support escape sequence:\n"
         "              \\n: new line\n"
         "              \\r: return\n"
         "              \\t: tab\n"
         "              \\xhh: ascii code in hex, example: \\x41 is 'A'\n"
         "      * rs: default '\\n'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
-        "      * mcrs: default use rs as record seperator. If mcrs was set then use mcrs as record\n"
-        "              seperator. Please refer to mcfs"
+        "      * mcrs: default use rs as record separator. If mcrs was set then use mcrs as record\n"
+        "              separator. Please refer to mcfs"
         "      * ec: default '\\'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
         "      * pc: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
         "      * direct: only for Vertica databases\n"
@@ -15079,18 +15079,18 @@ static void usagexit()
         "      Defaults/notes:\n"
         "      * tgt file: local file or {hdfs,mapr}.[@host,port[,huser]].<HDFS_PATH>\n"  
         "      * fs: default ','. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
-        "      * mcfs: default use fs as feild seperator. If mcfs was set then use mcfs as filed\n"
-        "              seperator. mcfs means multi characters seperator and support escape sequence:\n"
+        "      * mcfs: default use fs as field separator. If mcfs was set then use mcfs as field\n"
+        "              separator. mcfs means multi characters separator and support escape sequence:\n"
         "              \\n: new line\n"
         "              \\r: return\n"
         "              \\t: tab\n"
         "              \\xhh: ascii code in hex, example: \\x41 is 'A'\n"
         "      * rs: default '\\n'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
-        "      * mcrs: default use rs as record seperator. If mcrs was set then use mcrs as record\n"
-        "              seperator. Please refer to mcfs"
+        "      * mcrs: default use rs as record separator. If mcrs was set then use mcrs as record\n"
+        "              separator. Please refer to mcfs"
         "      * ec: default '\\'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
         "      * sq: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
-        "      * gzip compressione level between 0 and 9\n" 
+        "      * gzip compression level between 0 and 9\n" 
         "      * bpc: default 1,bpwc: default 4 \n");
     fprintf(stderr, "Data copy options [connection required]:\n"
         "   -cp src={table|-file:tgt=schema[.table][pwhere=where_cond][:soe][:roe=#][:roedel=#ms]\n"
