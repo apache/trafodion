@@ -547,6 +547,8 @@ struct execute {
                                     4   truncates and load
                                     5   do not check for field truncation
                                 */
+    char *mcfs;                 /* multi character field separator */
+    char *mcrs;                 /* multi character record separator */
 } *etab = 0;                    /* Execution TABle: one entry per command or script */
 struct ovar {
     char type;                  /* Variable type: 'a'=alias, 'i'=interal, 'u'=user defined */
@@ -712,6 +714,7 @@ static int mfprintf( FILE *fl1, FILE *fl2, char *fmt, ... );
 static int mfputc( FILE *fl1, FILE *fl2, int ch );
 static unsigned int checkdb(int eid, SQLHDBC *Oc, char *c, char *s);
 static unsigned char mchar ( char *s );
+static char* replace_escapes( char *s );
 static void tclean(void *tid);          /* Thread cleanup routine */
 #ifndef _WIN32
 static void tunlock(void *eid);         /* Thread cleanup routine */
@@ -1537,7 +1540,9 @@ int main(int ac, char *av[])
             fprintf(stderr, "\tChild EID (.child): %d\n", etab[i].child);
             fprintf(stderr, "\tTBE flag (.tbe): %d\n", etab[i].tbe);
             fprintf(stderr, "\tField Separator (.fs): %d (decimal value)\n", etab[i].fs);
+            fprintf(stderr, "\tMulti Characters Field Separator (.mcfs): %s\n", etab[i].mcfs);
             fprintf(stderr, "\tRecord Separator (.rs): %d (decimal value)\n", etab[i].rs);
+            fprintf(stderr, "\tMulti Characters Record Separator (.mcrs): %s\n", etab[i].mcrs);
             fprintf(stderr, "\tString Qualifier (.sq): %d (decimal value)\n", etab[i].sq);
             fprintf(stderr, "\tEscape Character (.ec): %d (decimal value)\n", etab[i].ec);
             fprintf(stderr, "\tEmbed file Character (.em): %d (decimal value)\n", etab[i].em);
@@ -3145,6 +3150,8 @@ static int Oexec(int tid, int eid, int ten, int scn, SQLCHAR *Ocmd, char *label)
     Mutex *parmutex = &etab[par].pmutex ;   /* Local copy of parent mutex address */
     z_stream gzstream = { 0 };  /* Local gzstream structure */
     unsigned int ucs = 0;       /* Local ucs2toutf8 conversion flag */
+    size_t mcfsl = etab[eid].mcfs ? strlen(etab[eid].mcfs) : 0;
+    size_t mcrsl = etab[eid].mcrs ? strlen(etab[eid].mcrs) : 0;
 
     /* register start time */
     gettimeofday(&tve, (void *)NULL);       
@@ -3628,8 +3635,14 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
         case 1:                 /* normal print (csv like) */
             for ( l = 0 ; l < (unsigned long)Orespl ; l++) {
                 for (i = 0; i < (int) Oncol; i++) { 
-                    if ( i )
-                        obuff[pos++] = lfs;
+                    if ( i ) {
+                        if (!etab[eid].mcfs)
+                            obuff[pos++] = lfs;
+                        else {
+                            strcpy(&obuff[pos], etab[eid].mcfs);
+                            pos += mcfsl;
+                        }
+                    }
                     switch ( Oll = Olength[i][l] ) {
                     case 0:
                         os = etab[eid].es ;
@@ -3657,8 +3670,14 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
                         pos += (size_t)osl;
                     }
                 }
-                if ( otflg & 0010 )
-                    obuff[pos++] = lrs;
+                if ( otflg & 0010 ) {
+                    if (!etab[eid].mcrs)
+                        obuff[pos++] = lrs;
+                    else {
+                        strcpy(&obuff[pos], etab[eid].mcrs);
+                        pos += mcrsl;
+                    }
+                }
             }
             break;
         case 2:                 /* XML print */
@@ -4916,6 +4935,11 @@ static void etabadd(char type, char *run, int id)
                 if (f & 04000000000)  /* no catalog as null */
                     etab[no].Ocso[0] = '\0';
             }
+            if (etab[no].k && (etab[no].mcfs || etab[no].mcrs)) {
+                fprintf(stderr, "odb [etabadd(%d)] - Error: neither 'mcfs' nor 'mcrs' support skip lines\n", __LINE__);
+                goto etabadd_exit;
+            }
+
             if ( etab[no].flg2 & 0400000000 ) { /* user defined iobuff */
                 if ( !etab[no].iobuff ) {       /* iobuff set to zero */
                     fprintf(stderr, "odb [etabadd(%d)] - Error: cannot set iobuff to zero for loads\n", __LINE__ );
@@ -6216,6 +6240,8 @@ static void Oload(int eid)
                  j=0,           /* loop variable */
                  lts = etab[eid].k ,    /* lines to skip */
                  isgz=0;        /* input file is gzipped: 0=no , 1=yes */
+    int mcfsl = etab[eid].mcfs ? (int)strlen(etab[eid].mcfs) : 0; /* multi character field separator length */
+    int mcrsl = etab[eid].mcrs ? (int)strlen(etab[eid].mcrs) : 0; /* multi character record separator length */
     unsigned char fg = 0,       /* Oload flags:
                                     0001 = in a quoted string   0004 = fixed fields      0020 = field ready
                                     0002 = nofile               0010 = delimited fields  0040 = record ready
@@ -7343,19 +7369,25 @@ static void Oload(int eid)
         }
         nb += len;                                              /* update bytes read from file */
         p = 0;                                                  /* reset buffer index */
-        while (lts && p < len) {                                /* skip initial lines */
-            if (buff[p++] == lrs) {
-                --lts;
+        if (!etab[eid].mcrs) {
+            while (lts && p < len) {                                /* skip initial lines */
+                if (buff[p++] == lrs) {
+                    --lts;
+                }
             }
         }
-        if ( ccl ) {                                            /* continue cleaning rest of line */
-            while ( p < len && buff[p] != lrs )                 /* ... skip the rest of the line */
-                p++;
-            if ( buff[p] == lrs ) {                             /* if a record separator has been found */
-                ccl = 0;                                        /* switch the continue cleaning flag off */
-                p++;                                            /* skip the record separator */
+
+        if (!etab[eid].mcrs) {
+            if ( ccl ) {                                            /* continue cleaning rest of line */
+                while ( p < len && buff[p] != lrs )                 /* ... skip the rest of the line */
+                    p++;
+                if (buff[p] == lrs) { /* if a record separator has been found */
+                    ccl = 0;            /* switch the continue cleaning flag off */
+                    p++;                /* skip the record separator */
+                }
             }
         }
+
         for ( ; p < len ; p++ ) {
             ch = buff[p];
             if ( fg & 0004 ) {                                  /* fixed file format */
@@ -7376,17 +7408,27 @@ static void Oload(int eid)
             } else {                                            /* delimited file format */
                 if ( ch == lec && !(fg & 0100)) {               /* if non-escaped escape char... */
                     fg |= 0100;                                 /* set Escape flag on */
-                } else if ( ch == lfs && !(fg & 0001)) {        /* if field sep... */   
+                } else if (!etab[eid].mcfs && (ch == lfs) && !(fg & 0001)) {        /* if field sep... */
                     fg |= 0020;                                 /* set field complete flag on */
-                } else if ( ch == lrs && !(fg & 0001)) {        /* if record sep... */  
+                } else if (!etab[eid].mcrs && (ch == lrs) && !(fg & 0001)) {        /* if record sep... */
                     fg |= 0040;                                 /* set record complete flag on */
                 } else if ( ch == lsq && !(fg & 0100)) {        /* if string qualifier char... */
                     fg ^= 0001;                                 /* flip quoted string flag */
                 } else if ( ch == lem && !(fg & 0100)) {        /* if embedded file char */
                     fg |= 0200;                                 /* embed file reading mode */
-                } else {                                        /* add new character to field buffer */
-                    str[ifl++] = ch;
+                } else {
+                    str[ifl++] = ch;                            /* add new character to field buffer */
                     fg &= ~0100;                                /* set escape flag off */
+
+                    if (etab[eid].mcfs && (ifl >= mcfsl)
+                        && !strncmp(etab[eid].mcfs, &str[ifl-mcfsl], mcfsl)) { /* if field sep... */
+                        fg |= 0020;
+                        ifl -= mcfsl;
+                    } else if (etab[eid].mcrs && (ifl >= mcrsl)
+                               && !strncmp(etab[eid].mcrs, &str[ifl-mcrsl], mcrsl)) { /* if reco sep... */
+                        fg |= 0040;
+                        ifl -= mcrsl;
+                    }
                 }
             }
             if ( fg & 0062 ) {                                  /* field/record ready or nofile */
@@ -7629,10 +7671,12 @@ static void Oload(int eid)
                         p = 0;
                     } else {                                            /* real file */
                         c = 0;                                          /* reset column number */
-                        while ( p < len && buff[p] != lrs )             /* ... skip the rest of the line */
-                            p++;
-                        if ( p == len && buff[p-1] != lrs )             /* Continue cleaning rest of line in the next buffsz */
-                            ccl = 1;
+                        if (!etab[eid].mcrs) {
+                            while ( p < len && buff[p] != lrs )         /* ... skip the rest of the line */
+                                p++;
+                            if ( p == len && buff[p-1] != lrs )         /* Continue cleaning rest of line in the next buffsz */
+                                ccl = 1;
+                        }
                     }
                     for ( j = 0 ; j < l ; j++ ) {                       /* now generate "artificial" fields for this record */
                         Odp = &etab[eid].Orowsetl[m*etab[eid].s + etab[eid].td[j].start];
@@ -8499,30 +8543,30 @@ static void Oload2(int eid)
         }
         bc = buff ;
 
-        for (size_t currentFiledPos = 0; currentFiledPos < len;) {
+        for (size_t currentFieldPos = 0; currentFieldPos < len;) {
             ifl = 0;
-            for (; currentFiledPos < len; ++currentFiledPos) {
-                if ((fg & 0001) && (fg & 0100) && (bc[currentFiledPos] == lfs || bc[currentFiledPos] == lrs)) { /* treat string qualifier before as end quote */
+            for (; currentFieldPos < len; ++currentFieldPos) {
+                if ((fg & 0001) && (fg & 0100) && (bc[currentFieldPos] == lfs || bc[currentFieldPos] == lrs)) { /* treat string qualifier before as end quote */
                     fg &= ~0101;
                 }
-                if (bc[currentFiledPos] == lfs && !(fg & 0001)) {             /* if field sep... */
+                if ((bc[currentFieldPos] == lfs) && !(fg & 0001)) {             /* if field sep... */
                     fg |= 0020;                                 /* set field complete flag on */
-                    ++currentFiledPos;
+                    ++currentFieldPos;
                     break;
                 }
-                else if (bc[currentFiledPos] == lrs && !(fg & 0001)) {        /* if record sep... */
+                else if ((bc[currentFieldPos] == lrs) && !(fg & 0001)) {        /* if record sep... */
                     fg |= 0040;                                 /* set record complete flag on */
-                    ++currentFiledPos;
+                    ++currentFieldPos;
                     break;
                 }
-                else if ((bc[currentFiledPos] == lsq) && (fg & 0001) && !(fg & 0100)) {  /* if string qualifier char and in string qualifier */
+                else if ((bc[currentFieldPos] == lsq) && (fg & 0001) && !(fg & 0100)) {  /* if string qualifier char and in string qualifier */
                     fg |= 0100;
                 }
-                else if ((bc[currentFiledPos] == lsq) && !(fg & 0100)) {
+                else if ((bc[currentFieldPos] == lsq) && !(fg & 0100)) {
                     fg ^= 0001;                                 /* flip quoted string flag */
                 }
                 else {                                          /* add new character to field buffer */
-                    str[ifl++] = bc[currentFiledPos];
+                    str[ifl++] = bc[currentFieldPos];
                     fg &= ~0100;                                /* set escape flag off */
                 }
             }
@@ -13343,6 +13387,61 @@ static unsigned char mchar ( char *s )
     return( (unsigned char)l );
 }
 
+/* hextobin:
+ * convert c from hexadecimal char to binary
+ */
+char hextobin(char c) {
+    switch(c) {
+    default: return c - '0';
+    case 'a': case 'A': return '\10';
+    case 'b': case 'B': return '\11';
+    case 'c': case 'C': return '\12';
+    case 'd': case 'D': return '\13';
+    case 'e': case 'E': return '\14';
+    case 'f': case 'F': return '\15';
+    }
+}
+
+/* replace_escapes:
+ * replace escape sequence like "\r" "\n" "\t" "\xA0"
+ * str: input string
+ * return: str
+ */
+static char* replace_escapes ( char *str ) {
+    char *p = str;
+    char *q = str;
+
+    while (*q) {
+        if (*q == '\\' && *(q + 1)) {
+            switch (*++q) {
+            case 'n': *p++ = '\n'; break;
+            case 'r': *p++ = '\r'; break;
+            case 't': *p++ = '\t'; break;
+            case 'x': case 'X':
+                if (!isxdigit(q[1]))
+                    goto not_escape;
+                *p = hextobin(*++q);
+                if (isxdigit(q[1]))
+                    *p = *p * 16 + hextobin(*++q);
+                ++p;
+                break;
+            default: // no need to be converted
+            not_escape:
+                *p++ = '\\';
+                *p++ = *q;
+                break; // just escape
+            }
+            ++q;
+        }
+        else {
+            *p++ = *q++;
+        }
+    }
+    *p = '\0';
+
+    return str;
+}
+
 /* strup:
  *      convert a source string (s) to uppercase
  *
@@ -14101,8 +14200,14 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                     }
                 } else if ( type != 'c' && !strcmp(&str[n], "fs") ) {
                     etab[no].fs = mchar(&str[l]);
+                } else if ( type != 'c' && !strcmp(&str[n], "mcfs") ) {
+                    etab[no].mcfs = replace_escapes(&str[l]);
+                    etab[no].flg |= 01000000; /* complex load. Use Oload */
                 } else if ( type != 'c' && !strcmp(&str[n], "rs") ) {
                     etab[no].rs = mchar(&str[l]);
+                } else if ( type != 'c' && !strcmp(&str[n], "mcrs") ) {
+                    etab[no].mcrs = replace_escapes(&str[l]);
+                    etab[no].flg |= 01000000; /* complex load. Use Oload */
                 } else if ( ( type == 'e' || type == 'l' ) && !strcmp(&str[n], "ec") ) {
                     etab[no].ec = mchar(&str[l]);
                     etab[no].flg |= 01000000 ;  /* complex load. Use Oload */
@@ -14937,8 +15042,8 @@ static void usagexit()
         "   -casesens: set case sensitive DB\n"
         "   -Z : shuffle the execution table randomizing Qs start order\n");
     fprintf(stderr, "Data loading options [connection required]:\n"
-        "   -l src=[-]file:tgt=table[:map=mapfile][:fs=fieldsep][:rs=recsep][:soe]\n"
-        "      [:skip=linestoskip][:ns=nullstring][:ec=eschar][:sq=stringqualifier]\n"
+        "   -l src=[-]file:tgt=table[:map=mapfile][:fs=fieldsep|:mcfs=fieldsep][:rs=recsep|:mcrs=recsep]\n"
+        "      [:soe][:skip=linestoskip][:ns=nullstring][:ec=eschar][:sq=stringqualifier]\n"
         "      [:pc=padchar][:em=embedchar][:errmax=#max_err][:commit=auto|end|#rows|x#rs]\n"
         "      [:rows=#rowset][:norb][:full][:max=#max_rec][:truncate][:show][:bpc=#][:bpwc=#]\n"
         "      [:nomark][:parallel=number][:iobuff=#size][:buffsz=#size]][:fieldtrunc={0-4}]\n"
@@ -14948,29 +15053,45 @@ static void usagexit()
         "      [:xmltag=[+]element][:xmlord][:xmldump]\n"
 #endif
         "      Defaults/notes:\n"
-        "      * src file: local file or {hdfs,mapr}[@host,port[,huser]].<HDFS_PATH>\n"  
+        "      * src file: local file or {hdfs,mapr}[@host,port[,huser]].<HDFS_PATH>\n"
         "      * fs: default ','. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
-        "      * rs: default '\\n'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
-        "      * ec: default '\\'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
-        "      * pc: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
+        "      * mcfs: default use fs as field separator. If mcfs was set then use mcfs as field\n"
+        "              separator. mcfs means multi characters separator and support escape sequence:\n"
+        "              \\n: new line\n"
+        "              \\r: return\n"
+        "              \\t: tab\n"
+        "              \\xhh: ascii code in hex, example: \\x41 is 'A'\n"
+        "      * rs: default '\\n'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
+        "      * mcrs: default use rs as record separator. If mcrs was set then use mcrs as record\n"
+        "              separator. Please refer to mcfs"
+        "      * ec: default '\\'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
+        "      * pc: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
         "      * direct: only for Vertica databases\n"
         "      * bpc: default 1,bpwc: default 4 \n"
         "      * loadcmd: default IN. only for Trafodion databases\n"
         "Data extraction options [connection required]:\n"
         "   -e {src={table|-file}|sql=<custom sql>}:tgt=[+]file[:pwhere=where_cond]\n"
-        "      [:fs=fieldsep][:rs=recsep][:sq=stringqualifier][:ec=escape_char][:soe]\n"
-       "      [:ns=nullstring][:es=emptystring][:rows=#rowset][:nomark][:binary][:bpc=#][:bpwc=#]\n"
-       "      [:max=#max_rec][:[r]trim[+]][:cast][:multi][:parallel=number][:gzip[=lev]]\n"
-       "      [:splitby=column][:uncommitted][:iobuff=#size][:hblock=#size][:ucs2toutf8]\n"
+        "      [:fs=fieldsep|:mcfs=fieldsep][:rs=recsep|:mcrs=recsep][:sq=stringqualifier]\n"
+       "      [:ec=escape_char][:soe][:ns=nullstring][:es=emptystring][:rows=#rowset][:nomark]\n"
+       "      [:binary][:bpc=#][:bpwc=#][:max=#max_rec][:[r]trim[+]][:cast][:multi][:parallel=number]\n"
+       "      [:gzip[=lev]][:splitby=column][:uncommitted][:iobuff=#size][:hblock=#size][:ucs2toutf8]\n"
        "      [:pre={@sqlfile|sqlcmd}[:mpre={@sqlfile|sqlcmd}[:post={@sqlfile|sqlcmd}]\n"
        "      [:tpar=#tables][:time][:cols=[-]columns]][:maxlen=#bytes][:xml]\n"
         "      Defaults/notes:\n"
         "      * tgt file: local file or {hdfs,mapr}.[@host,port[,huser]].<HDFS_PATH>\n"  
         "      * fs: default ','. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
-        "      * rs: default '\\n'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
+        "      * mcfs: default use fs as field separator. If mcfs was set then use mcfs as field\n"
+        "              separator. mcfs means multi characters separator and support escape sequence:\n"
+        "              \\n: new line\n"
+        "              \\r: return\n"
+        "              \\t: tab\n"
+        "              \\xhh: ascii code in hex, example: \\x41 is 'A'\n"
+        "      * rs: default '\\n'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
+        "      * mcrs: default use rs as record separator. If mcrs was set then use mcrs as record\n"
+        "              separator. Please refer to mcfs"
         "      * ec: default '\\'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
         "      * sq: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n" 
-        "      * gzip compressione level between 0 and 9\n" 
+        "      * gzip compression level between 0 and 9\n" 
         "      * bpc: default 1,bpwc: default 4 \n");
     fprintf(stderr, "Data copy options [connection required]:\n"
         "   -cp src={table|-file:tgt=schema[.table][pwhere=where_cond][:soe][:roe=#][:roedel=#ms]\n"
