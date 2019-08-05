@@ -592,7 +592,9 @@ ignoreme,*Giovanni*,xyz,_commentG_, ignoreme,Antonella,xyz,commentA
 and a map-file like this:
 
 ```
-FNAME:1 BDATE:CDATE COMMENT:4
+FNAME:1 
+BDATE:CDATE 
+COMMENT:4
 ```
 
 Then:
