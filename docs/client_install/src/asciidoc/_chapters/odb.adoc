@@ -123,7 +123,6 @@ $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ODBCHOME/lib
 
 ```
 [ODBC]
-AppUnicodeType=utf16
 
 [<DATA_SOURCE_NAME>]
 Description = DSN Description
@@ -150,7 +149,6 @@ UsageCount = 1
 $ cat odbc.ini
 
 [ODBC]
-AppUnicodeType=utf16
 
 [traf]
 Description = traf DSN 
