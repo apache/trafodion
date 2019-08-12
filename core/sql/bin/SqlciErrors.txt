@@ -1924,7 +1924,7 @@ drop the default context
 9232 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: cannot proceed because of the on-going IUS transaction originated at $0~String0. 
 9233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No operation was done since the table consists only of LOB columns. 
 9234 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: a new high frequency value is detected for column $0~string0. A regular UPDATE STATISTICS is performed instead.
-9235 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
+9235 ZZZZZ 99999 BEGINNER MINOR LOGONLY Histogram for non-existent column found on table $0~string0. Consider dropping and recreating histograms for this table.
 9236 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the histogram for column $0~string0 is empty. A regular UPDATE STATISTICS is performed instead.
 9237 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: WHERE clause of an IUS statement cannot contain $0~String0.
 9238 ZZZZZ 99999 BEGINNER INFRM DBADMIN Histograms were updated successfully, but partition statistics could not be updated from file labels.
