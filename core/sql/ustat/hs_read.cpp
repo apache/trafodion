@@ -1469,6 +1469,7 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
   NABoolean updateReadTime = FALSE, continueAfterReadTimeCheck = FALSE;
   HSLogMan *LM = HSLogMan::Instance();
   HSTranMan *TM = HSTranMan::Instance();  // Do not reset, this is not an entry point.
+  NABoolean nonExistentColumnWarningIssued = FALSE;
 
   // These are local variables, not in HSColStats class, as their state is
   // really local to this loop.  They are distinct from the booleans in
@@ -1534,6 +1535,23 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
       tableColNum_ += offset; // Align columns. See comment above.
       colmap[i] = tableColNum_;
 
+      if (tableColNum_ >= cs.colArray().entries())
+        {
+          // We have encountered a histogram for a column that does not exist.
+          // This can happen if a Hive table has histograms, and then is dropped
+          // and recreated with fewer columns outside of Trafodion. It could
+          // also happen if someone foolishly, maliciously or otherwise 
+          // manually modifies the SB_HISTOGRAMS.COLUMN_NUMBER column. Ignore
+          // this histogram, but also raise a warning.
+          ComDiagsArea *ptrDiags = CmpCommon::diags();
+          if (ptrDiags && !nonExistentColumnWarningIssued)
+            {
+              nonExistentColumnWarningIssued = TRUE;  // just issue the warning once
+              *ptrDiags << DgSqlCode(UERR_WARNING_NONEXISTENT_COLUMN)
+                 << DgString0(tabDef->getObjectFullName().data());
+            }
+          continue;
+        }
       const NAColumn *nacol = cs.colArray()[tableColNum_];
       if (preFetch || nacol->needHistogram())
         needHistogram = TRUE;

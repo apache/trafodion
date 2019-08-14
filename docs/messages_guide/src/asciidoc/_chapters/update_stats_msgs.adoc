@@ -419,6 +419,24 @@ in the sample table.
 is necessary.
 
 <<<
+[[SQL-9235]]
+== SQL 9235
+
+```
+Histogram for non-existent column found on table <table-name>. Consider dropping and recreating histograms for this table.
+```
+
+*Cause:* A SQL statement was compiled that referenced the given table name. When the compiler
+read the histograms for that table, it encountered one for a non-existent column. This can happen,
+for example, if a Hive table is recreated with fewer columns outside of Trafodion. In this case,
+Trafodion does not know in advance that the histograms are now stale.
+
+*Effect:* This is a warning only. {project-name} attempts to continue compiling the query.
+
+*Recovery:* To remove this warning, perform UPDATE STATISTICS ... CLEAR on the given table. This
+will remove all histograms on the table. If histograms are desired, then perform UPDATE STATISTICS
+to create the desired histograms.
+
 [[SQL-9240]]
 == SQL 9240
 
