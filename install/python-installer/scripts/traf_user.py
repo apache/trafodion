@@ -128,6 +128,15 @@ export traf_version="%s"
 export dcs_cnt_per_node="%s"
 """ % (dbcfgs['hbase_xml_file'], dbcfgs['hbase_lib_path'], dbcfgs['traf_user'], dbcfgs['traf_version'], dbcfgs['dcs_cnt_per_node'])
 
+    # save additonal configs for multi instance support
+    trafodion_config += """
+export TRAF_CLUSTER_NAME="%s"
+export TRAF_INSTANCE_NAME="%s"
+export TRAF_CLUSTER_ID="%s"
+export TRAF_INSTANCE_ID="%s"
+export TRAF_ROOT_ZNODE="/%s"
+""" % (dbcfgs['cluster_name'], dbcfgs['traf_instance_name'], dbcfgs['traf_cluster_id'], dbcfgs['traf_instance_id'], dbcfgs['traf_user'])
+
     run_cmd('mkdir -p %s' % TRAF_CFG_DIR)
     write_file(TRAF_CFG_FILE, trafodion_config)
 

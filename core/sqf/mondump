@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,19 +20,19 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-# mondump <pid> to [<node>:]<core> using <tmp-dir> if <node>
+# mondump <pid> to <core>
 #
 if [ $# -lt 2 ]; then
-	echo "usage: $0 <pid> <core> [<node> <tmp-dir>]"
-	exit 1
+    echo "usage: $0 <pid> <core>"
+    exit 1
 fi
 
 # change this to 1 for tracing to /tmp/mondump<pid>
 trace=0
 
 if [ $trace = 1 ]; then
-	TMP=/tmp/mondump$$
-	trap "rm -f ${TMP}; exit 1" 1 2 13 15
+    TMP=/tmp/mondump$$
+    trap "rm -f ${TMP}; exit 1" 1 2 13 15
 fi
 
 #
@@ -42,39 +42,25 @@ pid=$1
 core=$2
 tgtcore=$core
 if [ $trace = 1 ]; then
-	echo "input: pid=$pid" >> $TMP
-	echo "input: core=$core" >> $TMP
+    echo "input: pid=$pid" >> $TMP
+    echo "input: core=$core" >> $TMP
 fi
-shift 2
-node=""
-tmpdir=""
-if [ $# -ge 2 ]; then
-        node=$1
-        tmpdir=$2
-	if [ $trace = 1 ]; then
-		echo "input: node=$node" >> $TMP
-		echo "input: tmpdir=$tmpdir" >> $TMP
-	fi
-        shift 2
-fi
+
 dir=`dirname $core`
 core=`basename $core`
-if [ ! -z $node ]; then
-        dir=$tmpdir
-fi
 
 #
 # create core-file
 #
 if [ $trace = 1 ]; then
-	echo "" >> $TMP
-	echo "create core-file" >> $TMP
-	echo "cd $dir" >> $TMP
-	echo "gdb" >> $TMP
-	echo "  attach $pid" >> $TMP
-	echo "  gcore $core" >> $TMP
-	echo "  detach" >> $TMP
-	echo "" >> $TMP
+    echo "" >> $TMP
+    echo "create core-file" >> $TMP
+    echo "cd $dir" >> $TMP
+    echo "gdb" >> $TMP
+    echo "  attach $pid" >> $TMP
+    echo "  gcore $core" >> $TMP
+    echo "  detach" >> $TMP
+    echo "" >> $TMP
 fi
 
 cd $dir
@@ -85,32 +71,20 @@ detach
 eof
 ret=$?
 if [ $trace = 1 ]; then
-	echo "gdb exit $ret" >> $TMP
+    echo "gdb exit $ret" >> $TMP
 fi
 
 if [ $ret = 0 ]; then
-        if [ -z $node ]; then
-		# make sure file created
-		if [ ! -e $dir/$core ]; then
-			ret=1
-			if [ $trace = 1 ]; then
-				echo "$dir/$core were not created" >> $TMP
-			fi
-		fi
-        else
-		if [ $trace = 1 ]; then
-			echo "pdcp -w $node $dir/$core $tgtcore" >> $TMP
-		fi
-		pdcp -w $node $dir/$core $tgtcore
-		ret=$?
-		if [ $trace = 1 ]; then
-			echo "pdcp exit $ret" >> $TMP
-		fi
-		rm -f $dir/$core
+    # make sure file created
+    if [ ! -e $dir/$core ]; then
+        ret=1
+        if [ $trace = 1 ]; then
+            echo "$dir/$core were not created" >> $TMP
         fi
+    fi
 fi
 
 if [ $trace = 1 ]; then
-	echo "exit $ret" >> $TMP
+    echo "exit $ret" >> $TMP
 fi
 exit $ret

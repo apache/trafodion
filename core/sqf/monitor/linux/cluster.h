@@ -99,6 +99,10 @@ public:
         Reintegrate_Err15   // Could not get connect acknowledgement
     };
 
+    enum { SYNC_DELAY_LOGGING_THRESHOLD = 20 }; // percentage of SQ_MON_SYNC_TIMEOUT (20% default)
+    enum { SYNC_DELAY_LOGGING_THRESHOLD_MAX = 50 }; // maximum percentage of SQ_MON_SYNC_TIMEOUT (50%)
+    enum { SYNC_DELAY_LOGGING_FREQUENCY_DEFAULT = 60 }; // Mininum 1 minute between log messages
+
     int        NumRanks;       // Current # of processes in the cluster
 
     CCluster( void );
@@ -131,8 +135,8 @@ public:
 #ifndef NAMESERVER_PROCESS
     void AssignTmLeader( int pnid, bool checkProcess );
 #endif
-    void AssignMonitorLeader( const char* failedMaster );
-    void UpdateMonitorPort (const char* newMaster);
+    void AssignMonitorLeader( const char * failedMaster );
+    void UpdateMonitorPort (const char * newMaster);
     void stats();
     void CompleteSyncCycle()
         { syncCycle_.lock(); syncCycle_.wait(); syncCycle_.unlock(); }
@@ -148,17 +152,12 @@ public:
     inline void SetTmLeader( int tmLeaderNid ) { tmLeaderNid_ = tmLeaderNid; } 
 #endif
     int  GetDownedNid( void );
-#ifndef NAMESERVER_PROCESS
-    inline int GetTmSyncPNid( void ) { return( tmSyncPNid_ ); } // Physical Node ID of current TmSync operations master
-#endif
     void InitClusterComm(int worldSize, int myRank, int *rankToPnid);
+    void InitializeConfigCluster( int pnid );
     void addNewComm(int nid, int otherRank, MPI_Comm comm);
     void addNewSock(int nid, int otherRank, int sockFd );
 
     bool exchangeNodeData ( );
-#ifndef NAMESERVER_PROCESS
-    void exchangeTmSyncData ( struct sync_def *sync, bool bumpSync );
-#endif
     int GetConfigPNodesCount() { return configPNodesCount_; }
     int GetConfigPNodesMax() { return configPNodesMax_; }
     bool ImAlive( bool needed=false, struct sync_def *sync = NULL );
@@ -168,8 +167,6 @@ public:
 #else
     void HardNodeDownNs( int nid );
 #endif
-    void SoftNodeDown( int pnid );
-    int  SoftNodeUpPrepare( int pnid );
     bool CheckSpareSet( int pnid );
     inline bool  IsIntegrating( void ) { return( (joinSock_ != -1 || joinComm_ != MPI_COMM_NULL) || integratingPNid_ != -1 ); }
     struct message_def *JoinMessage( const char *node_name, int pnid, JOINING_PHASE phase );
@@ -234,6 +231,7 @@ public:
         long fullSize_;
         long compressedSize_;
         long tmLeader_;
+        long verifiers_[3];
         long clusterRegistryCount_;
         long processRegistryCount_;
         long uniqueStringCount_;
@@ -254,25 +252,15 @@ protected:
     int            ptpSock_;
 #endif
     int            epollFD_;
+    int            epollPingFD_;
     int           *indexToPnid_;
     int            configMaster_;
 
     CNode  **Node;           // array of nodes
     CLNode **LNode;          // array of logical nodes
-    int      tmSyncPNid_;    // Physical Node ID of current TmSync operations master
 
-
-#ifndef NAMESERVER_PROCESS
-    void AddTmsyncMsg( struct sync_buffer_def *tmSyncBuffer
-                     , struct sync_def *sync
-                     , struct internal_msg_def *msg);
-#endif
     void AddReplData (struct internal_msg_def *msg);
     void AddMyNodeState ();
-#ifndef NAMESERVER_PROCESS
-    void TraceTMSyncState(struct sync_buffer_def *recv_buffer,
-                          size_t recvCount);
-#endif
     void UpdateAllNodeState(struct sync_buffer_def *recv_buffer,
                             size_t recvCount,
                             bool &overflow);
@@ -330,7 +318,10 @@ private:
     unsigned long long highSeqNum_;
     unsigned long long reconnectSeqNum_;
     unsigned long long seqNum_;
-    int cumulativeDelaySec_;
+    int cumulativeSyncDelay_;        // cumulative seconds that Allgather is stuck
+                                     // this is the basis of log events generated
+    int syncDelayLogEventInterval_;  // when subsequent log events are generated (seconds)
+    int syncDelayLogEventThreshold_; // when 1st log event is generated (seconds)
 
     bool waitForWatchdogExit_;    // set when watchdog exit has already been issued
     bool waitForNameServerExit_;  // set when Name Server exit has already been issued
@@ -405,9 +396,10 @@ private:
     int Allgather(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherIB(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherSock(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
-    int AllgatherSockReconnect( MPI_Status *stats, bool reestablishConnections = false );
-    int AcceptSockPeer( CNode *node, int peer, bool reestablishConnections = false );
-    int ConnectSockPeer( CNode *node, int peer, bool reestablishConnections = false );
+    int AllgatherSockReconnect( MPI_Status *stats, peer_t *peers, bool resetConnections = false );
+    int AcceptSockPeer( MPI_Status *stats, bool resetConnections = false );
+    int CheckSockPeer( int pnid, MPI_Status *stats, peer_t *peer );
+    int ConnectSockPeer( CNode *node, int peer, bool resetConnections = false );
 
     void ValidateClusterState( cluster_state_def_t nodestate[],
                                bool haveDivergence );
@@ -415,8 +407,8 @@ private:
     void HandleDownNode( int nid );
     void HandleReintegrateError( int rc, int err,
                                  int nid, nodeId_t *nodeInfo,
-                                 bool abort );
-    bool PingSockPeer(CNode *node);
+                                 bool abort=false );
+    bool PingSockPeer( CNode *node, struct timespec &peerZnodeFailTime );
     void ReIntegrateMPI( int initProblem );
     void ReIntegrateSock( int initProblem );
     void SendReIntegrateStatus( STATE nodeState, int status );
@@ -426,8 +418,7 @@ private:
                              MPI_Status *status,
                              int sentChangeNid);
     bool ProcessClusterData( struct sync_buffer_def * syncBuf,
-                             struct sync_buffer_def * sendBuf,
-                             bool deferredTmSync );
+                             struct sync_buffer_def * sendBuf );
 
     bool checkIfDone ( void );
     void setNewComm(int nid);

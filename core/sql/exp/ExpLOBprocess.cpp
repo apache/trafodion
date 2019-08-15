@@ -345,11 +345,6 @@ void process_mon_msg(MS_Mon_Msg *msg) {
                msg->u.shutdown.pid,
                msg->u.shutdown.level);
         break;
-    case MS_MsgType_TmSyncAbort:
-    case MS_MsgType_TmSyncCommit:
-        break;
-    case MS_MsgType_UnsolicitedMessage:
-        break;
     default:
         break;
     }

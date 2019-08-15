@@ -545,10 +545,14 @@ int main(int argc, char *argv[]) {
             }
 
             printf("core-file=%s\n", core_file);
-            err = stat(core_file, &statbuf);
+            char *pch;
+            pch= strtok (core_file,":");
+            pch = strtok (NULL,":");
+            printf("pch=%s\n", pch);
+            err = stat(pch, &statbuf);
             assert(err == 0);
             if (!save)
-                unlink(core_file);
+                unlink(pch);
             if ((loop > 1) && sleepv)
                 sleep(1);
         }

@@ -53,17 +53,75 @@ using namespace std;
 #include "process.h"
 #include "redirector.h"
 #include "replicate.h"
+#include "zclient.h"
 
 extern CReqQueue ReqQueue;
 extern CMonitor *Monitor;
+extern CNodeContainer *Nodes;
 extern CNode *MyNode;
 #ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
 #endif
 extern CHealthCheck HealthCheck;
 extern CReplicate Replicator;
+extern CZClient    *ZClient;
 extern int MyPNID;
 extern bool IsRealCluster;
+extern bool ZClientEnabled;
+extern char MasterMonitorName[MAX_PROCESS_PATH];
+
+const char *StateString( STATE state);
+
+const char *HealthCheckStateString( HealthCheckStates state)
+{
+    const char *str;
+    
+    switch( state )
+    {
+        case HC_AVAILABLE:
+            str = "HC_AVAILABLE";
+            break;
+        case HC_UPDATE_SMSERVICE:
+            str = "HC_UPDATE_SMSERVICE";
+            break;
+        case HC_UPDATE_WATCHDOG:
+            str = "HC_UPDATE_WATCHDOG";
+            break;
+        case MON_READY:
+            str = "MON_READY";
+            break;
+        case MON_SHUT_DOWN:
+            str = "MON_SHUT_DOWN";
+            break;
+        case MON_NODE_QUIESCE:
+            str = "MON_NODE_QUIESCE";
+            break;
+        case MON_SCHED_NODE_DOWN:
+            str = "MON_SCHED_NODE_DOWN";
+            break;
+        case MON_NODE_DOWN:
+            str = "MON_NODE_DOWN";
+            break;
+        case MON_STOP_WATCHDOG:
+            str = "MON_STOP_WATCHDOG";
+            break;
+        case MON_START_WATCHDOG:
+            str = "MON_START_WATCHDOG";
+            break;
+        case MON_EXIT_PRIMITIVES:
+            str = "MON_EXIT_PRIMITIVES";
+            break;
+        case HC_EXIT:
+            str = "HC_EXIT";
+            break;
+        default:
+            str = "HealthCheckState - Undefined";
+            break;
+    }
+
+    return( str );
+}
+
 
 // constructor
 CHealthCheck::CHealthCheck()
@@ -75,6 +133,7 @@ CHealthCheck::CHealthCheck()
     clock_gettime(CLOCK_REALTIME, &currTime_);
     lastReqCheckTime_ = currTime_;
     lastSyncCheckTime_ = currTime_;
+    nextHealthLogTime_ = currTime_;
     quiesceStartTime_.tv_sec = 0;
     quiesceStartTime_.tv_nsec = 0;
     nonresponsiveTime_.tv_sec = 0;
@@ -87,7 +146,7 @@ CHealthCheck::CHealthCheck()
 
     initializeVars();
 
-    monSyncTimeout_ = -1;
+    monSyncTimeout_ = CHealthCheck::SYNC_TIMEOUT_DEFAULT;
     char *monSyncTimeoutC = getenv("SQ_MON_SYNC_TIMEOUT");
     if ( monSyncTimeoutC ) 
     {
@@ -115,6 +174,18 @@ CHealthCheck::CHealthCheck()
         quiesceTimeoutSec_     = atoi(quiesceTimeoutC);
     }
 
+    healthLoggingFrequency_    = CHealthCheck::HEALTH_LOGGING_FREQUENCY_DEFAULT;
+    char *healthLoggingFrequencyC = getenv("SQ_HEALTH_LOGGING_FREQUENCY");
+    if (healthLoggingFrequencyC)
+    {
+        healthLoggingFrequency_     = atoi(healthLoggingFrequencyC);
+        if (healthLoggingFrequency_ < CHealthCheck::HEALTH_LOGGING_FREQUENCY_MIN)
+        {
+            healthLoggingFrequency_ = CHealthCheck::HEALTH_LOGGING_FREQUENCY_MIN;
+        }
+    }
+    nextHealthLogTime_.tv_sec += healthLoggingFrequency_;
+    
 #ifdef NAMESERVER_PROCESS
     cpuSchedulingDataEnabled_ = false;
 #else
@@ -210,12 +281,8 @@ void CHealthCheck::stopNameServer()
     char buf[MON_STRING_BUF_SIZE];
     sprintf(buf, "[%s], stopping.\n", method_name);
     mon_log_write(MON_HEALTHCHECK_STOP_NS_1, SQ_LOG_CRIT, buf);
-    // Don't generate a core file, abort is intentional
-    struct rlimit limit;
-    limit.rlim_cur = 0;
-    limit.rlim_max = 0;
-    setrlimit(RLIMIT_CORE, &limit);
-    abort();
+
+    mon_failure_exit();
 }
 #endif
 
@@ -229,6 +296,9 @@ void CHealthCheck::healthCheckThread()
     TRACE_ENTRY;
 
     HealthCheckStates state;
+#ifndef NAMESERVER_PROCESS
+    int myPid = getpid();
+#endif
     struct timespec ts;
 
     if (trace_settings & TRACE_HEALTH)
@@ -237,6 +307,17 @@ void CHealthCheck::healthCheckThread()
     setTimeToWakeUp(ts);
 
     bool done = false;
+
+    if (trace_settings & (TRACE_HEALTH | TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d quiesceTimeoutSec_ = %d, syncTimeoutSec_ = %d, "
+                      "workerTimeoutSec_ = %d, healthLoggingFrequency_= %d (secs)\n"
+                    , method_name, __LINE__
+                    , quiesceTimeoutSec_
+                    , monSyncTimeout_
+                    , CReqQueue::REQ_MAX_RESPONSIVE
+                    , healthLoggingFrequency_ );
+    }
 
     // Wait for event or timer to expire
     while (!done) 
@@ -255,6 +336,8 @@ void CHealthCheck::healthCheckThread()
 
 #ifndef NAMESERVER_PROCESS
 #ifdef EXCHANGE_CPU_SCHEDULING_DATA
+        timeToLogHealth( currTime_ );
+
         if (cpuSchedulingDataEnabled_)
         {
             // Replicate this host's CPU scheduling data to other nodes
@@ -265,9 +348,10 @@ void CHealthCheck::healthCheckThread()
 #endif
 
         state = state_;
-
+#if 0
         if ( trace_settings & TRACE_HEALTH )
-            trace_printf("%s@%d State: %d(%s)\n", method_name, __LINE__, state, getStateStr(state));
+            trace_printf("%s@%d State: %s\n", method_name, __LINE__, HealthCheckStateString(state));
+#endif
 
         switch(state)
         {
@@ -410,6 +494,12 @@ static void sigusr2SignalHandler(int , siginfo_t *, void *)
     if (trace_settings & TRACE_HEALTH)
         trace_printf("%s@%d sigusr2 signal triggered, work queue is now blocked.\n", 
                       method_name, __LINE__);
+
+    if ( ZClientEnabled )
+    {
+        ZClient->RunningZNodeDelete( MyNode->GetName() );
+        ZClient->MasterZNodeDelete( MyNode->GetName() );
+    }
 
     char buf[MON_STRING_BUF_SIZE];
     sprintf(buf, "[CHealthCheck::sigusr2SignalHandler], work queue to now blocked.\n");
@@ -568,7 +658,13 @@ void CHealthCheck::processTimerEvent()
 {
     const char method_name[] = "CHealthCheck::processTimerEvent";
     TRACE_ENTRY;
-
+#if 0
+    if (trace_settings & TRACE_HEALTH)
+    {
+        trace_printf("%s@%d Timer event: wakeup=%lld, current=%ld\n"
+                    , method_name, __LINE__, wakeupTimeSaved_, currTime_.tv_sec );
+    }
+#endif
     // check if request queue is responsive, once every REQ_MAX_RESPONSIVE secs
     if ( (currTime_.tv_sec - lastReqCheckTime_.tv_sec) > CReqQueue::REQ_MAX_RESPONSIVE )
     {
@@ -607,15 +703,27 @@ void CHealthCheck::processTimerEvent()
             {
                 if ( (currTime_.tv_sec - nonresponsiveTime_.tv_sec) > monSyncTimeout_ )
                 {   
-                    ReqQueue.enqueueDownReq(MyPNID);
+                    char buf[MON_STRING_BUF_SIZE];
+                    sprintf( buf
+                           , "[%s], Sync Thread Timeout detected (timeout=%d). "
+                             "Scheduling all nodes down!\n"
+                           , method_name, monSyncTimeout_);
+                    mon_log_write(MON_HEALTHCHECK_TEVENT_4, SQ_LOG_CRIT, buf);
+
+                    if ( ZClientEnabled )
+                    {
+                        ZClient->RunningZNodesDelete();
+                    }
+                    else
+                    {
+                        CNode  *node = Nodes->GetFirstNode();
+                        while (node)
+                        {
+                            ReqQueue.enqueueDownReq( node->GetPNid() );
+                        }
+                    }
                     nonresponsiveTime_.tv_sec = 0;
                     nonresponsiveTime_.tv_nsec = 0;
-
-                    char buf[MON_STRING_BUF_SIZE];
-                    sprintf(buf, "[%s], Sync thread timeout detected (timeout"
-                            "=%d). Scheduling Node down.\n", method_name,
-                            monSyncTimeout_);
-                    mon_log_write(MON_HEALTHCHECK_TEVENT_4, SQ_LOG_ERR, buf);
                 }
             }
         }
@@ -648,6 +756,11 @@ void CHealthCheck::processTimerEvent()
     if ( SQ_theLocalIOToClient )
     {
         SQ_theLocalIOToClient->refreshWDT(++refreshCounter_);
+#if 0
+        if (trace_settings & TRACE_HEALTH)
+            trace_printf("%s@%d Watchdog timer refreshed (%d)\n"
+                        , method_name, __LINE__, refreshCounter_ );
+#endif
     }
 #endif
 
@@ -671,7 +784,13 @@ void CHealthCheck::setTimeToWakeUp( struct timespec &ts)
     ts.tv_sec += 1; // wake up every second
 
     wakeupTimeSaved_ = ts.tv_sec;
-
+#if 0
+    if (trace_settings & TRACE_HEALTH)
+    {
+        trace_printf("%s@%d Set Timer event: wakeup=%lld\n"
+                    , method_name, __LINE__, wakeupTimeSaved_ );
+    }
+#endif
     TRACE_EXIT;
 }
 
@@ -761,4 +880,53 @@ void CHealthCheck::scheduleNodeDown()
     TRACE_EXIT; 
 }
 
+// Determine if it is time to log a health message and then do it if needed
+void CHealthCheck::timeToLogHealth(struct timespec &currentTime)
+{
+    const char method_name[] = "CHealthCheck::timeToLogHealth";
+    TRACE_ENTRY;
+
+    const char message_tag[] = "Health Status";
+
+#if 0
+    if (trace_settings & TRACE_HEALTH)
+    {
+        trace_printf("%s@%d Timer: nextHealthLogTime=%ld, current=%ld\n"
+                    , method_name, __LINE__, nextHealthLogTime_.tv_sec, currTime_.tv_sec );
+    }
+#endif
+
+    if (currentTime.tv_sec >= nextHealthLogTime_.tv_sec)
+    { // Time to log health status
+        int readyCount = 0;
+        int upCount = Nodes->GetPNodesUpCount(readyCount);
+    
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf(buf, "[%s] - Node: %s, pnid=%d, state=%s, master=%s\n"
+               , message_tag
+               , MyNode->GetName(), MyPNID, StateString(MyNode->GetState()), MasterMonitorName );
+        mon_log_write(MON_HEALTHCHECK_TIMETOLOGHEALTH, SQ_LOG_INFO, buf);
+        sprintf(buf, "[%s] - Cluster: node count=%d (State Up - count=%d, Txn Services Ready - count=%d)\n"
+               , message_tag
+               , Nodes->GetPNodesCount(), upCount, readyCount );
+        mon_log_write(MON_HEALTHCHECK_TIMETOLOGHEALTH, SQ_LOG_INFO, buf);
+        
+        nextHealthLogTime_.tv_sec += healthLoggingFrequency_;
+    }
+    TRACE_EXIT; 
+}
+
+void CHealthCheck::triggerTimeToLogHealth( void )
+{
+    const char method_name[] = "CHealthCheck::triggerTimeToLogHealth";
+    TRACE_ENTRY;
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_HEALTH))
+    {
+        trace_printf( "%s@%d - Trigger Health Status logging!\n"
+                    , method_name, __LINE__);
+    }
+    clock_gettime(CLOCK_REALTIME, &currTime_);
+    nextHealthLogTime_ = currTime_;
+    TRACE_EXIT; 
+}
 

@@ -36,7 +36,9 @@ using namespace std;
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
+#include <sys/resource.h>
 #include <errno.h>
+
 #include "seabed/logalt.h"
 #include "monlogging.h"
 #include "montrace.h"
@@ -44,11 +46,31 @@ using namespace std;
 
 #define gettid() syscall(__NR_gettid)
 
+bool GenCoreOnFailureExit = false;
+
 extern bool IsRealCluster;
 extern int MyPNID;
 extern CMonLog *MonLog;
 
 pthread_mutex_t       MonLogMutex = PTHREAD_MUTEX_INITIALIZER;
+
+void mon_failure_exit( bool genCoreOnFailureExit )
+{
+    if (genCoreOnFailureExit || GenCoreOnFailureExit)
+    {
+        // Generate a core file, abort is intentional
+        abort();
+    }
+    else
+    {
+        // Don't generate a core file, abort is intentional
+        struct rlimit limit;
+        limit.rlim_cur = 0;
+        limit.rlim_max = 0;
+        setrlimit(RLIMIT_CORE, &limit);
+        abort();
+    }
+}
 
 int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
@@ -123,28 +145,38 @@ CMonLog::CMonLog( const char *log4cxxConfig
     gethostname(hostname, MAX_PROCESSOR_NAME);
     char   logFileSuffix[MAX_FILE_NAME];
 
-    if (myNid_ != -1)
+    // Set flag to indicate whether we are operating in a real cluster
+    // or a virtual cluster.
+    if ( getenv("SQ_VIRTUAL_NODES") )
     {
-        sprintf( logFileSuffix, ".%s.%d.log"
-               , hostname
-               , myNid_);
+        IsRealCluster = false;
     }
-    else if (myPNid_ != -1)
-    {
-        sprintf( logFileSuffix, ".%s.%d.log"
-               , hostname
-               , myPNid_);
-    }
-    else if ( myPNid_ == -1 && !IsRealCluster)
-    {
-        sprintf( logFileSuffix, ".%s.%d.log"
-               , hostname
-               , myPid_);
-    }
-    else
+
+    if (IsRealCluster)
     {
         sprintf( logFileSuffix, ".%s.log"
                , hostname );
+    }
+    else
+    {
+        if (myNid_ != -1)
+        {
+            sprintf( logFileSuffix, ".%d.%s.log"
+                   , myNid_
+                   , hostname);
+        }
+        else if (myPNid_ != -1)
+        {
+            sprintf( logFileSuffix, ".%d.%s.log"
+                   , myPNid_
+                   , hostname);
+        }
+        else
+        {
+            sprintf( logFileSuffix, ".%d.%s.log"
+                   , myPid_
+                   , hostname);
+        }
     }
 
     CommonLogger::instance().initLog4cxx(log4cxxConfig_.c_str(), logFileSuffix);
@@ -330,7 +362,7 @@ void CMonLog::setupInMemoryLog()
                 method_name, err, strerror(err));
         mon_log_write(MON_LOG_ERROR_1, SQ_LOG_ERR, la_buf);
     
-        abort(); 
+        mon_failure_exit();
     }
 
     memLogHeader_ = (memLogHeader_t *)shmat( memLogID_, NULL, 0 );
@@ -342,7 +374,7 @@ void CMonLog::setupInMemoryLog()
         sprintf(la_buf, "[%s], Error= Can't map shared memory segment address! - errno=%d (%s)\n", method_name, err, strerror(err));
         mon_log_write(MON_LOG_ERROR_2, SQ_LOG_CRIT, la_buf);
         
-        abort();
+        mon_failure_exit();
     }
 
     memLogBase_ = (memLogEntry_t *)(memLogHeader_ + 1);

@@ -113,7 +113,7 @@ SB_Trace::SB_Trace() {
 
 SB_Trace::~SB_Trace() {
     if (ip_trace_mem_buf != NULL) {
-        fprintf(ip_trace_file, ip_trace_mem_buf);
+        fprintf(ip_trace_file,"%s", ip_trace_mem_buf);
         delete [] ip_trace_mem_buf;
         ip_trace_mem_buf = NULL;
     }
@@ -152,7 +152,7 @@ void SB_Trace::trace_close() {
 void SB_Trace::trace_flush() {
     if (ip_trace_file != NULL) {
         if (ip_trace_mem_buf != NULL) {
-            fprintf(ip_trace_file, ip_trace_mem_buf);
+            fprintf(ip_trace_file,"%s", ip_trace_mem_buf);
             iv_trace_mem_inx = 0;
         }
         fflush(ip_trace_file);
@@ -734,7 +734,7 @@ void SB_trace_assert_fun(const char *pp_exp,
             getpid(), gettid(),
             pp_file, pv_line, pp_fun,
             pp_exp);
-    fprintf(stderr, la_buf);
+    fprintf(stderr,"%s", la_buf);
     fflush(stderr);
     abort(); // can't use SB_util_abort
 }
@@ -766,7 +766,7 @@ void SB_trace_assert_fun_ieq(const char *pp_exp,
             getpid(), gettid(),
             pp_file, pv_line, pp_fun,
             pp_exp, pv_lhs, pv_rhs);
-    fprintf(stderr, la_buf);
+    fprintf(stderr,"%s", la_buf);
     fflush(stderr);
     abort(); // can't use SB_util_abort
 }
@@ -798,7 +798,7 @@ void SB_trace_assert_fun_pne(const char *pp_exp,
             getpid(), gettid(),
             pp_file, pv_line, pp_fun,
             pp_exp, pp_lhs, pp_rhs);
-    fprintf(stderr, la_buf);
+    fprintf(stderr, "%s",la_buf);
     fflush(stderr);
     abort(); // can't use SB_util_abort
 }

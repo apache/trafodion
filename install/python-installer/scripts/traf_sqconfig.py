@@ -39,33 +39,36 @@ def run():
     if traf_conf == '': err('TRAF_CONF var is empty')
     sqconfig_file = traf_conf + '/sqconfig'
 
-    core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
-    core = int(core)-1 if int(core) <= 256 else 255
+    if not os.path.exists(sqconfig_file):
+        core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
+        core = int(core)-1 if int(core) <= 256 else 255
 
-    lines = ['begin node\n']
-    for node_id, node in enumerate(nodes):
-        line = 'node-id=%s;node-name=%s;cores=0-%d;processors=%s;roles=connection,aggregation,storage\n' % (node_id, node, core, processor)
-        lines.append(line)
+        lines = ['begin node\n']
+        for node_id, node in enumerate(nodes):
+            line = 'node-id=%s;node-name=%s;cores=0-%d;processors=%s;roles=connection,aggregation,storage\n' % (node_id, node, core, processor)
+            lines.append(line)
 
-    lines.append('end node\n')
-    lines.append('\n')
-    lines.append('begin overflow\n')
+        lines.append('end node\n')
+        lines.append('\n')
+        lines.append('begin overflow\n')
 
-    for scratch_loc in scratch_locs:
-        line = 'hdd %s\n' % scratch_loc
-        lines.append(line)
+        for scratch_loc in scratch_locs:
+            line = 'hdd %s\n' % scratch_loc
+            lines.append(line)
 
-    lines.append('end overflow\n')
+        lines.append('end overflow\n')
 
-    # write out the node section
-    with open(sqconfig_file, 'w') as f:
-        f.writelines(lines)
+        # write out the node section
+        with open(sqconfig_file, 'w') as f:
+            f.writelines(lines)
 
-    print 'sqconfig generated successfully!'
+        print 'sqconfig generated successfully!'
 
-    run_cmd('sqgen')
+        run_cmd('sqgen')
 
-    print 'sqgen ran successfully!'
+        print 'sqgen ran successfully!'
+    else:
+        print 'Using existing configuration (%s)' % sqconfig_file
 
 # main
 try:

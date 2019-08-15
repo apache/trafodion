@@ -78,6 +78,16 @@ CLNodeConfig::~CLNodeConfig( void )
     TRACE_EXIT;
 }
 
+const char *CLNodeConfig::GetDomain( void )
+{
+    return( pnodeConfig_->GetDomain() );
+}
+
+const char *CLNodeConfig::GetFqdn( void )
+{
+    return( pnodeConfig_->GetFqdn() );
+}
+
 const char *CLNodeConfig::GetName( void )
 {
     return( pnodeConfig_->GetName() );
@@ -240,7 +250,20 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
         return( NULL );
     }
 
-    assert( lnodesConfig_[lnodeConfigInfo.nid] == NULL );
+    if( lnodesConfig_[lnodeConfigInfo.nid] != NULL )
+    {
+        if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
+        {
+            trace_printf( "%s@%d - Existing logical node configuration object\n"
+                          "        (nid=%d, pnid=%d, nextNid_=%d)\n"
+                          "        (lnodesCount_=%d,lnodesConfigMax=%d)\n"
+                        , method_name, __LINE__
+                        , lnodeConfigInfo.nid, pnodeConfig->GetPNid(), nextNid_
+                        , lnodesCount_, lnodesConfigMax_);
+        }
+        TRACE_EXIT;
+        return( lnodesConfig_[lnodeConfigInfo.nid] );
+    }
 
     CLNodeConfig *lnodeConfig = new CLNodeConfig( pnodeConfig
                                                 , lnodeConfigInfo );

@@ -1,0 +1,137 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# Produce process status for Trafodion processes.
+# The output goes to stdout and may be displayed to the user or used
+# by other scripts that need to obtain a list of all Trafodion
+# processes.
+#
+# The list of Trafodion programs in variable PROGS below must include
+# all Trafodion programs.   Addition of a new Trafodion program requires
+# a corresponding addition to PROGS.
+#
+
+# Distinguished program commands for benefit of pkillall
+SAFEPROGS=monitor,sqwatchdog,memcheck-amd64-linux
+
+# Trafodion program and script command names.
+# Add new Trafodion programs and scripts to this list.
+# Observe the following:
+# 1. KEEP THE LIST IN ALPHABETICAL ORDER: A-Z then a-z
+# 2. Separate each entry with a comma.
+# 3. NO SPACES WHATSOEVER; this list is an argument to ps -C.
+#PROGS=dtmProc\
+PROGS=dtm\
+,childExitCtrl\
+,childExitParent\
+,childExitChild\
+,client\
+,server\
+,regTestCtrl\
+,deathNotice\
+,deathUnreg\
+,deathWatch\
+,persistentProc\
+,procCreate\
+,dtmCtrl\
+,dtmProc\
+,spxCtrl\
+,spxProc\
+,tmSyncTest\
+,tmSyncCtrl\
+,mpirun\
+,shell\
+,sqcheck\
+,sqregck\
+,sqstart\
+,trafns\
+,pstartd
+
+function usage {
+
+typeset MYNAME="$(basename $0)"
+cat <<EOF
+
+usage:  $MYNAME [-h] [-l] [-s] [-H]
+
+-h      Suppress header
+
+-l      List Trafodion programs.  When -s is also used,
+        list only programs used in safe mode.
+
+-s      Safe mode, does not show distinguished programs:
+                $SAFEPROGS
+
+-H      Show help text
+
+EOF
+}
+
+SUPPRESS_HEADER=0
+LIST=0
+while getopts ":hlsH" Option
+do
+  case $Option in
+    h) SUPPRESS_HEADER=1 ;;
+    l) LIST=1 ;;
+    s) SAFE=1 ;;
+    H) usage
+       exit 0;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+if [[ -z $SAFE ]]; then
+  PROGS="$PROGS,$SAFEPROGS"
+fi
+
+if (( LIST == 1 )); then
+    echo "$PROGS"
+  exit 0
+fi
+
+if (( SUPPRESS_HEADER == 0 )); then
+  echo "uid          pid   ppid  wchan   rss   vsz   time     stat cmd"
+  echo "---          ---   ----  -----   ---   ---   ----     ---- ---"
+fi
+
+PS_OUTPUT_FORMAT="user:12,pid,ppid,wchan,rss,vsz,time,stat,cmd"
+ps ww --sort=cmd,pid -C $PROGS -o ${PS_OUTPUT_FORMAT} | grep -w ^$USER | grep -v '<defunct>'$
+RES=$?
+
+# Look for tcollector processes
+uid="$(id -u)"
+pgrep -u ${uid} -f python |  xargs ps --sort=cmd,pid -o ${PS_OUTPUT_FORMAT} | grep tcollector | grep -v grep | grep -v '<defunct>'$
+if (($? == 0)) || ((RES == 0)); then
+  RES=0
+else
+  RES=1
+fi 
+
+#Add additional Java classes to search for in the following env variable (separated by a '|' character)
+JAVA_CLASSES='(net.opentsdb.tools.TSDMain|org.trafodion.sql.LittleJetty)'
+ps ww --sort=cmd,pid -C java -o ${PS_OUTPUT_FORMAT} | grep -w ^$USER | grep -v '<defunct>'$ | egrep ${JAVA_CLASSES} | cut -b1-200
+if (($? == 0)) || ((RES == 0)); then
+  exit 0
+else
+  exit 1
+fi 

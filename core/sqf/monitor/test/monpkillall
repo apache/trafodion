@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+# Obtain process ids of any monitors for current user.
+MONPIDLIST=$(ps --no-header -C monitor -o user:12,pid | grep -w ^$USER | awk '{print $2}')
+# Make MONPIDLISTCS a comma separated list of monitor process ids
+MONPIDLISTCS=$(echo $MONPIDLIST | sed 's/\s/,/g')
+
+# Obtain process ids of any watchdog processes for current user.
+WDTPIDLIST=$(ps --sort=cmd,pid -C sqwatchdog -o user:12,pid | grep -w ^$USER | awk '{print $2}')
+
+# Obtain process ids of Trafodion processes (except monitor and watchdog processes)
+if [ "$1" = "-safekill" ]; then
+    SAFE=1
+fi
+SQ_PROCS=$(monpstat -h -s | awk '{print $2}')
+
+# Remove Trafodion processes (except monitor and watchdog processes)
+if [[ -n $SQ_PROCS ]]; then
+    echo $SQ_PROCS | xargs kill -9 2>/dev/null
+fi
+
+# Kill the tcollector processes...
+uid="$(id -u)"
+pkill -9 -u $uid -f tcollector
+pkill -9 -u $uid -f mpstat
+
+# Give kills a second to take effect before looking for orphan processes
+sleep 1
+
+# Remove any other processes (except watchdog process) whose parent
+# process is a monitor (may have orphans if new processes were added
+# to the system but not included in "monpstat" or if the monitor was
+# creating a new process just at the time "monpstat" was executing).
+if [[ -n $MONPIDLISTCS ]]; then
+    ORPHANS=$(ps --no-headers --ppid $MONPIDLISTCS -o pid,cmd | grep -v sqwatchdog | awk '{print $1}')
+fi
+if [[ -n $ORPHANS ]]; then
+    echo $ORPHANS | xargs kill -9 2>/dev/null
+fi
+
+# Remove watchdog and monitor processes if not in safe mode
+if [[ -z $SAFE ]]; then
+    if [[ -n $MONPIDLIST ]]; then
+        echo $MONPIDLIST | xargs kill -9
+    fi
+    if [[ -n $WDTPIDLIST ]]; then
+        echo $WDTPIDLIST | xargs kill -9
+    fi
+
+    # Remove Trafodion processes (except monitor and watchdog processes).
+    # This repeats the earlier steps.  Generally will be few if any Trafodion
+    # processes remaining.   Those remaining are typically persistent processes
+    # that got recreated by the monitor before it was killed.
+    SQ_PROCS=$(monpstat -h -s | awk '{print $2}')
+    if [[ -n $SQ_PROCS ]]; then
+        echo $SQ_PROCS | xargs kill -9 2>/dev/null
+    fi
+fi
+
+# kill all running vili workflows
+ps -u $USER -o pid,cmd | grep " -vili" | awk '{print $1}' | xargs -r kill -9 2>/dev/null
+
+rm -f /dev/shm/sem.rms.`id -u`.* 2>/dev/null
+rm -f /dev/shm/sem.monitor*$USER 2>/dev/null

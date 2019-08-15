@@ -43,10 +43,9 @@ typedef set<int>  pids_set_t;
 class CNode;
 
 typedef enum {
-    Phase_Ready=0,                          // Node ready for use
-    Phase_Activating,                       // Spare node going active
-    Phase_SoftDown,                         // Node soft down
-    Phase_SoftUp                            // Node soft up
+    Phase_Undefined=0                      // Node ready for use
+   ,Phase_Ready                            // Node ready for use
+   ,Phase_Activating                       // Spare node going active
 } NodePhase;
 typedef vector<int>     PNidVector;
 typedef list<CNode *>   NodesList;
@@ -68,9 +67,11 @@ public:
     void    AddedNode( CNode *node );
 #ifndef NAMESERVER_PROCESS
     CProcess *AddCloneProcess( ProcessInfoNs_reply_def *processInfo );
+    void    AddConfiguredZNodes( void );
 #endif
     CNode  *AddNode( int pnid );
     void    AddNodes( void );
+    void    AddLNodes( void );
     void    AddToSpareNodesList( int pnid );
     CLNode *AssignLNode( CProcess *requester, PROCESSTYPE type, int nid, int not_nid );
     void    CancelDeathNotification( int nid
@@ -103,10 +104,12 @@ public:
     inline int GetLNodesCount( void ) { return ( CLNodeContainer::GetLNodesCount() ); }
     inline int GetPNodesConfigMax( void ) { return ( clusterConfig_->GetPNodesConfigMax() ); }
     inline int GetPNodesCount( void ) { return ( pnodeCount_ ); }
+    int        GetPNodesUpCount( int &readyCount );
     inline int GetSNodesCount( void ) { return ( clusterConfig_->GetSNodesCount() ); }
     inline int GetAvailableSNodesCount( void ) { return ( spareNodesList_.size() ); }
 
     int     GetPNid( char *nodeName );
+    inline int GetPNidByMap( int index ){ return ( indexToPnid_[index] ); }
     CProcess *GetProcess( int nid, int pid, bool checknode=true );
     CProcess *GetProcess( int nid
                         , int pid
@@ -132,17 +135,19 @@ public:
     SyncState GetTmState( SyncState check_state );
     CNode  *GetZoneNode( int zid );
 
+    void    InitRecvBuffer( struct sync_buffer_def *recvcBuf );
     struct internal_msg_def *InitSyncBuffer( struct sync_buffer_def *syncBuf
                                            , unsigned long long seqNum
                                            , upNodes_t upNodes );
-    int GetSyncSize() { return  sizeof(cluster_state_def_t)
+    int GetSyncSize(sync_buffer_def *sync_buffer) { return  sizeof(cluster_state_def_t)
                               + sizeof(msgInfo_t)
-                              + SyncBuffer->msgInfo.msg_offset; };
+                              + sync_buffer->msgInfo.msg_offset; };
     inline int GetSyncHdrSize() { return  sizeof(cluster_state_def_t)
                                           + sizeof(msgInfo_t); };
     struct sync_buffer_def * GetLastSyncBuffer() { return lastSyncBuffer_; };
     struct sync_buffer_def * GetSyncBuffer() { return SyncBuffer; };
     bool    IsShutdownActive( void );
+    bool    IsMyNodeFirstInConfigUp( void );
     void    KillAll( CProcess *process );
     void    LoadConfig( void );
     void    MarkStaleOpens( int nid, int pid );
@@ -195,8 +200,14 @@ private:
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
 public:
-    CNode( char *name, int pnid, int rank );
     CNode( char *name
+         , char *domain
+         , char *fqdn
+         , int pnid
+         , int rank );
+    CNode( char *name
+         , char *domain
+         , char *fqdn
          , int   pnid
          , int   rank
          , int   sparePNidCount
@@ -243,6 +254,8 @@ public:
     inline unsigned int GetBTime( void ) { return( bTime_ ); }
     inline CLNodeContainer *GetLNodeContainer( void ) { return( dynamic_cast<CLNodeContainer*>(this) ); }
     inline const char *GetHostname( void ) { return( hostname_.c_str() ); }
+    inline const char *GetDomain( void ) { return( domain_ ); }
+    inline const char *GetFqdn( void ) { return( fqdn_ ); }
     inline const char *GetName( void ) { return( name_ ); }
     inline int   GetPNid( void ) { return( pnid_ ); }
     inline NodePhase     GetPhase( void ) { return( phase_ ); }
@@ -271,8 +284,6 @@ public:
     // the unique id as the value of the method.
     strId_t GetStringId( char *candidate, CLNode *targetLNode = NULL, bool clone = false );
 
-    inline int   GetTmSyncNid( void ) { return( tmSyncNid_ ); }
-    inline SyncState GetTmSyncState( void ) { return( tmSyncState_ ); }
     inline int   GetZone( void ) { return( zid_ ); }
     inline int   GetWDTKeepAliveTimerValue( void ) { return( wdtKeepAliveTimerValue_ ); }
     inline bool  IsActivatingSpare( void ) { return( activatingSpare_ ); }
@@ -280,18 +291,21 @@ public:
     inline bool  IsDTMAborted( void ) { return( dtmAborted_ ); }
     inline bool  IsSMSAborted( void ) { return( smsAborted_ ); }
     inline bool  IsKillingNode( void ) { return( killingNode_ ); }
+    inline bool  IsPendingNodeDown( void ) { return( pendingNodeDown_ ); }
+    inline bool  IsPrimitivesReady( void ) { return( (primitiveDtmUp_ && primitivePsdUp_ && primitiveWdgUp_) ); }
     inline bool  IsRankFailure( void ) { return( rankFailure_ ); }
     inline bool  IsSpareNode( void ) { return( spareNode_ ); }
-    inline bool  IsSoftNodeDown( void ) { return( internalState_ == State_SoftDown ); }
-    inline bool  IsSoftNodeUp( void ) { return( internalState_ == State_SoftUp ); }
     inline bool  IsShutdownNameServer( void ) { return( shutdownNameServer_ ); }
 
-    CNode  *Link( CNode *entry );
+    CNode  *LinkAfter( CNode * &tail, CNode * entry );
+    CNode  *LinkBefore( CNode * &head, CNode * entry );
     void    MoveLNodes( CNode *targetNode );
     inline void ResetSpareNode( void ) { spareNode_ = false; }
-    void    ResetWatchdogTimer( void );
-    inline void ResetSoftNodeDown( void ) { internalState_ = State_Default; }
-    inline void ResetSoftNodeUp( void ) { internalState_ = State_Default; }
+    void        ResetWatchdogTimer( void );
+    inline void ResetPrimitiveDtmUp( void ) { primitiveDtmUp_ = false; }
+    inline void ResetPrimitivePsdUp( void ) { primitivePsdUp_ = false; }
+    inline void ResetPrimitiveWdgUp( void ) { primitiveWdgUp_ = false; }
+
     inline void SetActivatingSpare( int activatingSpare ) { activatingSpare_ = activatingSpare; }
     void    SetAffinity( int nid, pid_t pid, PROCESSTYPE type );
     void    SetAffinity( CProcess *process );
@@ -320,9 +334,8 @@ public:
     inline void SetSMSAborted( bool smsAborted ) { smsAborted_ = smsAborted; }
     inline void SetKillingNode( bool killingNode ) { killingNode_ = killingNode; }
     inline void SetNumCores( int numCores ) { numCores_ = numCores; }
+    inline void SetPendingNodeDown(  bool pendingNodeDown ) { pendingNodeDown_ = pendingNodeDown; }
     inline void SetPhase( NodePhase phase ) { phase_ = phase; }
-    inline void SetSoftNodeDown( void ) { internalState_ = State_SoftDown; }
-    inline void SetSoftNodeUp( void ) { internalState_ = State_SoftUp; }
     inline void SetSparePNids( PNidVector &sparePNids ) { sparePNids_ = sparePNids; }
     inline void SetRank( int rank ) { rank_ = rank; }
     inline void SetRankFailure( bool failed ) { rankFailure_ = failed; 
@@ -344,10 +357,13 @@ public:
     inline void SetShutdownNameServer( bool shutdown ) { shutdownNameServer_ = shutdown; }
     inline void SetShutdownLevel( ShutdownLevel level ) { shutdownLevel_ = level; }
     void SetState( STATE state );
-    inline void SetTmSyncNid( int nid ) { tmSyncNid_ = nid; }
-    inline void SetTmSyncState( SyncState syncState ) { tmSyncState_ = syncState; }
     inline void SetZone( int zid ) { zid_ = zid; }
     inline void SetName( char *newName ) { if (newName) strcpy (name_, newName); }
+    inline void SetPrimitiveDtmUp( void ) { primitiveDtmUp_ = true; }
+    inline void SetPrimitivePsdUp( void ) { primitivePsdUp_ = true; }
+    inline void SetPrimitiveWdgUp( void ) { primitiveWdgUp_ = true; }
+
+    void StartDtmProcess( void );
     void StartPStartDProcess( void );
     void StartPStartDPersistent( void );
     void StartPStartDPersistentDTM( int nid );
@@ -393,13 +409,20 @@ private:
     unsigned int  freeCache_;    // amount of free buffer/cache in node
     unsigned int  memInfoData_[memFinalItem];
     unsigned int  bTime_;        // node boot time
-    char          name_[MPI_MAX_PROCESSOR_NAME]; // physical node name
+    char          domain_[MPI_MAX_PROCESSOR_NAME]; // domain name
+    char          fqdn_[MPI_MAX_PROCESSOR_NAME]; // Fully Qualified Domain Name (FQDN)
+    char          name_[MPI_MAX_PROCESSOR_NAME]; // short node name
     string        hostname_;     // physical node name without domain
     STATE         state_;        // Physical node's current operating state
     NodePhase     phase_;        // Physical node's current phase during spare node activation
     bool          killingNode_;  // true when down node in process
     bool          dtmAborted_;   // true when DTM process terminates abnormally
     bool          smsAborted_;   // true when SMS process terminates abnormally
+    bool          pendingNodeDown_;  // true when down node is processing is pending
+
+    bool          primitiveDtmUp_; // DTM running and startup sent
+    bool          primitivePsdUp_; // PStartD (PSD) running and startup sent
+    bool          primitiveWdgUp_; // Watchdog (WDG) running and startup sent
 
     CLNode       *lastLNode_;    // last logical node selected for process attach
     ShutdownLevel lastSdLevel_;  // last shutdown level
@@ -416,8 +439,6 @@ private:
     CNode        *next_;
     CNode        *prev_;
     int           rank_;         // Node's Monitor rank in COMM_WORLD
-    int           tmSyncNid_;    // Logical Node of TM that initiated sync
-    SyncState     tmSyncState_;  // Sync operation state with TMs
     ShutdownLevel shutdownLevel_;
     bool          shutdownNameServer_; // true when monitor shutdown Name Server request is received
     int           wdtKeepAliveTimerValue_; // expiration time
@@ -455,6 +476,16 @@ private:
         size_t remBytes;
     } bufInfo_t;
 
+    void    GetPersistProcessAttributes( CPersistConfig *persistConfig
+                                       , int             nid
+                                       , PROCESSTYPE    &processType
+                                       , char           *processName
+                                       , char           *programName
+                                       , int            &programArgc
+                                       , char           *programArgs
+                                       , char           *outfile
+                                       , char           *persistRetries
+                                       , char           *persistZones );
     bool NextMemInfoLine( bufInfo_t &inBuf, char * dataline );
 
     timespec      prevSchedData_;  // timestamp for when last acquired

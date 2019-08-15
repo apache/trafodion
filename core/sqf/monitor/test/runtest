@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # @@@ START COPYRIGHT @@@
 #
@@ -26,11 +26,11 @@
 # Cluster environment setup:
 #    - create directories
 #      cd $TRAF_HOME
-#      pdsh $MY_NODES mkdir $PWD/monitor
-#      pdsh $MY_NODES mkdir $PWD/monitor/test
+#      edb_pdsh -a mkdir $PWD/monitor
+#      edb_pdsh -a mkdir $PWD/monitor/test
 #    - copy test files to $TRAF_HOME/monitor/test in all nodes
 #      cd $TRAF_HOME/monitor/test
-#      pdcp $MY_NODES -p -r /home/sqft2/monitor/test/* $PWD/
+#      pdcp $(trafconf -wname) -p -r /home/sqft2/monitor/test/* $PWD/
 #    - execute runtest -cluster
 #      cd $TRAF_HOME/monitor/test
 #      runtest -cluster
@@ -51,19 +51,17 @@ function Usage
     echo "         2     - Multi-Node"
     echo "         3     - Registry"
     echo "         4     - Death Notice"
-    echo "         5     - Persistent Process (FAILS-TBD)"
-    echo "         6     - DTM Process (FAILS-TBD)"
-    echo "         7     - SPX Process"
-    echo "         8     - Process Create"
-    echo "         9     - Node down before startup"
-    echo "        10     - TmSync"
+    echo "         5     - Persistent Process"
+    echo "         6     - DTM Process"
+    echo "         7     - Process Create"
+    echo "         8     - Node down before startup"
     echo
 }
 
 function Cleanup
 {
-    ckillall
-    sqipcrm
+    monpkillall
+    sqipcrm -local
 }
 
 if [ $# -lt 1 ]; then
@@ -73,6 +71,7 @@ fi
 
 cluster=
 conf=
+conf_persist=
 virtual=
 trace=
 nogen=
@@ -84,11 +83,13 @@ let test=-1
 if [ "$1" = "-cluster" ]; then
     cluster=-cluster
     conf="sqconfig.monitor.cluster"
+    conf_persist="sqconfig.persist"
     shift
 fi
 if [ "$1" = "-virtual" ]; then
     virtual=-virtual
     conf="sqconfig.monitor.virtual"
+    conf_persist="sqconfig.persist"
     shift
 fi
 if [ "$1" = "-nogen" ]; then
@@ -103,6 +104,12 @@ if [ "$1" = "-test" ]; then
     shift
     test=${1}
     shift
+    if ( [ $test '<' 1 ] || [ $test '>' 8 ] ); then
+        echo
+        echo "Invalid test number (-test ${test})"
+        Usage
+        exit 1
+    fi
 fi
 
 #
@@ -110,6 +117,8 @@ fi
 #
 ARCH=`arch`
 export PATH=$PATH:$PWD/Linux-${ARCH}/64/dbg
+export TRAF_CLUSTER_ID=1
+export TRAF_INSTANCE_ID=1
 cd $TRAF_HOME/monitor/test
 echo $PWD
 
@@ -124,8 +133,8 @@ fi
 fi
 
 if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES "rm -f $MPI_TMPDIR/monitor.port.*"
-    pdsh $MY_NODES "rm $PWD/core* $PWD/*.lst $PWD/stdout_*"
+    edb_pdsh -a "rm -f $MPI_TMPDIR/monitor.port.*"
+    edb_pdsh -a "rm $PWD/core* $PWD/*.lst $PWD/stdout_*"
 else
     rm -f $MPI_TMPDIR/monitor.port.*
     rm core* *.lst stdout_*
@@ -146,47 +155,95 @@ export SQ_SHELL_NOCWD=1
 # Uncomment to enable LIO tracing in test programs
 #export SQ_LOCAL_IO_SHELL_TRACE=1
 
+genConf_Success=0
+genConf_Failure=255
+
+function Genconf() 
+{
 #
 # Setup up monitor configuration
 #
-if [ "$nogen" = "-nogen" ]; then
-    echo "sqgen not executed!"
-else
-    echo sqgen $TRAF_HOME/monitor/test/$conf
-    sqgen $TRAF_HOME/monitor/test/$conf
-fi
+    [ $# -eq 1 ] || return $genConf_Failure
+
+    case $1 in
+    *[!0-9]*|"") 
+               return $genConf_Failure ;;
+
+    [1-5,7-8]) 
+             conf_persist=sqconfig.persist  ;;
+             
+    [6])      
+       conf_persist=sqconfig.persist.dtm  ;;
+      
+    esac
+
+    echo "**********************************************************"
+    echo ./montestgen $TRAF_HOME/monitor/test/$conf $TRAF_HOME/monitor/test/$conf_persist
+    echo "**********************************************************"
+    #./montestgen $TRAF_HOME/monitor/test/$conf $TRAF_HOME/monitor/test/$conf_persist
+    
+    ./montestgen $TRAF_HOME/monitor/test/$conf $TRAF_HOME/monitor/test/$conf_persist
+    return $genConf_Success 
+}
+
+function Shutdown_status() 
+{
+#
+# Verify if shutdown stopped the required processes
+#
+    ret=$(monpstat -h|wc -l)
+    if [ $ret == "0" ] ; then
+        echo "${*} Shutdown: PASSED"
+    else
+        echo "${*} Shutdown: FAILED"
+    fi
+}
+
 
 #
 # Execute tests
 #
 if ( [ $test '==' -1 ] || [ $test '==' 1 ] ); then
- echo "***"
- echo "*** Executing Child Exit test"
- echo "***"
 Cleanup
-shell <<eof
+Genconf 1
+[ $? -eq 0 ] || return 101
+
+TestTitle="Child Exit Test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell <<eof
  startup
  delay 3
+ ps
  exec {name \$CTRLR, nid 0, out $TRAF_HOME/monitor/test/childExit.lst} childExitCtrl $trace
  delay 3
- !shutdown
+ persist info PP 
+ persist kill PP
+ persist info ABC 
+ persist kill ABC
  exit
 eof
-shell -nid 0 -c ps
-#shell -nid 0 -c ps;shell -nid 1 -c ps;shell -nid 2 -c ps;shell -nid 3 -c ps;shell -nid 4 -c ps;shell -nid 5 -c ps
-shell -nid 0 -c ps monitor;shell -nid 1 -c ps monitor;shell -nid 2 -c ps monitor;shell -nid 3 -c ps monitor;shell -nid 4 -c ps monitor;shell -nid 5 -c ps monitor
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
  sleep 5
+ monpstat
+ Shutdown_status ${TestTitle} >> $PWD/childExit.lst
  cstat -h
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/childExit.lst
-     pdsh $MY_NODES grep FAILED $PWD/childExit.lst
+     edb_pdsh -a grep PASSED $PWD/childExit.lst
+     edb_pdsh -a grep FAILED $PWD/childExit.lst
  else
      grep PASSED $PWD/childExit.lst
      grep FAILED $PWD/childExit.lst
@@ -194,11 +251,15 @@ fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 2 ] ); then
- echo "***"
- echo "*** Executing Multi-Node test"
- echo "***"
 Cleanup
-shell <<eof
+Genconf 2
+[ $? -eq 0 ] || return 101
+
+TestTitle="Multi-Node test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell <<eof
  startup
  delay 3
  ! General tests for monitor functionality. This includes
@@ -211,54 +272,70 @@ shell <<eof
  ps
  exec {pri 10,name \$CLIENT,nid 0, out $TRAF_HOME/monitor/test/multiNode.lst} client $trace
  delay 3
- !shutdown
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
  sleep 5
+ monpstat
+ Shutdown_status ${TestTitle} >> $PWD/multiNode.lst
  cstat -h
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/multiNode.lst
-     pdsh $MY_NODES grep FAILED $PWD/multiNode.lst
+     edb_pdsh -a grep PASSED $PWD/multiNode.lst
+     edb_pdsh -a grep FAILED $PWD/multiNode.lst
  else
      grep PASSED $PWD/multiNode.lst
      grep FAILED $PWD/multiNode.lst
  fi
 fi
 
- if ( [ $test '==' -1 ] || [ $test '==' 3 ] ); then
- echo "***"
- echo "*** Executing Registry test"
- echo "***"
+if ( [ $test '==' -1 ] || [ $test '==' 3 ] ); then
 Cleanup
-shell <<eof
+Genconf 3 
+[ $? -eq 0 ] || return 101
+
+TestTitle="Registry Test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell <<eof
  startup
  delay 3
  exec {name \$CTRLR, nid 0, out $TRAF_HOME/monitor/test/regTest.lst} regTestCtrl $trace
  delay 3
- !shutdown
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
  sleep 5
+ monpstat
+ Shutdown_status ${TestTitle} >> $PWD/regTest.lst
  cstat -h
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/regTest.lst
-     pdsh $MY_NODES grep FAILED $PWD/regTest.lst
+     edb_pdsh -a grep PASSED $PWD/regTest.lst
+     edb_pdsh -a grep FAILED $PWD/regTest.lst
  else
      grep PASSED $PWD/regTest.lst
      grep FAILED $PWD/regTest.lst
@@ -266,11 +343,15 @@ fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 4 ] ); then
- echo "***"
- echo "*** Executing Death Notice test"
- echo "***"
 Cleanup
-shell <<eof
+Genconf 4
+[ $? -eq 0 ] || return 101
+
+TestTitle="Death Notice Test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell <<eof
  startup
  delay 3
  ! Test to register and cancel process death
@@ -286,63 +367,82 @@ shell <<eof
  !
  exec {name \$DEATH, nid 0, out $TRAF_HOME/monitor/test/deathNotice.lst} deathNotice $trace
  delay 3
- !shutdown
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
  sleep 5
+ monpstat
+ Shutdown_status ${TestTitle} >> $PWD/deathNotice.lst
  cstat -h
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/deathNotice.lst
-     pdsh $MY_NODES grep FAILED $PWD/deathNotice.lst
+     edb_pdsh -a grep PASSED $PWD/deathNotice.lst
+     edb_pdsh -a grep FAILED $PWD/deathNotice.lst
  else
      grep PASSED $PWD/deathNotice.lst
      grep FAILED $PWD/deathNotice.lst
  fi
 fi
 
-#if ( [ $test '==' -1 ] || [ $test '==' 5 ] ); then
-if ( [ $test '==' 5 ] ); then
+if ( [ $test '==' -1 ] || [ $test '==' 5 ] ); then
  if [ "$cluster" = "-cluster" ]; then
-  echo "***"
-  echo "*** Executing Persistent Process cluster test"
-  echo "***"
 Cleanup
-shell <<eof
+Genconf 5
+[ $? -eq 0 ] || return 101
+
+TestTitle="Persistent Process CLUSTER Test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell <<eof
  startup
  delay 3
  down 2 !
  delay 15
  exec {name \$PPROC, nid 0, out $TRAF_HOME/monitor/test/persistentProc.lst} persistentProc $trace
  delay 3
- !shutdown
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
   sleep 5
+  monpstat
+  Shutdown_status ${TestTitle} >> $PWD/persistentProc.lst
   cstat -h
-  pdsh $MY_NODES grep PASSED $PWD/persistentProc.lst
-  pdsh $MY_NODES grep FAILED $PWD/persistentProc.lst
+  edb_pdsh -a grep PASSED $PWD/persistentProc.lst
+  edb_pdsh -a grep FAILED $PWD/persistentProc.lst
+
  else
-  echo "***"
-  echo "*** Executing Persistent Process test"
-  echo "***"
+
 Cleanup
-shell <<eof
+Genconf 5
+TestTitle="Persistent Process Test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell <<eof
  startup
  delay 3
  exec {name \$PPROC, nid 0, out $TRAF_HOME/monitor/test/persistentProc.lst} persistentProc $trace
@@ -350,50 +450,66 @@ shell <<eof
  !shutdown
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
   sleep 5
-  cstat -h
+  monpstat
+  Shutdown_status ${TestTitle} >> $PWD/persistentProc.lst
   grep PASSED $PWD/persistentProc.lst
   grep FAILED $PWD/persistentProc.lst
  fi
 fi
 
-#if ( [[ $dtm_persistent_process == "1" ]] &&
-#      ([ $test '==' -1 ] || [ $test '==' 6 ]) ); then
 if ( [[ $dtm_persistent_process == "1" ]] &&
-      ([ $test '==' 6 ]) ); then
- echo "***"
- echo "*** Executing DTM Process test"
- echo "***"
+      ([ $test '==' -1 ] || [ $test '==' 6 ]) ); then
 Cleanup
-shell <<eof
+Genconf 6
+[ $? -eq 0 ] || return 101
+
+TestTitle="DTM Process Test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell <<eof
  startup
  delay 3
+ persist info dtm
  exec {name \$DTMCTRL, nid 0, out $TRAF_HOME/monitor/test/dtmTest.lst} dtmCtrl $trace
  delay 3
- !shutdown
+ persist info dtm
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
  sleep 5
+ monpstat
+ Shutdown_status ${TestTitle} >> $PWD/dtmTest.lst
  cstat -h
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/dtmTest.lst
-     pdsh $MY_NODES grep FAILED $PWD/dtmTest.lst
+     edb_pdsh -a grep PASSED $PWD/dtmTest.lst
+     edb_pdsh -a grep FAILED $PWD/dtmTest.lst
  else
      grep PASSED $PWD/dtmTest.lst
      grep FAILED $PWD/dtmTest.lst
@@ -404,77 +520,57 @@ else
    fi
 fi
 
-#if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then
-if ( [ $test '==' 7 ] ); then
- echo "***"
- echo "*** Executing SPX Process test"
- echo "***"
+if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then
 Cleanup
-shell <<eof
- startup
- delay 3
- exec {name \$SPXCTRL, nid 0, out $TRAF_HOME/monitor/test/spxTest.lst} spxCtrl $trace
- delay 3
- !shutdown
- exit
-eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
- shutdown
- exit
-eof
-fi
- sleep 5
- cstat -h
- if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/spxTest.lst
-     pdsh $MY_NODES grep FAILED $PWD/spxTest.lst
- else
-     grep PASSED $PWD/spxTest.lst
-     grep FAILED $PWD/spxTest.lst
- fi
-fi
+Genconf 7
+[ $? -eq 0 ] || return 101
 
-if ( [ $test '==' -1 ] || [ $test '==' 8 ] ); then
+TestTitle="Process Create Test"
  echo "***"
- echo "*** Executing Process Create test"
+ echo "*** Executing: ${TestTitle}"
  echo "***"
-Cleanup
-shell <<eof
+monshell <<eof
  startup
  delay 3
  exec {name \$PCRE8, nid 0, out $TRAF_HOME/monitor/test/procCreate.lst} procCreate $trace -x
  delay 3
- !shutdown
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
  sleep 5
- cstat -h
+ monpstat
+ Shutdown_status ${TestTitle} >> $PWD/procCreate.lst
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/procCreate.lst
-     pdsh $MY_NODES grep FAILED $PWD/procCreate.lst
+     edb_pdsh -a grep PASSED $PWD/procCreate.lst
+     edb_pdsh -a grep FAILED $PWD/procCreate.lst
  else
      grep PASSED $PWD/procCreate.lst
      grep FAILED $PWD/procCreate.lst
  fi
 fi
 
-if ( [ $test '==' -1 ] || [ $test '==' 9 ] ); then
- echo "***"
- echo "*** Executing Process Creates Node down before startup test"
- echo "***"
+if ( [ $test '==' -1 ] || [ $test '==' 8 ] ); then
 Cleanup
-shell <<eof 
+Genconf 8
+[ $? -eq 0 ] || return 101
+
+TestTitle="Node Down Before Startup Test"
+ echo "***"
+ echo "*** Executing: ${TestTitle}"
+ echo "***"
+monshell<<eof 
  startup
  delay 3
  exec {nowait, name \$PCRE8, nid 0, out $TRAF_HOME/monitor/test/nodeDown.lst} procCreate $trace -y
@@ -484,141 +580,29 @@ shell <<eof
  !shutdown
  exit
 eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
+
+#monshell -nid 0 -c ps
+#monshell -nid 0 -c ps monitor
+#monshell -nid 0 -c ps;monshell -nid 1 -c ps;monshell -nid 2 -c ps;monshell -nid 3 -c ps;monshell -nid 4 -c ps;monshell -nid 5 -c ps
+#monshell -nid 0 -c ps monitor;monshell -nid 1 -c ps monitor;monshell -nid 2 -c ps monitor;monshell -nid 3 -c ps monitor;monshell -nid 4 -c ps monitor;monshell -nid 5 -c ps monitor
+
+monshell -a<<eof
+ ps
+ ps monitor
  shutdown
  exit
 eof
-fi
+
  sleep 10
+ monpstat
+ Shutdown_status ${TestTitle} >> $PWD/nodeDown.lst
  cstat -h
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/nodeDown.lst
-     pdsh $MY_NODES grep FAILED $PWD/nodeDown.lst
+     edb_pdsh -a grep PASSED $PWD/nodeDown.lst
+     edb_pdsh -a grep FAILED $PWD/nodeDown.lst
  else
      grep PASSED $PWD/nodeDown.lst
      grep FAILED $PWD/nodeDown.lst
- fi
-fi
-
-
-#if ( [ $test '==' -1 ] || [ $test '==' 10 ] ); then
-if ( [ $test '==' 10 ] ); then
- if [ "$cluster" = "-cluster" ]; then
-  echo "***"
-  echo "*** Executing TmSync cluster test (subtest 7 disabled until it's fixed)"
-  echo "***"
-Cleanup
-shell <<eof
- startup
- delay 3
- exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync.lst} tmSyncCtrl -n 1,3,4,5,6 $trace
- wait $CTRLR
- delay 3
- !shutdown
- exit
-eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
- shutdown
- exit
-eof
-fi
-  sleep 5
-  cstat -h
-  pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
-  pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
-  echo "***"
-  echo "*** Executing TmSync cluster test 10"
-  echo "***"
-Cleanup
-shell <<eof
- startup
- delay 3
- exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync8.lst} tmSyncCtrl -n 8 $trace
- wait $CTRLR
- delay 3
- !shutdown
- exit
-eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
- shutdown
- exit
-eof
-fi
-  sleep 5
-  cstat -h
-  pdsh $MY_NODES grep PASSED $PWD/tmSync9.lst
-  pdsh $MY_NODES grep FAILED $PWD/tmSync9.lst
-  echo "***"
-  echo "*** Executing TmSync cluster test 10"
-  echo "***"
-Cleanup
-shell <<eof
- startup
- delay 3
- down 2 !
- delay 15
- exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync10.lst} tmSyncCtrl -n 10 $trace
- wait $CTRLR
- delay 3
- !shutdown
- exit
-eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
- shutdown
- exit
-eof
-fi
-  sleep 5
-  cstat -h
-  pdsh $MY_NODES grep PASSED $PWD/tmSync10.lst
-  pdsh $MY_NODES grep FAILED $PWD/tmSync10.lst
- else
-  echo "***"
-  echo "*** Executing TmSync test"
-  echo "***"
-Cleanup
-shell <<eof
- startup
- delay 3
- exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync.lst} tmSyncCtrl -n 3,4,5,6,7 $trace
- wait $CTRLR
- delay 3
- !shutdown
- exit
-eof
-shell -c ps 
-shell -c ps monitor
-if ( [ $test '==' -1 ] ); then
-shell -a<<eof
- shutdown
- exit
-eof
-fi
-  # Reset SQ virtual cluster parameters
-  unset SQ_VIRTUAL_NODES
-  unset SQ_VIRTUAL_NID
- fi
- 
- sleep 5
- cstat -h
- if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
-     pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
- else
-     grep PASSED $PWD/tmSync.lst
-     grep FAILED $PWD/tmSync.lst
  fi
 fi
 
@@ -627,30 +611,22 @@ if ( [ $test '==' -1 ] ); then
  echo "*** Monitor Test Results"
  echo "***"
  if [ "$cluster" = "-cluster" ]; then
-     pdsh $MY_NODES grep PASSED $PWD/childExit.lst
-     pdsh $MY_NODES grep FAILED $PWD/childExit.lst
-     pdsh $MY_NODES grep PASSED $PWD/multiNode.lst
-     pdsh $MY_NODES grep FAILED $PWD/multiNode.lst
-     pdsh $MY_NODES grep PASSED $PWD/regTest.lst
-     pdsh $MY_NODES grep FAILED $PWD/regTest.lst
-     pdsh $MY_NODES grep PASSED $PWD/deathNotice.lst
-     pdsh $MY_NODES grep FAILED $PWD/deathNotice.lst
-#     pdsh $MY_NODES grep PASSED $PWD/persistentProc.lst
-#     pdsh $MY_NODES grep FAILED $PWD/persistentProc.lst
-#     pdsh $MY_NODES grep PASSED $PWD/dtmTest.lst
-#     pdsh $MY_NODES grep FAILED $PWD/dtmTest.lst
-#     pdsh $MY_NODES grep PASSED $PWD/spxTest.lst
-#     pdsh $MY_NODES grep FAILED $PWD/spxTest.lst
-     pdsh $MY_NODES grep PASSED $PWD/procCreate.lst
-     pdsh $MY_NODES grep FAILED $PWD/procCreate.lst
-     pdsh $MY_NODES grep PASSED $PWD/nodeDown.lst
-     pdsh $MY_NODES grep FAILED $PWD/nodeDown.lst
-#     pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
-#     pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
-#     pdsh $MY_NODES grep PASSED $PWD/tmSync9.lst
-#     pdsh $MY_NODES grep FAILED $PWD/tmSync9.lst
-#     pdsh $MY_NODES grep PASSED $PWD/tmSync10.lst
-#     pdsh $MY_NODES grep FAILED $PWD/tmSync10.lst
+     edb_pdsh -a grep PASSED $PWD/childExit.lst
+     edb_pdsh -a grep FAILED $PWD/childExit.lst
+     edb_pdsh -a grep PASSED $PWD/multiNode.lst
+     edb_pdsh -a grep FAILED $PWD/multiNode.lst
+     edb_pdsh -a grep PASSED $PWD/regTest.lst
+     edb_pdsh -a grep FAILED $PWD/regTest.lst
+     edb_pdsh -a grep PASSED $PWD/deathNotice.lst
+     edb_pdsh -a grep FAILED $PWD/deathNotice.lst
+     edb_pdsh -a grep PASSED $PWD/persistentProc.lst
+     edb_pdsh -a grep FAILED $PWD/persistentProc.lst
+     edb_pdsh -a grep PASSED $PWD/dtmTest.lst
+     edb_pdsh -a grep FAILED $PWD/dtmTest.lst
+     edb_pdsh -a grep PASSED $PWD/procCreate.lst
+     edb_pdsh -a grep FAILED $PWD/procCreate.lst
+     edb_pdsh -a grep PASSED $PWD/nodeDown.lst
+     edb_pdsh -a grep FAILED $PWD/nodeDown.lst
  else
      grep PASSED $PWD/childExit.lst
      grep FAILED $PWD/childExit.lst
@@ -660,17 +636,13 @@ if ( [ $test '==' -1 ] ); then
      grep FAILED $PWD/regTest.lst
      grep PASSED $PWD/deathNotice.lst
      grep FAILED $PWD/deathNotice.lst
-#     grep PASSED $PWD/persistentProc.lst
-#     grep FAILED $PWD/persistentProc.lst
-#     grep PASSED $PWD/dtmTest.lst
-#     grep FAILED $PWD/dtmTest.lst
-#     grep PASSED $PWD/spxTest.lst
-#     grep FAILED $PWD/spxTest.lst
+     grep PASSED $PWD/persistentProc.lst
+     grep FAILED $PWD/persistentProc.lst
+     grep PASSED $PWD/dtmTest.lst
+     grep FAILED $PWD/dtmTest.lst
      grep PASSED $PWD/procCreate.lst
      grep FAILED $PWD/procCreate.lst
      grep PASSED $PWD/nodeDown.lst
      grep FAILED $PWD/nodeDown.lst
-#     grep PASSED $PWD/tmSync.lst
-#     grep FAILED $PWD/tmSync.lst
  fi
 fi

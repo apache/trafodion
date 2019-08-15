@@ -65,13 +65,12 @@ using namespace std;
 #define WDIOC_SQ_GETTIMEOUT        _IOR(WATCHDOG_IOCTL_BASE, 7, int)
 
 
-// The following defines specify the default values for the timers if the timer related variables are not defined.
-// The first is a timeout value to use during startup initialization.  The SETTIMEOUT facility
-// only sets the timeout, but does not drive the lower level driver to use that value until
+// The WDT_STARTUPTIMERDEFAULT is a timeout value to use during startup 
+// initialization.  The SETTIMEOUT facility only sets the timeout, but
+// does not drive the lower level driver to use that value until
 // a KEEPALIVE call.
-// Defaults give 30 second and 10 second timer expiration respectively.
-#define WDT_StartupTimerDefault 30
-#define WDT_KeepAliveTimerDefault 10
+// Default value is in seconds
+#define WDT_STARTUPTIMERDEFAULT 30
 
 
 CWdTimer::CWdTimer()
@@ -81,7 +80,7 @@ CWdTimer::CWdTimer()
          ,watchdog_(false)
          ,wdtRefresh_(Wdt_Disabled)
          ,wdtFd_(-1)
-         ,wdtKeepAliveTimerValue_(WDT_KeepAliveTimerDefault)
+         ,wdtKeepAliveTimerValue_(WDT_KEEPALIVETIMERDEFAULT)
 {
     const char method_name[] = "CWdTimer::CWdTimer";
     TRACE_ENTRY;
@@ -163,7 +162,7 @@ void CWdTimer::ResetWatchdogTimer( void )
                 int err = errno;
                 sprintf(la_buf, "[CWdTimer::ResetWatchdogTimer], Keep alive failed. (Error: %s)\n", strerror(err));
                 monproc_log_write(MON_WDTIMER_RESET_WATCHTIMER, SQ_LOG_ERR, la_buf);
-                abort();
+                exit(EXIT_FAILURE);
             }
             gettimeofday(&wdTimerStart_, NULL);
         }
@@ -194,7 +193,7 @@ void CWdTimer::RestoreWatchdogTimer( void )
             err = errno;
             sprintf(la_buf, "[CWdTimer::RestoreWatchdogTimer], Set timeout failed. (Error: %s)\n", strerror(err));
             monproc_log_write(MON_WDTIMER_RESTORE_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
-            abort();
+            exit(EXIT_FAILURE);
         }
 
         if (ioctl(wdtFd_, WDIOC_SQ_KEEPALIVE, &arg) == -1)
@@ -202,7 +201,7 @@ void CWdTimer::RestoreWatchdogTimer( void )
             err = errno;
             sprintf(la_buf, "[CWdTimer::RestoreWatchdogTimer], Keep alive failed. (Error: %s)\n", strerror(err));
             monproc_log_write(MON_WDTIMER_RESTORE_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
-            abort();
+            exit(EXIT_FAILURE);
         }
         if (trace_settings & TRACE_INIT)
            trace_printf("%s@%d" " - Watchdog Timer set to %d" "\n", method_name, __LINE__, timer);
@@ -245,7 +244,7 @@ void CWdTimer::SetWatchdogTimerMin( void )
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::SetWatchdogTimerMin], Set timeout failed. (Error: %s)\n", strerror(err));
                 monproc_log_write(MON_WDTIMER_SETMIN_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
-                abort();
+                exit(EXIT_FAILURE);
             }
 
             if (ioctl(wdtFd_, WDIOC_SQ_KEEPALIVE, &arg) == -1)
@@ -253,7 +252,7 @@ void CWdTimer::SetWatchdogTimerMin( void )
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::SetWatchdogTimerMin], Keep alive failed. (Error: %s)\n", strerror(err));
                 monproc_log_write(MON_WDTIMER_SETMIN_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
-                abort();
+                exit(EXIT_FAILURE);
             }
 
             if (trace_settings & TRACE_INIT)
@@ -315,7 +314,7 @@ void CWdTimer::StartWatchdogTimer( void )
 
         if (!(WDT_StartupTimerValueC = getenv("SQ_WDT_STARTUPTIMERVALUE")))
         {
-            WDT_StartupTimerValue = WDT_StartupTimerDefault;
+            WDT_StartupTimerValue = WDT_STARTUPTIMERDEFAULT;
         }
         else
         {
@@ -324,7 +323,7 @@ void CWdTimer::StartWatchdogTimer( void )
 
         if (!(WDT_KeepAliveTimerValueC = getenv("SQ_WDT_KEEPALIVETIMERVALUE")))
         {
-            wdtKeepAliveTimerValue_ = WDT_KeepAliveTimerDefault;
+            wdtKeepAliveTimerValue_ = WDT_KEEPALIVETIMERDEFAULT;
         }
         else
         {
@@ -376,7 +375,7 @@ void CWdTimer::StartWatchdogTimer( void )
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::StartWatchdogTimer], Set timeout failed. (Error: %s)\n", strerror(err));
                 monproc_log_write(MON_WDTIMER_START_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
-                abort();
+                exit(EXIT_FAILURE);
             }
 
             if (ioctl(fd, WDIOC_SQ_KEEPALIVE, &arg) == -1)
@@ -384,7 +383,7 @@ void CWdTimer::StartWatchdogTimer( void )
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::StartWatchdogTimer], Keep alive failed. (Error: %s)\n", strerror(err));
                 monproc_log_write(MON_WDTIMER_START_WATCHTIMER_3, SQ_LOG_ERR, la_buf);
-                abort();
+                exit(EXIT_FAILURE);
             }
 
             timer = wdtKeepAliveTimerValue_;
@@ -393,7 +392,7 @@ void CWdTimer::StartWatchdogTimer( void )
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::StartWatchdogTimer], Set Timeout failed. (Error: %s)\n", strerror(err));
                 monproc_log_write(MON_WDTIMER_START_WATCHTIMER_4, SQ_LOG_ERR, la_buf);
-                abort();
+                exit(EXIT_FAILURE);
             }
             else
             {

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -700,7 +700,7 @@ EOF
   # scripts to start/stop environment
   ####################################
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartall
-#!/bin/sh
+#!/bin/bash
 echo "Starting Hadoop, MySQL, HBase..."
 cd ${MY_SW_SCRIPTS_DIR}
 ./swstarthadoop
@@ -709,7 +709,7 @@ cd ${MY_SW_SCRIPTS_DIR}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopall
-#!/bin/sh
+#!/bin/bash
 echo "Stopping Hadoop, MySQL, HBase..."
 cd ${MY_SW_SCRIPTS_DIR}
 ./swstophbase
@@ -718,7 +718,7 @@ cd ${MY_SW_SCRIPTS_DIR}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthadoop
-#!/bin/sh
+#!/bin/bash
 echo "Starting Hadoop..."
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -727,7 +727,7 @@ cd ${MY_SW_ROOT}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophadoop
-#!/bin/sh
+#!/bin/bash
 echo "Stopping Hadoop..."
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -736,7 +736,7 @@ cd ${MY_SW_ROOT}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartmysql
-#!/bin/sh
+#!/bin/bash
 echo "Starting mysqld..."
 cd ${MY_SW_ROOT}/mysql
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -744,7 +744,7 @@ cd ${MY_SW_ROOT}/mysql
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopmysql
-#!/bin/sh
+#!/bin/bash
 echo "Stopping mysqld..."
 cd ${MY_SW_ROOT}/mysql
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -752,7 +752,7 @@ cd ${MY_SW_ROOT}/mysql
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthbase
-#!/bin/sh
+#!/bin/bash
 echo "Starting HBase..."
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -760,14 +760,14 @@ cd ${MY_SW_ROOT}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophbase
-#!/bin/sh
+#!/bin/bash
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 ./hbase/bin/stop-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
-#!/bin/sh
+#!/bin/bash
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 NUM_JAVA_PROCS=\`ps -aef | grep \$USER | grep java | grep -v grep | wc -l\`
@@ -788,7 +788,7 @@ EOF
   # scripts to start command line interpreters and tools
   #######################################################
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhadoop
-#!/bin/sh
+#!/bin/bash
 # command to run hadoop
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -796,7 +796,7 @@ ${MY_SW_ROOT}/hadoop/bin/hadoop \$*
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swyarn
-#!/bin/sh
+#!/bin/bash
 # command to run yarn
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -804,7 +804,7 @@ ${MY_SW_ROOT}/hadoop/bin/yarn \$*
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhdfs
-#!/bin/sh
+#!/bin/bash
 # command to run hadoop
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -812,7 +812,7 @@ ${MY_SW_ROOT}/hadoop/bin/hdfs \$*
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysql
-#!/bin/sh
+#!/bin/bash
 # command to run mysql
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -820,7 +820,7 @@ ${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysqladmin
-#!/bin/sh
+#!/bin/bash
 # command to run mysqladmin as root user
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -828,7 +828,7 @@ ${MY_SW_ROOT}/mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhive
-#!/bin/sh
+#!/bin/bash
 # command to run hive command line interpreter
 
 # Pick up MySQL JDBC driver
@@ -838,7 +838,7 @@ ${MY_SW_ROOT}/hive/bin/hive \$*
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhbase
-#!/bin/sh
+#!/bin/bash
 # command to run hbase shell
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -846,7 +846,7 @@ ${MY_SW_ROOT}/hbase/bin/hbase shell \$*
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swuninstall_local_hadoop
-#!/bin/sh
+#!/bin/bash
 # uninstall local Hadoop instance.
 
 . $MY_SW_SCRIPTS_DIR/swstopall
@@ -1648,7 +1648,7 @@ EOF
   then
     echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
     cat <<EOF >$MY_SW_SCRIPTS_DIR/swjdbc
-#!/bin/sh
+#!/bin/bash
 # command to run JDBC tests
 cd $DCS_SRC/src/test/jdbc_test
 ./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
@@ -1686,7 +1686,7 @@ if [[ -d $PHX_SRC ]]; then
   # existing local_hadoop installations
   echo "Adding swphoenix script...." | tee -a ${MY_LOG_FILE}
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swphoenix
-#!/bin/sh
+#!/bin/bash
 # command to run phoenix tests
 
 cd $PHX_SRC

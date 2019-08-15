@@ -415,9 +415,9 @@ SB_THROWS_FATAL {
 //
 // Purpose: handle process startup
 //
-SB_Export int file_mon_process_startup2(int pv_sysmsgs, int pv_pipeio)
+SB_Export int file_mon_process_startup2(int pv_sysmsgs, int pv_pipeio, bool pv_remap_std_err)
 SB_THROWS_FATAL {
-    return msg_mon_process_startup3(pv_sysmsgs, pv_pipeio);
+  return msg_mon_process_startup3(pv_sysmsgs, pv_pipeio, pv_remap_std_err);
 }
 
 //

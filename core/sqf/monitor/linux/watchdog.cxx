@@ -503,14 +503,6 @@ void localIORecvCallback(struct message_def *recv_msg, int size)
             Watchdog->CLock::wakeOne();
             break;
 
-        case MsgType_UnsolicitedMessage:
-            if (trace_settings & TRACE_REQUEST)
-            {
-                trace_printf( "%s@%d CB Unsolicited Message Received!\n",
-                              method_name, __LINE__ );
-            }
-            break;
-
         default:
             if (trace_settings & TRACE_REQUEST)
             {
@@ -539,7 +531,7 @@ void InitLocalIO( void )
                 char buf[MON_STRING_BUF_SIZE];
                 sprintf(buf, "[%s - InitLocalIO], Error= Failed to load cluster configuration!\n", MyName);
                 monproc_log_write(MON_WATCHDOG_INITLOCALIO_1, SQ_LOG_ERR, buf);
-                abort();
+                exit(EXIT_FAILURE);
             }
         }
         else
@@ -553,7 +545,7 @@ void InitLocalIO( void )
                 monproc_log_write(MON_WATCHDOG_INITLOCALIO_3, SQ_LOG_ERR, buf);
                 MyNid = 0;
             }
-            abort();
+            exit(EXIT_FAILURE);
         }
 
         lnodeConfig = ClusterConfig.GetLNodeConfig( MyNid );
@@ -605,7 +597,7 @@ void TraceInit( int & argc, char **&argv )
 {
     // Determine trace file name
     const char *tmpDir;
-    tmpDir = getenv( "MPI_TMPDIR" );
+    tmpDir = getenv( "TRAF_LOG" );
         
     const char *envVar;
     envVar = getenv("WDT_TRACE_FILE");
@@ -765,13 +757,6 @@ int main (int argc, char *argv[])
     MyNid = atoi(argv[3]);
     MyPid = atoi (argv[4]);
     gv_ms_su_verif  = MyVerifier = atoi(argv[9]);
-
-    // Set flag to indicate whether we are operating in a real cluster
-    // or a virtual cluster.
-    if ( getenv("SQ_VIRTUAL_NODES") )
-    {
-        IsRealCluster = false;
-    }
 
     MonLog = new CMonLog( "log4cxx.monitor.wdg.config", "WDG", "alt.wdg", MyPNID, MyNid, MyPid, MyName  );
 

@@ -139,9 +139,15 @@ int main(int argc, char *argv[]) {
                               BUFSIZ);        // bytecount
         util_check("XMSG_READDATA_", ferr);
         msg = (MS_Mon_Msg *) recv_buffer;
+#if 0
         assert(msg->type == MS_MsgType_ProcessDeath);
         printf("server name=%s received death message for %s\n",
                my_name, msg->u.death.process_name);
+#else
+        assert(msg->type == MS_MsgType_Shutdown);
+        printf("server name=%s received shutdown message\n",
+               my_name);
+#endif
         XMSG_REPLY_(sre.sre_msgId,  // msgid
                     NULL,           // replyctrl
                     0,              // replyctrlsize

@@ -49,6 +49,14 @@ void tmTimer_initiate_cp ()
     }
  
    TMTrace(2, ("tmTimer_initiate_cp : ENTRY.\n"));
+   
+   // This will send control point requests to the other TMs
+   if (gv_tm_info.lead_tm()) {
+     TMTrace(2, ("tmTimer_initiate_cp : Calling write_control_point \n"));
+     gv_tm_info.write_control_point(true);
+     gv_tm_info.write_control_point(true, true);
+   }
+
    if (gv_tm_info.use_tlog()) {
 
        // Initiate HBase TM Control Point

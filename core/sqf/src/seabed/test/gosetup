@@ -19,6 +19,8 @@
 #
 # @@@ END COPYRIGHT @@@
 
+export MON_DTM_PRIMITIVE_DISABLE=1
+
 cluster=
 if [ "$1" = "-cluster" ]; then
 	cluster=-cluster

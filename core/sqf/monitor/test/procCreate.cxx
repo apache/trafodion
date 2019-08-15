@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
@@ -219,6 +220,15 @@ void recv_notice_msg(struct message_def *recv_msg, int )
             }
         }
 
+    }
+    else if ( recv_msg->type == MsgType_Change ) 
+    {
+        if (tracing) 
+            printf("[%s] Message Type Change: ConfigType=%d GroupName=%s Key=%s Value=%s\n", MyName, 
+                   recv_msg->u.request.u.change.type,
+                   recv_msg->u.request.u.change.group,
+                   recv_msg->u.request.u.change.key,
+                   recv_msg->u.request.u.change.value );
     }
     else {
         printf("[%s] unexpected notice, type=%s\n", MyName,

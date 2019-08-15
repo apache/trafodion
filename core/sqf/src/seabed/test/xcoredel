@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -23,7 +23,7 @@
 cores=`ls core.*`
 
 for core in $cores; do
-	file $core|egrep "('/bin/sh |'go|'mpirun |'sh |'shell |'tcheck |'monitor'|'pstartd |'tee |'watchdog')" > /dev/null
+	file $core|egrep "('/bin/bash |'go|'mpirun |'sh |'shell |'tcheck |'monitor'|'pstartd |'tee |'watchdog')" > /dev/null
 	if [ $? = 0 ]; then
 		file $core
 		rm -f $core

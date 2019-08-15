@@ -36,6 +36,7 @@
 #include "msgdef.h"
 #include "montrace.h"
 #include "monlogging.h"
+#include "pnode.h"
 #include "zookeeper/zookeeper.h"
 #include "zclient.h"
 #include "zootest.h"
@@ -44,6 +45,8 @@ using namespace std;
 
 bool debugFlag = true;
 
+bool IsAgentMode = false;
+bool IsMaster = false;
 bool IsRealCluster = true;
 bool ZClientEnabled = true;
 char Node_name[MAX_PROCESSOR_NAME] = {'\0'};
@@ -51,17 +54,11 @@ char MyPNidStr[8];
 int MyPNID = -1;
 int MyNid = -1;
 int MyPid = -1;
+int InstanceId = -1;
+extern CNodeContainer *Nodes;
 
 CZClient    *ZClient = NULL;
 CMonLog     *MonLog =  NULL;
-
-void HandleAssignMonitorLeader ( const char* failedMaster )
-{
-    const char method_name[] = "HandleAssignMonitorLeader";
-    TRACE_ENTRY;
-    failedMaster = failedMaster;
-    TRACE_EXIT;
-}
 
 void HandleMyNodeExpiration( void )
 {
@@ -73,6 +70,42 @@ void HandleMyNodeExpiration( void )
     printf( "%s@%d zootest exiting!\n", method_name, __LINE__ );
     TRACE_EXIT;
     exit( 1  );
+}
+
+void HandleNodeChange( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeChange";
+    TRACE_ENTRY;
+    printf( "%s@%d Node %s znode changed!\n"
+          , method_name, __LINE__, nodeName );
+    TRACE_EXIT;
+}
+
+void HandleNodeConfigurationChange( void )
+{
+    const char method_name[] = "HandleNodeConfigurationChange";
+    TRACE_ENTRY;
+    printf( "%s@%d Node configuration changed!\n"
+          , method_name, __LINE__ );
+    TRACE_EXIT;
+}
+
+void HandleNodeCreated( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeCreated";
+    TRACE_ENTRY;
+    printf( "%s@%d Node %s znode created!\n"
+          , method_name, __LINE__, nodeName );
+    TRACE_EXIT;
+}
+
+void HandleNodeError( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeError";
+    TRACE_ENTRY;
+    printf( "%s@%d Node %s ERROR child!\n"
+          , method_name, __LINE__, nodeName );
+    TRACE_EXIT;
 }
 
 void HandleNodeExpiration( const char *nodeName )
@@ -92,6 +125,9 @@ void CreateZookeeperClient( void )
     if ( ZClientEnabled )
     {
         string       hostName;
+        string       instanceId;
+        string       trafodionRootZNode;
+        stringstream ss;
         string       zkQuorumHosts;
         stringstream zkQuorumPort;
         char *env;
@@ -163,9 +199,50 @@ void CreateZookeeperClient( void )
             }
         }
     
+        env = getenv("TRAF_ROOT_ZNODE");
+        if ( env )
+        {
+            ss.str( "" );
+            ss << env;
+            trafodionRootZNode = ss.str();
+        }
+        else
+        {
+            ss.str( "" );
+            ss << "/trafodion";
+            trafodionRootZNode = ss.str();
+
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf( la_buf
+                   , "[%s], Environment variable TRAF_ROOT_ZNODE is undefined, defaulting trafodionRootZNode=%s\n"
+                   , method_name, trafodionRootZNode.c_str() );
+        }
+
+        env = getenv("TRAF_INSTANCE_ID");
+        if ( env && isdigit(*env) )
+        {
+            InstanceId = atoi(env);
+            ss.str( "" );
+            ss << "/" << InstanceId;
+            instanceId = ss.str();
+        }
+        else
+        {
+            InstanceId = 1;
+            ss.str( "" );
+            ss << "/" << InstanceId;
+            instanceId = ss.str();
+
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf( la_buf
+                   , "[%s], Environment variable TRAF_INSTANCE_ID is undefined, defaulting instanceId=%s\n"
+                   , method_name, instanceId.c_str() );
+            printf( "%s", la_buf);
+        }
+
         ZClient = new CZClient( zkQuorumPort.str().c_str()
-                              , ZCLIENT_TRAFODION_ZNODE
-                              , ZCLIENT_INSTANCE_ZNODE );
+                              , trafodionRootZNode.c_str()
+                              , instanceId.c_str() );
         if ( ZClient == NULL )
         {
             char buf[MON_STRING_BUF_SIZE];

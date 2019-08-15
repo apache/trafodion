@@ -26,7 +26,7 @@
 // Test DTM process behavior
 //   1.  Verify ability to start an DTM process on each of the logical nodes
 //   2.  Verify that if an DTM process dies each of the other DTM
-//       process receives a process death and tmRestarted notifications.
+//       process DOES NOT receiv a process death OR tmRestarted notification.
 //   3.  Verify that DTM as a persistent process when restarted
 //       sends TmReady request to monitor.
 //   4.  Verify that only one DTM process can be started on a logical node.
@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
@@ -44,15 +45,13 @@
 #include "xmpi.h"
 #include "dtmCtrl.h"
 
-#define DTM_PROC_NAME_PREFIX        "$DTM"
+#define DTM_PROC_NAME_PREFIX        "$TM"
 #define DTM_RESTART_NID             2
 #define DTM_DOWN_NID                4
 #define DTM_KILL_DELAY              3
 #define DTM_RESTART_DELAY           3
-#define DTM_PERSIST_RETRIES         1
-#define DTM_PERSIST_DELAY          30
-#define PER_PERSIST_RETRIES         3
-#define PER_PERSIST_DELAY          30
+#define DTM_PERSIST_RETRIES         2
+#define DTM_OLD_TEST                0
 
 MonTestUtil util;
 
@@ -88,6 +87,7 @@ int pnodes;
 int dtmProcessCount = 0;
 int persistentProcessCount = 0;
 int nidDown = -1;
+int nidUp = -1;
 
 pthread_mutex_t     notice_mutex;
 pthread_cond_t      notice_cv;
@@ -230,17 +230,6 @@ void recv_notice_msg(struct message_def *recv_msg, int )
             }
         }
     }
-    else if ( recv_msg->type == MsgType_TmRestarted )
-    {
-        if ( tracing )
-            printf( "[%s] DTM Restarted in (nid=%d, pnid=%d, name=%s)\n"
-                  , MyName
-                  , recv_msg->u.request.u.tm_restart.nid
-                  , recv_msg->u.request.u.tm_restart.pnid
-                  , recv_msg->u.request.u.tm_restart.node_name );
-
-        ++dtmProcessCount;
-    }
     else if ( recv_msg->type == MsgType_NodeDown )
     {
         printf("[%s] Node %d (%s) is DOWN.\n", MyName,
@@ -248,6 +237,15 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                recv_msg->u.request.u.down.node_name);
         nidDown = recv_msg->u.request.u.down.nid;
         nodeDown = true;
+    }
+    else if ( recv_msg->type == MsgType_NodeUp )
+    {
+        printf("[%s] Node %d (%s) is Up.\n", MyName,
+               recv_msg->u.request.u.up.nid,
+               recv_msg->u.request.u.up.node_name);
+        nidUp = recv_msg->u.request.u.up.nid;
+        nodeDown = false;
+        //++dtmProcessCount;
     }
     else
     {
@@ -329,36 +327,11 @@ bool createPersistent( int nid )
     bool testSuccess = true;
     char *childArgs[1] = {(char *) "-t"};
     char procName[MAX_PROCESS_NAME] = {0};
-    char value[25];
 
-    sprintf( procName, "$PP%03d", nid );
+    sprintf( procName, "$PP%d", nid );
     
-    // Set persistent nid
-    printf( "[%s] For process %s setting PERSIST_ZONES=%d\n"
-          , MyName, procName, nid);
-    sprintf( value, "%d", nid );
-    if (!util.requestSet( ConfigType_Process
-                        , procName
-                        , "PERSIST_ZONES"
-                        , value))
-    {
-        return false;
-    }
-
-    // Set count of times to restart and persistent "max time"
-    printf( "[%s] For process %s setting PERSIST_RETRIES=%d,%d\n"
-          ,   MyName, procName, PER_PERSIST_RETRIES, PER_PERSIST_DELAY);
-    sprintf(value, "%d,%d", PER_PERSIST_RETRIES, PER_PERSIST_DELAY);
-    if (!util.requestSet( ConfigType_Process
-                        , procName
-                        , "PERSIST_RETRIES"
-                        , value))
-    {
-        return false;
-    }
-
     if ( util.requestNewProcess( nid
-                               , ProcessType_Generic
+                               , ProcessType_PERSIST
                                , false
                                , procName
                                , "dtmProc"
@@ -586,39 +559,14 @@ void killPersistent( int nid )
     sleep( DTM_KILL_DELAY );
 }
 
-bool createDTM( int nid , const char *procNamePrefix )
+bool checkDTM( int nid , const char *procNamePrefix )
 {
     bool testSuccess = true;
     char *childArgs[1] = {(char *) "-t"};
     char procName[MAX_PROCESS_NAME] = {0};
-    char value[25];
 
-    sprintf( procName, "%s%03d", procNamePrefix, nid );
+    sprintf( procName, "%s%d", procNamePrefix, nid );
     
-    // Set persistent nid
-    printf( "[%s] For process %s setting PERSIST_ZONES=%d\n"
-          , MyName, procName, nid);
-    sprintf( value, "%d", nid );
-    if (!util.requestSet( ConfigType_Process
-                        , procName
-                        , "PERSIST_ZONES"
-                        , value))
-    {
-        return false;
-    }
-
-    // Set count of times to restart and persistent "max time"
-    printf( "[%s] For process %s setting PERSIST_RETRIES=%d,%d\n"
-          ,   MyName, procName, DTM_PERSIST_RETRIES, DTM_PERSIST_DELAY);
-    sprintf(value, "%d,%d", DTM_PERSIST_RETRIES, DTM_PERSIST_DELAY);
-    if (!util.requestSet( ConfigType_Process
-                        , procName
-                        , "PERSIST_RETRIES"
-                        , value))
-    {
-        return false;
-    }
-
     if ( util.requestNewProcess( nid
                                , ProcessType_DTM
                                , false
@@ -641,16 +589,40 @@ bool createDTM( int nid , const char *procNamePrefix )
               , dtmProcess[nid].pid
               , dtmProcess[nid].verifier );
 
-        dtmProcess[nid].dead = false;
-
-        testSuccess = openDTM( nid );
+        testSuccess = false;
     }
     else
     {
-        dtmProcess[nid].dead = true;
         printf( "[%s] Failed to start DTM process %s on node %d\n"
-              , MyName, procName, nid );
-        testSuccess = false;
+              , MyName
+              , procName
+              , nid );
+        strcpy(dtmProcess[nid].procName,procName);
+        if( util.requestProcInfo( dtmProcess[nid].procName   
+                                , dtmProcess[nid].nid
+                                , dtmProcess[nid].pid
+                                , dtmProcess[nid].verifier ))
+        {
+            printf( "[%s] Existing DTM process with name %s on node %d with PID=%d and Verifier=%d\n"
+                  , MyName
+                  , dtmProcess[nid].procName
+                  , dtmProcess[nid].nid
+                  , dtmProcess[nid].pid
+                  , dtmProcess[nid].verifier );
+      
+            dtmProcess[nid].dead = false;
+            //testSuccess = true;
+            testSuccess = openDTM( nid );
+        }
+        else 
+        {
+            printf( "[%s] Failed to find DTM process %s on node %d\n"
+                  , MyName
+                  , procName
+                  , nid );
+            dtmProcess[nid].dead = true;
+            testSuccess = false;
+        }
     }
 
     return testSuccess;
@@ -796,10 +768,12 @@ void killDTM( int nid )
     sleep( DTM_KILL_DELAY );
 }
 
-//   1.  Verify ability to start an DTM process on each of the logical nodes
+//   1.  Verify that primitive DTM process cannot be created on each logical node
+//   2.  Verify that primitive DTM process exists on each logical nodexs
 //
-//       One DTM process is created in each logical node.
-//       One generic persistent process is created in each logical node.
+//   DTM process created must fail in each logical node. 
+//   A DTM process should already have been created by Monitor as one of its 
+//   primitive processes.
 bool DTM_test1 ()
 {
     int prevNid = -1;
@@ -834,15 +808,16 @@ bool DTM_test1 ()
 
             prevNid = reqNid = nodeData->node[i].nid;
 
-            if ( createDTM( reqNid, DTM_PROC_NAME_PREFIX ) )
+            if ( checkDTM( reqNid, DTM_PROC_NAME_PREFIX ) )
             {
                 ++dtmProcessCount;
             }
             else
             {
-                printf( "[%s] Failed to start DTM process on node %d\n"
+                printf( "[%s] Failed to find primitive DTM process on node %d\n"
                       , MyName, reqNid );
                 testSuccess = false;
+                break;
             }
 
             if ( createPersistent( reqNid ) )
@@ -852,6 +827,7 @@ bool DTM_test1 ()
             else
             {
                 testSuccess = false;
+                break;
             }
         }
     }
@@ -872,12 +848,11 @@ bool DTM_test1 ()
     return testSuccess;
 }
 
-//   2.  Verify that if an DTM process dies each of the other DTM
-//       process receives a process death and tmRestarted notifications.
+//   2.  Verify that if an DTM process dies none of the other DTM
+//       process receives a process death or tmRestarted notifications.
 //
-//       Request the notice counts from each DTM process. All except the
-//       restarted DTM will return the notices received counts greater than
-//       zero.
+//       Request the notice counts from each DTM process. All non-restarted 
+//       DTMs will return the notices received counts equal to zero.
 bool DTM_test2 ()
 {
     bool testSuccess = true;
@@ -934,16 +909,16 @@ bool DTM_test2 ()
         }
     }
 
-    if ( dtmDeathNoticeCount != (lnodes - 1) )
+    if ( dtmDeathNoticeCount != 0 )
     {
         printf( "[%s] Got %d DTM death notifications, expecting %d\n"
-              , MyName, dtmDeathNoticeCount, (dtmProcessCount - 1) );
+              , MyName, dtmDeathNoticeCount, 0 );
         testSuccess = false;
     }
-    if ( tmRestartedNoticeCount != (lnodes - 1) )
+    if ( tmRestartedNoticeCount != 0 )
     {
         printf( "[%s] Got %d DTM restarted notifications, expecting %d\n"
-              , MyName, tmRestartedNoticeCount, (dtmProcessCount - 1) );
+              , MyName, tmRestartedNoticeCount, 0 );
         testSuccess = false;
     }
 
@@ -1067,33 +1042,33 @@ bool DTM_test5 ()
     {
         if ( tracing )
         {
-            printf( "[%s] Killing DTM process on nid=%d, retry=%d\n"
-                  , MyName, DTM_DOWN_NID, i+1 );
+            printf( "[%s] Killing DTM process %s (%d, %d:%d) retry=%d\n"
+                  , MyName
+                  , dtmProcess[DTM_DOWN_NID].procName
+                  , dtmProcess[DTM_DOWN_NID].nid
+                  , dtmProcess[DTM_DOWN_NID].pid
+                  , dtmProcess[DTM_DOWN_NID].verifier, i+1 );
         }
 
         killDTM( DTM_DOWN_NID );
         
         // Wait for the process to be recreated
-        for ( int j = 0; j < 5; j++ )
+        sleep( DTM_RESTART_DELAY );
+        if ( infoDTM( DTM_DOWN_NID ) )
         {
-            if ( infoPersistent( DTM_DOWN_NID ) )
-            {
-                printf( "[%s] Found restarted persistent process %s (%d, %d:%d)\n"
-                      , MyName
-                      , persistentProcess[i].procName
-                      , persistentProcess[i].nid
-                      , persistentProcess[i].pid
-                      , persistentProcess[i].verifier );
-                persistentProcess[i].dead = false;
-                break;
-            }
-            else
-            {
-                printf( "[%s] Failed to find persistent process on node %d\n"
-                      , MyName, i );
-                persistentProcess[i].dead = true;
-                sleep( DTM_RESTART_DELAY );
-            }
+            printf( "[%s] Found restarted persistent process %s (%d, %d:%d)\n"
+                  , MyName
+                  , dtmProcess[DTM_DOWN_NID].procName
+                  , dtmProcess[DTM_DOWN_NID].nid
+                  , dtmProcess[DTM_DOWN_NID].pid
+                  , dtmProcess[DTM_DOWN_NID].verifier );
+            dtmProcess[DTM_DOWN_NID].dead = false;
+        }
+        else
+        {
+            printf( "[%s] Failed to find persistent process on node %d\n"
+                  , MyName, DTM_DOWN_NID );
+            dtmProcess[DTM_DOWN_NID].dead = true;
         }
     }
 
@@ -1120,7 +1095,6 @@ bool DTM_test5 ()
 
 int main (int argc, char *argv[])
 {
-
     bool testSuccess = true;
 
     util.processArgs( argc, argv );
@@ -1142,43 +1116,92 @@ int main (int argc, char *argv[])
 
     if ( testSuccess )
     {
-        printf( "[%s] Beginning DTM sub-test 1\n", MyName );
+        printf( "[%s] BEGIN DTM sub-test 1\n", MyName );
 
         testSuccess = DTM_test1( );
+
+        printf( "[%s] END DTM sub-test 1, test: ", MyName );
+        if (testSuccess)
+        {
+            printf( "PASS\n" );
+        }
+        else
+        {
+            printf( "FAIL\n" );
+        }
     }
     fflush (stdout );
     if ( testSuccess )
     {
-        printf( "[%s] Beginning DTM sub-test 2\n", MyName );
+        printf( "[%s] BEGIN DTM sub-test 2\n", MyName );
 
         testSuccess = DTM_test2( );
+
+        printf( "[%s] END DTM sub-test 2, test: ", MyName );
+        if (testSuccess)
+        {
+            printf( "PASS\n" );
+        }
+        else
+        {
+            printf( "FAIL\n" );
+        }
     }
     fflush (stdout );
     if ( testSuccess )
     {
-        printf( "[%s] Beginning DTM sub-test 3\n", MyName );
+        printf( "[%s] BEGIN DTM sub-test 3\n", MyName );
 
         testSuccess = DTM_test3( );
+
+        printf( "[%s] END DTM sub-test 3, test: ", MyName );
+        if (testSuccess)
+        {
+            printf( "PASS\n" );
+        }
+        else
+        {
+            printf( "FAIL\n" );
+        }
     }
     fflush (stdout );
     if ( testSuccess )
     {
-        printf( "[%s] Beginning DTM sub-test 4\n", MyName );
+        printf( "[%s] BEGIN DTM sub-test 4\n", MyName );
 
         testSuccess = DTM_test4( );
+
+        printf( "[%s] END DTM sub-test 4, test: ", MyName );
+        if (testSuccess)
+        {
+            printf( "PASS\n" );
+        }
+        else
+        {
+            printf( "FAIL\n" );
+        }
     }
     fflush (stdout );
     if ( testSuccess )
     {
-        printf( "[%s] Beginning DTM sub-test 5\n", MyName );
+        printf( "[%s] BEGIN DTM sub-test 5\n", MyName );
 
         testSuccess = DTM_test5( );
+
+        printf( "[%s] END DTM sub-test 5, test: ", MyName );
+        if (testSuccess)
+        {
+            printf( "PASS\n" );
+        }
+        else
+        {
+            printf( "FAIL\n" );
+        }
     }
     fflush (stdout );
 
     int sendbuf;
     replyMsg_t recvbuf;
-    int rc;
     const int clientTag = 99;
     MPI_Status status;
 
@@ -1189,7 +1212,7 @@ int main (int argc, char *argv[])
             printf( "[%s] Sending CMD_END to process %s\n"
                   , MyName, dtmProcess[i].procName );
             sendbuf = CMD_END;
-            rc = XMPI_Sendrecv( &sendbuf, 1, MPI_INT, 0, clientTag,
+            XMPI_Sendrecv( &sendbuf, 1, MPI_INT, 0, clientTag,
                 &recvbuf, 1, MPI_INT, MPI_ANY_SOURCE,
                 MPI_ANY_TAG, dtmProcess[i].comm, &status );
         }
@@ -1201,19 +1224,16 @@ int main (int argc, char *argv[])
                   , dtmProcess[i].procName
                   , dtmProcess[i].nid
                   , dtmProcess[i].pid
-                  , dtmProcess[i].verifier 
-                  , dtmProcess[i].comm 
+                  , dtmProcess[i].verifier
+                  , dtmProcess[i].comm
                   , dtmProcess[i].dead );
-        }
-    }
-    for ( int i=0; i < lnodes; ++i )
-    {
+         }
         if ( persistentProcess[i].comm  != -1 )
         {
             printf( "[%s] Sending CMD_END to process %s\n"
                   , MyName, persistentProcess[i].procName );
             sendbuf = CMD_END;
-            rc = XMPI_Sendrecv( &sendbuf, 1, MPI_INT, 0, clientTag,
+            XMPI_Sendrecv( &sendbuf, 1, MPI_INT, 0, clientTag,
                 &recvbuf, 1, MPI_INT, MPI_ANY_SOURCE,
                 MPI_ANY_TAG, persistentProcess[i].comm, &status );
         }
@@ -1225,20 +1245,20 @@ int main (int argc, char *argv[])
                   , persistentProcess[i].procName
                   , persistentProcess[i].nid
                   , persistentProcess[i].pid
-                  , persistentProcess[i].verifier 
-                  , persistentProcess[i].comm 
+                  , persistentProcess[i].verifier
+                  , persistentProcess[i].comm
                   , persistentProcess[i].dead );
-        }
-    }
+         }
+     }
 
-    sleep( 5 );
-    printf( "DTM Process Test:\t\t%s\n", (testSuccess) ? "PASSED" : "FAILED" );
+     sleep( 5 );
+     printf( "DTM Process Test:\t\t%s\n", (testSuccess) ? "PASSED" : "FAILED" );
 
-    // tell monitor we are exiting
-    util.requestExit( );
+     // tell monitor we are exiting
+     util.requestExit( );
 
-    XMPI_Close_port( util.getPort( ) );
-    if ( gp_local_mon_io )
+     XMPI_Close_port( util.getPort( ) );
+     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;
     }

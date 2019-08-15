@@ -42,6 +42,7 @@
 
 #include "buf.h"
 #include "mstrace.h"
+#include "msx.h"
 #include "socktrans.h"
 
 #ifndef AF_INET_SDP
@@ -207,6 +208,8 @@ int SB_Trans::Sock_Client::connect(char *pp_host, int pv_port) {
     }
     if (lv_sock == -1)
         return lv_errno;
+    lv_err = getGlobalSockCtrl()->set_keepalive(WHERE, lv_sock);
+    SB_util_assert_ieq(lv_err, 0);
     lv_err = getGlobalSockCtrl()->set_nodelay(WHERE, lv_sock);
     SB_util_assert_ieq(lv_err, 0);
     lv_err = getGlobalSockCtrl()->set_size_recv(WHERE, lv_sock, SIZE);
@@ -303,11 +306,20 @@ void SB_Trans::Sock_Controller::epoll_ctl(const char *pp_where,
                                           int         pv_fd,
                                           int         pv_event,
                                           void       *pp_data) {
+
+    static bool         sv_ignore_enoent = true;
+    static bool         sv_envvar_ignore_enoent_read = false;
+
     char                la_errno[100];
     const char         *lp_op;
     int                 lv_err;
     int                 lv_errno;
     struct epoll_event  lv_event;
+
+    if (! sv_envvar_ignore_enoent_read) {
+      sv_envvar_ignore_enoent_read = true;
+      ms_getenv_bool("SQ_SB_IGNORE_ENOENT", &sv_ignore_enoent);
+    }
 
     lv_event.events = pv_event;
     lv_event.data.ptr = pp_data;
@@ -332,6 +344,21 @@ void SB_Trans::Sock_Controller::epoll_ctl(const char *pp_where,
                                "epoll-ctl op=%d(%s), fd=%d, event=%d, data=%p, err=%d\n",
                                pv_op, lp_op, pv_fd, pv_event, pp_data, lv_err);
     }
+
+    if ((sv_ignore_enoent) &&
+        (lv_err == -1) &&
+        (lv_errno == ENOENT) &&
+        ((pv_op == EPOLL_CTL_MOD) ||
+         (pv_op == EPOLL_CTL_DEL))) {
+        lp_op = sock_get_label_epoll_ctl(pv_op);
+        SB_Buf_Line la_buf;
+        sprintf(la_buf, 
+            "epoll_ctl ignoring ENOENT op=%d(%s), fd=%d, event=%d, data=%p, err=%d\n",
+            pv_op, lp_op, pv_fd, pv_event, pp_data, lv_err);
+        sb_util_write_log(la_buf);
+        return;
+    }
+
     SB_util_assert_ine(lv_err, -1);
 }
 
@@ -401,6 +428,54 @@ int SB_Trans::Sock_Controller::set_nodelay(const char *pp_where,
                         sizeof(lv_tcpopt));
     if (gv_ms_trace_sock)
         trace_where_printf(pp_where, "setsockopt NODELAY sock=%d, err=%d\n",
+                           pv_sock, lv_err);
+    return lv_err;
+}
+
+int SB_Trans::Sock_Controller::set_keepalive(const char *pp_where,
+                                             int         pv_sock) {
+    int lv_err;
+    
+    static bool sv_envvar_read = false;
+    static int sv_sockkeepalive = 1;
+    static int sv_tcpkeepidle = 240;
+    static int sv_tcpkeepintvl = 6;
+    static int sv_tcpkeepcnt = 10;
+
+    if (! sv_envvar_read) {
+      sv_envvar_read = true;
+      ms_getenv_int("SQ_SB_KEEPALIVE", &sv_sockkeepalive);
+      ms_getenv_int("SQ_SB_KEEPIDLE", &sv_tcpkeepidle);
+      ms_getenv_int("SQ_SB_KEEPINTVL", &sv_tcpkeepintvl);
+      ms_getenv_int("SQ_SB_KEEPCNT", &sv_tcpkeepcnt);
+    }
+
+    lv_err = setsockopt(pv_sock,
+                        SOL_SOCKET,
+                        SO_KEEPALIVE,
+                        reinterpret_cast<char *>(&sv_sockkeepalive),
+                        sizeof(sv_sockkeepalive));
+
+    lv_err = setsockopt(pv_sock,
+                        IPPROTO_TCP,
+                        TCP_KEEPIDLE,
+                        reinterpret_cast<char *>(&sv_tcpkeepidle),
+                        sizeof(sv_tcpkeepidle));
+
+    lv_err = setsockopt(pv_sock,
+                        IPPROTO_TCP,
+                        TCP_KEEPINTVL,
+                        reinterpret_cast<char *>(&sv_tcpkeepintvl),
+                        sizeof(sv_tcpkeepintvl));
+
+    lv_err = setsockopt(pv_sock,
+                        IPPROTO_TCP,
+                        TCP_KEEPCNT,
+                        reinterpret_cast<char *>(&sv_tcpkeepcnt),
+                        sizeof(sv_tcpkeepcnt));
+
+    if (gv_ms_trace_sock)
+        trace_where_printf(pp_where, "setsockopt KEEPALIVE sock=%d, err=%d\n",
                            pv_sock, lv_err);
     return lv_err;
 }
@@ -788,8 +863,16 @@ void SB_Trans::Sock_Listener::listen(char *pp_host, int *pp_port) {
     if (gv_ms_trace_sock)
         trace_where_printf(WHERE, "bind complete, sock=%d\n",
                            lv_sock);
-    lv_err = ::listen(lv_sock, 10);
+
+    static bool sv_envvar_read = false;
+    static int sv_listen_backlog = 1024;
+    if (! sv_envvar_read) {
+      sv_envvar_read = true;
+      ms_getenv_int("SQ_SB_LISTEN_BACKLOG", &sv_listen_backlog);
+    }
+    lv_err = ::listen(lv_sock, sv_listen_backlog);
     SB_util_assert_ine(lv_err, -1);
+
     iv_sock = lv_sock;
     lv_len = sizeof(lv_addr);
     lv_err = getsockname(lv_sock, reinterpret_cast<struct sockaddr *>(&lv_addr), &lv_len);

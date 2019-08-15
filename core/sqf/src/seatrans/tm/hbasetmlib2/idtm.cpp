@@ -35,6 +35,7 @@
 #include "seabed/ms.h"
 #include "seabed/pctl.h"
 #include "seabed/pevents.h"
+#include "seabed/thread.h"
 
 #include "idtmsrv.h"
 

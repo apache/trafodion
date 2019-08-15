@@ -371,7 +371,6 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
                                errno, strerror(errno));
         la_node_name[0] = '\0';
     }
-
     char *tmpptr = la_node_name;
     while ( *tmpptr )
     {
@@ -431,7 +430,7 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
         sprintf(ip_port_fname,"%.*s/monitor.port.%d.%s",
                 (int)(sizeof(ip_port_fname)-(sizeof("/monitor.port..")+11
                                         +strlen(la_node_name))),
-                getenv("MPI_TMPDIR"),lv_MyNID,la_node_name);
+                getenv("TRAF_LOG"),lv_MyNID,la_node_name);
     } else 
     {
         // It's a real cluster
@@ -441,7 +440,7 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
         sprintf(ip_port_fname,"%.*s/monitor.port.%s",
                 (int)(sizeof(ip_port_fname)-(sizeof("/monitor.port.")+11
                                         +strlen(la_short_node_name))),
-                getenv("MPI_TMPDIR"), la_short_node_name);
+                getenv("TRAF_LOG"), la_short_node_name);
 
     }
     // Assume nid zero if the global Seabed nid variable is not initialized
@@ -825,7 +824,9 @@ int Local_IO_To_Monitor::get_io(int pv_sig, siginfo_t *pp_siginfo) {
                             +(lv_idx*sizeof(SharedMsgDef)));
 
     // Bug catcher: shared buffer pid and verifier must match my process
-    LIOTM_assert((iv_pid ==-1 && iv_verifier ==-1) ||
+    //              unless it is a notice from monitor process
+    LIOTM_assert((lv_type == MC_NoticeReady) ||
+                 (iv_pid ==-1 && iv_verifier ==-1) ||
                  (iv_pid == lv_m->trailer.OSPid && iv_verifier == -1) ||
                  (iv_pid == lv_m->trailer.OSPid && 
                   iv_verifier == lv_m->trailer.verifier) ||
@@ -1066,27 +1067,30 @@ bool Local_IO_To_Monitor::init_local_IO() {
         else
         {
             iv_mpid = ((SharedMemHdr*)ip_cshm)->mPid;
-            LIOTM_assert(iv_mpid > 0);
-            if (cv_trace)
-                trace_where_printf(WHERE, "shared-memory=%p, monitor pid=%d, nid=%d\n"
-                                       , ip_cshm, iv_mpid, iv_nid);
-
-            iv_qid = msgget( lv_sharedSegKey, SQ_LIO_MSQ_PERMISSIONS );
-            if (iv_qid == -1) {
-                lv_errno = errno;
-                perror( "failed msgget()" );
+            if (iv_mpid > 0)
+            {
                 if (cv_trace)
-                    trace_where_printf(WHERE, "failed msgget() errno=%d(%s)\n", lv_errno, strerror(lv_errno));
-                // detach from shared memory
-                shmdt(ip_cshm);
-                errno = lv_errno;
-                ip_cshm = NULL;
-                iv_qid = iv_mpid = 0;
+                    trace_where_printf(WHERE, "shared-memory=%p, monitor pid=%d, nid=%d\n"
+                                           , ip_cshm, iv_mpid, iv_nid);
+    
+                iv_qid = msgget( lv_sharedSegKey, SQ_LIO_MSQ_PERMISSIONS );
+                if (iv_qid == -1) {
+                    lv_errno = errno;
+                    perror( "failed msgget()" );
+                    if (cv_trace)
+                        trace_where_printf(WHERE, "failed msgget() errno=%d(%s)\n", lv_errno, strerror(lv_errno));
+                    // detach from shared memory
+                    shmdt(ip_cshm);
+                    errno = lv_errno;
+                    ip_cshm = NULL;
+                    iv_qid = iv_mpid = 0;
+                }
+                else {
+                    ip_cshm_end = ip_cshm + lv_shsize;
+                    iv_initted = lv_ret = true;
+                }
             }
-            else {
-                ip_cshm_end = ip_cshm + lv_shsize;
-                iv_initted = lv_ret = true;
-            }
+            // else return false and the caller handle retries
         }
     }
 
@@ -1186,15 +1190,11 @@ int Local_IO_To_Monitor::process_notice(struct message_def *pp_msg) {
     case MsgType_NodeDown:
     case MsgType_NodeJoining:
     case MsgType_NodeQuiesce:
-    case MsgType_NodePrepare:
     case MsgType_NodeUp:
     case MsgType_SpareUp:
     case MsgType_ProcessDeath:
     case MsgType_ReintegrationError:
     case MsgType_Shutdown:
-    case MsgType_TmRestarted:
-    case MsgType_TmSyncAbort:
-    case MsgType_TmSyncCommit:
         if (cv_trace)
             trace_where_printf(WHERE,
                               "notice %d received\n",
@@ -1218,17 +1218,6 @@ int Local_IO_To_Monitor::process_notice(struct message_def *pp_msg) {
         {
             lv_ret = put_on_event_list( pp_msg, size_of_msg(pp_msg));
         }
-        break;
-
-    case MsgType_UnsolicitedMessage:
-        if (cv_trace)
-            trace_where_printf(WHERE,
-                               "Unsolicited msg, type=%d received\n",
-                               pp_msg->u.request.type);
-        if (ip_unsol_cb)
-            ip_unsol_cb(pp_msg, size_of_msg(pp_msg));
-        else
-            lv_ret = put_on_notice_list( pp_msg, size_of_msg(pp_msg));
         break;
 
     default:
@@ -1863,10 +1852,6 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.joining);
         break;
 
-    case MsgType_NodePrepare:
-        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.prepare);
-        break;
-
     case MsgType_NodeQuiesce:
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.quiesce);
         break;
@@ -1897,22 +1882,6 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
 
     case MsgType_SpareUp:
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.spare_up);
-        break;
-
-    case MsgType_TmRestarted:
-        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.tm_restart);
-        break;
-
-    case MsgType_TmSyncAbort:
-    case MsgType_TmSyncCommit:
-        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.tm_sync_notice);
-        break;
-
-    case MsgType_UnsolicitedMessage:
-        if (reply)
-            lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.unsolicited_tm_sync);
-        else
-            lv_len = lv_preamble + sizeof(pp_msg->u.request.u.unsolicited_tm_sync);
         break;
 
     case MsgType_Service:
@@ -1957,12 +1926,6 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
                 break;
             case ReplyType_Startup:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.startup_info);
-                break;
-            case ReplyType_TmSync:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.tm_sync);
-                break;
-            case ReplyType_TransInfo:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.trans_info);
                 break;
             case ReplyType_ZoneInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.zone_info);
@@ -2053,18 +2016,11 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
             case ReqType_Startup:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.startup);
                 break;
-            //case ReqType_Stfsd:
             case ReqType_TmLeader:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.leader);
                 break;
             case ReqType_TmReady:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.tm_ready);
-                break;
-            case ReqType_TmSync:
-                lv_len = lv_preamble + sizeof(pp_msg->u.request.u.tm_sync);
-                break;
-            case ReqType_TransInfo:
-                lv_len = lv_preamble + sizeof(pp_msg->u.request.u.trans_info);
                 break;
             case ReqType_ZoneInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.zone_info);
@@ -2259,10 +2215,10 @@ const char * Local_IO_To_Monitor::msgTypes_[] = {
     "Close",
     "Event",
     "NodeAdded",
+    "NodeChanged",
     "NodeDeleted",
     "NodeDown",
     "NodeJoining",
-    "NodePrepare",
     "NodeQuiesce",
     "NodeUp",
     "Open",
@@ -2272,24 +2228,27 @@ const char * Local_IO_To_Monitor::msgTypes_[] = {
     "Service",
     "Shutdown",
     "SpareUp",
-    "TmRestarted",
-    "TmSyncAbort",
-    "TmSyncCommit",
-    "UnsolicitedMessage",
     "invalid"
 };
 
 const char * Local_IO_To_Monitor::reqTypes_[] = {
-    "",
+    "invalid",
     "Close",
+    "DelProcessNs",
     "Dump",
     "Event",
     "Exit",
     "Get",
+    "InstanceId",
     "Kill",
     "MonStats",
     "Mount",
+    "NameServerAdd",
+    "NameServerDelete",
+    "NameServerStart",
+    "NameServerStop",
     "NewProcess",
+    "NewProcessNs",
     "NodeAdd",
     "NodeDelete",
     "NodeDown",
@@ -2305,35 +2264,34 @@ const char * Local_IO_To_Monitor::reqTypes_[] = {
     "PNodeInfo",
     "ProcessInfo",
     "ProcessInfoCont",
+    "ProcessInfoNs",
     "Set",
     "Shutdown",
+    "ShutdownNs",
     "Startup",
-    "Stfsd",
     "TmLeader",
     "TmReady",
-    "TmSync",
-    "TransInfo",
     "ZoneInfo",
     "invalid"
 };
 
 const char * Local_IO_To_Monitor::replyTypes_[] = {
     "Generic",
+    "DelProcessNs",
     "Dump",
     "Get",
     "MonStats",
     "Mount",
     "NewProcess",
+    "NewProcessNs",
     "NodeInfo",
     "NodeName",
     "Open",
     "OpenInfo",
     "PNodeInfo",
     "ProcessInfo",
-    "Stfsd",
+    "ProcessInfoNs",
     "Startup",
-    "TmSync",
-    "TransInfo",
     "ZoneInfo",
     "invalid"
 };

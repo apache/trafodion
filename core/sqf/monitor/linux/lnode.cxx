@@ -238,6 +238,7 @@ void CLNode::Added( void )
         const char *nodeName = GetNode()->GetName();
         if (IsRealCluster)
         {
+            nodeName = GetNode()->GetFqdn();
             STRCPY(msg->u.request.u.node_added.node_name, nodeName);
         }
         else
@@ -288,6 +289,7 @@ void CLNode::Changed( CLNodeConfig *lnodeConfig )
         const char *nodeName = GetNode()->GetName();
         if (IsRealCluster)
         {
+            nodeName = GetNode()->GetFqdn();
             STRCPY(msg->u.request.u.node_changed.node_name, nodeName);
         }
         else
@@ -338,6 +340,7 @@ void CLNode::Deleted( void )
         const char *nodeName = GetNode()->GetName();
         if (IsRealCluster)
         {
+            nodeName = GetNode()->GetFqdn();
             STRCPY(msg->u.request.u.node_deleted.node_name, nodeName);
         }
         else
@@ -388,6 +391,7 @@ void CLNode::Down( void )
         const char * nodeName = GetNode()->GetName();
         if (IsRealCluster)
         {
+            nodeName = GetNode()->GetFqdn();
             STRCPY(msg->u.request.u.down.node_name, nodeName);
         }
         else
@@ -560,176 +564,157 @@ bool CLNode::IsKillingNode( void )
     return( lnodes_->GetNode()->IsKillingNode() );
 }
 
-CLNode *CLNode::Link (CLNode * entry)
+CLNode *CLNode::LinkAfter( CLNode * &tail, CLNode * entry )
 {
-    const char method_name[] = "CLNode::Link";
+    const char method_name[] = "CLNode::LinkAfter";
     TRACE_ENTRY;
 
-    next_ = entry;
     entry->prev_ = this;
+    if (next_ == NULL)
+    {
+        entry->next_ = NULL;
+        tail = entry;
+    }
+    else
+    {
+        entry->next_ = next_;
+        next_->prev_ = entry;
+    }
+    next_ = entry;
 
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Linked logical node object "
+                      "tail=%d\n"
+                      "\t\tthis: prev=%d, this=%d, next=%d\n"
+                      "\t\tentry: prev=%d, entry=%d, next=%d\n"
+                    , method_name, __LINE__
+                    , tail->GetNid()
+                    , prev_?prev_->GetNid():-1
+                    , GetNid()
+                    , next_?next_->GetNid():-1
+                    , entry->prev_?entry->prev_->GetNid():-1
+                    , entry->GetNid()
+                    , entry->next_?entry->next_->GetNid():-1 );
+    }
+    
     TRACE_EXIT;
     return entry;
 }
 
-CLNode *CLNode::LinkP(CLNode * entry)
+CLNode *CLNode::LinkBefore( CLNode * &head, CLNode * entry )
 {
-    const char method_name[] = "CLNode::LinkP";
+    const char method_name[] = "CLNode::LinkBefore";
     TRACE_ENTRY;
 
-    nextP_ = entry;
+    entry->next_ = this;
+    if (prev_ == NULL)
+    {
+        entry->prev_ = NULL;
+        head = entry;
+    }
+    else
+    {
+        entry->prev_ = prev_;
+        prev_->next_ = entry;
+    }
+    prev_ = entry;
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Linked logical node object "
+                      "head=%d\n"
+                      "\t\tthis: prev=%d, this=%d, next=%d\n"
+                      "\t\tentry: prev=%d, entry=%d, next=%d\n"
+                    , method_name, __LINE__
+                    , head->GetNid()
+                    , prev_?prev_->GetNid():-1
+                    , GetNid()
+                    , next_?next_->GetNid():-1
+                    , entry->prev_?entry->prev_->GetNid():-1
+                    , entry->GetNid()
+                    , entry->next_?entry->next_->GetNid():-1 );
+    }
+    
+    TRACE_EXIT;
+    return entry;
+}
+
+CLNode *CLNode::LinkAfterP( CLNode * &tail, CLNode * entry )
+{
+    const char method_name[] = "CLNode::LinkAfterP";
+    TRACE_ENTRY;
+
     entry->prevP_ = this;
+    if (nextP_ == NULL)
+    {
+        entry->nextP_ = NULL;
+        tail = entry;
+    }
+    else
+    {
+        entry->nextP_ = nextP_;
+        nextP_->prevP_ = entry;
+    }
+    nextP_ = entry;
 
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Linked logical node object "
+                      "tail=%d\n"
+                      "\t\tthis: prev=%d, this=%d, next=%d\n"
+                      "\t\tentry: prev=%d, entry=%d, next=%d\n"
+                    , method_name, __LINE__
+                    , tail->GetNid()
+                    , prevP_?prevP_->GetNid():-1
+                    , GetNid()
+                    , nextP_?nextP_->GetNid():-1
+                    , entry->prevP_?entry->prevP_->GetNid():-1
+                    , entry->GetNid()
+                    , entry->nextP_?entry->nextP_->GetNid():-1 );
+    }
+    
     TRACE_EXIT;
     return entry;
 }
 
-#ifndef NAMESERVER_PROCESS
-void CLNode::PrepareForTransactions( bool activatingSpare )
+CLNode *CLNode::LinkBeforeP( CLNode * &head, CLNode * entry )
 {
-    const char method_name[] = "CLNode::PrepareForTransactions";
+    const char method_name[] = "CLNode::LinkBeforeP";
     TRACE_ENTRY;
 
-    struct  message_def *msg;
-
-    if ( trace_settings & 
-        (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC | TRACE_INIT) )
+    entry->nextP_ = this;
+    if (prevP_ == NULL)
     {
-        trace_printf( "%s@%d -  %s (nid=%d, state=%d) sending prepare notice to DTM and SPX\n"
+        entry->prevP_ = NULL;
+        head = entry;
+    }
+    else
+    {
+        entry->prevP_ = prevP_;
+        prevP_->nextP_ = entry;
+    }
+    prevP_ = entry;
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Linked logical node object "
+                      "head=%d\n"
+                      "\t\tthis: prev=%d, this=%d, next=%d\n"
+                      "\t\tentry: prev=%d, entry=%d, next=%d\n"
                     , method_name, __LINE__
-                    , MyNode->GetName(), MyNode->GetPNid(), MyNode->GetState());
+                    , head->GetNid()
+                    , prevP_?prevP_->GetNid():-1
+                    , GetNid()
+                    , nextP_?nextP_->GetNid():-1
+                    , entry->prevP_?entry->prevP_->GetNid():-1
+                    , entry->GetNid()
+                    , entry->nextP_?entry->nextP_->GetNid():-1 );
     }
-
-    if ( MyNode->GetState() == State_Up )
-    {
-        CLNode *lnode = MyNode->GetFirstLNode();
-        for ( ; lnode; lnode = lnode->GetNextP() )
-        {
-            // Send local DTM processes a node prepare message for each
-            // logical node activated by spare node
-            CProcess   *process = lnode->GetProcessLByType( ProcessType_DTM );
-            if ( process )
-            {
-                // Record statistics (sonar counters)
-                if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-                   MonStats->notice_node_up_Incr();
-            
-                // send node prepare notice to our node's DTM process
-                msg = new struct message_def;
-                msg->type = MsgType_NodePrepare;
-                msg->noreply = true;
-                msg->u.request.type = ReqType_Notice;
-                msg->u.request.u.prepare.nid = Nid;
-                msg->u.request.u.prepare.takeover = activatingSpare ? true : false;
-                const char * nodeName = GetNode()->GetName();
-                STRCPY(msg->u.request.u.prepare.node_name, nodeName);
-                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
-                                                       , process->GetVerifier()
-                                                       , msg
-                                                       , NULL);
-            
-                if ( trace_settings & 
-                    (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC | TRACE_INIT) )
-                {
-                    trace_printf( "%s@%d - Sending node %d (takeover=%d) prepare notice to DTM %s (pid=%d)\n"
-                                , method_name, __LINE__
-                                , Nid , msg->u.request.u.prepare.takeover
-                                , process->GetName(), process->GetPid() );
-                                
-                }
-            }
-
-            // Send local SPX processes a node prepare message for each
-            // logical node activated by spare node
-            process = lnode->GetProcessLByType( ProcessType_SPX );
-            if ( process )
-            {
-                // Record statistics (sonar counters)
-                if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-                   MonStats->notice_node_up_Incr();
-            
-                // send node prepare notice to our node's DTM process
-                msg = new struct message_def;
-                msg->type = MsgType_NodePrepare;
-                msg->noreply = true;
-                msg->u.request.type = ReqType_Notice;
-                msg->u.request.u.prepare.nid = Nid;
-                msg->u.request.u.prepare.takeover = activatingSpare ? true : false;
-                const char * nodeName = GetNode()->GetName();
-                STRCPY(msg->u.request.u.prepare.node_name, nodeName);
-                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
-                                                       , process->GetVerifier()
-                                                       , msg
-                                                       , NULL);
-            
-                if ( trace_settings & 
-                    (TRACE_RECOVERY | TRACE_REQUEST | TRACE_INIT) )
-                {
-                    trace_printf( "%s@%d - Sending node %d prepare notice to SPX %s (pid=%d)\n"
-                                , method_name, __LINE__, Nid
-                                , process->GetName(), process->GetPid());
-                }
-            }
-        }
-    }
-
+    
     TRACE_EXIT;
+    return entry;
 }
-#endif
-
-#ifndef NAMESERVER_PROCESS
-void CLNode::SendDTMRestarted( void )
-{
-    const char method_name[] = "CLNode::SendDTMRestarted";
-    TRACE_ENTRY;
-
-    struct  message_def *msg;
-
-    if ( trace_settings &
-        (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC | TRACE_INIT) )
-    {
-        trace_printf( "%s@%d -  %s (pnid=%d, state=%d) sending DTM restarted in nid=%d notice to local DTMs\n"
-                    , method_name, __LINE__
-                    , MyNode->GetName(), MyNode->GetPNid(), MyNode->GetState(), GetNid() );
-    }
-
-    if ( MyNode->GetState() == State_Up )
-    {
-        CLNode *lnode = MyNode->GetFirstLNode();
-        for ( ; lnode; lnode = lnode->GetNextP() )
-        {
-            // Send local DTM processes a DTM restarted message
-            CProcess   *process = lnode->GetProcessLByType( ProcessType_DTM );
-            if ( process )
-            {
-                // send node prepare notice to our node's DTM process
-                msg = new struct message_def;
-                msg->type = MsgType_TmRestarted;
-                msg->noreply = true;
-                msg->u.request.type = ReqType_Notice;
-                msg->u.request.u.tm_restart.nid = Nid;
-                msg->u.request.u.tm_restart.pnid = GetNode()->GetPNid();
-                const char * nodeName = GetNode()->GetName();
-                STRCPY(msg->u.request.u.tm_restart.node_name, nodeName);
-                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
-                                                       , process->GetVerifier()
-                                                       , msg
-                                                       , NULL);
-
-                if ( trace_settings &
-                    (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC | TRACE_INIT) )
-                {
-                    trace_printf( "%s@%d - Sending nid=%d DTM restarted notice to DTM %s (nid=%d,pid=%d)\n"
-                                , method_name, __LINE__
-                                , Nid , process->GetName(), process->GetNid(), process->GetPid() );
-                }
-            }
-        }
-    }
-
-    TRACE_EXIT;
-}
-#endif
 
 #ifndef NAMESERVER_PROCESS
 void CLNode::SetAffinity( pid_t pid, PROCESSTYPE type )
@@ -974,6 +959,7 @@ void CLNode::Up( void )
     const char * nodeName = GetNode()->GetName();
     if (IsRealCluster)
     {
+        nodeName = GetNode()->GetFqdn();
         STRCPY(msg->u.request.u.up.node_name, nodeName);
     }
     else
@@ -1068,7 +1054,33 @@ CLNode *CLNodeContainer::AddLNode( CLNodeConfig *lnodeConfig, CNode *node )
     }
     else
     {
-        tail_ = tail_->Link(lnode);
+        // add to list in nid sort order
+        if (lnode->GetNid() < head_->GetNid())
+        { // link new lnode to the begining
+            head_->LinkBefore( head_, lnode );
+        }
+        else if (lnode->GetNid() > tail_->GetNid())
+        { // link new lnode to the end
+            tail_->LinkAfter( tail_, lnode );
+        }
+        else
+        {
+            CLNode *entry = head_;
+            CLNode *prevEntry = NULL;
+            while (entry)
+            { // walk the list
+                if (lnode->GetNid() > entry->GetNid())
+                { // new lnode is greater than current list entry
+                    prevEntry = entry;
+                    entry = prevEntry->GetNext();
+                }
+                else
+                { // new lnode is less than current list entry
+                    prevEntry->LinkAfter( tail_, lnode );
+                    entry = NULL;
+                }
+            }
+        }
     }
 
     if (trace_settings & TRACE_INIT)
@@ -1116,7 +1128,33 @@ void CLNodeContainer::AddLNodeP( CLNode *lnode )
     }
     else
     {
-        tail_ = tail_->LinkP(lnode);
+        // add to list in nid sort order
+        if (lnode->GetNid() < head_->GetNid())
+        { // link new lnode to the begining
+            head_->LinkBeforeP( head_, lnode );
+        }
+        else if (lnode->GetNid() > tail_->GetNid())
+        { // link new lnode to the end
+            tail_->LinkAfterP( tail_, lnode );
+        }
+        else
+        {
+            CLNode *entry = head_;
+            CLNode *prevEntry = NULL;
+            while (entry)
+            { // walk the list
+                if (lnode->GetNid() > entry->GetNid())
+                { // new lnode is greater than current list entry
+                    prevEntry = entry;
+                    entry = prevEntry->GetNext();
+                }
+                else
+                { // new lnode is less than current list entry
+                    prevEntry->LinkAfterP( tail_, lnode );
+                    entry = NULL;
+                }
+            }
+        }
     }
 
     if (trace_settings & TRACE_INIT)
@@ -1290,7 +1328,7 @@ int CLNodeContainer::GetNidIndex( int nid )
 
     for (int i = 0; i <  clusterConfig->GetLNodesCount(); i++ )
     {
-        if (LNode[i]->GetNid() == nid)
+        if (indexToNid_[i] == nid)
         {
             return(i);
         }

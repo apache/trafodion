@@ -21,6 +21,8 @@
 
 include ./macros.gmk
 
+# set USE_DUMA=1 to setup DUMA and add to link section in corresponding program
+USE_DUMA=0
 
 # set USE_DMALLOC=1 to setup dmalloc
 USE_DMALLOC=1
@@ -33,7 +35,7 @@ endif
 #DEBUG = -O0 -g3
 DEBUG = $(CFLAGS)
 
-FLAGS = $(DEBUG) -Wno-deprecated -fmessage-length=0 -fPIC
+FLAGS = $(DEBUG) -Wno-error=format-security -Wno-deprecated -fmessage-length=0 -fPIC
 ifeq ($(USE_DMALLOC),1)
  FLAGS+= -DDMALLOC
 endif
@@ -45,16 +47,22 @@ FLAGS+= -UNDEBUG
 # Uncomment the following line to see which compiler option controls
 #   a particular diagnostic (GNU compiler).
 # FLAGS+= -fdiagnostics-show-option
-FLAGS+= -Wall -Wextra -Werror
+FLAGS+= -Wall -Wextra -Werror -Wno-unused-variable
 
 # Flags for use in compiling Seabed trace modules
-SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
+SBFLAGS = -Wall -Wextra -pedantic -Werror -Wno-error=format-security  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
 
 COMMONLOGGERDIR = ../../commonLogger
 
 INCLUDE = monitor.h msgdef.h internal.h monlogging.h clio.h mlio.h localio.h lock.h
 
-LIBS = -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -lzookeeper_mt -ltrafconfig
+ifeq ($(USE_DUMA),1)
+    # Make sure 'libduma.a' is in the lib64d directory
+    LIBDUMA= -lduma
+endif
+
+CC_RUNTIME_LIB = -L/usr/lib/x86_64-linux-gnu -L/lib/x86_64-linux-gnu -L$(TOOLSDIR)/apache-log4cxx-0.10.0/lib
+LIBS = $(CC_RUNTIME_LIB) -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -ltrafconfig -lzookeeper_mt 
 
 LIBS+= -lmpich
 
@@ -100,7 +108,6 @@ MONITORSRC += process.cxx
 MONITORSRC += notice.cxx
 MONITORSRC += config.cxx
 MONITORSRC += monlogging.cxx
-MONITORSRC += tmsync.cxx
 MONITORSRC += device.cxx
 MONITORSRC += monprof.cxx
 MONITORSRC += montrace.cxx
@@ -123,6 +130,7 @@ MONITORSRC += reqdump.cxx
 MONITORSRC += reqevent.cxx
 MONITORSRC += reqexit.cxx
 MONITORSRC += reqget.cxx
+MONITORSRC += reqinstanceid.cxx
 MONITORSRC += reqkill.cxx
 MONITORSRC += reqmonstats.cxx
 MONITORSRC += reqmount.cxx
@@ -145,7 +153,6 @@ MONITORSRC += reqshutdown.cxx
 MONITORSRC += reqstartup.cxx
 MONITORSRC += reqtmleader.cxx
 MONITORSRC += reqtmready.cxx
-MONITORSRC += reqtmsync.cxx
 MONITORSRC += reqzoneinfo.cxx
 MONITORSRC += replicate.cxx
 MONITORSRC += gentrap.cxx
@@ -161,7 +168,6 @@ MONITOROBJS += $(OUTDIR)/notice.o
 MONITOROBJS += $(OUTDIR)/props.o
 MONITOROBJS += $(OUTDIR)/config.o
 MONITOROBJS += $(OUTDIR)/monlogging.o
-MONITOROBJS += $(OUTDIR)/tmsync.o
 MONITOROBJS += $(OUTDIR)/device.o
 MONITOROBJS += $(OUTDIR)/mlio.o
 MONITOROBJS += $(OUTDIR)/monprof.o
@@ -193,6 +199,7 @@ MONITOROBJS += $(OUTDIR)/reqdump.o
 MONITOROBJS += $(OUTDIR)/reqevent.o
 MONITOROBJS += $(OUTDIR)/reqexit.o
 MONITOROBJS += $(OUTDIR)/reqget.o
+MONITOROBJS += $(OUTDIR)/reqinstanceid.o
 MONITOROBJS += $(OUTDIR)/reqkill.o
 MONITOROBJS += $(OUTDIR)/reqmonstats.o
 MONITOROBJS += $(OUTDIR)/reqmount.o
@@ -216,7 +223,6 @@ MONITOROBJS += $(OUTDIR)/reqshutdown.o
 MONITOROBJS += $(OUTDIR)/reqstartup.o
 MONITOROBJS += $(OUTDIR)/reqtmleader.o
 MONITOROBJS += $(OUTDIR)/reqtmready.o
-MONITOROBJS += $(OUTDIR)/reqtmsync.o
 MONITOROBJS += $(OUTDIR)/reqzoneinfo.o
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)
     MONITOROBJS += $(OUTDIR)/monrs.o
@@ -336,13 +342,6 @@ CLIENTOBJS += $(OUTDIR)/persistconfig.o
 MONWDTOBJS = $(OUTDIR)/monwdt.o
 MONWDTOBJS += $(OUTDIR)/versmwdt.o
 
-ZOOMONOBJS = $(OUTDIR)/zootest.o
-ZOOMONOBJS += $(OUTDIR)/zclient.o
-ZOOMONOBJS += $(OUTDIR)/lock.o
-ZOOMONOBJS += $(OUTDIR)/montrace.o
-ZOOMONOBJS += $(OUTDIR)/CommonLogger.o
-ZOOMONOBJS += $(OUTDIR)/type2str.o
-
 MSG_LOG_OBJS = $(OUTDIR)/monlogging.o
 
 TRACE_LOG_OBJS = $(OUTDIR)/trace.o
@@ -374,7 +373,6 @@ ALLOBJS += $(TRACE_LOG_OBJS)
 ALLOBJS += $(CONFOBJS)
 ALLOBJS += $(MEMLOGOBJS)
 ALLOBJS += $(RTSIGBLOCK_OBJS)
-ALLOBJS += $(ZOOMONOBJS)
 ALLOBJS += $(TYPE2STR_OBJS)
 
 SHAREDLIBS =   $(LIBEXPDIR)/libtrafconfig.so
@@ -387,40 +385,28 @@ PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
 PGMS +=  $(BINEXPDIR)/trafns
 
-TEST_PGMS = $(OUTDIR)/client
-TEST_PGMS += $(OUTDIR)/client2
-TEST_PGMS += $(OUTDIR)/montim
-TEST_PGMS += $(OUTDIR)/nsclient
-TEST_PGMS += $(OUTDIR)/server
-TEST_PGMS += $(OUTDIR)/nsserver
-TEST_PGMS += $(OUTDIR)/getseq
-TEST_PGMS += $(OUTDIR)/notify
-TEST_PGMS += $(OUTDIR)/testtm
-TEST_PGMS += $(OUTDIR)/pingpong2
-TEST_PGMS += $(OUTDIR)/testspx
-TEST_PGMS += $(OUTDIR)/testconf
-TEST_PGMS += $(OUTDIR)/zootest
+TEST_PGMS  = $(OUTDIR)/testconf
 
 # Compile rules for building sources
 
 $(BINEXPDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
-	@echo 'Building target: $@'
+	@echo 'Building target0: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ $(CLIENTOBJS) $(TRACE_LOG_OBJS) -lrt $(LIBS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 $(OUTDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
-	@echo 'Building target: $@'
+	@echo 'Building target1: $@'
 	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ $(CLIENTOBJS) $(TRACE_LOG_OBJS) -lrt $(LIBS)  $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ $(CLIENTOBJS) $(TRACE_LOG_OBJS) -lrt $(LIBS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 $(OUTDIR)/%.o:%.cxx
-	@echo 'Building target: $@'
+	@echo 'Building target2: $@'
 	@echo 'Invoking: C++ Compiler'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -c -o $@ $<
 	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
@@ -429,7 +415,7 @@ $(OUTDIR)/%.o:%.cxx
 	@echo ' '
 
 $(OUTDIR)/%.o:%.cc
-	@echo 'Building target: $@'
+	@echo 'Building target3: $@'
 	@echo 'Invoking: C++ Compiler'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -c -o $@ $<
 	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
@@ -500,48 +486,40 @@ $(OUTDIR)/pingpong2 : pingpong2.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
-	@echo 'Finished building target: $@'
-	@echo ' '
-
-$(OUTDIR)/zootest : $(ZOOMONOBJS) $(TRACE_LOG_OBJS) $(MSG_LOG_OBJS)
-	@echo 'Building target: $@'
-	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) -o $@ $(LIBS) $^
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ $^ -lrt  $(LIBS)
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ $^ -lrt $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 $(BINEXPDIR)/shell : $(SHELLOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
-	@echo $(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $^
-	@$(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $(LIBS) $^
+	@echo $(CXX) -o$@ $^ -lreadline -lcurses $(LNK_FLGS) -lrt  $(LIBS)
+	@$(CXX) -o$@ $^ -lreadline -lcurses $(LNK_FLGS) -lrt $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 $(BINEXPDIR)/sqwatchdog : $(WATCHDOGOBJS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $(MSG_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) -o $@ $(LIBS) $^
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 $(BINEXPDIR)/pstartd: $(PSTARTDOBJS) $(OUTDIR)/monclio.o $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) -o $@ $(LIBS) $^
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 $(BINEXPDIR)/monmemlog : $(MEMLOGOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
-	@$(CXX) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) -o $@ $(LIBS) $^
+	@echo $(CXX) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
+	@$(CXX) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -551,16 +529,16 @@ $(OUTDIR)/montim : montim.cxx
 $(BINEXPDIR)/monitor: $(MONITOROBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
-	@echo $(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
-	@$(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
+	@echo $(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) $(LIBDUMA) -lz -lcrypto
+	@$(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) $(LIBDUMA) -lz -lcrypto
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 $(BINEXPDIR)/trafns: $(NSOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
-	@echo $(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto
-	@$(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto
+	@echo $(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) $(LIBDUMA) -lz -lcrypto
+	@$(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) $(LIBDUMA) -lz -lcrypto
 	@echo 'Finished building target: $@'
 	@echo ' '
 

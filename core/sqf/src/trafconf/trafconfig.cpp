@@ -25,11 +25,13 @@
 
 using namespace std;
 
+#include <string.h>
 #include "tcdb.h"
 #include "tctrace.h"
 #include "trafconf/trafconfig.h"
 
 bool TcTraceEnabled = false;
+bool TcIsRealCluster = true;
 
 CTrafConfigTrace    TrafConfigTrace;
 CTcdb               TrafConfigDb;
@@ -86,6 +88,11 @@ TC_Export int tc_initialize( bool traceEnabled
     if ( TrafConfigDb.IsInitialized() )
     {
         return( TCALREADYINIT );
+    }
+
+    if ( getenv( "SQ_VIRTUAL_NODES" ) )
+    {
+        TcIsRealCluster = false;
     }
 
     TcTraceEnabled = traceEnabled;
@@ -233,8 +240,20 @@ TC_Export int tc_put_node( TcNodeConfiguration_t *node_config )
     }
 
     int rc = TCDBOPERROR;
+    char fqdn_name[TC_PROCESSOR_NAME_MAX];
 
-    rc = TrafConfigDb.AddPNodeData( node_config->node_name
+    if (strlen(node_config->domain_name))
+    {
+        snprintf( fqdn_name, sizeof(fqdn_name), "%s.%s"
+                , node_config->node_name
+                , node_config->domain_name );
+    }
+    else
+    {
+        strncpy( fqdn_name, node_config->node_name, sizeof(fqdn_name) );
+    }
+
+    rc = TrafConfigDb.AddPNodeData( fqdn_name
                                   , node_config->pnid
                                   , node_config->excluded_first_core
                                   , node_config->excluded_last_core );

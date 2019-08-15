@@ -70,6 +70,8 @@ namespace SB_Trans {
         void        epoll_wait(const char *pp_where,
                                int         pv_timeout);
         void        lock();
+        int         set_keepalive(const char *pp_where,
+                                  int         pv_sock);
         int         set_nodelay(const char *pp_where,
                                 int         pv_sock);
         int         set_nonblock(const char *pp_where,
@@ -286,7 +288,7 @@ namespace SB_Trans {
 
         static int          check_streams();
         static void         close_stream(Sock_Stream *pp_stream, bool pv_local);
-        static void         close_streams();
+        static void         close_streams(bool pv_join);
         // execute functions
         virtual short       exec_abandon(MS_Md_Type *pp_md,
                                          int         pv_reqid,

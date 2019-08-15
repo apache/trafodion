@@ -112,7 +112,7 @@ void InitLocalIO( void )
             if ( ! ClusterConfig.LoadConfig() )
             {
                 printf("[%s], Failed to load cluster configuration.\n", MyName);
-                abort();
+                exit(EXIT_FAILURE);
             }
         }
         else
@@ -122,7 +122,7 @@ void InitLocalIO( void )
             {
                 MyNid = 0;
             }
-            abort();
+            exit(EXIT_FAILURE);
         }
 
         lnodeConfig = ClusterConfig.GetLNodeConfig( MyNid );
@@ -139,7 +139,7 @@ void InitLocalIO( void )
         char tracefile[MAX_SEARCH_PATH];
         char *tmpDir;
     
-        tmpDir = getenv( "MPI_TMPDIR" );
+        tmpDir = getenv( "TRAF_LOG" );
         if (tmpDir)
         {
             sprintf( tracefile, "%s/monwdt.trace.%d", tmpDir, getpid() );

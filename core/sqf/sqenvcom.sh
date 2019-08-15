@@ -37,7 +37,7 @@ export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
 # Product copyright header
-export PRODUCT_COPYRIGHT_HEADER="2015-2018 Apache Software Foundation"
+export PRODUCT_COPYRIGHT_HEADER="2015-2019 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -74,8 +74,7 @@ fi
 if [[ -z "$SQ_VERBOSE" ]]; then
   SQ_VERBOSE=0
 fi
-# temp variable for 64 bit cluster testing
-# export SQ_WDT_KEEPALIVETIMERVALUE=900
+
 #envvar to limit the number of memory arenas
 export MALLOC_ARENA_MAX=1
 
@@ -670,98 +669,6 @@ export SQ_LUNMGR_VERBOSITY=1
 # Control SQ default startup behavior (c=cold, w=warm, if removed sqstart will autocheck)
 export SQ_STARTUP=r
 
-#
-# NOTE: in a Python installation when SQ_MON_RUN_MODE below
-#       is AGENT the SQ_MON_CREATOR must be MPIRUN
-#
-#   MPIRUN - monitor process is created by mpirun
-#            (meaning that mpirun is the parent process of the monitor process)
-#   AGENT  - monitor process runs in agent mode versus MPI collective
-#
-# Uncomment the next environment variable
-#export SQ_MON_CREATOR=MPIRUN
-if [[ "$SQ_MON_CREATOR" == "MPIRUN" ]]; then
-  export SQ_MON_RUN_MODE=${SQ_MON_RUN_MODE:-AGENT}
-  export MONITOR_COMM_PORT=${MONITOR_COMM_PORT:-23390}
-  export MONITOR_SYNC_PORT=${MONITOR_SYNC_PORT:-23380}
-  export TRAF_SCALING_FACTOR=${TRAF_SCALING_FACTOR:-0.75}
-fi
-
-#
-#   NAME-SERVER - to disable process replication and enable the name-server
-#
-# Uncomment the next environment variable
-#export SQ_NAMESERVER_ENABLED=1
-if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
-  export NS_COMM_PORT=${NS_COMM_PORT:-23370}
-  export NS_SYNC_PORT=${NS_SYNC_PORT:-23360}
-  export NS_M2N_COMM_PORT=${NS_M2N_COMM_PORT:-23350}
-  export MON2MON_COMM_PORT=${MON2MON_COMM_PORT:-23340}
-fi
-
-# Alternative logging capability in monitor
-export SQ_MON_ALTLOG=0
-
-# Monitor sync thread responsiveness timeout
-# default 15 mins
-export SQ_MON_SYNC_TIMEOUT=900
-
-export SQ_MON_KEEPALIVE=1
-export SQ_MON_KEEPIDLE=60
-export SQ_MON_KEEPINTVL=6
-export SQ_MON_KEEPCNT=5
-
-# Monitor sync thread epoll wait timeout is in seconds
-# Currently set to 64 seconds (16 second timeout, 4 retries)
-export SQ_MON_EPOLL_WAIT_TIMEOUT=16
-export SQ_MON_EPOLL_RETRY_COUNT=4
-
-# Monitor Zookeeper client
-#  - A zero value disables the zclient logic in the monitor process.
-#    It is enabled by default in a real cluster, disabled otherwise.
-#      (must be disabled to debug monitor processes in a real cluster)
-#export SQ_MON_ZCLIENT_ENABLED=0
-#  - Session timeout in seconds defines when Zookeeper quorum determines a
-#    non-responsive monitor zclient which results in a Trafodion node down. 
-#    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
-#export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
-#  - My znode monitoring timeout in seconds defines frequency when local
-#    monitor's znode is checked. Uncomment to override default value.
-#    Default is 5 seconds.
-#export SQ_MON_ZCLIENT_MY_ZNODE_CHECKRATE=5
-
-# Trafodion Configuration Zookeeper store
-#export TC_ZCONFIG_SESSION_TIMEOUT=120
-
-# increase SQ_MON,ZCLIENT,WDT timeout only to jenkins env.
-if [[ "$TRAF_HOME" == *"/home/jenkins"* ]]; then
-export SQ_MON_EPOLL_WAIT_TIMEOUT=20
-export SQ_MON_ZCLIENT_SESSION_TIMEOUT=360
-export SQ_WDT_KEEPALIVETIMERVALUE=360
-fi
-
-# set to 0 to disable phandle verifier
-export SQ_PHANDLE_VERIFIER=1
-
-# set to 0 to disable process name long format in clusters larger that 256 nodes
-#export SQ_MON_PROCESS_NAME_FORMAT_LONG=0
-#   short format: '$Zxxpppp'     xx   = nid, pppp   = pid
-#   long  format: '$Zxxxxpppppp' xxxx = nid, pppppp = pid (default)
-
-# set to 0 to disable or 1 to enable configuration of DTM as a persistent process
-# must re-execute 'sqgen' to effect change
-export SQ_DTM_PERSISTENT_PROCESS=1
-
-# Check the state of the node with the cluster manager during regroup
-export SQ_WDT_CHECK_CLUSTER_STATE=0
-
-# Enable SQ_PIDMAP if you want to get a record of process activity.
-# This can be useful in troubleshooting problems.  There is an overhead cost
-# incurred each time a process is started so do not enable this if performance
-# is critical.
-# Log process start/end messages in $TRAF_VAR/monitor.map
-export SQ_PIDMAP=1
-
 #Enable RMS (SQL Run time statistics)
 export SQ_START_RMS=1
 
@@ -1019,3 +926,129 @@ if [[ "$SQ_VERBOSE" == "1" ]]; then
   echo $CLASSPATH | sed -e's/:/ /g' | fmt -w2 | xargs printf '\t%s\n'
   echo
 fi
+
+###########################
+# Trafodion monitor process
+###########################
+#
+# NOTE: in a Python installation when SQ_MON_RUN_MODE below
+#       is AGENT the SQ_MON_CREATOR must be MPIRUN
+#
+#   MPIRUN - monitor process is created by mpirun
+#            (meaning that mpirun is the parent process of the monitor process)
+#   AGENT  - monitor process runs in agent mode versus MPI collective
+#
+if [[ -z ${TRAF_AGENT} ]]; then
+  if [[ -e $TRAF_CONF/sqconfig ]]; then
+     node_count=`grep -o 'node-name=.[A-Za-z0-9\.\-]*' $TRAF_CONF/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u | wc -l`
+  else
+     node_count=1
+  fi
+  # Set monitor to run in agent mode is a cluster environment
+  if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
+     export SQ_MON_CREATOR=MPIRUN
+  fi
+  
+  if [[ "$SQ_MON_CREATOR" == "MPIRUN" ]]; then
+    export SQ_MON_RUN_MODE=${SQ_MON_RUN_MODE:-AGENT}
+    export MONITOR_COMM_PORT=${MONITOR_COMM_PORT:-23390}
+    export TRAF_SCALING_FACTOR=${TRAF_SCALING_FACTOR:-0.75}
+  fi
+fi
+  
+#
+#   NAME-SERVER - to disable process replication and enable the name-server
+#
+# Uncomment the next environment variable
+# Set the number of nodes configured
+#export SQ_NAMESERVER_ENABLED=1
+if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
+  export NS_COMM_PORT=${NS_COMM_PORT:-23370}
+#  export NS_SYNC_PORT=${NS_SYNC_PORT:-23360}
+  export NS_M2N_COMM_PORT=${NS_M2N_COMM_PORT:-23350}
+  export MON2MON_COMM_PORT=${MON2MON_COMM_PORT:-23340}
+fi
+
+# Alternative logging capability in monitor
+export SQ_MON_ALTLOG=0
+
+#
+#   Monitor - Sync Thread 
+#
+# Monitor sync thread responsiveness timeout (default 15 mins)
+export SQ_MON_SYNC_TIMEOUT=${SQ_MON_SYNC_TIMEOUT:-900}
+
+# Monitor sync thread responsiveness logging frequecy (default 1 min)
+export SQ_MON_SYNC_DELAY_LOGGING_FREQUENCY=${SQ_MON_SYNC_DELAY_LOGGING_FREQUENCY:-60}
+
+# Monitor sync thread threshold (default 20% of SQ_MON_SYNC_TIMEOUT, maximum is 50%)
+export SQ_MON_SYNC_DELAY_LOGGING_THRESHOLD=${SQ_MON_SYNC_DELAY_LOGGING_THRESHOLD:-20}
+
+# Using the above defaults, the logging threshold is 180 seconds and a frequency 
+# of every 60 seconds. So the first 'Sync thread not responsive' message is 
+# logged after 3 minutes (180 seconds) and every minute (60 seconds) after.
+
+export SQ_MON_KEEPALIVE=1
+export SQ_MON_KEEPIDLE=60
+export SQ_MON_KEEPINTVL=6
+export SQ_MON_KEEPCNT=5
+
+# Monitor sync thread epoll wait timeout is in seconds
+# Currently set to 64 seconds (16 second timeout, 4 retries)
+export SQ_MON_EPOLL_WAIT_TIMEOUT=${SQ_MON_EPOLL_WAIT_TIMEOUT:-16}
+export SQ_MON_EPOLL_RETRY_COUNT=${SQ_MON_EPOLL_RETRY_COUNT:-4}
+
+# Monitor Zookeeper client
+#  - A zero value disables the zclient logic in the monitor process.
+#    It is enabled by default in a real cluster, disabled otherwise.
+#      (must be disabled to debug monitor processes in a real cluster)
+#export SQ_MON_ZCLIENT_ENABLED=0
+#  - Session timeout in seconds defines when Zookeeper quorum determines a
+#    non-responsive monitor zclient which results in a Trafodion node down. 
+#    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
+#export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
+#  - My znode monitoring timeout in seconds defines frequency when local
+#    monitor's znode is checked. Uncomment to override default value.
+#    Default is 5 seconds.
+#export SQ_MON_ZCLIENT_MY_ZNODE_CHECKRATE=5
+
+# Trafodion Configuration Zookeeper store
+#export TC_ZCONFIG_SESSION_TIMEOUT=120
+
+# sqwatchdog process ($WDTn) timer expiration value (default 60 seconds)
+export SQ_WDT_KEEPALIVETIMERVALUE=${SQ_WDT_KEEPALIVETIMERVALUE:-60}
+
+# increase SQ_MON,ZCLIENT,WDT timeout only to jenkins env.
+if [[ "$TRAF_HOME" == *"/home/jenkins"* ]]; then
+export SQ_MON_EPOLL_WAIT_TIMEOUT=20
+export SQ_MON_ZCLIENT_SESSION_TIMEOUT=360
+export SQ_WDT_KEEPALIVETIMERVALUE=360
+fi
+
+# set to 0 to disable phandle verifier
+export SQ_PHANDLE_VERIFIER=1
+
+# set to 0 to disable process name long format in clusters larger that 256 nodes
+#export SQ_MON_PROCESS_NAME_FORMAT_LONG=0
+#   short format: '$Zxxpppp'     xx   = nid, pppp   = pid
+#   long  format: '$Zxxxxpppppp' xxxx = nid, pppppp = pid (default)
+
+# set to 0 to disable or 1 to enable configuration of DTM as a persistent process
+# must re-execute 'sqgen' to effect change
+export SQ_DTM_PERSISTENT_PROCESS=1
+
+# Check the state of the node with the cluster manager during regroup
+export SQ_WDT_CHECK_CLUSTER_STATE=0
+
+# Enable SQ_PIDMAP if you want to get a record of process activity.
+# This can be useful in troubleshooting problems.  There is an overhead cost
+# incurred each time a process is started so do not enable this if performance
+# is critical.
+# Log process start/end messages in $TRAF_VAR/monitor.map
+export SQ_PIDMAP=1
+
+#################################
+# End - Trafodion monitor process
+#################################
+
+

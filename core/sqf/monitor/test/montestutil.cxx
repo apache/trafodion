@@ -74,9 +74,6 @@ const char *MessageTypeString( MSGTYPE type )
         case MsgType_NodeJoining:
             str = "MsgType_NodeJoining";
             break;
-        case MsgType_NodePrepare:
-            str = "MsgType_NodePrepare";
-            break;
         case MsgType_NodeQuiesce:
             str = "MsgType_NodeQuiesce";
             break;
@@ -101,18 +98,6 @@ const char *MessageTypeString( MSGTYPE type )
         case MsgType_SpareUp:
             str = "MsgType_SpareUp";
             break;
-        case MsgType_TmRestarted:
-            str = "MsgType_TmRestarted";
-            break;
-        case MsgType_TmSyncAbort:
-            str = "MsgType_TmSyncAbort";
-            break;
-        case MsgType_TmSyncCommit:
-            str = "MsgType_TmSyncCommit";
-            break;
-        case MsgType_UnsolicitedMessage:
-            str = "MsgType_UnsolicitedMessage";
-            break;
         default:
             str = "MsgType - Undefined";
             break;
@@ -120,6 +105,50 @@ const char *MessageTypeString( MSGTYPE type )
     return( str );
 }
 
+
+const char *StateString( int state)
+{
+    const char *str;
+    
+    switch( state )
+    {
+        case State_Unknown:
+            str = "State_Unknown";
+            break;
+        case State_Up:
+            str = "State_Up";
+            break;
+        case State_Down:
+            str = "State_Down";
+            break;
+        case State_Stopped:
+            str = "State_Stopped";
+            break;
+        case State_Shutdown:
+            str = "State_Shutdown";
+            break;
+        case State_Unlinked:
+            str = "State_Unlinked";
+            break;
+        case State_Merging:
+            str = "State_Merging";
+            break;
+        case State_Merged:
+            str = "State_Merged";
+            break;
+        case State_Joining:
+            str = "State_Joining";
+            break;
+        case State_Initializing:
+            str = "State_Initializing";
+            break;
+        default:
+            str = "State - Undefined";
+            break;
+    }
+
+    return( str );
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Monitor test utility
@@ -505,10 +534,8 @@ void shell_locio_trace(const char *where, const char *format, va_list ap)
         int             us;
         struct timeval  t;
         struct tm       tx;
-        struct tm      *txp;
         char            buf[BUFSIZ];
         gettimeofday(&t, NULL);
-        txp = localtime_r(&t.tv_sec, &tx);
         ms = (int) t.tv_usec / 1000;
         us = (int) t.tv_usec - ms * 1000;
 
@@ -568,7 +595,7 @@ void MonTestUtil::InitLocalIO( int MyPNid )
         char tracefile[MAX_SEARCH_PATH];
         char *tmpDir;
 
-        tmpDir = getenv( "XMPI_TMPDIR" );
+        tmpDir = getenv( "TRAF_LOG" );
         if (tmpDir)
         {
             sprintf( tracefile, "%s/shell.trace.%d", tmpDir, getpid() );
@@ -931,11 +958,10 @@ bool MonTestUtil::requestProcInfo( const char *processName
                 {
                     if ( trace_ )
                     {
-                        printf( "[%s] - process info for %s returned data for %d processes, expected=%d\n"
+                        printf( "[%s] - process info for %s returned data for %d processes\n"
                                 , processName_
                                 , processName
-                                , msg->u.reply.u.process_info.num_processes
-                                , 1);
+                                , msg->u.reply.u.process_info.num_processes );
                     }
                 }
             }
@@ -1469,8 +1495,6 @@ bool MonTestUtil::requestSet ( ConfigType type,
 
 bool MonTestUtil::requestNodeDown( int nid )
 {
-    int count;
-    MPI_Status status;
     struct message_def *msg;
     bool result = false;
 
@@ -1493,8 +1517,6 @@ bool MonTestUtil::requestNodeDown( int nid )
     msg->u.request.u.down.node_name[0] = '\0';
 
     gp_local_mon_io->send( msg );
-    count = sizeof (*msg);
-    status.MPI_TAG = msg->reply_tag;
 
     return result;
 }

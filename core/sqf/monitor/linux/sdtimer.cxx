@@ -48,10 +48,6 @@ using namespace std;
 #include "gentrap.h"
 
 #define LUNMGR_RETRY_MAX           3
-// The following defines specify the default values for the timers if the 
-// softdog timer related variables are not defined.
-#define SDT_KeepAliveTimerDefault  5    // in seconds
-
 
 extern CWatchdog       *Watchdog;
 extern CProcessMonitor *ProcessMonitor;
@@ -101,7 +97,7 @@ CSdTimer::CSdTimer()
          ,dumpMonitor_(false)
          ,killingNode_(false)
          ,softdog_(false)
-         ,sdtKeepAliveTimerValue_(SDT_KeepAliveTimerDefault)
+         ,sdtKeepAliveTimerValue_(WDT_KEEPALIVETIMERDEFAULT)
          ,threadId_(0)
          ,sdtLastMonRefreshCtr_(0)
 {
@@ -440,18 +436,25 @@ void CSdTimer::SoftdogTimer( void )
                     }
                     else
                     {
-                        DumpMonitorProcess();
-
-                        char buf[MON_STRING_BUF_SIZE];
-                        snprintf( buf, sizeof(buf), "Node %d going down, "
-                                  "failed to get refresh event from monitor\n",
-                                  gv_ms_su_nid);
-                        genSnmpTrap( buf );
-
-                        NodeFailSafe( timerExpired );
-                        StopSoftdogTimer();
-                        Watchdog->SetNodeDown();
-                        Watchdog->CLock::wakeOne();
+                        if( getenv("SQ_VIRTUAL_NODES") )
+                        { // Ignore expired timer in virtual cluster
+                            ResetSoftdogTimer( timeout );
+                        }
+                        else
+                        {
+                            DumpMonitorProcess();
+    
+                            char buf[MON_STRING_BUF_SIZE];
+                            snprintf( buf, sizeof(buf), "Node %d going down, "
+                                      "failed to get refresh event from monitor\n",
+                                      gv_ms_su_nid);
+                            genSnmpTrap( buf );
+    
+                            NodeFailSafe( timerExpired );
+                            StopSoftdogTimer();
+                            Watchdog->SetNodeDown();
+                            Watchdog->CLock::wakeOne();
+                        }
                     }
                 }
                 break;
@@ -493,6 +496,13 @@ void CSdTimer::StartSoftdogTimer( void )
         {
             trace_printf( "%s@%d Timer started!\n", method_name, __LINE__ );
         }
+
+        char la_buf[MON_STRING_BUF_SIZE];
+        sprintf( la_buf
+               , "[%s], KeepAlive Timer in seconds = %ld\n"
+               , method_name, sdtKeepAliveTimerValue_ );
+        monproc_log_write( MON_SDTIMER_STARTSOFTDOGTIMER_1, SQ_LOG_INFO, la_buf);
+    
         clock_gettime(CLOCK_REALTIME, &expiredTime_);
         expiredTime_.tv_sec += sdtKeepAliveTimerValue_;
         SetSoftdog( true );

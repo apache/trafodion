@@ -100,7 +100,7 @@ extern short                 ms_err_mpi_rtn_msg_fatal(const char *pp_where,
 extern short                 ms_err_mpi_rtn_msg_noassert(const char *pp_where,
                                                          const char *pp_msg,
                                                          int         pv_mpierr);
-extern void                  ms_fifo_setup(int pv_orig_fd, char *pp_fifo_name);
+extern void                  ms_fifo_setup(int pv_orig_fd, char *pp_fifo_name, bool pv_remap_fd = true); // pv_remap_fd to monitor
 extern void                  ms_free_recv_bufs(MS_Md_Type *pp_md);
 extern SB_Comp_Queue        *ms_fsdone_get_comp_q(bool pv_ts);
 extern void                  ms_gather_info(const char *pp_where);

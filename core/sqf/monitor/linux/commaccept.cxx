@@ -547,6 +547,7 @@ void CCommAccept::processNewSock( int joinFd )
         snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
                  "monitor: %s.\n", method_name, ErrorMsg(rc));
         mon_log_write(MON_COMMACCEPT_8, SQ_LOG_ERR, buf);    
+        CommAccept.startAccepting();
         return;
     }
 
@@ -667,6 +668,9 @@ void CCommAccept::processNewSock( int joinFd )
                               , method_name );
 
         close( joinFd );
+
+        // This reply will terminate the other monitor
+        node->SetState(State_Down);
 
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
@@ -892,6 +896,13 @@ void CCommAccept::processNewSock( int joinFd )
 
         if (nodeStatus.state == State_Up)
         {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d - Received reintegrate status: state=%s, error=%d\n"
+                            , method_name, __LINE__
+                            , StateString(nodeStatus.state)
+                            , nodeStatus.status );
+            }
             // communicate the change and handle it after sync
             // in ImAlive
             node->SetChangeState( true );

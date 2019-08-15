@@ -91,6 +91,7 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( Event_Notice_def ),    // ReqType_Event
    sizeof(REQTYPE) + sizeof( Exit_def ),            // ReqType_Exit
    sizeof(REQTYPE) + sizeof( Get_def ),             // ReqType_Get
+   sizeof(REQTYPE) + sizeof( InstanceId_def ),      // ReqType_InstanceId
    sizeof(REQTYPE) + sizeof( Kill_def ),            // ReqType_Kill
    sizeof(REQTYPE) + sizeof( MonStats_def ),        // ReqType_MonStats
    sizeof(REQTYPE) + sizeof( Mount_def ),           // ReqType_Mount
@@ -106,23 +107,22 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( NodeInfo_def ),        // ReqType_NodeInfo
    sizeof(REQTYPE) + sizeof( NodeName_def ),        // ReqType_NodeName
    sizeof(REQTYPE) + sizeof( NodeUp_def ),          // ReqType_NodeUp
-   0,                              // ReqType_Notice -- not an actual request
+   0,                                               // ReqType_Notice -- not an actual request
    sizeof(REQTYPE) + sizeof( Notify_def ),          // ReqType_Notify
    sizeof(REQTYPE) + sizeof( Open_def ),            // ReqType_Open
    sizeof(REQTYPE) + sizeof( OpenInfo_def ),        // ReqType_OpenInfo
+   0,                                               // ReqType_PersistAdd (TODO)
+   0,                                               // ReqType_PersistDelete (TODO)
    sizeof(REQTYPE) + sizeof( PNodeInfo_def ),       // ReqType_PNodeInfo
    sizeof(REQTYPE) + sizeof( ProcessInfo_def ),     // ReqType_ProcessInfo
    sizeof(REQTYPE) + sizeof( ProcessInfoCont_def ), // ReqType_ProcessInfoCont
-   sizeof(REQTYPE) + sizeof( ProcessInfo_def ),     // ReqType_ProcessInfoPat
+   sizeof(REQTYPE) + sizeof( ProcessInfo_def ),     // ReqType_ProcessInfoNs
    sizeof(REQTYPE) + sizeof( Set_def ),             // ReqType_Set
    sizeof(REQTYPE) + sizeof( Shutdown_def ),        // ReqType_Shutdown
    sizeof(REQTYPE) + sizeof( ShutdownNs_def ),      // ReqType_ShutdownNs
    sizeof(REQTYPE) + sizeof( Startup_def ),         // ReqType_Startup
-   sizeof(REQTYPE) + sizeof( Stfsd_def ),           // ReqType_Stfsd
    sizeof(REQTYPE) + sizeof( TmLeader_def ),        // ReqType_TmLeader
    sizeof(REQTYPE) + sizeof( TmReady_def ),         // ReqType_TmReady
-   sizeof(REQTYPE) + sizeof( TmSync_def ),          // ReqType_TmSync
-   sizeof(REQTYPE) + sizeof( TransInfo_def ),       // ReqType_TransInfo
    sizeof(REQTYPE) + sizeof( ZoneInfo_def )         // ReqType_ZoneInfo
 };
 
@@ -134,6 +134,7 @@ const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( DelProcessNs_reply_def ),// ReplyType_DelProcessNs
    sizeof(REPLYTYPE) + sizeof( Dump_reply_def ),        // ReplyType_Dump
    sizeof(REPLYTYPE) + sizeof( Get_reply_def ),         // ReplyType_Get
+   sizeof(REPLYTYPE) + sizeof( InstanceId_reply_def ),  // ReplyType_InstanceId
    sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats
    sizeof(REPLYTYPE) + sizeof( Mount_reply_def ),       // ReplyType_Mount
    sizeof(REPLYTYPE) + sizeof( NewProcess_reply_def ),  // ReplyType_NewProcess
@@ -145,10 +146,7 @@ const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( PNodeInfo_reply_def ),   // ReplyType_PNodeInfo
    sizeof(REPLYTYPE) + sizeof( ProcessInfo_reply_def ), // ReplyType_ProcessInfo
    sizeof(REPLYTYPE) + sizeof( ProcessInfoNs_reply_def ),// ReplyType_ProcessInfoNs
-   sizeof(REPLYTYPE) + sizeof( Stfsd_reply_def ),       // ReplyType_Stfsd
    sizeof(REPLYTYPE) + sizeof( Startup_reply_def ),     // ReplyType_Startup
-   sizeof(REPLYTYPE) + sizeof( TmSync_reply_def ),      // ReplyType_TmSync 
-   sizeof(REPLYTYPE) + sizeof( TransInfo_reply_def ),   // ReplyType_TransInfo 
    sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def )     // ReplyType_ZoneInfo
 };
 
@@ -166,20 +164,15 @@ const int SQ_LocalIOToClient::requestSize[] = {
    sizeof(REQTYPE) + sizeof( NodeDeleted_def ),       // MsgType_NodeDeleted
    sizeof(REQTYPE) + sizeof( NodeDown_def ),          // MsgType_NodeDown
    sizeof(REQTYPE) + sizeof( NodeJoining_def ),       // MsgType_NodeJoining
-   sizeof(REQTYPE) + sizeof( NodePrepare_def ),       // MsgType_NodePrepare
    sizeof(REQTYPE) + sizeof( NodeQuiesce_def ),       // MsgType_NodeQuiesce
    sizeof(REQTYPE) + sizeof( NodeUp_def ),            // MsgType_NodeUp
    sizeof(REQTYPE) + sizeof( Open_def ),              // MsgType_Open
    sizeof(REQTYPE) + sizeof( NewProcess_Notice_def ), // MsgType_ProcessCreated
    sizeof(REQTYPE) + sizeof( ProcessDeath_def ),      // MsgType_ProcessDeath
    sizeof(REQTYPE) + sizeof( NodeReInt_def ),         // MsgType_ReintegrationError
-   0, // MsgType_Service
+   0,                                                 // MsgType_Service
    sizeof(REQTYPE) + sizeof( Shutdown_def ),          // MsgType_Shutdown
-   sizeof(REQTYPE) + sizeof( SpareUp_def ),           // MsgType_SpareUp
-   sizeof(REQTYPE) + sizeof( TmRestarted_def ),       // MsgType_TmRestarted
-   sizeof(REQTYPE) + sizeof( TmSyncNotice_def ),      // MsgType_TmSyncAbort
-   sizeof(REQTYPE) + sizeof( TmSyncNotice_def ),      // MsgType_TmSyncCommit
-   sizeof(REQTYPE) + sizeof( UnsolicitedTmSync_def )  // MsgType_UnsolicitedMessage
+   sizeof(REQTYPE) + sizeof( SpareUp_def )            // MsgType_SpareUp
 
 };
 
@@ -964,7 +957,8 @@ serialRequestThread( void * )
         char la_buf[MON_STRING_BUF_SIZE];
         sprintf(la_buf, "[%s], Error= Can't set blocking signal mask for thread! - errno=%d (%s)\n", method_name, rc, strerror(rc));
         mon_log_write(MON_MLIO_SERIALREQ_TH_1, SQ_LOG_CRIT, la_buf);
-        abort();
+
+        mon_failure_exit();
     }
 
     // Record statistics (sonar counters): monitor is busy
@@ -1026,9 +1020,6 @@ serialRequestThread( void * )
     return (void *) errno; // cast
 }
 
-// The tmsync request thread is not used for concurrent requests.  Only the
-// serial request thread is used.
-
 // This is the pending notice thread used to send unsent notices to the client.
 void *
 pendingNoticeThread( void * )
@@ -1046,7 +1037,8 @@ pendingNoticeThread( void * )
       char la_buf[MON_STRING_BUF_SIZE];
       sprintf(la_buf, "[%s], Error= Can't set blocking signal mask for thread! - errno=%d (%s)\n", method_name, rc, strerror(rc));
       mon_log_write(MON_MLIO_PENDING_TH_1, SQ_LOG_CRIT, la_buf);
-      abort();
+
+      mon_failure_exit();
   }
 
   sigemptyset(&sig_set);
@@ -1216,7 +1208,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
       sprintf(la_buf, "[%s], Monitor port does not contain ':' (%s)\n",
               method_name, MyCommPort);
       mon_log_write(MON_MLIO_INIT_2, SQ_LOG_ERR, la_buf);
-      abort();
+
+      mon_failure_exit();
   }
 
   myPortNum = strtoul(&pPort[1], NULL, 10);
@@ -1226,7 +1219,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
       sprintf(la_buf, "[%s], Cannot convert MyCommPort - errno=%d (%s)\n",
               method_name, errno, strerror(errno));
       mon_log_write(MON_MLIO_INIT_3, SQ_LOG_ERR, la_buf);
-      abort();
+
+      mon_failure_exit();
   }
   sharedSegKeyBase = (key_t) ((nidBase << 28) + (myPortNum & 0xFFFF));
   if (myPortNum > 65535)
@@ -1234,7 +1228,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
       char la_buf[MON_STRING_BUF_SIZE];
       sprintf(la_buf, "[%s], MyCommPort value exceeds 16 bits\n", method_name);
       mon_log_write(MON_MLIO_INIT_4, SQ_LOG_ERR, la_buf);
-      abort();
+
+      mon_failure_exit();
   }
   
   availableBufferCountMin = sharedBuffersMax;
@@ -1304,7 +1299,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
                       char la_buf[MON_STRING_BUF_SIZE];
                       sprintf(la_buf, "[%s], Error= Can't access shared memory segment! - errno=%d (%s)\n", method_name, err, strerror(err));
                       mon_log_write(MON_MLIO_INIT_5, SQ_LOG_CRIT, la_buf);
-                      abort();
+
+                      mon_failure_exit();
                   }
               }
               else
@@ -1313,7 +1309,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
                   char la_buf[MON_STRING_BUF_SIZE];
                   sprintf(la_buf, "[%s], Error= Can't remove existing shared memory segment! - errno=%d (%s)\n", method_name, err, strerror(err));
                   mon_log_write(MON_MLIO_INIT_6, SQ_LOG_CRIT, la_buf);
-                  abort();
+
+                  mon_failure_exit();
               }
           }
           else
@@ -1322,7 +1319,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
               char la_buf[MON_STRING_BUF_SIZE];
               sprintf(la_buf, "[%s], Error= Can't access shared memory segment! - errno=%d (%s)\n", method_name, err, strerror(err));
               mon_log_write(MON_MLIO_INIT_7, SQ_LOG_CRIT, la_buf);
-              abort();
+
+              mon_failure_exit();
           }
       }
       else
@@ -1331,7 +1329,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
           char la_buf[MON_STRING_BUF_SIZE];
           sprintf(la_buf, "[%s], Error= Can't access shared memory segment! - errno=%d (%s)\n", method_name, err, strerror(err));
           mon_log_write(MON_MLIO_INIT_8, SQ_LOG_CRIT, la_buf);
-          abort();
+
+          mon_failure_exit();
       }
   }
   
@@ -1345,7 +1344,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
       char la_buf[MON_STRING_BUF_SIZE];
       sprintf(la_buf, "[%s], Error= Can't map shared memory segment address! - errno=%d (%s)\n", method_name, err, strerror(err));
       mon_log_write(MON_MLIO_INIT_9, SQ_LOG_CRIT, la_buf);
-      abort();
+
+      mon_failure_exit();
   }
 
   memset( clientBuffers, 0, shsize );
@@ -1370,7 +1370,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
     char la_buf[MON_STRING_BUF_SIZE];
     sprintf(la_buf, "[%s], Error= Can't access message queue! - errno=%d (%s)\n", method_name, err, strerror(err));
     mon_log_write(MON_MLIO_INIT_10, SQ_LOG_CRIT, la_buf);
-    abort();
+
+    mon_failure_exit();
   }
 
   errno = 0;
@@ -1391,7 +1392,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
       char la_buf[MON_STRING_BUF_SIZE];
       sprintf(la_buf, "[%s], Error= Can't drain message queue! - errno=%d (%s)\n", method_name, err, strerror(err));
       mon_log_write(MON_MLIO_INIT_11, SQ_LOG_CRIT, la_buf);
-      abort();
+
+      mon_failure_exit();
     }
   }
   // populate client buffer relative index location
@@ -1406,7 +1408,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
       char la_buf[MON_STRING_BUF_SIZE];
       sprintf(la_buf, "[%s], Error= Can't load message queue! - errno=%d (%s)\n", method_name, err, strerror(err));
       mon_log_write(MON_MLIO_INIT_12, SQ_LOG_CRIT, la_buf);
-      abort();
+
+      mon_failure_exit();
     }
   }
 
@@ -1417,7 +1420,8 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
     char la_buf[MON_STRING_BUF_SIZE];
     sprintf(la_buf, "[%s], Error= Can't lock shared memory segment! - errno=%d (%s)\n", method_name, err, strerror(err));
     mon_log_write(MON_MLIO_INIT_13, SQ_LOG_CRIT, la_buf);
-    abort();
+
+    mon_failure_exit();
   }
 
 
@@ -1464,9 +1468,6 @@ SQ_LocalIOToClient::initWorker()
   }
   if (trace_settings & TRACE_INIT)
       trace_printf("%s@%d" " pendingNoticeThread created, threadId=%lx" "\n", method_name, __LINE__, pendingNoticesTid_);
-
-// The tmsync threads is not used for concurrent requests.  Only the
-// serial request thread is used.
 
   // Create the local io buffer cleanup thread
   ret = pthread_create(&lioBufCleanupTid_, NULL, lioBufCleanupThread, NULL);
@@ -1546,6 +1547,7 @@ void SQ_LocalIOToClient::msgQueueStats( void )
 struct message_def *
 SQ_LocalIOToClient::acquireMsg( int pid, Verifier_t verifier )
 {
+    bool done = false;
     struct message_def *msg = NULL;
     struct msqid_ds  mds;
     int ret;
@@ -1556,45 +1558,58 @@ SQ_LocalIOToClient::acquireMsg( int pid, Verifier_t verifier )
 
     if (acquiredBufferCount < SQ_LIO_MONITOR_ACQUIRE_MAX)
     {
-        ret = (int)msgrcv( qid, 
-                           (void *)&cbi,
-                           sizeof(cbi.index),
-                           SQ_LIO_NORMAL_MSG,
-                           IPC_NOWAIT
-                         );
-        if (ret == sizeof(cbi.index))
+        while (!done)
         {
-            SharedMsgDef *shm;
-            shm = (SharedMsgDef *)(clientBuffers+sizeof(SharedMemHdr)
-                                               +(cbi.index*sizeof(SharedMsgDef)));
-            memset( &shm->trailer, 0, sizeof( shm->trailer ) );
-            shm->trailer.index = cbi.index;
-            shm->trailer.OSPid = pid;
-            shm->trailer.verifier = verifier;
-            shm->trailer.bufInUse = getpid();
-            clock_gettime(CLOCK_REALTIME, &shm->trailer.timestamp);
-            msg = &shm->msg;
-            // Increment acquiredBufferCount.  Use atomic operation due
-            // to multi-threaded access.
-            __sync_fetch_and_add( &acquiredBufferCount, 1 );
-
-            // Record statistics (sonar counters)
-            if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-               MonStats->LocalIOBuffersIncr();
-            if (acquiredBufferCount > acquiredBufferCountMax) {
+            ret = (int)msgrcv( qid
+                             , (void *)&cbi
+                             , sizeof(cbi.index)
+                             , SQ_LIO_NORMAL_MSG
+                             , IPC_NOWAIT );
+            if (ret == sizeof(cbi.index))
+            {
+                SharedMsgDef *shm;
+                shm = (SharedMsgDef *)(clientBuffers+sizeof(SharedMemHdr)
+                                                   +(cbi.index*sizeof(SharedMsgDef)));
+                memset( &shm->trailer, 0, sizeof( shm->trailer ) );
+                shm->trailer.index = cbi.index;
+                shm->trailer.OSPid = pid;
+                shm->trailer.verifier = verifier;
+                shm->trailer.bufInUse = getpid();
+                clock_gettime(CLOCK_REALTIME, &shm->trailer.timestamp);
+                msg = &shm->msg;
+                // Increment acquiredBufferCount.  Use atomic operation due
+                // to multi-threaded access.
+                __sync_fetch_and_add( &acquiredBufferCount, 1 );
+    
+                // Record statistics (sonar counters)
                 if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-                   MonStats->LocalIOBuffersMaxSet(acquiredBufferCount);
+                   MonStats->LocalIOBuffersIncr();
+                if (acquiredBufferCount > acquiredBufferCountMax) {
+                    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
+                       MonStats->LocalIOBuffersMaxSet(acquiredBufferCount);
+                }
+    
+                acquiredBufferCountMax = acquiredBufferCount > acquiredBufferCountMax ? acquiredBufferCount : acquiredBufferCountMax;
+                if (trace_settings & TRACE_MLIO_DETAIL)
+                  trace_printf("%s@%d" " dequeued shared buffer, idx="  "%d" "\n", method_name, __LINE__, cbi.index);
+                done = true;
             }
-
-            acquiredBufferCountMax = acquiredBufferCount > acquiredBufferCountMax ? acquiredBufferCount : acquiredBufferCountMax;
-            if (trace_settings & TRACE_MLIO_DETAIL)
-              trace_printf("%s@%d" " dequeued shared buffer, idx="  "%d" "\n", method_name, __LINE__, cbi.index);
-        }
-        else
-        {  // msgrcv error
-            char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], msgrcv error %s (%d)\n", method_name, strerror(errno), errno);
-            mon_log_write(MON_MLIO_ACQUIRE_MSG_1, SQ_LOG_ERR, la_buf);
+            else if (ret == -1  && errno != ENOMSG)
+            {  // msgrcv error
+                char la_buf[MON_STRING_BUF_SIZE];
+                sprintf(la_buf, "[%s], msgrcv error %s (%d)\n", method_name, strerror(errno), errno);
+                mon_log_write(MON_MLIO_ACQUIRE_MSG_1, SQ_LOG_ERR, la_buf);
+                done = true;
+            }
+            if (!done)
+            {
+                usleep(10000); // sleep 10ms and try again
+                if (trace_settings & TRACE_MLIO)
+                {
+                    trace_printf( "%s@%d" " No message buffer!\n"
+                                , method_name, __LINE__);
+                }
+            }
         }
     }
     else

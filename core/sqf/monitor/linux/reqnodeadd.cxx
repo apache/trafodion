@@ -82,7 +82,7 @@ void CExtNodeAddReq::performRequest()
     CProcess       *requester = NULL;
 
     // Trace info about request
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    if (trace_settings & (TRACE_REQUEST | TRACE_REQUEST_DETAIL))
     {
         trace_printf("%s@%d request #%ld: NodeAdd, "
                      "node_name=%s, first_core=%d, last_core=%d, "

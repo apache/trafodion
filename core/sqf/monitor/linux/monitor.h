@@ -26,33 +26,22 @@
 #ifndef MONITOR_H_
 #define MONITOR_H_
 
-#include "tmsync.h"
+#include "msgdef.h"
+#include "cluster.h"
 #include "process.h"
 
 
-#define MAX_PROCESSES       2048
-#define MAX_IO_OUTSTANDING  MAX_PROCESSES*4
+#define MAX_PROCESSES            2048
+#define MAX_PORTFILEOPEN_RETRIES    60
+#define MAX_PORTFILEOPEN_DELAY       5   // seconds (5*60=300 = 5 min)
+#define MIN_PORTFILEOPEN_DELAY       1   // seconds (1*60=60  = 1 min)
+#define DEFAULT_PORTFILEOPEN_DELAY   2   // seconds (2*60=120 = 2 min)
 
 #define SUCCESS 0
 #define FAILURE 1
 
 
-enum OpType
-{
-    OpNull,
-    OpRecv,
-    OpSend
-#ifndef USE_BARRIER
-    ,
-    OpWake
-#endif
-};
-
-#ifdef NAMESERVER_PROCESS
 class CMonitor : public CCluster
-#else
-class CMonitor : public CTmSync_Container
-#endif
 {
 #ifndef NAMESERVER_PROCESS
 friend class SQ_LocalIOToClient;

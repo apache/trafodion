@@ -117,20 +117,20 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
     {
 #ifndef NAMESERVER_PROCESS
         sprintf(trace_file_name,"%s/monitor.trace.%d.%s",
-                getenv("MPI_TMPDIR"),MyPNID,Node_name);
+                getenv("TRAF_LOG"),MyPNID,Node_name);
 #else
         sprintf(trace_file_name,"%s/trafns.trace.%d.%s",
-                getenv("MPI_TMPDIR"),MyPNID,Node_name);
+                getenv("TRAF_LOG"),MyPNID,Node_name);
 #endif
     }
     else
     {
 #ifndef NAMESERVER_PROCESS
         sprintf(trace_file_name,"%s/monitor.trace.%s",
-                getenv("MPI_TMPDIR"), Node_name);
+                getenv("TRAF_LOG"), Node_name);
 #else
         sprintf(trace_file_name,"%s/trafns.trace.%s",
-                getenv("MPI_TMPDIR"), Node_name);
+                getenv("TRAF_LOG"), Node_name);
 #endif
     }
     remove(trace_file_name);
@@ -155,7 +155,7 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
         }
         else // Make user specified file name unique per node
         {
-            sprintf(trace_file_name,"%s/%s.%d.%s",getenv("MPI_TMPDIR"),
+            sprintf(trace_file_name,"%s/%s.%d.%s",getenv("TRAF_LOG"),
                     pfname,MyPNID,Node_name);
         }
     }
@@ -294,7 +294,7 @@ void CMonTrace::mon_trace_change(const char *key, const char *value)
             }
             else 
             {   // Make user specified file name unique per node
-                sprintf(fname,"%s/%s.%d.%s",getenv("MPI_TMPDIR"),
+                sprintf(fname,"%s/%s.%d.%s",getenv("TRAF_LOG"),
                         traceFileBase_,MyPNID,Node_name);
             }
         }
@@ -303,20 +303,20 @@ void CMonTrace::mon_trace_change(const char *key, const char *value)
             if( getenv("SQ_VIRTUAL_NODES") )
             {
 #ifndef NAMESERVER_PROCESS
-                sprintf(fname,"%s/monitor.trace.%d.%s",getenv("MPI_TMPDIR"), MyPNID,
+                sprintf(fname,"%s/monitor.trace.%d.%s",getenv("TRAF_LOG"), MyPNID,
                         Node_name);
 #else
-                sprintf(fname,"%s/trafns.trace.%d.%s",getenv("MPI_TMPDIR"), MyPNID,
+                sprintf(fname,"%s/trafns.trace.%d.%s",getenv("TRAF_LOG"), MyPNID,
                         Node_name);
 #endif
             }
             else
             {
 #ifndef NAMESERVER_PROCESS
-                sprintf(fname,"%s/monitor.trace.%s",getenv("MPI_TMPDIR"),
+                sprintf(fname,"%s/monitor.trace.%s",getenv("TRAF_LOG"),
                         Node_name);
 #else
-                sprintf(fname,"%s/trafns.trace.%s",getenv("MPI_TMPDIR"),
+                sprintf(fname,"%s/trafns.trace.%s",getenv("TRAF_LOG"),
                         Node_name);
 #endif
             }

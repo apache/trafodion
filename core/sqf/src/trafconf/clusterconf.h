@@ -43,8 +43,10 @@ public:
 
     void            Clear( void );
     bool            DeleteNodeConfig( int  pnid );
-    int             GetConfigMaster ( ) { return configMaster_;} 
-    char *          GetConfigMasterByName() {return configMasterName_;} 
+    inline int      GetClusterId( void ) { return clusterId_;} 
+    inline int      GetConfigMaster( void ) { return configMaster_;} 
+    inline char *   GetConfigMasterByName( void ) {return configMasterName_;} 
+    inline int      GetInstanceId( void ) { return instanceId_;} 
     bool            Initialize( void );
     bool            Initialize( bool traceEnabled, const char *traceFile );
     void            InitCoreMask( cpu_set_t &coreMask );
@@ -56,6 +58,7 @@ public:
     bool            LoadNodeConfig( void );
     bool            LoadPersistConfig( void );
     bool            SaveNodeConfig( const char *name
+                                  , const char *domain
                                   , int         nid
                                   , int         pnid
                                   , int         firstCore
@@ -69,6 +72,7 @@ public:
                                , cpu_set_t &coreMask );
     bool            UpdatePNodeConfig( int         pnid
                                      , const char *name
+                                     , const char *domain
                                      , int         excludedFirstCore
                                      , int         excludedLastCore );
 
@@ -76,7 +80,10 @@ protected:
 private:
 
     int             configMaster_;
+    int             clusterId_;
+    int             instanceId_;
     char            configMasterName_[TC_PROCESSOR_NAME_MAX];
+    bool            isRealCluster_;
     bool            nodeReady_;    // true when node configuration loaded
     bool            persistReady_; // true when persist configuration loaded
     bool            newPNodeConfig_;
@@ -115,6 +122,7 @@ private:
                            , int         excludedLastCore );
     void  UpdatePNodeConfiguration( int         pnid
                                   , const char *name
+                                  , const char *domain
                                   , int         excludedFirstCore
                                   , int         excludedLastCore );
 };

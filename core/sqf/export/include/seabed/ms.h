@@ -367,6 +367,10 @@ typedef struct MS_Mon_Zone_Info {
     int last_pnid;                          // Last Physical Node ID returned
     bool _fill_1;                           
 } MS_Mon_Zone_Info;
+typedef struct MS_Mon_ClusterInstanceId {
+    int nid;                                // node id of requesting process
+    int pid;                                // process id of requesting process
+} MS_Mon_ClusterInstanceId;
 
 //
 // Note the MS_Mon_MSGTYPE, MS_Mon_REQTYPE, MS_Mon_PROCESSTYPE, and MS_Mon_Msg
@@ -381,7 +385,6 @@ typedef enum {
     MS_MsgType_NodeDeleted,
     MS_MsgType_NodeDown,
     MS_MsgType_NodeJoining,
-    MS_MsgType_NodePrepare,
     MS_MsgType_NodeQuiesce,
     MS_MsgType_NodeUp,
     MS_MsgType_Open,
@@ -390,11 +393,7 @@ typedef enum {
     MS_MsgType_ReintegrationError,
     MS_MsgType_Service,
     MS_MsgType_Shutdown,
-    MS_MsgType_SpareUp,
-    MS_MsgType_TmRestarted,
-    MS_MsgType_TmSyncAbort,
-    MS_MsgType_TmSyncCommit,
-    MS_MsgType_UnsolicitedMessage
+    MS_MsgType_SpareUp
 } MS_Mon_MSGTYPE;
 typedef enum {
     MS_ReqType_Close = 1,
@@ -403,6 +402,7 @@ typedef enum {
     MS_ReqType_Event,
     MS_ReqType_Exit,
     MS_ReqType_Get,
+    MS_ReqType_InstanceId,
     MS_ReqType_Kill,
     MS_ReqType_MonStats,
     MS_ReqType_Mount,
@@ -432,11 +432,8 @@ typedef enum {
     MS_ReqType_Shutdown,
     MS_ReqType_ShutdownNs,
     MS_ReqType_Startup,
-    MS_ReqType_Stfsd,
     MS_ReqType_TmLeader,
     MS_ReqType_TmReady,
-    MS_ReqType_TmSync,
-    MS_ReqType_TransInfo,
     MS_ReqType_ZoneInfo
 } MS_Mon_REQTYPE;
 typedef enum {
@@ -523,11 +520,6 @@ struct MS_Mon_NodeJoining_def {
     char                 node_name[MS_MON_MAX_PROCESSOR_NAME];
     MS_MON_JOINING_PHASE phase;
 };
-struct MS_Mon_NodePrepare_def {
-    int  nid;
-    char node_name[MS_MON_MAX_PROCESSOR_NAME];
-    int  takeover;
-};
 struct MS_Mon_NodeQuiesce_def {
     int  nid;
     char node_name[MS_MON_MAX_PROCESSOR_NAME];
@@ -570,19 +562,6 @@ struct MS_Mon_SpareUp_def {
     int  pnid;
     char node_name[MS_MON_MAX_PROCESSOR_NAME];
 };
-struct MS_Mon_TmSyncNotice_def {
-    int                 nid[MS_MON_MAX_TM_SYNCS];
-    int                 orig_count;
-    int                 orig_tag[MS_MON_MAX_TM_SYNCS];
-    int                 orig_handle[MS_MON_MAX_TM_SYNCS];
-    int                 count;
-    int                 handle[MS_MON_MAX_TM_SYNCS];
-};
-struct MS_Mon_TmRestarted_def {
-    int  nid;
-    int  pnid;
-    char node_name[MS_MON_MAX_PROCESSOR_NAME];
-};
 // TODO: make less kludgy
 #if __WORDSIZE == 64
 enum { _MS_REQ_FILL = 3 };
@@ -604,14 +583,11 @@ typedef struct MS_Mon_Msg {
         struct MS_Mon_NodeDown_def            down;
         struct MS_Mon_NodeJoining_def         joining;
         struct MS_Mon_Open_def                open;
-        struct MS_Mon_NodePrepare_def         prepare;
         struct MS_Mon_NewProcess_Notice_def   process_created;
         struct MS_Mon_NodeQuiesce_def         quiesce;
         struct MS_Mon_Shutdown_def            shutdown;
         struct MS_Mon_SpareUp_def             spare_up;
-        struct MS_Mon_TmSyncNotice_def        tmsync;
         struct MS_Mon_NodeUp_def              up;
-        struct MS_Mon_TmRestarted_def         tmrestarted;        
         struct MS_Mon_NodeAdded_def           added;
         struct MS_Mon_NodeChanged_def         changed;
         struct MS_Mon_NodeDeleted_def         deleted;
@@ -892,6 +868,13 @@ SB_DIAG_UNUSED;
 SB_Export int msg_mon_event_wait2(int  *event_id,
                                   int  *event_len,
                                   char *event_data)
+SB_DIAG_UNUSED;
+
+//
+// Call this to get cluster id and instance id
+//
+SB_Export int msg_mon_get_instance_id(int *cluster_id,
+                                      int *instance_id)
 SB_DIAG_UNUSED;
 
 //
@@ -1290,7 +1273,7 @@ SB_THROWS_FATAL SB_DIAG_UNUSED;
 // sysmsgs: want system messages?
 // pipeio: want pipe io?
 //
-SB_Export int msg_mon_process_startup3(int sysmsgs, int pipeio)
+SB_Export int msg_mon_process_startup3(int sysmsgs, int pipeio, bool remap_stderr=true)
 SB_THROWS_FATAL SB_DIAG_UNUSED;
 
 //

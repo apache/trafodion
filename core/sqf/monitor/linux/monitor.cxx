@@ -51,7 +51,6 @@ using namespace std;
 #include "nameserverconfig.h"
 #include "lnode.h"
 #include "pnode.h"
-#include "tmsync.h"
 #include "cluster.h"
 #include "monitor.h"
 #include "props.h"
@@ -128,6 +127,7 @@ char IntegratingMonitorPort[MPI_MAX_PORT_NAME] = {'\0'};
 bool IsRealCluster = true;
 bool IsAgentMode = false;
 bool IsNameServer = false;
+AgentType_t AgentType = AgentType_Undefined;
 bool IsMaster = false;
 bool IsMPIChild = false;
 char MasterMonitorName[MAX_PROCESS_PATH]= {'\0'};
@@ -140,6 +140,8 @@ bool ZClientEnabled = true;
 #ifndef NAMESERVER_PROCESS
 bool NameServerEnabled = false;
 #endif
+int  ClusterId = -1;
+int  InstanceId = -1;
 
 // Lock to manage memory modifications during fork/exec
 CLock MemModLock;
@@ -254,6 +256,32 @@ char *ErrorMsg (int error_code)
 }
 
 #ifndef NAMESERVER_PROCESS
+void sigtermSignalHandler(int signal, siginfo_t *info, void *)
+{
+    const char method_name[] = "sigtermSignalHandler";
+
+    if (trace_settings & TRACE_ENTRY_EXIT)
+       trace_nolock_printf("%s@%d\n", method_name, __LINE__);
+
+    if (trace_settings & TRACE_SIG_HANDLER)
+        trace_nolock_printf("%s@%d - signal=%d, code=%d, status=%d, pid=%d\n",
+                            method_name, __LINE__, signal, info->si_code,
+                            info->si_status, info->si_pid);
+
+    char la_buf[MON_STRING_BUF_SIZE*2];
+    snprintf( la_buf, sizeof(la_buf)
+            , "[%s], Initiating node down on Node %s, pnid=%d (received SIGTERM signal)\n"
+            , method_name
+            , MyNode->GetName()
+            , MyPNID );
+    mon_log_write(MON_MONITOR_SIGTERMSIGNALHANDLER_1, SQ_LOG_CRIT, la_buf); 
+
+    Monitor->HardNodeDown( MyPNID, true );
+
+    if (trace_settings & TRACE_ENTRY_EXIT)
+        trace_nolock_printf("%s@%d - Exit\n", method_name, __LINE__);
+}
+
 void child_death_signal_handler2 (int signal, siginfo_t *info, void *)
 {
     pid_t pid;
@@ -350,6 +378,30 @@ void monMallocStats()
     malloc_stats();
 }
 
+const char *AgentTypeString( AgentType_t agentType)
+{
+    const char *str;
+    
+    switch( agentType )
+    {
+        case AgentType_Ambari:
+            str = "Ambari";
+            break;
+        case AgentType_CM:
+            str = "CM";
+            break;
+        case AgentType_MPI:
+            str = "MPI";
+            break;
+        default:
+            str = "Undefined";
+            break;
+    }
+
+    return( str );
+}
+
+
 const char *CommTypeString( CommType_t commType)
 {
     const char *str;
@@ -376,7 +428,7 @@ CMonitor::CMonitor ()
     : CCluster (),
 #else
 CMonitor::CMonitor (int procTermSig)
-    : CTmSync_Container (),
+    : CCluster (),
 #endif
       OpenCount (0)
     , NoticeCount (0)
@@ -457,9 +509,16 @@ void CMonitor::openProcessMap ( void )
         PidMap = true;
     }
 
-    snprintf( fname, sizeof(fname), "%s/monitor.map.%d.%s",
-             getenv("MPI_TMPDIR"), MyPNID, Node_name );
-    remove(fname);
+    if ( IsRealCluster )
+    {
+        snprintf( fname, sizeof(fname), "%s/monitor.map.%s",
+                 getenv("TRAF_LOG"), Node_name );
+    }
+    else
+    {
+        snprintf( fname, sizeof(fname), "%s/monitor.map.%d.%s",
+                 getenv("TRAF_LOG"), MyPNID, Node_name );
+    }
     processMapFd = open(fname, O_WRONLY | O_APPEND | O_CREAT,
                         S_IRUSR | S_IWUSR );
     if ( processMapFd == -1 )
@@ -1074,29 +1133,143 @@ void CMonitor::StartPrimitiveProcesses( void )
 }
 #endif
 
-void HandleAssignMonitorLeader ( const char *failedMaster )
-{
-    const char method_name[] = "HandleAssignMonitorLeader";
-    TRACE_ENTRY;
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf("%s@%d HandleAssignMonitorLeader called for %s\n"
-                            , method_name, __LINE__, failedMaster);
-    }
-    // only relevant in AgentMode
-     if (IsAgentMode)
-     {
-         Monitor->AssignMonitorLeader(failedMaster);
-     }
-    
-    TRACE_EXIT;
-}
-
 void HandleMyNodeExpiration( void )
 {
     const char method_name[] = "HandleMyNodeExpiration";
     TRACE_ENTRY;
-    ReqQueue.enqueueDownReq(MyPNID);
+    if (ZClientEnabled )
+    {
+        if (ZClient->StateGet() == CZClient::ZC_SHUTDOWN)
+        {
+            return;
+        }
+
+        if (!MyNode->IsPendingNodeDown())
+        {
+            ReqQueue.enqueueDownReq(MyPNID);
+        }
+    }
+    TRACE_EXIT;
+}
+
+void HandleNodeChange( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeChange";
+    TRACE_ENTRY;
+
+    if (ZClientEnabled )
+    {
+        if (ZClient->StateGet() == CZClient::ZC_SHUTDOWN)
+        {
+            return;
+        }
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Handling CHANGE for node=%s\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+    }
+
+    TRACE_EXIT;
+}
+
+void HandleNodeConfigurationChange( void )
+{
+    const char method_name[] = "HandleNodeConfigurationChange";
+    TRACE_ENTRY;
+
+    if (ZClientEnabled )
+    {
+        if (ZClient->StateGet() == CZClient::ZC_SHUTDOWN)
+        {
+            return;
+        }
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Handling CONFIGURATION CHANGE\n"
+                        , method_name, __LINE__ );
+        }
+    }
+
+    TRACE_EXIT;
+}
+
+void HandleNodeError( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeError";
+    TRACE_ENTRY;
+
+    if (ZClientEnabled )
+    {
+        if (ZClient->StateGet() == CZClient::ZC_SHUTDOWN)
+        {
+            return;
+        }
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Handling ERROR for node=%s\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+
+        CNode *node = Nodes->GetNode((char *)nodeName);
+        if (node)
+        {
+            if (node->GetState() != State_Down)
+            {
+                node->SetPendingNodeDown(true);
+            }
+            ReqQueue.enqueueDownReq(node->GetPNid());
+        }
+    }
+    TRACE_EXIT;
+}
+
+void HandleNodeChild( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeChild";
+    TRACE_ENTRY;
+
+    if (ZClientEnabled )
+    {
+        if (ZClient->StateGet() == CZClient::ZC_SHUTDOWN)
+        {
+            return;
+        }
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Handling CHILD for node=%s\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+    }
+    TRACE_EXIT;
+}
+
+void HandleNodeCreated( const char *nodeName )
+{
+    const char method_name[] = "HandleNodeCreated";
+    TRACE_ENTRY;
+
+    if (ZClientEnabled )
+    {
+        if (ZClient->StateGet() == CZClient::ZC_SHUTDOWN)
+        {
+            return;
+        }
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Handling CREATE for node=%s\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+    }
     TRACE_EXIT;
 }
 
@@ -1104,11 +1277,32 @@ void HandleNodeExpiration( const char *nodeName )
 {
     const char method_name[] = "HandleNodeExpiration";
     TRACE_ENTRY;
-    CNode *node = Nodes->GetNode((char *)nodeName);
-    if (node)
+
+    if (ZClientEnabled )
     {
-        ReqQueue.enqueueDownReq(node->GetPNid());
+        if (ZClient->StateGet() == CZClient::ZC_SHUTDOWN)
+        {
+            return;
+        }
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Handling EXPIRATION of node=%s\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+
+        CNode *node = Nodes->GetNode((char *)nodeName);
+        if (node)
+        {
+            if (node->GetState() != State_Down)
+            {
+                node->SetPendingNodeDown(true);
+            }
+            ReqQueue.enqueueDownReq(node->GetPNid());
+        }
     }
+
     TRACE_EXIT;
 }
 
@@ -1120,6 +1314,8 @@ void CreateZookeeperClient( void )
     if ( ZClientEnabled )
     {
         string       hostName;
+        string       instanceId;
+        string       trafodionRootZNode;
         string       zkQuorumHosts;
         stringstream zkQuorumPort;
         char *env;
@@ -1191,17 +1387,52 @@ void CreateZookeeperClient( void )
             }
         }
 
+        env = getenv("TRAF_ROOT_ZNODE");
+        if ( env )
+        {
+            stringstream ss;
+            ss.str( "" );
+            ss << env;
+            trafodionRootZNode = ss.str();
+        }
+        else
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf(la_buf, "[%s], Environment variable TRAF_ROOT_ZNODE is undefined, exiting!\n", method_name);
+            mon_log_write(MON_MONITOR_CREATEZCLIENT_3, SQ_LOG_CRIT, la_buf);
+ 
+            printf( "%s", la_buf);
+            exit(EXIT_FAILURE);
+        }
+
+        if (InstanceId != -1)
+        {
+            stringstream ss;
+            ss.str( "" );
+            ss << "/" << InstanceId;
+            instanceId = ss.str();
+        }
+        else
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf(la_buf, "[%s], Instance Id is undefined, exiting!\n", method_name);
+            mon_log_write(MON_MONITOR_CREATEZCLIENT_4, SQ_LOG_CRIT, la_buf);
+ 
+            printf( "%s", la_buf);
+            exit(EXIT_FAILURE);
+        }
+
         ZClient = new CZClient( zkQuorumPort.str().c_str()
-                              , ZCLIENT_TRAFODION_ZNODE
-                              , ZCLIENT_INSTANCE_ZNODE );
+                              , trafodionRootZNode.c_str()
+                              , instanceId.c_str() );
         if ( ZClient == NULL )
         {
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf),
                      "[%s], Failed to allocate ZClient object!\n"
                     , method_name);
-            mon_log_write(MON_MONITOR_CREATEZCLIENT_3, SQ_LOG_CRIT, buf);
-            abort();
+            mon_log_write(MON_MONITOR_CREATEZCLIENT_5, SQ_LOG_CRIT, buf);
+            mon_failure_exit();
         }
     }
 
@@ -1281,12 +1512,14 @@ int main (int argc, char *argv[])
 {
     int i;
     int rc;
+    int configMasterPNid = -1;
     bool done = false;
     char *env;
     char *nodename = NULL;
     char fname[MAX_PROCESS_PATH];
     char short_node_name[MPI_MAX_PROCESSOR_NAME];
 #ifndef NAMESERVER_PROCESS
+    int portFileOpenDelay = DEFAULT_PORTFILEOPEN_DELAY;
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
 #endif
@@ -1311,7 +1544,7 @@ int main (int argc, char *argv[])
 
     if (argc < 2) {
       printf("error: monitor needs an argument...exitting...\n");
-      exit(0);
+      exit(EXIT_FAILURE);
     }
 
     int lv_arg_index = 1;
@@ -1404,14 +1637,6 @@ int main (int argc, char *argv[])
         }
     }
 
-#ifdef NAMESERVER_PROCESS
-    MonLog = new CMonLog( "log4cxx.monitor.trafns.config", "NS", "alt.mon", -1, -1, getpid(), "$TNS" );
-#else
-    MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
-#endif
-
-    MonLog->setupInMemoryLog();
-
 #ifdef MULTI_TRACE_FILES
     initVariableKey();
 #endif
@@ -1441,14 +1666,14 @@ int main (int argc, char *argv[])
     {
         Measure = 1;
         snprintf(fname, sizeof(fname), "%s/monitor.P%d",
-                 getenv("MPI_TMPDIR"),getpid());
+                 getenv("TRAF_LOG"),getpid());
         setenv("MPI_INSTR", fname, 1);
     }
     if ( env && *env == '2' )
     {
         Measure = 2;
         snprintf(fname, sizeof(fname), "%s/monitor.cpu.P%d:cpu",
-                 getenv("MPI_TMPDIR"),getpid());
+                 getenv("TRAF_LOG"),getpid());
         setenv("MPI_INSTR", fname, 1);
     }
 
@@ -1462,18 +1687,68 @@ int main (int argc, char *argv[])
         CommType = CommType_Sockets;
     }
 
+    env = getenv("TRAF_AGENT");
+    if ( env != NULL && strcmp(env, "CM") == 0 )
+    {
+        AgentType = AgentType_CM;
+    }
+    else if ( env != NULL && strcmp(env, "Ambari") == 0 )
+    {
+        AgentType = AgentType_Ambari;
+    }
+    else
+    {
+        AgentType = AgentType_MPI;
+    }
+
+#ifdef NAMESERVER_PROCESS
+    env = getenv("NS_GENERATE_CORE_ON_FAILURE_EXIT");
+#else
+    env = getenv("MON_GENERATE_CORE_ON_FAILURE_EXIT");
+#endif
+    if ( env )
+    {
+        if ( *env == '0' )
+        {
+            GenCoreOnFailureExit = false;
+        }
+        else
+        {
+            GenCoreOnFailureExit = true;
+        }
+    }
+
+#ifndef NAMESERVER_PROCESS
+    if (AgentType == AgentType_CM)
+    {
+        // Set sigaction such that SIGTERM signal is caught.
+        // In a Cloudera Manager (CM) environment, the supervisord
+        // will send the monitor (NODE ROLE) a SIGTERM to indicate
+        // is time to shutdown the instance
+        struct sigaction act;
+        act.sa_sigaction = sigtermSignalHandler;
+        act.sa_flags = SA_SIGINFO | SA_NODEFER;
+        sigemptyset (&act.sa_mask);
+        sigaddset (&act.sa_mask, SIGTERM);
+        sigaction (SIGTERM, &act, NULL);
+    }
+#endif
+
     // Mask all allowed signals
     sigset_t              mask;
     sigfillset(&mask);
     sigdelset(&mask, SIGPROF); // allows profiling such as google profiler
     sigdelset(&mask, SIGUSR2);
+#ifndef NAMESERVER_PROCESS
+    sigdelset(&mask, SIGTERM);
+#endif
     rc = pthread_sigmask(SIG_SETMASK, &mask, NULL);
     if (rc != 0)
     {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], pthread_sigmask error=%d\n",
-                 method_name, rc);
-        mon_log_write(MON_MONITOR_MAIN_1, SQ_LOG_ERR, buf);
+        printf( "[%s],  Unable to set signal mask, "
+                "pthread_sigmask() error=%d (%s)\n"
+               ,method_name, rc, strerror(rc) );
+        exit(EXIT_FAILURE);
     }
 
     // Setup HP_MPI software license
@@ -1535,6 +1810,20 @@ int main (int argc, char *argv[])
     }
 
 #ifndef NAMESERVER_PROCESS
+    env = getenv("MON_PORT_OPEN_FILE_DELAY");
+    if ( env && isdigit(*env) )
+    {
+        portFileOpenDelay = atoi(env);
+        if (portFileOpenDelay < MIN_PORTFILEOPEN_DELAY)
+        {
+            portFileOpenDelay = MIN_PORTFILEOPEN_DELAY;
+        }
+        else if (portFileOpenDelay > MAX_PORTFILEOPEN_DELAY)
+        {
+            portFileOpenDelay = MAX_PORTFILEOPEN_DELAY;
+        }
+    }
+
     // We need to delay some to make sure all monitor processes have initialized before
     // any monitor tries to perform an Allgather operation.
     sleep( initSleepTime );
@@ -1545,8 +1834,6 @@ int main (int argc, char *argv[])
 #ifndef NAMESERVER_PROCESS
     MPI_Comm_rank (MPI_COMM_WORLD, &MyPNID);
 #endif
-
-    MonLog->setPNid( MyPNID );
 
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
     char *tmpptr = Node_name;
@@ -1582,6 +1869,14 @@ int main (int argc, char *argv[])
 #endif
 
 #ifdef NAMESERVER_PROCESS
+    MonLog = new CMonLog( "log4cxx.monitor.trafns.config", "NS", "alt.mon", MyPNID, -1, getpid(), "$TNS" );
+#else
+    MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", MyPNID, -1, getpid(), "$MONITOR" );
+#endif
+    MonLog->setPNid( MyPNID );
+    MonLog->setupInMemoryLog();
+
+#ifdef NAMESERVER_PROCESS
     // Without mpi daemon the monitor has no default standard output.
     // We create a standard output file here.
     if ( IsRealCluster )
@@ -1608,8 +1903,7 @@ int main (int argc, char *argv[])
                  getenv("TRAF_LOG"), MyPNID, Node_name);
     }
 #endif
-    remove(fname);
-    if( freopen (fname, "w", stdout) == NULL )
+    if( freopen(fname, "a", stdout) == NULL )
     {
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], can't open stdout (%s).\n",
@@ -1640,7 +1934,7 @@ int main (int argc, char *argv[])
         default:
             printf( "SQ_IC contains invalid communication protocol: %s\n"
                    , CommTypeString(CommType));
-            abort();
+            exit(EXIT_FAILURE);
     }
 
     if ((!IsAgentMode) && (argc > 3 && strcmp (argv[2], "-integrate") == 0))
@@ -1656,7 +1950,7 @@ int main (int argc, char *argv[])
                 else
                 {
                     printf ( "Invalid integrating monitor MPI port: %s\n", argv[3]);
-                    abort();
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case CommType_Sockets:
@@ -1665,25 +1959,13 @@ int main (int argc, char *argv[])
                     // In agent mode and when re-integrating (node up), all
                     // monitors processes start as a cluster of 1 and join to the
                     // creator monitor to establish the real cluster.
-                    // Therefore, MyPNID will always be zero then it is
-                    // necessary to use the node name to obtain the correct
-                    // <pnid> from the configuration which occurs when creating the
-                    // CMonitor object down below. By setting MyPNID to -1, when the
-                    // CCluster::InitializeConfigCluster() invoked during the creation
-                    // of the CMonitor object it will set MyPNID using Node_name.
-#ifdef NAMESERVER_PROCESS
-                    if ( IsRealCluster )
-                        MyPNID = -1;
-#else
-                    MyPNID = -1;
-#endif
                     SMSIntegrating = IAmIntegrating = true;
                     strcpy( IntegratingMonitorPort, argv[3] );
                 }
                 else
                 {
                     printf ( "Invalid integrating monitor socket port: %s\n", argv[3]);
-                    abort();
+                    exit(EXIT_FAILURE);
                 }
                 break;
             default:
@@ -1698,7 +1980,7 @@ int main (int argc, char *argv[])
         else
         {
             printf ( "Invalid creator shell pid: %s\n", argv[4]);
-            abort();
+            exit(EXIT_FAILURE);
         }
         if ( isdigit (*argv[5]) )
         {
@@ -1708,7 +1990,7 @@ int main (int argc, char *argv[])
         else
         {
             printf ( "Invalid creator shell verifier: %s\n", argv[5]);
-            abort();
+            exit(EXIT_FAILURE);
         }
 
         // Trace cannot be specified on startup command but need to
@@ -1717,12 +1999,18 @@ int main (int argc, char *argv[])
 
     }
 
+    if ( IsRealCluster )
+    {
+        // Set MyPNID to -1 to use the node name to obtain the correct
+        // <pnid> from the configuration which occurs when creating the
+        // CMonitor object down below. By setting MyPNID to -1, when the
+        // CCluster::InitializeConfigCluster() invoked during the creation
+        // of the CMonitor object it will set MyPNID using Node_name.
+        MyPNID = -1;
+    }
+
     if (IsAgentMode)
     {
-        if ( IsRealCluster )
-        {
-            MyPNID = -1;
-        }
         CreatorShellPid = 1000; // per monitor.sh
         CreatorShellVerifier = 0;
     }
@@ -1817,22 +2105,28 @@ int main (int argc, char *argv[])
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->MonitorBusyIncr();
 
+    const char message_tag[] = "Trafodion";
+    snprintf( buf, sizeof(buf), "[%s] - monitor Started!\n", message_tag );
+    mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
 #ifdef NAMESERVER_PROCESS
-    snprintf(buf, sizeof(buf),
-                 "[CMonitor::main], %s, Started! CommType: %s\n"
+    snprintf(buf, sizeof(buf), "[%s] - %s, Started! CommType: %s\n"
+                , message_tag
                 , CALL_COMP_GETVERS2(trafns), CommTypeString( CommType ));
 #else
-    snprintf(buf, sizeof(buf),
-                 "[CMonitor::main], %s, Started! CommType: %s (%s%s%s%s)\n"
+    snprintf(buf, sizeof(buf), "[%s] - %s, Started! CommType: %s (%s%s%s%s%s)\n"
+                , message_tag
                 , CALL_COMP_GETVERS2(monitor)
                 , CommTypeString( CommType )
                 , IsRealCluster?"RealCluster":"VirtualCluster"
-                , IsAgentMode?"/AgentMode":""
+                , IsAgentMode?"/AgentMode:":""
+                , IsAgentMode?AgentTypeString( AgentType ):""
                 , IsMPIChild?"/MPIChild":""
                 , NameServerEnabled?"/NameServerEnabled":"" );
 #endif
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
-
+    snprintf( buf, sizeof(buf), "[%s] - monitor Started!\n", message_tag );
+    mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
+       
 #ifdef DMALLOC
     if (trace_settings & TRACE_INIT)
        trace_printf("%s@%d" "DMALLOC Option set" "\n", method_name, __LINE__);
@@ -1867,7 +2161,7 @@ int main (int argc, char *argv[])
                      sprintf(la_buf, "[%s], Failed to load cluster configuration.\n", method_name);
                      mon_log_write(MON_MONITOR_MAIN_12, SQ_LOG_CRIT, la_buf);
 
-                     abort();
+                     mon_failure_exit();
                 }
             }
             else
@@ -1876,7 +2170,7 @@ int main (int argc, char *argv[])
                 sprintf(la_buf, "[%s], Failed to open cluster configuration.\n", method_name);
                 mon_log_write(MON_MONITOR_MAIN_13, SQ_LOG_CRIT, la_buf);
 
-                abort();
+                mon_failure_exit();
             }
         }
        else
@@ -1885,7 +2179,7 @@ int main (int argc, char *argv[])
            sprintf(la_buf, "[%s], Failed to allocate cluster configuration.\n", method_name);
            mon_log_write(MON_MONITOR_MAIN_14, SQ_LOG_CRIT, la_buf);
 
-           abort();
+           mon_failure_exit();
         }
 
         //Moved creation of the below to later on
@@ -1893,6 +2187,8 @@ int main (int argc, char *argv[])
         //Config = new CConfigContainer ();
         //Monitor = new CMonitor (procTermSig);
         
+        ClusterId = ClusterConfig->GetClusterId();
+        InstanceId = ClusterConfig->GetInstanceId();
 
         // Set up zookeeper and determine the master
         if ( IsAgentMode || IsRealCluster )
@@ -1923,10 +2219,11 @@ int main (int argc, char *argv[])
 
         if (IsAgentMode)
         {
+            configMasterPNid = ClusterConfig->GetConfigMaster();
             if ((ZClientEnabled) && (ZClient != NULL))
             {
                 // Do not wait, just see if one exists
-                const char *masterMonitor = ZClient->WaitForAndReturnMaster(false);
+                const char *masterMonitor = ZClient->MasterWaitForAndReturn(false);
 
                 if (masterMonitor)
                 {
@@ -1934,9 +2231,11 @@ int main (int argc, char *argv[])
 
                     if (trace_settings & TRACE_INIT)
                     {
-                        trace_printf("%s@%d (MasterMonitor) IsAgentMode = TRUE, masterMonitor from ZK: %s, Node_name: %s\n"
+                        trace_printf("%s@%d (MasterMonitor) IsAgentMode=%s, IAmIntegrating=%s, masterMonitor from ZK: %s, Node_name: %s\n"
                                      , method_name
                                      , __LINE__
+                                     , IsAgentMode?"TRUE":"FALSE"
+                                     , IAmIntegrating?"TRUE":"FALSE"
                                      , MasterMonitorName
                                      , Node_name);
                     }
@@ -1958,9 +2257,11 @@ int main (int argc, char *argv[])
 
                     if (trace_settings & TRACE_INIT)
                     {
-                        trace_printf("%s@%d (MasterMonitor) IsAgentMode = TRUE, ConfigMasterMonitor: %s, Node_name:%s \n"
+                        trace_printf("%s@%d (MasterMonitor) IsAgentMode=%s, IAmIntegrating=%s, ConfigMasterMonitor: %s, Node_name:%s \n"
                                      , method_name
                                      , __LINE__
+                                     , IsAgentMode?"TRUE":"FALSE"
+                                     , IAmIntegrating?"TRUE":"FALSE"
                                      , MasterMonitorName
                                      , Node_name);
                     }
@@ -1982,9 +2283,11 @@ int main (int argc, char *argv[])
 
                 if (trace_settings & TRACE_INIT)
                 {
-                    trace_printf("%s@%d (MasterMonitor) IsAgentMode = TRUE, ConfigMasterMonitor: %s, Node_name:%s \n"
+                    trace_printf("%s@%d (MasterMonitor) IsAgentMode=%s, IAmIntegrating=%s, ConfigMasterMonitor: %s, Node_name:%s \n"
                                  , method_name
                                  , __LINE__
+                                 , IsAgentMode?"TRUE":"FALSE"
+                                 , IAmIntegrating?"TRUE":"FALSE"
                                  , MasterMonitorName
                                  , Node_name);
                 }
@@ -2012,14 +2315,6 @@ int main (int argc, char *argv[])
          {
             if (!IsMaster)
             {
-#ifdef NAMESERVER_PROCESS
-                if ( IsRealCluster )
-                {
-                    MyPNID = -1;
-                }
-#else
-                MyPNID = -1;
-#endif
                 SMSIntegrating = IAmIntegrating = true;
 #ifdef NAMESERVER_PROCESS
                 char *monitorPort = getenv ("NS_COMM_PORT");
@@ -2047,20 +2342,22 @@ int main (int argc, char *argv[])
                 }
                 if (trace_settings & TRACE_INIT)
                 {
-                    trace_printf( "%s@%d (MasterMonitor) IsAgentMode = TRUE, I am NOT the master, "
-                                  "MyPNID=%d, master port=%s\n"
+                    trace_printf( "%s@%d (MasterMonitor) IsAgentMode=%s, IAmIntegrating=%s, "
+                                  "I am NOT the master, MyPNID=%d, master port=%s\n"
                                 , method_name, __LINE__
+                                , IsAgentMode?"TRUE":"FALSE"
+                                , IAmIntegrating?"TRUE":"FALSE"
                                 , MyPNID, IntegratingMonitorPort );
                 }
             }
             else
             {
+                IAmIntegrating = false;
                 if (trace_settings & TRACE_INIT)
                 {
-                    trace_printf( "%s@%d (MasterMonitor) IsAgentMode = TRUE, I am the master, MyPNID=%d\n"
-                                , method_name, __LINE__, MyPNID );
+                    trace_printf( "%s@%d (MasterMonitor) IsAgentMode=%s, IAmIntegrating=%s, I AM the master, MyPNID=%d\n"
+                                , method_name, __LINE__, IsAgentMode?"TRUE":"FALSE", IAmIntegrating?"TRUE":"FALSE", MyPNID );
                 }
-                IAmIntegrating = false;
             }
         }
 
@@ -2101,78 +2398,121 @@ int main (int argc, char *argv[])
             {
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf
-                       , "[%s], Failed to get my Node, MyPNID=%d\n"
+                       , "[%s], Failed to get myNode object, MyPNID=%d\n"
                        , method_name, MyPNID );
                 mon_log_write(MON_MONITOR_MAIN_15, SQ_LOG_CRIT, la_buf);
 
-                abort();
+                mon_failure_exit();
             }
-
             if ((ZClientEnabled) && (ZClient != NULL))
             {
+                bool newMasterSelected = false;
+retryMaster:
                 CNode *masterNode = Nodes->GetNode(MasterMonitorName);
                 if (!masterNode)
                 {
                     if (trace_settings & TRACE_INIT)
                     {
-                          trace_printf("%s@%d (MasterMonitor) IsMaster=%d, masterNode is NULL, with MasterMonitorName %s\n", method_name, __LINE__, IsMaster, MasterMonitorName);
+                        trace_printf("%s@%d (MasterMonitor) IsMaster=%d, IAmIntegrating=%s, masterNode is NULL, with MasterMonitorName %s\n"
+                                    , method_name, __LINE__, IsMaster, IAmIntegrating?"TRUE":"FALSE", MasterMonitorName);
                     }
                     char la_buf[MON_STRING_BUF_SIZE];
                     sprintf(la_buf, "[%s], Failed to get my Master Node.\n", method_name);
                     mon_log_write(MON_MONITOR_MAIN_16, SQ_LOG_CRIT, la_buf);
 
-                    abort();
+                    mon_failure_exit();
                 }
                 else
                 {
                     if (trace_settings & TRACE_INIT)
                     {
-                          trace_printf("%s@%d (MasterMonitor) IsMaster=%d, masterNode=%s\n", method_name, __LINE__, IsMaster, masterNode->GetName() );
+                          trace_printf("%s@%d (MasterMonitor) IsMaster=%d, IAmIntegrating=%s, masterNode=%s\n"
+                                      , method_name, __LINE__, IsMaster, IAmIntegrating?"TRUE":"FALSE", masterNode->GetName() );
                     }
                 }
                 monitorLead = masterNode->GetPNid();
                 if (MyPNID == monitorLead)
                 {
-                     ZClient->WatchNodeMasterDelete (myNode->GetName() ); // just in case of stale info
-                     ZClient->CreateMasterZNode ( myNode->GetName() );
+                     ZClient->MasterZNodeDelete( myNode->GetName() ); // just in case of stale info
+                     ZClient->MasterZNodeCreate( myNode->GetName() );
                      strcpy (MasterMonitorName, myNode->GetName());
-                     ZClient->WatchMasterNode( MasterMonitorName );
+                     if (newMasterSelected)
+                     {
+                        newMasterSelected = false;
+                        IsMaster = true;
+                        IAmIntegrating = false;
+                        // This monitor is now the master, therefore load the 
+                        // logical node (lnodes) as per the static configuration
+                        Monitor->InitializeConfigCluster( monitorLead );
+                     }
                      if (trace_settings & TRACE_INIT)
                      {
-                         trace_printf("%s@%d (MasterMonitor) IsMaster=%d, set monitor lead to %d\n", method_name, __LINE__, IsMaster, MyPNID);
+                         trace_printf("%s@%d (MasterMonitor) IsMaster=%d, IAmIntegrating=%s, master monitor pnid=%d\n"
+                                     , method_name, __LINE__, IsMaster, IAmIntegrating?"TRUE":"FALSE", MyPNID);
                      }
                  }
                  else
                  {
-                     masterMonitor = ZClient->WaitForAndReturnMaster(true);
+                     masterMonitor = ZClient->MasterWaitForAndReturn(true);
                      CNode *masterNode = NULL;
                      if (masterMonitor)
                      {
                          strcpy (MasterMonitorName, masterMonitor);
                          masterNode = Nodes->GetNode(MasterMonitorName);
+                        if (newMasterSelected)
+                        {
+                            newMasterSelected = false;
+                        }
                      }
 
                      if (masterNode)
                      {
                           if (trace_settings & TRACE_INIT)
                           {
-                              trace_printf("%s@%d (MasterMonitor) IsMaster=%d, set monitor lead to %d\n", method_name, __LINE__, IsMaster, masterNode->GetPNid());
+                            trace_printf( "%s@%d (MasterMonitor) IsMaster=%d, IAmIntegrating=%s, "
+                                          "master monitor pnid=%d\n"
+                                        , method_name, __LINE__
+                                        , IsMaster
+                                        , IAmIntegrating?"TRUE":"FALSE"
+                                        , masterNode->GetPNid());
                           }
                           monitorLead = masterNode->GetPNid();
-                          ZClient->WatchMasterNode( MasterMonitorName ); 
+                          if (monitorLead != configMasterPNid)
+                          {
+                            char *commPort = getenv ("MONITOR_COMM_PORT");
+                            if (commPort)
+                            {
+                                strcpy( IntegratingMonitorPort, MasterMonitorName);
+                                strcat( IntegratingMonitorPort, ":");
+                                strcat( IntegratingMonitorPort, commPort);
+                            }
+                          }
                      }
                      else
                      {
                           if (trace_settings & TRACE_INIT)
                           {
-                              trace_printf("%s@%d (MasterMonitor) IsMaster=%d, masterNode is NULL, with MasterMonitorName %s\n", method_name, __LINE__, IsMaster, MasterMonitorName);
+                            trace_printf( "%s@%d (MasterMonitor) IsMaster=%d, IAmIntegrating=%s, "
+                                          "masterNode is NULL, with MasterMonitorName %s\n"
+                                        , method_name, __LINE__
+                                        , IsMaster
+                                        , IAmIntegrating?"TRUE":"FALSE"
+                                        , MasterMonitorName);
                           }
                           char la_buf[MON_STRING_BUF_SIZE];
-                          sprintf(la_buf, "[%s], Failed to get my Master Node.\n", method_name);
-                          mon_log_write(MON_MONITOR_MAIN_17, SQ_LOG_CRIT, la_buf);
+                          sprintf( la_buf, "[%s], Master monitor (%s) is not available, selecting a new master\n"
+                                 , method_name, MasterMonitorName );
+                          mon_log_write(MON_MONITOR_MAIN_17, SQ_LOG_INFO, la_buf);
 
-                          abort();
-                     }
+                          ZClient->MasterZNodeDelete( MasterMonitorName ); // just in case of stale info
+                          CPNodeConfig * pnodeConfig = ClusterConfig->GetNextPNodeConfigByName( MasterMonitorName );
+                          assert( pnodeConfig );
+                          strcpy( MasterMonitorName, pnodeConfig->GetName() );
+
+                          newMasterSelected = true;
+
+                          goto retryMaster;
+                      }
                 }
             }
 #ifdef NAMESERVER_PROCESS
@@ -2184,10 +2524,13 @@ int main (int argc, char *argv[])
                 }
             }
 #endif
+            CNode *masterNode = Nodes->GetNode(monitorLead);
             char    buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf)
-                           , "[%s], Master Monitor is on node %d\n"
-                           , method_name, monitorLead);
+                           , "[%s], Master Monitor is %s on node %d\n"
+                           , method_name
+                           , masterNode?masterNode->GetName():""
+                           , monitorLead);
             mon_log_write(MON_MONITOR_MAIN_18, SQ_LOG_INFO, buf);
         }
         if (!IAmIntegrating)
@@ -2204,7 +2547,7 @@ int main (int argc, char *argv[])
             }
             else
             {
-                MPI_Abort(MPI_COMM_SELF,99); // too early to call failsafe node down.
+                mon_failure_exit();
             }
         }
 #endif
@@ -2212,6 +2555,9 @@ int main (int argc, char *argv[])
 
         // Create health check thread
         HealthCheck.start();
+
+        // Create request worker threads
+        CReqWorker::startReqWorkers();
 
         // Create thread to accept connections from other monitors
         CommAccept.start();
@@ -2254,7 +2600,7 @@ int main (int argc, char *argv[])
                      method_name, BLOCK_SIZE, err, ErrorMsg(err));
             mon_log_write(MON_MONITOR_MAIN_4, SQ_LOG_CRIT, buf);
 
-            MPI_Abort(MPI_COMM_SELF,99);
+            mon_failure_exit();
         }
 
         memset( (void *)ioBuffer, 0 , BLOCK_SIZE );
@@ -2265,13 +2611,13 @@ int main (int argc, char *argv[])
         if (IsRealCluster)
         {
             snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%s",
-                     getenv("MPI_TMPDIR"), short_node_name );
+                     getenv("TRAF_LOG"), short_node_name );
         }
         else
         {
             // Write out our port number so other processes can attach.
             snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%d.%s",
-                     getenv("MPI_TMPDIR"),MyPNID,Node_name);
+                     getenv("TRAF_LOG"),MyPNID,Node_name);
         }
 #endif
 
@@ -2283,49 +2629,67 @@ int main (int argc, char *argv[])
         }
 
 #ifndef NAMESERVER_PROCESS
-        // create with no caching, user read/write, group read/write, other read
-        fd = open( port_fname
-                   , O_RDWR | O_TRUNC | O_CREAT | O_DIRECT
-                   , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
-        if ( fd != -1 )
+        for ( i = 0; i < MAX_PORTFILEOPEN_RETRIES; i++ )
         {
-            snprintf( ioBuffer, BLOCK_SIZE, "%s", MyCommPort );
-            rc = write( fd, ioBuffer, BLOCK_SIZE );
-            if ( rc == -1 )
+            // create with no caching, user read/write, group read/write, other read
+            fd = open( port_fname
+                       , O_RDWR | O_TRUNC | O_CREAT | O_DIRECT | O_SYNC
+                       , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
+            if ( fd != -1 )
+            {
+                snprintf( ioBuffer, BLOCK_SIZE, "%s", MyCommPort );
+                rc = write( fd, ioBuffer, BLOCK_SIZE );
+                if ( rc == -1 )
+                {
+                    int err = errno;
+                    char buf[MON_STRING_BUF_SIZE];
+                    snprintf(buf, sizeof(buf), "[%s], can't write %d bytes to "
+                             "port file (%s), error=%d(%s)\n",
+                             method_name, BLOCK_SIZE, port_fname, err,
+                             ErrorMsg(err));
+                    mon_log_write(MON_MONITOR_MAIN_5, SQ_LOG_CRIT, buf);
+    
+                    if ( IAmIntegrating )
+                    {
+                        // This monitor is reintegrating into cluster.  Inform
+                        // creator monitor of error, then abort.
+                        Monitor->ReIntegrate( CCluster::Reintegrate_Err10 );
+                    }
+                    else
+                    {
+                        mon_failure_exit();
+                    }
+                }
+                close( fd );
+                if (trace_settings & TRACE_INIT)
+                    trace_printf("%s@%d" " Port file created, pnid=%d, port=%s" "\n", method_name, __LINE__, MyPNID, MyCommPort );
+                break;    
+            }
+            else
             {
                 int err = errno;
                 char buf[MON_STRING_BUF_SIZE];
-                snprintf(buf, sizeof(buf), "[%s], can't write %d bytes to "
-                         "port file (%s), Error=%d(%s)\n",
-                         method_name, BLOCK_SIZE, port_fname, err,
-                         ErrorMsg(err));
-                mon_log_write(MON_MONITOR_MAIN_5, SQ_LOG_CRIT, buf);
-
-                if ( IAmIntegrating )
-                    // This monitor is reintegrating into cluster.  Inform
-                    // creator monitor of error, then abort.
-                    Monitor->ReIntegrate( CCluster::Reintegrate_Err10 );
-                else
-                    MPI_Abort(MPI_COMM_SELF,99);
+                snprintf( buf, sizeof(buf)
+                        , "[%s], can't open port file (%s), "
+                          "error=%d (%s), retry=%d, max retries=%d\n"
+                        , method_name, port_fname, err, ErrorMsg(err)
+                        , i, MAX_PORTFILEOPEN_RETRIES );
+                mon_log_write(MON_MONITOR_MAIN_6, SQ_LOG_ERR, buf);
+                sleep(portFileOpenDelay);
             }
-            close( fd );
-            if (trace_settings & TRACE_INIT)
-                trace_printf("%s@%d" " Port file created, pnid=%d, port=%s" "\n", method_name, __LINE__, MyPNID, MyCommPort );
         }
-        else
+        if ( fd == -1 )
         {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], can't open port file (%s), "
-                     "Error= %s\n", method_name, port_fname,
-                     ErrorMsg(errno));
-            mon_log_write(MON_MONITOR_MAIN_6, SQ_LOG_CRIT, buf);
-
             if ( IAmIntegrating )
+            {
                 // This monitor is reintegrating into cluster.  Inform
                 // creator monitor of error, then abort.
                 Monitor->ReIntegrate( CCluster::Reintegrate_Err11 );
+            }
             else
-                MPI_Abort(MPI_COMM_SELF,99);
+            {
+                mon_failure_exit();
+            }
         }
         free( ioBuffer );
         int ret = SQ_theLocalIOToClient->initWorker();
@@ -2363,7 +2727,7 @@ int main (int argc, char *argv[])
             MyNode->SetPhase( Phase_Activating );
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-                trace_printf("%s@%d" " After UpdateCluster" "\n", method_name, __LINE__);
+                trace_printf("%s@%d" " After ReIntegrate" "\n", method_name, __LINE__);
         }
         else
         {
@@ -2382,16 +2746,10 @@ int main (int argc, char *argv[])
     {
         if ( ZClientEnabled )
         {
+#ifndef NAMESERVER_PROCESS
+            Nodes->AddConfiguredZNodes();
+#endif
             StartZookeeperClient();
-            // Set watch for master
-            if (IsAgentMode)
-            {
-                ZClient->WatchMasterNode( MasterMonitorName );
-            }
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d (MasterMonitor) set watch for MasterMonitorName %s\n", method_name, __LINE__, MasterMonitorName );
-            }
         }
     }
 
@@ -2442,9 +2800,6 @@ int main (int argc, char *argv[])
         }
     }
 #endif
-
-    // Create request worker threads
-    CReqWorker::startReqWorkers();
 
 #ifndef NAMESERVER_PROCESS
     if ( ! IAmIntegrating )
@@ -2510,26 +2865,9 @@ int main (int argc, char *argv[])
         if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->MonitorBusyIncr();
 
-#ifndef NAMESERVER_PROCESS
         Monitor->EnterSyncCycle();
-        if ( Monitor->TmSyncPending() )
-        {
-            Monitor->TmSync ();
-        }
+        done = Monitor->exchangeNodeData();
         Monitor->ExitSyncCycle();
-#endif
-
-#ifndef NAMESERVER_PROCESS
-        if ( !Monitor->GetPendingSlaveTmSync() &&
-             Monitor->GetTotalSlaveTmSyncCount() == 0 )
-        {
-#endif
-            Monitor->EnterSyncCycle();
-            done = Monitor->exchangeNodeData();
-            Monitor->ExitSyncCycle();
-#ifndef NAMESERVER_PROCESS
-        }
-#endif
 
         if (done)
             break;
@@ -2552,7 +2890,6 @@ int main (int argc, char *argv[])
 
     if ( ZClientEnabled )
     {
-        ZClient->StopMonitoring();
         ZClient->ShutdownWork();
     }
 

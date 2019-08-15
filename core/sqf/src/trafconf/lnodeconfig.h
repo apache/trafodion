@@ -33,6 +33,7 @@ typedef struct lnodeConfigInfo_s
     int        nid;
     int        pnid;
     char       nodename[TC_PROCESSOR_NAME_MAX];
+    char       domainname[TC_PROCESSOR_NAME_MAX];
     int        firstCore;
     int        lastCore;
     cpu_set_t  coreMask;
@@ -90,6 +91,8 @@ public:
     inline cpu_set_t    &GetCoreMask( void ) { return( coreMask_ ); }
     inline int           GetFirstCore( void ) { return( firstCore_ ); }
     inline int           GetLastCore( void ) { return( lastCore_ ); }
+    const char          *GetDomain( void );
+    const char          *GetFqdn( void );
     const char          *GetName( void );
     inline CLNodeConfig *GetNext( void ) { return( next_); }
     inline CLNodeConfig *GetNextP( void ) { return( nextP_); }

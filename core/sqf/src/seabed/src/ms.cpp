@@ -182,6 +182,14 @@ static SB_Smap         gv_ms_phandle_map("map-ms-phandle");
 void __attribute__((constructor)) __msg_init(void);
 void __attribute__((destructor))  __msg_fini(void);
 
+SB_Trans::Md_Table_Entry_Mgr SB_Trans::Msg_Mgr::cv_md_table_entry_mgr;
+SB_Trans::Md_Table_Mgr       SB_Trans::Msg_Mgr::cv_md_table("tablemgr-MD",
+                                                            SB_Table_Mgr_Alloc::ALLOC_FIFO,
+                                                            SB_Table_Mgr_Alloc::ALLOC_ENTRY_BLOCK,
+                                                            &cv_md_table_entry_mgr,
+                                                            4096, 1024); // cap-init, cap-inc
+int                          SB_Trans::Msg_Mgr::cv_md_table_inx = SB_Trans::Msg_Mgr::init();
+
 //
 // forwards
 //
@@ -228,7 +236,7 @@ void ms_abandon_cbt(MS_Md_Type *pp_md, bool pv_add) {
 //
 // Purpose:
 //
-void ms_fifo_setup(int pv_orig_fd, char *pp_fifo_name) {
+void ms_fifo_setup(int pv_orig_fd, char *pp_fifo_name, bool pv_remap_fd) {
     const char *WHERE = "ms_fifo_setup";
     int         lv_err;
     int         lv_fifo_fd;
@@ -244,26 +252,28 @@ void ms_fifo_setup(int pv_orig_fd, char *pp_fifo_name) {
             trace_where_printf("fifo open error, fifo=%s, errno=%d\n",
                                pp_fifo_name, errno);
     } else {
-        // Remap fifo file descriptor
-        // Close unneeded fifo file descriptor.
-        lv_err = close(pv_orig_fd);
-        if (lv_err == -1) {
-            if (gv_ms_trace)
-                trace_where_printf(WHERE, "fifo original close error, fd=%d, errno=%d\n",
-                                   pv_orig_fd, errno);
-        }
-
-        lv_err = dup2(lv_fifo_fd, pv_orig_fd);
-        if (lv_err == -1) {
-            if (gv_ms_trace)
-                trace_where_printf(WHERE, "fifo dup2 error, old-fd=%d, new-fd=%d, errno=%d\n",
-                                   lv_fifo_fd, pv_orig_fd, errno);
-        } else {
-            lv_err = close(lv_fifo_fd);
+        if (pv_remap_fd) {
+            // Remap fifo file descriptor
+            // Close unneeded fifo file descriptor.
+            lv_err = close(pv_orig_fd);
             if (lv_err == -1) {
                 if (gv_ms_trace)
-                    trace_where_printf(WHERE, "fifo close error, fifo-fd=%d, errno=%d\n",
-                                       lv_fifo_fd, errno);
+                    trace_where_printf(WHERE, "fifo original close error, fd=%d, errno=%d\n",
+                                       pv_orig_fd, errno);
+            }
+
+            lv_err = dup2(lv_fifo_fd, pv_orig_fd);
+            if (lv_err == -1) {
+                if (gv_ms_trace)
+                    trace_where_printf(WHERE, "fifo dup2 error, old-fd=%d, new-fd=%d, errno=%d\n",
+                                       lv_fifo_fd, pv_orig_fd, errno);
+            } else {
+                lv_err = close(lv_fifo_fd);
+                if (lv_err == -1) {
+                    if (gv_ms_trace)
+                        trace_where_printf(WHERE, "fifo close error, fifo-fd=%d, errno=%d\n",
+                                           lv_fifo_fd, errno);
+                }
             }
         }
     }
@@ -806,7 +816,7 @@ bool ms_is_mon_number(char *pp_arg) {
 
     lv_len = static_cast<int>(strlen(pp_arg));
 
-    if ((lv_len != 5) && (lv_len != 6))
+    if ((lv_len < 5) || (lv_len > 8))
         return false;
     for (lv_inx = 0; lv_inx < lv_len; lv_inx++)
         if (!isdigit(pp_arg[lv_inx]))
@@ -1340,8 +1350,6 @@ SB_THROWS_FATAL {
         ms_gather_info(WHERE);
     }
 
-    if (ms_getenv_str(gp_ms_env_assert_chk) == NULL)
-        gv_ms_assert_chk = true;
     if (gv_ms_trace_enable)
         trace_where_printf(WHERE, "TCP set, MS_ASSERT_CHK=%d\n",
                            gv_ms_assert_chk);

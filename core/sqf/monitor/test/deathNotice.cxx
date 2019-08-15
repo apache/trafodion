@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
@@ -392,7 +393,6 @@ bool testMultipleDeathNotices ()
     int deathWatcherPid[MAX_WATCHERS];
     Verifier_t deathWatcherVerifier[MAX_WATCHERS];
     char deathWatcherName[MAX_WATCHERS][25];
-    bool deathWatcherUp[MAX_WATCHERS];
     char *serverArgs[1] = {(char *) "-t"};
     int deathWatchers = 0;
 
@@ -444,7 +444,6 @@ bool testMultipleDeathNotices ()
     for (int i = 0; i < MAX_WATCHERS; i++)
     {
         deathWatcherComm[i] = MPI_COMM_NULL;
-        deathWatcherUp[i] = false;
 
         if (!util.requestNewProcess( i  // created death watcher in different nids
                                    , ProcessType_Generic

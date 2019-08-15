@@ -144,14 +144,64 @@ void CPtpCommAccept::processMonReqs( int sockFd )
         {
             switch ( msg.type )
             {
-                case InternalType_UniqStr:
+                case InternalType_Clone:
                 {
                     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                     {
-                        trace_printf( "%s@%d" " - Received InternalType_UniqStr\n"
+                        trace_printf( "%s@%d" " - Received InternalType_Clone\n"
                                     , method_name, __LINE__ );
                     }
-                    ReqQueue.enqueueUniqStrReq( &msg.u.uniqstr);
+                    ReqQueue.enqueueCloneReq( &msg.u.clone );
+                    break;
+                }
+                case InternalType_Exit:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Exit\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueExitReq( &msg.u.exit );
+                    break;
+                }
+                case InternalType_IoData:
+                {
+                    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_IoData\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueIoDataReq( &msg.u.iodata );
+                    break;
+                }
+                case InternalType_Kill:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Kill\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueKillReq( &msg.u.kill );
+                    break;
+                }
+                case InternalType_Notify:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Notify\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueNotifyReq( &msg.u.notify );
+                    break;
+                }
+                case InternalType_Open:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_Open\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueOpenReq( &msg.u.open );
                     break;
                 }
                 case InternalType_Process:
@@ -181,66 +231,6 @@ void CPtpCommAccept::processMonReqs( int sockFd )
                     }
                     break;
                 }
-                case InternalType_Clone:
-                {
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    {
-                        trace_printf( "%s@%d" " - Received InternalType_Clone\n"
-                                    , method_name, __LINE__ );
-                    }
-                    ReqQueue.enqueueCloneReq( &msg.u.clone );
-                    break;
-                }
-                case InternalType_Open:
-                {
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    {
-                        trace_printf( "%s@%d" " - Received InternalType_Open\n"
-                                    , method_name, __LINE__ );
-                    }
-                    ReqQueue.enqueueOpenReq( &msg.u.open );
-                    break;
-                }
-                case InternalType_Notify:
-                {
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    {
-                        trace_printf( "%s@%d" " - Received InternalType_Notify\n"
-                                    , method_name, __LINE__ );
-                    }
-                    ReqQueue.enqueueNotifyReq( &msg.u.notify );
-                    break;
-                }
-                case InternalType_Exit:
-                {
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    {
-                        trace_printf( "%s@%d" " - Received InternalType_Exit\n"
-                                    , method_name, __LINE__ );
-                    }
-                    ReqQueue.enqueueExitReq( &msg.u.exit );
-                    break;
-                }
-                case InternalType_Kill:
-                {
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    {
-                        trace_printf( "%s@%d" " - Received InternalType_Kill\n"
-                                    , method_name, __LINE__ );
-                    }
-                    ReqQueue.enqueueKillReq( &msg.u.kill );
-                    break;
-                }
-                case InternalType_IoData:
-                {
-                    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
-                    {
-                        trace_printf( "%s@%d" " - Received InternalType_IoData\n"
-                                    , method_name, __LINE__ );
-                    }
-                    ReqQueue.enqueueIoDataReq( &msg.u.iodata );
-                    break;
-                }
                 case InternalType_StdinReq:
                 {
                     if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
@@ -249,6 +239,16 @@ void CPtpCommAccept::processMonReqs( int sockFd )
                                     , method_name, __LINE__ );
                     }
                     ReqQueue.enqueueStdInReq( &msg.u.stdin_req );
+                    break;
+                }
+                case InternalType_UniqStr:
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d" " - Received InternalType_UniqStr\n"
+                                    , method_name, __LINE__ );
+                    }
+                    ReqQueue.enqueueUniqStrReq( &msg.u.uniqstr);
                     break;
                 }
                 default:

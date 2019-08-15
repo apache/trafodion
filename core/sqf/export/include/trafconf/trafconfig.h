@@ -132,7 +132,8 @@ typedef struct TcNodeConfiguration_s
 {
     int  nid;                                   // Node Id (logical)
     int  pnid;                                  // Physical Node ID
-    char node_name[TC_PERSIST_PROCESSOR_NAME_MAX]; // hostname
+    char node_name[TC_PERSIST_PROCESSOR_NAME_MAX]; // short hostname
+    char domain_name[TC_PERSIST_PROCESSOR_NAME_MAX]; // domain name
     int  excluded_first_core;                   // First or only core assigned
     int  excluded_last_core;                    // Last core assigned or -1
     int  first_core;                            // First or only core assigned
@@ -144,7 +145,8 @@ typedef struct TcNodeConfiguration_s
 typedef struct TcPhysicalNodeConfiguration_s
 {
     int  pnid;                                  // Physical Node ID
-    char node_name[TC_PERSIST_PROCESSOR_NAME_MAX]; // hostname
+    char node_name[TC_PERSIST_PROCESSOR_NAME_MAX]; // short hostname
+    char domain_name[TC_PERSIST_PROCESSOR_NAME_MAX]; // domain name
     int  excluded_first_core;                   // First or only core assigned
     int  excluded_last_core;                    // Last core assigned or -1
     int  spare_count;                           // Number of entries in spare_pnid[]

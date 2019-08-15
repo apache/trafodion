@@ -1837,6 +1837,7 @@ void tm_get_leader_info()
 
 } //tm_get_leader_info
 
+#ifdef SUPPORT_TM_SYNC
 //---------------------------------------------------------------------
 // tm_originating_sync_commit
 // Purpose - helper method to process the phase2 sync from the 
@@ -2099,7 +2100,7 @@ void tm_originating_sync_abort(int32 pv_tag)
      }
      TMTrace(2, ("tm_originating_sync_abort EXIT\n"));
 }
-
+#endif
 
 // ---------------------------------------------------------------------------
 // tm_process_node_down_msg
@@ -2552,8 +2553,12 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
         tm_log_event(DTM_NODEUP, SQ_LOG_INFO, "DTM_NODEUP", 
             -1,-1,gv_tm_info.nid(),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
            NULL,lv_msg.u.up.nid);
+        if (gv_tm_info.lead_tm()) {
+          gv_tm_info.open_restarted_tm(lv_msg.u.up.nid);
+        }
         break;
     }
+#if 0
     case MS_MsgType_NodePrepare:
     {
         TMTrace(1, ("tm_process_monitor_msg NodePrepare notice for nid %d\n", lv_msg.u.prepare.nid));
@@ -2586,6 +2591,7 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
         }
         break;
     }
+#endif
     case MS_MsgType_ProcessDeath:
     {
         TMTrace(3, ("tm_process_monitor_msg Process Death notice for %s\n", 
@@ -2723,6 +2729,7 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
                      NULL);          /*newphandle*/
          break;
     }
+#ifdef SUPPORT_TM_SYNC
     case MS_MsgType_TmSyncAbort:
     {
         // There can be many monitor replies, so circle through them all
@@ -2770,8 +2777,9 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
         }
     break;
     }
+#endif
     case MS_MsgType_Event:
-    case MS_MsgType_UnsolicitedMessage:
+//    case MS_MsgType_UnsolicitedMessage:
     default:
     {
          break;
@@ -2802,6 +2810,8 @@ void tm_process_msg(BMS_SRE *pp_sre)
     Tm_Control_Point_Req_Type *lp_cp_req;
     MESSAGE_HEADER_SQ     *lp_msg_hdr;
     CTmTxMessage          *lp_msg;
+
+    static bool           sv_schedule_init_and_recover_rms_called = false;
 
     TMTrace(2, ("tm_process_msg ENTRY\n"));
 
@@ -2987,14 +2997,17 @@ void tm_process_msg(BMS_SRE *pp_sre)
           }
           else
           {
-             if (lp_cp_req->iv_startup)
+            if (! sv_schedule_init_and_recover_rms_called)
              {
-                 TMTrace(3, ("tm_process_msg : Control Point startup from Lead TM nid %d.\n",
+                 TMTrace(3, ("tm_process_msg : Control Point request (first) from the Lead TM nid %d.\n",
                          lp_cp_req->iv_sending_tm_nid));
                  gv_tm_info.schedule_init_and_recover_rms();
+                 sv_schedule_init_and_recover_rms_called = true;
              }
              else
              {
+                 TMTrace(3, ("tm_process_msg : Control Point request (subsequent) from the Lead TM nid %d.\n",
+                         lp_cp_req->iv_sending_tm_nid));
                  gv_system_tx_count = 0;
                  gv_tm_info.write_all_trans_state();
              }
@@ -3225,7 +3238,7 @@ void tm_process_msg(BMS_SRE *pp_sre)
 // ----------------------------------------------------------------
 void tm_shutdown_helper ()
 {
-    TMTrace(2, ("tm_shutdown_helper ENTRY\n"));
+    TMTrace(2, ("tm_shutdown_helper ENTRY, num of active transactions:%d\n",gv_tm_info.num_active_txs()));
 
     if (gv_tm_info.num_active_txs() <= 0)
     {
@@ -3245,6 +3258,31 @@ void tm_shutdown_helper ()
    TMTrace(2, ("tm_shutdown_helper EXIT\n"));
 }
 
+//
+// The 'TM Ready' message (to the monitor) is generated 
+// by a non Lead DTM when it is started.
+//
+// The monitor generates the 'Node UP' message when it 
+// receives the 'TM Ready' message. 
+//
+// The 'Node UP' message causes the lead DTM to (re)connect
+// with this DTM.
+//
+bool generate_tm_ready_if_necessary()
+{
+ 
+  if (gv_tm_info.lead_tm()) {
+    TMTrace(2, ("generate_tm_ready_if_necessary, returning as I am the lead().\n"));
+    return false;
+  }
+ 
+  TMTrace(2, ("generate_tm_ready_if_necessary - going to call:msg_mon_tm_ready\n"));
+  msg_mon_tm_ready();
+  TMTrace(2, ("generate_tm_ready_if_necessary - back from call:msg_mon_tm_ready\n"));
+ 
+  return true;
+ 
+}
 // ---------------------------------------------------------------
 // tm_main_initialize
 // Purpose - call all initialization routines
@@ -3268,11 +3306,13 @@ void tm_main_initialize()
                       &lv_leader_pid, la_leader_name);
     gv_tm_info.lead_tm_nid(lv_leader_nid);
 
+    TMTrace(1, ("tm_main_initialize - lead dtm node id:%d\n", lv_leader_nid)); 
     if (lv_leader_nid < 0  || lv_leader_nid >= MAX_NODES)
     {
         tm_log_event(DTM_TM_LEADTM_BAD, SQ_LOG_CRIT, "DTM_TM_LEADTM_BAD",
                      -1, -1, gv_tm_info.nid(), -1, -1, -1, -1, -1, -1, -1, 
                      -1, -1, -1, -1, -1, -1, NULL, lv_leader_nid);
+        TMTrace(1, ("tm_main_initialize - bad lead dtm node id:%d\n", lv_leader_nid)); 
         abort();
     }
     if (lv_leader_nid == gv_tm_info.nid())
@@ -3303,7 +3343,11 @@ void tm_main_initialize()
         //The AM and TSE events will be implemented in the future.
         //msg_mon_event_wait (AM_TLOG_FIXUP_COMPLETED_EVENT_ID, &lv_event_len, la_event_data);
         //msg_mon_event_wait (TSE_START_EVENT_ID, &lv_event_len, la_event_data);
-        msg_mon_event_wait (DTM_START_EVENT_ID, &lv_event_len, la_event_data);
+        if (gv_tm_info.incarnation_num() == 0) {
+          TMTrace(2, ("tm_main_initialize - waiting for the start event\n")); 
+          msg_mon_event_wait (DTM_START_EVENT_ID, &lv_event_len, la_event_data);
+          TMTrace(2, ("tm_main_initialize - got the start event\n")); 
+        }
     }
 
      //Start timer thread
@@ -3390,13 +3434,25 @@ int main(int argc, char *argv[])
     msg_mon_process_startup(true); // server?
     msg_debug_hook ("tm.hook", "tm.hook");
     tm_init_logging();
-    msg_mon_tmsync_register(tm_sync_cb);
+//    msg_mon_tmsync_register(tm_sync_cb);
     msg_mon_enable_mon_messages (1);
     msg_enable_priority_queue();
     // allow the DTM to use all the message descriptors
     XCONTROLMESSAGESYSTEM(XCTLMSGSYS_SETRECVLIMIT,XMAX_SETTABLE_RECVLIMIT);  
     XCONTROLMESSAGESYSTEM(XCTLMSGSYS_SETSENDLIMIT,SEABED_MAX_SETTABLE_SENDLIMIT_TM);
     tm_main_initialize();
+
+    TMTrace(1, ("thread_main - back from tm_main_initialize.\n"));
+
+    // Added this block when removing the TM sync mechanism
+    gv_tm_info.set_txnsvc_ready(TXNSVC_UP);
+    gv_tm_info.can_takeover(true);
+
+    bool lv_tm_ready_generated = generate_tm_ready_if_necessary();
+
+    if (! gv_tm_info.lead_tm() && !lv_tm_ready_generated) {
+      gv_tm_info.schedule_init_and_recover_rms();
+    }
 
     for(;;) 
     {

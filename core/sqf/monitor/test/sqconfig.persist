@@ -1,0 +1,88 @@
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+begin persist
+
+#
+# The following PROCESS_TYPEs are persistent and have special process management:
+#
+#    DTM
+#    TMID
+#    SSMP
+#    PSD
+#    WDG
+#    TNS
+#
+# Generic persistent processes are of PROCESS_TYPE:
+#
+#    PERSIST
+#
+
+PERSIST_PROCESS_KEYS = ABC,DTM,PP,PSD,WDG
+#PERSIST_PROCESS_KEYS = DTM,PSD,WDG
+
+ABC_PROCESS_NAME      = $ABC
+ABC_PROCESS_TYPE      = PERSIST 
+ABC_PROGRAM_NAME      = dtmProc
+ABC_PROGRAM_ARGS      =
+ABC_REQUIRES_DTM      = N
+ABC_STDOUT            = stdout_ABC
+ABC_PERSIST_RETRIES   = 1,10
+ABC_PERSIST_ZONES     = %zid+
+
+DTM_PROCESS_NAME     = $TM%nid+
+DTM_PROCESS_TYPE     = DTM
+DTM_PROGRAM_NAME     = dtm
+DTM_PROGRAM_ARGS     = -t
+DTM_REQUIRES_DTM     = N
+DTM_STDOUT           = stdout_DTM%nid
+DTM_PERSIST_RETRIES  = 2,30
+DTM_PERSIST_ZONES    = %zid
+
+PP_PROCESS_NAME      = $PP%nid+
+PP_PROCESS_TYPE      = PERSIST
+PP_PROGRAM_NAME      = dtmProc
+PP_PROGRAM_ARGS      =
+PP_REQUIRES_DTM      = N
+PP_STDOUT            = stdout_PP%nid
+PP_PERSIST_RETRIES   = 2,30
+PP_PERSIST_ZONES     = %zid
+
+PSD_PROCESS_NAME     = $PSD%nid+
+PSD_PROCESS_TYPE     = PSD
+PSD_PROGRAM_NAME     = pstartd
+PSD_PROGRAM_ARGS     =
+PSD_REQUIRES_DTM     = N
+PSD_STDOUT           = stdout_PSD%nid
+PSD_PERSIST_RETRIES  = 10,60
+PSD_PERSIST_ZONES    = %zid
+            
+WDG_PROCESS_NAME     = $WDG%nid+
+WDG_PROCESS_TYPE     = WDG
+WDG_PROGRAM_NAME     = sqwatchdog
+WDG_PROGRAM_ARGS     =
+WDG_REQUIRES_DTM     = N
+WDG_STDOUT           = stdout_WDG%nid
+WDG_PERSIST_RETRIES  = 10,60
+WDG_PERSIST_ZONES    = %zid
+
+end persist
+
