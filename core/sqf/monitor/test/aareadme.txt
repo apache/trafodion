@@ -19,17 +19,59 @@
 #
 # @@@ END COPYRIGHT @@@
 
-setup:
-1.  Make sure sqconfig is set up correctly and sqgen run.
-    (some tests require a minimum number of nodes.  Tests should check
-     that number of nodes needed are actually available)
+##################
+Monitor unit tests
+##################
 
-2.  make sure directory containing executables is on PATH
+Scripts:
+  o runtest - driver test script for all test
+
+    Execute 'runtest' with no run time options to display usage:
+    
+    Example:
+
+    runtest { -cluster | -virtual } [ -nogen | -trace | -test <num> ]
+
+    Where: <num> is one of the following tests:
+             1     - Child Exit
+             2     - Multi-Node
+             3     - Registry
+             4     - Death Notice
+             5     - Persistent Process
+             6     - DTM Process
+             7     - Process Create
+             8     - Node down before startup
+
+  o monpkillall   - to forcibly terminate test programs 
+  o monpstat      - test programs process status
+  o monshell      - shell wrapper supporting virtual nodes configuration
+  o montestgen    - to compile test configuration with virtual nodes
+  o montestgen.pl - supports compile of test configuration with virtual nodes
+
+Configuration files used by 'runtest':
+
+  o sqconfig.monitor.cluster  (-cluster run time option)
+    - Update the 'node section' in this file to execute tests in a 'real cluster'
+  o sqconfig.monitor.virtual  (-virtual run time option)
+    - No changes required
+  o sqconfig.persist
+    - No changes required 
+  o sqconfig.persist.dtm
+    - No changes required 
+
+Setup:
+
+1.  Build the test programs before running 'runtest'
+2.  Make sure directory containing executables is on PATH
         export PATH=$PATH:$PWD/Linux-x86_64/dbg
 
-3.  Set the following environment variable so the shell looks in the
-    current directory instead of $TRAF_HOME/sql/scripts:
-       export SQ_SHELL_NOCWD=1
+Test results:
+
+  o Each test displays a PASSED or FAILED indicating the result of the test
+  o In addition, after each test is executed, the instance is 'shutdown' and
+    a check is made to determine that the 'shutdown' stopped all
+    processes with a PASSED or FAILED indicating that the shutdown
+    was successful or not.
 
 -----------------------------------
 Child Exit
@@ -42,12 +84,7 @@ Description:
 Discussion:
 
 How to run:
-   sqshell
-      startup
-      exec shell childExit.sub
-      shutdown
-      quit
-
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 1 
 
 Files for this test:
    childExitChild.cxx
@@ -91,11 +128,7 @@ Description:
 Discussion:
 
 How to run:
-   sqshell
-      startup
-      exec shell multiNode.sub
-      shutdown
-      quit
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 2
 
 Files for this test:
    client.cxx
@@ -123,9 +156,7 @@ Description:
 Discussion:
 
 How to run:
-   sqshell
-      startup
-      exec shell regTest.sub
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 3
 
 Files for this test:
    regTestCtrl.cxx
@@ -193,9 +224,7 @@ Discussion:
    processes to receive a death notice for the same process.
 
 How to run:
-   sqshell
-      startup
-      exec shell deathNotice.sub
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 4
 
    If "Test PASSED" is output then the test passed.
 
@@ -234,9 +263,7 @@ Discussion:
    When the last shell exits, there should be no Trafodion processes running
 
 How to run:
-   sqshell
-      startup
-      exec shell persistentProc.sub
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 5
 
    If "Test PASSED" is output then the test passed.
 
@@ -253,91 +280,35 @@ Additional test ideas:
    - exercise additional variations on restarting
 
 -----------------------------------
-tmSync
+DTM Process
 -----------------------------------
 
 Description:
-   Test TM sync requests with and without collisions
-
-How to run on a virtual cluster:
-   sqshell
-      startup
-      exec shell tmSyncVirtual.sub
-
-Relationship to original monitor tests:
-   Replaces test8.sub
-
-Discussion:
-   sub-test 1:
-      similar to sub-test 7 but spare node is available
-      every node that participates should commit transaction
-
-      all start transaction, 1 dies, spare node activated
-      (funky numbers depending on when node goes away)
-      total 5
-      total committed 5
-
-   sub-test 3:
-      only one tm starts 2 phase protocol for commit
-      other nodes always reply "commit"
-
-   sub-test 4:
-      node 1 starts transaction, no others do
-      all 6 abort the transaction
-
-   sub-test 5:
-      each tm starts 10 transactions
-      all commit transactions
-      total transactions = 60
-      commits = 60
-
-   sub-test 6:
-      similar to sub-test 5 but:
-         each tm starts 10 transactions
-         only 1 monitor's transaction is committed, other 5 aborted
-         commit should be 10
-         abort should be 50
-         total should be 60
-
-   sub-test 7:
-      all nodes start 1 transaction
-      1 node's transaction is comitted, others are aborted
-      one node goes down and no spare is available
-      abort 4, commit 1, total 5
-
-
-To do:
-1) need to verify on real cluster
-2) add real-cluster tests (as run originally using test8.sub.sn,
-   test8-8.sub.sn, test8-10.sub.sn) [1/6/12: waiting for fix for
-   spare node startup problem]
-
------------------------------------
-spx test
------------------------------------
-
-Description:
-   Verify monitor capabilities for SPX process type (SeaPilot Proxy Process)
+   Exercises the monitor DTM process management rules.
 
 Discussion:
    The test performs the following steps:
-   1.  Verifies that the configuration of Trafodion nodes is sufficient
-       for the test.
-   2.  Verify ability to start an SPX process on each of the physical nodes
-   3.  Verify that if an SPX process dies each of the other SPX
-       process receives a process death notification.
-   4.  Verify that can only start one SPX process on a given logical node.
-   5.  Verify that cannot start an SPX process on a logical node that
-       shares a physical node with another logical node where an SPX
-       process is running.
+     1.  Verify ability to start an DTM process on each of the logical nodes
+     2.  Verify that if an DTM process dies each of the other DTM
+         process DOES NOT receiv a process death OR tmRestarted notification.
+     3.  Verify that DTM as a persistent process when restarted
+         sends TmReady request to monitor.
+     4.  Verify that only one DTM process can be started on a logical node.
+     5.  Verify that DTM as a persistent process and exceeds restart limits
+         brings node down.
+
+   When the last shell exits, there should be no Trafodion processes running
 
 How to run:
-   sqshell
-      startup
-      exec shell spxTest.sub
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 6
+
+   If "Test PASSED" is output then the test passed.
 
 Relationship to original monitor tests:
-   Replaces test11.sub (and includes new test capabilities)
+   None
+
+Additional test ideas:
+   - none
 
 -----------------------------------
 process creation test
@@ -361,9 +332,27 @@ Discussion:
 
 
 How to run:
-   sqshell
-      startup
-      exec shell procCreate.sub
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 7
+
+Relationship to original monitor tests:
+   none
+
+-----------------------------------
+Shutdown and node down before startup test
+-----------------------------------
+
+Description:
+   Verify that process cleanup occurs in monitor when process is created
+   but has not sent its 'startup' message request to the monitor when
+   the instance is shutdown or the node goes down.
+
+Discussion:
+   The test performs the following steps:
+   1. Creates processes
+
+
+How to run:
+   runtest { -cluster | -virtual } [-nogen] [-trace] -test 7
 
 Relationship to original monitor tests:
    none
@@ -381,11 +370,13 @@ Original monitor test    New self-checking test
    test5.sub
    test6.sub               deathNotice
    test7.sub
-   test8.sub               tmSync
+   test8.sub               
    test10.sub              persistentProc
-   test11.sub              spxCtrl
+   test11.sub              
    test12.sub
       ---                  childExit
+      ---                  DTM process
+      ---                  Node down before startup
 
 ===========================================================================
 Tracing
