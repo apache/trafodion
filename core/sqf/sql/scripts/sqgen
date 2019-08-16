@@ -206,19 +206,19 @@ if [[ -z ${TRAF_AGENT} ]]; then
         echo "Creating directories on cluster nodes"
 
         # Clean HBase classpath cache file on all nodes
-        $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD rm -rf $TRAF_VAR/hbase_classpath
+        $PDSH $ExNodeList rm -rf $TRAF_VAR/hbase_classpath
 
-        echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $TRAF_VAR "
-        $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $TRAF_VAR
+        echo "$ExNodeList mkdir -p $TRAF_VAR "
+        $PDSH $ExNodeList mkdir -p $TRAF_VAR
         
-        echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQLOG_DIR "
-        $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQLOG_DIR
+        echo "$PDSH $ExNodeList mkdir -p $SQLOG_DIR "
+        $PDSH $ExNodeList mkdir -p $SQLOG_DIR
     
-        echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR "
-        $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR
+        echo "$PDSH $ExNodeList mkdir -p $MPI_TMPDIR "
+        $PDSH $ExNodeList mkdir -p $MPI_TMPDIR
     
-        echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR/tmp "
-        $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR/tmp
+        echo "$PDSH $ExNodeList mkdir -p $MPI_TMPDIR/tmp "
+        $PDSH $ExNodeList mkdir -p $MPI_TMPDIR/tmp
     
     fi
 fi
@@ -289,32 +289,37 @@ if [[ -z ${TRAF_AGENT} ]]; then
     if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
         echo
         echo
-        echo "Copying the generated files to all the nodes in the cluster"
+        echo "Copying the configuration and generated files to all the nodes in the cluster"
         echo
-        echo "Copying $TRAF_VAR/ms.env to $TRAF_VAR of all the nodes"
-        echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $TRAF_VAR/ms.env   $TRAF_VAR "
-        $PDCP -w ${ExNodeList[@]} -x `uname -n` $TRAF_VAR/ms.env   $TRAF_VAR
+
+        echo "Copying $TRAF_VAR/ms.env to $TRAF_VAR to all the nodes"
+        echo "$PDCP $ExNodeList $TRAF_VAR/ms.env   $TRAF_VAR "
+        $PDCP $ExNodeList $TRAF_VAR/ms.env   $TRAF_VAR
+
+        echo "Copying $SQCONFIG_FILE and $SQCONFIG_PERSIST_FILE to $TRAF_CONF to all the nodes"
+        echo "$PDCP $ExNodeList $SQCONFIG_FILE $SQCONFIG_PERSIST_FILE    $TRAF_CONF "
+        $PDCP $ExNodeList $SQCONFIG_FILE $SQCONFIG_PERSIST_FILE    $TRAF_CONF
 
 
         echo
-        echo "Copying $TRAF_VAR/seamonster.env to $TRAF_VAR of all the nodes"
-        echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $TRAF_VAR/seamonster.env   $TRAF_VAR "
-        $PDCP -w ${ExNodeList[@]} -x `uname -n` $TRAF_VAR/seamonster.env   $TRAF_VAR
+        echo "Copying $TRAF_VAR/seamonster.env to $TRAF_VAR to all the nodes"
+        echo "$PDCP $ExNodeList $TRAF_VAR/seamonster.env   $TRAF_VAR "
+        $PDCP $ExNodeList $TRAF_VAR/seamonster.env   $TRAF_VAR
 
         if [[ $sq_seamonster == 1 ]]; then 
             if [ -f $SQESPENV_FILE ]; then
                 echo
-                echo "Copying $SQESPENV_FILE to $TRAF_VAR of all the nodes"
-                echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $TRAF_VAR "
-                $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $TRAF_VAR
+                echo "Copying $SQESPENV_FILE to $TRAF_VAR to all the nodes"
+                echo "$PDCP $ExNodeList $SQESPENV_FILE   $TRAF_VAR "
+                $PDCP $ExNodeList $SQESPENV_FILE   $TRAF_VAR
             fi
         fi
 
         echo
-        echo "Copying Trafodion Configuration files to $TRAF_VAR"
+        echo "Copying Trafodion Configuration database file to $TRAF_VAR"
 
-        echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_PERSIST_FILE $SQCONFIG_DB_FILE $TRAF_VAR/ "
-        $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_PERSIST_FILE $SQCONFIG_DB_FILE $TRAF_VAR/
+        echo "$PDCP $ExNodeList $SQCONFIG_DB_FILE $TRAF_VAR/ "
+        $PDCP $ExNodeList $SQCONFIG_DB_FILE $TRAF_VAR/
 
         echo
     fi

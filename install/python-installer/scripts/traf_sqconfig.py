@@ -39,7 +39,13 @@ def run():
     if traf_conf == '': err('TRAF_CONF var is empty')
     sqconfig_file = traf_conf + '/sqconfig'
 
-    if not os.path.exists(sqconfig_file):
+    traf_var = os.environ['TRAF_VAR']
+    if traf_var == '': err('TRAF_VAR var is empty')
+    sqconfig_db_file = traf_var + '/sqconfig.db'
+
+    # If the configuration database file is not yet created,
+    # build the 'sqconfig' file with the nodes specified and compile it.
+    if not os.path.exists(sqconfig_db_file):
         core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
         core = int(core)-1 if int(core) <= 256 else 255
 
