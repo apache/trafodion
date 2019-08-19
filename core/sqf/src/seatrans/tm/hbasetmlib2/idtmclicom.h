@@ -432,7 +432,9 @@ static int do_get_servers(MS_Mon_Process_Info_Type **ppp_pi,
     do {
 
       if (lv_Retries > 0) {
-        printf("cli: do_get_servers, retry#%d, going to sleep for %d ms.\n", lv_Retries, lc_Pause);
+        if (gv_verbose) {
+            printf("cli: do_get_servers, retry#%d, going to sleep for %d ms.\n", lv_Retries, lc_Pause);
+        }
         SB_Thread::Sthr::sleep(lc_Pause); // in msec
       }
 
@@ -440,7 +442,9 @@ static int do_get_servers(MS_Mon_Process_Info_Type **ppp_pi,
                                               pp_count,
                                               0,      // max
                                               NULL);  // info
-      printf("cli: do_get_servers process type TMID err=%d, num_servers=%d\n", lv_ferr, *pp_count);
+      if (gv_verbose) {
+        printf("cli: do_get_servers process type TMID err=%d, num_servers=%d\n", lv_ferr, *pp_count);
+      }
 
       lv_Retries++;
     }
