@@ -226,6 +226,12 @@
       "default":"1",
       "isdigit":true
   },
+  "traf_cluster_id":
+  {
+      "prompt":"Enter a cluster ID for this Trafodion installation",
+      "default":"1",
+      "isdigit":true
+  },
   "use_data_node":
   {
       "prompt":"Install Trafodion nodes on all DataNodes",

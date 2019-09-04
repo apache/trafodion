@@ -140,8 +140,9 @@ public:
     void addDbProcData ( const char * procName, const char * key, const char * dataValue );
     void addDbClusterData ( const char * key, const char * dataValue );
     void addUniqueString(int nid, int id, const char * uniqStr );
-    bool findUniqueString(int nid, const char * uniqStr, strId_t & id );
     int  getMaxUniqueId( int nid );
+    bool getUniqueString(int nid, int id, string & uniqStr );
+    bool getUniqueStringId(int nid, const char * uniqStr, strId_t & id );
     void strIdToString ( strId_t stringId, string & value );
 
     int    PackRegistry( char *&buffer, ConfigType type );

@@ -227,7 +227,6 @@ static const char *ga_ms_mon_msg_type_labels[] = {
     "MS_MsgType_NodeDeleted",
     "MS_MsgType_NodeDown",
     "MS_MsgType_NodeJoining",
-    "MS_MsgType_NodePrepare",
     "MS_MsgType_NodeQuiesce",
     "MS_MsgType_NodeUp",
     "MS_MsgType_Open",
@@ -237,10 +236,6 @@ static const char *ga_ms_mon_msg_type_labels[] = {
     "MS_MsgType_Service",
     "MS_MsgType_Shutdown",
     "MS_MsgType_SpareUp",
-    "MS_MsgType_TmRestarted",
-    "MS_MsgType_TmSyncAbort",
-    "MS_MsgType_TmSyncCommit",
-    "MS_MsgType_UnsolicitedMessage",
     SB_LABEL_END
 };
 
@@ -253,7 +248,6 @@ static const char *ga_ms_mon_msg_type_short_labels[] = {
     "NodeDeleted",
     "NodeDown",
     "NodeJoining",
-    "NodePrepare",
     "NodeQuiesce",
     "NodeUp",
     "Open",
@@ -263,10 +257,6 @@ static const char *ga_ms_mon_msg_type_short_labels[] = {
     "Service",
     "Shutdown",
     "SpareUp",
-    "TmRestarted",
-    "TmSyncAbort",
-    "TmSyncCommit",
-    "UnsolicitedMessage",
     SB_LABEL_END
 };
 
@@ -349,6 +339,7 @@ static const char *ga_ms_mon_req_type_labels[] = {
     "MS_ReqType_Event",
     "MS_ReqType_Exit",
     "MS_ReqType_Get",
+    "MS_ReqType_InstanceId",
     "MS_ReqType_Kill",
     "MS_ReqType_MonStats",
     "MS_ReqType_Mount",
@@ -378,11 +369,8 @@ static const char *ga_ms_mon_req_type_labels[] = {
     "MS_ReqType_Shutdown",
     "MS_ReqType_ShutdownNs",
     "MS_ReqType_Startup",
-    "MS_ReqType_Stfsd",
     "MS_ReqType_TmLeader",
     "MS_ReqType_TmReady",
-    "MS_ReqType_TmSync",
-    "MS_ReqType_TransInfo",
     "MS_ReqType_ZoneInfo",
     SB_LABEL_END
 };
@@ -394,6 +382,7 @@ static const char *ga_ms_mon_req_type_short_labels[] = {
     "Event",
     "Exit",
     "Get",
+    "InstanceId",
     "Kill",
     "MonStats",
     "Mount",
@@ -423,11 +412,8 @@ static const char *ga_ms_mon_req_type_short_labels[] = {
     "Shutdown",
     "ShutdownNs",
     "Startup",
-    "Stfsd",
     "TmLeader",
     "TmReady",
-    "TmSync",
-    "TransInfo",
     "ZoneInfo",
     SB_LABEL_END
 };
@@ -478,6 +464,7 @@ static const char *ga_sb_msmon_reply_type_labels[] = {
     "DeleteNs",
     "Dump",
     "Get",
+    "InstanceId",
     "MonStats",
     "Mount",
     "NewProcess",
@@ -489,10 +476,7 @@ static const char *ga_sb_msmon_reply_type_labels[] = {
     "PNodeInfo",
     "ProcessInfo",
     "ProcessInfoNs",
-    "Stfsd",
     "Startup",
-    "TmSync",
-    "TransInfo",
     "ZoneInfo",
     SB_LABEL_END
 };
@@ -564,7 +548,6 @@ static const char *ga_sb_utrace_api_mon_msgtype_labels[] = {
     "MsgType_NodeDeleted",
     "MsgType_NodeDown",
     "MsgType_NodeJoining",
-    "MsgType_NodePrepare",
     "MsgType_NodeQuiesce",
     "MsgType_NodeUp",
     "MsgType_Open",
@@ -574,10 +557,6 @@ static const char *ga_sb_utrace_api_mon_msgtype_labels[] = {
     "MsgType_Service",
     "MsgType_Shutdown",
     "MsgType_SpareUp",
-    "MsgType_TmRestarted",
-    "MsgType_TmSyncAbort",
-    "MsgType_TmSyncCommit",
-    "MsgType_UnsolicitedMessage",
     "MsgType_Invalid",
     SB_LABEL_END
 };
@@ -589,6 +568,7 @@ static const char *ga_sb_utrace_api_mon_reqtype_labels[] = {
     "ReqType_Event",
     "ReqType_Exit",
     "ReqType_Get",
+    "ReqType_InstanceId",
     "ReqType_Kill",
     "ReqType_MonStats",
     "ReqType_Mount",
@@ -618,11 +598,8 @@ static const char *ga_sb_utrace_api_mon_reqtype_labels[] = {
     "ReqType_Shutdown",
     "ReqType_ShutdownNs",
     "ReqType_Startup",
-    "ReqType_Stfsd",
     "ReqType_TmLeader",
     "ReqType_TmReady",
-    "ReqType_TmSync",
-    "ReqType_TransInfo",
     "ReqType_ZoneInfo",
     SB_LABEL_END
 };
@@ -715,6 +692,7 @@ static const char *ga_sb_utrace_api_op_labels[] = {
     "MSG_MON_GET_TRANS_INFO_TRANSID",
     "MSG_MON_GET_ZONE_INFO",
     "MSG_MON_GET_ZONE_INFO_DETAIL",
+    "MSG_MON_GET_INSTANCE_ID",
     "MSG_MON_MOUNT_DEVICE,",
     "MSG_MON_MOUNT_DEVICE2",
     "MSG_MON_NODE_DOWN",
@@ -855,7 +833,7 @@ static SB_Label_Map gv_ms_mon_device_state_short_label_map = {
 
 enum {
     MS_LABEL_LIMIT_MON_MSG_TYPE_LO = MS_MsgType_Change,
-    MS_LABEL_LIMIT_MON_MSG_TYPE_HI = MS_MsgType_UnsolicitedMessage
+    MS_LABEL_LIMIT_MON_MSG_TYPE_HI = MsgType_SpareUp
 };
 SB_Label_Map gv_ms_mon_msg_type_label_map = {
     MS_LABEL_LIMIT_MON_MSG_TYPE_LO,

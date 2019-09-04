@@ -21,3 +21,4 @@
 
 # setup for node-down
 export SQ_IC=TCP
+export MON_DTM_PRIMITIVE_DISABLE=1

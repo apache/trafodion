@@ -47,9 +47,15 @@ using namespace std;
 
 typedef enum {
     TrafConfType_Undefined=0,         // Invalid
+
+    TrafConfType_ClusterId,           // Display Cluster Id: -clusterid
+    TrafConfType_InstanceId,          // Display Instance Id: -instanceid
+
     TrafConfType_NodeName,            // Display node names: -name -short
     TrafConfType_NodeName_w,          // Display node names: -wname -wshort
     TrafConfType_NodeId,              // Display node ids
+    TrafConfType_MyNodeName,          // Display local node name
+    TrafConfType_MyNodeId,            // Display local node id
     TrafConfType_PhysicalNodeId,      // Display physical node ids
     TrafConfType_ZoneId,              // Display zone ids
     // the above displays values as: "<value-1>  <value-2> ..."
@@ -140,14 +146,18 @@ int TcLogWrite(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_s
 void DisplayUsage( void )
 {
     fprintf( stderr, 
-"\nUsage: trafconf { -? | -h | -name | -short | -wname | -wshort | \\\n"
-"                  -nameserver | -ns | -node | -persist | \\\n"
+"\nUsage: trafconf { -? | -h | -cid | -iid | -name | -short | -wname | -wshort | \\\n"
+"                  -myname | -mynid | -nameserver | -ns | -node | -persist | \\\n"
 "                  -node-max | -nid-count | -pnid-count | -spares-count | \\\n"
-"                  --nameserver | --ns | --node | --persist | \\\n"
+"                  --cid | --iid | --name| --short | --wname | --wshort | \\\n"
+"                  --myname | --mynid | --nameserver | --ns | --node | --persist | \\\n"
 "                  --node-max | --nid-count | --pnid-count | --spares-count  }\n"
 "\n   Where:\n"
 "     -?                Displays usage.\n"
 "     -h                Displays usage.\n\n"
+
+"     -cid              Displays cluster id.\n"
+"     -iid              Displays instance id.\n"
 
 "     -name             Displays all node names in configuration.\n"
 "                        - Name is as stored in configuration, which could be in short host name or FQDN form.\n"
@@ -155,6 +165,10 @@ void DisplayUsage( void )
 "     -wname            Displays all node names in configuration prefixed with '-w'\n"
 "                        - Name is as stored in configuration, which could be in short host name or FQDN form.\n"
 "     -wshort           Displays all node names in configuration short host name form prefixed with '-w'.\n\n"
+
+"     -myname           Displays local node name in configuration.\n"
+"                        - Name is as stored in configuration, which could be in short host name or FQDN form.\n"
+"     -mynid            Displays local node-id in configuration.\n\n"
 
 "     -nameserver -ns   Displays nameserver configuration (without begin/end brackets).\n"
 "     -node             Displays node configuration (without begin/end brackets).\n"
@@ -164,6 +178,12 @@ void DisplayUsage( void )
 "     -nid-count        Displays count of node-id(s) in the configuration.\n"
 "     -pnid-count       Displays count of physical-node-id(s) in the configuration.\n"
 "     -spares-count     Displays count of spare physical-node-id(s) in the configuration.\n\n"
+
+"     --cid             Displays cluster id (prefixed with 'Cluster Id:')\n"
+"     --iid             Displays instance id (prefixed with 'Instance Id:')\n"
+
+"     --myname          Displays local node name in configuration (prefixed with 'Node Name:').\n"
+"     --mynid           Displays local node-id in configuration (prefixed with 'Node Id:').\n\n"
 
 "     --nameserver --ns Displays nameserver configuration (with begin/end brackets).\n"
 "     --node            Displays node configuration (with begin/end brackets).\n"
@@ -218,6 +238,42 @@ const char *RoleTypeString( TcZoneType_t type )
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Function/Method: DisplayId()
+//
+///////////////////////////////////////////////////////////////////////////////
+int DisplayId( void )
+{
+    int rc   = 0;
+
+    switch (TrafConfType)
+    {
+        case TrafConfType_ClusterId:
+            if ( DisplayLabel )
+            {
+                printf( "Cluster Id: " );
+            }
+            printf("%d", ClusterConfig.GetClusterId() );
+            break;
+        case TrafConfType_InstanceId:
+            if ( DisplayLabel )
+            {
+                printf( "Instance Id: " );
+            }
+            printf("%d", ClusterConfig.GetInstanceId() );
+            break;
+        default:
+            printf( "Invalid configuration type!\n" );
+            rc = -1;
+    }
+    if ( DisplayLabel )
+    {
+        printf( "\n" );
+    }
+    return(rc);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Function/Method: DisplayNodeAttributes()
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -243,7 +299,7 @@ void DisplayNodeAttributes( CLNodeConfig *lnodeConfig )
         printf( "node-id=%d;node-name=%s;"
                 "cores=%s;processors=%d;roles=%s\n"
               , lnodeConfig->GetNid()
-              , lnodeConfig->GetName()
+              , lnodeConfig->GetFqdn()
               , coresString
               , lnodeConfig->GetProcessors()
               , RoleTypeString( lnodeConfig->GetZoneType() )
@@ -286,7 +342,7 @@ void DisplayNodeName( CLNodeConfig *lnodeConfig, bool dashW )
         {
             printf( "-w " );
         }
-        printf( "%s ", NodeNameStr(lnodeConfig->GetName()) );
+        printf( "%s ", NodeNameStr(lnodeConfig->GetFqdn()) );
     }
 }
 
@@ -407,7 +463,7 @@ int DisplayNodeConfig( char *nodeName )
 ///////////////////////////////////////////////////////////////////////////////
 int DisplayConfigCounts( void )
 {
-    int rc   = -1;
+    int rc   = 0;
 
     switch (TrafConfType)
     {
@@ -441,6 +497,70 @@ int DisplayConfigCounts( void )
             break;
         default:
             printf( "Invalid configuration type!\n" );
+            rc = -1;
+    }
+    if ( DisplayLabel )
+    {
+        printf( "\n" );
+    }
+    return(rc);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function/Method: DisplayMyNode()
+//
+///////////////////////////////////////////////////////////////////////////////
+int DisplayMyNode( void )
+{
+    int rc   = 0;
+    char name[TC_PROCESSOR_NAME_MAX]; // hostname
+    CPNodeConfig * pnodeConfig = NULL;
+    CLNodeConfig * lnodeConfig = NULL;
+
+    gethostname(name, TC_PROCESSOR_NAME_MAX);
+    char *tmpptr = name;
+    while ( *tmpptr )
+    {
+        *tmpptr = (char)tolower( *tmpptr );
+        tmpptr++;
+    }
+
+    pnodeConfig = ClusterConfig.GetPNodeConfig( name );
+    if (pnodeConfig == NULL)
+    {
+        printf( "Local host %s is not in Trafodion Configuration!\n"
+              , name );
+        return(-1);
+    }
+
+    lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
+    if (lnodeConfig == NULL)
+    {
+        printf( "Logical node for local host %s is not in Trafodion Configuration!\n"
+              , name );
+        return(-1);
+    }
+
+    switch (TrafConfType)
+    {
+        case TrafConfType_MyNodeName:
+            if ( DisplayLabel )
+            {
+                printf( "Node Name: " );
+            }
+            printf("%s", pnodeConfig->GetFqdn() );
+            break;
+        case TrafConfType_MyNodeId:
+            if ( DisplayLabel )
+            {
+                printf( "Node Id: " );
+            }
+            printf("%d", lnodeConfig->GetNid() );
+            break;
+        default:
+            printf( "Invalid configuration type!\n" );
+            rc = -1;
     }
     if ( DisplayLabel )
     {
@@ -635,6 +755,10 @@ int ProcessTrafConfig( void )
 
     switch (TrafConfType)
     {
+        case TrafConfType_ClusterId:
+        case TrafConfType_InstanceId:
+            rc = DisplayId();
+            break;
         case TrafConfType_NodeConfig:
         case TrafConfType_NodeName:
         case TrafConfType_NodeName_w:
@@ -653,6 +777,10 @@ int ProcessTrafConfig( void )
             break;
         case TrafConfType_NameServerConfig:
             rc = DisplayNameServerConfig( );
+            break;
+        case TrafConfType_MyNodeName:
+        case TrafConfType_MyNodeId:
+            rc = DisplayMyNode( );
             break;
         case TrafConfType_NodeId:
         case TrafConfType_PhysicalNodeId:
@@ -692,6 +820,14 @@ int main( int argc, char *argv[] )
             DisplayUsage();
             return 0;
         }
+        else if ( strcasecmp( argv [argx], "-cid" ) == 0 )
+        {
+            TrafConfType = TrafConfType_ClusterId;
+        }
+        else if ( strcasecmp( argv [argx], "-iid" ) == 0 )
+        {
+            TrafConfType = TrafConfType_InstanceId;
+        }
         else if ( strcasecmp( argv [argx], "-name" ) == 0 )
         {
             TrafConfType = TrafConfType_NodeName;
@@ -709,6 +845,14 @@ int main( int argc, char *argv[] )
         {
             DisplayShortHost = true;
             TrafConfType = TrafConfType_NodeName_w;
+        }
+        else if ( strcasecmp( argv [argx], "-myname" ) == 0 )
+        {
+            TrafConfType = TrafConfType_MyNodeName;
+        }
+        else if ( strcasecmp( argv [argx], "-mynid" ) == 0 )
+        {
+            TrafConfType = TrafConfType_MyNodeId;
         }
         else if ( ( strcasecmp( argv [argx], "-nameserver" ) == 0 ) ||
                   ( strcasecmp( argv [argx], "-ns" ) == 0 ) )
@@ -744,6 +888,26 @@ int main( int argc, char *argv[] )
         else if ( strcasecmp( argv [argx], "-persist" ) == 0 )
         {
             TrafConfType = TrafConfType_PersistConfig;
+        }
+        else if ( strcasecmp( argv [argx], "--cid" ) == 0 )
+        {
+            TrafConfType = TrafConfType_ClusterId;
+            DisplayLabel = true;
+        }
+        else if ( strcasecmp( argv [argx], "--iid" ) == 0 )
+        {
+            TrafConfType = TrafConfType_InstanceId;
+            DisplayLabel = true;
+        }
+        else if ( strcasecmp( argv [argx], "--myname" ) == 0 )
+        {
+            TrafConfType = TrafConfType_MyNodeName;
+            DisplayLabel = true;
+        }
+        else if ( strcasecmp( argv [argx], "--mynid" ) == 0 )
+        {
+            TrafConfType = TrafConfType_MyNodeId;
+            DisplayLabel = true;
         }
         else if ( strcasecmp( argv [argx], "--node" ) == 0 )
         {

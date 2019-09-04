@@ -44,7 +44,7 @@ LIBS		= $(LIBTRAFCONFIG)
 LIBSX	+= -lrt
 
 # need -lsqlite3 for SQLite
-LIBSX	+=  -lsqlite3 -lpthread
+LIBSX	+=  -lsqlite3
 
 # need -lpthread starting on CentOS7
 LIBSX	+=  -lpthread  
@@ -86,15 +86,15 @@ $(LIBEXPDIR)/libtrafconfig.so: $(OBJTRAFCONFIG)
 	@echo 
 	@echo Building Trafodion Configuration Library
 	@echo 
-	@echo $(CXX) $(LIBSX) $(LNK_FLGS) -shared -o $@ $(OBJTRAFCONFIG)
-	$(CXX) $(LIBSX) $(LNK_FLGS) -shared -o $@ $(OBJTRAFCONFIG)
+	@echo $(CXX) $(LIBSX) -o $@ $(OBJTRAFCONFIG) -shared $(LNK_FLGS) 
+	$(CXX) $(LIBSX) -o $@ $(OBJTRAFCONFIG) -shared $(LNK_FLGS) 
 
 $(BINEXPDIR)/trafconf: $(OBJTRAFCONF)
 	@echo 
 	@echo Building Trafodion Configuration Utility
 	@echo 
-	@echo $(CXX) $(LIBSX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ $(OBJTRAFCONF)
-	@$(CXX) $(LIBSX) $(LIBTRAFCONFIGX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ $(OBJTRAFCONF)
+	@echo $(CXX) $(INCLUDES) -o $@ $(OBJTRAFCONF) $(LIBTRAFCONFIGX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(LIBSX)
+	@$(CXX) $(INCLUDES) -o $@ $(OBJTRAFCONF) $(LIBTRAFCONFIGX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(LIBSX)
 
 stop:
 	-killall shell monitor

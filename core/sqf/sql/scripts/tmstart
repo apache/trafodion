@@ -22,6 +22,15 @@
 # @@@ END COPYRIGHT @@@
 #
 
+# Check if there are TM processes already running on the cluster.
+# If they are, then it means that this script was executed before to
+# start the TMs. 
+lv_num_tm_processes=$(sqshell -c persist info DTM | grep DTM | wc -l)
+echo "Number of TM processes on the instance: ${lv_num_tm_processes}"
+if ( [ ${lv_num_tm_processes} '>' 0 ] ); then
+    sqshell -c set SQ_TXNSVC_READY=1
+fi
+
 sqshell -a <<eof
 
 ! Start DTM
@@ -29,7 +38,6 @@ set DTM_RUN_MODE=2
 set SQ_AUDITSVC_READY=1
 set DTM_TLOG_PER_TM=1
 set TRAF_TM_LOCKED=0
-persist exec DTM
 delay 5
 exit
 eof

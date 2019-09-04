@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <netdb.h>
 #include <net/if.h>
 #include <net/if_arp.h>
 
@@ -269,7 +270,7 @@ void SB_Trans::Sock_Stream::close_stream(Sock_Stream *pp_stream,
 //
 // Purpose: close streams
 //
-void SB_Trans::Sock_Stream::close_streams() {
+void SB_Trans::Sock_Stream::close_streams(bool pv_join) {
     const char *WHERE = "Sock_Stream::close_streams";
     int         lv_status;
 
@@ -305,11 +306,13 @@ void SB_Trans::Sock_Stream::close_streams() {
         if (gv_ms_trace_sock)
             trace_where_printf(WHERE, "shutdown accept thread\n");
         cp_accept_thread->fin();
-        lv_status = cp_accept_thread->join(&lp_result);
-        if (gv_ms_trace_sock)
-            trace_where_printf(WHERE, "accept thread death, status=%d\n",
-                               lv_status);
-        SB_util_assert_ieq(lv_status, 0);
+        if (pv_join) {
+            lv_status = cp_accept_thread->join(&lp_result);
+            if (gv_ms_trace_sock)
+                trace_where_printf(WHERE, "accept thread death, status=%d\n",
+                                   lv_status);
+            SB_util_assert_ieq(lv_status, 0);
+        }
         cp_accept_thread = NULL;
     }
     if (cp_helper_thread != NULL) {
@@ -1258,6 +1261,7 @@ int SB_Trans::Sock_Stream::open_port(char *pp_port) {
     static bool         lv_first = true;
     bool                lv_ok;
     static int          lv_port;
+    struct hostent     *lp_hostent = NULL;
 
     if (lv_first) {
         lv_first = false;
@@ -1270,6 +1274,12 @@ int SB_Trans::Sock_Stream::open_port(char *pp_port) {
         } else {
             lv_err = gethostname(la_host, sizeof(la_host));
             SB_util_assert_if(lv_err);
+            lp_hostent = gethostbyname( la_host );
+            SB_util_assert_if(!lp_hostent);
+            lp_addr = reinterpret_cast<unsigned char *>(lp_hostent->h_addr);
+            sprintf(la_host, "%d.%d.%d.%d",
+                    lp_addr[0], lp_addr[1], lp_addr[2], lp_addr[3]);
+            
         }
         lp_host = la_host;
         cp_listener = new Sock_Listener();
@@ -2048,7 +2058,7 @@ void SB_Trans::Sock_Stream::send_sm() {
 // (static)
 //
 void SB_Trans::Sock_Stream::shutdown() {
-    close_streams();
+    close_streams(false);
 }
 
 void SB_Trans::Sock_Stream::sock_free() {

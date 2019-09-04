@@ -63,7 +63,7 @@
            snprintf(buf, sizeof(buf), "[%s], Test point: %s, aborting\n",\
                     method_name, TPVAR);\
            mon_log_write(MON_CLUSTER_REINTEGRATE_10, SQ_LOG_ERR, buf);    \
-           MPI_Abort(MPI_COMM_SELF,99);\
+           mon_failure_exit(true);\
        }\
     }
 

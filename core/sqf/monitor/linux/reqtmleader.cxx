@@ -160,14 +160,24 @@ void CExtTmLeaderReq::performRequest()
                 }
             }
 
-            assert(process); 
-
-            // populate the TM leader process info
-            msg_->u.reply.type = ReplyType_Generic;
-            msg_->u.reply.u.generic.nid = process->GetNid();
-            msg_->u.reply.u.generic.pid = process->GetPid();
-            msg_->u.reply.u.generic.verifier = process->GetVerifier();
-            strcpy (msg_->u.reply.u.generic.process_name, process->GetName());
+            if (process)
+            {
+                // populate the TM leader process info
+                msg_->u.reply.type = ReplyType_Generic;
+                msg_->u.reply.u.generic.nid = process->GetNid();
+                msg_->u.reply.u.generic.pid = process->GetPid();
+                msg_->u.reply.u.generic.verifier = process->GetVerifier();
+                strcpy (msg_->u.reply.u.generic.process_name, process->GetName());
+            }
+            else
+            {
+                tmLeaderNid = -1;
+                msg_->u.reply.type = ReplyType_Generic;
+                msg_->u.reply.u.generic.nid = -1;
+                msg_->u.reply.u.generic.pid = -1;
+                msg_->u.reply.u.generic.verifier = -1;
+                msg_->u.reply.u.generic.process_name[0] = 0;
+            }
 
             if (process && NameServerEnabled)
             {

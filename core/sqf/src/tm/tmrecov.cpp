@@ -80,7 +80,9 @@ int32 TM_Recov::initiate_start_sync()
    ip_tm_info->set_sys_recov_status(TM_SYS_RECOV_STATE_START, ip_tm_info->nid());
    
    // Tell all the other TMs that system recovery has started.
+#ifdef SUPPORT_TM_SYNC
    send_sys_recov_start_sync(ip_tm_info->nid());
+#endif
    TMTrace (2, ("TM_Recov::initiate_start_sync EXIT.\n"));
    return lv_error;
 }
@@ -107,7 +109,7 @@ int32 TM_Recov::recover_system()
       ip_tm_info->write_control_point(true);
       ip_tm_info->write_control_point(true, true);
       ip_tm_info->set_sys_recov_status(TM_SYS_RECOV_STATE_END, lv_my_nid);
-      send_sys_recov_end_sync(lv_my_nid);
+      //send_sys_recov_end_sync(lv_my_nid);
       lv_error = FEOK;
       return (lv_error);
    }
@@ -189,7 +191,7 @@ int32 TM_Recov::recover_dtm_death(int32 pv_dtm)
    //lv_error = send_xa_recover_toall_TSEs(pv_dtm);
 
    // Sending ID for node down.
-   TMTrace (2, ("TM_Recov::recover_dtm_death: sending node down message"));
+   TMTrace (2, ("TM_Recov::recover_dtm_death: sending node down message.\n"));
    gv_HbaseTM.nodeDown(pv_dtm);
 
    if (lv_error != FEOK)
@@ -208,7 +210,7 @@ int32 TM_Recov::recover_dtm_death(int32 pv_dtm)
    TMTrace(3, ("TM_Recov::recover_dtm_death setting recovery_list_built to TRUE for Node %d\n",pv_dtm));
    ip_tm_info->recovery_list_built (pv_dtm, true);
    listBuilt (true);
-   send_recov_listbuilt_sync (ip_tm_info->nid(), pv_dtm);
+   //send_recov_listbuilt_sync (ip_tm_info->nid(), pv_dtm);
 
    iv_max_txs_to_recover = iv_total_txs_to_recover;
    tm_log_event(DTM_RECOVERY_TXNS_TO_RECOVER, SQ_LOG_NOTICE, "DTM_RECOVERY_TXNS_TO_RECOVER",
@@ -1344,7 +1346,7 @@ void TM_Recov::completeRecovery()
    ip_tm_info->write_control_point(true);
    ip_tm_info->write_control_point(true, true);
    ip_tm_info->set_sys_recov_status(TM_SYS_RECOV_STATE_END, ip_tm_info->nid());
-   send_sys_recov_end_sync(ip_tm_info->nid());
+   //send_sys_recov_end_sync(ip_tm_info->nid());
 
    TMTrace (2, ("TM_Recov::completeRecovery EXIT\n"));
 } //TM_Recov::completeRecovery

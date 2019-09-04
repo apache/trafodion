@@ -281,11 +281,11 @@ void printEntry(memLogEntry_t *entry, int eventStart, int eventEnd)
             printf("Sync thread not responsive, mpi time exceeded %d secs, stuck in ", entry->value1_);
             switch (entry->value2_)
             {
-                case 1: printf("Comm Dup");
+                case 4: printf("Comm Dup");
                         break;
-                case 2: printf("AllGather");
+                case 2: printf("Allgather");
                         break;
-                case 4: printf("Barrier");
+                case 1: printf("Barrier");
                         break;
             }
             printf("\n");

@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"

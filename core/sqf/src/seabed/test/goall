@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -22,6 +22,7 @@
 
 export TEST_STOP=test.status
 export SQ_MON_ENV_CHECK_DISABLE=1
+#export MON_DTM_PRIMITIVE_DISABLE=1
 cluster=
 if [ "$1" = "-cluster" ]; then
 	cluster=-cluster
@@ -84,7 +85,7 @@ go48 $cluster $verbose
 go49 $cluster $verbose
 go50 $cluster $verbose
 go50 $cluster $verbose -nowait
-go51 $cluster $verbose
+####go51 $cluster $verbose
 go52 $cluster $verbose
 ####go53 $cluster $verbose
 ####go53 $cluster $verbose -nowait
@@ -139,7 +140,7 @@ go101 $cluster $verbose
 go102 $cluster $verbose
 go103 $cluster $verbose
 go104 $cluster $verbose
-go105 $cluster $verbose
+####go105 $cluster $verbose
 go115 $cluster $verbose
 go118 $cluster $verbose
 go118 $cluster $verbose -nowait
@@ -254,13 +255,13 @@ go238
 go241 $cluster $verbose
 go242 $cluster $verbose
 go245 $cluster $verbose
-go246 $cluster $verbose
+####go246 $cluster $verbose
 ####go249 $cluster $verbose
 ####go250 $cluster $verbose
 go253 $cluster $verbose
-go261 $cluster $verbose
+####go261 $cluster $verbose
 go262 $cluster $verbose
-go266 $cluster $verbose
+####go266 $cluster $verbose
 go277 $cluster $verbose
 go277 $cluster $verbose -thread
 go277 $cluster $verbose -thread -any1

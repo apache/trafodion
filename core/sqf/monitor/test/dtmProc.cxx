@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
@@ -148,15 +149,6 @@ void recv_notice_msg(struct message_def *recv_msg, int )
               , recv_msg->u.request.u.death.trans_id.txid[3]
               , recv_msg->u.request.u.death.aborted );
         ++deathNoticesReceived;
-    }
-    else if ( recv_msg->type == MsgType_TmRestarted )
-    {
-        printf( "[%s] DTM Restarted in (nid=%d, pnid=%d, name=%s)\n"
-              , MyName
-              , recv_msg->u.request.u.tm_restart.nid
-              , recv_msg->u.request.u.tm_restart.pnid
-              , recv_msg->u.request.u.tm_restart.node_name );
-        ++tmRestartedNoticesReceived;
     }
     else if ( recv_msg->type == MsgType_NodeDown )
     {
@@ -297,6 +289,8 @@ int main (int argc, char *argv[])
     gp_local_mon_io->set_cb( recv_notice_msg, "notice" );
 
     util.requestStartup( );
+
+    //pause();
 
     // Get and execute commands from controller process
     processCommands( );

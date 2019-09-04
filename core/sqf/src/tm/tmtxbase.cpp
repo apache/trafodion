@@ -327,9 +327,11 @@ void CTmTxBase::sync_write (int32 pv_nid,
     }
     }; //switch
 
+#ifdef SUPPORT_TM_SYNC
     init_and_send_tx_sync_data( lv_type, pv_state, 
                             (TM_Transid_Type*)&iv_transid, 
                              pv_nid, pv_pid);
+#endif
 
     TMTrace (2, ("CTmTxBase::sync_write : EXIT. TxnId %d, type %d.\n",
                    iv_tag, lv_type));

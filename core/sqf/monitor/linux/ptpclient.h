@@ -47,6 +47,8 @@ public:
                           , int targetNid
                           , const char* targetNodeName );
     int  ProcessClone( CProcess* process );
+    int  ProcessDump( CProcess* process );
+    int  ProcessDumpComplete( CProcess* process );
     int  ProcessExit( CProcess* process
                     , int parentNid
                     , const char* targetNodeName );

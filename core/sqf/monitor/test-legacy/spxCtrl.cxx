@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
@@ -457,7 +458,6 @@ int main (int argc, char *argv[])
 
     int sendbuf;
     replyMsg_t recvbuf;
-    int rc;
     const int clientTag = 99;
     MPI_Status status;
 
@@ -465,9 +465,9 @@ int main (int argc, char *argv[])
     {
         // Tell the SPX process to exit
         sendbuf = CMD_END;
-        rc = XMPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
-                           &recvbuf, 1, MPI_INT, MPI_ANY_SOURCE,
-                           MPI_ANY_TAG, spxProcess[i].comm, &status);
+        XMPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
+                      &recvbuf, 1, MPI_INT, MPI_ANY_SOURCE,
+                      MPI_ANY_TAG, spxProcess[i].comm, &status);
     }
 
     printf("SPX Process Test:\t\t%s\n", (testSuccess) ? "PASSED" : "FAILED");

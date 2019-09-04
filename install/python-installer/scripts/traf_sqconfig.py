@@ -39,33 +39,42 @@ def run():
     if traf_conf == '': err('TRAF_CONF var is empty')
     sqconfig_file = traf_conf + '/sqconfig'
 
-    core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
-    core = int(core)-1 if int(core) <= 256 else 255
+    traf_var = os.environ['TRAF_VAR']
+    if traf_var == '': err('TRAF_VAR var is empty')
+    sqconfig_db_file = traf_var + '/sqconfig.db'
 
-    lines = ['begin node\n']
-    for node_id, node in enumerate(nodes):
-        line = 'node-id=%s;node-name=%s;cores=0-%d;processors=%s;roles=connection,aggregation,storage\n' % (node_id, node, core, processor)
-        lines.append(line)
+    # If the configuration database file is not yet created,
+    # build the 'sqconfig' file with the nodes specified and compile it.
+    if not os.path.exists(sqconfig_db_file):
+        core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
+        core = int(core)-1 if int(core) <= 256 else 255
 
-    lines.append('end node\n')
-    lines.append('\n')
-    lines.append('begin overflow\n')
+        lines = ['begin node\n']
+        for node_id, node in enumerate(nodes):
+            line = 'node-id=%s;node-name=%s;cores=0-%d;processors=%s;roles=connection,aggregation,storage\n' % (node_id, node, core, processor)
+            lines.append(line)
 
-    for scratch_loc in scratch_locs:
-        line = 'hdd %s\n' % scratch_loc
-        lines.append(line)
+        lines.append('end node\n')
+        lines.append('\n')
+        lines.append('begin overflow\n')
 
-    lines.append('end overflow\n')
+        for scratch_loc in scratch_locs:
+            line = 'hdd %s\n' % scratch_loc
+            lines.append(line)
 
-    # write out the node section
-    with open(sqconfig_file, 'w') as f:
-        f.writelines(lines)
+        lines.append('end overflow\n')
 
-    print 'sqconfig generated successfully!'
+        # write out the node section
+        with open(sqconfig_file, 'w') as f:
+            f.writelines(lines)
 
-    run_cmd('sqgen')
+        print 'sqconfig generated successfully!'
 
-    print 'sqgen ran successfully!'
+        run_cmd('sqgen')
+
+        print 'sqgen ran successfully!'
+    else:
+        print 'Using existing configuration (%s)' % sqconfig_file
 
 # main
 try:

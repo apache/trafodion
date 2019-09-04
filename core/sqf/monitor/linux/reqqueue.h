@@ -303,6 +303,21 @@ private:
 };
 #endif
 
+#ifndef NAMESERVER_PROCESS
+class CExtInstanceIdReq: public CExternalReq
+{
+public:
+    CExtInstanceIdReq (reqQueueMsg_t msgType, int pid,
+                       struct message_def *msg );
+    virtual ~CExtInstanceIdReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
 class CExtKillReq: public CExternalReq
 {
 public:
@@ -491,6 +506,7 @@ private:
 #ifndef NAMESERVER_PROCESS
 class CExtNameServerDeleteReq: public CExternalReq
 {
+
 public:
     CExtNameServerDeleteReq (reqQueueMsg_t msgType, int pid,
                              struct message_def *msg );
@@ -788,21 +804,6 @@ private:
 #endif
 
 #ifndef NAMESERVER_PROCESS
-class CExtTmSyncReq: public CExternalReq
-{
-public:
-    CExtTmSyncReq (reqQueueMsg_t msgType, int pid,
-                   struct message_def *msg );
-    virtual ~CExtTmSyncReq();
-
-    void performRequest();
-
-private:
-    void populateRequestString( void );
-};
-#endif
-
-#ifndef NAMESERVER_PROCESS
 class CExtZoneInfoReq: public CExternalReq
 {
 public:
@@ -973,6 +974,53 @@ private:
 #endif
 
 #ifndef NAMESERVER_PROCESS
+class CIntDumpCompleteReq: public CInternalReq
+{
+public:
+    CIntDumpCompleteReq();
+    virtual ~CIntDumpCompleteReq();
+
+    void prepRequest( struct dump_def *dumpDef );
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    int dumperNid_;
+    int dumperPid_;
+    Verifier_t dumperVerifier_;
+    char coreFile_[MAX_FILE_NAME];
+    DUMPSTATUS status_;
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
+class CIntDumpReq: public CInternalReq
+{
+public:
+    CIntDumpReq();
+    virtual ~CIntDumpReq();
+
+    void prepRequest( struct dump_def *dumpDef );
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    int dumperNid_;
+    int dumperPid_;
+    Verifier_t dumperVerifier_;
+    char coreFile_[MAX_FILE_NAME];
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
 class CIntExitReq: public CInternalReq
 {
 public:
@@ -1030,6 +1078,34 @@ public:
 
 private:
     void populateRequestString( void );
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
+class CIntEventReq: public CInternalReq
+{
+public:
+    CIntEventReq();
+    virtual ~CIntEventReq();
+
+    void prepRequest( struct event_def *eventDef );
+    void performRequest();
+
+    void * operator new(size_t size);
+    void operator delete(void *deadObject, size_t size);
+
+private:
+    void populateRequestString( void );
+
+    int eventId_;
+    int length_;
+    int targetNid_;
+    int targetPid_;
+    Verifier_t targetVerifier_;
+
+    enum {SMALL_DATA_SIZE=50};
+    char data_[SMALL_DATA_SIZE];
+    char *bigData_;
 };
 #endif
 
@@ -1413,6 +1489,7 @@ private:
     string new_name_;
 };
 
+#ifndef NAMESERVER_PROCESS
 class CIntNodeAddReq: public CInternalReq
 {
 public:
@@ -1461,40 +1538,13 @@ private:
     Verifier_t req_verifier_;
     int  pnid_;
 };
+#endif
 
 class CIntDownReq: public CInternalReq
 {
 public:
     CIntDownReq( int pnid );
     virtual ~CIntDownReq();
-
-    void performRequest();
-
-private:
-    void populateRequestString( void );
-
-    int pnid_;
-};
-
-class CIntSoftNodeDownReq: public CInternalReq
-{
-public:
-    CIntSoftNodeDownReq( int pnid );
-    virtual ~CIntSoftNodeDownReq();
-
-    void performRequest();
-
-private:
-    void populateRequestString( void );
-
-    int pnid_;
-};
-
-class CIntSoftNodeUpReq: public CInternalReq
-{
-public:
-    CIntSoftNodeUpReq( int pnid );
-    virtual ~CIntSoftNodeUpReq();
 
     void performRequest();
 
@@ -1636,6 +1686,9 @@ class CReqQueue
     void enqueueCloneReq( struct clone_def *cloneDef );
 #ifndef NAMESERVER_PROCESS
     void enqueueDeviceReq( char *ldevName );
+    void enqueueDumpCompleteReq( struct dump_def *dumpDef );
+    void enqueueDumpReq( struct dump_def *dumpDef );
+    void enqueueEventReq( struct event_def *eventDef );
 #endif
 #ifndef NAMESERVER_PROCESS
     void enqueueExitReq( struct exit_def *exitDef );
@@ -1675,6 +1728,7 @@ class CReqQueue
                                    , int req_pid
                                    , Verifier_t req_verifier
                                    , char *node_name );
+#ifndef NAMESERVER_PROCESS
     void enqueueNodeAddReq( int req_nid
                           , int req_pid
                           , Verifier_t req_verifier
@@ -1687,14 +1741,13 @@ class CReqQueue
                              , int req_pid
                              , Verifier_t req_verifier
                              , int pnid );
+#endif
     void enqueueDownReq( int pnid );
     void enqueueNodeNameReq( int req_nid
                            , int req_pid
                            , Verifier_t req_verifier
                            , char *current_name
                            , char *new_name);
-    void enqueueSoftNodeDownReq( int pnid );
-    void enqueueSoftNodeUpReq( int pnid );
     void enqueueShutdownReq( int level );
     void enqueueActivateSpareReq( CNode *spareNode, CNode *downNode, bool checkHealth=false );
     void enqueueUpReq( int pnid, char *node_name, int merge_lead );
@@ -1773,12 +1826,14 @@ private:
 /* CRequest eyecatcher_ assignments:
 
    CInternalReq:
-
       RQIA   CIntAttachedDeathReq
       RQIB   CPostQuiesceReq
       RQIC   CIntChildDeathReq
       RQID   CIntDeviceReq
+      RqIC   CIntDumpCompleteReq
+      RqID   CIntDumpReq
       RQIE   CIntExitReq
+      RqIE   CIntEventReq
       RQIF   CIntUniqStrReq
       RQIG   CIntSnapshotReq
       RQIH   CIntShutdownReq
@@ -1799,8 +1854,8 @@ private:
       RQIU   CQuiesceReq
       RQIV   CIntTmReadyReq
       RQIW   CIntCreatePrimitiveReq
-      RQIX   CIntSoftNodeDownReq
-      RQIY   CIntSoftNodeUpReq
+      RQIX   -
+      RQIY   -
       RQIZ   CIntNodeNameReq
       RqIA   CIntNameServerAddReq
       RqIB   CIntNameServerDeleteReq
@@ -1837,7 +1892,7 @@ private:
       RqER   CExtShutdownNsReq
       RQES   CExtStartupReq
       RQET   CExtTmLeaderReq
-      RQEV   CExtTmSyncReq
+      RQEV   CExtInstanceIdReq
       RQEW   CExtZoneInfoReq
       RQEX   CExtNodeAddReq
       RQEY   CExtNodeDeleteReq

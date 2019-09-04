@@ -419,10 +419,40 @@ static int do_get_servers(MS_Mon_Process_Info_Type **ppp_pi,
     int lv_ferr;
     int lv_tmpcount;
 
-    lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_TMID,
-                                            pp_count,
-                                            0,      // max
-                                            NULL);  // info
+    // Added retries to get the 'idtm' process info. 
+    // Reason: The DTM process is now a primitive process and
+    // the monitor starts it up right at the outset. At that point 
+    // the 'idtm' may not be up. The TM (java) code wants to get the
+    // ID from the idtm server during its initialisation.
+
+    int lv_Retries = 0;
+    int lc_maxRetries = 200;
+    int lc_Pause = 3000; // 3 seconds
+
+    do {
+
+      if (lv_Retries > 0) {
+        if (gv_verbose) {
+            printf("cli: do_get_servers, retry#%d, going to sleep for %d ms.\n", lv_Retries, lc_Pause);
+        }
+        SB_Thread::Sthr::sleep(lc_Pause); // in msec
+      }
+
+      lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_TMID,
+                                              pp_count,
+                                              0,      // max
+                                              NULL);  // info
+      if (gv_verbose) {
+        printf("cli: do_get_servers process type TMID err=%d, num_servers=%d\n", lv_ferr, *pp_count);
+      }
+
+      lv_Retries++;
+    }
+    while ((lv_Retries <= lc_maxRetries) && 
+           ((lv_ferr != XZFIL_ERR_OK) ||
+            (*pp_count <= 0)))
+      ;
+
     if (lv_ferr == XZFIL_ERR_OK) {
         *ppp_pi = new MS_Mon_Process_Info_Type[*pp_count];
         lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_TMID,

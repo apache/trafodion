@@ -79,11 +79,14 @@ extern CReqQueue ReqQueue;
 
 extern bool IsAgentMode;
 extern bool IsMaster;
+extern bool IsRealCluster;
 
 extern bool PidMap;
 extern int Measure;
 extern int trace_level;
 extern int MyPNID;
+extern int ClusterId ;
+extern int InstanceId;
 extern char MyCommPort[MPI_MAX_PORT_NAME];
 extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 extern sigset_t SigSet;
@@ -120,6 +123,7 @@ extern bool SMSIntegrating;
 
 extern const char *NodePhaseString( NodePhase phase );
 extern const char *ProcessTypeString( PROCESSTYPE type );
+extern const char *StateString( STATE state);
 
 extern int monitorArgc;
 extern char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
@@ -184,7 +188,6 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     prev_(NULL),
     nextL_(NULL),
     prevL_(NULL),
-    unsolTmSyncCount_(0),
     Last_error (MPI_SUCCESS)
     , argc_(0)
     , userArgvLen_ (0)
@@ -203,6 +206,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
 #endif
     , firstInstance_(true)
     , cmpOrEsp_(false)
+    , trafRootZnode_()
     , trafConf_()
     , trafHome_()
     , trafLog_()
@@ -242,6 +246,19 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
         infile_ = infile;
     if ( outfile && strcmp(outfile,"#default") != 0)
         outfile_ = outfile;
+
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+    {
+        trace_printf( "%s@%d - Process %s, infile=%s, infile_=%s\n"
+                    , method_name, __LINE__
+                    , Name, infile, infile_.c_str());
+    }
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+    {
+        trace_printf( "%s@%d - Process %s, outfile=%s, outfile_=%s\n"
+                    , method_name, __LINE__
+                    , Name, outfile, outfile_.c_str());
+    }
 
 #ifndef NAMESERVER_PROCESS
     Config->strIdToString(programStrId_, program_ );
@@ -334,7 +351,22 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
         }
     }
     if (trace_settings & (TRACE_PROCESS_DETAIL | TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
-       trace_printf("%s@%d" " - Process " "%s (nid=%d, priority=%d)" " created @ " "%p""\n", method_name, __LINE__, Name, Nid, Priority, this);
+    {
+        trace_printf( "%s@%d - Process %s created @ %p:\n"
+                      "                          nid       =%d\n"
+                      "                          priority  =%d\n"
+                      "                          type      =%s\n"
+                      "                          persistent=%d\n"
+                      "                          unhooked  =%d\n"
+                    , method_name, __LINE__
+                    , Name
+                    , this
+                    , Nid
+                    , Priority 
+                    , ProcessTypeString(Type)
+                    , Persistent
+                    , UnHooked );
+    }
 
     Monitor->IncProcessCount();
 
@@ -923,7 +955,11 @@ void CProcess::CompleteDump(DUMPSTATUS status, char *core_file)
                 msg->u.reply.u.dump.verifier = Verifier;
                 if (status == Dump_Success)
                 {
-                    STRCPY(msg->u.reply.u.dump.core_file, core_file);
+                    char coreFile[MAX_PROCESS_PATH];
+                    CNode * node = Nodes->GetLNode(GetNid())->GetNode();
+                    snprintf( coreFile, sizeof(coreFile)
+                            , "%s:%s", node->GetFqdn(), core_file );
+                    STRCPY(msg->u.reply.u.dump.core_file, coreFile);
                     msg->u.reply.u.dump.return_code = MPI_SUCCESS;
                 }
                 else
@@ -1161,26 +1197,28 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             // let healthcheck thread know that the SMService process is up and running.
             HealthCheck.setState(HC_UPDATE_SMSERVICE, (long long)this);
         }
-        if ( Type == ProcessType_Watchdog )
+        else if ( Type == ProcessType_DTM )
         {
+            MyNode->SetPrimitiveDtmUp();
+        }
+        else if ( Type == ProcessType_Watchdog )
+        {
+            MyNode->SetPrimitiveWdgUp();
             // let healthcheck thread know that the watchdog process is up and running.
             HealthCheck.setState(HC_UPDATE_WATCHDOG, (long long)this);
             // start the watchdog timer
             HealthCheck.setState(MON_START_WATCHDOG);
         }
-        if ( Type == ProcessType_PSD &&
-            (IAmIntegrated || MyNode->IsActivatingSpare() || MyNode->IsSoftNodeDown()) )
+        else if ( Type == ProcessType_PSD )
         {
-             MyNode->StartPStartDPersistent();
+            MyNode->SetPrimitivePsdUp();
+            if(IsRealCluster)
+            {
+                MyNode->StartPStartDPersistent();
+            }
 
              if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_INIT))
                  trace_printf("%s%d: Sent start persistent processes event to PSD process %s (pid=%d)\n", method_name, __LINE__, GetName(), GetPid());
-        }
-        if ( Type == ProcessType_DTM  &&
-             MyNode->IsSoftNodeDown() )
-        {
-            // Tell remote DTMs that this DTM was restarted
-            Monitor->SoftNodeUpPrepare( MyPNID );
         }
     }
 
@@ -1241,6 +1279,12 @@ bool CProcess::PickStdfile(PickStdFile_t whichStdfile,
         if (!outfile_.empty())
         {
             STRCPY(Destfile, outfile_.c_str());
+            if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+            {
+                trace_printf( "%s@%d - Process %s, Destfile=%s, outfile_=%s\n"
+                            , method_name, __LINE__
+                            , Name, Destfile, outfile_.c_str());
+            }
             TRACE_EXIT;
             return true;
         }
@@ -1250,6 +1294,12 @@ bool CProcess::PickStdfile(PickStdFile_t whichStdfile,
         if (!infile_.empty())
         {
             STRCPY(Destfile, infile_.c_str());
+            if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+            {
+                trace_printf( "%s@%d - Process %s, Destfile=%s, outfile_=%s\n"
+                            , method_name, __LINE__
+                            , Name, Destfile, infile_.c_str());
+            }
             TRACE_EXIT;
             return true;
         }
@@ -1917,6 +1967,12 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     if (env && isdigit(*env))
        numProcessThreads = atoi(env);
 
+    env = getenv( "TRAF_ROOT_ZNODE" );
+    if (env)
+    {
+        trafRootZnode_ = env ;
+    }
+
     env = getenv( "TRAF_CONF" );
     if (env)
     {
@@ -2003,6 +2059,10 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
         setEnvStrVal ( childEnv, nextEnv, "MPI_INSTR", filename );
     }
 
+    setEnvIntVal ( childEnv, nextEnv, "TRAF_CLUSTER_ID", ClusterId );
+    setEnvIntVal ( childEnv, nextEnv, "TRAF_INSTANCE_ID", InstanceId );
+
+    setEnvStrVal ( childEnv, nextEnv, "TRAF_ROOT_ZNODE", trafRootZnode_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_CONF", trafConf_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_HOME", trafHome_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_LOG", trafLog_.c_str() );
@@ -2109,38 +2169,17 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     }
 
     string LDpath;
-    static bool sv_getenv_ld_library_path_done = false;
-    static string sv_ld_library_path;
-    if (IsAgentMode)
-    {
-        if (! sv_getenv_ld_library_path_done)
-        {
-            sv_getenv_ld_library_path_done = true;
-            sv_ld_library_path = getenv( "LD_LIBRARY_PATH" );
-            if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-            {
-                trace_printf( "%s@%d" " - LD_LIBRARY_PATH = " "%s" "\n", method_name, __LINE__, sv_ld_library_path.c_str() );
-            }
-        }
-        LDpath = sv_ld_library_path;
-        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-        {
-            trace_printf( "%s@%d" " - LD_LIBRARY_PATH = " "%s" "\n", method_name, __LINE__, LDpath.c_str() );
-        }
-    }
-    else
-    {
-        if (ldpathStrId_.nid != -1)
-        {
-            Config->strIdToString( ldpathStrId_, LDpath );
-        }
-    }
+    Config->strIdToString( ldpathStrId_, LDpath );
+
     if (!LDpath.empty())
     {
         setEnvStrVal( childEnv, nextEnv, "LD_LIBRARY_PATH", LDpath.c_str( ) );
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
         {
             trace_printf( "%s@%d - LD_LIBRARY_PATH = %s\n", method_name, __LINE__, LDpath.c_str() );
+            trace_printf( "%s@%d - ldpathStrId_ = stringId(nid=%d, id=%d)\n"
+                        , method_name, __LINE__
+                        , ldpathStrId_.nid, ldpathStrId_.id );
         }
     }
 
@@ -2148,6 +2187,17 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
 
     string program;
     Config->strIdToString ( programStrId_, program );
+    if (!program.empty( ))
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+        {
+            trace_printf( "%s@%d - Program = %s\n", method_name, __LINE__, program.c_str( ) );
+            trace_printf( "%s@%d - programStrId_ = stringId(nid=%d, id=%d)\n"
+                        , method_name, __LINE__
+                        , programStrId_.nid, programStrId_.id );
+        }
+    }
+   
     // temp for performance investigation
     if ( strstr(program.c_str(), "tdm_arkcmp") != NULL
       || strstr(program.c_str(), "tdm_arkesp") != NULL )
@@ -2181,36 +2231,15 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     }
 
     string path;
-    static bool sv_getenv_path_done = false;
-    static string sv_path;
-    if (IsAgentMode)
-    {
-        if (! sv_getenv_path_done)
-        {
-            sv_getenv_path_done = true;
-            sv_path = getenv( "PATH" );
-            if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-            {
-                trace_printf( "%s@%d" " - PATH = " "%s" "\n", method_name, __LINE__, sv_path.c_str() );
-            }
-        }
-        path = sv_path;
-        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-        {
-            trace_printf( "%s@%d" " - PATH = " "%s" "\n", method_name, __LINE__, path.c_str() );
-        }
-    }
-    else
-    {
-        if (pathStrId_.nid != -1)
-        {
-            Config->strIdToString( pathStrId_, path );
-        }
-    }
+    Config->strIdToString( pathStrId_, path );
+
     setEnvStrVal( childEnv, nextEnv, "PATH", path.c_str( ) );
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
     {
         trace_printf( "%s@%d" " - PATH = " "%s" "\n", method_name, __LINE__, path.c_str() );
+        trace_printf( "%s@%d - pathStrId_ = stringId(nid=%d, id=%d)\n"
+                    , method_name, __LINE__
+                    , pathStrId_.nid, pathStrId_.id );
     }
 
     // Set values from registry as environment variables
@@ -2295,9 +2324,9 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     argv[j + 2] = new char[6];
     sprintf (argv[j + 2], "%5.5d", Nid);
 
-    argv[j + 3] = new char[7];
+    argv[j + 3] = new char[10];
     //sprintf (argv[j + 3], "%6.6d", Pid);
-    strcpy(argv[j + 3],"??????"); // The Pid will be assigned later, but we can't print it then.
+    strcpy(argv[j + 3],"????????"); // The Pid will be assigned later, but we can't print it then.
 
     argv[j + 4] = new char[strlen(Name) ? strlen(Name)+1 : MAX_PROCESS_NAME_STR];
     strcpy (argv[j + 4], Name);
@@ -2514,7 +2543,7 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
             // or handled by a specific process on another node.
             int AncestorNid = -1;
             int AncestorPid = -1;
-            char Stdfile[MAX_PROCESS_PATH];
+            char Stdfile[MAX_PROCESS_PATH] = {0};
             if (PickStdfile(PICK_STDIN, Stdfile, AncestorNid, AncestorPid))
             {
                 Redirector.stdinFd(Nid, os_pid, pfds_stdin[1], Stdfile,
@@ -2545,7 +2574,7 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
             // or handled by a specific process on another node.
             int AncestorNid = -1;
             int AncestorPid = -1;
-            char Stdfile[MAX_PROCESS_PATH];
+            char Stdfile[MAX_PROCESS_PATH] = {0};
             if (!PickStdfile(PICK_STDOUT, Stdfile, AncestorNid, AncestorPid))
             {  // Unable to locate stdout file.  So create a file based
                // on the process name and use that for output.
@@ -2945,10 +2974,43 @@ bool CProcess::Dump (CProcess *dumper, char *core_path)
             DumperVerifier = dumper->Verifier;
             status = SUCCESS;
             if (trace_settings & TRACE_PROCESS)
-                trace_printf("%s@%d - DumpState=Dump_Pending, pid=%d\n",
-                             method_name, __LINE__, Pid);
-            repl = new CReplDump(this);
-            Replicator.addItem(repl);
+                trace_printf("%s@%d - DumpState=Dump_Pending, "
+                             "target %s (%d, %d:%d), "
+                             "dumper %s (%d, %d:%d), core path:%s\n"
+                             , method_name, __LINE__
+                             , Name
+                             , Nid
+                             , Pid
+                             , Verifier
+                             , dumper->Name
+                             , dumper->Nid
+                             , dumper->Pid
+                             , dumper->Verifier
+                             , core_path?core_path:"" );
+            if ( NameServerEnabled )
+            {
+                int rc = -1;
+
+                rc = PtpClient->ProcessDump(this);
+                if (rc)
+                {
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Dump process request failed: "
+                              "target %s (%d, %d:%d)\n"
+                            , method_name
+                            , Name
+                            , Nid
+                            , Pid
+                            , Verifier );
+                    mon_log_write(MON_PROCESS_DUMP_1, SQ_LOG_ERR, la_buf);
+                }
+            }
+            else
+            {
+                repl = new CReplDump(this);
+                Replicator.addItem(repl);
+            }
             break;
 
         default:
@@ -3017,32 +3079,88 @@ void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path
             cmd = (char *) program.c_str();
         else
             cmd++; // past '/'
+
+        // Override core_path if directory specified in /proc/sys/kernel/core_pattern
+        FILE * procCorePatternFile;  // "/proc/sys/kernel/core_pattern" file descriptor
+
+        procCorePatternFile = fopen("/proc/sys/kernel/core_pattern", "r");
+        if (!procCorePatternFile)
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            sprintf(buf, "[%s], Cannot open /proc/sys/kernel/core_pattern, %s (%d)\n",
+                    method_name, strerror(errno), errno);
+            mon_log_write( MON_PROCESS_DUMP_BEGIN_1, SQ_LOG_ERR, buf );
+        }
+        else
+        {
+            char corePattern[132] = {0};
+            char corePath[132] = {0};
+
+            fgets( corePattern, 132, procCorePatternFile );
+            if (strlen( corePattern) )
+            {
+                strncpy( corePath, corePattern, sizeof(corePath) );
+                if (corePath[0] == '/')
+                {
+                    char *pch = strrchr( corePath, '/' );
+                    if (pch)
+                    {
+                        *pch = 0;
+                        strcpy( core_path, corePath );
+                    }
+                }
+                if (trace_settings & TRACE_PROCESS)
+                {
+                    trace_printf( "%s@%d - corePath=%s\n"
+                                , method_name, __LINE__, corePath );
+                    trace_printf( "%s@%d - core_path=%s\n"
+                                , method_name, __LINE__, core_path );
+                    trace_printf( "%s@%d - corePattern=%s\n"
+                                , method_name, __LINE__, corePattern );
+                }
+            }
+            else
+            {
+                if (trace_settings & TRACE_PROCESS)
+                {
+                    trace_printf("%s@%d - undefined corePattern=%s\n",
+                                 method_name, __LINE__, corePattern);
+                }
+            }
+            fclose(procCorePatternFile);
+        }
+
         // date=%Y-%m-%d_%H-%M-%S
         // core_file=<path>/core.<date>.<pname>.<pid>.<cmd>
-        snprintf(core_file, sizeof(core_file), "%s/core.%s.%s.%d.%s",
+        snprintf(core_file, sizeof(core_file), "%s/core.%s.%s.%d.%d.%s",
                 core_path,
                 date,
                 &Name[1],
+                Nid,
                 Pid,
                 cmd);
         corefile_ = core_file;
 
         if (trace_settings & TRACE_PROCESS)
-            trace_printf("%s@%d - starting mondump for pid=%d, core-file=%s\n",
-                         method_name, __LINE__, Pid, core_file);
+            trace_printf( "%s@%d - starting mondump - "
+                          "target %s (%d, %d:%d), "
+                          "dumper (%d, %d:%d), "
+                          "core-file=%s\n"
+                        , method_name, __LINE__
+                        , Name
+                        , Nid
+                        , Pid
+                        , Verifier
+                        , DumperNid
+                        , DumperPid
+                        , DumperVerifier
+                        , core_file);
 
         argv[0] = (char *) "mondump";
         snprintf(core_pid, sizeof(core_pid), "%d", Pid);
         argv[1] = core_pid;
         argv[2] = core_file;
-        if ((nid == Nid) || getenv("SQ_VIRTUAL_NODES"))
-           argv[3] = NULL;
-        else
-        {
-           argv[3] = (char *) Nodes->GetNode(Nid)->GetName();
-           argv[4] = getenv("MPI_TMPDIR");
-           argv[5] = NULL;
-        }
+        argv[3] = NULL;
         CLNode   *lnode = Nodes->GetLNode( Nid );
         err = IntProcess.create(argv[0],
                                 argv,
@@ -3058,8 +3176,34 @@ void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path
         else
         {
             DumpState = Dump_Complete;
-            CReplDumpComplete *repl = new CReplDumpComplete(this);
-            Replicator.addItem(repl);
+            if ( NameServerEnabled )
+            {
+                int rc = -1;
+    
+                rc = PtpClient->ProcessDumpComplete(this);
+                if (rc)
+                {
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Dump complete reply to dumper failed: "
+                              "target %s (%d, %d:%d), "
+                              "dumper (%d, %d:%d)\n"
+                            , method_name
+                            , Name
+                            , Nid
+                            , Pid
+                            , Verifier
+                            , DumperNid
+                            , DumperPid
+                            , DumperVerifier );
+                    mon_log_write(MON_PROCESS_DUMP_BEGIN_2, SQ_LOG_ERR, la_buf);
+                }
+            }
+            else
+            {
+                CReplDumpComplete *repl = new CReplDumpComplete(this);
+                Replicator.addItem(repl);
+            }
             CompleteDump(Dump_Failed, NULL);
         }
     }
@@ -3067,11 +3211,29 @@ void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path
     if (trace_settings & TRACE_PROCESS)
     {
         if (DumpState == Dump_InProgress)
-            trace_printf("%s@%d - DumpState=Dump_InProgress, pid=%d\n",
-                         method_name, __LINE__, Pid);
+            trace_printf( "%s@%d - DumpState=Dump_InProgress, "
+                          "target %s (%d, %d:%d), "
+                          "dumper (%d, %d:%d)\n"
+                        , method_name, __LINE__
+                        , Name
+                        , Nid
+                        , Pid
+                        , Verifier
+                        , DumperNid
+                        , DumperPid
+                        , DumperVerifier );
         else
-            trace_printf("%s@%d - DumpState=Dump_Complete, pid=%d\n",
-                         method_name, __LINE__, Pid);
+            trace_printf( "%s@%d - DumpState=Dump_Complete, "
+                          "target %s (%d, %d:%d), "
+                          "dumper (%d, %d:%d)\n"
+                        , method_name, __LINE__
+                        , Name
+                        , Nid
+                        , Pid
+                        , Verifier
+                        , DumperNid
+                        , DumperPid
+                        , DumperVerifier );
     }
 
     TRACE_EXIT;
@@ -3244,9 +3406,7 @@ void CProcess::Exit( CProcess *parent )
     {
         CNode * node = Nodes->GetLNode(GetNid())->GetNode();
         // if process' node is being killed, do not supply process death notices
-        supplyProcessDeathNotices = node->IsSoftNodeDown()
-                                        ? node->IsSoftNodeDown()
-                                        : !node->IsKillingNode();
+        supplyProcessDeathNotices = !node->IsKillingNode();
     }
 
     if(  NoticeHead &&
@@ -3417,12 +3577,14 @@ void CProcess::Exit( CProcess *parent )
             case ProcessType_SPX:
             case ProcessType_PSD:
             case ProcessType_PERSIST:
+            case ProcessType_TMID:
                 // No special handling needed on exit
                 break;
             default:
-
-                snprintf(la_buf, sizeof(la_buf),
-                         "[CProcess::Exit], Invalid process type!\n");
+                snprintf(la_buf, sizeof(la_buf)
+                        , "[CProcess::Exit], Invalid process type(%d)! "
+                          "%s (%d,%d:%d)\n"
+                        , Type, Name , Nid, Pid, Verifier);
                 mon_log_write(MON_PROCESS_EXIT_1, SQ_LOG_ERR, la_buf);
         }
 
@@ -3482,44 +3644,11 @@ void CProcess::Exit( CProcess *parent )
         }
 
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
-            trace_printf( "%s@%d" " - Death message check of %s (%d,%d:%d) type=%s, node phase=%s, send death notices=%d\n"
+            trace_printf( "%s@%d" " - Death message check of %s (%d,%d:%d) type=%s, My node phase=%s, send death notices=%d\n"
                         , method_name, __LINE__
                         , GetName(), GetNid(), GetPid(), GetVerifier()
                         , ProcessTypeString(GetType()), NodePhaseString( MyNode->GetPhase() )
                         , supplyProcessDeathNotices );
-
-        if ( Type == ProcessType_DTM &&
-             MyNode->GetPhase() == Phase_Ready &&
-             supplyProcessDeathNotices )
-        {
-            // Send local DTMs this DTM's death message
-            CLNode *lnode = MyNode->GetFirstLNode();
-            for ( ; lnode; lnode = lnode->GetNextP() )
-            {
-                CProcess *tmProcess = lnode->GetProcessLByType( ProcessType_DTM );
-                if ( tmProcess && MyNode->GetState() == State_Up )
-                {
-                    SQ_theLocalIOToClient->putOnNoticeQueue( tmProcess->Pid
-                                                           , tmProcess->Verifier
-                                                           , DeathMessage()
-                                                           , NULL);
-
-                    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-                       trace_printf( "%s@%d" " - Sending death message of %s (%d,%d:%d) to %s (%d,%d:%d)\n"
-                                   , method_name, __LINE__
-                                   , GetName(), GetNid(), GetPid(), GetVerifier()
-                                   , tmProcess->GetName(), tmProcess->GetNid()
-                                   , tmProcess->GetPid(), tmProcess->GetVerifier());
-
-                }
-                else
-                {
-                    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
-                        trace_printf("%s@%d: No DTM process found in nid=%d\n",
-                                     method_name, __LINE__, lnode->GetNid());
-                }
-            }
-        }
     }
 
     if ( parent && !parent->IsClone() && Pid != -1 )
@@ -3836,38 +3965,6 @@ bool CProcess::MakePrimary (void)
 }
 
 #ifndef NAMESERVER_PROCESS
-bool CProcess::MyTransactions( struct message_def *msg )
-{
-    int idx;
-    CNotice *notice = NoticeHead;
-
-    const char method_name[] = "CProcess::MyTransactions";
-    TRACE_ENTRY;
-
-    while (notice)
-    {
-        if ( !isNull( notice->TransID ) )
-        {
-            idx = msg->u.reply.u.trans_info.num_processes;
-            msg->u.reply.u.trans_info.procs[idx].nid = notice->Nid;
-            msg->u.reply.u.trans_info.procs[idx].pid = notice->Pid;
-            msg->u.reply.u.trans_info.procs[idx].trans_id = notice->TransID;
-            msg->u.reply.u.trans_info.num_processes++;
-            if (msg->u.reply.u.trans_info.num_processes >= MAX_PROC_LIST)
-            {
-                msg->u.reply.u.trans_info.return_code = MPI_ERR_TRUNCATE;
-                return FAILURE;
-            }
-        }
-        notice = notice->GetNext();
-    }
-
-    TRACE_EXIT;
-    return SUCCESS;
-}
-#endif
-
-#ifndef NAMESERVER_PROCESS
 bool CProcess::Open (CProcess * opened_process, int death_notification)
 {
     const char method_name[] = "CProcess::Open";
@@ -4153,7 +4250,8 @@ CProcessContainer::CProcessContainer (void)
         mon_log_write(MON_PROCESSCONT_PROCESSCONT_1, SQ_LOG_ERR, buf);
 
         sem_unlink(sem_name);
-        abort();
+
+        mon_failure_exit();
     }
 
 #ifndef NAMESERVER_PROCESS
@@ -4203,7 +4301,8 @@ CProcessContainer::CProcessContainer( bool nodeContainer )
                      method_name, sem_name, strerror(err));
             mon_log_write(MON_PROCESSCONT_PROCESSCONT_4, SQ_LOG_ERR, buf);
         }
-        abort();
+
+        mon_failure_exit();
     }
 
 #ifndef NAMESERVER_PROCESS
@@ -4631,7 +4730,7 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
             if ( ! MyNode->IsSpareNode() )
             {
                 int nid = MyNode->AssignNid();
-                if ( (nid == -1) && (MyNode->GetState() != State_Up) )
+                if ( nid == -1 )
                 {
                     snprintf( la_buf, sizeof(la_buf),
                             "[%s], Can't attach the pid %d (program: %s) - the monitor is not up yet (curr state: %d).\n",
@@ -4832,6 +4931,12 @@ char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
     const char method_name[] = "CProcessContainer::BuildOurName";
     TRACE_ENTRY;
 
+    // We are skipping 'A', 'I', 'O', and 'U' to distinguish between zero
+    // and one digits, and for political correctness in generated names
+    static char b32table[32] =  {'0','1','2','3','4','5','6','7','8','9'
+                                ,'B','C','D','E','F','G','H','J','K','L','M'
+                                ,'N','P','Q','R','S','T','V','W','X','Y','Z' };
+
     int i;
     int rem;
     int cnt[6];
@@ -4877,13 +4982,25 @@ char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
     }
     else
     {
-        // We are skipping 'A', 'I', 'O', and 'U' to distinguish between zero
-        // and one digits, and for political correctness in generated names
-        char b32table[32] =  {'0','1','2','3','4','5','6','7','8','9'
-                             ,'B','C','D','E','F','G','H','J','K','L','M'
-                             ,'N','P','Q','R','S','T','V','W','X','Y','Z' };
+        // Process name format long: '$Zxxxxpppppp' xxxx = <nid>, pppppp = <pid>
+        sprintf(name,"$Z");
     
-        // Convert Pid into base 32 ascii
+        // Convert <nid> into base 32 (1,048,575)
+        cnt[0] = nid / 32768;       // (32 * 32 * 32)
+        rem = nid - ( cnt[0] * 32768 );
+        cnt[1] = rem / 1024;        // (32 * 32)
+        rem -= ( cnt[1] * 1024 );
+        cnt[2] = rem / 32;
+        rem -= ( cnt[2] * 32 );
+        cnt[3] = rem;
+    
+        // Convert <nid> into base 32 ascii
+        for(i=3; i>=0; i--)
+        {
+            name[i+2] = static_cast<char>(b32table[cnt[i]]);
+        }
+    
+        // Convert <pid> into base 32 (1,073,741,823)
         cnt[0] = pid / 33554432;    // (32 * 32 * 32 * 32 * 32)
         rem = pid - ( cnt[0] * 33554432 );
         cnt[1] = rem / 1048576;     // (32 * 32 * 32 * 32)
@@ -4896,12 +5013,7 @@ char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
         rem -= ( cnt[4] * 32 );
         cnt[5] = rem;
     
-        // Process name format long: '$Zxxxxpppppp' xxxx = nid, pppppp = pid
-    
-        // Convert Nid into base 16 ascii
-        sprintf(name,"$Z%4.4X",nid);
-    
-        // Convert Pid into base 32 ascii
+        // Convert <pid> into base 32 ascii
         for(i=5; i>=0; i--)
         {
             name[i+6] = static_cast<char>(b32table[cnt[i]]);
@@ -5466,7 +5578,8 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
     if (process)
     {
         AddToList( process );
-        if (type == ProcessType_NameServer ||
+        if (type == ProcessType_DTM ||
+            type == ProcessType_NameServer ||
             type == ProcessType_Watchdog ||
             type == ProcessType_PSD ||
             type == ProcessType_SMS )
@@ -5916,7 +6029,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
         {
             process->SetState (State_Stopped);
             if ( !process->IsClone() &&
-                 (!MyNode->IsKillingNode() || MyNode->IsSoftNodeDown()) &&
+                 !MyNode->IsKillingNode() &&
                  !MyNode->isInQuiesceState() &&
                  !(process->GetType() == ProcessType_DTM &&
                    process->IsAbended() &&
@@ -6661,27 +6774,48 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
     {
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], Persistent process %s not "
-                  "restarted because the persist configuration is "
-                  "missing.\n"
+                , "[%s], Persistent process %s (%s) not restarted on nid=%d "
+                  "because the persist configuration is missing.\n"
                 , method_name
-                , process->GetName() );
+                , process->GetName()
+                , ProcessTypeString( process->GetType() )
+                , process->GetNid() );
         mon_log_write(MON_PROCESS_PERSIST_2, SQ_LOG_ERR, buf);
         return false;
+    }
+
+    if (!process->IsClone())
+    {
+        if ( process->GetType() == ProcessType_DTM )
+        {
+            MyNode->ResetPrimitiveDtmUp();
+        }
+        else if ( process->GetType() == ProcessType_Watchdog )
+        {
+            MyNode->ResetPrimitiveWdgUp();
+        }
+        else if ( process->GetType() == ProcessType_PSD )
+        {
+             MyNode->ResetPrimitivePsdUp() ;
+        }
     }
 
     // if 1st time retrying to restart process
     if (process->GetPersistentCreateTime() == 0)
     {
-        process->SetFirstInstance(false);
         process->SetPersistentCreateTime ( time(NULL) );
     }
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-       trace_printf( "%s@%d - Persistent process retries = %d, "
-                     "time limit = %d, down nid=%d\n"
+       trace_printf( "%s@%d - Persistent process %s, retryCount=%d, max_retries = %d, "
+                     "time limit = %d, createTime=%ld, down nid=%d\n"
                    , method_name, __LINE__
-                   , max_retries, retry_max_time, downNid);
+                   , process->GetName()
+                   , process->GetPersistentRetries()
+                   , max_retries
+                   , retry_max_time
+                   , process->GetPersistentCreateTime()
+                   , downNid);
 
     // get the parent process if any
     if (process->GetParentNid() != -1 && process->GetParentPid() != -1)
@@ -6874,9 +7008,9 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             if ( (time(NULL) - process->GetPersistentCreateTime()) < retry_max_time )
             {
                 int retryCount = process->GetPersistentRetries();
-                if ( retryCount < max_retries )
+                ++retryCount;
+                if ( retryCount <= max_retries )
                 {
-                    ++retryCount;
                     process->SetPersistentRetries ( retryCount );
                 }
                 else
@@ -6890,10 +7024,12 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
 
                     char buf[MON_STRING_BUF_SIZE];
 
-                    snprintf(buf, sizeof(buf), "[%s], Persistent process %s "
-                             "not restarted because the maximum retry count "
-                             "(%d) has been exceeded.\n",
-                             method_name, process->GetName(), retryCount);
+                    snprintf( buf, sizeof(buf)
+                            , "[%s], Persistent process %s not restarted because "
+                              "the maximum retry count has been exceeded. "
+                              "(retryCount=%d, maxRetryCount=%d) \n"
+                            , method_name, process->GetName()
+                            , retryCount, max_retries );
                     mon_log_write(MON_PROCESS_PERSIST_1, SQ_LOG_INFO, buf);
 
                     if ( process->GetType() == ProcessType_DTM ||
@@ -6925,15 +7061,15 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             }
             else
             {
-                process->SetPersistentRetries ( 0 );
                 if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-                    trace_printf("%s@%d" " - Retries count reset for process " "%s" "\n", method_name, __LINE__, process->GetName());
-            }
-
-            if ( process->GetType() == ProcessType_DTM )
-            {
-                // Kill all local processes
-                Monitor->SoftNodeDown( MyPNID );
+                    trace_printf( "%s@%d - Retries count reset for process %s, "
+                                  "retry: count=%d, time elapsed=%ld, time max=%d\n"
+                                , method_name, __LINE__
+                                , process->GetName()
+                                , process->GetPersistentRetries()
+                                , (time(NULL) - process->GetPersistentCreateTime())
+                                , retry_max_time);
+                process->SetPersistentRetries( 1 );
             }
 
             // OK ... just restart the process on the same node
@@ -6952,7 +7088,10 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
                     ->AddToNameMap(process);
                 Nodes->GetLNode (process->GetNid())->GetNode()
                     ->AddToPidMap(process->GetPid(), process);
-                process->SetPersistentCreateTime ( time(NULL) );
+                if (process->GetPersistentRetries() == 1)
+                {
+                    process->SetPersistentCreateTime ( time(NULL) );
+                }
                 if ( process->GetType() == ProcessType_SSMP )
                 {
                     Nodes->GetLNode ( process->GetNid() )->SetSSMProc ( process );
@@ -7125,14 +7264,12 @@ void CProcessContainer::PidHangupCheck ( time_t now )
         {
             if (errno == ESRCH)
             {   // Process no longer exists
-                if (trace_settings & TRACE_PROCESS)
-                    trace_printf("%s@%d process %d no longer exists\n",
-                                 method_name, __LINE__, pid);
-                // Log info
-                snprintf(buf, sizeof(buf),
-                         "[%s], process %d no longer exists, initiating "
-                         "exit processing\n", method_name, pid);
-                mon_log_write(MON_PROCESS_PIDHANGUPCHECK_1, SQ_LOG_INFO, buf);
+                if (trace_settings & (TRACE_PROCESS_DETAIL | TRACE_EVLOG_MSG))
+                {
+                    trace_printf("%s@%d process %d no longer exists, initiating "
+                                 "exit processing\n"
+                                , method_name, __LINE__, pid);
+                }
 
                 // Remove from set
                 hungupPids_.erase ( pid );
@@ -7215,12 +7352,14 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
             // Process intends to exits, when the child death arrives the
             // State_Stopped is processed
             if (trace_settings & TRACE_PROCESS)
-                trace_printf( "%s@%d Setting State_Down for process %s(%d,%d:%d), abend=%d, down=%d\n"
+                trace_printf( "%s@%d Setting State_Down for process %s(%d,%d:%d),"
+                              "state=%s, abend=%d, down=%d\n"
                             , method_name, __LINE__
                             , process->GetName()
                             , process->GetNid()
                             , process->GetPid()
                             , process->GetVerifier()
+                            , StateString(process->GetState())
                             , abend, downNode );
             process->SetState( State_Down );
             if ( abend && !process->IsAbended() )
@@ -7228,7 +7367,6 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                 process->SetAbended( abend );
             }
             break;
-
         case State_Stopped:
             if ( process->GetState() != State_Stopped )
             {
@@ -7314,43 +7452,3 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
     TRACE_EXIT;
 }
 
-
-
-#ifndef NAMESERVER_PROCESS
-bool CProcessContainer::WhoEnlisted( _TM_Txid_External trans_id, struct message_def *msg )
-{
-    int idx;
-    CProcess *process = head_;
-    CNotice *notice;
-
-    const char method_name[] = "CProcessContainer::WhoEnlisted";
-    TRACE_ENTRY;
-    while ((process) &&
-           (msg->u.reply.u.trans_info.num_processes < MAX_PROC_LIST ))
-    {
-        notice = process->GetNoticeHead();
-        while (notice)
-        {
-            if ( isEqual( notice->TransID, trans_id ) )
-            {
-                idx = msg->u.reply.u.trans_info.num_processes;
-                msg->u.reply.u.trans_info.procs[idx].nid = process->GetNid();
-                msg->u.reply.u.trans_info.procs[idx].pid = process->GetPid();
-                msg->u.reply.u.trans_info.procs[idx].trans_id = trans_id;
-                msg->u.reply.u.trans_info.num_processes++;
-                if (msg->u.reply.u.trans_info.num_processes >= MAX_PROC_LIST)
-                {
-                    msg->u.reply.u.trans_info.return_code = MPI_ERR_TRUNCATE;
-                    return FAILURE;
-                }
-                break;
-            }
-            notice = notice->GetNext();
-        }
-        process = process->GetNext();
-    }
-
-    TRACE_EXIT;
-    return SUCCESS;
-}
-#endif

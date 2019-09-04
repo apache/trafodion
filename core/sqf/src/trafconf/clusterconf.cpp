@@ -50,6 +50,9 @@ CClusterConfig::CClusterConfig( void )
               : CPNodeConfigContainer(TC_NODES_MAX)
               , CLNodeConfigContainer(TC_NODES_MAX)
               , configMaster_(-1)
+              , clusterId_(-1)
+              , instanceId_(-1)
+              , isRealCluster_(true)
               , nodeReady_(false)
               , persistReady_(false)
               , newPNodeConfig_(true)
@@ -61,6 +64,41 @@ CClusterConfig::CClusterConfig( void )
 {
     const char method_name[] = "CClusterConfig::CClusterConfig";
     TRACE_ENTRY;
+
+    if ( getenv( "SQ_VIRTUAL_NODES" ) )
+    {
+        isRealCluster_ = false;
+    }
+
+    char *env;
+    env = getenv("TRAF_CLUSTER_ID");
+    if ( env && isdigit(*env) )
+    {
+        clusterId_ = atoi(env);
+    }
+    else
+    {
+        char la_buf[TC_LOG_BUF_SIZE];
+        sprintf( la_buf
+               , "[%s], Environment variable TRAF_CLUSTER_ID is undefined, exiting!\n"
+               , method_name);
+        TcLogWrite( MON_CLUSTERCONF_CLUSTERCONFIG_1, TC_LOG_CRIT, la_buf );
+        exit(EXIT_FAILURE);
+    }
+    env = getenv("TRAF_INSTANCE_ID");
+    if ( env && isdigit(*env) )
+    {
+        instanceId_ = atoi(env);
+    }
+    else
+    {
+        char la_buf[TC_LOG_BUF_SIZE];
+        sprintf( la_buf
+               , "[%s], Environment variable TRAF_INSTANCE_ID is undefined, exiting!\n"
+               , method_name);
+        TcLogWrite( MON_CLUSTERCONF_CLUSTERCONFIG_2, TC_LOG_CRIT, la_buf );
+        exit(EXIT_FAILURE);
+    }
 
     memset( &configMasterName_, 0, TC_PROCESSOR_NAME_MAX );
 
@@ -116,11 +154,12 @@ void CClusterConfig::AddNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo
 
     if ( TcTraceSettings & TC_TRACE_INIT )
     {
-        trace_printf( "%s@%d nid=%d, pnid=%d, nodename=%s\n"
+        trace_printf( "%s@%d nid=%d, pnid=%d, nodename=%s, domainname=%s\n"
                     , method_name, __LINE__
                     , lnodeConfigInfo.nid
                     , pnodeConfigInfo.pnid
-                    , pnodeConfigInfo.nodename );
+                    , pnodeConfigInfo.nodename
+                    , pnodeConfigInfo.domainname );
     }
 
     if ( newPNodeConfig_ )
@@ -141,10 +180,11 @@ void CClusterConfig::AddSNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo )
 
     if ( TcTraceSettings & TC_TRACE_INIT )
     {
-        trace_printf( "%s@%d pnid=%d, nodename=%s\n"
+        trace_printf( "%s@%d pnid=%d, nodename=%s, domainname=%s\n"
                     , method_name, __LINE__
                     , pnodeConfigInfo.pnid
-                    , pnodeConfigInfo.nodename );
+                    , pnodeConfigInfo.nodename
+                    , pnodeConfigInfo.domainname );
     }
 
     if ( newPNodeConfig_ )
@@ -376,50 +416,15 @@ bool CClusterConfig::LoadNodeConfig( void )
         return( false );
     }
 
-    bool lv_is_real_cluster = true;
-    if ( getenv( "SQ_VIRTUAL_NODES" ) )
-    {
-        lv_is_real_cluster = false;
-    }
-
     // Process logical nodes
     for (int i =0; i < nodeCount; i++ )
     {
-        char *tmpptr = nodeConfigData[i].node_name;
-        while ( *tmpptr )
-        {
-            *tmpptr = (char)tolower( *tmpptr );
-            tmpptr++;
-        }
-    
-        if (lv_is_real_cluster)
-        {
-            // Remove the domain portion of the name if any
-            char short_node_name[TC_PROCESSOR_NAME_MAX];
-            char str1[TC_PROCESSOR_NAME_MAX];
-            memset( str1, 0, TC_PROCESSOR_NAME_MAX );
-            memset( short_node_name, 0, TC_PROCESSOR_NAME_MAX );
-            strcpy (str1, nodeConfigData[i].node_name );
-
-            char *str1_dot = strchr( (char *) str1, '.' );
-            if ( str1_dot )
-            {
-                memcpy( short_node_name, str1, str1_dot - str1 );
-            }
-            else
-            {
-                strcpy (short_node_name, str1 );
-            }
-
-            strcpy(nodeConfigData[i].node_name, short_node_name);
-
-        }
-
         if ( TcTraceSettings & TC_TRACE_INIT )
         {
-            trace_printf( "%s@%d nodename=%s\n"
+            trace_printf( "%s@%d node_name=%s, domain_name=%s\n"
                           , method_name, __LINE__
-                          , nodeConfigData[i].node_name);
+                          , nodeConfigData[i].node_name
+                          , nodeConfigData[i].domain_name );
         }
 
         ProcessLNode( nodeConfigData[i], pnodeConfigInfo, lnodeConfigInfo );
@@ -453,8 +458,10 @@ bool CClusterConfig::LoadNodeConfig( void )
         AddSNodeConfiguration( pnodeConfigInfo );
     }
 
+    prevPNodeConfig_ = NULL;
+    prevLNodeConfig_ = NULL;
     nodeReady_ = true;
-
+    
     if ( TcTraceSettings & TC_TRACE_INIT )
     {
         if ( nodeReady_ )
@@ -554,12 +561,14 @@ void CClusterConfig::ProcessLNode( TcNodeConfiguration_t &nodeConfigData
 
     if ( TcTraceSettings & TC_TRACE_INIT )
     {
-        trace_printf( "%s@%d nid=%d, pnid=%d, name=%s, excluded cores=(%d:%d),"
-                      " cores=(%d:%d), processors=%d, roles=%d\n"
+        trace_printf( "%s@%d nid=%d, pnid=%d, name=%s, domain=%s, "
+                      "excluded cores=(%d:%d), cores=(%d:%d), "
+                      "processors=%d, roles=%d\n"
                     , method_name, __LINE__
                     , nodeConfigData.nid
                     , nodeConfigData.pnid
                     , nodeConfigData.node_name
+                    , nodeConfigData.domain_name
                     , nodeConfigData.excluded_first_core
                     , nodeConfigData.excluded_last_core
                     , nodeConfigData.first_core
@@ -578,6 +587,9 @@ void CClusterConfig::ProcessLNode( TcNodeConfiguration_t &nodeConfigData
         strncpy( pnodeConfigInfo.nodename
                , nodeConfigData.node_name
                , sizeof(pnodeConfigInfo.nodename) );
+        strncpy( pnodeConfigInfo.domainname
+               , nodeConfigData.domain_name
+               , sizeof(pnodeConfigInfo.domainname) );
         pnodeConfigInfo.excludedFirstCore = nodeConfigData.excluded_first_core;
         pnodeConfigInfo.excludedLastCore  = nodeConfigData.excluded_last_core;
         excludedCores = (nodeConfigData.excluded_first_core != -1 || 
@@ -600,6 +612,9 @@ void CClusterConfig::ProcessLNode( TcNodeConfiguration_t &nodeConfigData
     strncpy( lnodeConfigInfo.nodename
            , nodeConfigData.node_name
            , sizeof(lnodeConfigInfo.nodename) );
+    strncpy( lnodeConfigInfo.domainname
+           , nodeConfigData.domain_name
+           , sizeof(lnodeConfigInfo.domainname) );
     lnodeConfigInfo.firstCore = nodeConfigData.first_core;
     lnodeConfigInfo.lastCore  = nodeConfigData.last_core;
     SetCoreMask( nodeConfigData.first_core
@@ -619,8 +634,8 @@ void CClusterConfig::ProcessSNode( TcPhysicalNodeConfiguration_t &pnodeConfig
 
     if ( TcTraceSettings & TC_TRACE_INIT )
     {
-        trace_printf( "%s@%d pnid=%d, name=%s, excluded cores=(%d:%d), "
-                      "spareCount=%d\n"
+        trace_printf( "%s@%d pnid=%d, node_name=%s, "
+                      "excluded cores=(%d:%d), spareCount=%d\n"
                     , method_name, __LINE__
                     , pnodeConfig.pnid
                     , pnodeConfig.node_name
@@ -630,13 +645,18 @@ void CClusterConfig::ProcessSNode( TcPhysicalNodeConfiguration_t &pnodeConfig
                     );
     }
 
-    newPNodeConfig_ = (pnodeConfig.pnid != prevPNodeConfig_->GetPNid()) 
+    newPNodeConfig_ = ((prevPNodeConfig_ == NULL) ||
+                       (pnodeConfig.pnid != prevPNodeConfig_->GetPNid()))
                         ? true : false;
     if ( newPNodeConfig_ )
     {
-        strncpy( pnodeConfigInfo.nodename
-               , pnodeConfig.node_name
-               , sizeof(pnodeConfigInfo.nodename) );
+        if ( TcTraceSettings & TC_TRACE_INIT )
+        {
+            trace_printf( "%s@%d node_name=%s, domain_name=%s\n"
+                          , method_name, __LINE__
+                          , pnodeConfigInfo.nodename
+                          , pnodeConfigInfo.domainname );
+        }
 
         bool excludedCores = (pnodeConfig.excluded_first_core != -1 || 
                               pnodeConfig.excluded_last_core != -1)
@@ -661,7 +681,7 @@ void CClusterConfig::ProcessSNode( TcPhysicalNodeConfiguration_t &pnodeConfig
 }
 
 void CClusterConfig::ProcessPersistInfo( TcPersistConfiguration_t &persistConfig
-                                       , persistConfigInfo_t     &persistConfigInfo )
+                                       , persistConfigInfo_t      &persistConfigInfo )
 {
     const char method_name[] = "CClusterConfig::ProcessPersistInfo";
     TRACE_ENTRY;
@@ -751,6 +771,7 @@ void CClusterConfig::ProcessPersistInfo( TcPersistConfiguration_t &persistConfig
 }
 
 bool CClusterConfig::SaveNodeConfig( const char *name
+                                   , const char *domain
                                    , int         nid
                                    , int         pnid
                                    , int         firstCore
@@ -771,11 +792,13 @@ bool CClusterConfig::SaveNodeConfig( const char *name
 
     if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
-        trace_printf( "%s@%d Saving node config (node_name=%s, processors=%d, "
+        trace_printf( "%s@%d Saving node config "
+                      "(name=%s, domain=%s, processors=%d, "
                       "roles=%d, firstCore=%d, lastCore=%d "
                       "excludedFirstCore=%d, excludedLastCore=%d)\n"
                      , method_name, __LINE__
                      , name
+                     , domain
                      , processors
                      , roles
                      , firstCore
@@ -787,6 +810,7 @@ bool CClusterConfig::SaveNodeConfig( const char *name
     nodeConfig.nid  = nid;
     nodeConfig.pnid = pnid;
     strncpy( nodeConfig.node_name, name, sizeof(nodeConfig.node_name) );
+    strncpy( nodeConfig.domain_name, domain, sizeof(nodeConfig.domain_name) );
     nodeConfig.excluded_first_core = excludedFirstCore;
     nodeConfig.excluded_last_core  = excludedLastCore;
     nodeConfig.first_core = firstCore;
@@ -828,6 +852,7 @@ void CClusterConfig::SetCoreMask( int        firstCore
 
 bool CClusterConfig::UpdatePNodeConfig( int         pnid
                                       , const char *name
+                                      , const char *domain
                                       , int         excludedFirstCore
                                       , int         excludedLastCore )
 {
@@ -841,18 +866,27 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
     if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d Updating pnode config "
-                      "(pnid=%d, node_name=%s, "
+                      "(pnid=%d, name=%s, domain=%s, "
                       "excludedFirstCore=%d, excludedLastCore=%d)\n"
                      , method_name, __LINE__
                      , pnid
                      , name
+                     , domain
                      , excludedFirstCore
                      , excludedLastCore );
     }
 
     memset( &pnodeConfig, 0, sizeof(TcPhysicalNodeConfiguration_t) );
     pnodeConfig.pnid = pnid;
-    strncpy( pnodeConfig.node_name, name, sizeof(pnodeConfig.node_name) );
+    if (strlen(domain))
+    {
+        snprintf( pnodeConfig.node_name, sizeof(pnodeConfig.node_name)
+                , "%s.%s", name, domain );
+    }
+    else
+    {
+        strncpy( pnodeConfig.node_name, name, sizeof(pnodeConfig.node_name) );
+    }
     pnodeConfig.excluded_first_core = excludedFirstCore;
     pnodeConfig.excluded_last_core  = excludedLastCore;
     
@@ -863,6 +897,7 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
         // Update physical node to configuration object
         UpdatePNodeConfiguration( pnid
                                 , name
+                                , domain
                                 , excludedFirstCore
                                 , excludedLastCore );
     }
@@ -871,8 +906,8 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
         rs = false;
         char buf[TC_LOG_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s] PNode update failed, pnid=%d, node_name=%s\n"
-                , method_name,  pnid, name );
+                , "[%s] PNode update failed, pnid=%d, name=%s, domain=%s\n"
+                , method_name,  pnid, name, domain );
         TcLogWrite( MON_CLUSTERCONF_UPDATEPNODECFG_1, TC_LOG_ERR, buf );
     }
 
@@ -882,6 +917,7 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
 
 void CClusterConfig::UpdatePNodeConfiguration( int         pnid
                                              , const char *name
+                                             , const char *domain
                                              , int         excludedFirstCore
                                              , int         excludedLastCore )
 {
@@ -903,6 +939,7 @@ void CClusterConfig::UpdatePNodeConfiguration( int         pnid
     if ( pnodeConfig )
     {
         pnodeConfig->SetName( name );
+        pnodeConfig->SetDomain( domain );
         pnodeConfig->SetExcludedFirstCore( excludedFirstCore );
         pnodeConfig->SetExcludedLastCore( excludedLastCore );
     }

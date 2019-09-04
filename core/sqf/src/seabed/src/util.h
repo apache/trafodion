@@ -52,6 +52,7 @@ extern char *SB_util_itoa_ptr(char *pp_str, void *pp_ptr);
 extern void  SB_util_short_lock();
 extern void  SB_util_short_unlock();
 
+extern void sb_util_write_log(char *pp_buf);
 
 // make printf happy
 #  define pfp(p)  (void *) (long) p

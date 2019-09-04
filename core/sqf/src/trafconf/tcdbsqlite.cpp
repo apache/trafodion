@@ -2436,10 +2436,48 @@ int CTcdbSqlite::GetSNodeData( int pnid
                     , exclastcore );
     }
 
+    if (TcIsRealCluster)
+    {
+        char short_node_name[TC_PROCESSOR_NAME_MAX];
+        char str1[TC_PROCESSOR_NAME_MAX];
+        char *tmpptr = NULL;
+        tmpptr = (char*)nodename;
+
+        while ( *tmpptr )
+        {
+            *tmpptr = (char)tolower( *tmpptr );
+            tmpptr++;
+        }
+
+        // Extract the domain portion of the name if any
+        memset( str1, 0, TC_PROCESSOR_NAME_MAX );
+        memset( short_node_name, 0, TC_PROCESSOR_NAME_MAX );
+        strcpy (str1, nodename );
+
+        char *str1_dot = strchr( (char *) str1, '.' );
+        if ( str1_dot )
+        {
+            memcpy( short_node_name, str1, str1_dot - str1 );
+            // copy the domain portion and skip the '.'
+            strcpy( spareNodeConfig.node_name, short_node_name );
+            strcpy( spareNodeConfig.domain_name, str1_dot+1 );
+        }
+        else
+        {
+            strncpy( spareNodeConfig.node_name
+                   , nodename
+                   , sizeof(spareNodeConfig.node_name) );
+            spareNodeConfig.domain_name[0] = 0;
+        }
+    }
+    else
+    {
+        strncpy( spareNodeConfig.node_name
+               , nodename
+               , sizeof(spareNodeConfig.node_name) );
+    }
+
     spareNodeConfig.pnid = pnid;
-    strncpy( spareNodeConfig.node_name
-           , nodename
-           , sizeof(spareNodeConfig.node_name) );
     spareNodeConfig.excluded_first_core = excfirstcore;
     spareNodeConfig.excluded_last_core = exclastcore;
 
@@ -3425,17 +3463,73 @@ void CTcdbSqlite::SetLNodeData( int nid
                     , roles );
     }
 
+    if (TcIsRealCluster)
+    {
+        char short_node_name[TC_PROCESSOR_NAME_MAX];
+        char str1[TC_PROCESSOR_NAME_MAX];
+        char *tmpptr = NULL;
+        tmpptr = (char *)nodename;
+
+        while ( *tmpptr )
+        { // Set to lowercase characters
+            *tmpptr = (char)tolower( *tmpptr );
+            tmpptr++;
+        }
+
+        // Extract the domain portion of the name if any
+        memset( str1, 0, TC_PROCESSOR_NAME_MAX );
+        memset( short_node_name, 0, TC_PROCESSOR_NAME_MAX );
+        strcpy (str1, nodename );
+
+        char *str1_dot = strchr( (char *) str1, '.' );
+        if ( str1_dot )
+        {
+            memcpy( short_node_name, str1, str1_dot - str1 );
+            // copy the domain portion and skip the '.'
+            strcpy( nodeConfig.node_name, short_node_name );
+            strcpy( nodeConfig.domain_name, str1_dot+1 );
+        }
+        else
+        {
+            strncpy( nodeConfig.node_name
+                   , nodename
+                   , sizeof(nodeConfig.node_name) );
+            nodeConfig.domain_name[0] = 0;
+        }
+    }
+    else
+    {
+        strncpy( nodeConfig.node_name
+               , nodename
+               , sizeof(nodeConfig.node_name) );
+    }
+
     nodeConfig.nid  = nid;
     nodeConfig.pnid = pnid;
-    strncpy( nodeConfig.node_name
-           , nodename
-           , sizeof(nodeConfig.node_name) );
     nodeConfig.excluded_first_core = excfirstcore;
     nodeConfig.excluded_last_core = exclastcore;
     nodeConfig.first_core = firstcore;
     nodeConfig.last_core = lastcore;
     nodeConfig.processors = processors;
     nodeConfig.roles  = roles;
+
+    if ( TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST) )
+    {
+        trace_printf( "%s@%d nid=%d, pnid=%d, node_name=%s, domain_name=%s, "
+                      "excluded cores=(%d:%d),  cores=(%d:%d), "
+                      "processors=%d, roles=%d\n"
+                    , method_name, __LINE__
+                    , nodeConfig.nid
+                    , nodeConfig.pnid
+                    , nodeConfig.node_name
+                    , nodeConfig.domain_name
+                    , nodeConfig.excluded_first_core
+                    , nodeConfig.excluded_last_core
+                    , nodeConfig.first_core
+                    , nodeConfig.last_core
+                    , nodeConfig.processors
+                    , nodeConfig.roles );
+    }
 
     TRACE_EXIT;
 }
@@ -3460,12 +3554,61 @@ void CTcdbSqlite::SetPNodeData( int pnid
                     , exclastcore );
     }
 
+    if (TcIsRealCluster)
+    {
+        char short_node_name[TC_PROCESSOR_NAME_MAX];
+        char str1[TC_PROCESSOR_NAME_MAX];
+        char *tmpptr = NULL;
+        tmpptr = (char *)nodename;
+
+        while ( *tmpptr )
+        {
+            *tmpptr = (char)tolower( *tmpptr );
+            tmpptr++;
+        }
+
+        // Extract the domain portion of the name if any
+        memset( str1, 0, TC_PROCESSOR_NAME_MAX );
+        memset( short_node_name, 0, TC_PROCESSOR_NAME_MAX );
+        strcpy (str1, nodename );
+
+        char *str1_dot = strchr( (char *) str1, '.' );
+        if ( str1_dot )
+        { // Set to lowercase characters
+            memcpy( short_node_name, str1, str1_dot - str1 );
+            // copy the domain portion and skip the '.'
+            strcpy( pnodeConfig.node_name, short_node_name );
+            strcpy( pnodeConfig.domain_name, str1_dot+1 );
+        }
+        else
+        {
+            strncpy( pnodeConfig.node_name
+                   , nodename
+                   , sizeof(pnodeConfig.node_name) );
+            pnodeConfig.domain_name[0] = 0;
+        }
+    }
+    else
+    {
+        strncpy( pnodeConfig.node_name
+               , nodename
+               , sizeof(pnodeConfig.node_name) );
+    }
+
     pnodeConfig.pnid = pnid;
-    strncpy( pnodeConfig.node_name
-           , nodename
-           , sizeof(pnodeConfig.node_name) );
     pnodeConfig.excluded_first_core = excfirstcore;
     pnodeConfig.excluded_last_core = exclastcore;
+
+    if ( TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST) )
+    {
+        trace_printf( "%s@%d pnid=%d, node_name=%s, domain_name=%s, excluded cores=(%d:%d)\n"
+                    , method_name, __LINE__
+                    , pnodeConfig.pnid
+                    , pnodeConfig.node_name
+                    , pnodeConfig.domain_name
+                    , pnodeConfig.excluded_first_core
+                    , pnodeConfig.excluded_last_core );
+    }
 
     TRACE_EXIT;
 }

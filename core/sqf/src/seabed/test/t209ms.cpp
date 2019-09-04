@@ -122,10 +122,22 @@ int main(int argc, char *argv[]) {
                                                  core_file);
             TEST_CHK_FEOK(ferr);
             printf("core-file=%s\n", core_file);
-            err = stat(core_file, &statbuf);
+            char *pch;
+            pch= strtok (core_file,":");
+            pch = strtok (NULL,":");
+            printf("pch=%s\n", pch);
+            err = stat(pch, &statbuf);
+            int error = errno;
+            printf("stat() failed! - err=%d errno=%d (%s)\n"
+                  , err
+                  , error
+                  , strerror(error) );
             assert(err == 0);
             if (!save)
-                unlink(core_file);
+            {
+                printf("Removing core-file=%s\n", core_file);
+                unlink(pch);
+            }
             if ((loop > 1) && sleepv)
                 sleep(1);
         }

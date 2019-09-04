@@ -76,7 +76,7 @@ void SB_thread_assert_fun(const char *pp_exp,
             getpid(), gettid(),
             pp_file, pv_line, pp_fun,
             pp_exp);
-    fprintf(stderr, la_buf);
+    fprintf(stderr, "%s", la_buf);
     fflush(stderr);
     abort(); // can't use SB_util_abort
 }

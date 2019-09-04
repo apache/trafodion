@@ -88,7 +88,8 @@ CPtpClient::CPtpClient (void)
                 , "[%s@%d] MON2MON_COMM_PORT environment variable is not set!\n"
                 , method_name, __LINE__ );
         mon_log_write( PTPCLIENT_PTPCLIENT_1, SQ_LOG_CRIT, buf );
-        abort();
+
+        mon_failure_exit();
     }
 
     ptpClusterSocks_ = new int[MAX_NODES];
@@ -387,6 +388,155 @@ int CPtpClient::ProcessClone( CProcess *process )
                          , myInfo
                          , process->GetParentNid()
                          , parentLNode->GetNode()->GetName());
+    
+    TRACE_EXIT;
+    return error;
+}
+
+int CPtpClient::ProcessDump( CProcess *process )
+{
+    const char method_name[] = "CPtpClient::ProcessDump";
+    TRACE_ENTRY;
+
+    if (!IsTargetRemote( process->GetNid() ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_Dump request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , process->GetNid() );
+        }
+        return(0);
+    }
+
+    int targetNid = process->GetNid();
+    CNode *targetNode = Nodes->GetLNode(targetNid)->GetNode();
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - Sending InternalType_Dump request to %s, targetPNid=%d"
+                      ", target process=%s (%d,%d:%d)\n"
+                    , method_name, __LINE__
+                    , targetNode?targetNode->GetName():""
+                    , targetNode?targetNode->GetPNid():-1
+                    , process->GetName()
+                    , process->GetNid()
+                    , process->GetPid()
+                    , process->GetVerifier() );
+    }
+
+    struct internal_msg_def msg;
+    memset(&msg, 0, sizeof(msg)); 
+    msg.type = InternalType_Dump;
+    msg.u.dump.nid = process->GetNid();
+    msg.u.dump.pid = process->GetPid();
+    msg.u.dump.verifier = process->GetVerifier();
+    msg.u.dump.dumper_nid = process->GetDumperNid();
+    msg.u.dump.dumper_pid = process->GetDumperPid();
+    msg.u.dump.dumper_verifier = process->GetDumperVerifier();
+    strcpy(msg.u.dump.core_file, process->GetDumpFile());
+
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.dump);
+    
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+    {
+        trace_printf( "%s@%d - size_=%d, process %s (%d,%d:%d), "
+                      "dumper (%d,%d:%d), core_file=%s\n"
+                    , method_name, __LINE__
+                    , myInfo.size
+                    , process->GetName()
+                    , msg.u.dump.nid
+                    , msg.u.dump.pid
+                    , msg.u.dump.verifier
+                    , msg.u.dump.dumper_nid
+                    , msg.u.dump.dumper_pid
+                    , msg.u.dump.dumper_verifier
+                    , msg.u.dump.core_file );
+    }
+
+    int error = SendToMon( "process-dump"
+                         , &msg
+                         , myInfo
+                         , targetNid
+                         , targetNode->GetName() );
+    
+    TRACE_EXIT;
+    return error;
+}
+
+int CPtpClient::ProcessDumpComplete( CProcess *process )
+{
+    const char method_name[] = "CPtpClient::ProcessDumpComplete";
+    TRACE_ENTRY;
+
+    if (!IsTargetRemote( process->GetDumperNid() ))
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d - Not Sending InternalType_Dump request to "
+                          "local nid=%d\n"
+                        , method_name, __LINE__
+                        , process->GetDumperNid() );
+        }
+        return(0);
+    }
+
+    int targetNid = process->GetDumperNid();
+    CNode *targetNode = Nodes->GetLNode(targetNid)->GetNode();
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - Sending InternalType_DumpComplete reply to %s, targetPNid=%d"
+                      ", dumper process (%d,%d:%d)\n"
+                    , method_name, __LINE__
+                    , targetNode?targetNode->GetName():""
+                    , targetNode?targetNode->GetPNid():-1
+                    , process->GetDumperNid()
+                    , process->GetDumperPid()
+                    , process->GetDumperVerifier() );
+    }
+
+    struct internal_msg_def msg;
+    memset(&msg, 0, sizeof(msg)); 
+    msg.type = InternalType_DumpComplete;
+    msg.u.dump.nid = process->GetNid();
+    msg.u.dump.pid = process->GetPid();
+    msg.u.dump.verifier = process->GetVerifier();
+    msg.u.dump.dumper_nid = process->GetDumperNid();
+    msg.u.dump.dumper_pid = process->GetDumperPid();
+    msg.u.dump.dumper_verifier = process->GetDumperVerifier();
+    strcpy(msg.u.dump.core_file, process->GetDumpFile());
+
+    ptpMsgInfo_t myInfo;
+    myInfo.pnid = MyPNID;
+    myInfo.size = offsetof(struct internal_msg_def, u);
+    myInfo.size += sizeof(msg.u.dump);
+    
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+    {
+        trace_printf( "%s@%d - size_=%d, process %s (%d,%d:%d), "
+                      "dumper (%d,%d:%d), core_file=%s\n"
+                    , method_name, __LINE__
+                    , myInfo.size
+                    , process->GetName()
+                    , msg.u.dump.nid
+                    , msg.u.dump.pid
+                    , msg.u.dump.verifier
+                    , msg.u.dump.dumper_nid
+                    , msg.u.dump.dumper_pid
+                    , msg.u.dump.dumper_verifier
+                    , msg.u.dump.core_file );
+    }
+
+    int error = SendToMon( "process-dump-complete"
+                         , &msg
+                         , myInfo
+                         , targetNid
+                         , targetNode->GetName() );
     
     TRACE_EXIT;
     return error;

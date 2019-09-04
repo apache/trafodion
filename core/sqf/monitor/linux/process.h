@@ -179,7 +179,6 @@ class CProcessContainer
     inline  void SetLastProcess( CProcess *process ) { tail_ = process; }
     inline void SetNameMap( nameMap_t *nameMap ) { nameMap_ = nameMap; };
     inline void SetPidMap( pidMap_t *pidMap ) { pidMap_ = pidMap; };
-    bool WhoEnlisted( _TM_Txid_External trans_id, struct message_def *msg );
     bool WhoOpenedMe( CProcess *process, struct message_def *msg );
     bool WhoOpenedMe( CProcess *process, struct message_def *msg, CProcess *entry );
     bool WhoOpenedMe( CProcess *process, int pid, struct message_def *msg );
@@ -264,7 +263,7 @@ class CProcess
     void CompleteRequest( int status );
     bool Create (CProcess *parent, void* tag, int & result);
     bool Dump (CProcess *dumper, char *core_path);
-    void DumpBegin(int nid, int pid, Verifier_t verifier, char *core_path);
+    void DumpBegin(int dumperNid, int dumperPid, Verifier_t dumperVerifier, char *core_path);
     void DumpEnd(DUMPSTATUS status, char *core_file);
     void Exit( CProcess *parent );
     void GenerateEvent( int event_id, int length, char *data );
@@ -360,11 +359,7 @@ class CProcess
     inline void  SetPriorPid ( pid_t pid ) { priorPid_ = pid; }
     CProcess *GetProcessLByType( PROCESSTYPE type );
     inline STATE GetState() { return State_; }
-    inline void IncrUnsolTmSyncCount() { ++unsolTmSyncCount_; }
-    inline int  DecrUnsolTmSyncCount() { --unsolTmSyncCount_; return unsolTmSyncCount_; }
-    inline int  GetUnsolTmSyncCount() { return unsolTmSyncCount_; }
     bool MakePrimary(void);
-    bool MyTransactions( struct message_def *msg );
     bool Open( CProcess *opened_process, int death_notification );
 #ifndef NAMESERVER_PROCESS
     CNotice *RegisterDeathNotification( int nid
@@ -527,7 +522,6 @@ private:
     CProcess    *prev_;     // previous process in logial node container list
     CProcess    *nextL_;    // next process in physical node container list
     CProcess    *prevL_;    // previous process in physical node container list
-    int          unsolTmSyncCount_;
 
     int          Last_error;
 
@@ -543,6 +537,7 @@ private:
     strId_t      ldpathStrId_;
     bool         firstInstance_; // reset on persistent process re-creation
     bool         cmpOrEsp_;
+    string       trafRootZnode_;  // TRAF_ROOT_ZNODE passed to object file
     string       trafConf_;     // TRAF_CONF passed to object file
     string       trafHome_;     // TRAF_HOME passed to object file
     string       trafLog_;      // TRAF_LOG passed to object file

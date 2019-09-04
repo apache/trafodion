@@ -30,6 +30,7 @@
 
 using namespace std;
 
+extern bool TcIsRealCluster;
 
 //
 // Trafodion Configuration Database Adaptor (CTcdbStore class)

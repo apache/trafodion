@@ -1297,7 +1297,7 @@ void TM_Info::init_and_recover_rms()
 
     if (!all_rms_closed()) {
        // RMs open, no need to re-open
-       TMTrace (2, ("TM_Info::init_and_recover_rms : EXIT.\n"));
+       TMTrace (2, ("TM_Info::init_and_recover_rms - all RMs open: EXIT.\n"));
        return;
     }
 
@@ -1454,6 +1454,7 @@ void TM_Info::init_and_recover_rms()
     // once recovery is done, write 2 control points for a clean slate
     if (lead_tm())
     {
+        TMTrace(2, ("TM_Info::init_and_recover_rms : lead_dtm.\n"));
         // If this is the Lead TM, proceeds with system crash recovery.
         // Once recovery is done, the recover_system function will 
         // write 2 control points for a clean slate.  
@@ -1463,16 +1464,24 @@ void TM_Info::init_and_recover_rms()
            // send out recovery start sync.  The rest of system recover will be driven
            // from the completion
            ClusterRecov(new TM_Recov(gv_tm_info.rm_wait_time()));
+#if 0
            lv_error = ClusterRecov()->initiate_start_sync();
+#endif
+           gv_tm_info.set_sys_recov_status(TM_SYS_RECOV_STATE_END,
+                                           gv_tm_info.lead_tm_nid()); //my node sb the lead tm
+           gv_tm_info.schedule_recover_system();      
         }
+	tm_up();
     }
     else
     {
        // Mark the TM up now if it's pending.
+       TMTrace(2, ("TM_Info::init_and_recover_rms : not the lead_dtm.\n"));
+       gv_tm_info.set_sys_recov_status(TM_SYS_RECOV_STATE_END,lead_tm_nid());
        tm_up();
        if (restarting_tm() == nid())
        {
-          gv_tm_info.set_sys_recov_status(TM_SYS_RECOV_STATE_END,lead_tm_nid());
+          TMTrace(2, ("TM_Info::init_and_recover_rms : Calling msg_mon_tm_ready.\n"));
           msg_mon_tm_ready();
           restarting_tm(-1);
        }
@@ -1490,6 +1499,12 @@ void TM_Info::init_and_recover_rms()
 //           message is received by the monitor. It will restart the
 //           TM process immediately and send a sync to update the 
 //           restarted process.
+//
+// Update: This method will NOT be called by the lead DTM as
+//         the 'pstartd' (process startup daemon)will start up 
+//         the TM on it's node.
+//
+//         Keeping this method for the time being.
 // -------------------------------------------------------------------
 int32 TM_Info::restart_tm_process(int32 pv_nid) 
 {
@@ -1949,7 +1964,7 @@ void TM_Info::set_recovery_start(int32 pv_nid)
 
     gv_tm_info.node_being_recovered (pv_nid, nid());
 
-    send_takeover_tm_sync(TM_RECOVERY_START, nid(), pv_nid);
+    //send_takeover_tm_sync(TM_RECOVERY_START, nid(), pv_nid);
                
     lv_error = msg_mon_get_node_info2(&lv_node_count, MAX_NODES, 
                                       NULL, &lv_lnode_count, NULL, NULL, NULL);
@@ -2006,7 +2021,7 @@ void TM_Info::set_recovery_start(int32 pv_nid)
 // ---------------------------------------------------------------------------
 void TM_Info::set_recovery_end(int32 pv_nid)
 {
-     bool  lv_success = true;
+     bool  lv_success = false;
 
      TMTrace(2, ("TM_Info::set_recovery_end ENTRY, Node %d\n",pv_nid));
 
@@ -2019,6 +2034,7 @@ void TM_Info::set_recovery_end(int32 pv_nid)
     if (mode() == TM_NONSYNC_MODE)
     {
         TMTrace(2, ("TM_Info::set_recovery_end (NONSYNC MODE)\n"));
+	lv_success = true;
         // Nothing to do!
     }
     else
@@ -2027,9 +2043,7 @@ void TM_Info::set_recovery_end(int32 pv_nid)
          lv_success = do_take_over(lp_dataList);
     }
 
-    if (lv_success)
-        send_takeover_tm_sync(TM_RECOVERY_END, gv_tm_info.nid(), pv_nid);
-    else
+    if (! lv_success)
     {
         tm_log_event(DTM_TM_TAKEOVER_FAILED, SQ_LOG_CRIT, "DTM_TM_TAKEOVER_FAILED",
                      -1, -1, pv_nid);
@@ -2088,13 +2102,13 @@ void TM_Info::restart_tm_process_helper(int32 pv_nid)
            continue;
 
         // send sync here for start of sync
-        send_takeover_tm_sync(TM_RECOVERY_START, nid(), lv_info[lv_inx].nid);
+        //send_takeover_tm_sync(TM_RECOVERY_START, nid(), lv_info[lv_inx].nid);
     }
 
     delete [] lv_info;
 
     // process has been restarted, set to up and recover rms
-    send_tm_process_restart_sync(nid(), pv_nid);
+    //send_tm_process_restart_sync(nid(), pv_nid);
 
     send_tm_state_information();
 
@@ -2120,9 +2134,11 @@ void TM_Info::send_tm_state_information()
             (iv_recovery[lv_index].iv_list_built == true))
 
         {
+#ifdef SUPPORT_TM_SYNC
             send_state_resync (iv_nid, iv_recovery[lv_index].iv_down_without_sync, 
                                iv_recovery[lv_index].iv_node_being_recovered,
                                iv_recovery[lv_index].iv_list_built, lv_index);
+#endif
             TMTrace(2, ("TM_Info::send_tm_state_information sent state for index %d.\n", lv_index));
         }
     }
@@ -3546,7 +3562,7 @@ void TM_Info::open_other_tms()
    if (!iv_lead_tm)
       return (FEOK);
    
-   TMTrace (2, ("TM_Info::open_restarted_tm : ENTRY.\n"));
+   TMTrace (2, ("TM_Info::open_restarted_tm, nid:%d : ENTRY.\n", pv_nid));
   
    sprintf(la_buffer, "$tm%d", pv_nid);
    lock();
@@ -3577,7 +3593,7 @@ void TM_Info::open_other_tms()
 //    SB_Thread::Sthr::sleep(100); // in msec
     dummy_link_to_refresh_phandle(pv_nid); // The second one actually updates the phandle
     
-   TMTrace (2, ("TM_Info::open_restarted_tm : EXIT"));
+   TMTrace (2, ("TM_Info::open_restarted_tm, nid:%d : EXIT.\n", pv_nid));
    return lv_error;
 }
 
@@ -3708,10 +3724,14 @@ void TM_Info::tm_up()
             iv_state, iv_sys_recov_state, all_rms_closed()));
 
    // We need to block new transactions while the RMs are still being opened.
-   if (all_rms_closed())
+   if (all_rms_closed()) {
+      TMTrace(2, ("TM_Info::tm_up. Still waiting for RMS\n"));
       state(TM_STATE_WAITING_RM_OPEN);
-   else
+   }
+   else {
+      TMTrace(2, ("TM_Info::tm_up. Setting state to UP\n"));
       state(TM_STATE_UP);
+   }
 
    if (iv_sys_recov_state == TM_SYS_RECOV_STATE_END)
       wake_TMUP_waiters(FEOK);
@@ -3843,12 +3863,20 @@ unsigned int TM_Info::setNextSeqNumBlock()
                             (char *) la_tm_name, (char *) DTM_NEXT_SEQNUM_BLOCK, 
                             la_seq_num);
 
+      TMTrace (2, ("TM_Info::setNextSeqNumBlock : proc:%s, seqnum block:%s.\n",
+                   la_tm_name, 
+                   la_seq_num));
       if (lv_error == 0)
          lv_startSeqNum = (unsigned int) strtoul((char *) &la_seq_num, &lp_stop, 10);
+
+      TMTrace (2, ("TM_Info::setNextSeqNumBlock : proc:%s, seqnum block:%s, startseqnum: %d.\n",
+                   la_tm_name, 
+                   la_seq_num, 
+                   lv_startSeqNum));
    }
    else
       lv_startSeqNum = iv_nextSeqNum;
-   
+  
    // Check for sequence number wraparound
    if (lv_startSeqNum >= MAX_SEQNUM)
    {

@@ -53,6 +53,7 @@ LIBSBLOGALT	= $(LIBEXPDIR)/libsblogalt.so
 LIBSBSAUTIL	= $(LIBEXPDIR)/libsbsautil.so
 LIBSBUTIL	= $(LIBEXPDIR)/libsbutil.so
 LIBSQSTATESB	= $(LIBEXPDIR)/libsqstatesb.so
+
 # neet -lrt for clock_gettime
 LIBSX	       += -lrt
 #
@@ -134,6 +135,7 @@ OBJSBUTIL	= $(OUTDIR)/cap.o \
 		  $(OUTDIR)/mslabelmaps.o \
 		  $(OUTDIR)/mstracevars.o \
 		  $(OUTDIR)/msvars.o \
+		  $(OUTDIR)/slotmgr.o \
 		  $(OUTDIR)/otrace.o \
 		  $(OUTDIR)/thread.o \
 		  $(OUTDIR)/threadl.o \
@@ -175,7 +177,6 @@ $(OUTDIR)/logalt.o: logalt.cpp
 
 $(LIBEXPDIR)/libsbms.so: $(OBJSBMS) $(LIBSBUTIL)
 	$(CXX) $(LIBSX) $(LNK_FLGS) -shared -o $@ $(OBJSBMS) $(LIBSBUTILX) $(LIBSMX) -ldl
-
 
 $(LIBEXPDIR)/libsbsautil.so: $(OBJSBSAUTIL)
 	$(OCXX) $(LNK_FLGS) -shared -o $@ $(OBJSBSAUTIL) -lpthread

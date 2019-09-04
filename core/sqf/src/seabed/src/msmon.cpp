@@ -242,7 +242,6 @@ static SB_Ts_LLmap            gv_ms_tc_map("map-ms-tc");
 static int                    gv_ms_trace_callback_inx = 0;
 static MS_Mon_Tmlib_Cb_Type   gv_ms_tmlib_callback      = NULL;
 static MS_Mon_Tmlib2_Cb_Type  gv_ms_tmlib2_callback     = NULL;
-static MS_Mon_TmSync_Cb_Type  gv_ms_tmsync_callback     = NULL;
 SB_Ts_Lmap                    Ms_Open_Thread::cv_run_map("map-ms-open-thread-run");
 
 typedef struct Map_Tag_Entry_Type {
@@ -338,9 +337,12 @@ static int            msg_mon_process_startup_com(bool pv_sysmsgs,
                                                   bool pv_attach,
                                                   bool pv_eventmsgs,
                                                   bool pv_pipeio,
-                                                  bool pv_altsig)
+                                                  bool pv_altsig,
+                                                  bool pv_stderr_remap=true)
 SB_THROWS_FATAL;
-static int            msg_mon_process_startup_ph1(bool pv_attach, bool pv_altsig)
+static int            msg_mon_process_startup_ph1(bool pv_attach, 
+                                                  bool pv_altsig, 
+                                                  bool pv_stderr_remap=true)
 SB_THROWS_FATAL;
 static void           msg_mon_recv_msg_cbt(MS_Md_Type *pp_md);
 static void           msg_mon_recv_msg_cbt_discard(const char *pp_where,
@@ -364,13 +366,9 @@ static void           msg_mon_recv_msg_node_up(Mon_Msg_Type *pp_msg);
 static void           msg_mon_recv_msg_process_created(Mon_Msg_Type *pp_msg);
 static void           msg_mon_recv_msg_process_death(Mon_Msg_Type *pp_msg);
 static void           msg_mon_recv_msg_shutdown(Mon_Msg_Type *pp_msg);
-static void           msg_mon_recv_msg_tmsync_abort(Mon_Msg_Type *pp_msg);
-static void           msg_mon_recv_msg_tmsync_commit(Mon_Msg_Type *pp_msg);
 static void           msg_mon_recv_msg_unknown(Mon_Msg_Type *pp_msg);
 static void           msg_mon_recv_notice_msg_loc_cbt(Mon_Msg_Type *pp_msg,
                                                       int           pv_size);
-static void           msg_mon_recv_unsol_msg_loc_cbt(Mon_Msg_Type *pp_msg,
-                                                     int           pv_size);
 static int            msg_mon_send_node_info(const char   *pp_where,
                                              Mon_Msg_Type *pp_msg,
                                              int           pv_msg_err,
@@ -455,8 +453,6 @@ static void           msg_mon_trace_msg_node_down(const char   *pp_where,
                                                   Mon_Msg_Type *pp_msg);
 static void           msg_mon_trace_msg_node_quiesce(const char   *pp_where,
                                                      Mon_Msg_Type *pp_msg);
-static void           msg_mon_trace_msg_node_prepare(const char   *pp_where,
-                                                     Mon_Msg_Type *pp_msg);
 static void           msg_mon_trace_msg_node_up(const char   *pp_where,
                                                 Mon_Msg_Type *pp_msg);
 static void           msg_mon_trace_msg_open(const char   *pp_where,
@@ -467,8 +463,6 @@ static void           msg_mon_trace_msg_process_death(const char   *pp_where,
                                                       Mon_Msg_Type *pp_msg);
 static void           msg_mon_trace_msg_shutdown(const char   *pp_where,
                                                  Mon_Msg_Type *pp_msg);
-static void           msg_mon_trace_msg_tmsync(const char   *pp_where,
-                                               Mon_Msg_Type *pp_msg);
 static void           msg_mon_trace_msg_unknown(const char   *pp_where,
                                                 Mon_Msg_Type *pp_msg);
 static void           ms_fs_shutdown_ph1();
@@ -1564,7 +1558,7 @@ static int msg_mon_dump_process(const char    *pp_where,
     if (pp_path == NULL) {
         lp_path = getenv(gp_ms_env_sq_snapshot_dir);
         if (lp_path == NULL)
-            lp_path = getenv("PWD");
+            lp_path = getenv("TRAF_LOG");
     } else
         lp_path = pp_path;
     // make absolute path and check len - don't need ms_util_string_copy
@@ -1574,7 +1568,7 @@ static int msg_mon_dump_process(const char    *pp_where,
             return ms_err_rtn_msg(pp_where, "EXIT", XZFIL_ERR_BOUNDSERR);
         strcpy(lp_msg->u.request.u.dump.path, lp_path);
     } else {
-        lp_cwd = getenv("PWD");
+        lp_cwd = getenv("TRAF_LOG");
         lv_len = strlen(lp_cwd) + 1 + strlen(lp_path);
         if (lv_len > sizeof(lp_msg->u.request.u.dump.path))
             return ms_err_rtn_msg(pp_where, "EXIT", XZFIL_ERR_BOUNDSERR);
@@ -2052,6 +2046,62 @@ static void msg_mon_fs_trace_change(const char *pp_key, const char *pp_value) {
     if (memcmp(pp_key, "FS_", 3) == 0)
         if (lv_change.ipchange != NULL)
             lv_change.ichange(pp_key, pp_value);
+}
+
+//
+// Purpose: get cluster id and instance id
+//
+SB_Export int msg_mon_get_instance_id(int *pp_cluster_id,
+                                      int *pp_instance_id) {
+    const char   *WHERE = "msg_mon_get_instance_id";
+    Mon_Msg_Type *lp_msg;
+    int           lv_mpierr;
+    SB_API_CTR   (lv_zctr, MSG_MON_GET_INSTANCE_ID);
+
+    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_GET_INSTANCE_ID, 0);
+
+    if (gv_ms_trace_mon)
+        trace_where_printf(WHERE, "ENTER nid=%d, pid=%d\n",
+                           gv_ms_su_nid, gv_ms_su_pid);
+    if (!gv_ms_mon_calls_ok) // msg_mon_get_zone_info_detail
+        return ms_err_rtn_msg(WHERE, "msg_init() or startup not called or shutdown",
+                              XZFIL_ERR_INVALIDSTATE);
+
+    Mon_Msg_Auto lv_msg;
+    lp_msg = &lv_msg;
+    lp_msg->type = MsgType_Service;
+    lp_msg->noreply = false;
+    lp_msg->u.request.type = ReqType_InstanceId;
+    lp_msg->u.request.u.instance_id.nid = gv_ms_su_nid;
+    lp_msg->u.request.u.instance_id.pid = gv_ms_su_pid;
+    lp_msg->u.request.u.instance_id.verifier = gv_ms_su_verif;
+    if (gv_ms_trace_mon)
+        trace_where_printf(WHERE, "send instance-id req to mon, nid=%d, pid=%d\n",
+                           gv_ms_su_nid, gv_ms_su_pid);
+    lv_mpierr = msg_mon_sendrecv_mon(WHERE,
+                                     "instance-id",
+                                     lp_msg,
+                                     lv_msg.get_error());
+    if (msg_mon_msg_ok(WHERE,
+                       "instance-id req",
+                       &lv_mpierr,
+                       lp_msg,
+                       MsgType_Service,
+                       ReplyType_InstanceId)) {
+        struct InstanceId_reply_def *lp_instance = &lp_msg->u.reply.u.instance_id;
+        // copy results for user
+        *pp_cluster_id = lp_instance->cluster_id;
+        *pp_instance_id = lp_instance->instance_id;
+        if (gv_ms_trace_mon) {
+            if (lv_mpierr == MPI_SUCCESS) {
+                trace_where_printf(WHERE, "EXIT OK instance-id req, cluster_id=%d, instance_id=%d\n",
+                                   lp_instance->cluster_id, lp_instance->instance_id);
+            } else
+                trace_where_printf(WHERE, "EXIT FAILED instance-id req, ret=%d\n",
+                                   lv_mpierr);
+        }
+    }
+    return ms_err_mpi_rtn_msg(WHERE, "EXIT", lv_mpierr);
 }
 
 //
@@ -3273,129 +3323,6 @@ int msg_mon_get_ref_count(SB_Phandle_Type *pp_phandle) {
     return lv_ref_count;
 }
 
-//
-// Purpose: get trans info
-//
-static int msg_mon_get_trans_info_com(const char             *pp_where,
-                                      char                   *pp_name,
-                                      MS_Mon_Transid_Type     pv_transid,
-                                      MS_Mon_Trans_Info_Type *pp_info) {
-    Mon_Msg_Type *lp_msg;
-    int           lv_mpierr;
-
-    if (pp_info == NULL)
-        return ms_err_rtn_msg(pp_where,
-                              "invalid info (null)",
-                              XZFIL_ERR_BOUNDSERR);
-    if (!gv_ms_mon_calls_ok) // msg_mon_get_trans_info
-        return ms_err_rtn_msg(pp_where, "msg_init() or startup not called or shutdown",
-                              XZFIL_ERR_INVALIDSTATE);
-
-    Mon_Msg_Auto lv_msg;
-    lp_msg = &lv_msg;
-    lp_msg->type = MsgType_Service;
-    lp_msg->noreply = false;
-    lp_msg->u.request.type = ReqType_TransInfo;
-    lp_msg->u.request.u.trans_info.nid = gv_ms_su_nid;
-    lp_msg->u.request.u.trans_info.pid = gv_ms_su_pid;
-    if (pp_name == NULL)
-        lp_msg->u.request.u.trans_info.process_name[0] = '\0';
-    else
-        ms_util_string_copy(lp_msg->u.request.u.trans_info.process_name,
-                            sizeof(lp_msg->u.request.u.trans_info.process_name),
-                            pp_name);
-    TRANSID_COPY_MON_TO(lp_msg->u.request.u.trans_info.trans_id, pv_transid);
-
-    if (gv_ms_trace_mon)
-        trace_where_printf(pp_where, "send trans-info req to mon\n");
-    lv_mpierr = msg_mon_sendrecv_mon(pp_where,
-                                     "trans-info",
-                                     lp_msg,
-                                     lv_msg.get_error());
-    if (msg_mon_msg_ok(pp_where,
-                       "trans-info req",
-                       &lv_mpierr,
-                       lp_msg,
-                       MsgType_Service,
-                       ReplyType_TransInfo)) {
-        lv_mpierr = lp_msg->u.reply.u.trans_info.return_code;
-        if ((lv_mpierr == MPI_SUCCESS) || (lv_mpierr == MPI_ERR_TRUNCATE)) {
-            if (gv_ms_trace_mon) {
-                int lv_num_procs = lp_msg->u.reply.u.trans_info.num_processes;
-                trace_where_printf(pp_where, "trans-info req OK, num_procs=%d, ret=%d\n",
-                                   lv_num_procs, lv_mpierr);
-                for (int lv_proc = 0; lv_proc < lv_num_procs; lv_proc++) {
-                    char la_transid[100];
-                    MS_Mon_Transid_Type lv_transid_copy;
-                    TRANSID_COPY_MON_FROM(lv_transid_copy, lp_msg->u.reply.u.trans_info.procs[lv_proc].trans_id);
-                    msg_util_format_transid(la_transid, lv_transid_copy);
-                    trace_where_printf(pp_where, "proc[%d].p-id=%d/%d, transid=%s\n",
-                                       lv_proc,
-                                       lp_msg->u.reply.u.trans_info.procs[lv_proc].nid,
-                                       lp_msg->u.reply.u.trans_info.procs[lv_proc].pid,
-                                       la_transid);
-                }
-            }
-
-            // copy results for user
-            memcpy(pp_info,
-                   &lp_msg->u.reply.u.trans_info,
-                   sizeof(MS_Mon_Trans_Info_Type));
-            pp_info->truncated = (lv_mpierr == MPI_SUCCESS) ? 0 : -1;
-            lv_mpierr = MPI_SUCCESS;
-        } else {
-            if (gv_ms_trace_mon)
-                trace_where_printf(pp_where, "EXIT FAILURE trans-info req, ret=%d\n",
-                                   lv_mpierr);
-        }
-    }
-    return ms_err_mpi_rtn_msg(pp_where, "EXIT", lv_mpierr);
-}
-
-//
-// Purpose: get trans info for process
-//
-SB_Export int msg_mon_get_trans_info_process(char                   *pp_name,
-                                             MS_Mon_Trans_Info_Type *pp_info) {
-    const char *WHERE = "msg_mon_get_trans_info_process";
-    SB_API_CTR (lv_zctr, MSG_MON_GET_TRANS_INFO_PROCESS);
-
-    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_GET_TRANS_INFO_PROCESS, 0);
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "ENTER pname=%s, info=%p\n",
-                           pp_name, pfp(pp_info));
-    if (pp_name == NULL)
-        return ms_err_rtn_msg(WHERE,
-                              "invalid process name (null)",
-                              XZFIL_ERR_BOUNDSERR);
-    MS_Mon_Transid_Type lv_transid;
-    TRANSID_SET_INVALID(lv_transid);
-    return msg_mon_get_trans_info_com(WHERE, pp_name, lv_transid, pp_info);
-}
-
-//
-// Purpose: get trans info for transid
-//
-SB_Export int msg_mon_get_trans_info_transid(MS_Mon_Transid_Type     pv_transid,
-                                             MS_Mon_Trans_Info_Type *pp_info) {
-    const char *WHERE = "msg_mon_get_trans_info_transid";
-    SB_API_CTR (lv_zctr, MSG_MON_GET_TRANS_INFO_TRANSID);
-
-    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_GET_TRANS_INFO_TRANSID, 0);
-    if (gv_ms_trace_mon) {
-        char la_transid[100];
-        msg_util_format_transid(la_transid, pv_transid);
-        trace_where_printf(WHERE, "ENTER transid=%s, info=%p\n",
-                           la_transid, pfp(pp_info));
-    }
-    if (TRANSID_IS_INVALID(pv_transid))
-        return ms_err_rtn_msg(WHERE,
-                              "invalid transid (-1)",
-                              XZFIL_ERR_BOUNDSERR);
-
-    return msg_mon_get_trans_info_com(WHERE, NULL, pv_transid, pp_info);
-}
-
 
 //
 // Purpose: get zone info (all nodes)
@@ -3629,8 +3556,6 @@ void msg_mon_init() {
 
     SB_util_static_assert(static_cast<int>(MS_MsgType_Change) ==
                           static_cast<int>(MsgType_Change)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_UnsolicitedMessage) ==
-                          static_cast<int>(MsgType_UnsolicitedMessage)); // sw fault
 
     SB_util_static_assert(static_cast<int>(MS_ReqType_Close) ==
                           static_cast<int>(ReqType_Close)); // sw fault
@@ -3659,8 +3584,6 @@ void msg_mon_init() {
                           sizeof(NodeDown_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeJoining_def) ==
                           sizeof(NodeJoining_def)); // sw fault
-    SB_util_static_assert(sizeof(MS_Mon_NodePrepare_def) ==
-                          sizeof(NodePrepare_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeQuiesce_def) ==
                           sizeof(NodeQuiesce_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeUp_def) ==
@@ -3673,8 +3596,6 @@ void msg_mon_init() {
                           sizeof(Shutdown_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_SpareUp_def) ==
                           sizeof(SpareUp_def)); // sw fault
-    SB_util_static_assert(sizeof(MS_Mon_TmSyncNotice_def) ==
-                          sizeof(TmSyncNotice_def)); // sw fault
     // More structs
     SB_util_static_assert(sizeof(MS_Mon_Monitor_Stats_Type) ==
                           sizeof(lp_msg->u.reply.u.mon_info)); // sw fault
@@ -3690,8 +3611,6 @@ void msg_mon_init() {
                           sizeof(lp_msg->u.reply.u.process_info.process)/MAX_PROCINFO_LIST); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_Reg_Get_Type) ==
                           sizeof(lp_msg->u.reply.u.get)); // sw fault
-    SB_util_static_assert(sizeof(MS_Mon_Trans_Info_Type) ==
-                          sizeof(lp_msg->u.reply.u.trans_info)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_Zone_Info_Type) ==
                           sizeof(lp_msg->u.reply.u.zone_info)); // sw fault
     // Check struct offsets
@@ -5495,7 +5414,7 @@ int msg_mon_process_shutdown_ph1(const char                    *pp_where,
         SB_Trans::Trans_Stream::close_nidpid_streams(false);
 
         if (gv_ms_trans_sock)
-            SB_Trans::Sock_Stream::close_streams();
+            SB_Trans::Sock_Stream::close_streams(false);
     }
 
     // shutdown ms
@@ -5656,7 +5575,7 @@ SB_THROWS_FATAL {
 //
 // Purpose: handle process startup
 //
-SB_Export int msg_mon_process_startup3(int pv_sysmsgs, int pv_pipeio)
+SB_Export int msg_mon_process_startup3(int pv_sysmsgs, int pv_pipeio, bool pv_remap_stderr)
 SB_THROWS_FATAL {
     SB_API_CTR (lv_zctr, MSG_MON_PROCESS_STARTUP3);
 
@@ -5665,7 +5584,8 @@ SB_THROWS_FATAL {
                                        gv_ms_attach,
                                        true,       // eventmsgs
                                        pv_pipeio,
-                                       false);     // altsig
+                                       false,
+                                       pv_remap_stderr);     // altsig
 }
 
 //
@@ -5690,7 +5610,8 @@ int msg_mon_process_startup_com(bool pv_sysmsgs,
                                 bool pv_attach,
                                 bool pv_eventmsgs,
                                 bool pv_pipeio,
-                                bool pv_altsig)
+                                bool pv_altsig,
+                                bool pv_remap_stderr)
 SB_THROWS_FATAL {
     const char   *WHERE = "msg_mon_process_startup";
     char         *lp_s;
@@ -5721,7 +5642,7 @@ SB_THROWS_FATAL {
     gv_ms_su_pipeio = pv_pipeio;
     gv_ms_su_altsig = pv_altsig;
 
-    int lv_fserr = msg_mon_process_startup_ph1(pv_attach, pv_altsig);
+    int lv_fserr = msg_mon_process_startup_ph1(pv_attach, pv_altsig, pv_remap_stderr);
     if (gp_local_mon_io != NULL)
         gv_ms_mon_calls_ok = true;
     if (gv_ms_trace_mon)
@@ -5732,7 +5653,7 @@ SB_THROWS_FATAL {
 //
 // Purpose: handle process startup
 //
-int msg_mon_process_startup_ph1(bool pv_attach, bool pv_altsig)
+int msg_mon_process_startup_ph1(bool pv_attach, bool pv_altsig, bool pv_remap_stderr)
 SB_THROWS_FATAL {
     const char           *WHERE = "msg_mon_process_startup_ph1";
     Mon_Shared_Msg_Type  *lp_msg;
@@ -5826,8 +5747,6 @@ SB_THROWS_FATAL {
     }
     SB_util_assert_pne(gp_local_mon_io, NULL);
     lv_ret = gp_local_mon_io->set_cb(msg_mon_recv_msg_loc_cbt, "recv");
-    SB_util_assert_if(lv_ret);
-    lv_ret = gp_local_mon_io->set_cb(msg_mon_recv_unsol_msg_loc_cbt, "unsol");
     SB_util_assert_if(lv_ret);
     lv_ret = gp_local_mon_io->set_cb(msg_mon_recv_notice_msg_loc_cbt, "notice");
     SB_util_assert_if(lv_ret);
@@ -5959,7 +5878,7 @@ SB_THROWS_FATAL {
                     // Connect to monitor via pipes and remap stdout and stderr
                     if (gv_ms_su_pipeio)
                         ms_fifo_setup(1, lp_msg->msg.u.reply.u.startup_info.fifo_stdout);
-                    ms_fifo_setup(2, lp_msg->msg.u.reply.u.startup_info.fifo_stderr);
+                    ms_fifo_setup(2, lp_msg->msg.u.reply.u.startup_info.fifo_stderr, pv_remap_stderr);
                 }
                 if (gv_ms_trace_name) {
                     sprintf(ga_ms_su_trace_pname, "%s:%d/%d",
@@ -6037,12 +5956,6 @@ void msg_mon_recv_msg(MS_Md_Type *pp_md) {
         break;
     case MsgType_Shutdown:
         msg_mon_recv_msg_shutdown(lp_msg);
-        break;
-    case MsgType_TmSyncAbort:
-        msg_mon_recv_msg_tmsync_abort(lp_msg);
-        break;
-    case MsgType_TmSyncCommit:
-        msg_mon_recv_msg_tmsync_commit(lp_msg);
         break;
     default:
         msg_mon_recv_msg_unknown(lp_msg);
@@ -6557,14 +6470,6 @@ void msg_mon_recv_msg_shutdown(Mon_Msg_Type *pp_msg) {
     pp_msg = pp_msg; // touch
 }
 
-void msg_mon_recv_msg_tmsync_abort(Mon_Msg_Type *pp_msg) {
-    pp_msg = pp_msg; // touch
-}
-
-void msg_mon_recv_msg_tmsync_commit(Mon_Msg_Type *pp_msg) {
-    pp_msg = pp_msg; // touch
-}
-
 void msg_mon_recv_msg_unknown(Mon_Msg_Type *pp_msg) {
     pp_msg = pp_msg; // touch
 }
@@ -6578,51 +6483,6 @@ void msg_mon_recv_notice_msg_loc_cbt(Mon_Msg_Type *pp_msg, int pv_size) {
         msg_mon_recv_msg_cbt(lp_md);
     else
         msg_mon_recv_msg_cbt_discard(WHERE, lp_md, false);
-}
-
-void msg_mon_recv_unsol_msg_loc_cbt(Mon_Msg_Type *pp_msg, int) {
-    const char   *WHERE = "msg_mon_recv_unsol_msg_loc_cbt";
-    Mon_Msg_Type *lp_msg;
-    int           lv_cbret;
-    int           lv_err;
-    int           lv_handle;
-
-    if (gv_ms_tmsync_callback != NULL) {
-        SB_util_assert_ieq(pp_msg->type, MsgType_UnsolicitedMessage); // sw fault
-        SB_util_assert_ieq(pp_msg->u.request.type, ReqType_TmSync); // sw fault
-
-        lv_handle = pp_msg->u.request.u.unsolicited_tm_sync.handle;
-        if (gv_ms_trace_mon) {
-            trace_where_printf(WHERE, "received tmsync req from mon, p-id=%d/%d, handle=%d len=%d\n",
-                               pp_msg->u.request.u.unsolicited_tm_sync.nid,
-                               pp_msg->u.request.u.unsolicited_tm_sync.pid,
-                               lv_handle,
-                               pp_msg->u.request.u.unsolicited_tm_sync.length);
-            trace_print_data(pp_msg->u.request.u.unsolicited_tm_sync.data,
-                             pp_msg->u.request.u.unsolicited_tm_sync.length,
-                             pp_msg->u.request.u.unsolicited_tm_sync.length);
-        }
-        lv_cbret = gv_ms_tmsync_callback(pp_msg->u.request.u.unsolicited_tm_sync.data,
-                                         pp_msg->u.request.u.unsolicited_tm_sync.length,
-                                         lv_handle);
-    } else {
-        if (gv_ms_trace_mon)
-            trace_where_printf(WHERE, "no tmsync callback, replying with error\n");
-        lv_handle = pp_msg->u.request.u.unsolicited_tm_sync.handle;
-        lv_cbret = 1; // set error
-    }
-    lv_err = gp_local_mon_io->acquire_msg(&lp_msg);
-    SB_util_assert_ieq(lv_err, 0); // TODO: revisit
-    lp_msg->type = MsgType_UnsolicitedMessage;
-    lp_msg->noreply = true;
-    lp_msg->u.reply.type = ReplyType_TmSync;
-    lp_msg->u.reply.u.unsolicited_tm_sync.nid = gv_ms_su_nid;
-    lp_msg->u.reply.u.unsolicited_tm_sync.pid = gv_ms_su_pid;
-    lp_msg->u.reply.u.unsolicited_tm_sync.handle = lv_handle;
-    lp_msg->u.reply.u.unsolicited_tm_sync.return_code = lv_cbret;
-    lp_msg->reply_tag = 0;
-    lv_err = gp_local_mon_io->send(lp_msg);
-    SB_util_assert_ieq(lv_err, 0); // TODO: revisit
 }
 
 //
@@ -8614,93 +8474,6 @@ SB_Export int msg_mon_tm_ready(void) {
 }
 
 //
-// Purpose: issue tmsync
-//
-SB_Export int msg_mon_tmsync_issue(void *pp_data,
-                                   int   pv_len,
-                                   int  *pp_handle,
-                                   int   pv_tag) {
-    const char   *WHERE = "msg_mon_tmsync_issue";
-    Mon_Msg_Type *lp_msg;
-    int           lv_mpierr;
-    SB_API_CTR   (lv_zctr, MSG_MON_TMSYNC_ISSUE);
-
-    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_TMSYNC_ISSUE, 0);
-
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "ENTER data=%p, len=%d, tag=%d\n",
-                           pp_data, pv_len, pv_tag);
-    if (!gv_ms_mon_calls_ok) // msg_mon_tmsync_issue
-        return ms_err_rtn_msg(WHERE, "msg_init() or startup not called or shutdown",
-                              XZFIL_ERR_INVALIDSTATE);
-
-    Mon_Msg_Auto lv_msg;
-    lp_msg = &lv_msg;
-    lp_msg->type = MsgType_Service;
-    lp_msg->noreply = false;
-    lp_msg->u.request.type = ReqType_TmSync;
-    lp_msg->u.request.u.tm_sync.nid = gv_ms_su_nid;
-    lp_msg->u.request.u.tm_sync.pid = gv_ms_su_pid;
-    lp_msg->u.request.u.tm_sync.length = pv_len;
-    lp_msg->u.request.u.tm_sync.tag = pv_tag;
-
-    memcpy(lp_msg->u.request.u.tm_sync.data, pp_data, pv_len);
-
-    if (gv_ms_trace_mon) {
-        trace_where_printf(WHERE, "send tmsync req to mon, p-id=%d/%d\n",
-                           lp_msg->u.request.u.tm_sync.nid,
-                           lp_msg->u.request.u.tm_sync.pid);
-        trace_print_data(pp_data, pv_len, pv_len);
-    }
-
-    lv_mpierr = msg_mon_sendrecv_mon(WHERE,
-                                     "tmsync",
-                                     lp_msg,
-                                     lv_msg.get_error());
-    if (msg_mon_msg_ok(WHERE,
-                       "tmsync req",
-                       &lv_mpierr,
-                       lp_msg,
-                       MsgType_Service,
-                       ReplyType_TmSync)) {
-        lv_mpierr = lp_msg->u.reply.u.tm_sync.return_code;
-        if (lv_mpierr == MPI_SUCCESS) {
-            *pp_handle = lp_msg->u.reply.u.tm_sync.handle;
-            if (gv_ms_trace_mon)
-                trace_where_printf(WHERE, "EXIT OK tmsync req, handle=%d\n",
-                                   *pp_handle);
-        } else {
-            *pp_handle = -1;
-            if (gv_ms_trace_mon)
-                trace_where_printf(WHERE, "EXIT FAILURE tmsync, ret=%d\n",
-                                   lv_mpierr);
-        }
-    }
-    return ms_err_mpi_rtn_msg(WHERE, "EXIT", lv_mpierr);
-}
-
-//
-// Purpose: register tmsync callback
-//
-SB_Export int msg_mon_tmsync_register(MS_Mon_TmSync_Cb_Type pv_callback) {
-    const char *WHERE = "msg_mon_tmsync_register";
-    SB_API_CTR (lv_zctr, MSG_MON_TMSYNC_REGISTER);
-
-    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_TMSYNC_REGISTER, 0);
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "ENTER\n");
-    if (!gv_ms_calls_ok) // msg_mon_tmsync_register
-        return ms_err_rtn_msg(WHERE, "msg_init() not called or shutdown",
-                              XZFIL_ERR_INVALIDSTATE);
-    gv_ms_tmsync_callback = pv_callback;
-    int lv_fserr = XZFIL_ERR_OK;
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "EXIT OK, ret=%d\n", lv_fserr);
-    return lv_fserr;
-}
-
-
-//
 // Purpose: delist trans
 //
 SB_Export int msg_mon_trace_register_change(MS_Mon_Trace_Cb_Type pv_callback) {
@@ -8740,9 +8513,6 @@ void msg_mon_trace_msg(const char *pp_where, Mon_Msg_Type *pp_msg) {
     case MsgType_NodeQuiesce:
         msg_mon_trace_msg_node_quiesce(pp_where, pp_msg);
         break;
-    case MsgType_NodePrepare:
-        msg_mon_trace_msg_node_prepare(pp_where, pp_msg);
-        break;
     case MsgType_NodeUp:
         msg_mon_trace_msg_node_up(pp_where, pp_msg);
         break;
@@ -8757,12 +8527,6 @@ void msg_mon_trace_msg(const char *pp_where, Mon_Msg_Type *pp_msg) {
         break;
     case MsgType_Shutdown:
         msg_mon_trace_msg_shutdown(pp_where, pp_msg);
-        break;
-    case MsgType_TmSyncAbort:
-        msg_mon_trace_msg_tmsync(pp_where, pp_msg);
-        break;
-    case MsgType_TmSyncCommit:
-        msg_mon_trace_msg_tmsync(pp_where, pp_msg);
         break;
     default:
         msg_mon_trace_msg_unknown(pp_where, pp_msg);
@@ -8805,13 +8569,6 @@ void msg_mon_trace_msg_node_quiesce(const char   *pp_where,
     trace_where_printf(pp_where, "mon-msg-node-quiesce nid=%d, node-name=%s\n",
                        pp_msg->u.request.u.quiesce.nid,
                        pp_msg->u.request.u.quiesce.node_name);
-}
-
-void msg_mon_trace_msg_node_prepare(const char   *pp_where,
-                                    Mon_Msg_Type *pp_msg) {
-    trace_where_printf(pp_where, "mon-msg-node-prepare nid=%d, node-name=%s\n",
-                       pp_msg->u.request.u.prepare.nid,
-                       pp_msg->u.request.u.prepare.node_name);
 }
 
 void msg_mon_trace_msg_node_up(const char *pp_where, Mon_Msg_Type *pp_msg) {
@@ -8878,55 +8635,6 @@ void msg_mon_trace_msg_shutdown(const char *pp_where, Mon_Msg_Type *pp_msg) {
                        pp_msg->u.request.u.shutdown.nid,
                        pp_msg->u.request.u.shutdown.pid,
                        pp_msg->u.request.u.shutdown.level);
-}
-
-void msg_mon_trace_msg_tmsync(const char   *pp_where,
-                              Mon_Msg_Type *pp_msg) {
-    int lv_orig_count = pp_msg->u.request.u.tm_sync_notice.orig_count;
-    char la_orig_tag_handle_str[MAX_TM_SYNCS * 30 + 40];
-    if (lv_orig_count > 0) {
-        int *lp_tags = pp_msg->u.request.u.tm_sync_notice.orig_tag;
-        int lv_pcount = lv_orig_count;
-        if (lv_orig_count > MAX_TM_SYNCS)
-            lv_pcount = MAX_TM_SYNCS;
-        char *lp_p = la_orig_tag_handle_str;
-        int *lp_handles = pp_msg->u.request.u.tm_sync_notice.orig_handle;
-        for (int lv_hdl = 0; lv_hdl < lv_pcount; lv_hdl++) {
-            sprintf(lp_p, "%d/%d ", lp_tags[lv_hdl], lp_handles[lv_hdl]);
-            lp_p += strlen(lp_p);
-        }
-        if (lv_pcount != lv_orig_count)
-           strcpy(lp_p, "** truncated **");
-    } else
-        strcpy(la_orig_tag_handle_str, "<none>");
-    const char *lp_msg_type = msg_util_get_msg_type(pp_msg->type);
-    int la_nid[MAX_TM_SYNCS];
-    int lv_count = pp_msg->u.request.u.tm_sync_notice.count;
-    char la_handle_str[MAX_TM_SYNCS * 14 + 40];
-    if (lv_count > 0) {
-        int lv_pcount = lv_count;
-        if (lv_count > MAX_TM_SYNCS)
-            lv_pcount = MAX_TM_SYNCS;
-        for (int lv_inx = 0; lv_inx < lv_pcount; lv_inx++) {
-            la_nid[lv_inx] = pp_msg->u.request.u.tm_sync_notice.nid[lv_inx];
-        }
-        char *lp_p = la_handle_str;
-        int *lp_handles = pp_msg->u.request.u.tm_sync_notice.handle;
-        for (int lv_hdl = 0; lv_hdl < lv_pcount; lv_hdl++) {
-            sprintf(lp_p, "%d ", lp_handles[lv_hdl]);
-            lp_p += strlen(lp_p);
-        }
-        if (lv_pcount != lv_count)
-           strcpy(lp_p, "** truncated **");
-    } else
-        strcpy(la_handle_str, "<none>");
-    trace_where_printf(pp_where, "mon-msg-%s mon message, nid=%d, orig_count=%d, orig_tag-handles=%s, count=%d, handles=%s\n",
-                       lp_msg_type,
-                       la_nid[0],
-                       lv_orig_count,
-                       la_orig_tag_handle_str,
-                       lv_count,
-                       la_handle_str);
 }
 
 void msg_mon_trace_msg_unknown(const char *pp_where, Mon_Msg_Type *pp_msg) {

@@ -43,19 +43,12 @@
 //
 // statics
 //
-SB_Trans::Md_Table_Entry_Mgr SB_Trans::Msg_Mgr::cv_md_table_entry_mgr;
-SB_Trans::Md_Table_Mgr       SB_Trans::Msg_Mgr::cv_md_table("tablemgr-MD",
-                                                            SB_Table_Mgr_Alloc::ALLOC_FIFO,
-                                                            SB_Table_Mgr_Alloc::ALLOC_ENTRY_BLOCK,
-                                                            &cv_md_table_entry_mgr,
-                                                            4096, 1024); // cap-init, cap-inc
 SB_Atomic_Int                SB_Trans::Msg_Mgr::cv_md_table_count_recv;
 SB_Atomic_Int                SB_Trans::Msg_Mgr::cv_md_table_count_send;
 SB_Atomic_Int                SB_Trans::Msg_Mgr::cv_md_table_count_total;
 int                          SB_Trans::Msg_Mgr::cv_md_table_hi_recv = 0;
 int                          SB_Trans::Msg_Mgr::cv_md_table_hi_send = 0;
 int                          SB_Trans::Msg_Mgr::cv_md_table_hi_total = 0;
-int                          SB_Trans::Msg_Mgr::cv_md_table_inx = SB_Trans::Msg_Mgr::init();
 int                          SB_Trans::Msg_Mgr::cv_md_table_max_recv = 255;
 int                          SB_Trans::Msg_Mgr::cv_md_table_max_send = 1023;
 

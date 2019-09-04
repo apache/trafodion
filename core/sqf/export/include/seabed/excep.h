@@ -32,9 +32,22 @@
 //
 // Use these for references.
 //
+#if __cplusplus < 201103L // Standards below C++2011 in which 
+                          // dynamic throw is allowed
+
 #define SB_THROW_FATAL(msg) throw SB_Fatal_Excep(msg)
 #define SB_THROWS_EXCEP(exc) throw (exc)
 #define SB_THROWS_FATAL SB_THROWS_EXCEP(SB_Fatal_Excep)
+ 
+#else  // Starting C++2011,  use noexcept(bool)
+
+#define SB_THROW_FATAL(msg) noexcept(false)
+#define SB_THROWS_EXCEP(exc) noexcept(false)
+#define SB_THROWS_FATAL noexcept(false)
+
+#endif
+
+
 
 //
 // Base-class for seabed exceptions.

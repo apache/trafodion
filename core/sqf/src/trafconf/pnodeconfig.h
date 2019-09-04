@@ -40,6 +40,7 @@ typedef struct pnodeConfigInfo_s
 {
     int        pnid;
     char       nodename[TC_PROCESSOR_NAME_MAX];
+    char       domainname[TC_PROCESSOR_NAME_MAX];
     int        excludedFirstCore;
     int        excludedLastCore;
     cpu_set_t  excludedCoreMask;
@@ -59,6 +60,7 @@ public:
     void          DeletePNodeConfig( CPNodeConfig *pnodeConfig );
     inline CPNodeConfig *GetFirstPNodeConfig( void ) { return ( head_ ); }
     inline int    GetNextPNid( void ) { return ( nextPNid_ ); }
+    CPNodeConfig *GetNextPNodeConfigByName( char * name );
     int           GetPNid( char  *nodename );
     CPNodeConfig *GetPNodeConfig( char *nodename );
     CPNodeConfig *GetPNodeConfig( int pnid );
@@ -98,9 +100,12 @@ public:
     inline cpu_set_t    &GetExcludedCoreMask( void ) { return (excludedCoreMask_); }
     inline int           GetExcludedFirstCore( void ) { return ( excludedFirstCore_ ); }
     inline int           GetExcludedLastCore( void ) { return ( excludedLastCore_ ); }
+    inline const char   *GetDomain( void ) { return ( domain_ ); }
+    inline const char   *GetFqdn( void ) { return ( fqdn_ ); }
     inline const char   *GetName( void ) { return ( name_ ); }
     inline CPNodeConfig *GetNext( void ) { return ( next_ ); }
     inline int           GetPNid( void ) { return ( pnid_ ); }
+    void                 SetDomain( const char *newDomain ); 
     void                 SetName( const char *newName ); 
     void                 SetExcludedFirstCore( int excludedFirstCore ); 
     void                 SetExcludedLastCore( int excludedLastCore ); 
@@ -115,7 +120,9 @@ public:
 protected:
 private:
     CPNodeConfigContainer *pnodesConfig_; // physical nodes container
-    char                   name_[TC_PROCESSOR_NAME_MAX]; // hostname
+    char                   name_[TC_PROCESSOR_NAME_MAX]; // short hostname
+    char                   domain_[TC_PROCESSOR_NAME_MAX]; // domain
+    char                   fqdn_[TC_PROCESSOR_NAME_MAX]; // FQDN hostname
     int                    pnid_;         // physical node identifier
     cpu_set_t              excludedCoreMask_; // mask of excluded SMP processor cores
     int                    excludedFirstCore_;// First excluded SMP processor core used by logical node

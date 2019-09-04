@@ -24,12 +24,12 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		  t20 t21 t22 t23 t24 t25     t27 \
 		  t30 t31 t32         t35 t36 t37 t38 t39 \
 		  t40 t41 t42 t43 t44             t48 t49 \
-		  t50 t51 t52             t56 t57 t58 \
+		  t50     t52             t56 t57 t58 \
 		      t61 t62 t63 t64 t65 t66 t67 t68 t69 \
 		  t70 t71 t72 t73 t74 t75 t76 t77 t78 t79 \
 		  t80         t83 t84 t85 t86     t88 \
 		      t91 t92 t93 t94     t96     t98 \
-		  t100 t101 t102 t103 t104 t105                     \
+		  t100 t101 t102 t103 t104                          \
 		                           t115           t118      \
 		                      t124           t127 t128 t129 \
 		  t130 t131 t132 t133      t135      t137 t138 t139 \
@@ -43,11 +43,11 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		  t210      t212 t213 t214 t215 t216 t217      t219 \
 		  t220 t221 t222                t226 t227 t228 \
 		       t231      t233 t234 t235           t238      \
-		  t240 t241 t242           t245 t246                \
+		  t240 t241 t242           t245                \
 		                 t253                               \
-		       t261 t262                t266           \
+		            t262                                    \
 		                                     t277      t279 \
-		  t280 t281 t282      t284      t286 \
+		  t280 t281 t282      t284      t286 t287\
 		  tcheck tdelta tmerge tsock ttee
 PROGSI		= t2fs t3ms t4ms \
 		  t5ms t6ms t9thread t14ms \
@@ -95,12 +95,11 @@ PROGSI		= t2fs t3ms t4ms \
 		  t233ms t234ms \
 		  t235ms t238ms \
 		  t240ms t241ms t242fs \
-		  t245ms t246ms \
+		  t245ms \
 		  t253ms \
 		  t261ms t262ms \
-		  t266ms \
-	          t277fs t279ms \
-	          t280fs t281ms t282ms t284cli t284srv
+		  t277fs t279ms \
+		  t280fs t281ms t282ms t284cli t284srv
 
 ###########################################################################
 
@@ -148,17 +147,21 @@ PURGE		= *.a *.so $(OUTDIR)/*.o $(OUTDIR)/com/hp/traf/*.class $(LIBS) $(PROGS) $
 # rule macros
 RCXXINCLUDES	= $(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDESX) -o $@ -c $<
 RCXXINCLUDESSRC	= $(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDESSRCX) -o $@ -c $<
-RFS		= $(LIBTMSUTILX) $(LIBTUTILX) $(LIBTUTILPX) $(LIBSBFSX) $(DEBUG)
-RMS		= $(LIBTMSUTILX) $(LIBTUTILX) $(LIBTUTILPX) $(LIBSBMSX) $(DEBUG)
+RFS		= $(LIBTMSUTILX) $(LIBTUTILX) $(LIBTUTILPX) $(LIBSBUTILX) $(LIBSBFSX) $(DEBUG)
+RMS		= $(LIBTMSUTILX) $(LIBTUTILX) $(LIBTUTILPX) $(LIBSBUTILX) $(LIBSBMSX) $(DEBUG)
 RMSEG		= $(LIBSBMSX) $(DEBUG)
-RMSUTP		= $(LIBSBMSX) $(LIBTUTILPX) $(DEBUG)
-RMX		= $(LIBTUTILX) $(LIBTUTILPX) $(DEBUG)
+RMSUTP		= $(LIBSBMSX) $(LIBTUTILPX) $(LIBSBUTILX) $(DEBUG)
+RMX		= $(LIBTUTILX) $(LIBTUTILPX) $(LIBSBUTILX) $(DEBUG)
 # target macros
 TFS		= $(LIBTMSUTIL) $(LIBTUTIL) $(LIBTUTILP) $(LIBSBFS)
 TMS		= $(LIBTMSUTIL) $(LIBTUTIL) $(LIBTUTILP) $(LIBSBMS)
 TMSEG		= $(LIBSBMS)
 TMSUTP		= $(LIBSBMS) $(LIBTUTILP)
 TMX		= $(LIBTUTIL) $(LIBTUTILP)
+
+# Targets
+# Uncomment the following target to disable parallel make
+.NOTPARALLEL:
 
 all: $(PROGS)
 
@@ -672,7 +675,7 @@ t156fs: $(OUTDIR)/t156fs.o $(TFS)
 
 t157: $(CHK) t157ms
 t157ms: $(OUTDIR)/t157ms.o $(TMX)
-	$(LINKITCXX) -o $@ $< $(RMX) -lpthread
+	$(LINKITCXX) -o $@ $< $(RMX) -lpthread -lrt
 
 t160: $(CHK) t160ms
 t160ms: $(OUTDIR)/t160ms.o $(TMS)
@@ -740,7 +743,7 @@ t183ms: $(OUTDIR)/t183ms.o $(TMS)
 
 t184: $(CHK) t184fs
 t184fs: $(OUTDIR)/t184fs.o $(TFS)
-	$(LINKITCXX) -o $@ $< $(RFS)
+	$(LINKITCXX) -o $@ $< $(RFS) -lpthread
 
 t185: $(CHK) t185fs
 t185fs: $(OUTDIR)/t185fs.o $(TFS)
@@ -888,7 +891,7 @@ t235ms: $(OUTDIR)/t235ms.o $(TMS)
 
 t238: $(CHK) t238ms
 t238ms: $(OUTDIR)/t238ms.o $(LIBEXPDIR)/libsblogalt.so
-	$(LINKITCXX) -o $@ $< -L$(LIBEXPDIR) -lsblogalt
+	$(LINKITCXX) -o $@ $< -L$(LIBEXPDIR) -lsblogalt -lpthread
 
 t240: $(CHK) t240ms
 t240ms: $(OUTDIR)/t240ms.o $(TMS)
@@ -965,7 +968,7 @@ t284cli: $(OUTDIR)/t284cli.o $(TMS)
 	$(LINKITCXX) -o $@ $< $(RMS)
 
 t284srv: $(OUTDIR)/t284srv.o $(TMS)
-	$(LINKITCXX) -o $@ $< $(RMS)
+	$(LINKITCXX) -o $@ $< $(RMS) -lrt
 
 t284clij: $(OUTDIR)/com/hp/traf/t284cli.class $(OUTDIR)/com/hp/traf/t284cb.class $(OUTDIR)/com/hp/traf/t284exc.class $(OUTDIR)/com/hp/traf/t284id.class
 $(OUTDIR)/com/hp/traf/t284cli.class $(OUTDIR)/com/hp/traf/t284cb.class $(OUTDIR)/com/hp/traf/t284exc.class $(OUTDIR)/com/hp/traf/t284id.class: t284cli.java t284cb.java t284exc.java t284id.java
@@ -986,6 +989,10 @@ t285fs: $(OUTDIR)/t285fs.o $(TFS)
 
 t286: $(CHK) t286ms
 t286ms: $(OUTDIR)/t286ms.o $(TMS)
+	$(LINKITCXX) -o $@ $< $(RMS)
+
+t287: $(CHK) t287ms
+t287ms: $(OUTDIR)/t287ms.o $(TMS)
 	$(LINKITCXX) -o $@ $< $(RMS)
 
 

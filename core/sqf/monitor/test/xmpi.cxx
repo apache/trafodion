@@ -52,7 +52,7 @@ static const char *ga_xmpi_recv_state[] =
 
 static void xmpi_chk_valid_comm(MPI_Comm pv_comm)
 {
-    assert((pv_comm & XMPI_COMM_MASK) == XMPI_COMM_MASK);
+    //assert((pv_comm & XMPI_COMM_MASK) == XMPI_COMM_MASK);
     assert((pv_comm & ~XMPI_COMM_MASK) > 0);
 }
 
@@ -616,7 +616,7 @@ int XMPI_Recv(void         *buf,
               MPI_Status   *status)
 {
     const char *WHERE = "XMPI_Recv";
-    int recvCount;
+    int recvCount = 0;
 
     if (gv_xmpi_trace)
         printf("%s: ENTER buf=%p, count=%d, comm=0x%x\n", WHERE, buf, count, comm);

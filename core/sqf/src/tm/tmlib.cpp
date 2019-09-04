@@ -2968,11 +2968,15 @@ short TMLIB::send_tm(Tm_Req_Msg_Type *pp_req, Tm_Rsp_Msg_Type *pp_rsp,
     short     la_results[6];
     short     lv_ret = FEOK;
     int32     lv_linkRetries = 0;
+    int32     lv_breakRetries = 0;
     const int32 lc_maxLinkRetries = 100;
     const int32 lc_linkPause = 3000; // 3 second
+    const int32 lc_maxBreakRetries = 60;
+    const int32 lc_breakPause = 3000; // 3 second
 
     TMlibTrace(("TMLIB_TRACE : send_tm (node %d) ENTRY\n", pv_node), 2);
 
+ retry_on_fepathdown:
     if (!gv_tmlib.open_tm(pv_node))
     {
          TMlibTrace(("TMLIB_TRACE : returning FETMFNOTRUNNING\n"), 1);
@@ -3021,6 +3025,12 @@ short TMLIB::send_tm(Tm_Req_Msg_Type *pp_req, Tm_Rsp_Msg_Type *pp_rsp,
     switch (lv_ret)
     {
     case FEPATHDOWN:
+       lv_breakRetries++;
+       if (lv_breakRetries <= lc_maxBreakRetries) {
+         SB_Thread::Sthr::sleep(lc_breakPause); // in msec
+         TMlibTrace(("TMLIB_TRACE : send_tm , retry after BMSG_BREAK error: FEPATHDOWN\n"), 3);
+         goto retry_on_fepathdown;
+       }
        lv_ret = FETMFNOTRUNNING;
        break;
     case FESERVICEDISABLED:

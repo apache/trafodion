@@ -44,6 +44,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+//#include <thread>
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
@@ -291,13 +293,9 @@ int main (int argc, char *argv[])
     // Kill "childExitParent"
     util.requestKill ( "$PROCA", verifier );
 
-    // Wait until all death notices received or time-out
-    for (int i=0; i<5; i++)
-    {
-        if (deathNoticeCount == procListCount) break;
-        sleep(1);
-    }
-
+    // Wait for all death notices
+    sleep(5);
+    
     // Verify that got all death notices
     for (int i=0; i<procListCount; i++)
     {

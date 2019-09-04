@@ -60,6 +60,15 @@ CPNodeConfig::CPNodeConfig( CPNodeConfigContainer *pnodesConfig
     TRACE_ENTRY;
 
     strcpy( name_, pnodeConfigInfo.nodename );
+    strcpy( domain_, pnodeConfigInfo.domainname );
+    if (strlen( domain_ ))
+    {
+        snprintf( fqdn_, sizeof(fqdn_), "%s.%s", name_, domain_ );
+    }
+    else
+    {
+        strncpy( fqdn_, name_, sizeof(fqdn_) );
+    }
     CPU_ZERO( &excludedCoreMask_ );
 
     TRACE_EXIT;
@@ -147,6 +156,14 @@ void CPNodeConfig::SetSpareList( int sparePNids[], int spareCount )
 
     TRACE_EXIT;
 }
+
+void CPNodeConfig::SetDomain( const char *newDomain ) 
+{ 
+    if (newDomain) 
+    {
+        strcpy(domain_, newDomain); 
+    }
+} 
 
 void CPNodeConfig::SetName( const char *newName ) 
 { 
@@ -269,7 +286,20 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo_t &pnodeCon
         return( NULL );
     }
 
-    assert( pnodesConfig_[pnodeConfigInfo.pnid] == NULL );
+    if( pnodesConfig_[pnodeConfigInfo.pnid] != NULL )
+    {
+        if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
+        {
+            trace_printf( "%s@%d - Existing physical node configuration object\n"
+                          "        (pnid=%d, nextPNid_=%d)\n"
+                          "        (pnodesCount_=%d,pnodesConfigMax=%d)\n"
+                        , method_name, __LINE__
+                        , pnodeConfigInfo.pnid, nextPNid_
+                        , pnodesCount_, pnodesConfigMax_);
+        }
+        TRACE_EXIT;
+        return( pnodesConfig_[pnodeConfigInfo.pnid] );
+    }
 
     CPNodeConfig *pnodeConfig = new CPNodeConfig( this, pnodeConfigInfo );
     if (pnodeConfig)
@@ -451,6 +481,38 @@ CPNodeConfig *CPNodeConfigContainer::GetPNodeConfig( int pnid )
             break;
         }
         config = config->GetNext();
+    }
+
+    TRACE_EXIT;
+    return config;
+}
+
+CPNodeConfig *CPNodeConfigContainer::GetNextPNodeConfigByName( char * nodename )
+{
+    const char method_name[] = "CPNodeConfigContainer::GetNextPNodeConfigByName";
+    TRACE_ENTRY;
+
+    int pnid = -1;
+    CPNodeConfig *config = GetPNodeConfig( nodename );
+    CPNodeConfig *nextConfig = NULL;
+
+    if (config)
+    {
+        pnid = config->GetPNid();
+        // Get the next one if not at the end, else start at zero
+        pnid = ((pnid + 1) < pnodesConfigMax_) ? (pnid + 1) : 0;
+    }
+
+    while (config)
+    {
+        nextConfig = GetPNodeConfig( pnid );
+        if ( !nextConfig )
+        { // Skip the empty entries
+            pnid = ((pnid + 1) < pnodesConfigMax_) ? (pnid + 1) : 0;
+            continue;
+        }
+        config = nextConfig;
+        break;
     }
 
     TRACE_EXIT;

@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-#/bin/sh
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -23,20 +22,36 @@
 # @@@ END COPYRIGHT @@@
 #
 
+# Set the number of nodes configured
+let node_count=`trafconf -nid-count`
+
 if [[ -z ${TRAF_AGENT} ]]; then
+
+   # Set monitor to run in agent mode
+   if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
+      export SQ_MON_CREATOR=MPIRUN
+   fi
+
+   if [[ "$SQ_MON_CREATOR" == "MPIRUN" ]]; then
+      export SQ_MON_RUN_MODE=${SQ_MON_RUN_MODE:-AGENT}
+      export MONITOR_COMM_PORT=${MONITOR_COMM_PORT:-23390}
+      echo  "***"
+      echo  "***" `date`  " - SQ_MON_CREATOR  = $SQ_MON_CREATOR"
+      echo  "***" `date`  " - SQ_MON_RUN_MODE = $SQ_MON_RUN_MODE"
+   fi
+
    echo  "***"
    echo  "***" `date`  " - Starting Monitor processes"
    echo  "***"
-
+   
 sqshell <<eof 
 
 ! Start the monitor processes across the cluster
 startup
 
 set SQ_MBTYPE=$SQ_MBTYPE
-set MY_NODES=$MY_NODES
 set JAVA_HOME=$JAVA_HOME
-set MY_CLUSTER_ID=$MY_CLUSTER_ID
+set TRAF_CLUSTER_ID=$TRAF_CLUSTER_ID
 set TRAF_FOUNDATION_READY=0
 
 exit
@@ -45,26 +60,16 @@ eof
 else
    echo `date`" - Waiting for the Trafodion monitor process..."
 
-   # 5 seconds, iterations 240 = 20 minutes
-   let loop_count=0
-   let loop_max=240
    let monitor_ready=0
-   while [[ $loop_count -lt $loop_max ]];
-   do
-     if sqcheckmon -f
-     then
-       let ++monitor_ready
-       break
-     else
-       echo -n "."
-       sleep 5
-       sleep $wtime
-       let ++loop_count
-     fi
-   done
+
+   # 5 seconds, iterations 240 = 20 minutes
+   if sqcheckmon -s up -i 240 -d 5
+   then
+      let ++monitor_ready
+   fi
 
    if [[ $monitor_ready -lt 1 ]]; then
-      echo "Aborting startup!"
+      echo `date`" - Aborting startup!"
       cat $TRAF_LOG/sqcheckmon.log
       exit 1
    else
@@ -73,20 +78,19 @@ else
 sqshell -a <<eof
 
 set SQ_MBTYPE=$SQ_MBTYPE
-set MY_NODES=$MY_NODES
 set JAVA_HOME=$JAVA_HOME
-set MY_CLUSTER_ID=$MY_CLUSTER_ID
+set TRAF_CLUSTER_ID=$TRAF_CLUSTER_ID
 set TRAF_FOUNDATION_READY=0
 
 exit
 eof
-
-      echo `date`" - Delaying 15 seconds before continuing with Startup"
-      sleep 15
-      echo `date`" - Continuing with Startup ..."
-      echo
    fi
 fi
+
+echo `date`" - Delaying 15 seconds before continuing with Startup"
+sleep 15
+echo `date`" - Continuing with Startup ..."
+echo
 
 if (
     [[ $TRAF_AGENT == "CM" ]] ||
@@ -95,8 +99,6 @@ if (
 then
    export TRAF_SCALING_FACTOR=${TRAF_SCALING_FACTOR:-0.75}
 
-   # Set the number of nodes configured
-   let node_count=`trafconf -nid-count`
    #echo  "***"
    #echo  "*** node_count = ${node_count}"
    #echo  "*** TRAF_SCALING_FACTOR = ${TRAF_SCALING_FACTOR}"
@@ -113,7 +115,9 @@ fi
 sqshell -c node info
 
 # Starting TSID
-
+echo  "***"
+echo  "***" `date`  " - Starting Trasaction Id Server (TSID)"
+echo  "***"
 idtmstart
 sqshell -c delay 1
 

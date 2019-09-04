@@ -501,7 +501,7 @@ SB_Thread::Mutex::~Mutex() {
     int lv_status;
 
     lv_status = destroy();
-    SB_util_assert_ieq(lv_status, 0); // sw fault
+    // NOTE: Disabling this assert:   SB_util_assert_ieq(lv_status, 0); // sw fault
     lv_status = lv_status; // touch (in case assert disabled)
 }
 #else

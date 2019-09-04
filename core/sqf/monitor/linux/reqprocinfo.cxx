@@ -41,6 +41,8 @@ extern bool NameServerEnabled;
 extern CNameServer *NameServer;
 #endif
 
+extern const char *ProcessTypeString( PROCESSTYPE type );
+
 // Copy information for a specific process into the reply message buffer.
 void CExtProcInfoBase::ProcessInfo_CopyData(CProcess *process, ProcessInfoState &procState)
 {
@@ -179,6 +181,10 @@ void CExtProcInfoBase::ProcessInfo_CopyPairData( CProcess *process
 // and the caller will need the new value.
 CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAllNodes)
 {
+#ifndef NAMESERVER_PROCESS 
+    const char method_name[] = "CExtProcInfoBase::ProcessInfo_GetProcess";
+#endif
+
     CProcess * process;
     CLNode *lnode = NULL;
 
@@ -200,6 +206,17 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
                 process = lnode->GetFirstProcess();
                 if (process != 0)
                 {
+                    if (trace_settings & TRACE_PROCESS_DETAIL)
+                    {
+                        trace_printf( "%s@%d allNodes=%d, nid=%d, process: %s (%d,%d:%d)\n"
+                                    , method_name, __LINE__
+                                    , getDataForAllNodes
+                                    , nid
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , process->GetVerifier() );
+                    }
                     return process;
                 }
             }
@@ -221,6 +238,8 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                                      bool getDataForAllNodes,
                                      char *pattern)
 {
+    const char method_name[] = "CExtProcInfoBase::ProcessInfo_BuildReply";
+
     int currentIndex = (process != 0) 
             ? Nodes->GetNidIndex( process->GetNid() )
             : Nodes->GetLNodesCount();
@@ -251,6 +270,18 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
         // Retrieve process data for processes on current node
         while ( process )
         {
+            if (trace_settings & TRACE_PROCESS_DETAIL)
+            {
+                trace_printf( "%s@%d allNodes=%d, pattern=%s, type=%s, process: %s (%d,%d:%d)\n"
+                            , method_name, __LINE__
+                            , getDataForAllNodes
+                            , (strlen( pattern ))?process_pattern: ""
+                            , ProcessTypeString(type)
+                            , process->GetName()
+                            , process->GetNid()
+                            , process->GetPid()
+                            , process->GetVerifier() );
+            }
             if (type == ProcessType_Undefined || type == process->GetType())
             {
                 if (reg)
@@ -289,9 +320,33 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
             // to be the node index number where the process resides.
 
             int nid = Nodes->GetNidByMap( currentIndex );
+            if (trace_settings & TRACE_PROCESS_DETAIL)
+            {
+                trace_printf( "%s@%d moreToRetrieve=%d, nid=%d\n"
+                            , method_name, __LINE__
+                            , moreToRetrieve
+                            , nid );
+            }
             if (nid == -1) break;
+            if (trace_settings & TRACE_PROCESS_DETAIL)
+            {
+                trace_printf( "%s@%d allNodes=%d, nid=%d\n"
+                            , method_name, __LINE__
+                            , getDataForAllNodes
+                            , nid );
+            }
             process = ProcessInfo_GetProcess( nid, getDataForAllNodes);
             currentIndex = Nodes->GetNidIndex( nid );
+            if (process && trace_settings & TRACE_PROCESS_DETAIL)
+            {
+                trace_printf( "%s@%d currentIndex=%d, next process: %s (%d,%d:%d)\n"
+                            , method_name, __LINE__
+                            , currentIndex
+                            , process->GetName()
+                            , process->GetNid()
+                            , process->GetPid()
+                            , process->GetVerifier() );
+            }
             moreToRetrieve = true;
         }
     } while (moreToRetrieve);

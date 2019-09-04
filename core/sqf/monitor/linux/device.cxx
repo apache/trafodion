@@ -57,6 +57,7 @@ using namespace std;
 #define LUNMGR_STATE_MOUNT_ERROR_MOUNT_FAILED         25
 #define LUNMGR_STATE_MOUNT_ERROR_SOME_SUCCEEDED       26
 
+extern bool NameServerEnabled;
 extern int MyPNID;
 extern CMonitor *Monitor;
 extern CNodeContainer *Nodes;
@@ -447,9 +448,36 @@ bool CLogicalDevice::Mount( CProcess *process, bool replicate )
 
     if ( rstate && replicate )
     {
-        // Replicate the mount to other nodes
-        CReplDevice *repl = new CReplDevice(this);
-        Replicator.addItem(repl);
+        if ( NameServerEnabled )
+        {
+            int rc = -1;
+
+#if 0
+            rc = PtpClient->ProcessDevice(this); // TODO: in future
+#endif
+            if (rc)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] - Logical device mount request not supported: "
+                          "device %s (%d, %d): "
+                          "zone=%d, primaryZid_=%d, backupZid_=%d\n"
+                        , method_name
+                        , process->GetName()
+                        , process->GetNid()
+                        , process->GetPid()
+                        , zone
+                        , primaryZid_
+                        , backupZid_  );
+                mon_log_write(MON_LDEVICE_MOUNT_1, SQ_LOG_ERR, la_buf);
+            }
+        }
+        else
+        {
+            // Replicate the mount to other nodes
+            CReplDevice *repl = new CReplDevice(this);
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -522,9 +550,37 @@ bool CLogicalDevice::UnMount( bool replicate )
     rstate = (pstate && bstate);
     if ( replicate )
     {
-        // Replicate the mount to other nodes
-        CReplDevice *repl = new CReplDevice(this);
-        Replicator.addItem(repl);
+        if ( NameServerEnabled )
+        {
+            int rc = -1;
+            CProcess *process = NULL;
+            Nodes->GetNode( (char *) GetName(), &process );
+
+#if 0
+            rc = PtpClient->ProcessDevice(this); // TODO: in future
+#endif
+            if (rc)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] - Logical device unmount request not supported: "
+                          "device %s (%d, %d), "
+                          "primary=%d, mirror=%d\n"
+                        , method_name
+                        , process?process->GetName():""
+                        , process?process->GetNid():-1
+                        , process?process->GetPid():-1
+                        , pstate
+                        , bstate  );
+                mon_log_write(MON_LDEVICE_UNMOUNT_1, SQ_LOG_ERR, la_buf);
+            }
+        }
+        else
+        {
+            // Replicate the mount to other nodes
+            CReplDevice *repl = new CReplDevice(this);
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -727,9 +783,34 @@ CLogicalDevice *CDeviceContainer::CreateDevice( CProcess *process )
         ldev = ConfigDevice (process);
         if (ldev)
         {
-            // Replicate the device to other nodes
-            CReplDevice *repl = new CReplDevice(ldev);
-            Replicator.addItem(repl);
+            if ( NameServerEnabled )
+            {
+                int rc = -1;
+                CProcess *process = NULL;
+                Nodes->GetNode( (char *) ldev->GetName(), &process );
+    
+#if 0
+                rc = PtpClient->ProcessDevice(this); // TODO: in future
+#endif
+                if (rc)
+                {
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Create logical device request not supported: "
+                              "device %s (%d, %d)\n"
+                            , method_name
+                            , process?process->GetName():""
+                            , process?process->GetNid():-1
+                            , process?process->GetPid():-1 );
+                    mon_log_write(MON_LDEVICE_CREATEDEVICE_1, SQ_LOG_ERR, la_buf);
+                }
+            }
+            else
+            {
+                // Replicate the device to other nodes
+                CReplDevice *repl = new CReplDevice(ldev);
+                Replicator.addItem(repl);
+            }
         }
         else
         {

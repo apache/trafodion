@@ -556,6 +556,11 @@ void CConfigContainer::Init(void)
     rc = tc_get_registry_cluster_set( &regClusterCount
                                     , regClusterMax
                                     , NULL );
+    if (trace_settings & (TRACE_INIT))
+      trace_printf("%s%d - rc:%d, #cluster scope keys:%d\n",
+                   method_name, __LINE__, 
+                   rc,
+                   regClusterCount);
     if ( rc )
     {
         char la_buf[MON_STRING_BUF_SIZE];
@@ -603,9 +608,14 @@ void CConfigContainer::Init(void)
     }
 
     // Get process scope configuration registry entries count
-    rc = tc_get_registry_cluster_set( &regProcessCount
+    rc = tc_get_registry_process_set( &regProcessCount
                                     , regProcessMax
                                     , NULL );
+    if (trace_settings & (TRACE_INIT))
+      trace_printf("%s%d - rc:%d, #process scope keys:%d\n",
+                   method_name, __LINE__, 
+                   rc,
+                   regProcessCount);
     if ( rc )
     {
         char la_buf[MON_STRING_BUF_SIZE];
@@ -619,7 +629,7 @@ void CConfigContainer::Init(void)
     regProcessConfig = new TcRegistryConfiguration_t[regProcessMax];
     if (regClusterConfig)
     {
-        rc = tc_get_registry_cluster_set( &regProcessCount
+        rc = tc_get_registry_process_set( &regProcessCount
                                         , regProcessMax
                                         , regProcessConfig );
         if ( rc )
@@ -882,47 +892,6 @@ void CConfigContainer::addUniqueString(int nid, int id, const char * uniqStr )
     TRACE_EXIT;
 }
 
-bool CConfigContainer::findUniqueString( int         nid
-                                       , const char *uniqStr
-                                       , strId_t    &strId )
-{
-    const char method_name[] = "CConfigContainer::findUniqueString";
-    TRACE_ENTRY;
-
-    bool result = false;
-    int rc;
-    int id;
-
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d finding unique string nid=%d string=%s\n"
-                    , method_name, __LINE__
-                    , nid, uniqStr );
-    }
-
-    rc = tc_get_unique_string_id( nid, uniqStr, &id );
-    if ( rc )
-    {
-        if ( rc != TCDBNOEXIST )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf)
-                    , "[%s] tc_get_unique_string_id() failed, ""error=%d (%s)\n"
-                    , method_name, rc, tc_errmsg( rc ) );
-            mon_log_write( MON_CONFIGCONT_FINDUNIQUESTRING_1, SQ_LOG_ERR, buf );
-        }
-    }
-    else
-    {
-        strId.nid = nid;
-        strId.id = id;
-        result = true;
-    }
-
-    TRACE_EXIT;
-    return result;
-}
-
 int CConfigContainer::getMaxUniqueId( int nid )
 {
     const char method_name[] = "CConfigContainer::getMaxUniqueId";
@@ -963,6 +932,92 @@ int CConfigContainer::getMaxUniqueId( int nid )
     return id;
 }
 
+bool CConfigContainer::getUniqueString(int nid, int id, string & uniqStr )
+{
+    const char method_name[] = "CConfigContainer::getUniqueString";
+    TRACE_ENTRY;
+
+    bool result = false;
+    int rc;
+    char uniqueString[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d Get unique string, stringId(nid=%d, id=%d)\n"
+                    , method_name, __LINE__
+                    , nid, id );
+    }
+
+    rc = tc_get_unique_string( nid, id, uniqueString );
+    if ( rc )
+    {
+        uniqStr.assign( "" );
+        if ( rc != TCDBNOEXIST )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] tc_get_unique_string() failed, ""error=%d (%s)\n"
+                    , method_name, rc, tc_errmsg( rc ) );
+            mon_log_write( MON_CONFIGCONT_GETUNIQUESTRING_1, SQ_LOG_ERR, buf );
+        }
+    }
+    else
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf( "%s@%d Found unique string, stringId(nid=%d, id=%d), string=%s\n"
+                        , method_name, __LINE__
+                        , nid, id, uniqueString );
+        }
+        uniqStr.assign( uniqueString  );
+        result = true;
+    }
+
+    TRACE_EXIT;
+    return result;
+}
+
+bool CConfigContainer::getUniqueStringId( int         nid
+                                        , const char *uniqStr
+                                        , strId_t    &strId )
+{
+    const char method_name[] = "CConfigContainer::getUniqueStringId";
+    TRACE_ENTRY;
+
+    bool result = false;
+    int rc;
+    int id;
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d finding unique string nid=%d string=%s\n"
+                    , method_name, __LINE__
+                    , nid, uniqStr );
+    }
+
+    rc = tc_get_unique_string_id( nid, uniqStr, &id );
+    if ( rc )
+    {
+        if ( rc != TCDBNOEXIST )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] tc_get_unique_string_id() failed, ""error=%d (%s)\n"
+                    , method_name, rc, tc_errmsg( rc ) );
+            mon_log_write( MON_CONFIGCONT_GETUNIQUESTRINGID_1, SQ_LOG_ERR, buf );
+        }
+    }
+    else
+    {
+        strId.nid = nid;
+        strId.id = id;
+        result = true;
+    }
+
+    TRACE_EXIT;
+    return result;
+}
+
 void CConfigContainer::strIdToString( strId_t stringId,  string & value )
 {
     const char method_name[] = "CConfigContainer::strIdToString";
@@ -971,7 +1026,7 @@ void CConfigContainer::strIdToString( strId_t stringId,  string & value )
     int rc;
     char uniqueString[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
     {
         trace_printf( "%s@%d Get unique string, stringId(nid=%d, id=%d)\n"
                     , method_name, __LINE__
@@ -988,7 +1043,7 @@ void CConfigContainer::strIdToString( strId_t stringId,  string & value )
             snprintf( buf, sizeof(buf)
                     , "[%s] tc_get_unique_string() failed, ""error=%d (%s)\n"
                     , method_name, rc, tc_errmsg( rc ) );
-            mon_log_write( MON_CONFIGCONT_STRINGIDTPSTRING_1, SQ_LOG_ERR, buf );
+            mon_log_write( MON_CONFIGCONT_STRINGIDTOSTRING_1, SQ_LOG_ERR, buf );
         }
     }
     else
@@ -1067,9 +1122,9 @@ int CConfigContainer::getUniqueStringsSize()
     int totalUniqueIds = 0;
     int uniqueIdSize = 0;
     
-    for (int pnid = 0; pnid < Monitor->GetConfigPNodesMax(); pnid++)
+    for (int index = 0; index < Nodes->GetPNodesCount(); index++)
     {
-        tc_get_unique_string_id_max (pnid, &maxUniqueId);
+        tc_get_unique_string_id_max( Nodes->GetPNidByMap( index ), &maxUniqueId );
         totalUniqueIds += maxUniqueId;
     }
     
@@ -1103,8 +1158,8 @@ int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
       {
           // Get cluster scope configuration registry entries count
           rc = tc_get_registry_cluster_set( &regClusterCount
-                                    , regClusterMax
-                                    , NULL );
+                                          , regClusterMax
+                                          , NULL );
           if ( rc )
           {
               char la_buf[MON_STRING_BUF_SIZE];
@@ -1119,8 +1174,8 @@ int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
           regClusterMax = regClusterCount;
           regClusterConfig = new TcRegistryConfiguration_t[regClusterMax];
           rc = tc_get_registry_cluster_set( &regClusterCount
-                                              , regClusterMax
-                                              , regClusterConfig );
+                                          , regClusterMax
+                                          , regClusterConfig );
           if ( rc )
           {
               char la_buf[MON_STRING_BUF_SIZE];
@@ -1173,7 +1228,7 @@ int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
            // programming error
           char la_buf[MON_STRING_BUF_SIZE];
           snprintf( la_buf, sizeof(la_buf)
-                    , "[%s]Rregistry access failed!\n"
+                    , "[%s]Registry access failed!\n"
                     , method_name );
           mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
           TRACE_EXIT;
@@ -1193,7 +1248,7 @@ int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
         regClusterEntry->valueLength = strlen (regClusterConfig[i].value);
         if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
         {
-            trace_printf ("%s@%d pack type %d, scope %s (%d), key %s (%d), value %s(%d)\n",method_name, __LINE__,
+            trace_printf ("%s@%d - pack type %d, scope %s (%d), key %s (%d), value %s(%d)\n",method_name, __LINE__,
                            regClusterEntry->type, regClusterConfig[i].scope, 
                            regClusterEntry->scopeLength,regClusterConfig[i].key,regClusterEntry->keyLength,  
                            regClusterConfig[i].value, regClusterEntry->valueLength);
@@ -1228,6 +1283,15 @@ int CConfigContainer::PackRegistry( char *&buffer, ConfigType type )
     {
          delete [] regClusterConfig; 
     }
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d - Packed Registry, scope(%s), entries=%d\n"
+                    , method_name, __LINE__
+                    , (type == ConfigType_Cluster) ? "CLUSTER" : "PROCESS"
+                    , numberOfEntries );
+    } 
+
     return numberOfEntries;
     
     TRACE_EXIT;
@@ -1243,25 +1307,27 @@ void CConfigContainer::UnpackRegistry( char *&buffer, int count )
      char myValue [TC_REGISTRY_VALUE_MAX];
      char myKey[TC_REGISTRY_KEY_MAX];
 
+     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+     {
+          trace_printf( "%s@%d - Unpacking Registry, entries=%d\n"
+                      , method_name, __LINE__
+                      , count );
+     } 
+ 
      if (count <= 0)
      {
          TRACE_EXIT;
          return;
      }
+
      struct cluster_set *clusterObj2 =  (cluster_set *)buffer;
      char *stringData2 = &clusterObj2->stringData;
      for (int i = 0; i < count; i++ )
      {     
         memset (myScope, '\0', sizeof (myScope));
-        memset (myValue, '\0', sizeof (myValue));
         memset (myKey, '\0', sizeof (myKey));
+        memset (myValue, '\0', sizeof (myValue));
 
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf ("%s@%d scope length %d, key length %d, value length %d\n", method_name, __LINE__,
-                          clusterObj2->scopeLength, 
-                          clusterObj2->keyLength, clusterObj2->valueLength);
-        }
         type = clusterObj2->type;
 
         memcpy(myScope, stringData2,  clusterObj2->scopeLength);
@@ -1273,18 +1339,30 @@ void CConfigContainer::UnpackRegistry( char *&buffer, int count )
         memcpy(myValue, stringData2,  clusterObj2->valueLength);
         stringData2 += clusterObj2->valueLength;
 
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        {
+            trace_printf( "%s@%d - scope=%s(%d), key=%s(%d), value=%s(%d)\n"
+                        , method_name, __LINE__
+                        , myScope
+                        , clusterObj2->scopeLength
+                        , myKey
+                        , clusterObj2->keyLength
+                        , myValue
+                        , clusterObj2->valueLength);
+        }
+
+        Set( myScope
+           , type
+           , myKey
+           , myValue
+           , true );
+
         if ((i+1) < count)
         {
             clusterObj2 = (cluster_set *)stringData2;
             stringData2 = &clusterObj2->stringData;
         }
     } 
-    
-    Set( myScope
-       , type
-       , myValue
-       , myKey
-       , false );
     
     buffer = stringData2;
     TRACE_EXIT; 
@@ -1296,37 +1374,39 @@ int CConfigContainer::PackUniqueStrings( char *&buffer )
     TRACE_ENTRY;
     int maxUniqueId = 0;
     char unique_string[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
-    int  stringDataLen;
     char *bufPtr = buffer;
 
     struct unique_string_set *stringObj = (struct unique_string_set *)bufPtr;
     char *stringData = &stringObj->stringData;
     int numberOfEntries = 0;
 
-    for (int pnid = 0; pnid < Monitor->GetConfigPNodesMax(); pnid++)
+    for (int index = 0; index < Nodes->GetPNodesCount(); index++)
     {
-        tc_get_unique_string_id_max (pnid, &maxUniqueId);
+        int nid = Nodes->GetPNidByMap( index );
+        tc_get_unique_string_id_max( nid, &maxUniqueId );
 
         for (int maxId = 0; maxId <= maxUniqueId; maxId++)
         {
              memset (unique_string, 0, TC_UNIQUE_STRING_VALUE_MAX);
-             int error = tc_get_unique_string( pnid, maxId, unique_string );
+             int error = tc_get_unique_string( nid, maxId, unique_string );
 
              if (!error)
              {
                  stringObj->stringLength = strlen(unique_string);
                  if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
                  {
-                      trace_printf ("%s@%d  packing nid %d, unique id %d, stringt %s (length %d)\n", method_name, __LINE__,
-                                     pnid, maxId, unique_string,stringObj->stringLength );
+                      trace_printf( "%s@%d - [%d] Packing Unique String, nid=%d, "
+                                    "unique_id=%d, string=%s (length=%d)\n"
+                                  , method_name, __LINE__
+                                  , numberOfEntries, nid, maxId
+                                  , unique_string, stringObj->stringLength );
                  } 
                  stringObj->unique_id = maxId;
-                 stringObj->nid = pnid;
+                 stringObj->nid = nid;
                  memcpy (stringData, unique_string, stringObj->stringLength);
-                 stringDataLen+= stringObj->stringLength;
                  stringData+=stringObj->stringLength;
                  ++numberOfEntries;
-                 if ((pnid + 1) < Monitor->GetConfigPNodesMax())
+                 if (index < Nodes->GetPNodesCount())
                  {
                       stringObj = ( unique_string_set *)stringData;
                       stringData = &stringObj->stringData;
@@ -1334,9 +1414,15 @@ int CConfigContainer::PackUniqueStrings( char *&buffer )
              }
              // don't advance if we didn't write anything
         }
-
     }
     
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+         trace_printf( "%s@%d - Packed Unique Strings, entries=%d\n"
+                     , method_name, __LINE__
+                     , numberOfEntries );
+    } 
+
     if (numberOfEntries > 0)
     {
         buffer = stringData;    
@@ -1350,36 +1436,73 @@ void CConfigContainer::UnpackUniqueStrings( char *&buffer, int entries )
 {
     const char method_name[] = "CConfigContainer::UnpackUniqueStrings";
     TRACE_ENTRY;
-    
+
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    {
+         trace_printf( "%s@%d - Unpacking Unique Strings, entries=%d\n"
+                     , method_name, __LINE__
+                     , entries );
+    } 
+
     if (entries <= 0)
-    { 
+    {
          TRACE_EXIT;
          return;
     }
-     
+
     struct unique_string_set *stringObj =  (unique_string_set *)buffer;
     char *stringData = &stringObj->stringData;
     char unique_string[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
-    
+    int nid = -1;
+    int unique_id = -1;
+    strId_t id;
+
     for (int i = 0; i < entries; i++)
     {
         if (stringObj)
         {
-            int maxUniqueId;
-            tc_get_unique_string_id_max (stringObj->nid, &maxUniqueId);
-            memset(unique_string, 0, TC_UNIQUE_STRING_VALUE_MAX);
-            memcpy (unique_string, stringData,stringObj->stringLength);
-            if (stringObj->unique_id > maxUniqueId)
+            if (nid != stringObj->nid)
             {
-                tc_put_unique_string( stringObj->nid, stringObj->unique_id, unique_string );
+                nid = stringObj->nid;
+            }
+
+            unique_id = stringObj->unique_id;
+            memset( unique_string, 0, TC_UNIQUE_STRING_VALUE_MAX );
+            memcpy( unique_string, stringData,stringObj->stringLength );
+            if ( ! Config->getUniqueStringId( nid, unique_string, id ) )
+            {   // The string is not in the configuration database, add it
+                id.id  = unique_id;
+                id.nid = nid;
+        
+                if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+                {
+                     trace_printf( "%s@%d - [%d] Adding Unique String, nid=%d, "
+                                   "unique_id=%d, string=%s (length=%d)\n"
+                                 , method_name, __LINE__, i
+                                 , nid, unique_id, unique_string
+                                 , stringObj->stringLength );
+                } 
+
+                Config->addUniqueString( id.nid, id.id, unique_string );
+            }
+            else
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+                {
+                     trace_printf( "%s@%d - [%d] Unique String exists, nid=%d, "
+                                   "unique_id=%d, string=%s (length=%d)\n"
+                                 , method_name, __LINE__, i
+                                 , nid, unique_id, unique_string
+                                 , stringObj->stringLength );
+                } 
             }
 
             stringData += stringObj->stringLength;
-        }
-        if ((i + 1) < entries)
-        {
-             stringObj = (unique_string_set *)stringData;
-             stringData = &stringObj->stringData;
+            if (i  < entries)
+            {
+                 stringObj = (unique_string_set *)stringData;
+                 stringData = &stringObj->stringData;
+            }
         }
     }
 

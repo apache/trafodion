@@ -109,7 +109,7 @@ sub printInitialLines {
         return;
     }
 
-    printScript(1, "#!/bin/sh \n");
+    printScript(1, "#!/bin/bash \n");
     printTime;
 
 #    $smenv = "$ENV{'TRAF_VAR'}/seamonster.env";
@@ -187,10 +187,17 @@ sub printInitialLines {
 
 #        printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
 #    printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
-#    printScript(1, "\nset MY_NODES=\$MY_NODES\n");
+#    printScript(1, "\nset JAVA_HOME=\$JAVA_HOME\n");
+#    printScript(1, "\nset TRAF_CLUSTER_ID=\$TRAF_CLUSTER_ID\n");
+#    printScript(1, "\nset TRAF_INSTANCE_ID=\$TRAF_INSTANCE_ID\n");
+#    printScript(1, "\nset TRAF_FOUNDATION_READY=0\n");
 
 #    sqconfigdb::addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
 #    sqconfigdb::addDbClusterData( "TRAF_HOME", "$TRAF_HOME"); # comes out null
+#    sqconfigdb::addDbClusterData( "JAVA_HOME", "$JAVA_HOME"); 
+#    sqconfigdb::addDbClusterData( "TRAF_CLUSTER_ID", "$TRAF_CLUSTER_ID");
+#    sqconfigdb::addDbClusterData( "TRAF_INSTANCE_ID", "$TRAF_INSTANCE_ID");
+#    sqconfigdb::addDbClusterData( "TRAF_FOUNDATION_READY", "0"); 
 
 #    genSQShellExit();
 
@@ -478,7 +485,7 @@ sub printInitLinesAuxFiles {
 
     my $file_ptr  = @_[0];
 
-    print $file_ptr "#!/bin/sh\n";
+    print $file_ptr "#!/bin/bash\n";
     print $file_ptr "# Trafodion config/utility file generated @ ", getTime(), "\n";
 }
 
@@ -586,28 +593,6 @@ sub doInit {
 
 }
 
-sub setupDbUniqStrings {
-
-    my $my_scripts_dir = "$TRAF_HOME" . "/sql/scripts/" ;
-    for ($i=0; $i < $gdNumNodes; $i++) {
-        sqconfigdb::addDbUniqStr($i, 1, 'shell');
-        sqconfigdb::addDbUniqStr($i, 2, 'pstartd');
-        sqconfigdb::addDbUniqStr($i, 3, 'sqwatchdog');
-        sqconfigdb::addDbUniqStr($i, 4, 'idtmsrv');
-        sqconfigdb::addDbUniqStr($i, 5, 'tm');
-        sqconfigdb::addDbUniqStr($i, 6, 'service_monitor');
-        sqconfigdb::addDbUniqStr($i, 7, 'mxsscp');
-        sqconfigdb::addDbUniqStr($i, 8, 'mxssmp');
-        sqconfigdb::addDbUniqStr($i, 9, 'run_command');
-        sqconfigdb::addDbUniqStr($i, 10, 'mxosrvr');
-        sqconfigdb::addDbUniqStr($i, 11, 'tdm_arkesp');
-        sqconfigdb::addDbUniqStr($i, 12, 'tdm_arkcmp');
-        sqconfigdb::addDbUniqStr($i, 13, 'traf_notify');
-        sqconfigdb::addDbUniqStr($i, 14, 'mxlobsrvr');
-        sqconfigdb::addDbUniqStr($i, 15, 'trafns');
-    }
-}
-
 #
 # Main
 #
@@ -654,8 +639,6 @@ while (<>) {
 }
 
 #printZoneList;
-
-setupDbUniqStrings();
 
 printScriptEndLines;
 

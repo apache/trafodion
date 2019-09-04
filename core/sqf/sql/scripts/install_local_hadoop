@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -361,7 +361,7 @@ do
 *)  echo "ERROR: Unexpected argument $1"
     echo
     cat <<EOF
-Syntax: $0 [ -p [<starting port num> | rand | fromDisplay | available ] ]  [-y]  [-n] [-v]
+Syntax: $0 [ -p [<starting port num> | rand | fromDisplay | available] ]  [-y]  [-n] [-v]
 EOF
     exit 1
     ;;
@@ -397,9 +397,10 @@ else
 
      portMsg=`python findPort.py`
 
-     missingPort=`echo $portMsg | cut -d':' -f 1-1`
+echo $portMsg
+     missingPort=`echo $portMsg | cut -d':' -f 2-`
 
-     if [[ $missingPort != "Port ranges not in use" ]]; then
+     if [[ "$missingPort" == "" ]]; then
         echo "No free port available, exit"
         exit 1
      fi
@@ -632,8 +633,8 @@ if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
 fi
 
 echo "Checking for existing Hadoop processes..."
-if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 -o \
-     `netstat -anl | grep ${MY_HADOOP_NN_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 ]; then
+if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep -w LISTEN | wc -l` -gt 0 -o \
+     `netstat -anl | grep ${MY_HADOOP_NN_HTTP_PORT_NUM} | grep -w LISTEN | wc -l` -gt 0 ]; then
   echo '**** ERROR:'
   echo "A process is already listening to port ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} or ${MY_HADOOP_NN_HTTP_PORT_NUM}."
   echo "This could be your own HDFS web interface or that of someone else."
@@ -778,7 +779,7 @@ EOF
   cat <<EOF >$MY_SW_SCRIPTS_DIR/sw_env.sh
 # Basic environment variables for Trafodion/Hadoop/Hive/HBase/MySQL setup
 export JAVA_HOME=${JAVA_HOME}
-export JAVA_LIBRARY_PATH=${LD_LIBRARY_PATH}
+export JAVA_LIBRARY_PATH=\${LD_LIBRARY_PATH}
 export MY_SW_SCRIPTS_DIR=${MY_SW_SCRIPTS_DIR}
 export MY_SW_ROOT=${MY_SW_ROOT}
 export MYSQL_HOME=${MYSQL_HOME}
@@ -802,6 +803,14 @@ export MY_DB_MGR_SECURE_PORT=${MY_DB_MGR_SECURE_PORT}
 export MY_DRILL_INFO_PORT_NUM=${MY_DRILL_INFO_PORT_NUM}
 export MY_DRILL_RPC_PORT_NUM=${MY_DRILL_RPC_PORT_NUM}
 export MY_DRILL_BIT_PORT_NUM=${MY_DRILL_BIT_PORT_NUM}
+export ZOOKEEPER_NODES=localhost
+export ZOOKEEPER_PORT=${MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM}
+export TRAF_CLUSTER_ID=1
+export TRAF_CLUSTER_NAME=$USER
+export TRAF_INSTANCE_ID=1
+export TRAF_INSTANCE_NAME=TRAFODION
+export TRAF_ROOT_ZNODE=/trafodion
+
 # HBase heap size is in MB
 export HBASE_HEAPSIZE=2048
 EOF
@@ -813,7 +822,7 @@ EOF
   # scripts to start/stop environment
   ####################################
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartall
-#!/bin/sh
+#!/bin/bash
 echo "Starting Hadoop, MySQL, HBase..."
 cd ${MY_SW_SCRIPTS_DIR}
 ./swstarthadoop
@@ -822,7 +831,7 @@ cd ${MY_SW_SCRIPTS_DIR}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopall
-#!/bin/sh
+#!/bin/bash
 echo "Stopping Hadoop, MySQL, HBase..."
 cd ${MY_SW_SCRIPTS_DIR}
 ./swstophbase
@@ -831,7 +840,7 @@ cd ${MY_SW_SCRIPTS_DIR}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthadoop
-#!/bin/sh
+#!/bin/bash
 echo "Starting Hadoop..."
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -840,7 +849,7 @@ cd ${MY_SW_ROOT}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophadoop
-#!/bin/sh
+#!/bin/bash
 echo "Stopping Hadoop..."
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -849,7 +858,7 @@ cd ${MY_SW_ROOT}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartmysql
-#!/bin/sh
+#!/bin/bash
 echo "Starting mysqld..."
 cd ${MY_SW_ROOT}/mysql
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -857,7 +866,7 @@ cd ${MY_SW_ROOT}/mysql
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopmysql
-#!/bin/sh
+#!/bin/bash
 echo "Stopping mysqld..."
 cd ${MY_SW_ROOT}/mysql
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -865,7 +874,7 @@ cd ${MY_SW_ROOT}/mysql
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthbase
-#!/bin/sh
+#!/bin/bash
 echo "Starting HBase..."
 cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -873,14 +882,14 @@ bin/start-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophbase
-#!/bin/sh
+#!/bin/bash
 cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 bin/stop-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
-#!/bin/sh
+#!/bin/bash
 cd \${MY_SW_ROOT}
 . \$MY_SW_SCRIPTS_DIR/sw_env.sh
 JPS_OUTPUT=\`jps\`
@@ -912,7 +921,7 @@ EOF
   # scripts to start command line interpreters and tools
   #######################################################
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhadoop
-#!/bin/sh
+#!/bin/bash
 # command to run hadoop
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -920,7 +929,7 @@ ${MY_SW_ROOT}/hadoop/bin/hadoop "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swyarn
-#!/bin/sh
+#!/bin/bash
 # command to run yarn
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -928,7 +937,7 @@ ${MY_SW_ROOT}/hadoop/bin/yarn "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhdfs
-#!/bin/sh
+#!/bin/bash
 # command to run hadoop
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -936,7 +945,7 @@ ${MY_SW_ROOT}/hadoop/bin/hdfs "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysql
-#!/bin/sh
+#!/bin/bash
 # command to run mysql
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -944,7 +953,7 @@ ${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysqladmin
-#!/bin/sh
+#!/bin/bash
 # command to run mysqladmin as root user
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -952,7 +961,7 @@ ${MY_SW_ROOT}/mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhive
-#!/bin/sh
+#!/bin/bash
 # command to run hive command line interpreter
 
 # Pick up MySQL JDBC driver
@@ -968,7 +977,7 @@ ${MY_SW_ROOT}/hive/bin/hive "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhbase
-#!/bin/sh
+#!/bin/bash
 # command to run hbase shell
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -976,7 +985,7 @@ ${MY_SW_ROOT}/hbase/bin/hbase shell "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swzkcli
-#!/bin/sh
+#!/bin/bash
 # command to run hbase zkcli
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
@@ -984,7 +993,7 @@ ${MY_SW_ROOT}/hbase/bin/hbase zkcli "\$@"
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swuninstall_local_hadoop
-#!/bin/sh
+#!/bin/bash
 # uninstall local Hadoop instance.
 
 . $MY_SW_SCRIPTS_DIR/swstopall
@@ -1271,14 +1280,13 @@ EOF
   bin/hdfs dfs -mkdir /tmp                           >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -mkdir /user                          >>${MY_LOG_FILE} 2>&1  
   bin/hdfs dfs -mkdir /user/trafodion                >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/trafodion/$USER                    >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/trafodion/hive                     >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/$USER          >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/hive           >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -mkdir /user/trafodion/bulkload       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/trafodion/hive/warehouse           >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/trafodion/hive                          >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/hive/warehouse >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/hive           >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /tmp                       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /user/trafodion/hive/warehouse       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /user/traofdion/bulkload                  >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/trafodion/hive/warehouse   >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /user/trafodion/bulkload   >>${MY_LOG_FILE} 2>&1
   bin/hadoop fs -ls -R /                 2>&1 | tee -a ${MY_LOG_FILE}
   echo "Done: Creating HDFS directories" 2>&1 | tee -a ${MY_LOG_FILE}
@@ -1568,7 +1576,7 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
   fi
 
   if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
-    MASTER_VISBILITY_COPROC="<property>
+    MASTER_VISIBILITY_COPROC="<property>
     <name>hbase.coprocessor.master.classes</name>
     <value>org.apache.hadoop.hbase.security.access.AccessController,
            org.apache.hadoop.hbase.security.visibility.VisibilityController
@@ -1653,7 +1661,7 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
     <value>true</value>
   </property>
    ${HREGION_IMPL}
-   ${MASTER_VISBILITY_COPROC}
+   ${MASTER_VISIBILITY_COPROC}
 </configuration>
 EOF
 

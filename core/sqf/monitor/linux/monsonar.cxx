@@ -46,8 +46,6 @@ CMonStats::CMonStats()
      req_type_shutdown (0),
      req_type_startup (0),
      req_type_tmleader (0),
-     req_type_tmseqnum (0),
-     req_type_tmsync (0),
      req_type_zoneinfo (0),
      msg_type_close (0),
      msg_type_unsolicited (0),
@@ -122,10 +120,6 @@ void CMonStats::displayStats ()
                      method_name, __LINE__, req_type_startup);
         trace_printf("%s@%d- Monitor Stats: req_type_tmleader=%llu\n",
                      method_name, __LINE__, req_type_tmleader);
-        trace_printf("%s@%d- Monitor Stats: req_type_tmseqnum=%llu\n",
-                     method_name, __LINE__, req_type_tmseqnum);
-        trace_printf("%s@%d- Monitor Stats: req_type_tmsync=%llu\n",
-                     method_name, __LINE__, req_type_tmsync);
         trace_printf("%s@%d- Monitor Stats: req_type_zoneinfo=%llu\n",
                      method_name, __LINE__, req_type_zoneinfo);
         trace_printf("%s@%d- Monitor Stats: msg_type_close=%llu\n",
@@ -207,8 +201,6 @@ CMonSonarStats::CMonSonarStats()
           {MONITOR_REQTYPE_SHUTDOWN_CTR, &req_type_shutdown},
           {MONITOR_REQTYPE_STARTUP_CTR, &req_type_startup},
           {MONITOR_REQTYPE_TMLEADER_CTR, &req_type_tmleader},
-          {MONITOR_REQTYPE_TMSEQNUM_CTR, &req_type_tmseqnum},
-          {MONITOR_REQTYPE_TMSYNC_CTR, &req_type_tmsync},
           {MONITOR_REQTYPE_ZONEINFO_CTR, &req_type_zoneinfo},
           {MONITOR_SYNC_CYCLES_CTR, &req_sync},
 

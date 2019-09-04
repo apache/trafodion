@@ -81,7 +81,7 @@ CFLAGS		= $(CWARN) $(DBG_FLGS) $(OPTIM_FLGS)
 CXXFLAGS	= $(CXXWARN) $(DBG_FLGS) $(OPTIM_FLGS)
 
 
-CWARN		= -Wno-long-long -fmessage-length=0
+CWARN		= -Wno-long-long -Wno-deprecated -fmessage-length=0
 CXXWARN		= -Wno-long-long -Wno-deprecated -fmessage-length=0
 
 INCLUDES	= -I$(INCEXPDIR) $(INCMISCDIR)
