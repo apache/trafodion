@@ -1330,14 +1330,14 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
       // -----------------------------------------------------------------
       ValueIdSet referencedInputs[MAX_REL_ARITY];
       // -----------------------------------------------------------------
-      // Allocate a ValueIdSet to contain the ValueIds of the roots of
+      // Allocate an array to contain the ValueIds of the roots of
       // sub-expressions that are covered by
       // a) the Group Attributes of a child and
       // b) the new external inputs.
       // Note that the containing expression is not covered for each
       // such sub-expression.
       // -----------------------------------------------------------------
-      ValueIdSet coveredSubExprNotUsed;
+      ValueIdSet coveredSubExprNotUsed[MAX_REL_ARITY];
       // -----------------------------------------------------------------
       // Allocate an array to contain the ValueIds of predicates that
       // can be pushed down to a specific child.
@@ -1391,7 +1391,7 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
               newExternalInputs,
               predPushSet[iter],
               referencedInputs[iter],
-              &coveredSubExprNotUsed);
+              &coveredSubExprNotUsed[iter]);
             // QSTUFF
           }
           // QSTUFF
@@ -1414,7 +1414,7 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
                 emptySet,
                 predPushSet[iter],
                 referencedInputs[iter],
-                &coveredSubExprNotUsed);
+                &coveredSubExprNotUsed[iter]);
               // QSTUFF
             }
             // QSTUFF
@@ -1433,6 +1433,46 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
       // -----------------------------------------------------------------
       computeValuesReqdForPredicates(predicatesOnParent,
                                      exprToEvalOnParent);
+
+      // -----------------------------------------------------------------
+      // Check for equality predicates that could not be pushed down.
+      // This may happen if we have an equality predicate that was not
+      // transformed into a VEG predicate. 
+      //
+      // If any of them have a column child node and that node is
+      // covered by one of our children, create an IS NOT NULL predicate
+      // for it and push that down. We do this so that indexes on the
+      // given column will be considered by Scan::addIndexInfo should
+      // the equality predicate be transformed into a TSJ join predicate.
+      // -----------------------------------------------------------------
+      ValueId pred;
+      for (pred = predicatesOnParent.init();
+           predicatesOnParent.next(pred);
+           predicatesOnParent.advance(pred))
+        {
+          ItemExpr * ie = pred.getItemExpr();
+          if (ie->getOperatorType() == ITM_EQUAL) // non-VEG, equality predicate
+            {
+              for (iter = firstChild; iter < lastChild; iter++)
+                {
+                  for (CollIndex i = 0; i < ie->getArity(); i++)
+                    {
+                      // If the child is covered, it might be a column reference
+                      // (or a VEGRef containing a column reference), so create
+                      // an IS NOT NULL predicate on it and push it down.
+                      ItemExpr * ieChildi = ie->child(i);
+                      if ((CmpCommon::getDefault(COMP_BOOL_194) == DF_ON) &&
+                          (coveredSubExprNotUsed[iter].contains(ieChildi->getValueId())))
+                        {
+                          UnLogic * isNotNull = 
+                            new(CmpCommon::statementHeap()) UnLogic(ITM_IS_NOT_NULL,ieChildi);
+                          isNotNull->synthTypeAndValueId();
+                          predPushSet[iter] += isNotNull->getValueId();
+                        }
+                    }
+                } 
+            }     
+        }
 
       // -----------------------------------------------------------------
       // Perform predicate pushdown
@@ -1457,7 +1497,7 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
   						    referencedInputs[iter],
   						    predPushSet[iter],
   						    inputsNeededByPredicates,
-  						    &coveredSubExprNotUsed);
+  						    &coveredSubExprNotUsed[iter]);
 	      child(iter).getPtr()->getGroupAttr()->addCharacteristicInputs
 	                                            (inputsNeededByPredicates);
 	      ValueIdSet essChildOutputs;
