@@ -1462,29 +1462,31 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
       // called once at the beginning of optimization, before any Join
       // to TSJ transformations have been attempted).
       // -----------------------------------------------------------------
-      ValueId pred;
-      for (pred = predicatesOnParent.init();
-           predicatesOnParent.next(pred);
-           predicatesOnParent.advance(pred))
+      if (CmpCommon::getDefault(COMP_BOOL_194) == DF_ON)
         {
-          ItemExpr * ie = pred.getItemExpr();
-          if (ie->getOperatorType() == ITM_EQUAL) // non-VEG, equality predicate
+          ValueId pred;
+          for (pred = predicatesOnParent.init();
+               predicatesOnParent.next(pred);
+               predicatesOnParent.advance(pred))
             {
-              for (iter = firstChild; iter < lastChild; iter++)
+              ItemExpr * ie = pred.getItemExpr();
+              if (ie->getOperatorType() == ITM_EQUAL) // non-VEG, equality predicate
                 {
-                  for (CollIndex i = 0; i < ie->getArity(); i++)
+                  for (iter = firstChild; iter < lastChild; iter++)
                     {
-                      // If the child is covered, it might contain a column reference
-                      // that is useful for index selection. Push that down.
-                      ItemExpr * ieChildi = ie->child(i);
-                      if ((CmpCommon::getDefault(COMP_BOOL_194) == DF_ON) &&
-                          (coveredSubExprNotUsed[iter].contains(ieChildi->getValueId())))
+                      for (CollIndex i = 0; i < ie->getArity(); i++)
                         {
-                          possibleIndexColumnsPushSet[iter] += ieChildi->getValueId();
+                          // If the child is covered, it might contain a column reference
+                          // that is useful for index selection. Push that down.
+                          ItemExpr * ieChildi = ie->child(i);
+                          if (coveredSubExprNotUsed[iter].contains(ieChildi->getValueId()))
+                            {
+                              possibleIndexColumnsPushSet[iter] += ieChildi->getValueId();
+                            }
                         }
-                    }
-                } 
-            }     
+                    } 
+                }     
+            }
         }
 
       // -----------------------------------------------------------------
