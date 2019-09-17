@@ -1430,6 +1430,12 @@ public:
 
   void adjustTopPartFunc(Lng32 newDop);
 
+  void addToPossibleIndexColumns(ValueIdSet & vids)
+  { possibleIndexColumns_ += vids; }
+
+  const ValueIdSet & possibleIndexColumns()
+  { return possibleIndexColumns_; }
+
 protected:
 
   void synthPropForBindChecks();
@@ -1596,6 +1602,25 @@ private:
   RelExpr *originalExpr_;
 
   NAString operKey_;
+
+  // Predicates are pushed down during the normalize pass. Some equality
+  // predicates cannot be represented as VEGs; these do not get pushed
+  // down. Nevertheless, during optimization, such an equality predicate
+  // may get pushed down as a result of a Join to TSJ transformation.
+  // The Optimizer (via Scan::addIndexInfo) chooses a set of interesting
+  // indexes just once at the beginning of optimization; an index 
+  // becomes interesting if its columns are referenced by some predicate
+  // on that node. (It may become interesting for other reasons as well.)
+  // Since non-VEG equality predicates don't get pushed down, columns
+  // referenced in them are not available at the node at Scan::addIndexInfo
+  // time. So, we have an alternate mechanism for making such column
+  // references available, namely this member. During predicate push down,
+  // this member holds columns that are of interest for indexes for this
+  // node (if it is a Scan node) or its children (if it is not a Scan 
+  // node). Note that possibleIndexColumns_ for non-leaf nodes might 
+  // contain more complex sorts of expressions (e.g. VEGReferences);
+  // these are eventually resolved as we push down to the leaves.
+  ValueIdSet possibleIndexColumns_;
 
 public:
 

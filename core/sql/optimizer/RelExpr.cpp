@@ -811,6 +811,9 @@ RelExpr * RelExpr::copyTopNode(RelExpr *derivedNode,CollHeap* outHeap)
   if (selection_ != NULL)
     result->selection_ = selection_->copyTree(outHeap)->castToItemExpr();
 
+  // copy possible index column hints for non-VEG equality predicates
+  result->possibleIndexColumns_ = possibleIndexColumns_;
+
   // -- Triggers
   // Copy the inlining information and access sets.
   result->getInliningInfo().merge(&getInliningInfo());
@@ -1330,19 +1333,25 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
       // -----------------------------------------------------------------
       ValueIdSet referencedInputs[MAX_REL_ARITY];
       // -----------------------------------------------------------------
-      // Allocate a ValueIdSet to contain the ValueIds of the roots of
+      // Allocate an array to contain the ValueIds of the roots of
       // sub-expressions that are covered by
       // a) the Group Attributes of a child and
       // b) the new external inputs.
       // Note that the containing expression is not covered for each
       // such sub-expression.
       // -----------------------------------------------------------------
-      ValueIdSet coveredSubExprNotUsed;
+      ValueIdSet coveredSubExprNotUsed[MAX_REL_ARITY];
       // -----------------------------------------------------------------
       // Allocate an array to contain the ValueIds of predicates that
       // can be pushed down to a specific child.
       // -----------------------------------------------------------------
       ValueIdSet predPushSet[MAX_REL_ARITY];
+      // -----------------------------------------------------------------
+      // Allocate an array to contain the ValueIds of predicates from
+      // non-VEG equality predicates that might be useful hints for
+      // index selection.
+      // -----------------------------------------------------------------
+      ValueIdSet possibleIndexColumnsPushSet[MAX_REL_ARITY];
       // -----------------------------------------------------------------
       // Check which predicate factors are fully covered by a certain
       // child. Gather their ValueIds in predPushSet.
@@ -1391,8 +1400,14 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
               newExternalInputs,
               predPushSet[iter],
               referencedInputs[iter],
-              &coveredSubExprNotUsed);
-            // QSTUFF
+              &coveredSubExprNotUsed[iter]);
+            // QSTUFF            
+            ValueIdSet dummyReferencedInputs;
+            child(iter).getGroupAttr()->coverTest(possibleIndexColumns_,
+              newExternalInputs,
+              possibleIndexColumnsPushSet[iter],
+              dummyReferencedInputs,
+              &possibleIndexColumnsPushSet[iter]);            
           }
           // QSTUFF
         }
@@ -1414,7 +1429,7 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
                 emptySet,
                 predPushSet[iter],
                 referencedInputs[iter],
-                &coveredSubExprNotUsed);
+                &coveredSubExprNotUsed[iter]);
               // QSTUFF
             }
             // QSTUFF
@@ -1433,6 +1448,46 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
       // -----------------------------------------------------------------
       computeValuesReqdForPredicates(predicatesOnParent,
                                      exprToEvalOnParent);
+
+      // -----------------------------------------------------------------
+      // Check for equality predicates that could not be pushed down.
+      // This may happen if we have an equality predicate that was not
+      // transformed into a VEG predicate. 
+      //
+      // If there are column references in the equality predicate, it
+      // may prove useful to tell the leaf nodes about it, as the equality
+      // predicate might be pushed down later during a Join to TSJ 
+      // transformation. Telling the leaf nodes about it might allow the
+      // use of an index in this case (see Scan::addIndexInfo; this is
+      // called once at the beginning of optimization, before any Join
+      // to TSJ transformations have been attempted).
+      // -----------------------------------------------------------------
+      if (CmpCommon::getDefault(COMP_BOOL_194) == DF_ON)
+        {
+          ValueId pred;
+          for (pred = predicatesOnParent.init();
+               predicatesOnParent.next(pred);
+               predicatesOnParent.advance(pred))
+            {
+              ItemExpr * ie = pred.getItemExpr();
+              if (ie->getOperatorType() == ITM_EQUAL) // non-VEG, equality predicate
+                {
+                  for (iter = firstChild; iter < lastChild; iter++)
+                    {
+                      for (CollIndex i = 0; i < ie->getArity(); i++)
+                        {
+                          // If the child is covered, it might contain a column reference
+                          // that is useful for index selection. Push that down.
+                          ItemExpr * ieChildi = ie->child(i);
+                          if (coveredSubExprNotUsed[iter].contains(ieChildi->getValueId()))
+                            {
+                              possibleIndexColumnsPushSet[iter] += ieChildi->getValueId();
+                            }
+                        }
+                    } 
+                }     
+            }
+        }
 
       // -----------------------------------------------------------------
       // Perform predicate pushdown
@@ -1457,7 +1512,7 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
   						    referencedInputs[iter],
   						    predPushSet[iter],
   						    inputsNeededByPredicates,
-  						    &coveredSubExprNotUsed);
+  						    &coveredSubExprNotUsed[iter]);
 	      child(iter).getPtr()->getGroupAttr()->addCharacteristicInputs
 	                                            (inputsNeededByPredicates);
 	      ValueIdSet essChildOutputs;
@@ -1493,6 +1548,8 @@ void RelExpr::pushdownCoveredExpr(const ValueIdSet & outputExpr,
                                                        &extraHubNonEssOutputs
                                                        );
 
+            // pass down index column hints for non-VEG equality predicates
+            child(iter).getPtr()->addToPossibleIndexColumns(possibleIndexColumnsPushSet[iter]);
             };
 	} // for loop to pushdown predicates
     } // endif (NOT predicatesOnParent.isEmpty())
@@ -8706,6 +8763,9 @@ void Scan::addIndexInfo()
             }
             else
                disjuncts=preds;
+
+	    // add in index column hints from non-VEG equality predicates
+	    disjuncts += possibleIndexColumns();
 
 	    disjuncts.isCovered(
 	      getGroupAttr()->getCharacteristicInputs(),

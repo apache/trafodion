@@ -6266,9 +6266,12 @@ void OptDebug::showEstLogProp( const EstLogPropSharedPtr& estLogProp,
 
     ColStatsSharedPtr colStats = stats[i]->getColStats();
 
-    out << prefix << "Table Column: "
-        << colStats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data()
-        << endl;
+    out << prefix << "Table Column: ";
+    if (colStats->getStatColumns().entries() > 0)
+      out << colStats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data();
+    else
+      out << "(None)";
+    out << endl;
 
     if (colStats->isFakeHistogram())
       out << prefix << "*** FAKE HISTOGRAM ***" << endl;

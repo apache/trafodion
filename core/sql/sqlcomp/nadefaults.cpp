@@ -671,6 +671,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_191,      "OFF"), // Temp for UDF metadata switch
   DDkwd__(COMP_BOOL_192,      "OFF"),
   DDkwd__(COMP_BOOL_193,      "OFF"),
+  DDkwd__(COMP_BOOL_194,      "ON"),  // If "OFF", turns off JIRA Trafodion 3325 fix
   DDkwd__(COMP_BOOL_196,      "OFF"),
   DDkwd__(COMP_BOOL_197,      "OFF"),
   DDkwd__(COMP_BOOL_198,      "OFF"),

@@ -1730,6 +1730,7 @@ enum DefaultConstants
   COMP_BOOL_191,
   COMP_BOOL_192,
   COMP_BOOL_193,
+  COMP_BOOL_194,  // Can be used to turn off fix to JIRA Trafodion 3325
   COMP_BOOL_196,
   COMP_BOOL_197,
   COMP_BOOL_198,
