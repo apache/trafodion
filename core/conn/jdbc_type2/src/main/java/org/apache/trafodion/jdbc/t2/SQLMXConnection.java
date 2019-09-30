@@ -229,7 +229,7 @@ public synchronized void commit() throws SQLException {
             debug[methodId_commit].traceOut(JdbcDebug.debugLevelEntry,
                     "beginTransFlag_ = " + beginTransFlag_
                     + "; autoCommit_ = " + autoCommit_
-                    + "; txid_ = " + getTxid_());
+                    + "; txid_ = " + getTxid());
             if (JdbcDebugCfg.entryActive)
             debug[methodId_commit].methodExit();
         }
@@ -582,7 +582,7 @@ public synchronized CallableStatement prepareCall(String sql)
 
             if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
             printIdMapEntry(cstmt);
-            cstmt.prepareCall(server_, getDialogueId_(), getTxid_(),
+            cstmt.prepareCall(server_, getDialogueId(), getTxid(),
                     autoCommit_, transactionMode_, cstmt.getStmtLabel_(),
                     cstmt.sql_.trim(), cstmt.queryTimeout_,
                     cstmt.resultSetHoldability_, cstmt.fetchSize_);
@@ -666,7 +666,7 @@ public synchronized CallableStatement prepareCall(String sql,
             }
             if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
             printIdMapEntry(cstmt);
-            cstmt.prepareCall(server_, getDialogueId_(), getTxid_(),
+            cstmt.prepareCall(server_, getDialogueId(), getTxid(),
                     autoCommit_, transactionMode_, cstmt.getStmtLabel_(),
                     cstmt.sql_.trim(), cstmt.queryTimeout_,
                     cstmt.resultSetHoldability_, cstmt.fetchSize_);
@@ -757,7 +757,7 @@ public synchronized CallableStatement prepareCall(String sql,
 
             if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
             printIdMapEntry(cstmt);
-            cstmt.prepareCall(server_, getDialogueId_(), getTxid_(),
+            cstmt.prepareCall(server_, getDialogueId(), getTxid(),
                     autoCommit_, transactionMode_, cstmt.getStmtLabel_(),
                     cstmt.sql_.trim(), cstmt.queryTimeout_,
                     cstmt.resultSetHoldability_, cstmt.fetchSize_);
@@ -864,7 +864,7 @@ public synchronized PreparedStatement prepareStatement(String sql)
             if (this.t2props.getEnableMFC().equalsIgnoreCase("on") && this.t2props.getBatchBinding() ==0) {
 
                 synchronized (SQLMXConnection.lockForMFCPrep) {
-                    pstmt.cpqPrepareJNI(server_, getDialogueId_(), getTxid_(),
+                    pstmt.cpqPrepareJNI(server_, getDialogueId(), getTxid(),
                             autoCommit_, transactionMode_, "", moduleVersion_,
                             moduleTimestamp_, pstmt.getStmtLabel_(),
                             pstmt.isSelect_, pstmt.queryTimeout_,
@@ -872,7 +872,7 @@ public synchronized PreparedStatement prepareStatement(String sql)
                             pstmt.fetchSize_, sql.trim(),getSqlStmtTypeForMFC(sql.trim()));
                 }
             } else {
-                pstmt.prepare(server_, getDialogueId_(), getTxid_(), autoCommit_,
+                pstmt.prepare(server_, getDialogueId(), getTxid(), autoCommit_,
                         pstmt.getStmtLabel_(), pstmt.sql_.trim(), pstmt.isSelect_,
                         pstmt.queryTimeout_, pstmt.resultSetHoldability_,
                         batchBindingSize_, pstmt.fetchSize_);
@@ -956,7 +956,7 @@ protected synchronized PreparedStatement prepareLobStatement(String sql)
                 batchBindingSize_ = 0;
             }
 
-            stmt.prepare(server_, getDialogueId_(), getTxid_(), autoCommit_,
+            stmt.prepare(server_, getDialogueId(), getTxid(), autoCommit_,
                     stmt.getStmtLabel_(), stmt.sql_.trim(), stmt.isSelect_,
                     stmt.queryTimeout_, stmt.resultSetHoldability_,
                     batchBindingSize_, stmt.fetchSize_);
@@ -1113,7 +1113,7 @@ public synchronized PreparedStatement prepareStatement(String sql,
             if (this.t2props.getEnableMFC().equalsIgnoreCase("on") && this.t2props.getBatchBinding() ==0) {
 
                 synchronized (SQLMXConnection.lockForMFCPrep) {
-                    stmt.cpqPrepareJNI(server_, getDialogueId_(), getTxid_(),
+                    stmt.cpqPrepareJNI(server_, getDialogueId(), getTxid(),
                             autoCommit_, transactionMode_, "", moduleVersion_,
                             moduleTimestamp_, stmt.getStmtLabel_(),
                             stmt.isSelect_, stmt.queryTimeout_,
@@ -1121,7 +1121,7 @@ public synchronized PreparedStatement prepareStatement(String sql,
                             stmt.fetchSize_, sql.trim(),getSqlStmtTypeForMFC(sql.trim()));
                 }
             } else {
-                stmt.prepare(server_, getDialogueId_(), getTxid_(),
+                stmt.prepare(server_, getDialogueId(), getTxid(),
                         autoCommit_, stmt.getStmtLabel_(), stmt.sql_.trim(),
                         stmt.isSelect_, stmt.queryTimeout_,
                         stmt.resultSetHoldability_, batchBindingSize_,
@@ -1231,7 +1231,7 @@ public synchronized PreparedStatement prepareStatement(String sql,
             if (this.t2props.getEnableMFC().equalsIgnoreCase("on") && this.t2props.getBatchBinding() ==0) {
 
                 synchronized (SQLMXConnection.lockForMFCPrep) {
-                    stmt.cpqPrepareJNI(server_, getDialogueId_(), getTxid_(),
+                    stmt.cpqPrepareJNI(server_, getDialogueId(), getTxid(),
                             autoCommit_, transactionMode_, "", moduleVersion_,
                             moduleTimestamp_, stmt.getStmtLabel_(),
                             stmt.isSelect_, stmt.queryTimeout_,
@@ -1239,7 +1239,7 @@ public synchronized PreparedStatement prepareStatement(String sql,
                             stmt.fetchSize_, sql.trim(),getSqlStmtTypeForMFC(sql.trim()));
                 }
             } else {
-                stmt.prepare(server_, getDialogueId_(), getTxid_(),
+                stmt.prepare(server_, getDialogueId(), getTxid(),
                         autoCommit_, stmt.getStmtLabel_(), stmt.sql_.trim(),
                         stmt.isSelect_, stmt.queryTimeout_,
                         stmt.resultSetHoldability_, batchBindingSize_,
@@ -1377,7 +1377,7 @@ public synchronized void rollback() throws SQLException {
             debug[methodId_rollback_V].traceOut(JdbcDebug.debugLevelEntry,
                     "beginTransFlag_ = " + beginTransFlag_
                     + "; autoCommit_ = " + autoCommit_
-                    + "; txid_ = " + getTxid_());
+                    + "; txid_ = " + getTxid());
             if (JdbcDebugCfg.entryActive)
             debug[methodId_rollback_V].methodExit();
         }
@@ -1440,7 +1440,7 @@ public void setAutoCommit(boolean autoCommit) throws SQLException {
                 if (autoCommit_ != autoCommit)
                 {
                     if (connectInitialized_)
-                    setAutoCommit(server_, getDialogueId_(), autoCommit);
+                    setAutoCommit(server_, getDialogueId(), autoCommit);
                     autoCommit_ = autoCommit;
                 }
             }
@@ -1466,7 +1466,7 @@ public synchronized void setCatalog(String catalog) throws SQLException {
             throw Messages.createSQLException(locale_,
                     "invalid_connection", null);
             if (catalog != null) {
-                setCatalog(server_, getDialogueId_(), catalog);
+                setCatalog(server_, getDialogueId(), catalog);
                 if (!catalog.startsWith("\""))
                 catalog_ = catalog.toUpperCase();
                 else
@@ -1613,7 +1613,7 @@ public synchronized void setTransactionIsolation(int level)
                 case TRANSACTION_REPEATABLE_READ:
                 case TRANSACTION_SERIALIZABLE:
                 // Check if connection is open
-                setTransactionIsolation(server_, getDialogueId_(),
+                setTransactionIsolation(server_, getDialogueId(),
                         mapTxnIsolation(level));
                 transactionIsolation_ = level;
                 updateConnectionReusability(SQL_SET_TRANSACTION);
@@ -1648,98 +1648,6 @@ public void setTypeMap(java.util.Map<String, Class<?>> map)
         }
     }
 
-    /*
-     * RFE: Connection synchronization cpqPrepareStatement() is now
-     * synchronized.
-     */
-    // Method to be used by SQLJ-O
-public synchronized PreparedStatement cpqPrepareStatement(
-            String moduleName, int moduleVersion, long moduleTimestamp,
-            String stmtName, boolean isSelect) throws SQLException {
-        if (out_ != null) {
-            out_.println(getTraceId() + "cpqPrepareStatement(\"" + moduleName
-                    + "\"," + moduleTimestamp + ", \"" + stmtName + "\", \""
-                    + isSelect + ")");
-        }
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_cpqPrepareStatement].methodEntry();
-        try {
-            SQLMXPreparedStatement pstmt;
-
-            if (isClosed_)
-            throw Messages.createSQLException(locale_,
-                    "invalid_connection", null);
-            gcStmts();
-            pstmt = new SQLMXPreparedStatement(this, moduleName, moduleVersion,
-                    moduleTimestamp, stmtName, isSelect, holdability_);
-            addElement(pstmt);
-
-            if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
-            printIdMapEntry(pstmt);
-
-            pstmt.cpqPrepareJNI(server_, getDialogueId_(), getTxid_(),
-                    autoCommit_, transactionMode_, pstmt.moduleName_,
-                    pstmt.moduleVersion_, pstmt.moduleTimestamp_, pstmt
-                    .getStmtLabel_(), pstmt.isSelect_,
-                    pstmt.queryTimeout_, pstmt.resultSetHoldability_,
-                    batchBindingSize_, pstmt.fetchSize_, "",false);
-            if (out_ != null) {
-                out_.println(getTraceId() + "cpqPrepareStatement(\"" + moduleName
-                        + "\"," + moduleTimestamp + ", \"" + stmtName + "\", \""
-                        + isSelect + ") returns PreparedStatement ["
-                        + pstmt.getStmtLabel_() + "]");
-            }
-            if (out_ != null) {
-                return new TPreparedStatement(pstmt, out_);
-            }
-            return pstmt;
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_cpqPrepareStatement].methodExit();
-        }
-    }
-
-    // Method to be used by SQLJ-O
-public CallableStatement cpqPrepareCall(String moduleName,
-            int moduleVersion, long moduleTimestamp, String stmtName)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_cpqPrepareCall].methodEntry();
-        if (JdbcDebugCfg.traceActive)
-        debug[methodId_cpqPrepareCall].methodParameters("moduleName="
-                + moduleName + ", moduleVersion=" + moduleVersion
-                + ", moduleTimestamp=" + moduleTimestamp + ", stmtName="
-                + stmtName);
-        try {
-            SQLMXCallableStatement cstmt;
-
-            if (isClosed_)
-            throw Messages.createSQLException(locale_,
-                    "invalid_connection", null);
-            gcStmts();
-            cstmt = new SQLMXCallableStatement(this, moduleName, moduleVersion,
-                    moduleTimestamp, stmtName);
-            addElement(cstmt);
-
-            if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
-            printIdMapEntry(cstmt);
-
-            cstmt.cpqPrepareCall(server_, getDialogueId_(), getTxid_(),
-                    autoCommit_, transactionMode_, cstmt.moduleName_,
-                    cstmt.moduleVersion_, cstmt.moduleTimestamp_, cstmt
-                    .getStmtLabel_(), cstmt.queryTimeout_,
-                    cstmt.resultSetHoldability_, cstmt.fetchSize_);
-            return cstmt;
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_cpqPrepareCall].methodExit();
-        }
-    }
-
-    /*
-     * RFE: Connection synchronization begintransaction() is now synchronized.
-     */
-    // Method to be used by SQLJ-O
 public synchronized void begintransaction() throws SQLException {
         if (JdbcDebugCfg.entryActive)
         debug[methodId_begintransaction].methodEntry();
@@ -1749,11 +1657,11 @@ public synchronized void begintransaction() throws SQLException {
             if (isClosed_)
             throw Messages.createSQLException(locale_,
                     "invalid_connection", null);
-            if (getTxid_() != 0)
+            if (getTxid() != 0)
             throw Messages.createSQLException(locale_,
                     "invalid_transaction_state", null);
 
-            txid = beginTransaction(server_, getDialogueId_());
+            txid = beginTransaction(server_, getDialogueId());
             if (txid != 0) {
                 setTxid_(txid);
                 autoCommit_ = false;
@@ -1837,7 +1745,7 @@ private int mapTxnIsolation(int level) {
                     if (stmtObject != null) {
                         stmtId = stmtObject.intValue();
                         try {
-                            SQLMXStatement.close(server_, getDialogueId_(),
+                            SQLMXStatement.close(server_, getDialogueId(),
                                     stmtId, true);
                         } catch (SQLException e) {
                         }finally {
@@ -1907,7 +1815,7 @@ private int mapTxnIsolation(int level) {
                     .equalsIgnoreCase("ON");
                     // MFC added two more parameters
 
-                    connectInit(server_, getDialogueId_(), catalog_, schema_,
+                    connectInit(server_, getDialogueId(), catalog_, schema_,
                             mploc_, isReadOnly_, autoCommit_,
                             mapTxnIsolation(transactionIsolation_),
                             loginTimeout_, queryTimeout_, enableMFC_,
@@ -1916,7 +1824,7 @@ private int mapTxnIsolation(int level) {
                     );
 
                     if (iso88591EncodingOverride_ != null)
-                    setCharsetEncodingOverride(server_, getDialogueId_(),
+                    setCharsetEncodingOverride(server_, getDialogueId(),
                             SQLMXDesc.SQLCHARSETCODE_ISO88591,
                             iso88591EncodingOverride_);
                 } catch (SQLException e) {
@@ -2019,8 +1927,8 @@ private int mapTxnIsolation(int level) {
                          */
                         if (!listOfCachedPrepStmtIds.contains(stmtIds.get(i))) {
                             try {
-                                // getDialogueId_()
-                                SQLMXStatement.close(server_, getDialogueId_(),
+                                // getDialogueId()
+                                SQLMXStatement.close(server_, getDialogueId(),
                                         ((Long) stmtIds.get(i)).intValue(),
                                         true);
                             } catch (SQLException se) {
@@ -2066,7 +1974,7 @@ private int mapTxnIsolation(int level) {
                     for (int i = 0; i < size; i++) {
                         try {
                             SQLMXStatement
-                            .close(server_, getDialogueId_(),
+                            .close(server_, getDialogueId(),
                                     ((Long) stmtIds.get(i))
                                     .longValue(), true);
                         } catch (SQLException se) {
@@ -2078,9 +1986,9 @@ private int mapTxnIsolation(int level) {
                 }
                 // Need to logically close the statement
                 // Rollback the Transaction independent of autoCommit mode
-                if (getTxid_() != 0) {
+                if (getTxid() != 0) {
                     try {
-                        rollback(server_, getDialogueId_(), getTxid_());
+                        rollback(server_, getDialogueId(), getTxid());
                     } catch (SQLException se1) {
                     }
                     setTxid_(0);
@@ -2088,13 +1996,13 @@ private int mapTxnIsolation(int level) {
                 if (this.setOfCQDs.isEmpty() == false) {
                     if (clearCQD1 == null && clearCQD2 == null
                             && clearCQD3 == null) {
-                        clearSetOfCQDs(this.getDialogueId_());
+                        clearSetOfCQDs(this.getDialogueId());
                         clearCQD2 = this
                         .prepareForResetCQDs("CONTROL TABLE * RESET");
-                        clearSetOfCQDs(this.getDialogueId_());
+                        clearSetOfCQDs(this.getDialogueId());
                         clearCQD3 = this
                         .prepareForResetCQDs("CONTROL QUERY SHAPE CUT");
-                        clearSetOfCQDs(this.getDialogueId_());
+                        clearSetOfCQDs(this.getDialogueId());
                         clearCQD1 = this
                         .prepareForResetCQDs("CONTROL QUERY DEFAULT * RESET");
 
@@ -2105,7 +2013,7 @@ private int mapTxnIsolation(int level) {
                         clearCQD3.execute();
                     }
                     //native call to clear native cqd list
-                    clearSetOfCQDs(this.getDialogueId_());
+                    clearSetOfCQDs(this.getDialogueId());
                     this.setOfCQDs.clear();
                     //to reset all the CQDs required for T2 connection.
                     connectInitialized_ = false;
@@ -2118,7 +2026,7 @@ private int mapTxnIsolation(int level) {
                     out_.println(getTraceId() +"close()"+" Connection Hard closed");
                     out_.println(getTraceId() + "close(hardClose="+hardClose +",sendEvents="+sendEvents+")");
                 }
-                if (getDialogueId_() == 0)
+                if (getDialogueId() == 0)
                 return;
                 // close all the statements
                 Set<WeakReference> ks1 = refToStmt_.keySet();
@@ -2143,9 +2051,9 @@ private int mapTxnIsolation(int level) {
                 refToStmt_.clear();
                 // Need to logically close the statement
                 // Rollback the Transaction independent of autoCommit mode
-                if (getTxid_() != 0) {
+                if (getTxid() != 0) {
                     try {
-                        rollback(server_, getDialogueId_(), getTxid_());
+                        rollback(server_, getDialogueId(), getTxid());
                     } catch (SQLException se1) {
                     }
                     setTxid_(0);
@@ -2154,14 +2062,14 @@ private int mapTxnIsolation(int level) {
                 clearPreparedStatementsAll();
                 // Close the connection
                 try {
-                    // getDialogueId_(),setDialogueId_()
-                    SQLMXConnection.close(server_, getDialogueId_());
+                    // getDialogueId(),setDialogueI_()
+                    SQLMXConnection.close(server_, getDialogueId());
                 }finally {
                     isClosed_ = true;
                     keyForMap=this.incrementAndGetkeyForMapCounter();
-                    mapOfClosedDialogs.put(keyForMap, getDialogueId_());
+                    mapOfClosedDialogs.put(keyForMap, getDialogueId());
 
-                    setDialogueId_(0);
+                    setDialogueId(0);
                     removeElement();
                 }
             }
@@ -2179,7 +2087,7 @@ private int mapTxnIsolation(int level) {
         debug[methodId_reuse].methodEntry(JdbcDebug.debugLevelPooling);
         try {
             if (connReuseBitMap_ != 0) {
-                connectReuse(server_, getDialogueId_(), connReuseBitMap_,
+                connectReuse(server_, getDialogueId(), connReuseBitMap_,
                         dsCatalog_, dsSchema_, mploc_,
                         TRANSACTION_READ_COMMITTED);
                 // Reset all connection attribute values
@@ -2228,39 +2136,10 @@ private int mapTxnIsolation(int level) {
             debug[methodId_updateConnectionReusability].methodExit();
         }
     }
-
-    long getDataLocator(String lobTableName, boolean isBlob)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_getDataLocator].methodEntry();
-        if (JdbcDebugCfg.traceActive)
-        debug[methodId_getDataLocator].methodParameters("lobTableName="
-                + lobTableName + ", isBlob=" + isBlob);
-        try {
-            SQLMXDataLocator dataLoc;
-
-            if (lobTableName == null) {
-                if (isBlob)
-                throw Messages.createSQLException(locale_,
-                        "no_blobTableName", null);
-                throw Messages.createSQLException(locale_, "no_clobTableName",
-                        null);
-            }
-            dataLoc = (SQLMXDataLocator) lobTableToDataLoc_.get(lobTableName);
-            if (dataLoc == null) {
-                dataLoc = new SQLMXDataLocator(this, lobTableName);
-                lobTableToDataLoc_.put(lobTableName, dataLoc);
-            }
-            return dataLoc.getDataLocator(this, isBlob);
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_getDataLocator].methodExit();
-        }
-    }
-
+    //
     // Extension method for WLS, this method gives the pooledConnection object
     // associated with the given connection object.
-public PooledConnection getPooledConnection() throws SQLException {
+    public PooledConnection getPooledConnection() throws SQLException {
         if (JdbcDebugCfg.entryActive)
         debug[methodId_getPooledConnection]
         .methodEntry(JdbcDebug.debugLevelPooling);
@@ -2340,123 +2219,6 @@ private void initSetDefaults() throws SQLException {
         }
     }
 
-    // The following methods ensure that the LOB statements are only prepared
-    // for the
-    // BLOB/CLOB specific PreparedStatement objects (to avoid constant
-    // re-prepares), and
-    // that they are only re-prepared if the appropriate BLOB/CLOB lobTableName_
-    // has changed.
-    void prepareGetLobLenStmt(String lobTableName, boolean isBlob)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareGetLobLenStmt].methodEntry();
-        try {
-            if (isBlob
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[BLOB_GET_LOB_LEN_STMT]))) {
-                String lobLenSQL = "select sum(char_length(lob_data)) from "
-                + lobTableName
-                + " where table_name = ? and data_locator = ?";
-                LobPrepStmts[BLOB_GET_LOB_LEN_STMT] = prepareLobStatement(lobLenSQL);
-                LobPrepStmtTableName[BLOB_GET_LOB_LEN_STMT] = lobTableName;
-            } else if ((!isBlob)
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[CLOB_GET_LOB_LEN_STMT]))) {
-                String lobLenSQL = "select sum(char_length(lob_data)) from "
-                + lobTableName
-                + " where table_name = ? and data_locator = ?";
-                LobPrepStmts[CLOB_GET_LOB_LEN_STMT] = prepareLobStatement(lobLenSQL);
-                LobPrepStmtTableName[CLOB_GET_LOB_LEN_STMT] = lobTableName;
-            }
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareGetLobLenStmt].methodExit();
-        }
-    }
-
-    void prepareDelLobDataStmt(String lobTableName, boolean isBlob)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareDelLobDataStmt].methodEntry();
-        try {
-            if (isBlob
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[BLOB_DEL_LOB_DATA_STMT]))) {
-                String lobDelSQL = "delete from "
-                + lobTableName
-                + " where table_name = ? and data_locator = ? and chunk_no >= ? and chunk_no <= ?";
-                LobPrepStmts[BLOB_DEL_LOB_DATA_STMT] = prepareLobStatement(lobDelSQL);
-                LobPrepStmtTableName[BLOB_DEL_LOB_DATA_STMT] = lobTableName;
-            } else if ((!isBlob)
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[CLOB_DEL_LOB_DATA_STMT]))) {
-                String lobDelSQL = "delete from "
-                + lobTableName
-                + " where table_name = ? and data_locator = ? and chunk_no >= ? and chunk_no <= ?";
-                LobPrepStmts[CLOB_DEL_LOB_DATA_STMT] = prepareLobStatement(lobDelSQL);
-                LobPrepStmtTableName[CLOB_DEL_LOB_DATA_STMT] = lobTableName;
-            }
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareDelLobDataStmt].methodExit();
-        }
-    }
-
-    void prepareGetLobDataStmt(String lobTableName, boolean isBlob)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareGetLobDataStmt].methodEntry();
-        try {
-            if (isBlob
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[BLOB_GET_LOB_DATA_STMT]))) {
-                String lobGetSQL = "select lob_data from "
-                + lobTableName
-                + " where table_name = ? and data_locator = ? and chunk_no >= ? and chunk_no <= ?";
-                LobPrepStmts[BLOB_GET_LOB_DATA_STMT] = prepareLobStatement(lobGetSQL);
-                LobPrepStmtTableName[BLOB_GET_LOB_DATA_STMT] = lobTableName;
-            } else if ((!isBlob)
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[CLOB_GET_LOB_DATA_STMT]))) {
-                String lobGetSQL = "select lob_data from "
-                + lobTableName
-                + " where table_name = ? and data_locator = ? and chunk_no >= ? and chunk_no <= ?";
-                LobPrepStmts[CLOB_GET_LOB_DATA_STMT] = prepareLobStatement(lobGetSQL);
-                LobPrepStmtTableName[CLOB_GET_LOB_DATA_STMT] = lobTableName;
-            }
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareGetLobDataStmt].methodExit();
-        }
-    }
-
-    void prepareUpdLobDataStmt(String lobTableName, boolean isBlob)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareUpdLobDataStmt].methodEntry();
-        try {
-            if (isBlob
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[BLOB_UPD_LOB_DATA_STMT]))) {
-                String lobUpdSQL = "update "
-                + lobTableName
-                + " set lob_data = subString(lob_data, 1, ?) || cast (? as varchar(24000)) || substring(lob_data from ?) where table_name = ? and data_locator = ? and chunk_no = ?";
-                LobPrepStmts[BLOB_UPD_LOB_DATA_STMT] = prepareLobStatement(lobUpdSQL);
-                LobPrepStmtTableName[BLOB_UPD_LOB_DATA_STMT] = lobTableName;
-            } else if ((!isBlob)
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[CLOB_UPD_LOB_DATA_STMT]))) {
-                String lobUpdSQL = "update "
-                + lobTableName
-                + " set lob_data = subString(lob_data, 1, ?) || cast (? as varchar(24000)) || substring(lob_data from ?) where table_name = ? and data_locator = ? and chunk_no = ?";
-                LobPrepStmts[CLOB_UPD_LOB_DATA_STMT] = prepareLobStatement(lobUpdSQL);
-                LobPrepStmtTableName[CLOB_UPD_LOB_DATA_STMT] = lobTableName;
-            }
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareUpdLobDataStmt].methodExit();
-        }
-    }
     synchronized PreparedStatement prepareForResetCQDs(String sql)
     throws SQLException {
         try {
@@ -2468,7 +2230,7 @@ private void initSetDefaults() throws SQLException {
             connectInit();
             gcStmts();
             pstmt = new SQLMXPreparedStatement(this, sql);
-            pstmt.prepare(server_, getDialogueId_(), getTxid_(), autoCommit_,
+            pstmt.prepare(server_, getDialogueId(), getTxid(), autoCommit_,
                     pstmt.getStmtLabel_(), pstmt.sql_.trim(), pstmt.isSelect_,
                     pstmt.queryTimeout_, pstmt.resultSetHoldability_,
                     batchBindingSize_, pstmt.fetchSize_);
@@ -2479,106 +2241,9 @@ private void initSetDefaults() throws SQLException {
         }
     }
 
-    void prepareInsLobDataStmt(String lobTableName, boolean isBlob)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareInsLobDataStmt].methodEntry();
-        try {
-            if (isBlob
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[BLOB_INS_LOB_DATA_STMT]))) {
-                String lobInsSQL = "insert into "
-                + lobTableName
-                + " (table_name, data_locator, chunk_no, lob_data) values (?,?,?,?)";
-                LobPrepStmts[BLOB_INS_LOB_DATA_STMT] = prepareLobStatement(lobInsSQL);
-                LobPrepStmtTableName[BLOB_INS_LOB_DATA_STMT] = lobTableName;
-            } else if ((!isBlob)
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[CLOB_INS_LOB_DATA_STMT]))) {
-                String lobInsSQL = "insert into "
-                + lobTableName
-                + " (table_name, data_locator, chunk_no, lob_data) values (?,?,?,?)";
-                LobPrepStmts[CLOB_INS_LOB_DATA_STMT] = prepareLobStatement(lobInsSQL);
-                LobPrepStmtTableName[CLOB_INS_LOB_DATA_STMT] = lobTableName;
-            }
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareInsLobDataStmt].methodExit();
-        }
-    }
-
-    void prepareTrunLobDataStmt(String lobTableName, boolean isBlob)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareTrunLobDataStmt].methodEntry();
-        try {
-            if (isBlob
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[BLOB_TRUN_LOB_DATA_STMT]))) {
-                String lobTrunSQL = "update "
-                + lobTableName
-                + " set lob_data = substring(lob_data, 1, ?) where table_name = ? and data_locator = ? and chunk_no = ?";
-                LobPrepStmts[BLOB_TRUN_LOB_DATA_STMT] = prepareLobStatement(lobTrunSQL);
-                LobPrepStmtTableName[BLOB_TRUN_LOB_DATA_STMT] = lobTableName;
-            } else if ((!isBlob)
-                    && !(lobTableName
-                            .equals(LobPrepStmtTableName[CLOB_TRUN_LOB_DATA_STMT]))) {
-                String lobTrunSQL = "update "
-                + lobTableName
-                + " set lob_data = substring(lob_data, 1, ?) where table_name = ? and data_locator = ? and chunk_no = ?";
-                LobPrepStmts[CLOB_TRUN_LOB_DATA_STMT] = prepareLobStatement(lobTrunSQL);
-                LobPrepStmtTableName[CLOB_TRUN_LOB_DATA_STMT] = lobTableName;
-            }
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareTrunLobDataStmt].methodExit();
-        }
-    }
-
-    boolean prepareGetStrtDataLocStmt(String lobTableName, boolean isBlob,
-            String ucs2) throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareGetStrtDataLocStmt].methodEntry();
-        try {
-            String lobGetStrtDataLocSQL;
-
-            if (isBlob
-                    && (!(lobTableName
-                                    .equals(LobPrepStmtTableName[BLOB_GET_STRT_DATA_LOC_STMT])) || LobPrepStmtTableName[BLOB_GET_STRT_DATA_LOC_STMT] == null)) {
-                lobGetStrtDataLocSQL = "select * from (update "
-                + lobTableName
-                + " set lob_data = cast(cast(cast(lob_data as largeint) + ? as largeint) as varchar(100)) where table_name = 'ZZDATA_LOCATOR' and data_locator = 0 and chunk_no = 0 return cast(old.lob_data as largeint)+1) as tab1";
-                LobPrepStmts[BLOB_GET_STRT_DATA_LOC_STMT] = prepareLobStatement(lobGetStrtDataLocSQL);
-                LobPrepStmtTableName[BLOB_GET_STRT_DATA_LOC_STMT] = lobTableName;
-                return true;
-            } else if ((!isBlob)
-                    && (!(lobTableName
-                                    .equals(LobPrepStmtTableName[CLOB_GET_STRT_DATA_LOC_STMT])) || LobPrepStmtTableName[CLOB_GET_STRT_DATA_LOC_STMT] == null)) {
-                if (ucs2.equals(UCS_STR)) // Unicode data
-                {
-                    lobGetStrtDataLocSQL = "select * from (update "
-                    + lobTableName
-                    + " set lob_data = cast(cast(cast(lob_data as largeint) + ? as largeint) as varchar(100) character set UCS2) where table_name = 'ZZDATA_LOCATOR' and data_locator = 0 and chunk_no = 0 return cast(old.lob_data as largeint)+1) as tab1";
-                } else // ISO data
-                {
-                    lobGetStrtDataLocSQL = "select * from (update "
-                    + lobTableName
-                    + " set lob_data = cast(cast(cast(lob_data as largeint) + ? as largeint) as varchar(100)) where table_name = 'ZZDATA_LOCATOR' and data_locator = 0 and chunk_no = 0 return cast(old.lob_data as largeint)+1) as tab1";
-                }
-                LobPrepStmts[CLOB_GET_STRT_DATA_LOC_STMT] = prepareLobStatement(lobGetStrtDataLocSQL);
-                LobPrepStmtTableName[CLOB_GET_STRT_DATA_LOC_STMT] = lobTableName;
-                return true;
-            }
-            return false;
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareGetStrtDataLocStmt].methodExit();
-        }
-    }
-
     // Log the JDBC SQL statement and the STMTID to the idMapFile if the
     // enableLog_ property is set.
-private void printIdMapEntry(SQLMXStatement stmt) {
+    private void printIdMapEntry(SQLMXStatement stmt) {
         SQLMXDataSource.prWriter_.println("["
                 + T2Driver.dateFormat.format(new java.util.Date()) + "] "
                 + stmt.getStmtLabel_() + " (" + stmt.sql_.trim() + ")\n");
@@ -2610,8 +2275,8 @@ private void printIdMapEntry(SQLMXStatement stmt) {
 //
 //			connectionTimeout_ = 60;
 
-            setDialogueId_(connect(server_, uid_, pwd_));
-            if (getDialogueId_() == 0)
+            setDialogueId(connect(server_, uid_, pwd_));
+            if (getDialogueId() == 0)
             return;
             isClosed_ = false;
             byteSwap_ = false;
@@ -2658,13 +2323,13 @@ private void printIdMapEntry(SQLMXStatement stmt) {
 
             initConnectionProps(t2props);
 
-            setDialogueId_(connect(server_, uid_, pwd_));
-            if (getDialogueId_() == 0)
+            setDialogueId(connect(server_, uid_, pwd_));
+            if (getDialogueId() == 0)
             return;
             isClosed_ = false;
             byteSwap_ = false;
 
-            setIsSpjRSFlag(getDialogueId_(), t2props.isSpjrsOn());
+            setIsSpjRSFlag(getDialogueId(), t2props.isSpjrsOn());
 
             refQ_ = new ReferenceQueue<SQLMXStatement>();
             refToStmt_ = new HashMap<WeakReference, Long>();
@@ -2707,8 +2372,8 @@ private void printIdMapEntry(SQLMXStatement stmt) {
 
             initConnectionProps(t2props);
 
-            setDialogueId_(connect(server_, uid_, pwd_));
-            if (getDialogueId_() == 0)
+            setDialogueId(connect(server_, uid_, pwd_));
+            if (getDialogueId() == 0)
             return;
             isClosed_ = false;
             byteSwap_ = false;
@@ -2900,15 +2565,15 @@ public void setTxid_(int txid_) {
 //		this.txIDPerThread.set(new Integer(txid_));
     }
 
-public int getTxid_() {
+public int getTxid() {
         return txid_;
 //		return this.txIDPerThread.get().intValue();
     }
 
-public void setDialogueId_(long dialogueId_) throws SQLException {
+public void setDialogueId(long dialogueId_) throws SQLException {
         this.dialogueId_ = dialogueId_;
     }
-public long getDialogueId_() throws SQLException {
+public long getDialogueId() throws SQLException {
         if(dialogueId_ != 0) {
             if(mapOfClosedDialogs.containsKey(this.keyForMap)) {
                 throw new SQLException(Long.toHexString(mapOfClosedDialogs.get(this.keyForMap)) + " Connection is already closed.");
@@ -2987,8 +2652,6 @@ public void initConnectionProps(T2Properties info) {
         loginTimeout_ = info.getLoginTimeout();
         enableMFC_ = info.getEnableMFC();
         compiledModuleLocation_ = info.getCompiledModuleLocation();
-        blobTableName_ = info.getBlobTableName();
-        clobTableName_ = info.getClobTableName();
         contBatchOnError_ = info.getContBatchOnError();
         iso88591EncodingOverride_ = info.getIso88591EncodingOverride();
 
@@ -3075,19 +2738,7 @@ public static final int SQL_SET_SCHEMA_FLAG = 0x0002;
 public static final int SQL_SET_TRANSACTION_FLAG = 0x0001;
 
     // Fields
-    static int reserveDataLocator_;
-    static HashMap<String, SQLMXDataLocator> lobTableToDataLoc_;
     static long rsCount_;
-
-    PreparedStatement InsLobDataStmt_;
-    PreparedStatement GetLobDataStmt_;
-    PreparedStatement GetLobLenStmt_;
-    PreparedStatement DelLobDataStmt_;
-    PreparedStatement TrunLobDataStmt_;
-    PreparedStatement UpdLobDataStmt_;
-
-    String clobTableName_;
-    String blobTableName_;
     boolean beginTransFlag_ = false;
     String server_;
     String dsn_;
@@ -3149,16 +2800,6 @@ private int txid_;
     // attribute statements that have been executed within the connection
     // context
     int connReuseBitMap_;
-
-    // Array used to store lob table name used when LOB statements are prepared.
-    // If the table names differ from one call to the next, the stmt will
-    // be re-prepared, and the new LOB table name will be saved off.
-    // Initialized to false, one each for the BLOB/CLOB statements listed above.
-    String[] LobPrepStmtTableName = new String[14];
-
-    // Array used to store the LOB prepared statements, indexed by
-    // the statement type statics that follow.
-    PreparedStatement[] LobPrepStmts = new PreparedStatement[14];
 
     // Cache area for character set
     static String getCharsetEncodingCached_server;
@@ -3353,17 +2994,6 @@ private static JdbcDebug[] debug;
                     "getCharsetEncodingCached");
         }
 
-        String reserveDataLocator = System
-        .getProperty("t2jdbc.reserveDataLocator");
-        if (reserveDataLocator != null) {
-            try {
-                reserveDataLocator_ = Integer.parseInt(reserveDataLocator);
-            } catch (NumberFormatException e) {
-            }
-        }
-        if (reserveDataLocator_ == 0)
-        reserveDataLocator_ = 100;
-        lobTableToDataLoc_ = new HashMap<String, SQLMXDataLocator>();
     }
     int dsBatchBindingSize_;
     int dsTransactionMode_;

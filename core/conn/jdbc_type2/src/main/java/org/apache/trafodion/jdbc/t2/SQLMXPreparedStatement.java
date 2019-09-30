@@ -251,7 +251,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			paramRowCount_++;
 			paramContainer_ = new DataWrapper(inputDesc_.length);
 			if (isAnyLob_ && (lobObjects_ == null))
-				lobObjects_ = new ArrayList<Object>();
+				lobObjects_ = new ArrayList<SQLMXLob>();
 			// Clear the isValueSet_ flag in inputDesc_ and add the lob objects
 			// to the lobObject List
 			for (int i = 0; i < inputDesc_.length; i++) {
@@ -261,7 +261,9 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				// not
 				// be null, based on the number of LOB columns in the query
 				if (inputDesc_[i].paramValue_ != null) {
+/* Todo Selva
 					lobObjects_.add(inputDesc_[i].paramValue_);
+*/
 					inputDesc_[i].paramValue_ = null;
 				}
 				inputDesc_[i].isValueSet_ = false;
@@ -366,7 +368,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 									resultSet_.close(true);
 								else{
 									close(connection_.server_,
-											connection_.getDialogueId_(), stmtId_,
+											connection_.getDialogueId(), stmtId_,
 											true);
 									connection_.hClosestmtCount++;
 
@@ -384,7 +386,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 								}
 							} else{
 								close(connection_.server_,
-										connection_.getDialogueId_(), stmtId_, true);
+										connection_.getDialogueId(), stmtId_, true);
 								connection_.hClosestmtCount++;
 
 								if (connection_.out_ != null) {
@@ -473,7 +475,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			int currentTxid = 0;
 			// Reset current txn ID at end if internal txn used for autocommit
 			// duties
-
+			Object[] lobObjects;
 			validateExecuteInvocation();
 			try {
 				synchronized (connection_) {
@@ -504,28 +506,41 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 /* Linux port - ToDo tmf.jar related
 					if (isAnyLob_ && (txnState == Current.StatusNoTransaction)
 							&& (connection_.autoCommit_)) {
-						currentTxid = connection_.getTxid_();
+						currentTxid = connection_.getTxid();
 						connection_.setTxid_(0);
 						tx.begin();
 						txBegin = true;
 						connection_.autoCommit_ = false;
 					}
 */
+					long beginTime=0,endTime,timeTaken;
+					if (connection_.t2props.getQueryExecuteTime() > 0)
+						beginTime=System.currentTimeMillis();
+					boolean currentAC = connection_.autoCommit_;
+					if (isAnyLob_) {
+						if (outputDesc_ != null)
+							throw Messages.createSQLException(connection_.locale_, "lob_as_param_not_support", 
+								null);
+						else {
+							try {
+								lobLocators_ = getLobLocators();
+								setLobLocators();
+							}	
+							finally {
+							}
+						}
+					}	
+					else {
 					// Allocate the result set incase any rows are returned by
 					// the execute
-					if (outputDesc_ != null)
-						resultSet_ = new SQLMXResultSet(this, outputDesc_);
-					else
-						resultSet_ = null;
-					long beginTime=0,endTime,timeTaken;
-//					if ((T2Driver.queryExecuteTime_ > 0) || (SQLMXDataSource.queryExecuteTime_> 0) ) {
-					if(connection_.t2props.getQueryExecuteTime() > 0){
-						beginTime=System.currentTimeMillis();
-					}
+						if (outputDesc_ != null)
+							resultSet_ = new SQLMXResultSet(this, outputDesc_);
+						else
+							resultSet_ = null;
 
-					if (inputDesc_ != null) {
-						execute(connection_.server_, connection_.getDialogueId_(),
-								connection_.getTxid_(),
+						if (inputDesc_ != null) {
+							execute(connection_.server_, connection_.getDialogueId(),
+								connection_.getTxid(),
 								connection_.autoCommit_,
 								connection_.transactionMode_, stmtId_,
 								cursorName_, isSelect_, paramRowCount_ + 1,
@@ -533,94 +548,34 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 								queryTimeout_, isAnyLob_,
 								connection_.iso88591EncodingOverride_,
 								resultSet_, false);
-					} else {
-						execute(connection_.server_, connection_.getDialogueId_(),
-								connection_.getTxid_(),
+						} else {
+							execute(connection_.server_, connection_.getDialogueId(),
+								connection_.getTxid(),
 								connection_.autoCommit_,
 								connection_.transactionMode_, stmtId_,
 								cursorName_, isSelect_, paramRowCount_ + 1, 0,
 								null, queryTimeout_, isAnyLob_,
 								connection_.iso88591EncodingOverride_,
 								resultSet_, false);
+						}
 					}
-
-//					if ((T2Driver.queryExecuteTime_ > 0) || (SQLMXDataSource.queryExecuteTime_> 0) ) {
-					if(connection_.t2props.getQueryExecuteTime() > 0){
+					if (isAnyLob_)
+						populateLobObjects();
+					if (connection_.t2props.getQueryExecuteTime() > 0) {
 						endTime = System.currentTimeMillis();
 						timeTaken = endTime - beginTime;
 						printQueryExecuteTimeTrace(timeTaken);
 					}
 
-					if (resultSet_ != null) {
+					if (resultSet_ != null) 
 						ret = true;
-					} else {
-						if (isAnyLob_)
-							populateLobObjects();
-					}
-					//**********************************************************
-					// *****************
-					// * If LOB is involved with AutoCommit enabled an no
-					// external Txn,
-					// * commit transaction and re-enable autocommit
-					//**********************************************************
-					// *****************
-					if (txBegin) {
-						connection_.autoCommit_ = true;
-/* Linux port - ToDo tmf.jar related
-						tx.commit(false);
-*/
-						txBegin = false;
-					}
-				}// End sync
-			}
-/* Linux port - ToDo tmf.jar related
-			catch (com.tandem.util.FSException fe1) {
-				SQLException se1 = null;
-				SQLException se2 = null;
-
-				Object[] messageArguments1 = new Object[2];
-				messageArguments1[0] = Short.toString(fe1.error);
-				messageArguments1[1] = fe1.getMessage();
-				se1 = Messages.createSQLException(connection_.locale_,
-						"transaction_error_update", messageArguments1);
-
-				try {
-					if (txBegin)
-						tx.rollback();
-				} catch (com.tandem.util.FSException fe2) {
-					Object[] messageArguments2 = new Object[2];
-					messageArguments2[0] = Short.toString(fe2.error);
-					messageArguments2[1] = fe2.getMessage();
-					se2 = Messages.createSQLException(connection_.locale_,
-							"transaction_error_update", messageArguments2);
-					se2.setNextException(se1);
-					throw se2;
 				}
-
-				throw se1;
-			}
-*/
-			catch (SQLException se) {
-				SQLException se2 = null;
-/* Linux port - ToDo tmf.jar related
-				try {
-					if (txBegin)
-						tx.rollback();
-				} catch (com.tandem.util.FSException fe2) {
-					Object[] messageArguments = new Object[2];
-					messageArguments[0] = Short.toString(fe2.error);
-					messageArguments[1] = fe2.getMessage();
-					se2 = Messages.createSQLException(connection_.locale_,
-							"transaction_error_update", messageArguments);
-					se2.setNextException(se);
-					throw se2;
-				}
-*/
-				throw se;
 			} finally {
+/*
 				if (currentTxid != 0) {
 					connection_.setTxid_(currentTxid);
 				}
+*/
 			}
 
 			return ret;
@@ -705,7 +660,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					// * If LOB is involved with autocommit enabled an no
 					// external Txn, we must
 					// * perform the base table (execute) and LOB table
-					// (populateBatchLobObjects)
+					// (populateLobObjects)
 					// * updates/inserts as a single unit of work (data
 					// integrity issue).
 					// * These updates/inserts will be performed inside an
@@ -722,7 +677,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 /* Linux port - ToDo tmf.jar related
 					if (isAnyLob_ && (txnState == Current.StatusNoTransaction)
 							&& (connection_.autoCommit_)) {
-						currentTxid = connection_.getTxid_();
+						currentTxid = connection_.getTxid();
 						connection_.setTxid_(0);
 						tx.begin();
 						txBegin = true;
@@ -746,8 +701,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					beginTime=System.currentTimeMillis();
 					}
 
-					execute(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					execute(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, stmtId_, cursorName_,
 							isSelect_, paramRowCount_, inputDesc_.length,
 							getParameters(), queryTimeout_,
@@ -764,7 +719,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 						printQueryExecuteTimeTrace(timeTaken);
 					}
 
-					populateBatchLobObjects();
+					populateLobObjects();
 					//**********************************************************
 					// *****************
 					// * If LOB is involved with AutoCommit enabled an no
@@ -901,16 +856,16 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			}
 			synchronized (connection_) {
 				if (inputDesc_ != null) {
-					execute(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					execute(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, stmtId_, cursorName_,
 							isSelect_, paramRowCount_ + 1, inputDesc_.length,
 							getParameters(), queryTimeout_, isAnyLob_,
 							connection_.iso88591EncodingOverride_, resultSet_,
 							false);
 				} else {
-					execute(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					execute(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, stmtId_, cursorName_,
 							isSelect_, paramRowCount_ + 1, 0, null,
 							queryTimeout_, isAnyLob_,
@@ -1008,7 +963,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 						if (isAnyLob_
 								&& (txnState == Current.StatusNoTransaction)
 								&& (connection_.autoCommit_)) {
-							currentTxid = connection_.getTxid_();
+							currentTxid = connection_.getTxid();
 							connection_.setTxid_(0);
 
 							tx.begin();
@@ -1022,8 +977,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 						if(connection_.t2props.getQueryExecuteTime() > 0){
 						beginTime=System.currentTimeMillis();
 						}
-						execute(connection_.server_, connection_.getDialogueId_(),
-								connection_.getTxid_(),
+						execute(connection_.server_, connection_.getDialogueId(),
+								connection_.getTxid(),
 								connection_.autoCommit_,
 								connection_.transactionMode_, stmtId_,
 								cursorName_, isSelect_, paramRowCount_ + 1,
@@ -1116,8 +1071,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					if(connection_.t2props.getQueryExecuteTime() > 0){
 					beginTime=System.currentTimeMillis();
 					}
-					execute(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					execute(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, stmtId_, cursorName_,
 							isSelect_, paramRowCount_ + 1, 0, null,
 							queryTimeout_, isAnyLob_,
@@ -1177,24 +1132,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		}
 	}
 
-	/**
-	 * Sets the designated parameter to the given <tt>Array</tt> object. The
-	 * driver converts this to an SQL <tt>ARRAY</tt> value when it sends it to
-	 * the database.
-	 * <p>
-	 * <B>Note:</B>This method is <em><B>unsupported</B></em> by the Trafodion JDBC
-	 * driver. If this method is called a <i>Unsupported feature -
-	 * {setArray())</i> SQLException will be thrown.
-	 * </p>
-	 *
-	 * @param i
-	 *            the first parameter is 1, the second is 2, ...
-	 * @param x
-	 *            an object representing an SQL array
-	 *
-	 * @throws SQLException
-	 *             Unsupported feature.
-	 */
 	public void setArray(int parameterIndex, Array x) throws SQLException {
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_setArray].methodEntry();
@@ -1208,38 +1145,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		}
 	}
 
-	/**
-	 * Sets the designated parameter to the given input stream, which will have
-	 * the specified number of bytes. When a very large ASCII value is input to
-	 * a <tt>LONGVARCHAR</tt> parameter, it may be more practical to send it via
-	 * a <tt>java.io.InputStream</tt>. Data will be read from the stream as
-	 * needed until end-of-file is reached. The JDBC driver will do any
-	 * necessary conversion from ASCII to the database char format.
-	 * <P>
-	 * <B>Note:</B> This stream object can either be a standard Java stream
-	 * object or your own subclass that implements the standard interface.
-	 * </p>
-	 * <p>
-	 * This API call <em><B>can only</B></em> be used to read into a SQL column
-	 * type <tt>CLOB</tt>, <tt>CHAR</tt>, <tt>VARCHAR</tt>, <tt>LONVARCHAR</tt>,
-	 * <tt>BINARY</tt>, <tt>VARBINARY</tt>, or <tt>LONGVARBINARY</tt>.
-	 *
-	 * @param parameterIndex
-	 *            the first parameter is 1...
-	 * @param x
-	 *            the Java input stream that contains the ASCII parameter value
-	 * @param length
-	 *            the number of bytes in the stream
-	 *
-	 * @exception SQLException
-	 *                restricted data type
-	 * @exception SQLException
-	 *                unsupported encoding
-	 * @exception SQLException
-	 *                I/O error
-	 * @exception SQLException
-	 *                invalid data type for column
-	 */
 	public void setAsciiStream(int parameterIndex, InputStream x, int length)
 			throws SQLException {
 		if (JdbcDebugCfg.entryActive)
@@ -1247,37 +1152,35 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		try {
 			byte[] buffer;
 			int dataType;
-			long dataLocator;
 
 			validateSetInvocation(parameterIndex);
 			dataType = inputDesc_[parameterIndex - 1].dataType_;
 
-			if (x == null) {
-				paramContainer_.setNull(parameterIndex);
-			} else {
-				switch (dataType) {
-				case Types.CLOB:
-					dataLocator = connection_.getDataLocator(
-							connection_.clobTableName_, false);
-					SQLMXClob clob = new SQLMXClob(connection_,
-							inputDesc_[parameterIndex - 1].tableName_,
-							dataLocator, x, length);
-					inputDesc_[parameterIndex - 1].paramValue_ = clob;
-					isAnyLob_ = true;
-					paramContainer_.setLong(parameterIndex, dataLocator);
-					break;
-				case Types.BLOB:
-					throw Messages.createSQLException(connection_.locale_,
-							"restricted_data_type", null);
-				case Types.CHAR:
-				case Types.VARCHAR:
-				case Types.LONGVARCHAR:
-				case Types.BINARY: // At this time SQL/MX does not have this
-					// column data type
-				case Types.VARBINARY: // At this time SQL/MX does not have this
-					// column data type
-				case Types.LONGVARBINARY: // At this time SQL/MX does not have
-					// this column data type
+			switch (dataType) {
+			case Types.CLOB:
+				SQLMXClob clob = null;
+				isAnyLob_ = true;
+				if (x == null) 
+					paramContainer_.setNull(parameterIndex);
+				else {
+					clob = new SQLMXClob(connection_, null, x, length);
+					inputDesc_[parameterIndex - 1].paramValue_ = "";
+					paramContainer_.setString(parameterIndex, "");
+				}
+				addLobObjects(parameterIndex, clob);
+				break;
+			case Types.BLOB:
+				throw Messages.createSQLException(connection_.locale_,
+						"restricted_data_type", null);
+			case Types.CHAR:
+			case Types.VARCHAR:
+			case Types.LONGVARCHAR:
+			case Types.BINARY: // At this time SQL/MX does not have this column data type
+			case Types.VARBINARY: // At this time SQL/MX does not have this column data type
+			case Types.LONGVARBINARY: // At this time SQL/MX does not have this column data type
+				if (x == null) 
+					paramContainer_.setNull(parameterIndex);
+				else {
 					buffer = new byte[length];
 					try {
 						x.read(buffer);
@@ -1296,11 +1199,11 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 						throw Messages.createSQLException(connection_.locale_,
 								"unsupported_encoding", messageArguments);
 					}
-					break;
-				default:
-					throw Messages.createSQLException(connection_.locale_,
-							"invalid_datatype_for_column", null);
 				}
+				break;
+			default:
+				throw Messages.createSQLException(connection_.locale_,
+							"invalid_datatype_for_column", null);
 			}
 			inputDesc_[parameterIndex - 1].isValueSet_ = true;
 		} finally {
@@ -1309,49 +1212,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		}
 	}
 
-	/**
-	 * Sets the designated parameter to the given <tt>java.math.BigDecimal</tt>
-	 * value. The driver converts this to a SQL <tt>NUMERIC</tt> value when it
-	 * sends it to the database.
-	 * <p>
-	 * <B>Note:</B> An <em>extended</em> feature of the Trafodion JDBC driver will
-	 * allow the setBigDecimal to write data to any compatible SQL column type.
-	 * The given <tt>java.math.BigDecimal</tt> value is converted to the correct
-	 * SQL column type, before the data is written to the database. If the
-	 * conversion can not be performed, then the SQLException
-	 * "conversion not allowed" will be thrown.
-	 * </p>
-	 * <p>
-	 * The compatible SQL column types are:
-	 *
-	 * <ul PLAIN> <tt>TINYINT</tt> </ul> <ul PLAIN> <tt>SMALLINT</tt> </ul> <ul
-	 * PLAIN> <tt>INTEGER</tt> </ul> <ul PLAIN> <tt>BIGINT</tt> </ul> <ul PLAIN>
-	 * <tt>REAL</tt> </ul> <ul PLAIN> <tt>DOUBLE</tt> </ul> <ul PLAIN>
-	 * <tt>DECIMAL</tt> </ul> <ul PLAIN> <tt>NUMERIC</tt> </ul> <ul PLAIN>
-	 * <tt>BOOLEAN</tt> </ul> <ul PLAIN> <tt>CHAR</tt> </ul> <ul PLAIN>
-	 * <tt>VARCHAR</tt> </ul> <ul PLAIN> <tt>LONGVARCHAR</tt> </ul>
-	 * </p>
-	 * <p>
-	 * A non-compatible SQL column type will result in a <i>Java data type does
-	 * not match SQL data type for column</i> SQLException being thrown.
-	 *
-	 * @param parameterIndex
-	 *            the first parameter is 1...
-	 * @param x
-	 *            the parameter value
-	 *
-	 * @exception SQLException
-	 *                wrong data type for the column
-	 * @exception SQLException
-	 *                the scale value was negative
-	 * @exception SQLException
-	 *                the data is out of range(value was too big or small for
-	 *                the column)
-	 * @exception SQLException
-	 *                writing a negative value to an unsigned column
-	 * @warning SQLWarning that the data value was rounded up
-	 *
-	 */
 	public void setBigDecimal(int parameterIndex, BigDecimal x)
 			throws SQLException {
 		/*
@@ -1681,40 +1541,41 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		try {
 			byte[] buffer;
 			int dataType;
-			long dataLocator;
 
 			validateSetInvocation(parameterIndex);
 			dataType = inputDesc_[parameterIndex - 1].dataType_;
 
-			if (x == null) {
-				paramContainer_.setNull(parameterIndex);
-			} else {
-				switch (dataType) {
-				case Types.CLOB:
-					throw Messages.createSQLException(connection_.locale_,
-							"restricted_data_type", null);
-				case Types.BLOB:
-					dataLocator = connection_.getDataLocator(
-							connection_.blobTableName_, true);
-					SQLMXBlob blob = new SQLMXBlob(connection_,
-							inputDesc_[parameterIndex - 1].tableName_,
-							dataLocator, x, length);
-					isAnyLob_ = true;
-					inputDesc_[parameterIndex - 1].paramValue_ = blob;
-					isAnyLob_ = true;
-					paramContainer_.setLong(parameterIndex, dataLocator);
-					break;
-				case Types.DOUBLE:
-				case Types.DECIMAL:
-				case Types.NUMERIC:
-				case Types.FLOAT:
-				case Types.BIGINT:
-				case Types.INTEGER:
-				case Types.SMALLINT:
-				case Types.TINYINT:
-					throw Messages.createSQLException(connection_.locale_,
+			switch (dataType) {
+			case Types.CLOB:
+				throw Messages.createSQLException(connection_.locale_,
+						"restricted_data_type", null);
+			case Types.BLOB:
+				SQLMXBlob blob = null;
+				isAnyLob_ = true;
+				if (x == null) 
+					paramContainer_.setNull(parameterIndex);
+				else {
+					blob = new SQLMXBlob(connection_, null, x, length);
+					inputDesc_[parameterIndex - 1].paramValue_ = "";
+					paramContainer_.setString(parameterIndex, "");
+				}
+				addLobObjects(parameterIndex, blob);
+				break;
+			case Types.DOUBLE:
+			case Types.DECIMAL:
+			case Types.NUMERIC:
+			case Types.FLOAT:
+			case Types.BIGINT:
+			case Types.INTEGER:
+			case Types.SMALLINT:
+			case Types.TINYINT:
+				throw Messages.createSQLException(connection_.locale_,
 							"invalid_datatype_for_column", null);
-				default:
+			default:
+				if (x == null) { 
+					paramContainer_.setNull(parameterIndex);
+				}
+				else {
 					buffer = new byte[length];
 
 					try {
@@ -1757,25 +1618,21 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					.toString(parameterIndex)
 					+ ",?");
 		try {
-			int dataType;
-			long dataLocator;
-			if (x == null) {
-				setNull(parameterIndex, java.sql.Types.BLOB);
-				return;
-			}
-
 			validateSetInvocation(parameterIndex);
+			int dataType = inputDesc_[parameterIndex - 1].dataType_;
 			dataType = inputDesc_[parameterIndex - 1].dataType_;
 			switch (dataType) {
 			case Types.BLOB:
-				dataLocator = connection_.getDataLocator(
-						connection_.blobTableName_, true);
-				SQLMXBlob blob = new SQLMXBlob(connection_,
-						inputDesc_[parameterIndex - 1].tableName_, dataLocator,
-						x);
-				inputDesc_[parameterIndex - 1].paramValue_ = blob;
+				SQLMXBlob blob = null;
 				isAnyLob_ = true;
-				paramContainer_.setLong(parameterIndex, dataLocator);
+				if (x == null) 
+					setNull(parameterIndex, Types.BLOB);
+				else {
+					blob = new SQLMXBlob(connection_, null, x);
+					inputDesc_[parameterIndex - 1].paramValue_ = "";
+					paramContainer_.setString(parameterIndex, "");
+				}
+				addLobObjects(parameterIndex, blob);
 				break;
 			default:
 				throw Messages.createSQLException(connection_.locale_,
@@ -1946,46 +1803,41 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					.toString(parameterIndex)
 					+ ",byte[]");
 		try {
-			int dataType;
+			validateSetInvocation(parameterIndex);
+			int dataType = inputDesc_[parameterIndex - 1].dataType_;
+            		int dataCharSet = inputDesc_[parameterIndex - 1].sqlCharset_;
 
-			if (x == null) {
+			if (x == null && dataType != Types.CLOB && dataType != Types.BLOB) {
 				setNull(parameterIndex, java.sql.Types.LONGVARBINARY);
-				return;
 			}
 
-
-			//byte[] tmpArray = new byte[x.length];
-			//System.arraycopy(x, 0, tmpArray, 0, x.length);
-
-			validateSetInvocation(parameterIndex);
-			dataType = inputDesc_[parameterIndex - 1].dataType_;
-            int dataCharSet = inputDesc_[parameterIndex - 1].sqlCharset_;
 			switch (dataType) {
 			case Types.BLOB:
-				long dataLocator = connection_.getDataLocator(
-						connection_.blobTableName_, true);
-				SQLMXBlob blob = new SQLMXBlob(connection_,
-						inputDesc_[parameterIndex - 1].tableName_, dataLocator,
-						x);
-				inputDesc_[parameterIndex - 1].paramValue_ = blob;
+				SQLMXBlob blob = null;
 				isAnyLob_ = true;
-				paramContainer_.setLong(parameterIndex, dataLocator);
+				if (x == null) 
+					paramContainer_.setNull(parameterIndex);
+				else {
+					blob = new SQLMXBlob(connection_, null, x);
+					inputDesc_[parameterIndex - 1].paramValue_ = "";
+					paramContainer_.setString(parameterIndex, "");
+				}
+				addLobObjects(parameterIndex, blob);
 				break;
-            case Types.CHAR:
-            case Types.VARCHAR:
-            case Types.LONGVARCHAR:
-                String charSet = SQLMXDesc.SQLCHARSETSTRING_ISO88591;
-                if (dataCharSet == SQLMXDesc.SQLCHARSETCODE_UCS2)
-                    charSet = "UTF-16LE";
-                try {
-                    x = (new String(x)).getBytes(charSet);
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                    throw Messages.createSQLException(connection_.locale_, "unsupported_encoding",
-                            new Object[] { charSet });
-                }
-                paramContainer_.setObject(parameterIndex, x);
-                break;
+			case Types.CHAR:
+			case Types.VARCHAR:
+			case Types.LONGVARCHAR:
+				String charSet = SQLMXDesc.SQLCHARSETSTRING_ISO88591;
+				if (dataCharSet == SQLMXDesc.SQLCHARSETCODE_UCS2)
+					charSet = "UTF-16LE";
+				try {
+					x = (new String(x)).getBytes(charSet);
+				} catch (UnsupportedEncodingException e) {
+					throw Messages.createSQLException(connection_.locale_, "unsupported_encoding",
+						new Object[] { charSet });
+				}
+				paramContainer_.setObject(parameterIndex, x);
+				break;
 			case Types.DATE:
 			case Types.TIME:
 			case Types.TIMESTAMP:
@@ -2055,34 +1907,37 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			validateSetInvocation(parameterIndex);
 			dataType = inputDesc_[parameterIndex - 1].dataType_;
 
-			if (reader == null) {
-				paramContainer_.setNull(parameterIndex);
-			} else {
-				switch (dataType) {
-				case Types.CLOB:
-					long dataLocator = connection_.getDataLocator(
-							connection_.clobTableName_, false);
-					SQLMXClob clob = new SQLMXClob(connection_,
-							inputDesc_[parameterIndex - 1].tableName_,
-							dataLocator, reader, length);
-					inputDesc_[parameterIndex - 1].paramValue_ = clob;
-					isAnyLob_ = true;
-					paramContainer_.setLong(parameterIndex, dataLocator);
-					break;
-				case Types.BLOB:
-					throw Messages.createSQLException(connection_.locale_,
+			switch (dataType) {
+			case Types.CLOB:
+				SQLMXClob clob = null;
+				isAnyLob_ = true;
+				if (reader == null) 
+					paramContainer_.setNull(parameterIndex);
+				else {
+					clob = new SQLMXClob(connection_, null, reader, length);
+					inputDesc_[parameterIndex - 1].paramValue_ = "";
+					paramContainer_.setString(parameterIndex, "");
+				}
+				addLobObjects(parameterIndex, clob);
+				break;
+			case Types.BLOB:
+				throw Messages.createSQLException(connection_.locale_,
 							"restricted_data_type", null);
-				case Types.DECIMAL:
-				case Types.DOUBLE:
-				case Types.FLOAT:
-				case Types.NUMERIC:
-				case Types.BIGINT:
-				case Types.INTEGER:
-				case Types.SMALLINT:
-				case Types.TINYINT:
-					throw Messages.createSQLException(connection_.locale_,
+			case Types.DECIMAL:
+			case Types.DOUBLE:
+			case Types.FLOAT:
+			case Types.NUMERIC:
+			case Types.BIGINT:
+			case Types.INTEGER:
+			case Types.SMALLINT:
+			case Types.TINYINT:
+				throw Messages.createSQLException(connection_.locale_,
 							"invalid_datatype_for_column", null);
-				default:
+			default:
+				if (reader == null) 
+					paramContainer_.setNull(parameterIndex);
+				else {
+				
 					buffer = new char[length];
 					try {
 						reader.read(buffer);
@@ -2124,27 +1979,20 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					.toString(parameterIndex)
 					+ ",?");
 		try {
-			int dataType;
-			long dataLocator;
-
-			if (x == null) {
-				setNull(parameterIndex, Types.CLOB);
-				return;
-			}
-
-
 			validateSetInvocation(parameterIndex);
-			dataType = inputDesc_[parameterIndex - 1].dataType_;
+			int dataType = inputDesc_[parameterIndex - 1].dataType_;
 			switch (dataType) {
 			case Types.CLOB:
-				dataLocator = connection_.getDataLocator(
-						connection_.clobTableName_, false);
-				SQLMXClob clob = new SQLMXClob(connection_,
-						inputDesc_[parameterIndex - 1].tableName_, dataLocator,
-						x);
-				inputDesc_[parameterIndex - 1].paramValue_ = clob;
+				SQLMXClob clob = null;
 				isAnyLob_ = true;
-				paramContainer_.setLong(parameterIndex, dataLocator);
+				if (x == null) 
+					setNull(parameterIndex, Types.CLOB);
+				else {
+					clob = new SQLMXClob(connection_, null, x);
+					inputDesc_[parameterIndex - 1].paramValue_ = "";
+					paramContainer_.setString(parameterIndex, "");
+				}
+				addLobObjects(parameterIndex, clob);
 				break;
 			case Types.DECIMAL:
 			case Types.DOUBLE:
@@ -2500,7 +2348,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 
 				synchronized (connection_) {
 					// Pass the fetch size change to the driver
-					resetFetchSize(connection_.getDialogueId_(), stmtId_, fetchSize_);
+					resetFetchSize(connection_.getDialogueId(), stmtId_, fetchSize_);
 				}
 			}
 		} finally {
@@ -4164,15 +4012,12 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					.toString(parameterIndex)
 					+ "," + x);
 		try {
-			long dataLocator;
-
 			validateSetInvocation(parameterIndex);
+			int dataType = inputDesc_[parameterIndex - 1].dataType_;
 
-			if (x == null) {
+			if (x == null && dataType != Types.CLOB && dataType != Types.BLOB) {
 				setNull(parameterIndex, Types.NULL);
 			} else {
-				int dataType = inputDesc_[parameterIndex - 1].dataType_;
-
 				switch (dataType) {
 				case Types.CHAR:
 				case Types.VARCHAR:
@@ -4205,14 +4050,16 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					break;
 				case Types.CLOB: // WLS extension: CLOB should to be able to
 					// write to string, deviation from API.
-					dataLocator = connection_.getDataLocator(
-							connection_.clobTableName_, false);
-					SQLMXClob clob = new SQLMXClob(connection_,
-							inputDesc_[parameterIndex - 1].tableName_,
-							dataLocator, x);
-					inputDesc_[parameterIndex - 1].paramValue_ = clob;
+					SQLMXClob clob = null;
 					isAnyLob_ = true;
-					paramContainer_.setLong(parameterIndex, dataLocator);
+					if (x == null) 
+						paramContainer_.setNull(parameterIndex);
+					else {
+						clob = new SQLMXClob(connection_, null, x);
+						inputDesc_[parameterIndex - 1].paramValue_ = "";
+						paramContainer_.setString(parameterIndex, "");
+					}
+					addLobObjects(parameterIndex, clob);
 					break;
 				case Types.ARRAY:
 				case Types.BINARY:
@@ -4811,6 +4658,15 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		}
 	}
 
+	 void copyParameters(SQLMXPreparedStatement other) 
+	{
+		paramRowCount_ = other.paramRowCount_;
+		paramContainer_ = other.paramContainer_;
+		rowsValue_ = other.rowsValue_;
+		for (int paramNumber = 0; paramNumber < inputDesc_.length; paramNumber++)
+			inputDesc_[paramNumber].isValueSet_ = true;
+	}
+
 	void logicalClose() throws SQLException {
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_logicalClose].methodEntry();
@@ -4903,7 +4759,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				}
 
 				// Check if the transaction is started by this Select statement
-				if (connection_.getTxid_() == 0 && txid != 0)
+				if (connection_.getTxid() == 0 && txid != 0)
 					resultSet_.txnStarted_ = true;
 				rowCount_ = -1;
 			} else {
@@ -5104,7 +4960,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					return;
 				try {
 					if (hardClose){
-						close(connection_.server_, connection_.getDialogueId_(),
+						close(connection_.server_, connection_.getDialogueId(),
 								stmtId_, true);
 					connection_.hClosestmtCount++;
 
@@ -5137,29 +4993,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_populateLobObjects].methodEntry();
 		try {
-			Object lob;
-
-			if (isAnyLob_) {
-				for (int i = 0; i < inputDesc_.length; i++) {
-					if (inputDesc_[i].paramValue_ != null) {
-						lob = inputDesc_[i].paramValue_;
-						if (lob instanceof SQLMXClob)
-							((SQLMXClob) lob).populate();
-						else
-							((SQLMXBlob) lob).populate();
-					}
-				}
-			}
-		} finally {
-			if (JdbcDebugCfg.entryActive)
-				debug[methodId_populateLobObjects].methodExit();
-		}
-	}
-
-	void populateBatchLobObjects() throws SQLException {
-		if (JdbcDebugCfg.entryActive)
-			debug[methodId_populateBatchLobObjects].methodEntry();
-		try {
 			int len;
 			Object lob;
 
@@ -5175,7 +5008,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			}
 		} finally {
 			if (JdbcDebugCfg.entryActive)
-				debug[methodId_populateBatchLobObjects].methodExit();
+				debug[methodId_populateLobObjects].methodExit();
 		}
 	}
 //venu changed dialogueId from int to long for 64 bit
@@ -5233,8 +5066,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				throw Messages.createSQLException(connection_.locale_,
 						"invalid_connection", null);
 			isSelect_ = getStmtSqlType(sql);
-			sql_ = scanSqlStr(sql).trim();
 			short stmtType = SQLMXConnection.getSqlStmtType(sql);
+			sql_ = sql;
 			this.setSqlType(stmtType);
 			if(stmtType == SQLMXConnection.TYPE_CONTROL){
 				isCQD = true;
@@ -5247,35 +5080,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_SQLMXPreparedStatement_LLIII].methodExit();
-		}
-	}
-
-	SQLMXPreparedStatement(SQLMXConnection connection, String moduleName,
-			int moduleVersion, long moduleTimestamp, String stmtName,
-			boolean isSelect, int holdability) {
-		if (JdbcDebugCfg.entryActive)
-			debug[methodId_SQLMXPreparedStatement_LLIJLZI].methodEntry();
-		try {
-			connection_ = connection;
-			moduleName_ = moduleName;
-			moduleVersion_ = moduleVersion;
-			moduleTimestamp_ = moduleTimestamp;
-			setStmtLabel_(stmtName);
-			isSelect_ = isSelect;
-
-			// Make Sure you initialize the other fields to the right value
-			fetchSize_ = SQLMXResultSet.DEFAULT_FETCH_SIZE;
-			maxRows_ = 0;
-			fetchDirection_ = ResultSet.FETCH_FORWARD;
-			queryTimeout_ = connection_.queryTimeout_;
-			resultSetType_ = ResultSet.TYPE_FORWARD_ONLY;
-			resultSetHoldability_ = holdability;
-			pRef_ = new WeakReference<SQLMXStatement>(this, connection_.refQ_);
-			batchBindingSize_ = connection.batchBindingSize_;
-			nf.setGroupingUsed(false);
-		} finally {
-			if (JdbcDebugCfg.entryActive)
-				debug[methodId_SQLMXPreparedStatement_LLIJLZI].methodExit();
 		}
 	}
 
@@ -5310,7 +5114,11 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	ArrayList<Object> rowsValue_;
 	DataWrapper paramContainer_;
 	boolean isAnyLob_;
-	ArrayList<Object> lobObjects_;
+	ArrayList<SQLMXLob> lobObjects_;
+	ArrayList<String> lobColNames_;
+	ArrayList<Integer> lobColIds_;
+	String[] lobLocators_;
+	boolean lobColDone_;
 
 	boolean isCQD;
 	short sqlType;
@@ -5442,7 +5250,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	private static int methodId_reuse = 61;
 	private static int methodId_close = 62;
 	private static int methodId_populateLobObjects = 63;
-	private static int methodId_populateBatchLobObjects = 64;
 	private static int methodId_cpqPrepare = 65;
 	private static int methodId_SQLMXPreparedStatement_LLIII = 66;
 	private static int methodId_SQLMXPreparedStatement_LLIJLZI = 67;
@@ -5558,8 +5365,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			debug[methodId_close] = new JdbcDebug(className, "close");
 			debug[methodId_populateLobObjects] = new JdbcDebug(className,
 					"populateLobObjects");
-			debug[methodId_populateBatchLobObjects] = new JdbcDebug(className,
-					"populateBatchLobObjects");
 			debug[methodId_cpqPrepare] = new JdbcDebug(className, "cpqPrepare");
 			debug[methodId_SQLMXPreparedStatement_LLIII] = new JdbcDebug(
 					className, "SQLMXPreparedStatement_LLIII");
@@ -5724,5 +5529,74 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
     public String getInputDescName(int parameterIndex){
         return inputDesc_[parameterIndex].name_;
     }
+
+	private void addLobObjects(int parameterIndex, SQLMXLob x)
+	{
+		if (lobObjects_ == null) {
+			lobObjects_ = new ArrayList<SQLMXLob>();
+			lobColNames_ = new ArrayList<String>();
+			lobColIds_ = new ArrayList<Integer>();
+		}
+		if (! lobColDone_) {	
+			lobColNames_.add(getInputDescName(parameterIndex-1));
+			lobColIds_.add(parameterIndex);
+		}
+		lobObjects_.add(x);
+	}
+
+	private int getNumLobColumns() 
+	{
+		if (lobColNames_ == null)
+			return 0;
+		else
+			return lobColNames_.size();
+	}
+
+	private String getLobColumns() 
+	{
+		if (lobColNames_ == null)
+			return "";
+		StringBuilder colNames = new StringBuilder();
+		colNames.append(lobColNames_.get(0));
+		for (int i = 1; i < lobColNames_.size(); i++)
+			colNames.append(", ").append(lobColNames_.get(i));
+		return colNames.toString();
+	}
+
+	private void setLobLocators() throws SQLException 
+	{
+		if (lobLocators_.length != lobObjects_.size())
+			throw Messages.createSQLException(connection_.locale_, "lob_objects_and_locators_dont_match", null);
+		int lobLocatorIdx = 0;
+		for (SQLMXLob lobObject : lobObjects_) {
+			if (lobObject != null)
+				lobObject.setLobLocator(lobLocators_[lobLocatorIdx]);
+			lobLocatorIdx++;
+		}
+	}
+
+	private String[] getLobLocators() throws SQLException
+	{
+		//String selectForLobLocator = "select " + getLobColumns() + " from ( " + this.sql_ + " ) as x";
+		String selectForLobLocator = "select * from ( " + this.sql_ + " ) as x";
+		SQLMXPreparedStatement lobLocatorStmt = (SQLMXPreparedStatement)connection_.prepareStatement(selectForLobLocator);
+		lobLocatorStmt.copyParameters(this); 
+		SQLMXResultSet lobLocatorRS = (SQLMXResultSet)lobLocatorStmt.executeQuery();
+		int numLocators = ((paramRowCount_ == 0 ? paramRowCount_ = 1 : paramRowCount_) * getNumLobColumns());
+		String lobLocators[] = new String[numLocators];
+		int locatorsIdx = 0;
+		while (lobLocatorRS.next()) {
+			for (int i = 0; i < getNumLobColumns() ; i++) {
+				if (locatorsIdx < lobLocators.length)
+					//lobLocators[locatorsIdx++] = lobLocatorRS.getString(i+1);
+					lobLocators[locatorsIdx++] = lobLocatorRS.getLobLocator(lobColIds_.get(i));
+				else
+					throw Messages.createSQLException(connection_.locale_, 
+						"locators out of space" , null);
+			}	
+		}
+		return lobLocators;
+	}
+
 //------------------------------
 }

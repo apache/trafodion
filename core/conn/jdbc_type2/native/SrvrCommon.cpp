@@ -1812,6 +1812,8 @@ void getMemoryAllocInfo(long data_type, long char_set, long data_length, long vc
     {
     case SQLTYPECODE_CHAR:
     case SQLTYPECODE_VARCHAR:
+    case SQLTYPECODE_CLOB:
+    case SQLTYPECODE_BLOB:
         if( nullRequired(char_set) )
             varNulls = 1;
         break;

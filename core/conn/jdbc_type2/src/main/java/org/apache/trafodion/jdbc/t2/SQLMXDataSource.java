@@ -194,7 +194,7 @@ public class SQLMXDataSource extends T2Properties implements
 //					mxConnect = new SQLMXConnection(this,getDataSourceProperties());
 					mxConnect = new SQLMXConnection(this,getT2Properties());
 					weakConnection.refToDialogueId_.put(mxConnect.pRef_, new Long(mxConnect
-							.getDialogueId_()));
+							.getDialogueId()));
 				} else {
 
 					int maxSt = getMaxStatements();

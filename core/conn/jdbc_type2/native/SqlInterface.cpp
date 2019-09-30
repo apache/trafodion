@@ -330,6 +330,16 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 			&allocSize,
 			NULL);
 		break;
+	case SQLTYPECODE_CLOB:
+		SQLItemDesc->ODBCDataType  = TYPE_CLOB;
+		SQLItemDesc->signType      = FALSE;
+		SQLItemDesc->ODBCPrecision = 0;
+	        break;	
+	case SQLTYPECODE_BLOB:
+		SQLItemDesc->ODBCDataType  = TYPE_BLOB;
+		SQLItemDesc->signType      = FALSE;
+		SQLItemDesc->ODBCPrecision = 0;
+		break;
 	case SQLTYPECODE_BIT:
 	case SQLTYPECODE_BITVAR:
 	case SQLTYPECODE_IEEE_FLOAT:
@@ -3451,6 +3461,16 @@ void InputDescInfo::setData(int countPosition, long dataType, long length, long 
 			break;
 		}
 		break;
+	case SQLTYPECODE_CLOB:
+		ODBCPrecision = Length;
+		ODBCDataType = TYPE_CLOB;
+		strcpy(DataTypeString, "CLOB");
+		break;	
+	case SQLTYPECODE_BLOB:
+		ODBCPrecision = Length;
+		ODBCDataType = TYPE_BLOB;
+		strcpy(DataTypeString, "BLOB");
+		break;	
 	default:
 		ODBCDataType = SQL_TYPE_NULL;
 		ODBCPrecision = 0;

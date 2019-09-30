@@ -34,6 +34,7 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.util.Date;
 import java.io.PrintWriter;
+import java.io.ByteArrayInputStream;
 
 public class SQLMXBlob extends SQLMXLob implements Blob 
 {
@@ -54,6 +55,7 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 
 	public byte[] getBytes(long pos, int length) throws SQLException
 	{
+/*
 		if (JdbcDebugCfg.entryActive) debug[methodId_getBytes].methodEntry();
 		try
 		{
@@ -153,10 +155,13 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_getBytes].methodExit();
 		}
+*/
+		return null;
 	}
 
 	public long position(Blob pattern, long start) throws SQLException
 	{
+/*
 		if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ].methodEntry();
 		try
 		{
@@ -176,10 +181,13 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ].methodExit();
 		}
+*/
+		return 0;
 	}
 
 	public long position(byte[] pattern, long start) throws SQLException
 	{
+/*
 		if (JdbcDebugCfg.entryActive) debug[methodId_position_BJ].methodEntry();
 		try
 		{
@@ -204,6 +212,8 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_position_BJ].methodExit();
 		}
+*/
+		return 0;
 	}
 
 
@@ -247,162 +257,17 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setBytes_JBII].methodEntry();
 		try
 		{
-			int endChunkNo;
-			int updOffset;
-			int updLen;
-			int	chunkNo;
-			long lobLenForUpd;
-			int	 byteOffset;
-			int retLen;
-			int totalRetLen;
-			int copyLen;
-			long remLen;
-			long lobLen;
-
-			byte [] tempChunk = null;
-
-			if (pos <= 0 || len < 0 || offset < 0 || bytes == null) 
+			if (pos > 1 || len < 0 || offset < 0 || bytes == null) 
 			{
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = "Blob.setBytes(long, byte[], int, int)";
 				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
 			}
 			checkIfCurrent();
-			lobLen = length();
-			if (pos > lobLen+1)
-				throw Messages.createSQLException(conn_.locale_,"invalid_position_value", null);
-			copyLen = len;
-			remLen = pos-1+len;	// Length to be either updated or inserted
-			byteOffset = offset;
-			totalRetLen = 0;
-			chunkNo = (int)((pos-1)/ chunkSize_);
-			// calculate the length that can be updated rounded to chunk size
-			if ((lobLen % chunkSize_) == 0)
-				lobLenForUpd = (lobLen / chunkSize_) * chunkSize_;
-			else
-				lobLenForUpd = ((lobLen / chunkSize_)+1) * chunkSize_;
-			if (remLen <= lobLenForUpd)
-				updLen	= len;
-			else
-				updLen = (int)(lobLenForUpd - (pos-1));
-			if (updLen > 0)
-			{
-				updOffset = (int)((pos-1) % chunkSize_);
-				prepareUpdLobDataStmt();		
-
-				synchronized (conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT])
-				{
-					conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setString(4, tableName_);
-					conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setLong(5, dataLocator_);
-				
-					while (true)
-					{
-						// String is 0 based while substring in SQL/MX is 1 based, hence +1
-						conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setInt(6, chunkNo);
-						conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setInt(1, updOffset);
-						if ((updOffset + updLen) <= chunkSize_)
-						{
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setInt(3, updOffset + updLen + 1);
-							if ((byteOffset == 0) && (updLen - updOffset == bytes.length))
-							{
-								conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setBytes(2, bytes);
-							}
-							else
-							{
-								tempChunk = new byte[updLen];
-								System.arraycopy(bytes, byteOffset, tempChunk, 0, updLen);
-								conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setBytes(2, tempChunk);
-							}
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].executeUpdate();
-							totalRetLen += updLen;
-							byteOffset += updLen;
-							chunkNo++;
-							break;
-						}
-						else
-						{
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setInt(3, chunkSize_+1);
-							if (tempChunk == null || tempChunk.length != chunkSize_-updOffset)
-								tempChunk = new byte[chunkSize_-updOffset];
-							System.arraycopy(bytes, byteOffset, tempChunk, 0, chunkSize_-updOffset);
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].setBytes(2, tempChunk);
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT].executeUpdate();
-							totalRetLen += (chunkSize_-updOffset);
-							byteOffset += (chunkSize_-updOffset);
-							updLen -= (chunkSize_-updOffset);
-							chunkNo++;
-						}
-						updOffset = 0;
-					}
-				}
-				copyLen = (int)(remLen - lobLenForUpd);
-				
-				if ((traceWriter_ != null) && 
-					((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-				{
-					traceWriter_.println(getTraceId() 
-						+ "setBytes(" + pos + ",<bytes>," + offset + "," + len 
-						+ ") - UpdLobDataStmt params: tableName_=" + tableName_ 
-						+ " dataLocator_=" + dataLocator_ + " chunkNo=" + chunkNo
-						+ " updOffset=" + updOffset + " updLen=" + updLen
-						+ " remLen=" + remLen + " lobLenForUpd=" + lobLenForUpd 
-						+ " byteOffset=" + byteOffset + " totalRetLen=" + totalRetLen);
-				}
-			}
-
-			tempChunk = null;
-			if (remLen > lobLenForUpd)
-			{
-				while (true)
-				{
-					prepareInsLobDataStmt();
-
-					synchronized (conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT])
-					{
-						conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setString(1, tableName_);
-						conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setLong(2, dataLocator_);
-						conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setInt(3, chunkNo);
-						if (copyLen <= chunkSize_)
-						{
-							if (byteOffset == 0 && copyLen == bytes.length)
-								conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setBytes(4, bytes);
-							else
-							{
-								tempChunk = new byte[copyLen];
-								System.arraycopy(bytes, byteOffset, tempChunk, 0, copyLen);
-								conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setBytes(4, tempChunk);
-							}
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].executeUpdate();
-							totalRetLen += copyLen;
-							break;
-						}
-						else
-						{
-							if (tempChunk == null)
-								tempChunk = new byte[chunkSize_];
-							System.arraycopy(bytes, byteOffset, tempChunk, 0, chunkSize_);
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setBytes(4, tempChunk);
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].executeUpdate();
-							byteOffset += chunkSize_;
-							copyLen -= chunkSize_;
-							totalRetLen += chunkSize_;
-						}
-						chunkNo++;
-					}
-				}
-				
-				if ((traceWriter_ != null) && 
-					((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-				{
-					traceWriter_.println(getTraceId() 
-						+ "setBytes(" + pos + ",<bytes>," + offset + "," + len 
-						+ ") - InsLobDataStmt params: tableName_=" + tableName_ 
-						+ " dataLocator_=" + dataLocator_ + " (total)chunkNo=" + chunkNo
-						+ " copyLen=" + copyLen + " byteOffset=" + byteOffset 
-						+ " totalRetLen=" + totalRetLen);
-				}
-			}
-			return totalRetLen;
+			is_ = new ByteArrayInputStream(bytes, offset, len);
+			isLength_ = len;
+			populate();
+			return len-offset;
 		}
 		finally
 		{
@@ -422,115 +287,22 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		try
 		{
 			SQLMXLobOutputStream os;
-
+			if (inputLob_ != null) {	
+				is_ = inputLob_.getBinaryStream();
+			} else if (b_ != null) {
+				is_ = new ByteArrayInputStream(b_, 0, b_.length);
+				isLength_ = b_.length;
+			}
 			if (is_ != null)
 			{
 				os = (SQLMXLobOutputStream)setOutputStream(1);
 				os.populate(is_, isLength_);
 				is_ = null;
 			}
-			else if (inputLob_ != null)
-			{	
-				populateFromBlob();
-				inputLob_ = null;			
-			}
-			else if (b_ != null)
-			{
-				setBytes(1, b_);
-				b_ = null;
-			}
 		}
 		finally
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_populate].methodExit();
-		}
-	}
-
-	void populateFromBlob() throws SQLException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_populateFromBlob].methodEntry();
-		try
-		{
-			long		pos;
-			byte[]		b;
-			int			ret;
-			ResultSet	rs;
-			SQLMXBlob	inputBlob;
-			int			chunkNo = 0;
-		
-			pos = 1;
-			if (inputLob_ instanceof SQLMXBlob)
-			{
-				// When SQL/MX supports insert into a table by selecting some other rows in
-				// the same table, we should change the code to do so
-				// Until then, we read a row and write to the same table with different
-				// data locator till all the rows are read 
-				inputBlob = (SQLMXBlob)inputLob_;
-			
-				prepareGetLobDataStmt();
-				prepareInsLobDataStmt();
-
-				if ((traceWriter_ != null) && 
-					((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-				{
-					traceWriter_.println(getTraceId() 
-						+ "populateFromBlob() - GetLobDataStmt params: tableName_=" + inputBlob.tableName_ 
-						+ " dataLocator_=" + inputBlob.dataLocator_ + " chunkNo=0");
-				}
-
-				synchronized (conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT])
-				{
-					conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setString(1, inputBlob.tableName_);
-					conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setLong(2, inputBlob.dataLocator_);
-					conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setInt(3, 0);	// start ChunkNo
-					conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setInt(4, Integer.MAX_VALUE);
-					rs = conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].executeQuery();
-					try
-					{
-						synchronized(conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT])
-						{
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setString(1, tableName_);
-							conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setLong(2, dataLocator_);
-		
-							while (rs.next())
-							{
-								b = rs.getBytes(1);
-								conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setInt(3, chunkNo);
-								conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].setBytes(4, b);
-								conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT].executeUpdate();
-								chunkNo++;
-							}
-						}		
-						
-						if ((traceWriter_ != null) && 
-							((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-						{
-							traceWriter_.println(getTraceId() 
-								+ "populateFromBlob() - InsLobDataStmt params: tableName_=" + tableName_ 
-								+ " dataLocator_=" + dataLocator_ + " (total)chunkNo=" + chunkNo);
-						}
-					} 
-					finally 
-					{
-						rs.close();
-					}
-				}
-			}
-			else
-			{
-				while (true)
-				{
-					b = inputLob_.getBytes(pos, chunkSize_);
-					if (b.length == 0)
-						break;
-					ret = setBytes(pos, b);
-					pos += b.length;
-				}
-			}
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_populateFromBlob].methodExit();
 		}
 	}
 
@@ -569,235 +341,29 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		}
 	}
 
-	// The following methods are used to prepare the LOB statement specific 
-	// to BLOB objects, and re-prepares if the lobTableName_ has changed. 
-	void prepareGetLobLenStmt() throws SQLException 
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_prepareGetLobLenStmt].methodEntry();
-		try
-		{
-			conn_.prepareGetLobLenStmt(lobTableName_,true);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_prepareGetLobLenStmt].methodExit();
-		}
-	}
-
-	void prepareDelLobDataStmt() throws SQLException 
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_prepareDelLobDataStmt].methodEntry();
-		try
-		{
-			conn_.prepareDelLobDataStmt(lobTableName_,true);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_prepareDelLobDataStmt].methodExit();
-		}
-	}
-	
-	void prepareGetLobDataStmt() throws SQLException 
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_prepareGetLobDataStmt].methodEntry();
-		try
-		{
-			conn_.prepareGetLobDataStmt(lobTableName_,true);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_prepareGetLobDataStmt].methodExit();
-		}
-	}
-	
-	void prepareUpdLobDataStmt() throws SQLException 
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_prepareUpdLobDataStmt].methodEntry();
-		try
-		{
-			conn_.prepareUpdLobDataStmt(lobTableName_,true);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_prepareUpdLobDataStmt].methodExit();
-		}
-	}
-	
-	void prepareInsLobDataStmt() throws SQLException 
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_prepareInsLobDataStmt].methodEntry();
-		try
-		{
-			conn_.prepareInsLobDataStmt(lobTableName_,true);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_prepareInsLobDataStmt].methodExit();
-		}
-	}
-	
-	void prepareTrunLobDataStmt() throws SQLException 
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_prepareTrunLobDataStmt].methodEntry();
-		try
-		{
-			conn_.prepareTrunLobDataStmt(lobTableName_,true);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_prepareTrunLobDataStmt].methodExit();
-		}
-	}
-	
-	// The following methods are used to return the BLOB prepared statement 
-	// from the connection object PS array for population and execution.
-	PreparedStatement getGetLobLenStmt()
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_getGetLobLenStmt].methodEntry();
-		try
-		{
-			return conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_LEN_STMT];
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getGetLobLenStmt].methodExit();
-		}
-	}
-	
-	PreparedStatement getDelLobDataStmt()
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_getDelLobDataStmt].methodEntry();
-		try
-		{
-			return conn_.LobPrepStmts[SQLMXConnection.BLOB_DEL_LOB_DATA_STMT];
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getDelLobDataStmt].methodExit();
-		}
-	}
-	
-	PreparedStatement getTrunLobDataStmt()
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_getTrunLobDataStmt].methodEntry();
-		try
-		{
-			return conn_.LobPrepStmts[SQLMXConnection.BLOB_TRUN_LOB_DATA_STMT];
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getTrunLobDataStmt].methodExit();
-		}
-	}
-	
-	PreparedStatement getInsLobDataStmt()
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_getInsLobDataStmt].methodEntry();
-		try
-		{
-			return conn_.LobPrepStmts[SQLMXConnection.BLOB_INS_LOB_DATA_STMT];
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getInsLobDataStmt].methodExit();
-		}
-	}
-	
-	PreparedStatement getUpdLobDataStmt()
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_getUpdLobDataStmt].methodEntry();
-		try
-		{
-			return conn_.LobPrepStmts[SQLMXConnection.BLOB_UPD_LOB_DATA_STMT];
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getUpdLobDataStmt].methodExit();
-		}
-	}
-	
-	PreparedStatement getGetLobDataStmt()
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_getGetLobDataStmt].methodEntry();
-		try
-		{
-			return conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT];
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getGetLobDataStmt].methodExit();
-		}
-	}
-
-
 	// Constructors
-	SQLMXBlob(SQLMXConnection connection, String tableName, long dataLocator) throws SQLException
+	SQLMXBlob(SQLMXConnection connection, String lobLocator) throws SQLException
 	{
-		super(connection, tableName, dataLocator, connection.blobTableName_, true);
-		if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJ].methodEntry();
-		try
-		{
-			if (connection.blobTableName_ == null)
-				throw Messages.createSQLException(conn_.locale_,"no_blobTableName", null);
-		
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJ].methodExit();
-		}
+		super(connection, lobLocator, true);
 	}
 
-	SQLMXBlob(SQLMXConnection connection, String tableName, long dataLocator, InputStream x, 
-			int length) throws SQLException
+	SQLMXBlob(SQLMXConnection connection, String lobLocator, InputStream x, int length) throws SQLException
 	{
-		super(connection, tableName, dataLocator, x, length, connection.blobTableName_, true);
-		if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJLI].methodEntry();
-		try
-		{
-			if (connection.blobTableName_ == null)
-				throw Messages.createSQLException(conn_.locale_,"no_blobTableName", null);
-	
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJLI].methodExit();
-		}
+		super(connection, lobLocator, x, length, true);
 	}
 
-	SQLMXBlob(SQLMXConnection connection, String tableName, long dataLocator, Blob inputLob) throws SQLException
+	SQLMXBlob(SQLMXConnection connection, String lobLocator, Blob inputLob) throws SQLException
 	{
-		super(connection, tableName, dataLocator, connection.blobTableName_, true);
-		if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJL].methodEntry();
-		try
-		{
-			if (connection.blobTableName_ == null)
-				throw Messages.createSQLException(conn_.locale_,"no_blobTableName", null);
-			inputLob_ = inputLob;
-	
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJL].methodExit();
-		}
+		super(connection, lobLocator, true);
+		inputLob_ = inputLob;
 	}
 	
-	SQLMXBlob(SQLMXConnection connection, String tableName, long dataLocator, byte[] b)
-		throws SQLException
+	SQLMXBlob(SQLMXConnection connection, String lobLocator, byte[] b) throws SQLException
 	{
-		super(connection, tableName, dataLocator, connection.blobTableName_, true);
-		if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJB].methodEntry();
-		try
-		{
-			if (connection.blobTableName_ == null)
-				throw Messages.createSQLException(conn_.locale_,"no_blobTableName", null);
-			b_ = b;
-	
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXBlob_LLJB].methodExit();
-		}
+		super(connection, lobLocator, true);
+		b_ = b;
 	}
+
 	public void setTraceId(String traceId_) {
 		this.traceId_ = traceId_;
 	}

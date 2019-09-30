@@ -215,7 +215,7 @@ public class SQLMXPooledConnection extends WeakConnection implements javax.sql.P
 			}
 			listenerList_ = new LinkedList<ConnectionEventListener>();
 			connection_ = new SQLMXConnection(this, info);
-			refToDialogueId_.put(connection_.pRef_, new Long(connection_.getDialogueId_()));
+			refToDialogueId_.put(connection_.pRef_, new Long(connection_.getDialogueId()));
 		}
 		finally
 		{
