@@ -32,9 +32,11 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.io.IOException;
 import java.util.Date;
 import java.io.PrintWriter;
 import java.io.ByteArrayInputStream;
+import java.util.Arrays;
 
 public class SQLMXBlob extends SQLMXLob implements Blob 
 {
@@ -55,165 +57,31 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 
 	public byte[] getBytes(long pos, int length) throws SQLException
 	{
-/*
-		if (JdbcDebugCfg.entryActive) debug[methodId_getBytes].methodEntry();
-		try
-		{
-			int startChunkNo;
-			int endChunkNo;
-			int offset;
-			int copyLen;
-			int copyOffset;
-			int dataLength;
-			int readLen;
-			long blobDataLen;
-			byte[] data;
-			byte[] b;
-			byte[] b1;
-
-			if (pos <= 0 || length < 0 )
-			{
-				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Blob.getBytes(long, int): position is less than or equal to 0, or length is less than 0";
-				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-			}
-
-			// Blob data total length must be larger than pos supplied (used to offset the bytes)
-			blobDataLen = length();
-			if (pos > blobDataLen) 
-			{
-				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Blob.getBytes(long, int): position (" + pos + ") exceeds the Blob data length (" + blobDataLen + ")";
-				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-			}
-
-			checkIfCurrent();
-			startChunkNo = (int)((pos-1) / chunkSize_);
-			endChunkNo = (int)((pos-1+length)/ chunkSize_);
-			copyLen = length;
-			offset = (int)((pos-1) % chunkSize_);
-			copyOffset= 0;
-			readLen = 0;
-			b = new byte[length];
-			prepareGetLobDataStmt();
-
-			if ((traceWriter_ != null) && 
-				((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-			{
-				traceWriter_.println(getTraceId() 
-					+ "getBytes(" + pos + "," + length + ") - GetLobDataStmt params: tableName_=" + tableName_ 
-					+ " dataLocator_=" + dataLocator_
-					+ " startChunkNo=" + startChunkNo
-					+ " endChunkNo=" + endChunkNo);
-			}
-
-			synchronized (conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT])
-			{
-				conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setString(1, tableName_);
-				conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setLong(2, dataLocator_);
-				conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setInt(3, startChunkNo);
-				conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].setInt(4, endChunkNo);
-				ResultSet rs = conn_.LobPrepStmts[SQLMXConnection.BLOB_GET_LOB_DATA_STMT].executeQuery();
-				try
-				{
-					while (rs.next())
-					{
-						data = rs.getBytes(1);
-						dataLength = data.length-offset;
-						
-						if (dataLength >= copyLen)
-						{
-							System.arraycopy(data, offset, b, copyOffset, copyLen);
-							readLen += copyLen;
-							break;
-						} 
-						else
-						{
-							System.arraycopy(data, offset, b, copyOffset, dataLength);
-							copyLen -= dataLength;
-							copyOffset += dataLength;
-							readLen += dataLength;
-						}
-						offset = 0;	// reset the offset 
-					}
-				}
-				finally
-				{
-					rs.close();
-				}
-			}
-			if (readLen == length)
-				return b;
-			else
-			{
-				b1 = new byte[readLen];
-				System.arraycopy(b, 0, b1, 0, readLen);
-				return b1;
-			}
+	 	long skippedLen;	
+		checkIfCurrent();
+		InputStream is = getInputStream();
+		try {
+	        	skippedLen = is.skip(pos);	
+			if (skippedLen < pos)
+				return new byte[0];
+			byte[] buf = new byte[length];
+			int retLen = is.read(buf, 0, length);
+			if (retLen < length)
+				buf = Arrays.copyOf(buf, retLen);
+			return buf;
+		} catch (IOException ioe) {
+			throw new SQLException(ioe);
 		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getBytes].methodExit();
-		}
-*/
-		return null;
 	}
 
 	public long position(Blob pattern, long start) throws SQLException
 	{
-/*
-		if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ].methodEntry();
-		try
-		{
-			byte[] searchPattern;
-		
-			if (start <= 0 )
-			{
-				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Blob.position(Blob, long)";
-				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-			}
-			checkIfCurrent();
-			searchPattern = pattern.getBytes(1L,(int)pattern.length());
-			return position(searchPattern, start);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ].methodExit();
-		}
-*/
-		return 0;
+		throw new SQLFeatureNotSupportedException("Blob.position(Blob, long) not supported");
 	}
 
 	public long position(byte[] pattern, long start) throws SQLException
 	{
-/*
-		if (JdbcDebugCfg.entryActive) debug[methodId_position_BJ].methodEntry();
-		try
-		{
-			byte[] blobData;
-			long retValue;
-
-			if (start <= 0 )
-			{
-				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Blob.position(byte[], long)";
-				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-			}
-			checkIfCurrent();
-			blobData = getBytes(start, (int)length());
-			retValue = findBytes(blobData, 0, blobData.length, pattern);
-			if (retValue != -1)
-				retValue += start;
-
-			return retValue;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_position_BJ].methodExit();
-		}
-*/
-		return 0;
+		throw new SQLFeatureNotSupportedException("Blob.position(String, long) not supported");
 	}
 
 
@@ -222,9 +90,14 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setBinaryStream].methodEntry();
 		try
 		{
+			if (pos < 0) {
+				Object[] messageArguments = new Object[1];
+				messageArguments[0] = "Blob.setBinaryStream(long)";
+				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
+			}
+			if (pos > 1)
+				throw new SQLFeatureNotSupportedException("Blob.setBinaryStream with position > 1 is not supported");
 			// Check if Autocommit is set, and no external transaction exists
-			checkAutoCommitExtTxn();
-			checkIfCurrent();
 			return setOutputStream(pos);
 		}
 		finally
@@ -238,12 +111,13 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setBytes_JB].methodEntry();
 		try
 		{
-			if (bytes == null)	
-			{
+			if (bytes == null || pos < 0) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = "Blob.setBytes(long, byte[])";
 				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
 			}
+			if (pos > 1)
+				throw new SQLFeatureNotSupportedException("Blob.setBytes with position > 1 is not supported");
 			return setBytes(pos, bytes, 0, bytes.length);
 		}
 		finally
@@ -257,22 +131,66 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setBytes_JBII].methodEntry();
 		try
 		{
-			if (pos > 1 || len < 0 || offset < 0 || bytes == null) 
+			if (pos < 0 || len < 0 || offset < 0 || bytes == null) 
 			{
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = "Blob.setBytes(long, byte[], int, int)";
 				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
 			}
-			checkIfCurrent();
-			is_ = new ByteArrayInputStream(bytes, offset, len);
-			isLength_ = len;
-			populate();
-			return len-offset;
+			if (pos > 1)
+				throw new SQLFeatureNotSupportedException("Blob.setBytes with position > 1 is not supported");
+			b_ = bytes;  	
+			length_ = len;
+			offset_ = offset;
+			return len;
 		}
 		finally
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_setBytes_JBII].methodExit();
 		}
+	}
+
+	byte[] getBytes(int inlineLobLen) throws SQLException 
+	{
+		long llength  = inLength();
+		if (llength > Integer.MAX_VALUE) {
+			Object[] messageArguments = new Object[1];
+			messageArguments[0] = "Blob.getBytes(int)";
+			throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
+		}
+		int length = (int)llength;
+		if (length == 0) {
+			if (b_ != null && (b_.length - offset_)  > inlineLobLen)	
+				return null;
+			else
+				return null;
+		} else if (length_ > inlineLobLen)
+			return null;
+		if (b_ != null) {
+			if (length == 0)
+				length = b_.length;
+			if (offset_ == 0) {
+				if (length_ == 0) 
+					return b_;
+				else
+					return Arrays.copyOf(b_, length);
+			}
+			else  
+				return Arrays.copyOfRange(b_, offset_, offset_+length);
+		}
+		if (is_ != null) {
+			try {
+				byte buf[] = new byte[length]; 
+				int retLen = is_.read(buf, offset_, length);
+				if (retLen != length)
+					return Arrays.copyOf(buf, retLen);
+				else
+					return buf; 
+			} catch (IOException ioe) {
+				throw new SQLException(ioe);
+			}
+		}
+		return null;
 	}
 
 	// This function populates the Blob data from one of the following:
@@ -290,13 +208,12 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 			if (inputLob_ != null) {	
 				is_ = inputLob_.getBinaryStream();
 			} else if (b_ != null) {
-				is_ = new ByteArrayInputStream(b_, 0, b_.length);
-				isLength_ = b_.length;
+				is_ = new ByteArrayInputStream(b_, offset_, b_.length);
 			}
 			if (is_ != null)
 			{
 				os = (SQLMXLobOutputStream)setOutputStream(1);
-				os.populate(is_, isLength_);
+				os.populate(is_, length_);
 				is_ = null;
 			}
 		}
@@ -342,7 +259,7 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 	}
 
 	// Constructors
-	SQLMXBlob(SQLMXConnection connection, String lobLocator) throws SQLException
+	public SQLMXBlob(SQLMXConnection connection, String lobLocator) throws SQLException
 	{
 		super(connection, lobLocator, true);
 	}
@@ -387,11 +304,10 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 	}
 
 	// fields
-	private String					traceId_;
-	static PrintWriter		traceWriter_;
-	static int				traceFlag_;
+	private String		traceId_;
+	static PrintWriter	traceWriter_;
+	static int		traceFlag_;
 	Blob			inputLob_;
-	byte[]			b_;
 
 	private static int methodId_getBinaryStream			=  0;
 	private static int methodId_getBytes				=  1;
@@ -407,19 +323,7 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 	private static int methodId_SQLMXBlob_LLJLI			= 11;
 	private static int methodId_SQLMXBlob_LLJL			= 12;
 	private static int methodId_SQLMXBlob_LLJB			= 13;
-	private static int methodId_prepareGetLobLenStmt	= 14;
-	private static int methodId_prepareDelLobDataStmt	= 15;
-	private static int methodId_prepareGetLobDataStmt	= 16;
-	private static int methodId_prepareUpdLobDataStmt	= 17;
-	private static int methodId_prepareInsLobDataStmt	= 18;
-	private static int methodId_prepareTrunLobDataStmt	= 19;
-	private static int methodId_getGetLobLenStmt		= 20;
-	private static int methodId_getDelLobDataStmt		= 21;
-	private static int methodId_getTrunLobDataStmt		= 22;
-	private static int methodId_getInsLobDataStmt		= 23;
-	private static int methodId_getUpdLobDataStmt		= 24;
-	private static int methodId_getGetLobDataStmt		= 25;
-	private static int totalMethodIds					= 26;
+	private static int totalMethodIds					= 14;
 	private static JdbcDebug[] debug;
 	
 	static
@@ -442,18 +346,6 @@ public class SQLMXBlob extends SQLMXLob implements Blob
 			debug[methodId_SQLMXBlob_LLJLI] = new JdbcDebug(className,"SQLMXBlob[LLJLI]");
 			debug[methodId_SQLMXBlob_LLJL] = new JdbcDebug(className,"SQLMXBlob[LLJL]");
 			debug[methodId_SQLMXBlob_LLJB] = new JdbcDebug(className,"SQLMXBlob[LLJB]");
-			debug[methodId_prepareGetLobLenStmt] = new JdbcDebug(className,"prepareGetLobLenStmt");
-			debug[methodId_prepareDelLobDataStmt] = new JdbcDebug(className,"prepareDelLobDataStmt");
-			debug[methodId_prepareGetLobDataStmt] = new JdbcDebug(className,"prepareGetLobDataStmt");
-			debug[methodId_prepareUpdLobDataStmt] = new JdbcDebug(className,"prepareUpdLobDataStmt");
-			debug[methodId_prepareInsLobDataStmt] = new JdbcDebug(className,"prepareInsLobDataStmt");
-			debug[methodId_prepareTrunLobDataStmt] = new JdbcDebug(className,"prepareTrunLobDataStmt");
-			debug[methodId_getGetLobLenStmt] = new JdbcDebug(className,"getGetLobLenStmt");
-			debug[methodId_getDelLobDataStmt] = new JdbcDebug(className,"getDelLobDataStmt");
-			debug[methodId_getTrunLobDataStmt] = new JdbcDebug(className,"getTrunLobDataStmt");
-			debug[methodId_getInsLobDataStmt] = new JdbcDebug(className,"getInsLobDataStmt");
-			debug[methodId_getUpdLobDataStmt] = new JdbcDebug(className,"getUpdLobDataStmt");
-			debug[methodId_getGetLobDataStmt] = new JdbcDebug(className,"getGetLobDataStmt");
 		}
 	}
 

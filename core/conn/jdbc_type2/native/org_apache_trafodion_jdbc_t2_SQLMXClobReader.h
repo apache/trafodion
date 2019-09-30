@@ -12,10 +12,10 @@ extern "C" {
 /*
  * Class:     org_apache_trafodion_jdbc_t2_SQLMXClobReader
  * Method:    readChunk
- * Signature: (Ljava/lang/String;JJJLjava/lang/String;Ljava/nio/CharBuffer;)I
+ * Signature: (Ljava/lang/String;JJILjava/lang/String;Ljava/nio/CharBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXClobReader_readChunk
-  (JNIEnv *, jobject, jstring, jlong, jlong, jlong, jstring, jobject);
+  (JNIEnv *, jobject, jstring, jlong, jlong, jint, jstring, jobject);
 
 #ifdef __cplusplus
 }

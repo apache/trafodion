@@ -848,6 +848,8 @@ public synchronized PreparedStatement prepareStatement(String sql)
 //				batchBindingSizePrev = batchBindingSize_;
 //				batchBindingSize_ = 0;
 //			}
+//
+/*  Selva
             if ( pstmt.getSqlType() != SQLMXConnection.TYPE_INSERT
                     && pstmt.getSqlType() != SQLMXConnection.TYPE_INSERT_PARAM
                     && pstmt.getSqlType() != SQLMXConnection.TYPE_UPDATE
@@ -858,6 +860,7 @@ public synchronized PreparedStatement prepareStatement(String sql)
                 batchBindingSizePrev = this.t2props.getBatchBinding();
                 batchBindingSize_ = 0;
             }
+*/
 
             // MFC - if modulecaching is on call cpqprepare directly
             // Renamed the modulecaching property as enableMFC
@@ -884,6 +887,7 @@ public synchronized PreparedStatement prepareStatement(String sql)
 //
 //				batchBindingSize_ = batchBindingSizePrev;
 //			}
+/*
             if (pstmt.getSqlType() != SQLMXConnection.TYPE_INSERT
                     && pstmt.getSqlType() != SQLMXConnection.TYPE_INSERT_PARAM
                     && pstmt.getSqlType() != SQLMXConnection.TYPE_UPDATE
@@ -893,6 +897,7 @@ public synchronized PreparedStatement prepareStatement(String sql)
                 batchBindingSize_ = batchBindingSizePrev;
             }
             // End
+*/
 
             if (isStatementCachingEnabled()) {
                 addPreparedStatement(this, pstmt.sql_.trim(), pstmt,
@@ -911,70 +916,6 @@ public synchronized PreparedStatement prepareStatement(String sql)
         }finally {
             if (JdbcDebugCfg.entryActive)
             debug[methodId_prepareStatement_L].methodExit();
-        }
-    }
-
-    // Do not add LOB statements to the statement cache.
-    // Set as protected to allow SQLMXDataLocator calls.
-    /*
-     * RFE: Connection synchronization prepareLobStatement() is now synchronized
-     */
-protected synchronized PreparedStatement prepareLobStatement(String sql)
-    throws SQLException {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_prepareLobStatement].methodEntry();
-        if (JdbcDebugCfg.traceActive)
-        debug[methodId_prepareLobStatement].methodParameters("sql=" + sql);
-        try {
-            SQLMXPreparedStatement stmt;
-
-            clearWarnings();
-            if (isClosed_)
-            throw Messages.createSQLException(null, "invalid_connection",
-                    null);
-
-            stmt = new SQLMXPreparedStatement(this, sql);
-
-            if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
-            printIdMapEntry(stmt);
-
-            // not insert
-            int batchBindingSizePrev = 0;
-//			if (SQLMXConnection.getSqlStmtType(sql) != SQLMXConnection.TYPE_INSERT
-//					&& SQLMXConnection.getSqlStmtType(sql) != SQLMXConnection.TYPE_INSERT_PARAM) {
-//
-//				batchBindingSizePrev = batchBindingSize_;
-//				batchBindingSize_ = 0;
-//			}
-            if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
-                    && stmt.getSqlType() != SQLMXConnection.TYPE_INSERT_PARAM
-                    && stmt.getSqlType() != SQLMXConnection.TYPE_UPDATE
-                    && stmt.getSqlType() != SQLMXConnection.TYPE_DELETE
-            ) {
-
-                batchBindingSizePrev = this.t2props.getBatchBinding();
-                batchBindingSize_ = 0;
-            }
-
-            stmt.prepare(server_, getDialogueId(), getTxid(), autoCommit_,
-                    stmt.getStmtLabel_(), stmt.sql_.trim(), stmt.isSelect_,
-                    stmt.queryTimeout_, stmt.resultSetHoldability_,
-                    batchBindingSize_, stmt.fetchSize_);
-
-            if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
-                    && stmt.getSqlType() != SQLMXConnection.TYPE_INSERT_PARAM
-                    && stmt.getSqlType() != SQLMXConnection.TYPE_UPDATE
-                    && stmt.getSqlType() != SQLMXConnection.TYPE_DELETE
-            )
-            {
-
-                batchBindingSize_ = batchBindingSizePrev;
-            }
-
-            return stmt;
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareLobStatement].methodExit();
         }
     }
 
@@ -1098,7 +1039,7 @@ public synchronized PreparedStatement prepareStatement(String sql,
 
             if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
             printIdMapEntry(stmt);
-
+/*
             // is not insert
             int batchBindingSizePrev = 0;
             if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
@@ -1107,6 +1048,7 @@ public synchronized PreparedStatement prepareStatement(String sql,
                 batchBindingSizePrev = this.t2props.getBatchBinding();
                 batchBindingSize_ = 0;
             }
+*/
 
             // MFC - if modulecaching is on call cpqprepare directly
             // Renamed the modulecaching property as enableMFC
@@ -1127,11 +1069,13 @@ public synchronized PreparedStatement prepareStatement(String sql,
                         stmt.resultSetHoldability_, batchBindingSize_,
                         stmt.fetchSize_);
             }
+/*
             if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
                     && stmt.getSqlType() != SQLMXConnection.TYPE_INSERT_PARAM) {
 
                 batchBindingSize_ = batchBindingSizePrev;
             }
+*/
             if (isStatementCachingEnabled()) {
                 addPreparedStatement(this, stmt.sql_.trim(), stmt,
                         resultSetType, resultSetConcurrency, holdability_);
@@ -1216,7 +1160,8 @@ public synchronized PreparedStatement prepareStatement(String sql,
 
             if (this.t2props.getEnableLog().equalsIgnoreCase("ON"))
             printIdMapEntry(stmt);
-
+/*
+            batchBindingSizePrev = this.t2props.getBatchBinding();
             // is not insert
             int batchBindingSizePrev = 0;
             if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
@@ -1226,6 +1171,7 @@ public synchronized PreparedStatement prepareStatement(String sql,
                 batchBindingSize_ = 0;
             }
 
+*/
             // MFC - if modulecaching is on call cpqprepare directly
             // Renamed the modulecaching property as enableMFC
             if (this.t2props.getEnableMFC().equalsIgnoreCase("on") && this.t2props.getBatchBinding() ==0) {
@@ -1245,13 +1191,14 @@ public synchronized PreparedStatement prepareStatement(String sql,
                         stmt.resultSetHoldability_, batchBindingSize_,
                         stmt.fetchSize_);
             }
+/*
 
             if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
                     && stmt.getSqlType() != SQLMXConnection.TYPE_INSERT_PARAM) {
 
                 batchBindingSize_ = batchBindingSizePrev;
             }
-
+*/
             if (isStatementCachingEnabled()) {
                 addPreparedStatement(this, stmt.sql_.trim(), stmt,
                         resultSetType, resultSetConcurrency,
@@ -2096,7 +2043,6 @@ private int mapTxnIsolation(int level) {
                 transactionIsolation_ = TRANSACTION_READ_COMMITTED;
                 connReuseBitMap_ = 0;
             }
-            mploc_ = dsMploc_;
             batchBindingSize_ = dsBatchBindingSize_;
             autoCommit_ = true;
             isReadOnly_ = false;
@@ -2634,10 +2580,11 @@ public void initConnectionProps(T2Properties info) {
         transactionMode_ = mapTxnMode(info.getTransactionMode());
         catalog_ = info.getCatalog();
         schema_ = info.getSchema();
-
+        inlineLobChunkSize_ = info.getInlineLobChunkSize();
+        lobChunkSize_ = info.getLobChunkSize();
         String lang = info.getLanguage();
         if (lang == null)
-        locale_ = Locale.getDefault();
+            locale_ = Locale.getDefault();
         else {
             if (lang.equalsIgnoreCase("ja"))
             locale_ = new Locale("ja", "", "");
@@ -2664,7 +2611,6 @@ public void initConnectionProps(T2Properties info) {
 
         dsCatalog_ = catalog_;
         dsSchema_ = schema_;
-        dsMploc_ = mploc_;
         dsBatchBindingSize_ = batchBindingSize_;
         dsTransactionMode_ = transactionMode_;
         dsIso88591EncodingOverride_ = iso88591EncodingOverride_;
@@ -2695,23 +2641,15 @@ public synchronized long incrementAndGetkeyForMapCounter() {
         return ++keyForMapCounter;
     }
 
-    // static fields
-    // statics setup to index LobPrepStmtTableName[] and LobPrepStmts[]
-    // for the appropriate LOB prepared statements.
-public static final int CLOB_INS_LOB_DATA_STMT = 0;
-public static final int CLOB_GET_LOB_DATA_STMT = 1;
-public static final int CLOB_GET_LOB_LEN_STMT = 2;
-public static final int CLOB_DEL_LOB_DATA_STMT = 3;
-public static final int CLOB_TRUN_LOB_DATA_STMT = 4;
-public static final int CLOB_UPD_LOB_DATA_STMT = 5;
-public static final int CLOB_GET_STRT_DATA_LOC_STMT = 6;
-public static final int BLOB_INS_LOB_DATA_STMT = 7;
-public static final int BLOB_GET_LOB_DATA_STMT = 8;
-public static final int BLOB_GET_LOB_LEN_STMT = 9;
-public static final int BLOB_DEL_LOB_DATA_STMT = 10;
-public static final int BLOB_TRUN_LOB_DATA_STMT = 11;
-public static final int BLOB_UPD_LOB_DATA_STMT = 12;
-public static final int BLOB_GET_STRT_DATA_LOC_STMT = 13;
+    public int getInlineLobChunkSize()
+    {
+        return inlineLobChunkSize_;
+    }
+
+    public int getLobChunkSize()
+    {
+        return lobChunkSize_;
+    }
 
 public static final int SQL_TXN_READ_UNCOMMITTED = 1;
 public static final int SQL_TXN_READ_COMMITTED = 2;
@@ -2754,7 +2692,9 @@ public static final int SQL_SET_TRANSACTION_FLAG = 0x0001;
     int loginTimeout_;
     int queryTimeout_;
     int connectionTimeout_;
-private long dialogueId_;
+    int inlineLobChunkSize_;
+    int lobChunkSize_;
+    private long dialogueId_;
     int hClosestmtCount=0;
     int lClosestmtCount=0;
     int pStmtCount=0;
@@ -2767,7 +2707,7 @@ private long dialogueId_;
     String statisticsSqlPlanEnabled_;
 
     boolean byteSwap_;
-private int txid_;
+    private int txid_;
     //ThreadLocal<Integer> txIDPerThread;
     Map<String, Class<?>> userMap_;
     Locale locale_;
@@ -2794,7 +2734,6 @@ private int txid_;
 
     String dsCatalog_;
     String dsSchema_;
-    String dsMploc_;
 
     // Bit-mapped value that corresponds to what SQL connection
     // attribute statements that have been executed within the connection
@@ -2860,20 +2799,12 @@ private static int methodId_getProperties = 48;
 private static int methodId_SQLMXConnection_LLL = 49;
 private static int methodId_SQLMXConnection_LL_ds = 50;
 private static int methodId_SQLMXConnection_LL_pool = 51;
-private static int methodId_prepareLobStatement = 52;
-private static int methodId_mapTxnMode = 53;
-private static int methodId_mapTxnModeToString = 54;
-private static int methodId_initSetDefaults = 55;
-private static int methodId_prepareGetLobLenStmt = 56;
-private static int methodId_prepareDelLobDataStmt = 57;
-private static int methodId_prepareGetLobDataStmt = 58;
-private static int methodId_prepareUpdLobDataStmt = 59;
-private static int methodId_prepareInsLobDataStmt = 60;
-private static int methodId_prepareTrunLobDataStmt = 61;
-private static int methodId_prepareGetStrtDataLocStmt = 62;
-private static int methodId_getCharsetEncodingCached = 63;
-private static int methodId_getSchema = 64;
-private static int totalMethodIds = 65;
+private static int methodId_mapTxnMode = 52;
+private static int methodId_mapTxnModeToString = 53;
+private static int methodId_initSetDefaults = 54;
+private static int methodId_getCharsetEncodingCached = 55;
+private static int methodId_getSchema = 56;
+private static int totalMethodIds = 57;
 private static JdbcDebug[] debug;
 
     static {
@@ -2969,27 +2900,11 @@ private static JdbcDebug[] debug;
                     "SQLMXConnection[LL_ds]");
             debug[methodId_SQLMXConnection_LL_pool] = new JdbcDebug(className,
                     "SQLMXConnection[LL_pool]");
-            debug[methodId_prepareLobStatement] = new JdbcDebug(className,
-                    "prepareLobStatement");
             debug[methodId_mapTxnMode] = new JdbcDebug(className, "mapTxnMode");
             debug[methodId_mapTxnModeToString] = new JdbcDebug(className,
                     "mapTxnModeToString");
             debug[methodId_initSetDefaults] = new JdbcDebug(className,
                     "initSetDefaults");
-            debug[methodId_prepareGetLobLenStmt] = new JdbcDebug(className,
-                    "prepareGetLobLenStmt");
-            debug[methodId_prepareDelLobDataStmt] = new JdbcDebug(className,
-                    "prepareDelLobDataStmt");
-            debug[methodId_prepareGetLobDataStmt] = new JdbcDebug(className,
-                    "prepareGetLobDataStmt");
-            debug[methodId_prepareUpdLobDataStmt] = new JdbcDebug(className,
-                    "prepareUpdLobDataStmt");
-            debug[methodId_prepareInsLobDataStmt] = new JdbcDebug(className,
-                    "prepareInsLobDataStmt");
-            debug[methodId_prepareTrunLobDataStmt] = new JdbcDebug(className,
-                    "prepareTrunLobDataStmt");
-            debug[methodId_prepareGetStrtDataLocStmt] = new JdbcDebug(
-                    className, "prepareGetStrtDataLocStmt");
             debug[methodId_getCharsetEncodingCached] = new JdbcDebug(className,
                     "getCharsetEncodingCached");
         }
@@ -3024,13 +2939,11 @@ public boolean isWrapperFor(Class iface) throws SQLException {
     }
 
 public Clob createClob() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+	return new SQLMXClob(this, null);
     }
 
 public Blob createBlob() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return new SQLMXBlob(this, null);
     }
 
 public NClob createNClob() throws SQLException {

@@ -234,7 +234,7 @@ public class SQLMXLobOutputStream extends OutputStream
 			long length;
 
 			lob_ = lob;
-			length = lob_.length();
+			length = lob_.inLength();
 			conn_ = connection;
 			chunk_ = new byte[lob_.chunkSize_];
 			isFlushed_ = false;

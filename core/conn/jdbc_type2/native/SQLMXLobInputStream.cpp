@@ -37,8 +37,11 @@
 #include "GlobalInformation.h"
 #include "sqlcli.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXLobInputStream_readChunk
-  (JNIEnv *jenv, jobject jobj, jstring jServer, jlong jDialogueId, jint jExtractMode, jstring jLobLocator, jobject jByteBuffer)
+  (JNIEnv *jenv, jobject jobj, jstring jServer, jlong jDialogueId, jlong txid, jint jExtractMode, jstring jLobLocator, jobject jByteBuffer)
 {
    odbc_SQLsrvr_ExtractLob_exc_ exception = {0,0,0};
    BYTE *chunkBuf = (BYTE *)jenv->GetDirectBufferAddress(jByteBuffer);
@@ -66,3 +69,7 @@ JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXLobInputStream_rea
    }
    return -1;
 }
+#ifdef __cplusplus
+}
+#endif
+

@@ -122,7 +122,6 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 							+ delimiter + getBatchBinding() + delimiter
 							+ getMaxPoolSize() + delimiter + getMinPoolSize() + delimiter
 							+ getMaxStatements() + delimiter + getTraceFlag() + delimiter
-							+ getBlobTableName() + delimiter + getClobTableName()
 							+ delimiter + getTransactionMode() + delimiter
 							+ getIso88591EncodingOverride() + delimiter
 							+ getContBatchOnError();

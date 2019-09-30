@@ -7,8 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef org_apache_trafodion_jdbc_t2_SQLMXClobWriter_WRITE_BUFFER_SIZE
-#define org_apache_trafodion_jdbc_t2_SQLMXClobWriter_WRITE_BUFFER_SIZE 1024L
 /*
  * Class:     org_apache_trafodion_jdbc_t2_SQLMXClobWriter
  * Method:    writeChunk

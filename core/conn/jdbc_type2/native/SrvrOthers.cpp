@@ -291,14 +291,14 @@ odbc_SQLSvc_ExecuteN_sme_(
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_ROW_COUNT;
         FUNCTION_RETURN_VOID(("totalRowCount <= 0"));
     }
-
+/*
     if ((sqlStmtType & TYPE_SELECT) && totalRowCount > 1)
     {
         exception_->exception_nr = odbc_SQLSvc_ExecuteN_ParamError_exn_;
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_ROW_COUNT_AND_SELECT;
         FUNCTION_RETURN_VOID(("sqlStmtType is TYPE_SELECT && totalRowCount > 1"));
     }
-
+*/
 
     /// For Modius.
     rc = pSrvrStmt->switchContext();
@@ -1544,35 +1544,25 @@ odbc_SQLSrvr_ExtractLob_sme_(
   )
 {
     char lobExtractQuery[1000] = {0};
-    char RequestError[200] = {0};
     long sqlcode;
     SRVR_STMT_HDL  *QryLobExtractSrvrStmt = NULL;
 
     if ((QryLobExtractSrvrStmt = createSrvrStmt(dialogueId, "MXOSRVR_EXTRACTLOB", &sqlcode, 
-			NULL, 0, 0, TYPE_UNKNOWN, false,true)) == NULL) 
+			NULL, 0, 0, TYPE_UNKNOWN, false,false)) == NULL) 
     {
        exception_->exception_nr = odbc_SQLSvc_ExtractLob_SQLInvalidhandle_exn_;
        return;
     }
     switch (extractLobAPI) {
     case 0:
-        snprintf(lobExtractQuery, sizeof(lobExtractQuery), "EXTRACT LOBLENGTH(LOB'%s') LOCATION %Ld", lobHandle, (Int64)&lobLength);
+        snprintf(lobExtractQuery, sizeof(lobExtractQuery), "EXTRACT LOBLENGTH(LOB'%s') LOCATION %llu", lobHandle, (Int64)&lobLength);
         break;
     case 1:
-        extractData = new BYTE[extractLen + 1];
-        if (extractData == NULL)
-        {
-            exception_->exception_nr = odbc_SQLSvc_ExtractLob_ParamError_exn_;
-            exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_BUFFER_ALLOC_FAILED;
-	    return;
-        }
-
-        snprintf(lobExtractQuery, sizeof(lobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)extractData, &extractLen);
+        snprintf(lobExtractQuery, sizeof(lobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %llu, SIZE %llu)", lobHandle, extractData, &extractLen);
         break;
     case 2:
         extractLen = 0;
-        extractData = NULL;
-        snprintf(lobExtractQuery, sizeof(lobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)extractData, &extractLen);
+        snprintf(lobExtractQuery, sizeof(lobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %llu, SIZE %llu)", lobHandle, 0L, &extractLen);
         break;
     default:
         return ;
@@ -1587,7 +1577,6 @@ odbc_SQLSrvr_ExtractLob_sme_(
     try
     {
         short retcode = QryLobExtractSrvrStmt->ExecDirect(NULL, &sqlStringValue, EXTERNAL_STMT, TYPE_CALL, SQL_ASYNC_ENABLE_OFF, 0);
-
         if (retcode == SQL_ERROR)
         {
             ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
@@ -1619,13 +1608,12 @@ odbc_SQLSrvr_UpdateLob_sme_(
   , /* In   */ BYTE * data)
 {
     char lobUpdateQuery[1000] = {0};
-    char RequestError[200] = {0};
     long sqlcode;
 
     SRVR_STMT_HDL * QryLobUpdateSrvrStmt = NULL;
 
     if ((QryLobUpdateSrvrStmt = createSrvrStmt(dialogueId, "MXOSRVR_UPDATELOB", &sqlcode, 
-			NULL, 0, 0, TYPE_UNKNOWN, false,true)) == NULL) {
+			NULL, 0, 0, TYPE_UNKNOWN, false,false)) == NULL) {
         exception_->exception_nr = odbc_SQLSvc_UpdateLob_SQLInvalidhandle_exn_;
 	return;
     }

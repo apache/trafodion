@@ -48,8 +48,8 @@ public class T2Properties {
     private int sql_nowait;
     private int traceFlag_;
     private String traceFile_;
-    private String clobTableName_;
-    private String blobTableName_;
+    private int inlineLobChunkSize_;
+    private int lobChunkSize_; 
     private int transactionMode_;
     private String iso88591EncodingOverride_;
     private String stmtatomicity_;
@@ -304,32 +304,38 @@ public class T2Properties {
         }
     }
 
-    /**
-     * @return the clobTableName_
-     */
-    public String getClobTableName() {
-        return clobTableName_;
+    public int getInlineLobChunkSize()
+    {
+       return inlineLobChunkSize_;
     }
 
-    /**
-     * @param clobTableName_ the clobTableName_ to set
-     */
-    public void setClobTableName(String clobTableName_) {
-        this.clobTableName_ = clobTableName_;
+    public void setInlineLobChunkSize(int size)
+    {
+       inlineLobChunkSize_ = size;       
     }
 
-    /**
-     * @return the blobTableName_
-     */
-    public String getBlobTableName() {
-        return blobTableName_;
+    public void setInlineLobChunkSize(String sz) {
+       int size = 0;
+       if (sz !=  null) 
+          size = Integer.parseInt(sz);
+       setInlineLobChunkSize(size);
     }
 
-    /**
-     * @param blobTableName_ the blobTableName_ to set
-     */
-    public void setBlobTableName(String blobTableName_) {
-        this.blobTableName_ = blobTableName_;
+    public int getLobChunkSize()
+    {
+        return lobChunkSize_;
+    }
+
+    public void setLobChunkSize(int size)
+    {
+       lobChunkSize_ = size;       
+    }
+
+    public void setLobChunkSize(String sz) {
+       int size = 0;
+       if (sz !=  null) 
+          size = Integer.parseInt(sz);
+       setLobChunkSize(size);
     }
 
     /**
@@ -945,6 +951,8 @@ public class T2Properties {
 
     void initialize(Properties props) {
         inprops_ = props;
+        inlineLobChunkSize_ = 16*1024;
+        lobChunkSize_ = 16*1024*1024;
         setProperties();
     }
 
@@ -1026,9 +1034,8 @@ public class T2Properties {
         setMaxStatements(getProperty("maxStatements"));
         setMinPoolSize(getProperty("minPoolSize"));
         setInitialPoolSize(getProperty("initialPoolSize"));
-
-        setBlobTableName(getProperty("blobTableName"));
-        setClobTableName(getProperty("clobTableName"));
+	setInlineLobChunkSize(getProperty("inlineLobChunkSize"));
+	setLobChunkSize(getProperty("lobChunkSize"));
 
         setEnableMFC(getProperty("enableMFC"));
         setCompiledModuleLocation(getProperty("compiledModuleLocation"));
@@ -1085,11 +1092,8 @@ public class T2Properties {
         props.setProperty("maxStatements", String.valueOf(maxStatements_));
         props.setProperty("minPoolSize", String.valueOf(minPoolSize_));
         props.setProperty("initialPoolSize", String.valueOf(initialPoolSize_));
-
-        if (getBlobTableName() != null)
-            props.setProperty("blobTableName", blobTableName_);
-        if (getClobTableName() != null)
-            props.setProperty("clobTableName", clobTableName_);
+ 	props.setProperty("inlineLobChunkSize", String.valueOf(inlineLobChunkSize_));
+ 	props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
         if (getEnableMFC() != null)
             props.setProperty("enableMFC", enableMFC_);
         if (getCompiledModuleLocation() != null)
@@ -1185,13 +1189,13 @@ public class T2Properties {
         propertyInfo[i++].choices = null;
 
         propertyInfo[i] = new java.sql.DriverPropertyInfo(
-                "clobTableName", clobTableName_);
-        propertyInfo[i].description = "Specifies the LOB table for using CLOB columns.";
+                "inlineLobChunkSize", Integer.toString(inlineLobChunkSize_));
+        propertyInfo[i].description = "Specifies the LOB chunk size that can be inlined along with row.";
         propertyInfo[i++].choices = null;
 
         propertyInfo[i] = new java.sql.DriverPropertyInfo(
-                "blobTableName", blobTableName_);
-        propertyInfo[i].description = "Specifies the LOB table for using BLOB columns.";
+                "lobChunkSize", Integer.toString(lobChunkSize_));
+        propertyInfo[i].description = "Specifies the LOB chunk size for streaming.";
         propertyInfo[i++].choices = null;
 
         propertyInfo[i] = new java.sql.DriverPropertyInfo(
@@ -1311,8 +1315,10 @@ public class T2Properties {
                 .toString(getMaxIdleTime())));
 //		ref.add(new StringRefAddr("propertyCycle", Integer
 //				.toString(propertyCycle_)));
-        ref.add(new StringRefAddr("clobTableName", getClobTableName()));
-        ref.add(new StringRefAddr("blobTableName", getBlobTableName()));
+        ref.add(new StringRefAddr("inlineLobChunkSize", Integer
+                .toString(getInlineLobChunkSize())));
+        ref.add(new StringRefAddr("lobChunkSize", Integer
+                .toString(getLobChunkSize())));
         ref.add(new StringRefAddr("transactionMode",getTransactionMode()));
         ref.add(new StringRefAddr("contBatchOnError",getContBatchOnError()));
         //Renamed the modulecaching property as enableMFC

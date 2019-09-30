@@ -27,6 +27,7 @@ package org.apache.trafodion.jdbc.t2;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -53,6 +54,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Arrays;
 //import com.tandem.tmf.Current;	// Linux port - ToDo
 
 /**
@@ -250,22 +252,9 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			rowsValue_.add(paramContainer_);
 			paramRowCount_++;
 			paramContainer_ = new DataWrapper(inputDesc_.length);
-			if (isAnyLob_ && (lobObjects_ == null))
-				lobObjects_ = new ArrayList<SQLMXLob>();
-			// Clear the isValueSet_ flag in inputDesc_ and add the lob objects
-			// to the lobObject List
+			// Clear the isValueSet_ and paramValue flag in inputDesc_ 
 			for (int i = 0; i < inputDesc_.length; i++) {
-				// If isAnyLob_ is false: inputDesc_.paramValue_ for all
-				// parameters should be null
-				// If isAnyLob_ is true: one or more inputDesc_.parmValue will
-				// not
-				// be null, based on the number of LOB columns in the query
-				if (inputDesc_[i].paramValue_ != null) {
-/* Todo Selva
-					lobObjects_.add(inputDesc_[i].paramValue_);
-*/
-					inputDesc_[i].paramValue_ = null;
-				}
+				inputDesc_[i].paramValue_ = null;
 				inputDesc_[i].isValueSet_ = false;
 			}
 		} finally {
@@ -304,7 +293,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				paramContainer_.setNull(i + 1);
 				inputDesc_[i].paramValue_ = null;
 			}
-			isAnyLob_ = false;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_clearBatch].methodExit();
@@ -339,7 +327,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				paramContainer_.setNull(i + 1);
 				inputDesc_[i].paramValue_ = null;
 			}
-			isAnyLob_ = false;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_clearParameters].methodExit();
@@ -634,7 +621,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				throw new BatchUpdateException(se.getMessage(), se
 						.getSQLState(), new int[0]);
 			}
-
+/* Selva
 			// Throw a exception if it is a select statement
 			if (isSelect_) {
 				se = Messages.createSQLException(connection_.locale_,
@@ -642,6 +629,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				throw new BatchUpdateException(se.getMessage(), se
 						.getSQLState(), new int[0]);
 			}
+*/
 			if (connection_.isClosed_) {
 
 				se = Messages.createSQLException(connection_.locale_,
@@ -687,39 +675,48 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					if (connection_.contBatchOnErrorval_ == true)
 						contBatchOnError = true;
 
-					// Allocate the result set incase any rows are returned by
-					// the execute
-					if (outputDesc_ != null)
-						resultSet_ = new SQLMXResultSet(this, outputDesc_);
-					else
-						resultSet_ = null;
-
-
 					long beginTime=0,endTime,timeTaken;
-//					if ((T2Driver.queryExecuteTime_ > 0) || (SQLMXDataSource.queryExecuteTime_> 0) ) {
 					if(connection_.t2props.getQueryExecuteTime() > 0){
 					beginTime=System.currentTimeMillis();
 					}
+					if (isAnyLob_) {
+						if (outputDesc_ != null)
+							throw Messages.createSQLException(connection_.locale_, "lob_as_param_not_support", 
+								null);
+						else {
+							try {
+								lobLocators_ = getLobLocators();
+								setLobLocators();
+							}	
+							finally {
+							}
+						}
+					}	
+					else {
+					// Allocate the result set incase any rows are returned by
+					// the execute
+						if (outputDesc_ != null)
+							resultSet_ = new SQLMXResultSet(this, outputDesc_);
+						else
+							resultSet_ = null;
 
-					execute(connection_.server_, connection_.getDialogueId(),
+						execute(connection_.server_, connection_.getDialogueId(),
 							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, stmtId_, cursorName_,
 							isSelect_, paramRowCount_, inputDesc_.length,
 							getParameters(), queryTimeout_,
-							lobObjects_ != null,
+							isAnyLob_,
 							connection_.iso88591EncodingOverride_, resultSet_,
 							contBatchOnError);
-
-
-
-//					if ((T2Driver.queryExecuteTime_ > 0) || (SQLMXDataSource.queryExecuteTime_> 0) ) {
+					}
+					if (isAnyLob_)
+						populateLobObjects();
 					if(connection_.t2props.getQueryExecuteTime() > 0){
 						endTime = System.currentTimeMillis();
 						timeTaken = endTime - beginTime;
 						printQueryExecuteTimeTrace(timeTaken);
 					}
 
-					populateLobObjects();
 					//**********************************************************
 					// *****************
 					// * If LOB is involved with AutoCommit enabled an no
@@ -846,8 +843,11 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			// execute
 			if (outputDesc_ != null)
 				resultSet_ = new SQLMXResultSet(this, outputDesc_);
-			else
+			else {
+				executeUpdate();
 				resultSet_ = null;
+				return resultSet_;
+			}
 
 			long beginTime=0,endTime,timeTaken;
 //			if ((T2Driver.queryExecuteTime_ > 0) || (SQLMXDataSource.queryExecuteTime_> 0) ) {
@@ -971,13 +971,25 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 							connection_.autoCommit_ = false;
 						}
 */
-
-						long beginTime=0,endTime,timeTaken;
-//						if ((T2Driver.queryExecuteTime_ > 0) || (SQLMXDataSource.queryExecuteTime_> 0) ) {
-						if(connection_.t2props.getQueryExecuteTime() > 0){
-						beginTime=System.currentTimeMillis();
-						}
-						execute(connection_.server_, connection_.getDialogueId(),
+						if (isAnyLob_) {
+							if (outputDesc_ != null)
+								throw Messages.createSQLException(connection_.locale_, "lob_as_param_not_support", 
+									null);
+							else {
+								try {
+									lobLocators_ = getLobLocators();
+									setLobLocators();
+								}	
+								finally {
+								}
+							}
+						}	
+						else {
+							long beginTime=0,endTime,timeTaken;
+							if(connection_.t2props.getQueryExecuteTime() > 0){
+								beginTime=System.currentTimeMillis();
+							}
+							execute(connection_.server_, connection_.getDialogueId(),
 								connection_.getTxid(),
 								connection_.autoCommit_,
 								connection_.transactionMode_, stmtId_,
@@ -987,11 +999,11 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 								connection_.iso88591EncodingOverride_,
 								resultSet_, false);
 
-//						if ((T2Driver.queryExecuteTime_ > 0) || (SQLMXDataSource.queryExecuteTime_> 0) ) {
-						if(connection_.t2props.getQueryExecuteTime() > 0){
-							endTime = System.currentTimeMillis();
-							timeTaken = endTime - beginTime;
-							printQueryExecuteTimeTrace(timeTaken);
+							if (connection_.t2props.getQueryExecuteTime() > 0){
+								endTime = System.currentTimeMillis();
+								timeTaken = endTime - beginTime;
+								printQueryExecuteTimeTrace(timeTaken);
+							}
 						}
 						if (isAnyLob_)
 							populateLobObjects();
@@ -1159,13 +1171,29 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			switch (dataType) {
 			case Types.CLOB:
 				SQLMXClob clob = null;
-				isAnyLob_ = true;
 				if (x == null) 
 					paramContainer_.setNull(parameterIndex);
 				else {
-					clob = new SQLMXClob(connection_, null, x, length);
-					inputDesc_[parameterIndex - 1].paramValue_ = "";
-					paramContainer_.setString(parameterIndex, "");
+					if (length <= connection_.getInlineLobChunkSize()) {
+						try {
+							int bufLength; 
+							byte[] buf = new byte[length];
+							bufLength = x.read(buf);
+							String inStr;
+							if (bufLength == length)
+								inStr = new String(buf);
+							else
+								inStr = new String(buf, 0, bufLength);
+							paramContainer_.setString(parameterIndex, inStr);
+						} catch (IOException ioe) {
+							throw new SQLException(ioe);
+						}
+					} else {			
+						isAnyLob_ = true;
+						clob = new SQLMXClob(connection_, null, x, length);
+						inputDesc_[parameterIndex - 1].paramValue_ = "";
+						paramContainer_.setString(parameterIndex, "");
+					}
 				}
 				addLobObjects(parameterIndex, clob);
 				break;
@@ -1551,13 +1579,29 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 						"restricted_data_type", null);
 			case Types.BLOB:
 				SQLMXBlob blob = null;
-				isAnyLob_ = true;
 				if (x == null) 
 					paramContainer_.setNull(parameterIndex);
 				else {
-					blob = new SQLMXBlob(connection_, null, x, length);
-					inputDesc_[parameterIndex - 1].paramValue_ = "";
-					paramContainer_.setString(parameterIndex, "");
+					if (length <= connection_.getInlineLobChunkSize()) {
+						try {
+							int bufLength; 
+							byte[] buf = new byte[length];
+							bufLength = x.read(buf);
+							byte[] inBuf;
+							if (bufLength == length)
+								inBuf = buf;
+							else
+								inBuf = Arrays.copyOf(buf, bufLength);
+							paramContainer_.setBytes(parameterIndex, inBuf);
+						} catch (IOException ioe) {
+							throw new SQLException(ioe);
+						}
+					} else {			
+						isAnyLob_ = true;
+						blob = new SQLMXBlob(connection_, null, x, length);
+						inputDesc_[parameterIndex - 1].paramValue_ = "";
+						paramContainer_.setBytes(parameterIndex, new byte[0]);
+					}
 				}
 				addLobObjects(parameterIndex, blob);
 				break;
@@ -1628,9 +1672,16 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				if (x == null) 
 					setNull(parameterIndex, Types.BLOB);
 				else {
-					blob = new SQLMXBlob(connection_, null, x);
-					inputDesc_[parameterIndex - 1].paramValue_ = "";
-					paramContainer_.setString(parameterIndex, "");
+					byte[] b = null;
+					if ((x instanceof SQLMXBlob) && 
+							((b = ((SQLMXBlob)x).getBytes(connection_.getInlineLobChunkSize())) != null)) {
+						paramContainer_.setBytes(parameterIndex, b);
+					} else {
+						isAnyLob_ = true;
+						blob = new SQLMXBlob(connection_, null, x);
+						inputDesc_[parameterIndex - 1].paramValue_ = "";
+						paramContainer_.setBytes(parameterIndex, new byte[0]);
+					}
 				}
 				addLobObjects(parameterIndex, blob);
 				break;
@@ -1814,13 +1865,17 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			switch (dataType) {
 			case Types.BLOB:
 				SQLMXBlob blob = null;
-				isAnyLob_ = true;
 				if (x == null) 
 					paramContainer_.setNull(parameterIndex);
 				else {
-					blob = new SQLMXBlob(connection_, null, x);
-					inputDesc_[parameterIndex - 1].paramValue_ = "";
-					paramContainer_.setString(parameterIndex, "");
+					if (x.length <= connection_.getInlineLobChunkSize()) 
+						paramContainer_.setBytes(parameterIndex, x);
+					else {
+						isAnyLob_ = true;
+						blob = new SQLMXBlob(connection_, null, x);
+						inputDesc_[parameterIndex - 1].paramValue_ = "";
+						paramContainer_.setBytes(parameterIndex, new byte[0]);
+					}
 				}
 				addLobObjects(parameterIndex, blob);
 				break;
@@ -1910,13 +1965,29 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			switch (dataType) {
 			case Types.CLOB:
 				SQLMXClob clob = null;
-				isAnyLob_ = true;
 				if (reader == null) 
 					paramContainer_.setNull(parameterIndex);
 				else {
-					clob = new SQLMXClob(connection_, null, reader, length);
-					inputDesc_[parameterIndex - 1].paramValue_ = "";
-					paramContainer_.setString(parameterIndex, "");
+					if (length <= connection_.getInlineLobChunkSize()) {
+						try {
+							int bufLength; 
+							char[] buf = new char[length];
+							bufLength = reader.read(buf);
+							String inStr;
+							if (bufLength == length)
+								inStr = new String(buf);
+							else
+								inStr = new String(buf, 0, bufLength);
+							paramContainer_.setString(parameterIndex, inStr);
+						} catch (IOException ioe) {
+							throw new SQLException(ioe);
+						}
+					} else {
+						isAnyLob_ = true;
+						clob = new SQLMXClob(connection_, null, reader, length);
+						inputDesc_[parameterIndex - 1].paramValue_ = "";
+						paramContainer_.setString(parameterIndex, "");
+					}
 				}
 				addLobObjects(parameterIndex, clob);
 				break;
@@ -1984,13 +2055,19 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			switch (dataType) {
 			case Types.CLOB:
 				SQLMXClob clob = null;
-				isAnyLob_ = true;
 				if (x == null) 
 					setNull(parameterIndex, Types.CLOB);
 				else {
-					clob = new SQLMXClob(connection_, null, x);
-					inputDesc_[parameterIndex - 1].paramValue_ = "";
-					paramContainer_.setString(parameterIndex, "");
+					String inStr = null;
+					if ((x instanceof SQLMXClob) && 
+							((inStr = ((SQLMXClob)x).getString(connection_.getInlineLobChunkSize())) != null)) {
+						paramContainer_.setString(parameterIndex, inStr);
+					} else {
+						isAnyLob_ = true;
+						clob = new SQLMXClob(connection_, null, x);
+						inputDesc_[parameterIndex - 1].paramValue_ = "";
+						paramContainer_.setString(parameterIndex, "");
+					}
 				}
 				addLobObjects(parameterIndex, clob);
 				break;
@@ -4049,17 +4126,36 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					paramContainer_.setString(parameterIndex, x);
 					break;
 				case Types.CLOB: // WLS extension: CLOB should to be able to
-					// write to string, deviation from API.
 					SQLMXClob clob = null;
-					isAnyLob_ = true;
 					if (x == null) 
 						paramContainer_.setNull(parameterIndex);
 					else {
-						clob = new SQLMXClob(connection_, null, x);
-						inputDesc_[parameterIndex - 1].paramValue_ = "";
-						paramContainer_.setString(parameterIndex, "");
+						if (x.length() <= connection_.getInlineLobChunkSize()) {
+							paramContainer_.setString(parameterIndex, x);
+						} else {
+							isAnyLob_ = true;
+							clob = new SQLMXClob(connection_, null, x);
+							inputDesc_[parameterIndex - 1].paramValue_ = "";
+							paramContainer_.setString(parameterIndex, "");
+						}
 					}
 					addLobObjects(parameterIndex, clob);
+					break;
+				case Types.BLOB:
+					SQLMXBlob blob = null;
+					if (x == null) 
+						paramContainer_.setNull(parameterIndex);
+					else {
+						if (x.length() <= connection_.getInlineLobChunkSize()) {
+							paramContainer_.setBytes(parameterIndex, x.getBytes());
+						} else {
+							isAnyLob_ = true;
+							blob = new SQLMXBlob(connection_, null, x.getBytes());
+							inputDesc_[parameterIndex - 1].paramValue_ = "";
+							paramContainer_.setBytes(parameterIndex, new byte[0]);
+						}
+					}
+					addLobObjects(parameterIndex, blob);
 					break;
 				case Types.ARRAY:
 				case Types.BINARY:
@@ -4081,7 +4177,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					dataWrapper.setString(1, x.trim());
 					setObject(parameterIndex, dataWrapper, dataType);
 					break;
-				case Types.BLOB:
 				case Types.BOOLEAN:
 				case Types.DOUBLE:
 				case Types.FLOAT:
@@ -5000,12 +5095,13 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				len = lobObjects_.size();
 				for (int i = 0; i < len; i++) {
 					lob = lobObjects_.get(i);
-					if (lob instanceof SQLMXClob)
+					if (lob instanceof SQLMXClob) 
 						((SQLMXClob) lob).populate();
 					else
 						((SQLMXBlob) lob).populate();
 				}
 			}
+			isAnyLob_ = false;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_populateLobObjects].methodExit();
@@ -5577,11 +5673,21 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 
 	private String[] getLobLocators() throws SQLException
 	{
+     	   SQLMXPreparedStatement lobLocatorStmt = null;
+	   SQLMXResultSet lobLocatorRS = null;
+	   int lBatchBindingSize = connection_.batchBindingSize_;
+	   try {
 		//String selectForLobLocator = "select " + getLobColumns() + " from ( " + this.sql_ + " ) as x";
 		String selectForLobLocator = "select * from ( " + this.sql_ + " ) as x";
-		SQLMXPreparedStatement lobLocatorStmt = (SQLMXPreparedStatement)connection_.prepareStatement(selectForLobLocator);
+		connection_.batchBindingSize_ = paramRowCount_;
+		lobLocatorStmt = (SQLMXPreparedStatement)connection_.prepareStatement(selectForLobLocator);
 		lobLocatorStmt.copyParameters(this); 
-		SQLMXResultSet lobLocatorRS = (SQLMXResultSet)lobLocatorStmt.executeQuery();
+		if (paramRowCount_ == 0)
+			lobLocatorRS = (SQLMXResultSet)lobLocatorStmt.executeQuery();
+		else {
+			int[] batchRet = lobLocatorStmt.executeBatch();
+			lobLocatorRS = (SQLMXResultSet)lobLocatorStmt.getResultSet();
+		}
 		int numLocators = ((paramRowCount_ == 0 ? paramRowCount_ = 1 : paramRowCount_) * getNumLobColumns());
 		String lobLocators[] = new String[numLocators];
 		int locatorsIdx = 0;
@@ -5596,6 +5702,13 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			}	
 		}
 		return lobLocators;
+	   } finally {
+		if (lobLocatorRS != null)
+			lobLocatorRS.close();
+		if (lobLocatorStmt != null)
+			lobLocatorStmt.close();
+		connection_.batchBindingSize_ = lBatchBindingSize;
+	   }
 	}
 
 //------------------------------

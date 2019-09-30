@@ -1,4 +1,4 @@
-/**********************************************************************
+/*********************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -642,7 +642,7 @@ short ExTransaction::commitTransaction()
 
       if (rc == FEHASCONFLICT)
         createDiagsArea (EXE_COMMIT_CONFLICT_FROM_TRANS_SUBSYS, rc,
-                         (errStr && errlen)? errStr: "DTM");
+                         (errStr && errlen)? "CONFLICT ERROR" : "DTM");
       else
         createDiagsArea (EXE_COMMIT_ERROR_FROM_TRANS_SUBSYS, rc,
                           (errStr && errlen)? errStr: "DTM");

@@ -296,7 +296,7 @@ public class SQLMXClobWriter extends Writer
 			long length;
 		
 			clob_ = clob;
-			length = clob_.length();
+			length = clob_.inLength();
 			conn_ = connection;
 			if (pos < 1 || pos > length+1)
 				throw Messages.createSQLException(conn_.locale_,"invalid_position_value", null);

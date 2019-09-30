@@ -12,10 +12,10 @@ extern "C" {
 /*
  * Class:     org_apache_trafodion_jdbc_t2_SQLMXLobInputStream
  * Method:    readChunk
- * Signature: (Ljava/lang/String;JJJLjava/lang/String;Ljava/nio/ByteBuffer;)I
+ * Signature: (Ljava/lang/String;JJILjava/lang/String;Ljava/nio/ByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXLobInputStream_readChunk
-  (JNIEnv *, jobject, jstring, jlong, jlong, jlong, jstring, jobject);
+  (JNIEnv *, jobject, jstring, jlong, jlong, jint, jstring, jobject);
 
 #ifdef __cplusplus
 }

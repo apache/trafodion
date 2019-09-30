@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.util.Arrays;
 
 public class SQLMXClob extends SQLMXLob implements Clob 
 {
@@ -113,150 +114,31 @@ public class SQLMXClob extends SQLMXLob implements Clob
 
 	public String getSubString(long pos, int length) throws SQLException
 	{
-/*
-		if (JdbcDebugCfg.entryActive) debug[methodId_getSubString].methodEntry();
-		try
-		{
-			int startChunkNo;
-			int endChunkNo;
-			int offset;
-			int copyLen;
-			int dataLength;
-			long clobDataLen;
-			String data;
-			StringBuffer retString;
-
-			if (pos <= 0 || length < 0 )
-			{
-				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Clob.getSubString(long, int): position is less than or equal to 0, or length is less than 0";
-				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-			}
-			
-			
-			// Clob data total length must be larger than pos supplied (used to offset the substring)
-//			clobDataLen = length();
-//			if (pos > clobDataLen) 
-//			{
-//				Object[] messageArguments = new Object[1];
-//				messageArguments[0] = "Clob.getSubString(long, int): position (" + pos + ") exceeds the Clob data length (" + clobDataLen + ")";
-//				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-//			}
-			
-			
-			checkIfCurrent();
-			startChunkNo = (int)((pos-1) / chunkSize_);
-			endChunkNo = (int)((pos-1+length)/ chunkSize_);
-			copyLen = length;
-			offset = (int)((pos-1) % chunkSize_);
-			retString = new StringBuffer(length);
-		
-			if ((traceWriter_ != null) && 
-				((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-			{
-				traceWriter_.println(getTraceId() 
-					+ "getSubString(" + pos + "," + length + ") - GetLobDataStmt params: tableName_=" + tableName_ 
-					+ " dataLocator_=" + dataLocator_
-					+ " startChunkNo=" + startChunkNo
-					+ " endChunkNo=" + endChunkNo);
-			}
-
-			synchronized (conn_.LobPrepStmts[SQLMXConnection.CLOB_GET_LOB_DATA_STMT])
-			{
-				conn_.LobPrepStmts[SQLMXConnection.CLOB_GET_LOB_DATA_STMT].setString(1, tableName_);
-				conn_.LobPrepStmts[SQLMXConnection.CLOB_GET_LOB_DATA_STMT].setLong(2, dataLocator_);
-				conn_.LobPrepStmts[SQLMXConnection.CLOB_GET_LOB_DATA_STMT].setInt(3, startChunkNo);
-				conn_.LobPrepStmts[SQLMXConnection.CLOB_GET_LOB_DATA_STMT].setInt(4, endChunkNo);
-				ResultSet rs = conn_.LobPrepStmts[SQLMXConnection.CLOB_GET_LOB_DATA_STMT].executeQuery();
-				try
-				{
-					while (rs.next())
-					{
-						data = rs.getString(1);
-						dataLength = data.length()-offset;
-						
-						if (dataLength >= copyLen)
-						{
-							retString.append(data.substring(offset, offset+copyLen));
-							break;
-						} 
-						else
-						{
-							if (offset == 0)
-								retString.append(data);
-							else
-								retString.append(data.substring(offset));
-							copyLen -= dataLength;
-						}
-						offset = 0;	// reset the offset 
-					}
-				}
-				finally
-				{
-					rs.close();
-				}
-			}
-			return retString.toString();
+	 	long skippedLen;	
+		checkIfCurrent();
+		Reader cr = getCharacterStream();
+		try {
+ 			skippedLen = cr.skip(pos);
+			if (skippedLen < pos)
+				return new String(""); 
+			char[] buf = new char[length];
+			int retLen = cr.read(buf, 0, length);
+			if (retLen < length)
+				buf = Arrays.copyOf(buf, retLen);
+			return new String(buf);
+		} catch (IOException ioe) {
+			throw new SQLException(ioe);
 		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_getSubString].methodExit();
-		}
-*/
-		return null;
 	}
 
 	public long position(Clob searchstr, long start) throws SQLException
 	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ_clob].methodEntry();
-		try
-		{
-			String searchString;
-		
-			if (start <= 0 )
-			{
-				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Clob.position(Clob, long)";
-				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-			}
-			checkIfCurrent();
-			searchString = searchstr.getSubString(1L,(int)searchstr.length());
-			return position(searchString, start);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ_clob].methodExit();
-		}
+		throw new SQLFeatureNotSupportedException("Clob.position(Clob, long) not supported");
 	}
 
 	public long position(String searchstr, long start) throws SQLException
 	{
-/*
-		if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ_str].methodEntry();
-		try
-		{
-			String clobData;
-			long retValue;
-
-			if (start <= 0 )
-			{
-				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Clob.position(String, long)";
-				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
-			}
-			clobData = getSubString(start, (int)length());
-			retValue = clobData.indexOf(searchstr);
-			if (retValue != -1)
-				retValue += start;
- 
-			return retValue;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_position_LJ_str].methodExit();
-		}
-*/
-		return 0;
+		throw new SQLFeatureNotSupportedException("Clob.position(String, long) not supported");
 	}
 
 	public OutputStream setAsciiStream(long pos) throws SQLException
@@ -264,7 +146,13 @@ public class SQLMXClob extends SQLMXLob implements Clob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setAsciiStream].methodEntry();
 		try
 		{
-			checkIfCurrent();
+			if (pos < 0) {
+				Object[] messageArguments = new Object[1];
+				messageArguments[0] = "Clob.setAsciiStream(long)";
+				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
+			}
+			if (pos > 1)
+				throw new SQLFeatureNotSupportedException("Clob.setAsciiStream with position > 1 is not supported");
 			// Close the writer and OutputStream hander over earlier
 			if (writer_ != null)
 			{
@@ -294,9 +182,14 @@ public class SQLMXClob extends SQLMXLob implements Clob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setCharacterStream].methodEntry();
 		try
 		{
-			// Check if Autocommit is set, and no external transaction exists
-			checkAutoCommitExtTxn();
-			checkIfCurrent();
+			if (pos < 0) {
+				Object[] messageArguments = new Object[1];
+				messageArguments[0] = "Clob.setCharacterStream(long)";
+				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
+			}
+			if (pos > 1)
+				throw new SQLFeatureNotSupportedException("Clob.setCharacterStream with position > 1 is not supported");
+
 			// Close the writer and OutputStream hander over earlier
 			if (writer_ != null)
 			{
@@ -340,11 +233,13 @@ public class SQLMXClob extends SQLMXLob implements Clob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setString_JL].methodEntry();
 		try
 		{
-			if (str == null || pos > 1) {
+			if (str == null || pos < 0) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = "Clob.setString(long, String)";
 				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
 			}
+			if (pos > 1)
+				throw new SQLFeatureNotSupportedException("Clob.setString with position > 1 is not supported");
 			return setString(pos, str, 0, str.length());
 		}
 		finally
@@ -358,26 +253,23 @@ public class SQLMXClob extends SQLMXLob implements Clob
 		if (JdbcDebugCfg.entryActive) debug[methodId_setString_JLII].methodEntry();
 		try
 		{
-			checkIfCurrent();
-			if (str == null || pos > 1  || len < 0 || offset < 0) {
+			if (str == null || pos < 0 || len < 0 || offset < 0) {
 				Object[] messageArguments = new Object[1];
-				messageArguments[0] = "Clob.setString(long, String)";
+				messageArguments[0] = "Clob.setString(long, String, int, int)";
 				throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
 			}
-			ir_ = new StringReader(str);	
-			irLength_ = len;
-			try {
-				ir_.skip(offset);
-			} catch (IOException ioe) {
-				throw new SQLException(ioe);
-			}
-			populate();
-			return len-offset;   
+			if (pos > 1)
+				throw new SQLFeatureNotSupportedException("Clob.setString with position > 1 is not supported");
+			inputLobStr_ = str;
+			startingPos_ = pos;	
+			length_ = len;
+			offset_ = offset;
 		}
 		finally
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_setString_JLII].methodExit();
 		}
+		return len;
 	}
 
 	void close() throws SQLException 
@@ -409,6 +301,64 @@ public class SQLMXClob extends SQLMXLob implements Clob
 		}
 	}
 
+	long inLength() throws SQLException 
+	{
+		if (inputLobStr_ != null && length_ == 0)
+			return inputLobStr_.length();
+		else
+			return super.inLength();
+	}
+
+	String getString(int inlineLobLen) throws SQLException 
+        {
+		long llength  = inLength();
+		if (llength > Integer.MAX_VALUE) {
+			Object[] messageArguments = new Object[1];
+			messageArguments[0] = "Blob.getString(int)";
+			throw Messages.createSQLException(conn_.locale_,"invalid_input_value", messageArguments);
+		}
+		int length = (int)llength;
+		if (length == 0) {
+			if (inputLobStr_ != null && (inputLobStr_.length() - offset_)  > inlineLobLen)	
+				return null;
+			else
+				return null;
+		}
+		else if (length_ > inlineLobLen)	
+			return null;	
+		if (inputLobStr_ != null) {
+			if (offset_ == 0)
+				return inputLobStr_;
+			else
+				return inputLobStr_.substring(offset_, length+offset_);
+		}
+		if (ir_ != null) {
+			try {
+				char[] cbuf = new char[length];
+				int retLen = ir_.read(cbuf, offset_, length);
+				if (retLen != length)
+					return new String(cbuf, 0, retLen);
+				else
+					return new String(cbuf);
+			} catch (IOException ioe) {
+				throw new SQLException(ioe);
+			}
+		}
+		if (is_ != null) {
+			try {
+				byte buf[] = new byte[length]; 
+				int retLen = is_.read(buf, offset_, length);
+				if (retLen != length)
+					return new String(buf, 0, retLen);
+				else
+					return new String(buf);
+			} catch (IOException ioe) {
+				throw new SQLException(ioe);
+			}
+		}
+		return null;
+ 	}
+
 	// This function populates the Clob data from one of the following:
 	// 1. InputStream set in PreparedStatement.setAsciiStream 
 	// 2. Reader set in PreparedStatement.setCharacterStream
@@ -430,16 +380,24 @@ public class SQLMXClob extends SQLMXLob implements Clob
 			}
 			else if (inputLobStr_ != null) {
 				ir_  = new StringReader(inputLobStr_);
+				try {
+					if (offset_ > 0)
+						ir_.skip(offset_);
+				} catch (IOException ioe) {
+					throw new SQLException(ioe);
+				}
 			}
 			if (is_ != null)
 			{
 				os = (SQLMXLobOutputStream)setOutputStream(1);
-				os.populate(is_, isLength_);
+				os.populate(is_, length_);
+				close();
 			}
 			else if (ir_ != null)
 			{
 				cw = (SQLMXClobWriter)setCharacterStream(1);
-				cw.populate(ir_, irLength_);
+				cw.populate(ir_, length_);
+				close();
 			}
 		}
 		finally
@@ -449,7 +407,7 @@ public class SQLMXClob extends SQLMXLob implements Clob
 	}
 	
 	// Constructors
-	SQLMXClob(SQLMXConnection connection, String lobLocator) throws SQLException
+	public SQLMXClob(SQLMXConnection connection, String lobLocator) throws SQLException
 	{
 		super(connection, lobLocator, false);
 	}
@@ -463,7 +421,7 @@ public class SQLMXClob extends SQLMXLob implements Clob
 	{
 		super(connection, lobLocator, false);
 		ir_ = x;
-		irLength_ = length;
+		length_ = length;
 	}
 	
 	SQLMXClob(SQLMXConnection connection, String lobLocator, Clob inputLob) throws SQLException
@@ -506,7 +464,6 @@ public class SQLMXClob extends SQLMXLob implements Clob
 	SQLMXClobReader		reader_;
 	SQLMXClobWriter		writer_;
 	Reader			ir_;
-	long			irLength_;
 	Clob			inputLob_;
 	String			inputLobStr_;
 	long			startingPos_;	
@@ -528,19 +485,7 @@ public class SQLMXClob extends SQLMXLob implements Clob
 	private static int methodId_SQLMXClob_LLJLI_reader	= 14;
 	private static int methodId_SQLMXClob_LLJL_clob		= 15;
 	private static int methodId_SQLMXClob_LLJL_string	= 16;
-	private static int methodId_prepareGetLobLenStmt	= 17;
-	private static int methodId_prepareDelLobDataStmt	= 18;
-	private static int methodId_prepareGetLobDataStmt	= 19;
-	private static int methodId_prepareUpdLobDataStmt	= 20;
-	private static int methodId_prepareInsLobDataStmt	= 21;
-	private static int methodId_prepareTrunLobDataStmt	= 22;
-	private static int methodId_getGetLobLenStmt		= 23;
-	private static int methodId_getDelLobDataStmt		= 24;
-	private static int methodId_getTrunLobDataStmt		= 25;
-	private static int methodId_getInsLobDataStmt		= 26;
-	private static int methodId_getUpdLobDataStmt		= 27;
-	private static int methodId_getGetLobDataStmt		= 28;
-	private static int totalMethodIds					= 29;
+	private static int totalMethodIds					= 17;
 	private static JdbcDebug[] debug;
 	
 	static
@@ -566,18 +511,6 @@ public class SQLMXClob extends SQLMXLob implements Clob
 			debug[methodId_SQLMXClob_LLJLI_reader] = new JdbcDebug(className,"SQLMXClob[LLJLI_reader]");
 			debug[methodId_SQLMXClob_LLJL_clob] = new JdbcDebug(className,"SQLMXClob[LLJL_clob]");
 			debug[methodId_SQLMXClob_LLJL_string] = new JdbcDebug(className,"SQLMXClob[LLJL_string]");
-			debug[methodId_prepareGetLobLenStmt] = new JdbcDebug(className,"prepareGetLobLenStmt");
-			debug[methodId_prepareDelLobDataStmt] = new JdbcDebug(className,"prepareDelLobDataStmt");
-			debug[methodId_prepareGetLobDataStmt] = new JdbcDebug(className,"prepareGetLobDataStmt");
-			debug[methodId_prepareUpdLobDataStmt] = new JdbcDebug(className,"prepareUpdLobDataStmt");
-			debug[methodId_prepareInsLobDataStmt] = new JdbcDebug(className,"prepareInsLobDataStmt");
-			debug[methodId_prepareTrunLobDataStmt] = new JdbcDebug(className,"prepareTrunLobDataStmt");
-			debug[methodId_getGetLobLenStmt] = new JdbcDebug(className,"getGetLobLenStmt");
-			debug[methodId_getDelLobDataStmt] = new JdbcDebug(className,"getDelLobDataStmt");
-			debug[methodId_getTrunLobDataStmt] = new JdbcDebug(className,"getTrunLobDataStmt");
-			debug[methodId_getInsLobDataStmt] = new JdbcDebug(className,"getInsLobDataStmt");
-			debug[methodId_getUpdLobDataStmt] = new JdbcDebug(className,"getUpdLobDataStmt");
-			debug[methodId_getGetLobDataStmt] = new JdbcDebug(className,"getGetLobDataStmt");
 		}
 	}
 	public void free() throws SQLException {

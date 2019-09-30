@@ -37,14 +37,22 @@ import java.io.PrintWriter;
 
 public abstract class SQLMXLob
 {
-	// public methods
+        long inLength() throws SQLException 
+        {
+		if (b_ != null && length_ == 0)
+			return b_.length;
+		else
+			return length_;
+        }
+
 	public long length() throws SQLException
 	{
-		return  isLength_;
+		throw new SQLFeatureNotSupportedException("Clob or Blob.length() is not supported");
 	}
 
 	public void truncate(long len) throws SQLException
 	{
+		throw new SQLFeatureNotSupportedException("Clob or Blob.truncate(long) is not supported");
 	}
 
 	InputStream getInputStream() throws SQLException
@@ -202,7 +210,7 @@ public abstract class SQLMXLob
 	{
 		this(connection, lobLocator, isBlob);
 		is_ = x;
-		isLength_ = length;
+		length_ = length;
 		isCurrent_ = true;
 	}
 
@@ -236,9 +244,12 @@ public abstract class SQLMXLob
 	SQLMXLobOutputStream		outputStream_;
 	boolean				isCurrent_;
 	InputStream			is_;
-	long				isLength_;
+	byte[]				b_;
+	long				length_;
+	int				offset_;
 	int				chunkSize_;
 	boolean				isBlob_;
+
 	
 	private static int methodId_length				=  0;
 	private static int methodId_truncate				=  1;

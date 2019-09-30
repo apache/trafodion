@@ -624,12 +624,12 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 				else if (x instanceof String) {
 					data_locator = (String)x; 
 					data = new SQLMXBlob(connection_, data_locator);
-					row.setBlob(columnIndex, data);
+					row.setObject(columnIndex, data);
 					isAnyLob_ = true;
 				} else if (x instanceof byte[]) {
 					data_locator = new String((byte[])x);
 					data = new SQLMXBlob(connection_, data_locator);
-					row.setBlob(columnIndex, data);
+					row.setObject(columnIndex, data);
 					isAnyLob_ = true;
 				} else
 					throw Messages.createSQLException(connection_.locale_,
@@ -895,7 +895,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 				} else if (x instanceof byte[]) {
 					data_locator = new String((byte[])x);
 					data = new SQLMXClob(connection_, data_locator);
-					row.setClob(columnIndex, data);
+					row.setObject(columnIndex, data);
 					isAnyLob_ = true;
 				} else
 					throw Messages.createSQLException(connection_.locale_,

@@ -81,8 +81,8 @@ public class SQLMXClobReader extends Reader
 		{
 			int retValue = 0;
 
-			if (isClosed_)
-				throw new IOException("Reader is in closed state");
+			if (eor_)
+				return -1;
 			if (currentChar_ == charsRead_)
 				retValue = readChunkThrowIO();
 			if (retValue != -1)
@@ -137,12 +137,10 @@ public class SQLMXClobReader extends Reader
 			int availableLen;
 			int copiedLen = 0;
 
-			if (isClosed_)
-				throw new IOException("Reader is in closed state");
 			if (cbuf == null)
 				throw new IOException("Invalid input value");
                         if (eor_)
-				throw new IOException("End of Reader already reached");
+				return -1;
 			remainLen = len;
 			copyOffset = off;
 			while (remainLen > 0) {
@@ -179,8 +177,6 @@ public class SQLMXClobReader extends Reader
 		if (JdbcDebugCfg.entryActive) debug[methodId_reset].methodEntry();
 		try
 		{
-			if (isClosed_)
-				throw new IOException("Reader is in closed state");
 			currentChar_ = 0;
 			charsRead_ = 0;
 			eor_ = false;
@@ -240,13 +236,17 @@ public class SQLMXClobReader extends Reader
 			extractMode = 2; // close the extract
 		 	readChunk(conn_.server_, conn_.getDialogueId(), conn_.getTxid(), extractMode, clob_.lobLocator_, chunk_); 
 			eor_ = true;
-		}
-                else
+			chunk_.limit(0);
+		} else if (charsRead_ == 0) {
+			charsRead_ = -1;
+			eor_ = true;
+			chunk_.limit(0);
+		} else
 			chunk_.limit(charsRead_);
 		return charsRead_;
 	}
 
-        native int readChunk(String server, long dialogueId, long txid,  long extractMode, String lobLocator, CharBuffer buffer);
+        native int readChunk(String server, long dialogueId, long txid,  int extractMode, String lobLocator, CharBuffer buffer);
 
 	// constructors
 	SQLMXClobReader(SQLMXConnection connection, SQLMXClob clob)

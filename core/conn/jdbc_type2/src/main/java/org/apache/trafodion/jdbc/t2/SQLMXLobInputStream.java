@@ -43,8 +43,6 @@ public class SQLMXLobInputStream extends InputStream
 	{
 		int remainLen;
 
-		if (isClosed_)
-			throw new IOException("Input stream is in closed state");
 		if (eos_)
 			remainLen = 0;
 		else {
@@ -76,10 +74,8 @@ public class SQLMXLobInputStream extends InputStream
 		{
 			int retValue = 0;
 
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
 			if (eos_)
-				throw new IOException("End of stream already reached");
+				return -1;
 			if (currentPos_ == bytesRead_)
 				retValue = readChunkThrowIO();
 			if (retValue != -1)
@@ -117,12 +113,10 @@ public class SQLMXLobInputStream extends InputStream
 			int availableLen;
 			int copiedLen = 0;
 
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
 			if (b == null)
 				throw new IOException("Invalid input value");
 			if (eos_)
-				throw new IOException("End of stream already reached");
+				return -1;		
 			remainLen = len;
 			copyOffset = off;
 			
@@ -162,8 +156,6 @@ public class SQLMXLobInputStream extends InputStream
 		if (JdbcDebugCfg.entryActive) debug[methodId_reset].methodEntry();
 		try
 		{
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
 			currentPos_ = 0;
 			bytesRead_ = 0;
 			return;
@@ -223,7 +215,7 @@ public class SQLMXLobInputStream extends InputStream
 		chunk_.clear(); 
 		if (eos_)
 			return -1;
-		if (bytesRead_ != 0 && (bytesRead_ < lob_.chunkSize_)) {
+		if (bytesRead_ > 0 && (bytesRead_ < lob_.chunkSize_)) {
 			eos_ = true;
 			extractMode = 2; // Close the extract
 		}
@@ -232,13 +224,17 @@ public class SQLMXLobInputStream extends InputStream
 			extractMode = 2; // close the extract
 		 	readChunk(conn_.server_, conn_.getDialogueId(), conn_.getTxid(), extractMode, lob_.lobLocator_, chunk_); 
 			eos_ = true;
-		}
-                else
+			chunk_.limit(0);
+		} else if (bytesRead_ == 0) {
+			bytesRead_ = -1;
+			eos_ = true;
+			chunk_.limit(0);
+		} else
 			chunk_.limit(bytesRead_);
 		return bytesRead_;
 	}
 
-        native int readChunk(String server, long dialogueId, long txid,  long extractMode, String lobLocator, ByteBuffer buffer);
+        native int readChunk(String server, long dialogueId, long txid,  int extractMode, String lobLocator, ByteBuffer buffer);
 
 	// Constructor
 	SQLMXLobInputStream(SQLMXConnection connection, SQLMXLob lob)
