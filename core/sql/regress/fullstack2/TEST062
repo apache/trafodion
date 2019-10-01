@@ -114,12 +114,6 @@ showcontrol defaults readonly_cursor;	-- TRUE
 
 control query default * reset;
 
-#ifdef SEABASE_REGRESS
-control query default mode_seabase 'ON';
-#endif
-
-
-
 showcontrol default;
 showcontrol default timeout, match full;
 showcontrol defaults REFERENCE_CODE;
@@ -228,16 +222,8 @@ env;						-- still not $$TEST_SCHEMA$$
 showcontrol default OPTIMIZATION_LEVEL, match full;	-- still 3
 showcontrol default timeout;				-- still 4567
 --
-#ifndef SEABASE_REGRESS
--- restore persistent and session state
-delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
-  where ATTRIBUTE = 'OPTIMIZATION_LEVEL';
 control query default * reset;
-#else
-control query default * reset;
-control query default mode_seabase 'ON';
 set schema $$TEST_SCHEMA$$;
-#endif
 env;                                                    -- back to $$TEST_SCHEMA$$
 set schema $$TEST_SCHEMA$$;     -- back to $$TEST_SCHEMA$$
 showcontrol default OPTIMIZATION_LEVEL, match full;	-- 3

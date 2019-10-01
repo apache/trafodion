@@ -1955,17 +1955,6 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   if (CmpSeabaseDDL::isSeabase(catName))
     setHbaseObjects(TRUE);
 
-  if (hbaseObjects())
-    {
-      if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
-	{
-	  *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("GET ")
-			      << DgString1("Reason: CQD MODE_SEABASE is not set.");
-	  
-	  GenExit();
-	}
-    }
-
   if (catName == HBASE_SYSTEM_CATALOG)
     {
       if  (queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_)

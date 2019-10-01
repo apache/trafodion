@@ -142,7 +142,6 @@ log LOG004 clear;
 control query default * reset; 
 
 #ifdef SEABASE_REGRESS
-cqd  mode_seabase 'ON';
 cqd seabase_volatile_tables 'ON';
 cqd mdam_scan_method 'OFF';
 set schema $$TEST_CATALOG$$.sch;
@@ -246,7 +245,6 @@ control query default nested_joins 'off';
 control query default * reset;
 
 #ifdef SEABASE_REGRESS
-cqd  mode_seabase 'ON';
 cqd seabase_volatile_tables 'ON';
 cqd mdam_scan_method 'OFF';
 set schema $$TEST_CATALOG$$.sch;
@@ -288,7 +286,6 @@ execute s;
 control query default * reset;
 
 #ifdef SEABASE_REGRESS
-cqd  mode_seabase 'ON';
 cqd seabase_volatile_tables 'ON';
 cqd mdam_scan_method 'OFF';
 set schema $$TEST_CATALOG$$.sch;

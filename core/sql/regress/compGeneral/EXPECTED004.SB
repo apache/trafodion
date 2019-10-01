@@ -5,9 +5,6 @@
 --- SQL operation complete.
 >>
 >>#ifdef SEABASE_REGRESS
->>cqd  mode_seabase 'ON';
-
---- SQL operation complete.
 >>cqd seabase_volatile_tables 'ON';
 
 --- SQL operation complete.
@@ -168,9 +165,6 @@ NUMBER_OF_MERGE_JOINS
 --- SQL operation complete.
 >>
 >>#ifdef SEABASE_REGRESS
->>cqd  mode_seabase 'ON';
-
---- SQL operation complete.
 >>cqd seabase_volatile_tables 'ON';
 
 --- SQL operation complete.
@@ -255,9 +249,6 @@ ab       1xv  ab       1xv
 --- SQL operation complete.
 >>
 >>#ifdef SEABASE_REGRESS
->>cqd  mode_seabase 'ON';
-
---- SQL operation complete.
 >>cqd seabase_volatile_tables 'ON';
 
 --- SQL operation complete.

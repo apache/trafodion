@@ -465,9 +465,6 @@ public:
                               callEmbeddedArkcmp_);
   }
 
-  void setModeSeabase(NABoolean v)
-  { modeSeabase_ = v; }
-
   NABoolean getDbtrProcess() { return dbtrProcess_; }
   NABoolean getOdbcProcess() { return odbcProcess_; }
   NABoolean getJdbcProcess() { return jdbcProcess_; }
@@ -475,7 +472,6 @@ public:
   NABoolean getNvciProcess() { return nvciProcess_; }
   NABoolean getWmsProcess()  { return wmsProcess_; }
   NABoolean getMariaQuestProcess() { return mariaQuestProcess_; }
-  NABoolean getModeSeabase() { return modeSeabase_; }
 
   Lng32 getEspPriority(){ return espPriority_; }
   Lng32 getMxcmpPriority(){ return mxcmpPriority_; }
@@ -798,7 +794,6 @@ private:
 
   Lng32 reclaimFreePFSRatio_; // 100 - (PFS current use / PFS size))
   
-  NABoolean modeSeabase_;
   Lng32 jniDebugPort_;     // port to attache JNI debugger, <=0 to disable
   Lng32 jniDebugTimeout_;  // timeout (msec) to wait for debugger to attach
   NABoolean useLibHdfs_;

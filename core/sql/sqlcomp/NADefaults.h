@@ -146,7 +146,7 @@ public:
   // This ordering is used by the "overwriteIfNotYet" logic.
   enum Provenance
   { UNINITIALIZED,
-    INIT_DEFAULT_DEFAULTS, DERIVED, READ_FROM_SQL_TABLE, COMPUTED, SET_BY_CQD,
+    INIT_DEFAULT_DEFAULTS, DERIVED, READ_FROM_SQL_TABLE, SET_BY_CQD, CQD_RESET_RESET, COMPUTED, 
     IMMUTABLE };
 
   enum Flags
@@ -281,27 +281,13 @@ public:
   }
 
   static size_t numDefaultAttributes();
-  NABoolean        readFromSQDefaultsTable() const { return readFromSQDefaultsTable_; }
-
   const char *getCurrentDefaultsAttrNameAndValue(size_t ix,
 						 const char* &name,
 						 const char* &value,
 						 NABoolean userDefaultsOnly);
-
-  void             readFromFlatFile	(const char *fname,
-					 Provenance overwriteIf   = SET_BY_CQD,
-					 Int32 errOrWarn = +1/*warning*/)
-  { NAString spName(fname);
-    spName.prepend(" ");		// space signals FLAT FILE not SQL TABLE
-    readFromSQLTable(spName, overwriteIf, errOrWarn);
-  }
-
-  void             readFromSQLTables(Provenance overwriteIfNotYet = SET_BY_CQD,
+  void  readFromDefaultsTable(Provenance overwriteIfNotYet = SET_BY_CQD,
   				     Int32 errOrWarn = +1/*warning*/);
 
-  // Reset to default-defaults, as if readFromSQLTables() had not executed.
-  // Used internally only (by StaticCompiler), no user syntax for this.
-  void		   undoReadsAndResetToDefaultDefaults();
   NABoolean    catSetToUserID() {
                return (catSchSetToUserID_ & DEFAULT_CATALOG_SET_TO_USERID) !=0;
                }
@@ -334,16 +320,6 @@ public:
   Lng32 unpackDefaultsFromBuffer(Lng32 numEntriesInBuffer, char * buffer);
   NABoolean isSameCQD(Lng32 numEntriesInBuffer, char * buffer, Lng32 bufLen);
 
-  Lng32 createNewDefaults(Lng32 numEntriesInBuffer,
-			 char * buffer);
-  Lng32 restoreDefaults(Lng32 numEntriesInBuffer,
-		       char * buffer);
-
-  // VO, Versioning Light: Need the ability to reset tablesRead_, in order to
-  // force readFromSQLTables() to re-read SYSTEM_DEFAULTS
-  void resetTablesRead (void)
-    { for (CollIndex i = tablesRead_.entries(); i--; )  tablesRead_.removeAt(i); };
-
   void setSchemaAsLdapUser(const NAString val="");
 
 
@@ -351,24 +327,14 @@ private:
 
   UInt32 defFlags_;
 
-  void		   initCurrentDefaultsWithDefaultDefaults();
+  void initCurrentDefaultsWithDefaultDefaults();
+  void initCurrentDefaultsFromSavedDefaults();
+  void saveCurrentDefaults();
   static void	   updateSystemParameters(NABoolean reInit = FALSE);
   void updateCurrentDefaultsForOSIM(DefaultDefault *,
                                     NABoolean validateFloatVal = TRUE);
-
-
-  // By default, don't overwrite explicitly specified defaults
-  // (note that, unlike arkcmp, sqlc&sqlco can call this method *after*
-  // having done CQD's, and do not want to overwrite explicit settings).
-  void             readFromSQLTable	(const char *tname,
-					 Provenance overwriteIfNotYet,
-					 Int32 errOrWarn = -1);
-
-  // This method differs from undoReadsAndResetToDefaultDefaults().
-  // This implements "CQD * RESET;" -- it resets to the defaults as they were
-  // *after* all readFromSQLTables() were done.
   void		   resetAll		(NAString &value,
-					 NABoolean reset,
+					 short reset,
   					 Int32 errOrWarn = -1);
 
   NABoolean	   insert               (Int32 attrEnum,
@@ -400,20 +366,18 @@ private:
   HeldDefaults     **heldDefaults_;
 
   Provenance       currentState_;
-  LIST(NAString)   tablesRead_;
-  NABoolean        readFromSQDefaultsTable_;
   Int32   	   catSchSetToUserID_;
-
-  // the next 3 fields are used to save the current default values
-  // during auto recomp.
-  const char   ** savedCurrentDefaults_;
-  float        ** savedCurrentFloats_;
-  DefaultToken ** savedCurrentTokens_;
 
   SqlParser_NADefaults	*SqlParser_NADefaults_;
 
   NAMemory         *heap_;
 
+  static const char **defaultsWithCQDsFromDefaultsTable_;
+  static DefaultToken **tokensWithCQDsFromDefaultsTable_;
+  static char *provenancesWithCQDsFromDefaultsTable_;	
+  static float **floatsWithCQDsFromDefaultsTable_;	
+  static NABoolean readFromDefaultsTable_;
+  
   // cqd * reset
   NABoolean resetAll_;
 };

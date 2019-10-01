@@ -430,13 +430,6 @@ short ExControlTcb::work()
                         else
 			  currContext->getSessionDefaults()->setCancelQueryAllowed(TRUE);
                       }
-            else if (strcmp(value[1], "MODE_SEABASE") == 0)
-              {
-                if (strcmp(value[2], "ON") == 0)
-                  currContext->getSessionDefaults()->setModeSeabase(TRUE);
-                else 
-                  currContext->getSessionDefaults()->setModeSeabase(FALSE);
-              }
             else if (strcmp(value[1], "SCHEMA") == 0)
               {
                 currContext->getSessionDefaults()->

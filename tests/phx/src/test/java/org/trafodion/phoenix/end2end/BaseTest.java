@@ -819,7 +819,7 @@ public abstract class BaseTest {
         assertNotNull(conn);
 
         if (tgtTR()) {
-            conn.createStatement().execute("control query default mode_seabase 'on'");
+            conn.createStatement().execute("select current_timestamp from dual");
         }
     }
 

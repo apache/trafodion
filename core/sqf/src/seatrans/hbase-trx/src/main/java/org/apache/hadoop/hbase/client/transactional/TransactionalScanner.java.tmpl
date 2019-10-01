@@ -127,7 +127,7 @@ public class TransactionalScanner extends AbstractClientScanner {
             LOG.error(errMsg);
             //throw new IOException(errMsg, e);
         }
-        if (response.getHasException()) {
+        if (response != null && response.getHasException()) {
            String exception = response.getException();
            String errMsg = "closeScanner encountered Exception txID: " +
                         ts.getTransactionId() + " Exception: " + exception;

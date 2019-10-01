@@ -237,7 +237,6 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setCancelEscalationInterval(60);
   setCancelEscalationMxosrvrInterval(120);
   setCancelEscalationSaveabend(FALSE);
-  setModeSeabase(FALSE);
   setUseLibHdfs(FALSE);
 }
   

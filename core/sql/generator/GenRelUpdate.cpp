@@ -779,6 +779,7 @@ short HbaseDelete::codeGen(Generator * generator)
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
+  NABoolean isTrafMDTable = getTableDesc()->getNATable()->isSeabaseMDTable();
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
     (isAlignedFormat ?
@@ -2449,6 +2450,7 @@ short HbaseInsert::codeGen(Generator *generator)
   }
 
   const NATable *naTable = getTableDesc()->getNATable();
+  NABoolean isTrafMDTable = getTableDesc()->getNATable()->isSeabaseMDTable();
 
   ULng32 insertRowLen    = 0;
   ExpTupleDesc * tupleDesc   = 0;
