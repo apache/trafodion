@@ -604,7 +604,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 		try {
 			int dataType;
 			Object x;
-			long data_locator;
+			String data_locator;
 			Blob data;
 			String tableName;
 
@@ -621,11 +621,15 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			else {
 				if (x instanceof Blob)
 					data = (Blob) x;
-				else if (x instanceof Long) {
-					data_locator = ((Long) x).longValue();
-					tableName = outputDesc_[columnIndex - 1].tableName_;
-					data = new SQLMXBlob(connection_, tableName, data_locator);
-					row.setBlob(columnIndex, data);
+				else if (x instanceof String) {
+					data_locator = (String)x; 
+					data = new SQLMXBlob(connection_, data_locator);
+					row.setObject(columnIndex, data);
+					isAnyLob_ = true;
+				} else if (x instanceof byte[]) {
+					data_locator = new String((byte[])x);
+					data = new SQLMXBlob(connection_, data_locator);
+					row.setObject(columnIndex, data);
 					isAnyLob_ = true;
 				} else
 					throw Messages.createSQLException(connection_.locale_,
@@ -866,7 +870,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			debug[methodId_getClob_I].methodEntry();
 		try {
 			int dataType;
-			long data_locator;
+			String  data_locator;
 			Clob data;
 			String tableName;
 
@@ -883,14 +887,19 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			else {
 				if (x instanceof Clob)
 					data = (Clob) x;
-				else {
-					data_locator = row
-							.getLong(columnIndex, connection_.locale_);
-					tableName = outputDesc_[columnIndex - 1].tableName_;
-					data = new SQLMXClob(connection_, tableName, data_locator);
+				else if (x instanceof String) {
+					data_locator = (String) x;
+					data = new SQLMXClob(connection_, data_locator);
 					row.setObject(columnIndex, data);
 					isAnyLob_ = true;
-				}
+				} else if (x instanceof byte[]) {
+					data_locator = new String((byte[])x);
+					data = new SQLMXClob(connection_, data_locator);
+					row.setObject(columnIndex, data);
+					isAnyLob_ = true;
+				} else
+					throw Messages.createSQLException(connection_.locale_,
+							"restricted_data_type", null);
 			}
 			return data;
 		} finally {
@@ -1639,7 +1648,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 				// set name
 				charsetcode = outputDesc_[columnIndex - 1].sqlCharset_;
 				charsetname = SQLMXConnection.getCharsetEncodingCached(
-						connection_.server_, connection_.getDialogueId_(),
+						connection_.server_, connection_.getDialogueId(),
 						charsetcode, connection_.iso88591EncodingOverride_);
 				wasNull_ = false;
 				try {
@@ -1867,7 +1876,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			}
 			// Context Handle and Statement ID
 			// Call to the C++ or JNI layer to retrieve ctxHandle and stmtID
-			getResultSetInfo(connection_.getDialogueId_(), stmtId_, retValue);
+			getResultSetInfo(connection_.getDialogueId(), stmtId_, retValue);
 			if (retValue.stmtClosed) {
 				retValue.RSClosed = retValue.stmtClosed;
 			}
@@ -2483,7 +2492,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 										"invalid_cursor_state", null);
 							}
 							validRow = fetchN(connection_.server_, connection_
-									.getDialogueId_(), connection_.getTxid_(),
+									.getDialogueId(), connection_.getTxid(),
 									connection_.transactionMode_, stmtId_,
 									maxRowCnt, queryTimeout, holdability_);
 						}// End sync
@@ -3588,15 +3597,15 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 							{
 								if ((stmt_.currentResultSetIndex_ == stmt_.resultSetIndex_)
 										&& (stmt_.spjRSCommitCount_ == 1)) {
-									txid = connection_.getTxid_();
+									txid = connection_.getTxid();
 									stmt_.spjRSCommitCount_--;
 								}
 							} else
-								txid = connection_.getTxid_();
+								txid = connection_.getTxid();
 						}
 						
 						close(connection_.server_,
-								connection_.getDialogueId_(), txid,
+								connection_.getDialogueId(), txid,
 								connection_.autoCommit_,
 								connection_.transactionMode_, stmtId_, dropStmt);
 
@@ -4230,7 +4239,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			stmtId_ = stmtId;
 
 			// Check if the transaction is started by this Select statement
-			if (connection_.getTxid_() == 0 && txid != 0)
+			if (connection_.getTxid() == 0 && txid != 0)
 				txnStarted_ = true;
 			connection_.setTxid_(txid);
 			holdability_ = CLOSE_CURSORS_AT_COMMIT;
@@ -5104,5 +5113,33 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
         row = (DataWrapper)cachedRows_.get(currentRow_ - 1);
         return row.getSQLBytes(columnIndex);
     }
+  
+    String getLobLocator(int columnIndex) throws SQLException 
+    {
+        Object x;
+        String data = null;
+
+        validateGetInvocation(columnIndex);
+        int dataType = outputDesc_[columnIndex - 1].dataType_;
+        if (dataType != Types.CLOB && dataType != Types.BLOB)
+           throw Messages.createSQLException(connection_.locale_, "restricted_data_type", null);
+        DataWrapper row = getCurrentRow();
+        wasNull_ = row.isNull(columnIndex);
+        if (wasNull_)
+           return null;
+        x = row.getObject(columnIndex);
+        wasNull_ = (x == null);
+        if (wasNull_)
+           data = null;
+        else {
+           if (x instanceof String) {
+               data = (String)x;
+           } else if (x instanceof byte[]) {
+               data = new String((byte[])x);
+           } 
+        }
+        return data;
+    }
+
 //--------------------------
 }

@@ -460,35 +460,6 @@ public class TConnection implements java.sql.Connection {
 		connection_.setTypeMap(map);
 	}
 
-	public PreparedStatement cpqPrepareStatement(String moduleName,
-			int moduleVersion, long moduleTimestamp, String stmtName,
-			boolean isSelect) throws SQLException {
-		PreparedStatement stmt;
-
-		if (out_ != null) {
-			out_.println(getTraceId() + "cpqPrepareStatement(\"" + moduleName
-					+ "\"," + moduleTimestamp + ", \"" + stmtName + "\", \""
-					+ isSelect + ")");
-		}
-
-		if (connection_ instanceof org.apache.trafodion.jdbc.t2.SQLMXConnection) {
-			stmt = ((org.apache.trafodion.jdbc.t2.SQLMXConnection) connection_)
-					.cpqPrepareStatement(moduleName, moduleVersion,
-							moduleTimestamp, stmtName, isSelect);
-		} else {
-			stmt = null;
-		}
-
-		if (out_ != null) {
-			out_.println(getTraceId() + "cpqPrepareStatement(\"" + moduleName
-					+ "\"," + moduleTimestamp + ", \"" + stmtName + "\", \""
-					+ isSelect + ") returns PreparedStatement ["
-					+ ((SQLMXStatement)((TPreparedStatement)stmt).stmt_).getStmtLabel_() + "]");
-		}
-
-		return new TPreparedStatement(stmt, out_);
-	}
-
 	// Constructors with access specifier as "default"
 	public TConnection(Connection connection, PrintWriter out)
 			throws SQLException {

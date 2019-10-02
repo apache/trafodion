@@ -51,7 +51,7 @@ import java.sql.Types;
  * 
  */
 /*
- * Methods Changed: getTxid_() changes 
+ * Methods Changed: getTxid() changes 
  */
 
 public class SQLMXDatabaseMetaData extends SQLMXHandle implements
@@ -2528,7 +2528,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 				else
 					schemaNm = schemaPattern;
 				resultSet = getProcedures(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, procedureNamePattern);
 			}// End sync
@@ -2634,7 +2634,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 				else
 					schemaNm = schemaPattern;
 				resultSet = getProcedureColumns(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, procedureNamePattern,
 						columnNamePattern);
@@ -2749,7 +2749,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 				} else
 					tableTypeList = null;
 				resultSet = getTables(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, tableNm, tableTypeList);
 			}// End sync
@@ -2792,7 +2792,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					throw Messages.createSQLException(connection_.locale_,
 							"invalid_connection", null);
 				resultSet = getSchemas(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						"%");
 			}// End sync
@@ -2834,7 +2834,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					throw Messages.createSQLException(connection_.locale_,
 							"invalid_connection", null);
 				resultSet = getCatalogs(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						"%");
 			}// End sync
@@ -2882,7 +2882,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					null, 100, 0, 0, null);
 
 			resultSet = new SQLMXResultSet(this, outputDesc, connection_
-					.getTxid_(), 0);
+					.getTxid(), 0);
 			rows = new DataWrapper[3];
 
 			// Populate the rows
@@ -2895,7 +2895,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 			rows[2] = new DataWrapper(1);
 			rows[2].setString(1, new String("VIEW"));
 
-			resultSet.setFetchOutputs(rows, 3, true, connection_.getTxid_());
+			resultSet.setFetchOutputs(rows, 3, true, connection_.getTxid());
 			return resultSet;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -3008,7 +3008,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					columnNm = columnNamePattern;
 
 				resultSet = getColumns(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, tableNm, columnNm);
 			}// End sync
@@ -3092,7 +3092,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					schemaNm = schema;
 
 				resultSet = getColumnPrivileges(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table, columnNamePattern);
 			}// End sync
@@ -3172,7 +3172,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					schemaNm = schema;
 
 				resultSet = getTablePrivileges(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table);
 			}// End sync
@@ -3261,7 +3261,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 				else
 					schemaNm = schema;
 				resultSet = getBestRowIdentifier(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table, scope, nullable);
 			}// End sync
@@ -3338,7 +3338,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 				else
 					schemaNm = schema;
 				resultSet = getVersionColumns(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table);
 			}// End sync
@@ -3406,7 +3406,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 				else
 					schemaNm = schema;
 				resultSet = getPrimaryKeys(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table);
 			}// End sync
@@ -3519,7 +3519,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					schemaNm = schema;
 
 				resultSet = getImportedKeys(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table);
 			}// End sync
@@ -3633,7 +3633,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					schemaNm = schema;
 
 				resultSet = getExportedKeys(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table);
 			}// End sync
@@ -3770,7 +3770,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					foreignSchemaNm = foreignSchema;
 
 				resultSet = getCrossReference(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						primaryCatalogNm, primarySchemaNm, primaryTable,
 						foreignCatalogNm, foreignSchemaNm, foreignTable);
@@ -3847,7 +3847,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					throw Messages.createSQLException(connection_.locale_,
 							"invalid_connection", null);
 				resultSet = getTypeInfo(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_);
 			}// End sync
 			// Patch the column names as per JDBC specification
@@ -3952,7 +3952,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 				else
 					schemaNm = schema;
 				resultSet = getIndexInfo(connection_.server_,
-						connection_.getDialogueId_(), connection_.getTxid_(),
+						connection_.getDialogueId(), connection_.getTxid(),
 						connection_.autoCommit_, connection_.transactionMode_,
 						catalogNm, schemaNm, table, unique, approximate);
 			}// End sync
@@ -4108,11 +4108,11 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					null, 130, 0, 0, null);
 
 			resultSet = new SQLMXResultSet(this, outputDesc, connection_
-					.getTxid_(), 0);
+					.getTxid(), 0);
 			rows = new DataWrapper[0];
 
 			// Populate the rows
-			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid_());
+			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid());
 			return resultSet;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -4556,11 +4556,11 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					(short) 0, 0, null, null, null, 100, 0, 0, null);
 
 			resultSet = new SQLMXResultSet(this, outputDesc, connection_
-					.getTxid_(), 0);
+					.getTxid(), 0);
 			rows = new DataWrapper[0];
 
 			// Populate the rows
-			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid_());
+			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid());
 			return resultSet;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -4644,11 +4644,11 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					(short) 0, 0, null, null, null, 100, 0, 0, null);
 
 			resultSet = new SQLMXResultSet(this, outputDesc, connection_
-					.getTxid_(), 0);
+					.getTxid(), 0);
 			rows = new DataWrapper[0];
 
 			// Populate the rows
-			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid_());
+			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid());
 			return resultSet;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -4833,11 +4833,11 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 					(short) 0, 0, null, null, null, 130, 0, 0, null);
 
 			resultSet = new SQLMXResultSet(this, outputDesc, connection_
-					.getTxid_(), 0);
+					.getTxid(), 0);
 			rows = new DataWrapper[0];
 
 			// Populate the rows
-			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid_());
+			resultSet.setFetchOutputs(rows, 0, true, connection_.getTxid());
 			return resultSet;
 		} finally {
 			if (JdbcDebugCfg.entryActive)

@@ -1611,6 +1611,8 @@ static Charset_def CHARSET_INFORMATION[] = {
 						case SQLTYPECODE_VARCHAR_LONG:
 						case SQLTYPECODE_DATETIME:
 						case SQLTYPECODE_INTERVAL:
+						case SQLTYPECODE_CLOB:
+						case SQLTYPECODE_BLOB:
 							if ((IPD[paramNumber + paramOffset].vc_ind_length == 4) && (allocLength > dataLen + sizeof(int)))
 							{
 							    *(unsigned int *)dataPtr = (int)dataLen;
@@ -1749,7 +1751,8 @@ static Charset_def CHARSET_INFORMATION[] = {
 		case SQLTYPECODE_VARCHAR:
 		case SQLTYPECODE_VARCHAR_LONG:
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
-
+		case SQLTYPECODE_CLOB:
+		case SQLTYPECODE_BLOB:		
 			if ( useDefaultCharsetEncoding(wrapperInfo->jenv, jobj, charSet, iso88591Encoding) )
 			{
 				encoding = NULL;
@@ -2022,6 +2025,8 @@ static Charset_def CHARSET_INFORMATION[] = {
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR_LONG:
+		case SQLTYPECODE_CLOB:
+		case SQLTYPECODE_BLOB:
 		case SQLTYPECODE_DATETIME:
 		case SQLTYPECODE_INTERVAL:
 			if (vcIndLength == 4 && targetLength > dataLen+sizeof(int))
@@ -2101,6 +2106,8 @@ func_exit:
 		case SQLTYPECODE_VARCHAR:
 		case SQLTYPECODE_VARCHAR_LONG:
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+		case SQLTYPECODE_CLOB:
+		case SQLTYPECODE_BLOB:
 			if (nParamValue != NULL)
 			{
 				JNI_ReleaseByteArrayElements(wrapperInfo->jenv,stringByteArray, (jbyte *)nParamValue, JNI_ABORT);
@@ -3227,6 +3234,15 @@ func_exit:
 			DataLen = strlen((const char *)SQLValue->dataValue._buffer);
 			DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,("varchar length = %ld", DataLen));
 
+			// Null terminate only if ISO88591
+			if(nullRequired(SQLValue->dataCharset))
+				*(strDataPtr + DataLen) = '\0';
+			usejchar = TRUE;
+			break;
+		case SQLTYPECODE_CLOB:
+		case SQLTYPECODE_BLOB:
+			strDataPtr = (char *)SQLValue->dataValue._buffer + sizeof(short);
+			DataLen = *(short *)SQLValue->dataValue._buffer;
 			// Null terminate only if ISO88591
 			if(nullRequired(SQLValue->dataCharset))
 				*(strDataPtr + DataLen) = '\0';

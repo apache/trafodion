@@ -2120,6 +2120,7 @@ public class DataWrapper
 				else
 				{
 					obj = getObject(col_idx+1);
+/* TODO: Selva
 					if (obj instanceof SQLMXLob)
 					{
 						if (orig_obj==this)
@@ -2129,6 +2130,7 @@ public class DataWrapper
 							continue;
 						}
 					}
+*/
 					updateStmt.setObject(++param_idx, obj);
 				}
 			}
@@ -2197,7 +2199,7 @@ public class DataWrapper
 		}
 	}
 
-	void closeLobObjects()
+	void closeLobObjects() throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_closeLobObjects].methodEntry();
 		try

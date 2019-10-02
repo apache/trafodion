@@ -47,13 +47,6 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 
 			if (batchCommands_ == null)
 				batchCommands_ = new ArrayList<String>();
-			// Scan the sql string for the special LOB EMPTY_CLOB() or
-			// EMPTY_BLOB()
-			// methods. This is required to replace the special method names in
-			// the sql string with a valid datalocator to insert for an empty
-			// row.
-			// SQL/MX does not know how to translate these special method names.
-			sql = scanSqlStr(sql);
 			batchCommands_.add(sql);
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -70,7 +63,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			// and it is not yet seen by the application
 
 			synchronized (connection_) {
-				cancel(connection_.server_, connection_.getDialogueId_(), stmtId_);
+				cancel(connection_.server_, connection_.getDialogueId(), stmtId_);
 			}
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -143,8 +136,8 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 				beginTime=System.currentTimeMillis();
 				}
 				synchronized (connection_) {
-					executeDirect(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					executeDirect(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, getStmtLabel_(),
 							cursorName_, sql_.trim(), isSelect_, queryTimeout_,
 							resultSetHoldability_, resultSet_,this.stmtId_);
@@ -299,8 +292,8 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 				beginTime=System.currentTimeMillis();
 				}
 				synchronized (connection_) {
-					executeBatch(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					executeBatch(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, getStmtLabel_(),
 							cursorName_, batchCommands_.toArray(), isSelect_,
 							queryTimeout_, contBatchOnError,this.stmtId_);
@@ -393,8 +386,8 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 				beginTime=System.currentTimeMillis();
 				}
 				synchronized (connection_) {
-					executeDirect(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					executeDirect(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, getStmtLabel_(),
 							cursorName_, sql_.trim(), isSelect_, queryTimeout_,
 							resultSetHoldability_, resultSet_,this.stmtId_);
@@ -461,8 +454,8 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 				beginTime=System.currentTimeMillis();
 				}
 				synchronized (connection_) {
-					executeDirect(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					executeDirect(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, getStmtLabel_(),
 							cursorName_, sql_.trim(), isSelect_, queryTimeout_,
 							resultSetHoldability_, resultSet_,this.stmtId_);
@@ -690,7 +683,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_getMoreResults_I]
 						.methodParameters("Pre-dialogueId_= "
-								+ connection_.getDialogueId_() + "  stmtId_= "
+								+ connection_.getDialogueId() + "  stmtId_= "
 								+ stmtId_ + "  resultSetMax_= " + resultSetMax_
 								+ "  resultSetIndex_= " + resultSetIndex_
 								+ "  isSPJResultSet_= " + isSPJResultSet_
@@ -699,8 +692,8 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			// stmtLabel_ = ... append RSx to existing base RS stmtLabel_
 			SPJRSstmtLabel_ = SPJRSbaseStmtLabel_ + resultSetIndex_;
 
-			executeRS(connection_.server_, connection_.getDialogueId_(), connection_
-					.getTxid_(), connection_.autoCommit_,
+			executeRS(connection_.server_, connection_.getDialogueId(), connection_
+					.getTxid(), connection_.autoCommit_,
 					connection_.transactionMode_, getStmtLabel_(),
 					SPJRSstmtLabel_, isSelect_, stmtId_, resultSetIndex_,
 					resultSet_);
@@ -708,7 +701,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_getMoreResults_I]
 						.methodParameters("Post-dialogueId_= "
-								+ connection_.getDialogueId_() + "  stmtId_= "
+								+ connection_.getDialogueId() + "  stmtId_= "
 								+ stmtId_ + "  resultSetMax_= " + resultSetMax_
 								+ "  resultSetIndex_= " + resultSetIndex_
 								+ "  isSPJResultSet_= " + isSPJResultSet_
@@ -775,7 +768,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 					if (JdbcDebugCfg.traceActive)
 						debug[methodId_getResultSet]
 								.methodParameters("Pre-dialogueId_= "
-										+ connection_.getDialogueId_()
+										+ connection_.getDialogueId()
 										+ "  stmtId_= " + stmtId_
 										+ "  resultSetMax_= " + resultSetMax_
 										+ "  resultSetIndex_= "
@@ -788,8 +781,8 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 					// to existing base SPJRS stmt label
 					SPJRSstmtLabel_ = SPJRSbaseStmtLabel_ + resultSetIndex_;
 
-					executeRS(connection_.server_, connection_.getDialogueId_(),
-							connection_.getTxid_(), connection_.autoCommit_,
+					executeRS(connection_.server_, connection_.getDialogueId(),
+							connection_.getTxid(), connection_.autoCommit_,
 							connection_.transactionMode_, getStmtLabel_(),
 							SPJRSstmtLabel_, isSelect_, stmtId_,
 							resultSetIndex_, resultSet_);
@@ -802,7 +795,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 					if (JdbcDebugCfg.traceActive)
 						debug[methodId_getResultSet]
 								.methodParameters("Post-dialogueId_= "
-										+ connection_.getDialogueId_()
+										+ connection_.getDialogueId()
 										+ "  stmtId_= " + stmtId_
 										+ "  resultSetMax_= " + resultSetMax_
 										+ "  resultSetIndex_= "
@@ -944,7 +937,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 
 				synchronized (connection_) {
 					// Pass the fetch size change to the driver
-					resetFetchSize(connection_.getDialogueId_(), stmtId_, fetchSize_);
+					resetFetchSize(connection_.getDialogueId(), stmtId_, fetchSize_);
 				}
 			}
 		} finally {
@@ -1062,80 +1055,13 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 		}
 	}
 
-	String scanSqlStr(String sql) throws SQLException {
-		if (JdbcDebugCfg.entryActive)
-			debug[methodId_scanSqlStr].methodEntry();
-		try {
-			String tempStr;
-			String tempSql;
-			int index = 0;
-			int oldIndex = 0;
-			StringBuffer newSql = null;
-			boolean clobFound = false;
-			boolean blobFound = false;
-			int len;
-
-			tempStr = sql.toUpperCase();
-			len = sql.length();
-			while (true) {
-				if ((index = tempStr.indexOf("EMPTY_CLOB()", oldIndex)) != -1) {
-					if (newSql == null)
-						newSql = new StringBuffer(len);
-					newSql.append(sql.substring(oldIndex, index));
-					newSql.append(Long.toString(connection_.getDataLocator(
-							connection_.clobTableName_, false)));
-					oldIndex = index + 12;
-					clobFound = true;
-				} else {
-					if (clobFound)
-						newSql.append(sql.substring(oldIndex));
-					break;
-				}
-			}
-			oldIndex = 0;
-			if (clobFound) {
-				tempSql = newSql.toString();
-				tempStr = tempSql.toUpperCase();
-			} else
-				tempSql = sql;
-
-			while (true) {
-				if ((index = tempStr.indexOf("EMPTY_BLOB()", oldIndex)) != -1) {
-					if (newSql == null) {
-						newSql = new StringBuffer(len);
-					} else {
-						if (!blobFound) // set the newSql to zero length for the
-							// first time
-							newSql.setLength(0);
-					}
-					newSql.append(tempSql.substring(oldIndex, index));
-					newSql.replace(index, index + 12, Long.toString(connection_
-							.getDataLocator(connection_.blobTableName_, true)));
-					blobFound = true;
-					oldIndex = index + 12;
-				} else {
-					if (blobFound)
-						newSql.append(tempSql.substring(oldIndex));
-					break;
-				}
-			}
-			if (clobFound || blobFound)
-				return newSql.toString();
-			else
-				return sql;
-		} finally {
-			if (JdbcDebugCfg.entryActive)
-				debug[methodId_scanSqlStr].methodExit();
-		}
-	}
-
 	void validateExecDirectInvocation(String sql) throws SQLException {
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_validateExecDirectInvocation_L].methodEntry();
 		try {
 			validateExecDirectInvocation();
 			isSelect_ = getStmtSqlType(sql);
-			sql_ = scanSqlStr(sql).trim();
+			sql_ = sql;
 			if(SQLMXConnection.getSqlStmtType(sql) == SQLMXConnection.TYPE_CONTROL){
 				connection_.setOfCQDs.add(sql);
 			}
@@ -1176,11 +1102,11 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			synchronized (connection_) {
 				if (!connection_.isClosed_) {
 					if (stmtId_ != 0)
-						close(connection_.server_, connection_.getDialogueId_(),
+						close(connection_.server_, connection_.getDialogueId(),
 								stmtId_, true);
 					else
 						closeUsingLabel(connection_.server_,
-								connection_.getDialogueId_(), getStmtLabel_(), true);
+								connection_.getDialogueId(), getStmtLabel_(), true);
 				}
 			}// End sync
 		} finally {
@@ -1207,7 +1133,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 				// reduced
 				connection_.addElement(this);
 				// Check if the transaction is started by this Select statement
-				if (connection_.getTxid_() == 0 && txid != 0)
+				if (connection_.getTxid() == 0 && txid != 0)
 					resultSet_.txnStarted_ = true;
 				rowCount_ = -1;
 			} else {
@@ -1256,7 +1182,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 
 				// Check if the transaction is started by this Select statement
 				// if (connection_.txid_ == 0 && txid != 0) 
-				if (connection_.getTxid_() == txid) 
+				if (connection_.getTxid() == txid) 
 					resultSet_.txnStarted_ = true;
 				rowCount_ = -1;
 			} else {
@@ -1346,7 +1272,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			if (JdbcDebugCfg.traceActive)
 				debug[methodId_firstResultSetExists]
 						.methodParameters("Pre-dialogueId_= "
-								+ connection_.getDialogueId_() + "  stmtId_= "
+								+ connection_.getDialogueId() + "  stmtId_= "
 								+ stmtId_ + "  resultSetMax_= " + resultSetMax_
 								+ "  resultSetIndex_= " + resultSetIndex_
 								+ "  isSPJResultSet_= " + isSPJResultSet_
@@ -1355,8 +1281,8 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			// stmtLabel_ = ... append RSx to existing base RS stmtLabel_
 			SPJRSstmtLabel_ = SPJRSbaseStmtLabel_ + resultSetIndex_;
 
-			executeRS(connection_.server_, connection_.getDialogueId_(), connection_
-					.getTxid_(), connection_.autoCommit_,
+			executeRS(connection_.server_, connection_.getDialogueId(), connection_
+					.getTxid(), connection_.autoCommit_,
 					connection_.transactionMode_, getStmtLabel_(),
 					SPJRSstmtLabel_, isSelect_, stmtId_, resultSetIndex_,
 					resultSet_);
@@ -1364,7 +1290,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			if (JdbcDebugCfg.traceActive)
 				debug[methodId_firstResultSetExists]
 						.methodParameters("Post-dialogueId_= "
-								+ connection_.getDialogueId_() + "  stmtId_= "
+								+ connection_.getDialogueId() + "  stmtId_= "
 								+ stmtId_ + "  resultSetMax_= " + resultSetMax_
 								+ "  resultSetIndex_= " + resultSetIndex_
 								+ "  isSPJResultSet_= " + isSPJResultSet_
@@ -1629,7 +1555,6 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 	private static int methodId_setMaxRows = 33;
 	private static int methodId_setQueryTimeout = 34;
 	private static int methodId_getStmtSqlType = 35;
-	private static int methodId_scanSqlStr = 36;
 	private static int methodId_validateExecDirectInvocation_L = 37;
 	private static int methodId_validateExecDirectInvocation_V = 38;
 	private static int methodId_internalClose = 39;
@@ -1713,7 +1638,6 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 					"setQueryTimeout");
 			debug[methodId_getStmtSqlType] = new JdbcDebug(className,
 					"getStmtSqlType");
-			debug[methodId_scanSqlStr] = new JdbcDebug(className, "scanSqlStr");
 			debug[methodId_validateExecDirectInvocation_L] = new JdbcDebug(
 					className, "validateExecDirectInvocation[L]");
 			debug[methodId_validateExecDirectInvocation_V] = new JdbcDebug(

@@ -64,7 +64,8 @@ public class SQLMXClobWriter extends Writer
 				throw new IOException("Output stream is in closed state");
 			if (! isFlushed_)
 			{
-				writeChunkThrowIO(null);
+				writeChunkThrowIO(chunk_, 0, currentChar_);
+				currentChar_ = 0;
 			}
 		}
 		finally
@@ -106,33 +107,25 @@ public class SQLMXClobWriter extends Writer
 					"length or offset is less than 0 or offset is greater than the length of array");
 			srcOffset = off;
 			copyLen = len;
-			while (true)
-			{
-				if (copyLen+currentChar_ < (clob_.chunkSize_))
-				{
+			while (true) {
+				if ((copyLen+currentChar_) < (clob_.chunkSize_)) {
 					System.arraycopy(cbuf, srcOffset, chunk_, currentChar_, copyLen);
 					currentChar_ += copyLen;
 					isFlushed_ = false;
 					break;
-				}
-				else
-				{
-					if (currentChar_ != 0)
-					{
+				} else {
+					if (currentChar_ != 0) {
 						tempLen = clob_.chunkSize_-currentChar_;
 						System.arraycopy(cbuf, srcOffset, chunk_, currentChar_, tempLen);
 						currentChar_ += tempLen;
-						writeChunkThrowIO(null);
-					}
-					else
-					{
+						writeChunkThrowIO(chunk_, 0, currentChar_);
+						currentChar_ = 0;
+					} else {
 						tempLen = clob_.chunkSize_;
-						currentChar_ += tempLen;
-						writeChunkThrowIO(new String(cbuf, srcOffset, tempLen));
+						writeChunkThrowIO(cbuf, srcOffset, tempLen);
 					}
 					copyLen -= tempLen;
 					srcOffset += tempLen;
-					currentChar_ = 0;
 				}
 			}
 		}
@@ -152,8 +145,10 @@ public class SQLMXClobWriter extends Writer
 			chunk_[currentChar_] = (char)c;
 			isFlushed_ = false;
 			currentChar_++;
-			if (currentChar_ == clob_.chunkSize_)
-				writeChunkThrowIO(null);
+			if (currentChar_ == clob_.chunkSize_) {
+				writeChunkThrowIO(chunk_, 0, currentChar_);
+				currentChar_ = 0;
+			}
 		}
 		finally
 		{
@@ -181,45 +176,40 @@ public class SQLMXClobWriter extends Writer
 		if (JdbcDebugCfg.entryActive) debug[methodId_write_LII].methodEntry();
 		try
 		{
+			int copyLen;
+			int srcOffset;
 			int tempLen;
-			int writeLen;
-			int srcOff;
-
-			writeLen = len;
-			srcOff = off;
 
 			if (isClosed_)
-				throw new IOException("Writer is in closed state");
+				throw new IOException("Output stream is in closed state");
 			if (str == null)
 				throw new IOException("Invalid input value");
-			if (currentChar_ != 0)
-			{
-				tempLen = clob_.chunkSize_ - currentChar_;
-				if (writeLen > tempLen)
-				{		
-					char[] cbuf = new char[tempLen];
-					str.getChars(srcOff, srcOff+tempLen, cbuf, 0);
-					write(cbuf, 0, cbuf.length);
-					writeLen -= tempLen;
-					srcOff += tempLen;
-				}
-			}
-			while (writeLen > 0)
-			{
-				if (writeLen < clob_.chunkSize_)
+			if (off < 0 || len < 0 || off > str.length())
+				throw new IndexOutOfBoundsException(
+					"length or offset is less than 0 or offset is greater than the length of array");
+			srcOffset = off;
+			copyLen = len;
+			while (true) {
+				if ((copyLen+currentChar_) < clob_.chunkSize_) {
+					System.arraycopy(str, srcOffset, chunk_, currentChar_, copyLen);
+					currentChar_ += copyLen;
+					isFlushed_ = false;
 					break;
-				else
-				{
-					writeChunkThrowIO(str.substring(srcOff, srcOff+clob_.chunkSize_));
-					writeLen -= clob_.chunkSize_;
-					srcOff += clob_.chunkSize_;
+				} else {
+					if (currentChar_ != 0) {
+						tempLen = clob_.chunkSize_-currentChar_;		
+						System.arraycopy(str, srcOffset, chunk_, currentChar_, tempLen);
+						currentChar_ += tempLen;
+						writeChunkThrowIO(chunk_, 0, currentChar_);
+						currentChar_ = 0;
+					} else {
+						tempLen = clob_.chunkSize_;
+						writeChunkThrowIO(str.toCharArray(), srcOffset, tempLen);
+					}	
+					copyLen -= tempLen;
+					srcOffset += tempLen;
 				}
-			}
-			if (writeLen != 0)
-			{
-				char[] cbuf = new char[writeLen];
-				str.getChars(srcOff, srcOff+writeLen, cbuf, 0);
-				write(cbuf, 0, cbuf.length);
+				
 			}
 		}
 		finally
@@ -228,82 +218,14 @@ public class SQLMXClobWriter extends Writer
 		}
 	}
 
-	void writeChunk(String str) throws SQLException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_writeChunk].methodEntry();
-		try
-		{
-			String tempStr;
-	
-			if (currentChunkNo_ > updChunkNo_)
-			{
-				clob_.prepareInsLobDataStmt();
-				PreparedStatement InsClobDataStmt = clob_.getInsLobDataStmt();
-
-				synchronized (InsClobDataStmt)
-				{
-					InsClobDataStmt.setString(1, clob_.tableName_);
-					InsClobDataStmt.setLong(2, clob_.dataLocator_);
-					InsClobDataStmt.setInt(3, currentChunkNo_);
-					if (str == null)
-					{
-						if (currentChar_ != clob_.chunkSize_)
-							tempStr = new String(chunk_, 0, currentChar_);
-						else
-							tempStr = new String(chunk_);	
-					}
-					else
-						tempStr = str;
-					InsClobDataStmt.setString(4, tempStr);
-					InsClobDataStmt.executeUpdate();
-					currentChunkNo_++;
-					currentChar_ = 0;
-				}
-			}
-			else
-			{
-				clob_.prepareUpdLobDataStmt();
-				PreparedStatement UpdClobDataStmt = clob_.getUpdLobDataStmt();
-
-				synchronized (UpdClobDataStmt)
-				{
-					UpdClobDataStmt.setString(4, clob_.tableName_);
-					UpdClobDataStmt.setLong(5, clob_.dataLocator_);
-					UpdClobDataStmt.setInt(6, currentChunkNo_);
-					UpdClobDataStmt.setInt(1, updOffset_);
-					if (str == null)
-					{
-						if (updOffset_ != 0 || currentChar_ != clob_.chunkSize_)
-							tempStr = new String(chunk_, updOffset_, currentChar_-updOffset_);
-						else
-							tempStr = new String(chunk_);	
-					}
-					else
-						tempStr = str;		
-					UpdClobDataStmt.setInt(3, currentChar_+1);
-					UpdClobDataStmt.setString(2, tempStr);
-					UpdClobDataStmt.executeUpdate();
-					currentChunkNo_++;
-					currentChar_ = 0;
-					updOffset_ = 0;
-				}
-			}
-			isFlushed_ = true;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_writeChunk].methodExit();
-		}
-	}
-
-	void writeChunkThrowIO(String str) throws IOException
+	void writeChunkThrowIO(char[] chunk, int offset, int len) throws IOException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_writeChunkThrowIO].methodEntry();
 		try
 		{
 			try
 			{
-				writeChunk(str);
+				writeChunk(chunk, offset, len);
 			}
 			catch (SQLException e)
 			{
@@ -315,14 +237,22 @@ public class SQLMXClobWriter extends Writer
 			if (JdbcDebugCfg.entryActive) debug[methodId_writeChunkThrowIO].methodExit();
 		}
 	}
+
+	void writeChunk(char[] chunk, int offset, int len) throws SQLException
+	{
+		writeChunk(conn_.server_, conn_.getDialogueId(), conn_.getTxid(),
+				clob_.lobLocator_, new String(chunk, offset, len), startingPos_-1+offset);
+ 	}
+
+	native void writeChunk(String server, long dialogueId, long txid, String lobLocator, String chunk, long pos);
 	
-	void populate(Reader ir, int length) throws SQLException
+	void populate(Reader ir, long length) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_populate].methodEntry();
 		try
 		{
 			int tempLen;
-			int readLen;
+			long readLen;
 			int retLen;
 				
 			readLen = length;
@@ -331,36 +261,15 @@ public class SQLMXClobWriter extends Writer
 				while (readLen > 0)
 				{
 					if (readLen <= clob_.chunkSize_)
-						tempLen = readLen;
+						tempLen = (int)readLen;
 					else
 						tempLen = clob_.chunkSize_;
 					retLen = ir.read(chunk_, 0, tempLen);
 					if (retLen == -1)
 						break;
 					currentChar_ = retLen;
-
-					if ((traceWriter_ != null) && 
-						((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-					{
-						// For tracing, only print the 1st and last LOB data chunk write info to limit 
-						// potential overflow of buffer for trace output.
-						if (readLen==length) 			// 1st writeChunk
-						{
-							traceWriter_.println(getTraceId() 
-								+ "populate() -  First writeChunk data: tableName_=" + clob_.tableName_
-								+ " dataLocator_=" + clob_.dataLocator_ + " length=" + length 
-								+ " currentChunkNo_=" + currentChunkNo_ + " updChunkNo_=" + updChunkNo_ + " retLen=" + retLen);
-						}
-						if (readLen<=clob_.chunkSize_)	// last writeChunk (NOTE: last chunk can be exactly chunkSize_)
-						{
-							traceWriter_.println(getTraceId() 
-								+ "populate() -  Last writeChunk data: tableName_=" + clob_.tableName_
-								+ " dataLocator_=" + clob_.dataLocator_ + " length=" + length 
-								+ " currentChunkNo_=" + currentChunkNo_ + " updChunkNo_=" + updChunkNo_ + " retLen=" + retLen);
-						}
-					}
-
-					writeChunk(null);
+					writeChunk(chunk_, 0, currentChar_);
+					currentChar_ = 0;
 					readLen -= retLen;
 				}
 			}
@@ -387,27 +296,14 @@ public class SQLMXClobWriter extends Writer
 			long length;
 		
 			clob_ = clob;
-			length = clob_.length();
+			length = clob_.inLength();
 			conn_ = connection;
 			if (pos < 1 || pos > length+1)
 				throw Messages.createSQLException(conn_.locale_,"invalid_position_value", null);
 			startingPos_ = pos;
 			chunk_ = new char[clob_.chunkSize_];
 			isFlushed_ = false;
-			if (length == 0)
-				updChunkNo_ = -1;
-			else
-			{
-				if ((length % clob_.chunkSize_) == 0)
-					updChunkNo_ = (int)(length / clob_.chunkSize_)-1;
-				else
-					updChunkNo_ = (int)(length / clob_.chunkSize_);
-			}
-			currentChunkNo_ = (int)((pos-1)/ clob_.chunkSize_);
-			currentChar_ = (int)((pos-1) % clob_.chunkSize_);
-			updOffset_ = (int)((pos-1) % clob_.chunkSize_);
-
-		
+			currentChar_ = 0;
 		}
 		finally
 		{
@@ -436,19 +332,16 @@ public class SQLMXClobWriter extends Writer
 	}
 
 	// Fields
-	private String				traceId_;
+	private String		traceId_;
 	static PrintWriter	traceWriter_;
-	static int			traceFlag_;
-	SQLMXClob			clob_;
-	long				startingPos_;
+	static int		traceFlag_;
+	SQLMXClob		clob_;
+	long			startingPos_;
 	SQLMXConnection		conn_;
-	boolean				isClosed_;
-	char[]				chunk_;
-	int					currentChar_;
-	int					currentChunkNo_;
-	boolean				isFlushed_;
-	int					updChunkNo_;
-	int					updOffset_;
+	boolean			isClosed_;
+	char[]			chunk_;
+	int			currentChar_;
+	boolean			isFlushed_;
 
 	private static int methodId_close				=  0;
 	private static int methodId_flush				=  1;

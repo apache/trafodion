@@ -35,72 +35,36 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
 
 public class SQLMXLobInputStream extends InputStream
 {
 	public int available() throws IOException
 	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_available].methodEntry();
-		try
-		{
-			long length;
-			long readLength;
+		int remainLen;
 
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
-			try
-			{
-				length = lob_.length();
-				if (currentChunkNo_ > 0)
-					readLength = ((currentChunkNo_-1) * lob_.chunkSize_) + currentByte_;
-				else
-					readLength = currentByte_;
-				return (int)(length - readLength);
-			}
-			catch (SQLException e)
-			{
-				throw new IOException(SQLMXLob.convSQLExceptionToIO(e));
-			}
+		if (eos_)
+			remainLen = 0;
+		else {
+			remainLen = bytesRead_ - currentPos_;
+			if (remainLen == 0) // 0 would mean all the bytes are read from chunk_
+				remainLen = lob_.chunkSize_;
 		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_available].methodExit();
-		}
+		return remainLen;
 	}
 
 	public void close() throws IOException
 	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_close].methodEntry();
-		try
-		{
-			isClosed_ = true;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_close].methodExit();
-		}
+		isClosed_ = true;
 	}
 
 	public void mark(int readlimit)
 	{
-		if (JdbcDebugCfg.entryActive)
-		{
-			debug[methodId_mark].methodEntry();
-			debug[methodId_mark].methodExit();
-		}
 	}
 
 	public boolean markSupported()
 	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_markSupported].methodEntry();
-		try
-		{
-			return false;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_markSupported].methodExit();
-		}
+		return false;
 	}
 
 	public int read() throws IOException
@@ -110,19 +74,14 @@ public class SQLMXLobInputStream extends InputStream
 		{
 			int retValue = 0;
 
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
-			if (currentByte_ == bytesRead_)
-				retValue = readChunkThrowIO(null, 0, lob_.chunkSize_);
+			if (eos_)
+				return -1;
+			if (currentPos_ == bytesRead_)
+				retValue = readChunkThrowIO();
 			if (retValue != -1)
 			{
-				retValue = chunk_[currentByte_];
-				// Should be a value between 0 and 255 
-				// -1 is mapped to 255, -2 is 254 etc
-				if (retValue < 0)
-					retValue = 256 + retValue; 
-				if (currentByte_ != bytesRead_)
-					currentByte_++;
+				retValue = chunk_.get();
+				currentPos_++;
 			}
 			return retValue;
 		}
@@ -134,65 +93,58 @@ public class SQLMXLobInputStream extends InputStream
 
 	public int read(byte[] b) throws IOException
 	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_read_B].methodEntry();
-		try
-		{
-			if (b == null)
-				throw new IOException("Invalid input value");
-			return read(b, 0, b.length);
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_read_B].methodExit();
-		}
+		return read(b, 0, b.length);
 	}
 
 	public int read(byte[] b, int off, int len) throws IOException
 	{
+		return read(b, off, len, false);
+	}
+
+	public int read(byte[] b, int off, int len, boolean skip) throws IOException
+	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_read_BII].methodEntry();
 		try
 		{
-			int readLen;
+			int remainLen;
 			int copyLen;
 			int copyOffset;
-			int tempLen = 0;
 			int retLen;
+			int availableLen;
+			int copiedLen = 0;
 
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
 			if (b == null)
 				throw new IOException("Invalid input value");
-			copyLen = len;
+			if (eos_)
+				return -1;		
+			remainLen = len;
 			copyOffset = off;
-			readLen = 0;
-			if (currentByte_ < bytesRead_)
-			{
-				if (copyLen+currentByte_ <= bytesRead_)
-				{
-					System.arraycopy(chunk_, currentByte_, b, copyOffset, copyLen);
-					currentByte_ += copyLen;
-					readLen = copyLen;
-					return readLen;
-				}
+			
+			while (remainLen > 0) {
+				availableLen = bytesRead_ - currentPos_;
+				if (availableLen > remainLen)	
+					copyLen = remainLen;
 				else
-				{
-					tempLen = bytesRead_- currentByte_;
-					System.arraycopy(chunk_, currentByte_, b, copyOffset, tempLen);
-					copyOffset += tempLen;
-					copyLen -= tempLen;
-					currentByte_ += tempLen;
+					copyLen = availableLen;
+				if (copyLen > 0) {
+					if (! skip)
+						chunk_.get(b, copyOffset, copyLen);			
+					else
+						chunk_.position(currentPos_+copyLen);
+					currentPos_ += copyLen;
+					copyOffset += copyLen;
+					copiedLen += copyLen;
+					remainLen -= copyLen;
+		
+				}
+				if (remainLen > 0) {
+					retLen = readChunkThrowIO();
+					if (retLen == -1)
+						break;
 				}
 			}
-			readLen = readChunkThrowIO(b, copyOffset, copyLen);
-			if (readLen != -1)
-				retLen = readLen + tempLen;
-			else
-				retLen = tempLen;
-			if (retLen == 0)
-				return -1;
-			else
-				return retLen;
-		}
+			return copiedLen;
+		}		
 		finally
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_read_BII].methodExit();
@@ -204,10 +156,7 @@ public class SQLMXLobInputStream extends InputStream
 		if (JdbcDebugCfg.entryActive) debug[methodId_reset].methodEntry();
 		try
 		{
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
-			currentByte_ = 0;
-			currentChunkNo_ = 0;
+			currentPos_ = 0;
 			bytesRead_ = 0;
 			return;
 		}
@@ -219,87 +168,34 @@ public class SQLMXLobInputStream extends InputStream
 
 	public long skip(long n) throws IOException
 	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_skip].methodEntry();
-		try
-		{
-			long bytesToSkip;
-			int noOfChunks = 0;
-			int remBytes;
-			long retLen = -1;
-			long bytesSkipped = 0;
-			int oldChunkNo;
-
-			if (isClosed_)
-				throw new IOException("Input stream is in closed state");
-			if (n <= 0)
-				throw new IOException("Invalid input Value");
-			if (currentByte_ + n > bytesRead_)
-			{
-				bytesSkipped = bytesRead_ - currentByte_;
-				bytesToSkip = n - bytesSkipped;
-				currentByte_ += bytesSkipped;
-			}
+		long totalSkippedLen = 0;
+		long skipRemain = n;
+		int skipLen;
+		int skippedLen;
+		while (skipRemain > 0) {
+			if (skipRemain <= Integer.MAX_VALUE)
+				skipLen = (int)skipRemain;
 			else
-			{
-				currentByte_ += n;
-				return n;
-			}
-			noOfChunks += (int)((bytesToSkip-1)/ lob_.chunkSize_);
-			if ((bytesToSkip % lob_.chunkSize_) == 0)
-				remBytes = lob_.chunkSize_;
-			else
-				remBytes = (int)(bytesToSkip % lob_.chunkSize_);
-			oldChunkNo = currentChunkNo_;	// Which is already 1 more
-			currentChunkNo_ = currentChunkNo_ + noOfChunks;
-			retLen = readChunkThrowIO(null, 0, lob_.chunkSize_);
-			if (retLen != -1)
-			{
-				bytesSkipped += (currentChunkNo_ - oldChunkNo - 1) * lob_.chunkSize_;
-				if (retLen < remBytes)
-					remBytes = (int)retLen;
-				currentByte_ = remBytes;
-				bytesSkipped += remBytes;
-			}
-			else
-			{
-				bytesSkipped += available();
-				// Exclude the bytes that are in chunk already
-				remBytes = (int)(bytesSkipped - (bytesRead_ - currentByte_));
-				noOfChunks += (int)((remBytes-1) / lob_.chunkSize_);
-				currentChunkNo_ = oldChunkNo + noOfChunks;
-				//calculate the bytes in the chunk and set currentByte and bytesRead
-				//to reach EOD
-				if (remBytes == 0)
-				{
-					currentByte_ = 0;
-					bytesRead_ = 0;
-				}
-				else
-				{
-					if ((remBytes % lob_.chunkSize_) == 0)
-						currentByte_ = lob_.chunkSize_;
-					else
-						currentByte_ = (int)(remBytes % lob_.chunkSize_);
-					bytesRead_ = currentByte_;
-				}
-			}
-			return bytesSkipped;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_skip].methodExit();
-		}
+				skipLen = Integer.MAX_VALUE;	
+			skippedLen = read(null, 0, skipLen, true); 
+			if (skippedLen == -1)
+				break;
+			skipRemain -= skippedLen;
+			totalSkippedLen += skippedLen;
+		}	
+		return totalSkippedLen;
 	}
 
-	int readChunkThrowIO(byte[] b, int off, int len) throws IOException
+	int readChunkThrowIO() throws IOException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_readChunkThrowIO].methodEntry();
 		try
 		{
 			int readLen;
+
 			try
 			{
-				readLen = readChunk(b, off, len);
+				readLen = readChunk();
 			}
 			catch (SQLException e)
 			{
@@ -311,103 +207,34 @@ public class SQLMXLobInputStream extends InputStream
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_readChunkThrowIO].methodExit();
 		}
-	} 
-
-	int readChunk(byte[] b, int off, int len) throws SQLException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_readChunk].methodEntry();
-		try
-		{
-			int endChunkNo;
-			byte[]	data;
-			int copyLen;
-			int	copyOffset;
-			int readLen = 0;
-
-			// The rows to read is calculated via ((len-1)/lob_.chunkSize_)
-			endChunkNo = currentChunkNo_ + ((len-1)/lob_.chunkSize_);
-			lob_.prepareGetLobDataStmt();
-			PreparedStatement GetLobStmt = lob_.getGetLobDataStmt();
-
-			if ((traceWriter_ != null) && 
-				((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-			{
-				traceWriter_.println(getTraceId() 
-					+ "readChunk(<byte>," + off + "," + len + ") - GetLobDataStmt params: tableName_=" + lob_.tableName_ 
-					+ " dataLocator_=" + lob_.dataLocator_
-					+ " currentChunkNo_=" + currentChunkNo_
-					+ " endChunkNo=" + endChunkNo);
-			}
-
-			synchronized (GetLobStmt)
-			{
-				GetLobStmt.setString(1, lob_.tableName_);
-				GetLobStmt.setLong(2, lob_.dataLocator_);
-				GetLobStmt.setInt(3, currentChunkNo_);
-				GetLobStmt.setInt(4, endChunkNo);
-				ResultSet rs = GetLobStmt.executeQuery();
-				copyLen = len;
-				copyOffset = off;
-				try 
-				{
-					while (rs.next())
-					{
-						data = rs.getBytes(1);
-						currentChunkNo_++;
-						bytesRead_ = data.length;
-						if (b == null)
-						{
-							System.arraycopy(data, 0, chunk_, 0, data.length);
-							readLen += data.length;
-							currentByte_ = 0;
-							break;				
-						}
-						else
-						{
-							if (copyLen >= data.length)
-							{
-								System.arraycopy(data, 0, b, copyOffset, data.length);
-								copyLen -= data.length;
-								readLen += data.length;
-								copyOffset += data.length;
-								currentByte_ = data.length;
-							} 
-							else
-							{
-								System.arraycopy(data, 0, b, copyOffset, copyLen);
-								// copy the rest of data to chunk
-								System.arraycopy(data, copyLen, chunk_, copyLen, data.length - copyLen);
-								readLen += copyLen;
-								currentByte_ = copyLen;
-								break;
-							}
-						}
-					}
-				} 
-				finally 
-				{
-					rs.close();
-				}
-			}
-			
-			if ((traceWriter_ != null) && 
-				((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-			{
-				traceWriter_.println(getTraceId() 
-					+ "readChunk(<byte>," + off + "," + len + ") - LOB data read: bytesRead_=" + bytesRead_ 
-					+ " readLen=" + readLen + " copyLen=" + copyLen + " currentChunkNo_=" + currentChunkNo_);
-			}
-
-			if (readLen == 0)
-				return -1;
-			else
-				return readLen;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_readChunk].methodExit();
-		}
 	}
+
+	int readChunk() throws SQLException
+	{
+		int extractMode = 1; // get the lob data
+		chunk_.clear(); 
+		if (eos_)
+			return -1;
+		if (bytesRead_ > 0 && (bytesRead_ < lob_.chunkSize_)) {
+			eos_ = true;
+			extractMode = 2; // Close the extract
+		}
+		bytesRead_ = readChunk(conn_.server_, conn_.getDialogueId(), conn_.getTxid(), extractMode, lob_.lobLocator_, chunk_); 
+		if (bytesRead_ == -1) {
+			extractMode = 2; // close the extract
+		 	readChunk(conn_.server_, conn_.getDialogueId(), conn_.getTxid(), extractMode, lob_.lobLocator_, chunk_); 
+			eos_ = true;
+			chunk_.limit(0);
+		} else if (bytesRead_ == 0) {
+			bytesRead_ = -1;
+			eos_ = true;
+			chunk_.limit(0);
+		} else
+			chunk_.limit(bytesRead_);
+		return bytesRead_;
+	}
+
+        native int readChunk(String server, long dialogueId, long txid,  int extractMode, String lobLocator, ByteBuffer buffer);
 
 	// Constructor
 	SQLMXLobInputStream(SQLMXConnection connection, SQLMXLob lob)
@@ -417,9 +244,10 @@ public class SQLMXLobInputStream extends InputStream
 		{
 			lob_ = lob;
 			conn_ = connection;
-			chunk_ = new byte[lob_.chunkSize_];
-
-			
+			chunk_ = ByteBuffer.allocateDirect(lob_.chunkSize_);
+			bytesRead_ = 0;
+			currentPos_ = 0;
+			eos_ = false;
 		}
 		finally
 		{
@@ -449,16 +277,16 @@ public class SQLMXLobInputStream extends InputStream
 	
 
 	// Fields
-	private String				traceId_;
+	private String		traceId_;
 	static PrintWriter	traceWriter_;
-	static int			traceFlag_;
-	SQLMXLob			lob_;
+	static int		traceFlag_;
+	SQLMXLob		lob_;
 	SQLMXConnection		conn_;
-	boolean				isClosed_;
-	byte[]				chunk_;
-	int					currentByte_;
-	int					currentChunkNo_;
-	int					bytesRead_;
+	boolean			isClosed_;
+	ByteBuffer		chunk_;
+	int			currentPos_;
+	int			bytesRead_;
+	boolean 		eos_;
 
 	private static int methodId_available			=  0;
 	private static int methodId_close				=  1;

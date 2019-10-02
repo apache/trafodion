@@ -63,14 +63,38 @@ public class SQLMXLobOutputStream extends OutputStream
 		{
 			if (isClosed_)
 				throw new IOException("Output stream is in closed state");
-			if (! isFlushed_)
-				writeChunkThrowIO();
+			if (! isFlushed_) {
+				writeChunkThrowIO(chunk_, 0, currentByte_);
+				currentByte_ = 0;
+			}
 		}
 		finally
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_flush].methodExit();
 		}
 	}
+
+	public void write(int b) throws IOException
+	{
+		if (JdbcDebugCfg.entryActive) debug[methodId_write_I].methodEntry();
+		try
+		{
+			if (isClosed_)
+				throw new IOException("Output stream is in closed state");
+			chunk_[currentByte_] = (byte)b;
+			isFlushed_ = false;
+			currentByte_++;
+			if (currentByte_ == lob_.chunkSize_) {
+				writeChunkThrowIO(chunk_, 0, currentByte_);
+				currentByte_ = 0;
+			}
+		}
+		finally
+		{
+			if (JdbcDebugCfg.entryActive) debug[methodId_write_I].methodExit();
+		}
+	}
+
 
 	public void write(byte[] b) throws IOException
 	{
@@ -93,7 +117,7 @@ public class SQLMXLobOutputStream extends OutputStream
 		try
 		{
 			int copyLen;
-			int	srcOffset;
+			int srcOffset;
 			int tempLen;
 
 			if (isClosed_)
@@ -105,26 +129,26 @@ public class SQLMXLobOutputStream extends OutputStream
 					"length or offset is less than 0 or offset is greater than the length of array");
 			srcOffset = off;
 			copyLen = len;
-			while (true)
-			{
-				if ((copyLen+currentByte_) < lob_.chunkSize_)
-				{
+			while (true) {
+				if ((copyLen+currentByte_) < lob_.chunkSize_) {
 					System.arraycopy(b, srcOffset, chunk_, currentByte_, copyLen);
 					currentByte_ += copyLen;
 					isFlushed_ = false;
 					break;
-				}
-				else
-				{
-					tempLen = lob_.chunkSize_-currentByte_;		
-					System.arraycopy(b, srcOffset, chunk_, currentByte_, tempLen);
-					currentByte_ += tempLen;
-					writeChunkThrowIO();
+				} else {
+					if (currentByte_ != 0) {
+						tempLen = lob_.chunkSize_-currentByte_;		
+						System.arraycopy(b, srcOffset, chunk_, currentByte_, tempLen);
+						currentByte_ += tempLen;
+						writeChunkThrowIO(chunk_, 0, currentByte_);
+						currentByte_ = 0;
+					} else {
+						tempLen = lob_.chunkSize_;
+						writeChunkThrowIO(b, srcOffset, tempLen);
+					}
 					copyLen -= tempLen;
 					srcOffset += tempLen;
-					currentByte_ = 0;
 				}
-				
 			}
 		}
 		finally
@@ -132,99 +156,15 @@ public class SQLMXLobOutputStream extends OutputStream
 			if (JdbcDebugCfg.entryActive) debug[methodId_write_BII].methodExit();
 		}
 	}
-	
-	public void write(int b)
-		throws IOException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_write_I].methodEntry();
-		try
-		{
-			if (isClosed_)
-				throw new IOException("Output stream is in closed state");
-			chunk_[currentByte_] = (byte)b;
-			isFlushed_ = false;
-			currentByte_++;
-			if (currentByte_ == lob_.chunkSize_)
-				writeChunkThrowIO();
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_write_I].methodExit();
-		}
-	}
 
-	void writeChunk() throws SQLException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_writeChunk].methodEntry();
-		try
-		{
-			byte[] tempChunk;
-
-			if (currentChunkNo_ > updChunkNo_)
-			{
-				lob_.prepareInsLobDataStmt();
-				PreparedStatement InsLobStmt = lob_.getInsLobDataStmt();
-
-				synchronized (InsLobStmt)
-				{
-					InsLobStmt.setString(1, lob_.tableName_);
-					InsLobStmt.setLong(2, lob_.dataLocator_);
-					InsLobStmt.setInt(3, currentChunkNo_);
-					if (currentByte_ != lob_.chunkSize_)
-					{
-						tempChunk = new byte[currentByte_];
-						System.arraycopy(chunk_, 0, tempChunk, 0, currentByte_);
-					}
-					else
-						tempChunk = chunk_;	
-					InsLobStmt.setBytes(4, tempChunk);
-					InsLobStmt.executeUpdate();
-					currentChunkNo_++;
-					currentByte_ = 0;
-				}
-			}
-			else
-			{
-				lob_.prepareUpdLobDataStmt();
-				PreparedStatement UpdLobStmt = lob_.getUpdLobDataStmt();
-
-				synchronized (UpdLobStmt)
-				{
-					UpdLobStmt.setString(4, lob_.tableName_);
-					UpdLobStmt.setLong(5, lob_.dataLocator_);
-					UpdLobStmt.setInt(6, currentChunkNo_);
-					UpdLobStmt.setInt(1, updOffset_);
-					if (updOffset_ != 0 || currentByte_ != lob_.chunkSize_)
-					{
-						tempChunk = new byte[currentByte_-updOffset_];
-						System.arraycopy(chunk_, updOffset_, tempChunk, 0, currentByte_-updOffset_);
-					}
-					else
-						tempChunk = chunk_;	
-					UpdLobStmt.setInt(3, currentByte_+1);
-					UpdLobStmt.setBytes(2, tempChunk);
-					UpdLobStmt.executeUpdate();
-					currentChunkNo_++;
-					currentByte_ = 0;
-					updOffset_ = 0;
-				}
-			}
-			isFlushed_ = true;
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_writeChunk].methodExit();
-		}
-	}
-
-	void writeChunkThrowIO() throws IOException
+        void writeChunkThrowIO(byte[] chunk, int off, int len) throws IOException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_writeChunkThrowIO].methodEntry();
 		try
 		{
 			try
 			{
-				writeChunk();
+				writeChunk(chunk, off, len);
 			}
 			catch (SQLException e)
 			{
@@ -237,52 +177,37 @@ public class SQLMXLobOutputStream extends OutputStream
 		}
 	}
 
-	void populate(InputStream is, int length) throws SQLException
+	
+	void writeChunk(byte[] chunk, int off, int len) throws SQLException
+	{
+		writeChunk(conn_.server_, conn_.getDialogueId(), conn_.getTxid(),
+				lob_.lobLocator_, chunk, off, len, startingPos_-1+off);
+	}
+
+	void populate(InputStream is, long length) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_populate].methodEntry();
 		try
 		{
 			int tempLen;
-			int readLen;
+			long readLen;
 			int retLen=0;
 				
 			readLen = length;
 			try
 			{
-				while (readLen > 0)
+				while (true)
 				{
 					if (readLen <= lob_.chunkSize_)
-						tempLen = readLen;
+						tempLen = (int)readLen;
 					else
 						tempLen = lob_.chunkSize_;
 					retLen = is.read(chunk_, 0, tempLen);
-					if (retLen == -1)
+					if (retLen == -1 || (length != 0 && readLen == 0))
 						break;
-					currentByte_ = retLen;
-
-					if ((traceWriter_ != null) && 
-						((traceFlag_ == T2Driver.LOB_LVL) || (traceFlag_ == T2Driver.ENTRY_LVL)))
-					{
-						// For tracing, only print the 1st and last LOB data chunk write info to limit 
-						// potential overflow of buffer for trace output.
-						if (readLen==length) 			// 1st writeChunk
-						{
-							traceWriter_.println(getTraceId()
-								+ "populate() -  First writeChunk data: tableName_=" + lob_.tableName_
-								+ " dataLocator_=" + lob_.dataLocator_ + " length=" + length 
-								+ " currentChunkNo_=" + currentChunkNo_ + " updChunkNo_=" + updChunkNo_ + " retLen=" + retLen);
-						}
-						if (readLen<=lob_.chunkSize_)	// last writeChunk (NOTE: last chunk can be exactly chunkSize_)
-						{
-							traceWriter_.println(getTraceId()
-								+ "populate() -  Last writeChunk data: tableName_=" + lob_.tableName_
-								+ " dataLocator_=" + lob_.dataLocator_ + " length=" + length 
-								+ " currentChunkNo_=" + currentChunkNo_ + " updChunkNo_=" + updChunkNo_ + " retLen=" + retLen);
-						}
-					}
-
-					writeChunk();
-					readLen -= retLen;
+					writeChunk(chunk_, 0, retLen);
+					if (length > 0)
+						readLen -= retLen;
 				}
 			}
 			catch (IOException e)
@@ -300,7 +225,7 @@ public class SQLMXLobOutputStream extends OutputStream
 	}
 
 	// constructors
-	SQLMXLobOutputStream(SQLMXConnection connection, SQLMXLob lob, long pos) throws 
+	SQLMXLobOutputStream(SQLMXConnection connection, long startingPos, SQLMXLob lob) throws 
 		SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXLobOutputStream].methodEntry();
@@ -309,45 +234,20 @@ public class SQLMXLobOutputStream extends OutputStream
 			long length;
 
 			lob_ = lob;
-			length = lob_.length();
+			length = lob_.inLength();
 			conn_ = connection;
-			if (pos < 1 || pos > length+1)
-				throw Messages.createSQLException(conn_.locale_,"invalid_position_value", null);
-			startingPos_ = pos;
 			chunk_ = new byte[lob_.chunkSize_];
 			isFlushed_ = false;
-			if (length == 0)
-				updChunkNo_ = -1;
-			else
-			{
-				if ((length % lob_.chunkSize_) == 0)
-					updChunkNo_ = (int)(length / lob_.chunkSize_)-1;
-				else
-					updChunkNo_ = (int)(length / lob_.chunkSize_);
-			}
-			currentChunkNo_ = (int)((pos-1)/ lob_.chunkSize_);
-			currentByte_ = (int)((pos-1) % lob_.chunkSize_);
-			updOffset_ = (int)((pos-1) % lob_.chunkSize_);
-
+			startingPos_ = startingPos;
 			traceWriter_ = SQLMXDataSource.traceWriter_;
-			
-			// Build up template portion of jdbcTrace output. Pre-appended to jdbcTrace entries.
-			// jdbcTrace:[XXXX]:[Thread[X,X,X]]:[XXXXXXXX]:ClassName.
-			if (traceWriter_ != null) 
-			{
-				traceFlag_ = T2Driver.traceFlag_;
-				String className = getClass().getName();
-				setTraceId(T2Driver.traceText + T2Driver.dateFormat.format(new Date()) 
-					+ "]:[" + Thread.currentThread() + "]:[" + hashCode() +  "]:" 
-					+ className.substring(T2Driver.REMOVE_PKG_NAME,className.length()) 
-					+ ".");
-			}
+			currentByte_ = 0;
 		}
 		finally
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_SQLMXLobOutputStream].methodExit();
 		}
 	}
+
 	public void setTraceId(String traceId_) {
 		this.traceId_ = traceId_;
 	}
@@ -356,19 +256,19 @@ public class SQLMXLobOutputStream extends OutputStream
 		return traceId_;
 	}
 	// Fields
-	private String				traceId_;
-	static PrintWriter	traceWriter_;
+	private String			traceId_;
+	static PrintWriter		traceWriter_;
 	static int			traceFlag_;
 	SQLMXLob			lob_;
 	long				startingPos_;
-	SQLMXConnection		conn_;
+	SQLMXConnection			conn_;
 	boolean				isClosed_;
 	byte[]				chunk_;
-	int					currentByte_;
-	int					currentChunkNo_;
+	int				currentByte_;
+	int				currentChunkNo_;
 	boolean				isFlushed_;
-	int					updChunkNo_;
-	int					updOffset_;
+	int				updChunkNo_;
+	int				updOffset_;
 
 	private static int methodId_close					= 0;
 	private static int methodId_flush					= 1;
@@ -399,4 +299,5 @@ public class SQLMXLobOutputStream extends OutputStream
 			debug[methodId_SQLMXLobOutputStream] = new JdbcDebug(className,"SQLMXLobOutputStream");
 		}
 	}
+	native void writeChunk(String server, long dialogueId, long txid, String lobLocator, byte[] chunk, int off, int writeLength, long pos);
 }

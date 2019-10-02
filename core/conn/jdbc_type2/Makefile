@@ -46,6 +46,10 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/SQLMXPreparedStatement.o \
        $(OUTDIR)/SQLMXResultSet.o \
        $(OUTDIR)/SQLMXStatement.o \
+       $(OUTDIR)/SQLMXClobReader.o \
+       $(OUTDIR)/SQLMXClobWriter.o \
+       $(OUTDIR)/SQLMXLobInputStream.o \
+       $(OUTDIR)/SQLMXLobOutputStream.o \
        $(OUTDIR)/SrvrJdbcConnect.o \
        $(OUTDIR)/CDesc.o \
        $(OUTDIR)/SrvrCommon.o \
@@ -65,6 +69,10 @@ CSES := org.apache.trafodion.jdbc.t2.JdbcDebug \
 		org.apache.trafodion.jdbc.t2.T2Driver \
 		org.apache.trafodion.jdbc.t2.SQLMXPreparedStatement \
 		org.apache.trafodion.jdbc.t2.SQLMXResultSet \
+		org.apache.trafodion.jdbc.t2.SQLMXClobReader \
+		org.apache.trafodion.jdbc.t2.SQLMXClobWriter \
+		org.apache.trafodion.jdbc.t2.SQLMXLobInputStream \
+		org.apache.trafodion.jdbc.t2.SQLMXLobOutputStream \
 		org.apache.trafodion.jdbc.t2.SQLMXStatement
 OBJS = $(COMMON_OBJS) $(T2_OBJS)
 MXODIR = $(TRAF_HOME)/../conn/odbc/src/odbc

@@ -1406,14 +1406,14 @@ public boolean execute() throws SQLException {
             synchronized (connection_) {
                 validateExecuteInvocation();
                 if (inputDesc_ != null) {
-                    executeCall(connection_.server_, connection_.getDialogueId_(),
-                            connection_.getTxid_(), connection_.autoCommit_,
+                    executeCall(connection_.server_, connection_.getDialogueId(),
+                            connection_.getTxid(), connection_.autoCommit_,
                             connection_.transactionMode_, stmtId_,
                             inputDesc_.length, getParameters(), queryTimeout_,
                             connection_.iso88591EncodingOverride_);
                 } else
-                executeCall(connection_.server_, connection_.getDialogueId_(),
-                        connection_.getTxid_(), connection_.autoCommit_,
+                executeCall(connection_.server_, connection_.getDialogueId(),
+                        connection_.getTxid(), connection_.autoCommit_,
                         connection_.transactionMode_, stmtId_, 0, null,
                         queryTimeout_,
                         connection_.iso88591EncodingOverride_);
@@ -1472,14 +1472,14 @@ public ResultSet executeQuery() throws SQLException {
             synchronized (connection_) {
                 validateExecuteInvocation();
                 if (inputDesc_ != null) {
-                    executeCall(connection_.server_, connection_.getDialogueId_(),
-                            connection_.getTxid_(), connection_.autoCommit_,
+                    executeCall(connection_.server_, connection_.getDialogueId(),
+                            connection_.getTxid(), connection_.autoCommit_,
                             connection_.transactionMode_, stmtId_,
                             inputDesc_.length, getParameters(), queryTimeout_,
                             connection_.iso88591EncodingOverride_);
                 } else
-                executeCall(connection_.server_, connection_.getDialogueId_(),
-                        connection_.getTxid_(), connection_.autoCommit_,
+                executeCall(connection_.server_, connection_.getDialogueId(),
+                        connection_.getTxid(), connection_.autoCommit_,
                         connection_.transactionMode_, stmtId_, 0, null,
                         queryTimeout_,
                         connection_.iso88591EncodingOverride_);
@@ -1524,14 +1524,14 @@ public int executeUpdate() throws SQLException {
             synchronized (connection_) {
                 validateExecuteInvocation();
                 if (inputDesc_ != null) {
-                    executeCall(connection_.server_, connection_.getDialogueId_(),
-                            connection_.getTxid_(), connection_.autoCommit_,
+                    executeCall(connection_.server_, connection_.getDialogueId(),
+                            connection_.getTxid(), connection_.autoCommit_,
                             connection_.transactionMode_, stmtId_,
                             inputDesc_.length, getParameters(), queryTimeout_,
                             connection_.iso88591EncodingOverride_);
                 } else
-                executeCall(connection_.server_, connection_.getDialogueId_(),
-                        connection_.getTxid_(), connection_.autoCommit_,
+                executeCall(connection_.server_, connection_.getDialogueId(),
+                        connection_.getTxid(), connection_.autoCommit_,
                         connection_.transactionMode_, stmtId_, 0, null,
                         queryTimeout_,
                         connection_.iso88591EncodingOverride_);
@@ -1669,7 +1669,7 @@ private int validateSetInvocation(String parameterName) throws SQLException {
                     JdbcDebug.debugLevelStmt, "paramValues_ = "
                     + paramValues_ + ", returnResultSet_ = "
                     + returnResultSet_ + ", connection_.txid_ = "
-                    + connection_.getTxid_() + ", resultSetMax_ = "
+                    + connection_.getTxid() + ", resultSetMax_ = "
                     + resultSetMax_ + ", resultSetIndex_ = "
                     + resultSetIndex_ + ", isSPJResultSet_ = "
                     + isSPJResultSet_);
@@ -1706,16 +1706,6 @@ private int validateSetInvocation(String parameterName) throws SQLException {
         if (JdbcDebugCfg.entryActive) {
             debug[methodId_SQLMXCallableStatement_LLIII].methodEntry();
             debug[methodId_SQLMXCallableStatement_LLIII].methodExit();
-        }
-    }
-
-    SQLMXCallableStatement(SQLMXConnection connection, String moduleName,
-            int moduleVersion, long moduleTimestamp, String stmtName) {
-        super(connection, moduleName, moduleVersion, moduleTimestamp, stmtName,
-                false, connection.holdability_);
-        if (JdbcDebugCfg.entryActive) {
-            debug[methodId_SQLMXCallableStatement_LLIJL].methodEntry();
-            debug[methodId_SQLMXCallableStatement_LLIJL].methodExit();
         }
     }
 
