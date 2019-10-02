@@ -79,10 +79,6 @@ public class T2Properties {
     private int maxIdleTime_;
     private int maxStatements_;
 
-    //MFC
-    private String enableMFC_;
-    private String compiledModuleLocation_;
-
     private String externalCallHandler = "NONE";
     private String externalCallPrefix = "EXT";
 
@@ -661,39 +657,6 @@ public class T2Properties {
         setMaxStatements(maxStmt);
 
     }
-    /**
-     * @return the enableMFC_
-     */
-    public String getEnableMFC() {
-        return enableMFC_;
-    }
-
-    /**
-     * @param enableMFC_ the enableMFC_ to set
-     */
-    public void setEnableMFC(String enableMFC_) {
-        if(enableMFC_ != null)
-            this.enableMFC_ = enableMFC_.toUpperCase();
-        else
-            this.enableMFC_ = "OFF";
-    }
-
-    /**
-     * @return the compiledModuleLocation_
-     */
-    public String getCompiledModuleLocation() {
-        return compiledModuleLocation_;
-    }
-
-    /**
-     * @param compiledModuleLocation_ the compiledModuleLocation_ to set
-     */
-    public void setCompiledModuleLocation(String compiledModuleLocation_) {
-        if(compiledModuleLocation_ !=null)
-            this.compiledModuleLocation_ = compiledModuleLocation_;
-        else
-            this.compiledModuleLocation_ = "/usr/tandem/sqlmx/USERMODULES";
-    }
 
     /**
      * @return the externalCallHandler
@@ -1037,10 +1000,6 @@ public class T2Properties {
 	setInlineLobChunkSize(getProperty("inlineLobChunkSize"));
 	setLobChunkSize(getProperty("lobChunkSize"));
 
-        setEnableMFC(getProperty("enableMFC"));
-        setCompiledModuleLocation(getProperty("compiledModuleLocation"));
-
-
 //		setContBatchOnErrorval(getProperty(""));
 
 //		setEnableLog(getProperty("enableLog"));
@@ -1094,10 +1053,6 @@ public class T2Properties {
         props.setProperty("initialPoolSize", String.valueOf(initialPoolSize_));
  	props.setProperty("inlineLobChunkSize", String.valueOf(inlineLobChunkSize_));
  	props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
-        if (getEnableMFC() != null)
-            props.setProperty("enableMFC", enableMFC_);
-        if (getCompiledModuleLocation() != null)
-            props.setProperty("compiledModuleLocation", compiledModuleLocation_);
 
         // props.setProperty("",);
         // props.setProperty("enableLog",);
@@ -1232,13 +1187,6 @@ public class T2Properties {
                 "idMapFile", idMapFile);
         propertyInfo[i].description = "Specifies the file to which the trace facility logs SQL statement IDs and the corresponding JDBC SQL statements.";
         propertyInfo[i++].choices = null;
-        /*
-         * MFC: Module Caching Description: Type 2 driver now supports
-         * compiled module caching
-         */
-        propertyInfo[i] = new java.sql.DriverPropertyInfo("enableMFC",
-                enableMFC_);
-        propertyInfo[i++].choices = null;
         propertyInfo[i] = new java.sql.DriverPropertyInfo("queryExecuteTime",Long.toString(queryExecuteTime_));
         propertyInfo[i].description="Sets the queryExecuteTime";
         propertyInfo[i++].choices = null;
@@ -1247,14 +1195,6 @@ public class T2Properties {
         propertyInfo[i].description="set the Trace file to log sql queries which are taking more the queryExecuteTime";
         propertyInfo[i++].choices = null;
 
-        propertyInfo[i].description = "Sets module caching feature to on or off";
-        propertyInfo[i++].choices = null;
-
-        propertyInfo[i] = new java.sql.DriverPropertyInfo(
-                "compiledModuleLocation", compiledModuleLocation_);
-        propertyInfo[i].description = "Specifies the directory to cache the compiled modules";
-        propertyInfo[i++].choices = null;
-// Publishing
         propertyInfo[i] = new java.sql.DriverPropertyInfo(
                 "statisticsIntervalTime", Integer.toString(statisticsIntervalTime_));
         propertyInfo[i].description = "Time in seconds on how often the aggregation data should be published. Default is 60";
@@ -1321,9 +1261,6 @@ public class T2Properties {
                 .toString(getLobChunkSize())));
         ref.add(new StringRefAddr("transactionMode",getTransactionMode()));
         ref.add(new StringRefAddr("contBatchOnError",getContBatchOnError()));
-        //Renamed the modulecaching property as enableMFC
-        ref.add(new StringRefAddr("enableMFC", getEnableMFC()));
-        ref.add(new StringRefAddr("compiledModuleLocation",	getCompiledModuleLocation()));
         ref.add(new StringRefAddr("queryExecuteTime",Long.toString(queryExecuteTime_)));
         ref.add(new StringRefAddr("T2QueryExecuteLogFile",T2QueryExecuteLogFile_));
 

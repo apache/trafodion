@@ -1062,9 +1062,6 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			validateExecDirectInvocation();
 			isSelect_ = getStmtSqlType(sql);
 			sql_ = sql;
-			if(SQLMXConnection.getSqlStmtType(sql) == SQLMXConnection.TYPE_CONTROL){
-				connection_.setOfCQDs.add(sql);
-			}
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_validateExecDirectInvocation_L].methodExit();

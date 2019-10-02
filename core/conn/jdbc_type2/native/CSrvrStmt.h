@@ -41,8 +41,6 @@
 
 //#include "spthread.h" commented by venu for TSLX
 #define     UNKNOWN_METHOD          -1
-#define     Prepare_From_Module     20  // PrepareFromModule Method Operation Index
-// addition to SrvrOthers.h indexes, which stop at 19
 #define     MAX_RESULT_SETS         255 // Max number of RS per stmt
 
 
@@ -65,7 +63,6 @@ public:
     BYTE                    *outputDescVarBuffer;       // Data Buffer for output values
     long                    inputDescVarBufferLen;
     long                    outputDescVarBufferLen;
-    BOOL                    isReadFromModule;
     jobject                 resultSetObject;
     BOOL                    endOfData;
     BOOL                    isSPJRS;                        // RS Query Stmt Type (e.g. SQL_CALL_NO_RESULT_SETS, SQL_CALL_WITH_RESULT_SETS)
@@ -191,9 +188,7 @@ public:
     SRVR_STMT_HDL(long dialogueId);
     ~SRVR_STMT_HDL();
     //SRVR_STMT_HDL(const char *inStmtLabel, const char *moduleName);
-    SQLRETURN Prepare(const SQLValue_def *inSqlString, short inStmtType, short holdability, long inQueryTimeout,bool isISUD = FALSE);
-    // MFC
-    SQLRETURN PrepareforMFC(const SQLValue_def *inSqlString, short inStmtType, short holdability, long inQueryTimeout, bool isISUD = FALSE);
+    SQLRETURN Prepare(const SQLValue_def *inSqlString, short inStmtType, short holdability, long inQueryTimeout);
     SQLRETURN Execute(const char *inCursorName, long inputRowcnt, short sqlStmtType,
         const SQLValueList_def *inputValueList,short inSqlAsyncEnable, long inQueryTimeout,
         SQLValueList_def *outputValueList);
@@ -207,7 +202,6 @@ public:
     void cleanupSQLValueList();
     void cleanupSQLDescList();
     void cleanupAll();
-    SQLRETURN PrepareFromModule(short stmtType);
     SQLRETURN InternalStmtClose(unsigned short inFreeResourceOpt);
     SQLRETURN freeBuffers(short descType);
     void processThreadReturnCode(void);

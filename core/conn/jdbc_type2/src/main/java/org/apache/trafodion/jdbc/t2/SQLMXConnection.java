@@ -862,24 +862,10 @@ public synchronized PreparedStatement prepareStatement(String sql)
             }
 */
 
-            // MFC - if modulecaching is on call cpqprepare directly
-            // Renamed the modulecaching property as enableMFC
-            if (this.t2props.getEnableMFC().equalsIgnoreCase("on") && this.t2props.getBatchBinding() ==0) {
-
-                synchronized (SQLMXConnection.lockForMFCPrep) {
-                    pstmt.cpqPrepareJNI(server_, getDialogueId(), getTxid(),
-                            autoCommit_, transactionMode_, "", moduleVersion_,
-                            moduleTimestamp_, pstmt.getStmtLabel_(),
-                            pstmt.isSelect_, pstmt.queryTimeout_,
-                            pstmt.resultSetHoldability_, batchBindingSize_,
-                            pstmt.fetchSize_, sql.trim(),getSqlStmtTypeForMFC(sql.trim()));
-                }
-            } else {
-                pstmt.prepare(server_, getDialogueId(), getTxid(), autoCommit_,
+            pstmt.prepare(server_, getDialogueId(), getTxid(), autoCommit_,
                         pstmt.getStmtLabel_(), pstmt.sql_.trim(), pstmt.isSelect_,
                         pstmt.queryTimeout_, pstmt.resultSetHoldability_,
                         batchBindingSize_, pstmt.fetchSize_);
-            }
 
             // value
 //			if (SQLMXConnection.getSqlStmtType(sql) != SQLMXConnection.TYPE_INSERT
@@ -1050,25 +1036,11 @@ public synchronized PreparedStatement prepareStatement(String sql,
             }
 */
 
-            // MFC - if modulecaching is on call cpqprepare directly
-            // Renamed the modulecaching property as enableMFC
-            if (this.t2props.getEnableMFC().equalsIgnoreCase("on") && this.t2props.getBatchBinding() ==0) {
-
-                synchronized (SQLMXConnection.lockForMFCPrep) {
-                    stmt.cpqPrepareJNI(server_, getDialogueId(), getTxid(),
-                            autoCommit_, transactionMode_, "", moduleVersion_,
-                            moduleTimestamp_, stmt.getStmtLabel_(),
-                            stmt.isSelect_, stmt.queryTimeout_,
-                            stmt.resultSetHoldability_, batchBindingSize_,
-                            stmt.fetchSize_, sql.trim(),getSqlStmtTypeForMFC(sql.trim()));
-                }
-            } else {
                 stmt.prepare(server_, getDialogueId(), getTxid(),
                         autoCommit_, stmt.getStmtLabel_(), stmt.sql_.trim(),
                         stmt.isSelect_, stmt.queryTimeout_,
                         stmt.resultSetHoldability_, batchBindingSize_,
                         stmt.fetchSize_);
-            }
 /*
             if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
                     && stmt.getSqlType() != SQLMXConnection.TYPE_INSERT_PARAM) {
@@ -1172,25 +1144,11 @@ public synchronized PreparedStatement prepareStatement(String sql,
             }
 
 */
-            // MFC - if modulecaching is on call cpqprepare directly
-            // Renamed the modulecaching property as enableMFC
-            if (this.t2props.getEnableMFC().equalsIgnoreCase("on") && this.t2props.getBatchBinding() ==0) {
-
-                synchronized (SQLMXConnection.lockForMFCPrep) {
-                    stmt.cpqPrepareJNI(server_, getDialogueId(), getTxid(),
-                            autoCommit_, transactionMode_, "", moduleVersion_,
-                            moduleTimestamp_, stmt.getStmtLabel_(),
-                            stmt.isSelect_, stmt.queryTimeout_,
-                            stmt.resultSetHoldability_, batchBindingSize_,
-                            stmt.fetchSize_, sql.trim(),getSqlStmtTypeForMFC(sql.trim()));
-                }
-            } else {
                 stmt.prepare(server_, getDialogueId(), getTxid(),
                         autoCommit_, stmt.getStmtLabel_(), stmt.sql_.trim(),
                         stmt.isSelect_, stmt.queryTimeout_,
                         stmt.resultSetHoldability_, batchBindingSize_,
                         stmt.fetchSize_);
-            }
 /*
 
             if (stmt.getSqlType() != SQLMXConnection.TYPE_INSERT
@@ -1760,13 +1718,10 @@ private int mapTxnIsolation(int level) {
                             "ON")
                     || System.getProperty("cqdDoomUserTxn", "OFF")
                     .equalsIgnoreCase("ON");
-                    // MFC added two more parameters
-
                     connectInit(server_, getDialogueId(), catalog_, schema_,
                             mploc_, isReadOnly_, autoCommit_,
                             mapTxnIsolation(transactionIsolation_),
-                            loginTimeout_, queryTimeout_, enableMFC_,
-                            compiledModuleLocation_, blnCQD,
+                            loginTimeout_, queryTimeout_, blnCQD,
                             statisticsIntervalTime_, statisticsLimitTime_, statisticsType_, programStatisticsEnabled_, statisticsSqlPlanEnabled_
                     );
 
@@ -1939,31 +1894,6 @@ private int mapTxnIsolation(int level) {
                     } catch (SQLException se1) {
                     }
                     setTxid_(0);
-                }
-                if (this.setOfCQDs.isEmpty() == false) {
-                    if (clearCQD1 == null && clearCQD2 == null
-                            && clearCQD3 == null) {
-                        clearSetOfCQDs(this.getDialogueId());
-                        clearCQD2 = this
-                        .prepareForResetCQDs("CONTROL TABLE * RESET");
-                        clearSetOfCQDs(this.getDialogueId());
-                        clearCQD3 = this
-                        .prepareForResetCQDs("CONTROL QUERY SHAPE CUT");
-                        clearSetOfCQDs(this.getDialogueId());
-                        clearCQD1 = this
-                        .prepareForResetCQDs("CONTROL QUERY DEFAULT * RESET");
-
-                    }
-                    if (clearCQD1 != null) {
-                        clearCQD1.execute();
-                        clearCQD2.execute();
-                        clearCQD3.execute();
-                    }
-                    //native call to clear native cqd list
-                    clearSetOfCQDs(this.getDialogueId());
-                    this.setOfCQDs.clear();
-                    //to reset all the CQDs required for T2 connection.
-                    connectInitialized_ = false;
                 }
                 pc_.logicalClose(sendEvents);
                 isClosed_ = true;
@@ -2165,28 +2095,6 @@ private void initSetDefaults() throws SQLException {
         }
     }
 
-    synchronized PreparedStatement prepareForResetCQDs(String sql)
-    throws SQLException {
-        try {
-            SQLMXPreparedStatement pstmt;
-            clearWarnings();
-            if (isClosed_)
-            throw Messages.createSQLException(locale_,
-                    "invalid_connection", null);
-            connectInit();
-            gcStmts();
-            pstmt = new SQLMXPreparedStatement(this, sql);
-            pstmt.prepare(server_, getDialogueId(), getTxid(), autoCommit_,
-                    pstmt.getStmtLabel_(), pstmt.sql_.trim(), pstmt.isSelect_,
-                    pstmt.queryTimeout_, pstmt.resultSetHoldability_,
-                    batchBindingSize_, pstmt.fetchSize_);
-            return pstmt;
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_prepareStatement_L].methodExit();
-        }
-    }
-
     // Log the JDBC SQL statement and the STMTID to the idMapFile if the
     // enableLog_ property is set.
     private void printIdMapEntry(SQLMXStatement stmt) {
@@ -2372,39 +2280,6 @@ public static boolean getSqlStmtType2(String str) {
         }
     }
 
-    boolean getSqlStmtTypeForMFC(String str) {
-        //
-        // Kludge to determin if the type of statement.
-        //
-        String tokens[] = str.split("[^a-zA-Z]+", 3);
-        boolean isISUD = false;
-        String str3 = "";
-
-        //
-        // If there are no separators (i.e. no spaces, {, =, etc.) in front of
-        // the
-        // first token, then the first token is the key word we are looking for.
-        // Else, the first token is an empty string (i.e. split thinks the first
-        // token is the empty string followed by a separator), and the second
-        // token is the key word we are looking for.
-        //
-        if (tokens[0].length() > 0) {
-            str3 = tokens[0].toUpperCase();
-        } else {
-            str3 = tokens[1].toUpperCase();
-        }
-
-        if (str3.equals("SELECT") || str3.equals("UPDATE")
-                || str3.equals("DELETE") || str3.equals("INSERT")) {
-            isISUD = true;
-        } else {
-            isISUD = false;
-
-        }
-        return isISUD;
-
-    }
-
     static short getSqlStmtType(String str) {
         //
         // Kludge to determin if the type of statement.
@@ -2478,7 +2353,6 @@ private native void setIsSpjRSFlag(long dialogueId, boolean isSpjrsOn);
 private native void connectInit(String server, long dialogueId,
             String catalog, String schema, String mploc, boolean isReadOnly, boolean autoCommit,
             int transactionIsolation, int loginTimeout, int queryTimeout,
-            String modulecaching, String compiledmodulelocation,
             boolean blnDoomUsrTxn,
             int statisticsIntervalTime_, int statisticsLimitTime_, String statisticsType_, String programStatisticsEnabled_, String statisticsSqlPlanEnabled_) throws SQLException;
 
@@ -2501,8 +2375,6 @@ private native int beginTransaction(String server, long dialogueId);
     static native String getCharsetEncoding(String server, long dialogueId,
             int charset, String encodingOverride) throws SQLException;
 
-    //native method to clear all the CQD's and Control statement in setOFCQD() function
-private native void clearSetOfCQDs(long dialogueId);
     native void setCharsetEncodingOverride(String server, long dialogueId,
             int charset, String encodingOverride) throws SQLException;
 
@@ -2552,28 +2424,6 @@ public PrintWriter getTracer() {
         return out_;
     }
 
-public String getMD5HashCode() {
-
-        MessageDigest md5;
-        String hashCode = null;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-            if (!setOfCQDs.isEmpty()) {
-                Iterator itr = setOfCQDs.iterator();
-                while (itr.hasNext()) {
-                    String s = (String) itr.next();
-                    md5.update(s.getBytes());
-                }
-                BigInteger hash = new BigInteger(1, md5.digest());
-                hashCode = hash.toString(16);
-            }
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return hashCode;
-    }
-
 public void initConnectionProps(T2Properties info) {
 
         dsn_ = info.getDataSourceName();
@@ -2597,8 +2447,6 @@ public void initConnectionProps(T2Properties info) {
         batchBindingSize_ = info.getBatchBinding();
         connectionTimeout_ = 60;
         loginTimeout_ = info.getLoginTimeout();
-        enableMFC_ = info.getEnableMFC();
-        compiledModuleLocation_ = info.getCompiledModuleLocation();
         contBatchOnError_ = info.getContBatchOnError();
         iso88591EncodingOverride_ = info.getIso88591EncodingOverride();
 
@@ -2719,9 +2567,6 @@ public static final int SQL_SET_TRANSACTION_FLAG = 0x0001;
     int batchBindingSize_;
     String contBatchOnError_;
     boolean contBatchOnErrorval_;
-    String enableMFC_;
-    String compiledModuleLocation_;
-
     WeakReference<SQLMXConnection> pRef_;
     SQLMXDataSource ds_;
     SQLMXPooledConnection pc_;
@@ -2782,29 +2627,27 @@ private static int methodId_setSavepoint_L = 31;
 private static int methodId_setSavepoint_V = 32;
 private static int methodId_setTransactionIsolation = 33;
 private static int methodId_setTypeMap = 34;
-private static int methodId_cpqPrepareStatement = 35;
-private static int methodId_cpqPrepareCall = 36;
-private static int methodId_begintransaction = 37;
-private static int methodId_mapTxnIsolation = 38;
-private static int methodId_gcStmts = 39;
-private static int methodId_removeElement_L = 40;
-private static int methodId_removeElement_V = 41;
-private static int methodId_addElement = 42;
-private static int methodId_connectInit = 43;
-private static int methodId_reuse = 44;
-private static int methodId_updateConnectionReusability = 45;
-private static int methodId_getDataLocator = 46;
-private static int methodId_getPooledConnection = 47;
-private static int methodId_getProperties = 48;
-private static int methodId_SQLMXConnection_LLL = 49;
-private static int methodId_SQLMXConnection_LL_ds = 50;
-private static int methodId_SQLMXConnection_LL_pool = 51;
-private static int methodId_mapTxnMode = 52;
-private static int methodId_mapTxnModeToString = 53;
-private static int methodId_initSetDefaults = 54;
-private static int methodId_getCharsetEncodingCached = 55;
-private static int methodId_getSchema = 56;
-private static int totalMethodIds = 57;
+private static int methodId_begintransaction = 35;
+private static int methodId_mapTxnIsolation = 36;
+private static int methodId_gcStmts = 37;
+private static int methodId_removeElement_L = 38;
+private static int methodId_removeElement_V = 39;
+private static int methodId_addElement = 40;
+private static int methodId_connectInit = 41;
+private static int methodId_reuse = 42;
+private static int methodId_updateConnectionReusability = 43;
+private static int methodId_getDataLocator = 44;
+private static int methodId_getPooledConnection = 45;
+private static int methodId_getProperties = 46;
+private static int methodId_SQLMXConnection_LLL = 47;
+private static int methodId_SQLMXConnection_LL_ds = 48;
+private static int methodId_SQLMXConnection_LL_pool = 49;
+private static int methodId_mapTxnMode = 50;
+private static int methodId_mapTxnModeToString = 51;
+private static int methodId_initSetDefaults = 52;
+private static int methodId_getCharsetEncodingCached = 53;
+private static int methodId_getSchema = 54;
+private static int totalMethodIds = 55;
 private static JdbcDebug[] debug;
 
     static {
@@ -2869,10 +2712,6 @@ private static JdbcDebug[] debug;
             debug[methodId_setTransactionIsolation] = new JdbcDebug(className,
                     "setTransactionIsolation");
             debug[methodId_setTypeMap] = new JdbcDebug(className, "setTypeMap");
-            debug[methodId_cpqPrepareStatement] = new JdbcDebug(className,
-                    "cpqPrepareStatement");
-            debug[methodId_cpqPrepareCall] = new JdbcDebug(className,
-                    "cpqPrepareCall");
             debug[methodId_begintransaction] = new JdbcDebug(className,
                     "begintransaction");
             debug[methodId_mapTxnIsolation] = new JdbcDebug(className,
@@ -2914,15 +2753,10 @@ private static JdbcDebug[] debug;
     int dsTransactionMode_;
     String dsIso88591EncodingOverride_;
     boolean dsContBatchOnError_; // RFE: Batch update improvements
-    // MFC - std version and timestamp for the cached modules.
-    static final int moduleVersion_ = 12;//R3.0 changes
-    static final long moduleTimestamp_ = 1234567890;
-    static final Object lockForMFCPrep = new Object();
     static final HashMap<Long, Long> mapOfClosedDialogs = new HashMap<Long, Long>();
     static private long keyForMapCounter = 0;
 private long keyForMap;
 
-    Set setOfCQDs = new HashSet();
 private PrintWriter tracer;
     PreparedStatement clearCQD1;
     PreparedStatement clearCQD2;

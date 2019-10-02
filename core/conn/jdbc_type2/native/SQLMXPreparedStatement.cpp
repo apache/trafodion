@@ -25,13 +25,7 @@
 //
 
 #include <platform_ndcs.h>
-#ifdef NSK_PLATFORM
-#include <sqlWin.h>
-#include <windows.h>
-#include <MD5.h>  // MFC
-#else
 #include <sql.h>
-#endif
 #include <sqlext.h>
 #include "CoreCommon.h"
 #include "JdbcDriverGlobal.h"
@@ -42,8 +36,6 @@
 #include "SrvrCommon.h"
 #endif
 #include "Debug.h"
-#include <sys/types.h>//MFC
-#include<sys/stat.h>// MFC
 
 
 JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_prepare
@@ -138,9 +130,7 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_
 		&outputDesc,
 		&sqlWarning,
 		&stmtId,
-		&inputParamOffset,
-		NULL,//MFC
-		FALSE);
+		&inputParamOffset);
 
 	if (sql)
 		JNI_ReleaseByteArrayElements(jenv,sqlByteArray, (jbyte *)nSql, JNI_ABORT);
@@ -528,248 +518,5 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_
 		fetchSize));
 
 	SRVR_STMT_HDL::resetFetchSize(dialogueId, stmtId, fetchSize);
-	FUNCTION_RETURN_VOID((NULL));
-}
-
-JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrepareJNI
-(JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
- jint txid, jboolean autoCommit, jint txnMode,
- jstring moduleName, jint moduleVersion, jlong moduleTimestamp, jstring stmtName,
- jboolean isSelect, jint queryTimeout, jint holdability, jint batchSize, jint fetchSize, jstring  sql,jboolean isISUD)
-{
-	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrepare",("...txid=%ld, autoCommit=%s, ...\
-																			  txnMode=%ld, isSelect=%s, \
-																			  holdability=%ld, isISUD=%d...",
-																			  txid,
-																			  DebugBoolStr(autoCommit),
-																			  txnMode,
-																			  DebugBoolStr(isSelect),
-																			  holdability,isISUD));
-
-#ifndef TODO	// Linux port Todo:
-	ExceptionStruct				exception_;
-	long					estimatedCost;
-	long					inputParamOffset;
-	ERROR_DESC_LIST_def			sqlWarning;
-	SQLItemDescList_def			outputDesc;
-	SQLItemDescList_def			inputDesc;
-	jint						currentTxid = txid;
-	jint						externalTxid = 0;
-	long						stmtId;
-	short						txn_status;
-
-	SQLValue_def				sqlString;			// MFC - added this
-	const char					*nSql = NULL;
-	jbyteArray					sqlByteArray;
-	jboolean					isCopy;
-	jsize						len;
-
-	const char		*nModuleName = NULL;
-	const char		*nStmtName = NULL;
-
-	if (moduleName)
-		nModuleName = JNI_GetStringUTFChars(jenv,moduleName, NULL);
-	else
-	{
-		throwSQLException(jenv, INVALID_MODULE_NAME_ERROR, NULL, "HY000");
-		FUNCTION_RETURN_VOID(("moduleName is Null"));
-	}
-
-	// MFC - read the sqlstring
-	if (sql)
-	{
-		nSql = JNI_GetStringUTFChars(jenv,sql, NULL);
-		sqlString.dataValue._buffer = new unsigned char[strlen(nSql)+1];
-		strcpy(sqlString.dataValue._buffer, nSql);
-		sqlString.dataValue._length = strlen(nSql);
-
-		//Soln. No.: 10-110927-9875 - fix memory leak
-		JNI_ReleaseStringUTFChars(jenv,sql, nSql);
-	}
-	else
-	{
-		throwSQLException(jenv, INVALID_SQL_STRING_ERROR, NULL, "HY090");
-		FUNCTION_RETURN_VOID(("Null SQL string"));
-	}
-
-	if (stmtName)
-		nStmtName = JNI_GetStringUTFChars(jenv,stmtName, NULL);
-	else
-	{
-		throwSQLException(jenv, INVALID_STMT_LABEL_ERROR, NULL, "HY000");
-		FUNCTION_RETURN_VOID(("stmtName is Null"));
-	}
-
-
-	// MFC - coin module name
-
-	char pmoduleFileName[1024];
-	/*char pModuleNameForLoad[1024];
-
-	memset(pModuleNameForLoad, '\0', 1024);*/
-	memset(pmoduleFileName, '\0', 1024);
-
-	strcpy(pmoduleFileName, srvrGlobal->compiledModuleLocation);
-	strcat(pmoduleFileName, "/");
-	strcat(pmoduleFileName, srvrGlobal->CurrentCatalog);
-	strcat(pmoduleFileName, ".");
-	strcat(pmoduleFileName,srvrGlobal->CurrentSchema);
-	strcat(pmoduleFileName,".");
-	strcat(pmoduleFileName,MFCKEY);
-
-	
-	struct stat checkMF;
-	char* resMD5 = NULL;
-	bool bModuleExists = false;
-	resMD5 = MDMultiple2(dialogueId, sqlString.dataValue._buffer);
-	strcat(pmoduleFileName,resMD5);
-
-	if(resMD5 != NULL )
-	{
-		free(resMD5);
-		resMD5 = NULL;
-	}
-
-	std::string lockFile(pmoduleFileName);
-	lockFile.append(".lck");
-	int retCode = stat(lockFile.c_str(), &checkMF);
-	if(retCode != 0)
-	{
-		retCode = stat(pmoduleFileName, &checkMF);
-		if (retCode == 0)
-		{
-			bModuleExists = true;	
-		}
-	}
-	char pstmtLabel[1024];//, stmtLabelForLoadingModule;
-	memset(pstmtLabel, '\0', 1024);
-	// Check if the module is already loaded for this connection
-	// If so it cannot be used again.
-	SRVR_CONNECT_HDL *pConnection = (SRVR_CONNECT_HDL*)dialogueId;
-	bool isModuleLoadedForThisConnection = pConnection->isModuleLoaded(pmoduleFileName);
-
-	if (bModuleExists && !isModuleLoadedForThisConnection)
-	{
-		std::string strInput = sqlString.dataValue._buffer;
-		if((strInput.find_first_of("SELECT") == 0) || (strInput.find_first_of("select") == 0))
-		{
-			strcpy(pstmtLabel, "MXSTMT01");
-		}
-		else
-		{
-			strcpy(pstmtLabel,"SQLMX_DEFAULT_STATEMENT_");
-			int n = -1;
-			if(strcmp(srvrGlobal->CurrentSchema, "SEABASE") != 0 &&
-				strcmp(srvrGlobal->CurrentCatalog, "TRAFODION") != 0)
-			{
-				//n = srvrGlobal->setOfCQD.size()+4;
-				n = pConnection->listOfCQDs.size()+4;
-			}
-			else if(strcmp(srvrGlobal->CurrentSchema, "SEABASE") == 0 &&
-				strcmp(srvrGlobal->CurrentCatalog, "TRAFODION") == 0)
-			{
-				//n = srvrGlobal->setOfCQD.size()+2;
-				n = pConnection->listOfCQDs.size()+2;
-			}
-			char num[4];
-			memset(num, '\0', 4);
-			itoa(n,num,10);
-			strcat(pstmtLabel, num);
-		}
-	}
-	else
-	{
-		strcpy(pstmtLabel,nStmtName);
-	}
-	// MFC - if module is available call prepareFromModule else call prepare
-	if (bModuleExists && !isModuleLoadedForThisConnection)
-	{
-		pConnection->referenceCountForModuleLoaded(pmoduleFileName);
-		odbc_SQLSvc_PrepareFromModule_sme_(NULL, NULL,
-			&exception_,
-			dialogueId,
-			pmoduleFileName,
-			moduleVersion,
-			moduleTimestamp,
-			pstmtLabel,
-			(isSelect ? TYPE_SELECT : TYPE_UNKNOWN),
-			fetchSize,
-			batchSize,
-			holdability,
-			&estimatedCost,
-			&inputDesc,
-			&outputDesc,
-			&sqlWarning,
-			&stmtId,
-			&inputParamOffset);
-
-	}
-	else
-	{
-		odbc_SQLSvc_Prepare_sme_(NULL, NULL,
-			&exception_,
-			dialogueId,
-			pstmtLabel,
-			"",				// StmtExplainName
-			EXTERNAL_STMT,
-			&sqlString,
-			holdability,
-			(isSelect ? TYPE_SELECT : TYPE_UNKNOWN),
-			batchSize,
-			fetchSize,
-			queryTimeout,
-			&estimatedCost,
-			&inputDesc,
-			&outputDesc,
-			&sqlWarning,
-			&stmtId,
-			&inputParamOffset,
-			pmoduleFileName,
-				isISUD);
-	}
-	//Soln 10-111229-1174 -- start
-	if(sqlString.dataValue._buffer != NULL)
-	{
-		MEMORY_DELETE_ARRAY(sqlString.dataValue._buffer);
-		sqlString.dataValue._length = 0;
-	}
-	//Soln 10-111229-1174 -- end
-	if (moduleName)
-		JNI_ReleaseStringUTFChars(jenv,moduleName, nModuleName);
-
-	if (stmtName)
-		JNI_ReleaseStringUTFChars(jenv,stmtName, nStmtName);
-
-
-	switch (exception_.exception_nr)
-	{
-	case CEE_SUCCESS:
-		setPrepareOutputs(jenv, jobj, &inputDesc, &outputDesc, currentTxid, stmtId, inputParamOffset);
-		if (sqlWarning._length > 0)
-			setSQLWarning(jenv, jobj, &sqlWarning);
-		break;
-	case odbc_SQLSvc_PrepareFromModule_SQLQueryCancelled_exn_:
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, QUERY_CANCELLED_ERROR, NULL, "HY008",
-			exception_.u.SQLQueryCancelled.sqlcode);
-		break;
-	case odbc_SQLSvc_PrepareFromModule_SQLError_exn_:
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, &exception_.u.SQLError);
-		break;
-	case odbc_SQLSvc_PrepareFromModule_ParamError_exn_:
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, MODULE_ERROR, exception_.u.ParamError.ParamDesc, "HY000");
-		break;
-	case odbc_SQLSvc_PrepareFromModule_SQLStillExecuting_exn_:
-	case odbc_SQLSvc_PrepareFromModule_InvalidConnection_exn_:
-	case odbc_SQLSvc_PrepareFromModule_TransactionError_exn_:
-	default:
-		// TFDS - These exceptions should not happen
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, PROGRAMMING_ERROR, NULL, "HY000", exception_.exception_nr);
-		break;
-	}
-#endif	
 	FUNCTION_RETURN_VOID((NULL));
 }

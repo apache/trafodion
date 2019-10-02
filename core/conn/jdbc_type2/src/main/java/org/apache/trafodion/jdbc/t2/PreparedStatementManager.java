@@ -329,8 +329,6 @@ class PreparedStatementManager extends SQLMXHandle {
 				lookupKey = lookupKey.concat(connect.schema_);			
 			lookupKey = lookupKey.concat(String.valueOf(connect.transactionIsolation_))
 					.concat(String.valueOf(resultSetHoldability));
-			if (connect.getMD5HashCode() != null) 
-				lookupKey = lookupKey.concat(connect.getMD5HashCode());
 //			lookupKey = sql;
 //			if (connect.catalog_ != null)
 //				lookupKey.concat(connect.catalog_);
@@ -403,8 +401,6 @@ class PreparedStatementManager extends SQLMXHandle {
 				lookupKey = lookupKey.concat(connect.schema_);
 			lookupKey = lookupKey.concat(String.valueOf(connect.transactionIsolation_))
 					.concat(String.valueOf(resultSetHoldability));
-			if (connect.getMD5HashCode() != null) 
-				lookupKey = lookupKey.concat(connect.getMD5HashCode());
 //			lookupKey = sql;
 //			if (connect.catalog_ != null)
 //				lookupKey.concat(connect.catalog_);

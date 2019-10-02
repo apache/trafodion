@@ -1650,6 +1650,11 @@ short ExProcessVolatileTableTcb::work()
 	case REMOVE_FROM_VOL_TAB_LIST_:
 	  {
 	    HashQueue * volTabList = currContext->getVolTabList();
+	    if (volTabList == NULL) {
+	       step_ = DONE_;
+	       break;
+	    }
+        
 	    volTabList->position(pvtTdb().volTabName_,
 				 pvtTdb().volTabNameLen_);
 	    void * name = volTabList->getNext();

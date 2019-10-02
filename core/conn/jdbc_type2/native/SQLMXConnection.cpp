@@ -381,7 +381,7 @@ JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_beginTr
 JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connectInit
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jstring catalog,
         jstring schema, jstring mploc, jboolean isReadOnly, jboolean autoCommit, jint transactionIsolation,
-        jint loginTimeout, jint queryTimeout, jstring modulecaching, jstring compiledmodulelocation, jboolean blnDoomUsrTxn,
+        jint loginTimeout, jint queryTimeout, jboolean blnDoomUsrTxn,
         jint statisticsIntervalTime, jint statisticsLimitTime, jstring statisticsType, jstring programStatisticsEnabled, jstring statisticsSqlPlanEnabled)
 {
 
@@ -410,20 +410,10 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connect
                     DebugJString(jenv,statisticsSqlPlanEnabled)
             ));
 
-    //MFC - new properties
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  MFC modulecaching=%s",
-                    DebugJString(jenv,modulecaching)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  MFC compiledmodulelocation=%s",
-                    DebugJString(jenv,compiledmodulelocation)));
-
     const char *nCatalog;
     const char *nSchema;
     const char *nMploc;
     jthrowable exception;
-
-    // MFC - new properties
-    const char *nModuleCaching;
-    const char *nCompiledModuleLocation;
 
     // PUBLISHING
     const char *nStatisticsType;
@@ -669,40 +659,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connect
         throwSetConnectionException(jenv, &setConnectException);
         FUNCTION_RETURN_VOID(("SQL_AUTOCOMMIT - setConnectException.exception_nr(%s) is not CEE_SUCCESS",
                         CliDebugSqlError(setConnectException.exception_nr)));
-    }
-    // MFC if mfc is on set the recompilation warnings on
-    // to help remove stale modules
-    if (srvrGlobal->moduleCaching == 1)
-    {
-        odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,
-                &setConnectException,
-                dialogueId,
-                SQL_RECOMPILE_WARNING,
-                0,
-                NULL,
-                &sqlWarning
-        );
-
-        if (setConnectException.exception_nr != CEE_SUCCESS)
-        {
-            throwSetConnectionException(jenv, &setConnectException);
-            FUNCTION_RETURN_VOID(("SQL_RECOMPILE_WARNING - setConnectException.exception_nr(%s) is not CEE_SUCCESS",
-                            CliDebugSqlError(setConnectException.exception_nr)));
-        }
-        //MFC support for BigNum
-        odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,&setConnectException,dialogueId,
-                SET_SESSION_INTERNAL_IO,0,NULL,
-                &sqlWarning);
-
-        if (setConnectException.exception_nr != CEE_SUCCESS)
-
-        {
-            throwSetConnectionException(jenv, &setConnectException);
-            FUNCTION_RETURN_VOID(("Set Session internal_format_io failure setConnectException.exception_nr(%s) is not CEE_SUCCESS",
-                            CliDebugSqlError(setConnectException.exception_nr)));
-
-        }
-
     }
 
 //    printf("Native statisticsIntervalTime :%ld\n", statisticsIntervalTime);
@@ -1148,20 +1104,5 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setChar
         }
         JNI_ReleaseStringUTFChars(jenv,encodingOverride, nEncodingOverride);
     }
-    FUNCTION_RETURN_VOID((NULL));
-}
-
-//Sol. 10-100618-1186
-/*
- * Class:     org_apache_trafodion_jdbc_t2_SQLMXConnection
- * Method:    clearSetOfCQDs
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_clearSetOfCQDs
-(JNIEnv *jenv, jobject obj, jlong dialogueId)
-{
-    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_clearSetOfCQDs",("..."));
-//cleare CQD's upon a logical connection close.
-    ((SRVR_CONNECT_HDL*)dialogueId)->listOfCQDs.clear();
     FUNCTION_RETURN_VOID((NULL));
 }

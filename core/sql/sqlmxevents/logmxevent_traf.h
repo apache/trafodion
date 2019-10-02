@@ -64,6 +64,7 @@
 #endif 
 
 #include "QRLogger.h"
+#include "ComDiags.h"
 
 class SQLMXLoggingArea
 {
@@ -188,5 +189,8 @@ class SQLMXLoggingArea
 				      Lng32 totalStatements);
 																									 
 };
+
+void logAnMXEventForError( ComCondition & condition, SQLMXLoggingArea::ExperienceLevel emsEventEL);
+
 
 #endif

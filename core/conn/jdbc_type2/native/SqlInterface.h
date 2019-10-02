@@ -62,8 +62,6 @@ extern SQLRETURN CANCEL(SRVR_STMT_HDL *pSrvrStmt);
 
 extern SQLRETURN CLEARDIAGNOSTICS(SRVR_STMT_HDL *pSrvrStmt);
 
-extern SQLRETURN PREPARE_FROM_MODULE(SRVR_STMT_HDL* pSrvrStmt);
-
 extern SQLRETURN ALLOCSQLMXHDLS(SRVR_STMT_HDL *pSrvrStmt);
 
 extern SQLRETURN ALLOCSQLMXHDLS_SPJRS(SRVR_STMT_HDL *pSrvrStmt, SQLSTMT_ID *callpStmt, const char *RSstmtName);
@@ -83,48 +81,5 @@ SQLRETURN SET_DATA_PTR(SRVR_STMT_HDL *pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTy
 SQLRETURN _SQL_WaitCloseOnErr (SRVR_STMT_HDL *pSrvrStmt, long int *retcode );
 
 SQLRETURN _SQL_Wait (SRVR_STMT_HDL *pSrvrStmt, long int *retcode );
-
-extern SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt); // New method for MFC - PREPARE + createModule
-
-
-//MFC  New structure and methods to get datatypes from descriptors
-typedef struct InputDescInfo {
-	int CountPosition;
-	long DataType;
-	char DataTypeString[50];
-	long Length;
-	long DateTimeCode;
-	long Precision;
-	long SQLCharset;
-	long ODBCPrecision;
-	long ODBCDataType;
-	long Scale;
-	long Nullable;
-	long IntLeadPrec;
-
-	void setData(int countPosition, long dataType, long length, long scale,long Nullable,
-		long dateTimeCode, long precision,long IntLeadPrec, long sQLCharset, SRVR_GLOBAL_Def *srvrGlobal);
-
-
-
-
-	InputDescInfo();
-
-
-	~InputDescInfo();
-
-	InputDescInfo(const InputDescInfo &rval);
-
-
-	void operator = (const InputDescInfo &rval);
-
-};
-
-SQLRETURN BuildSQLDesc2ForModFile(SQLDESC_ID pDesc,long numEntries,InputDescInfo *&pInputDescInfo);
-
-SQLRETURN BuildSQLDesc(SRVR_STMT_HDL*pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descType,InputDescInfo *pInputDescInfo);
-void CreateModulePlan(long inputParamCount, InputDescInfo *inputDescInfo, char *inputsqlString,long dialogueId,const char *resMD5);
-
-
 
 #endif

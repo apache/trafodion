@@ -30,9 +30,6 @@
 #include "CoreCommon.h"
 //#include "eventMsgs.h"
 
-#define MFCKEY  "T2MFC"  // MFC
-
-
 #define CLEAR_EXCEPTION(exception) { \
     exception.exception_nr = 0; \
     exception.exception_detail = 0; \
@@ -126,15 +123,6 @@ extern SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
 									 Int32  resultSetIndex = 0,
 									 SQLSTMT_ID* callStmtId = NULL);
 
-extern SRVR_STMT_HDL *createSrvrStmtForMFC(long dialogueId,
-                                           const char *stmtLabel,
-                                           long *sqlcode = NULL,
-                                           const char *moduleName = NULL,
-                                           long moduleVersion = SQLCLI_ODBC_MODULE_VERSION,
-                                           long long moduleTimestamp = 0,
-                                           short sqlStmtType = TYPE_UNKNOWN,
-                                           BOOL useDefaultDesc = FALSE
-                                           );
 extern SRVR_STMT_HDL *createSpjrsSrvrStmt(SRVR_STMT_HDL *callpStmt,
                                           long dialogueId,
                                           const char *RSstmtLabel,
@@ -258,22 +246,6 @@ short do_ExecSMD(
                         , /* In */ const char *tableParam[]
 , /* In */ const char *inputParam[]
 , /* Out   */ SQLItemDescList_def *outputDesc
-, /* Out   */ long *stmtId
-);
-
-extern short do_ExecFetchAppend(
-                                /* In    */ void * objtag_
-                                , /* In    */ const CEE_handle_def *call_id_
-                                , /* Out   */ ExceptionStruct *executeException
-                                , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
-                                , /* In    */ long dialogueId
-                                , /* In    */ const char *stmtLabel
-                                , /* In    */ short sqlStmtType
-                                , /* In    */ char *tableParam[]
-, /* In    */ const char *inputParam[]
-, /* Out   */ SQLItemDescList_def *outputDesc
-, /* Out   */ long *rowsAffected
-, /* Out   */ SQLValueList_def *outputValueList
 , /* Out   */ long *stmtId
 );
 

@@ -41,7 +41,6 @@
 #define odbc_SQLSvc_FetchN_SQLStillExecuting_exn_ 6
 #define odbc_SQLSvc_FetchN_SQLQueryCancelled_exn_ 7
 #define odbc_SQLSvc_FetchN_TransactionError_exn_ 8
-#define SQL_RECOMPILE_WARNING			113		// MFC - definition for recompilation warnings
 
 extern "C" void
 odbc_SQLSvc_FetchN_sme_(
@@ -120,10 +119,7 @@ odbc_SQLSvc_Prepare_sme_( 	void *               objtag_,			/* In	*/
 						 SQLItemDescList_def      *outputDesc,		/* Out  */
 						 ERROR_DESC_LIST_def      *sqlWarning,		/* Out  */
 						 long                     *stmtId,			/* Out  */
-						 long                 *inputParamOffset,	/* Out   */
-						 char                *moduleName,
-						 bool isISUD
-						 );
+						 long                 *inputParamOffset);    	/* Out   */
 
 
 /*
@@ -263,39 +259,6 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 									 , /* In	*/ char *optionValueStr
 									 , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
 									 );
-
-/*
-* Exception number constants for
-* operation 'odbc_SQLSvc_PrepareFromModule'
-*/
-#define odbc_SQLSvc_PrepareFromModule_ParamError_exn_ 1
-#define odbc_SQLSvc_PrepareFromModule_InvalidConnection_exn_ 2
-#define odbc_SQLSvc_PrepareFromModule_SQLError_exn_ 3
-#define odbc_SQLSvc_PrepareFromModule_SQLStillExecuting_exn_ 4
-#define odbc_SQLSvc_PrepareFromModule_SQLQueryCancelled_exn_ 5
-#define odbc_SQLSvc_PrepareFromModule_TransactionError_exn_ 6
-
-extern "C" void
-odbc_SQLSvc_PrepareFromModule_sme_(
-								   /* In	*/ void * objtag_
-								   , /* In	*/ const CEE_handle_def *call_id_
-								   , /* Out   */ ExceptionStruct *exception_
-								   , /* In	*/ long dialogueId
-								   , /* In	*/ char *moduleName
-								   , /* In	*/ long moduleVersion
-								   , /* In	*/ long long moduleTimestamp
-								   , /* In	*/ char *stmtName
-								   , /* In	*/ short sqlStmtType
-								   , /* In	*/ long fetchSize
-								   , /* In   */ long batchSize
-								   , /* In   */ long holdability
-								   , /* Out   */ long *estimatedCost
-								   , /* Out   */ SQLItemDescList_def *inputDesc
-								   , /* Out   */ SQLItemDescList_def *outputDesc
-								   , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
-								   , /* Out   */ long *stmtId
-								   , /* Out   */ long *inputParamOffset
-								   );
 
 /*
 * Exception number constants for
@@ -461,4 +424,3 @@ odbc_SQLSrvr_UpdateLob_sme_(
 //extern std::map<std::string, std::string> mapOfSQLToModuleFile;
 
 #endif // _SRVROTHERS_DEFINED
-# define SET_SESSION_INTERNAL_IO 197  //MFC support for BigNum

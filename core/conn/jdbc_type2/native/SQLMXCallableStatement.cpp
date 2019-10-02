@@ -134,9 +134,7 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 		&outputDesc,
 		&sqlWarning,
 		&stmtId,
-		&inputParamOffset,
-		NULL, // MFC
-		false);
+		&inputParamOffset);
 
 	if (sql)
 	{
@@ -285,119 +283,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 	case odbc_SQLSvc_ExecuteCall_InvalidConnection_exn_:
 	case odbc_SQLSvc_ExecuteCall_TransactionError_exn_:
 	case odbc_SQLSvc_ExecuteCall_SQLNeedData_exn_:
-	default:
-		// TFDS - These exceptions should not happen
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, PROGRAMMING_ERROR, NULL, "HY000", exception_.exception_nr);
-		break;
-	}
-	FUNCTION_RETURN_VOID((NULL));
-}
-
-JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_cpqPrepareCall
-(JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
- jint txid, jboolean autoCommit, jint txnMode,
- jstring moduleName, jint moduleVersion, jlong moduleTimestamp, jstring stmtName,
- jint queryTimeout, jint holdability, jint fetchSize)
-{
-	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_cpqPrepareCall",("..."));
-
-	long							estimatedCost;
-	long							inputParamOffset;
-	ERROR_DESC_LIST_def				sqlWarning;
-	SQLItemDescList_def				outputDesc;
-	SQLItemDescList_def				inputDesc;
-	jint							currentTxid = txid;
-	jint							externalTxid = 0;
-	long							stmtId;
-	const char						*nModuleName = NULL;
-	const char						*nStmtName = NULL;
-	short							txn_status;
-
-	ExceptionStruct	exception_;
-	CLEAR_EXCEPTION(exception_);
-
-	if (moduleName)
-		nModuleName = JNI_GetStringUTFChars(jenv,moduleName, NULL);
-	else
-	{
-		throwSQLException(jenv, INVALID_MODULE_NAME_ERROR, NULL, "HY000");
-		FUNCTION_RETURN_VOID(("moduleName is Null"));
-	}
-
-	if (stmtName)
-		nStmtName = JNI_GetStringUTFChars(jenv,stmtName, NULL);
-	else
-	{
-		throwSQLException(jenv, INVALID_STMT_LABEL_ERROR, NULL, "HY000");
-		FUNCTION_RETURN_VOID(("stmtName is Null"));
-	}
-
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-	}
-
-	odbc_SQLSvc_PrepareFromModule_sme_(NULL, NULL,
-		&exception_,
-		dialogueId,
-		(char *)nModuleName,
-		moduleVersion,
-		moduleTimestamp,
-		(char *)nStmtName,
-		TYPE_CALL,
-		fetchSize,
-		0,
-		0,
-		&estimatedCost,
-		&inputDesc,
-		&outputDesc,
-		&sqlWarning,
-		&stmtId,
-		&inputParamOffset);
-
-	if (moduleName)
-		JNI_ReleaseStringUTFChars(jenv,moduleName, nModuleName);
-
-	if (stmtName)
-		JNI_ReleaseStringUTFChars(jenv,stmtName, nStmtName);
-
-	// Prepare, don't abort transaction even if there is an error, hence CEE_SUCCESS
-	if ((txn_status = endTxnControl(jenv, currentTxid, txid,
-		autoCommit, CEE_SUCCESS, FALSE, txnMode, externalTxid)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("endTxnControl() Failed"));
-	}
-
-	switch (exception_.exception_nr)
-	{
-	case CEE_SUCCESS:
-		outputDesc._length = 0;
-		outputDesc._buffer = 0;
-		setPrepareOutputs(jenv, jobj, &inputDesc, &outputDesc, currentTxid, stmtId, inputParamOffset);
-		if (sqlWarning._length > 0)
-			setSQLWarning(jenv, jobj, &sqlWarning);
-		break;
-	case odbc_SQLSvc_PrepareFromModule_SQLQueryCancelled_exn_:
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, QUERY_CANCELLED_ERROR, NULL, "HY008",
-			exception_.u.SQLQueryCancelled.sqlcode);
-		break;
-	case odbc_SQLSvc_PrepareFromModule_SQLError_exn_:
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, &exception_.u.SQLError);
-		break;
-	case odbc_SQLSvc_PrepareFromModule_ParamError_exn_:
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwSQLException(jenv, MODULE_ERROR, exception_.u.ParamError.ParamDesc, "HY000");
-		break;
-	case odbc_SQLSvc_PrepareFromModule_SQLStillExecuting_exn_:
-	case odbc_SQLSvc_PrepareFromModule_InvalidConnection_exn_:
-	case odbc_SQLSvc_PrepareFromModule_TransactionError_exn_:
 	default:
 		// TFDS - These exceptions should not happen
 		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);

@@ -77,13 +77,6 @@ public:
 		Int32  resultSetIndex = 0,
 		SQLSTMT_ID* callStmtId = NULL);
 
-	SRVR_STMT_HDL *createSrvrStmtForMFC(const char *stmtLabel,
-		long	*sqlcode,
-		const char *moduleName,
-		long moduleVersion,
-		long long moduleTimestamp,
-		short	sqlStmtType,
-		BOOL	useDefaultDesc);
 	SRVR_STMT_HDL *createSpjrsSrvrStmt(SRVR_STMT_HDL *pSrvrStmt,
 		const char *stmtLabel,
 		long	*sqlcode,
@@ -105,9 +98,6 @@ public:
 	}
 	
 	inline void setCurrentStmt(SRVR_STMT_HDL *pSrvrStmt) { pCurrentSrvrStmt = pSrvrStmt;};
-	bool isModuleLoaded(std::string strModuleName);//MFC
-	void removeFromLoadedModuleSet(std::string strModuleName);//MFC
-	void referenceCountForModuleLoaded(std::string strModuleName);//MFC
 public:
 	SQLCTX_HANDLE			contextHandle;
 	ERROR_DESC_LIST_def		sqlWarning;
@@ -120,13 +110,11 @@ public:
 	char				CurrentCatalog[129];
 	char				CurrentSchema[129];
 	
-	std::list<std::string> listOfCQDs;
-
 private:
 	SRVR_STMT_HDL_LIST		*pSrvrStmtListHead;
 	
-    MapOfSrvrStmt mapOfSrvrStmt;
-    MapOfInternalSrvrStmt mapOfInternalSrvrStmt;
+	MapOfSrvrStmt mapOfSrvrStmt;
+	MapOfInternalSrvrStmt mapOfInternalSrvrStmt;
 
 	SRVR_STMT_HDL			*pCurrentSrvrStmt;
 	long					count;

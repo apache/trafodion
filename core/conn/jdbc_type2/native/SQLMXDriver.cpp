@@ -75,18 +75,14 @@ JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_getPid (JNIEnv
 * Method:    SQLMXInitialize
 * Signature: (Ljava/lang/String;I)V
 */
-// MFC - added two parameters to set the MFC on/off and the directory
 JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEnv *jenv, jclass cls,
-																		 jstring language, jint nowaitOn, jstring moduleCaching, jstring compiledModuleLocation)
+																		 jstring language, jint nowaitOn)
 {
 	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize",("language=%s, nowaitOn=%ld",
 		DebugJString(jenv,language),
 		nowaitOn));
 	const char 					*nLanguage;
 	//	static GlobalInformation	*globalInfo = new GlobalInformation();
-	//MFC
-	const char					*nModuleCaching;
-	const char					*nCompiledModuleLocation;
         
 	if (!driverVersionChecked)
 	{
@@ -174,63 +170,7 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitializ
 		FUNCTION_RETURN_VOID(("envGetMXSystemCatalogName() failed"));
 	}
 #endif
-
-	// MFC - set the srvrGlobal variables w.r.t the properties - start
-
-	srvrGlobal->moduleCaching=0;
-	if (moduleCaching)
-	{
-		nModuleCaching = JNI_GetStringUTFChars(jenv,moduleCaching, NULL);
-		if (strcmp(nModuleCaching,"ON") == 0)
-			srvrGlobal->moduleCaching=1;
-
-		//Soln. No.: 10-110927-9875 - fix memory leak
-		JNI_ReleaseStringUTFChars(jenv,moduleCaching, nModuleCaching);
-	}
-
-
-	if (srvrGlobal->moduleCaching == 1)
-	{
-		memset(srvrGlobal->CurrentCatalog, '\0', 129);
-		memset(srvrGlobal->CurrentSchema, '\0', 129);
-		memset(srvrGlobal->compiledModuleLocation, '\0', 100);
-		if (compiledModuleLocation == NULL)
-		{
-			strcpy(srvrGlobal->compiledModuleLocation,"/usr/tandem/sqlmx/USERMODULES");
-		}
-		else
-		{
-			nCompiledModuleLocation = JNI_GetStringUTFChars(jenv,compiledModuleLocation, NULL);
-			strcpy(srvrGlobal->compiledModuleLocation,nCompiledModuleLocation);
-
-			//Soln. No.: 10-110927-9875 - fix memory leak
-			JNI_ReleaseStringUTFChars(jenv,compiledModuleLocation, nCompiledModuleLocation);
-
-			if(srvrGlobal->compiledModuleLocation[0] != '/')
-			{
-				printf("The directory provided for option \"compiledmodulelocation\" must be an absolute path.\n");
-				abort();
-			}
-			int nDirExists = access(srvrGlobal->compiledModuleLocation, F_OK);
-			if(nDirExists != 0)
-			{
-				printf("The directory provided for option \"compiledmodulelocation\" does not exist.\n");
-				abort();
-			}
-			nDirExists = access(srvrGlobal->compiledModuleLocation, W_OK);
-			if(nDirExists != 0)
-			{
-				printf("The directory provided for option \"compiledmodulelocation\" does not have \"write\" permission.\n");
-				abort();
-			}
-			if(srvrGlobal->compiledModuleLocation[strlen(srvrGlobal->compiledModuleLocation)-1] == '/')
-			{
-				srvrGlobal->compiledModuleLocation[strlen(srvrGlobal->compiledModuleLocation)-1] = '\0';
-			}
-		}
-	}
 	srvrGlobal->boolFlgforInitialization = 1;
-	// MFC set the srvrGlobal variables w.r.t the properties - end
 	FUNCTION_RETURN_VOID((NULL));
 }
 

@@ -308,14 +308,6 @@ void SRVR_CONNECT_HDL::removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
                 free32(tempPtr);
             }
 #endif
-            // Remove the Module from the list: This is MFC Code.
-            if(lpSrvrStmt->moduleId.module_name != NULL)
-            {
-                // This is safe even if the Module is not an MFC Module.
-                // Because if these are canned queries, this will not
-                // be in the MFC set.
-                this->removeFromLoadedModuleSet((const char *)lpSrvrStmt->moduleId.module_name);
-            }
             // If the statement being deleted is current statement, reset the current statement
             if (pCurrentSrvrStmt == lpSrvrStmt)
             {
@@ -488,74 +480,6 @@ SRVR_STMT_HDL *SRVR_CONNECT_HDL::getInternalSrvrStmt(long dialogueId, const char
     {
         *sqlcode = SQL_INVALID_HANDLE;
         FUNCTION_RETURN_PTR(NULL, ("getInternalSrvrStmt() failed to find the internal statement \"%s\"", stmtLabel));
-    }
-}
-
-SRVR_STMT_HDL *SRVR_CONNECT_HDL::createSrvrStmtForMFC(
-    const char *stmtLabel,
-    long    *sqlcode,
-    const char *moduleName,
-    long moduleVersion,
-    long long moduleTimestamp,
-    short   sqlStmtType,
-    BOOL    useDefaultDesc)
-{
-    FUNCTION_ENTRY("SRVR_CONNECT_HDL::createSrvrStmt",("..."));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  stmtLabel=%s, sqlcode=0x%08x",
-        DebugString(stmtLabel),
-        sqlcode));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  moduleName=%s",
-        DebugString(moduleName)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  moduleVersion=%ld, moduleTimestamp=%s",
-        moduleVersion,
-        DebugTimestampStr(moduleTimestamp)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  sqlStmtType=%s, useDefaultDesc=%d",
-        CliDebugSqlStatementType(sqlStmtType),
-        useDefaultDesc));
-
-    SQLRETURN rc;
-    SRVR_STMT_HDL *pSrvrStmt;
-    int retcode;
-
-    pSrvrStmt = NULL;//getSrvrStmt(stmtLabel, sqlcode, moduleName);
-        MEMORY_ALLOC_OBJ(pSrvrStmt,SRVR_STMT_HDL((long)this));
-
-        rc = pSrvrStmt->allocSqlmxHdls(stmtLabel, moduleName, moduleTimestamp,
-            moduleVersion, sqlStmtType, useDefaultDesc);
-        if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
-        {
-            MEMORY_DELETE_OBJ(pSrvrStmt);
-        if (sqlcode)
-            *sqlcode = rc;
-        FUNCTION_RETURN_PTR(NULL,
-                ("pSrvrStmt->allocSqlmxHdls returned %s",CliDebugSqlError(rc)));
-        }
-        addSrvrStmt(pSrvrStmt);
-
-    if (sqlcode)
-        *sqlcode = SQL_SUCCESS;
-    FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
-}
-
-//MFC
-void SRVR_CONNECT_HDL::referenceCountForModuleLoaded(std::string strModuleName)
-{
-    if(!this->isModuleLoaded(strModuleName))
-    {
-        this->setOfLoadedModules.insert(strModuleName);
-    }
-}
-//MFC
-bool SRVR_CONNECT_HDL::isModuleLoaded(std::string strModuleName)
-{
-    return this->setOfLoadedModules.find(strModuleName) != this->setOfLoadedModules.end();
-}
-// MFC
-void SRVR_CONNECT_HDL::removeFromLoadedModuleSet(std::string strModuleName)
-{
-    if(this->isModuleLoaded(strModuleName))
-    {
-        this->setOfLoadedModules.erase(strModuleName);
     }
 }
 

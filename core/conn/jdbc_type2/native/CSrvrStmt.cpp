@@ -95,7 +95,6 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     clientLCID = srvrGlobal->clientLCID;
     rowCount._length = 0;
     rowCount._buffer = NULL;
-    isReadFromModule = FALSE;
     moduleName[0] = '\0';
     inputDescName[0] = '\0';
     outputDescName[0] = '\0';
@@ -156,21 +155,18 @@ SRVR_STMT_HDL::~SRVR_STMT_HDL()
 }
 
 SQLRETURN SRVR_STMT_HDL::Prepare(const SQLValue_def *inSqlString, short inStmtType, short inHoldability,
-                                 long inQueryTimeout,bool isISUD)
+                                 long inQueryTimeout)
 {
     FUNCTION_ENTRY("SRVR_STMT_HDL::Prepare",(""));
     DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inSqlString='%s'",
         CLI_SQL_VALUE_STR(inSqlString)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inStmtType=%s, inHoldability=%d, inQueryTimeout=%ld, isISUD=%d",
+    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inStmtType=%s, inHoldability=%d, inQueryTimeout=%ld",
         CliDebugStatementType(inStmtType),
         inHoldability,
-        inQueryTimeout,isISUD));
+        inQueryTimeout));
 
     SQLRETURN rc;
     size_t  len;
-    this->isISUD = isISUD;
-    if (isReadFromModule)   // Already SMD label is found
-        CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
     // cleanup all memory allocated in the previous operations
     cleanupAll();
     sqlString.dataCharset = inSqlString->dataCharset;
@@ -265,54 +261,6 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
     case SQL_SUCCESS_WITH_INFO:
         outValueList->_buffer = outputValueList._buffer;
         outValueList->_length = outputValueList._length;
-        //MFC update srvrGlobal if any CQD/catalog/schema is set
-        if (this->sqlString.dataValue._buffer != NULL)
-        {
-            if (this->SqlQueryStatementType == 9) // CQD is being set here
-            {
-                // The CQDs which are considered for creating HASH
-                // name of the Module File. Right now this conisders
-                // only the CQDs set by the JDBC/MX T2 Driver.
-                //Modified for sol 10-100618-1193
-                //srvrGlobal->setOfCQD.insert(this->sqlString.dataValue._buffer);
-                ((SRVR_CONNECT_HDL *)dialogueId)->listOfCQDs.push_back((const char *)this->sqlString.dataValue._buffer);
-            }
-            if (this->SqlQueryStatementType == 11) // set catalog
-            {
-                char currentSqlString[100];
-                strcpy(currentSqlString,(const char *)this->sqlString.dataValue._buffer);
-                strToUpper(currentSqlString);
-                char *stringtoken = strtok_r(currentSqlString," ",&saveptr);
-                stringtoken = strtok_r(NULL," ",&saveptr);
-                stringtoken = strtok_r(NULL," ;'",&saveptr);
-                strcpy(pConnect->CurrentCatalog,(stringtoken));
-            }
-            if(this->SqlQueryStatementType == 12) // set schema
-            {
-                char currentSqlString1[100],currentSqlString2[100];
-                strcpy(currentSqlString1,(const char *)this->sqlString.dataValue._buffer);
-                strToUpper(currentSqlString1);
-
-                saveptr=NULL;
-                char *stringtoken = strtok_r(currentSqlString1," ",&saveptr);
-                stringtoken = strtok_r(NULL," ",&saveptr);
-                stringtoken = strtok_r(NULL," ;\n\t",&saveptr);
-                strcpy(currentSqlString2,stringtoken);
-
-                int pos = strcspn(stringtoken,".");
-                if (pos == strlen(stringtoken))
-                    strcpy(pConnect->CurrentSchema,(stringtoken));
-                else
-                {
-                    saveptr=NULL;
-                    stringtoken = strtok_r(currentSqlString2,".",&saveptr);
-                    strcpy(pConnect->CurrentCatalog,(stringtoken));
-                    stringtoken = strtok_r(NULL,"; \t\n",&saveptr);
-                    strcpy(pConnect->CurrentSchema,(stringtoken));
-                }
-            }
-        }
-        //MFC update srvrGlobal end
         break;
     case ODBC_SERVER_ERROR:
         // Allocate Error Desc
@@ -535,37 +483,6 @@ void  SRVR_STMT_HDL::cleanupAll(void)
     FUNCTION_RETURN_VOID((NULL));
 }
 
-SQLRETURN SRVR_STMT_HDL::PrepareFromModule(short inStmtType)
-{
-    FUNCTION_ENTRY("SRVR_STMT_HDL::PrepareFromModule",("inStmtType=%s",
-        CliDebugStatementType(inStmtType)));
-
-    SQLRETURN rc;
-    size_t  len;
-    if (srvrGlobal->moduleCaching)
-    {
-        if (!this->isClosed)
-        {
-            long retcode = SQL_SUCCESS;
-            SQLSTMT_ID  *pStmt = &(this->stmt);
-            retcode = CLI_CloseStmt(pStmt);
-
-            if (retcode!=0) retcode = CLI_ClearDiagnostics(pStmt);
-            this->isClosed = TRUE;
-        }
-    }
-
-    if (isReadFromModule) CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
-    // cleanup all memory allocated in the previous operations
-    cleanupAll();
-    stmtType = inStmtType;
-    estimatedCost = -1;
-    rc = PREPARE_FROM_MODULE(this);
-    if (rc != SQL_ERROR)
-        isReadFromModule = TRUE;
-    CLI_DEBUG_RETURN_SQL(rc);
-}
-
 SQLRETURN SRVR_STMT_HDL::freeBuffers(short descType)
 {
     FUNCTION_ENTRY("SRVR_STMT_HDL::freeBuffers",("descType=%d",
@@ -657,23 +574,11 @@ SQLRETURN SRVR_STMT_HDL::allocSqlmxHdls(const char *inStmtName, const char *inMo
 
     strcpy(stmtName, inStmtName);
     stmtNameLen = strlen(inStmtName);
-    if (inModuleName != NULL)
-    {
-        moduleId.version = inModuleVersion;
-        strcpy(moduleName, inModuleName);
-        moduleId.module_name = moduleName;
-        moduleId.module_name_len = strlen(moduleName);
-        moduleId.charset = "ISO88591";
-        moduleId.creation_timestamp = inModuleTimestamp;
-    }
-    else
-    {
-        moduleId.version = SQLCLI_ODBC_MODULE_VERSION;
-        moduleId.module_name = NULL;
-        moduleId.module_name_len = 0;
-        moduleId.charset = "ISO88591";
-        moduleId.creation_timestamp = 0;
-    }
+    moduleId.version = SQLCLI_ODBC_MODULE_VERSION;
+    moduleId.module_name = NULL;
+    moduleId.module_name_len = 0;
+    moduleId.charset = "ISO88591";
+    moduleId.creation_timestamp = 0;
     sqlStmtType = inSqlStmtType;
     useDefaultDesc = inUseDefaultDesc;
     rc = ALLOCSQLMXHDLS(this);
@@ -1102,53 +1007,4 @@ struct SQLCLI_QUAD_FIELDS *SRVR_STMT_HDL::getQuadField(DESC_TYPE descType)
         FUNCTION_RETURN_PTR(fetchQuadField,("fetchQuadField"));
     }
     FUNCTION_RETURN_PTR(NULL,("Unknown"));
-}
-//MFC
-// MFC
-SQLRETURN SRVR_STMT_HDL::PrepareforMFC(const SQLValue_def *inSqlString, short inStmtType, short inHoldability,
-                                       long inQueryTimeout,bool isISUD)
-{
-    FUNCTION_ENTRY("SRVR_STMT_HDL::PrepareforMFC",(""));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inSqlString='%s'",
-        CLI_SQL_VALUE_STR(inSqlString)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inStmtType=%s, inHoldability=%d, inQueryTimeout=%ld, isISUD=%d",
-        CliDebugStatementType(inStmtType),
-        inHoldability,
-        inQueryTimeout,isISUD));
-
-    SQLRETURN rc;
-    size_t  len;
-    this->isISUD = isISUD;
-    if (srvrGlobal->moduleCaching)
-    {
-        if (!this->isClosed)
-        {
-            long retcode = SQL_SUCCESS;
-            SQLSTMT_ID  *pStmt = &(this->stmt);
-            retcode = CLI_CloseStmt(pStmt);
-
-            if (retcode!=0)
-            {
-                retcode = CLI_ClearDiagnostics(pStmt);
-            }
-            this->isClosed = TRUE;
-        }
-    }
-    if (isReadFromModule)   // Already SMD label is found
-    {
-        CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
-    }
-    // cleanup all memory allocated in the previous operations
-    cleanupAll();
-    sqlString.dataCharset = inSqlString->dataCharset;
-    sqlString.dataType = inSqlString->dataType;
-    MEMORY_ALLOC_ARRAY(sqlString.dataValue._buffer,unsigned char,inSqlString->dataValue._length+1);
-    sqlString.dataValue._length = inSqlString->dataValue._length+1;
-
-    strncpy((char *)sqlString.dataValue._buffer, (const char *)inSqlString->dataValue._buffer, inSqlString->dataValue._length);
-    sqlString.dataValue._buffer[inSqlString->dataValue._length] = '\0';
-    stmtType = inStmtType;
-    holdability = inHoldability;
-
-    CLI_DEBUG_RETURN_SQL(PREPAREFORMFC(this));
 }
