@@ -38,7 +38,6 @@ class GlobalInformation {
 //	static jboolean			useDefaultEncoding;	// Allows a "default" value for the encoding
 //	static int				totalCharsets;
 //	static jint				defaultCharset;
-//	static short			nowaitFilenum;
 //	static char				NskSystemCatalogName[MAX_NSKCATALOGNAME_LEN+1]; // MP system catalog name
 //	static char				DefaultCatalog[MAX_CHAR_SET_STRING_LENGTH + 1];
 //	static char				DefaultSchema[MAX_CHAR_SET_STRING_LENGTH + 1];
@@ -82,15 +81,6 @@ public:
 	
 	static char *getDefaultSchemaName () {
 		return (DefaultSchema);
-	}
-	
-	inline static void setNoWaitFileNumber (short fileNum) {
-		nowaitFilenum = fileNum;
-		return;
-	}
-	
-	inline static short int getNoWaitFileNumber () {
-		return (nowaitFilenum);
 	}
 */	
 };

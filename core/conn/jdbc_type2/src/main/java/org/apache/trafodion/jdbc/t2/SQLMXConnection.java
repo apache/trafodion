@@ -1719,7 +1719,7 @@ private int mapTxnIsolation(int level) {
                     || System.getProperty("cqdDoomUserTxn", "OFF")
                     .equalsIgnoreCase("ON");
                     connectInit(server_, getDialogueId(), catalog_, schema_,
-                            mploc_, isReadOnly_, autoCommit_,
+                            isReadOnly_, autoCommit_,
                             mapTxnIsolation(transactionIsolation_),
                             loginTimeout_, queryTimeout_, blnCQD,
                             statisticsIntervalTime_, statisticsLimitTime_, statisticsType_, programStatisticsEnabled_, statisticsSqlPlanEnabled_
@@ -1965,7 +1965,7 @@ private int mapTxnIsolation(int level) {
         try {
             if (connReuseBitMap_ != 0) {
                 connectReuse(server_, getDialogueId(), connReuseBitMap_,
-                        dsCatalog_, dsSchema_, mploc_,
+                        dsCatalog_, dsSchema_, 
                         TRANSACTION_READ_COMMITTED);
                 // Reset all connection attribute values
                 catalog_ = dsCatalog_;
@@ -2124,7 +2124,6 @@ private void initSetDefaults() throws SQLException {
 //			catalog_ = T2Driver.catalog_;
 //			schema_ = T2Driver.schema_;
 //			locale_ = T2Driver.locale_;
-//			mploc_ = T2Driver.mploc_;
 //			batchBindingSize_ = T2Driver.batchBindingSize_;
 //
 //			connectionTimeout_ = 60;
@@ -2351,13 +2350,13 @@ private native void setIsSpjRSFlag(long dialogueId, boolean isSpjrsOn);
     // private native void setReadOnly(String server, int dialogueId, boolean
     // readOnly);
 private native void connectInit(String server, long dialogueId,
-            String catalog, String schema, String mploc, boolean isReadOnly, boolean autoCommit,
+            String catalog, String schema, boolean isReadOnly, boolean autoCommit,
             int transactionIsolation, int loginTimeout, int queryTimeout,
             boolean blnDoomUsrTxn,
             int statisticsIntervalTime_, int statisticsLimitTime_, String statisticsType_, String programStatisticsEnabled_, String statisticsSqlPlanEnabled_) throws SQLException;
 
 private native void connectReuse(String server, long dialogueId,
-            int conResetValue, String catalog, String schema, String mploc,
+            int conResetValue, String catalog, String schema, 
             int transactionIsolation) throws SQLException;
 
 private native long connect(String server, String uid, String pwd);
@@ -2443,7 +2442,6 @@ public void initConnectionProps(T2Properties info) {
             else
             locale_ = Locale.getDefault();
         }
-        mploc_ = info.getMploc();
         batchBindingSize_ = info.getBatchBinding();
         connectionTimeout_ = 60;
         loginTimeout_ = info.getLoginTimeout();
@@ -2559,7 +2557,6 @@ public static final int SQL_SET_TRANSACTION_FLAG = 0x0001;
     //ThreadLocal<Integer> txIDPerThread;
     Map<String, Class<?>> userMap_;
     Locale locale_;
-    String mploc_;
     ReferenceQueue<SQLMXStatement> refQ_;
     HashMap<WeakReference, Long> refToStmt_;
     boolean connectInitialized_;

@@ -118,7 +118,6 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 					// unique key is created
 					// RFE: Batch update improvements
 					key = getLanguage() + delimiter + getCatalog() + delimiter + getSchema()
-							+ delimiter + getMploc() + delimiter + getSqlmx_nowait()
 							+ delimiter + getBatchBinding() + delimiter
 							+ getMaxPoolSize() + delimiter + getMinPoolSize() + delimiter
 							+ getMaxStatements() + delimiter + getTraceFlag() + delimiter
@@ -288,7 +287,7 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 	// Native methods
 	static native int getPid();
 
-	native static void SQLMXInitialize(String language, int nowaitOn);
+	native static void SQLMXInitialize(String language);
 
 	native static void setDefaultEncoding(String encoding);
 
@@ -367,7 +366,7 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 		checkLibraryVersion(DriverInfo.driverVproc);
 		
 		// Initialize Java objects, methods references into gJNICache
-		SQLMXInitialize(locale_.getLanguage(), 1);
+		SQLMXInitialize(locale_.getLanguage());
 		
     	// Get the major and minor database version numbers that
 		// were setup in SQLMXInitialize()

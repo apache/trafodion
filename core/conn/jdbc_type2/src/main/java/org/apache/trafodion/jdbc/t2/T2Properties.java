@@ -43,9 +43,7 @@ public class T2Properties {
 
     private String catalog_;
     private String schema_;
-    private String mploc_;
     private int batchBindingSize_;
-    private int sql_nowait;
     private int traceFlag_;
     private String traceFile_;
     private int inlineLobChunkSize_;
@@ -163,20 +161,6 @@ public class T2Properties {
     }
 
     /**
-     * @return the mploc_
-     */
-    public String getMploc() {
-        return mploc_;
-    }
-
-    /**
-     * @param mploc_ the mploc_ to set
-     */
-    public void setMploc(String mploc_) {
-        this.mploc_ = mploc_;
-    }
-
-    /**
      * @return the batchBindingSize_
      */
     public int getBatchBinding() {
@@ -215,31 +199,6 @@ public class T2Properties {
         setBatchBinding(bbSize);
     }
 
-
-
-    /**
-     * @return the sql_nowait
-     */
-    public int getSqlmx_nowait() {
-        return sql_nowait;
-    }
-
-    /**
-     * @param sql_nowait the sql_nowait to set
-     */
-    public void setSqlmx_nowait(String nowaitFlag) {
-        if (nowaitFlag == null)
-            this.sql_nowait = 1;
-        else {
-            if (nowaitFlag.equalsIgnoreCase("off") || nowaitFlag.equals("0")) //when setSqlmx_nowait called with zero
-                this.sql_nowait = 0;
-            else if (nowaitFlag.equalsIgnoreCase("on_olt_off")|| nowaitFlag.equals("2"))
-                this.sql_nowait = 2;
-            else
-                this.sql_nowait = 1;
-        }
-//		this.sql_nowait = sql_nowait;
-    }
 
     /**
      * @return the traceFlag_
@@ -983,8 +942,6 @@ public class T2Properties {
         setSchema(getProperty("schema"));
         setBatchBinding(getProperty("batchBinding"));
         setLanguage(getProperty("language"));
-        setMploc(getProperty("mploc"));
-        setSqlmx_nowait(getProperty("sql_nowait"));
         setSpjrs(getProperty("Spjrs"));
         setStmtatomicity(getProperty("stmtatomicity"));
 //		setStmtatomicityval(getProperty(""));
@@ -1030,10 +987,6 @@ public class T2Properties {
             props.setProperty("schema", schema_);
 
         props.setProperty("batchBinding", String.valueOf(batchBindingSize_));
-        if (getMploc() != null)
-            props.setProperty("mploc", mploc_);
-
-        props.setProperty("sql_nowait", String.valueOf(sql_nowait));
         if (getSpjrs() != null)
             props.setProperty("Spjrs", Spjrs_);
 
@@ -1101,11 +1054,6 @@ public class T2Properties {
         propertyInfo[i] = new java.sql.DriverPropertyInfo(
                 "batchBinding", Integer.toString(batchBindingSize_));
         propertyInfo[i].description = "Specifies that statements are batched together in the executeBatch() operation.";
-        propertyInfo[i++].choices = null;
-
-        propertyInfo[i] = new java.sql.DriverPropertyInfo("mploc",
-                mploc_);
-        propertyInfo[i].description = "Specifies the Guardian location in which SQL tables are created.";
         propertyInfo[i++].choices = null;
 
         propertyInfo[i] = new java.sql.DriverPropertyInfo(
@@ -1238,7 +1186,6 @@ public class T2Properties {
         ref.add(new StringRefAddr("catalog", getCatalog()));
         ref.add(new StringRefAddr("schema", getSchema()));
         ref.add(new StringRefAddr("language", getLanguage()));
-        ref.add(new StringRefAddr("mploc", getMploc()));
         /* Description: Adding the reference to ISO88591 encoding */
         ref.add(new StringRefAddr("ISO88591", getIso88591EncodingOverride()));
         ref.add(new StringRefAddr("batchBinding", Integer

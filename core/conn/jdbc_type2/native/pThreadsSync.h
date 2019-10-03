@@ -34,15 +34,6 @@
 
 #include <csrvrstmt.h>
 
-
-extern int registerPseudoFileIO(short fileNum);
-
-extern int initStmtForNowait(_TSLX_cond_t *cond, _TSLX_mutex_t *mutex);
-
-extern int WaitForCompletion(SRVR_STMT_HDL *pSrvrStmt, _TSLX_cond_t *cond, _TSLX_mutex_t *mutex);
-
-
-
 extern int mutexCondDestroy(_TSLX_cond_t *cond, _TSLX_mutex_t *mutex);
 
 extern short abortTransaction (void);

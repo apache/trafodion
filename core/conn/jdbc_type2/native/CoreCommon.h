@@ -279,7 +279,6 @@ typedef enum _STOP_TYPE
 #define SQLSVC_EXCEPTION_BUFFER_ALLOC_FAILED "Buffer Allocation Failed"
 #define SQLSVC_EXCEPTION_INVALID_HANDLE "Error while allocating Handles in SQL/MX"
 #define SQLSVC_EXCEPTION_PREPARE_FAILED "Error while preparing the query"
-#define SQLSVC_EXCEPTION_NOWAIT_ERROR   "Error in thread synchronizing functions - Vendor code is FS Error"
 #define SQLSVC_EXCEPTION_INVALID_SCHEMA_VERSION "Invalid Schema version"  // Used for Metadata schemaVersion setup
 
 
@@ -300,7 +299,6 @@ typedef enum _STOP_TYPE
 #define SQL_RETRY_COMPILE_AGAIN     -104
 #define SQL_QUERY_CANCELLED         -105
 #define CANCEL_NOT_POSSIBLE         -106
-#define NOWAIT_ERROR                -107
 #define SQL_RS_DOES_NOT_EXIST       -108
 
 #define TYPE_UNKNOWN                0x0000
@@ -382,8 +380,6 @@ typedef struct _SRVR_GLOBAL_Def
     char                CurrentCatalog[129]; // Added for MFC
     char                CurrentSchema[129];  // Added for MFC
     bool                jdbcProcess;        // This flag is used to determine the query for SQLTables
-    short               nowaitOn;
-    short               nowaitFilenum;
     char                SystemCatalog[129]; // MX system catalog name
     short               boolFlgforInitialization; // Flag intorduced for Connect/disconnect imp.
 
@@ -456,8 +452,6 @@ typedef struct tagTIME_TYPE
 #define SQLCLI_ODBC_VERSION 2
 #define SQLCLI_ODBC_MODULE_VERSION 1
 
-
-#define NOWAIT_PENDING      -8002
 
 // Errors returned from SQL_EXEC_AllocStmtForRS()
 #define STMT_ALREADY_EXISTS     -8802
