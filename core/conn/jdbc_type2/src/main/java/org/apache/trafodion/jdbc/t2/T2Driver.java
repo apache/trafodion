@@ -286,11 +286,9 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 	}
 
 	// Native methods
-	// MFC- SQLMXInitialize now contains 2 more parameters
 	static native int getPid();
 
-	native static void SQLMXInitialize(String language, int nowaitOn,
-			String modulecaching, String compiledmodulelocation);
+	native static void SQLMXInitialize(String language, int nowaitOn);
 
 	native static void setDefaultEncoding(String encoding);
 
@@ -369,7 +367,7 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 		checkLibraryVersion(DriverInfo.driverVproc);
 		
 		// Initialize Java objects, methods references into gJNICache
-		SQLMXInitialize(locale_.getLanguage(), 1, "OFF", null);
+		SQLMXInitialize(locale_.getLanguage(), 1);
 		
     	// Get the major and minor database version numbers that
 		// were setup in SQLMXInitialize()

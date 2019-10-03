@@ -296,20 +296,19 @@ void ContextCli::deleteMe()
 {
   ComDiagsArea *diags = NULL;
 
-  if (volatileSchemaCreated())
+  if (volatileSchemaCreated_)
     {
       // drop volatile schema, if one exists
       short rc =
         ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
         (this, NULL, exCollHeap(), diags);
+      if (rc < 0 && diags != NULL && diags->getNumber(DgSqlCode::ERROR_) > 0) {
+         ComCondition *condition = diags->getErrorEntry(0);
+         logAnMXEventForError(*condition, GetCliGlobals()->getEMSEventExperienceLevel()); 
+      } 
       SQL_EXEC_ClearDiagnostics(NULL);
-      
-      rc =
-        ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
-        (this, exCollHeap());
+      volatileSchemaCreated_ = FALSE;
     }
-
-  volTabList_ = 0;
 
   SQL_EXEC_ClearDiagnostics(NULL);
 
@@ -2907,6 +2906,11 @@ void ContextCli::dropSession(NABoolean clearCmpCache)
     {
       rc = ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
         (this, NULL, exHeap(), diags);
+      if (rc < 0 && diags != NULL && diags->getNumber(DgSqlCode::ERROR_) > 0) {
+         ComCondition *condition = diags->getErrorEntry(0);
+         logAnMXEventForError(*condition, GetCliGlobals()->getEMSEventExperienceLevel()); 
+      } 
+      volatileSchemaCreated_ = FALSE;
       SQL_EXEC_ClearDiagnostics(NULL);
     }
 
@@ -2934,10 +2938,7 @@ void ContextCli::dropSession(NABoolean clearCmpCache)
   // prevStmtStats_ is decremented so that it can be freed up when
   // GC happens in mxssmp
   setStatsArea(NULL, FALSE, FALSE, TRUE);
-
-  volatileSchemaCreated_ = FALSE;
-
-  HiveClient_JNI::deleteInstance();  
+  HiveClient_JNI::deleteInstance();
   disconnectHdfsConnections();
 }
 
@@ -2958,8 +2959,6 @@ void ContextCli::resetVolatileSchemaState()
   ExeCliInterface cliInterface(exHeap());
   Lng32 cliRC = cliInterface.executeImmediate(sendCQD);
   NADELETEBASIC(sendCQD, exHeap());
-  
-  volatileSchemaCreated_ = FALSE;
   
   if (savedDiagsArea)
     {

@@ -690,7 +690,7 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
   //  currContext->resetSqlParserFlags(0x8000); // ALLOW_VOLATILE_SCHEMA_CREATION
 
   NADELETEBASIC(dropSchema, heap);
-
+  currContext->resetVolTabList();
   return cliRC;
 }
 
@@ -728,7 +728,7 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
   strcpy(sendCQD, "CONTROL QUERY DEFAULT VOLATILE_SCHEMA_IN_USE 'FALSE';");
   cliInterface.executeImmediate(sendCQD);
   NADELETEBASIC(sendCQD, heap);
-
+  currContext->resetVolTabList();
   return cliRC;
 }
 

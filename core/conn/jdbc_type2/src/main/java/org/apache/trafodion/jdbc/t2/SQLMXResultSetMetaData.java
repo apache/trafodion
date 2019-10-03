@@ -183,24 +183,6 @@ public class SQLMXResultSetMetaData implements java.sql.ResultSetMetaData
 		}
 	}
  	
-	/* cpqGetCharacterName (extended) method added to allow SQLJ to */
-	/* pull character data types from SQL/MX encoding info in the   */
-	/* COLS table. Valid types are UCS2, ISO88591, or null.         */ 
-	public String cpqGetCharacterSet(int column) throws SQLException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_cpqGetCharacterSet].methodEntry();
-		try
-		{
-			if ((column > outputDesc_.length) || (column <= 0))
-				throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
-			return outputDesc_[column-1].getCharacterSetName();
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_cpqGetCharacterSet].methodExit();
-		}
-	}
-
 	public String getSchemaName(int column) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_getSchemaName].methodEntry();
@@ -396,30 +378,29 @@ public class SQLMXResultSetMetaData implements java.sql.ResultSetMetaData
 	SQLMXDesc[]		outputDesc_;
 	
 	private static int methodId_getCatalogName					=  0;
-	private static int methodId_getColumnClassName				=  1;
+	private static int methodId_getColumnClassName					=  1;
 	private static int methodId_getColumnCount					=  2;
-	private static int methodId_getColumnDisplaySize			=  3;
+	private static int methodId_getColumnDisplaySize				=  3;
 	private static int methodId_getColumnLabel					=  4;
 	private static int methodId_getColumnName					=  5;
 	private static int methodId_getColumnType					=  6;
-	private static int methodId_getColumnTypeName				=  7;
+	private static int methodId_getColumnTypeName					=  7;
 	private static int methodId_getPrecision					=  8;
 	private static int methodId_getScale						=  9;
-	private static int methodId_cpqGetCharacterSet				= 10;
-	private static int methodId_getSchemaName					= 11;
-	private static int methodId_getTableName					= 12;
-	private static int methodId_isAutoIncrement					= 13;
-	private static int methodId_isCaseSensitive					= 14;
-	private static int methodId_isCurrency						= 15;
-	private static int methodId_isDefinitelyWritable			= 16;
-	private static int methodId_isNullable						= 17;
-	private static int methodId_isReadOnly						= 18;
-	private static int methodId_isSearchable					= 19;
-	private static int methodId_isSigned						= 20;
-	private static int methodId_isWritable						= 21;
-	private static int methodId_SQLMXResultSetMetaData_LL_stmt	= 22;
-	private static int methodId_SQLMXResultSetMetaData_LL_rs	= 23;
-	private static int totalMethodIds							= 24;
+	private static int methodId_getSchemaName					= 10;
+	private static int methodId_getTableName					= 11;
+	private static int methodId_isAutoIncrement					= 12;
+	private static int methodId_isCaseSensitive					= 13;
+	private static int methodId_isCurrency						= 14;
+	private static int methodId_isDefinitelyWritable				= 15;
+	private static int methodId_isNullable						= 16;
+	private static int methodId_isReadOnly						= 17;
+	private static int methodId_isSearchable					= 18;
+	private static int methodId_isSigned						= 19;
+	private static int methodId_isWritable						= 20;
+	private static int methodId_SQLMXResultSetMetaData_LL_stmt			= 21;
+	private static int methodId_SQLMXResultSetMetaData_LL_rs			= 22;
+	private static int totalMethodIds						= 23;
 	private static JdbcDebug[] debug;
 	
 	static
@@ -438,7 +419,6 @@ public class SQLMXResultSetMetaData implements java.sql.ResultSetMetaData
 			debug[methodId_getColumnTypeName] = new JdbcDebug(className,"getColumnTypeName"); 
 			debug[methodId_getPrecision] = new JdbcDebug(className,"getPrecision"); 
 			debug[methodId_getScale] = new JdbcDebug(className,"getScale"); 
-			debug[methodId_cpqGetCharacterSet] = new JdbcDebug(className,"cpqGetCharacterSet"); 
 			debug[methodId_getSchemaName] = new JdbcDebug(className,"getSchemaName"); 
 			debug[methodId_getTableName] = new JdbcDebug(className,"getTableName"); 
 			debug[methodId_isAutoIncrement] = new JdbcDebug(className,"isAutoIncrement"); 

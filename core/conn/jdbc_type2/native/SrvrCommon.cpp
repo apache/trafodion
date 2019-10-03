@@ -485,58 +485,6 @@ SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
     FUNCTION_RETURN_PTR(pSrvrStmt,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
 }
 
-
-SRVR_STMT_HDL *createSrvrStmtForMFC(
-                                    long dialogueId,
-                                    const char *stmtLabel,
-                                    long    *sqlcode,
-                                    const char *moduleName,
-                                    long moduleVersion,
-                                    long long moduleTimestamp,
-                                    short   sqlStmtType,
-                                    BOOL    useDefaultDesc)
-{
-    FUNCTION_ENTRY("createSrvrStmt",(""));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  dialogueId=%ld, stmtLabel=%s",
-        dialogueId,
-        DebugString(stmtLabel)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  sqlcode=0x%08x",
-        sqlcode));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  moduleName=%s",
-        DebugString(moduleName)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  moduleVersion=%ld, moduleTimestamp=%s",
-        moduleVersion,
-        DebugTimestampStr(moduleTimestamp)));
-    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  sqlStmtType=%s, useDefaultDesc=%d",
-        CliDebugSqlStatementType(sqlStmtType),
-        useDefaultDesc));
-
-    SQLRETURN rc;
-    SRVR_CONNECT_HDL *pConnect;
-    SRVR_STMT_HDL *pSrvrStmt;
-
-    if (dialogueId == 0)
-    {
-        *sqlcode = DIALOGUE_ID_NULL_ERROR;
-        FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
-    }
-    pConnect = (SRVR_CONNECT_HDL *)dialogueId;
-    rc = pConnect->switchContext(sqlcode);
-    switch (rc)
-    {
-    case SQL_SUCCESS:
-    case SQL_SUCCESS_WITH_INFO:
-        break;
-    default:
-        FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
-    }
-
-    pSrvrStmt = pConnect->createSrvrStmtForMFC(stmtLabel, sqlcode, moduleName, moduleVersion, moduleTimestamp,
-        sqlStmtType, useDefaultDesc);
-    FUNCTION_RETURN_PTR(pSrvrStmt,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
-}
-
-
 SRVR_STMT_HDL *createSpjrsSrvrStmt(SRVR_STMT_HDL *callpSrvrStmt,
                                    long dialogueId,
                                    const char *stmtLabel,
@@ -1099,9 +1047,9 @@ short do_ExecSMD(
     long                sqlcode;
     short               holdability;
     long                queryTimeout;
-    odbc_SQLSvc_SQLError ModuleError;
+    odbc_SQLSvc_SQLError sqlError;
     char *odbcAppVersion = "3";
-    CLEAR_ERROR(ModuleError);
+    CLEAR_ERROR(sqlError);
 
     char catalogNmNoEsc[MAX_ANSI_NAME_LEN+1];
     char schemaNmNoEsc[MAX_ANSI_NAME_LEN+1];
@@ -1708,17 +1656,17 @@ tableNm, tableNmNoEsc)) && !metadataId)
             }
     if (pSrvrStmt == NULL)
     {
-        executeException->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;
-        kdsCreateSQLErrorException(&ModuleError, 1);
-        kdsCopySQLErrorException(&ModuleError, SQLSVC_EXCEPTION_READING_FROM_MODULE_FAILED, sqlcode,
+        executeException->exception_nr = odbc_SQLSvc_Prepare_SQLError_exn_;
+        kdsCreateSQLErrorException(&sqlError, 1);
+        kdsCopySQLErrorException(&sqlError, SQLSVC_EXCEPTION_PREPARE_FAILED, sqlcode,
             "HY000");
-        executeException->u.SQLError.errorList._length = ModuleError.errorList._length;
-        executeException->u.SQLError.errorList._buffer = ModuleError.errorList._buffer;
+        executeException->u.SQLError.errorList._length = sqlError.errorList._length;
+        executeException->u.SQLError.errorList._buffer = sqlError.errorList._buffer;
         FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
     }
     //make pSrvrStmt->Prepare() happy
     sqlString->dataValue._length=strlen((const char*)sqlString->dataValue._buffer);
-    rc = pSrvrStmt->Prepare(sqlString, sqlStmtType, holdability, queryTimeout,false);
+    rc = pSrvrStmt->Prepare(sqlString, sqlStmtType, holdability, queryTimeout);
     if (rc == SQL_ERROR)
     {
         executeException->exception_nr = odbc_SQLSvc_ExecuteN_SQLError_exn_;
@@ -2012,251 +1960,6 @@ short executeAndFetchSMDQuery(
     appendOutputValueList(outputValueList,&fetchOutputValueList,true);
 
     FUNCTION_RETURN_NUMERIC(CEE_SUCCESS,("CEE_SUCCESS"));
-}
-
-short do_ExecFetchAppend(
-                         /* In    */ void *objtag_
-                         , /* In    */ const CEE_handle_def *call_id_
-                         , /* Out   */ ExceptionStruct *executeException
-                         , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
-                         , /* In    */ long dialogueId
-                         , /* In    */ const char *stmtLabel
-                         , /* In    */ short sqlStmtType
-                         , /* In    */ char *tableParam[]
-, /* In    */ const char *inputParam[]
-, /* Out   */ SQLItemDescList_def *outputDesc
-, /* Out   */ long *rowsAffected
-, /* Out   */ SQLValueList_def *outputValueList
-, /* Out   */ long *stmtId
-)
-{
-    FUNCTION_ENTRY("do_ExecFetchAppend",("objtag_=%ld, call_id_=0x%08x, executeException=0x%08x, sqlWarning=0x%08x, dialogueId=%ld, stmtLabel=%s, sqlStmtType=%s, tableParam=0x%08x, inputParam=0x%08x, outputDesc=0x%08x, stmtId=0x%08x",
-        objtag_,
-        call_id_,
-        executeException,
-        sqlWarning,
-        dialogueId,
-        DebugString(stmtLabel),
-        CliDebugSqlStatementType(sqlStmtType),
-        tableParam,
-        inputParam,
-        outputDesc,
-        stmtId));
-
-    SRVR_STMT_HDL       *pSrvrStmt;
-    SQLItemDesc_def     *SQLItemDesc;
-    SMD_QUERY_TABLE     *smdQueryTable;     // Linux port - Commenting for now
-    unsigned long       curParamNo;
-    //long              allocLength;
-    int             allocLength;
-    long                retcode;
-    SQLRETURN           rc;
-    short               indValue;
-    BOOL                tableParamDone;
-    unsigned long       index;
-    long                sqlcode;
-    odbc_SQLSvc_SQLError ModuleError;
-    CLEAR_ERROR(ModuleError);
-
-    SQLValueList_def    tempOutputValueList;    // temp buffer for combined data
-    CLEAR_LIST(tempOutputValueList);
-
-    long                totalLength=0;
-
-    // Setup module filenames for MX metadata
-    pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        NULL,
-        SQLCLI_ODBC_MODULE_VERSION,
-        1234567890,
-        sqlStmtType,
-        false,true);
-
-    if (pSrvrStmt == NULL){
-        executeException->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;
-        kdsCreateSQLErrorException(&ModuleError, 1);
-        kdsCopySQLErrorException(&ModuleError, SQLSVC_EXCEPTION_READING_FROM_MODULE_FAILED, sqlcode,
-            "HY000");
-        executeException->u.SQLError.errorList._length = ModuleError.errorList._length;
-        executeException->u.SQLError.errorList._buffer = ModuleError.errorList._buffer;
-        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
-    }
-
-    rc = pSrvrStmt->PrepareFromModule(INTERNAL_STMT);
-    *stmtId = (long)pSrvrStmt;
-    if (rc == SQL_ERROR)
-    {
-        executeException->exception_nr = odbc_SQLSvc_ExecuteN_SQLError_exn_;
-        executeException->u.SQLError.errorList._length = pSrvrStmt->sqlError.errorList._length;
-        executeException->u.SQLError.errorList._buffer = pSrvrStmt->sqlError.errorList._buffer;
-        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
-    }
-
-#ifndef _FASTPATH
-    if ((rc = AllocAssignValueBuffer(&pSrvrStmt->inputDescList,
-        &pSrvrStmt->inputValueList, pSrvrStmt->inputDescVarBufferLen, 1,
-        pSrvrStmt->inputValueVarBuffer)) != SQL_SUCCESS)
-    {
-        executeException->exception_nr = odbc_SQLSvc_ExecuteN_ParamError_exn_;
-        executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_BUFFER_ALLOC_FAILED;
-        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
-    }
-#endif
-    pSrvrStmt->InternalStmtClose(SQL_CLOSE);
-    outputDesc->_length = pSrvrStmt->outputDescList._length;
-    outputDesc->_buffer = pSrvrStmt->outputDescList._buffer;
-
-#ifdef _FASTPATH
-
-    SRVR_DESC_HDL   *IPD;
-    IPD = pSrvrStmt->IPD;
-    BYTE    *dataPtr;
-    BYTE    *indPtr;
-    long    dataType;
-
-    // Populate the prepared module statement with the tableParam and inputParam lists
-    for (curParamNo = 0, index = 0,  tableParamDone = FALSE;
-        curParamNo < pSrvrStmt->inputDescList._length ; curParamNo++, index++)
-    {
-        dataPtr = IPD[curParamNo].varPtr;
-        indPtr = IPD[curParamNo].indPtr;
-        dataType = IPD[curParamNo].dataType;
-        SQLItemDesc = (SQLItemDesc_def *)pSrvrStmt->inputDescList._buffer + curParamNo;
-        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, SQLItemDesc->vc_ind_length, 0,
-            NULL, &allocLength, NULL);
-        if (! tableParamDone)
-        {
-            if (tableParam[index] == NULL)
-            {
-                tableParamDone = TRUE;
-                index = 0;
-            }
-            else
-            {
-                retcode = setParamValue(dataType, dataPtr, indPtr, allocLength, tableParam[index]);
-                DEBUG_OUT(DEBUG_LEVEL_METADATA,("tableParam[%d] = %s ",index,tableParam[index]));
-            }
-        }
-        if (tableParamDone)
-        {
-            retcode = setParamValue(dataType, dataPtr, indPtr, allocLength, inputParam[index]);
-            DEBUG_OUT(DEBUG_LEVEL_METADATA,("inputParam[%d] = %s ",index,inputParam[index]));
-        }
-        if (retcode != 0)
-            FUNCTION_RETURN_NUMERIC((short) retcode,(NULL));
-    }
-#else
-    for (curParamNo = 0, index = 0, tableParamDone = FALSE, pSrvrStmt->inputValueList._length = 0;
-        curParamNo < pSrvrStmt->inputDescList._length ; curParamNo++, index++)
-    {
-        SQLItemDesc = (SQLItemDesc_def *)pSrvrStmt->inputDescList._buffer + curParamNo;
-        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, SQLItemDesc->vc_ind_length, 0,
-            NULL, &allocLength, NULL);
-        if (! tableParamDone)
-        {
-            if (tableParam[index] == NULL)
-            {
-                tableParamDone = TRUE;
-                index = 0;
-            }
-            else
-            {
-                retcode = kdsCopyToSMDSQLValueSeq(&pSrvrStmt->inputValueList,
-                    SQLItemDesc->dataType, 0, tableParam[index], allocLength, SQLItemDesc->ODBCCharset);
-            }
-        }
-        if (tableParamDone)
-        {
-            if  (inputParam[index] == NULL)
-                indValue = -1;
-            else
-                indValue = 0;
-            retcode = kdsCopyToSMDSQLValueSeq(&pSrvrStmt->inputValueList,
-                SQLItemDesc->dataType, indValue, inputParam[index], allocLength, SQLItemDesc->ODBCCharset);
-        }
-        if (retcode != 0)
-            FUNCTION_RETURN_NUMERIC((short) retcode,(NULL));
-    }
-#endif
-    executeException->exception_nr = 0;
-
-    // sqlStmtType has value of types like TYPE_SELECT, TYPE_DELETE etc.
-    odbc_SQLSvc_ExecuteN_sme_(objtag_, call_id_, executeException, dialogueId, *stmtId,
-        (char *)stmtLabel,
-        sqlStmtType, 1, &pSrvrStmt->inputValueList, SQL_ASYNC_ENABLE_OFF, 0,
-        &pSrvrStmt->outputValueList, sqlWarning);
-
-    if (executeException->exception_nr != CEE_SUCCESS) {
-        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
-    }
-
-    if ((pSrvrStmt = getSrvrStmt(dialogueId, *stmtId, &sqlcode)) == NULL)
-    {
-        executeException->exception_nr = odbc_SQLSvc_FetchN_SQLInvalidHandle_exn_;
-        executeException->u.SQLInvalidHandle.sqlcode = sqlcode;
-        FUNCTION_RETURN_NUMERIC(-1, ("getSrvrStmt() Failed"));
-    }
-
-    do
-    {
-        rc = pSrvrStmt->Fetch(SQL_MAX_COLUMNS_IN_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
-
-        switch (rc)
-        {
-        case SQL_SUCCESS:
-        case SQL_SUCCESS_WITH_INFO:
-            appendOutputValueList(outputValueList,&pSrvrStmt->outputValueList,false);
-
-            if (pSrvrStmt->outputValueList._length) *rowsAffected += pSrvrStmt->rowsAffected;
-            else *rowsAffected = pSrvrStmt->rowsAffected;
-
-            executeException->exception_nr = 0;
-
-            // Save off any warnings
-            if (pSrvrStmt->sqlWarning._length > 0)
-            {
-                sqlWarning->_length = pSrvrStmt->sqlWarning._length;
-                sqlWarning->_buffer = pSrvrStmt->sqlWarning._buffer;
-            }
-            break;
-        case SQL_STILL_EXECUTING:
-            executeException->exception_nr = odbc_SQLSvc_FetchN_SQLStillExecuting_exn_;
-            break;
-        case SQL_INVALID_HANDLE:
-            executeException->exception_nr = odbc_SQLSvc_FetchN_SQLInvalidHandle_exn_;
-            break;
-        case SQL_NO_DATA_FOUND:
-            executeException->exception_nr = odbc_SQLSvc_FetchN_SQLNoDataFound_exn_;
-            break;
-        case SQL_ERROR:
-            ERROR_DESC_def *error_desc_def;
-            error_desc_def = pSrvrStmt->sqlError.errorList._buffer;
-            if (pSrvrStmt->sqlError.errorList._length != 0 &&
-                (error_desc_def->sqlcode == -8007 || error_desc_def->sqlcode == -8007))
-            {
-                executeException->exception_nr = odbc_SQLSvc_FetchN_SQLQueryCancelled_exn_;
-                executeException->u.SQLQueryCancelled.sqlcode = error_desc_def->sqlcode;
-            }
-            else
-            {
-                executeException->exception_nr = odbc_SQLSvc_FetchN_SQLError_exn_;
-                executeException->u.SQLError.errorList._length = pSrvrStmt->sqlError.errorList._length;
-                executeException->u.SQLError.errorList._buffer = pSrvrStmt->sqlError.errorList._buffer;
-            }
-            break;
-        case PROGRAM_ERROR:
-            executeException->exception_nr = odbc_SQLSvc_FetchN_ParamError_exn_;
-            executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_FETCH_FAILED;
-        default:
-            break;
-        }
-
-        // Loop until we have no more rows
-    } while (((rc==SQL_SUCCESS) || (rc==SQL_SUCCESS_WITH_INFO)) &&
-        (pSrvrStmt->rowsAffected==SQL_MAX_COLUMNS_IN_SELECT));
-
-    FUNCTION_RETURN_NUMERIC(0,(NULL));
 }
 
 BOOL nullRequired(long charSet)

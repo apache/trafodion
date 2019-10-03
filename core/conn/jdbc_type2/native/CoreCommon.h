@@ -278,7 +278,7 @@ typedef enum _STOP_TYPE
 #define SQLSVC_EXCEPTION_CATSMD_MODULE_ERROR "The Catalog SMD file is either corrupted or not found or cursor not found"
 #define SQLSVC_EXCEPTION_BUFFER_ALLOC_FAILED "Buffer Allocation Failed"
 #define SQLSVC_EXCEPTION_INVALID_HANDLE "Error while allocating Handles in SQL/MX"
-#define SQLSVC_EXCEPTION_READING_FROM_MODULE_FAILED "Reading From Module failed or Module Corrupted or Module not found"
+#define SQLSVC_EXCEPTION_PREPARE_FAILED "Error while preparing the query"
 #define SQLSVC_EXCEPTION_NOWAIT_ERROR   "Error in thread synchronizing functions - Vendor code is FS Error"
 #define SQLSVC_EXCEPTION_INVALID_SCHEMA_VERSION "Invalid Schema version"  // Used for Metadata schemaVersion setup
 
@@ -381,10 +381,6 @@ typedef struct _SRVR_GLOBAL_Def
     char                DefaultSchema[129];
     char                CurrentCatalog[129]; // Added for MFC
     char                CurrentSchema[129];  // Added for MFC
-    //moved setOfCQD to CsrvrConnect.h sol. Sol. 10-100618-1194
-//  std::set<std::string> setOfCQD; // Added for MFC
-    int                 moduleCaching;          // Added for MFC
-    char                compiledModuleLocation[100]; // Added for MFC
     bool                jdbcProcess;        // This flag is used to determine the query for SQLTables
     short               nowaitOn;
     short               nowaitFilenum;

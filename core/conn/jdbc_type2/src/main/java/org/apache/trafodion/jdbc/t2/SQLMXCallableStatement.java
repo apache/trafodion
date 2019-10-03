@@ -1550,32 +1550,8 @@ public int executeUpdate() throws SQLException {
         }
     }
 
-    void cpqPrepareCall(String server, long dialogueId, int txid,
-            boolean autoCommit, String moduleName, int moduleVersion,
-            long moduleTimestamp, String stmtName, int queryTimeout,
-            int holdability) {
-        if (JdbcDebugCfg.entryActive)
-        debug[methodId_cpqPrepareCall].methodEntry();
-        try {
-            /*
-             * RFE: Connection synchronization Connection object is now
-             * synchronized.
-             */
-            synchronized (connection_) {
-                // Call adding the current fetch size and select flag
-                cpqPrepareCall(server, dialogueId, txid, autoCommit,
-                        connection_.transactionMode_, moduleName,
-                        moduleVersion, moduleTimestamp, stmtName, queryTimeout,
-                        holdability, fetchSize_);
-            } // End sync
-        }finally {
-            if (JdbcDebugCfg.entryActive)
-            debug[methodId_cpqPrepareCall].methodExit();
-        }
-    }
-
     // Other methods
-protected void validateGetInvocation(int parameterIndex)
+    protected void validateGetInvocation(int parameterIndex)
     throws SQLException {
         if (JdbcDebugCfg.entryActive)
         debug[methodId_validateGetInvocation_I].methodEntry();
@@ -1719,13 +1695,6 @@ private native void executeCall(String server, long dialogueId, int txid,
             boolean autoCommit, int txnMode, long stmtId, int inputParamCount,
             Object inputParamValues, int queryTimeout, String iso88591Encoding);
 
-    // This method is used for internal support of SQLJ.
-    // Not used directly by SQLJ, so can be modified.
-    native void cpqPrepareCall(String server, long dialogueId, int txid,
-            boolean autoCommit, int txnMode, String moduleName,
-            int moduleVersion, long moduleTimestamp, String stmtName,
-            int queryTimeout, int holdability, int fetchSize);
-
     // fields
     boolean wasNull_;
     short returnResultSet_;
@@ -1813,19 +1782,18 @@ private static int methodId_execute = 78;
 private static int methodId_executeBatch = 79;
 private static int methodId_executeQuery = 80;
 private static int methodId_executeUpdate = 81;
-private static int methodId_cpqPrepareCall = 82;
-private static int methodId_validateGetInvocation_I = 83;
-private static int methodId_validateGetInvocation_L = 84;
-private static int methodId_validateSetInvocation = 85;
-private static int methodId_setExecuteCallOutputs = 86;
-private static int methodId_setByte = 87;
-private static int methodId_setBytes = 88;
-private static int methodId_setCharacterStream = 89;
-private static int methodId_SQLMXCallableStatement_LL = 90;
-private static int methodId_SQLMXCallableStatement_LLII = 91;
-private static int methodId_SQLMXCallableStatement_LLIII = 92;
-private static int methodId_SQLMXCallableStatement_LLIJL = 93;
-private static int totalMethodIds = 94;
+private static int methodId_validateGetInvocation_I = 82;
+private static int methodId_validateGetInvocation_L = 83;
+private static int methodId_validateSetInvocation = 84;
+private static int methodId_setExecuteCallOutputs = 85;
+private static int methodId_setByte = 86;
+private static int methodId_setBytes = 87;
+private static int methodId_setCharacterStream = 88;
+private static int methodId_SQLMXCallableStatement_LL = 89;
+private static int methodId_SQLMXCallableStatement_LLII = 90;
+private static int methodId_SQLMXCallableStatement_LLIII = 91;
+private static int methodId_SQLMXCallableStatement_LLIJL = 92;
+private static int totalMethodIds = 93;
 private static JdbcDebug[] debug;
 
     static {
@@ -1953,8 +1921,6 @@ private static JdbcDebug[] debug;
                     "executeQuery");
             debug[methodId_executeUpdate] = new JdbcDebug(className,
                     "executeUpdate");
-            debug[methodId_cpqPrepareCall] = new JdbcDebug(className,
-                    "cpqPrepareCall");
             debug[methodId_validateGetInvocation_I] = new JdbcDebug(className,
                     "validateGetInvocation[I]");
             debug[methodId_validateGetInvocation_L] = new JdbcDebug(className,

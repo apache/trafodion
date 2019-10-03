@@ -4671,9 +4671,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			if (paramRowCount_ > 0)
 				throw Messages.createSQLException(connection_.locale_,
 						"function_sequence_error", null);
-			if (isCQD) {
-				connection_.setOfCQDs.add(sql_);
-			}
 			checkIfAllParamsSet();
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -5107,34 +5104,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				debug[methodId_populateLobObjects].methodExit();
 		}
 	}
-//venu changed dialogueId from int to long for 64 bit
-	void cpqPrepare(String server, long dialogueId, int txid,
-			boolean autoCommit, String moduleName, int moduleVersion,
-			long moduleTimestamp, String stmtName, boolean isSelect,
-			int queryTimeout, int holdability) {
-		if (JdbcDebugCfg.entryActive)
-			debug[methodId_cpqPrepare].methodEntry();
-		if (JdbcDebugCfg.traceActive)
-			debug[methodId_cpqPrepare].methodParameters(server + ","
-					+ Long.toString(dialogueId) + ","
-					+ Long.toString(txid) + ","
-					+ Boolean.toString(autoCommit) + "," + moduleName + ","
-					+ Integer.toString(moduleVersion) + ","
-					+ Long.toString(moduleTimestamp) + "," + stmtName + ","
-					+ Boolean.toString(isSelect) + ","
-					+ Integer.toString(queryTimeout) + ","
-					+ Integer.toString(holdability));
-		try {
-			cpqPrepareJNI(server, dialogueId, txid, autoCommit,
-					connection_.transactionMode_, moduleName, moduleVersion,
-					moduleTimestamp, stmtName, isSelect, queryTimeout,
-					holdability, batchBindingSize_, fetchSize_, "",false);
-
-		} finally {
-			if (JdbcDebugCfg.entryActive)
-				debug[methodId_cpqPrepare].methodExit();
-		}
-	}
 
 	// Constructors with access specifier as "default"
 	SQLMXPreparedStatement(SQLMXConnection connection, String sql)
@@ -5191,12 +5160,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			String iso88591Encoding, SQLMXResultSet resultSet,
 			boolean contBatchOnError) throws SQLException;
 
-	native void cpqPrepareJNI(String server, long dialogueId, int txid,
-			boolean autoCommit, int txnMode, String moduleName,
-			int moduleVersion, long moduleTimestamp, String stmtName,
-			boolean isSelect, int queryTimeout, int holdability, int batchSize,
-			int fetchSize, String sql,boolean isISUD);
-	
 	private native void resetFetchSize(long dialogueId, long stmtId, int fetchSize);
 
 	// fields
@@ -5346,13 +5309,12 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	private static int methodId_reuse = 61;
 	private static int methodId_close = 62;
 	private static int methodId_populateLobObjects = 63;
-	private static int methodId_cpqPrepare = 65;
-	private static int methodId_SQLMXPreparedStatement_LLIII = 66;
-	private static int methodId_SQLMXPreparedStatement_LLIJLZI = 67;
-	private static int methodId_setFetchSize = 68;
-	private static int methodId_getFetchSize = 69;
+	private static int methodId_SQLMXPreparedStatement_LLIII = 65;
+	private static int methodId_SQLMXPreparedStatement_LLIJLZI = 66;
+	private static int methodId_setFetchSize = 67;
+	private static int methodId_getFetchSize = 68;
 	
-	private static int totalMethodIds = 70;
+	private static int totalMethodIds = 69;
 	
 	private static JdbcDebug[] debug;
 
@@ -5461,7 +5423,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			debug[methodId_close] = new JdbcDebug(className, "close");
 			debug[methodId_populateLobObjects] = new JdbcDebug(className,
 					"populateLobObjects");
-			debug[methodId_cpqPrepare] = new JdbcDebug(className, "cpqPrepare");
 			debug[methodId_SQLMXPreparedStatement_LLIII] = new JdbcDebug(
 					className, "SQLMXPreparedStatement_LLIII");
 			debug[methodId_SQLMXPreparedStatement_LLIJLZI] = new JdbcDebug(

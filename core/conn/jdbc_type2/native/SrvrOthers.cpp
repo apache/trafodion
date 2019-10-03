@@ -93,9 +93,7 @@ odbc_SQLSvc_Prepare_sme_(   void *               objtag_,           /* In   */
                          SQLItemDescList_def      *outputDesc,      /* Out  */
                          ERROR_DESC_LIST_def      *sqlWarning,      /* Out  */
                          long                     *stmtId,          /* Out  */
-                         long                 *inputParamOffset,     /* Out   */
-                         char                 *moduleName,
-                         bool isISUD)
+                         long                 *inputParamOffset)     /* Out   */
 
 {
     FUNCTION_ENTRY_LEVEL(DEBUG_LEVEL_STMT, "odbc_SQLSvc_Prepare_sme_",(""));
@@ -174,14 +172,7 @@ odbc_SQLSvc_Prepare_sme_(   void *               objtag_,           /* In   */
     if (rc==SQL_SUCCESS){
     //Start Soln no:10-091103-5969
         jboolean stmtType_ = getSqlStmtType(sqlString->dataValue._buffer);
-        if(stmtType_ == JNI_TRUE && batchSize > 0 || srvrGlobal->moduleCaching == 0)
-        {
-            rc = pSrvrStmt->Prepare(sqlString, stmtType, holdability, queryTimeout,isISUD);
-        }
-        else
-        {
-            rc = pSrvrStmt->PrepareforMFC(sqlString, stmtType, holdability, queryTimeout,isISUD);
-        }
+        rc = pSrvrStmt->Prepare(sqlString, stmtType, holdability, queryTimeout);
     //End Soln no:10-091103-5969
     }
 
@@ -1196,14 +1187,6 @@ odbc_SQLSvc_SetConnectionOption_sme_(
         // Set default schema to null
         pConnect->DefaultSchema[0] =  '\0';
         break;
-        // MFC option to set recompilation warnings on
-    case SQL_RECOMPILE_WARNING:
-        strcpy(sqlString, "CONTROL QUERY DEFAULT RECOMPILATION_WARNINGS 'ON'");
-        break;
-        // MFC support for BigNum
-    case SET_SESSION_INTERNAL_IO:
-        strcpy(sqlString, "SET SESSION DEFAULT internal_format_io 'on'");
-        break;
     default:
         exception_->exception_nr = odbc_SQLSvc_SetConnectionOption_ParamError_exn_;
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_CONNECTION_OPTION;
@@ -1250,115 +1233,6 @@ odbc_SQLSvc_SetConnectionOption_sme_(
     FUNCTION_RETURN_VOID((NULL));
 }
 
-
-/*
-* Synchronous method function prototype for
-* operation 'odbc_SQLSvc_PrepareFromModule'
-*/
-extern "C" void
-odbc_SQLSvc_PrepareFromModule_sme_(
-                                   /* In    */ void * objtag_
-                                   , /* In  */ const CEE_handle_def *call_id_
-                                   , /* Out   */ ExceptionStruct *exception_
-                                   , /* In  */ long dialogueId
-                                   , /* In  */ char *moduleName
-                                   , /* In  */ long moduleVersion
-                                   , /* In  */ long long moduleTimestamp
-                                   , /* In  */ char *stmtName
-                                   , /* In  */ short sqlStmtType
-                                   , /* In  */ long fetchSize
-                                   ,/* In   */ long batchSize
-                                   , /* In   */ long holdability
-                                   , /* Out   */ long *estimatedCost
-                                   , /* Out   */ SQLItemDescList_def *inputDesc
-                                   , /* Out   */ SQLItemDescList_def *outputDesc
-                                   , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
-                                   , /* Out   */ long *stmtId
-                                   , /* Out   */ long *inputParamOffset
-                                   )
-{
-    FUNCTION_ENTRY("odbc_SQLSvc_PrepareFromModule_sme_",("... fetchSize=%ld, inputParamOffset=%ld",
-        fetchSize,
-        inputParamOffset));
-
-    SRVR_STMT_HDL *pSrvrStmt;
-    SQLRETURN rc;
-    ERROR_DESC_def error_desc;
-    long    sqlcode;
-
-    odbc_SQLSvc_SQLError ModuleError;
-    CLEAR_ERROR(ModuleError);
-
-    // Need to validate the stmtLabel
-    // Given a label find out the SRVR_STMT_HDL
-    if ((pSrvrStmt = createSrvrStmtForMFC(dialogueId, stmtName, &sqlcode, moduleName,
-        moduleVersion, moduleTimestamp, sqlStmtType, TRUE)) == NULL)
-    {
-        exception_->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;
-        kdsCreateSQLErrorException(&ModuleError, 1);
-        kdsCopySQLErrorException(&ModuleError, SQLSVC_EXCEPTION_READING_FROM_MODULE_FAILED, sqlcode,
-            "HY000");
-        exception_->u.SQLError.errorList._length = ModuleError.errorList._length;
-        exception_->u.SQLError.errorList._buffer = ModuleError.errorList._buffer;
-        FUNCTION_RETURN_VOID(("createSrvrStmt() Failed"));
-    }
-
-    // Setup the output descriptors using the fetch size
-    pSrvrStmt->holdability = holdability;
-    pSrvrStmt->resetFetchSize(fetchSize);
-
-    rc = pSrvrStmt->setMaxBatchSize(batchSize);
-
-    // Prepare the statement
-    if(rc == SQL_SUCCESS)
-    {
-        rc = pSrvrStmt->PrepareFromModule(EXTERNAL_STMT);
-    }
-
-    switch (rc)
-    {
-    case SQL_SUCCESS:
-    case SQL_SUCCESS_WITH_INFO:
-        exception_->exception_nr = 0;
-        // Copy all the output parameters
-        *estimatedCost = pSrvrStmt->estimatedCost;
-        inputDesc->_length = pSrvrStmt->inputDescList._length;
-        inputDesc->_buffer = pSrvrStmt->inputDescList._buffer;
-        outputDesc->_length = pSrvrStmt->outputDescList._length;
-        outputDesc->_buffer = pSrvrStmt->outputDescList._buffer;
-        sqlWarning->_length = pSrvrStmt->sqlWarning._length;
-        sqlWarning->_buffer = pSrvrStmt->sqlWarning._buffer;
-        *stmtId = (long)pSrvrStmt;
-        *inputParamOffset = pSrvrStmt->inputDescParamOffset;
-        break;
-    case SQL_STILL_EXECUTING:
-        exception_->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLStillExecuting_exn_;
-        break;
-    case ODBC_RG_ERROR:
-    case SQL_ERROR:
-        ERROR_DESC_def *error_desc_def;
-        error_desc_def = pSrvrStmt->sqlError.errorList._buffer;
-        if (pSrvrStmt->sqlError.errorList._length != 0 &&
-            (error_desc_def->sqlcode == -8007 || error_desc_def->sqlcode == -8007))
-        {
-            exception_->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLQueryCancelled_exn_;
-            exception_->u.SQLQueryCancelled.sqlcode = error_desc_def->sqlcode;
-        }
-        else
-        {
-            exception_->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;
-            exception_->u.SQLError.errorList._length = pSrvrStmt->sqlError.errorList._length;
-            exception_->u.SQLError.errorList._buffer = pSrvrStmt->sqlError.errorList._buffer;
-        }
-        break;
-    case PROGRAM_ERROR:
-        exception_->exception_nr = odbc_SQLSvc_PrepareFromModule_ParamError_exn_;
-        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_PREPARE_FAILED;
-    default:
-        break;
-    }
-    FUNCTION_RETURN_VOID((NULL));
-}
 
 /*
 * Synchronous method function prototype for

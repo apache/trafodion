@@ -132,23 +132,6 @@ public class SQLMXParameterMetaData implements java.sql.ParameterMetaData
 		}
 	}
  	
-	/* cpqGetCharacterName (extended) method added to allow SQLJ to           */
-	/* pull character data types from SQL/MX encoding info in the COLS table. */  
-	public String cpqGetCharacterSet(int param) throws SQLException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_cpqGetCharacterSet].methodEntry();
-		try
-		{
-			if ((param > inputDesc_.length) || (param <= 0))
-				throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
-			return inputDesc_[param-1].getCharacterSetName();
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_cpqGetCharacterSet].methodExit();
-		}
-	}
-
 	public int isNullable(int param) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_isNullable].methodEntry();
@@ -202,13 +185,12 @@ public class SQLMXParameterMetaData implements java.sql.ParameterMetaData
 	private static int methodId_getParameterMode		=  2;
 	private static int methodId_getParameterType		=  3;
 	private static int methodId_getParameterTypeName	=  4;
-	private static int methodId_getPrecision			=  5;
-	private static int methodId_getScale				=  6;
-	private static int methodId_cpqGetCharacterSet		=  7;
-	private static int methodId_isNullable				=  8;
-	private static int methodId_isSigned				=  9;
-	private static int methodId_SQLMXParameterMetaData	= 10;
-	private static int totalMethodIds					= 11;
+	private static int methodId_getPrecision		=  5;
+	private static int methodId_getScale			=  6;
+	private static int methodId_isNullable			=  7;
+	private static int methodId_isSigned			=  8;
+	private static int methodId_SQLMXParameterMetaData	= 9;
+	private static int totalMethodIds			= 10;
 	private static JdbcDebug[] debug;
 
 	static
@@ -224,7 +206,6 @@ public class SQLMXParameterMetaData implements java.sql.ParameterMetaData
 			debug[methodId_getParameterTypeName] = new JdbcDebug(className,"getParameterTypeName");
 			debug[methodId_getPrecision] = new JdbcDebug(className,"getPrecision");
 			debug[methodId_getScale] = new JdbcDebug(className,"getScale");
-			debug[methodId_cpqGetCharacterSet] = new JdbcDebug(className,"cpqGetCharacterSet");
 			debug[methodId_isNullable] = new JdbcDebug(className,"isNullable");
 			debug[methodId_isSigned] = new JdbcDebug(className,"isSigned");
 			debug[methodId_SQLMXParameterMetaData] = new JdbcDebug(className,"SQLMXParameterMetaData");
