@@ -76,11 +76,10 @@ JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_getPid (JNIEnv
 * Signature: (Ljava/lang/String;I)V
 */
 JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEnv *jenv, jclass cls,
-																		 jstring language, jint nowaitOn)
+																		 jstring language)
 {
-	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize",("language=%s, nowaitOn=%ld",
-		DebugJString(jenv,language),
-		nowaitOn));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize",("language=%s,
+		DebugJString(jenv,language)));
 	const char 					*nLanguage;
 	//	static GlobalInformation	*globalInfo = new GlobalInformation();
         
@@ -105,71 +104,8 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitializ
 	if (! cacheJNIObjects(jenv))
 		FUNCTION_RETURN_VOID(("cacheJNIObjects() failed"));
 
-#ifdef NSK_PLATFORM		// Linux port
-	if (language)
-	{
-		nLanguage = JNI_GetStringUTFChars(jenv,language, NULL);
-		if (strcmp(nLanguage, "ja") == 0)
-		{
-			srvrGlobal->clientLCID = MAKELCID(MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT), SORT_DEFAULT);
-			srvrGlobal->clientErrorLCID = srvrGlobal->clientLCID;
-		}
-		else
-			if (strcmp(nLanguage, "en") == 0)
-			{
-				srvrGlobal->clientLCID = MAKELCID(MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), SORT_DEFAULT);
-				srvrGlobal->clientErrorLCID = srvrGlobal->clientLCID;
-			}
-			else
-			{
-				srvrGlobal->clientLCID = LANG_NEUTRAL;
-				srvrGlobal->clientErrorLCID = LANG_NEUTRAL;
-			}
-			JNI_ReleaseStringUTFChars(jenv,language, nLanguage);
-	}
-	else
-	{
-		srvrGlobal->clientLCID = LANG_NEUTRAL;
-		srvrGlobal->clientErrorLCID = LANG_NEUTRAL;
-	}
-#endif
-
 	srvrGlobal->dialogueId = 0;			// DialogueId is set to zero now
 
-	// Linux port - Nowait support is set to OFF for now.
-	// nowaitOn = 0;	// Should come command line or JDBC properties
-	
-	switch (nowaitOn)
-	{
-	case 0:
-		srvrGlobal->nowaitOn = 0;
-		break;
-	case 1:
-		srvrGlobal->nowaitOn = 1;
-		break;
-	case 2:
-		srvrGlobal->nowaitOn = 2;
-		break;
-	default:
-		srvrGlobal->nowaitOn = 0;
-		break;
-	}
-
-#ifdef NSK_PLATFORM		// Linux port
-	// setup MP system catalog name
-	if (envGetSystemCatalogName (&srvrGlobal->NskSystemCatalogName[0]) != TRUE)
-	{
-		throwSQLException(jenv, SYSTEM_CATALOG_ERROR, NULL, "HY000", 0);
-		FUNCTION_RETURN_VOID(("envGetSystemCatalogName() failed"));
-	}
-
-	// setup MX system catalog name
-	if (envGetMXSystemCatalogName (&srvrGlobal->SystemCatalog[0]) != TRUE)
-	{
-		throwSQLException(jenv, SYSTEM_CATALOG_ERROR, NULL, "HY000", 0);
-		FUNCTION_RETURN_VOID(("envGetMXSystemCatalogName() failed"));
-	}
-#endif
 	srvrGlobal->boolFlgforInitialization = 1;
 	FUNCTION_RETURN_VOID((NULL));
 }

@@ -111,7 +111,6 @@ public:
     SRVR_DESC_HDL           *IRD;
     BOOL                    useDefaultDesc;
     long                    dialogueId;
-    long                    nowaitRetcode;
     short                   holdability;
     long                    fetchQuadEntries;
     long                    fetchRowsetSize;
@@ -175,7 +174,6 @@ public:
     // T2_REPO
 
     bool isISUD;
-    BOOL                    stmtInitForNowait;
     inline void setSqlQueryStatementType (int Type) {
         SqlQueryStatementType = Type;
     };

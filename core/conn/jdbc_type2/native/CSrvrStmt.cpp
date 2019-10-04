@@ -103,7 +103,6 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     IRD = NULL;
     useDefaultDesc = FALSE;
     dialogueId = inDialogueId;
-    nowaitRetcode = SQL_SUCCESS;
     holdability = CLOSE_CURSORS_AT_COMMIT;
     fetchQuadEntries = 0;
     fetchRowsetSize = 0;
@@ -113,7 +112,6 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     batchQuadField = NULL;
     inputDescParamOffset = 0;
     batchMaxRowsetSize = 0;
-    stmtInitForNowait = FALSE;
     // +++ T2_REPO
     bLowCost = false;   // May not need this
     m_need_21036_end_msg = false;
@@ -148,9 +146,6 @@ SRVR_STMT_HDL::~SRVR_STMT_HDL()
     int retcode;
     cleanupAll();
     inState = STMTSTAT_NONE;
-#ifndef DISABLE_NOWAIT
-    if (stmtInitForNowait) mutexCondDestroy(&cond, &mutex);
-#endif
     FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -542,13 +537,6 @@ void SRVR_STMT_HDL::processThreadReturnCode(void)
         // (-104) error.
         threadReturnCode = SQL_RETRY_COMPILE_AGAIN;
         break;
-    case NOWAIT_ERROR:
-        // Allocate Error Desc
-        kdsCreateSQLErrorException(&sqlError, 1);
-        kdsCopySQLErrorException(&sqlError, SQLSVC_EXCEPTION_NOWAIT_ERROR, nowaitRetcode,
-            "HY000");
-        threadReturnCode = SQL_ERROR;
-        break;
     }
     FUNCTION_RETURN_VOID((NULL));
 }
@@ -582,14 +570,6 @@ SQLRETURN SRVR_STMT_HDL::allocSqlmxHdls(const char *inStmtName, const char *inMo
     sqlStmtType = inSqlStmtType;
     useDefaultDesc = inUseDefaultDesc;
     rc = ALLOCSQLMXHDLS(this);
-
-#ifndef DISABLE_NOWAIT
-    if (rc >= 0)
-        rc = initStmtForNowait(&cond, &mutex);
-    if (rc == 0)
-        stmtInitForNowait = TRUE;
-#endif
-
     CLI_DEBUG_RETURN_SQL(rc);
 }
 
@@ -638,14 +618,6 @@ SQLRETURN SRVR_STMT_HDL::allocSqlmxHdls_spjrs(SQLSTMT_ID *callpStmt, const char 
     isSPJRS = true;
 
     rc = ALLOCSQLMXHDLS_SPJRS(this, callpStmt, RSstmtName);
-
-#ifndef DISABLE_NOWAIT
-    if (rc >= 0)
-        rc = initStmtForNowait(&cond, &mutex);
-    if (rc == 0)
-        stmtInitForNowait = TRUE;
-#endif
-
     CLI_DEBUG_RETURN_SQL(rc);
 }
 

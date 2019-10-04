@@ -231,34 +231,6 @@ int initSqlCore(int argc, char *argv[])
     short   error;
     int     retcode = 0;
 
-#ifndef DISABLE_NOWAIT
-    if (srvrGlobal->nowaitOn)
-    {
-        error = FILE_OPEN_(SQL_PSEUDO_FILE,         // Filename
-            strlen(SQL_PSEUDO_FILE),    // The length of file name Guardian does not understand C strings
-            &srvrGlobal->nowaitFilenum, // Return the file number (file descriptor)
-            ,                          // Access - soecifies the desired access mode (default read-write)
-            ,                          // Exclusion - specifies the desired mode (default shared)
-            1);                      // Nowait-depth - number of outstanding I/O requests
-        retcode = error;
-        if (error != FEOK)
-        {
-            // TODO - Write to EMS log in future
-            srvrGlobal->nowaitOn = FALSE;
-        }
-    }
-    if (srvrGlobal->nowaitOn)
-    {
-        retcode = registerPseudoFileIO(srvrGlobal->nowaitFilenum);
-        if (retcode != TSLXE_SUCCESS)
-        {
-            // TODO - Write to EMS log in future
-            srvrGlobal->nowaitOn = FALSE;
-        }
-
-    }
-#endif
-
     gDescItems[0].item_id = SQLDESC_TYPE;
     gDescItems[1].item_id = SQLDESC_OCTET_LENGTH;
     gDescItems[2].item_id = SQLDESC_PRECISION;

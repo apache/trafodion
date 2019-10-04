@@ -1155,55 +1155,8 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 		} // End of stmt type switch
 	} // End of VER20 check
 
-#ifndef DISABLE_NOWAIT		
-	if (retcode == NOWAIT_PENDING)
-	{
-		rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
-		DEBUG_OUT(DEBUG_LEVEL_CLI,("WaitForCompletion() returned %d",rtn));
-
-		if (rtn == 0)
-		{
-			SQLRETURN rc = pSrvrStmt->switchContext();
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->switchContext() returned %ld", rc));
-			if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
-
-			switch (pSrvrStmt->nowaitRetcode)
-			{
-			case 0:		// Wait Success
-				// If not closed, try closing and clear out diag's
-				if(!pSrvrStmt->isClosed)
-				{
-					retcode = CLI_CloseStmt(pStmt);
-					pSrvrStmt->isClosed = TRUE;
-					if (retcode != 0) CLI_ClearDiagnostics(pStmt);
-				}
-				retcode = 0;
-				break;
-			case 9999:	// Wait error
-				pSrvrStmt->isClosed = TRUE;
-				THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-			default:	// All other errors
-				pSrvrStmt->isClosed = TRUE;
-				retcode = GETSQLCODE(pSrvrStmt);
-				break;
-			}
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
-				pSrvrStmt->nowaitRetcode,
-				CliDebugSqlError(retcode)));
-		}
-		else
-		{
-			// If waitForCompletion() was not successful (rtn != 0)
-			pSrvrStmt->isClosed = TRUE;
-			pSrvrStmt->nowaitRetcode = rtn;
-			THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-		}
-	}
-	else
-#endif	
-	{
-		if (retcode!=SQL_SUCCESS) pSrvrStmt->isClosed = TRUE;
-	}
+	if (retcode != SQL_SUCCESS) 
+		pSrvrStmt->isClosed = TRUE;
 	// Process the SQL CLI return code
 	if (retcode != 0){						// SQL success
 		if (retcode == 100) {				// No Data Found
@@ -1470,39 +1423,6 @@ SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt)
 
 	int rtn;
 	
-#ifndef DISABLE_NOWAIT		
-	if (retcode == NOWAIT_PENDING){
-		rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
-		DEBUG_OUT(DEBUG_LEVEL_CLI,("WaitForCompletion() returned %d",rtn));
-
-		if (rtn == 0){
-			rc = pSrvrStmt->switchContext();
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->switchContext() returned %ld", rc));
-			if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
-
-			switch (pSrvrStmt->nowaitRetcode)
-			{
-			case 0:
-				retcode = 0;
-				break;
-			case 9999:
-				THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-			default:
-				retcode = GETSQLCODE(pSrvrStmt);
-				break;
-			}
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
-				pSrvrStmt->nowaitRetcode,
-				CliDebugSqlError(retcode)));
-		}
-		else
-		{
-			pSrvrStmt->nowaitRetcode = rtn;
-			THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-		}
-	}
-#endif
-
 	HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
 
 	pSrvrStmt->estimatedCost = -1;
@@ -1658,59 +1578,6 @@ SQLRETURN FETCH(SRVR_STMT_HDL *pSrvrStmt)
 		retcode = CLI_Fetch(&pSrvrStmt->stmt, pDesc, 0);
 
 		int rtn;
-
-#ifndef DISABLE_NOWAIT		
-		if (retcode == NOWAIT_PENDING){
-			rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
-			DEBUG_OUT(DEBUG_LEVEL_ENTRY,("WaitForCompletion() returned %d",rtn));
-
-			if (rtn == 0){
-				SQLRETURN rc = pSrvrStmt->switchContext();
-				DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->switchContext() returned %ld", rc));
-				if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
-
-				switch (pSrvrStmt->nowaitRetcode)
-				{
-				case 0:			// nowaitRetcode is successful
-					retcode = 0;
-					break;
-				case 9999:
-					THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-				default:
-					/* Soln No: 10-070223-2784
-					Desc: JDBC/MX should call stmtinfo2 instead of Diagoninfo2 CLI call for rowsets
-					*/
-					/*     long row = 0;
-					retcode = CLI_GetDiagnosticsStmtInfo2(&pSrvrStmt->stmt,SQLDIAG_ROW_COUNT,&row,NULL,0,NULL);
-					if(row == 0)
-					retcode = GETSQLCODE(pSrvrStmt);
-					*/
-					// Refixed 10-070223-2784 for sol.10-090613-2299
-					retcode = GETSQLCODE(pSrvrStmt);
-
-					long rows_read_fin = 0;
-					long retcodenew = 0;
-					if (pSrvrStmt->fetchRowsetSize > 0)
-					{
-						retcodenew = ReadRow(pSrvrStmt, &curRowCount, &rows_read_fin);
-						if (retcodenew < 0) THREAD_RETURN(pSrvrStmt,retcodenew);
-						if (retcodenew > 0) sqlWarning = TRUE;
-
-						curRowNo += rows_read_fin;
-					}
-					break;
-				}
-				DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
-					pSrvrStmt->nowaitRetcode,
-					CliDebugSqlError(retcode)));
-			}
-			else {
-				pSrvrStmt->nowaitRetcode = rtn;
-				THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-			}
-		}
-#endif
-
 		if (retcode != 0)
 		{                  //Check for a bad return code
 			if (retcode == 100)
@@ -2085,47 +1952,6 @@ SQLRETURN EXECUTESPJRS(SRVR_STMT_HDL *pSrvrStmt)
 	HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
 	pSrvrStmt->isClosed = FALSE;
 
-#ifndef DISABLE_NOWAIT		
-	if (retcode == NOWAIT_PENDING){
-		rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
-		DEBUG_OUT(DEBUG_LEVEL_CLI,("EXECUTESPJRS : WaitForCompletion() returned %d",rtn));
-
-		if (rtn == 0)
-		{
-			rc = pSrvrStmt->switchContext();
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("EXECUTESPJRS  pSrvrStmt->switchContext() return with: %ld.", rc));
-			if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
-
-			switch (pSrvrStmt->nowaitRetcode)
-			{
-			case 0:
-				retcode = 0;
-				break;
-			case 9999:
-				pSrvrStmt->isClosed = TRUE;
-				THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-			default:
-				pSrvrStmt->isClosed = TRUE;
-				retcode = GETSQLCODE(pSrvrStmt);
-				break;
-			}
-			DEBUG_OUT(DEBUG_LEVEL_CLI,
-				("EXECUTESPJRS : pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
-				pSrvrStmt->nowaitRetcode,
-				CliDebugSqlError(retcode)));
-		}
-		else
-		{
-			pSrvrStmt->isClosed = TRUE;
-			pSrvrStmt->nowaitRetcode = rtn;
-			THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-		}
-	}
-#endif
-
-	// Note this could do a return
-	HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-
 	if (sqlWarning) THREAD_RETURN(pSrvrStmt,SQL_SUCCESS_WITH_INFO);
 	THREAD_RETURN(pSrvrStmt,SQL_SUCCESS);
 }
@@ -2201,21 +2027,7 @@ SQLRETURN ALLOCSQLMXHDLS(SRVR_STMT_HDL* pSrvrStmt)
 		pStmt->identifier_len = 0;
 		pStmt->identifier = NULL;
 	}
-
-	if (srvrGlobal->nowaitOn)
-	{
-#if defined(TAG64)
-		tempStmtId=(int _ptr32*)malloc32(sizeof(int));
-		pStmt->tag=(int)tempStmtId;
-		tempStmtIdMap[(long)tempStmtId]=pSrvrStmt;
-#else
-		pStmt->tag = (long)pSrvrStmt;
-#endif
-	}
-	else
-	{
-		pStmt->tag = 0;
-	}
+	pStmt->tag = 0;
 	if (pModule->module_name == NULL)
 	{
 		retcode = CLI_AllocStmt(pStmt,(SQLSTMT_ID *)NULL);
@@ -2304,16 +2116,6 @@ SQLRETURN ALLOCSQLMXHDLS(SRVR_STMT_HDL* pSrvrStmt)
 		pSrvrStmt->outputDescName[pOutputDesc->identifier_len] = '\0';
 	}
 
-	if (srvrGlobal->nowaitOn)
-	{
-		retcode = CLI_AssocFileNumber(pStmt, srvrGlobal->nowaitFilenum);
-		if (retcode < 0)
-		{
-			CLI_ClearDiagnostics(NULL);
-			CLI_DEBUG_RETURN_SQL(retcode);
-		}
-	}
-
 	// Set the input and output Desc to be Wide Descriptors
 	if (!pSrvrStmt->useDefaultDesc)
 	{
@@ -2399,19 +2201,7 @@ SQLRETURN ALLOCSQLMXHDLS_SPJRS(SRVR_STMT_HDL *pSrvrStmt, SQLSTMT_ID *callpStmt, 
 	DEBUG_OUT(DEBUG_LEVEL_STMT,("***pStmt->identifier_len=%ld", pStmt->identifier_len));
 	DEBUG_OUT(DEBUG_LEVEL_STMT,("***pStmt->identifier=%s", pStmt->identifier));
 
-	if (srvrGlobal->nowaitOn)
-	{
-#if defined(TAG64)
-		tempStmtId=(int _ptr32*)malloc32(sizeof(int));
-		pStmt->tag=(int)tempStmtId;
-		tempStmtIdMap[(int)tempStmtId]=pSrvrStmt;
-
-#else
-		pStmt->tag = (long)pSrvrStmt;
-#endif
-	}
-	else
-		pStmt->tag = 0;
+	pStmt->tag = 0;
 	if (pModule->module_name == NULL)
 	{
 		DEBUG_OUT(DEBUG_LEVEL_STMT,("***pModule->module_name == NULL  Call AllocStmtForRs()"));
@@ -2460,16 +2250,6 @@ SQLRETURN ALLOCSQLMXHDLS_SPJRS(SRVR_STMT_HDL *pSrvrStmt, SQLSTMT_ID *callpStmt, 
 		pOutputDesc->identifier = NULL;
 		pOutputDesc->module = pModule;
 		retcode = CLI_AllocDesc(pOutputDesc, (SQLDESC_ID *)NULL);
-		if (retcode < 0)
-		{
-			CLI_ClearDiagnostics(NULL);
-			CLI_DEBUG_RETURN_SQL(retcode);
-		}
-	}
-
-	if (srvrGlobal->nowaitOn)
-	{
-		retcode = CLI_AssocFileNumber(pStmt, srvrGlobal->nowaitFilenum);
 		if (retcode < 0)
 		{
 			CLI_ClearDiagnostics(NULL);
@@ -2548,56 +2328,10 @@ SQLRETURN EXECUTECALL(SRVR_STMT_HDL *pSrvrStmt)
 	}
 
 	DEBUG_ASSERT(pSrvrStmt->isClosed, ("Server Statement is Open before int."));
-	pSrvrStmt->isClosed = FALSE;
-
 	retcode = CLI_Exec(pStmt, pDescValue, 0);
 	DEBUG_OUT(DEBUG_LEVEL_STMT,("intCALL  CLI_EXEC  retcode: %ld.", retcode));
 	HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
 	pSrvrStmt->isClosed = FALSE;
-
-#ifndef DISABLE_NOWAIT
-	if (retcode == NOWAIT_PENDING){
-		rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
-		DEBUG_OUT(DEBUG_LEVEL_CLI,("WaitForCompletion() returned %d",rtn));
-
-		if (rtn == 0)
-		{
-			rc = pSrvrStmt->switchContext();
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->switchContext() return with: %ld.", rc));
-			if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
-
-			switch (pSrvrStmt->nowaitRetcode)
-			{
-			case 0:
-				retcode = 0;
-				break;
-			case 9999:
-				pSrvrStmt->isClosed = TRUE;
-				THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-			default:
-				pSrvrStmt->isClosed = TRUE;
-				retcode = GETSQLCODE(pSrvrStmt);
-				break;
-			}
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
-				pSrvrStmt->nowaitRetcode,
-				CliDebugSqlError(retcode)));
-		}
-		else
-		{
-			pSrvrStmt->isClosed = TRUE;
-			pSrvrStmt->nowaitRetcode = rtn;
-			THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-		}
-	}
-	else
-#endif
-	{
-		if (retcode!=SQL_SUCCESS) pSrvrStmt->isClosed = TRUE;
-	}
-
-	// Note this could do a return
-	HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
 
 	pDesc       = &pSrvrStmt->outputDesc;
 	columnCount = pSrvrStmt->columnCount;
@@ -2612,47 +2346,6 @@ SQLRETURN EXECUTECALL(SRVR_STMT_HDL *pSrvrStmt)
 	DEBUG_OUT(DEBUG_LEVEL_STMT,("***Anitha ---- >pSrvrStmt->isClosed=%ld", pSrvrStmt->isClosed));
 
 	retcode = CLI_Fetch(pStmt, pDescParam, 0);
-
-#ifndef DISABLE_NOWAIT
-	if (retcode == NOWAIT_PENDING) {
-		rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
-		DEBUG_OUT(DEBUG_LEVEL_CLI,("WaitForCompletion() returned %d",rtn));
-
-		if (rtn == 0)
-		{
-			rc = pSrvrStmt->switchContext();
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->switchContext() return with: %ld.", rc));
-			if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
-
-			switch (pSrvrStmt->nowaitRetcode)
-			{
-			case 0:
-				retcode = 0;
-				break;
-			case 9999:
-				pSrvrStmt->isClosed = TRUE;
-				THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-			default:
-				pSrvrStmt->isClosed = TRUE;
-				retcode = GETSQLCODE(pSrvrStmt);
-				break;
-			}
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
-				pSrvrStmt->nowaitRetcode,
-				CliDebugSqlError(retcode)));
-		}
-		else
-		{
-			pSrvrStmt->isClosed = TRUE;
-			pSrvrStmt->nowaitRetcode = rtn;
-			THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-		}
-	}
-	else
-#endif	
-	{
-		if (retcode!=SQL_SUCCESS) pSrvrStmt->isClosed = TRUE;
-	}
 
 	// Return if the fetch failed
 	HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
