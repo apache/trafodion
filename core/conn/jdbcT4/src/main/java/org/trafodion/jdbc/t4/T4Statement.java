@@ -204,4 +204,10 @@ final class T4Statement {
 		}
 		return buf;
 	}
+
+	public boolean isProcessing() 
+	{
+		 return m_processing;
+	}
+
 }

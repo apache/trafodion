@@ -1476,6 +1476,7 @@ $1~String1 --------------------------------
 7003 42000 99999 BEGINNER MAJOR DBADMIN A plan using cluster sampling could not be produced for this query.
 7004 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A parallel extract plan could not be produced. Possible causes include an incompatible Control Query Shape (CQS) specification, use of rowset expressions, or use of SQL features that cannot be parallelized such as [FIRST/LAST N], table-valued functions, stream access to tables, and embedded updates or deletes.
 7005 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of selection predicates in parallel extract consumer queries is not allowed.
+7008 ZZZZZ 99999 BEGINNER MINOR DBADMIN IUD not supported with hbase replication enabled table $0~TableName when HBASE_READ_REPLICA is enabled. 
 7350 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incompatible consistency level of $0~Int0 for Halloween protection
 7351 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incompatible lock size of $0~Int0 for Halloween protection.
 7352 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A Hash-Join that may overflow its memory to disk can not accept input rows longer than $0~Int0 bytes.

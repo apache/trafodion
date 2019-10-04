@@ -55,6 +55,7 @@ class InterfaceConnection {
 	
 	static final short SQL_COMMIT = 0;
 	static final short SQL_ROLLBACK = 1;
+	private int activeTimeBeforeCancel = -1;
 	private int txnIsolationLevel = Connection.TRANSACTION_READ_COMMITTED;
 	private boolean autoCommit = true;
 	private boolean isReadOnly = false;
@@ -131,6 +132,7 @@ class InterfaceConnection {
 	private String _remoteProcess;
 	private String _connStringHost = "";
 
+        int getActiveTimeBeforeCancel() { return activeTimeBeforeCancel; }
 	InterfaceConnection(TrafT4Connection conn, T4Properties t4props) throws SQLException {
 		_t4Conn = conn;
 		t4props_ = t4props;
@@ -166,7 +168,7 @@ class InterfaceConnection {
 		// Connection context details
 		inContext = getInContext(t4props);
 		m_ncsSrvr_ref = t4props.getUrl();
-		_ignoreCancel = false;
+		_ignoreCancel = t4props.getIgnoreCancel();
 
 		if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(t4props_, t4props);
@@ -215,6 +217,10 @@ class InterfaceConnection {
 
 	String getRoleName() {
 		return this._roleName;
+	}
+
+	boolean getIgnoreCancel() {
+		return this._ignoreCancel;
 	}
 
 	CONNECTION_CONTEXT_def getInContext() {
@@ -477,56 +483,44 @@ class InterfaceConnection {
 		endTransaction(SQL_ROLLBACK);
 	}
 
-	void cancel() throws SQLException {
-		if(!this._ignoreCancel) {
-			String srvrObjRef = "" + ncsAddr_.getPort();
-			// String srvrObjRef = t4props_.getServerID();
-			int srvrType = 2; // AS server
-			CancelReply cr_ = null;
+	void cancel(long startTime) throws SQLException 
+	{
+		String errorText = null;
+		long currentTime;
+		if (startTime != -1) {
+			if (activeTimeBeforeCancel != -1) {
+				currentTime = System.currentTimeMillis();
+				if ((activeTimeBeforeCancel * 1000) < (currentTime - startTime))
+					return; 
+			}
+		}
+
+		String srvrObjRef = "" + ncsAddr_.getPort();
+		// String srvrObjRef = t4props_.getServerID();
+		int srvrType = 2; // AS server
+		CancelReply cr_ = null;
 	
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(t4props_);
-				String temp = "cancel request received for " + srvrObjRef;
+			String temp = "cancel request received for " + srvrObjRef;
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "connect", temp, p);
-			}
+		}
 	
-			//
-			// Send the cancel to the ODBC association server.
-			//
-			String errorText = null;
-			int tryNum = 0;
-			String errorMsg = null;
-			String errorMsg_detail = null;
-			long currentTime = (new java.util.Date()).getTime();
-			long endTime;
+		cr_ = T4_Dcs_Cancel.cancel(t4props_, this, dialogueId_, srvrType, srvrObjRef, 0);
 	
-			if (inContext.loginTimeoutSec > 0) {
-				endTime = currentTime + inContext.loginTimeoutSec * 1000;
-			} else {
-	
-				// less than or equal to 0 implies infinit time out
-				endTime = Long.MAX_VALUE;
-	
-				//
-				// Keep trying to contact the Association Server until we run out of
-				// time, or make a connection or we exceed the retry count.
-				//
-			}
-			cr_ = T4_Dcs_Cancel.cancel(t4props_, this, dialogueId_, srvrType, srvrObjRef, 0);
-	
-			switch (cr_.m_p1_exception.exception_nr) {
-			case TRANSPORT.CEE_SUCCESS:
+		switch (cr_.m_p1_exception.exception_nr) {
+		case TRANSPORT.CEE_SUCCESS:
 				if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 					Object p[] = T4LoggingUtilities.makeParams(t4props_);
 					String temp = "Cancel successful";
 					t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "connect", temp, p);
 				}
-				break;
-			default:
+			break;
+		default:
 	
-				//
-				// Some unknown error
-				//
+			//
+			// Some unknown error
+			//
 				if (cr_.m_p1_exception.clientErrorText != null) {
 					errorText = "Client Error text = " + cr_.m_p1_exception.clientErrorText;
 				}
@@ -540,10 +534,7 @@ class InterfaceConnection {
 					t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "cancel", temp, p);
 				}
 				throw TrafT4Messages.createSQLException(t4props_, locale, "as_cancel_message_error", errorText);
-			} // end switch
-	
-			currentTime = (new java.util.Date()).getTime();
-		}
+		} // end switch
 	}
 	
 	private void initDiag(boolean setTimestamp, boolean downloadCert) throws SQLException {
@@ -591,7 +582,7 @@ class InterfaceConnection {
 					}
 
 					try {
-						t4connection_.getInputOutput().CloseIO(new LogicalByteArray(1, 0, false));
+						t4connection_.getInputOutput().closeIO();
 					} catch (Exception e) {
 						// ignore error
 					}

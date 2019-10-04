@@ -83,7 +83,8 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 		batchCommands_.add(sql);
 	}
 
-	public void cancel() throws SQLException {
+	public void cancel() throws SQLException 
+        {
 		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4Statement", "cancel", "", p);
@@ -97,18 +98,27 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
-		}
+        	}
 		// Donot clear warning, since the warning may pertain to
 		// previous opertation and it is not yet seen by the application
 		//
-		// We must decide if this statement is currently being processed or
-		// if it has a result set associated with it, and if that
-		// result set is currently active (i.e. we are fetching rows).
-		if ((ist_.t4statement_ != null && ist_.t4statement_.m_processing == true)
+
+		// if the statement is already closed
+		// No need to cancel the statement
+		
+		if (isClosed_) 
+			return;
+
+		// Check if the statement is stuck in reading from socket connection to mxosrvr
+		// If not, just do the internal close to free up the statement resources on the server side
+		// else let the query time mechanism in the socket connection read take care of 
+		// cancelling the query
+		if ((ist_.getT4statement() != null && (! ist_.getT4statement().isProcessing()))
 				|| (resultSet_ != null && resultSet_[result_set_offset] != null
 						&& resultSet_[result_set_offset].irs_ != null
-						&& resultSet_[result_set_offset].irs_.t4resultSet_ != null && resultSet_[result_set_offset].irs_.t4resultSet_.m_processing == true))
-			ist_.cancel();
+						&& resultSet_[result_set_offset].irs_.t4resultSet_ != null && 
+						( ! resultSet_[result_set_offset].irs_.t4resultSet_.m_processing)))
+			internalClose();
 	}
 
 	public void clearBatch() throws SQLException {

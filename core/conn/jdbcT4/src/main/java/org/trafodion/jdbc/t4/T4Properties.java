@@ -77,6 +77,8 @@ import javax.naming.StringRefAddr;
  * </p>
  */
 public class T4Properties {
+    final static int DEFAULT_NETWORK_TIMEOUT_IN_MILLIS = 1000;
+    final static int DEFAULT_CONNECT_TIMEOUT_IN_SECS = 10;
 	private String description_;
 	private String dataSourceName_;
 	private String serverDataSource_;
@@ -92,7 +94,7 @@ public class T4Properties {
 	private int maxStatements_;
 	private int loginTimeout_;
 	// private int closeConnectionTimeout_;
-	private int networkTimeout_;
+	private int networkTimeoutInMillis_ = DEFAULT_NETWORK_TIMEOUT_IN_MILLIS;
 	private int connectionTimeout_;
 	private int maxIdleTime_;
 	private Level t4LogLevel;
@@ -101,7 +103,6 @@ public class T4Properties {
 	private Properties inprops_;
 	private PrintWriter logWriter_;
 	// For LOB Support - SB 9/28/04
-	static long reserveDataLocator_;
 	private int roundMode_;
 	private String language_;
 
@@ -114,10 +115,6 @@ public class T4Properties {
 	private short ncsMinorVersion_;
 	private short sqlmxMajorVersion_;
 	private short sqlmxMinorVersion_;
-
-	// LOB Support 
-	String clobTableName_;
-	String blobTableName_;
 
     private int lobChunkSize_ = 10; // default 10M
     private boolean useLobHandle_ = false;
@@ -133,6 +130,8 @@ public class T4Properties {
 
 	// propertiy queryTimeout_ for future use.
 	private short queryTimeout_;
+ 	private boolean ignoreCancel_ = true;
+	private int activeTimeBeforeCancel_; 
 	private T4Address t4addr_;
 
 	// Error handling while setting Type 4 properties.
@@ -399,22 +398,8 @@ public class T4Properties {
 		setConnectionTimeout(getProperty("connectionTimeout"));
 		setClipVarchar(getProperty("clipVarchar"));
 		setFetchBufferSize(getProperty("fetchBufferSize")); 
-
-		// For LOB Support - SB 9/28/04
-		try {
-			setClobTableName(getProperty("clobTableName"));
-		} catch (SQLException se) {
-			sqlExceptionMessage_ = "Error while reading the clobTableName property: " + se.getMessage();
-		}
-
-		try {
-			setBlobTableName(getProperty("blobTableName"));
-		} catch (SQLException se2) {
-			sqlExceptionMessage_ = "Error while reading the blobTableName property: " + se2.getMessage();
-		}
-
-		setReserveDataLocator(getProperty("reserveDataLocator"));
 		setQueryTimeout(getProperty("queryTimeout"));
+		setActiveTimeBeforeCancel(getProperty("activeTimeBeforeCancelInSecs"));
 		setRoundingMode(getProperty("roundingMode"));
 		setSPJEnv(getProperty("SPJEnv"));
 		setKeepRawFetchBuffer(getProperty("keepRawFetchBuffer"));
@@ -484,7 +469,7 @@ public class T4Properties {
 		props.setProperty("loginTimeout", String.valueOf(loginTimeout_));
 		// props.setProperty("closeConnectionTimeout",
 		// String.valueOf(closeConnectionTimeout_));
-		props.setProperty("networkTimeout", String.valueOf(networkTimeout_));
+		props.setProperty("networkTimeout", String.valueOf(getNetworkTimeout()));
 		props.setProperty("connectionTimeout", String.valueOf(connectionTimeout_));
 		props.setProperty("description", description_);
 		props.setProperty("dataSourceName", dataSourceName_);
@@ -496,16 +481,10 @@ public class T4Properties {
 		props.setProperty("maxIdleTime", String.valueOf(maxIdleTime_));
 		props.setProperty("language", language_);
 
-		if (getBlobTableName() != null) {
-			props.setProperty("blobTableName", blobTableName_);
-		}
-		if (getClobTableName() != null) {
-			props.setProperty("clobTableName", clobTableName_);
-
-		}
-
 		// properties queryTimeout_ for future use.
 		props.setProperty("queryTimeout", String.valueOf(queryTimeout_));
+		props.setProperty("ignoreCancel", String.valueOf(ignoreCancel_));
+		props.setProperty("activeTimeBeforeCancelInSecs", String.valueOf(activeTimeBeforeCancel_));
 		props.setProperty("roundingMode", String.valueOf(roundMode_));
 		props.setProperty("SPJEnv", String.valueOf(SPJEnv_));
 		props.setProperty("keepRawFetchBuffer", String.valueOf(keepRawFetchBuffer_));
@@ -1257,27 +1236,36 @@ public class T4Properties {
 	 * @param networkTimeout
 	 *            The network timeout value in seconds.
 	 * @see #setNetworkTimeout(int)
-	 * @see #getNetworkTimeout()
+	 * @see #setNetworkTimeout()
 	 */
 	void setNetworkTimeout(int networkTimeout) {
 		if (networkTimeout < 0) {
 			sqlExceptionMessage_ = "Incorrect value for networkTimeout set: " + networkTimeout + ".";
-			networkTimeout_ = 0;
+			networkTimeoutInMillis_ = DEFAULT_NETWORK_TIMEOUT_IN_MILLIS;
 		} else {
-			networkTimeout_ = networkTimeout;
+			networkTimeoutInMillis_ = networkTimeout * 1000;
 		}
+	}
+
+	void setNetworkTimeoutInMillis(int networkTimeoutInMillis) {
+		networkTimeoutInMillis_ = networkTimeoutInMillis;
 	}
 
 	/**
 	 * Returns the network timeout value set for the current Type 4 connection.
 	 * 
 	 * @return the network timeout value in seconds.
-	 * @see #setNetworkTimeout(int)
-	 * @see #setNetworkTimeout(String)
+	 * @see #getNetworkTimeout(int)
+	 * @see #getNetworkTimeout(String)
 	 */
 	int getNetworkTimeout() {
-		return networkTimeout_;
+		return networkTimeoutInMillis_ / 1000;
 	}
+
+        int getNetworkTimeoutInMillis() {
+            return networkTimeoutInMillis_;
+        }
+ 
 
 	// -----------------------------------------------------------------
 
@@ -1606,6 +1594,8 @@ public class T4Properties {
 	 *            this property is not supported in the current release.
 	 */
 	void setQueryTimeout(short queryTimeout) {
+		if ((queryTimeout *1000) > networkTimeoutInMillis_)
+			queryTimeout = (short)(networkTimeoutInMillis_ % 1000);
 		queryTimeout_ = queryTimeout;
 	}
 
@@ -1617,6 +1607,50 @@ public class T4Properties {
 		return queryTimeout_;
 	}
 
+	void setIgnoreCancel(String ignoreCancel)
+	{
+		if (ignoreCancel != null)
+			ignoreCancel_ = Boolean.parseBoolean(ignoreCancel);
+		else
+			ignoreCancel_ = true;
+	}
+
+        void setIgnoreCancel(boolean ignoreCancel)
+	{
+		ignoreCancel_ = ignoreCancel;
+	}
+
+	boolean getIgnoreCancel()
+	{
+		return ignoreCancel_;
+	}
+
+	void setActiveTimeBeforeCancel(String activeTimeBeforeCancel) {
+		int tmpActiveTimeBeforeCancel = 0;
+		if (activeTimeBeforeCancel != null) {
+			try {
+				tmpActiveTimeBeforeCancel = Integer.parseInt(activeTimeBeforeCancel);
+			} catch (NumberFormatException ex) {
+				sqlExceptionMessage_ = "Incorrect value for activeTimeBeforeCancel set: " + activeTimeBeforeCancel + ex.getMessage();
+				tmpActiveTimeBeforeCancel = -1;
+			}
+		}
+		setActiveTimeBeforeCancel(tmpActiveTimeBeforeCancel);
+	}
+
+	void setActiveTimeBeforeCancel(int activeTimeBeforeCancel) 
+	{
+		if (activeTimeBeforeCancel < networkTimeoutInMillis_)
+			activeTimeBeforeCancel = networkTimeoutInMillis_;
+		activeTimeBeforeCancel_ = activeTimeBeforeCancel;
+	}
+
+	int getActiveTimeBeforeCancel() 
+	{
+		return activeTimeBeforeCancel_;
+	}
+
+	
 	/**
 	 * Sets the value (in KB) for the size of the fetch buffer. This is used
 	 * when rows are fetched are performed from a ResultSet object after a
@@ -1784,49 +1818,6 @@ public class T4Properties {
 	 */
 
 	/**
-	 * Sets the table name to store and retrieve the CLOB data for all CLOB
-	 * columns accessed in the connection using the data source.
-	 * 
-	 * @param clobTableName
-	 *            The clob table name which is of the format
-	 *            <code><var>catalog_name.schema_name.clob_table_name</code></var>
-	 * 
-	 * @since 1.1
-	 */
-	void setClobTableName(String clobTableName) throws SQLException {
-		int fromIndex = -1;
-		int count = 0;
-
-		if (clobTableName != null) {
-			while (((fromIndex = clobTableName.indexOf('.', fromIndex + 1)) != -1) && count < 2) {
-				count++;
-			}
-			if (count < 2) {
-				SQLException se = TrafT4Messages.createSQLException(null, null, "no_clobTableName", null);
-				sqlExceptionMessage_ = se.getMessage();
-			}
-			clobTableName_ = clobTableName;
-		} else { // If the name is null, let it be null
-			clobTableName_ = null;
-			// throw TrafT4Messages.createSQLException(null,
-			// null,"no_clobTableName",null);
-		}
-	}
-
-	/**
-	 * Retrieves the table name used to store CBLOB data for all CLOB columns
-	 * accessed in the connection using the data source.
-	 * 
-	 * @return the clob table name which is of the format
-	 *         <code><var>catalog_name.schema_name.clob_table_name</code></var>
-	 * 
-	 * @since 1.1
-	 */
-	String getClobTableName() {
-		return clobTableName_;
-	}
-
-	/**
 	 * @return any sql exception associated while setting the properties on this
 	 *         Type 4 connection. This mthod is accessed by InterfaceConnection
 	 *         to check if there is any SQL error setting the Type 4 properties.
@@ -1834,106 +1825,6 @@ public class T4Properties {
 	String getSQLException() {
 		// System.out.println("sqlExceptionMessage_ = " + sqlExceptionMessage_);
 		return sqlExceptionMessage_;
-	}
-
-	/**
-	 * Sets the table name to store and retrieve the BLOB data for all BLOB
-	 * columns accessed in the connection using the data source.
-	 * 
-	 * @param blobTableName
-	 *            the blob table name which is of the format
-	 *            <code><var>catalog_name.schema_name.blob_table_name</code></var>
-	 * 
-	 * @since 1.1
-	 */
-	void setBlobTableName(String blobTableName) throws SQLException {
-		int fromIndex = -1;
-		int count = 0;
-
-		if (blobTableName != null) {
-			while (((fromIndex = blobTableName.indexOf('.', fromIndex + 1)) != -1) && count < 2) {
-				count++;
-			}
-			if (count < 2) {
-				SQLException se = TrafT4Messages.createSQLException(null, null, "no_blobTableName", null);
-				sqlExceptionMessage_ = se.getMessage();
-			}
-			blobTableName_ = blobTableName;
-		}
-		// If the name is null, then let it be null
-		else {
-			blobTableName_ = null;
-			// throw TrafT4Messages.createSQLException(null, null,
-			// "no_blobTableName", null);
-		}
-	}
-
-	/**
-	 * Retrieves the table name used to store BLOB data for all BLOB columns
-	 * accessed in the connection using the data source.
-	 * 
-	 * @return the blob table name which is of the format
-	 *         <code><var>catalog_name.schema_name.blob_table_name</code></var>
-	 * 
-	 * @since 1.1
-	 */
-	String getBlobTableName() {
-		return blobTableName_;
-	}
-
-	/**
-	 * Configure to set the number of data locators to be reserved by the Type 4
-	 * connection. Default value is 100.
-	 * 
-	 * @param reserveDataLocator
-	 *            Set the value of the reserve data locator length for the
-	 *            binding) feature.
-	 * 
-	 * @since 1.1
-	 */
-	void setReserveDataLocator(String reserveDataLocator) {
-		long reserveDataLocatorLen = 100;
-		if (reserveDataLocator != null) {
-			try {
-				reserveDataLocatorLen = Long.parseLong(reserveDataLocator);
-			} catch (NumberFormatException ex) {
-				sqlExceptionMessage_ = "Incorrect value for setReserveDataLocator set: " + reserveDataLocator
-						+ ex.getMessage();
-				reserveDataLocatorLen = 100;
-			}
-		}
-		setReserveDataLocator(reserveDataLocatorLen);
-	}
-
-	/**
-	 * Configure to set the number of data locators to be reserved by the Type 4
-	 * connection. Default value is 100.
-	 * 
-	 * @param reserveDataLocatorLen
-	 *            Set the value of the reserve data locator length for the Type
-	 *            4 connection.
-	 * 
-	 * @since 1.1
-	 */
-	void setReserveDataLocator(long reserveDataLocatorLen) {
-		if (reserveDataLocatorLen < 0) {
-			sqlExceptionMessage_ = "Incorrect value for reserveDataLocator set: " + reserveDataLocatorLen + ".";
-			reserveDataLocator_ = 100;
-		} else {
-			reserveDataLocator_ = reserveDataLocatorLen;
-		}
-	}
-
-	/**
-	 * Return the value of the reserve data locator length.
-	 * 
-	 * @return reserveDataLocatorLength int indicates the value of the reserved
-	 *         data locator length.
-	 * 
-	 * @since 1.1
-	 */
-	long getReserveDataLocator() {
-		return reserveDataLocator_;
 	}
 
     public int getLobChunkSize() {
@@ -2486,21 +2377,12 @@ public class T4Properties {
 		 * Boolean.toString(getUseArrayBinding())));
 		 */
 
-		// LOB Support - SB 9/28/04
-		val = getClobTableName();
-		if (val != null) {
-			ref.add(new StringRefAddr("clobTableName", val));
-		}
-		val = getBlobTableName();
-		if (val != null) {
-			ref.add(new StringRefAddr("blobTableName", val));
-
-		}
-		ref.add(new StringRefAddr("reserveDataLocator", Long.toString(reserveDataLocator_)));
 		ref.add(new StringRefAddr("roundingMode", Integer.toString(getRoundingMode())));
 
 		// propertiy queryTimeout_ for future use.
 		ref.add(new StringRefAddr("queryTimeout", Integer.toString(getQueryTimeout())));
+		ref.add(new StringRefAddr("ignoreCancel", Boolean.toString(getIgnoreCancel())));
+		ref.add(new StringRefAddr("activeTimeBeforeCancelInSecs", Integer.toString(getActiveTimeBeforeCancel())));
 		ref.add(new StringRefAddr("fetchBufferSize", Short.toString(this.getFetchBufferSize())));
 		ref.add(new StringRefAddr("batchRecovery", Boolean.toString(this.getBatchRecovery())));
 		return ref;
@@ -2541,12 +2423,6 @@ public class T4Properties {
 				setPropertyInfo("language", props, false, "Locale language to use", null),
 				setPropertyInfo("serverDataSource", props, false, "NDCS data source name", null),
 				setPropertyInfo("roundingMode", props, false, "Data rounding mode", roundingMode),
-				setPropertyInfo("blobTableName", props, false, "Table name to store and retrieve BLOB column data",
-						null),
-				setPropertyInfo("clobTableName", props, false, "Table name to store and retrieve CLOB column data",
-						null),
-				setPropertyInfo("reserveDataLocator", props, false,
-						"Number of data locators (for LOB) to be reserved by the connection", null),
 				setPropertyInfo("fetchBufferSize", props, false,
 						"Value (in KB) for the size of the fetch buffer to be used when rows are fetched", null),
 				setPropertyInfo("batchRecovery", props, false,

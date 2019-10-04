@@ -832,6 +832,7 @@ odbc_SQLSvc_Prepare2_sme_(
   , /* In    */ const IDL_char *stmtLabel
   , /* In    */ IDL_string sqlString
   , /* In    */ Int32 holdableCursor
+  , /* In    */ Int32 queryTimeout
   , /* Out   */ Int32 *returnCode
   , /* Out   */ Int32 *sqlWarningOrErrorLength
   , /* Out   */ BYTE *&sqlWarningOrError
@@ -1410,6 +1411,7 @@ odbc_SQLSvc_Execute2_sme_(
 				  , sqlStmtType
 				  , inputRowCnt
 				  , holdableCursor
+                                  , queryTimeout
 				  , &rc
 				  , returnCode
 				  , sqlWarningOrErrorLength
@@ -1746,6 +1748,7 @@ odbc_SQLSvc_Execute2withRowsets_sme_(
 				  , sqlStmtType
 				  , inputRowCnt
 				  , holdableCursor
+				  , queryTimeout
 				  ,&rc
 				  , returnCode
 				  , sqlWarningOrErrorLength
@@ -2075,6 +2078,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
 			, Int32			sqlStmtType
 			, Int32			inputRowCnt
 			, Int32		holdableCursor
+			, Int32 queryTimeout
 			, SQLRETURN     *rc
 			, Int32          *returnCode
 			, Int32      *sqlWarningOrErrorLength

@@ -500,7 +500,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.getLogWriter().println(temp);
 		}
 		int dataType;
-		long dataLocator;
 
 		validateSetInvocation(parameterIndex);
 
@@ -591,7 +590,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.getLogWriter().println(temp);
 		}
 		int dataType;
-		long dataLocator;
 
 		validateSetInvocation(parameterIndex);
 
@@ -675,7 +673,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.getLogWriter().println(temp);
 		}
 		int dataType;
-		long dataLocator;
 
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
@@ -809,7 +806,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 		char[] value;
 		int dataType;
-		long dataLocator;
 
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;

@@ -136,6 +136,7 @@ public class HTableClient {
 	int fetchType = 0;
 	long jniObject = 0;
 	SnapshotScanHelper snapHelper = null;
+        static boolean enableHbaseScanForSkipReadConflict;
 
 	 class SnapshotScanHelper
 	 {
@@ -1152,7 +1153,7 @@ public class HTableClient {
 			numColsInScan = 0;
 		if (useTRex && (transID != 0)) {
 			getResultSet = batchGet(transID, listOfGets);
-                        fetchType = GET_ROW; 
+     			fetchType = GET_ROW; 
 		} else {
 			getResultSet = table.get(listOfGets);
 			fetchType = BATCH_GET;

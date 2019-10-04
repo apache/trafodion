@@ -782,45 +782,78 @@ bool SsmpGlobals::cancelQuery(char *queryId, Lng32 queryIdLen,
   int error;
   char tempQid[ComSqlId::MAX_QUERY_ID_LEN+1];
 
-
+  static int stopProcessAfterInSecs = 
+             (getenv("MIN_QUERY_ACTIVE_TIME_IN_SECS_BEFORE_CANCEL") != NULL ? atoi(getenv("MIN_QUERY_ACTIVE_TIME_IN_SECS_BEFORE_CANCEL")) : -1);
   ActiveQueryEntry * aq = (queryId ? getActiveQueryMgr().getActiveQuery(
                        queryId, queryIdLen) : NULL);
+  ExMasterStats * cMasterStats = NULL;
+  StmtStats *cqStmtStats = NULL;
 
   if (aq == NULL)
   {
      error = statsGlobals->getStatsSemaphore(getSemId(), myPin());
-     StmtStats *cqStmtStats = statsGlobals->getMasterStmtStats(
+     cqStmtStats = statsGlobals->getMasterStmtStats(
                 queryId, queryIdLen,
                 RtsQueryId::ANY_QUERY_);
-     if (cqStmtStats == NULL)
+     if (cqStmtStats == NULL) {
         sqlErrorCode = -EXE_CANCEL_QID_NOT_FOUND;
-     else
-     {
-        ExMasterStats * cMasterStats = cqStmtStats->getMasterStats();
-        if (cMasterStats)
-        {
+        statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
+     } else {
+        cMasterStats = cqStmtStats->getMasterStats();
+        if (cMasterStats == NULL) {
+            sqlErrorCode = -EXE_CANCEL_NOT_POSSIBLE;
+            sqlErrorDesc = "The query is not registered with cancel broker";
+            statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
+        } else {
            Statement::State stmtState = (Statement::State)cMasterStats->getState();
            if (stmtState != Statement::OPEN_ &&
                    stmtState  != Statement::FETCH_ &&
-                   stmtState != Statement::STMT_EXECUTE_)
-           {
+                   stmtState != Statement::STMT_EXECUTE_) {
               sqlErrorCode = -EXE_CANCEL_NOT_POSSIBLE;
               sqlErrorDesc = "The query is not in OPEN or FETCH or EXECUTE state";
-           }
-           else
-           {
-              sqlErrorCode = -EXE_CANCEL_NOT_POSSIBLE;
-              sqlErrorDesc = "The query is not registered with the cancel broker";
-           }
-        }
-        else
-        {
-           sqlErrorCode = -EXE_CANCEL_NOT_POSSIBLE;
-           sqlErrorDesc = "The query state is not known";
-        }
-     }
-     statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
-  }
+              statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
+           } else {
+              if ((stopProcessAfterInSecs <= 0) || (cMasterStats->getExeEndTime() != -1)) {
+                 sqlErrorCode = -EXE_CANCEL_NOT_POSSIBLE;
+                 sqlErrorDesc = "The query can't be canceled because it finished processing";
+                 statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
+              } else {
+                 Int64 exeStartTime = cMasterStats->getExeStartTime();
+                 int exeElapsedTimeInSecs = 0;
+                 if (exeStartTime != -1) {
+                    Int64 exeElapsedTime = NA_JulianTimestamp() - cMasterStats->getExeStartTime();
+                    exeElapsedTimeInSecs = exeElapsedTime / 1000000;
+                 }
+                 statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
+                 if (exeElapsedTimeInSecs > 0 && exeElapsedTimeInSecs > (stopProcessAfterInSecs)) {
+                    sqlErrorCode = stopMasterProcess(queryId, queryIdLen); 
+                    if (sqlErrorCode != 0) {
+                       switch (sqlErrorCode) {
+                          case -1:
+                             sqlErrorDesc = "Unable to get node number";
+                             break;
+                          case -2:
+                             sqlErrorDesc = "Unable to get pid";
+                             break;
+                          case -3:
+                             sqlErrorDesc = "Unable to get process name";
+                             break;
+                          default:
+                             sqlErrorDesc = "Unable to stop the process";
+                             break; 
+                       } // switch
+                       sqlErrorCode = -EXE_CANCEL_NOT_POSSIBLE;
+                    } else 
+                      didAttemptCancel = true;
+                 } else {
+                     sqlErrorDesc = "The query can't be canceled because cancel was requested earlier than required minimum query active time";
+                     sqlErrorCode = -EXE_CANCEL_NOT_POSSIBLE;
+                 } // stopAfterNSecs
+              } // ExeEndTime
+          } //StmtState
+       } // cMasterStats 
+    } // cqStmtStats
+  } // aq
   else
   if (aq && (aq->getQueryStartTime() <= cancelStartTime))
   {
@@ -1009,6 +1042,23 @@ bool SsmpGlobals::activateFromQid(
   return doAttemptActivate;
 }
 
+Lng32 SsmpGlobals::stopMasterProcess(char *queryId, Lng32 queryIdLen)
+{
+   Lng32 retcode;
+   Int64 node;
+   Int64 pin;
+   char processName[MS_MON_MAX_PROCESS_NAME+1];
+
+   if ((retcode = ComSqlId::getSqlSessionIdAttr(ComSqlId::SQLQUERYID_CPUNUM, queryId, queryIdLen, node, NULL)) != 0)
+      return -1;
+   if ((retcode = ComSqlId::getSqlSessionIdAttr(ComSqlId::SQLQUERYID_PIN, queryId, queryIdLen, pin, NULL)) != 0)
+      return -2;
+   if ((retcode = msg_mon_get_process_name((int)node, (int)pin, processName)) != XZFIL_ERR_OK)
+      return -3; 
+   if ((retcode = msg_mon_stop_process_name(processName)) != XZFIL_ERR_OK)
+      return retcode;   
+   return 0;    
+}
 
 void SsmpGuaReceiveControlConnection::actOnSystemMessage(
        short                  messageNum,

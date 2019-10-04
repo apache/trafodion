@@ -61,6 +61,7 @@ class T4_Dcs_Connect {
 			se.setNextException(se2);
 			throw se;
 		}
+		InputOutput io1 = null;
 		try {
 			LogicalByteArray rbuffer;
 			LogicalByteArray wbuffer;
@@ -72,10 +73,10 @@ class T4_Dcs_Connect {
 			T4Address address1 = new T4Address(t4props, locale, ic_.getUrl());
 
 			// Open the connection
-			InputOutput io1 = address1.getInputOutput();
-
-			io1.openIO();
+			io1 = address1.getInputOutput();
+                        io1.setInterfaceConnection(ic_);
 			io1.setTimeout(ic_.getLoginTimeout());
+			io1.openIO();
 			io1.setConnectionIdleTimeout(ic_.getConnectionTimeout());
 
 			// Send message to the ODBC Association server.
@@ -86,7 +87,8 @@ class T4_Dcs_Connect {
 
 			// Close IO
 			io1.setTimeout(ic_.t4props_.getLoginTimeout());
-			io1.CloseIO(wbuffer); // Note, we are re-using the wbuffer
+			io1.closeIO(); // Note, we are re-using the wbuffer
+                        io1 = null;
 
 			String name1 = null;
 			if (address1.m_ipAddress != null) {
@@ -118,6 +120,9 @@ class T4_Dcs_Connect {
 
 			se.initCause(e);
 			throw se;
+		} finally {
+			if (io1 != null)
+			    io1.closeIO();
 		}
 	}
 }
