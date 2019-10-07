@@ -55,6 +55,7 @@
 
 
 #include "CliDefs.h"
+#include "CliSemaphore.h"
 #include "CmpContext.h"
 #include "CmpErrors.h"
 #include "ComObjectName.h"
@@ -3798,15 +3799,23 @@ NADefaults::NADefaults(NAMemory * h)
      systemParamterUpdated = TRUE;
   }
 
-  if (! readFromDefaultsTable_) {
-     initCurrentDefaultsWithDefaultDefaults();
-     readFromDefaultsTable();
-     saveCurrentDefaults();
-     readFromDefaultsTable_ = TRUE;
-  }
-  else { 
+  if (readFromDefaultsTable_) {
      initCurrentDefaultsFromSavedDefaults();
      readFromDefaultsTable();
+  }
+  else { 
+     globalSemaphore.get();
+     if (readFromDefaultsTable_) {
+        globalSemaphore.release();
+        initCurrentDefaultsFromSavedDefaults();
+        readFromDefaultsTable();
+     } else {
+        initCurrentDefaultsWithDefaultDefaults();
+        readFromDefaultsTable();
+        saveCurrentDefaults();
+        readFromDefaultsTable_ = TRUE;
+        globalSemaphore.release();
+     }
   }
   // Set additional defaultDefaults flags:
 
