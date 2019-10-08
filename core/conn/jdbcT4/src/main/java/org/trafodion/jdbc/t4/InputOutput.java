@@ -25,6 +25,8 @@ package org.trafodion.jdbc.t4;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
@@ -49,7 +51,7 @@ class InputOutput {
 	private OutputStream m_os;
 	private InputStream m_is;
 	private WritableByteChannel m_wbc;
-	private T4Connection m_t4conn; // trace_connection
+	private InterfaceConnection ic;
 	//private int m_sendBufSize;
 	
 	private char compress = Header.NO;			//Header.NO means no compression is used. 
@@ -62,7 +64,7 @@ class InputOutput {
 
         // This is minimum time the socket read and write will wait
         // All other timeouts will be multiple of this timeout
-        private int m_networkTimeout;
+        private int m_networkTimeoutInMillis;
 
 	static {
 		try {
@@ -95,7 +97,7 @@ class InputOutput {
 		m_dialogueId = 0;
 		m_timeout = 0;
 		m_connectionIdleTimeout = 0;
-		
+		m_networkTimeoutInMillis = m_addr.m_t4props.getNetworkTimeoutInMillis();
 		if(m_addr.m_t4props.getCompression()) {
 			compress = Header.YES;
 		}
@@ -105,11 +107,10 @@ class InputOutput {
 
 	} // end InputOutput
 
-	// trace_connection - AM
-	void setT4Connection(T4Connection t4conn) {
-		m_t4conn = t4conn;
+	void setInterfaceConnection(InterfaceConnection ic) {
+		this.ic = ic;
 	}
-	
+
 	void setDialogueId(int dialogueId) {
 		m_dialogueId = dialogueId;
 	}
@@ -122,9 +123,20 @@ class InputOutput {
 		m_connectionIdleTimeout = timeout;
 	}
 	
-        void setNetworkTimeout(int timeout) {
-           m_networkTimeout = timeout; 
-        }
+	void setNetworkTimeoutInMillis(int timeout) throws SQLException {
+		int oldTimeout = m_networkTimeoutInMillis;
+		if (timeout == 0)
+			m_networkTimeoutInMillis = T4Properties.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS;
+		else
+           		m_networkTimeoutInMillis = timeout; 
+		if (m_socket != null && m_networkTimeoutInMillis != oldTimeout) { 
+			try {
+				m_socket.setSoTimeout(m_networkTimeoutInMillis);
+			} catch (java.net.SocketException e) {
+				throw new SQLException(e);
+			}
+		}
+	}
 
 	String getRemoteHost() {
 		return this.m_addr.getIPorName();
@@ -133,10 +145,10 @@ class InputOutput {
 	// ----------------------------------------------------------
 	synchronized void openIO() throws SQLException {
 		// trace_connection - AM
-		if (m_t4conn != null && m_t4conn.m_ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(m_t4conn.m_ic.t4props_);
+		if (ic != null && ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(ic.t4props_);
 			String temp = "m_socket=" + m_socket;
-			m_t4conn.m_ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "openIO", temp, p);
+			ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "openIO", temp, p);
 		}
 		if (m_socket == null) {
 			int numTry = 0;
@@ -160,53 +172,19 @@ class InputOutput {
 				i = 0;
 				while (found == false && i < m_addr.m_inetAddrs.length) {
 					try {
-						//System.out.println(m_addr.m_inetAddrs[i] + ":" + m_addr.m_portNumber.intValue());
-						m_socket = m_factory.createSocket(m_addr.m_inetAddrs[i], m_addr.m_portNumber.intValue());
-//						m_socket = new Socket(InetAddress.getByName("a.b.c.d"),5358);
-						m_socket.setKeepAlive(this.m_addr.m_t4props.getKeepAlive());
-						m_socket.setSoLinger(false, 0); // Make sure the socket
+						m_socket = m_factory.createSocket();
+						int connectTimeout;
+						if (m_timeout == 0)	
+							connectTimeout = T4Properties.DEFAULT_CONNECT_TIMEOUT_IN_SECS * 1000; 
+						else
+							connectTimeout = m_timeout * 1000;
+						m_socket.connect(new InetSocketAddress(m_addr.m_inetAddrs[i], m_addr.m_portNumber.intValue()), connectTimeout);
 						m_socket.setKeepAlive(true);
-						// can immediately
-						// reused if connection
-						// is lost.
-						//Set the network timeout to be at least 10 seconds
-						if (m_networkTimeout == 0)
-                                                    m_networkTimeout = 10;
-						m_socket.setSoTimeout(m_networkTimeout * 1000);
-                        // disable/enable Nagle's algorithm
-                        m_socket.setTcpNoDelay(this.m_addr.m_t4props.getTcpNoDelay());
-						//
-						// Note, I have not set a timeout here for either the
-						// conneciton or for
-						// read operations on the socket. I need to figure out
-						// what the
-						// semantics should be, and add this logic.
-						//
-						// Although the user can set a
-						// connection timeout, we
-						// do not set the timeout on the open/connect of the
-						// socket. Instead
-						// we use the default system TCP/IP timeout. In theory,
-						// this may be
-						// longer than the user login timeout. Also, we keep
-						// trying to create/connect
-						// the socket a minimun of 3 times. In theory, this
-						// could really mess up the
-						// user's use of login timeout. For example, if the user
-						// login timeout is
-						// small (e.g. 5 sec.), and the TCP/IP default socket
-						// create/connect timeout
-						// is large (e.g. 10 sec.), and the number of inetAddrs
-						// is large (e.g. 5),
-						// and the correct inetAddr is the last one on the list,
-						// and the AS server
-						// isn't ready until the last try, we could end up
-						// taking way more than
-						// the user specified login time to connect (3 * 10 * 5
-						// = 150 seconds vs.
-						// 5 sec. the user specified!).
-						//
-						//
+						m_socket.setSoLinger(false, 0); // Make sure the socket can immediately reused if connection is lost.
+						m_socket.setSoTimeout(m_networkTimeoutInMillis);
+						// disable/enable Nagle's algorithm
+						m_socket.setTcpNoDelay(this.m_addr.m_t4props.getTcpNoDelay());
+
 						m_os = m_socket.getOutputStream();
 						m_wbc = Channels.newChannel(m_os);
 						m_is = m_socket.getInputStream();
@@ -215,11 +193,11 @@ class InputOutput {
 						// Swastik: added code to start connection idle timers
 						startConnectionIdleTimeout();
 						// trace_connection - AM
-						if (m_t4conn != null && m_t4conn.m_ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
-							Object p[] = T4LoggingUtilities.makeParams(m_t4conn.m_ic.t4props_);
+						if (ic != null && ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+							Object p[] = T4LoggingUtilities.makeParams(ic.t4props_);
 							String temp = "found=" + found + ",numTry=" + numTry + ",i=" + i
 									+ ",m_addr.m_inetAddrs.length=" + m_addr.m_inetAddrs.length;
-							m_t4conn.m_ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "openIO", temp, p);
+							ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "openIO", temp, p);
 						}
 					} catch (Exception e) {
 						//
@@ -247,11 +225,11 @@ class InputOutput {
 			} // end while
 			if (found == false) {
 				// trace_connection - AM
-				if (m_t4conn != null && m_t4conn.m_ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
-					Object p[] = T4LoggingUtilities.makeParams(m_t4conn.m_ic.t4props_);
+				if (ic != null && ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+					Object p[] = T4LoggingUtilities.makeParams(ic.t4props_);
 					String temp = "found=" + found + ",numTry=" + numTry + ",i=" + i + ",m_addr.m_inetAddrs.length="
 							+ m_addr.m_inetAddrs.length;
-					m_t4conn.m_ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "openIO", temp, p);
+					ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "openIO", temp, p);
 				}
 				//
 				// Couldn't open the socket
@@ -310,10 +288,10 @@ class InputOutput {
 		}
 		
 		// trace_connection - AM
-		if (m_t4conn != null && m_t4conn.m_ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(m_t4conn.m_ic.t4props_);
+		if (ic != null && ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(ic.t4props_);
 			String temp = "MessageBuffer";
-			m_t4conn.m_ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "doIO", temp, p);
+			ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "doIO", temp, p);
 		}
 		Header wheader = new Header(odbcAPI, m_dialogueId, totalLength - readHdrLength// minus
 																					// the
@@ -368,11 +346,11 @@ class InputOutput {
 			totalNumRead = totalNumRead + numRead;
 			whileCount1 = whileCount1 + 1;
 			// trace_connection - AM
-			if (m_t4conn != null && m_t4conn.m_ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
-				Object p[] = T4LoggingUtilities.makeParams(m_t4conn.m_ic.t4props_);
+			if (ic != null && ic.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
+				Object p[] = T4LoggingUtilities.makeParams(ic.t4props_);
 				String temp = "MessageBuffer whileCount1=" + whileCount1 + ",numRead=" + numRead + ",totalNumRead="
 						+ totalNumRead;
-				m_t4conn.m_ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "doIO", temp, p);
+				ic.t4props_.t4Logger_.logp(Level.FINEST, "InputOutput", "doIO", temp, p);
 			}
 		} // end while
 
@@ -451,12 +429,11 @@ class InputOutput {
 	} // end doIO
 
 	// ----------------------------------------------------------
-	synchronized void CloseIO(LogicalByteArray buffer) throws SQLException {
-		/*Header hdr = new Header(Header.CLOSE_TCPIP_SESSION, m_dialogueId, 0, 0, Header.NO, Header.COMP_0,
-				Header.CLOSE_TCPIP_SESSION, Header.SIGNATURE, Header.VERSION, Header.PC, Header.TCPIP, Header.NO);
+	synchronized void closeIO() throws SQLException {
 
-		TCPIPDoWrite(hdr, buffer, 0, hdr.sizeOf());*/
 		try {
+			//m_socket.shutdownInput();
+			//m_socket.shutdownOutput();
 			m_socket.close();
 			m_socket = null;
 		} catch (Exception e) {
@@ -466,7 +443,7 @@ class InputOutput {
 		} finally {
 			closeTimers();
 		}
-	} // end CloseIO
+	} // end closeIO
 
 	void TCPIPWriteByteBuffer(ByteBuffer buffer) throws SQLException {
 
@@ -545,7 +522,7 @@ class InputOutput {
 		switch (hdr.hdr_type_) {
 		case Header.READ_RESPONSE_FIRST:
 		case Header.READ_RESPONSE_NEXT:
-			numRead = recv_nblk(buffer.getBuffer(), buffer_index);	
+			numRead = recv_nblk((int)hdr.operation_id_, buffer.getBuffer(), buffer_index);	
 //			buffer.setLocation(numRead);
 			break;
 		default:
@@ -578,61 +555,80 @@ class InputOutput {
 	} // end send_nblk
 
 	// ----------------------------------------------------------
-	int recv_nblk(byte[] buf, int offset) throws SQLException {
+	int recv_nblk(int srvrApi, byte[] buf, int offset) throws SQLException {
 		int num_read = 0;
-		boolean retry = false;
+		int activeTime = 0;
+		boolean cancelQueryAllowed = ! (ic.getIgnoreCancel() || ic.t4props_.getIgnoreCancel());
+		int activeTimeBeforeCancel = ic.getActiveTimeBeforeCancel();
+		boolean outerRetry = true;
 		do {
-			try {
-				boolean innerRetry = true;
-                        	int pendingTimeout = m_timeout;
-                                if (pendingTimeout == 0)
-                                   pendingTimeout = Integer.MAX_VALUE;
-				do {
-					try {
-						num_read = m_is.read(buf, offset, buf.length - offset);
-						// if the socket.read returns -1 then return 0 instead of -1
-						if (num_read < 0) 
-							num_read = 0;
-						innerRetry = false;
-						retry = false;
-                        		}
-	                		catch (SocketTimeoutException ste) {
-						pendingTimeout -= m_networkTimeout;
-						if (pendingTimeout < 0) {
-							innerRetry = false;
-							throw ste;
-						}
-                        		}
-				} while (innerRetry);
-			} catch (SocketTimeoutException ste) {
-				// the first exception should try to cancel and wait for the cancel message from the server
-				if (retry == false) {
-					this.m_t4conn.m_ic.cancel();
-					retry = true;
-					continue;
-                		}
-				
-				// if cancel didnt work the first time, clean everything up
+			boolean innerRetry = true;
+			int innerRetryCnt = 0;
+			int pendingTimeout = m_timeout * 1000;
+			if (pendingTimeout == 0)
+				pendingTimeout = Integer.MAX_VALUE;
+			do {
 				try {
-					m_socket.close();
-					this.m_t4conn.m_ic.setIsClosed(true);
-					this.m_t4conn.m_ic.cancel();
-					throw ste;
-				} catch (Exception e) {
-					SQLException se = TrafT4Messages
-							.createSQLException(null, m_locale, "session_close_error", e.getMessage());
-					se.initCause(e);
-					throw se;
+					num_read = m_is.read(buf, offset, buf.length - offset);
+					// if the socket.read returns -1 then return 0 instead of -1
+					if (num_read < 0) 
+						num_read = 0;
+					innerRetry = false;
+					outerRetry = false;
 				}
-			} catch (Exception e) {
-				SQLException se = TrafT4Messages.createSQLException(null, m_locale, "socket_read_error", e.getMessage());
-				se.initCause(e);
+				catch (SocketTimeoutException ste) {
+					pendingTimeout -= m_networkTimeoutInMillis;
+					if (pendingTimeout <= 0) {
+						innerRetry = false;
+						break;
+					}
+				}
+				catch (IOException ioe) {
+					if (innerRetryCnt <= 3) {
+						try {
+							innerRetryCnt++;
+							Thread.sleep(10);
+						} catch(InterruptedException ie) {
+						}
+					} else {
+						SQLException se = TrafT4Messages.createSQLException(null, m_locale, "problem_with_server_read", null);
+						se.setNextException(new SQLException(ioe));
+						if (ic.t4props_.t4Logger_.isLoggable(Level.FINER)) {
+							Object p[] = T4LoggingUtilities.makeParams(ic.t4props_);
+							String temp = "Socket.read returned an exception " + se.toString(); 
+							ic.t4props_.t4Logger_.logp(Level.FINER, "InputOutput", "recv_nblk", temp, p);
+						}
+						throw se; 
+					}
+				}
+			} while (innerRetry);
+			if (! outerRetry)
+				break;
+			// Connection or connection related requests timed out
+			if (srvrApi == TRANSPORT.SRVR_API_SQLCONNECT  || srvrApi == TRANSPORT.AS_API_GETOBJREF) {
+				closeIO();
+				SQLException se = TrafT4Messages.createSQLException(null, m_locale, 
+					"connection timed out in [" + m_timeout + "] seconds", null);
+				if (ic.t4props_.t4Logger_.isLoggable(Level.FINER)) {
+					Object p[] = T4LoggingUtilities.makeParams(ic.t4props_);
+					String temp = "Socket.read timed out in [" + m_timeout + "] seconds, networkTimeoutInMillis " 
+ 						+ m_networkTimeoutInMillis; 
+					ic.t4props_.t4Logger_.logp(Level.FINER, "InputOutput", "recv_nblk", temp, p);
+				}
 				throw se;
-			} finally {
-				resetTimedOutConnection();
 			}
-		} while(retry);
-
+			// Rest of the requests are treated as related to query timeout
+			if (cancelQueryAllowed)
+				ic.cancel(-1);	
+			else if (activeTimeBeforeCancel != -1) {
+				if (m_timeout != 0)
+					activeTime += m_timeout;
+				else
+					activeTime += (m_networkTimeoutInMillis /1000);	
+				if (activeTime >= activeTimeBeforeCancel)
+					ic.cancel(-1);
+			}	
+		} while (outerRetry);
 		return num_read;
 	} // recv_nblk
 

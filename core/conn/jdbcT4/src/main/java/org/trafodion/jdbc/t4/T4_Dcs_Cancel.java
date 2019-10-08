@@ -78,7 +78,7 @@ class T4_Dcs_Cancel {
 			// Send message to the ODBC Association server.
 			//
 			InputOutput io1 = address1.getInputOutput();
-
+			io1.setInterfaceConnection(ic_);
 			io1.openIO();
 			io1.setTimeout(ic_.t4props_.getNetworkTimeout());
 			io1.setConnectionIdleTimeout(ic_.getConnectionTimeout());
@@ -96,8 +96,7 @@ class T4_Dcs_Cancel {
 			//
 			// io1.setTimeout(ic_.t4props_.getCloseConnectionTimeout());
 			io1.setTimeout(ic_.t4props_.getNetworkTimeout());
-			io1.CloseIO(wbuffer); // Note, we are re-using the wbuffer
-
+			io1.closeIO();
 			return cr1;
 		} // end try
 		catch (SQLException se) {

@@ -1774,37 +1774,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 	boolean erroredConnection = false;
 
-	PreparedStatement[] LobPreparedStatements = new PreparedStatement[14];
-
-	// boolean reserveEmptyDataLocator_ = false;
-	// public static final int EMPTY_DATA_LOCATOR_UPDATE = 0;
-
-	String clobTableName_;
-	String blobTableName_;
-	// String preparedClobTableName_;
-	// String preparedBlobTableName_;
-
-	static final int CLOB_INS_LOB_DATA_STMT = 0;
-	static final int CLOB_GET_LOB_DATA_STMT = 1;
-	static final int CLOB_GET_LOB_LEN_STMT = 2;
-	static final int CLOB_DEL_LOB_DATA_STMT = 3;
-	static final int CLOB_TRUN_LOB_DATA_STMT = 4;
-	static final int CLOB_UPD_LOB_DATA_STMT = 5;
-	static final int CLOB_GET_STRT_DATA_LOC_STMT = 6;
-	static final int BLOB_INS_LOB_DATA_STMT = 7;
-	static final int BLOB_GET_LOB_DATA_STMT = 8;
-	static final int BLOB_GET_LOB_LEN_STMT = 9;
-	static final int BLOB_DEL_LOB_DATA_STMT = 10;
-	static final int BLOB_TRUN_LOB_DATA_STMT = 11;
-	static final int BLOB_UPD_LOB_DATA_STMT = 12;
-	static final int BLOB_GET_STRT_DATA_LOC_STMT = 13;
-
 	static Logger dummyLogger_ = null;
-
-	boolean[] bLobStatementPrepared = new boolean[14]; // initialized to false,
-	// one each for the
-	// BLOB/CLOB statements
-	// listed above
 
 	// Fields
 	InterfaceConnection ic_;
@@ -1923,22 +1893,21 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 	public void abort(Executor executor) throws SQLException {
 		if (ic_.getT4Connection().getInputOutput() != null) {
-			ic_.getT4Connection().getInputOutput().CloseIO(null);
+			ic_.getT4Connection().getInputOutput().closeIO();
 		}
 		ic_.setIsClosed(true);
-		
 	}
 
 	public void setNetworkTimeout(Executor executor, int milliseconds)
 			throws SQLException {
             validateConnection();
-            props_.setNetworkTimeout(milliseconds);
+            props_.setNetworkTimeoutInMillis(milliseconds);
 	}
 	
 
 	public int getNetworkTimeout() throws SQLException {
 		validateConnection();
-		return props_.getNetworkTimeout();
+		return props_.getNetworkTimeoutInMillis();
 	}
 
 	/*

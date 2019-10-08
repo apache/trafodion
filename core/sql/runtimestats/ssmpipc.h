@@ -140,6 +140,7 @@ public:
                        bool suspendLogging);
   void suspendOrActivate(char *queryId, Lng32 qidLen, 
                          SuspendOrActivate sOrA, bool suspendLogging);
+  Lng32 stopMasterProcess(char *queryId, Lng32 queryIdLen);
 
 private:
 

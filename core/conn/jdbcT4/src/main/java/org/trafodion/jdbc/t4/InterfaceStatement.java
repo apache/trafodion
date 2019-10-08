@@ -1082,8 +1082,10 @@ class InterfaceStatement {
 	} // end close
 
 	// --------------------------------------------------------------------------
-	void cancel() throws SQLException {
-		ic_.cancel();
+	void cancel(long startTime) throws SQLException {
+		// currently there are no callers to this statement
+		// It is important that callers specify the startTime correctly for cancel work as expected.
+		ic_.cancel(startTime);
 	}
 
 	// --------------------------------------------------------------------------
@@ -1396,14 +1398,18 @@ class InterfaceStatement {
 	    }
 	}
 
-    private String extractSchema(String sqlString) {
-        String schemaRegex = "(SET)\\s+(SCHEMA)\\s+([a-zA-Z0-9]+\\s*\\.)\\s*([a-zA-Z0-9]+)\\s*";
-        Pattern pattern = Pattern.compile(schemaRegex);
-        Matcher m = pattern.matcher(sqlString.toUpperCase());
-        while (m.find()) {
-            return m.group(m.groupCount());
-        }
-        return "";
-    }
+	private String extractSchema(String sqlString) {
+		String schemaRegex = "(SET)\\s+(SCHEMA)\\s+([a-zA-Z0-9]+\\s*\\.)\\s*([a-zA-Z0-9]+)\\s*";
+		Pattern pattern = Pattern.compile(schemaRegex);
+		Matcher m = pattern.matcher(sqlString.toUpperCase());
+		while (m.find()) {
+			return m.group(m.groupCount());
+		}
+		return "";
+    	}
 
+	protected T4Statement getT4statement() 
+	{
+		return t4statement_;
+    	}
 } // end class InterfaceStatement

@@ -66,8 +66,8 @@ class T4Connection {
 		m_io.setDialogueId(m_dialogueId);
 		m_io.setConnectionIdleTimeout(ic.getConnectionTimeout());
 		// trace_connection - AM
-		m_io.setT4Connection(this);
-                m_io.setNetworkTimeout(ic.t4props_.getNetworkTimeout());
+		m_io.setInterfaceConnection(ic);
+		m_io.setNetworkTimeoutInMillis(ic.t4props_.getNetworkTimeoutInMillis());
 		m_io.openIO();
 		getInputOutput().setTimeout(ic.getLoginTimeout());
 		checkConnectionIdleTimeout();
@@ -293,8 +293,7 @@ class T4Connection {
 			// what to do.
 			//
 			if (tdr1.m_p1.exception_nr == TRANSPORT.CEE_SUCCESS) {
-				m_io.CloseIO(wbuffer); // note, I'm re-using wbuffer
-
+				m_io.closeIO();
 			}
 
 			closeTimers();

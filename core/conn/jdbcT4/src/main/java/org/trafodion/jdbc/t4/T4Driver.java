@@ -169,8 +169,7 @@ public class T4Driver extends T4Properties implements java.sql.Driver {
 					}
 				}
 				if (getMaxPoolSize() != -1) {
-					key = getUrl() + getCatalog() + getSchema() + getUser() + getPassword() + getServerDataSource()
-							+ getBlobTableName() + getClobTableName();
+					key = getUrl() + getCatalog() + getSchema() + getUser() + getPassword() + getServerDataSource();
 	
 					ds = (TrafT4DataSource) dsCache_.get(key);
 	

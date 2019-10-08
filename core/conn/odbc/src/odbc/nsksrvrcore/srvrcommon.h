@@ -202,6 +202,7 @@ odbc_SQLSvc_Prepare2_sme_(
   , /* In    */ const IDL_char *stmtLabel
   , /* In    */ IDL_string sqlString
   , /* In    */ IDL_long holdableCursor
+  , /* In    */ Int32 queryTimeout
   , /* Out   */ IDL_long *returnCode
   , /* Out   */ IDL_long *sqlWarningOrErrorLength
   , /* Out   */ BYTE *&sqlWarningOrError
@@ -371,10 +372,11 @@ extern void translateToUTF8(Int32 inCharset, char* inStr, Int32 inStrLen, char* 
 extern "C" void 
 rePrepare2( SRVR_STMT_HDL *pSrvrStmt
           , Int32           sqlStmtType
-	      , Int32           inputRowCnt
-       	  , Int32			holdableCursor
-	      , SQLRETURN     	*rc 
-	      , Int32          	*returnCode
+	  , Int32           inputRowCnt
+       	  , Int32    	    holdableCursor
+          , Int32 	    queryTimeout
+	  , SQLRETURN     	*rc 
+	  , Int32          	*returnCode
           , Int32      		*sqlWarningOrErrorLength
           , BYTE          	*&sqlWarningOrError );
 
