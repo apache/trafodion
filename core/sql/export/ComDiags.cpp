@@ -1410,6 +1410,7 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
 // executor/TEST082
   if ((theError == CLI_TCB_EXECUTE_ERROR) ||  // 8816
       (theError == CLI_INTERNAL_ERROR   ) ||  // 8898
+      (theError == 2055   ) ||  // 2055
       (theError == EXE_INTERNAL_ERROR   ))    // 8001
   {
      // make a core-file to help understand this scenario.  But do 
@@ -1420,6 +1421,7 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
      static bool corefile8816 = false;
      static bool corefile8898 = false;
      static bool corefile8001 = false;
+     static bool corefile2055 = true;
      if (!InternErrorMakesCorefileInitialized)
      {
        InternErrorMakesCorefileInitialized = true;
@@ -1436,6 +1438,7 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
      }
      if ( (corefile8816 && theError == CLI_TCB_EXECUTE_ERROR) ||
           (corefile8898 && theError == CLI_INTERNAL_ERROR   ) ||
+          (corefile2055 && theError == 2055   ) ||
           (corefile8001 && theError == EXE_INTERNAL_ERROR   ) )
        genLinuxCorefile( (char *)
          "Generating core-file to capture internal error scenario.");
