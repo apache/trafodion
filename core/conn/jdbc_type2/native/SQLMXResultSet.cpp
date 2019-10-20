@@ -74,7 +74,6 @@ JNIEXPORT jboolean JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_fetc
 	
 	SRVR_STMT_HDL	*pSrvrStmt;
 	long			sqlcode;
-	short			txn_status;
 
 	if ((pSrvrStmt = getSrvrStmt(dialogueId, stmtId, &sqlcode)) == NULL)
 	{
@@ -82,25 +81,10 @@ JNIEXPORT jboolean JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_fetc
 		FUNCTION_RETURN_NUMERIC(false,("getSrvrStmt() returned NULL"));
 	}
 
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, holdability)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidRSMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_NUMERIC(false,("beginTxnControl() failed"));
-	}
-
 	odbc_SQLSvc_FetchN_sme_(NULL, NULL, &exception_,
 			dialogueId, stmtId, maxRowCnt, FALSE, queryTimeout, &rowsAffected, &outputValueList,
 			&sqlWarning);
 
-	if ((txn_status = endTxnControl(jenv, currentTxid, 0, FALSE, 
-		(exception_.exception_nr == odbc_SQLSvc_FetchN_SQLNoDataFound_exn_ ? CEE_SUCCESS : 
-			exception_.exception_nr), TRUE, txnMode, externalTxid)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidRSMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_NUMERIC(false,("endTxnControl() Failed"));
-	}
 	switch (exception_.exception_nr)
 	{
 	case CEE_SUCCESS:
@@ -165,19 +149,8 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_close
 	ExceptionStruct				exception_;
 	long						rowsAffected;
 	ERROR_DESC_LIST_def			sqlWarning;
-	short						txn_status;
 	
 	ERROR_DESC_def				*error_desc_def;
-	// Don't bother resuming the transaction, if it is already zero. Try and close the cursor
-	if (currentTxid != 0)
-	{
-		if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, CLOSE_CURSORS_AT_COMMIT)) != 0 )
-		{
-			jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidRSMethodId, currentTxid);
-			throwTransactionException(jenv, txn_status);
-			FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-		}
-	}
 	
 	odbc_SQLSvc_Close_sme_(NULL, NULL, &exception_,
 					dialogueId,
@@ -185,18 +158,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_close
 					(dropStmt ? SQL_DROP : SQL_CLOSE),
 					&rowsAffected,
 					&sqlWarning);
-	
-	if (currentTxid != 0)
-	{
-		if ((txn_status = endTxnControl(jenv, currentTxid, 0, autoCommit, 0, selectStmt, txnMode, externalTxid)) != 0)
-		{
-			jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidRSMethodId, currentTxid);
-			throwTransactionException(jenv, txn_status);
-			FUNCTION_RETURN_VOID(("endTxnControl() failed"));
-		}
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidRSMethodId, currentTxid);
-	}	
-	
 	switch (exception_.exception_nr)
 	{
 	case CEE_SUCCESS:

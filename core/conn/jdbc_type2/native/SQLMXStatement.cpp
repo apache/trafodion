@@ -72,7 +72,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeD
 	jboolean		isCopy;
 	jsize			len;
 	SQLValue_def	sqlString;
-	short			txn_status;
 
 	sqlString.dataCharset = 0;
 	sqlString.dataInd = 0;
@@ -116,13 +115,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeD
 	else
 		nCursorName = NULL;
 
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1) != 0))
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-	}
-
 	exception_.u.SQLError.errorList._buffer = NULL;
 	odbc_SQLSvc_ExecDirect_sme_(NULL, NULL, 
 			&exception_,
@@ -150,14 +142,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeD
 	if (cursorName)
 		JNI_ReleaseStringUTFChars(jenv,cursorName, nCursorName);
 
-	if ((txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit, 
-						exception_.exception_nr, isSelect, txnMode, externalTxid)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("endTxnControl() Failed"));
-	}
-	
 	switch (exception_.exception_nr)
 	{
 	case CEE_SUCCESS:
@@ -224,7 +208,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeR
 	const char					*nStmtLabel;
 	const char					*nRSStmtLabel;
 	jboolean					isCopy;
-	short						txn_status;
 
 	if (stmtLabel)
 		nStmtLabel = JNI_GetStringUTFChars(jenv,stmtLabel, NULL);
@@ -241,41 +224,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeR
 		FUNCTION_RETURN_VOID(("RSstmtLabel is NULL"));
 	}
 
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1) != 0))
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-	}
-
-	jdbc_SQLSvc_ExecSPJRS_sme_(NULL, NULL, 
-			&exception_,
-			dialogueId,
-			nStmtLabel,
-			nRSStmtLabel,
-			EXTERNAL_STMT,
-			(isSelect ? TYPE_SELECT : TYPE_UNKNOWN),
-			(long) resultSet,
-			ResultSetIndex,
-			&outputDesc,
-			&sqlWarning,
-			&RSstmtId,
-			stmtId);
-
-	if (stmtLabel)
-		JNI_ReleaseStringUTFChars(jenv, stmtLabel, nStmtLabel);
-
-	if (RSstmtLabel)
-		JNI_ReleaseStringUTFChars(jenv, RSstmtLabel, nRSStmtLabel);
-
-	if ((txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit, 
-						exception_.exception_nr, isSelect, txnMode, externalTxid)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("endTxnControl() Failed"));
-	}
-	
 	switch (exception_.exception_nr)
 	{
 	case CEE_SUCCESS:
@@ -395,11 +343,9 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeB
 	long			stmtId;
 	jsize			len;
 	SQLValue_def	sqlString;
-	short			txn_status;	
 	// RFE: Batch update improvements
 	jthrowable		queuedException = NULL;
 	jthrowable		exceptionHead = NULL;
-	bool			isSuspended = false;
 
 	exception_.exception_nr = CEE_SUCCESS;
 
@@ -413,13 +359,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeB
 
 	if (cursorName) nCursorName = JNI_GetStringUTFChars(jenv,cursorName, NULL);
 	
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1) != 0))
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-	}
-
 	sqlString.dataCharset = 0;
 	sqlString.dataInd = 0;
 	sqlString.dataType = SQLTYPECODE_VARCHAR;
@@ -428,20 +367,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeB
 
 	for (i = 0; i < noOfCommands ; i++)
 	{
-		/* RFE: Batch update improvements
-		 * Resume the transaction if it was earlier suspended, by checking the
-		 * variable isSuspended. This is reset to false after the transaction is resumed.
-		 */
-		if(isSuspended)
-		{
-			if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1) != 0))
-			{
-				jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-				throwTransactionException(jenv, txn_status);
-				FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-			}
-			isSuspended = false;
-		}
 		sql = (jstring) JNI_GetObjectArrayElement(jenv,sqlCommands, i);
 		if (sql)
 		{
@@ -501,20 +426,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeB
 				if (cursorName)
 					JNI_ReleaseStringUTFChars(jenv,cursorName, nCursorName);
 			}
-
-			// Commit the transaction so all good statements are processed.			
-			txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit, 
-									   CEE_SUCCESS, isSelect, txnMode, externalTxid);						
-			jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-			if (txn_status != 0)
-			{
-				throwTransactionException(jenv, txn_status);
-				DEBUG_OUT(DEBUG_LEVEL_ENTRY|DEBUG_LEVEL_TXN,("endTxnControl() Failed after ExecDirect failure"));
-			}
-			//RFE: Batch update improvements
-			if(contBatchOnError)
-				isSuspended = true;
-
 		}
 
 		switch (exception_.exception_nr)
@@ -580,16 +491,7 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeB
 
 	/* RFE: Batch update improvements
 	 * If contBatchOnError is true, CEE_SUCCESS is always passed instead of
-	 * exception_.exception_nr, so that endTxnControl suspends the transaction.	 
 	 */	
-	txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit, 
-							   (contBatchOnError ? CEE_SUCCESS:exception_.exception_nr), isSelect, txnMode, externalTxid);
-	jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-	if (txn_status != 0)
-	{
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("endTxnControl() failed"));
-	}
 	/* RFE: Batch update improvements
 	 * Throw the queued exception if any */
 	if(exceptionHead)

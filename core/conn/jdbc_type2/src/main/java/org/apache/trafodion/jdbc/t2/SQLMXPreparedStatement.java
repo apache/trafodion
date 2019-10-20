@@ -55,7 +55,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Arrays;
-//import com.tandem.tmf.Current;	// Linux port - ToDo
 
 /**
  * An object that represents a precompiled SQL statement.
@@ -452,24 +451,12 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		//**********************************************************************
 		// **
 		try {
-/* Linux port - ToDo tmf.jar related
-			Current tx = null;
-*/
-			int txnState = -1; // holds TMF transaction state code
-			boolean txBegin = false; // flag to indicate internal autocommit
 			// duties
 			boolean ret = false;
-			int currentTxid = 0;
-			// Reset current txn ID at end if internal txn used for autocommit
-			// duties
 			Object[] lobObjects;
 			validateExecuteInvocation();
 			try {
 				synchronized (connection_) {
-/* Linux port - ToDo tmf.jar related
-					tx = new Current();
-					txnState = tx.get_status();
-*/
 
 					//**********************************************************
 					// *****************
@@ -489,17 +476,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					// committed and autocommit
 					// * will be re-enabled.
 					//**********************************************************
-					// *****************
-/* Linux port - ToDo tmf.jar related
-					if (isAnyLob_ && (txnState == Current.StatusNoTransaction)
-							&& (connection_.autoCommit_)) {
-						currentTxid = connection_.getTxid();
-						connection_.setTxid_(0);
-						tx.begin();
-						txBegin = true;
-						connection_.autoCommit_ = false;
-					}
-*/
 					long beginTime=0,endTime,timeTaken;
 					if (connection_.t2props.getQueryExecuteTime() > 0)
 						beginTime=System.currentTimeMillis();
@@ -605,13 +581,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		try {
 			clearWarnings();
 			SQLException se;
-/* Linux port - ToDo tmf.jar related
-			Current tx = null;
-*/
-			int txnState = -1; // holds TMF transaction state code
-			boolean txBegin = false; // flag to indicate internal autcommit
-			// duties
-			int currentTxid = 0;
 			// Reset current txn ID at end if internal txn used for autocommit
 			// duties
 			boolean contBatchOnError = false;
@@ -639,10 +608,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			}
 			synchronized (connection_) {
 				try {
-/* Linux port - ToDo tmf.jar related
-					tx = new Current();
-					txnState = tx.get_status();
-*/
 					//**********************************************************
 					// *****************
 					// * If LOB is involved with autocommit enabled an no
@@ -662,16 +627,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					// * will be re-enabled.
 					//**********************************************************
 					// *****************
-/* Linux port - ToDo tmf.jar related
-					if (isAnyLob_ && (txnState == Current.StatusNoTransaction)
-							&& (connection_.autoCommit_)) {
-						currentTxid = connection_.getTxid();
-						connection_.setTxid_(0);
-						tx.begin();
-						txBegin = true;
-						connection_.autoCommit_ = false;
-					}
-*/
 					if (connection_.contBatchOnErrorval_ == true)
 						contBatchOnError = true;
 
@@ -724,41 +679,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					// * commit transaction and re-enable autocommit
 					//**********************************************************
 					// *****************
-					if (txBegin) {
-						connection_.autoCommit_ = true;
-/* Linux port - ToDo tmf.jar related
-						tx.commit(false);
-*/
-						txBegin = false;
-					}
 				}
-/* Linux port - ToDo tmf.jar related
-				catch (com.tandem.util.FSException fe1) {
-					SQLException se1 = null;
-					SQLException se2 = null;
-
-					Object[] messageArguments1 = new Object[2];
-					messageArguments1[0] = Short.toString(fe1.error);
-					messageArguments1[1] = fe1.getMessage();
-					se1 = Messages.createSQLException(connection_.locale_,
-							"transaction_error_update", messageArguments1);
-
-					try {
-						if (txBegin)
-							tx.rollback();
-					} catch (com.tandem.util.FSException fe2) {
-						Object[] messageArguments2 = new Object[2];
-						messageArguments2[0] = Short.toString(fe2.error);
-						messageArguments2[1] = fe2.getMessage();
-						se2 = Messages.createSQLException(connection_.locale_,
-								"transaction_error_update", messageArguments2);
-						se2.setNextException(se1);
-						throw se2;
-					}
-
-					throw se1;
-				}
-*/
 				catch (SQLException e) {
 					BatchUpdateException be;
 					SQLException se1 = null;
@@ -770,26 +691,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 					be = new BatchUpdateException(se.getMessage(), se
 							.getSQLState(), batchRowCount_);
 					be.setNextException(e);
-
-/* Linux port - ToDo tmf.jar related
-					try {
-						if (txBegin)
-							tx.rollback();
-					} catch (com.tandem.util.FSException fe2) {
-						Object[] messageArguments = new Object[2];
-						messageArguments[0] = Short.toString(fe2.error);
-						messageArguments[1] = fe2.getMessage();
-						se1 = Messages.createSQLException(connection_.locale_,
-								"transaction_error_update", messageArguments);
-						se1.setNextException(be);
-						throw se1;
-					}
-*/
 					throw be;
 				} finally {
-					if (currentTxid != 0) {
-						connection_.setTxid_(currentTxid);
-					}
 				}
 			}// End sync
 
@@ -910,13 +813,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_executeUpdate].methodEntry();
 		try {
-/* Linux port - ToDo tmf.jar related
-			Current tx = null;
-*/
-			int txnState = -1; // holds TMF transaction state code
-			boolean txBegin = false; // flag to indicate internal autcommit
-			// duties
-			int currentTxid = 0;
 			// Reset current txn ID at end if internal txn used for autocommit
 			// duties
 
@@ -935,10 +831,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			synchronized (connection_) {
 				if (inputDesc_ != null) {
 					try {
-/* Linux port - ToDo tmf.jar related
-						tx = new Current();
-						txnState = tx.get_status();
-*/
 
 						//******************************************************
 						// *********************
@@ -959,18 +851,6 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 						// * will be re-enabled.
 						//******************************************************
 						// *********************
-/* Linux port - ToDo tmf.jar related
-						if (isAnyLob_
-								&& (txnState == Current.StatusNoTransaction)
-								&& (connection_.autoCommit_)) {
-							currentTxid = connection_.getTxid();
-							connection_.setTxid_(0);
-
-							tx.begin();
-							txBegin = true;
-							connection_.autoCommit_ = false;
-						}
-*/
 						if (isAnyLob_) {
 							if (outputDesc_ != null)
 								throw Messages.createSQLException(connection_.locale_, "lob_as_param_not_support", 
@@ -1015,67 +895,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 						// * commit transaction and re-enable autocommit
 						//******************************************************
 						// *********************
-						if (txBegin) {
-							connection_.autoCommit_ = true;
-/* Linux port - ToDo tmf.jar related
-							tx.commit(false);
-*/
-							txBegin = false;
-						}
-					}
-/* Linux port - ToDo tmf.jar related
-					catch (com.tandem.util.FSException fe1) {
-						SQLException se1 = null;
-						SQLException se2 = null;
-
-						Object[] messageArguments1 = new Object[2];
-						messageArguments1[0] = Short.toString(fe1.error);
-						messageArguments1[1] = fe1.getMessage();
-						se1 = Messages.createSQLException(connection_.locale_,
-								"transaction_error_update", messageArguments1);
-
-						try {
-							if (txBegin)
-								tx.rollback();
-						} catch (com.tandem.util.FSException fe2) {
-							Object[] messageArguments2 = new Object[2];
-							messageArguments2[0] = Short.toString(fe2.error);
-							messageArguments2[1] = fe2.getMessage();
-							se2 = Messages.createSQLException(
-									connection_.locale_,
-									"transaction_error_update",
-									messageArguments2);
-							se2.setNextException(se1);
-							throw se2;
-						}
-
-						throw se1;
-					}
-*/
-					catch (SQLException se) {
-						SQLException se2 = null;
-
-/* Linux port - ToDo tmf.jar related
-						try {
-							if (txBegin)
-								tx.rollback();
-						} catch (com.tandem.util.FSException fe2) {
-							Object[] messageArguments = new Object[2];
-							messageArguments[0] = Short.toString(fe2.error);
-							messageArguments[1] = fe2.getMessage();
-							se2 = Messages.createSQLException(
-									connection_.locale_,
-									"transaction_error_update",
-									messageArguments);
-							se2.setNextException(se);
-							throw se2;
-						}
-*/
-						throw se;
 					} finally {
-						if (currentTxid != 0) {
-							connection_.setTxid_(currentTxid);
-						}
 					}
 				} else {
 					long beginTime=0,endTime,timeTaken;

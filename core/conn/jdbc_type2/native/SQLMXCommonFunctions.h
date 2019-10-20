@@ -147,9 +147,6 @@ extern jobject getSQLCatalogsInfo(JNIEnv *jenv, jobject jobj, jstring server, jl
 			long uniqueness, jint accuracy, jshort sqlType, jint metadataId,
 			jstring fkcatalogNm, jstring fkschemaNm, jstring fktableNm);
 
-extern short beginTxnControl(JNIEnv *jenv, jint &currentTxid, jint &externalTxid, jint txnMode, jint holdability);
-extern short endTxnControl(JNIEnv *jenv, jint &currentTxid, jint previousTxid, jboolean autoCommit, unsigned long exception_nr, 
-							jboolean isSelect, jint txnMode, jint &externalTxid);
 
 extern void throwTransactionException(JNIEnv *jenv, jint error_code);
 

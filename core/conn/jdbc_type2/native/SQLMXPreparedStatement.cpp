@@ -247,36 +247,12 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_
 	jint errorRow = 0;
 	jint rowsExecuted = 0;
 	long totalRows;
-	short txn_status;
 
 	/* RFE: Batch update improvements
 	* If contBatchOnError is true, execution of batch commands continues even on errors
 	*/
-	// Try to resume or start the transaction
-	//10-091005-5100
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1)) != 0)
-	{
-		DEBUG_OUT(DEBUG_LEVEL_ENTRY,("beginTxnControl() Failed"));
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		// Queue up the exception to be rethrown later
-		//queuedException = jenv->ExceptionOccurred();
-		if(exceptionHead)
-			jenv->CallVoidMethod(exceptionHead, gJNICache.setNextExceptionMethodId,
-			jenv->ExceptionOccurred());
-		else
-			exceptionHead = jenv->ExceptionOccurred();
-		jenv->ExceptionClear();
-		//break;
-		for(int nforX = 0; nforX < paramRowCount; ++nforX)
-		{
-			rowCount._buffer[nforX] = SQLMXStatement_EXECUTE_FAILED();
-			rowCount._length++;
-		}
-	}
-	//10-091005-5100
 	for (paramRowNumber = 0;
-		paramRowNumber < paramRowCount && txn_status == 0;
+		paramRowNumber < paramRowCount;
 		paramRowNumber += rowsExecuted)
 	{
 
@@ -459,29 +435,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_
 			rowsExecuted = errorRow;
 		}
 	}//end of for
-
-	/* RFE: Batch update improvements
-	* If contBatchOnError is true, CEE_SUCCESS is always passed instead of
-	* exception_.exception_nr, so that endTxnControl suspends the transaction.
-	*/
-	//10-091005-5100
-	if ((txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit,
-		(exception_.exception_nr), isSelect, txnMode, externalTxid)) != 0)
-	{
-		DEBUG_OUT(DEBUG_LEVEL_ENTRY,("endTxnControl() Failed"));
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		// Queue up the exception to be rethrown later
-		//queuedException = jenv->ExceptionOccurred();
-		if(exceptionHead)
-			jenv->CallVoidMethod(exceptionHead, gJNICache.setNextExceptionMethodId,
-			jenv->ExceptionOccurred());
-		else
-			exceptionHead = jenv->ExceptionOccurred();
-
-		jenv->ExceptionClear();
-		//break;
-	}
 
 	// Free up the cursor name
 	if (cursorName)

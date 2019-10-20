@@ -64,6 +64,9 @@ void setConnectAttr(JNIEnv *jenv, jobject jobj, jstring server, long dialogueId,
     FUNCTION_RETURN_VOID((NULL));
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setCatalog
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jstring catalog)
 {
@@ -381,7 +384,7 @@ JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_beginTr
 JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connectInit
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jstring catalog,
         jstring schema, jboolean isReadOnly, jboolean autoCommit, jint transactionIsolation,
-        jint loginTimeout, jint queryTimeout, jboolean blnDoomUsrTxn,
+        jint loginTimeout, jint queryTimeout, 
         jint statisticsIntervalTime, jint statisticsLimitTime, jstring statisticsType, jstring programStatisticsEnabled, jstring statisticsSqlPlanEnabled)
 {
 
@@ -540,24 +543,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connect
         throwSetConnectionException(jenv, &setConnectException);
         FUNCTION_RETURN_VOID(("BEGIN_SESSION - setConnectException.exception_nr(%s) is not CEE_SUCCESS",
                         CliDebugSqlError(setConnectException.exception_nr)));
-    }
-
-    if(blnDoomUsrTxn)
-    {
-
-        odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,
-                &setConnectException,
-                dialogueId,
-                CQD_DOOM_USER_TXN,
-                0,
-                NULL,
-                &sqlWarning);
-        if (setConnectException.exception_nr != CEE_SUCCESS)
-        {
-            throwSetConnectionException(jenv, &setConnectException);
-            FUNCTION_RETURN_VOID(("CQD_DOOM_USER_TXN - setConnectException.exception_nr(%s) is not CEE_SUCCESS",
-                            CliDebugSqlError(setConnectException.exception_nr)));
-        }
     }
 
     odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,
@@ -996,3 +981,7 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setChar
     }
     FUNCTION_RETURN_VOID((NULL));
 }
+
+#ifdef __cplusplus
+}
+#endif

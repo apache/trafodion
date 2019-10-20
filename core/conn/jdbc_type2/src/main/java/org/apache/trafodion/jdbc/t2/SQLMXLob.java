@@ -31,7 +31,6 @@ import java.sql.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-//import com.tandem.tmf.Current;	// Linux port - ToDo
 import java.util.Date;
 import java.io.PrintWriter;
 
@@ -148,50 +147,6 @@ public abstract class SQLMXLob
 		}
 	}
 
-
-// *******************************************************************
-// * If Autocommit is enabled, and no external transaction exists, an
-// * exception will be thrown. In this case, JDBC cannot play the role of
-// * Autocommit (updating the base and lob tables in a single unit of work)
-// * because we return an OutputStream or Writer object to the application,
-// * who could hold it indefinitely. This is the case for
-// * Clob.setAsciiStream, Clob.setCharacterStream, and Blob.setBinaryStream.
-// *******************************************************************
-	void checkAutoCommitExtTxn() throws SQLException
-	{
-		if (JdbcDebugCfg.entryActive) debug[methodId_checkAutoCommitExtTxn].methodEntry();
-		try
-		{
-/* Linux port - ToDo com.tandem.util.FSException in tmf.jar
-			Current tx = null;
-			int txnState = -1;
-
-			try
-			{
-				tx = new Current();
-				txnState = tx.get_status();
-
-				if (conn_.autoCommit_ && (txnState == tx.StatusNoTransaction))
-				{
-					throw Messages.createSQLException(conn_.locale_,"invalid_lob_commit_state", null);
-				}
-			}
-			catch (com.tandem.util.FSException fe1)
-			{
-				Object[] messageArguments = new Object[2];
-				messageArguments[0] = Short.toString(fe1.error);
-				messageArguments[1] = fe1.getMessage();
-				throw Messages.createSQLException(conn_.locale_, "transaction_error_update",
-					messageArguments);
-			}
-*/
-		}
-		finally
-		{
-			if (JdbcDebugCfg.entryActive) debug[methodId_checkAutoCommitExtTxn].methodExit();
-		}
-	}
-
 	void setLobLocator(String lobLocator)
 	{
 		lobLocator_ = lobLocator;
@@ -258,10 +213,9 @@ public abstract class SQLMXLob
 	private static int methodId_close				=  4;
 	private static int methodId_convSQLExceptionToIO		=  5;
 	private static int methodId_checkIfCurrent			=  6;
-	private static int methodId_checkAutoCommitExtTxn		=  7;
-	private static int methodId_SQLMXLob_LLJL			=  8;
-	private static int methodId_SQLMXLob_LLJLIL			=  9;
-	private static int totalMethodIds				= 10;
+	private static int methodId_SQLMXLob_LLJL			=  7;
+	private static int methodId_SQLMXLob_LLJLIL			=  8;
+	private static int totalMethodIds				=  9;
 	private static JdbcDebug[] debug;
 
 	static
@@ -277,7 +231,6 @@ public abstract class SQLMXLob
 			debug[methodId_close] = new JdbcDebug(className,"close");
 			debug[methodId_convSQLExceptionToIO] = new JdbcDebug(className,"convSQLExceptionToIO");
 			debug[methodId_checkIfCurrent] = new JdbcDebug(className,"checkIfCurrent");
-			debug[methodId_checkAutoCommitExtTxn] = new JdbcDebug(className,"checkAutoCommitExtTxn");
 			debug[methodId_SQLMXLob_LLJL] = new JdbcDebug(className,"SQLMXLob[LLJL]");
 			debug[methodId_SQLMXLob_LLJLIL] = new JdbcDebug(className,"SQLMXLob[LLJLIL]");
 		}
