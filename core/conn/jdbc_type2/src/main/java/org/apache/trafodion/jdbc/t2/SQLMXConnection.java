@@ -62,8 +62,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 import javax.sql.PooledConnection;
-//import com.tandem.tmf.Current;		// Linux port - ToDo
-//import com.tandem.util.FSException;	// Linux port - ToDo
 
 public class SQLMXConnection extends PreparedStatementManager implements
 java.sql.Connection {
@@ -1708,20 +1706,11 @@ private int mapTxnIsolation(int level) {
         //int status =0;
         try {
             if (!connectInitialized_) {
-                /*		status = tx.get_status();
-                 if(status == com.tandem.tmf.Current.StatusNoTransaction){
-                 tx.begin();
-                 }*/
                 try {
-                    boolean blnCQD = System.getProperty(
-                            "t2jdbc.cqdDoomUserTxn", "OFF").equalsIgnoreCase(
-                            "ON")
-                    || System.getProperty("cqdDoomUserTxn", "OFF")
-                    .equalsIgnoreCase("ON");
                     connectInit(server_, getDialogueId(), catalog_, schema_,
                             isReadOnly_, autoCommit_,
                             mapTxnIsolation(transactionIsolation_),
-                            loginTimeout_, queryTimeout_, blnCQD,
+                            loginTimeout_, queryTimeout_, 
                             statisticsIntervalTime_, statisticsLimitTime_, statisticsType_, programStatisticsEnabled_, statisticsSqlPlanEnabled_
                     );
 
@@ -1730,9 +1719,6 @@ private int mapTxnIsolation(int level) {
                             SQLMXDesc.SQLCHARSETCODE_ISO88591,
                             iso88591EncodingOverride_);
                 } catch (SQLException e) {
-                    /*	if(status == com.tandem.tmf.Current.StatusNoTransaction){
-                     tx.rollback();
-                     }*/
                     if (pc_ != null)
                     pc_.sendConnectionErrorEvent(e);
                     else
@@ -1740,20 +1726,9 @@ private int mapTxnIsolation(int level) {
                     throw e;
                 }
                 connectInitialized_ = true;
-                /*	if(status == com.tandem.tmf.Current.StatusNoTransaction){
-                 tx.rollback();
-                 }*/
             }
 
         }
-        /*catch (FSException e) {
-         if(status == com.tandem.tmf.Current.StatusNoTransaction){
-         try {
-         tx.rollback();
-         } catch (FSException e1) {
-         }
-         }
-         }*/
         finally {
             if (JdbcDebugCfg.entryActive)
             debug[methodId_connectInit].methodExit();
@@ -2352,7 +2327,6 @@ private native void setIsSpjRSFlag(long dialogueId, boolean isSpjrsOn);
 private native void connectInit(String server, long dialogueId,
             String catalog, String schema, boolean isReadOnly, boolean autoCommit,
             int transactionIsolation, int loginTimeout, int queryTimeout,
-            boolean blnDoomUsrTxn,
             int statisticsIntervalTime_, int statisticsLimitTime_, String statisticsType_, String programStatisticsEnabled_, String statisticsSqlPlanEnabled_) throws SQLException;
 
 private native void connectReuse(String server, long dialogueId,

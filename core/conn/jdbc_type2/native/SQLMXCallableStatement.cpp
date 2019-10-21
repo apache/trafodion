@@ -65,7 +65,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 	SQLValue_def				sqlString;
 	const char					*nSql = NULL;
 	const char					*nStmtLabel = NULL;
-	short						txn_status;
 
 	ExceptionStruct exception_;
 	CLEAR_EXCEPTION(exception_);
@@ -110,13 +109,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 		FUNCTION_RETURN_VOID(("stmtLabel is Null"));
 	}
 
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-	}
-
 	odbc_SQLSvc_Prepare_sme_(NULL, NULL,
 		&exception_,
 		dialogueId,
@@ -143,13 +135,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 
 	if (stmtLabel)
 		JNI_ReleaseStringUTFChars(jenv,stmtLabel, nStmtLabel);
-
-	if ((txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit, CEE_SUCCESS, FALSE, txnMode, externalTxid)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("endTxnControl() Failed"));
-	}
 
 	switch (exception_.exception_nr)
 	{
@@ -202,7 +187,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 	jint							externalTxid = 0;
 	short							returnResultSet;
 	long							sqlcode;
-	short							txn_status;
 
 	SQLValueList_def				inputSqlValueList;
 	CLEAR_LIST(inputSqlValueList);
@@ -224,13 +208,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 		0, 1, paramCount, paramValues, iso88591Encoding))
 		FUNCTION_RETURN_VOID(("fillInSQLValues() Failed"));
 
-	if ((txn_status = beginTxnControl(jenv, currentTxid, externalTxid, txnMode, -1)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
-	}
-
 	odbc_SQLSvc_ExecuteCall_sme_(NULL, NULL,
 		&exception_,
 		dialogueId,
@@ -241,14 +218,6 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXCallableStatement_
 		&outputSqlValueList,
 		&returnResultSet,
 		&sqlWarning);
-
-	if ((txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit, exception_.exception_nr,
-		pSrvrStmt->isSPJRS, txnMode, externalTxid)) != 0)
-	{
-		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
-		throwTransactionException(jenv, txn_status);
-		DEBUG_OUT(DEBUG_LEVEL_ENTRY,("endTxnControl() Failed"));
-	}
 
 	switch (exception_.exception_nr)
 	{

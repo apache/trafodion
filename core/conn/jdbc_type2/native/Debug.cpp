@@ -977,38 +977,6 @@ const char *DebugJString(void *jenv_ptr, void * jstring_ptr)
 	return(buffer[curr_idx++]);
 }
 
-void DebugTransTag(const char * filename, unsigned long line)
-{
-	if (DebugActive(DEBUG_LEVEL_TXN,filename,line))
-	{
-		char buffer[256];
-		short status = 0;
-		short length = 0;
-		short txn_status = 0;
-		long long txnId;
-
-		// Get current txn status
-		status = STATUSTRANSACTION(&txn_status);
-		DebugOutput(DebugFormat("status from STATUSTRANSACTION=%d; txn status=%d", txn_status, status),
-					filename, line);
-
-		// Get the transId for the current transaction (if one exists)
-		status = GETTRANSID((short *)&txnId);
-		if (status != 0)
-		{
-			// Report error status and return null
-			DebugOutput(DebugFormat("Status from GETTRANSID = %d", status),
-						filename, line);
-			return;
-		}
-
-		buffer[length] = 0;
-		DebugOutput(DebugFormat("transTagASCII = '%s'", buffer),
-					filename, line);
-		return;
-	}
-}
-
 const char *DebugBoolStr(bool isTrue)
 {
 	if (isTrue) return("TRUE");
