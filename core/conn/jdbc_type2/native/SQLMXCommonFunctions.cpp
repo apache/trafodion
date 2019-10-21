@@ -2316,6 +2316,34 @@ func_exit:
 		}
 	}
 
+        void throwTransactionException(JNIEnv *jenv, jint err_code)	
+	{	
+		FUNCTION_ENTRY("throwTransactionException",("jenv=0x%08x, err_code=%ld",	
+			jenv, err_code));	
+
+		char msg[100];	
+
+		if (err_code > 0)	
+		{	
+			sprintf(msg,"error %d",err_code);	
+			throwSQLException(jenv, TMF_ERROR, msg, "HY000", 0);	
+		}	
+		else	
+		{	
+			switch (err_code)	
+			{	
+			case INVALID_TRANSACTION_STATE:	
+				throwSQLException(jenv, INCONSISTENT_TRANSACTION_ERROR, NULL, "25000", 0);	
+				break;	
+				// This exception should never be thrown	
+			default:	
+				throwSQLException(jenv, PROGRAMMING_ERROR, NULL, "HY000", 0);	
+				break;	
+			}	
+		}	
+		FUNCTION_RETURN_VOID((NULL));	
+	}
+
 	BOOL cacheJNIObjects(JNIEnv *jenv)
 	{
 		FUNCTION_ENTRY("cacheJNIObjects",("jenv=0x%08x",

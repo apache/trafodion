@@ -224,6 +224,26 @@ JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeR
 		FUNCTION_RETURN_VOID(("RSstmtLabel is NULL"));
 	}
 
+	jdbc_SQLSvc_ExecSPJRS_sme_(NULL, NULL, 	
+			&exception_,	
+			dialogueId,	
+			nStmtLabel,	
+			nRSStmtLabel,	
+			EXTERNAL_STMT,	
+			(isSelect ? TYPE_SELECT : TYPE_UNKNOWN),	
+			(long) resultSet,	
+			ResultSetIndex,	
+			&outputDesc,	
+			&sqlWarning,	
+			&RSstmtId,	
+			stmtId);	
+
+	if (stmtLabel)	
+		JNI_ReleaseStringUTFChars(jenv, stmtLabel, nStmtLabel);	
+
+	if (RSstmtLabel)	
+		JNI_ReleaseStringUTFChars(jenv, RSstmtLabel, nRSStmtLabel);
+
 	switch (exception_.exception_nr)
 	{
 	case CEE_SUCCESS:
