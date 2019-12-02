@@ -177,37 +177,7 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
   if (gv_QRLoggerInitialized_)
      return TRUE;
  
-  // get the log directory
-  logFileName = "";
-
-  // gets the top ancestor process name that will be used to name the file appender log
-  char logFileSuffix [100]="";
-  static bool singleSqlLogFile = (getenv("TRAF_MULTIPLE_SQL_LOG_FILE") == NULL);
-  switch (module_)
-  {
-    case QRL_NONE:
-    case QRL_MXCMP:
-    case QRL_ESP:
-    case QRL_MXEXE:
-    case QRL_UDR:
-      if (singleSqlLogFile) 
-         getMyNidSuffix(logFileSuffix);
-      else 
-         getMyTopAncestor(logFileSuffix);
-      break;
-    case QRL_LOB:
-      getMyNidSuffix(logFileSuffix);
-      break; 
-    case QRL_SSMP:
-    case QRL_SSCP:
-      getMyNidSuffix(logFileSuffix);
-      break;
-    default:
-      break;
-  }
-
-  
-  if (CommonLogger::initLog4cxx(configFileName, logFileSuffix))
+  if (CommonLogger::initLog4cxx(configFileName))
   {
     introduceSelf();
     gv_QRLoggerInitialized_ = TRUE;

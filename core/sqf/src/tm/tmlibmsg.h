@@ -61,7 +61,6 @@
 #define SEABED_MAX_SETTABLE_RECVLIMIT_TM 25700
 #define SEABED_MAX_SETTABLE_SENDLIMIT_TM 25700
 
-#define MAX_FILE_NAME 64
 // MAXPROCESSNAME set at 16 for no good reason
 #define MAXPROCESSNAME 16
 // MAX_TRANS_SLOTS is the maximum number of transactions a TMLIB can have active at any time.

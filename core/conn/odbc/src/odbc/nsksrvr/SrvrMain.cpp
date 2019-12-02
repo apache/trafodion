@@ -257,15 +257,15 @@ catch(SB_Fatal_Excep sbfe)
         if (getenv("TRAF_MULTIPLE_SQL_LOG_FILE"))
            singleSqlLogFile = FALSE;
         if (singleSqlLogFile) {
-	   sprintf( logNameSuffix, "_%d.log", myNid );
            lv_configFileName = "log4cxx.trafodion.sql.config";
+	   CommonLogger::instance().initLog4cxx(lv_configFileName);
         }
         else 
         {
 	   sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
            lv_configFileName = "log4cxx.trafodion.masterexe.config";
+	   CommonLogger::instance().initLog4cxx(lv_configFileName, logNameSuffix);
         }
-	CommonLogger::instance().initLog4cxx(lv_configFileName, logNameSuffix);
 
     if(retcode == FALSE )
    {

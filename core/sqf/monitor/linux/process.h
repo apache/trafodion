@@ -542,6 +542,7 @@ private:
     string       trafHome_;     // TRAF_HOME passed to object file
     string       trafLog_;      // TRAF_LOG passed to object file
     string       trafVar_;      // TRAF_VAR passed to object file
+    string       hostNameVar_;  // HOSTNAME passed to object file
 
     string       infile_;    // process's stdin
     string       outfile_;   // process's stdout

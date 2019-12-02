@@ -68,9 +68,10 @@ public class HBPerf{
 
     static void setupLog4j() {
        System.out.println("In setupLog4J");
-        String confFile = System.getenv("PWD")
+       System.setProperty("hostName", System.getenv("HOSTNAME"));
+       String confFile = System.getenv("PWD")
             + "/log4j.util.config";
-        PropertyConfigurator.configure(confFile);
+       PropertyConfigurator.configure(confFile);
     }
 
     // Initialize and set up tables 

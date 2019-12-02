@@ -85,6 +85,7 @@ public class SequenceFileWriter {
      */
     static {
        conf = TrafConfiguration.create(TrafConfiguration.HDFS_CONF);
+       System.setProperty("hostName", System.getenv("HOSTNAME"));
     }
     SequenceFileWriter() throws IOException
     {

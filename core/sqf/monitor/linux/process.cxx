@@ -1993,6 +1993,13 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     {
         trafVar_ = env ;
     }
+    static char   lv_hostname[MAX_PROCESSOR_NAME + 1 ] = {'\0'};
+    static bool   lv_hostname_obtained = false;
+    if ( ! lv_hostname_obtained ) {
+      gethostname(lv_hostname, MAX_PROCESSOR_NAME);
+      lv_hostname_obtained = true;
+    } 
+    hostNameVar_ = lv_hostname;
 
     // setup default environment variables from monitor or last CreateProcess call
     if (maxClientBuffers)
@@ -2068,6 +2075,7 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     setEnvStrVal ( childEnv, nextEnv, "TRAF_LOG", trafLog_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_VAR", trafVar_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "USER", user );
+    setEnvStrVal ( childEnv, nextEnv, "HOSTNAME", hostNameVar_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "HOME", home );
     setEnvStrVal ( childEnv, nextEnv, "TERM", term );
     if (tz_exists)
