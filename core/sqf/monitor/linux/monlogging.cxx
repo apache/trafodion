@@ -141,7 +141,7 @@ CMonLog::CMonLog( const char *log4cxxConfig
     logFileType_ = SBX_LOG_TYPE_LOGFILE;
 
     // Log4cxx logging
-    char   hostname[MAX_PROCESSOR_NAME] = {'\0'};
+    char   hostname[MAX_PROCESSOR_NAME + 1 ] = {'\0'};
     gethostname(hostname, MAX_PROCESSOR_NAME);
     char   logFileSuffix[MAX_FILE_NAME];
 

@@ -67,7 +67,8 @@ public class HBPerfWrite{
 
 
     static void setupLog4j() {
-       System.out.println("In setupLog4J");
+        System.out.println("In setupLog4J");
+        System.setProperty("hostName", System.getenv("HOSTNAME"));      
         String confFile = System.getenv("PWD")
             + "/log4j.util.config";
         PropertyConfigurator.configure(confFile);

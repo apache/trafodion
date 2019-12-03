@@ -50,6 +50,7 @@ public class OrcFileReader
 	   (in case of an ESP, e.g.) when the class:org.trafodion.sql.HBaseClient (which initializes log4j 
            for the org.trafodion.sql package) hasn't been loaded.
 	*/
+        System.setProperty("hostName", System.getenv("HOSTNAME"));
     	String confFile = System.getProperty("trafodion.log4j.configFile");
     	if (confFile == null) {
     		System.setProperty("trafodion.sql.log", System.getenv("TRAF_LOG") + "/trafodion.sql.java.log");

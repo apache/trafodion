@@ -117,15 +117,14 @@ public class HBaseTxClient {
    static final Object mapLock = new Object();
 
    void setupLog4j() {
-        //System.out.println("In setupLog4J");
         System.setProperty("trafodion.logdir", System.getenv("TRAF_LOG"));
+        System.setProperty("hostName", System.getenv("HOSTNAME"));
         String confFile = System.getenv("TRAF_CONF")
             + "/log4j.dtm.config";
         PropertyConfigurator.configure(confFile);
     }
 
    public boolean init(String hBasePath, String zkServers, String zkPort) throws IOException {
-      //System.out.println("In init - hbp");
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init, hBasePath:" + hBasePath);
       if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());

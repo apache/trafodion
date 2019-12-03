@@ -100,10 +100,11 @@ public class HiveClient {
     private static Statement stmt = null;
 
     static {
+         System.setProperty("hostName", System.getenv("HOSTNAME"));
          String confFile = System.getProperty("trafodion.log4j.configFile");
          System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
          if (confFile == null) 
-         confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
+            confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
          PropertyConfigurator.configure(confFile);
          hiveConf = new HiveConf();
          hiveMetaClient = new ThreadLocal<HiveMetaStoreClient>();

@@ -139,6 +139,7 @@ export SQ_PDCP=/usr/bin/pdcp
 export PDCP="$SQ_PDCP -R ssh"
 export TAR_DOWNLOAD_ROOT=$HOME/sqllogs
 export CACERTS_DIR=$HOME/cacerts
+export HOSTNAME
 
 # Get redhat major version
 # Examples:

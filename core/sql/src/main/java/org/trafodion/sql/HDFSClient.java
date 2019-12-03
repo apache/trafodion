@@ -127,6 +127,7 @@ public class HDFSClient
    private SequenceFile.CompressionType seqCompressionType_;
 
    static {
+      System.setProperty("hostName", System.getenv("HOSTNAME"));
       String confFile = System.getProperty("trafodion.log4j.configFile");
       System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
       if (confFile == null) {

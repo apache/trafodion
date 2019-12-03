@@ -34,14 +34,8 @@ static bool gv_log4cxx_initialized = false;
 
 int tm_init_logging()
 {
-	// Log4cxx logging
-        MS_Mon_Process_Info_Type  proc_info;
-        msg_mon_get_process_info_detail(NULL, &proc_info);
-        int myNid = proc_info.nid;
-        char logNameSuffix[32];
-        sprintf( logNameSuffix, "_%d.log", myNid );
-
-	CommonLogger::instance().initLog4cxx("log4cxx.trafodion.tm.config",logNameSuffix);
+    // Log4cxx logging
+    CommonLogger::instance().initLog4cxx("log4cxx.trafodion.tm.config");
     gv_log4cxx_initialized = true;
     ms_getenv_int ("TM_DUAL_LOGGING", &gv_dual_logging);
     return gv_dual_logging; 

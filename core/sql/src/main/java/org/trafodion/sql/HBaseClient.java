@@ -173,6 +173,11 @@ public class HBaseClient {
     }
 
     static {
+        System.setProperty("hostName", System.getenv("HOSTNAME"));
+        String trafLog = System.getProperty("TRAF_LOG"); 
+        if (trafLog == null) {  
+            System.setProperty("TRAF_LOG", System.getenv("TRAF_LOG"));  
+        } 
     	String confFile = System.getProperty("trafodion.log4j.configFile");
         System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
     	if (confFile == null) {

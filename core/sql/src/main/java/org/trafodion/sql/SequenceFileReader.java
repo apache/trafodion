@@ -55,9 +55,10 @@ public class SequenceFileReader {
   boolean isEOF = false;
   String lastError = null;  
   static { 
+    System.setProperty("hostName", System.getenv("HOSTNAME"));
     String confFile = System.getProperty("trafodion.log4j.configFile");
     if (confFile == null) {
-   	System.setProperty("trafodion.sql.log", System.getenv("TRAF_LOG") + "/trafodion.sql.java.log");
+        System.setProperty("trafodion.sql.log", System.getenv("TRAF_LOG") + "/trafodion.sql.java.${hostName}.log");
     	confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
     }
     PropertyConfigurator.configure(confFile);
