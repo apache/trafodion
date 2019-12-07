@@ -2074,8 +2074,8 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     setEnvStrVal ( childEnv, nextEnv, "TRAF_HOME", trafHome_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_LOG", trafLog_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "TRAF_VAR", trafVar_.c_str() );
-    setEnvStrVal ( childEnv, nextEnv, "USER", user );
     setEnvStrVal ( childEnv, nextEnv, "HOSTNAME", hostNameVar_.c_str() );
+    setEnvStrVal ( childEnv, nextEnv, "USER", user );
     setEnvStrVal ( childEnv, nextEnv, "HOME", home );
     setEnvStrVal ( childEnv, nextEnv, "TERM", term );
     if (tz_exists)
