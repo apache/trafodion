@@ -208,6 +208,9 @@ if [[ ! -z "$RMS_SHARED_SEG_SIZE_MB" ]]; then
    echo "RMS_SHARED_SEG_SIZE_MB=$RMS_SHARED_SEG_SIZE_MB"
 fi
 
+echo "#### Ignore ENOENT from epoll_ctl"
+echo "SQ_SB_IGNORE_ENOENT=1"
+
 echo ""
 echo ""
 echo "# Added by gensq.pl"
