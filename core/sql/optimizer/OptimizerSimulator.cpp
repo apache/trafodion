@@ -426,7 +426,7 @@ NABoolean OptimizerSimulator::setOsimModeAndLogDir(osimMode targetMode, const ch
                   case CAPTURE: // OFF --> CAPTURE
                       setOsimLogdir(localDir);
                       setOsimMode(targetMode);//mode must be set before initialize
-                      NADefaults::updateSystemParameters(TRUE);
+                      NADefaults::updateSystemParameters(FALSE);
                       createLogDir();
                       initHashDictionaries();
                       initLogFilePaths();
@@ -449,7 +449,7 @@ NABoolean OptimizerSimulator::setOsimModeAndLogDir(osimMode targetMode, const ch
                       initHashDictionaries();
                       readSysCallLogfiles();
                       //reinitialize NAClusterInfoLinux and CQDs
-                      NADefaults::updateSystemParameters(TRUE);
+                      NADefaults::updateSystemParameters(FALSE);
                       //apply cqds
                       readAndSetCQDs();
                       setClusterInfoInitialized(TRUE);

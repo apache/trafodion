@@ -3790,15 +3790,6 @@ NADefaults::NADefaults(NAMemory * h)
   , resetAll_(FALSE)
   , defFlags_(0)
 {
-  static THREAD_P NABoolean systemParamterUpdated = FALSE;
-  // First (but only if NSK-LITE Services exist),
-  // write system parameters (attributes DEF_*) into DefaultDefaults,
-  if (!systemParamterUpdated && !cmpCurrentContext->isStandalone())
-  {
-     updateSystemParameters();
-     systemParamterUpdated = TRUE;
-  }
-
   if (readFromDefaultsTable_) {
      initCurrentDefaultsFromSavedDefaults();
      readFromDefaultsTable();
@@ -3810,6 +3801,7 @@ NADefaults::NADefaults(NAMemory * h)
         initCurrentDefaultsFromSavedDefaults();
         readFromDefaultsTable();
      } else {
+        updateSystemParameters(TRUE);
         initCurrentDefaultsWithDefaultDefaults();
         readFromDefaultsTable();
         saveCurrentDefaults();
@@ -3973,29 +3965,31 @@ static void ftoa_(float val, char *buf)
 }
 
 
-// Updates the system parameters in the defaultDefaults table.
-void NADefaults::updateSystemParameters(NABoolean reInit)
+// Updates the system parameters in the defaultDefaults table based on 
+// the flag passed.
+void NADefaults::updateSystemParameters(NABoolean updateDefaultDefaults)
 {
 
-  static const char *arrayOfSystemParameters[] = {
-      "DEF_CPU_ARCHITECTURE",
-      "DEF_DISCS_ON_CLUSTER",
-      "DEF_INSTRUCTIONS_SECOND",
-      "DEF_PAGE_SIZE",
-      "DEF_LOCAL_CLUSTER_NUMBER",
-      "DEF_LOCAL_SMP_NODE_NUMBER",
-      "DEF_NUM_SMP_CPUS",
-      "MAX_ESPS_PER_CPU_PER_OP",
-      "DEFAULT_DEGREE_OF_PARALLELISM",
-      "DEF_NUM_NODES_IN_ACTIVE_CLUSTERS",
+  static Int32 arrayOfSystemParameters[] = {
+      DEF_CPU_ARCHITECTURE,
+      DEF_DISCS_ON_CLUSTER,
+      DEF_INSTRUCTIONS_SECOND,
+      DEF_PAGE_SIZE,
+      DEF_LOCAL_CLUSTER_NUMBER,
+      DEF_LOCAL_SMP_NODE_NUMBER,
+      DEF_NUM_SMP_CPUS,
+      MAX_ESPS_PER_CPU_PER_OP,
+      DEFAULT_DEGREE_OF_PARALLELISM,
+      DEF_NUM_NODES_IN_ACTIVE_CLUSTERS,
       // this is deliberately not in the list:  "DEF_CHUNK_SIZE",
-      "DEF_NUM_BM_CHUNKS",
-      "DEF_PHYSICAL_MEMORY_AVAILABLE", //returned in KB not bytes
-      "DEF_TOTAL_MEMORY_AVAILABLE",		 //returned in KB not bytes
-      "DEF_VIRTUAL_MEMORY_AVAILABLE"
-      , "USTAT_IUS_PERSISTENT_CBF_PATH"
+      DEF_NUM_BM_CHUNKS,
+      DEF_PHYSICAL_MEMORY_AVAILABLE, //returned in KB not bytes
+      DEF_TOTAL_MEMORY_AVAILABLE,		 //returned in KB not bytes
+      DEF_VIRTUAL_MEMORY_AVAILABLE,
+      USTAT_IUS_PERSISTENT_CBF_PATH
    }; //returned in KB not bytes
 
+  char *newValue;
   char valuestr[WIDEST_CPUARCH_VALUE];
 
   //  Set up global cluster information.
@@ -4006,235 +4000,161 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
   Int32   clusterNum = 0;
   OSIM_getNodeAndClusterNumbers(nodeNum, clusterNum);
 
-  // First (but only if NSK-LITE Services exist),
-  // write system parameters (attributes DEF_*) into DefaultDefaults,
-  // then copy DefaultDefaults into CurrentDefaults.
-  if (!cmpCurrentContext->isStandalone())  {
+  if (updateDefaultDefaults) {
+     const size_t numAttrs = numDefaultAttributes();
+     if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
+        return;
+     for (size_t i = 0; i < numAttrs; i++) {
+         defDefIx_[defaultDefaults[i].attrEnum] = i;
+     }
+  }
+  size_t numElements = sizeof(arrayOfSystemParameters) / sizeof(Int32);
 
-  size_t numElements = sizeof(arrayOfSystemParameters) / sizeof(char *);
   for (size_t i = 0; i < numElements; i++) {
+     if (updateDefaultDefaults) 
+        newValue = new (GetCliGlobals()->exCollHeap()) char[WIDEST_CPUARCH_VALUE];
+     else
+        newValue = valuestr; 
+     newValue[0] = '\0';
 
-    Int32 j;
-    // perform a lookup for the string, using a binary search
-    lookupAttrName(arrayOfSystemParameters[i], -1, &j);
+     switch (arrayOfSystemParameters[i]) 
+     {
+        case DEF_CPU_ARCHITECTURE:
+           switch(gpClusterInfo->cpuArchitecture()) {
+           case CPU_ARCH_INTEL_80386:
+              strcpy(newValue, "INTEL_80386");
+              break;
+           case CPU_ARCH_INTEL_80486:
+              strcpy(newValue, "INTEL_80486");
+              break;
+           case CPU_ARCH_PENTIUM:
+              strcpy(newValue, "PENTIUM");
+              break;
+           case CPU_ARCH_PENTIUM_PRO:
+              strcpy(newValue, "PENTIUM_PRO");
+              break;
+           case CPU_ARCH_MIPS:
+              strcpy(newValue, "MIPS");
+              break;
+           case CPU_ARCH_ALPHA:
+              strcpy(newValue, "ALPHA");
+              break;
+           case CPU_ARCH_PPC:
+              strcpy(newValue, "PPC");
+              break;
+           default:
+              strcpy(newValue, "UNKNOWN");
+              break;
+           }
+           break;
 
-    CMPASSERT(j >= 0);
+        case DEF_DISCS_ON_CLUSTER:
+           strcpy(newValue, "8");
+           break;
+   
+        case DEF_PAGE_SIZE:
+           utoa_(gpClusterInfo->pageSize(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-    if(reInit)
-      NADELETEBASIC(defaultDefaults[j].value,NADHEAP);
-    char *newValue = new (GetCliGlobals()->exCollHeap()) char[WIDEST_CPUARCH_VALUE];
-    newValue[0] = '\0';
-    defaultDefaults[j].value = newValue;
+        case DEF_LOCAL_CLUSTER_NUMBER:
+           utoa_(clusterNum, valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-    switch(defaultDefaults[j].attrEnum) {
+        case DEF_LOCAL_SMP_NODE_NUMBER:
+           utoa_(nodeNum, valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-    case DEF_CPU_ARCHITECTURE:
+        case DEF_NUM_SMP_CPUS:
+           utoa_(gpClusterInfo->numberOfCpusPerSMP(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      switch(gpClusterInfo->cpuArchitecture()) {
-				       // 123456789!1234567890@123456789
-      case CPU_ARCH_INTEL_80386:
-	strcpy(newValue, "INTEL_80386");
-	break;
+        case DEFAULT_DEGREE_OF_PARALLELISM:
+           {
+              Lng32 x = 2;
+             utoa_(x, valuestr);
+             strcpy(newValue, valuestr);
+           }
+           break;
 
-      case CPU_ARCH_INTEL_80486:
-	strcpy(newValue, "INTEL_80486");
-	break;
+        case MAX_ESPS_PER_CPU_PER_OP:
+           {
+              float espsPerCore = computeNumESPsPerCore(FALSE);
+              ftoa_(espsPerCore, valuestr);
+              strcpy(newValue, valuestr);
+           }
+           break;
 
-      case CPU_ARCH_PENTIUM:
-	strcpy(newValue, "PENTIUM");
-	break;
+        case DEF_NUM_NODES_IN_ACTIVE_CLUSTERS:
+           utoa_(gpClusterInfo->numOfPhysicalSMPs(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_PENTIUM_PRO:
-	strcpy(newValue, "PENTIUM_PRO");
-	break;
+        case DEF_PHYSICAL_MEMORY_AVAILABLE:
+           utoa_(gpClusterInfo->physicalMemoryAvailable(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_MIPS:
-	strcpy(newValue, "MIPS");
-	break;
+        case DEF_TOTAL_MEMORY_AVAILABLE:
+           utoa_(gpClusterInfo->totalMemoryAvailable(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_ALPHA:
-	strcpy(newValue, "ALPHA");
-	break;
+        case DEF_VIRTUAL_MEMORY_AVAILABLE:
+           utoa_(gpClusterInfo->virtualMemoryAvailable(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_PPC:
-	strcpy(newValue, "PPC");
-	break;
+        case DEF_NUM_BM_CHUNKS:
+           {
+              UInt32 numChunks = (UInt32)
+                (gpClusterInfo->physicalMemoryAvailable() / def_DEF_CHUNK_SIZE / 4);
+              utoa_(numChunks, valuestr);
+              strcpy(newValue, valuestr);
+           }
+           break;
 
-      default:
-	strcpy(newValue, "UNKNOWN");
-	break;
-      }
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j], FALSE);
-      break;
+        case DEF_INSTRUCTIONS_SECOND:
+           {
+              Int32 frequency, speed;
+              frequency = gpClusterInfo->processorFrequency();
+              switch (gpClusterInfo->cpuArchitecture()) {
+                 case CPU_ARCH_PENTIUM_PRO: speed = (Int32) (frequency * 0.5); break;
+                 case CPU_ARCH_PENTIUM:     speed = (Int32) (frequency * 0.4); break;
+                 default:                   speed = (Int32) (frequency * 0.3); break;
+              }
+              itoa_(speed, valuestr);
+              strcpy(newValue, valuestr);
+           }
+           break;
 
-
-    case DEF_DISCS_ON_CLUSTER:
-      strcpy(newValue, "8");
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_PAGE_SIZE:
-      utoa_(gpClusterInfo->pageSize(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_LOCAL_CLUSTER_NUMBER:
-      utoa_(clusterNum, valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_LOCAL_SMP_NODE_NUMBER:
-      utoa_(nodeNum, valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_NUM_SMP_CPUS:
-      utoa_(gpClusterInfo->numberOfCpusPerSMP(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEFAULT_DEGREE_OF_PARALLELISM:
-      {
-        Lng32 x = 2;
-
-	utoa_(x, valuestr);
-	strcpy(newValue, valuestr);
-	if(reInit)
-	  ActiveSchemaDB()->
-	    getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case MAX_ESPS_PER_CPU_PER_OP:
-      {
-        float espsPerCore = computeNumESPsPerCore(FALSE);
-        ftoa_(espsPerCore, valuestr);
-        strcpy(newValue, valuestr);
-        if(reInit)
-          ActiveSchemaDB()->
-            getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case DEF_NUM_NODES_IN_ACTIVE_CLUSTERS:
-
-      utoa_(gpClusterInfo->numOfPhysicalSMPs(), valuestr);
-      strcpy(newValue, valuestr);
-
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_PHYSICAL_MEMORY_AVAILABLE:
-      utoa_(gpClusterInfo->physicalMemoryAvailable(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_TOTAL_MEMORY_AVAILABLE:
-      utoa_(gpClusterInfo->totalMemoryAvailable(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_VIRTUAL_MEMORY_AVAILABLE:
-      utoa_(gpClusterInfo->virtualMemoryAvailable(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_NUM_BM_CHUNKS:
-      {
- UInt32 numChunks = (UInt32)
-	  (gpClusterInfo->physicalMemoryAvailable() / def_DEF_CHUNK_SIZE / 4);
-	utoa_(numChunks, valuestr);
-	strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case DEF_INSTRUCTIONS_SECOND:
-      {
- Int32 frequency, speed;
-	frequency = gpClusterInfo->processorFrequency();
-
-	switch (gpClusterInfo->cpuArchitecture()) {
-	case CPU_ARCH_PENTIUM_PRO: speed = (Int32) (frequency * 0.5); break;
-	case CPU_ARCH_PENTIUM:     speed = (Int32) (frequency * 0.4); break;
-	default:                   speed = (Int32) (frequency * 0.3); break;
-	}
-
-	itoa_(speed, valuestr);
-	strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case USTAT_IUS_PERSISTENT_CBF_PATH:
-
-      {
-        // set the CQD it to $HOME/cbfs
-        const char* home = getenv("HOME");
-
-        if ( home ) {
-           str_cat(home, "/cbfs", newValue);
-        }
-
-      }
-      break;
-
-    default:
-      #ifndef NDEBUG
-        cerr << "updateSystemParameters: no case for "
-	     << defaultDefaults[j].attrName << endl;
-      #endif
-      break;
-
-    } // switch (arrayOfSystemParameters)
-  } // for
-  } // isStandalone
-
+        case USTAT_IUS_PERSISTENT_CBF_PATH:
+           {
+              // set the CQD it to $HOME/cbfs
+              const char* home = getenv("HOME");
+   
+              if ( home ) {
+                 str_cat(home, "/cbfs", newValue);
+              }
+           }
+           break;
+        default:
+           #ifndef NDEBUG
+              cerr << "updateSystemParameters: no case for "
+	         << defaultDefaults[j].attrName << endl;
+           #endif
+           break;
+     } // switch (arrayOfSystemParameters)
+     if (updateDefaultDefaults) {
+        Int32 j = defDefIx_[arrayOfSystemParameters[i]];
+        defaultDefaults[j].value = newValue;
+     }
+     else
+        ActiveSchemaDB()->getDefaults().updateCurrentDefaultsForOSIM(arrayOfSystemParameters[i], newValue);
+   } // for
 } // updateSystemParameters()
 
 //==============================================================================
@@ -6657,39 +6577,15 @@ NABoolean NADefaults::isSameCQD(Lng32 numEntriesInBuffer,
   return TRUE;
 }
 
-void NADefaults::updateCurrentDefaultsForOSIM(DefaultDefault * defaultDefault,
-                                              NABoolean validateFloatVal)
+void NADefaults::updateCurrentDefaultsForOSIM(Int32 attrEnum, const char *value)
 {
-  Int32 attrEnum = defaultDefault->attrEnum;
-  const char * defaultVal = defaultDefault->value;
-  const char * valueStr = currentDefaults_[attrEnum];
+ 
+  Int32 errOrWarn;
 
-  if(valueStr)
-  {
-    NADELETEBASIC(valueStr,NADHEAP);
-  }
-
-  char * value = new NADHEAP char[strlen(defaultVal) + 1];
-  strcpy(value, defaultVal);
-  currentDefaults_[attrEnum] = value;
-
-  if ( validateFloatVal )
-  {
-    float floatVal = 0;
-    if (validateFloat(currentDefaults_[attrEnum], floatVal, attrEnum)) {
-      if (currentFloats_[attrEnum]) {
-        NADELETEBASIC(currentFloats_[attrEnum], NADHEAP);
-      }
-      currentFloats_[attrEnum] = new NADHEAP float;
-      *currentFloats_[attrEnum] = floatVal;
-    }
-  }
-
-  if ( currentTokens_[attrEnum] )
-   {
-    if (provenances_[attrEnum] > INIT_DEFAULT_DEFAULTS)
-       NADELETEBASIC( currentTokens_[attrEnum], NADHEAP );
-    currentTokens_[attrEnum] = NULL;
+  if (! insert(attrEnum, value, errOrWarn)) {
+     *CmpCommon::diags() << DgSqlCode(-2055)
+                       << DgString0(value)
+                       << DgString1(lookupAttrName(attrEnum));
   }
 }
 

@@ -330,9 +330,8 @@ private:
   void initCurrentDefaultsWithDefaultDefaults();
   void initCurrentDefaultsFromSavedDefaults();
   void saveCurrentDefaults();
-  static void	   updateSystemParameters(NABoolean reInit = FALSE);
-  void updateCurrentDefaultsForOSIM(DefaultDefault *,
-                                    NABoolean validateFloatVal = TRUE);
+  static void	   updateSystemParameters(NABoolean initDefaultDefaults);
+  void updateCurrentDefaultsForOSIM(Int32 attrEnum, const char *defaultVal);
   void		   resetAll		(NAString &value,
 					 short reset,
   					 Int32 errOrWarn = -1);
