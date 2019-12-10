@@ -4142,10 +4142,8 @@ void NADefaults::updateSystemParameters(NABoolean updateDefaultDefaults)
            }
            break;
         default:
-           #ifndef NDEBUG
-              cerr << "updateSystemParameters: no case for "
-	         << defaultDefaults[j].attrName << endl;
-           #endif
+           cerr << "updateSystemParameters: no case for "
+	        << lookupAttrName(arrayOfSystemParameters[i]) << endl;
            break;
      } // switch (arrayOfSystemParameters)
      if (updateDefaultDefaults) {
