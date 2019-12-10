@@ -3244,7 +3244,7 @@ NABoolean NADefaults::readFromDefaultsTable_ = FALSE;
 //       same defaultDefaults[] entries.  Such as change is being
 //       left to a future round of optimizations.
 //
-static THREAD_P size_t defDefIx_[__NUM_DEFAULT_ATTRIBUTES];
+static size_t defDefIx_[__NUM_DEFAULT_ATTRIBUTES];
 
 inline static const char *getAttrName(Int32 attrEnum)
 {
