@@ -933,8 +933,7 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
                                               
 NABoolean CmpSeabaseDDL::isHbase(const NAString &catName)
 {
-  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
-      (NOT catName.isNull()))
+  if (NOT catName.isNull())
     {
       NAString hbaseDefCatName = "";
       CmpCommon::getDefault(HBASE_CATALOG, hbaseDefCatName, FALSE);
@@ -986,8 +985,7 @@ NABoolean CmpSeabaseDDL::isLOBDependentNameMatch(const NAString &name)
 
 NABoolean CmpSeabaseDDL::isSeabase(const NAString &catName)
 {
-  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
-      (NOT catName.isNull()))
+   if (NOT catName.isNull())
     {
       NAString seabaseDefCatName = "";
       CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
@@ -1010,8 +1008,7 @@ NABoolean CmpSeabaseDDL::isSeabaseMD(
                                      const NAString &schName,
                                      const NAString &objName)
 {
-  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
-      (NOT catName.isNull()))
+  if (NOT catName.isNull())
     {
       NAString seabaseDefCatName = "";
       CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
@@ -1031,8 +1028,7 @@ NABoolean CmpSeabaseDDL::isSeabasePrivMgrMD(
                                             const NAString &catName,
                                             const NAString &schName)
 {
-  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
-      (NOT catName.isNull()))
+  if (NOT catName.isNull())
     {
       NAString seabaseDefCatName = "";
       CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
@@ -1102,8 +1098,7 @@ NABoolean CmpSeabaseDDL::isUserUpdatableSeabaseMD(const NAString &catName,
                                                   const NAString &schName,
                                                   const NAString &objName)
 {
-  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
-      (NOT catName.isNull()))
+  if (NOT catName.isNull())
     {
       NAString seabaseDefCatName = "";
       CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
@@ -1985,15 +1980,7 @@ short CmpSeabaseDDL::existsInHbase(const NAString &objName,
 // ----------------------------------------------------------------------------
 void CmpSeabaseDDL::processSystemCatalog(NADefaults *defs)
 {
-  NAString value(TRAFODION_SYSCAT_LIT);
-
-  if (defs)
-    defs->validateAndInsert("SEABASE_CATALOG", value, FALSE);
-  else
-    ActiveSchemaDB()->getDefaults().validateAndInsert(
-                                                      "SEABASE_CATALOG", value, FALSE);
-
-  seabaseSysCat_ = value;
+  seabaseSysCat_ = getSystemCatalogStatic();
   CONCAT_CATSCH(seabaseMDSchema_,seabaseSysCat_,SEABASE_MD_SCHEMA);
   
 }

@@ -21621,29 +21621,12 @@ control_statement : TOK_CONTROL TOK_QUERY TOK_SHAPE query_shape_options query_sh
 					}
 				      else
 					{
-					  /*					  if ((getenv("SQLMX_REGRESS")) &&
-					      (CmpCommon::getDefault(MODE_SEABASE) == DF_ON))
-					    {
-					      // TEMPTEMP. CQS doesn't work and causes many
-					      // regressions failures. Temporarily CUT it.
-					      $$ = new (PARSERHEAP()) CutOp(0);
-					    }
-					    else*/
 					  $$ = $5->castToRelExpr();
 					}
 				    }
 				  else
 				    {
 				      RelExpr * re = $5->castToRelExpr();
-				      /*				      if ((getenv("SQLMX_REGRESS")) &&
-					  (CmpCommon::getDefault(MODE_SEABASE) == DF_ON))
-					{
-					  // TEMPTEMP. CQS doesn't work and causes many
-					  // regressions failures. Temporarily CUT it.
-					  re = new (PARSERHEAP()) CutOp(0);
-					}
-				      */
-
 				      $$ = new (PARSERHEAP())
 					ControlQueryShape(
 					     re, //$5->castToRelExpr(),
@@ -26466,24 +26449,10 @@ heading_character_string_literal : character_string_literal
 /* type pElemDDL */
 serialized : TOK_SERIALIZED
                                 {
-				  if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
-				    {
-				      // Not for non-seabase mode
-				      yyerror("");
-				      YYERROR;
-				    }
-
 				  $$ = new (PARSERHEAP()) ElemDDLSeabaseSerialized(TRUE);
                                 }
                          | TOK_NOT TOK_SERIALIZED
                                 {
-				  if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
-				    {
-				      // Not for non-seabase mode
-				      yyerror("");
-				      YYERROR;
-				    }
-
 				  $$ = new (PARSERHEAP()) ElemDDLSeabaseSerialized(FALSE);
                                 }
 

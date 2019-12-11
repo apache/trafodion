@@ -108,6 +108,9 @@ extern THREAD_P jmp_buf CmpInternalErrorJmpBuf;
 // Methods for CmpContext
 // -----------------------------------------------------------------------
 
+NABoolean CmpContext::useReservedNameSpace_ = FALSE;
+Int32 CmpContext::authorizationState_ = 0;
+
 CmpContext::CmpContext(UInt32 f, CollHeap * h)
 : heap_((NAHeap *)h), 
   statements_(h, 16),
@@ -237,10 +240,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   CmpProcess p;
   p.getCompilerId(compilerId_, COMPILER_ID_LEN);
 
-
-  //  CmpSeabaseDDL cmpSBD;
-  //  cmpSBD.processSystemCatalog();
-
   // initialize thread local variables (used to be globals) BEGIN
   USER_WANTS_DIVZERO_FAILURES = ( getenv( DIVZERO_ENV_VAR ) == NULL ) ? FALSE : TRUE ;
 #ifndef NDEBUG
@@ -299,6 +298,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   // create dynamic metadata descriptors
   CmpSeabaseDDL cmpSeabaseDDL(heap_);
   cmpSeabaseDDL.createMDdescs(trafMDDescsInfo_);
+  
 }
 
 // MV

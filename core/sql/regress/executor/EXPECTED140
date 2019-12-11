@@ -169,7 +169,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -232,7 +231,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -282,7 +280,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -343,7 +340,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -402,7 +398,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -497,7 +492,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -555,7 +549,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -665,7 +658,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -747,7 +739,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -819,7 +810,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -887,7 +877,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON

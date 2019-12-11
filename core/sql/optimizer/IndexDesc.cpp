@@ -386,8 +386,7 @@ CostScalar IndexDesc::getEstimatedRecordsPerBlock() const
 
   const CostScalar recordsPerBlock = (blockSize / recordLength).getFloor();
 
-  if ((CmpCommon::getDefault(MODE_SEABASE) != DF_ON) ||
-      (NOT getPrimaryTableDesc()->getNATable()->isHbaseTable()))
+  if (NOT getPrimaryTableDesc()->getNATable()->isHbaseTable())
     {
       // A row can never be larger than a block:
       CMPASSERT( recordsPerBlock > csZero );

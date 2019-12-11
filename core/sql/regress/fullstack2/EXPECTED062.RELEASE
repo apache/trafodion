@@ -67,12 +67,12 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /home/centos/regr_results/regress/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
+MESSAGEFILE        /home/centos/esgyndb/core/sqf/export/bin64/mxcierrors.cat
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2016-01-25 17:04 LINUX:EDEV05/owhadi} 
+MESSAGEFILE VRSN   {2019-09-18 08:01 LINUX:GSELVA-ESGYN-RH6-1.NOVALOCAL/centos} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
@@ -475,7 +475,6 @@ Current DEFAULTS
 >>showcontrol query default;
 
 CONTROL QUERY DEFAULT
-  MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
@@ -499,7 +498,6 @@ CONTROL QUERY DEFAULT
 >>showcontrol default;
 
 CONTROL QUERY DEFAULT
-  MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
@@ -518,7 +516,6 @@ CONTROL QUERY DEFAULT
 >>showcontrol default;
 
 CONTROL QUERY DEFAULT
-  MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
@@ -545,18 +542,9 @@ Current DEFAULTS
 
 --- SQL operation complete.
 >>
->>#ifdef SEABASE_REGRESS
->>control query default mode_seabase 'ON';
-
---- SQL operation complete.
->>#endif
->>
->>
->>
 >>showcontrol default;
 
-CONTROL QUERY DEFAULT
-  MODE_SEABASE                  	ON
+No CONTROL QUERY DEFAULT settings are in effect.
 
 --- SQL operation complete.
 >>showcontrol default timeout, match full;
@@ -875,12 +863,12 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /home/centos/regr_results/regress/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
+MESSAGEFILE        /home/centos/esgyndb/core/sqf/export/bin64/mxcierrors.cat
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2016-01-25 17:04 LINUX:EDEV05/owhadi} 
+MESSAGEFILE VRSN   {2019-09-18 08:01 LINUX:GSELVA-ESGYN-RH6-1.NOVALOCAL/centos} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
@@ -941,12 +929,12 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /home/centos/regr_results/regress/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
+MESSAGEFILE        /home/centos/esgyndb/core/sqf/export/bin64/mxcierrors.cat
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2016-01-25 17:04 LINUX:EDEV05/owhadi} 
+MESSAGEFILE VRSN   {2019-09-18 08:01 LINUX:GSELVA-ESGYN-RH6-1.NOVALOCAL/centos} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
@@ -979,34 +967,24 @@ Current DEFAULTS
 --- SQL operation complete.
 >>				-- still 4567
 >>--
->>#ifndef SEABASE_REGRESS
->>-- restore persistent and session state
->>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
-+>  where ATTRIBUTE = 'OPTIMIZATION_LEVEL';
 >>control query default * reset;
->>#else
->>control query default * reset;
-
---- SQL operation complete.
->>control query default mode_seabase 'ON';
 
 --- SQL operation complete.
 >>set schema $$TEST_SCHEMA$$;
 
 --- SQL operation complete.
->>#endif
 >>env;
 ----------------------------------
 Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /home/centos/regr_results/regress/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
+MESSAGEFILE        /home/centos/esgyndb/core/sqf/export/bin64/mxcierrors.cat
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2016-01-25 17:04 LINUX:EDEV05/owhadi} 
+MESSAGEFILE VRSN   {2019-09-18 08:01 LINUX:GSELVA-ESGYN-RH6-1.NOVALOCAL/centos} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected

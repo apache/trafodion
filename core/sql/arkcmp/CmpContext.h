@@ -634,6 +634,9 @@ private:
 
   // for any Hive SQL operations we may want to do
   HiveClient_JNI* hiveClient_;
+public:
+  static NABoolean useReservedNameSpace_;
+  static Int32 authorizationState_;
 }; // end of CmpContext 
 
 static inline CmpContext::InternalCompileEnum &InternalCompile() 

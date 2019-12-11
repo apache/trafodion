@@ -2758,7 +2758,6 @@ enum DefaultConstants
   // enable exeutil(explain, reorg, maintain...) output in rwrs mode.
   EXE_UTIL_RWRS,
 
-  MODE_SEABASE,
   SEABASE_CATALOG,
   HBASE_CATALOG,
   //  HBASE_DEFAULT_CHARSET,
@@ -3393,6 +3392,7 @@ enum DefaultConstants
   // 1 - Transaction started for SELECT .. FOR UPDATE
   // 2 - Transaction started for SELECT with isolaton level other than skip conflict access 
   BEGIN_TRANSACTION_FOR_SELECT, 
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

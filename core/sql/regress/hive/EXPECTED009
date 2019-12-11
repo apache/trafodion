@@ -646,7 +646,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -773,7 +772,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -1072,6 +1070,8 @@ CREATE EXTERNAL TABLE DATE_DIM
 --- SQL operation complete.
 >>prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
 
+*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
+
 --- SQL command prepared.
 >>explain options 'c' s;
 
@@ -1107,7 +1107,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
@@ -1336,7 +1335,6 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
-  MODE_SEABASE ........... ON
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON

@@ -55,6 +55,7 @@
 
 
 #include "CliDefs.h"
+#include "CliSemaphore.h"
 #include "CmpContext.h"
 #include "CmpErrors.h"
 #include "ComObjectName.h"
@@ -1992,7 +1993,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDflte_(MJ_LIST_NODE_SIZE,			".01"),
   DDkwd__(MJ_OVERFLOW,				"ON"),
 
-  DDkwd__(MODE_SEABASE,			    "ON"),
   DDkwd__(MODE_SEAHIVE,			    "ON"),
 
  SDDkwd__(MODE_SPECIAL_1,                       "OFF"),
@@ -3230,6 +3230,12 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
 };
 
+const char **NADefaults::defaultsWithCQDsFromDefaultsTable_ = NULL;
+DefaultToken **NADefaults::tokensWithCQDsFromDefaultsTable_ = NULL;
+char *NADefaults::provenancesWithCQDsFromDefaultsTable_ = NULL;
+float **NADefaults::floatsWithCQDsFromDefaultsTable_ = NULL;
+NABoolean NADefaults::readFromDefaultsTable_ = FALSE;
+
 //
 // NOTE: The  defDefIx_ array  is an array of integers that map
 //       'enum' values to defaultDefaults[] entries.
@@ -3238,7 +3244,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 //       same defaultDefaults[] entries.  Such as change is being
 //       left to a future round of optimizations.
 //
-static THREAD_P size_t defDefIx_[__NUM_DEFAULT_ATTRIBUTES];
+static size_t defDefIx_[__NUM_DEFAULT_ATTRIBUTES];
 
 inline static const char *getAttrName(Int32 attrEnum)
 {
@@ -3404,8 +3410,13 @@ const char *NADefaults::getCurrentDefaultsAttrNameAndValue(
 // -----------------------------------------------------------------------
 void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 {
-  deleteMe();
-
+  // It is important that the currentDefaults_ array elements are initialized with DefaultsDefaults
+  // static constant values or values allocated using cli_gloabsl->exCollHeap().
+  // Keyword tokens are populated once in currentTokens_ and saved off similar to currentDefaults_. 
+  // Hence currentTokens_ array elements are allocated from cli_globals->exCollHeap().
+  // INIT_DEFAULT_DEFAULT provenance means scope is process level for the elements of these
+  // two arrays. The elements with this scope from these 2 arrays should never be
+  // deallocated.
 
   const size_t numAttrs = numDefaultAttributes();
   if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
@@ -3464,24 +3475,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
       // can't have the same enum value twice in defaultDefaults
       CMPASSERT(currentDefaults_[defaultDefaults[i].attrEnum] == NULL);
 
-      // set currentDefaults_[enum] to the static string,
-      // leaving the "allocated from heap" flag as FALSE
-      char * value = new NADHEAP char[strlen(defaultDefaults[i].value) + 1];
-      strcpy(value,defaultDefaults[i].value);
-
-      // trim trailing spaces (except UDR_JAVA_OPTION_DELIMITERS, since
-      // trailing space is allowed for it)
-      if (defaultDefaults[i].attrEnum != UDR_JAVA_OPTION_DELIMITERS)
-      {
-        Lng32 len = strlen(value);
-        while ((len > 0) && (value[len-1] == ' '))
-	{
-	  value[len-1] = 0;
-	  len--;
-	}
-      }
-
-      currentDefaults_[defaultDefaults[i].attrEnum] = value;
+      currentDefaults_[defaultDefaults[i].attrEnum] = defaultDefaults[i].value;
 
 
       // set up our backlink which maps [enum] to its defaultDefaults entry
@@ -3629,11 +3623,12 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   }
 // End: Temporary workaround for SQL build regressions to pass
 
-  // Cache all the default keywords up front,
   // leaving other non-keyword token to be cached on demand.
-  // The "keyword" that is not cached is the kludge/clever trick that
-  // Matt puts in for NATIONAL_CHARSET.
-  NAString tmp( NADHEAP );
+  // Some of the keywords corresponding to attribute like NATIONAL_CHARSET 
+  // are not cached.
+  // Use Globals heap so that it can be saved off 
+  NAHeap *heap = (NAHeap *)GetCliGlobals()->exCollHeap();
+  NAString tmp( heap );
   for ( i = 0; i < numAttrs; i++ )
   {
 #ifndef NDEBUG
@@ -3643,27 +3638,21 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
     if ( validator(i)->getType() == VALID_KWD && (i != NATIONAL_CHARSET) &&
          (i != INPUT_CHARSET) && (i != ISO_MAPPING) )
     {
-      currentTokens_[i] = new NADHEAP DefaultToken;
+      currentTokens_[i] = new (heap) DefaultToken;
 
       // do not call 'token' method as it will return an error if FALSE
       // is to be inserted. Just directly assign DF_OFF to non-resetable defs.
       if (isNonResetableAttribute(defaultDefaults[defDefIx_[i]].attrName))
-	*currentTokens_[i] = DF_OFF;
+         *currentTokens_[i] = DF_OFF;
       else
-	*currentTokens_[i] = token( i, tmp );
+         *currentTokens_[i] = token( i, tmp );
     }
   }
 
-  if (getToken(MODE_SEABASE) == DF_ON)
-    {
-      currentDefaults_[CATALOG] = TRAFODION_SYSCAT_LIT;
-
-      if (getToken(SEABASE_VOLATILE_TABLES) == DF_ON)
-	{
-	  NAString sbCat = getValue(SEABASE_CATALOG);
-	  CmpCommon::context()->sqlSession()->setVolatileCatalogName(sbCat, TRUE);
-	}
-    }
+  if (getToken(SEABASE_VOLATILE_TABLES) == DF_ON) {
+     NAString sbCat = getValue(SEABASE_CATALOG);
+     CmpCommon::context()->sqlSession()->setVolatileCatalogName(sbCat, TRUE);
+  }
 
   SqlParser_NADefaults_->NAMETYPE_		= getToken(NAMETYPE);
   SqlParser_NADefaults_->NATIONAL_CHARSET_	=
@@ -3681,7 +3670,109 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   // access SqlParser_ISO_MAPPING directly due to the complex
   // build hierarchy.
   NAString_setIsoMapCS((SQLCHARSET_CODE) SqlParser_NADefaults_->ISO_MAPPING_);
+}
 
+void NADefaults::saveCurrentDefaults() 
+{
+  NAHeap *heap = (NAHeap *)GetCliGlobals()->exCollHeap();
+
+  const size_t numAttrs = numDefaultAttributes();
+  provenancesWithCQDsFromDefaultsTable_	= new (heap) char [numAttrs];   // enum fits in 2 bits
+  tokensWithCQDsFromDefaultsTable_ = new (heap) DefaultToken * [numAttrs];
+  defaultsWithCQDsFromDefaultsTable_ = new (heap) const char * [numAttrs];
+  // floats are not cached currently - Reserved for future use  
+  floatsWithCQDsFromDefaultsTable_ = new (heap) float * [numAttrs];
+
+  for (int i = 0; i < numAttrs; i++) {
+     provenancesWithCQDsFromDefaultsTable_[i] = provenances_[i];	
+     char *value;
+     if (provenances_[i]  > INIT_DEFAULT_DEFAULTS) {
+        value = new (heap) char[strlen(currentDefaults_[i]) + 1];
+        strcpy(value,currentDefaults_[i]);
+     }
+     else {
+        value = (char *)currentDefaults_[i];
+     }
+     defaultsWithCQDsFromDefaultsTable_[i] = value;
+     if (currentTokens_[i] != NULL) { 
+        if (provenances_[i]  > INIT_DEFAULT_DEFAULTS) {
+           tokensWithCQDsFromDefaultsTable_[i] = new (heap) DefaultToken;
+           *tokensWithCQDsFromDefaultsTable_[i] = *currentTokens_[i]; 
+        }
+        else
+           tokensWithCQDsFromDefaultsTable_[i] = currentTokens_[i]; 
+     }
+     else
+        tokensWithCQDsFromDefaultsTable_[i] = NULL;
+     if (currentFloats_[i] != NULL) { 
+        floatsWithCQDsFromDefaultsTable_[i] = new (heap) float;
+        *floatsWithCQDsFromDefaultsTable_[i] = *currentFloats_[i];
+     } 
+     else
+        floatsWithCQDsFromDefaultsTable_[i] = NULL;
+  }
+}
+
+void NADefaults::initCurrentDefaultsFromSavedDefaults()
+{
+  const size_t numAttrs = numDefaultAttributes();
+  SqlParser_NADefaults_Glob =
+  SqlParser_NADefaults_ = new NADHEAP SqlParser_NADefaults();
+  provenances_		= new NADHEAP char [numAttrs];   // enum fits in 2 bits
+  flags_		= new NADHEAP char [numAttrs];
+  resetToDefaults_	= new NADHEAP char * [numAttrs];
+  currentDefaults_	= new NADHEAP const char * [numAttrs];
+  currentFloats_	= new NADHEAP float * [numAttrs];
+  currentTokens_	= new NADHEAP DefaultToken * [numAttrs];
+  currentState_	= INIT_DEFAULT_DEFAULTS;
+  heldDefaults_        = new NADHEAP HeldDefaults * [numAttrs];
+
+  memset( resetToDefaults_, 0, sizeof(char *) * numAttrs );
+  memset( heldDefaults_, 0, sizeof(HeldDefaults *) * numAttrs );
+
+  for (int i = 0; i < numAttrs; i++) {
+     provenances_[i] = provenancesWithCQDsFromDefaultsTable_[i];	
+     flags_[i]            = 0;
+     char *value;
+     if (provenances_[i]  > INIT_DEFAULT_DEFAULTS) {
+        value = new NADHEAP char[strlen(defaultsWithCQDsFromDefaultsTable_[i]) + 1];
+        strcpy(value,defaultsWithCQDsFromDefaultsTable_[i]);
+     }
+     else
+        value = (char *)defaultsWithCQDsFromDefaultsTable_[i];
+     currentDefaults_[i] = value;
+     if (provenances_[i]  == READ_FROM_SQL_TABLE) {
+        if (tokensWithCQDsFromDefaultsTable_[i] != NULL) { 
+           currentTokens_[i] = new NADHEAP DefaultToken;
+           *currentTokens_[i] = *tokensWithCQDsFromDefaultsTable_[i]; 
+        }
+        else
+           currentTokens_[i] = tokensWithCQDsFromDefaultsTable_[i];
+        if (floatsWithCQDsFromDefaultsTable_[i] != NULL) { 
+           currentFloats_[i] = new NADHEAP float;
+           *currentFloats_[i] = *floatsWithCQDsFromDefaultsTable_[i];
+        } 
+        else
+           currentFloats_[i] = floatsWithCQDsFromDefaultsTable_[i];
+     }
+     else {
+        currentTokens_[i] = tokensWithCQDsFromDefaultsTable_[i];
+        currentFloats_[i] = floatsWithCQDsFromDefaultsTable_[i];
+     }
+  }
+  currentState_ = SET_BY_CQD;	// enter the next state...
+  NAString sbCat = getValue(SEABASE_CATALOG);
+  CmpCommon::context()->sqlSession()->setVolatileCatalogName(sbCat, TRUE);
+  SqlParser_NADefaults_->NAMETYPE_ = getToken(NAMETYPE);
+  SqlParser_NADefaults_->NATIONAL_CHARSET_ = CharInfo::getCharSetEnum(currentDefaults_[NATIONAL_CHARSET]);
+  SqlParser_NADefaults_->ISO_MAPPING_ = CharInfo::getCharSetEnum(currentDefaults_[ISO_MAPPING]);
+  SqlParser_NADefaults_->DEFAULT_CHARSET_ = CharInfo::getCharSetEnum(currentDefaults_[DEFAULT_CHARSET]);
+
+  // Set the NAString_isoMappingCS memory cache for use by routines
+  // ToInternalIdentifier() and ToAnsiIdentifier[2|3]() 
+  // These routines currently cannot access SqlParser_ISO_MAPPING directly due to the complex
+  // build hierarchy.
+  NAString_setIsoMapCS((SQLCHARSET_CODE) SqlParser_NADefaults_->ISO_MAPPING_);
 }
 
 NADefaults::NADefaults(NAMemory * h)
@@ -3693,26 +3784,31 @@ NADefaults::NADefaults(NAMemory * h)
   , currentTokens_(NULL)
   , heldDefaults_(NULL)
   , currentState_(UNINITIALIZED)
-  , readFromSQDefaultsTable_(FALSE)
   , SqlParser_NADefaults_(NULL)
   , catSchSetToUserID_(0)
   , heap_(h)
   , resetAll_(FALSE)
   , defFlags_(0)
-  , tablesRead_(h)
 {
-  static THREAD_P NABoolean systemParamterUpdated = FALSE;
-  // First (but only if NSK-LITE Services exist),
-  // write system parameters (attributes DEF_*) into DefaultDefaults,
-  if (!systemParamterUpdated && !cmpCurrentContext->isStandalone())
-  {
-     updateSystemParameters();
-     systemParamterUpdated = TRUE;
+  if (readFromDefaultsTable_) {
+     initCurrentDefaultsFromSavedDefaults();
+     readFromDefaultsTable();
   }
-
-  // then copy DefaultDefaults into CurrentDefaults.
-  initCurrentDefaultsWithDefaultDefaults();
-
+  else { 
+     globalSemaphore.get();
+     if (readFromDefaultsTable_) {
+        globalSemaphore.release();
+        initCurrentDefaultsFromSavedDefaults();
+        readFromDefaultsTable();
+     } else {
+        updateSystemParameters(TRUE);
+        initCurrentDefaultsWithDefaultDefaults();
+        readFromDefaultsTable();
+        saveCurrentDefaults();
+        readFromDefaultsTable_ = TRUE;
+        globalSemaphore.release();
+     }
+  }
   // Set additional defaultDefaults flags:
 
   // If an attr allows ON/OFF/SYSTEM and the default-default is not SYSTEM,
@@ -3740,6 +3836,7 @@ void NADefaults::deleteMe()
     for (size_t i = numDefaultAttributes(); i--; )
       NADELETEBASIC(resetToDefaults_[i], NADHEAP);
     NADELETEBASIC(resetToDefaults_, NADHEAP);
+    resetToDefaults_ = NULL;
   }
 
   if (currentDefaults_) {
@@ -3747,32 +3844,43 @@ void NADefaults::deleteMe()
       if (provenances_[i] > INIT_DEFAULT_DEFAULTS)
 	NADELETEBASIC(currentDefaults_[i], NADHEAP);
     NADELETEBASIC(currentDefaults_, NADHEAP);
+    currentDefaults_ = NULL;
   }
 
   if (currentFloats_) {
     for (size_t i = numDefaultAttributes(); i--; )
       NADELETEBASIC(currentFloats_[i], NADHEAP);
     NADELETEBASIC(currentFloats_, NADHEAP);
+    currentFloats_ = NULL;
   }
 
   if (currentTokens_) {
     for (size_t i = numDefaultAttributes(); i--; )
-      NADELETEBASIC(currentTokens_[i], NADHEAP);
+       if (provenances_[i] > INIT_DEFAULT_DEFAULTS)
+          NADELETEBASIC(currentTokens_[i], NADHEAP);
     NADELETEBASIC(currentTokens_, NADHEAP);
+    currentTokens_ = NULL;
   }
 
   if (heldDefaults_) {
     for (size_t i = numDefaultAttributes(); i--; )
       NADELETE(heldDefaults_[i], HeldDefaults, NADHEAP);
     NADELETEBASIC(heldDefaults_, NADHEAP);
+    heldDefaults_ = NULL;
   }
 
-  for (CollIndex i = tablesRead_.entries(); i--; )
-    tablesRead_.removeAt(i);
-
-  NADELETEBASIC(provenances_, NADHEAP);
-  NADELETEBASIC(flags_, NADHEAP);
-  NADELETE(SqlParser_NADefaults_, SqlParser_NADefaults, NADHEAP);
+  if (provenances_ != NULL) {
+     NADELETEBASIC(provenances_, NADHEAP);
+     provenances_ = NULL;
+  }
+  if (flags_ != NULL) {
+     NADELETEBASIC(flags_, NADHEAP);
+     flags_ = NULL;
+  }
+  if (SqlParser_NADefaults_ != NULL) {
+     NADELETE(SqlParser_NADefaults_, SqlParser_NADefaults, NADHEAP);
+     SqlParser_NADefaults_ = NULL; 
+  }
 }
 
 // -----------------------------------------------------------------------
@@ -3857,29 +3965,31 @@ static void ftoa_(float val, char *buf)
 }
 
 
-// Updates the system parameters in the defaultDefaults table.
-void NADefaults::updateSystemParameters(NABoolean reInit)
+// Updates the system parameters in the defaultDefaults table based on 
+// the flag passed.
+void NADefaults::updateSystemParameters(NABoolean updateDefaultDefaults)
 {
 
-  static const char *arrayOfSystemParameters[] = {
-      "DEF_CPU_ARCHITECTURE",
-      "DEF_DISCS_ON_CLUSTER",
-      "DEF_INSTRUCTIONS_SECOND",
-      "DEF_PAGE_SIZE",
-      "DEF_LOCAL_CLUSTER_NUMBER",
-      "DEF_LOCAL_SMP_NODE_NUMBER",
-      "DEF_NUM_SMP_CPUS",
-      "MAX_ESPS_PER_CPU_PER_OP",
-      "DEFAULT_DEGREE_OF_PARALLELISM",
-      "DEF_NUM_NODES_IN_ACTIVE_CLUSTERS",
+  static Int32 arrayOfSystemParameters[] = {
+      DEF_CPU_ARCHITECTURE,
+      DEF_DISCS_ON_CLUSTER,
+      DEF_INSTRUCTIONS_SECOND,
+      DEF_PAGE_SIZE,
+      DEF_LOCAL_CLUSTER_NUMBER,
+      DEF_LOCAL_SMP_NODE_NUMBER,
+      DEF_NUM_SMP_CPUS,
+      MAX_ESPS_PER_CPU_PER_OP,
+      DEFAULT_DEGREE_OF_PARALLELISM,
+      DEF_NUM_NODES_IN_ACTIVE_CLUSTERS,
       // this is deliberately not in the list:  "DEF_CHUNK_SIZE",
-      "DEF_NUM_BM_CHUNKS",
-      "DEF_PHYSICAL_MEMORY_AVAILABLE", //returned in KB not bytes
-      "DEF_TOTAL_MEMORY_AVAILABLE",		 //returned in KB not bytes
-      "DEF_VIRTUAL_MEMORY_AVAILABLE"
-      , "USTAT_IUS_PERSISTENT_CBF_PATH"
+      DEF_NUM_BM_CHUNKS,
+      DEF_PHYSICAL_MEMORY_AVAILABLE, //returned in KB not bytes
+      DEF_TOTAL_MEMORY_AVAILABLE,		 //returned in KB not bytes
+      DEF_VIRTUAL_MEMORY_AVAILABLE,
+      USTAT_IUS_PERSISTENT_CBF_PATH
    }; //returned in KB not bytes
 
+  char *newValue;
   char valuestr[WIDEST_CPUARCH_VALUE];
 
   //  Set up global cluster information.
@@ -3890,235 +4000,159 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
   Int32   clusterNum = 0;
   OSIM_getNodeAndClusterNumbers(nodeNum, clusterNum);
 
-  // First (but only if NSK-LITE Services exist),
-  // write system parameters (attributes DEF_*) into DefaultDefaults,
-  // then copy DefaultDefaults into CurrentDefaults.
-  if (!cmpCurrentContext->isStandalone())  {
+  if (updateDefaultDefaults) {
+     const size_t numAttrs = numDefaultAttributes();
+     if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
+        return;
+     for (size_t i = 0; i < numAttrs; i++) {
+         defDefIx_[defaultDefaults[i].attrEnum] = i;
+     }
+  }
+  size_t numElements = sizeof(arrayOfSystemParameters) / sizeof(Int32);
 
-  size_t numElements = sizeof(arrayOfSystemParameters) / sizeof(char *);
   for (size_t i = 0; i < numElements; i++) {
+     if (updateDefaultDefaults) 
+        newValue = new (GetCliGlobals()->exCollHeap()) char[WIDEST_CPUARCH_VALUE];
+     else
+        newValue = valuestr; 
+     newValue[0] = '\0';
 
-    Int32 j;
-    // perform a lookup for the string, using a binary search
-    lookupAttrName(arrayOfSystemParameters[i], -1, &j);
+     switch (arrayOfSystemParameters[i]) 
+     {
+        case DEF_CPU_ARCHITECTURE:
+           switch(gpClusterInfo->cpuArchitecture()) {
+           case CPU_ARCH_INTEL_80386:
+              strcpy(newValue, "INTEL_80386");
+              break;
+           case CPU_ARCH_INTEL_80486:
+              strcpy(newValue, "INTEL_80486");
+              break;
+           case CPU_ARCH_PENTIUM:
+              strcpy(newValue, "PENTIUM");
+              break;
+           case CPU_ARCH_PENTIUM_PRO:
+              strcpy(newValue, "PENTIUM_PRO");
+              break;
+           case CPU_ARCH_MIPS:
+              strcpy(newValue, "MIPS");
+              break;
+           case CPU_ARCH_ALPHA:
+              strcpy(newValue, "ALPHA");
+              break;
+           case CPU_ARCH_PPC:
+              strcpy(newValue, "PPC");
+              break;
+           default:
+              strcpy(newValue, "UNKNOWN");
+              break;
+           }
+           break;
 
-    CMPASSERT(j >= 0);
+        case DEF_DISCS_ON_CLUSTER:
+           strcpy(newValue, "8");
+           break;
+   
+        case DEF_PAGE_SIZE:
+           utoa_(gpClusterInfo->pageSize(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-    if(reInit)
-      NADELETEBASIC(defaultDefaults[j].value,NADHEAP);
-    char *newValue = new (GetCliGlobals()->exCollHeap()) char[WIDEST_CPUARCH_VALUE];
-    newValue[0] = '\0';
-    defaultDefaults[j].value = newValue;
+        case DEF_LOCAL_CLUSTER_NUMBER:
+           utoa_(clusterNum, valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-    switch(defaultDefaults[j].attrEnum) {
+        case DEF_LOCAL_SMP_NODE_NUMBER:
+           utoa_(nodeNum, valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-    case DEF_CPU_ARCHITECTURE:
+        case DEF_NUM_SMP_CPUS:
+           utoa_(gpClusterInfo->numberOfCpusPerSMP(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      switch(gpClusterInfo->cpuArchitecture()) {
-				       // 123456789!1234567890@123456789
-      case CPU_ARCH_INTEL_80386:
-	strcpy(newValue, "INTEL_80386");
-	break;
+        case DEFAULT_DEGREE_OF_PARALLELISM:
+           {
+              Lng32 x = 2;
+             utoa_(x, valuestr);
+             strcpy(newValue, valuestr);
+           }
+           break;
 
-      case CPU_ARCH_INTEL_80486:
-	strcpy(newValue, "INTEL_80486");
-	break;
+        case MAX_ESPS_PER_CPU_PER_OP:
+           {
+              float espsPerCore = computeNumESPsPerCore(FALSE);
+              ftoa_(espsPerCore, valuestr);
+              strcpy(newValue, valuestr);
+           }
+           break;
 
-      case CPU_ARCH_PENTIUM:
-	strcpy(newValue, "PENTIUM");
-	break;
+        case DEF_NUM_NODES_IN_ACTIVE_CLUSTERS:
+           utoa_(gpClusterInfo->numOfPhysicalSMPs(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_PENTIUM_PRO:
-	strcpy(newValue, "PENTIUM_PRO");
-	break;
+        case DEF_PHYSICAL_MEMORY_AVAILABLE:
+           utoa_(gpClusterInfo->physicalMemoryAvailable(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_MIPS:
-	strcpy(newValue, "MIPS");
-	break;
+        case DEF_TOTAL_MEMORY_AVAILABLE:
+           utoa_(gpClusterInfo->totalMemoryAvailable(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_ALPHA:
-	strcpy(newValue, "ALPHA");
-	break;
+        case DEF_VIRTUAL_MEMORY_AVAILABLE:
+           utoa_(gpClusterInfo->virtualMemoryAvailable(), valuestr);
+           strcpy(newValue, valuestr);
+           break;
 
-      case CPU_ARCH_PPC:
-	strcpy(newValue, "PPC");
-	break;
+        case DEF_NUM_BM_CHUNKS:
+           {
+              UInt32 numChunks = (UInt32)
+                (gpClusterInfo->physicalMemoryAvailable() / def_DEF_CHUNK_SIZE / 4);
+              utoa_(numChunks, valuestr);
+              strcpy(newValue, valuestr);
+           }
+           break;
 
-      default:
-	strcpy(newValue, "UNKNOWN");
-	break;
-      }
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j], FALSE);
-      break;
+        case DEF_INSTRUCTIONS_SECOND:
+           {
+              Int32 frequency, speed;
+              frequency = gpClusterInfo->processorFrequency();
+              switch (gpClusterInfo->cpuArchitecture()) {
+                 case CPU_ARCH_PENTIUM_PRO: speed = (Int32) (frequency * 0.5); break;
+                 case CPU_ARCH_PENTIUM:     speed = (Int32) (frequency * 0.4); break;
+                 default:                   speed = (Int32) (frequency * 0.3); break;
+              }
+              itoa_(speed, valuestr);
+              strcpy(newValue, valuestr);
+           }
+           break;
 
-
-    case DEF_DISCS_ON_CLUSTER:
-      strcpy(newValue, "8");
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_PAGE_SIZE:
-      utoa_(gpClusterInfo->pageSize(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_LOCAL_CLUSTER_NUMBER:
-      utoa_(clusterNum, valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_LOCAL_SMP_NODE_NUMBER:
-      utoa_(nodeNum, valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_NUM_SMP_CPUS:
-      utoa_(gpClusterInfo->numberOfCpusPerSMP(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEFAULT_DEGREE_OF_PARALLELISM:
-      {
-        Lng32 x = 2;
-
-	utoa_(x, valuestr);
-	strcpy(newValue, valuestr);
-	if(reInit)
-	  ActiveSchemaDB()->
-	    getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case MAX_ESPS_PER_CPU_PER_OP:
-      {
-        float espsPerCore = computeNumESPsPerCore(FALSE);
-        ftoa_(espsPerCore, valuestr);
-        strcpy(newValue, valuestr);
-        if(reInit)
-          ActiveSchemaDB()->
-            getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case DEF_NUM_NODES_IN_ACTIVE_CLUSTERS:
-
-      utoa_(gpClusterInfo->numOfPhysicalSMPs(), valuestr);
-      strcpy(newValue, valuestr);
-
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_PHYSICAL_MEMORY_AVAILABLE:
-      utoa_(gpClusterInfo->physicalMemoryAvailable(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_TOTAL_MEMORY_AVAILABLE:
-      utoa_(gpClusterInfo->totalMemoryAvailable(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_VIRTUAL_MEMORY_AVAILABLE:
-      utoa_(gpClusterInfo->virtualMemoryAvailable(), valuestr);
-      strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      break;
-
-    case DEF_NUM_BM_CHUNKS:
-      {
- UInt32 numChunks = (UInt32)
-	  (gpClusterInfo->physicalMemoryAvailable() / def_DEF_CHUNK_SIZE / 4);
-	utoa_(numChunks, valuestr);
-	strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case DEF_INSTRUCTIONS_SECOND:
-      {
- Int32 frequency, speed;
-	frequency = gpClusterInfo->processorFrequency();
-
-	switch (gpClusterInfo->cpuArchitecture()) {
-	case CPU_ARCH_PENTIUM_PRO: speed = (Int32) (frequency * 0.5); break;
-	case CPU_ARCH_PENTIUM:     speed = (Int32) (frequency * 0.4); break;
-	default:                   speed = (Int32) (frequency * 0.3); break;
-	}
-
-	itoa_(speed, valuestr);
-	strcpy(newValue, valuestr);
-      if(reInit)
-        ActiveSchemaDB()->
-          getDefaults().
-            updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-    case USTAT_IUS_PERSISTENT_CBF_PATH:
-
-      {
-        // set the CQD it to $HOME/cbfs
-        const char* home = getenv("HOME");
-
-        if ( home ) {
-           str_cat(home, "/cbfs", newValue);
-        }
-
-      }
-      break;
-
-    default:
-      #ifndef NDEBUG
-        cerr << "updateSystemParameters: no case for "
-	     << defaultDefaults[j].attrName << endl;
-      #endif
-      break;
-
-    } // switch (arrayOfSystemParameters)
-  } // for
-  } // isStandalone
-
+        case USTAT_IUS_PERSISTENT_CBF_PATH:
+           {
+              // set the CQD it to $HOME/cbfs
+              const char* home = getenv("HOME");
+   
+              if ( home ) {
+                 str_cat(home, "/cbfs", newValue);
+              }
+           }
+           break;
+        default:
+           cerr << "updateSystemParameters: no case for "
+	        << lookupAttrName(arrayOfSystemParameters[i]) << endl;
+           break;
+     } // switch (arrayOfSystemParameters)
+     if (updateDefaultDefaults) {
+        Int32 j = defDefIx_[arrayOfSystemParameters[i]];
+        defaultDefaults[j].value = newValue;
+     }
+     else
+        ActiveSchemaDB()->getDefaults().updateCurrentDefaultsForOSIM(arrayOfSystemParameters[i], newValue);
+   } // for
 } // updateSystemParameters()
 
 //==============================================================================
@@ -4158,168 +4192,14 @@ const SQLMODULE_ID __SQL_mod_866668761818000 = {
   /* name length */     47
 };
 
-static const Int32 MAX_VALUE_LEN = 1000;
-
-// Read the SQL defaults table, to layer on further defaults.
-//
-// [1] This is designed such that it can be called multiple times
-// (a site-wide defaults table, then a user-specific one, e.g.)
-// and by default it will supersede values read/computed from earlier tables.
-//
-// [2] It can also be called *after* CQD's have been issued
-// (e.g. from the getCatalogAndSchema() method)
-// and by default it will supersede values from earlier tables
-// but *not* explicitly CQD-ed settings.
-//
-// This default behavior is governed by the overwrite* arguments in
-// various methods (see the .h file).  Naturally you can override such behavior,
-// e.g., if you wanted to reset to an earlier state, erasing all user CQD's.
-//
-void NADefaults::readFromSQLTable(const char *tname,
-				  Provenance overwriteIfNotYet,
-				  Int32 errOrWarn)
-{
-  char value[MAX_VALUE_LEN + 1];
-  // CMPASSERT(MAX_VALUE_LEN >= ComMAX_2_PART_EXTERNAL_UCS2_NAME_LEN_IN_NAWCHARS);
-
-  // First (but only if NSK-LITE Services exist),
-  // write system parameters (attributes DEF_*) into DefaultDefaults,
-  // then copy DefaultDefaults into CurrentDefaults.
-  if (!cmpCurrentContext->isStandalone())  {
-
-  Lng32 initialErrCnt = CmpCommon::diags()->getNumber();
-
-
-  // Set this *before* doing any insert()'s ...
-  currentState_ = READ_FROM_SQL_TABLE;
-
-  Int32 loop_here=0;
-  while (loop_here > 10)
-  {
-    loop_here++;
-    if (loop_here > 1000)
-      loop_here=100;
-  }
-
-  if (tname) {
-
-      NABoolean isSQLTable = TRUE;
-      if (*tname == ' ') {	// called from NADefaults::readFromFlatFile()
-	isSQLTable = FALSE;	// -- see kludge in .h file!
-        tname++;
-      }
-
-      char attrName[101];	// column ATTRIBUTE VARCHAR(100) UPSHIFT
-      Int32 sqlcode;
-      static THREAD_P struct SQLCLI_OBJ_ID __SQL_id0;
-      FILE *flatfile = NULL;
-
-      if (isSQLTable) {
-	init_SQLCLI_OBJ_ID(&__SQL_id0, SQLCLI_CURRENT_VERSION, cursor_name,
-			&__SQL_mod_866668761818000, "S1", 0,
-			SQLCHARSETSTRING_ISO88591, 2);
-
-	/* EXEC SQL OPEN S1; See file NADefaults.mdf for cursor declaration */
-	sqlcode = SQL_EXEC_ClearDiagnostics(&__SQL_id0);
-        sqlcode = SQL_EXEC_Exec(&__SQL_id0,NULL,1,tname,NULL);
-      }
-      else {
-        flatfile = fopen(tname, "r");
-	sqlcode = flatfile ? 0 : -ABS(arkcmpErrorFileOpenForRead);
-      }
-
-      /* EXEC SQL FETCH S1 INTO :attrName, :value; */
-      //   Since the DEFAULTS table is PRIMARY KEY (SUBSYSTEM, ATTRIBUTE),
-      //   we'll fetch (scanning the clustering index)
-      //   CATALOG before SCHEMA; this is important if user has rows like
-      //   ('CATALOG','c1') and ('SCHEMA','c2.sn') --
-      //   the schema setting must supersede the catalog one.
-      //   We should also put an ORDER BY into the cursor decl in the .mdf,
-      //   to handle user-created DEFAULTS tables w/o a PK.
-
-      if (sqlcode >= 0)
-	if (isSQLTable)
-          {
-            sqlcode = SQL_EXEC_Fetch(&__SQL_id0,NULL,2,attrName,NULL,value,NULL);
-            if (sqlcode >= 0)
-              readFromSQDefaultsTable_ = TRUE;
-          }
-	else {
-	  value[0] = 0; // NULL terminator
-	  if (fscanf(flatfile, " %100[A-Za-z0-9_#] ,", attrName) < 0) 
-	    sqlcode = +100;
-	  else 
-	    fgets((char *) value, sizeof(value), flatfile);
-	}
-
-      // Ignore warnings except for end-of-data
-      while (sqlcode >= 0 && sqlcode != +100) {
-
-        NAString v(value);
-
-        // skip comments, indicated by a #
-        if (attrName[0] != '#')
-          validateAndInsert(attrName, v, FALSE, errOrWarn, overwriteIfNotYet);
-
-	/* EXEC SQL FETCH S1 INTO :attrName, :value; */
-	if (isSQLTable)
-	  sqlcode = SQL_EXEC_Fetch(&__SQL_id0,NULL,2,attrName,NULL,value,NULL);
-	else {
-	  value[0] = 0; // NULL terminator
-	  if (fscanf(flatfile, " %100[A-Za-z0-9_#] ,", attrName) < 0) sqlcode = +100;
-	  else fgets((char *) value, sizeof(value), flatfile);
-	}
-      }
-      if (sqlcode < 0 && errOrWarn && initializeSQLdone()) {
-	if (ABS(sqlcode) == ABS(CLI_MODULEFILE_OPEN_ERROR) &&
-	    cmpCurrentContext->isInstalling()) {
-	  // Emit no warning when (re)installing,
-	  // because obviously the module will not exist before we have
-	  // (re)arkcmp'd it!
-	}
-	else {
-	  // 2001 Error $0 reading table $1.  Using $2 values.
-	  CollIndex n = tablesRead_.entries();
-          const char *errtext = n ? tablesRead_[n-1].data() : "default-default";
-	  *CmpCommon::diags() << DgSqlCode(ERRWARN(2001))
-	    << DgInt0(sqlcode) << DgTableName(tname) << DgString0(errtext);
-	}
-      }
-
-      if (isSQLTable) {
-	/* EXEC SQL CLOSE S1; */
-	sqlcode = SQL_EXEC_ClearDiagnostics(&__SQL_id0);
-        sqlcode = SQL_EXEC_CloseStmt(&__SQL_id0);
-
-        // The above statement should not start any transactions because
-        // it uses read uncommitted access.  If it ever changes, then we
-        // would need to commit it at this time.
-      }
-
-  } // tname
-
-  if (initialErrCnt < CmpCommon::diags()->getNumber() && errOrWarn)
-    *CmpCommon::diags() << DgSqlCode(ERRWARN(2059))
-      << DgString0(tname ? tname : "");
-  } // isStandalone
-
-} // NADefaults::readFromSQLTable()
-
-void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn)
+void NADefaults::readFromDefaultsTable(Provenance overwriteIfNotYet, Int32 errOrWarn)
 {
   NABoolean cat = FALSE;
   NABoolean sch = FALSE;
 
 
-  if (getToken(MODE_SEABASE) == DF_ON && !readFromSQDefaultsTable())
+    if (! readFromDefaultsTable_)
     {
-      // Read system defaults from configuration file.
-      // keep this name in sync with file cli/SessionDefaults.cpp
-      NAString confFile(getenv("TRAF_CONF"));
-      confFile += "/SQSystemDefaults.conf";
-      readFromFlatFile(confFile, overwriteIfNotYet, errOrWarn);  
-      tablesRead_.insert(confFile);           
-
       CmpSeabaseDDL cmpSBD((NAHeap *)heap_, FALSE);
       Lng32 hbaseErr = 0;
       NAString hbaseErrStr;
@@ -4329,6 +4209,7 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
                                              &hbaseErr, &hbaseErrStr);
       if (errNum == 0) // seabase is initialized properly
         {
+          currentState_ = READ_FROM_SQL_TABLE;
           // read from seabase defaults table
           cmpSBD.readAndInitDefaultsFromSeabaseDefaultsTable
             (overwriteIfNotYet, errOrWarn, this);
@@ -4338,6 +4219,7 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
           NABoolean checkAllPrivTables = FALSE;
           errNum = cmpSBD.isPrivMgrMetadataInitialized(this,checkAllPrivTables);
           CmpCommon::context()->setAuthorizationState(errNum);
+          CmpContext::authorizationState_ = errNum;
         }
       else
 	{
@@ -4347,22 +4229,17 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
 	  CmpCommon::context()->hbaseErrStr() = hbaseErrStr;
 	}
     }
+    else {
+       CmpCommon::context()->setAuthorizationState(CmpContext::authorizationState_);
+    }
 
   currentState_ = SET_BY_CQD;	// enter the next state...
 
-  // Make self fully consistent, by executing deferred actions last of all
-  getSqlParser_NADefaults();
-} // NADefaults::readFromSQLTables()
+} // NADefaults::readFromDefaultsTable()
 
 // This method is used by SchemaDB::initPerStatement
 const char * NADefaults::getValueWhileInitializing(Int32 attrEnum)
 {
-  // We can't rely on our state_ because SQLC might have called CQD::bindNode()
-  // which does a setState(SET_BY_CQD)...
-  if (!tablesRead_.entries())
-    if (getProvenance(attrEnum) < SET_BY_CQD)
-      readFromSQLTables(SET_BY_CQD);
-
   return getValue(attrEnum);
 }
 
@@ -4437,9 +4314,10 @@ NABoolean NADefaults::insert(Int32 attrEnum, const NAString &value, Int32 errOrW
   }
 
   // Update cache for DefaultToken by deallocating the cached entry.
-  if ( currentTokens_[attrEnum] )
+  if (currentTokens_[attrEnum] )
   {
-    NADELETEBASIC( currentTokens_[attrEnum], NADHEAP );
+     if ( provenances_[attrEnum] > INIT_DEFAULT_DEFAULTS)
+        NADELETEBASIC(currentTokens_[attrEnum], NADHEAP );
     currentTokens_[attrEnum] = NULL;
   }
 
@@ -4649,21 +4527,52 @@ NABoolean NADefaults::domainMatch(Int32 attrEnum,
 //	Useful for apps that dynamically send startup settings that ought
 //	to be preserved -- ODBC and SQLCI do this.
 //
-void NADefaults::resetAll(NAString &value, NABoolean reset, Int32 errOrWarn)
+void NADefaults::resetAll(NAString &value, short reset, Int32 errOrWarn)
 {
   size_t i, numAttrs = numDefaultAttributes();
 
   if (reset == 1) {			// CQD * RESET; (not RESET RESET)
     setResetAll(TRUE);
-    for (i = 0; i < numAttrs; i++)
-    {
-      const char * attributeName = defaultDefaults[i].attrName;
-      DefaultConstants attrEnum = lookupAttrName(attributeName, errOrWarn);
-
-      if (isNonResetableAttribute(attributeName))
-	continue;
-
-      validateAndInsert(attributeName, value, TRUE, errOrWarn);
+    for (int i = 0 ; i < numAttrs; i++ ) {
+        if (provenances_[i] == SET_BY_CQD || provenances_[i] == DERIVED || provenances_[i] == COMPUTED)
+        {
+           //delete the current cqd value
+           if (resetToDefaults_[i]) {
+              NADELETEBASIC(resetToDefaults_[i], NADHEAP);
+              resetToDefaults_[i] = NULL;
+           }
+           if (currentDefaults_[i]) {
+              NADELETEBASIC(currentDefaults_[i], NADHEAP);
+              currentDefaults_[i] = NULL;
+           }
+           if (currentTokens_[i]) {
+              NADELETEBASIC(currentTokens_[i], NADHEAP);
+              currentTokens_[i] = NULL;
+           }
+           if (currentFloats_[i]) {
+              NADELETEBASIC(currentFloats_[i], NADHEAP);
+              currentFloats_[i] = NULL;
+           }
+           // Copy from saved defaults; 
+           provenances_[i] = provenancesWithCQDsFromDefaultsTable_[i];
+           if (provenances_[i] == INIT_DEFAULT_DEFAULTS) {
+              currentDefaults_[i] = defaultsWithCQDsFromDefaultsTable_[i];
+              currentTokens_[i] = tokensWithCQDsFromDefaultsTable_[i];
+              currentFloats_[i] = floatsWithCQDsFromDefaultsTable_[i];  
+           }
+           else {
+              currentDefaults_[i] = new NADHEAP char[strlen(defaultsWithCQDsFromDefaultsTable_[i]) + 1];
+              strcpy((char *)currentDefaults_[i], defaultsWithCQDsFromDefaultsTable_[i]);
+              if (tokensWithCQDsFromDefaultsTable_[i] != NULL) {
+                 currentTokens_[i] = new NADHEAP DefaultToken;
+                 *currentTokens_[i] = *tokensWithCQDsFromDefaultsTable_[i]; 
+              }
+              if (floatsWithCQDsFromDefaultsTable_[i] != NULL) {
+                 currentFloats_[i] = new NADHEAP float;
+                 *currentFloats_[i] = *floatsWithCQDsFromDefaultsTable_[i];
+              }
+           }
+       }
     }
     // if DEFAULT_SCHEMA_NAMETYPE=USER after CQD * RESET
     // set SCHEMA to LDAP_USERNAME
@@ -4678,25 +4587,16 @@ void NADefaults::resetAll(NAString &value, NABoolean reset, Int32 errOrWarn)
   else if (reset == 2) {
     for (i = 0; i < numAttrs; i++) {
       if (resetToDefaults_[i]) {
-	// CONTROL QUERY DEFAULT * RESET RESET;  -- this code cloned below
-	//   Can't reset prov, because to which?
-	//	  provenances_[i] =  READ_FROM_SQL_TABLE  or  COMPUTED ??
 	NADELETEBASIC(resetToDefaults_[i], NADHEAP);
 	resetToDefaults_[i] = NULL;
       }
+      if (provenances_[i] == SET_BY_CQD || provenances_[i] == DERIVED || provenances_[i] == COMPUTED)
+          provenances_[i] = CQD_RESET_RESET;
     }
   }
   else {
-    CMPASSERT(!reset);
+    CMPASSERT(reset == 0);
   }
-}
-
-// Reset to default-defaults, as if readFromSQLTables() had not executed,
-// but setting state and provenance so no future reads will be triggered.
-// See StaticCompiler and Genesis 10-990204-2469 above for motivation.
-void NADefaults::undoReadsAndResetToDefaultDefaults()
-{
-  initCurrentDefaultsWithDefaultDefaults();
 }
 
 NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
@@ -5058,7 +4958,8 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	      currentFloats_[attrEnum] = NULL;
 
 	      // Undo any caching from getToken()
-	      NADELETEBASIC( currentTokens_[attrEnum], NADHEAP );
+	      if (provenances_[attrEnum] > INIT_DEFAULT_DEFAULTS)
+	         NADELETEBASIC( currentTokens_[attrEnum], NADHEAP );
 	      currentTokens_[attrEnum] = NULL;
 
 	      // Now fall thru to insert the string "SYSTEM" or ""
@@ -5193,44 +5094,10 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	}
       break;
 
-      case MODE_SEABASE:
-	{
-	  if (value == "ON")
-	    {
-	      if (NOT seabaseDefaultsTableRead())
-		{
-		  CmpSeabaseDDL cmpSBD((NAHeap *)heap_);
-		  Lng32 errNum = cmpSBD.validateVersions(this);
-		  if (errNum == 0) // seabase is initialized properly
-		    {
-		      // read from seabase defaults table
-		      cmpSBD.readAndInitDefaultsFromSeabaseDefaultsTable
-			(overwriteIfNotYet, errOrWarn, this);
-		    }
-		  else
-		    {
-		      CmpCommon::context()->setIsUninitializedSeabase(TRUE);
-		      CmpCommon::context()->uninitializedSeabaseErrNum() = errNum;
-		    }
-		}
-
-	      NAString sbCat = getValue(SEABASE_CATALOG);
-	      insert(SEABASE_VOLATILE_TABLES, "ON", errOrWarn);
-	      CmpCommon::context()->sqlSession()->setVolatileCatalogName(sbCat, TRUE);
 
 	      insert(UPD_SAVEPOINT_ON_ERROR, "OFF", errOrWarn);
-	    }
-	  else
-	    {
-	      NAString defCat = getValue(CATALOG);
-	      insert(SEABASE_VOLATILE_TABLES, "OFF", errOrWarn);
-	      CmpCommon::context()->sqlSession()->setVolatileCatalogName(defCat);
 
 	      insert(UPD_SAVEPOINT_ON_ERROR, "ON", errOrWarn);
-	    }
-	}
-      break;
-
       case MEMORY_LIMIT_QCACHE_UPPER_KB:
         CURRENTQCACHE->setHeapUpperLimit((size_t) 1024 * atoi(value.data()));
         break;
@@ -6708,119 +6575,15 @@ NABoolean NADefaults::isSameCQD(Lng32 numEntriesInBuffer,
   return TRUE;
 }
 
-Lng32 NADefaults::createNewDefaults(Lng32 numEntriesInBuffer,
-				   char * buffer)
+void NADefaults::updateCurrentDefaultsForOSIM(Int32 attrEnum, const char *value)
 {
-  const Lng32 numCurrentDefaultAttrs = (Lng32)numDefaultAttributes();
+ 
+  Int32 errOrWarn;
 
-  // save the current defaults
-  savedCurrentDefaults_ = currentDefaults_;
-  savedCurrentFloats_   = currentFloats_;
-  savedCurrentTokens_   = currentTokens_;
-
-  // VO, Plan Versioning Support.
-  //
-  //     This code may execute in a downrev compiler, which knows about fewer
-  //     defaults than the compiler originally used to compile the statement.
-  //     Only copy those defaults we know about, and skip the rest.
-  Lng32 numEntriesToCopy = _min (numEntriesInBuffer, numCurrentDefaultAttrs);
-
-  // allocate a new currentDefaults_ array and make it point to
-  // the default values in the input 'buffer'.
-  // If the current number of default attributes are greater than the
-  // ones in the input buffer, then populate the remaining default
-  // entries in the currentDefaults_ array with the values from the
-  // the savedCurrentDefaults_.
-  currentDefaults_	= new NADHEAP const char * [numCurrentDefaultAttrs];
-
-  Int32 curPos = 0;
-  Int32 i = 0;
-  for (i = 0; i < numEntriesToCopy; i++)
-    {
-      currentDefaults_[i] = &buffer[curPos];
-      curPos += strlen(&buffer[curPos]) + 1;
-    }
-
-  for (i = numEntriesToCopy; i < numCurrentDefaultAttrs; i++)
-    {
-      currentDefaults_[i] = savedCurrentDefaults_[i];
-    }
-
-  // allocate two empty arrays for floats and tokens.
-  currentFloats_	= new NADHEAP float * [numCurrentDefaultAttrs];
-  currentTokens_	= new NADHEAP DefaultToken * [numCurrentDefaultAttrs];
-  memset( currentFloats_, 0, sizeof(float *) * numCurrentDefaultAttrs );
-  memset( currentTokens_, 0, sizeof(DefaultToken *) * numCurrentDefaultAttrs );
-
-  return 0;
-}
-
-Lng32 NADefaults::restoreDefaults(Lng32 numEntriesInBuffer,
-				 char * buffer)
-{
-  // Deallocate the currentDefaults_ array.
-  // The array entries are not to be deleted as they point to
-  // entries in 'buffer' or the 'savedCurrentDefaults_'.
-  // See NADefaults::createNewDefaults() method.
-  if (currentDefaults_)
-    {
-      NADELETEBASIC(currentDefaults_, NADHEAP);
-    }
-
-  if (currentFloats_)
-    {
-      for (size_t i = numDefaultAttributes(); i--; )
-	NADELETEBASIC(currentFloats_[i], NADHEAP);
-      NADELETEBASIC(currentFloats_, NADHEAP);
-    }
-
-  if (currentTokens_)
-    {
-      for (size_t i = numDefaultAttributes(); i--; )
-	NADELETEBASIC(currentTokens_[i], NADHEAP);
-      NADELETEBASIC(currentTokens_, NADHEAP);
-    }
-
-  // restore the saved defaults
-  currentDefaults_ = savedCurrentDefaults_;
-  currentFloats_   = savedCurrentFloats_;
-  currentTokens_   = savedCurrentTokens_;
-
-  return 0;
-}
-
-void NADefaults::updateCurrentDefaultsForOSIM(DefaultDefault * defaultDefault,
-                                              NABoolean validateFloatVal)
-{
-  Int32 attrEnum = defaultDefault->attrEnum;
-  const char * defaultVal = defaultDefault->value;
-  const char * valueStr = currentDefaults_[attrEnum];
-
-  if(valueStr)
-  {
-    NADELETEBASIC(valueStr,NADHEAP);
-  }
-
-  char * value = new NADHEAP char[strlen(defaultVal) + 1];
-  strcpy(value, defaultVal);
-  currentDefaults_[attrEnum] = value;
-
-  if ( validateFloatVal )
-  {
-    float floatVal = 0;
-    if (validateFloat(currentDefaults_[attrEnum], floatVal, attrEnum)) {
-      if (currentFloats_[attrEnum]) {
-        NADELETEBASIC(currentFloats_[attrEnum], NADHEAP);
-      }
-      currentFloats_[attrEnum] = new NADHEAP float;
-      *currentFloats_[attrEnum] = floatVal;
-    }
-  }
-
-  if ( currentTokens_[attrEnum] )
-  {
-    NADELETEBASIC( currentTokens_[attrEnum], NADHEAP );
-    currentTokens_[attrEnum] = NULL;
+  if (! insert(attrEnum, value, errOrWarn)) {
+     *CmpCommon::diags() << DgSqlCode(-2055)
+                       << DgString0(value)
+                       << DgString1(lookupAttrName(attrEnum));
   }
 }
 
