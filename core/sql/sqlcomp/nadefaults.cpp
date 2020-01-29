@@ -3623,6 +3623,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   }
 // End: Temporary workaround for SQL build regressions to pass
 
+  // Cache all the default keywords up front,
   // leaving other non-keyword token to be cached on demand.
   // Some of the keywords corresponding to attribute like NATIONAL_CHARSET 
   // are not cached.
@@ -5092,12 +5093,8 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
           else
             Reset_SqlParser_Flags(IN_MODE_SPECIAL_4);
 	}
-      break;
+        break;
 
-
-	      insert(UPD_SAVEPOINT_ON_ERROR, "OFF", errOrWarn);
-
-	      insert(UPD_SAVEPOINT_ON_ERROR, "ON", errOrWarn);
       case MEMORY_LIMIT_QCACHE_UPPER_KB:
         CURRENTQCACHE->setHeapUpperLimit((size_t) 1024 * atoi(value.data()));
         break;

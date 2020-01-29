@@ -55,7 +55,7 @@ class ComTdbHdfsScan : public ComTdb
     LOG_ERROR_ROWS              = 0x0040,
     ASSIGN_RANGES_AT_RUNTIME    = 0x0080,
     TREAT_EMPTY_AS_NULL         = 0x0100,
-    USE_LIBHDFS_SCAN            = 0x0200,
+    UNUSED                      = 0x0200,
     COMPRESSED_FILE             = 0x0400
   };
 
@@ -285,11 +285,6 @@ public:
   {(v ? flags_ |= ASSIGN_RANGES_AT_RUNTIME : flags_ &= ~ASSIGN_RANGES_AT_RUNTIME); }
   NABoolean getAssignRangesAtRuntime() const
                                 { return (flags_ & ASSIGN_RANGES_AT_RUNTIME) != 0; }
-
-  void setUseLibhdfsScan(NABoolean v)
-  {(v ? flags_ |= USE_LIBHDFS_SCAN : flags_ &= ~USE_LIBHDFS_SCAN); }
-  NABoolean getUseLibhdfsScan() const
-                                { return (flags_ & USE_LIBHDFS_SCAN) != 0; }
 
   void setCompressedFile(NABoolean v)
   {(v ? flags_ |= COMPRESSED_FILE : flags_ &= ~COMPRESSED_FILE); }

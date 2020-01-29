@@ -1403,9 +1403,6 @@ if (hTabStats->isOrcFile())
   hdfsscan_tdb->setUseCif(useCIF);
   hdfsscan_tdb->setUseCifDefrag(useCIFDegrag);
 
-  if (CmpCommon::getDefault(USE_LIBHDFS) == DF_ON)
-     hdfsscan_tdb->setUseLibhdfsScan(TRUE);
-
   hdfsscan_tdb->setCompressedFile(isCompressedFile);
 
   if(!generator->explainDisabled()) {

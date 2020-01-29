@@ -128,30 +128,22 @@ ExHdfsScanTcb::ExHdfsScanTcb(
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
-  useLibhdfsScan_ = hdfsScanTdb.getUseLibhdfsScan();
-  lobGlob_ = NULL;
   hdfsScanBufMaxSize_ = hdfsScanTdb.hdfsBufSize_;
   headRoom_ = (Int32)hdfsScanTdb.rangeTailIOSize_;
-
-  if (useLibhdfsScan_) {
-     hdfsScanBuffer_ = new(heap) char[ hdfsScanBufMaxSize_ + 1 ]; 
-     hdfsScanBuffer_[hdfsScanBufMaxSize_] = '\0';
-  } else {
-     hdfsScanBufBacking_[0] = new (heap) BYTE[hdfsScanBufMaxSize_ + 2 * (headRoom_)];
-     hdfsScanBufBacking_[1] = new (heap) BYTE[hdfsScanBufMaxSize_ + 2 * (headRoom_)];
-     for (int i=0; i < 2; i++) {
-        BYTE *hdfsScanBufBacking = hdfsScanBufBacking_[i];
-        hdfsScanBuf_[i].headRoom_ = hdfsScanBufBacking;
-        hdfsScanBuf_[i].buf_ = hdfsScanBufBacking + headRoom_;
-     }
-     bufBegin_ = NULL;
-     bufEnd_ = NULL;
-     bufLogicalEnd_ = NULL;
-     headRoomCopied_ = 0;
-     prevRangeNum_ = -1;
-     currRangeBytesRead_ = 0;
-     recordSkip_ = FALSE;
+  hdfsScanBufBacking_[0] = new (heap) BYTE[hdfsScanBufMaxSize_ + 2 * (headRoom_)];
+  hdfsScanBufBacking_[1] = new (heap) BYTE[hdfsScanBufMaxSize_ + 2 * (headRoom_)];
+  for (int i=0; i < 2; i++) {
+     BYTE *hdfsScanBufBacking = hdfsScanBufBacking_[i];
+     hdfsScanBuf_[i].headRoom_ = hdfsScanBufBacking;
+     hdfsScanBuf_[i].buf_ = hdfsScanBufBacking + headRoom_;
   }
+  bufBegin_ = NULL;
+  bufEnd_ = NULL;
+  bufLogicalEnd_ = NULL;
+  headRoomCopied_ = 0;
+  prevRangeNum_ = -1;
+  currRangeBytesRead_ = 0;
+  recordSkip_ = FALSE;
   moveExprColsBuffer_ = new(space) ExSimpleSQLBuffer( 1, // one row 
 						      (Int32)hdfsScanTdb.moveExprColsRowLength_,
 						      space);
@@ -307,10 +299,6 @@ void ExHdfsScanTcb::freeResources()
     qparent_.down = NULL;
   }
   deallocateRuntimeRanges();
-  if (lobGlob_) { 
-     ExpLOBinterfaceCleanup(lobGlob_);
-     lobGlob_ = NULL;
-  }
   if (hdfsClient_ != NULL) 
      NADELETE(hdfsClient_, HdfsClient, getHeap());
   if (logFileHdfsClient_ != NULL) 
@@ -369,15 +357,6 @@ ex_tcb_private_state *ExHdfsScanTcb::allocatePstates(
   return pa.allocatePstates(this, numElems, pstateLength);
 }
 
-Int32 ExHdfsScanTcb::fixup()
-{
-  lobGlob_ = NULL;
-  lobGlob_ = ExpLOBoper::initLOBglobal((NAHeap *)getGlobals()->getDefaultHeap(),
-                                         getGlobals()->castToExExeStmtGlobals()->getContext(), 
-                                         useLibhdfsScan_, TRUE);
-  return 0;
-}
-
 void brkpoint()
 {}
 
@@ -422,8 +401,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE && step_ != DONE) 
       {
-          if (! useLibhdfsScan_)
-             step_ = STOP_HDFS_SCAN;
+         step_ = STOP_HDFS_SCAN;
       }
       switch (step_)
 	{
@@ -445,10 +423,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 break;
               }
 	    else {
-               if (useLibhdfsScan_)
-                   step_ = INIT_HDFS_CURSOR;
-               else
-                   step_ = SETUP_HDFS_SCAN; 
+               step_ = SETUP_HDFS_SCAN; 
 	    }
 
 	    beginRangeNum_ =  
@@ -467,10 +442,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           computeRangesAtRuntime();
           currRangeNum_ = beginRangeNum_;
           if (numRanges_ > 0) {
-            if (useLibhdfsScan_)
-               step_ = INIT_HDFS_CURSOR;
-            else
-               step_ = SETUP_HDFS_SCAN; 
+             step_ = SETUP_HDFS_SCAN; 
           }
           else
             step_ = DONE;
@@ -628,403 +600,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
              step_ = DONE;
           }
           break;
-	case INIT_HDFS_CURSOR:
-	  {
-            hdfo_ = getRange(currRangeNum_);
-            if ((hdfo_->getBytesToRead() == 0) && 
-                (beginRangeNum_ == currRangeNum_) && (numRanges_ > 1))
-              {
-                // skip the first range if it has 0 bytes to read
-                // doing this for subsequent ranges is more complex
-                // since the file may neeed to be closed. The first 
-                // range being 0 is common with sqoop generated files
-                currRangeNum_++;
-                hdfo_ = getRange(currRangeNum_);
-              }
-               
-            hdfsOffset_ = hdfo_->getStartOffset();
-            bytesLeft_ = hdfo_->getBytesToRead();
-
-            hdfsFileName_ = hdfo_->fileName();
-            sprintf(cursorId_, "%d", currRangeNum_);
-            stopOffset_ = hdfsOffset_ + hdfo_->getBytesToRead();
-
-
-	    step_ = OPEN_HDFS_CURSOR;
-	  }
-        
-	  break;
-
-	case OPEN_HDFS_CURSOR:
-	  {
-	    retcode = 0;
-	    if (isSequenceFile() && !sequenceFileReader_)
-	      {
-	        sequenceFileReader_ = new(getHeap()) 
-                    SequenceFileReader((NAHeap *)getHeap());
-	        sfrRetCode = sequenceFileReader_->init();
-	        
-	        if (sfrRetCode != JNI_OK)
-	          {
-    		      ComDiagsArea * diagsArea = NULL;
-    		      ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL, 
-    		      		  NULL, NULL, NULL, sequenceFileReader_->getErrorText(sfrRetCode), NULL);
-    		      pentry_down->setDiagsArea(diagsArea);
-    		      step_ = HANDLE_ERROR;
-    		      break;
-	          }
-	      }
-	    
-	    if (isSequenceFile())
-	      {
-	        sfrRetCode = sequenceFileReader_->open(hdfsFileName_);
-	        
-	        if (sfrRetCode == JNI_OK)
-	          {
-	            // Seek to start offset
-	            sfrRetCode = sequenceFileReader_->seeknSync(hdfsOffset_);
-	          }
-	        
-	        if (sfrRetCode != JNI_OK)
-	          {
-    		    ComDiagsArea * diagsArea = NULL;
-    		    ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL, 
-    		    		  NULL, NULL, NULL, sequenceFileReader_->getErrorText(sfrRetCode), NULL);
-    		    pentry_down->setDiagsArea(diagsArea);
-    		    step_ = HANDLE_ERROR;
-    		    break;
-	          }
-	      }
-	    else
-	      {
-                Int64 rangeTail  = hdfo_->fileIsSplitEnd() ? 
-                  hdfsScanTdb().rangeTailIOSize_ : 0;
-                openType = 2; // must open
-                retcode = ExpLOBInterfaceSelectCursor
-                  (lobGlob_,
-                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
-                   hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
-                   NULL, //(char*)"",
-                   (Lng32)Lob_External_HDFS_File,
-                   hdfsScanTdb().hostName_,
-                   hdfsScanTdb().port_,
-                   0, NULL, // handle not valid for non lob access
-                   bytesLeft_ + rangeTail, // max bytes
-                   cursorId_, 
-		       
-                   requestTag_, Lob_Memory,
-                   0, // not check status
-                   (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
-		       
-                   hdfsOffset_, 
-                   hdfsScanBufMaxSize_,
-                   bytesRead_,
-                   NULL,
-                   1, // open
-                   openType, //
-                   &hdfsErrorDetail
-                   );
-                
-                if ((retcode < 0) &&
-                    ((hdfsErrorDetail == ENOENT) || (hdfsErrorDetail == EAGAIN)))
-                  {
-                    ComDiagsArea * diagsArea = NULL;
-                    if (hdfsErrorDetail == ENOENT)
-                      {
-                        Lng32 len = strlen(hdfsScanTdb().tableName()) + strlen(hdfsFileName_) + 100;
-                        char errBuf[len];
-                        snprintf(errBuf, len, "%s (fileLoc: %s)",
-                                 hdfsScanTdb().tableName(), hdfsFileName_);
-                        ExRaiseSqlError(getHeap(), &diagsArea, 
-                                      (ExeErrorCode)(EXE_TABLE_NOT_FOUND), NULL,
-                                      NULL, NULL, NULL,
-                                      errBuf);
-                      }
-                    else
-                      ExRaiseSqlError(getHeap(), &diagsArea, 
-                                      (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE));
-                    pentry_down->setDiagsArea(diagsArea);
-                    step_ = HANDLE_ERROR_AND_DONE;
-                    break;
-                  }
-
-                // preopen next range. 
-                if ( (currRangeNum_ + 1) < (beginRangeNum_ + numRanges_) ) 
-                  {
-                    hdfo = getRange(currRangeNum_ + 1);
-                
-                    hdfsFileName_ = hdfo->fileName();
-                    sprintf(cursorId, "%d", currRangeNum_ + 1);
-		    rangeTail  = hdfo->fileIsSplitEnd() ? 
-		      hdfsScanTdb().rangeTailIOSize_ : 0;
-
-                    openType = 1; // preOpen
-                
-                    retcode = ExpLOBInterfaceSelectCursor
-                      (lobGlob_,
-                       (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
-                       hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
-                       NULL, //(char*)"",
-                       (Lng32)Lob_External_HDFS_File,
-                       hdfsScanTdb().hostName_,
-                       hdfsScanTdb().port_,
-                       0, NULL,//handle not relevant for non lob access
-                       hdfo->getBytesToRead() + rangeTail, // max bytes
-                       cursorId, 
-                           
-                       requestTag_, Lob_Memory,
-                       0, // not check status
-                       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
-                           
-                       hdfo->getStartOffset(), 
-                       hdfsScanBufMaxSize_,
-                       bytesRead_,
-                       NULL,
-                       1,// open
-                       openType,
-                       &hdfsErrorDetail
-                       );
-                
-                    hdfsFileName_ = hdfo_->fileName();
-                  } 
-              }
-                
-            if (retcode < 0)
-              {
-                Lng32 cliError = 0;
-		    
-                Lng32 intParam1 = -retcode;
-                ComDiagsArea * diagsArea = NULL;
-                ExRaiseSqlError(getHeap(), &diagsArea, 
-                                (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
-                                &intParam1, 
-                                &hdfsErrorDetail, 
-                                NULL, 
-                                "HDFS",
-                                (char*)"ExpLOBInterfaceSelectCursor/open",
-                                getLobErrStr(intParam1));
-                
-                pentry_down->setDiagsArea(diagsArea);
-                step_ = HANDLE_ERROR;
-                break;
-              }  
-            trailingPrevRead_ = 0; 
-            firstBufOfFile_ = true;
-            numBytesProcessedInRange_ = 0;
-
-            step_ = GET_HDFS_DATA;
-          }        
-          break;
-
-	case GET_HDFS_DATA:
-	  {
-	    Int64 bytesToRead = hdfsScanBufMaxSize_ - trailingPrevRead_;
-            ex_assert(bytesToRead >= 0, "bytesToRead less than zero.");
-            if (hdfo_->fileIsSplitEnd() && !isSequenceFile())
-            {
-              if (bytesLeft_ > 0) 
-                bytesToRead = min(bytesToRead, 
-                          (bytesLeft_ + hdfsScanTdb().rangeTailIOSize_));
-              else
-                bytesToRead = hdfsScanTdb().rangeTailIOSize_;
-            }
-            else
-            {
-              ex_assert(bytesLeft_ >= 0, "Bad assumption at e-o-f");
-              if (bytesToRead > bytesLeft_ +
-                     1 // plus one for end-of-range files with no
-                       // record delimiter at eof.
-                 )
-                bytesToRead = bytesLeft_ + 1;
-            }
-
-            ex_assert(bytesToRead + trailingPrevRead_ <= hdfsScanBufMaxSize_,
-                     "too many bites.");
-
-            if (hdfsStats_)
-	      hdfsStats_->getHdfsTimer().start();
-
-	    retcode = 0;
-	    
-	    if (isSequenceFile())
-	      {
-                sfrRetCode = sequenceFileReader_->fetchRowsIntoBuffer(stopOffset_, 
-                                                                      hdfsScanBuffer_, 
-                                                                      hdfsScanBufMaxSize_, //bytesToRead, 
-                                                                      bytesRead_,
-                                                                      hdfsScanTdb().recordDelimiter_);
-
-	        if (sfrRetCode != JNI_OK && sfrRetCode != SFR_NOMORE)
-	          {
-    		    ComDiagsArea * diagsArea = NULL;
-    		    ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL, 
-    		    		  NULL, NULL, NULL, sequenceFileReader_->getErrorText(sfrRetCode), NULL);
-    		    pentry_down->setDiagsArea(diagsArea);
-    		    step_ = HANDLE_ERROR_WITH_CLOSE;
-    		    break;
-	          }
-	        else
-	          {
-                    seqScanAgain_ = (sfrRetCode != SFR_NOMORE);
-	          }
-	      }
-	    else
-	      {
-                Int32 hdfsErrorDetail = 0;///this is the errno returned from the underlying hdfs call.
-                retcode = ExpLOBInterfaceSelectCursor
-                  (lobGlob_,
-                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
-                   hdfsFileName_,
-                   NULL, 
-                   (Lng32)Lob_External_HDFS_File,
-                   hdfsScanTdb().hostName_,
-                   hdfsScanTdb().port_,
-                   0, NULL,		       
-                   0, cursorId_,
-		       
-                   requestTag_, Lob_Memory,
-                   0, // not check status
-                   (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
-		       
-                   hdfsOffset_,
-                   bytesToRead,
-                   bytesRead_,
-                   hdfsScanBuffer_  + trailingPrevRead_,
-                   2, // read
-                   0 // openType, not applicable for read
-                   &hdfsErrorDetail
-                   );
-                  
-                if (hdfsStats_)
-                {
-                  hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
-                  hdfsStats_->incHdfsCalls();
-	        }  
-	        if (retcode < 0)
-	          {
-		    Lng32 cliError = 0;
-		    
-		    Lng32 intParam1 = -retcode;
-		    ComDiagsArea * diagsArea = NULL;
-		    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
-                                    &intParam1, 
-                                    &hdfsErrorDetail, 
-                                    NULL, 
-                                    "HDFS",
-                                    (char*)"ExpLOBInterfaceSelectCursor/read",
-                                    getLobErrStr(intParam1));
-		    pentry_down->setDiagsArea(diagsArea);
-		    step_ = HANDLE_ERROR_WITH_CLOSE;
-		    break;
-	          }
-              }
-              
-            if (bytesRead_ <= 0)
-	      {
-		// Finished with this file. Unexpected? Warning/event?
-	        step_ = CLOSE_HDFS_CURSOR;
-                break;
-              }
-	    else
-              {
-                char * lastByteRead = hdfsScanBuffer_  +
-                  trailingPrevRead_ + bytesRead_ - 1;
-                if ((bytesRead_ < bytesToRead) &&
-                    (*lastByteRead != hdfsScanTdb().recordDelimiter_))
-                {
-                  // Some files end without a record delimiter but
-                  // hive treats the end-of-file as a record delimiter.
-                  lastByteRead[1] = hdfsScanTdb().recordDelimiter_;
-                  bytesRead_++;
-                }
-                if (bytesRead_ > bytesLeft_)
-                { 
-                  if (isSequenceFile())
-                    endOfRequestedRange_ = hdfsScanBuffer_ + bytesRead_;
-                  else
-                    endOfRequestedRange_ = hdfsScanBuffer_ +
-                                   trailingPrevRead_ + bytesLeft_;
-                }
-                else
-                   endOfRequestedRange_ = NULL;
-                  
-                if (isSequenceFile())
-                  {
-                    // If the file is compressed, we don't know the real value
-                    // of bytesLeft_, but it doesn't really matter.
-                    if (seqScanAgain_ == false)
-                      bytesLeft_ = 0;
-                  }
-                else
-	          bytesLeft_ -= bytesRead_;
-              }
-	    
-	    if (hdfsStats_)
-	      hdfsStats_->incBytesRead(bytesRead_);
-
-	    if (firstBufOfFile_ && hdfo_->fileIsSplitBegin() && !isSequenceFile())
-	      {
-		// Position in the hdfsScanBuffer_ to the
-		// first record delimiter.  
-		hdfsBufNextRow_ = 
-		  hdfs_strchr(hdfsScanBuffer_,
-			      hdfsScanTdb().recordDelimiter_, 
-			      hdfsScanBuffer_+trailingPrevRead_+ 
-			      min(bytesRead_, hdfo_->bytesToRead_), 
-			      checkRangeDelimiter_, 
-			      hdfsScanTdb().getHiveScanMode(), &changedLen);
-		// May be that the record is too long? Or data isn't ascii?
-		// Or delimiter is incorrect.
-		if (! hdfsBufNextRow_)
-		  {
-		    if (hdfo_->bytesToRead_ < hdfsScanTdb().rangeTailIOSize_)
-		      {
-			// for wide rows it is not an error if a whole range
-			// does not include a record delimiter. RangeTaileIOSize
-			// is set to max row size in generator by default.
-			// It is also checked in the compiler that rowsize
-			// is less than buffer size.
-			step_ = CLOSE_HDFS_CURSOR;
-		      }
-		    else 
-		      {
-			ComDiagsArea *diagsArea = NULL;
-			ExRaiseSqlError(getHeap(), &diagsArea, 
-					(ExeErrorCode)(8446), NULL, 
-					NULL, NULL, NULL,
-					(char*)"No record delimiter found in buffer from hdfsRead.",
-					NULL);
-			// no need to log errors in this case (bulk load) since
-			// this is a major issue and needs to be corrected
-			pentry_down->setDiagsArea(diagsArea);
-			step_ = HANDLE_ERROR_WITH_CLOSE;
-		      }
-		    break;
-		  }
-		
-		hdfsBufNextRow_ += 1 + changedLen;   // point past record delimiter.
-		//add changedLen since hdfs_strchr will remove the pointer ahead to remove the \r
-	      }
-	    else
-	      hdfsBufNextRow_ = hdfsScanBuffer_;
-	    
-            debugPrevRow_ = hdfsScanBuffer_;    // By convention, at
-                                                // beginning of scan, the
-                                                // prev is set to next.
-            debugtrailingPrevRead_ = 0; 
-            debugPenultimatePrevRow_ = NULL;
-            firstBufOfFile_ = false;
-
-	    hdfsOffset_ += bytesRead_;
-
- 	    step_ = PROCESS_HDFS_ROW;
-	  }        
-	  break;
-
 	case PROCESS_HDFS_ROW:
 	{
-          if (!useLibhdfsScan_ && hdfsBufNextRow_ == NULL) {
+          if (hdfsBufNextRow_ == NULL) {
              step_ = TRAF_HDFS_READ;
              break;
           } 
@@ -1056,41 +634,30 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    {
 	      if (transformDiags)
 	        pentry_down->setDiagsArea(transformDiags);
-	      step_ = HANDLE_ERROR_WITH_CLOSE;
+	      step_ = HANDLE_ERROR_AND_DONE;
 	      break;
 	    }
 	  }
 
 	  if (startOfNextRow == NULL)
 	  {
-            if (useLibhdfsScan_) 
-	       step_ = REPOS_HDFS_DATA;
-            else {
-               if (retArray_[IS_EOF]) { 
-                  headRoomCopied_ = 0; 
-                  step_ = TRAF_HDFS_READ;
-               }
-               else
-                  step_ = COPY_TAIL_TO_HEAD;
-            }
+             if (retArray_[IS_EOF]) { 
+                headRoomCopied_ = 0; 
+                step_ = TRAF_HDFS_READ;
+             }
+             else
+                step_ = COPY_TAIL_TO_HEAD;
             // Looks like we can break always
 	    if (!exception_)
 	       break;
 	  }
 	  else
 	  {
-            if (useLibhdfsScan_) {
-	       numBytesProcessedInRange_ +=
-	        startOfNextRow - hdfsBufNextRow_;
-	       hdfsBufNextRow_ = startOfNextRow;
-             } 
-             else {
-                if ((BYTE *)startOfNextRow > bufLogicalEnd_) {
-                   headRoomCopied_ = 0;
-                   hdfsBufNextRow_ = NULL;
-                } else 
-	          hdfsBufNextRow_ = startOfNextRow;
-             }
+             if ((BYTE *)startOfNextRow > bufLogicalEnd_) {
+                headRoomCopied_ = 0;
+                hdfsBufNextRow_ = NULL;
+             } else 
+	        hdfsBufNextRow_ = startOfNextRow;
 	  }
            
 	  if (exception_)
@@ -1139,7 +706,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	        break;
 	      }
-	      step_ = HANDLE_ERROR_WITH_CLOSE;
+	      step_ = HANDLE_ERROR_AND_DONE;
 	      break;
 	    }
 	    else
@@ -1169,7 +736,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    step_ = HANDLE_EXCEPTION;
 	          break;
 	        }
-	        step_ = HANDLE_ERROR_WITH_CLOSE;
+	        step_ = HANDLE_ERROR_AND_DONE;
 	        break;
 	      }
 	    }
@@ -1220,10 +787,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 {
                   if ((pentry_down->downState.request == ex_queue::GET_N) &&
                       (pentry_down->downState.requestValue == matches_)) {
-                     if (useLibhdfsScan_)
-                        step_ = CLOSE_HDFS_CURSOR;
-                     else
-                        step_ = DONE;
+                     step_ = DONE;
                   }
                   else
                     step_ = PROCESS_HDFS_ROW;
@@ -1265,7 +829,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	          pentry_down->getDiagsArea()->
 	              mergeAfter(*up_entry->getDiagsArea());
 	          up_entry->setDiagsArea(NULL);
-	          step_ = HANDLE_ERROR_WITH_CLOSE;
+	          step_ = HANDLE_ERROR_AND_DONE;
 	          break;
 	        }
 	        if (pool_->get_free_tuple(
@@ -1291,10 +855,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	        {
 	          if ((pentry_down->downState.request == ex_queue::GET_N) &&
 	              (pentry_down->downState.requestValue == matches_)) {
-                     if (useLibhdfsScan_)
-                        step_ = CLOSE_HDFS_CURSOR;
-                     else
-                        step_ = DONE;
+                     step_ = DONE;
                   }
 	          else
 	            step_ = PROCESS_HDFS_ROW;
@@ -1336,10 +897,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	          pentry_down->getDiagsArea()->
 	              mergeAfter(*up_entry->getDiagsArea());
 	          up_entry->setDiagsArea(NULL);
-                  if (useLibhdfsScan_)
-	             step_ = HANDLE_ERROR_WITH_CLOSE;
-	          else
-	             step_ = HANDLE_ERROR;
+	          step_ = HANDLE_ERROR;
 	          break;
 	        }
 	      }
@@ -1364,129 +922,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           if (((pentry_down->downState.request == ex_queue::GET_N) &&
                (pentry_down->downState.requestValue == matches_)) ||
               (pentry_down->downState.request == ex_queue::GET_NOMORE)) {
-              if (useLibhdfsScan_)
-                 step_ = CLOSE_HDFS_CURSOR;
-              else
-                 step_ = DONE;
+             step_ = DONE;
           }
           else
 	     step_ = PROCESS_HDFS_ROW;
 	  break;      
 	}
-	case REPOS_HDFS_DATA:
-	  {
-            bool scanAgain = false;
-            if (isSequenceFile())
-              scanAgain = seqScanAgain_;
-            else
-              {
-                if (hdfo_->fileIsSplitEnd())
-                  {
-                  if (numBytesProcessedInRange_ <  hdfo_->getBytesToRead())
-                    scanAgain = true;
-                  }
-                else 
-                  if (bytesLeft_ > 0)
-                    scanAgain = true;
-              }
-              
-            if (scanAgain)
-            {
-              // Get ready for another gulp of hdfs data.  
-              debugtrailingPrevRead_ = trailingPrevRead_;
-              trailingPrevRead_ = bytesRead_ - 
-                          (hdfsBufNextRow_ - 
-                           (hdfsScanBuffer_ + trailingPrevRead_));
-
-              // Move trailing data from the end of buffer to the front.
-              // The GET_HDFS_DATA step will use trailingPrevRead_ to
-              // adjust the read buffer ptr so that the next read happens
-              // contiguously to the final byte of the prev read. It will
-              // also use trailingPrevRead_ to to adjust the size of
-              // the next read so that fixed size buffer is not overrun.
-              // Finally, trailingPrevRead_ is used in the 
-              // extractSourceFields method to keep from processing
-              // bytes left in the buffer from the previous read.
-              if ((trailingPrevRead_ > 0)  && 
-                  (hdfsBufNextRow_[0] == RANGE_DELIMITER))
-              {
-                 checkRangeDelimiter_ = FALSE;
-                 step_ = CLOSE_HDFS_CURSOR;
-                 break;
-              }  
-              memmove(hdfsScanBuffer_, hdfsBufNextRow_, 
-		      (size_t)trailingPrevRead_);
-              step_ = GET_HDFS_DATA;
-            }            
-            else
-            {
-              trailingPrevRead_ = 0;
-              step_ = CLOSE_HDFS_CURSOR;
-            }
-	    break;
-	  }
-	case CLOSE_HDFS_CURSOR:
-	  {          
-	    retcode = 0;
-	    if (isSequenceFile())
-	      {
-	        sfrRetCode = sequenceFileReader_->close();
-	        if (sfrRetCode != JNI_OK)
-	          {
-    		    ComDiagsArea * diagsArea = NULL;
-    		    ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL, 
-    		    		  NULL, NULL, NULL, sequenceFileReader_->getErrorText(sfrRetCode), NULL);
-    		    pentry_down->setDiagsArea(diagsArea);
-    		    step_ = HANDLE_ERROR;
-    		    break;
-	          }
-	      }
-	    else
-	      {
-                retcode = ExpLOBInterfaceSelectCursor
-                  (lobGlob_,
-                  (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
-                   hdfsFileName_, 
-                   NULL,
-                   (Lng32)Lob_External_HDFS_File,
-                   hdfsScanTdb().hostName_,
-                   hdfsScanTdb().port_,
-                   0,NULL, //handle not relevant for non lob access
-                   0, cursorId_,
-		       
-                   requestTag_, Lob_Memory,
-                   0, // not check status
-                   (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
-		       
-                   0, 
-                   hdfsScanBufMaxSize_,
-                   bytesRead_,
-                   hdfsScanBuffer_,
-                   3, // close
-                   0); // openType, not applicable for close
-                 
-	        if (retcode < 0)
-	          {
-		    Lng32 cliError = 0;
-		    
-		    Lng32 intParam1 = -retcode;
-		    ComDiagsArea * diagsArea = NULL;
-		    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
-                                    &intParam1, 
-                                    &errno, 
-                                    NULL, 
-                                    "HDFS",
-                                    (char*)"ExpLOBInterfaceSelectCursor/close",
-                                    getLobErrStr(intParam1));
-		    pentry_down->setDiagsArea(diagsArea);
-		    step_ = HANDLE_ERROR;
-		    break;
-	          }
-              }
-              step_ = CLOSE_FILE;
-	  }
-          break;
 	case HANDLE_EXCEPTION:
 	{
 	  step_ = nextStep_;
@@ -1511,7 +952,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
               ExRaiseSqlError(getHeap(), &da,
                 (ExeErrorCode)(EXE_MAX_ERROR_ROWS_EXCEEDED));
-	      step_ = HANDLE_ERROR_WITH_CLOSE;
+	      step_ = HANDLE_ERROR_AND_DONE;
 	      break;
 	    }
 	  }
@@ -1531,7 +972,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	}
 	break;
 
-        case HANDLE_ERROR_WITH_CLOSE:
 	case HANDLE_ERROR:
 	case HANDLE_ERROR_AND_DONE:
 	  {
@@ -1559,83 +999,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    up_entry->upState.status = ex_queue::Q_SQLERROR;
 	    qparent_.up->insert();
-          
-            if (useLibhdfsScan_) {
-               if (step_ == HANDLE_ERROR_WITH_CLOSE)
-                  step_ = CLOSE_HDFS_CURSOR;
-               else if (step_ == HANDLE_ERROR_AND_DONE)
-                  step_ = DONE;
-               else
-	          step_ = ERROR_CLOSE_FILE;
-            } else
-               step_ = DONE;
+            step_ = DONE;
 	    break;
 	  }
-
-	case CLOSE_FILE:
-	case ERROR_CLOSE_FILE:
-	  {
-            // if next file is not same as current file, then close the current file. 
-            bool closeFile = true;
-
-            if ( (step_ == CLOSE_FILE) && 
-                 ((currRangeNum_ + 1) < (beginRangeNum_ + numRanges_))) 
-                 
-            {   
-                hdfo = getRange(currRangeNum_ + 1);
-                if (strcmp(hdfsFileName_, hdfo->fileName()) == 0) 
-                    closeFile = false;
-            }
-
-            if (closeFile) 
-            {
-                retcode = ExpLOBinterfaceCloseFile
-                  (lobGlob_,
-                   (getStatsEntry() != NULL ? getStatsEntry()->castToExHdfsScanStats() : NULL),
-                   hdfsFileName_,
-                   NULL, 
-                   (Lng32)Lob_External_HDFS_File,
-                   hdfsScanTdb().hostName_,
-                   hdfsScanTdb().port_);
-
-                if ((step_ == CLOSE_FILE) &&
-                    (retcode < 0))
-                  {
-                    Lng32 cliError = 0;
-                    
-                    Lng32 intParam1 = -retcode;
-                    ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
-                                    &intParam1, 
-                                    &cliError, 
-                                    NULL, 
-                                    "HDFS",
-                                    (char*)"ExpLOBinterfaceCloseFile",
-                                    getLobErrStr(intParam1));
-                    pentry_down->setDiagsArea(diagsArea);
-                  }
-            } 
-	    if (step_ == CLOSE_FILE)
-	      {
-                currRangeNum_++;
-                if (currRangeNum_ < (beginRangeNum_ + numRanges_)) {
-                    if (((pentry_down->downState.request == ex_queue::GET_N) &&
-                        (pentry_down->downState.requestValue == matches_)) ||
-                         (pentry_down->downState.request == ex_queue::GET_NOMORE))
-                       step_ = DONE;
-                    else
-                       // move to the next file.
-                       step_ = INIT_HDFS_CURSOR;
-                    break;
-                }
-	      }     
-	    step_ = DONE;
-	  }
-
-          
-	  break;
-
 	case DONE:
 	  {
 	    if (qparent_.up->isFull())
@@ -1698,14 +1064,9 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   const char rd = hdfsScanTdb().recordDelimiter_;
   const char *sourceDataEnd;
   const char *endOfRequestedRange;
-  if (useLibhdfsScan_) {
-     sourceDataEnd  = hdfsScanBuffer_+trailingPrevRead_+ bytesRead_;
-     endOfRequestedRange = endOfRequestedRange_;
-  }
-  else {
-     sourceDataEnd = (const char *)bufEnd_;
-     endOfRequestedRange = NULL;
-  }
+
+  sourceDataEnd = (const char *)bufEnd_;
+  endOfRequestedRange = NULL;
   hdfsLoggingRow_ = hdfsBufNextRow_;
   if (asciiSourceTD->numAttrs() == 0)
   {
@@ -1714,13 +1075,6 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
      
      if (sourceRowEnd == NULL)
         return NULL; 
-     if (useLibhdfsScan_) {
-        if ((endOfRequestedRange) && 
-            (sourceRowEnd >= endOfRequestedRange)) {
-           checkRangeDelimiter_ = TRUE;
-           *(sourceRowEnd +1)= RANGE_DELIMITER;
-        }
-     }
      // no columns need to be converted. For e.g. count(*) with no predicate
      return sourceRowEnd+1;
   }
@@ -2149,14 +1503,6 @@ ExOrcScanTcb::ExOrcScanTcb(
 ExOrcScanTcb::~ExOrcScanTcb()
 {
 }
-
-Int32 ExOrcScanTcb::fixup()
-{
-  lobGlob_ = NULL;
-
-  return 0;
-}
-
 
 
 short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
