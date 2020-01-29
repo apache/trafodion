@@ -8072,6 +8072,7 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
   }
 
   // change authorization status in compiler contexts
+  CmpContext::authorizationState_ = 1;
   CmpCommon::context()->setAuthorizationState (1);
   GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
 
@@ -8123,7 +8124,6 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
     CmpCommon::diags()->negateAllErrors();
     *CmpCommon::diags() << DgSqlCode(CAT_AUTH_COMPLETED_WITH_WARNINGS); 
   }
-
   return 0;
 }
 
@@ -8148,6 +8148,7 @@ void CmpSeabaseDDL::dropSeabaseAuthorization(
     return;
   }
 
+  CmpContext::authorizationState_ = 0;
   // Turn off authorization in compiler contexts
   GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
 

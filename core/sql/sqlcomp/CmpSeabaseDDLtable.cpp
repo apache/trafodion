@@ -4249,7 +4249,8 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   // tables
   if (! (tableName.isExternalHive() || tableName.isExternalHbase()) )
     {
-      if (objectNamePart != "SB_HISTOGRAMS" && 
+      if ((!ComIsTrafodionReservedSchemaName(schemaNamePart)) &&
+          objectNamePart != "SB_HISTOGRAMS" && 
           objectNamePart != "SB_HISTOGRAM_INTERVALS" &&
           objectNamePart != "SB_PERSISTENT_SAMPLES" &&
           strncmp(objectNamePart.data(),TRAF_SAMPLE_PREFIX,sizeof(TRAF_SAMPLE_PREFIX)) != 0)
