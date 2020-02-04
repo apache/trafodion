@@ -530,12 +530,6 @@ short ExSetSessionDefaultTcb::work()
   if (getParentQueue().up->isFull())
     return WORK_OK;
 
-  NABoolean changeMasterPriority = FALSE;
-  NABoolean changeMxcmpPriority = FALSE;
-  NABoolean changeEspPriority = FALSE;
-  NABoolean masterIsDelta = FALSE;
-  NABoolean mxcmpIsDelta = FALSE;
-  NABoolean espIsDelta = FALSE;
   NABoolean dropVolatileSchema = FALSE;
   Lng32 defaultValueAsLong = -1;
   NABoolean computeDefValAsLong = TRUE;
@@ -555,17 +549,8 @@ short ExSetSessionDefaultTcb::work()
   
   // Display error message if it's not a default we know about.
 
-  if ((strcmp(defaultName, "ALTPRI_MASTER") != 0) &&
-      (strcmp(defaultName, "ALTPRI_MASTER_SEQ_EXE") != 0) &&
-      (strcmp(defaultName, "ALTPRI_ESP") != 0) &&
-      (strcmp(defaultName, "IS_DB_TRANPORTER") != 0) &&
+  if ((strcmp(defaultName, "IS_DB_TRANPORTER") != 0) &&
       (strcmp(defaultName, "AQR_ENTRIES") != 0) &&
-      (strcmp(defaultName, "MASTER_PRIORITY") != 0) &&
-      (strcmp(defaultName, "MASTER_PRIORITY_DELTA") != 0) &&
-      (strcmp(defaultName, "ESP_PRIORITY") != 0) &&
-      (strcmp(defaultName, "ESP_PRIORITY_DELTA") != 0) &&
-      (strcmp(defaultName, "ESP_FIXUP_PRIORITY") != 0) &&
-      (strcmp(defaultName, "ESP_FIXUP_PRIORITY_DELTA") != 0) &&
       (strcmp(defaultName, "ESP_ASSIGN_DEPTH") != 0) &&
       (strcmp(defaultName, "ESP_ASSIGN_TIME_WINDOW") != 0) &&
       (strcmp(defaultName, "ESP_STOP_IDLE_TIMEOUT") != 0) &&
@@ -579,8 +564,6 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "ESP_CLOSE_ERROR_LOGGING") != 0) &&
       (strcmp(defaultName, "INTERNAL_FORMAT_IO") != 0) &&
       (strcmp(defaultName, "ISO_MAPPING") != 0) &&
-      (strcmp(defaultName, "MXCMP_PRIORITY") != 0) &&
-      (strcmp(defaultName, "MXCMP_PRIORITY_DELTA") != 0) &&
       (strcmp(defaultName, "CLI_BULKMOVE") != 0) &&
       (strcmp(defaultName, "SQL_SESSION") != 0) &&
       (strcmp(defaultName, "SQL_USER") != 0) &&
@@ -624,9 +607,6 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "CLI_BULKMOVE") == 0) ||
       (strcmp(defaultName, "SQL_SESSION") == 0) ||
       (strcmp(defaultName, "SQL_USER") == 0) ||
-      (strcmp(defaultName, "ALTPRI_MASTER") == 0) ||
-      (strcmp(defaultName, "ALTPRI_MASTER_SEQ_EXE") == 0) ||
-      (strcmp(defaultName, "ALTPRI_ESP") == 0) ||
       (strcmp(defaultName, "IS_DB_TRANSPORTER") == 0) ||
       (strcmp(defaultName, "INTERNAL_FORMAT_IO") == 0) ||
       (strcmp(defaultName, "ISO_MAPPING") == 0) ||
@@ -667,46 +647,7 @@ short ExSetSessionDefaultTcb::work()
           goto all_ok;
 	}
     }
-
-  if (strcmp(defaultName, "MASTER_PRIORITY") == 0)
-    {
-      changeMasterPriority = TRUE;
-      changeMxcmpPriority  = TRUE;
-      changeEspPriority  = TRUE;
-      mxcmpIsDelta = TRUE;
-      espIsDelta = TRUE;
-    }
-  else if (strcmp(defaultName, "MASTER_PRIORITY_DELTA") == 0)
-    {
-      changeMasterPriority = TRUE;
-      changeMxcmpPriority  = TRUE;
-      changeEspPriority  = TRUE;
-      masterIsDelta = TRUE;
-      mxcmpIsDelta = TRUE;
-      espIsDelta = TRUE;
-    }
-  else if (strcmp(defaultName, "ESP_PRIORITY") == 0)
-    {
-      currContext->getSessionDefaults()->setEspPriority(defaultValueAsLong);
-      changeEspPriority = TRUE;
-    }
-  else if (strcmp(defaultName, "ESP_PRIORITY_DELTA") == 0)
-    {
-      currContext->getSessionDefaults()->setEspPriorityDelta(defaultValueAsLong);
-      changeEspPriority = TRUE;
-      espIsDelta = TRUE;
-    }
-  else if (strcmp(defaultName, "ESP_FIXUP_PRIORITY") == 0)
-    {
-      currContext->getSessionDefaults()
-                 ->setEspFixupPriority(defaultValueAsLong);
-    }
-  else if (strcmp(defaultName, "ESP_FIXUP_PRIORITY_DELTA") == 0)
-    {
-      currContext->getSessionDefaults()
-                 ->setEspFixupPriorityDelta(defaultValueAsLong);
-    }
-  else if (strcmp(defaultName, "ESP_ASSIGN_DEPTH") == 0)
+  if (strcmp(defaultName, "ESP_ASSIGN_DEPTH") == 0)
     {
       currContext->getSessionDefaults()
                  ->setEspAssignDepth(defaultValueAsLong);
@@ -789,18 +730,6 @@ short ExSetSessionDefaultTcb::work()
                    ->setPersistentOpens(defaultValueAsLong);
 	ipcEnv->setPersistentOpens(defaultValueAsLong > 0);
       }
-    }
-
-  else if (strcmp(defaultName, "MXCMP_PRIORITY") == 0)
-    {
-      currContext->getSessionDefaults()->setMxcmpPriority(defaultValueAsLong);
-      changeMxcmpPriority = TRUE;
-    }
-  else if (strcmp(defaultName, "MXCMP_PRIORITY_DELTA") == 0)
-    {
-      currContext->getSessionDefaults()->setMxcmpPriorityDelta(defaultValueAsLong);
-      changeMxcmpPriority = TRUE;
-      mxcmpIsDelta = TRUE;
     }
   else if (strcmp(defaultName, "AQR_ENTRIES") == 0)
     {
@@ -1054,42 +983,6 @@ short ExSetSessionDefaultTcb::work()
 			 NULL);
 	}
     }
-  else if (strcmp(defaultName, "ALTPRI_MASTER") == 0)
-    {
-      if ((strcmp(defaultValue, "ON") == 0) ||
-	  (strcmp(defaultValue, "ENABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriMaster(TRUE);
-      else if ((strcmp(defaultValue, "OFF") == 0) ||
-	       (strcmp(defaultValue, "DISABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriMaster(FALSE);
-    }
-  else if (strcmp(defaultName, "ALTPRI_MASTER_SEQ_EXE") == 0)
-    {
-      if ((strcmp(defaultValue, "ON") == 0) ||
-	  (strcmp(defaultValue, "ENABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriMasterSeqExe(TRUE);
-      else if ((strcmp(defaultValue, "OFF") == 0) ||
-	       (strcmp(defaultValue, "DISABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriMasterSeqExe(FALSE);
-    }
-  else if (strcmp(defaultName, "ALTPRI_FIRST_FETCH") == 0)
-    {
-      if ((strcmp(defaultValue, "ON") == 0) ||
-	  (strcmp(defaultValue, "ENABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriFirstFetch(TRUE);
-      else if ((strcmp(defaultValue, "OFF") == 0) ||
-	       (strcmp(defaultValue, "DISABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriFirstFetch(FALSE);
-    }
-  else if (strcmp(defaultName, "ALTPRI_ESP") == 0)
-    {
-      if ((strcmp(defaultValue, "ON") == 0) ||
-	  (strcmp(defaultValue, "ENABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriEsp(TRUE);
-      else if ((strcmp(defaultValue, "OFF") == 0) ||
-	       (strcmp(defaultValue, "DISABLE") == 0))
-	currContext->getSessionDefaults()->setAltpriEsp(FALSE);
-    }
   else if (strcmp(defaultName, "INTERNAL_FORMAT_IO") == 0)
     {
       if ((strcmp(defaultValue, "ON") == 0) ||
@@ -1247,74 +1140,6 @@ short ExSetSessionDefaultTcb::work()
       int lvl = (int) strtoul(defaultValue, NULL, 16);
       currContext->getSessionDefaults()->setExSMTraceLevel(lvl);
     }
-
-  if (changeMasterPriority)
-    {
-      ComRtSetProcessPriority(defaultValueAsLong, masterIsDelta);
-      
-      IpcPriority p;
-      ComRtGetProcessPriority(p);
-      currContext->getCliGlobals()->setMyPriority(p);
-    }
-
-  if (changeMxcmpPriority)
-    {
-      // mxcmp priority changed, kill arkcmps, if they are runing.
-      for (short i = 0; i < currContext->getNumArkcmps(); i++)
-	{
-	  ExSqlComp::ReturnStatus retStatus = 
-	    currContext->getArkcmp(i)->changePriority
-	    ((mxcmpIsDelta ? 
-	      currContext->getSessionDefaults()->getMxcmpPriorityDelta() : 
-	      currContext->getSessionDefaults()->getMxcmpPriority()), 
-	     mxcmpIsDelta);
-	  if (retStatus != ExSqlComp::SUCCESS)
-	    {
-	      ExHandleErrors(qparent_,
-			     pentry_down,
-			     0,
-			     getGlobals(),
-			     NULL,
-			     (ExeErrorCode)(-15371),
-			     NULL,
-			     "MXCMP");
-	    }
-	}
-    }
-
-  if (changeEspPriority)
-    {
-      IpcPriority p = 
-	(espIsDelta ? 
-	 currContext->getSessionDefaults()->getEspPriorityDelta() : 
-	 currContext->getSessionDefaults()->getEspPriority());
-
-      // adjust this, if altpri is to be done in esp.
-      if (currContext->getSessionDefaults()->getAltpriEsp())
-	{
-	  // in this case, the 'idle' esp priority is its fixup priority.
-	  p += currContext->getSessionDefaults()->getEspFixupPriorityDelta();
-	}
-
-      short rc = currContext->getCliGlobals()->getEspManager()->
-        changePriorities(p, espIsDelta, true); // ignore idle timed out esps
-      if (rc)
-	{
-	  char errMsg[100];
-	  strcpy(errMsg, "MXESP. Error code: ");
-	  str_itoa(ABS(rc), &errMsg[strlen(errMsg)]);
-          up_entry = qparent_.up->getTailEntry();
-
-	  ComDiagsArea *  da = 
-	    ExRaiseSqlError(getGlobals()->getDefaultHeap(),
-			    up_entry,
-			    (ExeErrorCode)(15371),
-			    NULL,
-			    errMsg);
-	  up_entry->setDiagsArea(da);
-	}
-    }
-
 
 all_ok:
   // all ok. Return EOF.

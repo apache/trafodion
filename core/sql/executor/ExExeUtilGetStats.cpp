@@ -1935,7 +1935,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (masterStatsItems_ == NULL)
         {
-          maxMasterStatsItems_ = 36;
+          maxMasterStatsItems_ = 35;
           masterStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxMasterStatsItems_];
           initSqlStatsItems(masterStatsItems_, maxMasterStatsItems_, FALSE);
@@ -1959,23 +1959,22 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           masterStatsItems_[17].statsItem_id = SQLSTATS_CHILD_QUERY_ID;
           masterStatsItems_[18].statsItem_id = SQLSTATS_NUM_SQLPROCS;
           masterStatsItems_[19].statsItem_id = SQLSTATS_NUM_CPUS;
-          masterStatsItems_[20].statsItem_id  = SQLSTATS_MASTER_PRIORITY;
-          masterStatsItems_[21].statsItem_id  = SQLSTATS_TRANSID;
-          masterStatsItems_[22].statsItem_id = SQLSTATS_SOURCE_STR;
-          masterStatsItems_[23].statsItem_id = SQLSTATS_SOURCE_STR_LEN;
-          masterStatsItems_[24].statsItem_id = SQLSTATS_ROWS_RETURNED;
-          masterStatsItems_[25].statsItem_id = SQLSTATS_FIRST_ROW_RET_TIME;
-          masterStatsItems_[26].statsItem_id = SQLSTATS_AQR_LAST_ERROR;
-          masterStatsItems_[27].statsItem_id = SQLSTATS_AQR_NUM_RETRIES;
-          masterStatsItems_[28].statsItem_id = SQLSTATS_AQR_DELAY_BEFORE_RETRY;
-          masterStatsItems_[29].statsItem_id = SQLSTATS_RECLAIM_SPACE_COUNT;
-          masterStatsItems_[30].statsItem_id = SQLSTATS_CANCEL_TIME_ID;
-          masterStatsItems_[31].statsItem_id = SQLSTATS_SUSPEND_TIME_ID;
-          masterStatsItems_[32].statsItem_id = SQLSTATS_EXECUTE_COUNT;
-          masterStatsItems_[33].statsItem_id = SQLSTATS_EXECUTE_TIME_MIN;
-          masterStatsItems_[34].statsItem_id = SQLSTATS_EXECUTE_TIME_MAX;
-          masterStatsItems_[35].statsItem_id = SQLSTATS_EXECUTE_TIME_AVG;
-          // maxMasterStatsItems_ is set to 36
+          masterStatsItems_[20].statsItem_id  = SQLSTATS_TRANSID;
+          masterStatsItems_[21].statsItem_id = SQLSTATS_SOURCE_STR;
+          masterStatsItems_[22].statsItem_id = SQLSTATS_SOURCE_STR_LEN;
+          masterStatsItems_[23].statsItem_id = SQLSTATS_ROWS_RETURNED;
+          masterStatsItems_[24].statsItem_id = SQLSTATS_FIRST_ROW_RET_TIME;
+          masterStatsItems_[25].statsItem_id = SQLSTATS_AQR_LAST_ERROR;
+          masterStatsItems_[26].statsItem_id = SQLSTATS_AQR_NUM_RETRIES;
+          masterStatsItems_[27].statsItem_id = SQLSTATS_AQR_DELAY_BEFORE_RETRY;
+          masterStatsItems_[28].statsItem_id = SQLSTATS_RECLAIM_SPACE_COUNT;
+          masterStatsItems_[29].statsItem_id = SQLSTATS_CANCEL_TIME_ID;
+          masterStatsItems_[30].statsItem_id = SQLSTATS_SUSPEND_TIME_ID;
+          masterStatsItems_[31].statsItem_id = SQLSTATS_EXECUTE_COUNT;
+          masterStatsItems_[32].statsItem_id = SQLSTATS_EXECUTE_TIME_MIN;
+          masterStatsItems_[33].statsItem_id = SQLSTATS_EXECUTE_TIME_MAX;
+          masterStatsItems_[34].statsItem_id = SQLSTATS_EXECUTE_TIME_AVG;
+          // maxMasterStatsItems_ is set to 35
           masterStatsItems_[0].str_value = new (getGlobals()->getDefaultHeap())
                           char[ComSqlId::MAX_QUERY_ID_LEN+1];
           masterStatsItems_[0].str_max_len = ComSqlId::MAX_QUERY_ID_LEN;
@@ -1992,9 +1991,9 @@ short ExExeUtilGetRTSStatisticsTcb::work()
                           char[ComSqlId::MAX_QUERY_ID_LEN+1];
           masterStatsItems_[17].str_max_len = ComSqlId::MAX_QUERY_ID_LEN;
           // Source Str
-          masterStatsItems_[22].str_value = new (getGlobals()->getDefaultHeap())
+          masterStatsItems_[21].str_value = new (getGlobals()->getDefaultHeap())
                           char[RMS_STORE_SQL_SOURCE_LEN+2];
-          masterStatsItems_[22].str_max_len = RMS_STORE_SQL_SOURCE_LEN;
+          masterStatsItems_[21].str_max_len = RMS_STORE_SQL_SOURCE_LEN;
         }
         else
           initSqlStatsItems(masterStatsItems_, maxMasterStatsItems_, TRUE);
@@ -3651,7 +3650,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (rmsStatsItems_ == NULL)
         {
-          maxRMSStatsItems_ = 34;
+          maxRMSStatsItems_ = 32;
           rmsStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxRMSStatsItems_];
           initSqlStatsItems(rmsStatsItems_, maxRMSStatsItems_, FALSE);
@@ -3660,35 +3659,33 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           rmsStatsItems_[2].statsItem_id = SQLSTATS_RMS_VER;
           rmsStatsItems_[3].statsItem_id = SQLSTATS_RMS_ENV_TYPE;
           rmsStatsItems_[4].statsItem_id = SQLSTATS_SSCP_PID;
-          rmsStatsItems_[5].statsItem_id = SQLSTATS_SSCP_PRIORITY;
-          rmsStatsItems_[6].statsItem_id = SQLSTATS_SSCP_TIMESTAMP;
-          rmsStatsItems_[7].statsItem_id = SQLSTATS_SSMP_PID;
-          rmsStatsItems_[8].statsItem_id = SQLSTATS_SSMP_PRIORITY;
-          rmsStatsItems_[9].statsItem_id = SQLSTATS_SSMP_TIMESTAMP;
-          rmsStatsItems_[10].statsItem_id = SQLSTATS_STORE_SRC_LEN;
-          rmsStatsItems_[11].statsItem_id = SQLSTATS_STATS_HEAP_ALLOC;
-          rmsStatsItems_[12].statsItem_id = SQLSTATS_STATS_HEAP_USED;
-          rmsStatsItems_[13].statsItem_id = SQLSTATS_STATS_HEAP_HIGH_WM;
-          rmsStatsItems_[14].statsItem_id = SQLSTATS_PROCESS_STATS_HEAPS;
-          rmsStatsItems_[15].statsItem_id = SQLSTATS_PROCESSES_REGD;
-          rmsStatsItems_[16].statsItem_id = SQLSTATS_QUERIES_REGD;
-          rmsStatsItems_[17].statsItem_id = SQLSTATS_RMS_SEMAPHORE_PID;
-          rmsStatsItems_[18].statsItem_id = SQLSTATS_SSCPS_OPENED;
-          rmsStatsItems_[19].statsItem_id = SQLSTATS_SSCPS_DELETED_OPENS;
-          rmsStatsItems_[20].statsItem_id = SQLSTATS_LAST_GC_TIME;
-          rmsStatsItems_[21].statsItem_id = SQLSTATS_QUERIES_GCED_IN_LAST_RUN;
-          rmsStatsItems_[22].statsItem_id = SQLSTATS_TOTAL_QUERIES_GCED;
-          rmsStatsItems_[23].statsItem_id = SQLSTATS_SSMP_REQ_MSG_CNT;
-          rmsStatsItems_[24].statsItem_id = SQLSTATS_SSMP_REQ_MSG_BYTES;
-          rmsStatsItems_[25].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_CNT;
-          rmsStatsItems_[26].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_BYTES;
-          rmsStatsItems_[27].statsItem_id = SQLSTATS_SSCP_REQ_MSG_CNT;
-          rmsStatsItems_[28].statsItem_id = SQLSTATS_SSCP_REQ_MSG_BYTES;
-          rmsStatsItems_[29].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_CNT;
-          rmsStatsItems_[30].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_BYTES;
-          rmsStatsItems_[31].statsItem_id = SQLSTATS_RMS_STATS_RESET_TIMESTAMP;
-          rmsStatsItems_[32].statsItem_id = SQLSTATS_RMS_STATS_NUM_SQL_SIK;
-          rmsStatsItems_[33].statsItem_id = SQLSTATS_RMS_CONFIGURED_PID_MAX;
+          rmsStatsItems_[5].statsItem_id = SQLSTATS_SSCP_TIMESTAMP;
+          rmsStatsItems_[6].statsItem_id = SQLSTATS_SSMP_PID;
+          rmsStatsItems_[7].statsItem_id = SQLSTATS_SSMP_TIMESTAMP;
+          rmsStatsItems_[8].statsItem_id = SQLSTATS_STORE_SRC_LEN;
+          rmsStatsItems_[9].statsItem_id = SQLSTATS_STATS_HEAP_ALLOC;
+          rmsStatsItems_[10].statsItem_id = SQLSTATS_STATS_HEAP_USED;
+          rmsStatsItems_[11].statsItem_id = SQLSTATS_STATS_HEAP_HIGH_WM;
+          rmsStatsItems_[12].statsItem_id = SQLSTATS_PROCESS_STATS_HEAPS;
+          rmsStatsItems_[13].statsItem_id = SQLSTATS_PROCESSES_REGD;
+          rmsStatsItems_[14].statsItem_id = SQLSTATS_QUERIES_REGD;
+          rmsStatsItems_[15].statsItem_id = SQLSTATS_RMS_SEMAPHORE_PID;
+          rmsStatsItems_[16].statsItem_id = SQLSTATS_SSCPS_OPENED;
+          rmsStatsItems_[17].statsItem_id = SQLSTATS_SSCPS_DELETED_OPENS;
+          rmsStatsItems_[18].statsItem_id = SQLSTATS_LAST_GC_TIME;
+          rmsStatsItems_[19].statsItem_id = SQLSTATS_QUERIES_GCED_IN_LAST_RUN;
+          rmsStatsItems_[20].statsItem_id = SQLSTATS_TOTAL_QUERIES_GCED;
+          rmsStatsItems_[21].statsItem_id = SQLSTATS_SSMP_REQ_MSG_CNT;
+          rmsStatsItems_[22].statsItem_id = SQLSTATS_SSMP_REQ_MSG_BYTES;
+          rmsStatsItems_[23].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_CNT;
+          rmsStatsItems_[24].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_BYTES;
+          rmsStatsItems_[25].statsItem_id = SQLSTATS_SSCP_REQ_MSG_CNT;
+          rmsStatsItems_[26].statsItem_id = SQLSTATS_SSCP_REQ_MSG_BYTES;
+          rmsStatsItems_[27].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_CNT;
+          rmsStatsItems_[28].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_BYTES;
+          rmsStatsItems_[29].statsItem_id = SQLSTATS_RMS_STATS_RESET_TIMESTAMP;
+          rmsStatsItems_[30].statsItem_id = SQLSTATS_RMS_STATS_NUM_SQL_SIK;
+          rmsStatsItems_[31].statsItem_id = SQLSTATS_RMS_CONFIGURED_PID_MAX;
           // maxRMSStatsItems_ is set to 34
           rmsStatsItems_[0].str_value = new (getGlobals()->getDefaultHeap())
             char[MAX_SEGMENT_NAME_LEN+1];

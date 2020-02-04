@@ -119,9 +119,6 @@ public:
   // download fragments unless already done and fix them up
   void downloadAndFixup();
 
-  // restore priority for all esps after fixup is completed
-  short restoreEspPriority();
-
   // assign initial (or permanent) partition ranges to the ESPs
   // or assign additional ranges during dynamic load balancing
   // (may subcontract this task out to another process),
@@ -305,8 +302,6 @@ private:
 			       NABoolean compressFrag = FALSE);
   void addFixupRequestToMessage(ExMasterEspMessage *msg,
 				ExFragId fragId,
-				IpcPriority fixupPriority,
-				IpcPriority executePriority,
 				Lng32 maxPollingInterval,
 				Lng32 persistentOpens,
 				NABoolean espCloseErrorLogging,
@@ -522,7 +517,6 @@ class ExEspManager
 	 NABoolean verifyESP, // need to verify that prior ESP is alive ?
 	 NABoolean * verifyCPU, // input: need to verify each CPU
 	                        // output: if create ESP failed -- return TRUE
-	 IpcPriority priority,
 	 Lng32 espLevel,
 	 Lng32 idleTimeout,
 	 Lng32 assignTimeWindow,
@@ -532,12 +526,6 @@ class ExEspManager
          Int16 esp_num_fragments);
 
     void releaseEsp(ExEspDbEntry *esp, NABoolean verifyEsp, NABoolean badEsp);
-
-    // change ESP priorities. Some ESPs could have idle timedout
-    // and could return error 11 (not find). If the error should not
-    // be reported to caller, set ignoreNotFound to true
-    short changePriorities(IpcPriority priority, NABoolean isDelta,
-                           bool ignoreNotFound = false);
 
     // kill/delete all free esps in cache
     Lng32 endSession(ContextCli *context);

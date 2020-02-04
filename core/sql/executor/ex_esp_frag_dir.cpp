@@ -1459,35 +1459,6 @@ void ExEspControlMessage::actOnFixupFragmentReq(ComDiagsArea &da)
       //      able to send a reply
     }
 
-  // if fixup priority has been sent, save that so my priority could be restored to
-  // this value.
-  if (receivedRequest.getEspFixupPriority() > 0)
-    {
-      glob->setMyFixupPriority((IpcPriority)receivedRequest.getEspFixupPriority());
-    }
-
-  // if execute priority has been sent, set my priority to that value.
-  if (receivedRequest.getEspExecutePriority() > 0)
-    {
-      Lng32 rc = 0;
-
-      // get my current priority and save it in stmt globals.
-      // If an error is returned, ignore and leave priorities as is.
-      //      long p;
-      //rc = ComRtGetProcessPriority(p);
-      //      if (rc == 0) // no error
-      //	{
-      // set the execute priority
-      rc = 
-	ComRtSetProcessPriority(receivedRequest.getEspExecutePriority(), 
-				FALSE);
-      if (rc != 0)
-	{
-	  // don't do anything.
-	}
-      //	}
-    }
-
   // the reply is handled by the caller
 }
 
@@ -1505,7 +1476,6 @@ void ExEspControlMessage::actOnReleaseFragmentReq(ComDiagsArea & /*da*/)
   currHandle_ = fragInstanceDir_->findHandle(receivedRequest.key_);
 
   ExEspStmtGlobals *glob = NULL;
-  IpcPriority myFixupPriority = 0;
 
   if (receivedRequest.deleteStmt())
     {
@@ -1521,7 +1491,6 @@ void ExEspControlMessage::actOnReleaseFragmentReq(ComDiagsArea & /*da*/)
 		  glob = fragInstanceDir_->getGlobals(i);
 		  if (glob)
 		    {
-		      myFixupPriority = glob->getMyFixupPriority();
 		      glob->setCloseAllOpens(receivedRequest.closeAllOpens());
 		    }
 		}
@@ -1549,7 +1518,6 @@ void ExEspControlMessage::actOnReleaseFragmentReq(ComDiagsArea & /*da*/)
 	  glob = fragInstanceDir_->getGlobals(currHandle_);
 	  if (glob)
 	    {
-	      myFixupPriority = glob->getMyFixupPriority();
 	      glob->setCloseAllOpens(receivedRequest.closeAllOpens());
 	    }
 
@@ -1567,17 +1535,6 @@ void ExEspControlMessage::actOnReleaseFragmentReq(ComDiagsArea & /*da*/)
       fragInstanceDir_->numMasters_--;
     }
 
-  // change my priority back to my 'fixup' priority.
-  if (myFixupPriority > 0)
-    {
-      Lng32 rc = 
-	ComRtSetProcessPriority(myFixupPriority, FALSE);
-      if (rc != 0)
-	{
-	  // ignore error.
-	}
-    }
-  
   // how long to keep idle esp alive
   environment_->setStopAfter(receivedRequest.idleTimeout_);
 
@@ -1631,26 +1588,6 @@ void ExEspControlMessage::actOnReqForSplitBottom(IpcConnection *connection)
     {
       ex_split_bottom_tcb * splitBottom =
 	fragInstanceDir_->getTopTcb(currHandle_);
-
-      if (changePri)
-	{
-	  // change my priority back to my 'fixup' priority.
-	  ExEspStmtGlobals *glob = fragInstanceDir_->getGlobals(currHandle_);
-	  IpcPriority myFixupPriority = glob->getMyFixupPriority();
-	  if (myFixupPriority > 0)
-	    {
-	      Lng32 rc = 
-		ComRtSetProcessPriority(myFixupPriority, FALSE);
-	      if (rc != 0)
-		{
-		  // ignore error.
-		}
-
-	      // reset priority indication in global
-	      glob->setMyFixupPriority(0);
-	      
-	    }
-	}
 
       if (splitBottom)
 	{

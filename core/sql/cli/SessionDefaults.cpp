@@ -57,10 +57,6 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
   // Attribute                                       Attr String                 Attr Datatype                        IsCQD    InDef  IsSSD  Ext
   //                                                                                                                           Table
   // ==============================================================================================================================================
-  SDEntry(SessionDefaults::ALTPRI_ESP,               ALTPRI_ESP,                 SessionDefaults::SDT_BOOLEAN,        FALSE,   TRUE,  TRUE,  TRUE),
-  SDEntry(SessionDefaults::ALTPRI_FIRST_FETCH,       ALTPRI_FIRST_FETCH,         SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
-  SDEntry(SessionDefaults::ALTPRI_MASTER,            ALTPRI_MASTER,              SessionDefaults::SDT_BOOLEAN,        FALSE,   TRUE,  TRUE,  TRUE),
-  SDEntry(SessionDefaults::ALTPRI_MASTER_SEQ_EXE,    ALTPRI_MASTER_SEQ_EXE,      SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::AQR_ENTRIES,              AQR_ENTRIES,                SessionDefaults::SDT_ASCII,          FALSE,   TRUE,  TRUE,  FALSE),
   SDEntry(SessionDefaults::AUTO_QUERY_RETRY_WARNINGS,AUTO_QUERY_RETRY_WARNINGS,  SessionDefaults::SDT_BOOLEAN,        TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::CALL_EMBEDDED_ARKCMP,     CALL_EMBEDDED_ARKCMP,       SessionDefaults::SDT_BOOLEAN,        TRUE,    FALSE, TRUE,  FALSE),
@@ -80,22 +76,14 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
   SDEntry(SessionDefaults::ESP_ASSIGN_DEPTH,         ESP_ASSIGN_DEPTH,           SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_ASSIGN_TIME_WINDOW,   ESP_ASSIGN_TIME_WINDOW,     SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_CLOSE_ERROR_LOGGING,  ESP_CLOSE_ERROR_LOGGING,    SessionDefaults::SDT_BOOLEAN,        FALSE,   TRUE,  TRUE,  TRUE),
-  SDEntry(SessionDefaults::ESP_FIXUP_PRIORITY,       ESP_FIXUP_PRIORITY,         SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   FALSE, TRUE,  FALSE),
-  SDEntry(SessionDefaults::ESP_FIXUP_PRIORITY_DELTA, ESP_FIXUP_PRIORITY_DELTA,   SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_FREEMEM_TIMEOUT,      ESP_FREEMEM_TIMEOUT,        SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   FALSE, TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_IDLE_TIMEOUT,         ESP_IDLE_TIMEOUT,           SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),  
   SDEntry(SessionDefaults::ESP_INACTIVE_TIMEOUT,     ESP_INACTIVE_TIMEOUT,       SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),  
-  SDEntry(SessionDefaults::ESP_PRIORITY,             ESP_PRIORITY,               SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
-  SDEntry(SessionDefaults::ESP_PRIORITY_DELTA,       ESP_PRIORITY_DELTA,         SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_STOP_IDLE_TIMEOUT,    ESP_STOP_IDLE_TIMEOUT,      SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_RELEASE_WORK_TIMEOUT, ESP_RELEASE_WORK_TIMEOUT,   SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::INTERNAL_FORMAT_IO,       INTERNAL_FORMAT_IO,         SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::ISO_MAPPING,              ISO_MAPPING,                SessionDefaults::SDT_ASCII,          FALSE,   TRUE,  TRUE,  FALSE),
-  SDEntry(SessionDefaults::MASTER_PRIORITY,          MASTER_PRIORITY,            SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
-  SDEntry(SessionDefaults::MASTER_PRIORITY_DELTA,    MASTER_PRIORITY_DELTA,      SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::MAX_POLLING_INTERVAL,     MAX_POLLING_INTERVAL,       SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE, TRUE, TRUE),
-  SDEntry(SessionDefaults::MXCMP_PRIORITY,           MXCMP_PRIORITY,             SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
-  SDEntry(SessionDefaults::MXCMP_PRIORITY_DELTA,     MXCMP_PRIORITY_DELTA,       SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::PARENT_QID,               PARENT_QID,                 SessionDefaults::SDT_ASCII,          FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::PARENT_QID_SYSTEM,        PARENT_QID_SYSTEM,          SessionDefaults::SDT_ASCII,          FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::PARSER_FLAGS,             PARSER_FLAGS,               SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   FALSE, TRUE,  FALSE),
@@ -171,16 +159,6 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
      setCallEmbeddedArkcmp(FALSE);
   else
     setCallEmbeddedArkcmp(TRUE);
-  setEspPriority(-1);
-  setMxcmpPriority(-1);
-  // on Linux, we don't change ESP priorities so the related logic was
-  // commented off. To enable it remove this an related ifdefs
-  // in executor/ex_frag_rt.cpp with mark >>ESP_PRIORITY
-  setEspPriorityDelta(0);
-  setMxcmpPriorityDelta(6);
-  setEspFixupPriority(-1);
-  // ESP has higher priority when fixup
-  setEspFixupPriorityDelta(1);
   char *espAssignDepthEnvvar = getenv("ESP_ASSIGN_DEPTH");
   if (espAssignDepthEnvvar != NULL)
     setEspAssignDepth(atoi(espAssignDepthEnvvar));
@@ -212,10 +190,6 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setEspFreeMemTimeout(10);
   setRtsTimeout(0);
   
-  setAltpriMaster(TRUE);
-  setAltpriMasterSeqExe(FALSE);
-  setAltpriEsp(FALSE);
-  setAltpriFirstFetch(FALSE);
 
   setEspFreeMemTimeout(espFreeMemTimeout_);
   setEspCloseErrorLogging(espCloseErrorLogging_);
@@ -344,42 +318,6 @@ void SessionDefaults::setSessionDefaultAttributeValue
       }
     break;
 
-    case MXCMP_PRIORITY:
-      {
-	setMxcmpPriority(defaultValueAsLong);
-      }
-    break;
-    
-    case MXCMP_PRIORITY_DELTA:
-      {
-	setMxcmpPriorityDelta(defaultValueAsLong);
-      }
-    break;
-    
-    case ESP_PRIORITY:
-      {
-	setEspPriority(defaultValueAsLong);
-      }
-    break;
-    
-    case ESP_PRIORITY_DELTA:
-      {
-	setEspPriorityDelta(defaultValueAsLong);
-      }
-    break;
-    
-    case ESP_FIXUP_PRIORITY:
-      {
-	setEspFixupPriority(defaultValueAsLong);
-      }
-    break;
-    
-    case ESP_FIXUP_PRIORITY_DELTA:
-      {
-	setEspFixupPriorityDelta(defaultValueAsLong);
-      }
-    break;
-    
     case ESP_ASSIGN_DEPTH:
       {
 	setEspAssignDepth(defaultValueAsLong);
@@ -469,30 +407,6 @@ void SessionDefaults::setSessionDefaultAttributeValue
       }
       break;
 
-    case ALTPRI_MASTER:
-      {
-	setAltpriMaster(defaultValueAsBoolean);
-      }
-    break;
-
-    case ALTPRI_MASTER_SEQ_EXE:
-      {
-	setAltpriMasterSeqExe(defaultValueAsBoolean);
-      }
-    break;
-
-    case ALTPRI_FIRST_FETCH:
-      {
-	setAltpriFirstFetch(defaultValueAsBoolean);
-      }
-    break;
-
-    case ALTPRI_ESP:
-      {
-	setAltpriEsp(defaultValueAsBoolean);
-      }
-    break;
- 
     case INTERNAL_FORMAT_IO:
       {
 	setInternalFormatIO(defaultValueAsBoolean);

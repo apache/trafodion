@@ -207,9 +207,6 @@ public:
   virtual Int32 getSMTraceLevel() const = 0;
   virtual const char *getSMTraceFilePrefix() const = 0;
 
-  inline IpcPriority getMyProcessPriority()
-    { return cliGlobals_->myPriority(); }
-
   // get resource info
   virtual const ExScratchFileOptions *getScratchFileOptions() const = 0;
 
@@ -756,8 +753,6 @@ pid_t getTid()
   Lng32 getQueryIdLen() { return queryIdLen_; }
   inline StmtStats *getStmtStats() { return stmtStats_; }
   StmtStats *setStmtStats();
-  void setMyFixupPriority(IpcPriority v)     { myFixupPriority_ = v; }
-  IpcPriority getMyFixupPriority()           { return myFixupPriority_; }
 
 private:
 
@@ -785,13 +780,6 @@ private:
   ARRAY(ex_send_top_tcb *) sendTopTcbs_;
   // the subset of the send top TCBs that got a request
   SUBARRAY(ex_send_top_tcb *) activatedSendTopTcbs_;
-
-  // This is the priority ESPs run at when waiting for a 'fixup' message.
-  // After fixup message is received, the priority is changed to its
-  // 'execute' priority which is sent as part of the fixup message.
-  // Once ESPs are done executing and the release transaction msg is
-  // received, priority is changed back to the 'fixup' priority value.
-  IpcPriority myFixupPriority_;
 
   char *queryId_;
   Lng32 queryIdLen_;

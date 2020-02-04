@@ -428,9 +428,6 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   // Allow users to grant privileges to role using the with grant option
   DDkwd__(ALLOW_WGO_FOR_ROLES,                  "ON"),
 
-  DDSkwd__(ALTPRI_ESP,                          ""),
-  DDSkwd__(ALTPRI_MASTER,	                ""),
-
   DDS_____(AQR_ENTRIES,                          ""),
   DDkwd__(AQR_WNR,                              "ON"),
   DDkwd__(AQR_WNR_DELETE_NO_ROWCOUNT,           "OFF"),
@@ -1135,14 +1132,10 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 
   DDSint__(ESP_ASSIGN_DEPTH,                    "0"),
 
-  DDSint__(ESP_FIXUP_PRIORITY_DELTA,            "0"),
   DDint__(ESP_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
   DDkwd__(ESP_MULTI_FRAGMENTS,			"ON"),
   DDui1500_4000(ESP_MULTI_FRAGMENT_QUOTA_VM,	"4000"),
   DDui1_8(ESP_NUM_FRAGMENTS,			"3"),
-
-  DDSint__(ESP_PRIORITY,                        "0"),
-  DDSint__(ESP_PRIORITY_DELTA,                  "0"),
 
  // Disable hints - if SYSTEM, enable on SSD, and disable only on HDD
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_HASH,	"SYSTEM"),
@@ -1794,9 +1787,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDkwd__(MARIAQUEST_PROCESS,                   "OFF"),
 
-  DDSint__(MASTER_PRIORITY,                     "0"),
-  DDSint__(MASTER_PRIORITY_DELTA,               "0"),
-
   DDint__(MATCH_CONSTANTS_OF_EQUALITY_PREDICATES, "2"),
 
   DDui1__(MAX_ACCESS_NODES_PER_ESP,	"1024"),
@@ -2127,9 +2117,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(MV_REFRESH_MDELTA_PHASE_SIZE_FOR_MID_RANGE,               "6"),
 
   DDkwd__(MV_TRACE_INCONSISTENCY,		"OFF"),
-
-  DDSint__(MXCMP_PRIORITY,                     "0"),
-  DDSint__(MXCMP_PRIORITY_DELTA,               "0"),
 
   DDkwd__(NAMETYPE,				"ANSI"),
 

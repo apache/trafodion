@@ -307,10 +307,6 @@ class ComTdbRoot : public ComTdb
   // EMBEDDED_IUD_WITH_LAST1 is set for (a) select [LAST 1] ... insert ... select, 
   // used for MTS insert and select [LAST 1] ... delete, used for MTS delete
   // EMBEDDED_INSERT is set for embedded INSERTs.
-  // ALTPRI_MASTER -- At runtime, master's priority is lowered to be the 
-  //    same as ESP after fixup, if "set session default" altpri_master 
-  //    is set and the query is a parallel query.  This flags forces the 
-  //    same behavior for non-parallel queries.
   // CHECK_AUTOCOMMIT is set for self-referencing updates using the DP2
   //    locks method to prevent the Halloween problem.  This needs to
   //    raise an error if executed under AUTOCOMMIT OFF.
@@ -345,7 +341,6 @@ class ComTdbRoot : public ComTdb
 	// an inMemory object definition was used in this query.
 	// An error will be returned at runtime, if this plan is executed.
 	IN_MEMORY_OBJECT_DEFN           = 0x1000000,
-	ALTPRI_MASTER                   = 0x2000000,
         CHECK_AUTOCOMMIT		= 0x4000000,
 	SINGLE_ROW_INPUT                = 0x8000000,
 	ROWWISE_ROWSET_INPUT            = 0x10000000,
@@ -828,9 +823,6 @@ public:
   NABoolean inMemoryObjectDefn()
     { return (rtFlags1_ & IN_MEMORY_OBJECT_DEFN) != 0; }
 
-  NABoolean altpriMaster() const 
-    { return ((rtFlags1_ & ALTPRI_MASTER) != 0);}
-
   NABoolean singleRowInput() const 
     { return ((rtFlags1_ & SINGLE_ROW_INPUT) != 0);}
  
@@ -962,14 +954,6 @@ public:
       rtFlags1_ &= ~ROWWISE_ROWSET_INPUT;
   }
   
-  void setAltpriMaster(NABoolean value)
-  {
-    if (value)
-      rtFlags1_ |= ALTPRI_MASTER;
-    else
-      rtFlags1_ &= ~ALTPRI_MASTER;
-  }
-
   void setCheckAutoCommit(short value)
   {
     if (value)

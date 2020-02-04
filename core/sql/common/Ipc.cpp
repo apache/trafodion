@@ -4631,7 +4631,6 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
 						  CollHeap   *diagsHeap,
 						  const char *nodeName,
 						  IpcCpuNum cpuNum,
-						  IpcPriority priority,
 						  Lng32 espLevel,
 						  NABoolean usesTransactions,
 						  NABoolean waitedCreation,
@@ -4869,7 +4868,6 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
 	       nodeName,
 	       className,
 	       cpuNum,
-	       priority, //IPC_PRIORITY_DONT_CARE,
 	       allocationMethod_,
 	       (short) allocatedServers_.entries(),
 	       lv_usesTransactions,
@@ -5312,14 +5310,6 @@ IpcProcessId IpcEnvironment::getMyOwnProcessId(IpcNetworkDomain dom)
     }
   // make the compiler happy
   return IpcProcessId();
-}
-
-IpcPriority IpcEnvironment::getMyProcessPriority()
-{
-  IpcPriority priority;
-  priority = -1;
-
-  return priority;
 }
 
 void IpcEnvironment::setEnvVars(char ** envvars)

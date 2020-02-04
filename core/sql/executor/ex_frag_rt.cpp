@@ -269,8 +269,6 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
   Statement *currentStatement = glob_->getStatement();
   NABoolean verifyCPU = FALSE ; // Check that each CPU is up
 
-  IpcPriority espPriority = IPC_PRIORITY_DONT_CARE;
-
   ExEspManager *espManager = glob_->getEspManager();
   Lng32 idleTimeout = getEspIdleTimeout();
   Lng32 assignTimeWindow = currentContext->getSessionDefaults()->getEspAssignTimeWindow();
@@ -358,7 +356,6 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
                         NA_UserIdDefault,
 		    mstrGlob->verifyESP(),
 		    &verifyCPU,
-		    espPriority,
 		    espLevel,
                     idleTimeout,
                     assignTimeWindow,
@@ -452,7 +449,6 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
                         NA_UserIdDefault, // de-coupling ESP with database uid
 		    mstrGlob->verifyESP(),
 		    &verifyCPU,
-		    espPriority,
 		    espLevel,
 		    idleTimeout,
                     assignTimeWindow,
@@ -618,23 +614,9 @@ void ExRtFragTable::downloadAndFixup()
   if (smQueryID > 0)
     ExSMGlobals::initFixupReplyCount();
 
-  short rc, savedRc = 0;
-  IpcPriority espFixupPriority = 0;
-  IpcPriority espExecutePriority = 0;
-  NABoolean altpriInEsp = FALSE;
+  short rc = 0;
 
   SessionDefaults *sd = glob_->getContext()->getSessionDefaults();
-
-  altpriInEsp = sd->getAltpriEsp();
-  
-  IpcPriority myProcessPriority = glob_->getMyProcessPriority();
-
-  if (sd->getEspPriority() > 0)
-    espExecutePriority = sd->getEspPriority();
-  else if (sd->getEspPriorityDelta() != 0)
-    espExecutePriority = myProcessPriority + sd->getEspPriorityDelta();
-  else
-    espExecutePriority = myProcessPriority;
 
   NABoolean compressFrag;
 
@@ -699,51 +681,6 @@ void ExRtFragTable::downloadAndFixup()
                 case ESP_ASSIGNED:
                   // this ESP hasn't heard about our fragment
                   objectIsAlreadyDownloaded = FALSE;
-                  // pump up the priority for fixup, bring it down when done
-                  // Note that we don't change ESP priority on Linux,
-                  // see above, so the if test will fail.
-                  if (espFixupPriority > 0 && !altpriInEsp)
-                    {
-                      // This is the first interaction with this assigned ESP.
-                      // if esp has died, changePriority() should return error.
-                      rc = inst->usedEsp_->getIpcServer()
-                        ->castToIpcGuardianServer()
-                        ->changePriority(espFixupPriority, FALSE);
-                      if (rc)
-                        {
-                          if (!savedRc)
-                            // save first error
-                            savedRc = rc;
-
-                          if (rc == FENOTFOUND || rc == FEPATHDOWN )
-                            {
-                              // ESP died or that CPU is down
-                              IpcConnection *controlConn = inst->usedEsp_
-                                ->getIpcServer()->getControlConnection();
-
-                              ComDiagsArea *da = glob_->getDiagsArea();
-                              if (!da)
-                                {
-                                  da = ComDiagsArea::allocate(glob_->getDefaultHeap());
-                                  glob_->setGlobDiagsArea(da);
-                                  da->decrRefCount();
-                                }
-                              *da << DgSqlCode(-EXE_ESP_CHANGE_PRIORITY_FAILED)
-                                  << DgInt0(rc);
-                              controlConn->getOtherEnd().addProcIdToDiagsArea(*da, 0);
-
-                              controlConn->setState(IpcConnection::ERROR_STATE);
-                              abortFixup = true;
-
-                              // continue to next esp
-                              continue;
-                            }
-
-                          // for other errors return from changePriority(),
-                          // ignore them and only add a warning.
-                        } // if (rc)
-                    } // if (espFixupPriority > 0 && !altpriInEsp)
-
                   // fall through into the next case
 
                 case DOWNLOADED:
@@ -832,8 +769,6 @@ void ExRtFragTable::downloadAndFixup()
       NABoolean espCloseErrorLogging =  sd->getEspCloseErrorLogging();
       Lng32 espFreeMemTimeout = sd->getEspFreeMemTimeout();
       addFixupRequestToMessage(mm,frag, 
-                               (altpriInEsp ? espFixupPriority : 0),
-                               (altpriInEsp ? espExecutePriority : 0),
                                maxPollingInterval,
                                persistentOpens,
                                espCloseErrorLogging,
@@ -999,19 +934,6 @@ void ExRtFragTable::downloadAndFixup()
 
   glob_->getIpcEnvironment()->releaseSafetyBuffer();
 
-  // Note that we don't change ESP priority on Linux, see above,
-  // so savedRc will remain 0
-  if (savedRc)  // report change priority error as warning
-    {
-   }
-}
-
-short ExRtFragTable::restoreEspPriority()
-{
-  short rc, savedRc = 0;
-
-
-  return savedRc;
 }
 
 void ExRtFragTable::assignPartRangesAndTA(NABoolean /*initial*/)
@@ -1732,8 +1654,6 @@ void ExRtFragTable::addLoadRequestToMessage(ExMasterEspMessage *msg,
 
 void ExRtFragTable::addFixupRequestToMessage(ExMasterEspMessage *msg,
 					     ExFragId fragId,
-					     IpcPriority fixupPriority,
-					     IpcPriority executePriority,
 					     Lng32 maxPollingInterval,
 					     Lng32 persistentOpens,
 					     NABoolean espCloseErrorLogging,
@@ -1762,8 +1682,6 @@ void ExRtFragTable::addFixupRequestToMessage(ExMasterEspMessage *msg,
 
   req->setStatsEnabled(glob_->statsEnabled());
 
-  req->setEspFixupPriority(fixupPriority);
-  req->setEspExecutePriority(executePriority);
   req->setMaxPollingInterval(maxPollingInterval);
   req->setPersistentOpens(persistentOpens);
   req->setEspCloseErrorLogging(espCloseErrorLogging);
@@ -2760,7 +2678,6 @@ ExEspDbEntry *ExEspManager::shareEsp(
      Int32 user_id,
      NABoolean verifyESP,
      NABoolean * verifyCPUptr, // both input and output
-     IpcPriority priority,
      Lng32 espLevel,
      Lng32 idleTimeout,
      Lng32 assignTimeWindow,
@@ -2845,7 +2762,6 @@ ExEspDbEntry *ExEspManager::shareEsp(
 	 env_->getHeap(),
 	 ptrToClusterName,
 	 cpuNum,
-	 priority,
 	 espLevel,
 	 TRUE, //usesTransactions
 	 waitedStartup, //waited process creation
@@ -2886,7 +2802,6 @@ ExEspDbEntry *ExEspManager::shareEsp(
 	 env_->getHeap(),
 	 ptrToClusterName,
 	 cpuNum,
-	 priority,
 	 espLevel,
 	 TRUE,
 	 FALSE, //nowaited process creation (Must be FALSE on nowaited completion)
@@ -3254,55 +3169,6 @@ void ExEspManager::releaseEsp(ExEspDbEntry *esp, NABoolean verifyEsp,
           addToTrace(esp, USED_IDLING);
         }
     }
-}
-
-// change the priority of all ESPs currently held by the ESP manager
-// note that we may find that some ESPs are idle timed out when altering
-// priority calls are returned. If ignoreNotFound is true, no error 11
-// is returned, but the connections to those ESPs will still be set to
-// error state
-short ExEspManager::changePriorities(IpcPriority priority, NABoolean isDelta,
-                                     bool ignoreNotFound)
-{
-  short rc, retRC = 0;
-  if (!espServerClass_)
-    return retRC;
-
-  ExEspCacheKey *key = NULL;
-  NAList<ExEspDbEntry *> *espList = NULL;
-  NAHashDictionaryIterator<ExEspCacheKey, NAList<ExEspDbEntry *> > iter(*espCache_);
-  for (CollIndex i = 0; i < iter.entries(); i++)
-    {
-      iter.getNext(key, espList);
-      for (CollIndex j = FIRST_COLL_INDEX; j < espList->getUsedLength(); j++)
-        {
-          if (espList->getUsage(j) == UNUSED_COLL_ENTRY)
-            continue;
-
-          ExEspDbEntry *e = espList->usedEntry(j);
-
-          IpcServer *ipcs = e->getIpcServer();
-          IpcConnection *conn = ipcs->getControlConnection();
-          if (!conn || conn->getState() == IpcConnection::ERROR_STATE)
-            continue;
-
-          rc = ipcs->castToIpcGuardianServer()->changePriority(priority, isDelta);
-          if (rc)
-            {
-              // if return code is 11 the esp could have been stopped
-              // due to idle timeout. Do not return any error if told.
-              if (rc == 11 && ignoreNotFound == true)
-                ; // no op
-              else if (!retRC)
-                retRC = rc;
-
-              // change priority failed. set connection to error state.
-              conn->setState(IpcConnection::ERROR_STATE);
-            }
-        } // for j
-    } // for i
-
-  return retRC;
 }
 
 Lng32 ExEspManager::endSession(ContextCli *context)

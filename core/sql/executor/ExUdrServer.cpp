@@ -289,7 +289,6 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::start(ComDiagsArea **diags,
                                              diagsHeap,
                                              NULL,
                                              collocatedCPU,
-                                             IPC_PRIORITY_DONT_CARE,
                                              1,   // espLevel (not relevant for UDR servers) 
                                              usesTransactions,
                                              waitedCreation,

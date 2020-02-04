@@ -300,8 +300,6 @@ ExEspFixupFragmentReqHeader::ExEspFixupFragmentReqHeader(NAMemory *heap) :
      ExEspRequestHeader(ESP_FIXUP_FRAGMENT_HDR,
 			CurrFixupFragmentHdrVersion,heap),
      flags_(0),
-     espExecutePriority_(0),
-     espFixupPriority_(0),
      maxPollingInterval_(300),
      espFreeMemTimeout_(0)
 {}

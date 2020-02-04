@@ -4265,23 +4265,6 @@ void __cdecl SRVR::SrvrSessionCleanup(void)
 	else
 	   t = 0;
 
-	// Fix for - The below code has been moved to before the
-	// end of session call since this was causing issues with RMS.
-	// If the service context does not have a priority set then have to
-	// default to the priority what the process was started with.
-	// We set only the master priority. SQL will adjust the compiler and
-	// ESP priorities accordingly.
-	// ++++ Note: When service-level default process priority feature is enabled
-	// ++++ then this code will not be relevant and should be removed at that time.
-	if( srvrGlobal->prtyChanged )
-	{
-	   char sqlcmd[64];
-	   sprintf(sqlcmd, "SET SESSION DEFAULT MASTER_PRIORITY '%d'",
-	           srvrGlobal->srvrPriority );
-	   EXECDIRECT(sqlcmd);
-	   srvrGlobal->prtyChanged = false;
-	}
-
 	// Fixed a problem when AutoCommit is OFF and SQL starts a transaction
 	// during session end (for e.g. dropping of any volatile tables). In this
 	// case the transaction does not get commited and new connections to the

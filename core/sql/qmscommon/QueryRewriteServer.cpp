@@ -198,7 +198,7 @@ IpcServer* MvQueryRewriteServer::createServerProcess(IpcServerClass* serverClass
 
 
   server = serverClass->allocateServerProcess(&diagsArea, heap_, segmentName, cpu,
-                                              IPC_PRIORITY_DONT_CARE, 1, usesTran,
+                                              1, usesTran,
                                               TRUE, 2, NULL, baseProcName);
 
   if (!server)
