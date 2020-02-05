@@ -703,15 +703,6 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
   return retcode;
 }
 
-Lng32 ComRtGetProcessPriority(Lng32  &processPriority /* out */)
-{
-  Lng32 retcode = 0;
-
-  processPriority = -1;
-
-  return retcode;
-}
-
 Lng32 ComRtGetProcessPagesInUse(Int64 &pagesInUse /* out */)
 {
     pagesInUse = -1;
@@ -747,15 +738,6 @@ Lng32 ComRtGetProcessCreateTime(short  *cpu, /* cpu */
   return retcode;
 }
 
-
-
-Lng32 ComRtSetProcessPriority(Lng32 priority,
-			     NABoolean isDelta)
-{
-  short rc = 0;
-
-  return rc;
-}
 
 
 Lng32 ComRtGetIsoMappingEnum()

@@ -206,12 +206,6 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
                          , SB_Verif_Type *verifier = NULL
 			 );
 
-// OUT: processPriority: current priority of process
-Lng32 ComRtGetProcessPriority(Lng32  &processPriority /* out */);
-
-Lng32 ComRtSetProcessPriority(Lng32 priority,
-			     NABoolean isDelta);
-
 // OUT: pagesInUse: Pages(16k) currently in use by process
 Lng32 ComRtGetProcessPagesInUse(Int64  &pagesInUse /* out */);
 

@@ -1284,7 +1284,7 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 #define MAX_ACCUMULATED_STATS_DESC	2
 #define MAX_PERTABLE_STATS_DESC		30
 
-#define MAX_MASTERSTATS_ENTRY		31
+#define MAX_MASTERSTATS_ENTRY		30
 #define MAX_MEASSTATS_ENTRY		30	
 #define MAX_PERTABLE_ENTRY		10
 
@@ -1440,16 +1440,15 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 				masterStatsItems_[18].statsItem_id = SQLSTATS_NUM_CPUS;
 				masterStatsItems_[19].statsItem_id = SQLSTATS_SOURCE_STR;
 				masterStatsItems_[20].statsItem_id = SQLSTATS_SOURCE_STR_LEN;
-				masterStatsItems_[21].statsItem_id = SQLSTATS_MASTER_PRIORITY;
-				masterStatsItems_[22].statsItem_id = SQLSTATS_TRANSID;
-				masterStatsItems_[23].statsItem_id = SQLSTATS_AQR_LAST_ERROR;
-				masterStatsItems_[24].statsItem_id = SQLSTATS_AQR_NUM_RETRIES;
-				masterStatsItems_[25].statsItem_id = SQLSTATS_AQR_DELAY_BEFORE_RETRY;
-				masterStatsItems_[26].statsItem_id = SQLSTATS_ROWS_AFFECTED;
-				masterStatsItems_[27].statsItem_id = SQLSTATS_CHILD_QUERY_ID;	 // new col
-				masterStatsItems_[28].statsItem_id = SQLSTATS_RECLAIM_SPACE_COUNT;
-				masterStatsItems_[29].statsItem_id = SQLSTATS_SUBQUERY_TYPE;
-				masterStatsItems_[30].statsItem_id = SQLSTATS_PARENT_QUERY_SYSTEM;
+				masterStatsItems_[21].statsItem_id = SQLSTATS_TRANSID;
+				masterStatsItems_[22].statsItem_id = SQLSTATS_AQR_LAST_ERROR;
+				masterStatsItems_[23].statsItem_id = SQLSTATS_AQR_NUM_RETRIES;
+				masterStatsItems_[24].statsItem_id = SQLSTATS_AQR_DELAY_BEFORE_RETRY;
+				masterStatsItems_[25].statsItem_id = SQLSTATS_ROWS_AFFECTED;
+				masterStatsItems_[26].statsItem_id = SQLSTATS_CHILD_QUERY_ID;	 // new col
+				masterStatsItems_[27].statsItem_id = SQLSTATS_RECLAIM_SPACE_COUNT;
+				masterStatsItems_[28].statsItem_id = SQLSTATS_SUBQUERY_TYPE;
+				masterStatsItems_[29].statsItem_id = SQLSTATS_PARENT_QUERY_SYSTEM;
 				
 				// MAX_MASTERSTATS_ENTRY is set to 31
 				qrid_ = masterStatsItems_[0].str_value = new (nothrow) char[MAX_QUERY_ID_LEN+1];
@@ -1462,25 +1461,25 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 				bzero(parentid_, MAX_QUERY_ID_LEN+1 );
 				masterStatsItems_[16].str_max_len = MAX_QUERY_ID_LEN;
 
-				childid_ = masterStatsItems_[27].str_value = new (nothrow) char[MAX_QUERY_ID_LEN+1];
+				childid_ = masterStatsItems_[26].str_value = new (nothrow) char[MAX_QUERY_ID_LEN+1];
 				if (childid_ == NULL) { cliRC = 995; throw ("error");}
 				bzero(childid_, MAX_QUERY_ID_LEN+1);
-				masterStatsItems_[27].str_max_len = MAX_QUERY_ID_LEN;
+				masterStatsItems_[26].str_max_len = MAX_QUERY_ID_LEN;
 
 				rmsSqlSource_ = masterStatsItems_[19].str_value = new (nothrow) char[RMS_STORE_SQL_SOURCE_LEN+2];
 				if (rmsSqlSource_ == NULL) { cliRC = 996; throw ("error");}
 				bzero(rmsSqlSource_, RMS_STORE_SQL_SOURCE_LEN+2);
 				masterStatsItems_[19].str_max_len = RMS_STORE_SQL_SOURCE_LEN;
 
-				subQueryType_ = masterStatsItems_[29].str_value = new (nothrow) char[SUB_QRY_TYPE_LEN+1];
+				subQueryType_ = masterStatsItems_[28].str_value = new (nothrow) char[SUB_QRY_TYPE_LEN+1];
 				if (subQueryType_ == NULL) { cliRC = 1000; throw ("error");}
 				bzero(subQueryType_, SUB_QRY_TYPE_LEN+1);
-				masterStatsItems_[29].str_max_len = SUB_QRY_TYPE_LEN;
+				masterStatsItems_[28].str_max_len = SUB_QRY_TYPE_LEN;
 
-				parentSystem_ = masterStatsItems_[30].str_value = new (nothrow) char[PAR_SYS_NAME_LEN+1];
+				parentSystem_ = masterStatsItems_[29].str_value = new (nothrow) char[PAR_SYS_NAME_LEN+1];
 				if (parentSystem_ == NULL) { cliRC = 1001; throw ("error");}
 				bzero(parentSystem_, PAR_SYS_NAME_LEN+1);
-				masterStatsItems_[30].str_max_len = PAR_SYS_NAME_LEN;
+				masterStatsItems_[29].str_max_len = PAR_SYS_NAME_LEN;
 
 				cliRC = SQL_EXEC_GetStatisticsItems(
 					reqType,
@@ -1701,9 +1700,6 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 					break;
 				case SQLSTATS_SOURCE_STR_LEN:
 					sqlSrcLen = masterStatsItems_[i].int64_value;
-					break;
-				case SQLSTATS_MASTER_PRIORITY:
-					exePriority = masterStatsItems_[i].int64_value;
 					break;
 				case SQLSTATS_TRANSID:
 					transIDnum = masterStatsItems_[i].int64_value;

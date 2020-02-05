@@ -1452,7 +1452,6 @@ short ExExeUtilTcb::createServer(char *serverName,
 				 char *nodeName,
 				 short cpu,
 				 const char *partnName,
-				 Lng32 priority,
 				 IpcServer* &ipcServer,
 				 NABoolean logError,
 				 const char * operation)
@@ -1502,7 +1501,6 @@ short ExExeUtilTcb::createServer(char *serverName,
 			      ipcHeap,
 			      nodeName,
 			      cpu,
-			      priority, 
 			      1, // espLevel (not relevent)
 			      FALSE, // no Xn
 			      TRUE, // waited creation

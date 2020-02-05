@@ -2887,11 +2887,6 @@ public:
   Int32  &numOfTotalEspsUsed() { return numOfTotalEspsUsed_; }
   Int32  &numOfNewEspsStarted() { return numOfNewEspsStarted_; }
   Int32  &numOfRootEsps() { return numOfRootEsps_; }
-  short  &exePriority() {return exePriority_;}
-  short  &espPriority() {return espPriority_;}
-  short  &cmpPriority() {return cmpPriority_;}
-  short  &dp2Priority() {return dp2Priority_;}
-  short  &fixupPriority() {return fixupPriority_;}
   void  incNumEspsInUse() { numOfTotalEspsUsed_++; }
   inline void setNumCpus(short i) {numCpus_ = i; }
   inline short getNumSqlProcs() { return numOfTotalEspsUsed_+1; }
@@ -3061,11 +3056,6 @@ private:
   Int32 numOfNewEspsStarted_;
   Int32 numOfRootEsps_;
 
-  short exePriority_;
-  short espPriority_;
-  short cmpPriority_;
-  short dp2Priority_;
-  short fixupPriority_;
   short queryType_;
   short subqueryType_;
 
@@ -3147,8 +3137,6 @@ public:
   inline void setCpu(short cpu) { cpu_ = cpu; }
   inline void setSscpPid(pid_t pid) { sscpPid_ = pid; }
   inline void setSsmpPid(pid_t pid) { ssmpPid_ = pid; }
-  inline void setSscpPriority(short pri) { sscpPriority_ = pri; }
-  inline void setSsmpPriority(short pri) { ssmpPriority_ = pri; }
   inline void setStoreSqlSrcLen(short srcLen) { storeSqlSrcLen_ = srcLen; }
   inline void setRmsEnvType(short envType) { rmsEnvType_ = envType; }
   inline void setGlobalStatsHeapAlloc(Int64 size) { currGlobalStatsHeapAlloc_ = size; }
@@ -3203,10 +3191,8 @@ private:
   char  nodeName_[MAX_SEGMENT_NAME_LEN+1];
   short cpu_;
   pid_t  sscpPid_;
-  short sscpPriority_;
   Int64 sscpTimestamp_;
   pid_t  ssmpPid_;
-  short ssmpPriority_;
   Int64 ssmpTimestamp_;
   short storeSqlSrcLen_;
   short rmsEnvType_;

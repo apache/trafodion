@@ -7973,11 +7973,6 @@ void ExMasterStats::init(NABoolean resetDop)
   numOfTotalEspsUsed_ = 0;
   numOfNewEspsStarted_ = -1;
   numOfRootEsps_ = -1;
-  exePriority_ = -1;
-  espPriority_ = -1;
-  cmpPriority_ = -1;
-  dp2Priority_ = -1;
-  fixupPriority_ = -1;
   queryType_ = SQL_OTHER;
   subqueryType_ = SQL_STMT_NA;
   statsErrorCode_ = 0;
@@ -8310,7 +8305,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %s EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %ld "
     "exeElapsedTime: %ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %ld firstRowReturnTime: %ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %ld suspended: %s lastSuspendTime: %ld "
+    "transId: %ld suspended: %s lastSuspendTime: %ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d "
     "reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
@@ -8341,7 +8336,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               firstRowReturnTime_,
               getNumSqlProcs(),
               numCpus_,
-              exePriority_,
               transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
@@ -8364,7 +8358,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %d EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %ld "
     "exeElapsedTime: %ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %ld firstRowReturnTime: %ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %ld suspended: %s lastSuspendTime: %ld "
+    "transId: %ld suspended: %s lastSuspendTime: %ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
     "exeCount: %u, exeTimeMin: %ld exeTimeMax: %ld exeTimeAvg: %f "
@@ -8395,7 +8389,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               firstRowReturnTime_,
               getNumSqlProcs(),
               numCpus_,
-              exePriority_,
               transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
@@ -8735,9 +8728,6 @@ Lng32 ExMasterStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_NUM_CPUS:
     sqlStats_item->int64_value = numCpus_;
-    break;
-  case SQLSTATS_MASTER_PRIORITY:
-    sqlStats_item->int64_value = exePriority_;
     break;
   case SQLSTATS_TRANSID:
     sqlStats_item->int64_value = transId_;
@@ -9593,10 +9583,8 @@ ExRMSStats::ExRMSStats(NAHeap *heap)
   nodeName_[0] = '\0';
   cpu_ = -1;
   sscpPid_ = -1;
-  sscpPriority_ = -1;
   sscpTimestamp_ = -1;
   ssmpPid_ = -1;
-  ssmpPriority_ = -1;
   ssmpTimestamp_ = -1;
   storeSqlSrcLen_ = -1;
   rmsEnvType_ = -1;
@@ -9764,8 +9752,8 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
     sprintf (
        buf,
        "statsRowType: %d rmsVersion: %d nodeName: %s cpu: %d nodeId: %d "
-       "sscpPid: %d sscpPri: %d sscpTimestamp: %ld "
-       "ssmpPid: %d ssmpPri: %d ssmpTimestamp: %ld srcLen: %d rtsEnvType: %d "
+       "sscpPid: %d sscpTimestamp: %ld "
+       "ssmpPid: %d ssmpTimestamp: %ld srcLen: %d rtsEnvType: %d "
         "statsHeapUsed: %ld "
         "statsHeapTotal: %ld statsHeapWM: %ld noOfProcessRegd: %d  noOfProcessStatsHeaps: %d "
         "noOfQidRegd: %d semPid: %d sscpOpens: %d sscpDeleted: %d "
@@ -9779,10 +9767,8 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
         cpu_,
         cpu_,
         sscpPid_,
-        sscpPriority_,
         sscpTimestamp_,
         ssmpPid_,
-        ssmpPriority_,
         ssmpTimestamp_,
         storeSqlSrcLen_,
         rmsEnvType_,
@@ -9853,17 +9839,11 @@ Lng32 ExRMSStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_SSCP_PID:
     sqlStats_item->int64_value = sscpPid_;
     break;
-  case SQLSTATS_SSCP_PRIORITY:
-    sqlStats_item->int64_value = sscpPriority_;
-    break;
   case SQLSTATS_SSCP_TIMESTAMP:
     sqlStats_item->int64_value = sscpTimestamp_;
     break;
   case SQLSTATS_SSMP_PID:
     sqlStats_item->int64_value = ssmpPid_;
-    break;
-  case SQLSTATS_SSMP_PRIORITY:
-    sqlStats_item->int64_value = ssmpPriority_;
     break;
   case SQLSTATS_SSMP_TIMESTAMP:
     sqlStats_item->int64_value = ssmpTimestamp_;

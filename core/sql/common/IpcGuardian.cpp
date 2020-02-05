@@ -3403,7 +3403,6 @@ IpcGuardianServer::IpcGuardianServer(
      const char     * nodeName,
      const char     * className,
      IpcCpuNum      cpuNum,
-     IpcPriority    priority,
      IpcServerAllocationMethod allocMethod,
      short          uniqueTag,
      NABoolean      usesTransactions,
@@ -3421,7 +3420,6 @@ IpcGuardianServer::IpcGuardianServer(
   cpuNum_                      = cpuNum;
   actualCpuNum_                = cpuNum;
   requestedCpuDown_            = FALSE;
-  priority_                    = priority;
   allocMethod_                 = allocMethod;
   uniqueTag_                   = uniqueTag;
   usesTransactions_            = usesTransactions;
@@ -4209,11 +4207,6 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
 }
 
 
-short IpcGuardianServer::changePriority(IpcPriority priority, NABoolean isDelta)
-{
-  return 0;
-}
-					
 NABoolean IpcGuardianServer::serverDied()
 {
   const GuaProcessHandle &ph = getServerId().getPhandle();

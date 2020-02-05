@@ -84,10 +84,6 @@ public:
   enum SessionDefaultAttribute
   {
     INVALID_SESSION_DEFAULT    = -1,
-    ALTPRI_ESP,
-    ALTPRI_FIRST_FETCH,
-    ALTPRI_MASTER,
-    ALTPRI_MASTER_SEQ_EXE,
     AQR_ENTRIES,
     AUTO_QUERY_RETRY_WARNINGS,
     CALL_EMBEDDED_ARKCMP,
@@ -103,22 +99,14 @@ public:
     ESP_ASSIGN_DEPTH,
     ESP_ASSIGN_TIME_WINDOW,
     ESP_CLOSE_ERROR_LOGGING,
-    ESP_FIXUP_PRIORITY,
-    ESP_FIXUP_PRIORITY_DELTA,
     ESP_FREEMEM_TIMEOUT,
     ESP_IDLE_TIMEOUT,
     ESP_INACTIVE_TIMEOUT,
-    ESP_PRIORITY,
-    ESP_PRIORITY_DELTA,
     ESP_STOP_IDLE_TIMEOUT,
     ESP_RELEASE_WORK_TIMEOUT,
     INTERNAL_FORMAT_IO,
     ISO_MAPPING,
-    MASTER_PRIORITY,
-    MASTER_PRIORITY_DELTA,
     MAX_POLLING_INTERVAL,
-    MXCMP_PRIORITY,
-    MXCMP_PRIORITY_DELTA,
     PARENT_QID,
     PARENT_QID_SYSTEM,
     PARSER_FLAGS,
@@ -203,47 +191,6 @@ public:
   void setIsoMappingName(const char * attrValue, Lng32 attrValueLen);
   void setIsoMappingEnum();
 
-  void setEspPriority(Lng32 espPriority) 
-  { 
-    espPriority_ = espPriority;
-
-    updateDefaultsValueString(ESP_PRIORITY, espPriority_);
-  }
-
-  void setMxcmpPriority(Lng32 mxcmpPriority) 
-  { 
-    mxcmpPriority_ = mxcmpPriority;
-
-    updateDefaultsValueString(MXCMP_PRIORITY, mxcmpPriority_);
-  }
-
-  void setEspPriorityDelta(Lng32 espPriorityDelta) 
-  { 
-    espPriorityDelta_ = espPriorityDelta;
-
-    updateDefaultsValueString(ESP_PRIORITY_DELTA, espPriorityDelta_);
-  }
-
-  void setMxcmpPriorityDelta(Lng32 mxcmpPriorityDelta) 
-  { 
-    mxcmpPriorityDelta_ = mxcmpPriorityDelta;
-
-    updateDefaultsValueString(MXCMP_PRIORITY_DELTA, mxcmpPriorityDelta_);
-  }
-
-  void setEspFixupPriority(Lng32 espFixupPriority) 
-  { 
-    espFixupPriority_ = espFixupPriority;
-
-    updateDefaultsValueString(ESP_FIXUP_PRIORITY, espFixupPriority_);
-  }
-
-  void setEspFixupPriorityDelta(Lng32 espFixupPriorityDelta) 
-  { 
-    espFixupPriorityDelta_ = espFixupPriorityDelta;
-
-    updateDefaultsValueString(ESP_FIXUP_PRIORITY_DELTA, espFixupPriorityDelta_);
-  }
 
   void setCatalog(char * attrValue, Lng32 attrValueLen)
   {
@@ -361,38 +308,6 @@ public:
     updateDefaultsValueString(ESP_FREEMEM_TIMEOUT, espFreeMemTimeout_);
   }
 
-  void setAltpriMaster(NABoolean v)
-  {
-    const Int16 DisAmbiguate = 0;
-    altpriMaster_ = v;
-
-    updateDefaultsValueString(ALTPRI_MASTER, DisAmbiguate, altpriMaster_);
-  }
-
-  void setAltpriMasterSeqExe(NABoolean v)
-  {
-    const Int16 DisAmbiguate = 0;
-    altpriMasterSeqExe_ = v;
-
-    updateDefaultsValueString(ALTPRI_MASTER_SEQ_EXE, DisAmbiguate, altpriMasterSeqExe_);
-  }
-
-  void setAltpriEsp(NABoolean v)
-  {
-    const Int16 DisAmbiguate = 0;
-    altpriEsp_ = v;
-
-    updateDefaultsValueString(ALTPRI_ESP, DisAmbiguate, altpriEsp_);
-  }
-
-  void setAltpriFirstFetch(NABoolean v)
-  {
-    const Int16 DisAmbiguate = 0;
-    altpriFirstFetch_ = v;
-
-    updateDefaultsValueString(ALTPRI_FIRST_FETCH, DisAmbiguate, altpriFirstFetch_);
-  }
-
   void setInternalFormatIO(NABoolean v)
   {
     internalFormatIO_ = v;
@@ -473,12 +388,6 @@ public:
   NABoolean getWmsProcess()  { return wmsProcess_; }
   NABoolean getMariaQuestProcess() { return mariaQuestProcess_; }
 
-  Lng32 getEspPriority(){ return espPriority_; }
-  Lng32 getMxcmpPriority(){ return mxcmpPriority_; }
-  Lng32 getEspPriorityDelta(){ return espPriorityDelta_; }
-  Lng32 getMxcmpPriorityDelta(){ return mxcmpPriorityDelta_; }
-  Lng32 getEspFixupPriority(){ return espFixupPriority_; }
-  Lng32 getEspFixupPriorityDelta(){ return espFixupPriorityDelta_; }
   Lng32 getEspAssignDepth(){ return espAssignDepth_; }
   Lng32 getEspAssignTimeWindow(){ return espAssignTimeWindow_; }
   Lng32 getEspStopIdleTimeout() { return espStopIdleTimeout_; }
@@ -490,11 +399,6 @@ public:
   Lng32 getPersistentOpens() { return persistentOpens_; }
   Lng32 getEspFreeMemTimeout() { return espFreeMemTimeout_; }
   Lng32 getEspCloseErrorLogging() { return espCloseErrorLogging_; }
-
-  NABoolean getAltpriMaster() { return altpriMaster_; }
-  NABoolean getAltpriMasterSeqExe() { return altpriMasterSeqExe_; }
-  NABoolean getAltpriFirstFetch() { return altpriFirstFetch_; }
-  NABoolean getAltpriEsp()    { return FALSE; }
 
   NABoolean getInternalFormatIO() { return internalFormatIO_;}
   char * getIsoMappingName() { return isoMappingName_; }
@@ -662,22 +566,6 @@ private:
   char * catalog_;
   char * schema_;
 
-  // priorities
-  // priorities of ESP and MXCMP
-  Lng32 espPriority_;
-  Lng32 mxcmpPriority_;
-  // incremental priorities of ESP and MXCMP relative to current process.
-  // Valid if espPriority_ and mxcmpPriority_ are set to -1.
-  Lng32 espPriorityDelta_;
-  Lng32 mxcmpPriorityDelta_;
-
-  // absolute priorities of ESPs during plan fixup time.
-  Lng32 espFixupPriority_;
-
-  // incremental priorities of ESP during plan fixup time relative to current
-  // irrespect to whether espPriority_ and/or espPriorityDelta_ is set or not
-  Lng32 espFixupPriorityDelta_;
-
   // Limit on number of statements with ESPs assigned. When the limit is
   // exceeded, releaseSpace() will be called on the closed statement whose
   // ESPs were assigned earliest
@@ -707,24 +595,6 @@ private:
 
   // user experience level
    char * uel_;
-
-  // master selfadjusts its priority after fixup to bring it to the
-  // same value as the esp. This stmt does the priority change for
-  // parallel plans.
-  NABoolean altpriMaster_;
-
-  // master selfadjusts its priority after fixup to bring it to the
-  // same value as the esp. This stmts does the priority change for
-  // sequential, non-olt plans.
-  NABoolean altpriMasterSeqExe_;
-
-  // change master priority back to its fixup priority after first
-  // row has been returned to application.
-  NABoolean altpriFirstFetch_;
-
-  // esp selfadjusts its priority after fixup to bring it down
-  // to its execute priority.
-  NABoolean altpriEsp_;
 
   // others
   NABoolean cliBulkMove_;

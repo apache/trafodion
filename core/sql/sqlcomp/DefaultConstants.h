@@ -2497,18 +2497,9 @@ enum DefaultConstants
   // But they can be inserted into
   // the defaults table which is read by executor at runtime.
   // ****** BEGIN SET SESSION DEFAULTs ***********************************
-  ALTPRI_ESP,
-  ALTPRI_MASTER,
   AQR_ENTRIES,
   ESP_ASSIGN_DEPTH,
-  ESP_FIXUP_PRIORITY_DELTA,
-  ESP_PRIORITY,
-  ESP_PRIORITY_DELTA,
   ESP_IDLE_TIMEOUT,
-  MASTER_PRIORITY,
-  MASTER_PRIORITY_DELTA,
-  MXCMP_PRIORITY,
-  MXCMP_PRIORITY_DELTA,
   // ****** END SET SESSION DEFAULTs ***********************************
 
   USTAT_AUTO_EMPTYHIST_TWO_TRANS,

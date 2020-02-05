@@ -171,10 +171,8 @@ void StatsGlobals::incSscpReplyMsg(Int64 msgBytes) { rmsStats_->incSscpReplyMsg(
 void StatsGlobals::setSscpOpens(short numSscps) { rmsStats_->setSscpOpens(numSscps); }
 void StatsGlobals::setSscpDeletedOpens(short numSscps) { rmsStats_->setSscpDeletedOpens(numSscps);  }
 void StatsGlobals::setSscpPid(pid_t pid) { rmsStats_->setSscpPid(pid); }
-void StatsGlobals::setSscpPriority(short pri) {rmsStats_->setSscpPriority(pri); }
 void StatsGlobals::setSscpTimestamp(Int64 timestamp) { rmsStats_->setSscpTimestamp(timestamp);  }
 void StatsGlobals::setSsmpPid(pid_t pid) { rmsStats_->setSsmpPid(pid); }
-void StatsGlobals::setSsmpPriority(short pri) {rmsStats_->setSsmpPriority(pri); }
 void StatsGlobals::setSsmpTimestamp(Int64 timestamp) { rmsStats_->setSsmpTimestamp(timestamp);  }
 void StatsGlobals::setRMSStatsResetTimestamp(Int64 timestamp) { rmsStats_->setRMSStatsResetTimestamp(timestamp);  }
 void StatsGlobals::incProcessRegd() { rmsStats_->incProcessRegd();  }

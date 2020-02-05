@@ -571,23 +571,6 @@ struct ExEspFixupFragmentReqHeader : public ExEspRequestHeader
       return 0;
   }
 
-  void setEspFixupPriority(IpcPriority p)
-  {
-    espFixupPriority_ = (short)p;
-  }
-  IpcPriority getEspFixupPriority()
-  {
-    return (IpcPriority)espFixupPriority_;
-  }
-
-  void setEspExecutePriority(IpcPriority p)
-  {
-    espExecutePriority_ = (short)p;
-  }
-  IpcPriority getEspExecutePriority()
-  {
-    return (IpcPriority)espExecutePriority_;
-  }
   void setMaxPollingInterval(Lng32 p)
   {
     maxPollingInterval_ = p;
@@ -616,14 +599,6 @@ struct ExEspFixupFragmentReqHeader : public ExEspRequestHeader
   Lng32             numOfParentInstances_;
 
   UInt32           flags_;
-
-  // priority that ESP should execute the stmt at.
-  // ESP changes its own priority to this value after 'fixup' stage.
-  // Once the query is finished after release fragment request, priority is
-  // changed back to the original fixup priority value which is saved
-  // in esp stmt globals after fixup stage.
-  short            espExecutePriority_;
-  short            espFixupPriority_;
 
   Lng32             maxPollingInterval_;
   Lng32             espFreeMemTimeout_;

@@ -77,7 +77,6 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
   error = sscpPhandle.getmine(statsGlobals->getSscpProcHandle());
 
   statsGlobals_->setSscpPid(myPin_);
-  statsGlobals_->setSscpPriority(pri);
   statsGlobals_->setSscpTimestamp(myStartTime);
   statsGlobals_->setSscpProcSemId(semId_);
   statsGlobals->setSscpInitialized(TRUE);

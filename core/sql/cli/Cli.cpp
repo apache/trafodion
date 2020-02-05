@@ -293,36 +293,6 @@ static Lng32 SQLCLI_Prepare_Setup_Post(
 	   }
 	   masterStats->setQueryType((Int16)rootTdb->getQueryType(),
                                 rootTdb->getSubqueryType());
-	   masterStats->exePriority() = (short)
-		currContext.getCliGlobals()->myPriority();
-	      
-	   if (currContext.getSessionDefaults()->getEspPriority() > 0)
-	      masterStats->espPriority() = (short)
-		  currContext.getSessionDefaults()->getEspPriority();
-	   else if (currContext.
-		       getSessionDefaults()->getEspPriorityDelta() != 0)
-	      masterStats->espPriority() = (short)
-		  (stmtStats->getMasterStats()->exePriority() +
-		   currContext.getSessionDefaults()->getEspPriorityDelta());
-	   else 
-              masterStats->espPriority() =
-		  masterStats->exePriority();
-
-	   if (currContext.getSessionDefaults()->getMxcmpPriority() > 0)
-              masterStats->cmpPriority() = (short)
-		  currContext.getSessionDefaults()->getMxcmpPriority();
-	   else if (currContext.
-	          getSessionDefaults()->getMxcmpPriorityDelta() != 0)
-              masterStats->cmpPriority() = (short)
-		  (masterStats->exePriority() +
-		   currContext.getSessionDefaults()->getMxcmpPriorityDelta());
-	   else 
-              masterStats->cmpPriority() =
-		  masterStats->exePriority();
-
-	   masterStats->fixupPriority() = (short)
-		currContext.getSessionDefaults()->getEspFixupPriorityDelta();
-	      
 	      // detect if this query is sequential at top. If
 	      // the root doesn't have an ESP exchange as its child,
 	      // then it is sequential at top. A FirstN operator could
@@ -484,16 +454,6 @@ static Lng32 CliEpilogue(CliGlobals * cliGlobals,
 
   if (isERROR(inRetcode)) 
     {
-      // if priority of master was changed for execution, 
-      // switch it back to its original priority.
-      // Do this only for root cli level.
-      if ((numOfCliCalls == 1) &&
-	  (cliGlobals->priorityChanged()))
-	{
-	  ComRtSetProcessPriority(cliGlobals->myPriority(), FALSE);
-	  cliGlobals->setPriorityChanged(FALSE);
-	}
-
       return SQLCLI_ReturnCode(cliGlobals->currContext(),inRetcode);
     }
 
@@ -2836,17 +2796,6 @@ Lng32 SQLCLI_PerformTasks(
 	    }
 	}
 
-      // if priority of master was changed for execution and didn't get
-      // changed back to its original priority at the end of that stmt, 
-      // switch it back to its original priority now.
-      // Do this only for root cli level.
-      if ((currContext.getNumOfCliCalls() == 1) &&
-	  (cliGlobals->priorityChanged()))
-	{
-	  ComRtSetProcessPriority(cliGlobals->myPriority(), FALSE);
-	  cliGlobals->setPriorityChanged(FALSE);
-	}
-
       Lng32 retcode;
       retcode = CheckNOSQLAccessMode(*cliGlobals);
       if(isERROR(retcode)){
@@ -3079,17 +3028,7 @@ Lng32 SQLCLI_PerformTasks(
       if (isERROR(tretcode))
       {
 	return CliEpilogue(cliGlobals,statement_id,tretcode);
-    }
-
-      // if priority of master was changed for execution, 
-      // switch it back to its original priority.
-      // Do this only for root cli level.
-      if ((currContext.getNumOfCliCalls() == 1) &&
-	  (cliGlobals->priorityChanged()))
-	{
-	  ComRtSetProcessPriority(cliGlobals->myPriority(), FALSE);
-	  cliGlobals->setPriorityChanged(FALSE);
-	}
+      }
     }
 
   if (tasks & CLI_PT_SPECIAL_END_PROCESS)

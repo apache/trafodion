@@ -2727,7 +2727,6 @@ public:
        const char     * nodeName,
        const char     * className,
        IpcCpuNum      cpuNum = IPC_CPU_DONT_CARE,
-       IpcPriority    priority = IPC_PRIORITY_DONT_CARE,
        IpcServerAllocationMethod allocMethod = IPC_LAUNCH_GUARDIAN_PROCESS,
        short          uniqueTag = 0,
        NABoolean      usesTransactions = FALSE,
@@ -2769,8 +2768,6 @@ public:
   // startup of this server (leave type of sys msg unspecified)
   void acceptSystemMessage(const char *sysMsg,
 			   Lng32 sysMsgLength);
-
-  short changePriority(Lng32 priority, NABoolean isDelta = FALSE);
 
   NABoolean serverDied(); // return TRUE iff server is dead
 
@@ -2828,9 +2825,6 @@ private:
   // different from the requested one. (tbd - could the IpcConnection's
   // phandle be compared to cpuNum_ to give the same info?)
   NABoolean requestedCpuDown_;
-
-  // the requested priority for the server
-  IpcPriority priority_;
 
   // allocation method, indicates whether PROCESS_LAUNCH_ or
   // PROCESS_SPAWN_ should be used to start the process. If the process file
@@ -2906,7 +2900,6 @@ public:
 				   CollHeap *diagsHeap = NULL,
 				   const char *nodeName = NULL,
 				   IpcCpuNum cpuNum = IPC_CPU_DONT_CARE,
-				   IpcPriority priority = IPC_PRIORITY_DONT_CARE,
 				   Lng32 espLevel = 1,
 				   NABoolean usesTransactions = TRUE,
 				   NABoolean waitedCreation = TRUE,
@@ -3226,8 +3219,6 @@ public:
   void checkLocalIntegrity(void);  // checks integrity of this object
 #endif
 
-  IpcPriority getMyProcessPriority();
-
   // We have a flag to indicate that the IPC heap became full. The
   // flag is not used internally by the instance. It is only placed
   // here because the IpcEnvironment is generally visible from all
@@ -3385,7 +3376,6 @@ private:
   Int32                  retriedMessageCount_;
   short                maxPerProcessMQCs_;
 
-  //  IpcPriority priority_;
   char                 espAssignByLevel_;
   short                numOpensInProgress_;
   CloseTraceEntry (*closeTraceArray_)[closeTraceEntries];

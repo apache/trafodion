@@ -458,8 +458,6 @@ public:
   void setSsmpTimestamp(Int64 timestamp);
   void setSscpPid(pid_t pid);
   void setSsmpPid(pid_t pid);
-  void setSscpPriority(short pri);
-  void setSsmpPriority(short pri);
   void setRMSStatsResetTimestamp(Int64 timestamp); 
   void setNodesInCluster(short numNodes);
   void incProcessRegd();

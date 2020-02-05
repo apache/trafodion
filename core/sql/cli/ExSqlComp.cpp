@@ -100,22 +100,6 @@ inline void ExSqlComp::initRequests(Requests& req)
   req.ioStatus_ = INIT;
 }
 
-ExSqlComp::ReturnStatus ExSqlComp::changePriority(IpcPriority priority,
-						  NABoolean isDelta)
-{
-  ReturnStatus ret = SUCCESS;
-  if (! server_)
-    return ret;
-
-  short rc = server_->castToIpcGuardianServer()->changePriority(priority, isDelta);
-  if (rc != 0)
-    {
-      ret = ERROR;
-    }
-
-  return ret;
-}
-
 ExSqlComp::ReturnStatus ExSqlComp::createServer() 
 {
   ReturnStatus ret = SUCCESS;
@@ -136,27 +120,9 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
     }
   else
     {
-      IpcPriority priority = IPC_PRIORITY_DONT_CARE;
-      
-      if (cliGlobals_->currContext()->getSessionDefaults()->getMxcmpPriority() > 0)
-	priority = cliGlobals_->currContext()->getSessionDefaults()->
-	  getMxcmpPriority();
-      else if (cliGlobals_->currContext()->getSessionDefaults()->
-	       getMxcmpPriorityDelta() != 0)
-	priority = 
-	  //	  env_->getMyProcessPriority() + 
-	  cliGlobals_->myPriority() + 
-	  cliGlobals_->currContext()->getSessionDefaults()->
-	  getMxcmpPriorityDelta();
-      if ((priority > 200) ||
-	  (priority < 1))
-	
-	priority = IPC_PRIORITY_DONT_CARE;
-	
       ComDiagsArea* diags = 0;
       if ( !( server_ = sc_->allocateServerProcess(&diags, h_,nodeName_,
-						   IPC_CPU_DONT_CARE,
-						   priority,
+                                                   IPC_CPU_DONT_CARE,
 						   1, TRUE, TRUE, 2, NULL, NULL, FALSE, NULL
 						   ) ) )
 	ret = ERROR;

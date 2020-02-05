@@ -118,7 +118,6 @@ IpcServer *ExSsmpManager::getSsmpServer(NAHeap *heap, char *nodeName, short cpuN
             env_->getHeap(),
             nodeName,
             cpuNum,
-            IPC_PRIORITY_DONT_CARE,
             FALSE);
    if (ssmpServer != NULL && ssmpServer->castToIpcGuardianServer()->isReady())
    {
@@ -258,7 +257,6 @@ SsmpGlobals::SsmpGlobals(NAHeap *ssmpheap, IpcEnvironment *ipcEnv,  StatsGlobals
 
   (void)phandle.getmine(statsGlobals->getSsmpProcHandle());
   statsGlobals_->setSsmpPid(myPin_);
-  statsGlobals_->setSsmpPriority(pri);
   statsGlobals_->setSsmpTimestamp(myStartTime);
   statsGlobals_->setStoreSqlSrcLen(storeSqlSrcLen_);
   statsGlobals_->setSsmpProcSemId(semId_);
@@ -358,7 +356,6 @@ IpcServer *SsmpGlobals::allocateServer(char *nodeName, short nodeNameLen, short 
             heap_,
 	    serverId.nodeName_,
             serverId.cpuNum_,
-            IPC_PRIORITY_DONT_CARE,
             1, // espLevel
             FALSE);
   if (server != NULL && server->castToIpcGuardianServer()->isReady())

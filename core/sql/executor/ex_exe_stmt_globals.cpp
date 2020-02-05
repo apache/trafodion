@@ -1122,7 +1122,6 @@ ExEspStmtGlobals::ExEspStmtGlobals(short num_temps,
     espFragInstanceDir_(espFragInstanceDir),
     queryId_(queryId),
     queryIdLen_(queryIdLen),
-    myFixupPriority_(0),
     smDownloadInfo_(NULL)
 {
   myHandle_               = handle;

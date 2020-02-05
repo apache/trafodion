@@ -168,8 +168,6 @@ public:
   // end connection with arkcmp. Kill it.
   void endConnection();
 
-  ReturnStatus changePriority(Lng32 IpcPriority, NABoolean isDelta);
-
   inline CollHeap * getHeap() {return h_; };
 
   NABoolean isConnected() {return (sqlcompMessage_ != NULL);};

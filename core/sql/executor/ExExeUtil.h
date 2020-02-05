@@ -350,7 +350,6 @@ class ExExeUtilTcb : public ex_tcb
                      char *nodeName,
                      short cpu,
                      const char *partnName,
-                     Lng32 priority,
                      IpcServer* &ipcServer,
                      NABoolean logError,
                      const char * operation);

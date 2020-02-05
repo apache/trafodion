@@ -338,11 +338,4 @@ typedef Int32  IpcCpuNum;
 // an invalid CPU number in a node
 const IpcCpuNum IPC_CPU_DONT_CARE = -1;
 
-// -----------------------------------------------------------------------
-// Priority of a started process
-// -----------------------------------------------------------------------
-typedef Int32  IpcPriority;
-
-const IpcPriority IPC_PRIORITY_DONT_CARE = -1;
-
 #endif /* IPCMESSAGETYPE_H */

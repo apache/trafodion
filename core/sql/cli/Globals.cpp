@@ -86,10 +86,8 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        totalCliCalls_(0),
        savedCompilerVersion_ (COM_VERS_COMPILER_VERSION),
        globalSbbCount_(0),
-       priorityChanged_(FALSE),
        currRootTcb_(NULL),
        processStats_(NULL),
-       savedPriority_(148), // Set it to some valid priority to start with
        tidList_(NULL),
        cliSemaphore_(NULL),
        defaultContext_(NULL),
@@ -156,8 +154,6 @@ void CliGlobals::init( NABoolean espProcess,
     ex_assert(0,errStr);
   }
 
-  ComRtGetProcessPriority(myPriority_);
-  savedPriority_ = (short)myPriority_;
   myNumCpus_ = ComRtGetCPUArray(cpuArray_, (NAHeap *)&executorMemory_);
 
   // create global structures for IPC environment
@@ -315,17 +311,6 @@ Lng32 CliGlobals::getNextUniqueContextHandle()
     contextHandle = nextUniqueContextHandle++;
     cliSemaphore_->release();
     return contextHandle;
-}
-
-IpcPriority CliGlobals::myCurrentPriority()
-{
-  IpcPriority myPriority;
-  
-  Lng32 retcode = ComRtGetProcessPriority(myPriority);
-  if (retcode)
-    return -2;
-
-  return myPriority;
 }
 
 

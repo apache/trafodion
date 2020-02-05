@@ -288,26 +288,6 @@ short ExDDLTcb::work()
 	{  // start of calling the standard arkcmp process
 	  cmp = getArkcmp();
 
-	  // This mxcmp will be used to process the ddl command.
-	  // Change the priority of mxcmp to be the same as 'this' process.
-	  // That will ensure that the processing in mxcmp and any esps it
-	  // starts follow the same priority settings as 'this' master executor.
-	  // One note: esp priority delta will be set to the system default for any
-	  // esps that are started by the mxcmp. This is because the SET PRIORITY
-	  // settings are currently not propagated to mxcmp.
-	  cmpStatus = cmp->changePriority(0, TRUE);
-	  if (cmpStatus != ExSqlComp::SUCCESS)
-	    {
-	      // Add a warning that change priority failed.
-	      // Continue processing with the original default.
-	      cpDiagsArea = ComDiagsArea::allocate(getHeap());
-
-	      *cpDiagsArea << DgSqlCode(15371) << DgString0("MXCMP");
-
-	      //	  handleErrors(pentry_down, cmp->getDiags(), (int) cmpStatus);
-	      //	  goto endOfData;
-	    }
-
 	  // ddl data is already in iso mapping default value.
 	  // Indicate that.
 	  // We cannot use the enum SQLCHARSETCODE_ISO_MAPPING out here as that 
@@ -352,23 +332,6 @@ short ExDDLTcb::work()
     endOfData:
       // all ok. Return EOF.
       ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-      // restore mxcmp priority back to its original value
-      if (cmp)
-        {
-	  cmpStatus = 
-	    cmp->changePriority(
-				currContext->getSessionDefaults()->getMxcmpPriorityDelta(), TRUE);
-	  if (cmpStatus != ExSqlComp::SUCCESS)
-	    {
-	      // Add a warning that change priority failed.
-	      // Continue processing with the original default.
-	      if (cpDiagsArea == NULL)
-		cpDiagsArea = ComDiagsArea::allocate(getHeap());
-
-	      *cpDiagsArea << DgSqlCode(15371) << DgString0("MXCMP");
-	    }
-        }
 
       if (cpDiagsArea)
         {
