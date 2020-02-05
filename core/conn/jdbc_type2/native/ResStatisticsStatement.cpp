@@ -1326,7 +1326,7 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 #define MAX_ACCUMULATED_STATS_DESC  2
 #define MAX_PERTABLE_STATS_DESC     30
 
-#define MAX_MASTERSTATS_ENTRY       31
+#define MAX_MASTERSTATS_ENTRY       30
 #define MAX_MEASSTATS_ENTRY         30
 #define MAX_PERTABLE_ENTRY          10
 
