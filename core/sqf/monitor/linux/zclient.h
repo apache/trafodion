@@ -1,4 +1,5 @@
-/*********************************************************************
+///////////////////////////////////////////////////////////////////////////////
+//
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -19,7 +20,8 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-********************************************************************/
+//
+///////////////////////////////////////////////////////////////////////////////
 //
 // Zookeeper Client (CZClient class)
 //
@@ -208,6 +210,7 @@ public:
     void    ConfiguredZNodesDelete( void );
     int     ConfiguredZNodesGet( String_vector *children );
     int     ErrorZNodeCreate( const char *errorNode );
+    int     ErrorZNodeDelete( const char *errorNode );
     int     ErrorZNodeWatchAdd( void );
     int     ErrorZNodeWatchDelete( void );
     void    ErrorZNodesDelete( void );
@@ -237,7 +240,7 @@ private:
     void    ClusterMonitoringStop( void );
     void    ConfiguredZNodesWatchSet( void );
     void    EnabledSet( bool enabled ) { CAutoLock lock(getLocker()); enabled_ = enabled; }
-    int     ErrorZNodeDelete( const char *errorNode, String_vector *errorChildNodes );
+    int     ErrorZNodesDelete( const char *errorNode, String_vector *errorChildNodes );
     int     ErrorChildZNodeDelete( const char *errorNode
                                  , const char *errorChildNode
                                  , String_vector *errorChildNodes );

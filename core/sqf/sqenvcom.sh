@@ -967,7 +967,7 @@ if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
   export NS_COMM_PORT=${NS_COMM_PORT:-23370}
 #  export NS_SYNC_PORT=${NS_SYNC_PORT:-23360}
   export NS_M2N_COMM_PORT=${NS_M2N_COMM_PORT:-23350}
-  export MON2MON_COMM_PORT=${MON2MON_COMM_PORT:-23340}
+  export MON_P2P_COMM_PORT=${MON_P2P_COMM_PORT:-23340}
 fi
 
 # Alternative logging capability in monitor
@@ -995,9 +995,9 @@ export SQ_MON_KEEPINTVL=6
 export SQ_MON_KEEPCNT=5
 
 # Monitor sync thread epoll wait timeout is in seconds
-# Currently set to 64 seconds (16 second timeout, 4 retries)
-export SQ_MON_EPOLL_WAIT_TIMEOUT=${SQ_MON_EPOLL_WAIT_TIMEOUT:-16}
-export SQ_MON_EPOLL_RETRY_COUNT=${SQ_MON_EPOLL_RETRY_COUNT:-4}
+# Currently set to 64 seconds (1 second timeout, 64 retries)
+export SQ_MON_EPOLL_WAIT_TIMEOUT=${SQ_MON_EPOLL_WAIT_TIMEOUT:-1}
+export SQ_MON_EPOLL_RETRY_COUNT=${SQ_MON_EPOLL_RETRY_COUNT:-64}
 
 # Monitor Zookeeper client
 #  - A zero value disables the zclient logic in the monitor process.
@@ -1022,6 +1022,7 @@ export SQ_WDT_KEEPALIVETIMERVALUE=${SQ_WDT_KEEPALIVETIMERVALUE:-60}
 # increase SQ_MON,ZCLIENT,WDT timeout only to jenkins env.
 if [[ "$TRAF_HOME" == *"/home/jenkins"* ]]; then
 export SQ_MON_EPOLL_WAIT_TIMEOUT=20
+export SQ_MON_EPOLL_RETRY_COUNT=4
 export SQ_MON_ZCLIENT_SESSION_TIMEOUT=360
 export SQ_WDT_KEEPALIVETIMERVALUE=360
 fi

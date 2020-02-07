@@ -36,7 +36,6 @@ using namespace std;
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
-#include <sys/resource.h>
 #include <errno.h>
 
 #include "seabed/logalt.h"
@@ -46,31 +45,11 @@ using namespace std;
 
 #define gettid() syscall(__NR_gettid)
 
-bool GenCoreOnFailureExit = false;
-
 extern bool IsRealCluster;
 extern int MyPNID;
-extern CMonLog *MonLog;
+extern CMonLog * MonLog;
 
 pthread_mutex_t       MonLogMutex = PTHREAD_MUTEX_INITIALIZER;
-
-void mon_failure_exit( bool genCoreOnFailureExit )
-{
-    if (genCoreOnFailureExit || GenCoreOnFailureExit)
-    {
-        // Generate a core file, abort is intentional
-        abort();
-    }
-    else
-    {
-        // Don't generate a core file, abort is intentional
-        struct rlimit limit;
-        limit.rlim_cur = 0;
-        limit.rlim_max = 0;
-        setrlimit(RLIMIT_CORE, &limit);
-        abort();
-    }
-}
 
 int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
@@ -178,7 +157,6 @@ CMonLog::CMonLog( const char *log4cxxConfig
                    , hostname);
         }
     }
-
     CommonLogger::instance().initLog4cxx(log4cxxConfig_.c_str(), logFileSuffix);
 }
 

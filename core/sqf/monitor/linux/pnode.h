@@ -43,7 +43,7 @@ typedef set<int>  pids_set_t;
 class CNode;
 
 typedef enum {
-    Phase_Undefined=0                      // Node ready for use
+    Phase_Undefined=0                      // Initial phase
    ,Phase_Ready                            // Node ready for use
    ,Phase_Activating                       // Spare node going active
 } NodePhase;
@@ -265,17 +265,12 @@ public:
     inline int   GetRank( void ) { return( rank_ ); }
     inline ShutdownLevel GetShutdownLevel( void) { return( shutdownLevel_ ); }
     inline const char *GetCommPort( void ) { return commPort_.c_str(); }
-    inline const char *GetSyncPort( void ) { return syncPort_.c_str(); }
-#ifdef NAMESERVER_PROCESS
-    inline const char *GetMon2NsPort( void ) { return mon2NsPort_.c_str(); }
-    inline int   GetMon2NsSocketPort( void ) { return( mon2NsSocketPort_ ); }
-    inline int GetMonConnCount( void ) { return monConnCount_; }
-#else
-    inline const char *GetPtPPort( void ) { return ptpPort_.c_str(); }
-    inline int   GetPtPSocketPort( void ) { return( ptpSocketPort_ ); }
-#endif
     inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
+    inline const char *GetSyncPort( void ) { return syncPort_.c_str(); }
     inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }
+#ifdef NAMESERVER_PROCESS
+    inline int GetMonConnCount( void ) { return monConnCount_; }
+#endif
     inline PNidVector   &GetSparePNids( void ) { return( sparePNids_ ); }
     inline STATE GetState( void ) { return( state_ ); }
 
@@ -340,18 +335,9 @@ public:
     inline void SetRank( int rank ) { rank_ = rank; }
     inline void SetRankFailure( bool failed ) { rankFailure_ = failed; 
                                                 rank_ = rankFailure_ ? -1 : rank_; }
-    //inline void SetPort( char * port) { port_ = port; }
     inline void SetCommPort( char *commPort) { commPort_ = commPort; }
-    inline void SetSyncPort( char *syncPort) { syncPort_ = syncPort; }
-#ifdef NAMESERVER_PROCESS
-    inline void SetMon2NsPort( char *mon2NsPort) { mon2NsPort_ = mon2NsPort; }
-    inline void SetMon2NsSocketPort( int mon2NsSocketPort) { mon2NsSocketPort_ = mon2NsSocketPort; }
-#else
-    inline void SetPtPPort( char *ptpPort) { ptpPort_ = ptpPort; }  
-    inline void SetPtPSocketPort( int ptpSocketPort) { ptpSocketPort_ = ptpSocketPort; }
-#endif
-    //inline void SetSockPort( int sockPort ) { sockPort_ = sockPort; }
     inline void SetCommSocketPort( int commSocketPort) { commSocketPort_ = commSocketPort; }
+    inline void SetSyncPort( char *syncPort) { syncPort_ = syncPort; }
     inline void SetSyncSocketPort( int syncSocketPort) { syncSocketPort_ = syncSocketPort; }
     inline void SetSpareNode( void ) { spareNode_ = true; }
     inline void SetShutdownNameServer( bool shutdown ) { shutdownNameServer_ = shutdown; }
@@ -452,17 +438,12 @@ private:
     
     int           zid_;
     string        commPort_;          // monitor MPI or Integration port
-    string        syncPort_;          // monitor socket allgather port
-#ifdef NAMESERVER_PROCESS
-    string        mon2NsPort_;        // monitor to ns port
-    int           mon2NsSocketPort_;  // monitor to ns socket port
-    int           monConnCount_;      // monitor connections
-#else
-    string        ptpPort_;
-    int           ptpSocketPort_;           // point-2-point socket port
-#endif
     int           commSocketPort_;          // re-integration socket port
+    string        syncPort_;          // monitor socket allgather port
     int           syncSocketPort_;          // algather socket port
+#ifdef NAMESERVER_PROCESS
+    int           monConnCount_;      // monitor connections
+#endif
 
     int uniqStrId_;
     

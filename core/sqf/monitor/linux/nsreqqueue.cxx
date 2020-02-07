@@ -32,8 +32,13 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
     const char method_name[] = "CRequest::monreply";
     TRACE_ENTRY;
 
+    static int sv_io_wait_timeout = EPOLL_IO_WAIT_TIMEOUT_MSEC;
+    static int sv_io_retry_count = EPOLL_IO_RETRY_COUNT;
+
     if (error)
+    {
         *error = 0;
+    }
     if (!msg->noreply) // send reply
     {
         int size = offsetof(struct message_def, u.reply.u);
@@ -95,9 +100,12 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
             }
             abort();
         }
-        int rc = Monitor->SendSock( (char *) &size
+        int rc = Monitor->SendWait( sockFd
+                                  , (char *) &size
                                   , sizeof(size)
-                                  , sockFd
+                                  , sv_io_wait_timeout
+                                  , sv_io_retry_count
+                                  , (char *) "Remote node"
                                   , method_name );
         if ( rc )
         {
@@ -109,9 +117,12 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
                 *error = rc;
         } else
         {
-            rc = Monitor->SendSock( (char *) msg
+            rc = Monitor->SendWait( sockFd
+                                  , (char *) msg
                                   , size
-                                  , sockFd
+                                  , sv_io_wait_timeout
+                                  , sv_io_retry_count
+                                  , (char *) "Remote node"
                                   , method_name );
             if ( rc )
             {

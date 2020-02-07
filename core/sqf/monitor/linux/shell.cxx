@@ -90,6 +90,7 @@ int CurNodes = 0;
 int NumDown = 0;
 int PNodesConfigMax = 0;
 int LNodesConfigMax = 0;
+int MpiRunPid = -1; // Process id of last mpirun process started on 'node up'
 bool Debug = false;
 int  Measure = 0;
 bool Attached = false;
@@ -514,13 +515,13 @@ bool check_environment( void )
             rs = false;
         }
 
-        env = getenv("MON2MON_COMM_PORT");
+        env = getenv("MON_P2P_COMM_PORT");
         if ( env )
         {
             val = atoi(env);
             if ( val <= 0)
             {
-                sprintf( msgString, "[%s] Error: Name Server is enabled and MON2MON_COMM_PORT value is invalid (%s)! Set MON2MON_COMM_PORT environment variable and try again.", MyName, env );
+                sprintf( msgString, "[%s] Error: Name Server is enabled and MON_P2P_COMM_PORT value is invalid (%s)! Set MON2MON_COMM_PORT environment variable and try again.", MyName, env );
                 write_startup_log( msgString );
                 printf("%s\n", msgString );
                 rs = false;
@@ -528,7 +529,7 @@ bool check_environment( void )
         }
         else
         {
-            sprintf( msgString, "[%s] Error: Name Server is enabled and MON2MON_COMM_PORT is undefined! Set MON2MON_COMM_PORT environment variable and try again.", MyName );
+            sprintf( msgString, "[%s] Error: Name Server is enabled and MON_P2P_COMM_PORT is undefined! Set MON2MON_COMM_PORT environment variable and try again.", MyName );
             write_startup_log( msgString );
             printf("%s\n", msgString );
             rs = false;
@@ -1289,6 +1290,8 @@ void waitDeathComplete()
 
 void recv_notice_msg(struct message_def *recv_msg, int )
 {
+    const char method_name[] = "recv_notice_msg";
+
     switch (recv_msg->type )
     {
     case MsgType_Change:
@@ -1398,6 +1401,19 @@ void recv_notice_msg(struct message_def *recv_msg, int )
             }
         }
 
+        // If mpirun on a node up command still running, kill it!
+        if (MpiRunPid != -1)
+        {
+            if ( trace_settings & TRACE_SHELL_CMD )
+            {
+                trace_printf( "%s@%d [%s] Killing mpirun, MpiRunPid=%d\n"
+                            , method_name, __LINE__, MyName
+                            , MpiRunPid );
+            }
+            kill( MpiRunPid, SIGKILL );
+            MpiRunPid = -1;
+        }
+
         break;
 
 
@@ -1434,6 +1450,19 @@ void recv_notice_msg(struct message_def *recv_msg, int )
             {
                 nodePendingComplete();
             }
+        }
+
+        // If mpirun on a node up command still running, kill it!
+        if (MpiRunPid != -1)
+        {
+            if ( trace_settings & TRACE_SHELL_CMD )
+            {
+                trace_printf( "%s@%d [%s] Killing mpirun, MpiRunPid=%d\n"
+                            , method_name, __LINE__, MyName
+                            , MpiRunPid );
+            }
+            kill( MpiRunPid, SIGKILL );
+            MpiRunPid = -1;
         }
         break;
 
@@ -4701,6 +4730,10 @@ int node_up( int nid, bool nowait )
             }
         }
 
+        if ( trace_settings & TRACE_SHELL_CMD )
+            trace_printf( "%s@%d [%s] Creating monitor process in node %s.\n ",
+                 method_name, __LINE__, MyName, node_name );
+
         // remove shared segment on the node
         char cmd[256];
         sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $TRAF_LOG/node_up_%s.log\"", node_name, node_name, node_name);
@@ -4751,9 +4784,10 @@ int node_up( int nid, bool nowait )
     if ( !VirtualNodes )
     {
         if ( trace_settings & TRACE_SHELL_CMD )
-            trace_printf( "%s@%d [%s] %s node up successful, rtn=%d\n ",
-                 method_name, __LINE__, MyName, node_name,
-                 msg->u.reply.u.generic.return_code );
+        {
+            trace_printf( "%s@%d [%s] Monitor in node %s created and merging to existing cluster.\n ",
+                 method_name, __LINE__, MyName, node_name );
+        }
 
         sprintf( msgString, "[%s] Node %s is merging to existing cluster.",
                MyName, node_name);
@@ -4763,6 +4797,12 @@ int node_up( int nid, bool nowait )
 
         if ( ! nowait )
         {
+            if ( trace_settings & TRACE_SHELL_CMD )
+            {
+                trace_printf( "%s@%d [%s] Waiting for node %s up message\n ",
+                     method_name, __LINE__, MyName, node_name );
+            }
+
             struct sigaction int_act, old_act;
             int_act.sa_sigaction = interrupt_handler;
             sigemptyset(&int_act.sa_mask);
@@ -6131,12 +6171,19 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
         if (os_pid == -1)
         {
             if ( trace_settings & TRACE_SHELL_CMD )
-                trace_printf ("%s@%d [%s] Monitor fork() failed, errno=%d\n",
-                         method_name, __LINE__, MyName, errno);
+            {
+                trace_printf( "%s@%d [%s] Monitor fork() failed, errno=%d\n"
+                            , method_name, __LINE__, MyName, errno);
+            }
             rc = MPI_ERR_SPAWN;
         }
         else
         {
+            if ( trace_settings & TRACE_SHELL_CMD )
+            {
+                trace_printf( "%s@%d [%s] Monitor fork() success, os_pid=%d\n"
+                            , method_name, __LINE__, MyName, os_pid);
+            }
             rc = MPI_SUCCESS;
         }
 
@@ -6171,6 +6218,16 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
             else if (child == 0)
             {  // mpirun has not yet changed state, delay.
                 // do not wait for mpirun to complete when using mpich!
+                if ( reintegrate )
+                {
+                    MpiRunPid = os_pid;
+                    if ( trace_settings & TRACE_SHELL_CMD )
+                    {
+                        trace_printf( "%s@%d [%s] No mpirun state change, child=%d, MpiRunPid=%d, os_pid=%d\n"
+                                    , method_name, __LINE__, MyName
+                                    , child, MpiRunPid, os_pid);
+                    }
+                }
                 done = true;
             }
             else
@@ -6179,13 +6236,16 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
                 {
                     if (child == -1)
                     {
-                        trace_printf("[%s] waiting for mpirun: %s (%d)\n",
-                                     MyName, strerror(errno), errno);
+                        trace_printf( "%s@%d [%s] waiting for mpirun: %s (%d)\n"
+                                    , method_name, __LINE__, MyName
+                                    , strerror(errno), errno);
                     }
                     else
                     {
-                        trace_printf("[%s] waiting for mpirun pid=%d but got "
-                                     "pid=%d\n", MyName, os_pid, child);
+                        trace_printf( "%s@%d [%s] waiting for mpirun pid=%d but got "
+                                      "pid=%d\n"
+                                    , method_name, __LINE__, MyName
+                                    , os_pid, child);
                     }
                 }
                 done = true;
@@ -6572,7 +6632,7 @@ void dump_cmd (char *cmd_tail, char delimiter)
                     trace_printf("%s@%d [%s] dumped process successfully. "
                                  "error=%s\n", method_name, __LINE__, MyName,
                                  ErrorMsg(msg->u.reply.u.dump.return_code));
-                printf("dump file created@ %s\n",
+                printf("dump file created: %s\n",
                        msg->u.reply.u.dump.core_file);
             }
             else

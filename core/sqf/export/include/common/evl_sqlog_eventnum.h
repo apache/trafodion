@@ -370,6 +370,7 @@
 #define MON_MONITOR_CREATEZCLIENT_5         101022305
 #define MON_MONITOR_STARTZCLIENT_1          101022401
 #define MON_MONITOR_SIGTERMSIGNALHANDLER_1  101022501
+#define MON_MONITOR_FAILURE_EXIT_1          101022601
 
 /* Module: process.cxx = 03 */
 
@@ -781,6 +782,7 @@
 #define MON_REQQUEUE_REVIVE_4               101180504
 #define MON_REQQUEUE_REVIVE_5               101180505
 #define MON_REQQUEUE_REVIVE_6               101180506
+#define MON_REQQUEUE_REVIVE_7               101180507
 #define MON_REQQUEUE_REQUEST_1              101180601
 #define MON_REQ_NODE_ADD_1                  101180701
 #define MON_REQ_NODE_ADD_2                  101180702
@@ -866,6 +868,7 @@
 #define MON_WATCHDOG_INITLOCALIO_1          101220301
 #define MON_WATCHDOG_INITLOCALIO_2          101220302
 #define MON_WATCHDOG_INITLOCALIO_3          101220303
+#define MON_WATCHDOG_FAILURE_EXIT_1         101220401
 
 /* Module: healthcheck.cxx = 23 */
 #define MON_HEALTHCHECK_BAD_STATE           101230101
@@ -962,6 +965,7 @@
 #define PSTARTD_STARTPROCS_2                101301002
 #define PSTARTD_STARTPROCS_3                101301003
 #define PSTARTD_MAIN_1                      101301101
+#define PSTARTD_FAILURE_EXIT_1              101301201
 
 
 /* Module robsem.cxx = 31 */
@@ -971,26 +975,29 @@
 #define MON_ROBSEM_4                        101310104
 
 /* Module commaccept.cxx = 32 */
-#define MON_COMMACCEPT_1                    101320101
-#define MON_COMMACCEPT_2                    101320102
-#define MON_COMMACCEPT_3                    101320103
-#define MON_COMMACCEPT_4                    101320104
-#define MON_COMMACCEPT_5                    101320105
-#define MON_COMMACCEPT_6                    101320106
-#define MON_COMMACCEPT_7                    101320107
-#define MON_COMMACCEPT_8                    101320108
-#define MON_COMMACCEPT_9                    101320109
-#define MON_COMMACCEPT_10                   101320110
-#define MON_COMMACCEPT_11                   101320111
-#define MON_COMMACCEPT_12                   101320112
-#define MON_COMMACCEPT_13                   101320113
-#define MON_COMMACCEPT_14                   101320114
-#define MON_COMMACCEPT_15                   101320115
-#define MON_COMMACCEPT_16                   101320116
-#define MON_COMMACCEPT_17                   101320117
-#define MON_COMMACCEPT_18                   101320118
-#define MON_COMMACCEPT_19                   101320119
-#define MON_COMMACCEPT_20                   101320120
+#define MON_COMMACCEPT_COMMACCEPT_1         101320101
+#define MON_COMMACCEPT_COMMACCEPT_2         101320102
+#define MON_COMMACCEPT_COMMACCEPT_3         101320103
+#define MON_COMMACCEPT_1                    101320201
+#define MON_COMMACCEPT_1                    101320201
+#define MON_COMMACCEPT_2                    101320202
+#define MON_COMMACCEPT_3                    101320203
+#define MON_COMMACCEPT_4                    101320204
+#define MON_COMMACCEPT_5                    101320205
+#define MON_COMMACCEPT_6                    101320206
+#define MON_COMMACCEPT_7                    101320207
+#define MON_COMMACCEPT_8                    101320208
+#define MON_COMMACCEPT_9                    101320209
+#define MON_COMMACCEPT_10                   101320210
+#define MON_COMMACCEPT_11                   101320211
+#define MON_COMMACCEPT_12                   101320212
+#define MON_COMMACCEPT_13                   101320213
+#define MON_COMMACCEPT_14                   101320214
+#define MON_COMMACCEPT_15                   101320215
+#define MON_COMMACCEPT_16                   101320216
+#define MON_COMMACCEPT_17                   101320217
+#define MON_COMMACCEPT_18                   101320218
+#define MON_COMMACCEPT_19                   101320219
 
 /* Module: reqnodedown.cxx = 33 */
 #define MON_EXT_NODEDOWN_REQ                101330101
@@ -1066,6 +1073,8 @@
 #define MON_ZCLIENT_HNDLEERRORCHILDZNODES_1 101373901
 #define MON_ZCLIENT_HANDLEERRORZNODE_1      101374001
 #define MON_ZCLIENT_HNDLERRCHLZNFORZNCHL_1  101374101
+#define MON_ZCLIENT_ERRORZNODECREATE_1      101374201
+#define MON_ZCLIENT_MYRUNNINGZNODECREATE_1  101374301
 
 /* Module: zconfig.cxx = 38 */
 #define ZCONFIG_ZCONFIG_1                   101380101
@@ -1100,10 +1109,15 @@
 #define NAMESERVER_CLIENTSOCKCREATE_6       101390106
 #define NAMESERVER_SENDTONS_1               101390201
 #define NAMESERVER_SENDTONS_2               101390202
-#define NAMESERVER_SOCKRECEIVE_1            101390301
-#define NAMESERVER_SOCKSEND_1               101390401
+#define NAMESERVER_NAMESERVER_1             101390301
+#define NAMESERVER_SOCKSENDRECVWAIT_1       101390401
+#define NAMESERVER_SOCKSENDRECVWAIT_2       101390402
+#define NAMESERVER_SOCKSENDRECVWAIT_3       101390403
+#define NAMESERVER_SOCKSENDRECVWAIT_4       101390404
+#define NAMESERVER_SOCKSENDRECVWAIT_5       101390405
 #define NAMESERVER_GETM2NPORT_1             101390501
 #define NAMESERVER_CHOOSENEXTNS_1           101390601
+#define NAMESERVER_EPOLLCTL_1               101390701
 
 /* Module nscommaccept.cxx = 40 */
 #define NS_COMMACCEPT_PROCESSMONREQS_1      101400101
@@ -1116,6 +1130,8 @@
 #define NS_COMMACCEPT_MON2NSACCEPTMON_1     101400401
 #define NS_COMMACCEPT_MON2NSPROCESS_1       101400501
 #define NS_COMMACCEPT_START_1               101400601
+#define NS_NSCOMMACCEPT_NSCOMMACCEPT_1      101400701
+#define NS_NSCOMMACCEPT_NSCOMMACCEPT_2      101400702
 
 /* Module: reqnodedown.cxx = 41 */
 #define MON_EXT_NAMESERVERDOWN_REQ          101410101
@@ -1145,25 +1161,82 @@
 
 /* Module ptpclient.cxx = 93 */
 #define PTPCLIENT_PTPCLIENT_1               101930101
+#define PTPCLIENT_PTPCLIENT_2               101930102
 #define PTPCLIENT_STDINREQ_1                101930201
 #define PTPCLIENT_STDINREQ_2                101930202
 #define PTPCLIENT_STDIODATA_1               101930301
 #define PTPCLIENT_STDIODATA_2               101930302
 #define PTPCLIENT_SENDTOMON_1               101930401
 #define PTPCLIENT_SENDTOMON_2               101930402
+#define PTPCLIENT_EPOLLCTL_1                101930501
+#define PTPCLIENT_SOCKSENDRECVWAIT_1        101930601
+#define PTPCLIENT_SOCKSENDRECVWAIT_2        101930602
+#define PTPCLIENT_SOCKSENDRECVWAIT_3        101930603
+#define PTPCLIENT_SOCKSENDRECVWAIT_4        101930604
+#define PTPCLIENT_SOCKSENDRECVWAIT_5        101930605
 
 /* Module ptpcommaccept.cxx = 94 */
-#define PTP_COMMACCEPT_1                    101940101
-#define PTP_COMMACCEPT_2                    101940102
-#define PTP_COMMACCEPT_3                    101940103
-#define PTP_COMMACCEPT_4                    101940104
-#define PTP_COMMACCEPT_5                    101940105
-#define PTP_COMMACCEPT_6                    101940106
-#define PTP_COMMACCEPT_7                    101940107
-#define PTP_COMMACCEPT_8                    101940108
+#define PTP_COMMACCEPT_COMMACCEPT_1         101940101
+#define PTP_COMMACCEPT_COMMACCEPT_2         101940102
+#define PTP_COMMACCEPT_COMMACCEPT_3         101940103
+#define PTP_COMMACCEPT_1                    101940201
+#define PTP_COMMACCEPT_2                    101940202
+#define PTP_COMMACCEPT_3                    101940203
+#define PTP_COMMACCEPT_4                    101940204
+#define PTP_COMMACCEPT_5                    101940205
+#define PTP_COMMACCEPT_6                    101940206
+#define PTP_COMMACCEPT_7                    101940207
+#define PTP_COMMACCEPT_8                    101940208
 
 /* Module notice.cxx = 95 */
 #define NOTICE_NOTIFYREMOTE_1               101950101
+
+/* Module comm.cxx = 96 */
+#define COMM_COMM_1                         101960101
+#define COMM_ACCEPT_1                       101960201
+#define COMM_ACCEPT_2                       101960202
+#define COMM_ACCEPT_3                       101960203
+#define COMM_CONNECTLOCAL_1                 101960301
+#define COMM_CONNECTLOCAL_2                 101960302
+#define COMM_CONNECTLOCAL_3                 101960303
+#define COMM_CONNECT_1                      101960401
+#define COMM_CONNECT_2                      101960402
+#define COMM_CONNECT_3                      101960403
+#define COMM_CONNECT_4                      101960404
+#define COMM_CONNECT_5                      101960405
+#define COMM_CONNECT_6                      101960406
+#define COMM_CONNECT_7                      101960407
+#define COMM_CONNECT_8                      101960408
+#define COMM_CONNECT_9                      101960409
+#define COMM_CONNECT_10                     101960410
+#define COMM_CONNECT_11                     101960411
+#define COMM_CONNECT_12                     101960412
+#define COMM_CONNECT_13                     101960413
+#define COMM_CONNECT_14                     101960414
+#define COMM_CONNECT_15                     101960415
+#define COMM_CONNECT_16                     101960416
+#define COMM_CONNECT_17                     101960417
+#define COMM_EPOLLCTL_1                     101960501
+#define COMM_EPOLLCTLDELETE_1               101960601
+#define COMM_LISTEN_1                       101960701
+#define COMM_LISTEN_2                       101960702
+#define COMM_LISTEN_3                       101960703
+#define COMM_LISTEN_4                       101960704
+#define COMM_LISTEN_5                       101960705
+#define COMM_LISTEN_6                       101960706
+#define COMM_RECEIVE_1                      101960801
+#define COMM_SEND_1                         101960901
+#define COMM_SENDRECVWAIT_1                 101961001
+#define COMM_SENDRECVWAIT_2                 101961002
+#define COMM_SENDRECVWAIT_3                 101961003
+#define COMM_SENDRECVWAIT_4                 101961004
+#define COMM_SENDRECVWAIT_5                 101961005
+#define COMM_SENDRECVWAIT_6                 101961006
+#define COMM_SENDRECVWAIT_7                 101961007
+#define COMM_SETKEEPALIVESOCKOPT_1          101961101
+#define COMM_SETKEEPALIVESOCKOPT_2          101961102
+#define COMM_SETKEEPALIVESOCKOPT_3          101961103
+#define COMM_SETKEEPALIVESOCKOPT_4          101961104
 
 /**********************************************/
 

@@ -673,6 +673,9 @@
             <version>${jdbct2.version}</version>
          </dependency>
       </dependencies>
+      <properties>
+          <additionalparam>-Xdoclint:none</additionalparam>
+       </properties>
     </profile>
     <profile>
       <id>runSmallTests</id>

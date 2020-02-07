@@ -106,6 +106,17 @@
 #define MAX_VALUE_SIZE   512
 #define MAX_VALUE_SIZE_INT 4096
 
+// Connect default 64 seconds
+#define CONNECT_WAIT_TIMEOUT_MSEC    1000
+#define CONNECT_WAIT_TIMEOUT_SEC        1
+#define CONNECT_RETRY_COUNT            64
+#define CONNECT_RETRY_COUNT_MAX       180
+// IO default 64 seconds
+#define EPOLL_IO_WAIT_TIMEOUT_MSEC   1000
+#define EPOLL_IO_WAIT_TIMEOUT_SEC       1
+#define EPOLL_IO_RETRY_COUNT           64
+#define EPOLL_IO_RETRY_COUNT_MAX      180
+
 // The following defines specify the default values for the HA
 // timers if the timer related environment variables are not defined.
 // Defaults to 60 second Watchdog process timer expiration

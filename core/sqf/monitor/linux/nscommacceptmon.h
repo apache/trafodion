@@ -29,8 +29,10 @@
 #include <pthread.h>
 #include "lock.h"
 #include "reqqueue.h"
+#include "comm.h"
 
 class CCommAcceptMon : public CLock
+                     , public CComm
 {
 public:
 
@@ -38,6 +40,8 @@ public:
     virtual ~CCommAcceptMon();
 
     void commAcceptor( void );
+    inline const char * getMon2NsPort( void ) { return mon2NsPort_.c_str(); }
+    inline int          getMon2NsSocketPort( void ) { return( mon2NsSocketPort_ ); }
     bool isAccepting( void ) { CAutoLock lock(getLocker()); return( accepting_ ); }
     void processNewSock( int sockFd );
     void processMonReqs( int sockFd );
@@ -52,6 +56,8 @@ public:
     void monReqProcessInfoNs( struct message_def* msg, int sockFd );
     void monReqShutdown( struct message_def* msg, int sockFd );
     void monReqUnknown( struct message_def* msg, int sockFd );
+    inline void setMon2NsPort( char *mon2NsPort) { mon2NsPort_ = mon2NsPort; }
+    inline void setMon2NsSocketPort( int mon2NsSocketPort) { mon2NsSocketPort_ = mon2NsSocketPort; }
     void startAccepting( void );
     void stopAccepting( void );
     void start( void );
@@ -65,9 +71,15 @@ public:
 
 private:
     void commAcceptorSock( void );
+    void connectToCommSelf( void );
 
-    bool accepting_;
-    bool shutdown_;
+    bool   accepting_;
+    bool   shutdown_;
+    int    ioWaitTimeout_;
+    int    ioRetryCount_;
+    int    mon2nsSock_;
+    int    mon2NsSocketPort_;  // monitor to ns port
+    string mon2NsPort_;        // monitor to ns port ip address
 
     // mon2nsAcceptMon thread's id
     pthread_t                      thread_id_;

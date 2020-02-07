@@ -3857,6 +3857,9 @@ void CIntReviveReq::performRequest()
 
     int error;
 
+    static int sv_io_wait_timeout = EPOLL_IO_WAIT_TIMEOUT_MSEC;
+    static int sv_io_retry_count = EPOLL_IO_RETRY_COUNT;
+
     Monitor->EnterSyncCycle();
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
@@ -3876,10 +3879,13 @@ void CIntReviveReq::performRequest()
                                        , Monitor->getJoinComm());
             break;
         case CommType_Sockets:
-            error = Monitor->ReceiveSock( (char *)&header
-                                         , sizeof(header)
-                                         , Monitor->getJoinSock()
-                                         , method_name );
+            error = Monitor->ReceiveWait( Monitor->getJoinSock()
+                                        , (char *)&header
+                                        , sizeof(header)
+                                        , sv_io_wait_timeout
+                                        , sv_io_retry_count
+                                        , (char *) "Master monitor"
+                                        , method_name );
             break;
         default:
             // Programmer bonehead!
@@ -3888,43 +3894,60 @@ void CIntReviveReq::performRequest()
 
     mem_log_write(MON_REQQUEUE_REVIVE_2, error);
 
-    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - Msg Received - header. Error = %d\n", method_name, __LINE__, error);
+    if (!error && trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Msg Received - header.compressedSize_=%ld\n"
+                    , method_name, __LINE__, header.compressedSize_ );
+    }
 
     if (error)
     {
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Unable to receive header. Exiting.", method_name, __LINE__);
-
-        TRACE_EXIT;
-        return;
-    }
-
-    if (header.compressedSize_ == -1)
-    {   // creator monitor ran into compression error, abort.
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Creator monitor compression error. Exiting.", method_name, __LINE__);
-
         char buf[MON_STRING_BUF_SIZE];
-        sprintf(buf, "Creator monitor had compression error. Aborting node reintegration.\n");
-        mon_log_write(MON_REQQUEUE_REVIVE_2, SQ_LOG_CRIT, buf);
+        sprintf( buf, 
+                "[%s] Unable to receive header. Exiting!\n"
+                , method_name );
+        mon_log_write(MON_REQQUEUE_REVIVE_3, SQ_LOG_CRIT, buf);
 
         // exit call below runs desctructors. Stop healthcheck thread so that its lock can be destructed.
         HealthCheck.shutdownWork();
 
         TRACE_EXIT;
-        exit(0); // this will cause other monitors to disconnect from the new monitor.
+        // this will cause other monitors to disconnect from the new monitor.
+        mon_failure_exit();
+    }
+
+    if (header.compressedSize_ == -1)
+    {   // creator monitor ran into compression error, abort.
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf( buf, 
+                "[%s] Creator monitor had compression error. Exiting!\n"
+                , method_name );
+        mon_log_write(MON_REQQUEUE_REVIVE_4, SQ_LOG_CRIT, buf);
+
+        // exit call below runs desctructors. Stop healthcheck thread so that its lock can be destructed.
+        HealthCheck.shutdownWork();
+
+        TRACE_EXIT;
+        // this will cause other monitors to disconnect from the new monitor.
+        mon_failure_exit();
     }
 
     char *compBuf = (char *) malloc ( header.compressedSize_ );
 
     if (!compBuf)
     {
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Unable to allocate buffer of size = %ld\n",
-                          method_name, __LINE__, header.compressedSize_);
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf( buf, 
+                "[%s] Unable to allocate buffer of size = %ld. Exiting!\n"
+                , method_name, header.compressedSize_ );
+        mon_log_write(MON_REQQUEUE_REVIVE_5, SQ_LOG_CRIT, buf);
+
+        // exit call below runs desctructors. Stop healthcheck thread so that its lock can be destructed.
+        HealthCheck.shutdownWork();
+
         TRACE_EXIT;
-        return;
+        // this will cause other monitors to disconnect from the new monitor.
+        mon_failure_exit();
     }
 
     switch( CommType )
@@ -3937,9 +3960,12 @@ void CIntReviveReq::performRequest()
                                        , Monitor->getJoinComm());
             break;
         case CommType_Sockets:
-            error = Monitor->ReceiveSock( compBuf
+            error = Monitor->ReceiveWait( Monitor->getJoinSock()
+                                        , compBuf
                                         , header.compressedSize_
-                                        , Monitor->getJoinSock()
+                                        , sv_io_wait_timeout
+                                        , sv_io_retry_count
+                                        , (char *) "Master monitor"
                                         , method_name );
             break;
         default:
@@ -3954,27 +3980,39 @@ void CIntReviveReq::performRequest()
 
     if (error)
     {
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Unable to receive data. Exiting.", method_name, __LINE__);
-
         free( compBuf );
 
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf( buf, 
+                "[%s] Unable to receive data. Exiting!\n"
+                , method_name );
+        mon_log_write(MON_REQQUEUE_REVIVE_6, SQ_LOG_CRIT, buf);
+
+        // exit call below runs desctructors. Stop healthcheck thread so that its lock can be destructed.
+        HealthCheck.shutdownWork();
+
         TRACE_EXIT;
-        return;
+        // this will cause other monitors to disconnect from the new monitor.
+        mon_failure_exit();
     }
 
     char *buf = (char *) malloc ( header.fullSize_ );
 
     if (!buf)
     {
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Unable to allocate buffer of size = %ld\n",
-                          method_name, __LINE__, header.fullSize_);
-
         free( compBuf );
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf( buf, 
+                "[%s] Unable to allocate buffer of header.fullSize_=%ld. Exiting!\n"
+                , method_name, header.fullSize_ );
+        mon_log_write(MON_REQQUEUE_REVIVE_7, SQ_LOG_CRIT, buf);
+
+        // exit call below runs desctructors. Stop healthcheck thread so that its lock can be destructed.
+        HealthCheck.shutdownWork();
 
         TRACE_EXIT;
-        return;
+        // this will cause other monitors to disconnect from the new monitor.
+        mon_failure_exit();
     }
 
     unsigned long bufLen = header.fullSize_;
@@ -4094,6 +4132,9 @@ void CIntSnapshotReq::performRequest()
     int z_result = 0;
     struct timespec startTime, snapShotTime, compressTime;
     int error = 0;
+
+    static int sv_io_wait_timeout = EPOLL_IO_WAIT_TIMEOUT_MSEC;
+    static int sv_io_retry_count = EPOLL_IO_RETRY_COUNT;
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf("%s@%d - Snapshot request\n", method_name, __LINE__);
@@ -4260,9 +4301,12 @@ void CIntSnapshotReq::performRequest()
                                         , Monitor->getJoinComm());
                 break;
             case CommType_Sockets:
-                error = Monitor->SendSock( (char *)&header
+                error = Monitor->SendWait( Monitor->getJoinSock()
+                                         , (char *)&header
                                          , sizeof(header)
-                                         , Monitor->getJoinSock()
+                                         , sv_io_wait_timeout
+                                         , sv_io_retry_count
+                                         , (char *) "Remote joining node"
                                          , method_name );
                 break;
             default:
@@ -4307,9 +4351,12 @@ void CIntSnapshotReq::performRequest()
                                     , Monitor->getJoinComm());
             break;
         case CommType_Sockets:
-            error = Monitor->SendSock( (char *)&header
+            error = Monitor->SendWait( Monitor->getJoinSock()
+                                     , (char *)&header
                                      , sizeof(header)
-                                     , Monitor->getJoinSock()
+                                     , sv_io_wait_timeout
+                                     , sv_io_retry_count
+                                     , (char *) "Remote joining node"
                                      , method_name );
             break;
         default:
@@ -4343,9 +4390,12 @@ void CIntSnapshotReq::performRequest()
                                     , Monitor->getJoinComm());
             break;
         case CommType_Sockets:
-            error = Monitor->SendSock( compBuf
+            error = Monitor->SendWait( Monitor->getJoinSock()
+                                     , compBuf
                                      , header.compressedSize_
-                                     , Monitor->getJoinSock()
+                                     , sv_io_wait_timeout
+                                     , sv_io_retry_count
+                                     , (char *) "Remote joining node"
                                      , method_name );
             break;
         default:

@@ -102,6 +102,7 @@ ifeq ($(USE_SONAR),1)
 endif
 
 MONITORSRC = monitor.cxx
+MONITORSRC += comm.cxx
 MONITORSRC += cluster.cxx
 MONITORSRC += open.cxx
 MONITORSRC += process.cxx
@@ -160,6 +161,7 @@ MONITORSRC += monrobsem.cxx
 
 MONITOROBJS = $(OUTDIR)/versmon.o
 MONITOROBJS += $(OUTDIR)/monitor.o
+MONITOROBJS += $(OUTDIR)/comm.o
 MONITOROBJS += $(OUTDIR)/cluster.o
 MONITOROBJS += $(OUTDIR)/nameserver.o
 MONITOROBJS += $(OUTDIR)/open.o
@@ -238,6 +240,7 @@ MONITOROBJS += $(OUTDIR)/meas.o
 
 NSOBJS = $(OUTDIR)/versns.o
 NSOBJS += $(OUTDIR)/nsmonitor.o
+NSOBJS += $(OUTDIR)/comm.o
 NSOBJS += $(OUTDIR)/nscluster.o
 NSOBJS += $(OUTDIR)/open.o
 NSOBJS += $(OUTDIR)/nsprocess.o
@@ -510,8 +513,8 @@ $(BINEXPDIR)/sqwatchdog : $(WATCHDOGOBJS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $(MSG_
 $(BINEXPDIR)/pstartd: $(PSTARTDOBJS) $(OUTDIR)/monclio.o $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS)
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) -pthread $(INCLUDES) $^ -o $@ $(LIBS) 
 	@echo 'Finished building target: $@'
 	@echo ' '
 

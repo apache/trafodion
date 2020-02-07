@@ -27,14 +27,3 @@
 
 #include "cluster.cxx"
 
-int CCluster::AcceptMon2NsSock( void )
-{
-    const char method_name[] = "CCluster::AcceptMon2NsSock";
-    TRACE_ENTRY;
-
-    int csock = AcceptSock( mon2nsSock_ );
-
-    TRACE_EXIT;
-    return( csock  );
-}
-
