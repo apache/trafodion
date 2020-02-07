@@ -389,6 +389,8 @@ void CCluster::AssignLeaders( int pnid, const char* failedMaster, bool checkProc
     const char method_name[] = "CCluster::AssignLeaders";
     TRACE_ENTRY;
 
+    EnterSyncCycle();
+
 #ifndef NAMESERVER_PROCESS
     AssignTmLeader ( pnid, checkProcess );
 #else
@@ -396,6 +398,8 @@ void CCluster::AssignLeaders( int pnid, const char* failedMaster, bool checkProc
     checkProcess = checkProcess;
 #endif
     AssignMonitorLeader ( failedMaster );
+
+    ExitSyncCycle();
 
     TRACE_EXIT;
 }
