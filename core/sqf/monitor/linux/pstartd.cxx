@@ -960,13 +960,19 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
     progArgs = persistConfig->GetProgramArgs();
     progArgc = persistConfig->GetProgramArgc();
 
+    char stdout[MAX_PROCESS_PATH];
+    const char *logpath = getenv("TRAF_LOG");
+    snprintf( stdout, sizeof(stdout)
+            , "%s/%s"
+            , logpath, progStdout.c_str() );
+
     if ( tracing )
     {
         trace_printf( "%s@%d Will start process: nid=%d, type=%s, name=%s, "
                       "prog=%s, stdout=%s, argc=%d, args=%s\n"
                     , method_name, __LINE__, MyNid
                     , ProcessTypeString(procType), procName.c_str()
-                    , progProgram.c_str(), progStdout.c_str()
+                    , progProgram.c_str(), stdout
                     , progArgc, progArgs.c_str());
     }
 
@@ -982,7 +988,7 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
                                       , procName.c_str()
                                       , progProgram.c_str()
                                       , ""
-                                      , progStdout.c_str()
+                                      , stdout
                                       , progArgc
                                       , progArgs.c_str()
                                     //  , argBegin
