@@ -1655,6 +1655,7 @@ int main (int argc, char *argv[])
 #else
         strcat(envfile, "/monitor.env");
 #endif
+        printf("Loading monitor trace configuration file: %s\n", envfile);
         xprops.load( envfile );
         delete [] envfile;
         MON_Smap_Enum xenum( &xprops );
