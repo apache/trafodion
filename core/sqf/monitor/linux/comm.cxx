@@ -287,10 +287,10 @@ int CComm::Connect( const char *portName, bool doRetries )
     const char method_name[] = "CComm::Connect";
     TRACE_ENTRY;
 
-    int  sock;      // socket
-    int  ret;       // returned value
-    int  nodelay = 1; // sockopt reuse option
-    int  reuse = 1; // sockopt reuse option
+    int  sock;          // socket
+    int  ret;           // returned value
+    int  nodelay = 1;   // sockopt TCP_NODELAY option
+    int  reuse = 1;     // sockopt SO_REUSEADDR option
 #if defined(_XOPEN_SOURCE_EXTENDED)
 #ifdef __LP64__
     socklen_t  size;    // size of socket address
