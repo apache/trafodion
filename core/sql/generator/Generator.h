@@ -1455,7 +1455,6 @@ NABoolean isEffTreeUpsert() {
        ComTdbVirtTableTableInfo * tableInfo = NULL,
        ComTdbVirtTableSequenceInfo * seqInfo = NULL,
        NAArray<HbaseStr>* endKeyArray = NULL,
-       char * snapshotName = NULL,
        NABoolean genPackedDesc = FALSE,
        Int32 * packedDescLen = NULL,
        NABoolean isUserTable = FALSE,

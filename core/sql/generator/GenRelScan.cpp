@@ -52,6 +52,7 @@
 #include "CmpSeabaseDDL.h"
 #include "TrafDDLdesc.h"
 
+#include "HBaseClient_JNI.h"
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -2490,10 +2491,12 @@ short HbaseAccess::codeGen(Generator * generator)
          tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
          if (getIndexDesc()->isClusteringIndex())
          {
-            //base table
-            snapshotName = (char*)getTableDesc()->getNATable()->getSnapshotName() ;
-           if (snapshotName == NULL)
-             latestSnpSupport = latest_snp_no_snapshot_available;
+              //Base table
+              Lng32 retcode = HBaseClient_JNI::getLatestSnapshot(tablename, snapshotName, generator->wHeap()); 
+              if (retcode != HBC_OK)
+                 GenAssert(0,"HBaseClient_JNI::getLatestSnapshot failed");
+              if (snapshotName == NULL)
+                 latestSnpSupport = latest_snp_no_snapshot_available;
           }
           else
             latestSnpSupport = latest_snp_index_table;
@@ -3096,10 +3099,11 @@ short HbaseAccess::codeGen(Generator * generator)
   if (isSnapshotScanFeasible( latestSnpSupport,tablename))
   {
     snapAttrs->setUseSnapshotScan(TRUE );
+    snapAttrs->setSnapshotType(snpType_);
     if (snpType_ == SNP_LATEST)
     {
-      CMPASSERT(snapshotName != NULL);
-      snapNameNAS = snapshotName;
+      CMPASSERT(snapshotName != NULL);	
+      snapNameNAS = snapshotName;	
     }
     else if (snpType_ == SNP_SUFFIX)
     {

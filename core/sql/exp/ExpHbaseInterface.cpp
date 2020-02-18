@@ -1462,17 +1462,6 @@ Lng32 ExpHbaseInterface_JNI::getHbaseTableInfo(const HbaseStr& tblName,
   return retCode_;
 }
 
-Lng32 ExpHbaseInterface_JNI::getLatestSnapshot( const char * tabname, char *& snapshotName, NAHeap * heap)
-{
-  if (client_ == NULL)
-  {
-    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
-      return -HBASE_ACCESS_ERROR;
-  }
-
-  retCode_ = client_->getLatestSnapshot(tabname, snapshotName, heap);
-  return retCode_;
-}
 Lng32 ExpHbaseInterface_JNI::cleanSnpTmpLocation( const char * path)
 {
   if (client_ == NULL)

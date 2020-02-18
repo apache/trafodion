@@ -1336,7 +1336,7 @@ HBC_RetCode HBaseClient_JNI::getLatestSnapshot(const char * tblName, char *& sna
     return HBC_ERROR_GET_LATEST_SNP_PARAM;
   }
   tsRecentJMFromJNI = JavaMethods_[JM_GET_LATEST_SNP].jm_full_name;
-  jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_LATEST_SNP].methodID,js_tblName);
+  jstring jresult = (jstring)jenv_->CallStaticObjectMethod(javaClass_, JavaMethods_[JM_GET_LATEST_SNP].methodID,js_tblName);
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getLatestSnapshot()");

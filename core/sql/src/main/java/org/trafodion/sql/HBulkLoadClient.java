@@ -85,6 +85,7 @@ import java.sql.Statement;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.lang.ClassNotFoundException;
+import org.apache.hadoop.hbase.snapshot.SnapshotExistsException;
 
 public class HBulkLoadClient
 {
@@ -284,20 +285,15 @@ public class HBulkLoadClient
     Admin admin = null;
     try 
     {
-      admin = connection_.getAdmin();
-      List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
-      if (! lstSnaps.isEmpty())
-      {
-        for (SnapshotDescription snpd : lstSnaps) 
-        {
-            if (snpd.getName().compareTo(snapshotName) == 0)
-            {
-              if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.createSnapshot() -- deleting: " + snapshotName + " : " + snpd.getName());
-              admin.deleteSnapshot(snapshotName);
-            }
-        }
+      admin = HBaseClient.getConnection().getAdmin();
+      try {
+         admin.snapshot(snapshotName, TableName.valueOf(tableName));
+      } catch (org.apache.hadoop.hbase.snapshot.SnapshotExistsException e) {
+         try {
+           admin.deleteSnapshot(snapshotName);
+         } catch (IOException ioe) {}
+         admin.snapshot(snapshotName, TableName.valueOf(tableName));
       }
-      admin.snapshot(snapshotName, TableName.valueOf(tableName));
     }
     finally
     {
@@ -336,22 +332,6 @@ public class HBulkLoadClient
     try
     {
       admin = connection_.getAdmin();
-      List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
-      if (! lstSnaps.isEmpty())
-      {
-        for (SnapshotDescription snpd : lstSnaps) 
-        {
-          //System.out.println("here 1: " + snapshotName + snpd.getName());
-          if (snpd.getName().compareTo(snapshotName) == 0)
-          {
-            //System.out.println("deleting: " + snapshotName + " : " + snpd.getName());
-            snapshotExists = true;
-            break;
-          }
-        }
-      }
-      if (!snapshotExists)
-        return true;
       TableName table = TableName.valueOf(tableName);
       if (admin.isTableDisabled(table))
           admin.enableTable(table);

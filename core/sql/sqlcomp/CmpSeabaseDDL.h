@@ -470,9 +470,6 @@ class CmpSeabaseDDL
   }
   
   enum {
-    // set if we need to get the hbase snapshot info of the table
-    GET_SNAPSHOTS     = 0x0002,
-
     // set if descr is to be generated in packed format to be stored in metadata
     GEN_PACKED_DESC   = 0x0004,
 

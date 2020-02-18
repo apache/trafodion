@@ -26,6 +26,7 @@
 #include "ComTdb.h"
 #include "ComQueue.h"
 #include "ComKeyRange.h" // keyInfo_ dereferenced in some inline methods.
+#include "RelScan.h"
 
 static const ComTdbVirtTableColumnInfo hbaseTableColumnInfo[] =
 {                                                                                     
@@ -355,6 +356,9 @@ public:
     char * getSnapshotName() const { return snapshotName_; }
     void   setSnapshotName(char *  v) { snapshotName_= v; }
 
+    HbaseAccess::SNPType getSnapshotType() { return snpType_; }
+    void setSnapshotType(HbaseAccess::SNPType snpType) { snpType_ = snpType; }
+
   private:
     enum
     {
@@ -366,6 +370,7 @@ public:
     NABasicPtr snapshotName_;
     UInt32     snapshotScanTimeout_;
     UInt32     flags_;
+    HbaseAccess::SNPType snpType_;
   };
   typedef NAVersionedObjectPtrTempl<HbaseSnapshotScanAttributes> HbaseSnapshotScanAttributesPtr;
 	

@@ -12773,7 +12773,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
      0, NULL, // viewInfo
      tableInfo,
      seqInfo,
-     NULL, NULL, // endKeyArray, snapshotName
+     NULL, // endKeyArray, 
      FALSE, NULL, FALSE, // genPackedDesc, packedDescLen, isUserTable
      privInfo);
   
@@ -13646,23 +13646,6 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   
   NAArray<HbaseStr>* endKeyArray  = ehi->getRegionEndKeys(extNameForHbase);
 
-  char * snapshotName = NULL;
-  if (ctlFlags & GET_SNAPSHOTS)
-    {
-      Lng32 retcode = 
-        ehi->getLatestSnapshot(extNameForHbase.data(), snapshotName, STMTHEAP);
-      if (retcode < 0)
-        {
-          *CmpCommon::diags()
-            << DgSqlCode(-8448)
-            << DgString0((char*)"ExpHbaseInterface::getLatestSnapshot()")
-            << DgString1(getHbaseErrStr(-retcode))
-            << DgInt0(-retcode)
-            << DgString2((char*)GetCliGlobals()->getJniErrorStr());
-          delete ehi;
-        }
-    }
-
   
   tableDesc =
     Generator::createVirtualTableDesc
@@ -13682,7 +13665,6 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
      tableInfo,
      seqInfo,
      endKeyArray,
-     snapshotName,
      ((ctlFlags & GEN_PACKED_DESC) != 0),
      &packedDescLen,
      TRUE /*user table*/,
@@ -13787,8 +13769,6 @@ TrafDesc * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
       else
         {
           Int32 ctlFlags = 0;
-          if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) != DF_NONE)
-             ctlFlags = GET_SNAPSHOTS; // get snapshot
           if ((CmpCommon::getDefault(TRAF_READ_OBJECT_DESC) == DF_ON) &&
               (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
               (NOT includeInvalidDefs))
