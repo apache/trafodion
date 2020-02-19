@@ -2172,6 +2172,7 @@ NABoolean HbaseAccess::isSnapshotScanFeasible(
   }
   return (snpType_ != SNP_NONE);
 }
+
 short HbaseAccess::createSortValue(ItemExpr * col_node,
 				   std::vector<SortValue> &myvector,
 				   NABoolean isSecondaryIndex)
@@ -2475,34 +2476,44 @@ short HbaseAccess::codeGen(Generator * generator)
   char * tablename = NULL;
   char * snapshotName = NULL;
   LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
-  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()) ||
-      (getTableName().getQualifiedNameObj().isHbaseMappedName()))
-    {
-      tablename =
-        space->AllocateAndCopyToAlignedSpace(
-                                             GenGetQualifiedName(getTableName().getQualifiedNameObj().getObjectName()), 0);
-      latestSnpSupport = latest_snp_not_trafodion_table;
-    }
-  else
-    {
-      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
-      {
+  Int32 computedHBaseRowSizeFromMetaData = getTableDesc()->getNATable()->computeHBaseRowSizeFromMetaData();
+  if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) != DF_NONE)
+  {
+      if (!getTableDesc()->getNATable()->isSeabaseTable()
+          || getTableDesc()->getNATable()->isSeabaseMDTable()
+          || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HIST_NAME)
+          || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HISTINT_NAME))
+         snpType_ = SNP_NONE;
+     else if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+         (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+         (getTableName().getQualifiedNameObj().isHbaseMappedName())) 
+     {
+        latestSnpSupport = latest_snp_not_trafodion_table;
+     }
+     else if (computedHBaseRowSizeFromMetaData * getEstRowsAccessed().getValue()  <
+                getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD)*1024*1024)
+        latestSnpSupport = latest_snp_small_table;
+     else
+     {
+        if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+        {
          tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
          if (getIndexDesc()->isClusteringIndex())
          {
-              //Base table
-              Lng32 retcode = HBaseClient_JNI::getLatestSnapshot(tablename, snapshotName, generator->wHeap()); 
-              if (retcode != HBC_OK)
-                 GenAssert(0,"HBaseClient_JNI::getLatestSnapshot failed");
-              if (snapshotName == NULL)
-                 latestSnpSupport = latest_snp_no_snapshot_available;
+              if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) == DF_LATEST) {
+                  //Base table
+                 Lng32 retcode = HBaseClient_JNI::getLatestSnapshot(tablename, snapshotName, generator->wHeap()); 
+                 if (retcode != HBC_OK)
+                     GenAssert(0,"HBaseClient_JNI::getLatestSnapshot failed");
+                 if (snapshotName == NULL)
+                     latestSnpSupport = latest_snp_no_snapshot_available;
+             }
           }
           else
             latestSnpSupport = latest_snp_index_table;
       }
     }
-
+  } 
   if (! tablename) 
      tablename =
         space->AllocateAndCopyToAlignedSpace(
@@ -3068,11 +3079,6 @@ short HbaseAccess::codeGen(Generator * generator)
 
       upqueuelength = ((buffersize / bufRowlen) * numBuffers)/2;
     }
-
-  Int32 computedHBaseRowSizeFromMetaData = getTableDesc()->getNATable()->computeHBaseRowSizeFromMetaData();
-  if (computedHBaseRowSizeFromMetaData * getEstRowsAccessed().getValue()  <
-                getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD)*1024*1024)
-    latestSnpSupport = latest_snp_small_table;
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
