@@ -2386,6 +2386,93 @@ static short HbaseAccess_updateHbaseInfoNode(
   return 0;
 }
 
+// asAnsiString: return name in ansi delimited format
+short FileScan::genTableName(Generator * generator,
+                             ComSpace *space,
+                             const CorrName &tableName,
+                             const NATable* naTable,
+                             const NAFileSet* naFileSet,
+                             const NABoolean asAnsiString,
+                             char* &gendTablename)
+{
+  gendTablename = NULL;
+
+  NAString tabNS;
+
+
+  if (naTable && ((naTable->isHbaseRowTable()) ||
+                  (naTable->isHbaseCellTable())))
+    {
+      if (NOT tabNS.isNull())
+        {
+          NAString tabName = tabNS +
+            tableName.getQualifiedNameObj().getObjectName();
+          gendTablename = space->AllocateAndCopyToAlignedSpace(tabName, 0);
+        }
+      else
+        {
+          gendTablename = space->AllocateAndCopyToAlignedSpace(
+               GenGetQualifiedName(
+                    tableName.getQualifiedNameObj().getObjectName(),
+                    FALSE), 0);
+        }
+    }
+  else if (naTable && (naTable->isHbaseMapTable()))
+    {
+      const char * tblColonPos =
+        strchr(tableName.getQualifiedNameObj().getObjectName(), ':');
+      if ((NOT tabNS.isNull()) &&
+          (!tblColonPos))
+        {
+          NAString tabName = tabNS +
+            tableName.getQualifiedNameObj().getObjectName();
+          gendTablename = space->AllocateAndCopyToAlignedSpace(tabName, 0);
+        }
+      else
+        {
+          gendTablename = space->AllocateAndCopyToAlignedSpace(
+               GenGetQualifiedName(
+                    tableName.getQualifiedNameObj().getObjectName(),
+                    FALSE), 0);
+        }
+    }
+  else if (naFileSet)
+    {
+      if (tabNS.isNull())
+        {
+          gendTablename = space->AllocateAndCopyToAlignedSpace(
+               GenGetQualifiedName(naFileSet->getFileSetName(),
+                                   FALSE), 0);
+        }
+      else
+        {
+          NAString tabName =
+            tabNS + GenGetQualifiedName(naFileSet->getFileSetName(),
+                                        FALSE);
+
+          gendTablename = space->AllocateAndCopyToAlignedSpace(tabName, 0);
+        }
+    }
+
+  if (gendTablename == NULL)
+    {
+      if (tabNS.isNull())
+        gendTablename = space->AllocateAndCopyToAlignedSpace(
+             GenGetQualifiedName(tableName, FALSE), 0);
+      else
+        {
+          NAString tabName =
+            tabNS +
+            GenGetQualifiedName(tableName, FALSE);
+
+          gendTablename = space->AllocateAndCopyToAlignedSpace(tabName, 0);
+        }
+    }
+
+  return 0;
+}
+
+
 short HbaseAccess::codeGen(Generator * generator)
 {
   Space * space          = generator->getSpace();
@@ -2474,22 +2561,41 @@ short HbaseAccess::codeGen(Generator * generator)
   // Always get the index name -- it will be the base tablename for
   // primary access if it is trafodion table.
   char * tablename = NULL;
+  char * baseTableName = NULL;
   char * snapshotName = NULL;
+
+ if (genTableName(generator, space, getTableName(),
+                  getTableDesc()->getNATable(),
+                  getIndexDesc()->getNAFileSet(),
+                  FALSE,
+                  tablename))
+    {
+      GenAssert(0,"genTableName failed");
+    }
+
+  if (genTableName(generator, space, getTableDesc()->getCorrNameObj(),
+                  getTableDesc()->getNATable(),
+                  NULL,  // so we get the base table name
+                  FALSE,
+                  baseTableName))
+    {
+      GenAssert(0,"genTableName failed");
+    }
+
   LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
   Int32 computedHBaseRowSizeFromMetaData = getTableDesc()->getNATable()->computeHBaseRowSizeFromMetaData();
+
   if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) != DF_NONE)
   {
       if (!getTableDesc()->getNATable()->isSeabaseTable()
-          || getTableDesc()->getNATable()->isSeabaseMDTable()
-          || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HIST_NAME)
-          || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HISTINT_NAME))
+           || getTableDesc()->getNATable()->isSeabaseMDTable()
+           || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HIST_NAME)
+           || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HISTINT_NAME))
          snpType_ = SNP_NONE;
      else if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
          (getTableDesc()->getNATable()->isHbaseCellTable()) ||
          (getTableName().getQualifiedNameObj().isHbaseMappedName())) 
-     {
         latestSnpSupport = latest_snp_not_trafodion_table;
-     }
      else if (computedHBaseRowSizeFromMetaData * getEstRowsAccessed().getValue()  <
                 getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD)*1024*1024)
         latestSnpSupport = latest_snp_small_table;
@@ -2497,12 +2603,11 @@ short HbaseAccess::codeGen(Generator * generator)
      {
         if (getIndexDesc() && getIndexDesc()->getNAFileSet())
         {
-         tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
          if (getIndexDesc()->isClusteringIndex())
          {
               if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) == DF_LATEST) {
                   //Base table
-                 Lng32 retcode = HBaseClient_JNI::getLatestSnapshot(tablename, snapshotName, generator->wHeap()); 
+                 Lng32 retcode = HBaseClient_JNI::getLatestSnapshot(baseTableName, snapshotName, generator->wHeap()); 
                  if (retcode != HBC_OK)
                      GenAssert(0,"HBaseClient_JNI::getLatestSnapshot failed");
                  if (snapshotName == NULL)
@@ -2514,10 +2619,6 @@ short HbaseAccess::codeGen(Generator * generator)
       }
     }
   } 
-  if (! tablename) 
-     tablename =
-        space->AllocateAndCopyToAlignedSpace(
-                                           GenGetQualifiedName(getTableName()), 0);
 
   ValueIdList columnList;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
