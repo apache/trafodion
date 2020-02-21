@@ -5603,7 +5603,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
       ((strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0) ||
        (strcmp(objType, COM_VIEW_OBJECT_LIT) == 0)))
     {
-      Int32 ctlFlags = GEN_PACKED_DESC | GET_SNAPSHOTS;
+      Int32 ctlFlags = GEN_PACKED_DESC ;
       Int32 packedDescLen = 0;
       TrafDesc * ds = 
         getSeabaseUserTableDesc(catName, schName, objName,

@@ -612,7 +612,6 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->convertRowLen_, 
 				       &rc, FALSE))
 	      return 1;
-	    
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incUsedRows();
 	    
@@ -626,6 +625,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
             if (tcb_->hbaseAccessTdb().multiVersions())
               step_ = CREATE_ROW;
             else
+              
               step_ = NEXT_ROW;
 	  }
 	  break;

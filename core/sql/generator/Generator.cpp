@@ -1923,7 +1923,6 @@ TrafDesc * Generator::createVirtualTableDesc
      ComTdbVirtTableTableInfo * tableInfo,
      ComTdbVirtTableSequenceInfo * seqInfo,
      NAArray<HbaseStr>* endKeyArray,
-     char * snapshotName,
      NABoolean genPackedDesc,
      Int32 * packedDescLen,
      NABoolean isUserTable,
@@ -2288,15 +2287,6 @@ TrafDesc * Generator::createVirtualTableDesc
       table_desc->tableDesc()->hbase_regionkey_desc = 
         assembleDescs(endKeyArray, space);
     }
-
-  if (snapshotName != NULL)
-    {
-      table_desc->tableDesc()->snapshotName = 
-        new GENHEAP(space) char[strlen(snapshotName) + 1];
-      strcpy(table_desc->tableDesc()->snapshotName, snapshotName);
-    }
- else
-    table_desc->tableDesc()->snapshotName = NULL;
 
   if (genPackedDesc && space)
     {

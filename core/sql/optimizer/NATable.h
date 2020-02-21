@@ -806,7 +806,6 @@ public:
   inline CostScalar getOriginalRowCount() const { return originalCardinality_ ; }
   void setOriginalRowCount(CostScalar rowcount) {originalCardinality_ = rowcount; }
 
-  const char * getSnapshotName() const { return snapshotName_; }
   // ---------------------------------------------------------------------
   // Standard operators
   // ---------------------------------------------------------------------
@@ -1208,8 +1207,6 @@ private:
   ULng32 keyLength_;
 
   char * parentTableName_;
-
-  char *snapshotName_;
 
   TrafDesc *partnsDesc_;
 

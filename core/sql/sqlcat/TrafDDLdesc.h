@@ -1060,7 +1060,7 @@ public:
   Lng32 owner;
   Lng32 schemaOwner;
 
-  char*  snapshotName;
+  char * snapshotName;
   char*  default_col_fam;
   char*  all_col_fams;
   Int64 objectFlags;

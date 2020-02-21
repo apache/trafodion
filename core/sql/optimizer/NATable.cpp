@@ -5002,7 +5002,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
      privDescs_(NULL),
      secKeySet_(heap),
      newColumns_(heap),
-     snapshotName_(NULL),
      prototype_(NULL),
      allColFams_(heap)
  {
@@ -5177,14 +5176,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
    if (CmpSeabaseDDL::isMDflagsSet
        (table_desc->tableDesc()->tablesFlags, MD_TABLES_HIVE_EXT_KEY_ATTRS))
      setHiveExtKeyAttrs(TRUE);
-
-   if (table_desc->tableDesc()->snapshotName)
-     {
-       snapshotName_ =
-         new(heap_) char[strlen(table_desc->tableDesc()->snapshotName) + 1];
-       strcpy(snapshotName_, table_desc->tableDesc()->snapshotName);
-     }
-
    if (table_desc->tableDesc()->default_col_fam)
      defaultColFam_ = table_desc->tableDesc()->default_col_fam;
 
@@ -5734,7 +5725,6 @@ NATable::NATable(BindWA *bindWA,
        privInfo_(NULL),
        privDescs_(NULL),
        newColumns_(heap),
-       snapshotName_(NULL),
        allColFams_(heap)
 {
 
@@ -7068,11 +7058,6 @@ NATable::~NATable()
       NADELETEBASIC(parentTableName_, heap_);
       parentTableName_ = NULL;
     } 
-  if (snapshotName_ != NULL)
-    {
-      NADELETEBASIC(snapshotName_, heap_);
-      snapshotName_ = NULL;
-    }
   if (viewText_ != NULL)
     {
       NADELETEBASIC(viewText_, heap_);

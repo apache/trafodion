@@ -874,6 +874,14 @@ public:
                                ValueIdSet &pulledNewInputs);
   virtual short codeGen(Generator*);
 
+  static short genTableName(Generator * generator,
+                            ComSpace *space,
+                            const CorrName &tableName,
+                            const NATable* naTable,
+                            const NAFileSet* naFileSet,
+                            const NABoolean asAnsiString,
+                            char* &gendTablename);
+
   short codeGenForHive(Generator*);
   short genForTextAndSeq(Generator * generator,
                              Queue * &hdfsFileInfoList,

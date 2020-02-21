@@ -70,6 +70,7 @@ import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.snapshot.SnapshotCreationException;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription.Type;
+import org.apache.hadoop.hbase.snapshot.SnapshotExistsException;
 //import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos;
 
 import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
@@ -963,19 +964,6 @@ public class HBaseClient {
             Admin admin = getConnection().getAdmin();
 	    
 	    String snapshotName = srcTblName + "_SNAPSHOT";
-	    
-	    List<SnapshotDescription> l = new ArrayList<SnapshotDescription>(); 
-	    //	    l = admin.listSnapshots(snapshotName);
-	    l = admin.listSnapshots();
-	    if (! l.isEmpty())
-		{
-		    for (SnapshotDescription sd : l) {
-			if (sd.getName().compareTo(snapshotName) == 0)
-			    {
-				admin.deleteSnapshot(snapshotName);
-			    }
-		    }
-		}
             TableName tgtTableName = TableName.valueOf(tgtTblName);
             TableName srcTableName = TableName. valueOf(srcTblName);
 
@@ -986,13 +974,13 @@ public class HBaseClient {
             }
                 
 	    if (! admin.isTableDisabled(srcTableName))
-		admin.disableTable(srcTableName);
-	    admin.snapshot(snapshotName, srcTableName);
+	       admin.disableTable(srcTableName);
+	    createSnapshot(srcTblName, snapshotName, true);
 	    admin.cloneSnapshot(snapshotName, tgtTableName);
-	    admin.deleteSnapshot(snapshotName);
+	    deleteSnapshot(snapshotName, false);
 	    admin.enableTable(srcTableName);
-            admin.close();
-            return true;
+	    admin.close();
+	    return true;
     }
 
     public boolean exists(String tblName, long transID)  
@@ -1891,7 +1879,7 @@ public class HBaseClient {
   
   //returns the latest snapshot name for a table. returns null if table has no snapshots
   //associated with it
-  public String getLatestSnapshot(String tabName) throws IOException
+  public static String getLatestSnapshot(String tabName) throws IOException
   {
     Admin admin = getConnection().getAdmin();
     List<SnapshotDescription> snapDescs = admin.listSnapshots();
@@ -2179,7 +2167,52 @@ public class HBaseClient {
       if (logger.isDebugEnabled()) logger.debug("HBaseClient.deleteSnapshot() - Snapshot deleted: " + snapshotName);
       return true;
   }
-}
     
-
+  public static boolean createSnapshot( String tableName, String snapshotName, boolean deleteIfExists)
+      throws IOException
+  {
+    Admin admin = null;
+    try 
+    {
+      admin = getConnection().getAdmin();
+      try {
+         admin.snapshot(snapshotName, TableName.valueOf(tableName));
+      } catch (SnapshotExistsException e) {
+         try {
+           if (! deleteIfExists)
+              throw e;
+           admin.deleteSnapshot(snapshotName);
+         } catch (IOException ioe) {}
+         admin.snapshot(snapshotName, TableName.valueOf(tableName));
+      }
+    }
+    finally
+    {
+      admin.close();
+    }
+    return true;
+  }
+  
+  public static boolean deleteSnapshot( String snapshotName, boolean throwError)
+      throws IOException
+  {
+    
+    Admin admin = null;
+    try
+    {
+      admin = getConnection().getAdmin();
+      try {
+        admin.deleteSnapshot(snapshotName);
+      } catch (IOException ioe) {
+          if (throwError)
+             throw ioe;
+      }
+    }
+    finally 
+    {
+       admin.close();
+    }
+    return true;
+  }
+}
 
