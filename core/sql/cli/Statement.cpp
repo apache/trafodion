@@ -3090,63 +3090,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	      state_ = ERROR_;
 	      break;
 	    }
-		SQL_QUERY_COST_INFO query_cost_info;
-		SQL_QUERY_COMPILER_STATS_INFO query_comp_stats_info;
-		query_cost_info.cpuTime   = 0;
-		query_cost_info.ioTime    = 0;
-		query_cost_info.msgTime   = 0;
-		query_cost_info.idleTime  = 0;
-		query_cost_info.totalTime = 0;
-		query_cost_info.cardinality = 0;
-		query_cost_info.estimatedTotalMem  = 0;
-		query_cost_info.resourceUsage = 0;
-                query_cost_info.maxCpuUsage = 0;
-		if (getRootTdb())
-		  {
-		    if (getRootTdb()->getQueryCostInfo())
-		      {
-                        getRootTdb()->getQueryCostInfo()->translateToExternalFormat(&query_cost_info);
-		      }
-		
-		  }
-		else
-		  query_cost_info.totalTime = getRootTdb()->getCost();
 
-	      
-		if (getRootTdb())
-		  {
-		    CompilerStatsInfo *cmpStatsInfo = 
-		      getRootTdb()->getCompilerStatsInfo();
-
-		    if (cmpStatsInfo)
-		      {
-			short xnNeeded = (transactionReqd() ? 1 : 0);
-			cmpStatsInfo->translateToExternalFormat(&query_comp_stats_info,xnNeeded);
-			// CompilationStatsData. 
-			CompilationStatsData *cmpData = 
-			  getRootTdb()->getCompilationStatsData();
-
-
-			SQL_COMPILATION_STATS_DATA *query_cmp_data = 
-			  &query_comp_stats_info.compilationStats;
-  
-			if( cmpData )
-			  {
-                           Int64 cmpStartTime = -1;
-                           Int64 cmpEndTime = NA_JulianTimestamp();
-                           if (masterStats != NULL)
-                              cmpStartTime = masterStats->getCompStartTime();
-			    cmpData->translateToExternalFormat(query_cmp_data,
-                                        cmpStartTime, cmpEndTime);
-                            setCompileEndTime(cmpEndTime);
-			  }   
-		      }
-
-		  }
-
-            // done deciding if this query needs to be monitored and 
-            // registered with WMS.
-            // now execute it.
             if (masterStats != NULL)
               {
                 masterStats->setIsBlocking();
