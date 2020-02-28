@@ -177,17 +177,12 @@ CNode::CNode( char *name
       ,wdtKeepAliveTimerValue_(WDT_KEEPALIVETIMERDEFAULT)
       ,zid_(pnid)
       ,commPort_("")
-      ,syncPort_("")
-#ifdef NAMESERVER_PROCESS
-      ,mon2NsPort_("")
-      ,mon2NsSocketPort_(-1)
-      ,monConnCount_(0)
-#else
-      ,ptpPort_("")
-      ,ptpSocketPort_(-1)
-#endif
       ,commSocketPort_(-1)
+      ,syncPort_("")
       ,syncSocketPort_(-1)
+#ifdef NAMESERVER_PROCESS
+      ,monConnCount_(0)
+#endif
       ,uniqStrId_(-1)
       ,procStatFile_(NULL)
       ,procMeminfoFile_(-1)
@@ -318,17 +313,12 @@ CNode::CNode( char *name
       ,wdtKeepAliveTimerValue_(WDT_KEEPALIVETIMERDEFAULT)
       ,zid_(-1)
       ,commPort_("")
-      ,syncPort_("")
-#ifdef NAMESERVER_PROCESS
-      ,mon2NsPort_("")
-      ,mon2NsSocketPort_(-1)
-      ,monConnCount_(-1)
-#else
-      ,ptpPort_("")
-      ,ptpSocketPort_(-1)
-#endif
       ,commSocketPort_(-1)
+      ,syncPort_("")
       ,syncSocketPort_(-1)
+#ifdef NAMESERVER_PROCESS
+      ,monConnCount_(-1)
+#endif
       ,uniqStrId_(-1)
       ,procStatFile_(NULL)
       ,procMeminfoFile_(-1)
@@ -553,7 +543,9 @@ void CNode::CheckActivationPhase( void )
     if ( tmReady )
     {
         if (trace_settings & (TRACE_INIT | TRACE_SYNC | TRACE_TMSYNC))
+        {
             trace_printf("%s@%d - Setting Phase_Ready on node %s, pnid=%d\n", method_name, __LINE__, GetName(), GetPNid());
+        }
         phase_ = Phase_Ready;
         HealthCheck.triggerTimeToLogHealth();
     }
@@ -1734,7 +1726,7 @@ void CNode::StartPStartDPersistent( void )
                 // Send local PSD process event to start persistent processes 
                 // that don't require transactions
                 process = lnode->GetProcessLByType( ProcessType_PSD );
-                if ( process )
+                if ( process && process->IsFirstInstance() )
                 {
                     char nidString[6];
                     sprintf(nidString,"%d",lnode->GetNid());
@@ -3960,7 +3952,7 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
         }
     }
 
-    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
+    if (trace_settings & (TRACE_PROCESS_DETAIL | TRACE_SYNC_DETAIL | TRACE_TMSYNC))
     {
 #ifdef NAMESERVER_PROCESS
         trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, change_nid=%d, seqNum_=%lld, monConnCount=%d\n"
@@ -4296,7 +4288,7 @@ void CNodeContainer::LoadConfig( void )
             char la_buf[MON_STRING_BUF_SIZE];
             sprintf(la_buf, "[%s], Failed to load nameserver configuration.\n", method_name);
             mon_log_write(MON_NODECONT_LOAD_CONFIG_4, SQ_LOG_CRIT, la_buf);
-            
+
             mon_failure_exit();
         }
     }

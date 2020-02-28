@@ -27,10 +27,11 @@
 #define PTPCLIENT_H_
 #ifndef NAMESERVER_PROCESS
 
+#include "comm.h"
 #include "process.h"
 #include "internal.h"
 
-class CPtpClient 
+class CPtpClient : public CComm
 {
 protected:
     int            eyecatcher_;      // Debuggging aid -- leave as first
@@ -84,12 +85,15 @@ public:
 
 private:
 
+    int  ioWaitTimeout_;
+    int  ioRetryCount_;
     int  ptpCommPort_;
     char ptpHost_[MAX_PROCESSOR_NAME];
     char ptpPortBase_[MAX_PROCESSOR_NAME+100];
     int *ptpClusterSocks_;
     int  seqNum_;
 
+    void Close( int pnid );
     bool IsTargetRemote( int targetNid );
     int  SendToMon( const char* reqType
                    , internal_msg_def* msg
@@ -97,11 +101,6 @@ private:
                    , int receiveNode
                    , const char* hostName);
     void SetLocalHost( void );
-    void SockClose( int pnid );
-    int  SockReceive(char* buf, int size, int sockFd);
-    int  SockSend( char* buf
-                 , int size
-                 , int sockFd);
 };
 
 #endif

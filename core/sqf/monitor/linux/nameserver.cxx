@@ -54,6 +54,7 @@ using namespace std;
 #include "meas.h"
 #include "reqqueue.h"
 
+extern CMonitor *Monitor;
 extern CNode *MyNode;
 extern CProcess *NameServerProcess;
 extern CNodeContainer *Nodes;
@@ -66,13 +67,32 @@ extern CMeas Meas;
 #define NAMESERVER_IO_RETRIES 3
 
 CNameServer::CNameServer( void )
-           : mon2nsSock_(-1)
-           , nsStartupComplete_(false)
-           , seqNum_(0)
+           : nsStartupComplete_(false)
            , shutdown_(false)
+           , ioWaitTimeout_(EPOLL_IO_WAIT_TIMEOUT_MSEC)
+           , ioRetryCount_(EPOLL_IO_RETRY_COUNT)
+           , mon2nsSock_(-1)
+           , seqNum_(0)
 {
     const char method_name[] = "CNameServer::CNameServer";
     TRACE_ENTRY;
+
+    // Use the EPOLL timeout and retry values
+    char *ioWaitTimeoutEnv = getenv( "SQ_MON_EPOLL_WAIT_TIMEOUT" );
+    if ( ioWaitTimeoutEnv )
+    {
+        // Timeout in seconds
+        ioWaitTimeout_ = atoi( ioWaitTimeoutEnv );
+        char *ioRetryCountEnv = getenv( "SQ_MON_EPOLL_RETRY_COUNT" );
+        if ( ioRetryCountEnv )
+        {
+            ioRetryCount_ = atoi( ioRetryCountEnv );
+        }
+        if ( ioRetryCount_ > EPOLL_IO_RETRY_COUNT_MAX )
+        {
+            ioRetryCount_ = EPOLL_IO_RETRY_COUNT_MAX;
+        }
+    }
 
     mon2nsHost_[0] = '\0';
     mon2nsPort_[0] = '\0';
@@ -188,7 +208,20 @@ reconnect:
 
     if ( err == 0 )
     {
-        sock = ClientSockCreate();
+        char mon2nsPort[MAX_PROCESSOR_NAME+MAX_PROCESSOR_NAME];
+
+        //memset( &mon2nsPort, 0, sizeof(mon2nsPort) );
+        mon2nsPort[0] = 0;
+        sprintf( mon2nsPort,"%s:%s", mon2nsHost_, mon2nsPort_ );
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Connecting to %s\n"
+                        , method_name, __LINE__
+                        , mon2nsPort );
+        }
+
+        sock = CComm::Connect( mon2nsPort );
         if ( sock < 0 )
         {
             err = sock;
@@ -246,7 +279,11 @@ reconnect:
                         , nodeId.creatorShellVerifier
                         , nodeId.ping );
         }
-        err = SockSend( ( char *) &nodeId, sizeof(nodeId) );
+        err = CComm::Send( mon2nsSock_
+                         , (char *) &nodeId
+                         , sizeof(nodeId)
+                         , mon2nsHost_
+                         , method_name );
         if (err == 0)
         {
             if ( trace_settings & TRACE_NS )
@@ -258,7 +295,11 @@ reconnect:
                             , mon2nsSock_
                             , err );
             }
-            err = SockReceive( (char *) &nodeId, sizeof(nodeId ) );
+            err = CComm::Receive( mon2nsSock_
+                                , (char *) &nodeId
+                                , sizeof(nodeId)
+                                , mon2nsHost_
+                                , method_name );
             if ( err )
             {
                 if ( trace_settings & TRACE_NS )
@@ -319,7 +360,7 @@ reconnect:
                         gethostname( mon2nsHost_, MAX_PROCESSOR_NAME);
                         GetM2NPort( -1 );
                     }
-                    SockClose();
+                    CloseNs();
                 }
             }
         }
@@ -443,189 +484,6 @@ bool CNameServer::IsNameServerConfigured( int pnid )
     return(rs);
 }
 
-int CNameServer::ClientSockCreate( void )
-{
-    const char method_name[] = "CNameServer::ClientSockCreate";
-    TRACE_ENTRY;
-
-    int    sock;        // socket
-    int    ret;         // returned value
-    int    reuse = 1;   // sockopt reuse option
-    int    nodelay = 1; // sockopt nodelay option
-    socklen_t  size;    // size of socket address
-    static int retries = 0;      // # times to retry connect
-    int    outer_failures = 0;   // # failed connect loops
-    int    connect_failures = 0; // # failed connects
-    char   *p;     // getenv results 
-    struct sockaddr_in  sockinfo;    // socket address info 
-    struct hostent *he;
-    char   host[MAX_PROCESSOR_NAME];
-    unsigned int port;
-
-    strcpy( host, mon2nsHost_ );
-    port = atoi( mon2nsPort_ );
-    
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - Connecting to %s:%d\n"
-                    , method_name, __LINE__
-                    , host
-                    , port );
-    }
-
-    size = sizeof(sockinfo );
-
-    if ( !retries )
-    {
-        p = getenv( "HPMP_CONNECT_RETRIES" );
-        if ( p ) retries = atoi( p );
-        else retries = 5;
-    }
-
-    for ( ;; )
-    {
-        sock = socket( AF_INET, SOCK_STREAM, 0 );
-        if ( sock < 0 )
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            int err = errno;
-            snprintf( la_buf, sizeof(la_buf) 
-                    , "[%s], socket() failed! errno=%d (%s)\n"
-                    , method_name, err, strerror(err) );
-            mon_log_write( NAMESERVER_CLIENTSOCKCREATE_1, SQ_LOG_ERR, la_buf ); 
-            TRACE_EXIT;
-            return ( -1 );
-        }
-
-        he = gethostbyname( host );
-        if ( !he )
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            int err = h_errno;
-            snprintf( la_buf, sizeof(la_buf ), 
-                      "[%s] gethostbyname(%s) failed! errno=%d (%s)\n"
-                    , method_name, host, err, strerror(err) );
-            mon_log_write(NAMESERVER_CLIENTSOCKCREATE_2, SQ_LOG_ERR, la_buf ); 
-            close( sock );
-            TRACE_EXIT;
-            return ( -1 );
-        }
-
-        // Connect socket.
-        memset( (char *) &sockinfo, 0, size );
-        memcpy( (char *) &sockinfo.sin_addr, (char *) he->h_addr, 4 );
-        sockinfo.sin_family = AF_INET;
-        sockinfo.sin_port = htons( (unsigned short) port );
-
-        // Note the outer loop uses "retries" from HPMP_CONNECT_RETRIES,
-        // and has a yield between each retry, since it's more oriented
-        // toward failures from network overload and putting a pause
-        // between retries.  This inner loop should only iterate when
-        // a signal interrupts the local process, so it doesn't pause
-        // or use the same HPMP_CONNECT_RETRIES count.
-        connect_failures = 0;
-        ret = 1;
-        while ( ret != 0 && connect_failures <= 10 )
-        {
-            if ( trace_settings & TRACE_NS )
-            {
-                trace_printf( "%s@%d - Connecting to %s addr=%d.%d.%d.%d, port=%d, connect_failures=%d\n"
-                            , method_name, __LINE__
-                            , host
-                            , (int)((unsigned char *)he->h_addr)[0]
-                            , (int)((unsigned char *)he->h_addr)[1]
-                            , (int)((unsigned char *)he->h_addr)[2]
-                            , (int)((unsigned char *)he->h_addr)[3]
-                            , port
-                            , connect_failures );
-            }
-    
-            ret = connect( sock, (struct sockaddr *) &sockinfo, size );
-            if ( ret == 0 ) break;
-            ++connect_failures;
-            if ( errno != EINTR )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                int err = errno;
-                sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
-                       , method_name, err, strerror(err) );
-                mon_log_write(NAMESERVER_CLIENTSOCKCREATE_3, SQ_LOG_ERR, la_buf ); 
-                struct timespec req, rem;
-                req.tv_sec = 0;
-                req.tv_nsec = 500000000L; // 500,000,000
-                nanosleep( &req, &rem );
-            }
-        }
-
-        if ( ret == 0 ) break;
-
-        // For large clusters, the connect/accept calls seem to fail occasionally,
-        // no doubt do to the large number (1000's) of simultaneous connect packets
-        // flooding the network at once.  So, we retry up to HPMP_CONNECT_RETRIES
-        // number of times.
-        if ( errno != EINTR )
-        {
-            if ( ++outer_failures > retries )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
-                       , method_name, retries );
-                mon_log_write(NAMESERVER_CLIENTSOCKCREATE_4, SQ_LOG_ERR, la_buf ); 
-                close( sock );
-                TRACE_EXIT;
-                return ( -1 );
-            }
-            struct timespec req, rem;
-            req.tv_sec = 0;
-            req.tv_nsec = 500000;
-            nanosleep( &req, &rem );
-        }
-        close( sock );
-        TRACE_EXIT;
-        return( -1 );
-    }
-
-    if ( trace_settings & TRACE_NS )
-    {
-        trace_printf( "%s@%d - Connected to %s addr=%d.%d.%d.%d, port=%d, sock=%d\n"
-                    , method_name, __LINE__
-                    , host
-                    , (int)((unsigned char *)he->h_addr)[0]
-                    , (int)((unsigned char *)he->h_addr)[1]
-                    , (int)((unsigned char *)he->h_addr)[2]
-                    , (int)((unsigned char *)he->h_addr)[3]
-                    , port
-                    , sock );
-    }
-
-    if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
-    {
-        char la_buf[MON_STRING_BUF_SIZE];
-        int err = errno;
-        sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
-               , method_name, err, strerror(err) );
-        mon_log_write(NAMESERVER_CLIENTSOCKCREATE_5, SQ_LOG_ERR, la_buf );
-        close( sock );
-        TRACE_EXIT;
-        return ( -2 );
-    }
-
-    if ( setsockopt( sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(int) ) )
-    {
-        char la_buf[MON_STRING_BUF_SIZE];
-        int err = errno;
-        sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
-               , method_name, err, strerror(err) );
-        mon_log_write(NAMESERVER_CLIENTSOCKCREATE_6, SQ_LOG_ERR, la_buf ); 
-        close( sock );
-        TRACE_EXIT;
-        return ( -2 );
-    }
-
-    TRACE_EXIT;
-    return ( sock );
-}
-
 void CNameServer::NameServerExited( void )
 {
     const char method_name[] = "CNameServer::NameServerExited";
@@ -634,7 +492,7 @@ void CNameServer::NameServerExited( void )
     mon2nsHost_[0] = '\0';
     mon2nsPort_[0] = '\0';
     nsStartupComplete_ = false;
-    SockClose();
+    CloseNs();
 
     TRACE_EXIT;
 }
@@ -644,7 +502,14 @@ int CNameServer::NameServerStop( struct message_def* msg )
     const char method_name[] = "CNameServer::NameServerStop";
     TRACE_ENTRY;
 
-    int error = SendReceive( msg );
+    if ( trace_settings & TRACE_NS )
+    {
+        trace_printf( "%s@%d - sending nameserver-stop request to nameserver=%s:%s\n"
+                    , method_name, __LINE__
+                    , mon2nsHost_, mon2nsPort_ );
+    }
+
+    int error = ProcessRequest( msg );
 
     TRACE_EXIT;
     return error;
@@ -672,7 +537,19 @@ int CNameServer::ProcessDelete(CProcess* process )
     strcpy( msgdel->target_process_name, msgdel->process_name );
     msgdel->target_abended = process->IsAbended();
 
-    int error = SendReceive(&msg );
+    if ( trace_settings & TRACE_NS )
+    {
+        trace_printf( "%s@%d - sending del_process_ns request to nameserver=%s:%s\n"
+                      "        msg.del_process_ns.process_name=%s (%d,%d:%d)\n"
+                    , method_name, __LINE__
+                    , mon2nsHost_, mon2nsPort_
+                    , msgdel->process_name
+                    , msgdel->nid
+                    , msgdel->pid
+                    , msgdel->verifier );
+    }
+
+    int error = ProcessRequest( &msg );
 
     TRACE_EXIT;
     return error;
@@ -683,7 +560,14 @@ int CNameServer::ProcessInfo( struct message_def* msg )
     const char method_name[] = "CNameServer::ProcessInfo";
     TRACE_ENTRY;
 
-    int error = SendReceive( msg );
+    if ( trace_settings & TRACE_NS )
+    {
+        trace_printf( "%s@%d - sending process-info request to nameserver=%s:%s\n"
+                    , method_name, __LINE__
+                    , mon2nsHost_, mon2nsPort_ );
+    }
+
+    int error = ProcessRequest( msg );
 
     TRACE_EXIT;
     return error;
@@ -694,7 +578,14 @@ int CNameServer::ProcessInfoCont( struct message_def* msg )
     const char method_name[] = "CNameServer::ProcessInfoCont";
     TRACE_ENTRY;
 
-    int error = SendReceive( msg );
+    if ( trace_settings & TRACE_NS )
+    {
+        trace_printf( "%s@%d - sending process-info-continue request to nameserver=%s:%s\n"
+                    , method_name, __LINE__
+                    , mon2nsHost_, mon2nsPort_ );
+    }
+
+    int error = ProcessRequest( msg );
 
     TRACE_EXIT;
     return error;
@@ -705,7 +596,14 @@ int CNameServer::ProcessInfoNs( struct message_def* msg )
     const char method_name[] = "CNameServer::ProcessInfoNs";
     TRACE_ENTRY;
 
-    int error = SendReceive( msg );
+    if ( trace_settings & TRACE_NS )
+    {
+        trace_printf( "%s@%d - sending process-info-ns request to nameserver=%s:%s\n"
+                    , method_name, __LINE__
+                    , mon2nsHost_, mon2nsPort_ );
+    }
+
+    int error = ProcessRequest( msg );
 
     TRACE_EXIT;
     return error;
@@ -761,7 +659,7 @@ int CNameServer::ProcessNew(CProcess* process )
 
     if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
-        trace_printf( "%s@%d - Received monitor request new-process data.\n"
+        trace_printf( "%s@%d - sending new_process_ns request to nameserver=%s:%s\n"
                       "        msg.new_process_ns.nid=%d\n"
                       "        msg.new_process_ns.pid=%d\n"
                       "        msg.new_process_ns.verifier=%d\n"
@@ -786,6 +684,7 @@ int CNameServer::ProcessNew(CProcess* process )
                       "        msg.new_process_ns.outfile=%s\n"
                       "        msg.new_process_ns.creation_time=%ld(secs):%ld(nsecs)\n"
                     , method_name, __LINE__
+                    , mon2nsHost_, mon2nsPort_ 
                     , msgnew->nid
                     , msgnew->pid
                     , msgnew->verifier
@@ -822,7 +721,7 @@ int CNameServer::ProcessNew(CProcess* process )
         }
     }
 
-    int error = SendReceive(&msg );
+    int error = ProcessRequest( &msg );
 
     TRACE_EXIT;
     return error;
@@ -860,7 +759,7 @@ int CNameServer::ProcessNodeDown( int nid, char *nodeName )
                         , msgdown->node_name );
         }
 
-        error = SendReceive(&msg );
+        error = ProcessRequest( &msg );
     }
 
     TRACE_EXIT;
@@ -883,18 +782,29 @@ int CNameServer::ProcessShutdown( void )
     msgshutdown->pid = -1;
     msgshutdown->level = ShutdownLevel_Normal;
 
-    int error = SendReceive(&msg );
+    if ( trace_settings & TRACE_NS )
+    {
+        trace_printf( "%s@%d - sending shutdown_ns request to nameserver=%s:%s\n"
+                      "        msg.shutdown_ns.level=%d\n"
+                    , method_name, __LINE__
+                    , mon2nsHost_, mon2nsPort_
+                    , msgshutdown->level );
+    }
+
+    int error = ProcessRequest( &msg );
 
     if ( error == 0 )
+    {
         SetShutdown( true );
+    }
 
     TRACE_EXIT;
     return error;
 }
 
-int CNameServer::SendReceive( struct message_def* msg )
+int CNameServer::ProcessRequest( struct message_def* msg )
 {
-    const char method_name[] = "CNameServer::SendReceive";
+    const char method_name[] = "CNameServer::ProcessRequest";
     TRACE_ENTRY;
 
     int retryCount = 0;
@@ -982,9 +892,34 @@ retryIO:
 
     int error = SendToNs( descp, msg, size );
     if ( error == 0 )
-        error = SockReceive( (char *) &size, sizeof(size ) );
+    {
+        error = CComm::Receive( mon2nsSock_
+                              , (char *) &size
+                              , sizeof(size)
+                              , mon2nsHost_
+                              , method_name );
+    }
     if ( error == 0 )
-        error = SockReceive( (char *) pmsg_reply, size );
+    {
+        error = CComm::Receive( mon2nsSock_
+                              , (char *) pmsg_reply
+                              , size
+                              , mon2nsHost_
+                              , method_name );
+    }
+    if ( error != 0 )
+    {
+        // Choose another name server on IO retry
+        if (IsRealCluster)
+        {
+            mon2nsHost_[0] = 0;
+        }
+        else
+        {
+            mon2nsPort_[0] = 0;
+        }
+    }
+
     if ( error == 0 )
     {
         memcpy( msg, pmsg_reply, size );
@@ -1170,7 +1105,11 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
 
     if ( error == 0 )
     {
-        error = SockSend( (char *) &size, sizeof(size) );
+        error = CComm::Send( mon2nsSock_
+                           , (char *) &size
+                           , sizeof(size)
+                           , mon2nsHost_
+                           , method_name );
         if (error)
         {
             int err = error;
@@ -1183,7 +1122,11 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
         }
         else
         {
-            error = SockSend( (char *) msg, size );
+            error = CComm::Send( mon2nsSock_
+                               , (char *) msg
+                               , size
+                               , mon2nsHost_
+                               , method_name );
             if (error)
             {
                 int err = error;
@@ -1219,198 +1162,17 @@ void CNameServer::SetShutdown( bool shutdown )
     TRACE_EXIT;
 }
 
-void CNameServer::SockClose( void )
+void CNameServer::CloseNs( void )
 {
-    const char method_name[] = "CNameServer::SockClose";
+    const char method_name[] = "CNameServer::CloseNs";
     TRACE_ENTRY;
 
     if (mon2nsSock_ != -1)
     {
-        close( mon2nsSock_ );
+        CComm::Close( mon2nsSock_ );
         mon2nsSock_ = -1;
     }
 
     TRACE_EXIT;
 }
 
-int CNameServer::SockReceive( char *buf, int size )
-{
-    const char method_name[] = "CNameServer::SockReceive";
-    TRACE_ENTRY;
-
-    bool    readAgain = false;
-    int     error = 0;
-    int     readCount = 0;
-    int     received = 0;
-    int     sizeCount = size;
-    
-    do
-    {
-        readCount = (int) recv( mon2nsSock_
-                              , buf
-                              , sizeCount
-                              , 0 );
-        if ( readCount > 0 ) Meas.addSockNsRcvdBytes( readCount );
-    
-        if ( trace_settings & TRACE_NS )
-        {
-            trace_printf( "%s@%d - Count read %d = recv(%d)\n"
-                        , method_name, __LINE__
-                        , readCount
-                        , sizeCount );
-        }
-    
-        if ( readCount > 0 )
-        { // Got data
-            received += readCount;
-            buf += readCount;
-            if ( received == size )
-            {
-                readAgain = false;
-            }
-            else
-            {
-                sizeCount -= readCount;
-                readAgain = true;
-            }
-        }
-        else if ( readCount == 0 )
-        { // EOF
-             error = ENODATA;
-             readAgain = false;
-        }
-        else
-        { // Got an error
-            if ( errno != EINTR)
-            {
-                error = errno;
-                readAgain = false;
-            }
-            else
-            {
-                readAgain = true;
-            }
-        }
-    }
-    while( readAgain );
-
-    if ( trace_settings & TRACE_NS )
-    {
-        trace_printf( "%s@%d - recv(), received=%d, error=%d(%s)\n"
-                    , method_name, __LINE__
-                    , received
-                    , error, strerror(error) );
-    }
-
-    if (error)
-    {
-        SockClose();
-
-        int err = error;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], unable to receive request size %d to "
-                  "nameserver=%s:%s, error: %d(%s)\n"
-                , method_name, size, mon2nsHost_, mon2nsPort_, err, strerror(err) );
-        mon_log_write(NAMESERVER_SOCKRECEIVE_1, SQ_LOG_ERR, buf);    
-
-        // Choose another name server on IO retry
-        if (IsRealCluster)
-        {
-            mon2nsHost_[0] = 0;
-        }
-        else
-        {
-            mon2nsPort_[0] = 0;
-        }
-    }
-
-    TRACE_EXIT;
-    return error;
-}
-
-int CNameServer::SockSend( char *buf, int size )
-{
-    const char method_name[] = "CNameServer::SockSend";
-    TRACE_ENTRY;
-
-    bool    sendAgain = false;
-    int     error = 0;
-    int     sendCount = 0;
-    int     sent = 0;
-    
-    do
-    {
-        sendCount = (int) send( mon2nsSock_
-                              , buf
-                              , size
-                              , 0 );
-        if ( sendCount > 0 ) Meas.addSockNsSentBytes( sendCount );
-    
-        if ( trace_settings & TRACE_NS )
-        {
-            trace_printf( "%s@%d - send(), sendCount=%d\n"
-                        , method_name, __LINE__
-                        , sendCount );
-        }
-    
-        if ( sendCount > 0 )
-        { // Sent data
-            sent += sendCount;
-            if ( sendCount == size )
-            {
-                 sendAgain = false;
-            }
-            else
-            {
-                sendAgain = true;
-            }
-        }
-        else
-        { // Got an error
-            if ( errno != EINTR)
-            {
-                error = errno;
-                sendAgain = false;
-            }
-            else
-            {
-                sendAgain = true;
-            }
-        }
-    }
-    while( sendAgain );
-
-    if ( trace_settings & TRACE_NS )
-    {
-        trace_printf( "%s@%d - send(), sent=%d, error=%d(%s)\n"
-                    , method_name, __LINE__
-                    , sent
-                    , error, strerror(error) );
-    }
-
-    if (error)
-    {
-        SockClose();
-
-        int err = error;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], unable to send request size %d to "
-                  "nameserver=%s:%s, error: %d(%s)\n"
-                , method_name, size, mon2nsHost_, mon2nsPort_, err, strerror(err) );
-        mon_log_write(NAMESERVER_SOCKSEND_1, SQ_LOG_ERR, buf);    
-        // Choose another name server on IO retry
-        if (IsRealCluster)
-        {
-            mon2nsHost_[0] = 0;
-        }
-        else
-        {
-            mon2nsPort_[0] = 0;
-        }
-    }
-
-    TRACE_EXIT;
-    return error;
-}

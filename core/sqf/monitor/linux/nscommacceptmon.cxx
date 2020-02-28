@@ -30,34 +30,135 @@ using namespace std;
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <netdb.h>
+#include <sys/socket.h>
 
 #include "nscommacceptmon.h"
 #include "monlogging.h"
 #include "montrace.h"
 #include "monitor.h"
 
-extern CCommAcceptMon CommAcceptMon;
+extern CCommAcceptMon *CommAcceptMon;
 extern CMonitor *Monitor;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern int MyPNID;
+extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 extern char MyMon2NsPort[MPI_MAX_PORT_NAME];
 extern char *ErrorMsg (int error_code);
 extern const char *StateString( STATE state);
 extern CommType_t CommType;
 extern CReqQueue ReqQueue;
+extern bool IsRealCluster;
 
 static void *mon2nsProcess(void *arg);
 
 CCommAcceptMon::CCommAcceptMon()
-           : accepting_(false)
-           , shutdown_(false)
-           , thread_id_(0)
-           , process_thread_id_(0)
+              : accepting_(false)
+              , shutdown_(false)
+              , ioWaitTimeout_(EPOLL_IO_WAIT_TIMEOUT_MSEC)
+              , ioRetryCount_(EPOLL_IO_RETRY_COUNT)
+              , mon2nsSock_(-1)
+              , mon2NsSocketPort_(-1)
+              , mon2NsPort_("")
+              , thread_id_(0)
+              , process_thread_id_(0)
 {
     const char method_name[] = "CCommAcceptMon::CCommAcceptMon";
     TRACE_ENTRY;
 
+    // Use the EPOLL timeout and retry values
+    char *ioWaitTimeoutEnv = getenv( "SQ_MON_EPOLL_WAIT_TIMEOUT" );
+    if ( ioWaitTimeoutEnv )
+    {
+        // Timeout in seconds
+        ioWaitTimeout_ = atoi( ioWaitTimeoutEnv );
+        char *ioRetryCountEnv = getenv( "SQ_MON_EPOLL_RETRY_COUNT" );
+        if ( ioRetryCountEnv )
+        {
+            ioRetryCount_ = atoi( ioRetryCountEnv );
+        }
+        if ( ioRetryCount_ > EPOLL_IO_RETRY_COUNT_MAX )
+        {
+            ioRetryCount_ = EPOLL_IO_RETRY_COUNT_MAX;
+        }
+    }
+
+    int mon2nsPort = 0;
+    int val = 0;
+    unsigned char addr[4] = {0,0,0,0};
+    struct hostent *he;
+
+    he = gethostbyname( Node_name );
+    if ( !he )
+    {
+        char ebuff[256];
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] gethostbyname(%s) error: %s\n"
+                , method_name, __LINE__
+                , Node_name, strerror_r( h_errno, ebuff, 256 ) );
+        mon_log_write( NS_NSCOMMACCEPT_NSCOMMACCEPT_1, SQ_LOG_CRIT, buf );
+
+        mon_failure_exit();
+    }
+    memcpy( addr, he->h_addr, 4 );
+
+    char *env = getenv("NS_M2N_COMM_PORT");
+    if ( env )
+    {
+        val = atoi(env);
+        if ( val > 0)
+        {
+            if ( !IsRealCluster )
+            {
+                val += MyPNID;
+            }
+            mon2nsPort = val;
+        }
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d NS_M2N_COMM_PORT Node_name=%s, env=%s, mon2nsPort=%d, val=%d\n"
+                    , method_name, __LINE__
+                    , Node_name, env, mon2nsPort, val );
+    }
+
+    mon2nsSock_ = CComm::Listen( &mon2nsPort );
+    if ( mon2nsSock_ < 0 )
+    {
+        char ebuff[256];
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] MkSrvSock(NS_M2N_COMM_PORT=%d) error: %s\n"
+                , method_name, __LINE__, mon2nsPort
+                , strerror_r( errno, ebuff, 256 ) );
+        mon_log_write( NS_NSCOMMACCEPT_NSCOMMACCEPT_2, SQ_LOG_CRIT, buf );
+
+        mon_failure_exit();
+    }
+    else
+    {
+        snprintf( MyMon2NsPort, sizeof(MyMon2NsPort)
+                , "%d.%d.%d.%d:%d"
+                , (int)((unsigned char *)addr)[0]
+                , (int)((unsigned char *)addr)[1]
+                , (int)((unsigned char *)addr)[2]
+                , (int)((unsigned char *)addr)[3]
+                , mon2nsPort );
+        setMon2NsPort( MyMon2NsPort );
+        setMon2NsSocketPort( mon2nsPort );
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d Initialized my mon2ns comm socket port, "
+                          "pnid=%d (%s:%s) (Mon2NsPort=%s, Mon2NsSocketPort=%d)\n"
+                        , method_name, __LINE__
+                        , MyPNID, MyNode->GetName(), MyMon2NsPort
+                        , getMon2NsPort()
+                        , getMon2NsSocketPort() );
+
+    }
 
     TRACE_EXIT;
 }
@@ -448,6 +549,9 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     nodeId_t nodeId;
     struct message_def msg;
 
+    static int sv_io_wait_timeout = EPOLL_IO_WAIT_TIMEOUT_MSEC;
+    static int sv_io_retry_count = EPOLL_IO_RETRY_COUNT;
+
     if ( trace_settings & ( TRACE_NS ) )
     {
         trace_printf( "%s@%d - Accepted connection sock=%d\n"
@@ -455,10 +559,11 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     }
 
     // Get info about connecting monitor
-    rc = Monitor->ReceiveSock( (char *) &nodeId
-                             , sizeof(nodeId_t)
-                             , sockFd
-                             , method_name );
+    rc = CComm::Receive( sockFd
+                       , (char *) &nodeId
+                       , sizeof(nodeId_t)
+                       , (char *) "Remote monitor"
+                       , method_name );
     if ( rc )
     {   // Handle error
         close( sockFd );
@@ -554,10 +659,13 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     }
 
     // return Send info to connecting monitor
-    rc = Monitor->SendSock( (char *) &nodeId
-                          , sizeof(nodeId_t)
-                          , sockFd
-                          , method_name );
+    rc = CComm::SendWait( sockFd
+                        , (char *) &nodeId
+                        , sizeof(nodeId_t)
+                        , sv_io_wait_timeout
+                        , sv_io_retry_count
+                        , (char *) node->GetName()
+                        , method_name );
     if ( rc )
     {   // Handle error
         close( sockFd );
@@ -572,7 +680,11 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     {
         // Get monitor request (hdr)
         int size;
-        rc = Monitor->ReceiveSock( (char *) &size, sizeof(size), sockFd, method_name );
+        rc = CComm::Receive( sockFd
+                           , (char *) &size
+                           , sizeof(size)
+                           , (char *) node->GetName()
+                           , method_name );
         if ( rc )
         {   // Handle error
             close( sockFd );
@@ -583,7 +695,11 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             return;
         }
 
-        rc = Monitor->ReceiveSock( (char *) &msg, size, sockFd, method_name );
+        rc = CComm::Receive( sockFd
+                           , (char *) &msg
+                           , size
+                           , (char *) node->GetName()
+                           , method_name );
         if ( rc )
         {   // Handle error
             close( sockFd );
@@ -779,7 +895,7 @@ void CCommAcceptMon::commAcceptorSock()
             }
 
             mem_log_write(CMonLog::MON_NSCONNTONEWMON_2);
-            joinFd = Monitor->AcceptMon2NsSock();
+            joinFd = CComm::Accept( mon2nsSock_ );
         }
         else
         {
@@ -825,6 +941,16 @@ void CCommAcceptMon::commAcceptorSock()
     TRACE_EXIT;
 }
 
+void CCommAcceptMon::connectToCommSelf( void )
+{
+    const char method_name[] = "CCommAcceptMon::connectToCommSelf";
+    TRACE_ENTRY;
+
+    CComm::ConnectLocal( getMon2NsSocketPort() );
+
+    TRACE_EXIT;
+}
+
 void CCommAcceptMon::shutdownWork(void)
 {
     const char method_name[] = "CCommAcceptMon::shutdownWork";
@@ -832,7 +958,7 @@ void CCommAcceptMon::shutdownWork(void)
 
     // Set flag that tells the commAcceptor thread to exit
     shutdown_ = true;
-    Monitor->ConnectToMon2NsCommSelf();
+    connectToCommSelf();
     CLock::wakeOne();
 
     if ( trace_settings & ( TRACE_NS ) )

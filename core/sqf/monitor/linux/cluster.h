@@ -26,6 +26,7 @@
 #ifndef CLUSTER_H_
 #define CLUSTER_H_
 
+#include "comm.h"
 #include "pnode.h"
 #include "msgdef.h"
 #include "internal.h"
@@ -73,7 +74,7 @@ typedef struct
 class CNode;
 class CLNode;
 
-class CCluster 
+class CCluster : public CComm
 {
 protected:
     int            eyecatcher_;      // Debuggging aid -- leave as first
@@ -110,24 +111,6 @@ public:
 
     int  AcceptCommSock( void );
     int  AcceptSyncSock( void );
-#ifdef NAMESERVER_PROCESS
-    int  AcceptMon2NsSock( void );
-#else
-    int  AcceptPtPSock( void );
-#endif
-    int  Connect( const char *portName, bool doRetries = true );
-    void Connect( int socketPort );
-#ifdef NAMESERVER_PROCESS
-    void ConnectToMon2NsCommSelf( void );
-#else
-    void ConnectToPtPCommSelf( void );
-#endif
-#ifdef NAMESERVER_PROCESS
-    void ConnectToMonCommSelf( void );
-#endif
-    void ConnectToSelf( void );
-    int  SetKeepAliveSockOpt( int sock );
-    int  MkCltSock( const char *portName );
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
@@ -205,10 +188,7 @@ public:
     bool IsNodeDownDeathNotices() { return nodeDownDeathNotices_; }
 
     int  ReceiveMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
-    int  ReceiveSock(char *buf, int size, int sockFd, const char *desc);
     int  SendMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
-    int  SendSock(char *buf, int size, int sockFd, const char *desc);
-
     bool ReinitializeConfigCluster( bool nodeAdded, int pnid );
 
     int incrGetVerifierNum();
@@ -243,16 +223,9 @@ public:
 protected:
     int           *socks_;
     int           *sockPorts_;
-    int            commSock_;
     int            syncPort_;
     int            syncSock_;
-#ifdef NAMESERVER_PROCESS
-    int            mon2nsSock_;
-#else
-    int            ptpSock_;
-#endif
     int            epollFD_;
-    int            epollPingFD_;
     int           *indexToPnid_;
     int            configMaster_;
 
@@ -434,11 +407,6 @@ private:
 
     void InitClusterSocks( int worldSize, int myRank, char *nodeNames,int *rankToPnid );
     void InitServerSock( void );
-    int  AcceptSock( int sock );
-    void EpollCtl( int efd, int op, int fd, struct epoll_event *event );
-    void EpollCtlDelete( int efd, int fd, struct epoll_event *event );
-    int  MkSrvSock( int *pport );
-    int  MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int port );
 
 };
 

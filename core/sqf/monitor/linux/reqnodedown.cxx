@@ -85,7 +85,6 @@ void CExtNodeDownReq::performRequest()
     if ( requester )
     {
         node = Nodes->GetLNode( msg_->u.request.u.down.nid )->GetNode();
-        Monitor->HardNodeDown( node->GetPNid(), true );
 
         char la_buf[MON_STRING_BUF_SIZE*2];
         snprintf( la_buf, sizeof(la_buf)
@@ -109,6 +108,8 @@ void CExtNodeDownReq::performRequest()
                 , node->GetName()
                 , msg_->u.request.u.down.reason);
         genSnmpTrap( la_buf );
+
+        Monitor->HardNodeDown( node->GetPNid(), true );
 
         if (!msg_->noreply)  // client needs a reply 
         {

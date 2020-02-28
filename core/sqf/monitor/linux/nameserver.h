@@ -28,9 +28,10 @@
 #ifndef NAMESERVER_PROCESS
 
 #include "process.h"
+#include "comm.h"
 
 
-class CNameServer 
+class CNameServer : public CComm
 {
 protected:
     int            eyecatcher_;      // Debuggging aid -- leave as first
@@ -53,23 +54,22 @@ public:
     void SetLocalHost( void );
 
 private:
+    bool nsStartupComplete_;
+    bool shutdown_;
+    int  ioWaitTimeout_;
+    int  ioRetryCount_;
+    int  mon2nsSock_;
+    int  seqNum_;
     char mon2nsHost_[MAX_PROCESSOR_NAME];
     char mon2nsPort_[10];
-    int  mon2nsSock_;
-    bool nsStartupComplete_;
-    int  seqNum_;
-    bool shutdown_;
 
     int  ChooseNextNs( void );
-    int  ClientSockCreate();
+    void CloseNs( void );
     int  ConnectToNs( bool* retry );
     int  GetM2NPort( int PNid );
-    int  SendReceive( struct message_def* msg );
+    int  ProcessRequest( struct message_def* msg );
     int  SendToNs( const char* reqType, struct message_def* msg, int size );
     void SetShutdown( bool shutdown );
-    void SockClose( void );
-    int  SockReceive( char* buf, int size );
-    int  SockSend( char* buf, int size );
 };
 
 #endif

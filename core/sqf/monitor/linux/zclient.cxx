@@ -1,4 +1,5 @@
-/**********************************************************************
+///////////////////////////////////////////////////////////////////////////////
+//
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -19,7 +20,8 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-********************************************************************/
+//
+///////////////////////////////////////////////////////////////////////////////
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -135,7 +137,7 @@ static void *ZClientThread(void *arg)
     const char method_name[] = "ZClientThread";
     TRACE_ENTRY;
 
-    // Parameter passed to the thread is an instance of the CommAccept object
+    // Parameter passed to the thread is an instance of the CZClient object
     CZClient *zooClient = (CZClient *) arg;
 
     // Mask all allowed signals 
@@ -698,6 +700,7 @@ int CZClient::ErrorZNodeCreate( const char *errorNode )
     const char method_name[] = "CZClient::ErrorZNodeCreate";
     TRACE_ENTRY;
 
+    bool createZSequence = false;
     int rc;
     int zerr;
 
@@ -733,6 +736,10 @@ int CZClient::ErrorZNodeCreate( const char *errorNode )
 
     // Suppress error logging if error == ZNODEEXISTS
     rc = ZNodeCreate( errorznode.c_str(), NULL, 0, true );
+    if ( rc == ZNODEEXISTS )
+    {
+        createZSequence = true;
+    }
 
     errorpath.str( "" );
     errorpath << errorZNodePath_.c_str() << "/"
@@ -749,8 +756,110 @@ int CZClient::ErrorZNodeCreate( const char *errorNode )
 
     // Suppress error logging if error == ZNODEEXISTS
     rc = ZNodeCreate( errorznode.c_str(), NULL, 0, true );
+    if ( rc == ZNODEEXISTS )
+    {
+        createZSequence = true;
+    }
+
+    if ( createZSequence )
+    {
+        errorpath.str( "" );
+        errorpath << errorZNodePath_.c_str() << "/ZERR" ;
+        errorznode = errorpath.str( );
+
+        stringstream ss;
+        ss.str( "" );
+        ss << Node_name;
+        string zdata( ss.str( ) );
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Error ZNodeCreate(%s:%s,ZOO_SEQUENCE)\n"
+                        , method_name, __LINE__
+                        , errorznode.c_str()
+                        , zdata.c_str());
+        }
+
+        int rc1 = ZNodeCreate( errorznode.c_str(), zdata.c_str(), ZOO_SEQUENCE, true );
+        if ( rc1 != ZOK )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], ZNodeCreate(%s:%s,ZOO_SEQUENCE) failed with error %s\n"
+                    , method_name
+                    , errorznode.c_str()
+                    , zdata.c_str()
+                    , zerror(rc1) );
+            mon_log_write(MON_ZCLIENT_ERRORZNODECREATE_1, SQ_LOG_ERR, buf);
+        }
+    }
 
     unlock();
+
+    TRACE_EXIT;
+    return(rc);
+}
+
+int CZClient::ErrorZNodeDelete( const char *errorNode )
+{
+    const char method_name[] = "CZClient::ErrorZNodeDelete";
+    TRACE_ENTRY;
+
+    int rc;
+    int zerr;
+    struct String_vector childnodes;
+
+    lock();
+
+    stringstream errorchildpath;
+    errorchildpath.str( "" );
+    errorchildpath << errorZNodePath_.c_str() << "/"
+              << errorNode << "/"
+              << Node_name;
+    string errorchildznode = errorchildpath.str( );
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d Error child ZNodeDelete(%s)\n"
+                    , method_name, __LINE__
+                    , errorchildznode.c_str() );
+    }
+
+    rc = ZNodeDelete( errorchildznode );
+
+    rc = ErrorZNodesGetChild( errorNode, &childnodes );
+    if ( rc != ZOK && rc != ZNONODE )
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], ErrorZNodesGetChild(%s) failed!\n"
+                , method_name, errorNode );
+        mon_log_write(MON_ZCLIENT_ERRORZNODEDELETE_1, SQ_LOG_ERR, buf);
+        CLock::wakeOne();
+        return(rc);
+    }
+
+    if ( childnodes.count == 0 )
+    {
+        stringstream errorpath;
+        errorpath.str( "" );
+        errorpath << errorZNodePath_.c_str() << "/"
+                  << errorNode;
+        string errorznode = errorpath.str( );
+    
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Error ZNodeDelete(%s)\n"
+                        , method_name, __LINE__
+                        , errorznode.c_str() );
+        }
+    
+        rc = ZNodeDelete( errorznode );
+    }
+
+    unlock();
+
+    FreeStringVector( &childnodes );
 
     TRACE_EXIT;
     return(rc);
@@ -762,7 +871,7 @@ int CZClient::ErrorZNodeCreate( const char *errorNode )
 // The possibility exist that each errorChildNode is also an errorNode under
 // errorZNodePath_ if the errorNode passed in could not communicate with
 // one or more errorChildNodes.
-// Therefore, the each errorChildNode that is also an errorNode and it child 
+// Therefore, the each errorChildNode that is also an errorNode and its child 
 // znode must be also be deleted. 
 // For example, if the error znode tree is as follows:
 //   o node-b is the errorNode
@@ -771,17 +880,17 @@ int CZClient::ErrorZNodeCreate( const char *errorNode )
 //       /trafodion/1/cluster/error/node-b/node-c
 //       /trafodion/1/cluster/error/node-c/node-b
 //   o Therefore,
-//       ErrorZNodeDelete( node-b, errorChildNodes-of-node-b )
+//       ErrorZNodesDelete( node-b, errorChildNodes-of-node-b )
 //           Delete(/trafodion/1/cluster/error/node-a/node-b)
 //           Delete(/trafodion/1/cluster/error/node-a)
 //           Delete(/trafodion/1/cluster/error/node-c/node-b)
 //           Delete(/trafodion/1/cluster/error/node-c)
 //           Delete(/trafodion/1/cluster/error/node-b/node-a)
-//           Delete(/trafodion/1/cluster/error/node-b/node-b)
+//           Delete(/trafodion/1/cluster/error/node-b/node-c)
 //           Delete(/trafodion/1/cluster/error/node-b)
-int CZClient::ErrorZNodeDelete( const char *errorNode, String_vector *errorChildNodes )
+int CZClient::ErrorZNodesDelete( const char *errorNode, String_vector *errorChildNodes )
 {
-    const char method_name[] = "CZClient::ErrorZNodeDelete";
+    const char method_name[] = "CZClient::ErrorZNodesDelete";
     TRACE_ENTRY;
 
     int rc = -1;
@@ -805,10 +914,9 @@ retry:
     {
         for (int i = 0; i < errorChildNodes->count ; i++ )
         {
-            trace_printf( "%s@%d errorNode=%s, errorChildNodes.count=%d, errorChildNode[%d]=%s\n"
+            trace_printf( "%s@%d errorNode=%s, errorChildNode[%d]=%s\n"
                         , method_name, __LINE__
                         , errorNode
-                        , errorChildNodes->count
                         , i
                         , errorChildNodes->data[i] );
         }
@@ -1019,10 +1127,10 @@ int CZClient::ErrorZNodesGet( String_vector *nodes, bool doRetries )
         }
         else if ( rc == ZOK )
         {
-            // Now get the list of available znodes in the cluster.
+            // Now get the list of error znodes.
             //
             // This will return child znodes for each monitor process that has
-            // registered, including this process.
+            // registered an error with another monitor process.
             rc = zoo_get_children( ZHandle, errorznodes.c_str( ), 0, nodes );
             if ( rc == ZOK )
             {
@@ -1823,7 +1931,7 @@ void CZClient::HandleErrorChildZNodes( const char *errorNode )
 
     if ( childnodes.count > 1 )
     {
-        ErrorZNodeDelete( errorNode, &childnodes );
+        ErrorZNodesDelete( errorNode, &childnodes );
         // Delete the corresponding running znode which will trigger node down
         RunningZNodeDelete( errorNode );
     }
@@ -2501,6 +2609,7 @@ int CZClient::MyRunningZNodeCreate( void )
     TRACE_ENTRY;
 
     int rc;
+    int zerr;
     char pnidStr[10];
 
     sprintf( pnidStr, "%d", MyPNID);
@@ -2529,6 +2638,17 @@ int CZClient::MyRunningZNodeCreate( void )
     HandleErrorChildZNodes( Node_name );
     unlock();
 
+    // Clean up my previous running znode, if any
+    rc = ZNodeDelete( monZnode );
+    if ( rc == ZOK )
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], My znode (%s) deleted!\n"
+                , method_name, Node_name );
+        mon_log_write(MON_ZCLIENT_MYRUNNINGZNODECREATE_1, SQ_LOG_INFO, buf);
+    }
+
     rc = ZNodeCreate( monZnode.c_str(), monData.c_str(), ZOO_EPHEMERAL );
 
     TRACE_EXIT;
@@ -2555,16 +2675,6 @@ int CZClient::RunningZNodeDelete( const char *nodeName )
                     , monZnode.c_str() );
     }
 
-    if (strcmp( Node_name, nodeName) == 0)
-    {
-        // Clean up my error znode and children
-        HandleErrorChildZNodes( Node_name );
-        // Clean up error znodes and where I am their 'only' child
-        lock();
-        HandleErrorChildZNodesForZNodeChild( Node_name, true );
-        unlock();
-    }
-
     rc = ZNodeDelete( monZnode );
     if ( rc == ZOK )
     {
@@ -2573,6 +2683,16 @@ int CZClient::RunningZNodeDelete( const char *nodeName )
                 , "[%s], znode (%s) deleted!\n"
                 , method_name, nodeName );
         mon_log_write(MON_ZCLIENT_RUNZNODEWATCHDELETE_1, SQ_LOG_INFO, buf);
+    }
+
+    if (strcmp( Node_name, nodeName) == 0)
+    {
+        // Clean up my error znode and children
+        HandleErrorChildZNodes( Node_name );
+        // Clean up error znodes and where I am their 'only' child
+        lock();
+        HandleErrorChildZNodesForZNodeChild( Node_name, true );
+        unlock();
     }
 
     TRACE_EXIT;
@@ -3204,7 +3324,7 @@ int CZClient::ZNodeCreate( const char *znodePath
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf( "%s@%d zoo_create (%s : %s)\n"
+        trace_printf( "%s@%d zoo_create (%s:%s)\n"
                     , method_name, __LINE__
                     , zpath.c_str()
                     , zdata.c_str());

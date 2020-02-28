@@ -399,6 +399,11 @@ void CHealthCheck::healthCheckThread()
                 }
                 else
                 {
+                    if ( ZClientEnabled )
+                    {
+                        ZClient->RunningZNodeDelete( MyNode->GetName() );
+                        ZClient->MasterZNodeDelete( MyNode->GetName() );
+                    }
                     // Bring down the node by expiring the watchdog process
                     sendEventToWatchDog(Watchdog_Expire);
                     // wait forever

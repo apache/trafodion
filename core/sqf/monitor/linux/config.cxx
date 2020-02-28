@@ -787,7 +787,7 @@ void CConfigContainer::addDbProcName ( const char * name )
 
     int rc;
     
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (trace_settings & (TRACE_PROCESS | TRACE_REQUEST))
     {
         trace_printf( "%s@%d saving registry process, name=%s\n"
                     , method_name, __LINE__
@@ -844,7 +844,7 @@ void CConfigContainer::addDbProcData ( const char * procName,
 
     int rc;
     
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (trace_settings & (TRACE_PROCESS | TRACE_REQUEST))
     {
         trace_printf( "%s@%d saving registry process data procName=%s, "
                       "key=%s\n"
@@ -872,7 +872,7 @@ void CConfigContainer::addUniqueString(int nid, int id, const char * uniqStr )
 
     int rc;
     
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
     {
         trace_printf( "%s@%d saving unique string nid=%d id=%d\n"
                     , method_name, __LINE__
@@ -900,7 +900,7 @@ int CConfigContainer::getMaxUniqueId( int nid )
     int id = 0;
     int rc;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
     {
         trace_printf( "%s@%d finding max unique string id for nid=%d\n"
                     , method_name, __LINE__
@@ -921,7 +921,7 @@ int CConfigContainer::getMaxUniqueId( int nid )
     }
     else
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
         {
             trace_printf( "%s@%d found max(id)=%d for nid=%d\n"
                         , method_name, __LINE__, id, nid);
@@ -941,7 +941,7 @@ bool CConfigContainer::getUniqueString(int nid, int id, string & uniqStr )
     int rc;
     char uniqueString[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
     {
         trace_printf( "%s@%d Get unique string, stringId(nid=%d, id=%d)\n"
                     , method_name, __LINE__
@@ -963,7 +963,7 @@ bool CConfigContainer::getUniqueString(int nid, int id, string & uniqStr )
     }
     else
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
         {
             trace_printf( "%s@%d Found unique string, stringId(nid=%d, id=%d), string=%s\n"
                         , method_name, __LINE__
@@ -988,7 +988,7 @@ bool CConfigContainer::getUniqueStringId( int         nid
     int rc;
     int id;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
     {
         trace_printf( "%s@%d finding unique string nid=%d string=%s\n"
                     , method_name, __LINE__

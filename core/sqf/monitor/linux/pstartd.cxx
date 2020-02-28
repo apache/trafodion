@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/resource.h>
 
 
 #include "SCMVersHelp.h"
@@ -40,6 +41,7 @@
 
 const char *MyName;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connection port - not used
+bool GenCoreOnFailureExit = false;
 
 long trace_settings = 0;
 bool IsRealCluster = true;
@@ -60,6 +62,31 @@ CMonLog *MonLog = NULL;
 
 DEFINE_EXTERN_COMP_DOVERS(pstartd)
 DEFINE_EXTERN_COMP_PRINTVERS(pstartd)
+
+void mon_failure_exit( bool genCoreOnFailureExit )
+{
+    const char method_name[] = "mon_failure_exit";
+
+    char buf[MON_STRING_BUF_SIZE];
+    snprintf(buf, sizeof(buf), "[%s], Aborting! genCore=%d, GenCore=%d\n",
+             method_name, genCoreOnFailureExit, GenCoreOnFailureExit);
+    monproc_log_write(PSTARTD_FAILURE_EXIT_1, SQ_LOG_CRIT, buf);
+
+    if (genCoreOnFailureExit || GenCoreOnFailureExit)
+    {
+        // Generate a core file, abort is intentional
+        abort();
+    }
+    else
+    {
+        // Don't generate a core file, abort is intentional
+        struct rlimit limit;
+        limit.rlim_cur = 0;
+        limit.rlim_max = 0;
+        setrlimit(RLIMIT_CORE, &limit);
+        abort();
+    }
+}
 
 const char *ProcessTypeString( PROCESSTYPE type );
 
@@ -933,13 +960,19 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
     progArgs = persistConfig->GetProgramArgs();
     progArgc = persistConfig->GetProgramArgc();
 
+    char stdout[MAX_PROCESS_PATH];
+    const char *logpath = getenv("TRAF_LOG");
+    snprintf( stdout, sizeof(stdout)
+            , "%s/%s"
+            , logpath, progStdout.c_str() );
+
     if ( tracing )
     {
         trace_printf( "%s@%d Will start process: nid=%d, type=%s, name=%s, "
                       "prog=%s, stdout=%s, argc=%d, args=%s\n"
                     , method_name, __LINE__, MyNid
                     , ProcessTypeString(procType), procName.c_str()
-                    , progProgram.c_str(), progStdout.c_str()
+                    , progProgram.c_str(), stdout
                     , progArgc, progArgs.c_str());
     }
 
@@ -955,7 +988,7 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
                                       , procName.c_str()
                                       , progProgram.c_str()
                                       , ""
-                                      , progStdout.c_str()
+                                      , stdout
                                       , progArgc
                                       , progArgs.c_str()
                                     //  , argBegin

@@ -101,6 +101,7 @@ bool PidMap = false;
 bool usingCpuAffinity = false;
 bool usingTseCpuAffinity = false;
 bool genSnmpTrapEnabled = false;
+bool GenCoreOnFailureExit = false;
 int Measure = 0;
 long trace_level = 0;
 char MyPath[MAX_PROCESS_PATH];
@@ -168,11 +169,11 @@ CRedirector Redirector;
 CIntProcess IntProcess;
 CReqQueue ReqQueue;
 CHealthCheck HealthCheck;
-CCommAccept CommAccept;
+CCommAccept *CommAccept;
 #ifdef NAMESERVER_PROCESS
-CCommAcceptMon CommAcceptMon;
+CCommAcceptMon *CommAcceptMon;
 #else
-CPtpCommAccept PtpCommAccept;
+CPtpCommAccept *PtpCommAccept;
 #endif
 extern CReplicate Replicator;
 CZClient  *ZClient = NULL;
@@ -276,7 +277,7 @@ void sigtermSignalHandler(int signal, siginfo_t *info, void *)
             , MyPNID );
     mon_log_write(MON_MONITOR_SIGTERMSIGNALHANDLER_1, SQ_LOG_CRIT, la_buf); 
 
-    Monitor->HardNodeDown( MyPNID, true );
+    ReqQueue.enqueueDownReq(MyPNID);
 
     if (trace_settings & TRACE_ENTRY_EXIT)
         trace_nolock_printf("%s@%d - Exit\n", method_name, __LINE__);
@@ -366,6 +367,37 @@ void child_death_signal_handler2 (int signal, siginfo_t *info, void *)
         trace_nolock_printf("%s@%d - Exit\n", method_name, __LINE__);
 }
 #endif
+
+void mon_failure_exit( bool genCoreOnFailureExit )
+{
+    const char method_name[] = "mon_failure_exit";
+
+    if ( ZClientEnabled )
+    {
+        ZClient->RunningZNodeDelete( MyNode->GetName() );
+        ZClient->MasterZNodeDelete( MyNode->GetName() );
+    }
+
+    char buf[MON_STRING_BUF_SIZE];
+    snprintf(buf, sizeof(buf), "[%s], Aborting! genCore=%d, GenCore=%d\n",
+             method_name, genCoreOnFailureExit, GenCoreOnFailureExit);
+    mon_log_write(MON_MONITOR_FAILURE_EXIT_1, SQ_LOG_CRIT, buf);
+
+    if (genCoreOnFailureExit || GenCoreOnFailureExit)
+    {
+        // Generate a core file, abort is intentional
+        abort();
+    }
+    else
+    {
+        // Don't generate a core file, abort is intentional
+        struct rlimit limit;
+        limit.rlim_cur = 0;
+        limit.rlim_max = 0;
+        setrlimit(RLIMIT_CORE, &limit);
+        abort();
+    }
+}
 
 void monMallocStats()
 {
@@ -1562,13 +1594,13 @@ int main (int argc, char *argv[])
     // Set flag to indicate whether we are operating in a real cluster
     // or a virtual cluster.   This is used throughout the monitor when
     // behavior differs for a real vs. virtual cluster environment.
+    if ( getenv( "SQ_VIRTUAL_NODES" ) )
+    {
+        IsRealCluster = false;
+        Emulate_Down = true;
+    }
     if ( !IsAgentMode )
     {
-        if ( getenv( "SQ_VIRTUAL_NODES" ) )
-        {
-            IsRealCluster = false;
-            Emulate_Down = true;
-        }
         if ( IsRealCluster )
         {
             // The monitor processes may be started by MPIrun utility
@@ -1605,7 +1637,7 @@ int main (int argc, char *argv[])
     }
 #endif
 
-    if ( IsAgentMode || IsNameServer )
+    // Always load the trace files in the local node
     {
         MON_Props xprops( true );
         char *envfile;
@@ -1623,6 +1655,7 @@ int main (int argc, char *argv[])
 #else
         strcat(envfile, "/monitor.env");
 #endif
+        printf("Loading monitor trace configuration file: %s\n", envfile);
         xprops.load( envfile );
         delete [] envfile;
         MON_Smap_Enum xenum( &xprops );
@@ -2106,13 +2139,18 @@ int main (int argc, char *argv[])
        MonStats->MonitorBusyIncr();
 
     const char message_tag[] = "Trafodion";
-    snprintf( buf, sizeof(buf), "[%s] - monitor Started!\n", message_tag );
-    mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
 #ifdef NAMESERVER_PROCESS
+    snprintf( buf, sizeof(buf), "[%s] - trafns Started!\n", message_tag );
+    mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
     snprintf(buf, sizeof(buf), "[%s] - %s, Started! CommType: %s\n"
                 , message_tag
                 , CALL_COMP_GETVERS2(trafns), CommTypeString( CommType ));
+    mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
+    snprintf( buf, sizeof(buf), "[%s] - trafns Started!\n", message_tag );
+    mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
 #else
+    snprintf( buf, sizeof(buf), "[%s] - monitor Started!\n", message_tag );
+    mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
     snprintf(buf, sizeof(buf), "[%s] - %s, Started! CommType: %s (%s%s%s%s%s)\n"
                 , message_tag
                 , CALL_COMP_GETVERS2(monitor)
@@ -2122,10 +2160,10 @@ int main (int argc, char *argv[])
                 , IsAgentMode?AgentTypeString( AgentType ):""
                 , IsMPIChild?"/MPIChild":""
                 , NameServerEnabled?"/NameServerEnabled":"" );
-#endif
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
     snprintf( buf, sizeof(buf), "[%s] - monitor Started!\n", message_tag );
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
+#endif
        
 #ifdef DMALLOC
     if (trace_settings & TRACE_INIT)
@@ -2365,16 +2403,21 @@ int main (int argc, char *argv[])
         Nodes = new CNodeContainer ();
         Config = new CConfigContainer ();
 #ifdef NAMESERVER_PROCESS
+        CommAccept = new CCommAccept();
         Monitor = new CMonitor ();
+        CommAcceptMon = new CCommAcceptMon();
 #else
         if (NameServerEnabled)
         {
-            PtpClient  = new CPtpClient ();
+            CommAccept = new CCommAccept();
             Monitor    = new CMonitor (procTermSig);
+            PtpClient  = new CPtpClient ();
+            PtpCommAccept = new CPtpCommAccept();
             NameServer = new CNameServer ();
         }
         else
         {
+            CommAccept = new CCommAccept();
             Monitor = new CMonitor (procTermSig);
         }
 #endif
@@ -2560,19 +2603,19 @@ retryMaster:
         CReqWorker::startReqWorkers();
 
         // Create thread to accept connections from other monitors
-        CommAccept.start();
+        CommAccept->start();
 #ifdef NAMESERVER_PROCESS
         // Create thread to accept connections from other name servers
-        CommAcceptMon.start();
+        CommAcceptMon->start();
         if (IsMaster)
         {
-            CommAcceptMon.startAccepting();
+            CommAcceptMon->startAccepting();
         }
 #else
         if (NameServerEnabled)
         {
             // Create thread to accept point-2-point connections from other monitors
-            PtpCommAccept.start();
+            PtpCommAccept->start();
         }
 #endif
 #ifndef NAMESERVER_PROCESS
@@ -2912,13 +2955,13 @@ retryMaster:
     SQ_theLocalIOToClient->shutdownWork();
     if (NameServerEnabled)
     {
-        PtpCommAccept.shutdownWork();
+        PtpCommAccept->shutdownWork();
     }
 #endif
 
-    CommAccept.shutdownWork();
+    CommAccept->shutdownWork();
 #ifdef NAMESERVER_PROCESS
-    CommAcceptMon.shutdownWork();
+    CommAcceptMon->shutdownWork();
 #endif
 
 #ifndef NAMESERVER_PROCESS

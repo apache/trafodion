@@ -28,9 +28,11 @@
 
 #include <pthread.h>
 #include "lock.h"
+#include "comm.h"
 
 
 class CPtpCommAccept : public CLock
+                     , public CComm
 {
 public:
 
@@ -38,11 +40,15 @@ public:
     virtual ~CPtpCommAccept();
 
     void commAcceptor( void );
+    inline const char * getPtPPort( void ) { return ptpPort_.c_str(); }
+    inline int          getPtPSocketPort( void ) { return( ptpSocketPort_ ); }
     bool isAccepting( void ) { CAutoLock lock(getLocker()); return( accepting_ ); }
     void monReqExec( void *req ); //stupid compiler and circular header files
 
     void processMonReqs( int sockFd );
     void processNewSock( int sockFd );
+    inline void setPtPPort( char *ptpPort) { ptpPort_ = ptpPort; }  
+    inline void setPtPSocketPort( int ptpSocketPort) { ptpSocketPort_ = ptpSocketPort; }
     void startAccepting( void );
     void stopAccepting( void );
     void start( void );
@@ -57,14 +63,18 @@ public:
 private:
 
     void commAcceptorSock( void );
+    void connectToCommSelf( void );
 
-    bool accepting_;
-    bool shutdown_;
-
-    // ptpCommAccept thread's id
-    pthread_t                      thread_id_;
-    // ptpProcess thread's id
-    pthread_t                      process_thread_id_;
+    bool   accepting_;
+    bool   shutdown_;
+    int    ioWaitTimeout_;
+    int    ioRetryCount_;
+    int    ptpSock_;
+    int    ptpSocketPort_;           // point-2-point socket port
+    string ptpPort_;
+    
+    pthread_t   thread_id_;         // ptpCommAccept thread's id
+    pthread_t   process_thread_id_; // ptpProcess thread's id
 };
 
 #endif

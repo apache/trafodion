@@ -59,15 +59,37 @@ extern bool IsRealCluster;
 extern CMeas Meas;
 extern int MyPNID;
 
+const char *EpollEventString( __uint32_t events );
+const char *EpollOpString( int op );
+
 #define MON2MON_IO_RETRIES 3
 
 CPtpClient::CPtpClient (void)
-          : ptpCommPort_(0)
+          : ioWaitTimeout_(EPOLL_IO_WAIT_TIMEOUT_MSEC)
+          , ioRetryCount_(EPOLL_IO_RETRY_COUNT)
+          , ptpCommPort_(0)
           , ptpClusterSocks_(NULL)
           , seqNum_(0)
 {
     const char method_name[] = "CPtpClient::CPtpClient";
     TRACE_ENTRY;
+
+    // Use the EPOLL timeout and retry values
+    char *ioWaitTimeoutEnv = getenv( "SQ_MON_EPOLL_WAIT_TIMEOUT" );
+    if ( ioWaitTimeoutEnv )
+    {
+        // Timeout in seconds
+        ioWaitTimeout_ = atoi( ioWaitTimeoutEnv );
+        char *ioRetryCountEnv = getenv( "SQ_MON_EPOLL_RETRY_COUNT" );
+        if ( ioRetryCountEnv )
+        {
+            ioRetryCount_ = atoi( ioRetryCountEnv );
+        }
+        if ( ioRetryCount_ > EPOLL_IO_RETRY_COUNT_MAX )
+        {
+            ioRetryCount_ = EPOLL_IO_RETRY_COUNT_MAX;
+        }
+    }
 
     ptpHost_[0] = '\0';
     ptpPortBase_[0] = '\0';
@@ -76,7 +98,7 @@ CPtpClient::CPtpClient (void)
         SetLocalHost();
     }
     
-    char * env  = getenv( "MON2MON_COMM_PORT" );
+    char * env  = getenv( "MON_P2P_COMM_PORT" );
     if ( env  ) 
     {
         ptpCommPort_ = atoi( env  );
@@ -85,10 +107,10 @@ CPtpClient::CPtpClient (void)
     {
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s@%d] MON2MON_COMM_PORT environment variable is not set!\n"
+                , "[%s@%d] MON_P2P_COMM_PORT environment variable is not set!\n"
                 , method_name, __LINE__ );
         mon_log_write( PTPCLIENT_PTPCLIENT_1, SQ_LOG_CRIT, buf );
-
+        
         mon_failure_exit();
     }
 
@@ -119,7 +141,7 @@ int CPtpClient::InitializePtpClient( int pnid, char * ptpPort )
 
     if (ptpClusterSocks_[pnid] == -1)
     {
-        int sock = Monitor->MkCltSock( ptpPort );                
+        int sock = CComm::Connect( ptpPort );
         if (sock < 0)
         {
             err = sock;
@@ -1166,9 +1188,11 @@ int CPtpClient::ProcessStdIoData( int nid
     return error;
 }
 
-int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg
+int CPtpClient::SendToMon(const char *reqType
+                         , internal_msg_def *msg
                          , ptpMsgInfo_t &myInfo
-                         , int targetNid, const char *hostName)
+                         , int targetNid
+                         , const char *hostName)
 {
     const char method_name[] = "CPtpClient::SendToMon";
     TRACE_ENTRY;
@@ -1241,7 +1265,13 @@ retryIO:
                     , sendSock );
     }
 
-    error = SockSend((char *) &myInfo, sizeof(ptpMsgInfo_t), sendSock);
+    error = CComm::SendWait( sendSock
+                           , (char *) &myInfo
+                           , sizeof(ptpMsgInfo_t)
+                           , ioWaitTimeout_
+                           , ioRetryCount_
+                           , (char*)node->GetName()
+                           , method_name );
     if (error)
     {
         int err = error;
@@ -1254,7 +1284,13 @@ retryIO:
     }
     else
     {
-        error = SockSend((char *) msg, myInfo.size, sendSock);
+        error = CComm::SendWait( sendSock
+                               , (char *) msg
+                               , myInfo.size
+                               , ioWaitTimeout_
+                               , ioRetryCount_
+                               , (char*)node->GetName()
+                               , method_name);
         if (error)
         {
             int err = error;
@@ -1269,7 +1305,7 @@ retryIO:
     
     if (error)
     {
-        SockClose( pnid );
+        Close( pnid );
         if ( retryCount < MON2MON_IO_RETRIES )
         {
             retryCount++;
@@ -1288,9 +1324,9 @@ retryIO:
     return error;
 }
 
-void CPtpClient::SockClose( int pnid )
+void CPtpClient::Close( int pnid )
 {
-    const char method_name[] = "CPtpClient::SockClose";
+    const char method_name[] = "CPtpClient::Close";
     TRACE_ENTRY;
 
     if (ptpClusterSocks_[pnid] != -1)
@@ -1305,142 +1341,5 @@ void CPtpClient::SockClose( int pnid )
 void CPtpClient::SetLocalHost( void )
 {
     gethostname( ptpHost_, MAX_PROCESSOR_NAME );
-}
-
-int CPtpClient::SockReceive(char *buf, int size, int sockFd)
-{
-    const char method_name[] = "CPtpClient::SockReceive";
-    TRACE_ENTRY;
-
-    bool    readAgain = false;
-    int     error = 0;
-    int     readCount = 0;
-    int     received = 0;
-    int     sizeCount = size;
-       
-    do
-    {
-        readCount = (int) recv( sockFd
-                              , buf
-                              , sizeCount
-                              , 0 );
-        if ( readCount > 0 ) Meas.addSockPtpRcvdBytes( readCount );
-
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Count read %d = recv(%d)\n"
-                        , method_name, __LINE__
-                        , readCount
-                        , sizeCount );
-        }
-    
-        if ( readCount > 0 )
-        { // Got data
-            received += readCount;
-            buf += readCount;
-            if ( received == size )
-            {
-                readAgain = false;
-            }
-            else
-            {
-                sizeCount -= readCount;
-                readAgain = true;
-            }
-        }
-        else if ( readCount == 0 )
-        { // EOF
-             error = ENODATA;
-             readAgain = false;
-        }
-        else
-        { // Got an error
-            if ( errno != EINTR)
-            {
-                error = errno;
-                readAgain = false;
-            }
-            else
-            {
-                readAgain = true;
-            }
-        }
-    }
-    while( readAgain );
-
-    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - recv(), received=%d, error=%d(%s)\n"
-                    , method_name, __LINE__
-                    , received
-                    , error, strerror(error) );
-    }
-
-    TRACE_EXIT;
-    return error;
-}
-
-int CPtpClient::SockSend(char *buf, int size, int sockFd)
-{
-    const char method_name[] = "CPtpClient::SockSend";
-    TRACE_ENTRY;
-    
-    bool    sendAgain = false;
-    int     error = 0;
-    int     sendCount = 0;
-    int     sent = 0;
-    
-    do
-    {
-        sendCount = (int) send( sockFd
-                              , buf
-                              , size
-                              , 0 );
-        if ( sendCount > 0 ) Meas.addSockPtpSentBytes( sendCount );
-
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - send(), sendCount=%d\n"
-                        , method_name, __LINE__
-                        , sendCount );
-        }
-    
-        if ( sendCount > 0 )
-        { // Sent data
-            sent += sendCount;
-            if ( sendCount == size )
-            {
-                 sendAgain = false;
-            }
-            else
-            {
-                sendAgain = true;
-            }
-        }
-        else
-        { // Got an error
-            if ( errno != EINTR)
-            {
-                error = errno;
-                sendAgain = false;
-            }
-            else
-            {
-                sendAgain = true;
-            }
-        }
-    }
-    while( sendAgain );
-
-    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - send(), sent=%d, error=%d(%s)\n"
-                    , method_name, __LINE__
-                    , sent
-                    , error, strerror(error) );
-    }
-
-    TRACE_EXIT;
-    return error;
 }
 
