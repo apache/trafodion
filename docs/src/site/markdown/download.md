@@ -37,20 +37,20 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 * [Documentation](documentation.html#230_Release)
 
 [src230]: https://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.3.0/src/apache-trafodion-2.3.0-src.tar.gz
-[pgp230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/src/apache-trafodion-2.3.0-src.tar.gz.asc
-[sha230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/src/apache-trafodion-2.3.0-src.tar.gz.sha512
+[pgp230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/src/apache-trafodion-2.3.0-src.tar.gz.asc
+[sha230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/src/apache-trafodion-2.3.0-src.tar.gz.sha512
 [pins230]: https://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_pyinstaller-2.3.0.tar.gz
-[pinpgp230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_pyinstaller-2.3.0.tar.gz.asc
-[pinsha230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_pyinstaller-2.3.0.tar.gz.sha512
+[pinpgp230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_pyinstaller-2.3.0.tar.gz.asc
+[pinsha230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_pyinstaller-2.3.0.tar.gz.sha512
 [ser230]: https://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_server-2.3.0-RH6-x86_64.tar.gz
-[sepgp230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_server-2.3.0-RH6-x86_64.tar.gz.asc
-[sesha230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_server-2.3.0-RH6-x86_64.tar.gz.sha512
+[sepgp230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_server-2.3.0-RH6-x86_64.tar.gz.asc
+[sesha230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_server-2.3.0-RH6-x86_64.tar.gz.sha512
 [cl230]: https://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_clients-2.3.0-RH6-x86_64.tar.gz
-[clpgp230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_clients-2.3.0-RH6-x86_64.tar.gz.asc
-[clsha230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_clients-2.3.0-RH6-x86_64.tar.gz.sha512
+[clpgp230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_clients-2.3.0-RH6-x86_64.tar.gz.asc
+[clsha230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/apache-trafodion_clients-2.3.0-RH6-x86_64.tar.gz.sha512
 [ap230]: https://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.3.0/bin/traf_ambari-2.3.0-1.noarch.rpm
-[appgp230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/traf_ambari-2.3.0-1.noarch.rpm.asc
-[apsha230]: https://www.apache.org/dist/trafodion/apache-trafodion-2.3.0/bin/traf_ambari-2.3.0-1.noarch.rpm.sha512
+[appgp230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/traf_ambari-2.3.0-1.noarch.rpm.asc
+[apsha230]: https://downloads.apache.org/trafodion/apache-trafodion-2.3.0/bin/traf_ambari-2.3.0-1.noarch.rpm.sha512
 
 ## 2.2.0 (March 2018)
 
@@ -185,4 +185,4 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 
 * * * *
 
-Note: when downloading from a mirror please check the [md5sum](https://www.apache.org/dev/release-signing#md5) and verify the [OpenPGP](https://www.apache.org/dev/release-signing#openpgp) compatible signature from the main [Apache](https://www.apache.org/) site. Links are provided above (next to the release download link). This [KEYS](https://www.apache.org/dist/trafodion/KEYS) file contains the public keys used for signing release. It is recommended that (when possible) a [web of trust](https://www.apache.org/dev/release-signing#web-of-trust) is used to confirm the identity of these keys. For more information, please see the [Apache Release FAQ](https://www.apache.org/dev/release.html).
+Note: when downloading from a mirror please check the [md5sum](https://www.apache.org/dev/release-signing#md5) and verify the [OpenPGP](https://www.apache.org/dev/release-signing#openpgp) compatible signature from the main [Apache](https://www.apache.org/) site. Links are provided above (next to the release download link). This [KEYS](https://downloads.apache.org/trafodion/KEYS) file contains the public keys used for signing release. It is recommended that (when possible) a [web of trust](https://www.apache.org/dev/release-signing#web-of-trust) is used to confirm the identity of these keys. For more information, please see the [Apache Release FAQ](https://www.apache.org/dev/release.html).
