@@ -345,7 +345,7 @@ echo "INFO: Installing ICU on $(date)" | tee -a $LOGFILE
 if [ -d $TOOLSDIR/icu4c_4.4/linux64/bin ]; then
   echo "INFO: ICU is already installed, skipping to next tool" | tee -a $LOGFILE
 else
-  downloadSource http://download.icu-project.org/files/icu4c/4.4/icu4c-4_4-src.tgz icu4c-4_4-src
+  downloadSource https://sourceforge.net/projects/icu/files/ICU4C/4.4.2/icu4c-4_4_2-src.tgz icu4c-4_4-src
   cd icu/source
   ./configure --prefix=$TOOLSDIR/icu4c_4.4/linux64 >>$LOGFILE 2>&1
   echo "INFO:   configure complete" | tee -a $LOGFILE
