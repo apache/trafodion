@@ -119,6 +119,13 @@ CREATE SEQUENCE   t072sch_comment.t072seq
     --UNSIGNED INTEGER
 ;
 
+create hbase table t072t1_comment ( column family 'cf');
+create external table t072t1_comment 
+  (row_id varchar(20) not null primary key, 
+   row_value varchar (1000))
+ attribute default column family 'cf'
+ map to hbase table t072t1_comment;
+
 
 ?section comment01
 --------------------------------------------------------------------------
@@ -141,7 +148,9 @@ comment on column     t072sch_comment.t072view1.col1            is 'This is a V0
 comment on column     t072sch_comment.t072view1.col2            is 'This is a V02 column new comment of view.' ;
 comment on column     t072sch_comment.t072view1.col3            is 'This is a V03 column new comment of view.大家好。' ;
 
-
+comment on table      hbase."_CELL_".t072t1_comment             is 'This is a new comment of hbase._CELL_.TABLE.这个是一个中文的table的注释。》》、……' ;
+comment on table      hbase."_ROW_".t072t1_comment              is 'This is a new comment of hbase._ROW_.TABLE.这个是一个中文的table的注释。》》、……' ;
+comment on table      hbase."_MAP_".t072t1_comment              is  'This is a new comment of hbase._MAP__.TABLE.这个是一个中文的table的注释。》》、……' ;
 ?section comment02
 --------------------------------------------------------------------------
 
@@ -240,7 +249,9 @@ showddl library      t072sch_comment.t072jar;
 showddl function     t072sch_comment.t072func;
 showddl procedure    t072sch_comment.t072spj;
 showddl sequence     t072sch_comment.t072seq;
-
+showddl hbase."_CELL_".t072t1_comment;
+showddl hbase."_ROW_".t072t1_comment;
+showddl hbase."_MAP_".t072t1_comment;
 
 ?section showddl2
 --------------------------------------------------------------------------
@@ -259,4 +270,8 @@ showddl sequence     t072sch_comment.t072seq;
 
 -- CLEANUP database
 drop schema IF EXISTS t072sch_comment cascade;
+unregister hbase table if exists t072t1_comment;
+drop external table if exists t072t1_comment;
+drop hbase table  t072t1_comment;
+   
 

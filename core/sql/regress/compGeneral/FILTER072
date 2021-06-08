@@ -14,4 +14,5 @@ fi
 
 sed "
 s/FILE '.*rundir\(.*\)'/FILE '\$rundir\1'/g
+s/ObjectUID = [0-9]\{19\}/ObjectUID = _nnnnnnnnnnnnnnnnnn/g
 " $fil

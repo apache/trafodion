@@ -6,6 +6,20 @@
 >>drop schema IF EXISTS t072sch_comment cascade;
 
 --- SQL operation complete.
+>>unregister hbase table if exists t072t1_comment;
+
+*** ERROR[3251] UNREGISTER operation could not be completed. Reason: Specified object T072T1_COMMENT does not exist.
+
+--- SQL operation failed with errors.
+>>drop external table if exists t072t1_comment;
+
+--- SQL operation complete.
+>>drop hbase table t072t1_comment;
+
+*** WARNING[1004] Object T072T1_COMMENT does not exist or object type is invalid for the current operation.
+
+--- SQL operation complete.
+>>
 >>
 >>obey TEST072(compile_libs);
 >>--------------------------------------------------------------------------
@@ -80,6 +94,17 @@
 
 --- SQL operation complete.
 >>
+>>create hbase table t072t1_comment ( column family 'cf');
+
+--- SQL operation complete.
+>>create external table t072t1_comment
++> (row_id varchar(20) not null primary key,
++> row_value varchar (1000))
++> attribute default column family 'cf'
++> map to hbase table t072t1_comment;
+
+--- SQL operation complete.
+>>
 >>
 >>
 >>obey TEST072(comment01);
@@ -133,7 +158,15 @@
 
 --- SQL operation complete.
 >>
->>
+>>comment on table hbase."_CELL_".t072t1_comment is 'This is a new comment of hbase._CELL_.TABLE.这个是一个中文的table的注释。》》、……' ;
+
+--- SQL operation complete.
+>>comment on table hbase."_ROW_".t072t1_comment is 'This is a new comment of hbase._ROW_.TABLE.这个是一个中文的table的注释。》》、……' ;
+
+--- SQL operation complete.
+>>comment on table hbase."_MAP_".t072t1_comment is 'This is a new comment of hbase._MAP__.TABLE.这个是一个中文的table的注释。》》、……' ;
+
+--- SQL operation complete.
 >>obey TEST072(showcomment);
 >>--------------------------------------------------------------------------
 >>
@@ -315,7 +348,80 @@ COMMENT ON SEQUENCE TRAFODION.T072SCH_COMMENT.T072SEQ IS
   'This is a new comment of SEQUENCE.' ;
 
 --- SQL operation complete.
->>
+>>showddl hbase."_CELL_".t072t1_comment;
+
+/*
+CREATE TABLE HBASE."_CELL_".T072T1_COMMENT
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_FAMILY VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_NAME VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_TIMESTAMP LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_VALUE VARCHAR(1000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , PRIMARY KEY (ROW_ID ASC)
+ )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T072T1_COMMENT ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T072T1_COMMENT;
+/* ObjectUID = _nnnnnnnnnnnnnnnnnn */
+
+COMMENT ON TABLE HBASE."_CELL_".T072T1_COMMENT IS
+ 'This is a new comment of hbase._CELL_.TABLE.这个是一个中文的table的注释。》》、……'
+ ;
+
+--- SQL operation complete.
+>>showddl hbase."_ROW_".t072t1_comment;
+
+/*
+CREATE TABLE HBASE."_ROW_".T072T1_COMMENT
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COLUMN_DETAILS VARCHAR(10000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , PRIMARY KEY (ROW_ID ASC)
+ )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T072T1_COMMENT ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T072T1_COMMENT;
+/* ObjectUID = _nnnnnnnnnnnnnnnnnn */
+
+COMMENT ON TABLE HBASE."_ROW_".T072T1_COMMENT IS
+ 'This is a new comment of hbase._ROW_.TABLE.这个是一个中文的table的注释。》》、……'
+ ;
+
+--- SQL operation complete.
+>>showddl hbase."_MAP_".t072t1_comment;
+
+CREATE EXTERNAL TABLE T072T1_COMMENT
+ (
+ "cf".ROW_ID VARCHAR(20) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".ROW_VALUE VARCHAR(1000) CHARACTER SET ISO88591
+ COLLATE DEFAULT DEFAULT NULL
+ , PRIMARY KEY NOT SERIALIZED (ROW_ID ASC)
+ )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+ MAP TO HBASE TABLE T072T1_COMMENT DATA FORMAT VARCHAR
+;
+
+COMMENT ON TABLE TRAFODION."_HB_MAP_".T072T1_COMMENT IS
+ 'This is a new comment of hbase._MAP__.TABLE.这个是一个中文的table的注释。》》、……'
+ ;
+
+--- SQL operation complete.
 >>
 >>
 >>obey TEST072(comment02);
@@ -580,7 +686,80 @@ COMMENT ON SEQUENCE TRAFODION.T072SCH_COMMENT.T072SEQ IS
   'This is a Modified comment: This is a comment of SEQUENCE.' ;
 
 --- SQL operation complete.
->>
+>>showddl hbase."_CELL_".t072t1_comment;
+
+/*
+CREATE TABLE HBASE."_CELL_".T072T1_COMMENT
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_FAMILY VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_NAME VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_TIMESTAMP LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_VALUE VARCHAR(1000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , PRIMARY KEY (ROW_ID ASC)
+ )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T072T1_COMMENT ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T072T1_COMMENT;
+/* ObjectUID = _nnnnnnnnnnnnnnnnnn */
+
+COMMENT ON TABLE HBASE."_CELL_".T072T1_COMMENT IS
+ 'This is a new comment of hbase._CELL_.TABLE.这个是一个中文的table的注释。》》、……'
+ ;
+
+--- SQL operation complete.
+>>showddl hbase."_ROW_".t072t1_comment;
+
+/*
+CREATE TABLE HBASE."_ROW_".T072T1_COMMENT
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COLUMN_DETAILS VARCHAR(10000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , PRIMARY KEY (ROW_ID ASC)
+ )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T072T1_COMMENT ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T072T1_COMMENT;
+/* ObjectUID = _nnnnnnnnnnnnnnnnnn */
+
+COMMENT ON TABLE HBASE."_ROW_".T072T1_COMMENT IS
+ 'This is a new comment of hbase._ROW_.TABLE.这个是一个中文的table的注释。》》、……'
+ ;
+
+--- SQL operation complete.
+>>showddl hbase."_MAP_".t072t1_comment;
+
+CREATE EXTERNAL TABLE T072T1_COMMENT
+ (
+ "cf".ROW_ID VARCHAR(20) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".ROW_VALUE VARCHAR(1000) CHARACTER SET ISO88591
+ COLLATE DEFAULT DEFAULT NULL
+ , PRIMARY KEY NOT SERIALIZED (ROW_ID ASC)
+ )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+ MAP TO HBASE TABLE T072T1_COMMENT DATA FORMAT VARCHAR
+;
+
+COMMENT ON TABLE TRAFODION."_HB_MAP_".T072T1_COMMENT IS
+ 'This is a new comment of hbase._MAP__.TABLE.这个是一个中文的table的注释。》》、……'
+ ;
+
+--- SQL operation complete.
 >>
 >>
 >>obey TEST072(comment03);
@@ -1137,6 +1316,16 @@ COMMENT ON SEQUENCE TRAFODION.T072SCH_COMMENT.T072SEQ IS
 >>drop schema IF EXISTS t072sch_comment cascade;
 
 --- SQL operation complete.
+>>unregister hbase table if exists t072t1_comment;
+
+--- SQL operation complete.
+>>drop external table if exists t072t1_comment;
+
+--- SQL operation complete.
+>>drop hbase table t072t1_comment;
+
+--- SQL operation complete.
+>>
 >>
 >>obey TEST072(showcomment);
 >>--------------------------------------------------------------------------
