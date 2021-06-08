@@ -20,6 +20,9 @@
 
 dcsznode=/$USER/dcs/master
 jpscmd=$JAVA_HOME/bin/jps
+JAVA=$JAVA_HOME/bin/java
+jstatcmd=$JAVA_HOME/bin/jstat
+jstackcmd=$JAVA_HOME/bin/jstack
 cfg_mxo_cnt=0
 act_mxo_cnt=0
 down_mxo_cnt=0
@@ -30,7 +33,7 @@ cfg_dcsserver_cnt=0
 actual_dcsserver_cnt=0
 down_dcsserver_cnt=0
 activeMaster=localhost
-
+OPT_VALUE=$1
 if [ -e $SQ_PDSH ]; then
    L_PDSH="$SQ_PDSH $MY_NODES "
 else
@@ -171,11 +174,6 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
    fi
    echo
   fi
-  echo -e "Process\t\tConfigured\tActual\t\tDown"
-  echo -e "---------\t----------\t------\t\t----"
-  echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t\t$down_dcsmaster_cnt"
-  echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t\t$down_dcsserver_cnt"
-  echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t\t$down_mxo_cnt\n"
  else
    echo "DCS is not installed. Please install and configure DCS..."
    exit 1
@@ -183,5 +181,51 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
 else
  echo "Trafodion is not started or is not operational..."
  echo
+ exit 1
 fi
+
+case $OPT_VALUE in
+    -m)
+        if [ -e $SQ_PDSH ]; then
+            STAT_CMD="$SQ_PDSH -w $activeMaster $jstatcmd -gc "
+        else
+            STAT_CMD=" $jstatcmd -gc "
+        fi
+        J_STATUS=`$STAT_CMD $activeDcsPid `
+        EC=`echo $J_STATUS | sed -n 1p | awk '{ print $20 }'`
+        EU=`echo $J_STATUS | sed -n 1p | awk '{ print $21 }'`
+        OC=`echo $J_STATUS | sed -n 1p | awk '{ print $22 }'`
+        OU=`echo $J_STATUS | sed -n 1p | awk '{ print $23 }'`
+        PERCENT_EU=$(echo "scale=2;$EU/$EC "| bc)
+        PERCENT_OU=$(echo "scale=2;$OU/$OC "| bc)
+
+        echo -e "Active DCSMaster VM status:"
+        echo -e "EC\tEU\tOC\tOU\tPERCENT_EU\tPERCENT_OU\t"
+        echo -e "$EC\t|$EU\t|$OC\t|$OU\t|$PERCENT_EU\t\t|$PERCENT_OU\t"
+        ;;
+
+    -t)
+        if [ -e $SQ_PDSH ]; then
+            STAT_CMD="$SQ_PDSH -w $activeMaster $jstackcmd "
+        else
+            STAT_CMD=" $jstackcmd "
+        fi
+        echo `$STAT_CMD $activeDcsPid \
+            | sed -n '/Thread-6/, /ListenerWorker.java/p'`
+
+        echo `$STAT_CMD $activeDcsPid \
+            | sed -n '/Thread-5/, /ListenerService.java/p'`
+        ;;
+    -s)
+        "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p"  -classpath ${CLASSPATH}:${DCS_INSTALL_DIR}/"dcs-"$TRAFODION_VER".jar" org.trafodion.dcs.zookeeper.ZKShellTool 2>/dev/null
+        ;;
+    *)
+        echo -e "Process\t\tConfigured\tActual\t\tDown"
+        echo -e "---------\t----------\t------\t\t----"
+        echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t\t$down_dcsmaster_cnt"
+        echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t\t$down_dcsserver_cnt"
+        echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t\t$down_mxo_cnt\n"
+        exit 0
+        ;;
+esac
 exit 0
