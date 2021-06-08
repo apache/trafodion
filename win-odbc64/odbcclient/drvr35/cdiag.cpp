@@ -378,7 +378,7 @@ SQLRETURN CDiagRec::GetDiagRec(SQLSMALLINT	RecNumber,
 
 		//Double strLen to circumvent the bug in driver manager, that requires us to give 
 		//the NO. OF BYTES instead of no. of characters
-		strLen = tmpStrLen * 2;
+		strLen = tmpStrLen;
 
 		translateLengthMax = (BufferLength == SQL_NTS) ? strLen : BufferLength; 
 		
@@ -386,7 +386,7 @@ SQLRETURN CDiagRec::GetDiagRec(SQLSMALLINT	RecNumber,
 		{
 			// translate from UTF8 to WChar
 			if ( (rc = UTF8ToWChar((char *)MsgStruct.lpsMsgText.c_str(), tmpStrLen, MessageText, 
-					translateLengthMax/2, (int *)&translateLength, (char *)errorMsg)) != SQL_SUCCESS )
+					translateLengthMax, (int *)&translateLength, (char *)errorMsg)) != SQL_SUCCESS )
 				rc = SQL_SUCCESS_WITH_INFO; //ERROR;
 
 			((wchar_t *)MessageText)[translateLength] = L'\0';
