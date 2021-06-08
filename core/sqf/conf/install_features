@@ -69,3 +69,5 @@ export CDH_5_7_SUPPORT="Y"
 export APACHE_1_0_X_SUPPORT="Y"
 export APACHE_1_1_X_SUPPORT="Y"
 export APACHE_1_2_X_SUPPORT="Y"
+
+export REDHAT_7_SUPPORT="Y"
