@@ -64,5 +64,23 @@
       <scope>system</scope>
       <systemPath>MY_JDBC_SYS_PATH</systemPath>
     </dependency>
+    <dependency>
+       <groupId>org.slf4j</groupId>
+       <artifactId>slf4j-api</artifactId>
+       <version>1.7.5</version>
+       <scope>test</scope>
+       <exclusions>
+         <exclusion>
+           <groupId>*</groupId>
+           <artifactId>*</artifactId>
+         </exclusion>
+       </exclusions>
+     </dependency>
+     <dependency>
+       <groupId>org.slf4j</groupId>
+       <artifactId>slf4j-log4j12</artifactId>
+       <version>1.7.5</version>
+       <scope>test</scope>
+     </dependency>
   </dependencies>
 </project>

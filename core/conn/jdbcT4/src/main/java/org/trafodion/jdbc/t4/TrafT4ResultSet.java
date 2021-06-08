@@ -56,13 +56,16 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // ----------------------------------------------------------------------------
 // This class partially implements the result set class as defined in 
 // java.sql.ResultSet.  
 // ----------------------------------------------------------------------------
 public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet {
-
+    private static final Logger LOG = LoggerFactory.getLogger(TrafT4ResultSet.class);
+    private static final long FETCH_BYTES_LIMIT = 1024 * 1024 * 1024;
 	// java.sql.ResultSet interface methods
 	public boolean absolute(int row) throws SQLException {
 		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
@@ -2773,7 +2776,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 					maxRows = 0;
 					queryTimeout = 0;
 				}
-
+				setFetchSizeIfExceedLimit();
 				if (maxRows == 0 || maxRows > totalRowsFetched_ + fetchSize_) {
 					maxRowCnt = fetchSize_;
 				} else {
@@ -2974,34 +2977,52 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		}
 	}
 
-	public void setFetchSize(int rows) throws SQLException {
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, rows);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "setFetchSize", "", p);
-		}
-		if (connection_.props_.getLogWriter() != null) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, rows);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4ResultSet");
-			lr.setSourceMethodName("setFetchSize");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
-		if (isClosed_) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
-					null);
-		}
-		if (rows < 0) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_fetch_size",
-					null);
-		} else if (rows == 0) {
-			fetchSize_ = DEFAULT_FETCH_SIZE;
-		} else {
-			fetchSize_ = rows;
-		}
-	}
+    public void setFetchSize(int rows) throws SQLException {
+        if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, rows);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "setFetchSize", "", p);
+        }
+        if (connection_.props_.getLogWriter() != null) {
+            LogRecord lr = new LogRecord(Level.FINE, "");
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, rows);
+            lr.setParameters(p);
+            lr.setSourceClassName("TrafT4ResultSet");
+            lr.setSourceMethodName("setFetchSize");
+            T4LogFormatter lf = new T4LogFormatter();
+            String temp = lf.format(lr);
+            connection_.props_.getLogWriter().println(temp);
+        }
+        if (isClosed_) {
+            throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+                    "invalid_cursor_state", null);
+        }
+        if (rows < 0) {
+            throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+                    "invalid_fetch_size", null);
+        } else if (rows == 0) {
+            fetchSize_ = DEFAULT_FETCH_SIZE;
+        } else {
+            fetchSize_ = rows;
+        }
+
+        setFetchSizeIfExceedLimit();
+    }
+
+    /**
+     * if (row width) * (fetch rows) too large, there will have core in server side. once fetch
+     * bytes bigger than 1GB, divide it into several times to fetch, each time fetch bytes less than
+     * 1GB.
+     */
+    private void setFetchSizeIfExceedLimit() {
+        if (outputDesc_ != null && outputDesc_[0] != null) {
+            long rowLength = outputDesc_[0].rowLength_;
+            long fetchBytes = rowLength * fetchSize_;
+            if (fetchBytes >= FETCH_BYTES_LIMIT) {
+                fetchSize_ = (int) Math.ceil(FETCH_BYTES_LIMIT / (double) rowLength);
+                LOG.trace("Fetch size exceed limit, change it to <{}>.", fetchSize_);
+            }
+        }
+    }
 
 	public void updateArray(int columnIndex, Array x) throws SQLException {
 		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
