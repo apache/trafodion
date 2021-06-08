@@ -159,37 +159,46 @@ public class BatchTest extends JdbcCommon {
         }
         int expectedRowCount = 8;
 
-        // Start to prepare and execute the batch upsert
-        PreparedStatement insertStmt = _conn.prepareStatement(strInsert);
-        for(int i=0; i < 10; ++i) {
-            insertStmt.setInt(1, idArray[i]);
-            insertStmt.setString(2, nameArray[i]);
-            insertStmt.addBatch();
-        }
-        
-        try {
-            statusArray = insertStmt.executeBatch();
-        } catch(SQLException sqle) {
-            assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
-            SQLException e = null;
-            e = sqle.getNextException();
-            do {
-                assertTrue(e.getMessage().contains("ERROR[8102] The operation is prevented by a unique constraint"));
-            } while((e = e.getNextException()) != null);
-        }
-        
-        //assertArrayEquals(expectedStatusArray, statusArray);
+        PreparedStatement insertStmt =null;
+		ResultSet rs = null;
+		try {
+			// Start to and execute the batch upsert
+	        insertStmt = _conn.prepareStatement(strInsert);
+	        for(int i=0; i < 10; ++i) {
+	            insertStmt.setInt(1, idArray[i]);
+				insertStmt.setString(2, nameArray[i]);
+	            insertStmt.addBatch();
+	        }
 
-        int rowCount = 0;
-        ResultSet rs = _conn.createStatement().executeQuery(strSelect);
-        while(rs.next()) {
-            System.out.println("ID = " + rs.getString(1) + ", Name = " + rs.getString(2));
-            assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
-            assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
-            rowCount++;
+			try {
+				statusArray = insertStmt.executeBatch();
+			} catch(SQLException sqle) {
+				assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED"));
+				SQLException e = null;
+				e = sqle.getNextException();
+				do {
+					assertTrue(e.getMessage().contains("ERROR[8102] The operation is prevented by a unique constraint"));
+				} while((e = e.getNextException()) != null);
+			}
+
+			//assertArrayEquals(expectedStatusArray, statusArray);
+
+			int rowCount = 0;
+			rs = _conn.createStatement().executeQuery(strSelect);
+			while(rs.next()) {
+				System.out.println("ID = " + rs.getString(1) + ", Name = " + rs.getString(2));
+				assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
+				assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
+				rowCount++;
+			}
+			rs.close();
+			insertStmt.close();
+		 } finally {
+            if (rs != null)
+                rs.close();
+            if (insertStmt != null)
+                insertStmt.close();
         }
-        rs.close();
-        insertStmt.close();
     }
 
     /* Currently SQL does not have the ability to dump individual row, which
