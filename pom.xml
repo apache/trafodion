@@ -11,7 +11,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,9 +22,9 @@
  *
  */
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache</groupId>
@@ -36,17 +36,17 @@
 
   <groupId>org.apache.trafodion</groupId>
   <artifactId>trafodion</artifactId>
-  <version>1.3.0</version>
+  <version>2.2.0</version>
   <packaging>pom</packaging>
   <name>Apache Trafodion</name>
   <description>Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Hadoop.</description>
-  <url>http://trafodion.apache.org</url>
+  <url>https://trafodion.apache.org</url>
   <inceptionYear>2015</inceptionYear>
 
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
       <comments>A business-friendly OSS license</comments>
     </license>
@@ -54,7 +54,7 @@
 
   <organization>
     <name>Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
+    <url>https://www.apache.org</url>
   </organization>
 
   <issueManagement>
@@ -63,7 +63,7 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/trafodion.git</connection>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/trafodion.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/trafodion.git</developerConnection>
     <url>https://git-wip-us.apache.org/repos/asf?p=trafodion.git</url>
     <tag>HEAD</tag>
@@ -80,32 +80,32 @@
       <subscribe>user-subscribe@trafodion.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@trafodion.apache.org</unsubscribe>
       <post>user@trafodion.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-user/</archive>
+      <archive>https://mail-archives.apache.org/mod_mbox/trafodion-user/</archive>
     </mailingList>
     <mailingList>
       <name>Developer List</name>
       <subscribe>dev-subscribe@trafodion.apache.org</subscribe>
       <unsubscribe>dev-unsubscribe@trafodion.apache.org</unsubscribe>
       <post>dev@trafodion.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-dev/</archive>
+      <archive>https://mail-archives.apache.org/mod_mbox/trafodion-dev/</archive>
     </mailingList>
     <mailingList>
       <name>GitHub Codereview List</name>
       <subscribe>codereview-subscribe@trafodion.apache.org</subscribe>
       <unsubscribe>codereview-unsubscribe@trafodion.apache.org</unsubscribe>
-      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-codereview/</archive>
+      <archive>https://mail-archives.apache.org/mod_mbox/trafodion-codereview/</archive>
     </mailingList>
     <mailingList>
       <name>Commits List</name>
       <subscribe>commits-subscribe@trafodion.apache.org</subscribe>
       <unsubscribe>commits-unsubscribe@trafodion.apache.org</unsubscribe>
-      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-commits/</archive>
+      <archive>https://mail-archives.apache.org/mod_mbox/trafodion-commits/</archive>
     </mailingList>
     <mailingList>
       <name>Issues List</name>
       <subscribe>issues-subscribe@trafodion.apache.org</subscribe>
       <unsubscribe>issues-unsubscribe@trafodion.apache.org</unsubscribe>
-      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-issues/</archive>
+      <archive>https://mail-archives.apache.org/mod_mbox/trafodion-issues/</archive>
     </mailingList>
     <mailingList>
       <name>Security Issues</name>
