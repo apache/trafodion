@@ -3114,6 +3114,11 @@ static Int64 lcl_interval(rec_datetime_field eField, Lng32 eCode, char *opdata, 
     {
       short nValue;
       str_cpy_all((char *) &nValue, opdata, sizeof(nValue));
+      if ( 0 == nValue )
+        return 1;
+      nValue = nValue % 12;
+      if ( 0 == nValue )
+        return 4;
       return (nValue-1)/3+1;
     }
   if ( REC_DATE_EPOCH == eField )
@@ -3253,11 +3258,9 @@ Int64 ex_function_extract::getExtraTimeValue(rec_datetime_field eField, Lng32 eC
           return year/10;
         }
       case REC_DATE_WEEK:
-        {//same with built-in function week  ITM_WEEK
-          Int64 interval = datetimeOpType->getTotalDays(year, 1, 1);
-          Int64 dayofweek = lcl_dayofweek(interval);
+        {
           Int64 dayofyear = lcl_dayofyear(year,month,day);
-          return (dayofyear-1+dayofweek-1)/7+1;
+          return (dayofyear-1)/7+1;
         }
       case REC_DATE_QUARTER:
         {

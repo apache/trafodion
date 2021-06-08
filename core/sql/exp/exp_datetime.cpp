@@ -3686,6 +3686,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
         {
           if (hour > 12)
             hour = hour - 12;
+          if ( 0 == hour )
+            hour = 12;
         }
       convertToAscii(hour, dstDataPtr, 2);
       return (dstDataPtr - dstData);
@@ -3809,10 +3811,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
       int weekofmonth = 0;
       if ( day )
         {
-          Int64 interval = getTotalDays(year, 1, 1);
-          int dayofweek = (int)(((interval + 1) % 7) + 1);
           int dayofyear = Date2Julian(year,month,day)-Date2Julian(year,1,1)+1;
-          weekofmonth = (dayofyear-1+dayofweek-1)/7+1;
+          weekofmonth = (dayofyear-1)/7+1;
         }
       convertToAscii(weekofmonth,dstDataPtr,2);
       return (dstDataPtr - dstData);
