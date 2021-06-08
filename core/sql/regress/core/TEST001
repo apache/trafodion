@@ -128,8 +128,32 @@ select (case a when null then 1 else 2 end) from t001t1;
 select (case a when 1 then 1 when null then 2 else 3 end) from t001t1;
 select (case a when 1 then 1 when 2 then 2 else null end) from t001t1;	-- ok
 
+-- clause way
+cqd pcode_opt_level 'off';
+select case when cast(null as int) > 0 then 1/0 else 0 end from dual;
+
+select case when cast(null as int) > 0 and 2>1 then 1/0 else 0 end from dual;
+select case when cast(null as int) > 0 or 2>1 then 1/0 else 0 end from dual;
+
+select case when cast(null as int) > 0 and 2>3 then 1/0 else 0 end from dual;
+select case when cast(null as int) > 0 or 2>3 then 1/0 else 0 end from dual;
+
+-- PCODE way
+cqd pcode_opt_level 'on';
+select case when cast(null as int) > 0 then 1/0 else 0 end from dual;
+
+select case when cast(null as int) > 0 and 2>1 then 1/0 else 0 end from dual;
+select case when cast(null as int) > 0 or 2>1 then 1/0 else 0 end from dual;
+
+select case when cast(null as int) > 0 and 2>3 then 1/0 else 0 end from dual;
+select case when cast(null as int) > 0 or 2>3 then 1/0 else 0 end from dual;
+
 select a from t001t1 where null is null;			-- ok
 select a from t001t1 where null is not null;			-- ok (0 rows)
+
+-- = NULL is not ANSI
+select case when 3 is null then 1/0 else 0 end from dual;
+select case when 3 = null then 1/0 else 0 end from dual;
 
 
 -- PARAM queries
