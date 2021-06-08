@@ -350,6 +350,14 @@ public:
            NAMemory * outHeap = CmpCommon::statementHeap()
         );
 
+  ConstValue(const NAString& strval,
+           NABoolean isCaseInSensitive,
+           enum CharInfo::CharSet charSet=CharInfo::DefaultCharSet,
+           enum CharInfo::Collation collation=CharInfo::DefaultCollation,
+           enum CharInfo::Coercibility coercibility=CharInfo::COERCIBLE,
+           NAMemory * outHeap = CmpCommon::statementHeap()
+        );
+
   // constructor for a wide (unicode) string constant
   ConstValue(const NAWString& strval,
            enum CharInfo::CharSet charSet=CharInfo::UNICODE,
@@ -358,6 +366,16 @@ public:
            NAMemory * outHeap = CmpCommon::statementHeap(),
            enum CharInfo::CharSet strLitPrefixCharSet=CharInfo::UnknownCharSet
         );
+
+  ConstValue(const NAWString& strval,
+           NABoolean isCaseInSensitive,
+           enum CharInfo::CharSet charSet=CharInfo::UNICODE,
+           enum CharInfo::Collation collation=CharInfo::DefaultCollation,
+           enum CharInfo::Coercibility coercibility=CharInfo::COERCIBLE,
+           NAMemory * outHeap = CmpCommon::statementHeap(),
+           enum CharInfo::CharSet strLitPrefixCharSet=CharInfo::UnknownCharSet
+        );
+
 
 // constructor for a string constant with unknown charset (both the
 // single-byte and double-byte string values are known)
