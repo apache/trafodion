@@ -1608,7 +1608,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	    sourceType = REC_DECIMAL_LSE;
 	  }
 	  
-	  // 5/18/98: added to handle SJIS encoding charset case.
+      // 5/18/98: added to handle SJIS encoding charset case.
 	  // This is used in ODBC where the target character set is still
 	  // ASCII but the actual character set used is SJIS.
 	  //
@@ -3388,6 +3388,94 @@ error_return:
   return ex_expr::EXPR_ERROR;
 }
 
+void handleCharsetPerfix(Descriptor * inputDesc)
+{
+    char perfix[MAX_CHAR_SET_STRING_LENGTH];
+
+    if(inputDesc)
+    {
+        for (Lng32 entry = 1; entry <= inputDesc->getUsedEntryCount(); ++entry)
+        {
+            Lng32 perfix_beg = -1;
+            Lng32 perfix_end = 0;
+            char* source = inputDesc->getVarData(entry);
+            Lng32 valueLength = inputDesc->getVarDataLength(entry);
+            if (source)
+            {
+                // get charset perfix beg loc
+                for (Lng32 i = 0; i < valueLength && i < MAX_CHAR_SET_STRING_LENGTH; ++i)
+                {
+                    if(source[i] == '_' || TOUPPER(source[i]) =='N')
+                    {
+                        perfix_beg = i;
+                        break;
+                    }
+
+                    if (source[i] == '\'')
+                        return;
+                }
+
+                if (perfix_beg < 0)
+                    return;
+
+                // get charset perfix end loc
+                Lng32 perfix_ind = 0;
+
+                if (source[perfix_beg] == 'N')
+                {
+                    perfix[perfix_ind] = 'N';
+                    perfix_ind = 1;
+                }
+
+                for (Lng32 i = perfix_beg+1; i < valueLength && i < MAX_CHAR_SET_STRING_LENGTH; ++i)
+                {
+                    if(source[i] != '\'' && source[i] != 0)
+                    {
+                       perfix[perfix_ind] = TOUPPER(source[i]);
+                       ++perfix_ind;
+                    }
+
+                    if(source[i] == '\'')
+                    {
+                        perfix[perfix_ind] = 0;
+                        perfix_end = i;
+                        break;
+                    }
+                }
+
+                //perfix_cs
+                CharInfo::CharSet cs = CharInfo::getCharSetEnum(perfix);
+                if(str_len(perfix) == 1 AND perfix[0] == 'N')
+                   cs = CharInfo::UNICODE;
+
+                //if perfix_cs is UnknownCharSet direct return
+                if(cs == CharInfo::UnknownCharSet)
+                    return;
+
+                // remove cs
+                Lng32 valEnd = 0;
+                for (Lng32 i = perfix_end+1; i < valueLength; ++i)
+                {
+                    if (source[i] == '\'')
+                    {
+                        valEnd = i-1;
+                        break;
+                    }
+                }
+                Lng32 valBeg = perfix_end+1;
+                if (!source[valBeg])
+                {
+                    valBeg += 1;
+                }
+                memcpy(&source[perfix_beg], &source[valBeg], valEnd-valBeg+1);
+                memcpy(&source[valEnd-valBeg+1+perfix_beg], &source[valEnd+3], valBeg+2);
+            }
+
+        }
+
+    }
+}
+
 ex_expr::exp_return_type
 InputOutputExpr::inputValues(atp_struct *atp,
                              void * inputDesc_,
@@ -3644,6 +3732,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	
         // do the conversion
         source = (char *)&targetRowsetSize;
+
         if (::convDoIt(source,
                        sizeof(Lng32),
                        REC_BIN32_SIGNED,
@@ -3809,7 +3898,10 @@ InputOutputExpr::inputValues(atp_struct *atp,
           if (!source) {
 	    continue;
 	  }
-
+          if(isOdbc)
+          {
+             handleCharsetPerfix(inputDesc);
+          }
           if (DFS2REC::isSQLVarChar(sourceType)) {
             Lng32 vcIndLen = inputDesc->getVarIndicatorLength(entry);
             sourceLen = ExpTupleDesc::getVarLength(source, vcIndLen);
@@ -4413,6 +4505,7 @@ ex_expr::exp_return_type InputOutputExpr::addDescInfoIntoStaticDesc
   }
   
   return ex_expr::EXPR_OK;
+
 }
 
 Lng32 InputOutputExpr::getMaxParamIdx()
