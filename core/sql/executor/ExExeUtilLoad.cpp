@@ -2653,15 +2653,6 @@ short ExExeUtilLobExtractTcb::work()
 	  
 	case GET_NO_CHILD_HANDLE_:
 	  {
-	    ex_expr::exp_return_type exprRetCode =
-	      lobTdb().inputExpr_->eval(NULL, 
-					workAtp_);
-	    if (exprRetCode == ex_expr::EXPR_ERROR)
-	      {
-		step_ = CANCEL_;
-		break;
-	      }
-	    
 	    step_ = GET_LOB_HANDLE_;
 	  }
 	  break;
@@ -3458,14 +3449,6 @@ short ExExeUtilLobUpdateTcb::work()
           break;
         case GET_HANDLE_:
           {
-            ex_expr::exp_return_type exprRetCode =
-	      lobTdb().inputExpr_->eval(NULL, 
-					workAtp_);
-	    if (exprRetCode == ex_expr::EXPR_ERROR)
-              {	      
-                step_ = CANCEL_;
-                break;
-              }
             if (ExpLOBoper::genLOBhandleFromHandleString
 		    (lobTdb().getHandle(),
 		     lobTdb().getHandleLen(),
