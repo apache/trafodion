@@ -1,0 +1,9 @@
+.classpath
+.project
+.settings
+mvn.out
+target/*
+/target/
+*.log
+/LICENSE
+/NOTICE
